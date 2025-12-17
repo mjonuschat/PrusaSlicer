@@ -87,6 +87,7 @@ public:
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
+        m_slicing_interactor.add_listener<Slicing::IWipeTowerGeometryListener>(&m_scene_interactor);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
         m_file_downloader_interactor.add_listener<FileDownloader::IFileDownloaderListener>(this);

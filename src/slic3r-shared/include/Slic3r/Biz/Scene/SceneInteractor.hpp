@@ -18,6 +18,8 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
+#include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
+#include "libslic3r/PrintBase.hpp"
 
 namespace Slic3r::Domain { class Bed; }
 
@@ -120,13 +122,8 @@ public:
     )
     {}
 
-    virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) {}
-
-    virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) {}
-
-    virtual void
-    on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx, TransformState state)
-    {}
+    virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Print::WipeTowerGeometry& wipe_tower) {}
+    virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
 };
 
 class ISceneBedInstanceChangedListener
@@ -145,6 +142,7 @@ class SceneInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
     public Preset::IPresetChangedListener,
+    public Slicing::IWipeTowerGeometryListener,
     public WithListeners<
         ISceneSelectionChangedListener,
         ISceneChangedListener,
@@ -310,6 +308,17 @@ public:
     /** @} */
 
     void on_removed_config_container(Domain::Project& project);
+
+    void on_wipe_tower_geometry_changed(
+        Print::OptWipeTowerGeometry wipe_tower,
+        const Domain::SlicingId slicing_id
+    ) override;
+
+    void remove_wipe_tower(const Domain::SlicingId slicing_id);
+    void change_wipe_tower(
+        const Print::WipeTowerGeometry& wipe_tower,
+        const Domain::SlicingId slicing_id
+    );
 
 private:
     void layout_after_project_load(Domain::Project& added_project);

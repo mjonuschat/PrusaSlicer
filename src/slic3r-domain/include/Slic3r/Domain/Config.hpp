@@ -276,6 +276,7 @@ public:
 protected:
     FullConfigPtr m_full_config;
     std::vector<PartialConfigPtr> m_partial_configs;
+    std::vector<std::string> m_keys;
 
 private:
     ConfigValue get_value(const std::string& key) const;

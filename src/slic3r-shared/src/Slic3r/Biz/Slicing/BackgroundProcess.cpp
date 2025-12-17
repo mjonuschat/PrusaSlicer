@@ -25,10 +25,10 @@ using Biz::Slicing::FDMResult;
 using Biz::Slicing::SLAResult;
 using Biz::Slicing::Sla::Object;
 using Biz::Print::IPrint;
-using Biz::Print::WipeTowerGeometry;
+using Biz::Print::OptWipeTowerGeometry;
 
 std::unique_ptr<IPrint> init_print(
-    const Domain::PrinterTechnology& printer_technology, 
+    const Domain::PrinterTechnology& printer_technology,
     IProcessCallbacks& callbacks,
     const SlicingId id)
 {
@@ -38,7 +38,7 @@ std::unique_ptr<IPrint> init_print(
     case Domain::PrinterTechnology::FFF: {
         Print::OnFdmResult on_fdm_result = [callbacks_ref, id](FDMResult&& result) {
             callbacks_ref.get().on_fdm_result(std::move(result), id); };
-        Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](WipeTowerGeometry&& geometry) {
+        Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](OptWipeTowerGeometry&& geometry) {
             callbacks_ref.get().on_wipe_tower_geometry(std::move(geometry), id); };
         print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
         break;
@@ -55,6 +55,7 @@ std::unique_ptr<IPrint> init_print(
     default:
         UNREACHABLE("Only FFF and SLA are viable options!");
     }
+    callbacks_ref.get().on_wipe_tower_geometry(std::nullopt, id);
     print->set_status_silent();
     return print;
 }
@@ -89,16 +90,6 @@ bool is_thread_active(const StatusCode status) {
         || status == StatusCode::Updating;
 }
 
-Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
-    if (std::holds_alternative<ConfigPackFDM>(config)) {
-        return Domain::PrinterTechnology::FFF;
-    } else if (std::holds_alternative<ConfigPackSLA>(config)) {
-        return Domain::PrinterTechnology::SLA;
-    } else {
-        PANIC("Unexpected config type!");
-    }
-}
-
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Domain::Model& model,
@@ -108,8 +99,8 @@ BackgroundProcess::BackgroundProcess(
     const Domain::BedInstance& bed,
     const SlicingId id
 ) :
-    m_printer_technology{Slicing::get_printer_technology(config)},
-    m_print{init_print(m_printer_technology, callbacks, id)},
+    m_hw_config_id{preset_metadata.hw_config.id},
+    m_print{init_print(preset_metadata.hw_config.technology, callbacks, id)},
     m_on_status{[call = std::reference_wrapper(callbacks), id](const StatusUpdate status) {
         call.get().on_status(status, id);
     }},
@@ -134,7 +125,7 @@ BackgroundProcess::BackgroundProcess(
     const Domain::BedInstance& bed,
     const SlicingId id
 )
-    : m_printer_technology{Slicing::get_printer_technology(config)}
+    : m_hw_config_id{preset_metadata.hw_config.id}
     , m_print{std::move(print)}
     , m_on_status{[call = std::reference_wrapper(callbacks), id](const StatusUpdate status) {call.get().on_status(status, id); }}
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
@@ -160,8 +151,7 @@ void BackgroundProcess::update(
 )
 {
     SPDLOG_INFO("{}: update", fmt::streamed(m_id));
-    const Domain::PrinterTechnology printer_technology{Slicing::get_printer_technology(config)};
-    ASSERT(printer_technology == m_printer_technology);
+    ASSERT(preset_metadata.hw_config.id == m_hw_config_id);
 
     const LoggingScopeLock lock{m_mutex, "background process"};
 
@@ -324,8 +314,8 @@ void BackgroundProcess::stop()
     });
 }
 
-Domain::PrinterTechnology BackgroundProcess::get_printer_technology() const {
-    return m_printer_technology;
+std::string BackgroundProcess::get_hw_printer_id() const {
+    return m_hw_config_id;
 }
 
 void BackgroundProcess::queue_action(const std::function<void()>& action)

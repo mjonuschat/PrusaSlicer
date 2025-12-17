@@ -173,11 +173,11 @@ libpgcode::MoveVertices convert_to_move_vertices(
 
 MoveVerticesPerLayer get_wipe_tower_preview(const Slic3r::Print& print)
 {
-    if (!print.is_step_done(Slic3r::psWipeTower) || !print.has_wipe_tower()) {
+    if (!print.is_step_done(Slic3r::psWipeTower) || !print.wipe_tower_data()) {
         return {};
     }
 
-    const WipeTowerData& wipe_tower_data{print.wipe_tower_data()};
+    const WipeTowerData& wipe_tower_data{*print.wipe_tower_data()};
 
     MoveVerticesPerLayer result{};
     const WipeTowerHelper wipe_tower_helper{wipe_tower_data};

@@ -429,7 +429,16 @@ struct ZDepth{
     double depth{};
 };
 
-using WipeTowerGeometry = std::vector<ZDepth>;
+struct WipeTowerGeometry {
+    std::vector<ZDepth> depths;
+    Domain::Vec2d position{Domain::Vec2d::Zero()};
+    double rotation{};
+    double width{};
+    double cone_angle{};
+    double brim_width{};
+};
+
+using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;
 
 class IPrint {
 public:

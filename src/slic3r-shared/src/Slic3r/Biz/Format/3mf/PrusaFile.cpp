@@ -1196,8 +1196,7 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
         add(object_json, RANGES, RangesSerialization::ranges_to_json(object.layer_config_ranges));
     if (object.is_cut())
         add(object_json, CUT_OBJECT_ID, CutSerialization::cut_to_json(object.cut_id));
-    if (!object.object_settings.overrides.empty())
-        add(object_json, OBJECT_SETTINGS, object.object_settings);
+    add(object_json, OBJECT_SETTINGS, object.object_settings);
     if (const std::vector<double> &layer_height_profile = object.layer_height_profile.get();
         !layer_height_profile.empty())
         add(object_json, LAYER_HEIGHT_PROFILE, LayerHeightProfileSerialization::to_json(layer_height_profile));
@@ -1388,19 +1387,26 @@ void write(
     for (const auto& config_container : config_containers) {
         nlohmann::json cc_json;
         std::vector<nlohmann::json> beds_json;
+
+        bool has_wipe_tower = false;
+        const Domain::ConfigPack config_pack{config_container->print_config()};
+        if (auto config_pack_fdm{std::get_if<Domain::ConfigPackFDM>(&config_pack)}) {
+            const bool enabled{config_pack_fdm->print.items.opt("wipe_tower").get<bool>()};
+            has_wipe_tower = config_pack_fdm->tool.size() > 1 && enabled;
+        }
+
         for (const auto& bed_instance : config_container->bed_instances()) {
             const Vec3d& offset = bed_instance->transformation.get_offset();
             beds_json.emplace_back();
             beds_json.back()["position_x"] = offset.x();
             beds_json.back()["position_y"] = offset.y();
 
-            const auto& wt = bed_instance->wipe_tower;
-            if (wt) {
-                beds_json.back()["wipe_tower"]["x"] = wt->position.x();
-                beds_json.back()["wipe_tower"]["y"] = wt->position.y();
-                beds_json.back()["wipe_tower"]["rotation_angle"] = wt->rotation;
+            if (has_wipe_tower) {
+                beds_json.back()["wipe_tower"]["x"] = bed_instance->wipe_tower.position.x();
+                beds_json.back()["wipe_tower"]["y"] = bed_instance->wipe_tower.position.y();
+                beds_json.back()["wipe_tower"]["rotation_angle"] = bed_instance->wipe_tower.rotation;
             } else
-                beds_json.back()["wipe_tower"] = nullptr;            
+                beds_json.back()["wipe_tower"] = nullptr;
         }
         cc_json["beds"] = beds_json;
 

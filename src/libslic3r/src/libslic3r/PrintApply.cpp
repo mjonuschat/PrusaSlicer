@@ -32,6 +32,7 @@
 #include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/StepsInvalidation.hpp"
+#include "libslic3r/ShrinkageCompensation.hpp"
 #include "Slic3r/Biz/Parser/IO.hpp"
 
 namespace Slic3r {
@@ -1126,7 +1127,17 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
             })
         };
 
-        result.invalidated_steps.print = invalidated_steps.first;
+        PrintSteps* result_print_steps{std::get_if<PrintSteps>(&result.invalidated_steps.print)};
+        if (result_print_steps != nullptr) {
+            std::visit(Domain::overloaded{
+                [&](const AllSteps&){
+                    result.invalidated_steps.print = AllSteps{};
+                },
+                [&](PrintSteps invalidated_print_steps){
+                    result_print_steps->merge(std::move(invalidated_print_steps));
+                }
+            }, invalidated_steps.first);
+        }
 
         for (auto it = print_objects_range_begin; it != print_objects_range_end; ++it) {
             result.regions.push_back({*it, *new_regions});
@@ -1305,18 +1316,20 @@ bool InvalidatedSteps::empty() const {
 
 Biz::Print::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
-    const Domain::Vec3d& shrinkage_compensation,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
     const Domain::Preset::HwPrinterConfig& hw_config,
-    const std::optional<Domain::ModelWipeTower>& wipe_tower,
-    const std::optional<Domain::CustomGCode::Info>& custom_gcode
+    const Domain::ModelWipeTower& wipe_tower,
+    const std::optional<Domain::CustomGCode::Info>& custom_gcode,
+    const std::vector<unsigned>& extruder_candidates
 )
 {
+    const bool could_have_had_wipe_tower{can_have_wipe_tower()};
+
     PrintConfigView new_print_config{new_full_config_ptr};
 
     // Check if the print config change will produce any warnings.
-    const std::vector<Biz::Slicing::Warning> warnings{
+    std::vector<Biz::Slicing::Warning> warnings{
         validate_print_config_change(m_config, new_print_config)
     };
 
@@ -1333,6 +1346,17 @@ Biz::Print::ApplyStatus::Status Print::apply(
         m_model.copy_id(model);
     }
 
+    const std::optional<Vec3d> shrinkage_compensation_optional{
+        Biz::Slicing::get_shrinkage_compensation(extruder_candidates, new_print_config)
+    };
+    if (!shrinkage_compensation_optional) {
+        warnings.emplace_back(
+            Biz::Slicing::Warning{Biz::Slicing::WarningCode::FilamentShrinkageDiffer}
+        );
+    }
+    const Vec3d shrinkage_compensation{
+        shrinkage_compensation_optional.value_or(Vec3d{1.0, 1.0, 1.0})
+    };
     const auto model_sync_result{sync_model(
         m_model,
         model,
@@ -1347,6 +1371,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
         return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
     }
 
+    m_extruder_candidates = extruder_candidates;
     m_shrinkage_compensation = shrinkage_compensation;
     m_hw_config         = hw_config;
     m_serialized_config = serialized_config;
@@ -1358,11 +1383,15 @@ Biz::Print::ApplyStatus::Status Print::apply(
     );
 
     InvalidatedSteps wipe_tower_invalidated_steps;
-    // Check the position and rotation of the wipe tower.
-    if (wipe_tower != m_wipe_tower) {
-        std::get<PrintSteps>(wipe_tower_invalidated_steps.print).insert(psSkirtBrim);
+    if (can_have_wipe_tower()) {
+        // Check the position and rotation of the wipe tower.
+        if (wipe_tower != m_wipe_tower) {
+            std::get<PrintSteps>(wipe_tower_invalidated_steps.print).insert(psSkirtBrim);
+        }
+        m_wipe_tower = wipe_tower;
+    } else {
+        m_wipe_tower = std::nullopt;
     }
-    m_wipe_tower = wipe_tower;
 
     const InvalidatedSteps custom_gcode_invalidated_steps{get_custom_gcode_invalidated_steps(
         m_custom_gcode,
@@ -1400,6 +1429,34 @@ Biz::Print::ApplyStatus::Status Print::apply(
          changed_objects_invalidated_steps,
          deleted_objects_invalidated_steps}
     )};
+
+    if (can_have_wipe_tower()) {
+        ASSERT(m_wipe_tower);
+        const bool wipe_tower_invalidated{std::visit(
+            Domain::overloaded{
+                [&](const std::set<PrintStep>& steps)
+                { return steps.contains(PrintStep::psWipeTower); },
+                [&](AllSteps) { return true; },
+            },
+            invalidated_steps.print
+        )};
+
+        if (wipe_tower_invalidated || !could_have_had_wipe_tower) {
+            m_on_wipe_tower_geometry(
+                Biz::Print::WipeTowerGeometry{
+                    .depths   = {},
+                    .position = wipe_tower.position,
+                    .rotation = wipe_tower.rotation,
+                    .width = new_full_config_ptr->get<double>("wipe_tower_width"),
+                    .cone_angle = new_full_config_ptr->get<double>("wipe_tower_cone_angle"),
+                    .brim_width = new_full_config_ptr->get<double>("wipe_tower_brim_width")
+                }
+            );
+        }
+    }
+    if (!can_have_wipe_tower() && could_have_had_wipe_tower) {
+        m_on_wipe_tower_geometry(std::nullopt);
+    }
 
     const bool changed{!invalidated_steps.empty()};
     this->invalidate_object_steps(invalidated_steps);

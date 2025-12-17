@@ -24,6 +24,7 @@
 #include "Slic3r/App/Scene/PrintVolumeData.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/Scene/VolumeColor.hpp"
+#include "Slic3r/Math.hpp"
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
@@ -70,13 +71,18 @@ void remove_children(Scene::Scene& scn, const std::vector<RefT>& elements, const
 
 } // namespace
 
-PlaterScenePresenter::PlaterScenePresenter(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
-    Render::Device& device, Platform::AnimationManager& animation_manager)
-    : m_workbench(workbench)
-    , m_project_interactor(project_interactor)
-    , m_device(device)
-    , m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
-    , m_animation_manager(animation_manager)
+PlaterScenePresenter::PlaterScenePresenter(
+    const Domain::Workbench& workbench,
+    Biz::ProjectInteractor& project_interactor,
+    Render::Device& device,
+    Platform::AnimationManager& animation_manager
+) :
+    m_workbench(workbench),
+    m_project_interactor(project_interactor),
+    m_device(device),
+    m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor()),
+    m_animation_manager(animation_manager),
+    m_data_factory(device)
 {
     load_selected_project();
 
@@ -545,8 +551,13 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId
         center_camera_on_selected_bed(true);
 }
 
-void
-PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol, std::optional<ColorRGBA> color)
+void PlaterScenePresenter::build_volume_node(
+    Scene::NodeBuilder& builder,
+    Domain::SelectionId project_id,
+    const Domain::ModelInstance* inst,
+    const Domain::ModelVolume* vol,
+    std::optional<ColorRGBA> color
+)
 {
     SPDLOG_DEBUG("build_volume inst: {}  vol: {}", inst->id().id, vol->id().id);
     auto& ctx         = m_projects[project_id];
@@ -588,6 +599,247 @@ PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::Sel
         // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
         // and for sla printers it should be set in dependence of the resin type
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
+}
+
+struct WipeTowerTag {
+    Domain::SlicingId slicing_id;
+};
+
+const double wipe_tower_brim_height{0.2};
+
+void build_wipe_tower_cube(
+    Scene::NodeBuilder& builder,
+    Scene::GeometryDataFactory& data_factory,
+    const Render::Material& material,
+    double bottom_z,
+    const Vec3d& scale,
+    Domain::SlicingId slicing_id
+)
+{
+    builder.child(
+        [&](Scene::NodeBuilder& builder)
+        {
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cube);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cube);
+
+            builder.set_debug_name("wipe_tower_cube")
+                .set_material_override(material)
+                .set_tag(WipeTowerTag{slicing_id})
+                .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
+                .set_aabb(mesh->aabb_mesh());
+
+            Domain::Transform3d transform{Domain::Transform3d::Identity()};
+            transform.translate(Vec3d{0, 0, bottom_z + scale.z() / 2.0});
+            transform.scale(scale);
+            builder.set_transform(transform);
+        }
+    );
+}
+
+Domain::Vec2d wipe_tower_center(
+    const Domain::Vec2d& wipe_tower_position,
+    double wipe_tower_width,
+    double wipe_tower_depth,
+    double wipe_tower_rotation
+)
+{
+    Vec3d position{wipe_tower_position.x(), wipe_tower_position.y(), 0.0};
+    const auto rotation_transformation{
+        Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower_rotation), Vec3d::UnitZ()}
+    };
+    const Domain::Vec3d offset{wipe_tower_width / 2.0, wipe_tower_depth / 2.0, 0.0};
+    position += Vec3d{rotation_transformation * offset};
+    return {position.x(), position.y()};
+}
+
+void build_wipe_tower_cone(
+    Scene::NodeBuilder& builder,
+    Scene::GeometryDataFactory& data_factory,
+    const Render::Material& material,
+    const Domain::Vec2d& relative_position,
+    double apex_angle,
+    double height,
+    double brim_width,
+    Domain::SlicingId slicing_id
+)
+{
+    if (apex_angle <= 0) {
+        return;
+    }
+
+    const Domain::Vec3d offset{relative_position.x(), relative_position.y(), 0.0};
+
+    const double base_size{2.0 * height * std::tan(Slic3r::deg2rad(apex_angle / 2.0))};
+    builder.child(
+        [&](Scene::NodeBuilder& builder)
+        {
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cone);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
+
+            builder.set_debug_name("wipe_tower_cone")
+                .set_material_override(material)
+                .set_tag(WipeTowerTag{slicing_id})
+                .set_mesh(
+                    geom,
+                    material,
+                    Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects)
+                )
+                .set_aabb(mesh->aabb_mesh());
+
+            Domain::Transform3d transform{Domain::Transform3d::Identity()};
+            transform.translate(offset);
+            transform.scale(Vec3d{base_size, base_size, height});
+            builder.set_transform(transform);
+        }
+    );
+
+    builder.child(
+        [&](Scene::NodeBuilder& builder)
+        {
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cylinder);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cylinder);
+
+            builder.set_debug_name("wipe_tower_cone_brim")
+                .set_material_override(material)
+                .set_tag(WipeTowerTag{slicing_id})
+                .set_mesh(
+                    geom,
+                    material,
+                    Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects)
+                )
+                .set_aabb(mesh->aabb_mesh());
+            const double base_size_brim{base_size + 2 * brim_width};
+            Domain::Transform3d transform{Domain::Transform3d::Identity()};
+            transform.translate(offset);
+            transform.scale(Vec3d{base_size_brim, base_size_brim, wipe_tower_brim_height});
+            builder.set_transform(transform);
+        }
+    );
+}
+
+void PlaterScenePresenter::build_unknown_wipe_tower_node(
+    Scene::NodeBuilder& builder,
+    const Biz::Print::WipeTowerGeometry& wipe_tower,
+    const Domain::Transformation& bed_transformation,
+    Domain::SlicingId slicing_id
+)
+{
+    auto color{Domain::ColorRGBA::BLUEISH()};
+    const Render::Material material{
+        Render::Material{}
+            .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("uniform_color", color)
+    };
+
+    const double height{10.0};
+    const double depth{7.0};
+    const double width{wipe_tower.width};
+
+    const Domain::Vec2d center{
+        wipe_tower_center(wipe_tower.position, width, depth, wipe_tower.rotation)
+    };
+    Domain::Transform3d transform{bed_transformation.get_matrix()};
+    transform.translate(Vec3d{center.x(), center.y(), 0.0});
+    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
+    builder.set_transform(transform);
+
+    build_wipe_tower_cube(
+        builder,
+        m_data_factory,
+        material,
+        0.0,
+        Domain::Vec3d{
+            width + 2 * wipe_tower.brim_width,
+            depth + 2 * wipe_tower.brim_width,
+            wipe_tower_brim_height
+        },
+        slicing_id
+    );
+
+    build_wipe_tower_cube(
+        builder,
+        m_data_factory,
+        material,
+        0.0,
+        Domain::Vec3d{width, depth, height},
+        slicing_id
+    );
+
+    build_wipe_tower_cone(
+        builder,
+        m_data_factory,
+        material,
+        Domain::Vec2d{0.0, -depth / 2.0},
+        wipe_tower.cone_angle,
+        height,
+        wipe_tower.brim_width,
+        slicing_id
+    );
+}
+
+void PlaterScenePresenter::build_wipe_tower_node(
+    Scene::NodeBuilder& builder,
+    const Biz::Print::WipeTowerGeometry& wipe_tower,
+    const Domain::Transformation& bed_transformation,
+    Domain::SlicingId slicing_id
+)
+{
+    ASSERT(!wipe_tower.depths.empty());
+    ASSERT(wipe_tower.depths.front().z == 0.0);
+    const Render::Material material{
+        Render::Material{}
+            .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("uniform_color", Domain::ColorRGBA::ORANGE())
+    };
+
+    using Biz::Print::ZDepth;
+
+    const double depth{wipe_tower.depths.front().depth};
+
+    const Domain::Vec2d center{
+        wipe_tower_center(wipe_tower.position, wipe_tower.width, depth, wipe_tower.rotation)
+    };
+    Domain::Transform3d transform{bed_transformation.get_matrix()};
+    transform.translate(Vec3d{center.x(), center.y(), 0.0});
+    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
+    builder.set_transform(transform);
+
+    build_wipe_tower_cube(
+        builder,
+        m_data_factory,
+        material,
+        0.0,
+        Domain::Vec3d{
+            wipe_tower.width + 2 * wipe_tower.brim_width,
+            wipe_tower.depths.front().depth + 2 * wipe_tower.brim_width,
+            wipe_tower_brim_height
+        },
+        slicing_id
+    );
+
+    for (int i{1}; i < wipe_tower.depths.size(); ++i) {
+        const double next_z{wipe_tower.depths[i].z};
+        const auto [z, depth]{wipe_tower.depths[i - 1]};
+        build_wipe_tower_cube(
+            builder,
+            m_data_factory,
+            material,
+            z,
+            Domain::Vec3d{wipe_tower.width, depth, next_z - z},
+            slicing_id
+        );
+    }
+
+    build_wipe_tower_cone(
+        builder,
+        m_data_factory,
+        material,
+        Domain::Vec2d{0.0, 0.0},
+        wipe_tower.cone_angle,
+        wipe_tower.depths.back().z,
+        wipe_tower.brim_width,
+        slicing_id
+    );
 }
 
 PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances() const
@@ -1088,20 +1340,56 @@ void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId proje
         invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
-{
-    invoke_bed_visually_changed(project_id);
+static void remove_wipe_tower_node(Scene::Scene& scene, Domain::SlicingId slicing_id) {
+    Scene::Node* node{scene.root().query_first([&](const Scene::Node* node){
+        auto tag{node->tag_of_type<WipeTowerTag>()};
+        if (tag == nullptr) {
+            return false;
+        }
+        return tag->slicing_id == slicing_id;
+    })};
+    if (node == nullptr) {
+        return;
+    }
+    scene.remove_child(node);
 }
 
-void PlaterScenePresenter::on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
+void PlaterScenePresenter::on_wipe_tower_changed(
+    Domain::SlicingId slicing_id,
+    const Biz::Print::WipeTowerGeometry& wipe_tower
+)
 {
-    invoke_bed_visually_changed(project_id);
+    Scene::Scene& current_scene{scene()};
+    remove_wipe_tower_node(current_scene, slicing_id);
+
+    const Domain::Project& project{m_workbench.project(slicing_id.project_id)};
+    const Domain::BedInstance* bed_instance{
+        project.find_bed_instance_by_id(slicing_id.bed_instance_id)
+    };
+    if (!bed_instance) {
+        return;
+    }
+
+    const Domain::Transformation& bed_transformation{bed_instance->transformation};
+
+    Scene::NodeBuilder builder{current_scene};
+    builder.set_debug_name("wipe_tower");
+    builder.set_tag(WipeTowerTag{slicing_id});
+    if (!wipe_tower.depths.empty()) {
+        build_wipe_tower_node(builder, wipe_tower, bed_transformation, slicing_id);
+        current_scene.add_child(builder.build().release());
+    } else {
+        build_unknown_wipe_tower_node(builder, wipe_tower, bed_transformation, slicing_id);
+        current_scene.add_child(builder.build().release());
+    }
+    invoke_bed_visually_changed(slicing_id.project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id, Biz::Scene::TransformState state)
+void PlaterScenePresenter::on_wipe_tower_removed(Domain::SlicingId slicing_id)
 {
-    if (state != Biz::Scene::TransformState::InProgress)
-        invoke_bed_visually_changed(project_id);
+    Scene::Scene& current_scene{scene()};
+    remove_wipe_tower_node(current_scene, slicing_id);
+    invoke_bed_visually_changed(slicing_id.project_id);
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)

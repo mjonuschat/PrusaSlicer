@@ -53,7 +53,7 @@ struct IStatusListener : ISlicingListener
 
 struct IWipeTowerGeometryListener : ISlicingListener
 {
-    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry, const Domain::SlicingId) = 0;
+    virtual void on_wipe_tower_geometry_changed(Print::OptWipeTowerGeometry, const Domain::SlicingId) = 0;
 };
 
 struct UpdateRequest
@@ -113,7 +113,7 @@ public:
     void on_sla_object(const Domain::SlicingId&, Sla::Object&&) override;
     void on_status(const StatusUpdate, Domain::SlicingId) override;
     void on_exception(std::exception_ptr exception, Domain::SlicingId) override;
-    void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
+    void on_wipe_tower_geometry(Print::OptWipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
     StatusCode get_status(const Domain::SlicingId id) const override;
 
 private:

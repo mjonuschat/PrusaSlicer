@@ -26,6 +26,7 @@ using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Biz::Slicing::IWipeTowerGeometryListener;
+using Slic3r::Biz::Print::OptWipeTowerGeometry;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Biz::Print::ZDepth;
 using Slic3r::Tests::SlicingFixture;
@@ -128,14 +129,14 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor][
 
 struct WipeTowerGeometryListener : public IWipeTowerGeometryListener
 {
-    void on_wipe_tower_geometry(
-        WipeTowerGeometry wipe_tower_geometry, const SlicingId
+    void on_wipe_tower_geometry_changed(
+        OptWipeTowerGeometry wipe_tower_geometry, const SlicingId
     ) override
     {
         geometry = std::move(wipe_tower_geometry);
     }
 
-    std::optional<WipeTowerGeometry> geometry;
+    OptWipeTowerGeometry geometry;
 };
 
 TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks][timeout]")
@@ -174,12 +175,12 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     const WipeTowerGeometry geometry{*wipe_tower_geometry_listener.geometry};
 
     // Two step wipe tower with brim.
-    REQUIRE(geometry.size() == 4);
-    CHECK(geometry[0].z == 0);
-    CHECK(geometry[3].depth == 0);
+    REQUIRE(geometry.depths.size() == 4);
+    CHECK(geometry.depths[0].z == 0);
+    CHECK(geometry.depths[3].depth == 0);
 
-    ZDepth previous_z_depth{geometry.front()};
-    for (const auto& [z, depth] : std::span{geometry}.subspan(1)) {
+    ZDepth previous_z_depth{geometry.depths.front()};
+    for (const auto& [z, depth] : std::span{geometry.depths}.subspan(1)) {
         CHECK(previous_z_depth.z < z);
         CHECK(previous_z_depth.depth > depth);
         previous_z_depth = {z, depth};
@@ -210,7 +211,7 @@ struct SLAObjectListener : public ISLAObjectListener{
 TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
     using namespace std::chrono_literals;
 
-    ModelOnBed model_on_bed{get_cubes_model(1, 5)};
+    ModelOnBed model_on_bed{get_cubes_model(1, 5, Slic3r::Domain::PrinterTechnology::SLA)};
 
     SLAResultListener result_listener;
     SLAObjectListener object_listener;
@@ -223,8 +224,6 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
         model_on_bed.config,
         model_on_bed.bed_instance
     );
-
-    model_on_bed.config = ConfigPackSLA{};
 
     slicing.update_process(
         model_on_bed.model,

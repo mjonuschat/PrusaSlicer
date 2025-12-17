@@ -537,10 +537,19 @@ std::size_t SquashedConfig::hash() const {
 ConfigView::ConfigView(FullConfigPtr full_config, const std::vector<PartialConfigPtr>& partial_configs)
     : m_full_config{full_config}, m_partial_configs{partial_configs}
 {
+    std::vector<std::string> partial_config_keys;
     ASSERT(m_full_config);
     for (const PartialConfigPtr& ptr : m_partial_configs) {
         ASSERT(ptr);
+        for (const auto&[key, _] : ptr->m_values) {
+            partial_config_keys.push_back(key);
+        }
     }
+
+    m_keys = m_full_config->keys();
+    m_keys.insert(m_keys.end(), partial_config_keys.begin(), partial_config_keys.end());
+    std::ranges::sort(m_keys);
+    m_keys.erase(std::unique(m_keys.begin(), m_keys.end()), m_keys.end());
 }
 
 bool ConfigView::operator==(const ConfigView& other) const {
@@ -567,8 +576,7 @@ std::size_t ConfigView::hash() const {
 std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
 {
     std::vector<std::string> result;
-
-    for (const std::string& key : m_full_config->keys()) {
+    for (const std::string& key : m_keys) {
         if (get_value(key) != other.get_value(key)) {
             result.push_back(key);
         }

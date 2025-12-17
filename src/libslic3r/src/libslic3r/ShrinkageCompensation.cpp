@@ -1,36 +1,21 @@
 #include "libslic3r/ShrinkageCompensation.hpp"
-#include "libslic3r/ExtruderCandidates.hpp"
 
 namespace Slic3r::Biz::Slicing {
 
-template <typename T>
-static std::vector<T>
-get_filament_option_vector(const Domain::ConfigPackFDM& config, const std::string& key)
-{
-    std::vector<T> result;
-    result.reserve(config.filament.size());
-
-    for (const auto& filament : config.filament) {
-        const auto value{filament.items.opt(key).get<T>()};
-        result.push_back(value);
-    }
-    return result;
-}
-
 static bool has_same_shrinkage_compensations(
     const std::vector<unsigned int> extruders,
-    const Domain::ConfigPackFDM& config
+    const PrintConfigView& config
 )
 {
     if (extruders.empty())
         return false;
 
-    const std::vector<Domain::Percentage> compensation_xy{
-        get_filament_option_vector<Domain::Percentage>(config, "filament_shrinkage_compensation_xy")
+    const auto compensation_xy{
+        config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy")
     };
 
-    const std::vector<Domain::Percentage> compensation_z{
-        get_filament_option_vector<Domain::Percentage>(config, "filament_shrinkage_compensation_z")
+    const auto compensation_z{
+        config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z")
     };
 
     for (unsigned int extruder : extruders) {
@@ -44,11 +29,12 @@ static bool has_same_shrinkage_compensations(
     return true;
 }
 
-std::optional<Domain::Vec3d>
-get_shrinkage_compensation(const Domain::Model& model, const Domain::ConfigPackFDM& config)
+std::optional<Domain::Vec3d> get_shrinkage_compensation(
+    const std::vector<unsigned int>& extruders,
+    const PrintConfigView& config
+)
 
 {
-    const std::vector<unsigned int> extruders{get_extruder_candidates(model, config)};
     if (extruders.empty()) {
         return std::nullopt;
     }
@@ -58,18 +44,16 @@ get_shrinkage_compensation(const Domain::Model& model, const Domain::ConfigPackF
 
     const unsigned int first_extruder{extruders.front()};
     const double xy_compensation_percent{std::clamp(
-        config.filament.at(first_extruder)
-            .items.opt("filament_shrinkage_compensation_xy")
-            .get<Domain::Percentage>()
+        config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy")
+            .at(first_extruder)
             .value,
         -99.,
         99.
     )};
 
     const double z_compensation_percent{std::clamp(
-        config.filament.at(first_extruder)
-            .items.opt("filament_shrinkage_compensation_z")
-            .get<Domain::Percentage>()
+        config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z")
+            .at(first_extruder)
             .value,
         -99.,
         99.

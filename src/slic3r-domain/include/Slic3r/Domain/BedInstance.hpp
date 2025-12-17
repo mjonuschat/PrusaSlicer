@@ -35,7 +35,7 @@ struct BedInstance : public ObjectBase
     ModelInstanceList model_instances;
     ModelInstanceList colliding_instances;
     bool print_volume_enabled{false};
-    std::optional<ModelWipeTower> wipe_tower;
+    ModelWipeTower wipe_tower{};
     std::optional<CustomGCode::Info> custom_gcode;
 
 private:

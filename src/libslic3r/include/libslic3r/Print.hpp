@@ -480,54 +480,25 @@ private:
 
 struct WipeTowerData
 {
-    // Following section will be consumed by the GCodeGenerator.
-    // Tool ordering of a non-sequential print has to be known to calculate the wipe tower.
-    // Cache it here, so it does not need to be recalculated during the G-code generation.
-    ToolOrdering                                         &tool_ordering;
     // Cache of tool changes per print layer.
     std::unique_ptr<std::vector<WipeTower::ToolChangeResult>> priming;
     std::vector<std::vector<WipeTower::ToolChangeResult>> tool_changes;
     std::unique_ptr<WipeTower::ToolChangeResult>          final_purge;
     std::vector<std::pair<float, std::vector<float>>>     used_filament_until_layer;
-    int                                                   number_of_toolchanges;
+    int                                                   number_of_toolchanges{};
 
     // Depth of the wipe tower to pass to GLCanvas3D for exact bounding box:
-    float                                                 depth;
+    float                                                 depth{};
     std::vector<std::pair<float, float>>                  z_and_depth_pairs;
-    float                                                 brim_width;
-    float                                                 height;
+    float                                                 brim_width{};
+    float                                                 height{};
 
     // Data needed to generate fake extrusions for conflict checking.
-    float                                                 width;
-    float                                                 first_layer_height;
-    float                                                 cone_angle;
-    Domain::Vec2d                                         position;
-    float                                                 rotation_angle;
-
-    void clear() {
-        priming.reset(nullptr);
-        tool_changes.clear();
-        final_purge.reset(nullptr);
-        used_filament_until_layer.clear();
-        number_of_toolchanges = -1;
-        depth = 0.f;
-        z_and_depth_pairs.clear();
-        brim_width = 0.f;
-        height = 0.f;
-        width = 0.f;
-        first_layer_height = 0.f;
-        cone_angle = 0.f;
-        position = Domain::Vec2d::Zero();
-        rotation_angle = 0.f;
-    }
-
-private:
-	// Only allow the WipeTowerData to be instantiated internally by Print, 
-	// as this WipeTowerData shares reference to Print::m_tool_ordering.
-	friend class Print;
-	WipeTowerData(ToolOrdering &tool_ordering) : tool_ordering(tool_ordering) { clear(); }
-	WipeTowerData(const WipeTowerData & /* rhs */) = delete;
-	WipeTowerData &operator=(const WipeTowerData & /* rhs */) = delete;
+    float                                                 width{};
+    float                                                 first_layer_height{};
+    float                                                 cone_angle{};
+    Domain::Vec2d                                         position{};
+    float                                                 rotation_angle{};
 };
 
 bool is_toolchange_required(
@@ -566,7 +537,7 @@ private: // Prevents erroneous use by other classes.
 
 public:
     using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
-    using OnWipeTowerGeometry = std::function<void(Biz::Print::WipeTowerGeometry&&)>;
+    using OnWipeTowerGeometry = std::function<void(Biz::Print::OptWipeTowerGeometry)>;
     Print();
     Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry);
 	virtual ~Print() { this->clear(); }
@@ -593,12 +564,12 @@ public:
 
     Biz::Print::ApplyStatus::Status apply(
         const Domain::Model& model,
-        const Domain::Vec3d& shrinkage_compensation,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
         const Domain::Preset::HwPrinterConfig& hw_config,
-        const std::optional<Domain::ModelWipeTower>& wipe_tower,
-        const std::optional<Domain::CustomGCode::Info>& custom_gcode
+        const Domain::ModelWipeTower& wipe_tower,
+        const std::optional<Domain::CustomGCode::Info>& custom_gcode,
+        const std::vector<unsigned>& extruder_candidates
     );
 
     static Domain::ModelInstancePtrs deep_copy_instances(
@@ -675,21 +646,21 @@ public:
     const Domain::Polygon&      first_layer_convex_hull() const { return m_first_layer_convex_hull; }
 
     // Wipe tower support.
-    bool                        has_wipe_tower() const;
-    const WipeTowerData&        wipe_tower_data(size_t extruders_cnt = 0) const;
+    bool                        can_have_wipe_tower() const;
+    const std::optional<WipeTowerData>& wipe_tower_data() const;
     const ToolOrdering& 		tool_ordering() const { return m_tool_ordering; }
 
     size_t                      num_print_regions() const throw() { return m_print_regions.size(); }
     const PrintRegion&          get_print_region(size_t idx) const  { return *m_print_regions[idx]; }
-    const ToolOrdering&         get_tool_ordering() const { return m_wipe_tower_data.tool_ordering; }
-
-    Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
+    const ToolOrdering&         get_tool_ordering() const { return m_tool_ordering; }
 
     // Invalidates the step, and its depending steps in Print.
     bool                invalidate_step(PrintStep step);
 
     void                _make_skirt();
-    void                _make_wipe_tower();
+
+    // Modifies m_tool_ordering_heavily!
+    std::optional<WipeTowerData> generate_wipe_tower_data();
     void                finalize_first_layer_convex_hull();
     void                alert_when_supports_needed();
 
@@ -727,7 +698,7 @@ public:
 
     // Following section will be consumed by the GCodeGenerator.
     ToolOrdering 							m_tool_ordering;
-    WipeTowerData                           m_wipe_tower_data {m_tool_ordering};
+    std::optional<WipeTowerData>            m_wipe_tower_data;
 
     Thumbnails thumbnails;
 
@@ -739,6 +710,10 @@ public:
     friend class PrintObject;
 
     std::optional<std::pair<std::string, std::string>> m_sequential_collision_detected; // names of objects (hit first when printing second)
+
+private:
+    std::vector<unsigned> m_extruder_candidates;
+    Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
 };
 
 } /* slic3r_Print_hpp_ */

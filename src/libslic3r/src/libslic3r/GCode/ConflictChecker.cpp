@@ -442,13 +442,15 @@ ConflictComputeOpt find_inter_of_lines(const LineWithIDs &lines)
 
 namespace Biz::Slicing {
 
-ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs,
-                                                                    const WipeTowerData& wipe_tower_data) // find the first intersection point of lines in different objects
+ConflictResultOpt find_inter_of_lines_in_diff_objs(
+    SpanOfConstPtrs<PrintObject> objs,
+    const std::optional<WipeTowerData>& wipe_tower_data
+) // find the first intersection point of lines in different objects
 {
     // There is no conflict when there are no objects,
     // or when there is only one object with a single instance and the wipe tower is disabled.
     if (objs.empty()
-     || (objs.size() == 1 && objs.front()->instances().size() == 1 && wipe_tower_data.z_and_depth_pairs.empty())) {
+     || (objs.size() == 1 && objs.front()->instances().size() == 1 && !wipe_tower_data)) {
         return {};
     }
 
@@ -457,10 +459,10 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
     int wtptr = 0;
 
     LinesBucketQueue conflictQueue;
-    if (! wipe_tower_data.z_and_depth_pairs.empty()) {
+    if (wipe_tower_data) {
         // The wipe tower is being generated.
         const Point plate_origin = Point::Zero();
-        std::vector<LayerPaths> wtpaths = getFakeExtrusionPathsFromWipeTower(wipe_tower_data);
+        std::vector<LayerPaths> wtpaths = getFakeExtrusionPathsFromWipeTower(*wipe_tower_data);
         conflictQueue.emplace_back_bucket(std::move(wtpaths), &wtptr, Points{plate_origin});
     }
     for (const PrintObject *obj : objs) {
@@ -505,7 +507,7 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
         const void *ptr2   = conflictQueue.idToObjsPtr(conflict[0].first._obj2);
         double conflict_z  = conflict[0].second;
         if (ptr1 == &wtptr || ptr2 == &wtptr) {
-            assert(! wipe_tower_data.z_and_depth_pairs.empty());
+            assert(wipe_tower_data);
             if (ptr2 == &wtptr) { std::swap(ptr1, ptr2); }
             const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(ptr2);
             ConflictResult out = {

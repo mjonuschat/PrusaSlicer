@@ -290,16 +290,20 @@ void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instanc
 }
 
 void SlicingInteractor::on_wipe_tower_geometry(
-    Print::WipeTowerGeometry&& wipe_tower_geometry,
+    Print::OptWipeTowerGeometry&& wipe_tower_geometry,
     const SlicingId id
 )
 {
-    SPDLOG_INFO("{}: WipeTowerGeometry{{size: {}}}", fmt::streamed(id), wipe_tower_geometry.size());
+    if (wipe_tower_geometry) {
+        SPDLOG_INFO("{}: OptWipeTowerGeometry{{depths.size: {}}}", fmt::streamed(id), wipe_tower_geometry->depths.size());
+    } else {
+        SPDLOG_INFO("{}: OptWipeTowerGeometry{{nullopt}}", fmt::streamed(id));
+    }
 
     if (!m_dispatcher.dispatch_on_main_thread(
             [this, id, geometry = std::move(wipe_tower_geometry)]() mutable {
         invoke_listeners<IWipeTowerGeometryListener>([&](auto* listener) {
-            listener->on_wipe_tower_geometry(geometry, id);
+            listener->on_wipe_tower_geometry_changed(geometry, id);
         });
     }
         ))
@@ -363,7 +367,7 @@ void SlicingInteractor::process_update_requests()
             continue;
         }
 
-        if (process.get_printer_technology() != get_printer_technology(request.config)) {
+        if (process.get_hw_printer_id() != request.preset_metadata.hw_config.id) {
             m_processes.erase(id);
             create_process(
                 request.model.get(),

@@ -4472,6 +4472,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm");
     def->mode = comAdvanced;
     def->init_fn = init_with(60.);
+    def->min = 1.0;
 
     def = defs.add("wipe_tower_brim_width", typeid(double));
     def->location = Print;

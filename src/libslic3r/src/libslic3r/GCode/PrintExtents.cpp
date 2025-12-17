@@ -151,6 +151,7 @@ BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object
 BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double max_print_z)
 {
     ASSERT(print.wipe_tower());
+    ASSERT(print.wipe_tower_data());
     // Wipe tower extrusions are saved as if the tower was at the origin with no rotation
     // We need to get position and angle of the wipe tower to transform them to actual position.
     Transform2d trafo =
@@ -158,7 +159,7 @@ BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double 
         Eigen::Rotation2Dd(deg2rad(print.wipe_tower()->rotation));
 
     BoundingBoxf bbox;
-    for (const std::vector<WipeTower::ToolChangeResult> &tool_changes : print.wipe_tower_data().tool_changes) {
+    for (const std::vector<WipeTower::ToolChangeResult> &tool_changes : print.wipe_tower_data()->tool_changes) {
         if (! tool_changes.empty() && tool_changes.front().print_z > max_print_z)
             break;
         for (const WipeTower::ToolChangeResult &tcr : tool_changes) {
@@ -181,8 +182,8 @@ BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double 
 BoundingBoxf get_wipe_tower_priming_extrusions_extents(const Print &print)
 {
     BoundingBoxf bbox;
-    if (print.wipe_tower_data().priming != nullptr) {
-        for (const WipeTower::ToolChangeResult &tcr : *print.wipe_tower_data().priming) {
+    if (print.wipe_tower_data() && print.wipe_tower_data()->priming != nullptr) {
+        for (const WipeTower::ToolChangeResult &tcr : *print.wipe_tower_data()->priming) {
             for (size_t i = 1; i < tcr.extrusions.size(); ++ i) {
                 const WipeTower::Extrusion &e = tcr.extrusions[i];
                 if (e.width > 0) {

@@ -1218,13 +1218,10 @@ void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Do
         "bed_custom_model",
         "bed_custom_texture",
     };
-
-    if (std::ranges::find(bed_related_keys, item.def().name) == bed_related_keys.end()) {
-        return;
+    if (std::ranges::find(bed_related_keys, item.def().name) != bed_related_keys.end()) {
+        Domain::Project& project{m_workbench.project(project_id)};
+        update_config_container_bed(project, config_container_id);
     }
-
-    Domain::Project& project{m_workbench.project(project_id)};
-    update_config_container_bed(project, config_container_id);
 }
 
 const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const
@@ -1425,6 +1422,34 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
 void SceneInteractor::on_removed_config_container(Domain::Project& project)
 {
     layout_after_project_load(project);
+}
+
+void SceneInteractor::on_wipe_tower_geometry_changed(
+    Print::OptWipeTowerGeometry wipe_tower,
+    const Domain::SlicingId slicing_id
+)
+{
+    if (!wipe_tower) {
+        remove_wipe_tower(slicing_id);
+        return;
+    }
+    change_wipe_tower(*wipe_tower, slicing_id);
+}
+
+void SceneInteractor::remove_wipe_tower(const Domain::SlicingId slicing_id)
+{
+    invoke_listeners<ISceneChangedListener>([&](auto listener)
+                                            { listener->on_wipe_tower_removed(slicing_id); });
+}
+
+void SceneInteractor::change_wipe_tower(
+    const Print::WipeTowerGeometry& wipe_tower,
+    const Domain::SlicingId slicing_id
+)
+{
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto listener) { listener->on_wipe_tower_changed(slicing_id, wipe_tower); }
+    );
 }
 
 BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)

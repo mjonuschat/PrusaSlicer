@@ -50,13 +50,18 @@ Domain::Preset::SelectedPresetMetadata get_selected_preset_metadata()
     return metadata;
 }
 
-Domain::ConfigPack get_config() {
-    Domain::ConfigPackFDM config;
-    config.print.items.opt("skirts").set(0);
-    // Make print statitistics non-zero.
-    config.filament.at(0).items.opt("filament_density").set(1.0);
-    config.filament.at(0).items.opt("filament_cost").set(44.0);
-    return config;
+Domain::ConfigPack get_config(Domain::PrinterTechnology technology)
+{
+    if (technology == Domain::PrinterTechnology::FFF) {
+        Domain::ConfigPackFDM config;
+        config.print.items.opt("skirts").set(0);
+        // Make print statitistics non-zero.
+        config.filament.at(0).items.opt("filament_density").set(1.0);
+        config.filament.at(0).items.opt("filament_cost").set(44.0);
+        return config;
+    } else {
+        return Domain::ConfigPackSLA{};
+    }
 }
 
 ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& config)
@@ -67,12 +72,25 @@ ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& config)
             this->bed_instance.model_instances.push_back(instance);
         }
     }
+
+    static unsigned hw_config_id_counter{};
+    preset_metadata.hw_config.id = std::to_string(hw_config_id_counter++);
+
+    if (std::holds_alternative<Domain::ConfigPackFDM>(config)) {
+        preset_metadata.hw_config.technology = Domain::PrinterTechnology::FFF;
+    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config)) {
+        preset_metadata.hw_config.technology = Domain::PrinterTechnology::SLA;
+    } else {
+        PANIC("Invalid config pack!");
+    }
 }
 
 Domain::Bed ModelOnBed::bed{};
 
-ModelOnBed get_cubes_model(const int count, const int row_size) {
-    return {generate_cubes(count, row_size), get_config()};
+ModelOnBed
+get_cubes_model(const int count, const int row_size, Domain::PrinterTechnology technology)
+{
+    return {generate_cubes(count, row_size), get_config(technology)};
 }
 
 std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event)

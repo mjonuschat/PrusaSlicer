@@ -19,7 +19,9 @@ Domain::Model generate_cubes(const int count, const int row_size);
 double get_cubes_filament_used(const Domain::Model &model);
 
 Domain::Preset::SelectedPresetMetadata get_selected_preset_metadata();
-Domain::ConfigPack get_config();
+Domain::ConfigPack get_config(
+    Domain::PrinterTechnology technology = Domain::PrinterTechnology::FFF
+);
 
 struct ModelOnBed {
     ModelOnBed(Domain::Model&& model, Domain::ConfigPack&& config);
@@ -33,7 +35,11 @@ struct ModelOnBed {
     Domain::BedInstance bed_instance;
 };
 
-ModelOnBed get_cubes_model(const int count, const int row_size);
+ModelOnBed get_cubes_model(
+    const int count,
+    const int row_size,
+    Domain::PrinterTechnology technology = Domain::PrinterTechnology::FFF
+);
 
 struct StatusEvent {
     Biz::Slicing::StatusCode status_code;

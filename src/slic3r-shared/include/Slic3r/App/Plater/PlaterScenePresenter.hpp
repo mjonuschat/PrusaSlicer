@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -227,9 +228,11 @@ private:
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, Biz::Scene::TransformState state) override;
 
-    void on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
-    void on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
-    void on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id, Biz::Scene::TransformState state) override;
+    void on_wipe_tower_changed(
+        Domain::SlicingId slicing_id,
+        const Biz::Print::WipeTowerGeometry& wipe_tower
+    ) override;
+    void on_wipe_tower_removed(Domain::SlicingId slicing_id) override;
 
     void on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
     void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
@@ -237,6 +240,19 @@ private:
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
         std::optional<Domain::ColorRGBA> color = std::nullopt);
+
+    void build_unknown_wipe_tower_node(
+        Scene::NodeBuilder& builder,
+        const Biz::Print::WipeTowerGeometry& wipe_tower,
+        const Domain::Transformation& bed_transformation,
+        Domain::SlicingId slicing_id
+    );
+    void build_wipe_tower_node(
+        Scene::NodeBuilder& builder,
+        const Biz::Print::WipeTowerGeometry& wipe_tower,
+        const Domain::Transformation& bed_transformation,
+        Domain::SlicingId slicing_id
+    );
 
     BedInstances selected_bed_instances() const;
 
@@ -278,6 +294,7 @@ private:
     Scene::CameraFrustumUpdater m_camera_frustum_updater;
     HoverData m_hover_data;
     Platform::AnimationManager& m_animation_manager;
+    Scene::GeometryDataFactory m_data_factory;
 
     bool m_freeze_selection_center{ false };
     bool m_volume_materials_dirty{ true };

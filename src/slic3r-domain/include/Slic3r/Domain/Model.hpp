@@ -30,8 +30,6 @@ namespace Slic3r::Domain {
 const constexpr float  SINKING_Z_THRESHOLD     = -0.001f;
 const constexpr double SINKING_MIN_Z_THRESHOLD =  0.05;
 
-// Note: The following class does not have to inherit from ObjectID, it is currently
-// only used for arrangement. It might be good to refactor this in future.
 class ModelWipeTower
 {
 public:

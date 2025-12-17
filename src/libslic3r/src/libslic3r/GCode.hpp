@@ -401,7 +401,7 @@ private:
     struct PlaceholderParserIntegration {
         void reset();
         void init(const GCodeWriter &config);
-        void update_from_gcodewriter(const GCodeWriter &writer, const WipeTowerData& wipe_tower_data);
+        void update_from_gcodewriter(const GCodeWriter &writer, const std::optional<WipeTowerData>& wipe_tower_data);
         void validate_output_vector_variables();
 
         Biz::Parser::PlaceholderParser parser;

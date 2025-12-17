@@ -243,16 +243,16 @@ std::vector<Error> transform_to_legacy_input(PartialVolumeConfigFDM& volume_conf
     return {};
 }
 
-void set_extruders(PartialConfig& partial_config)
+void set_extruders(PartialConfig& partial_config, const auto& settings)
 {
     if (const auto extruder{partial_config.template get<int>("extruder")}; extruder > 0) {
-        if (!partial_config.get<int>("infill_extruder")) {
+        if (!settings.overrides.get("infill_extruder")) {
             partial_config.set("infill_extruder", *extruder);
         }
-        if (!partial_config.get<int>("perimeter_extruder")) {
+        if (!settings.overrides.get("perimeter_extruder")) {
             partial_config.set("perimeter_extruder", *extruder);
         }
-        if (!partial_config.get<int>("solid_infill_extruder")) {
+        if (!settings.overrides.get("solid_infill_extruder")) {
             partial_config.set("solid_infill_extruder", *extruder);
         }
     }
@@ -278,7 +278,7 @@ tl::expected<PartialObjectConfigFDMPtr, std::vector<Error>> prepare_slicing_obje
 )
 {
     PartialObjectConfigFDM result{object_settings, tools_count, filaments_count};
-    set_extruders(result);
+    set_extruders(result, object_settings);
     std::vector<Error> errors{transform_to_legacy_input(result)};
     if (!errors.empty()) {
         return tl::unexpected{std::move(errors)};
@@ -293,7 +293,7 @@ tl::expected<PartialVolumeConfigFDMPtr, std::vector<Error>> prepare_slicing_volu
 )
 {
     PartialVolumeConfigFDM result{volume_settings, tools_count, filaments_count};
-    set_extruders(result);
+    set_extruders(result, volume_settings);
     std::vector<Error> errors{transform_to_legacy_input(result)};
     if (!errors.empty()) {
         return tl::unexpected{std::move(errors)};

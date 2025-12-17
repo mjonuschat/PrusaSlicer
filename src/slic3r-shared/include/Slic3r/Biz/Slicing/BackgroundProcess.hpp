@@ -34,8 +34,6 @@ private:
 
 bool is_thread_active(const StatusCode status);
 
-Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
-
 using FDMResult = libpgcode::ProcessorResult;
 
 class IProcessCallbacks {
@@ -45,7 +43,7 @@ public:
     virtual void on_sla_object(const Domain::SlicingId&, Sla::Object&&) = 0;
     virtual void on_status(const StatusUpdate, Domain::SlicingId) = 0;
     virtual void on_exception(std::exception_ptr exception, Domain::SlicingId) = 0;
-    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, Domain::SlicingId) = 0;
+    virtual void on_wipe_tower_geometry(Print::OptWipeTowerGeometry&&, Domain::SlicingId) = 0;
     virtual StatusCode get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };
@@ -86,10 +84,10 @@ public:
     void slice(IThumbnailImageGenerator& thumbnail_generator);
     void stop();
 
-    Domain::PrinterTechnology get_printer_technology() const;
+    std::string get_hw_printer_id() const;
 
 private:
-    Domain::PrinterTechnology m_printer_technology;
+    std::string m_hw_config_id;
     std::unique_ptr<Print::IPrint> m_print;
     std::function<void(StatusUpdate)> m_on_status;
     std::function<void(std::exception_ptr)> m_on_exception;
