@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/UserAccount/UserAccountActionData.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountAction.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Assert.hpp"
@@ -7,28 +8,6 @@
 #include <map>
 
 namespace Slic3r::Biz::UserAccount {
-
-enum class UserAccountActionID {
-    Dummy,
-    RefreshToken,
-    CodeForToken,
-    UserId,
-    UserIdAfterTokenSuccess,
-    TestAccessToken,
-    TestConnection,
-    ConnectStatus, // status of all printers by UUID
-    ConnectPrinterModels, // status of all printers by UUID with printer_model. Should be called once to save printer models.
-    Avatar,
-    ConnectDataFromUuid,
-};
-
-struct ActionQueueData
-{
-    UserAccountActionID action_id;
-    ActionSuccessFn     success_callback;
-    ActionFailFn        fail_callback;
-    std::string         input;
-};
 
 /**
  * @brief Database of all Actions. All Actions live here as unique ptr, possibly reused indefinitely.
@@ -41,6 +20,7 @@ public:
 		m_actions[UserAccountActionID::Dummy] = std::make_unique<UserAccountActionDummy>();
         m_actions[UserAccountActionID::RefreshToken] = std::make_unique<UserAccountActionPost>("EXCHANGE_TOKENS", sc.account_token_url());
         m_actions[UserAccountActionID::CodeForToken] = std::make_unique<UserAccountActionPost>("EXCHANGE_TOKENS", sc.account_token_url());
+        m_actions[UserAccountActionID::PrintablesSecretToken] = std::make_unique<UserAccountActionPost>("PRINTABLES_SECRET_TOKEN", sc.printables_get_secret_token_url());
         m_actions[UserAccountActionID::UserId] = std::make_unique<UserAccountActionGetWithEvent>("USER_ID", sc.account_me_url(), ActionSuccessType::UserID, ActionFailType::Reset);
         m_actions[UserAccountActionID::UserIdAfterTokenSuccess] = std::make_unique<UserAccountActionGetWithEvent>("USER_ID_AFTER_TOKEN_SUCCESS", sc.account_me_url(), ActionSuccessType::UserIDAfterToken, ActionFailType::Reset);
         m_actions[UserAccountActionID::TestAccessToken] = std::make_unique<UserAccountActionGetWithEvent>("TEST_ACCESS_TOKEN", sc.account_me_url(), ActionSuccessType::UserID, ActionFailType::Fail);

@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp"
 #include "Slic3r/Assert.hpp"
 
+
 #include <nlohmann/json.hpp>
 #include <regex>
 
@@ -39,6 +40,7 @@ std::string BrowserLogicPrintables::access_token()
 std::vector<BrowserLogicCommand>
 BrowserLogicPrintables::on_navigation_request_webview_event(const std::string& new_url, const std::string& current_url)
 {
+    SPDLOG_INFO("{} {}", __FUNCTION__, new_url);
     if (new_url.find(m_url) == 0) {
         m_reached_default_url = true;
         if (new_url == current_url) {
@@ -70,10 +72,10 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_show_webview_event(b
     std::vector<BrowserLogicCommand> auth_cmds;
     if (access_token.empty()) {
         auth_cmds = logout(m_next_show_url);
+        m_next_show_url.clear();
     } else {
         auth_cmds = login(access_token, m_next_show_url);
     }
-    m_next_show_url.clear();
 
     result.insert(result.end(), 
                   std::make_move_iterator(auth_cmds.begin()), 
@@ -123,13 +125,12 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
     if (!is_refresh) {
         return login(m_project_interactor.user_account_interactor().access_token());
     }
-
+    SPDLOG_INFO("{}", __FUNCTION__);
     std::vector<BrowserLogicCommand> result;
-    result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
+    result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
+    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
 
-    std::string token = m_project_interactor.user_account_interactor().access_token();
-    std::string script = "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + token + "'}));";
-    result.emplace_back(BrowserLogicCommandType::RunScript, script);
+    m_project_interactor.user_account_interactor().request_printables_secret_token();   
 
     return result;
 }
@@ -150,6 +151,46 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_will_re
     return {{BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))"}};
 }
 
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_secret_token(const std::string& body)
+{    
+    std::vector<BrowserLogicCommand> result;
+    result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
+    
+    std::string token;
+    try {
+        nlohmann::json j = nlohmann::json::parse(body);
+        if (j.contains("secretToken") && j["secretToken"].is_string()) {
+            token = j["secretToken"].get<std::string>();
+        }
+    } catch (const nlohmann::json::exception& e) {
+        SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
+        SPDLOG_ERROR("Failed to retrieve Printables secret token - Account features might not work.");
+    }
+
+    if (token.empty()) {
+        SPDLOG_ERROR("Failed to retrieve Printables secret token - Account features might not work.");
+        m_reload_after_secret_token = false;
+        // We failed to retrieve the secret token. Printables will sooner or later run into error state.
+        // It is likely this is happening for a reason (f.e. severed connection), its better to let things fail than repeat the token exchange.
+        return result;
+    }
+
+    nlohmann::json payload = {
+        {"event", "secretTokenChange"},
+        {"secretToken", token}
+    };
+    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage('" + payload.dump() + "');");
+
+    if (m_reload_after_secret_token && m_next_show_url.empty()) {
+        result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");
+    } else if (!m_next_show_url.empty()) {
+        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(m_next_show_url));
+        m_next_show_url.clear();
+    }
+    m_reload_after_secret_token = false;
+    return result;
+}
+
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webview_event(const std::string& message)
 {
     std::string event_string;
@@ -158,7 +199,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webvi
         if (j.contains("event") && j["event"].is_string()) {
             event_string = j["event"].get<std::string>();
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -204,7 +245,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_pri
         if (j.contains("modelUrl") && j["modelUrl"].is_string()) {
             model_url = j["modelUrl"].get<std::string>();
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -231,7 +272,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_dow
         if (j.contains("modelUrl") && j["modelUrl"].is_string()) {
             model_url = j["modelUrl"].get<std::string>();
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -260,7 +301,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
         if (j.contains("modelUrl") && j["modelUrl"].is_string()) {
             model_url = j["modelUrl"].get<std::string>();
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -313,7 +354,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
                 sources.jobs.emplace_back(std::move(info));
             }
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -337,7 +378,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_ope
         if (j.contains("url") && j["url"].is_string()) {
             url = j["url"].get<std::string>();
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -358,7 +399,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_webview_reload_event
             emplace_load_default_url_commands(res);
             return res;
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
         return {};
     }
@@ -389,21 +430,14 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string& access_token, const std::string& url)
 {
+    SPDLOG_INFO("{}", __FUNCTION__);
     std::vector<BrowserLogicCommand> result;
     m_refreshing_token = false;
     m_styles_defined   = false;
-    result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
-    // We cannot add token to header as when making the first request.
-    // In fact, we shall not do request here, only run scripts.
-    // postMessage accessTokenWillChange -> postMessage accessTokenChange -> window.location.reload();
+    m_reload_after_secret_token = true;
+    result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
-    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + access_token + "'}));");
-
-    if (url.empty()) {
-        result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");
-    } else {
-        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(url));
-    }
+    m_project_interactor.user_account_interactor().request_printables_secret_token();
     return result;
 }
 
@@ -527,18 +561,19 @@ void BrowserLogicPrintables::emplace_define_css_commands(std::vector<BrowserLogi
         }
         `;
         document.head.appendChild(style); 
-    
-        // Capture click on hypertext
-        // Rewritten from mobileApp code
-                (function() {
+
+        (function() {
             const listenerKey = 'custom-click-listener';
             if (!document[listenerKey]) {
                 document.addEventListener('click', function(event) {
                     const target = event.target.closest('a[href]');
                     if (!target) return; 
+
                     const url = target.href;
                     if (url === 'about:blank') return; 
+
                     console.log(`Printables:onNavigationRequest: ${url}`);
+
                     // Updated Regex to include testprusaverse.com
                     if (!/printables\.com|prusaverse\.com/.test(url)) {
                         window.ExternalApp.postMessage(JSON.stringify({ event: 'openExternalUrl', url }))
@@ -624,6 +659,7 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
 
 void BrowserLogicPrintables::emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res)
 {
+    SPDLOG_INFO("{}", __FUNCTION__);
     res.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
     m_styles_defined = false;
     std::string actual_default_url = url_lang_theme(Biz::Network::ServiceConfig::instance().printables_url() + "/homepage");
@@ -638,6 +674,10 @@ void BrowserLogicPrintables::emplace_load_default_url_commands(std::vector<Brows
         res.emplace_back(BrowserLogicCommandType::LoadURL, std::move(actual_default_url));
         return;
     }
+
+    m_project_interactor.user_account_interactor().request_printables_secret_token();
+    res.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
+
     // add token to first request
 #ifdef _WIN32
     res.emplace_back(BrowserLogicCommandType::AddRequestAuthorization, m_url);

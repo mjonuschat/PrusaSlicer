@@ -44,6 +44,7 @@ public:
     virtual std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) {return {};}
     virtual std::vector<BrowserLogicCommand> on_user_account_logged_out(const std::string& current_url) {return {};}
     virtual std::vector<BrowserLogicCommand> on_user_account_will_refresh() {return {};}
+    virtual std::vector<BrowserLogicCommand> on_printables_secret_token(const std::string& body) {return {};}
 
     void set_next_show_url(std::string url) {m_next_show_url = url;}
     void set_title(const std::string& title) { m_component_title = title; }

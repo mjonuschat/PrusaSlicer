@@ -30,6 +30,8 @@ public:
     ) override
     {}
 
+    void on_printables_secret_token(const std::string& body) override {}
+
     virtual void set_next_show_url(const std::string url) {}
 
     void set_switch_left_tab_fn(std::function<void(LeftBarTabs, const std::string&)> switch_left_tab_fn)

@@ -10,12 +10,11 @@ namespace Slic3r::Biz::UserAccount {
 void UserAccountActionPost::perform(
     IUserAccountActionCallbacks* callbacks,
     /*UNUSED*/ const std::string& access_token,
-    ActionSuccessFn success_callback,
-    ActionFailFn fail_callback,
-    const std::string& input,
+    ActionQueueData&& action_data,
     std::atomic_bool& global_cancel
 ) const
 {
+    auto shared_data = std::make_shared<ActionQueueData>(std::move(action_data));
     std::string url = m_url;
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
 
@@ -29,45 +28,56 @@ void UserAccountActionPost::perform(
     };
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
-    if (!input.empty())
-        http->set_post_body(input);
-    http->header("Content-type", "application/x-www-form-urlencoded")
-        .on_progress(
-            [fail_callback](Network::IHttp::Progress progress, bool& cancel)
+    if (!shared_data->input.empty())
+        http->set_post_body(shared_data->input);
+    if (shared_data->additional_headers.empty()) {
+        http->header("Content-type", "application/x-www-form-urlencoded");
+    } else {
+        for (const auto& [key, value] : shared_data->additional_headers) {
+            http->header(key, value);
+        }
+    }
+    http->on_progress(
+            [shared_data](Network::IHttp::Progress progress, bool& cancel)
             {
-                if (cancel && fail_callback) {
-                    fail_callback({});
+                if (cancel && shared_data->fail_callback) {
+                    shared_data->fail_callback({});
                 }
             }
         )
         .on_error(
-            [fail_callback](std::string body, std::string error, unsigned status)
+            [shared_data](std::string body, std::string error, unsigned status)
             {
                 // SPDLOG_INFO("UserActionPost::perform on_error");
-                if (fail_callback)
-                    fail_callback(body);
+                if (shared_data->fail_callback)
+                    shared_data->fail_callback(body);
             }
         )
         .on_complete(
-            [success_callback](std::string body, unsigned status)
+            [shared_data](std::string body, unsigned status)
             {
                 // SPDLOG_INFO("UserActionPost::perform on_complete");
-                if (success_callback)
-                    success_callback(body);
+                if (shared_data->success_callback)
+                    shared_data->success_callback(body);
             }
         )
         .perform_sync(Network::HttpRetryOpt::default_retry());
 }
 
-void UserAccountActionGetWithEvent::
-    perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const
+void UserAccountActionGetWithEvent::perform(
+    IUserAccountActionCallbacks* callbacks,
+    const std::string& access_token,
+    ActionQueueData&& action_data,
+    std::atomic_bool& global_cancel
+) const
 {
+    auto shared_data = std::make_shared<ActionQueueData>(std::move(action_data));
     std::string url = m_url;
     std::string post_body;
     if (url.empty()) {
-        url = input;
+        url = shared_data->input;
     } else {
-        post_body = input;
+        post_body = shared_data->input;
     }
 
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
@@ -97,12 +107,17 @@ void UserAccountActionGetWithEvent::
         */
 #endif
     }
+    if (!shared_data->additional_headers.empty()) {
+        for (const auto& [key, value] : shared_data->additional_headers) {
+            http->header(key, value);
+        }
+    }
     http->on_error(
-            [fail_callback, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](std::string body, std::string error, unsigned status)
+            [shared_data, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](std::string body, std::string error, unsigned status)
             {
                 // SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
-                if (fail_callback)
-                    fail_callback(body);
+                if (shared_data->fail_callback)
+                    shared_data->fail_callback(body);
                 std::string message = fmt::format("{} action failed ({}): {}", *action_name, std::to_string(status), body);
                 if (fail_type != ActionFailType::None) {
                     callbacks->on_action_fail(fail_type, std::move(message));
@@ -110,11 +125,11 @@ void UserAccountActionGetWithEvent::
             }
     )
         .on_progress(
-            [fail_callback, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
+            [shared_data, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
             {
                 if (cancel) {
-                    if (fail_callback) {
-                        fail_callback({});
+                    if (shared_data->fail_callback) {
+                        shared_data->fail_callback({});
                     }
                     std::string message = fmt::format("{} action canceled", *action_name);
                     if (fail_type != ActionFailType::None) {
@@ -124,11 +139,11 @@ void UserAccountActionGetWithEvent::
             }
         )
         .on_complete(
-            [success_callback, &callbacks, success_type = m_success_type](std::string body, unsigned status)
+            [shared_data, &callbacks, success_type = m_success_type](std::string body, unsigned status)
             {
                 // SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
-                if (success_callback)
-                    success_callback(body);
+                if (shared_data->success_callback)
+                    shared_data->success_callback(body);
                 if (success_type != ActionSuccessType::None) {
                     callbacks->on_action_success(success_type, std::move(body));
                 }

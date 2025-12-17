@@ -848,6 +848,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountAction.hpp
         include/Slic3r/Biz/UserAccount/UserAccountActionStore.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountActionData.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp

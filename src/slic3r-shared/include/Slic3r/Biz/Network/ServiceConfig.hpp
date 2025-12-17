@@ -59,6 +59,11 @@ public:
         return m_account_url + "/o/token/";
     }
 
+    std::string printables_get_secret_token_url() const
+    {
+        return m_printables_url + "/auth/get-secret-token";
+    }
+
     std::string account_me_url() const
     {
         return m_account_url + "/api/v1/me/";

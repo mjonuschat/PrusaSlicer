@@ -26,6 +26,7 @@ public:
     UserAccountSessionDispatchBase& operator=(const UserAccountSessionDispatchBase&)  = delete;
     UserAccountSessionDispatchBase& operator=(UserAccountSessionDispatchBase&& other) = delete;
 
+    void dispatch_printables_secret_token(const std::string& body);
 protected:
     void dispatch_action_retry(const Network::IHttp::Retry& retry);
     void dispatch_action_success(ActionSuccessType success_type, std::string body);

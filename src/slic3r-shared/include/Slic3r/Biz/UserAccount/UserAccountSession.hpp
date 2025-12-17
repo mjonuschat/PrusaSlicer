@@ -41,7 +41,7 @@ public:
      * @brief Enqueues CodeForToken action with callbacks.
      */
     void on_log_in_code_response(const std::string& code, const std::string& code_verifier);
-    void enqueue_action(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input);
+    void enqueue_action(ActionQueueData&& action);
     void enqueue_test_with_refresh();
     void enqueue_refresh(const std::string& body);
     void enqueue_refresh_race(const std::string& refresh_token_from_store);
@@ -96,7 +96,7 @@ private:
      */
     bool m_processing_enabled{false};
 
-    void enqueue_action_inner(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input);
+    void enqueue_action_inner(ActionQueueData&& action);
 
     // End of section guarded by m_session_mutex
 

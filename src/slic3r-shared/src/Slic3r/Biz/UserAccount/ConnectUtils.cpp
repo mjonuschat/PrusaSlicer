@@ -41,7 +41,7 @@ bool config_from_json(const std::string& json, PrintHost::PrintHostConfig& confi
             SPDLOG_ERROR("Could not find data subtree in Connect message.");
             return false;
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Connect message: {}", e.what());
         return false;
     }

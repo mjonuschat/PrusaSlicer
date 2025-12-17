@@ -16,6 +16,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/nowide/convert.hpp>
 
 #include <wx/webview.h>
 #include <wrl/client.h>

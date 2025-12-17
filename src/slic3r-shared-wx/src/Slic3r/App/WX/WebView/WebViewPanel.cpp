@@ -184,6 +184,12 @@ void WebViewPanel::on_user_account_will_refresh()
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
+void WebViewPanel::on_printables_secret_token(const std::string& body) 
+{
+    bool b = process_logic_command_vector(m_logic->on_printables_secret_token(body));
+    DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
+}
+
 void WebViewPanel::load_url(const wxString& url)
 {
     if (!m_web_view)

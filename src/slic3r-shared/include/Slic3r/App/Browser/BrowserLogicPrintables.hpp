@@ -25,6 +25,7 @@ public:
     std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) override;
     std::vector<BrowserLogicCommand> on_user_account_logged_out(const std::string& current_url) override;
     std::vector<BrowserLogicCommand> on_user_account_will_refresh() override;
+    std::vector<BrowserLogicCommand> on_printables_secret_token(const std::string& body) override;
 
 private:
     Biz::ProjectInteractor& m_project_interactor;
@@ -42,6 +43,7 @@ private:
 
     std::vector<BrowserLogicCommand> logout(const std::string& url);
     std::vector<BrowserLogicCommand> login(const std::string& access_token, const std::string& override_url = std::string());
+
     void emplace_define_css_commands(std::vector<BrowserLogicCommand>& res);
     void emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res);
 
@@ -57,5 +59,7 @@ private:
     bool m_refreshing_token {false};
     bool m_load_default_url { true };
     bool m_remove_request_auth {false};
+    bool m_reload_after_secret_token {false};
+    std::string m_last_loaded_url;
 };
 } // namespace Slic3r::App::Browser 

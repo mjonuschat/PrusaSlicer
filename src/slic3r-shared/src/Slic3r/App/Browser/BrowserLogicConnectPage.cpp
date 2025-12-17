@@ -215,7 +215,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_webview_reload_even
             }
             return res;
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Connect message. {}", e.what());
         return {};
     }

@@ -46,7 +46,7 @@ std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_script_message_we
         {
             return {{BrowserLogicCommandType::LoadURL, m_user_account.on_log_in_request("en", true)}};
         }
-    } catch (const nlohmann::json::parse_error& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse WebView message. {}", e.what());
         return {};
     }

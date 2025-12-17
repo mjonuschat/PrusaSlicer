@@ -70,7 +70,7 @@ void UserAccountSession::process_action_queue()
         if (m_priority_action_queue.empty() && m_action_queue.empty()) {
             // Update printers periodically.
             // ConnectStatus needs ConnectPrinterModels to be called once to has effect.
-            enqueue_action_inner(UserAccountActionID::ConnectStatus, nullptr, nullptr, {});
+            enqueue_action_inner({UserAccountActionID::ConnectStatus, nullptr, nullptr, {}});
         }
     }
     process_action_queue_inner();
@@ -103,9 +103,7 @@ void UserAccountSession::process_action_queue_inner()
         m_actions[selected_data.action_id]->perform(
             this,
             use_token ? get_access_token() : std::string(),
-            selected_data.success_callback,
-            selected_data.fail_callback,
-            selected_data.input,
+            std::move(selected_data),
             m_global_cancel
         );
         process_action_queue_inner();
@@ -132,11 +130,11 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
     }
 }
 
-void UserAccountSession::enqueue_action(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input)
+void UserAccountSession::enqueue_action(ActionQueueData&& action)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
-        enqueue_action_inner(id, success_callback, fail_callback, input);
+        enqueue_action_inner(std::move(action));
     }
 }
 
@@ -219,10 +217,10 @@ bool UserAccountSession::is_enqueued(UserAccountActionID action_id) const
     }
 }
 
-void UserAccountSession::enqueue_action_inner(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input)
+void UserAccountSession::enqueue_action_inner(ActionQueueData&& action)
 {
     m_processing_enabled = true;
-    m_action_queue.push({id, success_callback, fail_callback, input});
+    m_action_queue.push(std::move(action));
 }
 
 void UserAccountSession::refresh_fail_callback(const std::string& body)
@@ -320,7 +318,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
         m_shared_session_key = shared_session_key;
         m_next_token_timeout = std::time(nullptr) + expires_in;
     }
-    enqueue_action(UserAccountActionID::UserIdAfterTokenSuccess, nullptr, nullptr, {});
+    enqueue_action({UserAccountActionID::UserIdAfterTokenSuccess, nullptr, nullptr, {}, {}});
     dispatch_new_refresh_time(expires_in);
 }
 

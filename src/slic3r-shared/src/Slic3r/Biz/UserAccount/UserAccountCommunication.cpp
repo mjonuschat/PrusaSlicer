@@ -10,6 +10,7 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/cstdio.hpp>
+#include <nlohmann/json.hpp>
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -112,7 +113,7 @@ void UserAccountCommunication::on_avatar_url(const std::string& data)
     const boost::filesystem::path server_file(data);
     m_avatar_extension = server_file.extension().string();
     ASSERT(m_session.is_initialized());
-    m_session.enqueue_action(UserAccountActionID::Avatar, nullptr, nullptr, data);
+    m_session.enqueue_action({UserAccountActionID::Avatar, nullptr, nullptr, data, {}});
     wakeup_session_thread();
 }
 
@@ -128,6 +129,34 @@ void UserAccountCommunication::on_avatar_success(std::string&& data) const
     }
     fwrite(data.c_str(), 1, data.size(), file);
     fclose(file);
+}
+
+void UserAccountCommunication::request_printables_secret_token()
+{
+    ASSERT(m_session.is_initialized());
+    auto succ_fn = [this](const std::string& body)
+    { 
+        m_session.dispatch_printables_secret_token(body); 
+    };
+    auto fail_fn = [this](const std::string& body)
+    {
+        SPDLOG_ERROR("Failed to retrieve Printables secret token:  {}", body);
+        m_session.dispatch_printables_secret_token({});
+    };
+
+    nlohmann::json j;
+    j["accessToken"] = access_token();
+    
+    ActionQueueData action{
+        UserAccountActionID::PrintablesSecretToken,
+        succ_fn,
+        fail_fn,
+        j.dump(),
+        {{"Content-type", "application/json"},
+         {"Origin", Network::ServiceConfig::instance().printables_url()}}
+    };
+    m_session.enqueue_action(std::move(action));
+    wakeup_session_thread();
 }
 
 } // namespace Slic3r::Biz::UserAccount

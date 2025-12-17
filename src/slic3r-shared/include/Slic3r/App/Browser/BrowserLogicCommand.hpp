@@ -25,6 +25,7 @@ enum class BrowserLogicCommandType
     SetLoadDefaultURLOnErrorTrue,
     SetLoadDefaultURLOnErrorFalse,
     SwitchToSlicing,
+    RunOnBackground,
 };
 
 struct BrowserLogicCommand

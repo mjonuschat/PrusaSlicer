@@ -67,6 +67,11 @@ std::string UserAccountInteractor::access_token() const
     return m_communication.access_token();
 }
 
+void UserAccountInteractor::request_printables_secret_token()
+{
+    m_communication.request_printables_secret_token();
+}
+
 void UserAccountInteractor::on_action_retry(const Network::IHttp::Retry& retry)
 {
     SPDLOG_INFO(
@@ -154,6 +159,13 @@ void UserAccountInteractor::on_logged_out()
 {
     invoke_listeners<IUserAccountListener>(
         [](auto* listener) { listener->on_user_account_logged_out(); }
+    );
+}
+
+void UserAccountInteractor::on_printables_secret_token(const std::string& body)
+{
+    invoke_listeners<IUserAccountListener>(
+        [body](auto* listener) { listener->on_printables_secret_token(body); }
     );
 }
 

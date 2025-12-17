@@ -1,14 +1,12 @@
 #pragma once
 
+#include "Slic3r/Biz/UserAccount/UserAccountActionData.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountActionCallbacks.hpp"
 
 #include <string>
 #include <functional>
 
 namespace Slic3r::Biz::UserAccount {
-
-typedef std::function<void(const std::string& body)> ActionSuccessFn;
-typedef std::function<void(const std::string& body)> ActionFailFn;
 
 /**
  * @brief Interface of Action. Implementations perform POST or GET operation with callbacks.
@@ -24,8 +22,18 @@ public:
     IUserAccountAction& operator=(const IUserAccountAction& ) = delete;
     IUserAccountAction& operator=(IUserAccountAction&& other) = delete;
 
-    virtual void perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const = 0;
-    bool get_requires_auth_token() { return m_requires_auth_token; }
+    virtual void perform(
+        IUserAccountActionCallbacks* callbacks,
+        const std::string& access_token,
+        ActionQueueData&& action_data,
+        std::atomic_bool& global_cancel
+    ) const = 0;
+
+    bool get_requires_auth_token()
+    {
+        return m_requires_auth_token;
+    }
+
 protected:
     std::string m_action_name;
     std::string m_url;
@@ -41,7 +49,13 @@ public:
         , m_fail_type(fail_type)
     {}
     ~UserAccountActionGetWithEvent() {}
-    void perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const override;
+
+    void perform(
+        IUserAccountActionCallbacks* callbacks,
+        const std::string& access_token,
+        ActionQueueData&& action_data,
+        std::atomic_bool& global_cancel
+    ) const override;
 
 private:
     ActionSuccessType   m_success_type;
@@ -53,7 +67,13 @@ class UserAccountActionPost : public IUserAccountAction
 public:
     UserAccountActionPost(const std::string name, const std::string url, bool requires_auth_token = true) : IUserAccountAction(name, url, requires_auth_token) {}
     ~UserAccountActionPost() {}
-    void perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const override;
+
+    void perform(
+        IUserAccountActionCallbacks* callbacks,
+        const std::string& access_token,
+        ActionQueueData&& action_data,
+        std::atomic_bool& global_cancel
+    ) const override;
 };
 
 class UserAccountActionDummy : public IUserAccountAction
@@ -61,6 +81,13 @@ class UserAccountActionDummy : public IUserAccountAction
 public:
     UserAccountActionDummy() : IUserAccountAction("Dummy", {}, false) {}
     ~UserAccountActionDummy() {}
-    void perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const override { }
+
+    void perform(
+        IUserAccountActionCallbacks* callbacks,
+        const std::string& access_token,
+        ActionQueueData&& action_data,
+        std::atomic_bool& global_cancel
+    ) const override
+    {}
 };
 }

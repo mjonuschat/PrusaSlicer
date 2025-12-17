@@ -59,6 +59,9 @@ public:
      * @brief Stores avatar into file.
      */
     void on_avatar_success(std::string&& data) const;
+
+    void request_printables_secret_token();
+
 private:
     std::string m_code_verifier;
     std::string m_avatar_extension;

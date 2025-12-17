@@ -20,5 +20,6 @@ public:
         const Network::IHttp::Retry& retry,
         std::function<void(void)> cancel_callback
     ) {};
+    virtual void on_printables_secret_token(const std::string& body) {};
 };
 } // namespace Slic3r::Biz::UserAccount

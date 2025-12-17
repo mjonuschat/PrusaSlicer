@@ -115,4 +115,16 @@ void UserAccountSessionDispatchBase::dispatch_logged_out()
     );
 }
 
+void UserAccountSessionDispatchBase::dispatch_printables_secret_token(const std::string& body)
+{
+    m_dispatcher.dispatch_on_main_thread(
+        [this, body]()
+        {
+            this->invoke_listeners<IUserAccountSessionListener>(
+                [body](auto* listener) { listener->on_printables_secret_token(body); }
+            );
+        }
+    );
+}
+
 } // namespace Slic3r::Biz::UserAccount

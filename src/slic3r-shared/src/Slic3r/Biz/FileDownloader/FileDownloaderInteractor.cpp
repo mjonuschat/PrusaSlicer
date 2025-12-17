@@ -80,7 +80,7 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
     }
 
     // subdomain check
-    if (!is_any_subdomain(escaped_url, {"printables.com", "thingiverse.com", "cults3d.com"})) {
+    if (!is_any_subdomain(escaped_url, {"printables.com", "testprusaverse.com", "thingiverse.com", "cults3d.com"})) {
         std::string msg = fmt::format(
             "Download won't start. Download URL doesn't point to allowed subdomains : {}",
             escaped_url
@@ -173,7 +173,7 @@ void FileDownloaderInteractor::init_multi_job(FileDownloaderMultiTicket ticket)
             }
 
             // subdomain check
-            if (!is_any_subdomain(escaped_url, {"printables.com", "thingiverse.com", "cults3d.com"})) {
+            if (!is_any_subdomain(escaped_url, {"printables.com", "testprusaverse.com", "thingiverse.com", "cults3d.com"})) {
                 std::string msg = fmt::format(
                     "Download won't start. Download URL doesn't point to allowed subdomains : {}",
                     escaped_url
