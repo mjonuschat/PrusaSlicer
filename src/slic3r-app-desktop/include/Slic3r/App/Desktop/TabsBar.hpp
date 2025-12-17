@@ -324,8 +324,7 @@ protected:
         if (win)
         {
             GetTabsBarCtrl()->RemovePage(page);
-            // Don't setect any page after deletion some of them
-            // DoSetSelectionAfterRemoval(page);
+            DoSetSelectionAfterRemoval(page);
         }
 
         return win;

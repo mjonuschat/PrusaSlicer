@@ -429,17 +429,11 @@ void MainFrame::update_left_bar()
 
     auto remove_page = [this](LeftBarTabs page_id) -> void
     {
-        wxWindow* selected_page = m_left_bar->GetCurrentPage();
-        if (selected_page && selected_page->GetId() == static_cast<wxWindowID>(page_id)) {
-            // If page for remove is selected, than Slicing page should be selected
-            switch_left_tab(LeftBarTabs::Slicing, std::string());
-        }
         int page_index = get_tab_index_by_id(m_left_bar, page_id);
         ASSERT(page_index != size_t(-1));
-
         m_left_bar->RemovePage(page_index);
     };
-    bool prusa_account_enabled = AppServices::instance().app_config().is_prusa_account_enabled();
+
     bool printables_enabled = AppServices::instance().app_config().is_printables_enabled();
     if (m_printables_page_added && !printables_enabled) {
         remove_page(LeftBarTabs::Printables);
@@ -448,16 +442,23 @@ void MainFrame::update_left_bar()
         init_printables_page(m_project_interactor);
     }
 
+    bool prusa_account_enabled = AppServices::instance().app_config().is_prusa_account_enabled();
     if (m_printers_page_added && !prusa_account_enabled) {
         remove_page(LeftBarTabs::Printers);
         m_printers_page_added = false;
-    } else if (!m_printers_page_added && prusa_account_enabled)
-    {
+    } else if (!m_printers_page_added && prusa_account_enabled) {
         init_printer_page(m_project_interactor);
     }
     m_left_bar->ShowUserAccount(prusa_account_enabled);
     if (!prusa_account_enabled) {
         m_project_interactor.user_account_interactor().do_log_out(true);
+    }
+
+    // Always select the Slicing page after updating the left bar
+    if (wxWindow* selected_page = m_left_bar->GetCurrentPage();
+        selected_page && selected_page->GetId() != static_cast<wxWindowID>(LeftBarTabs::Slicing))
+    {
+        switch_left_tab(LeftBarTabs::Slicing, std::string());
     }
 }
 
@@ -466,7 +467,7 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
     ASSERT(m_left_bar);
 
     int page_index = get_tab_index_by_id(m_left_bar, id);
-    ASSERT(page_index != size_t(-1));
+    ASSERT(page_index != size_t(-1) && page_index<m_left_bar->GetPageCount());
 
     if (id == LeftBarTabs::Printables) {
         WebView::AbstractWebViewPanel* webview_panel =
