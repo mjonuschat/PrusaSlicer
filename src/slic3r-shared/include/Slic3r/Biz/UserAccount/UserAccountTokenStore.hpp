@@ -24,4 +24,10 @@ bool save_tokens(const StoreData& secrets);
  */
 bool load_tokens(StoreData& result);
 
+
+/**
+ * @brief Saves empty secret to store. Used when App should load without using User Account by settings.
+ */
+void reset();
+
 }

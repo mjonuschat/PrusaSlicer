@@ -36,6 +36,10 @@ bool save_tokens(const StoreData& secrets)
 
 }
 
+void reset()
+{
+    save_tokens({});
+}
 
 bool load_tokens(StoreData& result)
 {

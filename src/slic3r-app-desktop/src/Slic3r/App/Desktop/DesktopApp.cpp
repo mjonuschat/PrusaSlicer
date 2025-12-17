@@ -30,6 +30,7 @@
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/ResultExport/ResultExportInteractor.hpp>
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"
 
@@ -219,6 +220,11 @@ bool DesktopApp::OnInit()
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 
     platform_services.set_secret_store(SecretStoreFactory::create_secret_store());
+    // Reset Token store if Account not allowed in app_config
+    if (!app_services.app_config().is_prusa_account_enabled())
+    {
+        Biz::UserAccount::TokenStore::reset();
+    }
 
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
