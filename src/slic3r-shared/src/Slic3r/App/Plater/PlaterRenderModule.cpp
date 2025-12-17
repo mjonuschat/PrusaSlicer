@@ -82,6 +82,7 @@
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -1076,9 +1077,15 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
+        m_project_interactor.project_dir(
+            m_project_interactor.selected_project_id(),
+            AppServices::instance().app_config().get<std::string>("last_used_directory")
+        ),
         "",
-        Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl, Wildcards::TypeFlag::Stl),
+        Wildcards::generate_wildcards(
+            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl,
+            Wildcards::TypeFlag::Stl
+        ),
         callback
     );
 }

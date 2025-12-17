@@ -92,6 +92,11 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
     def->init_fn = []() { return Domain::ConfigValue(280.); };
+
+    def = defs.add("last_used_directory", typeid(std::string));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(std::string()); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)

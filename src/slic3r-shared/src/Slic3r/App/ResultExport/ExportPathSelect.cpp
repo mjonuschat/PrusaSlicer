@@ -4,6 +4,7 @@
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
@@ -80,10 +81,14 @@ void show_modal_dialog(
     const std::string& wildcards_overide /*= std::string()*/
 )
 {
-     boost::filesystem::path default_folder = project_interactor.export_result_path(project_interactor.selected_project_id(), default_path_at_removable);
+    boost::filesystem::path default_folder = project_interactor.output_dir(
+        project_interactor.selected_project_id(),
+        default_path_at_removable,
+        AppServices::instance().app_config().get<std::string>("last_used_directory")
+    );
 
-     ExportNameData name_data;
-     try {
+    ExportNameData name_data;
+    try {
         name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
      } catch (const Slic3r::PlaceholderParserError& e) {
          SPDLOG_ERROR("Failed to parse output filename: {}", e.what());

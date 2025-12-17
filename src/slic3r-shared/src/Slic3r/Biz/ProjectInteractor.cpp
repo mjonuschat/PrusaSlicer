@@ -134,7 +134,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 
                 m_scene_interactor.prepare_added_project(added_project);
 
-                set_export_project_path(project_id, file_path);
+                set_project_dir(project_id, file_path);
             }
 
             invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
@@ -191,7 +191,7 @@ void ProjectInteractor::save_project(const boost::filesystem::path& file_path, c
     selected_project.set_file_name(file_path.stem().string());
     store_3mf(file_path.string(), selected_project, params);
 
-    selected_project.export_path_storage().set_export_project_dir_path(file_path);
+    selected_project.directory_storage().set_project_dir(file_path);
 
     invoke_listeners<IProjectsChangedListener>(
         [this](auto* l) { l->on_project_changed(selected_project_id()); }
@@ -423,7 +423,7 @@ void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, Print
 
 void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
-    set_export_result_path(id.project_id, dest_path);
+    set_output_dir(id.project_id, dest_path);
     PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
     PrintHost::PrintHostJobData data{
         std::monostate{},
@@ -491,39 +491,39 @@ std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) 
     return it->second.file_name();
 }
 
-const boost::filesystem::path& ProjectInteractor::export_project_path(Domain::SelectionId project_id) const
+boost::filesystem::path ProjectInteractor::project_dir(Domain::SelectionId project_id, const std::string& app_config_val) const
 {
     auto it = m_workbench.projects().find(project_id);
     ASSERT(it != m_workbench.projects().end());
 
-    return it->second.export_path_storage().export_project_dir_path();
+    return it->second.directory_storage().project_dir(app_config_val);
 }
 
-void ProjectInteractor::set_export_project_path(Domain::SelectionId project_id, const boost::filesystem::path& path)
+void ProjectInteractor::set_project_dir(Domain::SelectionId project_id, const boost::filesystem::path& path)
 {
     auto it = m_workbench.projects().find(project_id);
     ASSERT(it != m_workbench.projects().end());
 
-    it->second.export_path_storage().set_export_project_dir_path(path);
+    it->second.directory_storage().set_project_dir(path);
 }
 
-boost::filesystem::path ProjectInteractor::export_result_path(Domain::SelectionId project_id, bool only_removable) const
+boost::filesystem::path ProjectInteractor::output_dir(Domain::SelectionId project_id, bool only_removable, const std::string& app_config_val) const
 {
     auto it = m_workbench.projects().find(project_id);
     ASSERT(it != m_workbench.projects().end());
 
     if (only_removable) {
-        return m_removable_drive_service.get_path_on_removable_drive(it->second.export_path_storage().export_result_dir_path());
+        return m_removable_drive_service.get_path_on_removable_drive(it->second.directory_storage().output_dir(app_config_val));
     }
-    return it->second.export_path_storage().export_result_dir_path();
+    return it->second.directory_storage().output_dir(app_config_val);
 }
 
-void ProjectInteractor::set_export_result_path(Domain::SelectionId project_id, const boost::filesystem::path& path)
+void ProjectInteractor::set_output_dir(Domain::SelectionId project_id, const boost::filesystem::path& path)
 {
     auto it = m_workbench.projects().find(project_id);
     ASSERT(it != m_workbench.projects().end());
 
-    it->second.export_path_storage().set_export_result_dir_path(path);
+    it->second.directory_storage().set_output_dir(path);
 }
 
 void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::path> paths)
@@ -542,7 +542,7 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         m_dialog_provider
     );
 
-    set_export_project_path(selected_project_id(), paths.front());
+    set_project_dir(selected_project_id(), paths.front());
 }
 
 Domain::SelectionId ProjectInteractor::add_config_container()

@@ -457,14 +457,14 @@ public:
     /**
      * @brief Getter for default path when exporting 3mf file.
      */
-    const boost::filesystem::path& export_project_path(Domain::SelectionId project_id) const;
-    void set_export_project_path(Domain::SelectionId project_id, const boost::filesystem::path& path);
+    boost::filesystem::path project_dir(Domain::SelectionId project_id, const std::string& app_config_val) const;
+    void set_project_dir(Domain::SelectionId project_id, const boost::filesystem::path& path);
 
     /**
      * @brief Getter for default path when exporting gcode.
      */
-    boost::filesystem::path export_result_path(Domain::SelectionId project_id, bool only_removable) const;
-    void set_export_result_path(Domain::SelectionId project_id, const boost::filesystem::path& path);
+    boost::filesystem::path output_dir(Domain::SelectionId project_id, bool only_removable, const std::string& app_config_val) const;
+    void set_output_dir(Domain::SelectionId project_id, const boost::filesystem::path& path);
 
     ObservableProjectList& observable_project_list();
 

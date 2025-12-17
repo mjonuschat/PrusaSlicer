@@ -20,6 +20,7 @@
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
@@ -131,7 +132,10 @@ void TopBar::load_project()
     dlg_manager.show_file_dialog(
         FileDialogType::Open,
         _u8L("Open Project"),
-        m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
+        m_project_interactor.project_dir(
+            m_project_interactor.selected_project_id(),
+            AppServices::instance().app_config().get<std::string>("last_used_directory")
+        ),
         "",
         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
         callback
@@ -192,8 +196,9 @@ void TopBar::save_project_as()
                     dlg_manager.show_file_dialog(
                         FileDialogType::Save,
                         _u8L("Save Project"),
-                        m_project_interactor.export_project_path(
-                            m_project_interactor.selected_project_id()
+                        m_project_interactor.project_dir(
+                            m_project_interactor.selected_project_id(),
+                            AppServices::instance().app_config().get<std::string>("last_used_directory")
                         ),
                         project_name,
                         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
@@ -433,8 +438,7 @@ void TopBar::register_menu_commands()
                 }
             )
         )
-
-        // File -> Import -> children
+            // File -> Import -> children
         .register_menu_item(
             {MenuItemName::FileMenu, MenuItemName::Import, MenuItemName::ImportGeometry},
             std::make_unique<UIItemCommand>(
@@ -467,22 +471,27 @@ void TopBar::register_menu_commands()
 
                             m_navigator.navigate_to_module_type(App::Render::ModuleType::Plater);
 
-                            m_project_interactor.set_export_project_path(
+                            m_project_interactor.set_project_dir(
                                 m_project_interactor.selected_project_id(),
                                 file_paths.front()
                             );
                         }
                     };
 
+
                     auto& dlg_manager = App::AppServices::instance().dialog_manager();
                     dlg_manager.show_file_dialog(
                         FileDialogType::OpenMultiple,
                         _u8L("Import File"),
-                        m_project_interactor.export_project_path(
-                            m_project_interactor.selected_project_id()
+                        m_project_interactor.project_dir(
+                            m_project_interactor.selected_project_id(),
+                            AppServices::instance().app_config().get<std::string>("last_used_directory")
                         ),
                         "",
-                        Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl, Wildcards::TypeFlag::Stl),
+                        Wildcards::generate_wildcards(
+                            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl,
+                            Wildcards::TypeFlag::Stl
+                        ),
                         callback
                     );
                 },

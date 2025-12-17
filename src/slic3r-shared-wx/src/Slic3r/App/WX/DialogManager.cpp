@@ -10,6 +10,9 @@
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "Slic3r/Log.hpp"
 
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
+
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
 #include <wx/string.h>
@@ -95,6 +98,7 @@ DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& d
             SPDLOG_ERROR("Failed to resolve new default dialog path: {}", ec.message());
         }
     }
+    AppServices::instance().app_config().set<std::string>("last_used_directory", m_last_dir.string());
     callback(true, out_paths);
 }
 

@@ -6,7 +6,7 @@
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/FindById.hpp"
-#include "Slic3r/Domain/ProjectExportPathStorage.hpp"
+#include "Slic3r/Domain/ProjectDirectoryStorage.hpp"
 
 
 namespace Slic3r::Domain {
@@ -113,9 +113,9 @@ public:
         return m_unplaced_model_instances;
     }
 
-    ProjectExportPathStorage& export_path_storage()
+    ProjectDirectoryStorage& directory_storage()
     {
-        return m_export_path_storage;
+        return m_directory_storage;
     }
 
 private:
@@ -125,7 +125,7 @@ private:
     BedContainer m_bed_container;
     std::unique_ptr<Domain::Model> m_model;
     ModelInstanceList m_unplaced_model_instances;
-    ProjectExportPathStorage m_export_path_storage;
+    ProjectDirectoryStorage m_directory_storage;
 };
 
 } // namespace Slic3r::Domain
