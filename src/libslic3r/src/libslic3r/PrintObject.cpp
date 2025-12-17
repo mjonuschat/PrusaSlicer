@@ -149,6 +149,22 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
     this->set_instances(std::move(instances));
 }
 
+Domain::Transform3d PrintObject::trafo_centered() const
+{
+    const Domain::Vec2d center_offset_2d(
+        -m_center_offset_unscaled.x(),
+        -m_center_offset_unscaled.y()
+    );
+    const Domain::Vec2d transformed_center_offset_2d =
+        this->trafo().linear().topLeftCorner<2, 2>() * center_offset_2d;
+
+    Domain::Transform3d result = this->trafo();
+    result.pretranslate(
+        Domain::Vec3d(transformed_center_offset_2d.x(), transformed_center_offset_2d.y(), 0)
+    );
+    return result;
+}
+
 SlicingSync::PrintSteps PrintObject::set_instances(PrintInstances &&instances)
 {
     using SlicingSync::PrintSteps;

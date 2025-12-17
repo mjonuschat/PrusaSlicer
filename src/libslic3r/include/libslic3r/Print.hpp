@@ -329,8 +329,7 @@ public:
     auto                         support_layers() const { return SpanOfConstPtrs<SupportLayer>(const_cast<const SupportLayer* const* const>(m_support_layers.data()), m_support_layers.size()); }
     const Domain::Transform3d&   trafo() const          { return m_trafo; }
     // Trafo with the center_offset() applied after the transformation, to center the object in XY before slicing.
-    Domain::Transform3d          trafo_centered() const
-        { Domain::Transform3d t = this->trafo(); t.pretranslate(Domain::Vec3d(-m_center_offset_unscaled.x(), -m_center_offset_unscaled.y(), 0)); return t; }
+    Domain::Transform3d          trafo_centered() const;
     const PrintInstances&        instances() const      { return m_instances; }
 
     // Whoever will get a non-const pointer to PrintObject will be able to modify its layers.
