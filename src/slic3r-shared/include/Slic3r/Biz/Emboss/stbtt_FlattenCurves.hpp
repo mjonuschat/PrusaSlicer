@@ -1,5 +1,5 @@
 #pragma once
-#include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
+#include "imgui/imstb_truetype.h" // stbtt_fontinfo
 
 // create public interface for private function from imstb_truetype.h
 // Implementation with dependencies is copied

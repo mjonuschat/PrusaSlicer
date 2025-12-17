@@ -484,7 +484,7 @@ Scene::ToolType TextGizmo::type() const {
 }
 
 
-bool TextGizmo::activate_by_double_click(const Scene::GizmoEventContext& ctx)
+bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext& ctx)
 {
     // is double click on text volume?
     const Domain::Project& project = m_project_interactor.selected_project();

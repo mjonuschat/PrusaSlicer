@@ -27,11 +27,13 @@ Cache current state of preset
 class TextPresetManager
 {
 public:
-    /// <param name="font_manager">Accessor to font file data via Domain::FontDescriptor</param>
-    /// <param name="language_glyph_range">Character to load for imgui when initialize imgui font</param>
-    /// <param name="cache_path">File path for store cache with current user Emboss presets.
-    /// data_dir() + "/emboss_presets.cereal"</param>
-    /// <param name="project_interactor">For initialize ProjectScoped data</param>
+    /**
+    @param font_manager Accessor to font file data via Domain::FontDescriptor
+    @param language_glyph_range Character to load for imgui when initialize imgui font
+    @param cache_path File path for store cache with current user Emboss presets.
+        @note data_dir() + "/emboss_presets.cereal"
+    @param project_interactor For initialize ProjectScoped data only
+    */
     TextPresetManager(
         IFontManager& font_manager,
         const ImWchar* language_glyph_range,
@@ -40,16 +42,13 @@ public:
     );
 
     /**
-    @brief Load font presets from file
+    @brief Load font presets from file,
     Also select actual activ font
-    @param app_config Application configuration loaded from file "PrusaSlicer.ini"
-    + cfg is stored to privat variable
     */
     void init();
 
     /**
     @brief Write font list into AppConfig
-    @param item_to_store Configuration
     @param use_modification When true cache state will be used for store
     @param store_active_index When treu also store current activ index
     @return True on succes otherwise False.

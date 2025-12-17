@@ -107,7 +107,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         e.button() == Platform::MouseButton::Left)
     {
         auto it = std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(),
-            [&ctx](const IToolGizmoPtr& tool) { return tool->activate_by_double_click(ctx); });
+            [&ctx](const IToolGizmoPtr& tool) { return tool->allows_activation_by_double_click(ctx); });
         if (it != m_tool_gizmos.end()) {
             ToolType tool_type = (*it)->type();
             if (tool_type != current_tool_type()) {
@@ -245,20 +245,11 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
-// TODO: remove this when gizmo rendering will be fully implemented
 void GizmoManager::render_imgui() {
-    if (current_tool_type() == ToolType::Text) {
-        if (auto* text_gizmo = dynamic_cast<Plater::TextGizmo*>(current_context().active_tool);
-            text_gizmo != nullptr)
-            text_gizmo->render_imgui();
-    }
-#if MEASURE_GIZMO_DEBUG
-    if (current_tool_type() == ToolType::MeasureGizmo) {
-        auto measure_gizmo = dynamic_cast<Slic3r::App::Plater::MeasureGizmo*>(current_context().active_tool);
-        if (measure_gizmo != nullptr)
-            measure_gizmo->render_imgui();
-    }
-#endif // MEASURE_GIZMO_DEBUG
+    IToolGizmo* active_tool = current_context().active_tool;
+    if (active_tool == nullptr)
+        return; // no active tool
+    active_tool->render_imgui();
 #if DEBUG_GIZMO_MANAGER
     render_gizmo_activation_debug();
 #endif

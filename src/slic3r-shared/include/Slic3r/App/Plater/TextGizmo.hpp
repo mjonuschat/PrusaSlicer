@@ -68,7 +68,8 @@ public:
     void on_project_deactivated(size_t old_project_id) override;
 
     Scene::ToolType type() const override;
-    bool activate_by_double_click(const Scene::GizmoEventContext& ctx) override;
+    bool allows_activation_by_double_click(const Scene::GizmoEventContext& ctx) override;
+    void render_imgui() override; // Draw crosshair
 
     /**
      * @name Implementation of ISceneSelectionChangedListener interface
@@ -81,9 +82,6 @@ public:
      *  @retval             - True on success otherwise False.
      */
     bool add_text_by_view_direction(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
-
-    // Only debug 
-    void render_imgui();
 private:
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});

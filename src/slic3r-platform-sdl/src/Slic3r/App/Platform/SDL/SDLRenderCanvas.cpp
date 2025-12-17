@@ -500,7 +500,12 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
     }
     else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
         const auto& mouse_button = event.button;
-        MouseEvent::Type type = event.type == SDL_MOUSEBUTTONDOWN ? MouseEvent::Type::ButtonDown : MouseEvent::Type::ButtonUp;
+        MouseEvent::Type type = event.type == SDL_MOUSEBUTTONDOWN ?
+            ((event.button.clicks == 2) ? 
+                MouseEvent::Type::DoubleClick : 
+                MouseEvent::Type::ButtonDown ) : 
+            MouseEvent::Type::ButtonUp; // SDL_MOUSEBUTTONUP
+
         MouseEvent platform_event{
             type, MouseButton(mouse_button.button),
             m_mouse_x, m_mouse_y,

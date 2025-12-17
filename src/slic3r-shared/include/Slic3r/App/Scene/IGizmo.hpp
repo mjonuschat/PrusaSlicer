@@ -179,7 +179,13 @@ public:
      *  @param  ctx - ray cast into scene under mouse
      *  @retval     - True when tool wants to be acitvated
      */
-    virtual bool activate_by_double_click(const GizmoEventContext& ctx) { return false; }
+    virtual bool allows_activation_by_double_click(const GizmoEventContext& ctx) { return false; }
+
+    /**
+     * Imgui render function 
+     * Do not use the Yoga tree
+     */
+    virtual void render_imgui() {}
 
     /**
      * @name Project activation and deactivation

@@ -65,7 +65,7 @@ public:
     ) override;
 
     // DEBUG ONLY
-    void render_imgui();
+    void render_imgui() override;
 
 private:
     void reset();

@@ -641,9 +641,9 @@ void MeasureGizmo::on_scene_selection_transformed(
     Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
 }
 
-#if MEASURE_GIZMO_DEBUG
 void MeasureGizmo::render_imgui()
 {
+#if MEASURE_GIZMO_DEBUG
     const auto& scene_selection_cache = m_current_project->scene_selection_cache;
     const auto& feature_cache         = m_current_project->feature_cache;
 
@@ -799,8 +799,8 @@ void MeasureGizmo::render_imgui()
             ImGui::Text("EMPTY");
     }
     ImGui::End();
-}
 #endif // MEASURE_GIZMO_DEBUG
+}
 
 void MeasureGizmo::reset()
 {
