@@ -162,18 +162,24 @@ void WebViewPanel::late_create()
 
 void WebViewPanel::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
+    if (!m_web_view)
+        return;
     bool b = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewPanel::on_user_account_logged_out()
 {
-    bool b = process_logic_command_vector(m_logic->on_user_account_logged_out());
+    if (!m_web_view)
+        return;
+    bool b = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewPanel::on_user_account_will_refresh()
 {
+    if (!m_web_view)
+        return;
     bool b = process_logic_command_vector(m_logic->on_user_account_will_refresh());
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
@@ -453,7 +459,6 @@ void WebViewPanel::on_add_user_script(wxCommandEvent& evt)
         return;
 
     const wxString& javascript = dialog.GetValue();
-    SPDLOG_DEBUG("RunScript {}", into_u8(javascript));
     if (!m_web_view->AddUserScript(javascript))
         SPDLOG_ERROR("Could not add user script");
 }

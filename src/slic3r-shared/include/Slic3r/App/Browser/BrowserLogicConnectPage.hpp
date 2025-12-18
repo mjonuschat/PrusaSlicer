@@ -23,7 +23,7 @@ public:
     std::vector<BrowserLogicCommand> on_webview_created() override;
     std::vector<BrowserLogicCommand> on_loaded_webview_event(const std::string& url) override;
     std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) override;
-    std::vector<BrowserLogicCommand> on_user_account_logged_out() override;
+    std::vector<BrowserLogicCommand> on_user_account_logged_out(const std::string& current_url) override;
 
     /**
      * @brief call when connect panel is being removed 

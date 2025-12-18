@@ -67,19 +67,23 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_show_webview_event(b
     // on every show of panel,
     // than to keep information if we have printables page in same state as slicer in terms of login
     const std::string access_token = m_project_interactor.user_account_interactor().access_token();
+    std::vector<BrowserLogicCommand> auth_cmds;
     if (access_token.empty()) {
-        result = logout(m_next_show_url);
+        auth_cmds = logout(m_next_show_url);
     } else {
-        result = login(access_token, m_next_show_url);
+        auth_cmds = login(access_token, m_next_show_url);
     }
     m_next_show_url.clear();
+
+    result.insert(result.end(), 
+                  std::make_move_iterator(auth_cmds.begin()), 
+                  std::make_move_iterator(auth_cmds.end()));
 
     return result;
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_loaded_webview_event(const std::string& url)
 {
-    m_last_loaded_url = url;
     std::vector<BrowserLogicCommand> result;
     if (url.find("/web/" + m_loading_html) != std::string::npos && m_load_default_url) {
         m_load_default_url = false;
@@ -130,12 +134,12 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
     return result;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_logged_out()
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_logged_out(const std::string& current_url)
 {
     if (m_load_default_url) {
         return {};
     }
-    return logout();
+    return logout(current_url);
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_will_refresh()
@@ -360,7 +364,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_webview_reload_event
     }
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::string& override_url)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::string& url)
 {
     std::vector<BrowserLogicCommand> result;
     m_refreshing_token = false;
@@ -372,7 +376,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
     );
     result.emplace_back(BrowserLogicCommandType::RunScript, "localStorage.clear();");
 
-    std::string next_url = override_url.empty() ? url_lang_theme(m_last_loaded_url) : url_lang_theme(override_url);
+    std::string next_url = url_lang_theme(url);
 #ifdef _WIN32
     result.emplace_back(BrowserLogicCommandType::LoadURL, next_url);
 #else
@@ -383,7 +387,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
     return result;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string& access_token, const std::string& override_url)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string& access_token, const std::string& url)
 {
     std::vector<BrowserLogicCommand> result;
     m_refreshing_token = false;
@@ -395,10 +399,10 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + access_token + "'}));");
 
-    if (override_url.empty()) {
+    if (url.empty()) {
         result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");
     } else {
-        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(override_url));
+        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(url));
     }
     return result;
 }

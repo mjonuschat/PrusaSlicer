@@ -451,7 +451,7 @@ void WebViewDialog::on_user_account_id_success(bool is_refresh, const std::strin
 
 void WebViewDialog::on_user_account_logged_out()
 {
-    bool r = process_logic_command_vector(m_logic->on_user_account_logged_out());
+    bool r = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
 }
 

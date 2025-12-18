@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Browser/BrowserLogicCommand.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <vector>
 #include <string>
@@ -37,8 +38,8 @@ protected:
     bool process_logic_command_vector(std::vector<BrowserLogicCommand>&& command)
     {
         bool ret_val = true;
-        for (const BrowserLogicCommand& cmd : command) {
-            ret_val &= handle_logic_command(cmd);
+        for (const BrowserLogicCommand& cmd : command) {        
+            ret_val &= handle_logic_command(cmd);          
         }
         return ret_val;
     }

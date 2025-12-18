@@ -150,7 +150,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_user_account_id_suc
     return result;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_user_account_logged_out()
+std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_user_account_logged_out(const std::string& current_url)
 {
     if (m_load_default_url) {
         return {};
