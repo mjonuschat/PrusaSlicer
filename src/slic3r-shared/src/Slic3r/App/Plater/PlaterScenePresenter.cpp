@@ -341,7 +341,7 @@ static std::optional<ColorRGBA> select_color(bool is_model_part, bool is_selecte
 {
     static const ColorRGBA OUTSIDE_COLOR          = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
     static const ColorRGBA OUTSIDE_SELECTED_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 1.0f);
-    static const ColorRGBA SELECTED_COLOR         = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+    static const ColorRGBA SELECTED_COLOR         = ColorRGBA::GREEN();// ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
     static const ColorRGBA HOVER_SELECT_COLOR     = ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f);
     static const ColorRGBA HOVER_UNSELECT_COLOR   = ColorRGBA(1.0f, 0.75f, 0.75f, 1.0f);
     static const ColorRGBA DISABLED_COLOR         = ColorRGBA(0.25f, 0.25f, 0.25f, 1.0f);

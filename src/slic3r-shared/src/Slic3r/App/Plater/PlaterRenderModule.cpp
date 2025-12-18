@@ -30,6 +30,7 @@
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/App/Plater/ScaleGizmo.hpp"
+#include "Slic3r/App/Plater/PlaceOnFaceGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyNotification.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
@@ -403,6 +404,16 @@ void PlaterRenderModule::register_commands()
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
+                CommandName::PlaceOnFace,
+                [this]() { toggle_activate_tool(Scene::ToolType::PlaceOnFace); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F},
+                    .enabled           = is_unique_instance_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
                 CommandName::ArrangeGizmo,
                 [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); },
                 FuncCommandExtraOpts{
@@ -644,6 +655,14 @@ void PlaterRenderModule::init_scene_layout()
     );
     m_command_binding_manager.bind_tb_item(CommandName::ScaleGizmo, m_toolbar_scale);
 
+    m_toolbar_place_on_face = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::PlaceOnFace,
+        _u8L("Place On Face"),
+        m_place_on_face_gizmo
+    );
+    m_command_binding_manager.bind_tb_item(CommandName::PlaceOnFace, m_toolbar_place_on_face);
+
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Left,
         Render::Icon::Layout,
@@ -851,6 +870,7 @@ void PlaterRenderModule::update_toolbar_visibility()
     m_toolbar_add_volume->set_visible(m_command_registry.command(CommandName::AddInstance).enabled());
 
     m_toolbar_cut->set_visible(m_command_registry.command(CommandName::CutGizmo).enabled());
+    m_toolbar_place_on_face->set_visible(m_command_registry.command(CommandName::PlaceOnFace).enabled());
 
     m_toolbar_paint_on_supports->set_visible(m_command_registry.command(CommandName::PaintOnSupportsGizmo).enabled());
     m_toolbar_paint_on_seams->set_visible(m_command_registry.command(CommandName::PaintOnSeamsGizmo).enabled());
@@ -863,6 +883,7 @@ void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
     m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
     m_toolbar_scale->set_checked(current_tool_type == Scene::ToolType::Scale);
+    m_toolbar_place_on_face->set_checked(current_tool_type == Scene::ToolType::PlaceOnFace);
     m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
     m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
     m_toolbar_paint_on_supports->set_checked(
@@ -940,6 +961,14 @@ void PlaterRenderModule::init_gizmos()
         m_gizmo_manager->data_factory(),
         *m_scene_presenter,
         m_project_interactor
+    );
+    m_place_on_face_gizmo = &m_gizmo_manager->add_tool_gizmo<PlaceOnFaceGizmo>(
+        *m_device,
+        *m_scene_presenter,
+        m_project_interactor
+    );
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
+        m_place_on_face_gizmo
     );
     m_arrange_gizmo = &m_gizmo_manager->add_tool_gizmo<ArrangeGizmo>(
         m_project_interactor.arrange_interactor(),

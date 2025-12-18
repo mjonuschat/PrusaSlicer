@@ -172,6 +172,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Preview, "preview"},
     {Icon::Move, "move"},
     {Icon::Scale, "scale"},
+    {Icon::PlaceOnFace, "place"},
     {Icon::Ellipsis, "elipsis"},
     {Icon::Cube, "cube"},
     {Icon::CubeAdd, "cube_add"},

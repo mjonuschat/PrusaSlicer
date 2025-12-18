@@ -188,6 +188,7 @@ enum class Icon : wchar_t
     Preview,
     Move,
     Scale,
+    PlaceOnFace,
     Ellipsis,
     Cube,
     CubeAdd,

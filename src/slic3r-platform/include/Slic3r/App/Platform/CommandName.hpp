@@ -19,6 +19,7 @@ struct CommandName
     static constexpr const char* MoveGizmo                  = "move-gizmo";
     static constexpr const char* RotateGizmo                = "rotate-gizmo";
     static constexpr const char* ScaleGizmo                 = "scale-gizmo";
+    static constexpr const char* PlaceOnFace                = "place-on-face-gizmo";
     static constexpr const char* ArrangeGizmo               = "arrange-gizmo";
     static constexpr const char* SimplifyGizmo              = "simplify-gizmo";
     static constexpr const char* TextGizmo                  = "text-gizmo";

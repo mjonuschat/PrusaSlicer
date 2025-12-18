@@ -5,7 +5,7 @@
 #include "Geometry.hpp"
 
 struct indexed_triangle_set;
-namespace Slic3r { class TriangleMesh; }
+namespace Slic3r::Domain { class TriangleMesh; }
 
 namespace Slic3r::App::Render {
 
@@ -227,7 +227,7 @@ private:
 };
 
 std::unique_ptr<Geometry> geometry_from_triangle_mesh(
-    Device& device, const TriangleMesh& triangle_mesh, const Material& material = {}
+    Device& device, const Domain::TriangleMesh& triangle_mesh, const Material& material = {}
 );
 std::unique_ptr<Geometry> geometry_from_triangle_mesh(
     Device& device, const indexed_triangle_set& triangle_mesh, const Material& material = {}

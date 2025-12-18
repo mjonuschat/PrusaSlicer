@@ -76,7 +76,7 @@ std::unique_ptr<Geometry> geometry_from_triangle_mesh(
 }
 
 std::unique_ptr<Geometry> geometry_from_triangle_mesh(
-    Device& device, const TriangleMesh& triangle_mesh, const Material& material
+    Device& device, const Domain::TriangleMesh& triangle_mesh, const Material& material
 )
 {
     return geometry_from_triangle_mesh(device, triangle_mesh.its, material);

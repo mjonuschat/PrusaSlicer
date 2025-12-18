@@ -44,6 +44,7 @@ namespace Slic3r::App::Plater {
 class TranslationGizmo;
 class RotationGizmo;
 class ScaleGizmo;
+class PlaceOnFaceGizmo;
 class PaintOnSupportsGizmo;
 class PaintOnSeamsGizmo;
 class PaintOnFuzzySkinGizmo;
@@ -189,6 +190,7 @@ private:
     Yoga::ToolbarButton* m_toolbar_move                    = nullptr;
     Yoga::ToolbarButton* m_toolbar_rotate                  = nullptr;
     Yoga::ToolbarButton* m_toolbar_scale                   = nullptr;
+    Yoga::ToolbarButton* m_toolbar_place_on_face           = nullptr;
     Yoga::ToolbarButton* m_toolbar_simplify                = nullptr;
     Yoga::ToolbarButton* m_toolbar_arrange                 = nullptr;
     Yoga::ToolbarButton* m_toolbar_paint_on_supports       = nullptr;
@@ -202,6 +204,7 @@ private:
     TranslationGizmo* m_translation_gizmo                       = nullptr;
     RotationGizmo* m_rotation_gizmo                             = nullptr;
     ScaleGizmo* m_scale_gizmo                                   = nullptr;
+    PlaceOnFaceGizmo* m_place_on_face_gizmo                     = nullptr;
     ArrangeGizmo* m_arrange_gizmo                               = nullptr;
     SimplifyGizmo* m_simplify_gizmo                             = nullptr;
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo             = nullptr;

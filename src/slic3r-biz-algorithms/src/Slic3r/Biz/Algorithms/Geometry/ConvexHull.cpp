@@ -63,26 +63,29 @@ Polygon convex_hull(Points pts)
     return hull;
 }
 
-Points3d convex_hull(Points3d points)
+Domain::Vec3fs convex_hull_2d_xy(Domain::Vec3fs points)
 {
+    using Domain::Vec3f;
+    using Domain::Vec2f;
+
     assert(points.size() >= 3);
     // sort input points
-    std::sort(points.begin(), points.end(), [](const Vec3d& a, const Vec3d& b) {
+    std::sort(points.begin(), points.end(), [](const Vec3f& a, const Vec3f& b) {
         return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
     });
 
     int n = points.size(), k = 0;
-    Points3d hull;
+    Domain::Vec3fs hull;
 
     if (n >= 3) {
         hull.resize(2 * n);
 
         // Build lower hull
         for (int i = 0; i < n; ++i) {
-            Point p = scaled(Vec2d(points[i](0), points[i](1)));
+            Point p = scaled(Vec2f(points[i](0), points[i](1)));
             while (k >= 2) {
-                Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
-                Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
+                Point k1 = scaled(Vec2f(hull[k - 1](0), hull[k - 1](1)));
+                Point k2 = scaled(Vec2f(hull[k - 2](0), hull[k - 2](1)));
 
                 if (Geometry::orient(p, k2, k1) != Geometry::ORIENTATION_CCW)
                     --k;
@@ -95,10 +98,10 @@ Points3d convex_hull(Points3d points)
 
         // Build upper hull
         for (int i = n - 2, t = k + 1; i >= 0; --i) {
-            Point p = scaled(Vec2d(points[i](0), points[i](1)));
+            Point p = scaled(Vec2f(points[i](0), points[i](1)));
             while (k >= t) {
-                Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
-                Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
+                Point k1 = scaled(Vec2f(hull[k - 1](0), hull[k - 1](1)));
+                Point k2 = scaled(Vec2f(hull[k - 2](0), hull[k - 2](1)));
 
                 if (Geometry::orient(p, k2, k1) != Geometry::ORIENTATION_CCW)
                     --k;
@@ -139,7 +142,7 @@ Polygon convex_hull(const Domain::ExPolygons& expolygons)
     return convex_hull(pp);
 }
 
-Polygon convex_hulll(const Domain::Polylines& polylines)
+Polygon convex_hull(const Domain::Polylines& polylines)
 {
     Points pp;
     size_t sz = 0;

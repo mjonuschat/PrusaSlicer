@@ -22,7 +22,7 @@ class RotationGizmo : public Scene::IToolGizmo, public ISelectionBoundingBoxChan
 {
 public:
     RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
-        PlaterScenePresenter& scene_presenter, Biz::ProjectInteractor& scene_interactor);
+        PlaterScenePresenter& scene_presenter, Biz::ProjectInteractor& project_interactor);
 
     ~RotationGizmo();
 

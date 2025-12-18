@@ -16,14 +16,15 @@
 
 namespace Slic3r::Biz::Algorithms::Geometry {
 
-using Points3d = std::vector<Domain::Vec3d>;
-Points3d convex_hull(Points3d points);
 Domain::Polygon convex_hull(Domain::Points points);
 Domain::Polygon convex_hull(const Domain::Polygons& polygons);
 Domain::Polygon convex_hull(const Domain::ExPolygons& expolygons);
 Domain::Polygon convex_hull(const Domain::Polylines& polylines);
 Domain::Polygon convex_hull(const Domain::Polygon& poly);
 Domain::Polygon convex_hull(const Domain::ExPolygon& poly);
+
+// Be cautious of this one. It ignores z coordinate.
+Domain::Vec3fs convex_hull_2d_xy(Domain::Vec3fs points);
 
 
 // Returns true if the intersection of the two convex polygons A and B

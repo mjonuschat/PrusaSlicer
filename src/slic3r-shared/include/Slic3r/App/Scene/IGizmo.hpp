@@ -139,6 +139,7 @@ enum class ToolType : uint8_t
     Translation,
     Rotation,
     Scale,
+    PlaceOnFace,
     Simplify,
     Text,
     PaintOnSupportsGizmo,

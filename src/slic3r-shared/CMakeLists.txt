@@ -33,6 +33,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/RotationGizmo.cpp
         include/Slic3r/App/Plater/RotationDialog.hpp
         src/Slic3r/App/Plater/RotationDialog.cpp
+        include/Slic3r/App/Plater/PlaceOnFaceGizmo.hpp
+        src/Slic3r/App/Plater/PlaceOnFaceGizmo.cpp
+        src/Slic3r/App/Plater/PlaceOnFaceGizmoPlanes.hpp
+        src/Slic3r/App/Plater/PlaceOnFaceGizmoPlanes.cpp
         include/Slic3r/App/Plater/SimplifyGizmo.hpp
         src/Slic3r/App/Plater/SimplifyGizmo.cpp
         include/Slic3r/App/Plater/SimplifyNotification.hpp
