@@ -907,6 +907,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/FileDownloader/FileDownloaderJob.cpp
         include/Slic3r/Biz/FileDownloader/IFileDownloaderListener.hpp
         include/Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp
+        include/Slic3r/App/AppDownloadConfigProvider.hpp
+        src/Slic3r/App/AppDownloadConfigProvider.cpp
 
         src/Slic3r/Biz/Utils/MeshRaycaster.cpp
         include/Slic3r/Biz/Utils/MeshRaycaster.hpp

@@ -9,6 +9,9 @@
 #include <boost/nowide/convert.hpp>
 #include "Slic3r/Assert.hpp"
 
+#include <fstream> 
+#include <regex>
+
 #if defined(_WIN32)
 
 #include <shlobj.h>
@@ -28,6 +31,8 @@
 #include <pwd.h>
 
 #endif
+
+namespace fs = boost::filesystem;
 
 namespace Slic3r {
 
@@ -240,7 +245,6 @@ const std::string& cache_dir() {
 }
 
 #if defined(__linux__)
-namespace fs = boost::filesystem;
 static fs::path get_xdg_cache_home() {
     const char* cache_path_raw{::getenv("XDG_CACHE_HOME")};
     if (cache_path_raw != nullptr) {
@@ -278,41 +282,125 @@ boost::filesystem::path system_downloads_dir()
         CoTaskMemFree(path);
         return result;
     }
-    SPDLOG_ERROR("Failed to read path at FOLDERID_Downloads.");
+
+    boost::system::error_code ec;
+    const wchar_t* user_profile = _wgetenv(L"USERPROFILE");
+    if (user_profile) {
+        boost::filesystem::path fallback = boost::filesystem::path(user_profile) / "Downloads";
+        if (fs::exists(fallback, ec) && fs::is_directory(fallback, ec)) {
+            return fallback;
+        }
+    }
+    SPDLOG_ERROR("Failed to resolve downloads path.");
     return {};
 }
+
 #elif  __APPLE__
 boost::filesystem::path system_downloads_dir()
 {
-    const char* home_dir = getenv("HOME");
-    if (home_dir == nullptr) {
-        // Fallback for when HOME is not set
-        passwd* pw = getpwuid(getuid());
-        if(pw) {
-            home_dir = pw->pw_dir;
-        } else {
-             SPDLOG_ERROR("Failed to read default downloads path.");
-             return {};
+    std::string home_path;
+    const char* env_home = std::getenv("HOME");
+    if (env_home) {
+        home_path = env_home;
+    } else {
+        // MacOS is POSIX compliant; use thread-safe getpwuid_r
+        long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+        if (bufsize == -1) bufsize = 16384; 
+
+        std::vector<char> buf(bufsize);
+        passwd pwd, *result = nullptr;
+
+        if (getpwuid_r(getuid(), &pwd, buf.data(), buf.size(), &result) == 0 && result) {
+            home_path = result->pw_dir;
         }
     }
-    return boost::filesystem::path(home_dir) / "Downloads";
+    if (home_path.empty()) {
+        SPDLOG_ERROR("Failed to resolve home directory.");
+        return {};
+    }
+    boost::system::error_code ec;
+    fs::path root(home_path);
+    // MacOS Specific: "Downloads" is standard.
+    fs::path downloads = root / "Downloads";
+    if (fs::exists(downloads, ec) && fs::is_directory(downloads, ec)) {
+        return downloads;
+    }
+    SPDLOG_ERROR("Failed to resolve downloads path.");
+    return {};
 }
+
 #else
-boost::filesystem::path system_downloads_dir()
-{
-    const char* home_dir = getenv("HOME");
-    if (home_dir == nullptr) {
-        // Fallback for when HOME is not set
-        passwd* pw = getpwuid(getuid());
-        if(pw) {
-            home_dir = pw->pw_dir;
-        } else {
-             SPDLOG_ERROR("Failed to read default downloads path.");
-             return {};
+
+static fs::path get_home_directory() {
+    const char* env_home = std::getenv("HOME");
+    if (env_home && *env_home != '\0') {
+        return fs::path(env_home);
+    }
+
+    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bufsize == -1) bufsize = 16384;
+
+    std::vector<char> buf(bufsize);
+    passwd pwd;
+    passwd* result = nullptr;
+
+    if (getpwuid_r(getuid(), &pwd, buf.data(), buf.size(), &result) == 0 && result) {
+        return fs::path(result->pw_dir);
+    }
+    return {};
+}
+
+boost::filesystem::path system_downloads_dir() {
+    if (const char* env_dl = std::getenv("XDG_DOWNLOAD_DIR")) {
+        fs::path p(env_dl);
+        if (p.is_absolute()) return p;
+    }
+
+    const fs::path home = get_home_directory();
+    if (home.empty()) {
+        SPDLOG_ERROR("Failed to resolve home directory.");
+        return {};
+    }
+
+    fs::path config_file;
+    if (const char* env_config = std::getenv("XDG_CONFIG_HOME")) {
+        config_file = fs::path(env_config) / "user-dirs.dirs";
+    } else {
+        config_file = home / ".config" / "user-dirs.dirs";
+    }
+
+    boost::system::error_code ec;
+    if (fs::exists(config_file, ec) && fs::is_regular_file(config_file, ec)) {
+        std::ifstream file(config_file.string());
+        std::string line;
+
+        static const std::regex re(R"rx(^\s*XDG_DOWNLOAD_DIR\s*=\s*"([^"]*)")rx");
+        std::smatch match;
+
+        while (std::getline(file, line)) {
+            // Skip comments
+            if (line.empty() || line[0] == '#') continue;
+
+            if (std::regex_search(line, match, re) && match.size() > 1) {
+                std::string value = match.str(1);
+
+                static const std::string home_var = "$HOME";                
+                if (value == home_var) {
+                    return home;
+                } else if (value.rfind(home_var + "/", 0) == 0) {
+                    return home / value.substr(6); 
+                } else if (value.rfind("/", 0) == 0) {
+                    return fs::path(value);
+                } else {
+                    return home / value;
+                }
+            }
         }
     }
-    return boost::filesystem::path(home_dir) / "Downloads";
+
+    return home / "Downloads";
 }
+
 #endif
 
 static boost::filesystem::path temp_dir_override;

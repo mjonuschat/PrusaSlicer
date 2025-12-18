@@ -97,6 +97,16 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
     def->init_fn = []() { return Domain::ConfigValue(std::string()); };
+
+    // TODO: This option needs check after changed field in Preferences.
+    def = defs.add("downloads_directory", typeid(std::string));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::textfield;
+    def->label = L("Downloads directory");
+    def->tooltip = L("Sets directory for downloads such as objects from Printables service or app updates. Must be valid path.");
+    def->category = Category::Services;
+    def->option_group = L("Services setup");
+    def->init_fn = []() { return Domain::ConfigValue(system_downloads_dir().string()); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
