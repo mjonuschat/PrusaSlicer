@@ -658,6 +658,23 @@ namespace DoExport {
             }
         }
 
+        // TODO: TEMPORARY HACK: show some colors in the preview
+        const std::vector<std::string> colors{
+            "#FF0000", // RED
+            "#00FF00", // GREEN
+            "#0000FF", // BLUE
+            "#FFFF00", // YELLOW
+            "#FF00FF", // MAGENTA
+            "#00FFFF", // CYAN
+            "#808080", // GRAY (0.5 * 255 = 127.5 → 128)
+            "#000000"  // BLACK
+        };
+        for (size_t i = 0; i < processor_config.extruders.str_colors.size(); ++i) {
+            if (processor_config.extruders.str_colors[i].empty()) {
+                processor_config.extruders.str_colors[i] = colors[i % colors.size()];
+            }
+        }
+
         processor_config.callbacks.cb_log = [](const std::string& msg){
             SPDLOG_WARN(msg);
         };
