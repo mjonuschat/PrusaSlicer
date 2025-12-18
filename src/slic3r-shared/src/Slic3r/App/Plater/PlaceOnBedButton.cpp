@@ -54,6 +54,9 @@ void PlaceOnBedButton::reload()
     const std::optional<Scene::OrientedBoundingBox>& bounding_box{
         m_scene_provider.selection_bounding_box()
     };
+    if (!bounding_box) {
+        return;
+    }
 
     const Domain::Vec3d h{bounding_box->dimensions * 0.5};
 
