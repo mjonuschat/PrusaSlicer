@@ -1,6 +1,6 @@
-#include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
+#include "Slic3r/App/Plater/PaintOnFuzzySkinDialog.hpp"
 
-#include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
+#include "Slic3r/App/Plater/PaintOnFuzzySkinGizmo.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -14,13 +14,13 @@ using namespace Slic3r::Biz::Algorithms;
 
 namespace Slic3r::App::Plater {
 
-PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
+PaintOnFuzzySkinDialog::Callbacks& PaintOnFuzzySkinDialog::callbacks()
 {
     return m_callbacks;
 }
 
-PaintOnSupportsDialog::PaintOnSupportsDialog() :
-    GizmoWindow(_u8L("Paint-on supports"), Render::Icon::PaintSupports)
+PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
+    GizmoWindow(_u8L("Paint-on fuzzy skin"), Render::Icon::PaintFuzzySkin)
 {
     this->content()->set_orientation(Orientation::Vertical);
     this->content()->set_gap(this->gap_size());
@@ -109,8 +109,8 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     constexpr float slider_text_size = 50;
 
     m_brush_radius_slider = Passthrough(std::make_unique<SliderWithInput>());
-    m_brush_radius_slider->set_begin_value(PaintOnSupportsGizmo::CursorRadiusMin);
-    m_brush_radius_slider->set_end_value(PaintOnSupportsGizmo::CursorRadiusMax);
+    m_brush_radius_slider->set_begin_value(PaintOnFuzzySkinGizmo::CursorRadiusMin);
+    m_brush_radius_slider->set_end_value(PaintOnFuzzySkinGizmo::CursorRadiusMax);
     m_brush_radius_slider->set_step(0.01);
     m_brush_radius_slider->set_input_width(slider_text_size);
     m_brush_radius_slider->callbacks().value_changed = [this](double value)
@@ -122,48 +122,14 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     { m_callbacks.split_triangles_value_changed(checked); };
 
     m_smart_fill_angle_slider = Passthrough(std::make_unique<SliderWithInput>());
-    m_smart_fill_angle_slider->set_begin_value(PaintOnSupportsGizmo::SmartFillAngleMin);
-    m_smart_fill_angle_slider->set_end_value(PaintOnSupportsGizmo::SmartFillAngleMax);
-    m_smart_fill_angle_slider->set_step(PaintOnSupportsGizmo::SmartFillAngleStep);
+    m_smart_fill_angle_slider->set_begin_value(PaintOnFuzzySkinGizmo::SmartFillAngleMin);
+    m_smart_fill_angle_slider->set_end_value(PaintOnFuzzySkinGizmo::SmartFillAngleMax);
+    m_smart_fill_angle_slider->set_step(PaintOnFuzzySkinGizmo::SmartFillAngleStep);
     m_smart_fill_angle_slider->set_input_width(slider_text_size);
     m_smart_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.smart_fill_angle_changed(value); };
     m_smart_fill_angle_row =
         this->add_new_row(_u8L("Smart fill angle"), m_smart_fill_angle_slider.release());
-
-    this->add_separator(this->content());
-
-    m_highlight_overhangs_angle_slider = Passthrough(std::make_unique<SliderWithInput>());
-    m_highlight_overhangs_angle_slider->set_validator(std::make_unique<IntValidator>(0, 90));
-    m_highlight_overhangs_angle_slider->set_step(1.);
-    m_highlight_overhangs_angle_slider->set_input_width(slider_text_size);
-    m_highlight_overhangs_angle_slider->callbacks().value_changed = [this](double value)
-    {
-        m_callbacks.highlight_overhangs_angle_changed(value);
-
-        if (value <= 0.) {
-            m_overhangs_enforce_button->set_enabled(false);
-        } else if (value > 0. && !m_overhangs_enforce_button->enabled()) {
-            m_overhangs_enforce_button->set_enabled(true);
-        }
-    };
-    this->add_new_row(_u8L("Show overhangs"), m_highlight_overhangs_angle_slider.release());
-
-    std::unique_ptr<Item> overhangs_buttons = std::make_unique<Item>();
-    overhangs_buttons->set_gap(this->gap_size());
-
-    m_overhangs_enforce_button = overhangs_buttons->emplace_back<LayoutButton>(_u8L("Enforce"));
-    m_overhangs_enforce_button->callbacks().action = [this]()
-    {
-        m_callbacks.overhangs_enforced();
-        this->set_highlight_overhangs_angle(0.);
-    };
-    this->add_new_row(std::string{}, std::move(overhangs_buttons));
-
-    m_paint_on_overhangs_only_toggle =
-        this->content()->emplace_back<ToggleButton>(_u8L("Paint on overhangs only"));
-    m_paint_on_overhangs_only_toggle->callbacks().checked_changed = [this](bool checked)
-    { m_callbacks.paint_on_overhangs_only_value_changed(checked); };
 
     this->add_separator(this->content());
 
@@ -176,22 +142,11 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     { m_callbacks.clipping_of_view_value_changed(value); };
     this->add_new_row(_u8L("Clipping of view"), m_clipping_of_view_slider.release());
 
-    std::unique_ptr<Item> clipping_of_view_buttons = std::make_unique<Item>();
-    clipping_of_view_buttons->set_gap(this->gap_size());
-
+    Item* clipping_of_view_reset_direction_row = this->content()->emplace_back<Item>();
     m_clipping_of_view_reset_direction_button =
-        clipping_of_view_buttons->emplace_back<LayoutButton>(_u8L("Reset direction"));
+        clipping_of_view_reset_direction_row->emplace_back<LayoutButton>(_u8L("Reset direction"));
     m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
     { m_callbacks.clipping_of_view_reset_direction(); };
-    this->add_new_row(std::string{}, std::move(clipping_of_view_buttons));
-
-    this->add_separator(this->content());
-
-    Item* automatic_painting_row = this->content()->emplace_back<Item>();
-    m_automatic_painting_button =
-        automatic_painting_row->emplace_back<LayoutButton>(_u8L("Automatic painting"));
-    m_automatic_painting_button->callbacks().action = [this]()
-    { m_callbacks.automatic_painting(); };
 
     this->add_separator(this->content());
 
@@ -211,54 +166,35 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     help_row->set_flex_wrap(YGWrapWrap);
 
     m_help.init(help_row);
-    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Paint"));
-    m_help.add_item({{Render::Icon::MouseRight}}, _u8L("Block"));
+    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Add"));
     m_help.add_item(
         {{Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft}},
         _u8L("Remove")
     );
 }
 
-void PaintOnSupportsDialog::set_brush_radius(const double brush_radius)
+void PaintOnFuzzySkinDialog::set_brush_radius(const double brush_radius)
 {
     m_brush_radius_slider->set_value(brush_radius);
 }
 
-void PaintOnSupportsDialog::set_clipping_of_view_value(const double clipping_of_view_value)
+void PaintOnFuzzySkinDialog::set_clipping_of_view_value(const double clipping_of_view_value)
 {
     m_clipping_of_view_slider->set_value(clipping_of_view_value);
 }
 
-void PaintOnSupportsDialog::set_highlight_overhangs_angle(const double highlight_overhangs_angle)
-{
-    m_highlight_overhangs_angle_slider->set_value(highlight_overhangs_angle);
-
-    if (highlight_overhangs_angle <= 0.) {
-        m_overhangs_enforce_button->set_enabled(false);
-    } else if (highlight_overhangs_angle > 0. && !m_overhangs_enforce_button->enabled()) {
-        m_overhangs_enforce_button->set_enabled(true);
-    }
-}
-
-void PaintOnSupportsDialog::set_smart_fill_angle(const double smart_fill_angle)
+void PaintOnFuzzySkinDialog::set_smart_fill_angle(const double smart_fill_angle)
 {
     m_smart_fill_angle_slider->set_value(smart_fill_angle);
 }
 
-void PaintOnSupportsDialog::set_paint_on_overhangs_only_value(const bool paint_on_overhangs_only)
-{
-    m_paint_on_overhangs_only_toggle->set_checked(paint_on_overhangs_only);
-}
-
-void PaintOnSupportsDialog::set_split_triangles_value(const bool split_triangles)
+void PaintOnFuzzySkinDialog::set_split_triangles_value(const bool split_triangles)
 {
     m_split_triangles_toggle->set_checked(split_triangles);
 }
 
-void PaintOnSupportsDialog::set_tool_type(const PaintOnGizmoBase::ToolType& tool_type)
+void PaintOnFuzzySkinDialog::set_tool_type(const PaintOnGizmoBase::ToolType& tool_type)
 {
-    m_selected_tool_type = tool_type;
-
     switch (tool_type) {
     case PaintOnGizmoBase::ToolType::BRUSH:
         m_brush_button->set_checked(true);
@@ -274,11 +210,11 @@ void PaintOnSupportsDialog::set_tool_type(const PaintOnGizmoBase::ToolType& tool
     this->update_visibility();
 }
 
-void PaintOnSupportsDialog::set_brush_type(
+void PaintOnFuzzySkinDialog::set_brush_type(
     const Biz::Algorithms::TriangleSelector::CursorType& brush_type
 )
 {
-    m_selected_brush_type = brush_type;
+    using namespace Slic3r::Biz::Algorithms;
 
     switch (brush_type) {
     case TriangleSelector::CursorType::SPHERE:
@@ -298,7 +234,7 @@ void PaintOnSupportsDialog::set_brush_type(
     this->update_visibility();
 }
 
-void PaintOnSupportsDialog::update_visibility()
+void PaintOnFuzzySkinDialog::update_visibility()
 {
     if (m_selected_tool_type == PaintOnGizmoBase::ToolType::BRUSH) {
         m_brush_shape_row->set_visible(true);

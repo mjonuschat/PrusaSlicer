@@ -108,6 +108,7 @@ void Clipper::recalculate_object_clippers()
         mesh_clipper->set_plane(*m_clp);
         mesh_clipper->set_transformation(trafo);
         mesh_clipper->set_limiting_plane(Biz::ClippingPlane(Vec3d::UnitZ(), -SINKING_Z_THRESHOLD));
+        mesh_clipper->set_limiting_plane(m_limiting_plane);
         mesh_clipper->update_result();
     }
 }
@@ -200,10 +201,17 @@ void Clipper::set_range_and_pos(const Vec3d& cpl_normal, double cpl_offset, doub
     recalculate_object_clippers();
 }
 
-const Biz::ClippingPlane* Clipper::get_clipping_plane(bool ignore_hide_clipped) const
+void Clipper::set_limiting_plane(const Vec3d& plane_normal, const double plane_offset)
+{
+    m_limiting_plane = Biz::ClippingPlane(plane_normal, plane_offset);
+
+    recalculate_object_clippers();
+}
+
+const Biz::ClippingPlane& Clipper::get_clipping_plane(bool ignore_hide_clipped) const
 {
     static const Biz::ClippingPlane no_clip = Biz::ClippingPlane::ClipsNothing();
-    return (ignore_hide_clipped || m_hide_clipped) ? m_clp.get() : &no_clip;
+    return (ignore_hide_clipped || m_hide_clipped) ? *m_clp : no_clip;
 }
 
 void Clipper::set_behavior(bool hide_clipped, bool fill_cut, double contour_width)

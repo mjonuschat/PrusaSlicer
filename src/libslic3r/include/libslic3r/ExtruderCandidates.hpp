@@ -6,7 +6,8 @@
 
 namespace Slic3r::Biz::Slicing {
 
-std::vector<unsigned int> get_painting_extruders(const Domain::ModelObject& model_object);
+std::vector<unsigned int>
+get_painting_extruders(const Domain::ModelObject& model_object, unsigned int num_extruders);
 
 /* @brief Returns a list of extruder candidates (first extruder is 0).
  *

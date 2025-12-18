@@ -6,6 +6,7 @@
 
 #include "Slic3r/Biz/Utils/MeshClipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
+#include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Domain {
 class ModelVolume;
@@ -32,9 +33,10 @@ public:
         return m_clp_ratio;
     }
 
-    const Biz::ClippingPlane* get_clipping_plane(bool ignore_hide_clipped = false) const;
+    const Biz::ClippingPlane& get_clipping_plane(bool ignore_hide_clipped = false) const;
     void set_position_by_ratio(double pos, bool keep_normal);
     void set_range_and_pos(const Domain::Vec3d& cpl_normal, double cpl_offset, double pos);
+    void set_limiting_plane(const Domain::Vec3d& plane_normal, double plane_offset);
     void set_behavior(bool hide_clipped, bool fill_cut, double contour_width);
 
     int get_number_of_contours() const;
@@ -79,6 +81,7 @@ private:
     const Domain::ModelObject* m_selected_object{nullptr};
     const Domain::ModelInstance* m_selected_instance{nullptr};
     double m_sla_shift{0.};
+    Biz::ClippingPlane m_limiting_plane{Domain::Vec3d::UnitZ(), -Domain::SINKING_Z_THRESHOLD};
 };
 
 } // namespace Slic3r::App::Scene

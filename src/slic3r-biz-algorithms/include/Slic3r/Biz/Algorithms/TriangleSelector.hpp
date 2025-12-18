@@ -36,11 +36,10 @@ using Domain::TriangleSelector::TriangleSplittingData;
 // to recursively subdivide the triangles and make the selection finer.
 class TriangleSelector
 {
-protected:
+public:
     class Triangle;
     struct Vertex;
 
-public:
     enum class CursorType {
         CIRCLE,
         SPHERE,
@@ -339,7 +338,6 @@ public:
     // Compute total area of the triangle.
     double get_triangle_area(const Triangle &triangle) const;
 
-protected:
     // Triangle and info about how it's split.
     class Triangle {
     public:
@@ -398,6 +396,8 @@ protected:
         bool m_valid : 1;
     };
 
+    using Triangles = std::vector<Triangle>;
+
     struct Vertex {
         explicit Vertex(const stl_vertex& vert)
             : v{vert},
@@ -407,9 +407,22 @@ protected:
         int ref_cnt;
     };
 
+    using Vertices = std::vector<Vertex>;
+
+    const Vertices& vertices() const
+    {
+        return m_vertices;
+    }
+
+    const Triangles& triangles() const
+    {
+        return m_triangles;
+    }
+
+protected:
     // Lists of vertices and triangles, both original and new
-    std::vector<Vertex> m_vertices;
-    std::vector<Triangle> m_triangles;
+    Vertices m_vertices;
+    Triangles m_triangles;
     const Domain::TriangleMesh &m_mesh;
     const std::vector<Domain::Index3> m_neighbors;
     const std::vector<Vec3f> m_face_normals;
@@ -497,5 +510,7 @@ private:
     int m_free_triangles_head { -1 };
     int m_free_vertices_head { -1 };
 };
+
+using TriangleSelectors = std::vector<TriangleSelector>;
 
 } // namespace Slic3r::Biz::Algorithms

@@ -29,6 +29,19 @@ const TriangleSelector::TriangleSplittingData& FacetsAnnotation::get_data() cons
     return this->triangle_splitting_data;
 }
 
+bool FacetsAnnotation::set_data(
+    TriangleSelector::TriangleSplittingData&& new_triangle_splitting_data
+)
+{
+    if (new_triangle_splitting_data != this->triangle_splitting_data) {
+        triangle_splitting_data = std::move(new_triangle_splitting_data);
+        this->touch();
+        return true;
+    }
+
+    return false;
+}
+
 bool FacetsAnnotation::empty() const
 {
     return this->triangle_splitting_data.triangles_to_split.empty();

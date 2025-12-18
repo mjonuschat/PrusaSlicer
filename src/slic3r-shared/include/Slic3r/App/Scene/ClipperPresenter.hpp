@@ -19,6 +19,12 @@ namespace Slic3r::App::Scene {
 class Scene;
 class Node;
 
+enum class BuildMeshesNodes
+{
+    Yes,
+    No
+};
+
 class ClipperPresenter
 {
     using ModelGeometryManager     = Render::GeometryManager<ClipperElement>;
@@ -32,13 +38,15 @@ public:
         Scene* scene,
         const Domain::ModelObject* selected_object,
         const Domain::ModelInstance* selected_instance,
-        double sla_shift = 0.
+        double sla_shift                           = 0.,
+        BuildMeshesNodes should_build_meshes_nodes = BuildMeshesNodes::Yes
     );
     void deactivate(bool force_enabled_scene_nodes = true);
     void reset();
 
     void set_behavior(bool hide_clipped, bool fill_cut, double contour_width);
     void set_position_by_ratio(double pos, bool keep_normal);
+    void set_limiting_plane(const Domain::Vec3d& plane_normal, double plane_offset);
     void update_clipper(
         const Domain::Vec3d& clp_normal,
         double clp_offset,

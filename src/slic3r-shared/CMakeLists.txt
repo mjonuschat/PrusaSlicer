@@ -49,10 +49,26 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/History.cpp
         include/Slic3r/App/Plater/SidebarPlaterActionButtons.hpp
         src/Slic3r/App/Plater/SidebarPlaterActionButtons.cpp
+        include/Slic3r/App/Plater/PaintOnGizmoBase.hpp
+        src/Slic3r/App/Plater/PaintOnGizmoBase.cpp
+        include/Slic3r/App/Plater/PaintOnGizmoHelper.hpp
+        src/Slic3r/App/Plater/PaintOnGizmoHelper.cpp
         include/Slic3r/App/Plater/PaintOnSupportsGizmo.hpp
         src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
         include/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
         src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
+        include/Slic3r/App/Plater/PaintOnSeamsGizmo.hpp
+        src/Slic3r/App/Plater/PaintOnSeamsGizmo.cpp
+        include/Slic3r/App/Plater/PaintOnSeamsDialog.hpp
+        src/Slic3r/App/Plater/PaintOnSeamsDialog.cpp
+        include/Slic3r/App/Plater/PaintOnFuzzySkinGizmo.hpp
+        src/Slic3r/App/Plater/PaintOnFuzzySkinGizmo.cpp
+        include/Slic3r/App/Plater/PaintOnFuzzySkinDialog.hpp
+        src/Slic3r/App/Plater/PaintOnFuzzySkinDialog.cpp
+        include/Slic3r/App/Plater/MultiMaterialPaintingGizmo.hpp
+        src/Slic3r/App/Plater/MultiMaterialPaintingGizmo.cpp
+        include/Slic3r/App/Plater/MultiMaterialPaintingDialog.hpp
+        src/Slic3r/App/Plater/MultiMaterialPaintingDialog.cpp
         include/Slic3r/App/Plater/TextGizmo.hpp
         src/Slic3r/App/Plater/TextGizmo.cpp
         include/Slic3r/App/Plater/TextDialog.hpp
@@ -876,6 +892,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/FileDownloader/FileDownloaderJob.cpp
         include/Slic3r/Biz/FileDownloader/IFileDownloaderListener.hpp
         include/Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp
+
+        src/Slic3r/Biz/Utils/MeshRaycaster.cpp
+        include/Slic3r/Biz/Utils/MeshRaycaster.hpp
 )
 
 if (WIN32)

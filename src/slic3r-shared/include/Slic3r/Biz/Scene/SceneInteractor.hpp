@@ -173,6 +173,15 @@ public:
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;
     void change_volume_meshes(RefMeshes&& meshes);
+
+    /**
+     * @brief Notify that facets annotations have changed for given volumes.
+     * @param changed_volume_refs List of volumes whose facets annotations were changed.
+     *
+     * @note The facets annotation data must be already updated before calling this method.
+     */
+    void notify_facets_annotations_changed(const Domain::ElementRefs& changed_volume_refs);
+
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();

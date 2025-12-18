@@ -53,7 +53,8 @@ void ClipperPresenter::activate(
     Scene* scene,
     const Domain::ModelObject* selected_object,
     const Domain::ModelInstance* selected_instance,
-    double sla_shift
+    double sla_shift,
+    BuildMeshesNodes should_build_meshes_nodes
 )
 {
     if (m_main_node && m_main_node->children().size() > 0) {
@@ -65,8 +66,13 @@ void ClipperPresenter::activate(
         m_clipper->set_camera(&m_scene->camera());
         m_clipper->update(selected_object, selected_instance, sla_shift, true);
     }
+
     init_main_node();
-    build_meshes_nodes(selected_instance->get_matrix());
+
+    if (should_build_meshes_nodes == BuildMeshesNodes::Yes) {
+        build_meshes_nodes(selected_instance->get_matrix());
+    }
+
     set_enabled_scene_nodes(m_scene, false, m_main_node);
 }
 
@@ -96,18 +102,6 @@ void ClipperPresenter::reset()
 
 void ClipperPresenter::init_main_node()
 {
-    Node* node = m_scene->root().query_first(
-        [](const Node* node) -> bool
-        {
-            const ClipperElement* tag = node->tag_of_type<ClipperElement>();
-            return tag != nullptr;
-        },
-        true
-    );
-    if (node) {
-        m_main_node = node;
-        return;
-    }
     NodeBuilder builder{*m_scene};
     builder.set_debug_name("Clipper main").set_tag(ClipperElement());
 
@@ -160,10 +154,10 @@ Domain::Vec4f get_clipping_plane_data(const Clipper* clipper)
     // Take care of the clipping plane. The normal of the clipping plane is
     // saved with opposite sign than we need to pass to OpenGL (FIXME)
     if (bool clipping_plane_active = clipper->get_position() != 0.; clipping_plane_active) {
-        const Biz::ClippingPlane* clp = clipper->get_clipping_plane();
+        const Biz::ClippingPlane& clp = clipper->get_clipping_plane();
         for (size_t i = 0; i < 3; ++i)
-            clp_data_out[i] = -1.f * float(clp->get_data()[i]);
-        clp_data_out[3] = float(clp->get_data()[3]);
+            clp_data_out[i] = -1.f * float(clp.get_data()[i]);
+        clp_data_out[3] = float(clp.get_data()[3]);
     }
 
     return clp_data_out;
@@ -423,6 +417,15 @@ void ClipperPresenter::update_clipper(
             reset_ignored();
         }
         m_clipper->set_range_and_pos(clp_normal, clp_offset, pos);
+        update_nodes();
+    }
+}
+
+void
+ClipperPresenter::set_limiting_plane(const Domain::Vec3d& plane_normal, const double plane_offset)
+{
+    if (m_clipper) {
+        m_clipper->set_limiting_plane(plane_normal, plane_offset);
         update_nodes();
     }
 }
