@@ -761,10 +761,13 @@ void PrintConfigDef::init_fff_params()
     def = this->add("bridge_density", coPercent);
     def->label = L("Bridge density");
     def->category = L("Infill");
-    def->tooltip = L("Density of external bridges. 100% means solid bridge. Default is 100%.");
+    def->tooltip = L("Density of external bridges. 100% means solid bridge. Default is 100%.\n\n"
+                     "Higher densities can produce smoother bridge surfaces, as overlapping lines provide "
+                     "additional support during printing. Maximum is 120%. \n"
+                     "Note: Bridge density that is too high can cause warping or overextrusion.");
     def->sidetext = L("%");
     def->min = 10;
-    def->max = 100;
+    def->max = 120;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionPercent(100));
 
