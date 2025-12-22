@@ -1034,20 +1034,25 @@ void CutGizmo::on_stop_dragging()
 
 bool CutGizmo::set_plane_center(const Vec3d& center_pos)
 {
-    const double old_dist = (m_bb_center - m_plane_center).norm();
-    const double new_dist = (m_bb_center - center_pos).norm();
-    const double radius   = (m_bb_center - m_bounding_box.max).norm();
-    // check if forcing is reasonable
-    bool can_set_center_pos =
-        is_planar_mode() ? (new_dist < old_dist || can_perform_cut()) : new_dist < radius;
+    // Compute the projection radius of the bounding box onto the plane normal.
+    // Absolute values are used because extents contribute regardless of direction.
+    Vec3d bb_half_extents = (m_bounding_box.max - m_bounding_box.min) * 0.5;
+    Vec3d abs_plane_normal =
+        Vec3d(std::abs(m_cut_normal.x()), std::abs(m_cut_normal.y()), std::abs(m_cut_normal.z()));
+    double bb_radius = abs_plane_normal.dot(bb_half_extents);
 
-    if (can_set_center_pos) {
+    // Compute the distance from the bounding box center to the newly positioned cut plane
+    double bb_center_dist = std::abs(m_cut_normal.dot(m_bb_center) - m_cut_normal.dot(center_pos));
+
+    if (bb_center_dist <= bb_radius) {
+        // The center position is updated only if the cut plane actually cuts the object bounding box
         m_plane_center          = center_pos;
         context().center_offset = m_plane_center - m_bb_center;
         m_dialog->set_cut_z_position(m_plane_center.z());
+        return true;
     }
 
-    return can_set_center_pos;
+    return false;
 }
 
 void CutGizmo::update_scene_nodes()
@@ -1073,8 +1078,8 @@ void CutGizmo::update_scene_nodes()
     Domain::ModelObject* new_object = project.find_object_by_id(element.object_id);
     if (context().selected_object != new_object) {
         context().selected_object = new_object;
-        context().is_planar_mode = true;
-        force_full_reset = true;
+        context().is_planar_mode  = true;
+        force_full_reset          = true;
     }
 
     bool force_just_trafo_reset{false};
@@ -1168,8 +1173,7 @@ void CutGizmo::update_scene_nodes()
 
     if (force_just_trafo_reset) {
         preprocess_cut();
-    }
-    else {
+    } else {
         update_cut_plane_mesh();
     }
     update_cut_plane_trafo();
@@ -1544,8 +1548,6 @@ void CutGizmo::update_cut_plane_trafo()
     normal.normalize();
     m_cut_normal = normal;
 
-    // bool has_error            = !can_perform_cut()/* || !is_valid_groove()*/;
-    // ColorRGBA cp_clr          = has_error ? CUT_PLANE_ERR_COLOR : CUT_PLANE_DEF_COLOR;
     ColorRGBA cp_clr = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
 
     Render::Material material = m_plane_node->render_component()->material();
@@ -1712,7 +1714,9 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
             } else if (tag_h.is_move()) {
                 node.set_local_transform(
                     trafo
-                    * translation_transform(m_handle_connection_len * axis_type_dir(tag->primary_axis))
+                    * translation_transform(
+                        m_handle_connection_len * axis_type_dir(tag->primary_axis)
+                    )
                     * scale_transform(size)
                 );
             } else if (tag_h.is_rotation()) {
@@ -2690,7 +2694,7 @@ void CutGizmo::perform_cut()
         // arrange result objects
         Biz::Arrange::Settings settings;
         settings.scaled_offset = Biz::Algorithms::Scaling::scaled(3.0);
-        settings.mode = Biz::Arrange::Mode::Local;
+        settings.mode          = Biz::Arrange::Mode::Local;
         m_project_interactor->arrange_interactor().arrange(
             m_project_interactor->selected_project_id(),
             settings
