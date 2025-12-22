@@ -1155,7 +1155,7 @@ void CutGizmo::update_scene_nodes()
     if (force_full_reset) {
         m_start_dragging_m = context().rotation_m = Transform3d::Identity();
         set_plane_center(m_bb_center);
-    } else if (force_just_trafo_reset){
+    } else {
         set_plane_center(m_bb_center + context().center_offset);
     }
 
