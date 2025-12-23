@@ -12,15 +12,18 @@
 namespace Slic3r::App::Yoga {
 class LayoutButton;
 class ToggleButton;
+class RadioButton;
 class InputTextField;
 class Text;
 class SliderWithInput;
+class ComboBox;
+class ScrollArea;
 
-class PartProcessingRow : public Item
+class PartProcessingItem : public Item
 {
 public:
-    explicit PartProcessingRow(const std::string& part_name);
-    virtual ~PartProcessingRow();
+    explicit PartProcessingItem(const std::string& part_name, ImColor color);
+    virtual ~PartProcessingItem();
 
     enum class Type
     {
@@ -47,11 +50,12 @@ public:
     bool is_checked() const;
 
 private:
+    Yoga::Text* m_label{nullptr};
     Yoga::ToggleButton* m_part_checker{nullptr};
     Yoga::ButtonGroup m_group;
-    Yoga::LayoutButton* m_keep_btn{nullptr};
-    Yoga::LayoutButton* m_place_on_cut_btn{nullptr};
-    Yoga::LayoutButton* m_flip_btn{nullptr};
+    Yoga::RadioButton* m_keep_btn{nullptr};
+    Yoga::RadioButton* m_place_on_cut_btn{nullptr};
+    Yoga::RadioButton* m_flip_btn{nullptr};
 
     Callbacks m_callbacks;
 
@@ -144,6 +148,7 @@ public:
     int snap_space_proportion{30};
 
 private:
+    void init_action_buttons();
     void init_connectors_input_panel();
     void init_cut_plane_input_panel();
     void init_warning_rows();
@@ -153,11 +158,16 @@ private:
     void add_cut_settings();
     void update_panels_visibility();
 
+    void confirm_connectors();
+
     // return an Item(box) where some control can be placed
     Yoga::Item*
     add_row(const std::string& title, Yoga::Item* parent, const std::string& unit = std::string());
 
 private:
+    Yoga::ScrollArea* m_scroll_area{nullptr};
+
+    Yoga::Item* m_connectors_header{nullptr};
     Yoga::Item* m_connectors_input_panel{nullptr};
     Yoga::LayoutButton* m_add_connectors_btn{nullptr};
     Yoga::ButtonGroup m_connector_type_group;
@@ -183,7 +193,9 @@ private:
     Yoga::Item* m_cut_plane_input_panel{nullptr};
     Yoga::ButtonGroup m_mode_group;
     Yoga::LayoutButton* m_planar_mode_btn{nullptr};
-    Yoga::Text* m_build_volume{nullptr};
+    Yoga::Text* m_build_volume_x{nullptr};
+    Yoga::Text* m_build_volume_y{nullptr};
+    Yoga::Text* m_build_volume_z{nullptr};
     Yoga::InputTextField* m_cut_position{nullptr};
 
     Yoga::Item* m_groove_input_panel{nullptr};
@@ -194,11 +206,9 @@ private:
     Yoga::SliderWithInput* m_flap_angle{nullptr};
     Yoga::SliderWithInput* m_groove_angle{nullptr};
 
-    Yoga::ButtonGroup m_cut_into_group;
-    Yoga::LayoutButton* m_cut_into_objects_btn{nullptr};
-    Yoga::LayoutButton* m_cut_into_parts_btn{nullptr};
-    Yoga::PartProcessingRow* m_part_A{nullptr};
-    Yoga::PartProcessingRow* m_part_B{nullptr};
+    Yoga::ComboBox* m_cut_into_combo{nullptr};
+    Yoga::PartProcessingItem* m_part_A{nullptr};
+    Yoga::PartProcessingItem* m_part_B{nullptr};
 
     Yoga::Text* m_connectors_warning{nullptr};
     Yoga::Text* m_keep_object_warning{nullptr};
@@ -206,6 +216,8 @@ private:
     Yoga::Text* m_groove_warning{nullptr};
 
     Yoga::LayoutButton* m_perform_btn{nullptr};
+    Yoga::LayoutButton* m_confirm_connectors_btn{nullptr};
+    Yoga::LayoutButton* m_cancel_connectors_btn{nullptr};
 
     Yoga::Item* m_type_row{nullptr};
     Yoga::Item* m_style_row{nullptr};

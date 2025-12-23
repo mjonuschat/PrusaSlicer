@@ -1346,6 +1346,8 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
 {
     SPDLOG_DEBUG("build_volume type:Cut plane handles");
 
+    static constexpr double SCALE_FACTOR = 0.075;
+
     builder.set_debug_name("Handles");
     builder.set_tag(CutHandleNodeTag());
 
@@ -1416,6 +1418,7 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
                 material,
                 Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
             )
+            .set_screen_space_sized_modifier(SCALE_FACTOR)
             .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Sphere)->aabb_mesh());
     };
 
@@ -1454,6 +1457,7 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
                 material,
                 Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
             )
+            .set_screen_space_sized_modifier(SCALE_FACTOR)
             .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Cone)->aabb_mesh());
     };
 
@@ -1736,7 +1740,7 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                             trafo
                             * translation_transform(offset)
                             * rotation_transform(rotation)
-                            * scale_transform(scale)
+           //                 * scale_transform(scale)
                         );
                     }
                 } else if (tag_h.is_y_axis()) {
@@ -1754,7 +1758,7 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                             trafo
                             * translation_transform(offset)
                             * rotation_transform(rotation)
-                            * scale_transform(scale)
+           //                 * scale_transform(scale)
                         );
                     }
                 } else if (tag_h.is_z_axis()) {
@@ -1771,13 +1775,13 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                                 trafo
                                 * translation_transform(offset)
                                 * rotation_transform(rotation)
-                                * scale_transform(scale)
+                   //             * scale_transform(scale)
                             );
                         } else {
                             node_child->set_local_transform(
                                 trafo
                                 * translation_transform(handle_y_shift * Vec3d::UnitY())
-                                * scale_transform(size)
+             //                   * scale_transform(size)
                             );
                         }
                     }

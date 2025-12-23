@@ -6,11 +6,14 @@
 #include "Slic3r/App/Plater/CutDialog.hpp"
 
 #include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
@@ -37,13 +40,33 @@ static LayoutButton* add_button(Item* parent, Render::Icon icon, const std::stri
     return btn;
 }
 
-Slic3r::App::Yoga::PartProcessingRow::PartProcessingRow(const std::string& part_name) :
+Slic3r::App::Yoga::PartProcessingItem::PartProcessingItem(
+    const std::string& part_name,
+    ImColor color
+) :
     m_name(part_name)
 {
+    // set_flex_shrink(0);
+
     Item* group_item = this->emplace_back<Item>();
     group_item->set_gap(10.f);
-    m_part_checker = group_item->emplace_back<ToggleButton>(m_name);
-    m_part_checker->set_width(100);
+    group_item->set_padding(5.f);
+    group_item->set_orientation(Orientation::Vertical);
+    group_item->set_flex_grow(1.f);
+
+    Item* header_item = group_item->emplace_back<Item>();
+    header_item->set_gap(10.f);
+    header_item->set_flex_grow(1.f);
+    Circle* color_marker = header_item->emplace_back<Circle>();
+    color_marker->set_fill(color);
+    color_marker->set_height(16);
+
+    m_label = header_item->emplace_back<Text>(m_name);
+    m_label->set_font_type(Render::ImguiFontType::Bold);
+
+    m_part_checker = header_item->emplace_back<ToggleButton>();
+    m_part_checker->set_justify_content(YGJustifyFlexEnd);
+    m_part_checker->set_flex_grow(1);
     m_part_checker->set_checked(true);
     m_part_checker->callbacks().checked_changed = [this](bool checked)
     {
@@ -53,9 +76,9 @@ Slic3r::App::Yoga::PartProcessingRow::PartProcessingRow(const std::string& part_
         }
     };
 
-    m_keep_btn         = add_button(group_item, Render::Icon::Pin, _u8L("Keep orientation"));
-    m_place_on_cut_btn = add_button(group_item, Render::Icon::PlaceOnFace, _u8L("Place on cut"));
-    m_flip_btn = add_button(group_item, Render::Icon::FlipVertically, _u8L("Flip upside down"));
+    m_keep_btn         = group_item->emplace_back<RadioButton>(_u8L("Keep orientation"));
+    m_place_on_cut_btn = group_item->emplace_back<RadioButton>(_u8L("Place on cut"));
+    m_flip_btn         = group_item->emplace_back<RadioButton>(_u8L("Flip upside down"));
 
     m_group.set_buttons({m_keep_btn, m_place_on_cut_btn, m_flip_btn});
     m_group.callbacks().action = [this](AbstractButton* btn)
@@ -69,18 +92,18 @@ Slic3r::App::Yoga::PartProcessingRow::PartProcessingRow(const std::string& part_
     };
 }
 
-PartProcessingRow::~PartProcessingRow() {}
+PartProcessingItem::~PartProcessingItem() {}
 
-PartProcessingRow::Callbacks& PartProcessingRow::callbacks()
+PartProcessingItem::Callbacks& PartProcessingItem::callbacks()
 {
     return m_callbacks;
 }
 
-void PartProcessingRow::set_as_part(bool is_part)
+void PartProcessingItem::set_as_part(bool is_part)
 {
     const std::string new_name =
         fmt::format("{} {}", is_part ? _u8L("Part") : _u8L("Object"), m_name);
-    m_part_checker->set_label(new_name);
+    m_label->set_text(new_name);
 
     if (is_part) {
         m_part_checker->set_checked(true);
@@ -91,14 +114,14 @@ void PartProcessingRow::set_as_part(bool is_part)
     set_enabled_buttons(!is_part);
 }
 
-void PartProcessingRow::set_enabled_buttons(bool enabled)
+void PartProcessingItem::set_enabled_buttons(bool enabled)
 {
     for (AbstractButton* btn : m_group.buttons()) {
         btn->set_enabled(enabled);
     }
 }
 
-bool PartProcessingRow::is_checked() const
+bool PartProcessingItem::is_checked() const
 {
     return m_part_checker->checked();
 }
@@ -106,13 +129,11 @@ bool PartProcessingRow::is_checked() const
 static LayoutButton* add_revert_btn(Item* parent, const std::string& tooltip)
 {
     Item* revert_space = parent->emplace_back<Item>();
-    revert_space->set_width_percent(10);
+    revert_space->set_width(24);
     revert_space->set_justify_content(YGJustifyFlexEnd);
     LayoutButton* revert_btn =
         revert_space->emplace_back<LayoutButton>("", Render::Icon::DSRevert, tooltip);
     revert_btn->set_self_align(YGAlignCenter);
-    revert_btn->set_aspect_ratio(1);
-    // revert_btn->set_visible(false);
     return revert_btn;
 }
 
@@ -130,27 +151,83 @@ CutDialog::Callbacks& CutDialog::callbacks()
 static const Vec2f mouse_help_size{25.f, 25.f};
 static const Vec2f shortcut_help_size{40.f, 25.f};
 
-static const ImColor build_volume_color{151, 187, 255};
+static const ImColor build_volume_color{192, 154, 247};
 static const ImColor titles_color{121, 149, 203};
-static const ImColor buttons_color{76, 93, 127};
+static const ImColor buttons_color{42, 42, 42};
+static const ImColor act_button_color{250, 104, 49};
 
 CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
 {
     content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(gap_size());
+    content()->set_flex_grow(1);
+    content()->set_gap(2 * gap_size());
+
+    m_scroll_area = content()->emplace_back<ScrollArea>("Foobar");
+    m_scroll_area->set_gap(gap_size());
+    m_scroll_area->set_orientation(Orientation::Vertical);
+    m_scroll_area->set_flex_grow(1);
 
     init_connectors_input_panel();
     init_cut_plane_input_panel();
 
     init_warning_rows();
+    init_action_buttons();
+}
+
+void CutDialog::init_action_buttons()
+{
+    Item* buttons_wrap = content()->emplace_back<Item>();
+    buttons_wrap->set_justify_content(YGJustifySpaceBetween);
+    buttons_wrap->set_flex_shrink(0);
+    buttons_wrap->set_padding(gap_size());
+
+    m_perform_btn = buttons_wrap->emplace_back<LayoutButton>(_u8L("Perform cut"));
+    m_perform_btn->callbacks().action = [this]()
+    {
+        if (callbacks().perform) {
+            callbacks().perform();
+        }
+    };
+
+    m_confirm_connectors_btn = buttons_wrap->emplace_back<LayoutButton>(
+        _u8L("Confirm"),
+        Render::Icon::None,
+        _u8L("Confirm connectors")
+    );
+    m_confirm_connectors_btn->callbacks().action = [this]() { confirm_connectors(); };
+
+    for (LayoutButton* btn :
+         std::initializer_list<LayoutButton*>{m_perform_btn, m_confirm_connectors_btn})
+    {
+        btn->set_background_color(act_button_color);
+        btn->set_label_font_type(Render::ImguiFontType::Bold);
+        btn->set_content_padding(gap_size());
+    }
+
+    m_cancel_connectors_btn = buttons_wrap->emplace_back<LayoutButton>(_u8L("Cancel"));
+    m_cancel_connectors_btn->set_background_color(buttons_color);
+    m_cancel_connectors_btn->set_content_padding(gap_size());
+    m_cancel_connectors_btn->callbacks().action = [this]()
+    {
+        connectors_editing = false;
+        if (callbacks().connectors_editing_changed) {
+            callbacks().connectors_editing_changed(connectors_editing);
+        }
+        update_panels_visibility();
+        if (callbacks().reset_connectors) {
+            callbacks().reset_connectors();
+        }
+    };
 }
 
 void CutDialog::init_cut_plane_input_panel()
 {
-    m_cut_plane_input_panel = content()->emplace_back<Item>();
+    m_cut_plane_input_panel = m_scroll_area->emplace_back<Item>();
     m_cut_plane_input_panel->set_orientation(Orientation::Vertical);
     m_cut_plane_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
-    m_cut_plane_input_panel->set_gap(gap_size());
+    m_cut_plane_input_panel->set_flex_grow(1);
+    m_cut_plane_input_panel->set_flex_shrink(0);
+    m_cut_plane_input_panel->set_gap(2. * gap_size());
 
     Item* mode_row    = add_row(_u8L("Mode"), m_cut_plane_input_panel);
     m_planar_mode_btn = add_button(mode_row, Render::Icon::DividingLine, _u8L("Planar"));
@@ -164,13 +241,8 @@ void CutDialog::init_cut_plane_input_panel()
         }
     };
 
-    Item* buid_volume_row = add_row(_u8L("Build Volume"), m_cut_plane_input_panel);
-    m_build_volume        = buid_volume_row->emplace_back<Text>("X mm, Y mm, Z mm");
-    m_build_volume->set_text_color(build_volume_color);
-    m_build_volume->set_font_type(Render::ImguiFontType::Bold);
-
     Item* cut_position_row = add_row(_u8L("Cut position"), m_cut_plane_input_panel);
-    cut_position_row->emplace_back<Text>("Z:");
+    cut_position_row->emplace_back<Text>("Z")->set_text_color(ImColor{64, 200, 232});
     m_cut_position = cut_position_row->emplace_back<InputTextField>();
     m_cut_position->set_width(50);
     std::unique_ptr<DoubleValidator> validator = std::make_unique<DoubleValidator>();
@@ -194,12 +266,15 @@ void CutDialog::init_cut_plane_input_panel()
         add_revert_btn(cut_position_row, _u8L("Reset cutting plane"));
     m_cut_position->set_revert_button(revert_cut_position_btn);
 
+    add_groove_input_panel();
+    add_cut_settings();
+
+    add_separator(m_cut_plane_input_panel);
+
     Item* buttons_row = m_cut_plane_input_panel->emplace_back<Item>();
     buttons_row->set_justify_content(YGJustifySpaceBetween);
 
-    m_add_connectors_btn = buttons_row->emplace_back<LayoutButton>(
-        /*has_connectors ? _u8L("Edit connectors") : */ _u8L("Add connectors")
-    );
+    m_add_connectors_btn = buttons_row->emplace_back<LayoutButton>(_u8L("Add connectors"));
     m_add_connectors_btn->set_background_color(buttons_color);
     m_add_connectors_btn->callbacks().action = [this]()
     {
@@ -226,25 +301,38 @@ void CutDialog::init_cut_plane_input_panel()
         }
     };
 
-    add_groove_input_panel();
-    add_cut_settings();
+    add_separator(m_cut_plane_input_panel);
+
+    m_cut_plane_input_panel->emplace_back<Text>(_u8L("Build Volume"))
+        ->set_font_type(Render::ImguiFontType::Bold);
+
+    Item* build_volume = m_cut_plane_input_panel->emplace_back<Item>();
+    build_volume->set_justify_content(YGJustifySpaceBetween);
+
+    for (Text** build_volume_axes :
+         std::initializer_list<Text**>{
+             &m_build_volume_x,
+             &m_build_volume_y,
+             &m_build_volume_z,
+         })
+    {
+        (*build_volume_axes) = build_volume->emplace_back<Text>("* mm");
+        (*build_volume_axes)->set_text_color(build_volume_color);
+        (*build_volume_axes)->set_font_type(Render::ImguiFontType::Bold);
+    }
+
     add_cut_plane_help_panel();
 
-    m_perform_btn = m_cut_plane_input_panel->emplace_back<LayoutButton>(_u8L("Perform cut"));
-    m_perform_btn->set_background_color(buttons_color);
-    m_perform_btn->callbacks().action = [this]()
-    {
-        if (callbacks().perform) {
-            callbacks().perform();
-        }
-    };
+    // empty item - stretch spacer
+    m_cut_plane_input_panel->emplace_back<Item>()->set_flex_grow(1);
+    add_separator(m_cut_plane_input_panel);
 }
 
 void CutDialog::init_warning_rows()
 {
     auto add_warning_text = [this]() -> Text*
     {
-        Item* row = content()->emplace_back<Item>();
+        Item* row = m_scroll_area->emplace_back<Item>();
         row->set_flex_grow(1.);
         row->emplace_back<Icon>(Render::Icon::WarningMarker)->set_width(30);
         Text* warning_text = row->emplace_back<Text>("");
@@ -252,25 +340,24 @@ void CutDialog::init_warning_rows()
         return warning_text;
     };
 
-    m_connectors_warning = add_warning_text();
+    m_connectors_warning  = add_warning_text();
     m_keep_object_warning = add_warning_text();
-    m_cut_plane_warning = add_warning_text();
-    m_groove_warning = add_warning_text();
+    m_cut_plane_warning   = add_warning_text();
+    m_groove_warning      = add_warning_text();
 }
 
 void CutDialog::add_cut_plane_help_panel()
 {
     add_separator(m_cut_plane_input_panel);
-    Item* help_row = m_cut_plane_input_panel->emplace_back<Item>();
+    Item* help_area = m_cut_plane_input_panel->emplace_back<Item>();
 
-    help_row->set_min_size({0, 50});
-    help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
-    help_row->set_padding(5);
+    help_area->set_min_size({0, 50});
+    help_area->set_justify_content(YGJustify::YGJustifyFlexStart);
+    help_area->set_padding(5);
 
     Yoga::GizmoDialogHelp help;
-    help.init(help_row);
+    help.init(help_area);
     help.add_item({{Render::Icon::KeyShift, shortcut_help_size}}, _u8L("Hold to draw a cut line"));
-    add_separator(m_cut_plane_input_panel);
 }
 
 void CutDialog::add_groove_input_panel()
@@ -381,54 +468,50 @@ void CutDialog::add_groove_input_panel()
 
 void CutDialog::add_cut_settings()
 {
-    add_separator(m_cut_plane_input_panel);
-
     Item* cut_into_row = add_row(_u8L("Cut into") + ":", m_cut_plane_input_panel);
 
+    m_cut_into_combo = cut_into_row->emplace_back<ComboBox>("Cut into");
+    m_cut_into_combo->set_flex_grow(1);
     // TRN CutGizmo: RadioButton Cut into ...
-    m_cut_into_objects_btn = add_button(cut_into_row, Render::Icon::ObjectIcon, _u8L("Objects"));
-    // TRN CutGizmo: RadioButton Cut into ...
-    m_cut_into_parts_btn = add_button(cut_into_row, Render::Icon::SolidPartVolume, _u8L("Parts"));
-
-    m_cut_into_group.set_buttons({m_cut_into_objects_btn, m_cut_into_parts_btn});
-    m_cut_into_group.callbacks().action = [this](AbstractButton* btn)
+    m_cut_into_combo->set_items({_u8L("Objects"), _u8L("Parts")});
+    m_cut_into_combo->callbacks().selection_changed = [this](int index)
     {
-        keep_as_parts = btn == m_cut_into_parts_btn;
+        keep_as_parts = index == 1;
         m_part_A->set_as_part(keep_as_parts);
         m_part_B->set_as_part(keep_as_parts);
 
-        m_add_connectors_btn->set_visible(btn == m_cut_into_objects_btn);
+        m_add_connectors_btn->set_visible(index == 0);
     };
 
-    // Text* text = m_cut_plane_input_panel->emplace_back<Text>(_u8L("Cut result") + ":");
-    Item* cut_result_row = add_row(_u8L("Cut result") + ":", m_cut_plane_input_panel);
+    add_separator(m_cut_plane_input_panel);
 
-    Item* parts_wrap_item = cut_result_row->emplace_back<Item>();
+    Item* parts_wrap_item = m_cut_plane_input_panel->emplace_back<Item>();
     parts_wrap_item->set_orientation(Orientation::Vertical);
-    parts_wrap_item->set_gap(gap_size());
+    parts_wrap_item->set_gap(2 * gap_size());
 
     // create PartProcessingRow
 
-    m_part_A = parts_wrap_item->emplace_back<PartProcessingRow>("A");
-    m_part_B = parts_wrap_item->emplace_back<PartProcessingRow>("B");
+    m_part_A = parts_wrap_item->emplace_back<PartProcessingItem>("A", ImColor{64, 191, 191});
+    add_separator(parts_wrap_item);
+    m_part_B = parts_wrap_item->emplace_back<PartProcessingItem>("B", ImColor{191, 64, 191});
 
     m_part_A->set_as_part(false);
     m_part_B->set_as_part(false);
 
     m_part_A->callbacks().checked_changed     = [this](bool checked) { keep_upper = checked; };
-    m_part_A->callbacks().part_action_changed = [this](PartProcessingRow::Action action)
+    m_part_A->callbacks().part_action_changed = [this](PartProcessingItem::Action action)
     {
-        keep_upper         = m_part_A->is_checked() || action == PartProcessingRow::Action::Keep;
-        place_on_cut_upper = action == PartProcessingRow::Action::PlaceOnCut;
-        flip_upper         = action == PartProcessingRow::Action::Flip;
+        keep_upper         = m_part_A->is_checked() || action == PartProcessingItem::Action::Keep;
+        place_on_cut_upper = action == PartProcessingItem::Action::PlaceOnCut;
+        flip_upper         = action == PartProcessingItem::Action::Flip;
     };
 
     m_part_B->callbacks().checked_changed     = [this](bool checked) { keep_lower = checked; };
-    m_part_B->callbacks().part_action_changed = [this](PartProcessingRow::Action action)
+    m_part_B->callbacks().part_action_changed = [this](PartProcessingItem::Action action)
     {
-        keep_lower         = m_part_B->is_checked() || action == PartProcessingRow::Action::Keep;
-        place_on_cut_lower = action == PartProcessingRow::Action::PlaceOnCut;
-        flip_lower         = action == PartProcessingRow::Action::Flip;
+        keep_lower         = m_part_B->is_checked() || action == PartProcessingItem::Action::Keep;
+        place_on_cut_lower = action == PartProcessingItem::Action::PlaceOnCut;
+        flip_lower         = action == PartProcessingItem::Action::Flip;
     };
 }
 
@@ -446,7 +529,10 @@ void CutDialog::update_state(
     bool has_warnings =
         connectors_warnig || plane_outside_object || invalid_groove || (!keep_upper && !keep_lower);
 
-    m_perform_btn->set_visible(!has_warnings);
+    m_perform_btn->set_visible(!has_warnings && !connectors_editing);
+
+    m_confirm_connectors_btn->set_visible(connectors_editing);
+    m_cancel_connectors_btn->set_visible(connectors_editing);
 
     if (connectors_warnig) {
         std::string out = _u8L("Invalid connectors detected") + ":";
@@ -500,24 +586,35 @@ void CutDialog::update_panels_visibility()
     m_connectors_input_panel->set_visible(connectors_editing);
     m_cut_plane_input_panel->set_visible(!connectors_editing);
     m_groove_input_panel->set_visible(!is_planar_cut_mode);
+
+    m_confirm_connectors_btn->set_visible(connectors_editing);
+    m_cancel_connectors_btn->set_visible(connectors_editing);
+    m_perform_btn->set_visible(!connectors_editing);
+}
+
+void CutDialog::confirm_connectors()
+{
+    connectors_editing = false;
+    if (callbacks().connectors_editing_changed) {
+        callbacks().connectors_editing_changed(connectors_editing);
+    }
+    update_panels_visibility();
 }
 
 void CutDialog::init_connectors_input_panel()
 {
-    m_connectors_input_panel = content()->emplace_back<Item>();
-    m_connectors_input_panel->set_orientation(Orientation::Vertical);
-    m_connectors_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
-    m_connectors_input_panel->set_gap(gap_size());
+    m_connectors_header = content()->emplace_back<Item>();
+    m_connectors_header->set_gap(2.f * gap_size());
+    m_connectors_header->set_padding(gap_size());
+    m_connectors_header->set_flex_shrink(0);
+    m_connectors_header->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft)
+        ->callbacks()
+        .action = [this]() { confirm_connectors(); };
+    m_connectors_header->emplace_back<Text>(_u8L("Connectors"))
+        ->set_font_type(Render::ImguiFontType::Bold); 
 
-    Item* title_row = m_connectors_input_panel->emplace_back<Item>();
-    title_row->set_gap(gap_size());
-    title_row->set_align_items(YGAlignCenter);
-
-    Text* text = title_row->emplace_back<Text>(_u8L("Connectors") + ":");
-    text->set_text_color(titles_color);
-    text->set_font_type(Render::ImguiFontType::Bold);
-
-    LayoutButton* reset_btn       = add_revert_btn(title_row, _u8L("Remove connectors"));
+    // Proces reset button in taskbar
+    LayoutButton* reset_btn       = add_revert_btn(m_connectors_input_panel, _u8L("Remove connectors"));
     reset_btn->callbacks().action = [this]()
     {
         if (callbacks().reset_connectors) {
@@ -525,15 +622,11 @@ void CutDialog::init_connectors_input_panel()
         }
     };
 
-    LayoutButton* flip_cut_plane_btn =
-        title_row->emplace_back<LayoutButton>(_u8L("Flip cut plane"));
-    flip_cut_plane_btn->set_background_color(buttons_color);
-    flip_cut_plane_btn->callbacks().action = [this]()
-    {
-        if (callbacks().flip_cut_plane) {
-            callbacks().flip_cut_plane();
-        }
-    };
+    m_connectors_input_panel = m_scroll_area->emplace_back<Item>();
+    m_connectors_input_panel->set_orientation(Orientation::Vertical);
+    m_connectors_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
+    m_connectors_input_panel->set_gap(gap_size());
+    m_connectors_input_panel->set_flex_shrink(0);
 
     m_type_row = add_row(_u8L("Type"), m_connectors_input_panel);
 
@@ -592,6 +685,8 @@ void CutDialog::init_connectors_input_panel()
             callbacks().connector_attributes_changed();
         }
     };
+
+    add_separator(m_connectors_input_panel);
 
     Item* depth_row                = add_row(_u8L("Depth"), m_connectors_input_panel, "mm");
     LayoutButton* revert_depth_btn = add_revert_btn(depth_row, _u8L("Revert depth"));
@@ -673,7 +768,8 @@ void CutDialog::init_connectors_input_panel()
     };
     m_snap_space_proportion->set_revert_button(revert_snap_space_btn);
 
-    for (SliderWithInput* input : {
+    for (SliderWithInput* input :
+         {
              m_connector_depth_value,
              m_connector_depth_tolerance,
              m_connector_size_value,
@@ -702,34 +798,16 @@ void CutDialog::init_connectors_input_panel()
 
     add_separator(m_connectors_input_panel);
 
-    Item* buttons_row = m_connectors_input_panel->emplace_back<Item>();
-    buttons_row->set_justify_content(YGJustifySpaceBetween);
-
-    LayoutButton* confirm_connectors_btn =
-        buttons_row->emplace_back<LayoutButton>(_u8L("Confirm connectors"));
-    confirm_connectors_btn->set_background_color(buttons_color);
-    confirm_connectors_btn->callbacks().action = [this]()
+    LayoutButton* flip_cut_plane_btn =
+        m_connectors_input_panel->emplace_back<LayoutButton>(_u8L("Flip cut plane"));
+    flip_cut_plane_btn->set_background_color(buttons_color);
+    flip_cut_plane_btn->callbacks().action = [this]()
     {
-        connectors_editing = false;
-        if (callbacks().connectors_editing_changed) {
-            callbacks().connectors_editing_changed(connectors_editing);
-        }
-        update_panels_visibility();
-    };
-
-    LayoutButton* cancel_btn = buttons_row->emplace_back<LayoutButton>(_u8L("Cancel"));
-    cancel_btn->set_background_color(buttons_color);
-    cancel_btn->callbacks().action = [this]()
-    {
-        connectors_editing = false;
-        if (callbacks().connectors_editing_changed) {
-            callbacks().connectors_editing_changed(connectors_editing);
-        }
-        update_panels_visibility();
-        if (callbacks().reset_connectors) {
-            callbacks().reset_connectors();
+        if (callbacks().flip_cut_plane) {
+            callbacks().flip_cut_plane();
         }
     };
+    add_separator(m_connectors_input_panel);
 
     add_connectors_help_panel();
 
@@ -738,40 +816,25 @@ void CutDialog::init_connectors_input_panel()
 
 void CutDialog::add_connectors_help_panel()
 {
-    ImColor color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
-    add_separator(m_connectors_input_panel);
-    m_connectors_input_panel->emplace_back<Text>(_u8L("Connectors") + ":")->set_text_color(color);
-
-    Item* help_row = m_connectors_input_panel->emplace_back<Item>();
-    help_row->set_min_size({0, 50});
-    help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
-    help_row->set_gap(10);
+    Item* help_area = m_connectors_input_panel->emplace_back<Item>();
+    help_area->set_orientation(Orientation::Vertical);
+    help_area->set_min_size({0, 50});
+    help_area->set_justify_content(YGJustify::YGJustifyFlexStart);
+    help_area->set_gap(10);
 
     Yoga::GizmoDialogHelp help;
-    help.init(help_row);
-    help.add_item({{Render::Icon::MouseLeft, mouse_help_size}}, _u8L("Add"));
-    help.add_item({{Render::Icon::MouseRight, mouse_help_size}}, _u8L("Remove"));
-    help.add_item({{Render::Icon::MouseDrag, mouse_help_size}}, _u8L("Move"));
-
-    add_separator(m_connectors_input_panel);
-    m_connectors_input_panel->emplace_back<Text>(_u8L("Selection") + ":")->set_text_color(color);
-
-    Item* help_row2 = m_connectors_input_panel->emplace_back<Item>();
-    help_row2->set_min_size({0, 50});
-    help_row2->set_justify_content(YGJustify::YGJustifySpaceEvenly);
-    help_row2->set_gap(10);
-
-    Yoga::GizmoDialogHelp help2;
-    help2.init(help_row2);
-    help2.add_item(
+    help.init(help_area);
+    help.add_item({{Render::Icon::MouseLeft, mouse_help_size}}, _u8L("Add connector"));
+    help.add_item({{Render::Icon::MouseRight, mouse_help_size}}, _u8L("Remove connector"));
+    help.add_item(
         {{Render::Icon::KeyShift, shortcut_help_size}, {Render::Icon::MouseLeft, mouse_help_size}},
-        _u8L("Add")
+        _u8L("Select multiple")
     );
-    help2.add_item(
+    help.add_item(
         {{Render::Icon::KeyAlt, mouse_help_size}, {Render::Icon::MouseLeft, mouse_help_size}},
-        _u8L("Remove")
+        _u8L("Remove from selection")
     );
-    help2.add_item({{Render::Icon::KeyCtrlA, shortcut_help_size}}, _u8L("Select all"));
+    help.add_item({{Render::Icon::KeyCtrlA, shortcut_help_size}}, _u8L("Select all"));
 }
 
 Item* CutDialog::add_row(const std::string& title, Yoga::Item* parent, const std::string& unit)
@@ -814,9 +877,9 @@ void CutDialog::set_build_size(Domain::Vec3d size)
         size.z() *= mm_to_in;
     }
 
-    m_build_volume->set_text(
-        fmt::format("{0:.5g} {3}, {1:.5g} {3}, {2:.5g} {3}", size.x(), size.y(), size.z(), unit_str)
-    );
+    m_build_volume_x->set_text(fmt::format("{0:.5g} {1}", size.x(), unit_str));
+    m_build_volume_y->set_text(fmt::format("{0:.5g} {1}", size.y(), unit_str));
+    m_build_volume_z->set_text(fmt::format("{0:.5g} {1}", size.z(), unit_str));
 }
 
 void CutDialog::set_cut_z_position(double cut_z_position)
@@ -836,14 +899,13 @@ void CutDialog::set_planar_mode(bool is_planar)
 
     if (!is_planar_cut_mode) {
         keep_as_parts = false;
-        m_cut_into_objects_btn->set_checked(true);
+        m_cut_into_combo->set_current_index(0);
         m_part_A->set_as_part(keep_as_parts);
         m_part_B->set_as_part(keep_as_parts);
     }
 
     // disable buttons for dovetail mode
-    m_cut_into_objects_btn->set_enabled(is_planar_cut_mode);
-    m_cut_into_parts_btn->set_enabled(is_planar_cut_mode);
+    m_cut_into_combo->set_enabled(is_planar_cut_mode);
     m_add_connectors_btn->set_visible(is_planar_cut_mode);
 }
 
