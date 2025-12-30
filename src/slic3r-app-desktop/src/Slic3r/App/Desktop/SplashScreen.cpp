@@ -107,6 +107,14 @@ SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
         return;
     }
 
+    // By default, the splash screen is always shown on the main display,
+    // so we need to set its position manually.
+    this->SetPosition(pos);
+    // The splash screen size may change after being moved to another display,
+    // so update it based on the bitmap size.
+    this->SetClientSize(m_main_bitmap.GetWidth(), m_main_bitmap.GetHeight());
+    this->CenterOnScreen();
+
     // Initialize constant texts and scale fonts using the determined scale factor.
     init_constant_text();
 

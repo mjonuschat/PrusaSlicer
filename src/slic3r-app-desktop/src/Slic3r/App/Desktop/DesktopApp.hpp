@@ -52,6 +52,7 @@ public:
 
 private:
     void init_translations();
+    void handle_previous_crash_recovery(AppConfig& app_config);
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;

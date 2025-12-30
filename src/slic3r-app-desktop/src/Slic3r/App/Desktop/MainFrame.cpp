@@ -24,6 +24,8 @@
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 
 #include "Slic3r/App/WX/Scalable.hpp"
+#include "Slic3r/App/WX/WindowMetrics.hpp"
+
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "boost/algorithm/string.hpp"
@@ -31,6 +33,8 @@
 #include <wx/panel.h>
 #include <wx/notebook.h>
 #include <wx/string.h>
+#include <wx/display.h>
+#include <wx/toplevel.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -152,7 +156,8 @@ MainFrame::MainFrame(
     Biz::ProjectInteractor& project_interactor,
     Navigator& navigator
 ) :
-    wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID)),
+    wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID), wxDefaultPosition,wxDefaultSize,
+        wxDEFAULT_FRAME_STYLE, from_u8("mainframe")),
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_preset_interactor(project_interactor.preset_interactor()),
@@ -165,7 +170,7 @@ MainFrame::MainFrame(
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon());
 
-    AppServices::instance().app_config_intractor().add_listener<IAppConfigChangedListener>(this);
+    AppServices::instance().app_config_interactor().add_listener<IAppConfigChangedListener>(this);
 
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -273,6 +278,8 @@ MainFrame::MainFrame(
             event.Skip();
         }
     );
+
+    persist_window_geometry(this, true);
 }
 
 MainFrame::~MainFrame()
@@ -595,5 +602,95 @@ void MainFrame::register_win32_callbacks()
     }
 }
 #endif // _WIN32
+
+void MainFrame::window_pos_save(wxTopLevelWindow* window, const std::string& name)
+{
+    if (name.empty()) {
+        return;
+    }
+
+    WindowMetrics metrics = WindowMetrics::from_window(window);
+    const auto config_key = fmt::format("{}_window_metrics", name);
+
+    AppConfig& app_config = AppServices::instance().app_config();
+    app_config.set(config_key, metrics.serialize());
+    // save changed app_config here, before all action related to a close of application is processed
+    app_config.save();
+}
+
+void MainFrame::window_pos_restore(wxTopLevelWindow* window, const std::string& name, bool default_maximized)
+{
+    if (name.empty()) { return; }
+    const std::string config_key = fmt::format("{}_window_metrics", name);
+
+    AppConfig& app_config = AppServices::instance().app_config();
+    std::string metrics_string = app_config.get<std::string>(config_key);
+
+    if (metrics_string.empty()) {
+        window->Maximize(default_maximized);
+        return;
+    }
+
+    auto metrics = WindowMetrics::deserialize(metrics_string);
+    if (!metrics) {
+        window->Maximize(default_maximized);
+        return;
+    }
+
+    const wxRect& rect = metrics->get_rect();
+
+    if (app_config.get<bool>("restore_win_position")) {
+        // workaround for crash related to the positioning of the window on secondary monitor
+        app_config.record_crash("restore_win_pos", "restore_win_position");
+        window->SetPosition(rect.GetPosition());
+
+        // workaround for crash related to the positioning of the window on secondary monitor
+        app_config.record_crash("restore_win_size", "restore_win_position");
+        window->SetSize(rect.GetSize());
+
+        // invalidate "crash_reason" value if application wasn't crashed
+        app_config.resolve_crash(std::string(), "restore_win_position");
+    }
+    else {
+        window->CenterOnScreen();
+    }
+
+    window->Maximize(metrics->get_maximized());
+}
+
+void MainFrame::window_pos_sanitize(wxTopLevelWindow* window)
+{
+    int display_idx = wxDisplay::GetFromWindow(window);
+    wxRect display;
+    if (display_idx == wxNOT_FOUND) {
+        display = wxDisplay(0u).GetClientArea();
+        window->Move(display.GetTopLeft());
+    }
+    else {
+        display = wxDisplay(display_idx).GetClientArea();
+    }
+
+    auto metrics = WindowMetrics::from_window(window);
+    metrics.sanitize_for_display(display);
+    if (window->GetScreenRect() != metrics.get_rect()) {
+        window->SetSize(metrics.get_rect());
+    }
+}
+
+void MainFrame::persist_window_geometry(wxTopLevelWindow* window, bool default_maximized)
+{
+    const std::string name = into_u8(window->GetName());
+
+    window->Bind(wxEVT_CLOSE_WINDOW, [=](wxCloseEvent& event) {
+        window_pos_save(window, name);
+        event.Skip();
+        });
+
+    window_pos_restore(window, name, default_maximized);
+
+    on_window_geometry(window, [=]() {
+        window_pos_sanitize(window);
+        });
+}
 
 } // namespace Slic3r::App::Desktop

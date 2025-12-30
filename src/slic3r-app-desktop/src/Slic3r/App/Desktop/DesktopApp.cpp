@@ -33,6 +33,7 @@
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"
+#include "Slic3r/App/WX/WindowMetrics.hpp"
 
 #include "libslic3r/Utils.hpp"
 
@@ -174,34 +175,30 @@ bool DesktopApp::OnInit()
 
     bool is_editor     = true; // is_editor();
     SplashScreen* scrn = nullptr;
+    const std::string last_crash_reason = app_config->get<std::string>("crash_reason");
     if (app_config->get<bool>("show_splash_screen")) {
         // Detect position (display) to show the splash screen
         // Now this position is equal to the mainframe position
-        wxPoint splashscreen_pos      = wxDefaultPosition;
-        bool default_splashscreen_pos = true;
-        /* ysFIXME uncomment, when we start to process app_config
-                if (app_config->has("window_mainframe") && app_config->get_bool("restore_win_position")) {
-                    auto metrics = WindowMetrics::deserialize(app_config->get("window_mainframe"));
-                    default_splashscreen_pos = metrics == boost::none;
-                    if (!default_splashscreen_pos)
-                        splashscreen_pos = metrics->get_rect().GetPosition();
-                }
+        wxPoint splashscreen_pos         = wxDefaultPosition;
+        const std::string metrics_string = app_config->get<std::string>("mainframe_window_metrics");
+        if (!metrics_string.empty() && app_config->get<bool>("restore_win_position")) {
+            if (auto metrics = WX::WindowMetrics::deserialize(metrics_string);
+                metrics != boost::none)
+            {
+                splashscreen_pos = metrics->get_rect().GetPosition();
+            }
+        }
 
-                if (!default_splashscreen_pos) {
-                    // workaround for crash related to the positioning of the window on secondary monitor
-                    get_app_config()->set("restore_win_position", "crashed_at_splashscreen_pos");
-                    get_app_config()->save();
-                }
-        */
+        // workaround for crash related to the positioning of the window on secondary monitor
+        app_config->record_crash("splashscreen_pos", "show_splash_screen");
+
         // create splash screen with updated bmp
         scrn = new SplashScreen(is_editor, splashscreen_pos);
 
-/* ysFIXME uncomment, when we start to process app_config
-        if (!default_splashscreen_pos) {
-            // revert "restore_win_position" value if application wasn't crashed
-            get_app_config()->set("restore_win_position", "1");
-        }
-*/
+        // revert "crash_reason" value if application wasn't crashed
+        // on set position for splashscreen
+        app_config->resolve_crash(last_crash_reason, "show_splash_screen");
+
 #ifndef __linux__
         wxYield();
 #endif
@@ -273,6 +270,8 @@ bool DesktopApp::OnInit()
     preset_interactor.set_dialog_manager(&app_services.dialog_manager());
 
     m_project_interactor->new_project();
+
+    handle_previous_crash_recovery(app_services.app_config());
 
     m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator);
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
@@ -378,6 +377,41 @@ void DesktopApp::init_translations()
                 localization().active_language()
             );
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
+    }
+}
+
+void DesktopApp::handle_previous_crash_recovery(AppConfig& app_config)
+{
+    if (const std::string crash_reason = app_config.get<std::string>("crash_reason");
+        !crash_reason.empty())
+    {
+        const std::string opt_key = crash_reason == "splashscreen_pos" ? "show_splash_screen" : "restore_win_position";
+        const std::string opt_name = app_config.get_config_box().find(opt_key).item->def().label;
+        const std::string preferences_item = Biz::_u8(opt_name);
+
+        const std::string msg = fmt::format(
+            fmt::runtime(
+                Biz::_u8L(
+                    "PrusaSlicer crashed last time when attempting to set window position or size.\n"
+                    "We are sorry for the inconvenience, it unfortunately happens with certain multiple-monitor setups.\n"
+                    "More precise reason for the crash: \"{0}\".\n"
+                    "For more information see our GitHub issue tracker: \"{1}\" and \"{2}\"\n\n"
+                    "To avoid this problem, Preferences option \"{3}\" was disabled.\n"
+                    "Otherwise, the application will most likely crash again next time."
+                )
+            ),
+            "<b>" + crash_reason + "</b>",
+            "<a href=http://github.com/prusa3d/PrusaSlicer/issues/2939>#2939</a>",
+            "<a href=http://github.com/prusa3d/PrusaSlicer/issues/5573>#5573</a>",
+            "<b>" + preferences_item + "</b>"
+        );
+
+        AppServices::instance().dialog_manager().show_info_dialog(
+            msg,Biz::_u8L("PrusaSlicer started after a crash")
+            
+        );
+
+        app_config.resolve_crash();
     }
 }
 

@@ -32,7 +32,7 @@ public:
     IDialogManager& dialog_manager() const;
     Platform::IFileExplorerHandler& file_explorer_handler() const;
     AppConfig& app_config() const;
-    AppConfigInteractor& app_config_intractor() const;
+    AppConfigInteractor& app_config_interactor() const;
 
 private:
     std::unique_ptr<PopNotification::PopNotificationCenter> m_pop_notification_center;

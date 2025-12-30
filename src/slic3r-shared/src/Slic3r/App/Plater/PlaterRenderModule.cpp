@@ -292,7 +292,7 @@ void PlaterRenderModule::init_scene_layout()
     ASSERT(m_render_module_navigator);
 
     m_preferences_dialog = std::make_unique<PreferencesDialog>(
-        AppServices::instance().app_config_intractor(),
+        AppServices::instance().app_config_interactor(),
         *m_render_module_navigator
     );
 

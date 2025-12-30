@@ -62,7 +62,7 @@ AppConfig& AppServices::app_config() const
     return *m_app_config;
 }
 
-AppConfigInteractor& AppServices::app_config_intractor() const
+AppConfigInteractor& AppServices::app_config_interactor() const
 {
     ASSERT(m_app_config_interactor != nullptr);
     return *m_app_config_interactor;

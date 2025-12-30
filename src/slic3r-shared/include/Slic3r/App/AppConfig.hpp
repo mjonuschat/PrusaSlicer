@@ -40,6 +40,29 @@ public:
     bool is_printables_enabled() const;
     bool is_prusa_account_enabled() const;
 
+    /**
+     * @brief Records a crash and disables a related configuration option.
+     *
+     * @param crash_reason Identifier of the detected crash cause.
+     * @param disabled_option_key Configuration option to disable to prevent repeated crashes.
+     */
+    void record_crash(const std::string& crash_reason, const std::string& disabled_option_key);
+
+    /**
+     * @brief Resolves a previously recorded crash.
+     *
+     * Clears or updates the stored crash reason and optionally restores
+     * a previously disabled configuration option.
+     *
+     * @param resolved_crash_reason New crash reason to store.
+     *                              If empty, the crash state is cleared.
+     * @param restored_option_key   Configuration option to re-enable.
+     *                              If empty, no option is restored.
+     */
+    void resolve_crash(const std::string& resolved_crash_reason = std::string(),
+        const std::string& restored_option_key = std::string());
+
+
 private:
     AppSettings m_app_settings;
     std::string m_filename;

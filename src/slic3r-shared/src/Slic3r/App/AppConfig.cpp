@@ -49,9 +49,19 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Restore window position on start");
     def->tooltip = L("Restore window position on start.");
-    def->category = Category::Hidden;// PreferencesGeneral;
+    def->category = Category::PreferencesGeneral;
     def->option_group = L("Application");
     def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("crash_reason", typeid(std::string));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(std::string()); };
+
+    def = defs.add("mainframe_window_metrics", typeid(std::string));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(std::string()); };
 
 #ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
@@ -150,6 +160,23 @@ bool AppConfig::is_prusa_account_enabled() const
 #endif // SLIC3R_HAS_WEBKIT
 
     return get<bool>("enable_prusa_account");
+}
+
+void
+AppConfig::record_crash(const std::string& crash_reason, const std::string& disabled_option_key)
+{
+    set("crash_reason", crash_reason);
+    set(disabled_option_key, false);
+    save();
+}
+
+void AppConfig::resolve_crash(const std::string& resolved_crash_reason, const std::string& restored_option_key)
+{
+    set("crash_reason", resolved_crash_reason);
+    if (!restored_option_key.empty()) {
+        set(restored_option_key, true);
+    }
+    save();
 }
 
 } // namespace Slic3r::App

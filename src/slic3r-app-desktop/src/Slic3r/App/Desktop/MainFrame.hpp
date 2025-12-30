@@ -65,16 +65,6 @@ public:
     void switch_left_tab(LeftBarTabs id, const std::string& data);
 
 private:
-    // Move to BasicAppConfig
-    /*ConfigOptionMode*/ int m_mode{1 /*comAdvanced*/};
-
-#ifdef OLD_CODE
-    void init_plater();
-    void init_preset_editors();
-    void add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/);
-    void update_preset_editors();
-#endif
-
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
     void init_printer_page(Biz::ProjectInteractor& project_interactor);
     void init_projects_page();
@@ -83,13 +73,21 @@ private:
     void init_preferences_button();
     void complete_and_bind_left_bar();
 
-    void init_top_bar();
-    void complete_and_bind_top_bar();
-
     void on_language_changed() override;
     void on_app_config_changed() override;
 
     void on_close(wxCloseEvent& event);
+
+    // @note next frame related functions use wxTopLevelWindow* window
+    // because they can be called for settings non-modal dialog in the feature
+    void window_pos_save(wxTopLevelWindow* window, const std::string& name);
+    void window_pos_restore(
+        wxTopLevelWindow* window,
+        const std::string& name,
+        bool default_maximized = false
+    );
+    void window_pos_sanitize(wxTopLevelWindow* window);
+    void persist_window_geometry(wxTopLevelWindow* window, bool default_maximized = false);
 
 private:
     Domain::Workbench& m_workbench;
@@ -97,10 +95,6 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
     Navigator& m_navigator;
-
-#ifdef OLD_CODE
-    std::map<Slic3r::Preset::Type, Preset::AbstractEditor*> m_preset_editors;
-#endif
 
     TabsBarMenus m_tabs_bar_menus;
     LeftBar* m_left_bar{nullptr};

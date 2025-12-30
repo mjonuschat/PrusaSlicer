@@ -148,7 +148,7 @@ void SearchObservableList::invalidate_source_items()
 
     extract_cbol(
         App::AppServices::instance()
-            .app_config_intractor()
+            .app_config_interactor()
             .app_config_cbi()
             .config_box_list()
             .lock()
