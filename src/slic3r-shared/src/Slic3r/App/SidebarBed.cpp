@@ -11,6 +11,7 @@
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
+#include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -116,7 +117,12 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
             m_material_selection_dialog->set_material_index(
                 m_list_view->index_of(action_button).value()
             );
-            m_navigator.set_opened_dialog(m_material_selection_dialog);
+            m_material_selection_dialog->material_settings_dialog().set_current_tab(
+                m_list_view->index_of(action_button).value()
+            );
+            if (!m_material_selection_dialog->opened()) {
+                m_navigator.set_opened_dialog(m_material_selection_dialog);
+            }
         } else {
             m_navigator.set_opened_dialog(nullptr);
         }

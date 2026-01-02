@@ -67,10 +67,9 @@ void MaterialSettingsDialog::on_reset()
         current_index = std::distance(m_tabs.cbegin(), current_tab_it);
     }
 
-    for (size_t tab_index = 0; tab_index < m_config_tabs.size(); ++tab_index) {
+    while (!m_config_tabs.empty()) {
         remove_tab(0);
     }
-    m_config_tabs.clear();
 
     for (size_t material_cbi_index = 0; material_cbi_index < m_material_cbi_list.size();
          ++material_cbi_index)
@@ -90,7 +89,7 @@ void MaterialSettingsDialog::on_reset()
     }
 
     if (current_index.has_value()) {
-        set_current_tab(current_index.value());
+        set_current_tab(std::min(current_index.value(), m_tabs.size() - 1));
     }
 }
 
