@@ -46,9 +46,6 @@ public:
 
     int icon_size() const { return lround(16 * font_scale()); } // default size of icon is 16 px
     int icon_medium_size() const { return int(1.25f * icon_size()); }
-    int icon_large_size() const { return 2 * icon_size(); }
-    int icon_extra_large_size() const { return 4 * icon_size(); }
-    int icon_toolbar_size() const { return 2.5f * icon_size(); }
     float icon_advance() const { return 3.0f * font_scale(); }
 
     ImFont* font(Render::ImguiFontType type);

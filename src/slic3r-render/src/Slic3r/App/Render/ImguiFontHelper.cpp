@@ -58,33 +58,14 @@ static const ImWchar ranges_keyboard_shortcuts[] =
 #endif // __APPLE__
 
 static const std::unordered_set<Icon> FONT_ICONS = {
-    Icon::PrintIconMarker              ,
+    // Icons used by ObjectList
     Icon::PrinterIconMarker            ,
     Icon::PrinterSlaIconMarker         ,
-    Icon::FilamentIconMarker           ,
-    Icon::MaterialIconMarker           ,
-    Icon::MinimalizeButton             ,
-    Icon::MinimalizeHoverButton        ,
-    Icon::RightArrowButton             ,
-    Icon::RightArrowHoverButton        ,
-    Icon::PreferencesButton            ,
-    Icon::PreferencesHoverButton       ,
     Icon::SliderFloatEditBtnIcon       ,
     Icon::SliderFloatEditBtnPressedIcon,
-    Icon::ClipboardBtnIcon             ,
-    Icon::ExpandBtn                    ,
-    Icon::CollapseBtn                  ,
-    Icon::RevertButton                 ,
-    Icon::WarningMarkerSmall           ,
-    Icon::InfoMarkerSmall              ,
     Icon::PlugMarker                   ,
     Icon::DowelMarker                  ,
     Icon::SnapMarker                   ,
-    Icon::HorizontalHide               ,
-    Icon::HorizontalShow               ,
-    Icon::PrintIdle                    ,
-    Icon::PrintRunning                 ,
-    Icon::PrintFinished                ,
     Icon::EyeOpen                      ,
     Icon::EyeClosed                    ,
     Icon::SolidPartVolume              ,
@@ -106,31 +87,18 @@ static const std::unordered_set<Icon> FONT_ICONS = {
     Icon::MmSegmentation               ,
     Icon::Sinking                      ,
     Icon::FuzzySkin                    ,
-    Icon::BedIcon                      ,
-    Icon::Details                      ,
     Icon::OpenArrow                    ,
     Icon::CloseArrow                   ,
     Icon::ConfigContainer              ,
     Icon::InstancesIcon                ,
-    Icon::SceneMap                     ,
     Icon::AddBedIcon                   ,
     Icon::DelBedIcon                   ,
     Icon::OverridesMarker              ,
     Icon::AllBeds                      ,
-    Icon::SettingsSet                  ,
 };
 
 static const std::unordered_set<Icon> FONT_ICONS_MEDIUM = {
     // double slider icons
-    Icon::Lock             ,
-    Icon::LockHovered      ,
-    Icon::Unlock           ,
-    Icon::UnlockHovered    ,
-    Icon::DSRevert         ,
-    Icon::DSRevertHovered  ,
-    Icon::DSRevertDisabled ,
-    Icon::DSSettings       ,
-    Icon::DSSettingsHovered,
     Icon::ErrorTick        ,
     Icon::ErrorTickHovered ,
     Icon::PausePrint       ,
@@ -139,58 +107,6 @@ static const std::unordered_set<Icon> FONT_ICONS_MEDIUM = {
     Icon::EditGCodeHovered ,
     Icon::RemoveTick       ,
     Icon::RemoveTickHovered,
-};
-
-static const std::unordered_set<Icon> FONT_ICONS_LARGE = {
-    Icon::LegendTravel            ,
-    Icon::LegendWipe              ,
-    Icon::LegendRetract           ,
-    Icon::LegendDeretract         ,
-    Icon::LegendSeams             ,
-    Icon::LegendToolChanges       ,
-    Icon::LegendColorChanges      ,
-    Icon::LegendPausePrints       ,
-    Icon::LegendCustomGCodes      ,
-    Icon::LegendCOG               ,
-    Icon::LegendShells            ,
-    Icon::LegendToolMarker        ,
-    Icon::CloseNotifButton        ,
-    Icon::CloseNotifHoverButton   ,
-    Icon::EjectButton             ,
-    Icon::EjectHoverButton        ,
-    Icon::WarningMarker           ,
-    Icon::ErrorMarker             ,
-    Icon::CancelButton            ,
-    Icon::CancelHoverButton       ,
-//    Icon::SinkingObjectMarker     ,
-//    Icon::CustomSupportsMarker    ,
-//    Icon::CustomSeamMarker        ,
-//    Icon::MmuSegmentationMarker   ,
-//    Icon::VarLayerHeightMarker    ,
-    Icon::DocumentationButton     ,
-    Icon::DocumentationHoverButton,
-    Icon::InfoMarker              ,
-    Icon::PlayButton              ,
-    Icon::PlayHoverButton         ,
-    Icon::PauseButton             ,
-    Icon::PauseHoverButton        ,
-    Icon::OpenButton              ,
-    Icon::OpenHoverButton         ,
-    Icon::SlaViewOriginal         ,
-    Icon::SlaViewProcessed        ,
-};
- 
-static const std::unordered_set<Icon> FONT_ICONS_PRINTER = {
-    // printer icons
-    Icon::PrinterNEXT             ,
-};
- 
-static const std::unordered_set<Icon> FONT_ICONS_EXTRA_LARGE = {
-    Icon::ClippyMarker         ,
-    Icon::SliceAllBtnIcon      ,
-    Icon::WarningMarkerDisabled,
-    Icon::PrusaSlicerIcon      ,
-    Icon::CubeViewIcon
 };
 
 ImguiFontHelper::ImguiFontHelper(Device& device)
@@ -259,9 +175,6 @@ static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiL
     // add rectangles for the icons to the font atlas
     add_icons(helper.icon_size(), FONT_ICONS);
     add_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
-    add_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
-    add_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
-    add_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 
 static void load_icon_from_file(const std::string& icon_name, int icon_sz, int rect_id, int tex_width,
@@ -316,9 +229,6 @@ static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rec
     // Fill rectangles from the SVG-icons
     load_icons(helper.icon_size(), FONT_ICONS);
     load_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
-    load_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
-    load_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
-    load_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 
 static ImFont* load_font(const std::string& filename, const std::string& filename_cjk, const ImguiLanguageData& language_data, const ImVector<ImWchar>& ranges,
