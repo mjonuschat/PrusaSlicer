@@ -5,6 +5,8 @@ on:
     branches-ignore:
       - master
       - release
+    tags:
+      - 'version_*'
   workflow_dispatch:
     inputs:
       enable_sentry:
