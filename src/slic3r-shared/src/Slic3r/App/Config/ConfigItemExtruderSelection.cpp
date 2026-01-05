@@ -1,0 +1,106 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#include "Slic3r/App/Config/ConfigItemExtruderSelection.hpp"
+
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+
+#include "Slic3r/App/Yoga/ComboBox.hpp"
+
+namespace Slic3r::App {
+
+ConfigItemExtruderSelection::ConfigItemExtruderSelection(
+    size_t index,
+    const Domain::ConfigItem& config_item,
+    Biz::IConfigBoxSetter& cbi_container,
+    size_t cbi_index
+) :
+    ConfigItemControl(index, config_item),
+    ComboBox("ConfigItemCombo"),
+    m_tool_items_list_observer_scope(project_interactor()->preset_interactor().tool_items(), *this),
+    m_cbi_container(cbi_container),
+    m_cbi_index(cbi_index)
+{
+    set_width(150);
+
+    update_size();
+    on_data_update();
+
+    m_tooltip->set_text(tooltip_text());
+    m_tooltip->content_item()->set_width(350);
+    m_tooltip->set_text_wrap(true);
+
+    callbacks().selection_changed = [this](int selected)
+    {
+        if (current_index() < project_interactor()->preset_interactor().tool_items().size()) {
+            m_cbi_container
+                .set_item_value(*m_state, Domain::ConfigValue{current_index()}, m_cbi_index);
+            update_size();
+        }
+    };
+}
+
+void ConfigItemExtruderSelection::on_inserted(
+    const Biz::Preset::ToolConfigItemObservableList& data,
+    size_t index
+)
+{
+    update_size();
+}
+
+void ConfigItemExtruderSelection::on_removed(const Biz::IndexRange& index_range)
+{
+    update_size();
+}
+
+void ConfigItemExtruderSelection::on_reset()
+{
+    update_size();
+}
+
+void ConfigItemExtruderSelection::update_size()
+{
+    const size_t tool_count = project_interactor()->preset_interactor().tool_items().size();
+    if (tool_count != m_items.size()) {
+        std::vector<std::string> new_items;
+        new_items.reserve(tool_count);
+        for (size_t i = 0; i < tool_count; ++i) {
+            new_items.push_back(std::to_string(i + 1));
+        }
+
+        if (!mixed() && m_state->value().get<int>() >= tool_count) {
+            new_items.push_back(std::to_string(m_state->value().get<int>()));
+            set_items(new_items);
+            set_current_index(tool_count);
+        } else {
+            set_items(new_items);
+        }
+    }
+}
+
+void ConfigItemExtruderSelection::on_data_update()
+{
+    if (mixed()) {
+        set_override_label(Biz::_u8L("Mixed"));
+        set_label_font_type(Render::ImguiFontType::Italic);
+        return;
+    }
+
+    set_override_label(std::string());
+    set_label_font_type(Render::ImguiFontType::Regular);
+    if (!overriden().value_or(true)) {
+        update_value(*m_cbi_container.get_override_original_value(*m_state, location_index()));
+    } else {
+        update_value(m_state->value());
+    }
+}
+
+void ConfigItemExtruderSelection::update_value(const Domain::ConfigValue& value)
+{
+    set_current_index(value.get<int>());
+}
+
+} // namespace Slic3r::App

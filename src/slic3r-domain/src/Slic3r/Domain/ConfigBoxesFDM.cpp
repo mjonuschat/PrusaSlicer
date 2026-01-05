@@ -957,18 +957,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Volume };
     def->label = L("Extruder");
     def->category = ConfigItemDef::Category::Extruders;
-    def->gui_type = ConfigItemDef::GUIType::i_enum_open;
+    def->gui_type = ConfigItemDef::GUIType::extruder_selection;
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
-    def->choices = {
-        { 0,  L("default") },
-        { 1,  "1" },
-        { 2,  "2" },
-        { 3,  "3" },
-        { 4,  "4" },
-        { 5,  "5" }
-    };
     def->init_fn = init_with(0);
         
     def = defs.add("extruder_colour", typeid(std::string));

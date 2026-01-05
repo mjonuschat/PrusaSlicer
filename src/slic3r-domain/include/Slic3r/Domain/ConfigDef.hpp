@@ -169,7 +169,8 @@ struct ConfigItemDef
         combobox,
         comboboxes,
         points,
-        substitutions
+        substitutions,
+        extruder_selection
     };
     GUIType gui_type = GUIType::undefined;
 };

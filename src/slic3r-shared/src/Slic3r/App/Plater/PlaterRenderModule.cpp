@@ -83,6 +83,7 @@
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -257,6 +258,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
 {
     AbstractRenderModule::on_init(device, imgui_render, animation_manager);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
+    ConfigItemControl::set_project_interactor(&m_project_interactor);
     m_scene_presenter = std::make_unique<PlaterScenePresenter>(
         m_workbench,
         m_project_interactor,

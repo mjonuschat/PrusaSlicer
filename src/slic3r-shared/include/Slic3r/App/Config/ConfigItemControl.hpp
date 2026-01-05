@@ -10,6 +10,7 @@
 
 namespace Slic3r::Biz {
 class IConfigBoxSetter;
+class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
@@ -41,12 +42,18 @@ public:
     int location_index() const;
     void set_location_index(int location_index);
 
+    static void set_project_interactor(Biz::ProjectInteractor* project_interactor);
+
 protected:
     std::optional<std::string> default_value() const;
 
     std::string tooltip_text() const;
 
+    Biz::ProjectInteractor* project_interactor() const;
+
 private:
+    static Biz::ProjectInteractor* m_project_interactor;
+
     bool m_mixed         = false;
     int m_location_index = 0;
     std::optional<bool> m_overriden;

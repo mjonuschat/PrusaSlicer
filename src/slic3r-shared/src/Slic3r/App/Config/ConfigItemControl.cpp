@@ -15,10 +15,13 @@
 #include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemSubstitutions.hpp"
+#include "Slic3r/App/Config/ConfigItemExtruderSelection.hpp"
 
 #include <fmt/format.h>
 
 namespace Slic3r::App {
+
+Biz::ProjectInteractor* ConfigItemControl::m_project_interactor = nullptr;
 
 ConfigItemControl::ConfigItemControl(size_t index, const Domain::ConfigItem& data) :
     Biz::DataObserver<Domain::ConfigItem>(index, data)
@@ -44,6 +47,11 @@ std::string ConfigItemControl::tooltip_text() const
     return text;
 }
 
+Biz::ProjectInteractor* ConfigItemControl::project_interactor() const
+{
+    return m_project_interactor;
+}
+
 int ConfigItemControl::location_index() const
 {
     return m_location_index;
@@ -52,6 +60,11 @@ int ConfigItemControl::location_index() const
 void ConfigItemControl::set_location_index(int location_index)
 {
     m_location_index = location_index;
+}
+
+void ConfigItemControl::set_project_interactor(Biz::ProjectInteractor* project_interactor)
+{
+    m_project_interactor = project_interactor;
 }
 
 std::optional<bool> ConfigItemControl::overriden() const
@@ -174,6 +187,15 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     case Slic3r::Domain::ConfigItemDef::GUIType::s_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
         item_control = container->emplace<ConfigItemComboBox>(
+            child_index,
+            data_index,
+            item,
+            cbi_container,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::extruder_selection:
+        item_control = container->emplace<ConfigItemExtruderSelection>(
             child_index,
             data_index,
             item,
