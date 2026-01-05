@@ -139,7 +139,7 @@ PercentageValidator::PercentageValidator(double from, double to) : DoubleValidat
 std::string PercentageValidator::process(const std::string& input)
 {
     std::string_view trimmed_view = trim(input);
-    if (trimmed_view.back() == '%') {
+    if (!trimmed_view.empty() && trimmed_view.back() == '%') {
         m_percentage_symbol = true;
         trimmed_view.remove_suffix(1); // so it would confuse parser
     } else {

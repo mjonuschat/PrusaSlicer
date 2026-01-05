@@ -104,26 +104,34 @@ TEST_CASE("DoubleValidator range")
     REQUIRE_THAT(std::stod(validator.process("5.1")), WithinRel(0.5, 0.0001));
 }
 
+TEST_CASE("PercentageValidator empty")
+{
+    PercentageValidator validator;
+
+    REQUIRE_THAT(std::stod(validator.process("")), WithinRel(0., 0.0001));
+    REQUIRE(validator.percentage_symbol() == false);
+}
+
 TEST_CASE("PercentageValidator simple")
 {
     PercentageValidator validator;
 
     REQUIRE_THAT(std::stod(validator.process("0")), WithinRel(0., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("1%")), WithinRel(1., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-999., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("-99%")), WithinRel(-99., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("-999.999")), WithinRel(-999.999, 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("-999.9%")), WithinRel(-999.9, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("-0.5%")), WithinRel(-0.5, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
 }
 
 TEST_CASE("PercentageValidator complex")
@@ -131,23 +139,23 @@ TEST_CASE("PercentageValidator complex")
     PercentageValidator validator;
 
     REQUIRE_THAT(std::stod(validator.process("2+3%")), WithinRel(5., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("3%-0.5")), WithinRel(0., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("2*2%")), WithinRel(4, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("2%/2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("2/2+1+2%")), WithinRel(4, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("2.5%*2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("3% ")), WithinRel(3., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("4% %")), WithinRel(0., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("4 %")), WithinRel(4., 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
 }
 
 TEST_CASE("PercentageValidator range")
@@ -155,13 +163,13 @@ TEST_CASE("PercentageValidator range")
     PercentageValidator validator(-5, 0.5);
 
     REQUIRE_THAT(std::stod(validator.process("2%")), WithinRel(0.5, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-5., 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("-99.5%")), WithinRel(-5, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
     REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.percentage_symbol()==false);
+    REQUIRE(validator.percentage_symbol() == false);
     REQUIRE_THAT(std::stod(validator.process("5.1%")), WithinRel(0.5, 0.0001));
-    REQUIRE(validator.percentage_symbol()==true);
+    REQUIRE(validator.percentage_symbol() == true);
 }
