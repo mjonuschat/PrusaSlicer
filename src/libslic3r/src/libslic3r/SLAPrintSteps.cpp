@@ -1556,7 +1556,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     }),
     .slices  = std::move(slices),
     .heights = std::move(heights),
-    .type    = Sla::ResultType::Slices
+    .type    = Sla::ResultType::Slices,
+    .contained_in_bed = contained_in_bed
 });
 }
 
