@@ -1165,6 +1165,9 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
                 changed_instances.emplace_back(mi->get_object()->id().id, mi->id().id);
             }
         }
+        for (const auto* mi : project.unplaced_model_instances()) {
+            changed_instances.emplace_back(mi->get_object()->id().id, mi->id().id);
+        }
         auto updated = m_bed_placement.layout(project, BED_GAP);
 
         const auto it{std::ranges::find_if(
