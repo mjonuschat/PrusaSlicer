@@ -31,15 +31,22 @@ public:
 protected:
     void on_data_update() override;
     void send_data();
+    void construct_points();
 
 private:
+    struct Point
+    {
+        Yoga::Item* container{nullptr};
+        Yoga::InputTextField* input_x{nullptr};
+        Yoga::InputTextField* input_y{nullptr};
+        Yoga::Passthrough<Yoga::DoubleValidator> validator_x;
+        Yoga::Passthrough<Yoga::DoubleValidator> validator_y;
+    };
+
     Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index{0};
 
-    Yoga::InputTextField* m_input_x{nullptr};
-    Yoga::InputTextField* m_input_y{nullptr};
-    Yoga::Passthrough<Yoga::DoubleValidator> m_validator_x;
-    Yoga::Passthrough<Yoga::DoubleValidator> m_validator_y;
+    std::vector<Point> m_points;
 };
 
 } // namespace Slic3r::App
