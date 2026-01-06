@@ -15,6 +15,7 @@ namespace Slic3r::App::Yoga {
 class Slider;
 class InputTextField;
 class Validator;
+class Text;
 
 /**
  * @brief The SliderWithInput class is a composite control combining an input field and a slider.
@@ -29,6 +30,7 @@ public:
     };
 
     explicit SliderWithInput();
+    explicit SliderWithInput(const std::string& unit);
 
     Callbacks& callbacks();
 
@@ -60,9 +62,16 @@ public:
     /* @note this function just set control into invalid state, when input is empty*/
     void set_undef_value();
 
+    const std::string& unit() const;
+    void set_unit(const std::string& unit);
+
+private:
+    void Create();
+
 private:
     Slider* m_slider = nullptr;
     InputTextField* m_input = nullptr;
+    Text* m_unit;
     Callbacks m_callbacks;
 };
 

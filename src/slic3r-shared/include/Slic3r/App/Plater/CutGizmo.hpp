@@ -120,6 +120,7 @@ private:
         Scene::TriangleMesh** trimesh,
         Render::Geometry** geom
     );
+    void update_cut_plane_color();
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
     void update_parts_nodes_colors_from_selection();

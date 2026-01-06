@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
 
@@ -14,6 +15,7 @@ class LayoutButton;
 class ToggleButton;
 class RadioButton;
 class InputTextField;
+class InputTextWithSpin;
 class Text;
 class SliderWithInput;
 class ComboBox;
@@ -48,10 +50,11 @@ public:
     void set_as_part(bool is_part);
     void set_enabled_buttons(bool enabled);
     bool is_checked() const;
+    void set_enabled_toggler(bool enabled);
 
 private:
     Yoga::Text* m_label{nullptr};
-    Yoga::ToggleButton* m_part_checker{nullptr};
+    Yoga::ToggleButton* m_part_toggler{nullptr};
     Yoga::ButtonGroup m_group;
     Yoga::RadioButton* m_keep_btn{nullptr};
     Yoga::RadioButton* m_place_on_cut_btn{nullptr};
@@ -64,6 +67,18 @@ private:
     Action m_act{Action::Keep}; //?
 };
 
+class WarningPanel : public Rectangle
+{
+public:
+    explicit WarningPanel(const std::string& warning_text, bool has_extantion = false);
+
+    void set_extention(const std::string& extention);
+
+private:
+    Yoga::Text* m_label{nullptr};
+    Yoga::Text* m_extention{nullptr};
+};
+
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
@@ -72,6 +87,16 @@ class CutDialog : public Yoga::GizmoWindow
 {
 public:
     CutDialog();
+
+    struct OutState
+    {
+        size_t connectors_outside_cut_contour{0};
+        size_t connectors_outside_object{0};
+        bool connectors_overlap{false};
+        bool plane_outside_object{false};
+        bool invalid_groove{false};
+        bool has_connectors{false};
+    };
 
     struct Callbacks
     {
@@ -98,7 +123,7 @@ public:
 
     Callbacks& callbacks();
 
-    void set_build_size(Domain::Vec3d tbb_size);
+    void set_build_size(Domain::Vec3d tbb_size, double default_z);
     void set_cut_z_position(double cut_z_position);
     void set_planar_mode(bool is_planar);
     void set_connector_type(Domain::CutConnectorType type);
@@ -116,13 +141,7 @@ public:
     void force_connectors_editing();
 
     // check state of teh cut settings and show warning line or "Perform" button
-    void update_state(
-        size_t connectors_outside_cut_contour,
-        size_t connectors_outside_object,
-        bool connectors_overlap,
-        bool plane_outside_object,
-        bool invalid_groove
-    );
+    void update_state(OutState state);
 
 public:
     bool is_planar_cut_mode{true};
@@ -149,6 +168,7 @@ public:
 
 private:
     void init_action_buttons();
+    void init_connectors_header();
     void init_connectors_input_panel();
     void init_cut_plane_input_panel();
     void init_warning_rows();
@@ -156,13 +176,22 @@ private:
     void add_cut_plane_help_panel();
     void add_groove_input_panel();
     void add_cut_settings();
+    void add_connectors_editing_buttons();
     void update_panels_visibility();
+    void update_keep_object_warning();
 
     void confirm_connectors();
 
     // return an Item(box) where some control can be placed
-    Yoga::Item*
-    add_row(const std::string& title, Yoga::Item* parent, const std::string& unit = std::string());
+    Yoga::Item* add_row(const std::string& title, Yoga::Item* parent);
+
+    void add_tolerances_row(
+        Yoga::Item* parent,
+        Yoga::InputTextField** first_input,
+        const std::string& first_input_tooltip,
+        Yoga::InputTextField** second_input,
+        const std::string& second_input_tooltip
+    );
 
 private:
     Yoga::ScrollArea* m_scroll_area{nullptr};
@@ -170,6 +199,7 @@ private:
     Yoga::Item* m_connectors_header{nullptr};
     Yoga::Item* m_connectors_input_panel{nullptr};
     Yoga::LayoutButton* m_add_connectors_btn{nullptr};
+    Yoga::LayoutButton* m_remove_connectors_btn{nullptr};
     Yoga::ButtonGroup m_connector_type_group;
     Yoga::LayoutButton* m_plug_btn{nullptr};
     Yoga::LayoutButton* m_dowel_btn{nullptr};
@@ -183,12 +213,12 @@ private:
     Yoga::LayoutButton* m_hexagon_btn{nullptr};
     Yoga::LayoutButton* m_circle_btn{nullptr};
     Yoga::SliderWithInput* m_connector_depth_value{nullptr};
-    Yoga::SliderWithInput* m_connector_depth_tolerance{nullptr};
+    Yoga::InputTextField* m_connector_depth_tolerance{nullptr};
     Yoga::SliderWithInput* m_connector_size_value{nullptr};
-    Yoga::SliderWithInput* m_connector_size_tolerance{nullptr};
-    Yoga::SliderWithInput* m_connector_rotation{nullptr};
-    Yoga::SliderWithInput* m_snap_bulge_proportion{nullptr};
-    Yoga::SliderWithInput* m_snap_space_proportion{nullptr};
+    Yoga::InputTextField* m_connector_size_tolerance{nullptr};
+    Yoga::InputTextWithSpin* m_connector_rotation{nullptr};
+    Yoga::InputTextWithSpin* m_snap_bulge_proportion{nullptr};
+    Yoga::InputTextWithSpin* m_snap_space_proportion{nullptr};
 
     Yoga::Item* m_cut_plane_input_panel{nullptr};
     Yoga::ButtonGroup m_mode_group;
@@ -200,29 +230,31 @@ private:
 
     Yoga::Item* m_groove_input_panel{nullptr};
     Yoga::SliderWithInput* m_groove_depth_value{nullptr};
-    Yoga::SliderWithInput* m_groove_depth_tolerance{nullptr};
+    Yoga::InputTextField* m_groove_depth_tolerance{nullptr};
     Yoga::SliderWithInput* m_groove_width_value{nullptr};
-    Yoga::SliderWithInput* m_groove_width_tolerance{nullptr};
-    Yoga::SliderWithInput* m_flap_angle{nullptr};
-    Yoga::SliderWithInput* m_groove_angle{nullptr};
+    Yoga::InputTextField* m_groove_width_tolerance{nullptr};
+    Yoga::InputTextWithSpin* m_flap_angle{nullptr};
+    Yoga::InputTextWithSpin* m_groove_angle{nullptr};
 
     Yoga::ComboBox* m_cut_into_combo{nullptr};
     Yoga::PartProcessingItem* m_part_A{nullptr};
     Yoga::PartProcessingItem* m_part_B{nullptr};
 
-    Yoga::Text* m_connectors_warning{nullptr};
-    Yoga::Text* m_keep_object_warning{nullptr};
-    Yoga::Text* m_cut_plane_warning{nullptr};
-    Yoga::Text* m_groove_warning{nullptr};
+    Yoga::WarningPanel* m_connectors_warning{nullptr};
+    Yoga::WarningPanel* m_keep_object_warning{nullptr};
+    Yoga::WarningPanel* m_cut_plane_warning{nullptr};
+    Yoga::WarningPanel* m_groove_warning{nullptr};
 
     Yoga::LayoutButton* m_perform_btn{nullptr};
     Yoga::LayoutButton* m_confirm_connectors_btn{nullptr};
     Yoga::LayoutButton* m_cancel_connectors_btn{nullptr};
 
+    Yoga::Item* m_mode_row{nullptr};
+    Yoga::Item* m_cut_into_row{nullptr};
+    Yoga::Item* m_connectors_editing_buttons{nullptr};
     Yoga::Item* m_type_row{nullptr};
     Yoga::Item* m_style_row{nullptr};
     Yoga::Item* m_shape_row{nullptr};
-    Yoga::Item* m_rotation_row{nullptr};
     Yoga::Item* m_snap_bulge_row{nullptr};
     Yoga::Item* m_snap_space_row{nullptr};
 

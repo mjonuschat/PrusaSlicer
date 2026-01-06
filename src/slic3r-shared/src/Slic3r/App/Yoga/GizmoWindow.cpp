@@ -65,7 +65,23 @@ GizmoWindow::GizmoCallbacks& GizmoWindow::gizmo_callbacks()
 Separator* GizmoWindow::add_separator(Item* item)
 {
     Separator* separator = item->emplace_back<Separator>(Orientation::Horizontal);
-    separator->set_margin(Margins(-content()->padding().left, 0.f));
+
+    float margin_begin{0.f};
+    float margin_end{0.f};
+    Item* parent_item = item;
+    while (parent_item != this) {
+        margin_begin += item->orientation() == Orientation::Vertical ? parent_item->padding().left :
+                                                                       parent_item->padding().top;
+        margin_end += item->orientation() == Orientation::Vertical ? parent_item->padding().right :
+                                                                     parent_item->padding().bottom;
+        parent_item = parent_item->parent_item();
+    }
+
+    if (item->orientation() == Orientation::Vertical) {
+        separator->set_margin(Margins(-margin_begin, 0.f, -margin_end, 0.f));
+    } else {
+        separator->set_margin(Margins(0.f, -margin_begin, 0.f, -margin_end));
+    }
     return separator;
 }
 

@@ -49,6 +49,11 @@ const ImColor& Rectangle::border_color() const
     return m_border_color;
 }
 
+const ImColor& Rectangle::border_color_disabled() const
+{
+    return m_border_color_disabled;
+}
+
 float Rectangle::border_width() const
 {
     return m_border_width;
@@ -77,6 +82,11 @@ void Rectangle::set_disabled_fill(const ImColor& fill)
 void Rectangle::set_border_color(const ImColor& border_color)
 {
     m_border_color = border_color;
+}
+
+void Rectangle::set_border_color_disabled(const ImColor& border_color_disabled)
+{
+    m_border_color_disabled = border_color_disabled;
 }
 
 void Rectangle::set_border_width(float border_width)

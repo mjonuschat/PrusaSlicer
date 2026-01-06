@@ -95,6 +95,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::KeyAlt, "key_alt"},
     {Icon::KeyCtrl, "key_ctrl"},
     {Icon::KeyCtrlA, "key_ctrl_a"},
+    {Icon::KeyA, "key_a"},
     {Icon::KeyEsc, "key_esc"},
     {Icon::KeyDel, "key_del"},
 
@@ -187,9 +188,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::RectangleAdd, "rectangle_add"},
     {Icon::Rotate, "rotate"},
     {Icon::Simplify, "simplify"},
-    {Icon::Pin, "pin"},
-    {Icon::PlaceOnFace, "place"},
-    {Icon::FlipVertically, "flip_vertically"},
+    {Icon::ExclamationRed, "exclamation_red"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

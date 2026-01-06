@@ -104,6 +104,7 @@ enum class Icon : wchar_t
     KeyAlt,
     KeyCtrl,
     KeyCtrlA,
+    KeyA,
     KeyEsc,
     KeyDel,
     Calculator,
@@ -203,9 +204,7 @@ enum class Icon : wchar_t
     RectangleAdd,
     Rotate,
     Simplify,
-    Pin,
-    PlaceOnFace,
-    FlipVertically,
+    ExclamationRed,
 };
 
 } // namespace Slic3r::App::Render

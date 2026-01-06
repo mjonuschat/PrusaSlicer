@@ -23,6 +23,7 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
 
     m_knob = emplace_back<Circle>();
     m_knob->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
+    m_knob->set_disabled_fill(ImColor(20, 20, 20));
     m_knob->set_border_width(1);
     m_knob->set_min_size({12, 12});
 
