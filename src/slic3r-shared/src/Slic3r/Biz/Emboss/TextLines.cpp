@@ -9,7 +9,7 @@
 #include "Slic3r/Domain/ExPolygonsIndex.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include <Slic3r/App/Scene/NodeBuilder.hpp>
@@ -336,7 +336,7 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
             .object_selection().elements.front().instance_id;
         size_t object_id = text_volume_ptr->get_object()->id().id;
         object_node = scene.root().query_first([object_id, instance_id](const App::Scene::Node* n){
-            const auto* tag = n->tag_of_type<App::Plater::SceneNodeTag>();
+            const auto* tag = n->tag_of_type<App::Scene::SceneNodeTag>();
             return tag != nullptr && 
                 tag->volume_id == 0 &&
                 tag->object_id == object_id &&
@@ -355,7 +355,7 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
         volumes_to_slice = prepare_volumes_to_slice(*object);
 
         object_node = scene.root().query_first([&el](const App::Scene::Node* n) {
-            const auto* tag = n->tag_of_type<App::Plater::SceneNodeTag>();
+            const auto* tag = n->tag_of_type<App::Scene::SceneNodeTag>();
             return tag != nullptr &&
                 tag->volume_id == 0 &&
                 tag->object_id == el.object_id &&

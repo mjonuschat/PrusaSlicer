@@ -245,11 +245,10 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
-void GizmoManager::render_imgui() {
-    IToolGizmo* active_tool = current_context().active_tool;
-    if (active_tool == nullptr)
-        return; // no active tool
-    active_tool->render_imgui();
+void GizmoManager::render_imgui() {    
+    if (IToolGizmo* active_tool = current_context().active_tool;
+        active_tool != nullptr)        
+        active_tool->render_imgui();
 #if DEBUG_GIZMO_MANAGER
     render_gizmo_activation_debug();
 #endif

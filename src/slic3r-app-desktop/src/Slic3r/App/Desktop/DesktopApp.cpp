@@ -226,8 +226,6 @@ bool DesktopApp::OnInit()
     {
         Biz::UserAccount::TokenStore::reset();
     }
-
-    platform_services.set_font_manager(std::make_unique<Biz::WX::FontManager>(data_dir()));
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
     platform_services.set_app_config_provider(std::make_unique<AppConfigProvider>());

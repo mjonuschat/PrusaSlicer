@@ -5,7 +5,7 @@
 
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
-#include <Slic3r/App/Plater/SceneNodeTag.hpp>
+#include <Slic3r/App/Scene/SceneNodeTag.hpp>
 #include <Slic3r/App/AppServices.hpp>
 #include <Slic3r/App/Render/ScreenInfo.hpp>
 #include <Slic3r/App/Scene/NodeVisitor.hpp> // visit_conditional_transform()
@@ -366,8 +366,9 @@ void TextGizmo::register_commands(Platform::CommandRegistry& registry)
         std::make_unique<Platform::FuncCommand>(
             "Create/Edit text",
             [&]() { add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART); },
-            nullptr,
-            Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+            Platform::FuncCommandExtraOpts{
+                .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+            }            
         )
     );
 }
@@ -480,7 +481,7 @@ void TextGizmo::on_project_deactivated(size_t old_project_id)
 }
 
 Scene::ToolType TextGizmo::type() const {
-    return Scene::ToolType::Text;
+    return Scene::ToolType::TextGizmo;
 }
 
 
@@ -489,9 +490,9 @@ bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext
     // is double click on text volume?
     const Domain::Project& project = m_project_interactor.selected_project();
     for (const App::Scene::NodePickResult& pick : ctx.pick_results()) {
-        if (!pick.node->has_tag_of_type<App::Plater::SceneNodeTag>())
+        if (!pick.node->has_tag_of_type<Scene::SceneNodeTag>())
             continue; // ignore staff(node) infront of text volume
-        auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
+        auto* tag = pick.node->tag_of_type<Scene::SceneNodeTag>();
         if (tag == nullptr)
             continue;
         const Domain::ModelVolume* volume_ptr =
@@ -828,7 +829,7 @@ std::optional<float> calc_distance(const Domain::Project& project, const Domain:
     auto ray_cast = [&ref, &root](const Scene::Ray& ray) {
         return Scene::visit_conditional_transform<Scene::RaycastResult>(root,
             [&ray, &ref](Scene::Node& n, Scene::RaycastResult& t) {
-                auto* tag = n.tag_of_type<App::Plater::SceneNodeTag>();
+                auto* tag = n.tag_of_type<Scene::SceneNodeTag>();
                 if (tag == nullptr || // Not a scene node tag (object)
                     tag->volume_type != Domain::ModelVolumeType::MODEL_PART ||
                     tag->object_id != ref.object_id || // different object

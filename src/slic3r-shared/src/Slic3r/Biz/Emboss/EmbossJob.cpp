@@ -20,7 +20,7 @@
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp" // use surface cuts
 
 // #include "libslic3r/Format/OBJ.hpp" // load_obj for default mesh
@@ -268,8 +268,8 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
     const Domain::Project& project = input.base.project_interactor.selected_project();
     const App::Scene::NodePickResult* bed_pick = nullptr;
     for (const App::Scene::NodePickResult& pick : picks) {
-        if (pick.node->has_tag_of_type<App::Plater::SceneNodeTag>()) {
-            auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
+        if (pick.node->has_tag_of_type<App::Scene::SceneNodeTag>()) {
+            auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
             const Domain::ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
             if (volume == nullptr)
                 continue; // no volume under mouse

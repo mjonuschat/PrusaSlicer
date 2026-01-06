@@ -1,7 +1,7 @@
 #include "Slic3r/Biz/Emboss/SurfaceDrag.hpp"
 
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 
 namespace {
 using namespace Slic3r;
@@ -102,10 +102,10 @@ bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx)
     const Domain::ElementRef& element = elements.front();
 
     for (const App::Scene::NodePickResult& pick : ctx.pick_results()) {
-        if (!pick.node->has_tag_of_type<App::Plater::SceneNodeTag>())
+        if (!pick.node->has_tag_of_type<App::Scene::SceneNodeTag>())
             continue; // ignore staff(node) infront of text volume
         
-        auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();        
+        auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
         if (!tag->matches_element(element))
             return false; // Only seleceted Volume could be dragged over surface
 
@@ -175,9 +175,9 @@ bool SurfaceDrag::on_dragging(const App::Scene::GizmoEventContext& ctx,
     m_scene_presenter.scene().pick_at(pick.x(), pick.y(), pick_results, &pick_ray);
         
     for (const App::Scene::NodePickResult& pick : pick_results) {
-        if (!pick.node->has_tag_of_type<App::Plater::SceneNodeTag>())
+        if (!pick.node->has_tag_of_type<App::Scene::SceneNodeTag>())
             continue; // only node tag
-        auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
+        auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
         if (tag->volume_id == element.volume_id)
             continue; // skip itself
 

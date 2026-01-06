@@ -635,7 +635,6 @@ void SceneInteractor::add_volume(const Domain::ModelVolume* volume)
     });
 
     set_object_selection({ SelectionMode::Volume, updated});
-    update_selection_instance_bed_placement();
 }
 
 void SceneInteractor::add_instance(const Vec2d& offset)
