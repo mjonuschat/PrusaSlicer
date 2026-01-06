@@ -306,6 +306,22 @@ void PlaterRenderModule::register_commands()
         return selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance;
     };
 
+    auto is_unique_instance_selected = [this]() -> bool
+    {
+        const Biz::Scene::ObjectSelection& selection =
+            m_project_interactor.scene_interactor().object_selection();
+        if (selection.empty() || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance)
+            return false;
+
+        const size_t inst_id = selection.elements[0].instance_id;
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.instance_id != inst_id) {
+                return false;
+            }
+        }
+        return true;
+    };
+
     auto is_fff_print = [this]() -> bool
     {
         const Domain::ConfigContainer* config_container =
@@ -405,8 +421,8 @@ void PlaterRenderModule::register_commands()
                 [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); },
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::L},
-                    .enabled           = [is_object_selected, is_fff_print]()
-                    { return is_object_selected() && is_fff_print(); }
+                    .enabled           = [is_unique_instance_selected, is_fff_print]()
+                    { return is_unique_instance_selected() && is_fff_print(); }
                 }
             )
         )
@@ -416,8 +432,8 @@ void PlaterRenderModule::register_commands()
                 [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSeamsGizmo); },
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::P},
-                    .enabled           = [is_object_selected, is_fff_print]()
-                    { return is_object_selected() && is_fff_print(); }
+                    .enabled           = [is_unique_instance_selected, is_fff_print]()
+                    { return is_unique_instance_selected() && is_fff_print(); }
                 }
             )
         )
@@ -427,8 +443,8 @@ void PlaterRenderModule::register_commands()
                 [this]() { toggle_activate_tool(Scene::ToolType::PaintOnFuzzySkinGizmo); },
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::H},
-                    .enabled           = [is_object_selected, is_fff_print]()
-                    { return is_object_selected() && is_fff_print(); }
+                    .enabled           = [is_unique_instance_selected, is_fff_print]()
+                    { return is_unique_instance_selected() && is_fff_print(); }
                 }
             )
         )
@@ -439,7 +455,7 @@ void PlaterRenderModule::register_commands()
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::N},
                     .enabled =
-                        [is_object_selected, this]()
+                        [is_unique_instance_selected, this]()
                     {
                         if (const Domain::ConfigContainer* config_container =
                                 active_config_container(m_project_interactor))
@@ -450,7 +466,7 @@ void PlaterRenderModule::register_commands()
                                 std::holds_alternative<Domain::ConfigPackFDM>(print_config) ?
                                 std::get<Domain::ConfigPackFDM>(print_config).tool.size() :
                                 1;
-                            return is_object_selected()
+                            return is_unique_instance_selected()
                                 && tool_count > 1
                                 && config_container->print_technology()
                                 == Domain::PrinterTechnology::FFF;
@@ -475,7 +491,7 @@ void PlaterRenderModule::register_commands()
                 [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); },
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::C},
-                    .enabled           = is_instance_from_same_object_selected
+                    .enabled           = is_unique_instance_selected
                 }
             )
         )
@@ -797,19 +813,7 @@ void PlaterRenderModule::update_object_selection()
         );
     }
 
-    bool can_add_instance = !empty_selection;
-    if (can_add_instance) {
-        const size_t obj_id = selection.elements[0].object_id;
-        for (const Domain::ElementRef& el : selection.elements) {
-            if (el.object_id != obj_id) {
-                // We can’t add instances for multiple objects simultaneously.
-                can_add_instance = false;
-                break;
-            }
-        }
-    }
-    m_toolbar_add_instance->set_visible(can_add_instance);
-    m_toolbar_add_volume->set_visible(can_add_instance);
+    update_toolbar_visibility();
 
     update_current_right_sidebar();
 
@@ -837,23 +841,15 @@ void PlaterRenderModule::update_current_right_sidebar()
 
 void PlaterRenderModule::update_toolbar_visibility()
 {
-    const Domain::ConfigContainer* config_container = active_config_container(m_project_interactor);
-    if (config_container == nullptr) {
-        return;
-    }
+    m_toolbar_add_instance->set_visible(m_command_registry.command(CommandName::AddInstance).enabled());
+    m_toolbar_add_volume->set_visible(m_command_registry.command(CommandName::AddInstance).enabled());
 
-    const Domain::PrinterTechnology print_technology = config_container->print_technology();
-    const Domain::ConfigPack& print_config           = config_container->print_config();
-    const size_t tool_count = std::holds_alternative<Domain::ConfigPackFDM>(print_config) ?
-        std::get<Domain::ConfigPackFDM>(print_config).tool.size() :
-        1;
+    m_toolbar_cut->set_visible(m_command_registry.command(CommandName::CutGizmo).enabled());
 
-    m_toolbar_paint_on_supports->set_visible(print_technology == Domain::PrinterTechnology::FFF);
-    m_toolbar_paint_on_seams->set_visible(print_technology == Domain::PrinterTechnology::FFF);
-    m_toolbar_paint_on_fuzzy_skin->set_visible(print_technology == Domain::PrinterTechnology::FFF);
-    m_toolbar_multi_material_painting->set_visible(
-        print_technology == Domain::PrinterTechnology::FFF && tool_count > 1
-    );
+    m_toolbar_paint_on_supports->set_visible(m_command_registry.command(CommandName::PaintOnSupportsGizmo).enabled());
+    m_toolbar_paint_on_seams->set_visible(m_command_registry.command(CommandName::PaintOnSeamsGizmo).enabled());
+    m_toolbar_paint_on_fuzzy_skin->set_visible(m_command_registry.command(CommandName::PaintOnFuzzySkinGizmo).enabled());
+    m_toolbar_multi_material_painting->set_visible(m_command_registry.command(CommandName::MultiMaterialPaintingGizmo).enabled());
 }
 
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
