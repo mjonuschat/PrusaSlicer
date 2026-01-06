@@ -56,7 +56,7 @@ public:
     ) override
     {}
 
-    void show_info_dialog(const std::string& text, const std::string& title) override
+    void show_info_dialog(const std::string& text, const std::string& title, bool is_marked = false) override
     {
         SPDLOG_INFO("{}: {}", title, text);
     }

@@ -27,7 +27,7 @@ public:
         const CheckBoxCheckedCallback& checked_callback
     ) = 0;
     virtual void
-    show_info_dialog(const std::string& text, const std::string& title = std::string()) = 0;
+    show_info_dialog(const std::string& text, const std::string& title = std::string(), bool is_marked = false) = 0;
     virtual void
     show_warning_dialog(const std::string& text, const std::string& title = std::string()) = 0;
     virtual void

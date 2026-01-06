@@ -385,7 +385,8 @@ void DesktopApp::handle_previous_crash_recovery(AppConfig& app_config)
     if (const std::string crash_reason = app_config.get<std::string>("crash_reason");
         !crash_reason.empty())
     {
-        const std::string opt_key = crash_reason == "splashscreen_pos" ? "show_splash_screen" : "restore_win_position";
+        const std::string opt_key =
+            crash_reason == "splashscreen_pos" ? "show_splash_screen" : "restore_win_position";
         const std::string opt_name = app_config.get_config_box().find(opt_key).item->def().label;
         const std::string preferences_item = Biz::_u8(opt_name);
 
@@ -407,8 +408,9 @@ void DesktopApp::handle_previous_crash_recovery(AppConfig& app_config)
         );
 
         AppServices::instance().dialog_manager().show_info_dialog(
-            msg,Biz::_u8L("PrusaSlicer started after a crash")
-            
+            msg,
+            Biz::_u8L("PrusaSlicer started after a crash"),
+            true
         );
 
         app_config.resolve_crash();

@@ -129,11 +129,11 @@ void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::
         cbc_callback(true);
 }
 
-void DialogManager::show_info_dialog(const std::string& text, const std::string& title)
+void DialogManager::show_info_dialog(const std::string& text, const std::string& title, bool is_marked)
 {
     // Use CallAfter because most of InfoDialog call we have from the thread.
-    wxTheApp->CallAfter([text, title] {
-        MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Information") : from_u8(title), wxICON_INFORMATION | wxOK)
+    wxTheApp->CallAfter([text, title, is_marked] {
+        InfoDialog(nullptr, from_u8(title), from_u8(text), is_marked)
             .ShowModal();
         });
 }
