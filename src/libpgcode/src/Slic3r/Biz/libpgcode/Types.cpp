@@ -47,14 +47,4 @@ void PrintSettings::reset()
     filament.clear();
 }
 
-void ConflictResult::reset()
-{
-    layer = -1;
-    height = 0.0f;
-    obj_1 = nullptr;
-    obj_2 = nullptr;
-    obj_name_1.clear();
-    obj_name_2.clear();
-}
-
 } // namespace Slic3r::Biz::libpgcode

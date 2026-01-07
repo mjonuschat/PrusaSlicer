@@ -1125,12 +1125,22 @@ void Print::process()
         m_wipe_tower_data.position = m_wipe_tower->position;
         m_wipe_tower_data.rotation_angle = m_wipe_tower->rotation;
     }
-    auto conflictRes = ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
-
-
-    m_conflict_result = conflictRes;
-    if (conflictRes.has_value())
-        BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->obj_name_1 % conflictRes->obj_name_2;
+    if (auto conflict =
+            ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
+        conflict.has_value())
+    {
+        this->append_warning_callback(Biz::Slicing::Warning{
+            .code = Biz::Slicing::WarningCode::GCodeConflict,
+            .item_keys = {},
+            .model_object_id = std::nullopt,
+            .payload = Biz::Slicing::GCodeConflictWarningPayload{
+                .object_names = {conflict->obj_name_1, conflict->obj_name_2},
+                .height = conflict->height,
+                .layer_id = size_t(conflict->layer)
+            },
+            .severity = Biz::Slicing::WarningSeverity::HIGH
+        });
+    }
 
     m_sequential_collision_detected = config().get<bool>("complete_objects") ? std::nullopt /*check_seq_conflict(model(), config())*/ : std::nullopt;
 
@@ -1151,9 +1161,6 @@ Biz::libpgcode::ProcessorResult Print::process_gcode()
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
     Biz::libpgcode::ProcessorResult result{gcode->do_export(this, m_serialized_config)};
-
-    if (m_conflict_result.has_value())
-        result.conflict_result = *m_conflict_result;
 
     result.sequential_collision_detected = m_sequential_collision_detected;
 

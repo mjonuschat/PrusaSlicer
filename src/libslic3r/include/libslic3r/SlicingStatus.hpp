@@ -127,6 +127,7 @@ enum class WarningCode
     InvalidToolchange,
     CloseToPrimingRegions, // _u8L( "Your print is very close to the priming regions. " "Make sure there is no collision.")
     ToolpathOutsideBuildVolume,
+    GCodeConflict
 };
 
 struct StabilityWarningPayload {
@@ -146,13 +147,25 @@ struct InvalidToolchangeWarningPayload {
     std::string gcode_line;
 };
 
+struct GCodeConflictWarningPayload {
+    std::array<std::string, 2> object_names;
+    double height{0.};
+    size_t layer_id{0};
+};
+
 using WarningPayload = std::variant<
     std::monostate,
     StabilityWarningPayload,
     EmptyLayersWarningPayload,
     CustomGCodeReservedKeywordsWarningPayload,
-    InvalidToolchangeWarningPayload
+    InvalidToolchangeWarningPayload,
+    GCodeConflictWarningPayload
     >;
+
+enum class WarningSeverity {
+    LOW,
+    HIGH
+};
 
 struct Warning {
     WarningCode code{WarningCode::None};
@@ -161,6 +174,7 @@ struct Warning {
     std::vector<std::string> item_keys;
     std::optional<Domain::ObjectID> model_object_id;
     WarningPayload payload;
+    WarningSeverity severity{WarningSeverity::LOW}; // only for UI-purposes
 };
 
 class Exception : public Slic3r::Exception

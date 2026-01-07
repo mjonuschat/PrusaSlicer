@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+//#include "Slic3r/Domain/Slicing.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
@@ -132,9 +133,23 @@ using ConflictComputeOpt = std::optional<ConflictComputeResult>;
 
 using ConflictObjName = std::optional<std::pair<std::string, std::string>>;
 
+struct ConflictResult
+{
+    std::string obj_name_1;
+    std::string obj_name_2;
+    float height{ 0.0f };
+    const void* obj_1{ nullptr }; // nullptr means wipe tower
+    const void* obj_2{ nullptr };
+    int layer{ -1 };
+
+    void reset();
+};
+
+using ConflictResultOpt = std::optional<ConflictResult>;
+
 struct ConflictChecker
 {
-    static Biz::libpgcode::ConflictResultOpt  find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs, const WipeTowerData& wtd);
+    static ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs, const WipeTowerData& wtd);
     static ConflictComputeOpt find_inter_of_lines(const LineWithIDs &lines);
     static ConflictComputeOpt line_intersect(const LineWithID &l1, const LineWithID &l2);
 };

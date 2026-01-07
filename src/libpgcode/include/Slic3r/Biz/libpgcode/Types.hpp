@@ -289,20 +289,6 @@ struct PrintSettings
     void reset();
 };
 
-struct ConflictResult
-{
-    std::string obj_name_1;
-    std::string obj_name_2;
-    float height{ 0.0f };
-    const void* obj_1{ nullptr }; // nullptr means wipe tower
-    const void* obj_2{ nullptr };
-    int layer{ -1 };
-
-    void reset();
-};
-
-using ConflictResultOpt = std::optional<ConflictResult>;
-
 enum class Tags : uint8_t
 {
     Role,

@@ -454,6 +454,7 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
 void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::SlicingId slicing_id) {
     using Biz::Slicing::Warning;
     using Biz::Slicing::WarningCode;
+    using Biz::Slicing::WarningSeverity;
     using Payload = SlicingWarningNotificationData;
 
     auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
@@ -494,7 +495,7 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
         m_notification_list.upsert_notifcation(
             PopNotificationData{
                 PopNotificationType::SlicingWarning,
-                PopNotificationLevel::Warning,
+                warning.severity == WarningSeverity::LOW ? PopNotificationLevel::Warning : PopNotificationLevel::Error,
                 0s,
                 PopNotificationLayoutHeaderText{header, to_display_string(warning, project)},
                 Payload{warning.code, slicing_id}

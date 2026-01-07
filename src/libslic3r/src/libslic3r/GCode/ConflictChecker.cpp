@@ -18,6 +18,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+//#include "Slic3r/Domain/Slicing.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -28,7 +29,6 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
-using Biz::libpgcode::ConflictResult;
 
 namespace RasterizationImpl {
 using IndexPair = std::pair<int64_t, int64_t>;
@@ -308,7 +308,7 @@ ConflictComputeOpt ConflictChecker::find_inter_of_lines(const LineWithIDs &lines
     return {};
 }
 
-Biz::libpgcode::ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs,
+ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs,
                                                                     const WipeTowerData& wipe_tower_data) // find the first intersection point of lines in different objects
 {
     // There is no conflict when there are no objects,
@@ -351,36 +351,52 @@ Biz::libpgcode::ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_o
     }
 
     bool                                   find = false;
-    tbb::concurrent_vector<std::pair<ConflictComputeResult,double>> conflict;
+    tbb::concurrent_vector<std::pair<ConflictComputeResult,int>> conflict;
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, layersLines.size()), [&](tbb::blocked_range<size_t> range) {
         for (size_t i = range.begin(); i < range.end(); i++) {
             auto interRes = find_inter_of_lines(layersLines[i]);
             if (interRes.has_value()) {
                 find = true;
-                conflict.emplace_back(*interRes, heights[i]);
+                conflict.emplace_back(*interRes, i);
                 break;
             }
         }
     });
 
     if (find) {
-        std::sort(conflict.begin(), conflict.end(), [](const std::pair<ConflictComputeResult, double>& i1, const std::pair<ConflictComputeResult, double>& i2) {
-            return i1.second < i2.second;
+        std::sort(conflict.begin(), conflict.end(), [&heights](const std::pair<ConflictComputeResult, int>& i1, const std::pair<ConflictComputeResult, int>& i2) {
+            return heights[i1.second] < heights[i2.second];
         });
 
-        const void *ptr1           = conflictQueue.idToObjsPtr(conflict[0].first._obj1);
-        const void *ptr2           = conflictQueue.idToObjsPtr(conflict[0].first._obj2);
-        double      conflictHeight = conflict[0].second;
+        const void *ptr1   = conflictQueue.idToObjsPtr(conflict[0].first._obj1);
+        const void *ptr2   = conflictQueue.idToObjsPtr(conflict[0].first._obj2);
+        int conflict_layer = conflict[0].second;
         if (ptr1 == &wtptr || ptr2 == &wtptr) {
             assert(! wipe_tower_data.z_and_depth_pairs.empty());
             if (ptr2 == &wtptr) { std::swap(ptr1, ptr2); }
             const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(ptr2);
-            return ConflictResult{"WipeTower", obj2->model_object()->name, static_cast<float>(conflictHeight), nullptr, ptr2};
+            ConflictResult out = {
+                .obj_name_1 = "WipeTower",
+                .obj_name_2 = obj2->model_object()->name,
+                .height = float(heights[conflict_layer]),
+                .obj_1 = nullptr,
+                .obj_2 = ptr2,
+                .layer = conflict_layer
+            };
+            return out;
         }
         const PrintObject *obj1 = reinterpret_cast<const PrintObject *>(ptr1);
         const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(ptr2);
-        return ConflictResult{obj1->model_object()->name, obj2->model_object()->name, static_cast<float>(conflictHeight), ptr1, ptr2};
+        ConflictResult out = {
+            .obj_name_1 = obj1->model_object()->name,
+            .obj_name_2 = obj2->model_object()->name,
+            .height = float(heights[conflict_layer]),
+            .obj_1 = ptr1,
+            .obj_2 = ptr2,
+            .layer = conflict_layer
+        };
+        return out;
     } else
         return {};
 }
@@ -398,6 +414,16 @@ ConflictComputeOpt ConflictChecker::line_intersect(const LineWithID &l1, const L
         if (dist > 0.01) { return std::make_optional<ConflictComputeResult>(l1._obj_id, l2._obj_id); } // the two lines intersects if dist>0.01mm
     }
     return {};
+}
+
+void ConflictResult::reset()
+{
+    layer = -1;
+    height = 0.0f;
+    obj_1 = nullptr;
+    obj_2 = nullptr;
+    obj_name_1.clear();
+    obj_name_2.clear();
 }
 
 } // namespace Slic3r
