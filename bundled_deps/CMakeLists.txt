@@ -1,7 +1,7 @@
 add_subdirectory(slic3r-domain-types)
 
 add_subdirectory(admesh)
-add_subdirectory(avrdude)
+#add_subdirectory(avrdude) # disabled because FirmwareUpdater is not ported yet.
 add_subdirectory(miniz)
 add_subdirectory(glu-libtess)
 add_subdirectory(agg)
