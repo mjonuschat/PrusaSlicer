@@ -108,7 +108,6 @@ static tl::expected<TriangleMesh, std::string> read_stl_file(const char* input_f
         Algorithms::TriangleMesh::trianglemesh_repair_on_import(stl);
 
     Domain::TriangleMeshStats stats;
-    stats.number_of_facets = stl.stats.number_of_facets;
     stats.min              = stl.stats.min;
     stats.max              = stl.stats.max;
     stats.size             = stl.stats.size;

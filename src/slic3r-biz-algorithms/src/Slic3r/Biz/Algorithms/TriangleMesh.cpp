@@ -78,7 +78,6 @@ using Domain::AdditionalMeshInfo;
 TriangleMeshStats calculate_stats(const indexed_triangle_set& its)
 {
     TriangleMeshStats result;
-    result.number_of_facets = its.indices.size();
     result.volume = Domain::its_volume(its);
     const BoundingBox3d bbox = Domain::bounding_box(its);
     result.min = bbox.min.cast<float>();

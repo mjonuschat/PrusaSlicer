@@ -917,9 +917,11 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, Read3mfIs
     if (auto source_json_it = volume_json.find(SOURCE);
         source_json_it != volume_json.end()){
         for (ModelVolume *mv : mvs) {
-            Domain::TriangleMeshStats stats;
+            // Use previously loaded mesh stats to avoid invalidating them
+            // during source deserialization.
+            Domain::TriangleMeshStats stats = mv->mesh().stats();
             SourceSerialization::load(*source_json_it, mv->source, stats, collected_issues);
-            // Can't set repaired_errors directly so need to re-set the mesh
+            // Stats cannot be set directly, so the mesh has to be recreated.
             auto &its = const_cast<indexed_triangle_set &>(mv->mesh().its);
             mv->set_mesh(Domain::TriangleMesh(std::move(its), std::move(stats)));
         }
