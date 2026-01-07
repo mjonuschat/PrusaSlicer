@@ -872,9 +872,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
                 if (is_planar_mode()) {
                     update_clipper_presenter();
                 }
-                if (is_planar_mode() || m_hovered_handle.is_move_x()) {
-                    update_cut_plane_trafo();
-                }
+                update_cut_plane_trafo();
             }
             m_can_flip_plane = false;
         }
@@ -1040,6 +1038,16 @@ void CutGizmo::on_stop_dragging()
 
 bool CutGizmo::set_plane_center(const Vec3d& center_pos)
 {
+    if (!is_planar_mode()) {
+        // Non-planar mode allows translation of the cut plane while keeping its normal fixed.
+        // Ensure the new plane center stays inside the bounding sphere of the bounding box.
+        const double dist = (m_bb_center - center_pos).norm();
+        const double radius = (m_bb_center - m_bounding_box.min).norm();
+        if (dist > radius) {
+            return false;
+        }
+    }
+
     // Compute the projection radius of the bounding box onto the plane normal.
     // Absolute values are used because extents contribute regardless of direction.
     Vec3d bb_half_extents = (m_bounding_box.max - m_bounding_box.min) * 0.5;
@@ -2724,6 +2732,8 @@ void CutGizmo::perform_cut()
         // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
     }
+
+    context().invalidate();
 }
 
 void CutGizmo::reset_preprocess_cut()

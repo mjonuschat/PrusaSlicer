@@ -210,6 +210,19 @@ static constexpr ImColor act_button_color{223, 93, 45};
 
 CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
 {
+    LayoutButton* reset_cut_btn = revert_button();
+    reset_cut_btn->set_tooltip(_u8L("Reset cutting plane and remove connectors"));
+    reset_cut_btn->set_visible(true);
+    gizmo_callbacks().revert_requested = [this]()
+    {
+        if (callbacks().reset_cut_plane) {
+            callbacks().reset_cut_plane();
+        }
+        if (callbacks().reset_connectors) {
+            callbacks().reset_connectors();
+        }
+    };
+
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1);
 
@@ -650,25 +663,6 @@ void CutDialog::add_connectors_editing_buttons()
             callbacks().connectors_editing_changed(connectors_editing);
         }
         update_panels_visibility();
-    };
-
-    // Add empty item for correct layout, when "Add connectors" button is hidden
-    buttons_row->emplace_back<Item>();
-
-    LayoutButton* reset_cut_btn = buttons_row->emplace_back<LayoutButton>(
-        _u8L("Reset cut"),
-        Render::Icon::None,
-        _u8L("Reset cutting plane and remove connectors")
-    );
-    reset_cut_btn->set_background_color(buttons_color);
-    reset_cut_btn->callbacks().action = [this]()
-    {
-        if (callbacks().reset_cut_plane) {
-            callbacks().reset_cut_plane();
-        }
-        if (callbacks().reset_connectors) {
-            callbacks().reset_connectors();
-        }
     };
 }
 

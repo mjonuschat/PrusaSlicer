@@ -258,6 +258,20 @@ private:
         bool connectors_editing{ false };
         bool is_planar_mode{ true };
         Biz::Cut::Groove groove;
+
+        void invalidate()
+        {
+            selected_object   = nullptr;
+            selected_instance = nullptr;
+            instance_idx      = size_t(-1);
+
+            center_offset = Vec3d::Zero();
+            rotation_m    = Domain::Transform3d::Identity();
+
+            connectors_editing = false;
+            is_planar_mode     = true;
+            groove             = Biz::Cut::Groove();
+        };
     };
 
     using ProjectContexts    = Biz::ProjectScoped<ProjectContext>;

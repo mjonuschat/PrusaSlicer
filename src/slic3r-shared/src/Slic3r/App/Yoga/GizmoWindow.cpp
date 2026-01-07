@@ -44,6 +44,17 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon) : Window("
     Item* spacer = buttons_rect->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
+    m_revert_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::DSRevert);
+    m_revert_button->set_min_size({24, 24});
+    m_revert_button->callbacks().action = [this]
+    {
+        if (m_gizmo_callback.revert_requested) {
+            m_gizmo_callback.revert_requested();
+        }
+    };
+    m_revert_button->set_visible(false);
+    m_revert_button->set_margin(Margins(10.f, 0.f));
+
     m_close_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     m_close_button->set_min_size({20, 20});
     m_close_button->callbacks().action = [this]
@@ -113,6 +124,11 @@ Item* GizmoWindow::content() const
 LayoutButton* GizmoWindow::close_button() const
 {
     return m_close_button;
+}
+
+LayoutButton* GizmoWindow::revert_button() const
+{
+    return m_revert_button;
 }
 
 } // namespace Slic3r::App::Yoga
