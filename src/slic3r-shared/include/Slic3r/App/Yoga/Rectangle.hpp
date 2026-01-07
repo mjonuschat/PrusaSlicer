@@ -8,7 +8,7 @@
 
 namespace Slic3r::App::Yoga {
 
-class Rectangle : public Yoga::Item
+class Rectangle : public Item
 {
 public:
     explicit Rectangle();

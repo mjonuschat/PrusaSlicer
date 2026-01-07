@@ -508,6 +508,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/SplitLayout.cpp
         include/Slic3r/App/Yoga/CollapsibleWindow.hpp
         src/Slic3r/App/Yoga/CollapsibleWindow.cpp
+        include/Slic3r/App/Yoga/ColorPicker.hpp
+        src/Slic3r/App/Yoga/ColorPicker.cpp
+        include/Slic3r/App/Yoga/ColorPickerButton.hpp
+        src/Slic3r/App/Yoga/ColorPickerButton.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

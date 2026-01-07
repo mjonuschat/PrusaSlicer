@@ -200,7 +200,13 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::color:
-        item_control = container->emplace<ConfigItemColorPicker>(child_index, data_index, item);
+        item_control = container->emplace<ConfigItemColorPicker>(
+            child_index,
+            data_index,
+            item,
+            cbi_container,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
         item_control = container->emplace<ConfigItemSpinBox>(
