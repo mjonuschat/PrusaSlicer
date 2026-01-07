@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/Point.hpp"
 
 #include "libslic3r/ExtrusionEntity.hpp"
-#include "tcbspan/span.hpp"
+#include <span>
 
 namespace Slic3r::GCode {
     struct SmoothPathElement;
@@ -23,7 +23,7 @@ struct Scarf
     double start_height{};
 };
 
-using SmoothingFunction = std::function<GCode::SmoothPath(tcb::span<const ExtrusionPath>)>;
+using SmoothingFunction = std::function<GCode::SmoothPath(std::span<const ExtrusionPath>)>;
 
 namespace Impl {
 struct PathPoint
@@ -43,9 +43,9 @@ std::pair<ExtrusionPath, ExtrusionPath> split_path(
 
 ExtrusionPaths split_paths(ExtrusionPaths &&paths, const PathPoint &path_point);
 
-double get_length(tcb::span<const GCode::SmoothPathElement> smooth_path);
+double get_length(std::span<const GCode::SmoothPathElement> smooth_path);
 
-GCode::SmoothPath convert_to_smooth(tcb::span<const ExtrusionPath> paths);
+GCode::SmoothPath convert_to_smooth(std::span<const ExtrusionPath> paths);
 
 /**
  * @param count: Points count including the first and last point.

@@ -2,6 +2,7 @@
 #include <oneapi/tbb/parallel_for.h>
 #include <cstdint>
 #include <iterator>
+#include <span>
 #include <tuple>
 #include <limits>
 
@@ -15,7 +16,6 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "libslic3r/MultiPoint.hpp"
-#include "tcbspan/span.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -340,7 +340,7 @@ PerimeterPoints get_perimeter_points(const std::vector<Vec2d> &points){
 namespace Slic3r::Seams::Perimeters {
 
 LayerInfos get_layer_infos(
-    tcb::span<const Slic3r::Layer* const> object_layers, const double elephant_foot_compensation
+    std::span<const Slic3r::Layer* const> object_layers, const double elephant_foot_compensation
 ) {
     LayerInfos result(object_layers.size());
 
@@ -433,7 +433,7 @@ Perimeter::Perimeter(
     , layer_index(layer_index)
     , positions(std::move(positions))
     , angles(std::move(angles))
-    , index_to_coord(IndexToCoord{tcb::span{this->positions}})
+    , index_to_coord(IndexToCoord{std::span{this->positions}})
     , point_types(std::move(point_types))
     , point_classifications(std::move(point_classifications))
     , angle_types(std::move(angle_types))

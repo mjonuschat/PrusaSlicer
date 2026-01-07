@@ -24,7 +24,7 @@
 #include <functional>
 #include <optional>
 #include <set>
-#include <tcbspan/span.hpp>
+#include <span>
 #include <Eigen/Geometry>
 
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
@@ -167,7 +167,7 @@ inline bool operator!=(const PrintRegion &lhs, const PrintRegion &rhs) { return 
 
 // For const correctness: Wrapping a vector of non-const pointers as a span of const pointers.
 template<class T>
-using SpanOfConstPtrs           = tcb::span<const T* const>;
+using SpanOfConstPtrs           = std::span<const T* const>;
 
 using LayerPtrs                 = std::vector<Layer*>;
 using SupportLayerPtrs          = std::vector<SupportLayer*>;

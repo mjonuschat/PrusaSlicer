@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <catch2/catch_approx.hpp>
+#include <span>
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
@@ -182,12 +183,12 @@ TEST_CASE("Get first crossed line distance", "[GCode]") {
     AABBTreeLines::LinesDistancer<GCode::ObjectOrExtrusionLinef> distancer{std::move(lines)};
 
     CHECK(get_first_crossed_line_distance(travel, distancer) == Approx(1));
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(1), distancer) == Approx(0.2));
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(2), distancer) == Approx(0.5));
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(3), distancer) == Approx(1.0)); //Edge case
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(4), distancer) == Approx(0.7));
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(5), distancer) == Approx(1.6));
-    CHECK(get_first_crossed_line_distance(tcb::span{travel}.subspan(6), distancer) == std::numeric_limits<double>::max());
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(1), distancer) == Approx(0.2));
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(2), distancer) == Approx(0.5));
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(3), distancer) == Approx(1.0)); //Edge case
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(4), distancer) == Approx(0.7));
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(5), distancer) == Approx(1.6));
+    CHECK(get_first_crossed_line_distance(std::span{travel}.subspan(6), distancer) == std::numeric_limits<double>::max());
 }
 
 

@@ -507,7 +507,6 @@ target_link_libraries(libslic3r PUBLIC
     admesh
     localesutils
     LibBGCode::bgcode_convert
-    tcbspan
     miniz
     agg
     ankerl

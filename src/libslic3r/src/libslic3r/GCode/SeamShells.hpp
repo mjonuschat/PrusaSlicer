@@ -1,7 +1,6 @@
 #ifndef libslic3r_SeamShells_hpp_
 #define libslic3r_SeamShells_hpp_
 
-#include <tcbspan/span.hpp>
 #include <vector>
 #include <cstddef>
 

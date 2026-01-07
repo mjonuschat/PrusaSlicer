@@ -53,6 +53,7 @@
 #include <chrono>
 #include <math.h>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -2376,7 +2377,7 @@ std::pair<GCode::SmoothPath, std::size_t> split_with_seam(
         ), 0};
     } else if (scarf != nullptr) {
         ExtrusionPaths paths{loop.paths};
-        const auto apply_smoothing{[&](tcb::span<const ExtrusionPath> paths){
+        const auto apply_smoothing{[&](std::span<const ExtrusionPath> paths){
             return smooth_path_cache.resolve_or_fit(paths, false, scaled<double>(0.0015));
         }};
         return Seams::Scarf::add_scarf_seam(std::move(paths), *scarf, apply_smoothing, flipped);

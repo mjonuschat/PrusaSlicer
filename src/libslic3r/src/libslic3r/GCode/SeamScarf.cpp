@@ -2,6 +2,7 @@
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include <span>
 
 using namespace Slic3r::Biz;
 
@@ -62,7 +63,7 @@ ExtrusionPaths split_paths(ExtrusionPaths &&paths, const PathPoint &path_point) 
     return result;
 }
 
-double get_length(tcb::span<const GCode::SmoothPathElement> smooth_path) {
+double get_length(std::span<const GCode::SmoothPathElement> smooth_path) {
     if (smooth_path.empty() || smooth_path.front().path.empty()) {
         return 0;
     }
@@ -80,7 +81,7 @@ double get_length(tcb::span<const GCode::SmoothPathElement> smooth_path) {
     return result;
 }
 
-GCode::SmoothPath convert_to_smooth(tcb::span<const ExtrusionPath> paths) {
+GCode::SmoothPath convert_to_smooth(std::span<const ExtrusionPath> paths) {
     GCode::SmoothPath result;
     for (const ExtrusionPath &path : paths) {
         Geometry::ArcWelder::Path smooth_path;
@@ -138,7 +139,7 @@ ExtrusionPaths ensure_scarf_resolution(
     ExtrusionPaths &&paths, const std::size_t scarf_paths_count, const double max_distance
 ) {
     ExtrusionPaths result{std::move(paths)};
-    auto scarf{tcb::span{result}.first(scarf_paths_count)};
+    auto scarf{std::span{result}.first(scarf_paths_count)};
 
     for (ExtrusionPath &path : scarf) {
         path.polyline.points = ensure_max_distance(path.polyline.points, max_distance);
@@ -209,20 +210,20 @@ GCode::SmoothPath lineary_readuce_extrusion_amount(
 GCode::SmoothPath elevate_scarf(
     const ExtrusionPaths &paths,
     const std::size_t scarf_paths_count,
-    const std::function<GCode::SmoothPath(tcb::span<const ExtrusionPath>)> &apply_smoothing,
+    const std::function<GCode::SmoothPath(std::span<const ExtrusionPath>)> &apply_smoothing,
     const double start_height
 ) {
-    const auto scarf_at_start{tcb::span{paths}.first(scarf_paths_count)};
+    const auto scarf_at_start{std::span{paths}.first(scarf_paths_count)};
     GCode::SmoothPath first_segment{convert_to_smooth(scarf_at_start)};
     first_segment =
         lineary_increase_extrusion_height(std::move(first_segment), start_height);
 
     std::size_t normal_extrusions_size{paths.size() - 2 * scarf_paths_count};
     const auto normal_extrusions{
-        tcb::span{paths}.subspan(scarf_paths_count, normal_extrusions_size)};
+        std::span{paths}.subspan(scarf_paths_count, normal_extrusions_size)};
     const GCode::SmoothPath middle_segment{apply_smoothing(normal_extrusions)};
 
-    const auto scarf_at_end{tcb::span{paths}.last(scarf_paths_count)};
+    const auto scarf_at_end{std::span{paths}.last(scarf_paths_count)};
     GCode::SmoothPath last_segment{convert_to_smooth(scarf_at_end)};
     last_segment =
         lineary_readuce_extrusion_amount(std::move(last_segment));
@@ -312,7 +313,7 @@ ExtrusionPaths reverse(ExtrusionPaths &&paths) {
 std::pair<GCode::SmoothPath, std::size_t> add_scarf_seam(
     ExtrusionPaths &&paths,
     const Scarf &scarf,
-    const std::function<GCode::SmoothPath(tcb::span<const ExtrusionPath>)> &apply_smoothing,
+    const std::function<GCode::SmoothPath(std::span<const ExtrusionPath>)> &apply_smoothing,
     const bool flipped
 ) {
     Impl::PathPoint end_point{

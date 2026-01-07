@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <span>
 #include "test_data.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
@@ -37,7 +38,7 @@ void check_layers(const TestConfig& config) {
     CHECK(z.at(1) == Approx(first_layer_height + layer_height + z_offset));
 
     INFO("Correct layer height");
-    for (const double increment : tcb::span{increments}.subspan(1)) {
+    for (const double increment : std::span{increments}.subspan(1)) {
         CHECK(increment == Approx(layer_height));
     }
 }
