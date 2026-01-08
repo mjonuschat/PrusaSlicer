@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
 struct SceneNodeTag
 {
@@ -19,4 +19,4 @@ struct SceneNodeTag
     }
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

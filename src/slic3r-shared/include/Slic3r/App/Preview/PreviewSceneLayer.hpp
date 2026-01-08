@@ -17,6 +17,7 @@ enum class PreviewSceneLayer : Scene::RenderLayerId
     ToolMarker,
     CogMarker,
     Bed,
+    Shell,
 };
 
 } // namespace Slic3r::App::Preview

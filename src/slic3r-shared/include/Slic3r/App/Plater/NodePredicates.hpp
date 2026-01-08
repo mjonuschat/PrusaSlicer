@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 
 namespace Slic3r::App::Plater {
+
     inline bool is_selectable(const Scene::Node& n)
-    { return n.has_tag_of_type<SceneNodeTag>() || n.has_tag_of_type<Scene::BedNodeTag>(); }
+    { return n.has_tag_of_type<Scene::SceneNodeTag>() || n.has_tag_of_type<Scene::BedNodeTag>(); }
 
     inline bool is_draggable(const Scene::Node& n)
-    { return n.has_tag_of_type<SceneNodeTag>(); }
+    { return n.has_tag_of_type<Scene::SceneNodeTag>(); }
 
     inline bool any_of(const Scene::Node::ConstNodeList& nodes, std::function<bool(const Scene::Node&)> predicate)
     {

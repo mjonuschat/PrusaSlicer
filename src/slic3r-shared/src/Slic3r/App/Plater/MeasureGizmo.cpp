@@ -8,7 +8,7 @@
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -25,6 +25,8 @@
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Plater::Measure;
 using namespace magic_enum::bitwise_operators;
+
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

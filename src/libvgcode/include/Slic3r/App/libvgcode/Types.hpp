@@ -69,18 +69,6 @@ enum class ViewType : uint8_t
 
 static constexpr size_t VIEW_TYPES_COUNT = size_t(ViewType::COUNT);
 
-typedef std::function<void(bool)> CustomOptionActionCallback;
-
-struct CustomOption
-{
-    std::string name;
-    Render::Icon icon;
-    bool visible{ false };
-    CustomOptionActionCallback cb_action{ nullptr };
-};
-
-using CustomOptions = std::vector<CustomOption>;
-
 //
 // Parameters for export to obj file
 //

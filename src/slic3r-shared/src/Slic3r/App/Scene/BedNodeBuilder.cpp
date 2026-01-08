@@ -318,10 +318,12 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
     std::vector<std::pair<Vec3f, Vec2f>> triangles = Biz::Scene::BedGeometry::label(bed, label_width, label_height);
     DEBUG_ASSERT(!triangles.empty());
 
-    AuxiliaryElementId id{AuxiliaryElementId::Type::BedLabel, tag.instance_id};
-    // do not use get_or_create() because the label texture may change size, so does the geometry used to render it
-    geom_mgr.set(id, Render::geometry_from_triangles(device, triangles));
-    const auto* geom = geom_mgr.get(id);
+    // create unique geometry for each different label size
+    // so that label textures, where the label strings are rendered, can share it when they are of the same size
+    AuxiliaryElementId id{AuxiliaryElementId::Type::BedLabel, size_t(tex_width * 100000 + tex_height)};
+    const auto* geom = geom_mgr.get_or_create(id,
+        [&]() { return Render::geometry_from_triangles(device, triangles); }
+    );
 
     builder.child(
         [&](NodeBuilder& bldr)
@@ -329,8 +331,8 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
             bldr.set_debug_name(fmt::format("bed {} label", tag.instance_id))
                 .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Label})
                 .set_mesh(geom, material, layer_id)
-                .transform([&bed](Transform3d& xform)
-                           { xform.translate(Vec3d(5.0, 5.0, z_offset(BedElementType::Label))); });
+                .transform([](Transform3d& xform)
+                    { xform.translate(Vec3d(5.0, 5.0, z_offset(BedElementType::Label))); });
         }
     );
 }

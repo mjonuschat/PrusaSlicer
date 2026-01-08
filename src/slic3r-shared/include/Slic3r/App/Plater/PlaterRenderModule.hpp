@@ -12,6 +12,7 @@
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
+#include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -65,7 +66,8 @@ class PlaterRenderModule final :
     public Biz::Scene::ISceneSelectionChangedListener,
     private Scene::IGizmoActiveToolListener,
     public Biz::ISelectedProjectChangedListener,
-    public Biz::Preset::IPresetChangedListener
+    public Biz::Preset::IPresetChangedListener,
+    public Scene::ISharedModelGeometryProvider
 {
 public:
     PlaterRenderModule(
@@ -113,6 +115,13 @@ public:
     {
         return m_command_binding_manager;
     }
+
+    /**
+     * @name Implementation of Scene::ISharedModelGeometryProvider public interface
+     * @{
+     */
+    std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider() override;
+    /**@}*/
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;

@@ -260,7 +260,7 @@ bool DesktopApp::OnInit()
         scrn->SetText(WX::_L("Preparing Preview") + dots);
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store,
-        thumbnail_store_updater, thumbnail_image_generator);
+        thumbnail_store_updater, thumbnail_image_generator, m_plater_module.get());
 
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
     ));

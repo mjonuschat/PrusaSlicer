@@ -20,6 +20,8 @@ using namespace Slic3r::Biz::Algorithms::BoundingBox;
 using namespace Slic3r::Biz::Algorithms::ClipperUtils;
 using namespace Slic3r::Biz::Algorithms::Tesselate;
 
+using Slic3r::App::Scene::SceneNodeTag;
+
 namespace Slic3r::App::Plater {
 
 static Domain::ElementRef tag_to_element_ref(const SceneNodeTag& tag)
@@ -317,7 +319,7 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
                 );
                 if (it != pick_results.end()) {
                     pick_results.erase(std::remove_if(it, pick_results.end(),
-                        [](const Scene::NodePickResult& r) { return r.node->tag_of_type<Plater::SceneNodeTag>() != nullptr; }),
+                        [](const Scene::NodePickResult& r) { return r.node->tag_of_type<SceneNodeTag>() != nullptr; }),
                         pick_results.end());
                 }
             }

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 
 #include <boost/functional/hash.hpp>
 
 namespace Slic3r::App::Plater {
 
-struct SinkingSceneNodeTag : public SceneNodeTag
+struct SinkingSceneNodeTag : public Scene::SceneNodeTag
 {
 };
 

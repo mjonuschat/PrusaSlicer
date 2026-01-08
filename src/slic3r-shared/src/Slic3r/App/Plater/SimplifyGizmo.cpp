@@ -4,7 +4,7 @@
 
 #include "Slic3r/App/Plater/SimplifyDialog.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp" // geometry_from_triangle_mesh
 #include "Slic3r/App/Render/Material.hpp"
@@ -31,6 +31,7 @@ using namespace Slic3r::Biz;
 // 2. Esc key down: cancel simplification
 // 3. validate volume exchange(Scne::Node are correct but object list is invalid)
 namespace Slic3r::App::Plater {
+
 using Slic3r::App::Render::Geometry;
 using Slic3r::App::Render::Device;
 using Slic3r::App::Scene::GizmoActivationState;
@@ -41,6 +42,7 @@ using Slic3r::Biz::Scene::SceneInteractor;
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::ProjectInteractor;
 using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace { 
 // Static variables

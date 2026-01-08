@@ -89,6 +89,22 @@ public:
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
 
+    void set_model_geometry_provider(std::shared_ptr<Scene::ModelGeometryProvider> provider)
+    {
+        return project_context().set_model_geometry_provider(provider);
+    }
+
+    void remove_all_shells();
+    void add_shells();
+    void update_shells_visibility();
+
+    bool are_shells_visible() const { return m_shells_visible; }
+    void toggle_shells_visibility()
+    {
+        m_shells_visible = !m_shells_visible;
+        update_shells_visibility();
+    }
+
 private:
     Scene::ScenePresenterProjectContext& project_context()
     {
@@ -117,6 +133,7 @@ private:
     ProjectContexts m_projects;
     Scene::BedRenderUpdater m_bed_render_updater;
     Scene::CameraFrustumUpdater m_camera_frustum_updater;
+    bool m_shells_visible{ false };
 };
 
 } // namespace Slic3r::App::Preview

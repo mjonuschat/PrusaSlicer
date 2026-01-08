@@ -4,12 +4,11 @@
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
@@ -24,6 +23,7 @@
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/App/Scene/PrintVolumeData.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Scene/VolumeColor.hpp"
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
@@ -34,16 +34,9 @@ using Slic3r::Domain::Vec3d;
 
 using Slic3r::Biz::Algorithms::Color::saturate;
 
-namespace Slic3r::App::Plater {
+using Slic3r::App::Scene::SceneNodeTag;
 
-static const std::unordered_map<Domain::ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
-    {Domain::ModelVolumeType::MODEL_PART,         {1.0f, 0.5f, 0.0f, 1.0f}},
-    {Domain::ModelVolumeType::NEGATIVE_VOLUME,    {0.5f, 0.5f, 0.5f, 0.5f}},
-    {Domain::ModelVolumeType::SUPPORT_BLOCKER,    {1.0f, 0.2f, 0.2f, 0.5f}},
-    {Domain::ModelVolumeType::SUPPORT_ENFORCER,   {0.2f, 0.2f, 1.0f, 0.5f}},
-    {Domain::ModelVolumeType::PARAMETER_MODIFIER, {1.0f, 1.0f, 0.2f, 0.5f}},
-    {Domain::ModelVolumeType::INVALID,            {1.0f, 0.2f, 0.2f, 0.5f}},
-};
+namespace Slic3r::App::Plater {
 
 namespace {
 template <typename TagT, typename RefT>
@@ -506,6 +499,8 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(m_selected_project_id);
+        std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider = std::make_shared<Scene::ModelGeometryProvider>();
+        project_context().set_model_geometry_provider(shared_model_geometry_provider);
         // a new camera has been created, add the camera update listeners
         auto& camera = project_context().scene().camera();
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
@@ -571,8 +566,8 @@ PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::Sel
 
     ColorRGBA clr = color.has_value() ? *color : ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
     if (!color.has_value()) {
-        auto color_it = VOLUME_COLORS.find(vol->type());
-        if (color_it != VOLUME_COLORS.end())
+        auto color_it = Scene::VOLUME_COLORS.find(vol->type());
+        if (color_it != Scene::VOLUME_COLORS.end())
             clr = color_it->second;
     }
 
@@ -857,7 +852,7 @@ void PlaterScenePresenter::update_selection_obb(
 }
 
 void PlaterScenePresenter::clear_selection_root_children() {
-    PlaterScenePresenterProjectContext& project{project_context()};
+    Scene::ScenePresenterProjectContext& project{project_context()};
 
     project.scene().remove_children(
         [](const Scene::Node*) { return true; },
@@ -1147,50 +1142,6 @@ void PlaterScenePresenter::remove_beds(Domain::SelectionId project_id, const Dom
         {
             return tag.config_container_id == br.config_container_id && tag.instance_id == br.instance_id;
         }
-    );
-
-    std::set<std::size_t> active_beds;
-    std::set<std::size_t> active_bed_instances;
-
-    const Domain::Project& project{m_workbench.project(project_id)};
-    for (const auto& config_container : project.config_containers()) {
-        active_beds.insert(config_container->bed().id().id);
-        for (const auto& bed_instance : config_container->bed_instances()) {
-            active_bed_instances.insert(bed_instance->id().id);
-        }
-    }
-
-    const auto is_active = [&](const Scene::AuxiliaryElementId& id)
-    {
-        using Type = Scene::AuxiliaryElementId::Type;
-        switch (id.type) {
-        case Type::BedLabel:
-            return active_bed_instances.contains(id.id);
-        case Type::BedPlate:
-            [[fallthrough]];
-        case Type::BedGrid:
-            [[fallthrough]];
-        case Type::BedContour:
-            [[fallthrough]];
-        case Type::BedPrintVolume:
-            [[fallthrough]];
-        case Type::BedAxis:
-            [[fallthrough]];
-        case Type::BedModel:
-            return active_beds.contains(id.id);
-        default:
-            return true;
-        }
-    };
-
-    Scene::ScenePresenterProjectContext& project_context{m_projects.at(project_id)};
-    project_context.model_geometry_manager().release_if(
-        [&](const Scene::AuxiliaryElementId& id, const Render::Geometry&) { return !is_active(id); }
-    );
-
-    project_context.model_triangle_mesh_manager().release_if(
-        [&](const Scene::AuxiliaryElementId& id, const Scene::TriangleMesh&)
-        { return !is_active(id); }
     );
 }
 

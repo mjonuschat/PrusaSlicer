@@ -4,6 +4,7 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 
 #include <magic_enum/magic_enum.hpp>
 #include <fmt/format.h>
@@ -25,85 +26,14 @@ enum class CornerTag : uint8_t
     RTC  // Right Top Ceil
 };
 
-static std::vector<Domain::Vec3f> corner_lines(CornerTag tag)
+static std::vector<Domain::Vec3f> corner_lines()
 {
-    std::vector<Domain::Vec3f> ret;
-    Domain::Vec3f origin = Domain::Vec3f(0.0f, 0.0f, 0.0f);
-    switch (tag)
-    {
-    case CornerTag::LBF:
-    {
-        ret = {
-            origin, origin + 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::RBF:
-    {
-        ret = {
-            origin, origin - 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::LTF:
-    {
-        ret = {
-            origin, origin + 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::RTF:
-    {
-        ret = {
-            origin, origin - 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::LBC:
-    {
-        ret = {
-            origin, origin + 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::RBC:
-    {
-        ret = {
-            origin, origin - 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin + 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::LTC:
-    {
-        ret = {
-            origin, origin + 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    case CornerTag::RTC:
-    {
-        ret = {
-            origin, origin - 0.5f * Domain::Vec3f::UnitX(), // X axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitY(), // Y axis
-            origin, origin - 0.5f * Domain::Vec3f::UnitZ(), // Z axis
-        };
-        break;
-    }
-    }
+    Domain::Vec3f origin = Domain::Vec3f::Zero();
+    std::vector<Domain::Vec3f> ret = {
+        origin, origin + 0.5f * Domain::Vec3f::UnitX(), // X axis
+        origin, origin + 0.5f * Domain::Vec3f::UnitY(), // Y axis
+        origin, origin + 0.5f * Domain::Vec3f::UnitZ(), // Z axis
+    };
     return ret;
 }
 
@@ -127,13 +57,60 @@ static Domain::Vec3d corner_offset(CornerTag tag)
     }
 }
 
-void build_obb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Render::Device& device, const std::string& debug_name,
-    RenderLayerId layer_id, const Domain::ColorRGB& color)
+static Eigen::AngleAxisd corner_rotation(CornerTag tag)
+{
+    using namespace Biz::Algorithms::Geometry;
+    switch (tag)
+    {
+    case CornerTag::LBF: { return Eigen::AngleAxisd(0.0, Domain::Vec3d::UnitZ()); }
+    case CornerTag::RBF: { return Eigen::AngleAxisd(0.5 * PI, Domain::Vec3d::UnitZ()); }
+    case CornerTag::LTF: { return Eigen::AngleAxisd(-0.5 * PI, Domain::Vec3d::UnitZ()); }
+    case CornerTag::RTF: { return Eigen::AngleAxisd(PI, Domain::Vec3d::UnitZ()); }
+    case CornerTag::LBC: { return Eigen::AngleAxisd(-0.5 * PI, Domain::Vec3d::UnitX()); }
+    case CornerTag::RBC: { return Eigen::AngleAxisd(-PI, Domain::Vec3d::UnitY()); }
+    case CornerTag::LTC: { return Eigen::AngleAxisd(-PI, Domain::Vec3d::UnitX()); }
+    case CornerTag::RTC: {
+        Eigen::Quaterniond q2(Eigen::AngleAxisd(-PI, Domain::Vec3d::UnitX()));
+        Eigen::Quaterniond q1(Eigen::AngleAxisd(0.5 * PI, Domain::Vec3d::UnitZ()));
+        return Eigen::AngleAxisd(q2 * q1);
+    }
+    default: {
+        PANIC("Invalid corner tag");
+        return Eigen::AngleAxisd();
+    }
+    }
+}
+
+static Domain::Vec3d corner_scale(CornerTag tag, const Domain::Vec3d& scale)
+{
+    switch (tag)
+    {
+    case CornerTag::LBF: { return scale; }
+    case CornerTag::RBF: { return {scale.y(), scale.x(), scale.z()}; }
+    case CornerTag::LTF: { return {scale.y(), scale.x(), scale.z()}; }
+    case CornerTag::RTF: { return scale; }
+    case CornerTag::LBC: { return {scale.x(), scale.z(), scale.y()}; }
+    case CornerTag::RBC: { return scale; }
+    case CornerTag::LTC: { return scale; }
+    case CornerTag::RTC: { return {scale.y(), scale.x(), scale.z()}; }
+    default: {
+        PANIC("Invalid corner tag");
+        return Domain::Vec3d::Zero();
+    }
+    }
+}
+
+void build_obb_node(NodeBuilder& builder, Render::GeometryManager<AuxiliaryElementId>& geom_manager, Render::Device& device,
+    const std::string& debug_name, RenderLayerId layer_id, const Domain::ColorRGB& color)
 {
     builder.set_debug_name(fmt::format("{} main", debug_name))
            .set_tag(AABBNodeTag{ 0 });
 
-    auto& geom_mgr = ctx.model_geometry_manager();
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::AABB, size_t(CornerTag::LBF)};
+    std::vector<Domain::Vec3f> lines = corner_lines();
+    const auto* geom = geom_manager.get_or_create(id,
+        [&]() { return Render::geometry_from_lines(device, lines); }
+    );
 
     Render::Material material;
     material.set_shader(device.context().shader_manager().shader("flat"))
@@ -143,15 +120,8 @@ void build_obb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Ren
     for (const auto& tag : cornerTags) {
         builder.child(
             [&](NodeBuilder& bldr) {
-                AuxiliaryElementId id{ AuxiliaryElementId::Type::AABB, size_t(tag)};
-                std::vector<Domain::Vec3f> lines = corner_lines(tag);
-                const auto* geom = geom_mgr.get_or_create(id,
-                    [&]() { return Render::geometry_from_lines(device, lines); }
-                );
-
                 bldr.set_debug_name(fmt::format("{} corner {}", debug_name, magic_enum::enum_name(tag)))
                     .set_tag(AABBNodeTag{ uint8_t(tag) })
-                    .transform([&](Domain::Transform3d& xform) { xform.translate(corner_offset(tag)); })
                     .set_mesh(geom, material, layer_id);
             }
         );
@@ -213,7 +183,8 @@ void update_obb_node(Node& node, const OrientedBoundingBox& obb, double edge_cov
         DEBUG_ASSERT(child_corner_tag.has_value());
         Transform child_trafo = Transform::Identity();
         child_trafo.translate(corner_offset(child_corner_tag.value()).cwiseProduct(size));
-        child_trafo.scale(edge_coverage_percent * size);
+        child_trafo.rotate(corner_rotation(child_corner_tag.value()));
+        child_trafo.scale(corner_scale(child_corner_tag.value(), edge_coverage_percent * size));
         child->set_local_transform(child_trafo);
     }
 }

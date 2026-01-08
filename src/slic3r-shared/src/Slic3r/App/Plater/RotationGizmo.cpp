@@ -1,7 +1,6 @@
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 

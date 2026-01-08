@@ -6,7 +6,6 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
 #include "Slic3r/App/Scene/Frustum.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"

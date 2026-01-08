@@ -1,9 +1,11 @@
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include <fmt/ostream.h>
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/App/Plater/TripleInput.hpp"
+
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

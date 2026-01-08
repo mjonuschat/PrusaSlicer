@@ -7,7 +7,7 @@
 #include "Slic3r/App/Plater/ScopedGCodeThumbnailSceneCustomizer.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Domain/Project.hpp"
@@ -17,6 +17,7 @@
 #include "Slic3r/Assert.hpp"
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

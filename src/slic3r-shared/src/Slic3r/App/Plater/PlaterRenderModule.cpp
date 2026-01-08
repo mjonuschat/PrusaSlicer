@@ -19,7 +19,7 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedMaterials.hpp"
@@ -173,6 +173,11 @@ void PlaterRenderModule::set_object_list_collapsed(bool collapsed)
     if (m_object_list.get()) {
         m_object_list->set_collapsed(collapsed);
     }
+}
+
+std::shared_ptr<Scene::ModelGeometryProvider> PlaterRenderModule::shared_model_geometry_provider()
+{
+    return m_scene_presenter->model_geometry_provider();
 }
 
 void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)

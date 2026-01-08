@@ -37,8 +37,6 @@ struct FdmViewerWrapperSettings : public ViewerWrapperBaseSettings
     bool slider_layers_use_default_colors{ false };
     bool seq_top_layer_only{ false };
 
-    libvgcode::CustomOptions custom_options;
-
     //
     // wrapper callbacks
     //
@@ -131,9 +129,6 @@ public:
     void set_units(Biz::libpgcode::UnitsSystem sys);
 
     Biz::libpgcode::GCodeProducer producer() const { return m_data.producer; }
-
-    const libvgcode::CustomOptions& custom_options() const { return m_settings.custom_options; }
-    libvgcode::CustomOptions& custom_options() { return m_settings.custom_options; }
 
     float cog_marker_scale_factor() const { return m_viewer.cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_viewer.set_cog_marker_scale_factor(factor); }

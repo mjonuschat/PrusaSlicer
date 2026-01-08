@@ -19,6 +19,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
+#include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 
 #include <memory>
 
@@ -50,7 +51,8 @@ public:
         Biz::ProjectInteractor& project_interactor,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-        std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
+        std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
+        Scene::ISharedModelGeometryProvider* model_geometry_provider
     ) :
         m_workbench(workbench),
         m_project_interactor(project_interactor),
@@ -58,7 +60,8 @@ public:
         m_thumbnail_store_updater(thumbnail_store_updater),
         m_thumbnail_image_generator(thumbnail_image_generator),
         m_menu_manager(m_command_registry),
-        m_command_binding_manager(m_command_registry)
+        m_command_binding_manager(m_command_registry),
+        m_shared_model_geometry_provider(model_geometry_provider)
     {}
 
     /**
@@ -149,6 +152,7 @@ private:
     DialogNavigation m_dialog_navigation;
     MenuManager m_menu_manager;
     CommandBindingManager m_command_binding_manager;
+    Scene::ISharedModelGeometryProvider* m_shared_model_geometry_provider{ nullptr };
 
     PreviewCameraGizmo* m_camera_gizmo{ nullptr };
 
@@ -223,8 +227,8 @@ private:
     std::set<int> on_slider_layers_get_used_extruders_in_print(float print_z);
     void on_slider_layers_app_config_changed(const std::string& key, const std::string& val);
     void on_slider_gcode_on_thumb_move();
-    void on_legend_shells_action(bool visible);
 
+    void update_shells();
     void update_bed_instances();
     void update_viewer();
     void update_scene_aabb();

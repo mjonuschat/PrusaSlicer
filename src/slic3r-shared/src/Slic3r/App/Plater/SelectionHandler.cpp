@@ -1,8 +1,10 @@
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 #include <unordered_set>
+
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

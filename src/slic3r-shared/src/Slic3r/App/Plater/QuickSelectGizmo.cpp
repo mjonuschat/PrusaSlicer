@@ -8,12 +8,13 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
 
 using Slic3r::Domain::SquareMatrix4f;
-
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

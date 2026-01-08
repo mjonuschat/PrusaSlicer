@@ -314,6 +314,7 @@ void PreviewRenderModule::on_selected_bed_instances_changed(
     }
 
     update_bed_instances();
+    m_scene_presenter->update_shells_visibility();
     m_scene_presenter->center_camera_on_selected_bed(true);
 
     m_object_list->update_sliced_info();
@@ -337,7 +338,10 @@ void PreviewRenderModule::on_status_cache_status_code_changed(const Domain::Slic
 
 void PreviewRenderModule::on_selected_project_changed(size_t project_id)
 {
+    m_scene_presenter->set_model_geometry_provider(m_shared_model_geometry_provider->shared_model_geometry_provider());
+
     update_bed_instances();
+    update_shells();
     update_viewer();
 
     const Biz::Scene::BedSelection& bed_selection =
@@ -440,7 +444,10 @@ void PreviewRenderModule::on_activated()
     if (m_scene_presenter != nullptr)
         m_scene_presenter->scene().set_lights(App::global_lighting());
 
+    m_scene_presenter->set_model_geometry_provider(m_shared_model_geometry_provider->shared_model_geometry_provider());
+
     update_bed_instances();
+    update_shells();
     update_viewer();
     update_scene_aabb();
 
@@ -657,7 +664,7 @@ void PreviewRenderModule::register_commands()
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::ShowShell,
-                [this]() { /*ToDo*/ }
+                [this]() { m_scene_presenter->toggle_shells_visibility(); }
             )
         )
         .register_command(
@@ -779,15 +786,6 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     // set gcode slider callbacks
     settings.cb_slider_gcode_on_thumb_move =
         std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
-
-    if (mode == FdmViewerWrapperMode::EditorGCode || mode == FdmViewerWrapperMode::EditorPreGCode) {
-        // legend's custom options
-        CustomOption& shells_option = settings.custom_options.emplace_back(CustomOption());
-        shells_option.name          = _u8L("Shells");
-        shells_option.icon          = Render::Icon::LegendShells;
-        shells_option.cb_action =
-            std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
-    }
 
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
         && m_fdm_viewer.set_settings(settings))
@@ -955,7 +953,8 @@ void PreviewRenderModule::init_scene_layout()
     m_button_shells = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendShells,
-        "Shells"
+        "Shells",
+        m_scene_presenter->are_shells_visible()
     );
     m_command_binding_manager.bind_tb_item(CommandName::ShowShell, m_button_shells);
 
@@ -1080,6 +1079,8 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
     update_toolbar_visibility();
 
+    m_scene_presenter->update_shells_visibility();
+
     // request redraw
     request_render();
 
@@ -1161,6 +1162,8 @@ void PreviewRenderModule::update_sla_viewer_object_data(
     }
     else
         m_sla_viewer.reset_object(instance_id);
+
+    m_scene_presenter->update_shells_visibility();
 }
 
 void PreviewRenderModule::update_sla_viewer_data(const Domain::SlicingId id)
@@ -1282,9 +1285,11 @@ void PreviewRenderModule::on_slider_gcode_on_thumb_move()
     update_scene_aabb();
 }
 
-void PreviewRenderModule::on_legend_shells_action(bool visible)
+void PreviewRenderModule::update_shells()
 {
-    // TODO
+    m_scene_presenter->remove_all_shells();
+    m_scene_presenter->add_shells();
+    m_scene_presenter->update_shells_visibility();
 }
 
 void PreviewRenderModule::update_bed_instances()

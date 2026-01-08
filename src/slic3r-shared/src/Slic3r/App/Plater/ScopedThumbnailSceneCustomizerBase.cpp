@@ -4,12 +4,14 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/OBBNodeHelper.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
+
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

@@ -3,7 +3,7 @@
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 // DEBUG ONLY: for MEASURE_GIZMO_DEBUG
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
@@ -90,7 +90,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         );
         if (it != pick_results.end()) {
             pick_results.erase(std::remove_if(it, pick_results.end(),
-                [](const NodePickResult& r) { return r.node->tag_of_type<Plater::SceneNodeTag>() != nullptr; }),
+                [](const NodePickResult& r) { return r.node->tag_of_type<SceneNodeTag>() != nullptr; }),
                 pick_results.end());
         }
     }

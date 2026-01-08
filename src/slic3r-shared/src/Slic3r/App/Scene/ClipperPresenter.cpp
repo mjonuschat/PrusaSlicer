@@ -12,7 +12,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include <Slic3r/App/Render/GeometryBuilder.hpp>
 
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include <fmt/format.h>
 
 using Slic3r::Domain::ColorRGBA;
@@ -36,7 +36,7 @@ static void set_enabled_scene_nodes(
             scene->root(),
             [&](Node& node)
             {
-                Plater::SceneNodeTag* tag = node.tag_of_type<Plater::SceneNodeTag>();
+                SceneNodeTag* tag = node.tag_of_type<SceneNodeTag>();
                 if (tag != nullptr) {
                     node.set_enabled(enabled_scene_nodes);
                 }

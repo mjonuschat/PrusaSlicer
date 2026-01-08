@@ -8,7 +8,7 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Render/Material.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
@@ -454,7 +454,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                             ImGui::TableSetColumnIndex(0);
                             ImGui::AlignTextToFramePadding();
                             std::string name = n->debug_name();
-                            const Plater::SceneNodeTag* tag = n->tag_of_type<Plater::SceneNodeTag>();
+                            const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
                             if (tag != nullptr) {
                                 name += " (";
                                 name += std::to_string(tag->object_id);
@@ -485,8 +485,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                             ImGui::TableSetColumnIndex(4);
                             if (ImGui::Button(format("Default##pbr%zu", i).c_str())) {
                                 bool found = false;
-                                const Plater::SceneNodeTag* sn_tag = n->tag_of_type<Plater::SceneNodeTag>(
-                                );
+                                const SceneNodeTag* sn_tag = n->tag_of_type<SceneNodeTag>();
                                 if (sn_tag != nullptr) {
                                     pbr   = DEFAULT_VOLUME_PBRPARAMS;
                                     found = true;

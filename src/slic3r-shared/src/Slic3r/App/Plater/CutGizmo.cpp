@@ -5,7 +5,7 @@
 
 #include "Slic3r/App/Plater/CutGizmo.hpp"
 #include "Slic3r/App/Plater/CutDialog.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
 #include "Slic3r/Domain/Constants.hpp"
@@ -41,6 +41,7 @@
 using namespace Slic3r::App::Yoga;
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::App::Scene::SceneNodeTag;
 
 static const ColorRGBA UPPER_PART_COLOR    = ColorRGBA(0.0f, 1.0f, 1.0f, 1.0f);
 static const ColorRGBA LOWER_PART_COLOR    = ColorRGBA(1.0f, 0.0f, 1.0f, 1.0f);

@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Plater/PaintOnGizmoHelper.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
-#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
@@ -39,6 +39,7 @@ using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
+using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 

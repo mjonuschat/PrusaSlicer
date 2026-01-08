@@ -184,6 +184,8 @@ public:
 
     void update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
 
+    std::shared_ptr<Scene::ModelGeometryProvider> model_geometry_provider() { return project_context().model_geometry_provider(); }
+
     using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
 
 private:

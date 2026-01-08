@@ -6,7 +6,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
         src/Slic3r/App/Plater/PlaterCameraGizmo.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp
-        include/Slic3r/App/Plater/SceneNodeTag.hpp
         include/Slic3r/App/Plater/NodePredicates.hpp
         include/Slic3r/App/Plater/QuickSelectGizmo.hpp
         src/Slic3r/App/Plater/QuickSelectGizmo.cpp
@@ -106,10 +105,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/SinkingContours.hpp
         src/Slic3r/App/Plater/SinkingContours.cpp
         include/Slic3r/App/Plater/SinkingContoursHelper.hpp
-        include/Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp
-        src/Slic3r/App/Plater/PlaterScenePresenterProjectContext.cpp
         include/Slic3r/App/Plater/PlaterGizmosHelper.hpp
         src/Slic3r/App/Plater/PlaterGizmosHelper.cpp
+        include/Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp
+        src/Slic3r/App/Plater/PlaterScenePresenterProjectContext.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -275,6 +274,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Scene.hpp
         src/Slic3r/App/Scene/Node.cpp
         include/Slic3r/App/Scene/Node.hpp
+        include/Slic3r/App/Scene/SceneNodeTag.hpp
         include/Slic3r/App/Scene/IRenderLayerObject.hpp
         include/Slic3r/App/Scene/IRenderNodeComponent.hpp
         include/Slic3r/App/Scene/Camera.hpp
@@ -360,6 +360,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/ClipperPresenter.cpp
         include/Slic3r/App/Scene/CameraTargetAnimation.hpp
         src/Slic3r/App/Scene/CameraTargetAnimation.cpp
+        include/Slic3r/App/Scene/ModelGeometryProvider.hpp
+        include/Slic3r/App/Scene/VolumeColor.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
