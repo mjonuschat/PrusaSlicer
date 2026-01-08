@@ -1126,7 +1126,7 @@ void Print::process()
         m_wipe_tower_data.rotation_angle = m_wipe_tower->rotation;
     }
     if (auto conflict =
-            ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
+            Biz::Slicing::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
         conflict.has_value())
     {
         this->append_warning_callback(Biz::Slicing::Warning{
