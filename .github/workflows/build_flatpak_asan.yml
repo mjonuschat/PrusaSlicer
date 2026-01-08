@@ -9,11 +9,11 @@ on:
 
 jobs:
   build_flatpak_asan:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@slic3r3_prototype
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@master
     secrets: inherit
     with:
       with_asan: true
       debug_symbols: true
       enable_sentry:  false
       release_build: false
-      actions_branch: slic3r3_prototype
+      actions_branch: master

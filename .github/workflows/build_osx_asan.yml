@@ -9,10 +9,10 @@ on:
 
 jobs:
   build_osx_asan:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@slic3r3_prototype
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@master
     secrets: inherit
     with:
       with_asan: true
       enable_sentry:  false
       release_build: false
-      actions_branch: slic3r3_prototype
+      actions_branch: master

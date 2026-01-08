@@ -29,10 +29,10 @@ on:
 
 jobs:
   build_win:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@slic3r3_prototype
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@master
     secrets: inherit
     with:
-      actions_branch: slic3r3_prototype
+      actions_branch: master
       create_pdb: ${{ inputs.create_pdb || false }}
       create_installer: ${{ inputs.create_installer || false }}
       enable_sentry: ${{ inputs.enable_sentry || false }}
