@@ -8,6 +8,7 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/App/Platform/PlatformError.hpp
     include/Slic3r/App/Platform/KeyModifers.hpp
     include/Slic3r/App/Platform/KeyCode.hpp
+    src/Slic3r/App/Platform/KeyCode.cpp
     include/Slic3r/App/Platform/KeyboardShortcut.hpp
     src/Slic3r/App/Platform/KeyboardShortcut.cpp
     include/Slic3r/App/Platform/ICommand.hpp

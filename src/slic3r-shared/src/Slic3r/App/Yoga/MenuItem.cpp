@@ -54,8 +54,8 @@ void MenuItem::create(
 
     float icon_size = 16; // ! for check
 
-    Text* shortcut_text = emplace_back<Text>(shortcut);
-    shortcut_text->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    m_shortcut_text = emplace_back<Text>(shortcut);
+    m_shortcut_text->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
 
     // for expanded menu item use expander icon
     Icon* expander_icon = emplace_back<Icon>(Render::Icon::CloseArrow);
@@ -82,6 +82,11 @@ void MenuItem::clear_submenu()
     for (Item* child : items()) {
         m_sub_menu->remove(child);
     }
+}
+
+void MenuItem::set_shortcut_internal(const std::string& shortcut)
+{
+    m_shortcut_text->set_text(shortcut);
 }
 
 void MenuItem::action_internal()

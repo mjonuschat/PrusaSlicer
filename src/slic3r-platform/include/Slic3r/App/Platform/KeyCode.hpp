@@ -273,40 +273,10 @@ inline bool is_meta(KeyCode code)
     return code == KeyCode::LMeta || code == KeyCode::RMeta;
 }
 
-inline std::string to_string(KeyCode key_code)
-{
-    switch (key_code) {
-    case KeyCode::None:
-        return "";
-    case KeyCode::Escape:
-        return "Esc";
-    case KeyCode::Tab:
-        return "Tab";
-    case KeyCode::Space:
-        return "Space";
-    case KeyCode::Backspace:
-        return "Backspace";
-    case KeyCode::Delete:
-        return "Del";
-    case KeyCode::KpPlus:
-        return "+";
-    case KeyCode::KpMinus:
-        return "-";
-    case KeyCode::Left:
-        return "Arrow Left";
-    case KeyCode::Right:
-        return "Arrow Right";
+// Returns a human-readable shortcut string (e.g. for menus, tooltips).
+std::string to_string(KeyCode key_code);
 
-    default: {
-        uint32_t code = static_cast<uint32_t>(key_code);
-
-        // ASCII section (printable single-character keys)
-        if (code != 0 && code < 256)
-            return std::string(1, static_cast<char>(code));
-
-        return "Unknown";
-    }
-    }
-}
+// Returns a platform-specific shortcut string suitable for accelerator tables.
+std::string to_accel_table_string(KeyCode key_code);
 
 } // namespace Slic3r::App::Platform

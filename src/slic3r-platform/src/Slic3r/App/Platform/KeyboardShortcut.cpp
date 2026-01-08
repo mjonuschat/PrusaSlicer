@@ -2,21 +2,26 @@
 
 namespace Slic3r::App::Platform {
 
-std::string KeyboardShortcut::to_string() const
+std::string KeyboardShortcut::to_string(Translator translator) const
 {
     std::string shortcut;
-    if (std::string str_modifiers = Platform::to_string(modifiers);
-        !str_modifiers.empty())
-    {
+    if (std::string str_modifiers = Platform::to_string(modifiers); !str_modifiers.empty()) {
         shortcut += str_modifiers;
     }
-    shortcut += Platform::to_string(key);
+    shortcut += translator(Platform::to_string(key));
 
     return shortcut;
 }
-bool KeyboardShortcut::has_modifier() const
+
+std::string KeyboardShortcut::to_accel_table_string() const
 {
-    return modifiers != 0;
+    std::string shortcut;
+    if (std::string str_modifiers = Platform::to_string(modifiers); !str_modifiers.empty()) {
+        shortcut += str_modifiers;
+    }
+    shortcut += Platform::to_accel_table_string(key);
+
+    return shortcut;
 }
 
-} // Slic3r::App::Platform
+} // namespace Slic3r::App::Platform

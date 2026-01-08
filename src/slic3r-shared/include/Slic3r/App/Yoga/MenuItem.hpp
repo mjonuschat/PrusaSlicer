@@ -33,6 +33,8 @@ public:
     );
     void clear_submenu();
 
+    void set_shortcut_internal(const std::string& shortcut) override;
+
 private:
     void create(
         const std::string& label,
@@ -46,6 +48,7 @@ private:
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};
     Menu* m_sub_menu{nullptr};
+    Text* m_shortcut_text{nullptr};
 };
 
 } // namespace Slic3r::App::Yoga

@@ -24,9 +24,14 @@ public:
         return true;
     }
 
-    const std::string keyboard_shortcut_string() const
+    const std::string keyboard_shortcut_string(KeyboardShortcut::Translator translator) const
     {
-        return keyboard_shortcut() ? keyboard_shortcut().value().to_string() : std::string();
+        return keyboard_shortcut() ? keyboard_shortcut().value().to_string(translator) : std::string();
+    }
+
+    const std::string keyboard_shortcut_accel_string() const
+    {
+        return keyboard_shortcut() ? keyboard_shortcut().value().to_accel_table_string() : std::string();
     }
 };
 

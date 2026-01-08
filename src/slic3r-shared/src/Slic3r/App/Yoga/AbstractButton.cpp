@@ -71,8 +71,11 @@ const std::string& AbstractButton::shortcut() const
 
 void AbstractButton::set_shortcut(const std::string& shortcut)
 {
-    m_shortcut = shortcut;
-    m_tooltip->set_shortcut(m_shortcut);
+    if (m_shortcut != shortcut) {
+        m_shortcut = shortcut;
+        m_tooltip->set_shortcut(m_shortcut);
+        set_shortcut_internal(m_shortcut);
+    }
 }
 
 void AbstractButton::set_tooltip(const std::string& tooltip)
@@ -192,6 +195,8 @@ void AbstractButton::hovered_updated_internal() {}
 void AbstractButton::pressed_updated_internal() {}
 
 void AbstractButton::action_internal() {}
+
+void AbstractButton::set_shortcut_internal(const std::string& shortcut) {}
 
 void AbstractButton::enabled_updated_internal()
 {

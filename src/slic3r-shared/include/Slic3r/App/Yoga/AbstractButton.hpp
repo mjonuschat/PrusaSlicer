@@ -60,6 +60,7 @@ protected:
     virtual void hovered_updated_internal();
     virtual void pressed_updated_internal();
     virtual void action_internal();
+    virtual void set_shortcut_internal(const std::string& shortcut);
 
     void enabled_updated_internal() override;
     void visible_updated_internal() override;

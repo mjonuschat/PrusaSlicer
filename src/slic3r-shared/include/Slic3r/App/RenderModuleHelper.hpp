@@ -1,7 +1,7 @@
 #pragma once
 
 #define ENABLED_DEBUG_OUTLINE 0
-#define ENABLED_SHORTCUTS_LIST 1
+#define ENABLED_SHORTCUTS_LIST 0
 
 #if ENABLED_DEBUG_OUTLINE
 namespace Slic3r::App::Scene {

@@ -359,14 +359,14 @@ void MainFrame::update_accel_table()
 
     for (const auto& [cmd_id, cmd] : m_canvas->get_render_module()->commands()) {
         if (!cmd->keyboard_shortcut().has_value()) {
-            // menus with
+            // menus without shortcut
             continue;
         }
 
         wxWindow* parent{nullptr};
         int entry_id = wxNewId();
         if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(
-                WX::from_u8("\t" + cmd->keyboard_shortcut_string())
+                WX::from_u8("\t" + cmd->keyboard_shortcut_accel_string())
             ))
         {
             entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry_id);

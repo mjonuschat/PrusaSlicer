@@ -9,6 +9,7 @@
 #if ENABLED_SHORTCUTS_LIST
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include <imgui/imgui.h>
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #endif // ENABLED_DEBUG_OUTLINE
 
 namespace Slic3r::App {
@@ -112,11 +113,14 @@ void imgui_shortcuts_list(Platform::CommandRegistry& command_registry)
         if (ImGui::IsWindowAppearing()) {
             ImGui::SetWindowCollapsed(true);
         }
+
+        auto translator = [](const std::string& s) { return Biz::_u8(s); };
+
         for (const auto& [command_name, command] : command_registry.commands()) {
             ImGui::Text("%s", command_name.c_str());
             ImGui::SameLine(200);
             ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-            ImGui::Text("%s", command.get()->keyboard_shortcut_string().c_str());
+            ImGui::Text("%s", command.get()->keyboard_shortcut_string(translator).c_str());
             ImGui::PopStyleColor();
         }
     }

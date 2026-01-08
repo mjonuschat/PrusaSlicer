@@ -3,7 +3,11 @@
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 namespace Slic3r::App {
+
+static auto translator = [](const std::string& s) { return Biz::_u8(s); };
 
 void
 CommandBindingManager::bind_menu_item(const UIItemCommand* command, Yoga::AbstractButton* ui_item)
@@ -13,6 +17,8 @@ CommandBindingManager::bind_menu_item(const UIItemCommand* command, Yoga::Abstra
     ui_item->callbacks().checked_changed = [command](bool checked)
     { command->checked_changed(checked); };
 
+    ui_item->set_shortcut(command->keyboard_shortcut_string(translator));
+
     bind(command->name(), ui_item);
 }
 
@@ -21,7 +27,8 @@ void CommandBindingManager::bind_tb_item(const char* command_name, Yoga::Abstrac
     ui_item->callbacks().action = [this, command_name]()
     { m_command_registry.command(command_name).execute(); };
 
-    ui_item->set_shortcut(m_command_registry.command(command_name).keyboard_shortcut_string());
+    ui_item->set_shortcut(m_command_registry.command(command_name)
+                              .keyboard_shortcut_string(translator));
 
     if (const UIItemCommand* ui_command =
             dynamic_cast<UIItemCommand*>(&m_command_registry.command(command_name)))

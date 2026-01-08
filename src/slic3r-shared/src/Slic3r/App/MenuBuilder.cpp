@@ -86,8 +86,7 @@ void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* men
         Yoga::MenuItem* new_yoga_menu_item = yoga_menu_item->append_sub_menu_item(
             item_name_translated(sub_menu_item->name()),
             nullptr,
-            item_icon(sub_menu_item->name()),
-            sub_menu_item->command()->keyboard_shortcut_string()
+            item_icon(sub_menu_item->name())
         );
         if (sub_menu_item->children().empty()) {
             m_command_binding_manager.bind_menu_item(sub_menu_item->command(), new_yoga_menu_item);
@@ -102,8 +101,7 @@ Yoga::MenuItem* MenuBuilder::add_menu_item(Yoga::Menu* menu, App::MenuItem* menu
     Yoga::MenuItem* yoga_menu_item = menu->append_item(
         item_name_translated(menu_item->name()),
         nullptr,
-        item_icon(menu_item->name()),
-        menu_item->command()->keyboard_shortcut_string()
+        item_icon(menu_item->name())
     );
     m_command_binding_manager.bind_menu_item(menu_item->command(), yoga_menu_item);
 
