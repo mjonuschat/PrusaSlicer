@@ -12,7 +12,6 @@
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
-#include "tcbspan/span.hpp"
 
 // #define SLIC3R_DEBUG
 

@@ -40,7 +40,6 @@
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
-#include "tcbspan/span.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
 #include <memory>

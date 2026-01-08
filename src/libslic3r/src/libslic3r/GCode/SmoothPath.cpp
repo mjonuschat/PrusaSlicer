@@ -187,7 +187,7 @@ Geometry::ArcWelder::Path SmoothPathCache::resolve_or_fit(const ExtrusionPath &p
     return out;
 }
 
-SmoothPath SmoothPathCache::resolve_or_fit(tcb::span<const ExtrusionPath> paths, bool reverse, double resolution) const
+SmoothPath SmoothPathCache::resolve_or_fit(std::span<const ExtrusionPath> paths, bool reverse, double resolution) const
 {
     SmoothPath out;
     out.reserve(paths.size());
@@ -203,14 +203,14 @@ SmoothPath SmoothPathCache::resolve_or_fit(tcb::span<const ExtrusionPath> paths,
 
 SmoothPath SmoothPathCache::resolve_or_fit(const ExtrusionMultiPath &multipath, bool reverse, double resolution) const
 {
-    return this->resolve_or_fit(tcb::span{multipath.paths}, reverse, resolution);
+    return this->resolve_or_fit(std::span{multipath.paths}, reverse, resolution);
 }
 
 SmoothPath SmoothPathCache::resolve_or_fit_split_with_seam(
     const ExtrusionLoop &loop, const bool reverse, const double resolution,
     const Point &seam_point, const double seam_point_merge_distance_threshold) const
 {
-    SmoothPath out = this->resolve_or_fit(tcb::span{loop.paths}, reverse, resolution);
+    SmoothPath out = this->resolve_or_fit(std::span{loop.paths}, reverse, resolution);
     assert(! out.empty());
     if (! out.empty()) {
         // Find a closest point on a vector of smooth paths.

@@ -6,7 +6,7 @@
 #ifndef slic3r_GCode_Travels_hpp_
 #define slic3r_GCode_Travels_hpp_
 
-#include <tcbspan/span.hpp>
+#include <span>
 #include <boost/functional/hash.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/container_hash/hash.hpp>
@@ -166,7 +166,7 @@ private:
  * @endcode
  */
 std::vector<DistancedPoint> slice_xy_path(
-    tcb::span<const Point> xy_path, tcb::span<const double> sorted_distances
+    std::span<const Point> xy_path, std::span<const double> sorted_distances
 );
 
 /**
@@ -186,7 +186,7 @@ ElevatedTravelParams get_elevated_traval_params(
 /**
  * @brief Simply return the xy_path with z coord set to elevation.
  */
-Points3 generate_flat_travel(tcb::span<const Point> xy_path, const float elevation);
+Points3 generate_flat_travel(std::span<const Point> xy_path, const float elevation);
 
 /**
  * @brief Take xy_path and genrate a travel acording to elevation.
@@ -200,7 +200,7 @@ Points3 generate_flat_travel(tcb::span<const Point> xy_path, const float elevati
  * in scaled coordinates.
  */
 Points3 generate_elevated_travel(
-    const tcb::span<const Point> xy_path,
+    const std::span<const Point> xy_path,
     const std::vector<double> &ensure_points_at_distances,
     const double initial_elevation,
     const std::function<double(double)> &elevation
@@ -219,7 +219,7 @@ Points3 generate_elevated_travel(
  * **Ignores intersection with xy_path starting point.**
  */
 double get_first_crossed_line_distance(
-    tcb::span<const Line> xy_path,
+    std::span<const Line> xy_path,
     const Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &distancer,
     const ObjectsLayerToPrint &objects_to_print = {},
     const std::function<bool(const ObjectOrExtrusionLinef &)> &predicate = [](const ObjectOrExtrusionLinef &) { return true; },

@@ -53,7 +53,7 @@ if (SLIC3R_STATIC)
     # (e.g. CURL)
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 endif ()
-set(SLIC3R_RESOURCES_DIR ${CMAKE_SOURCE_DIR}/ResourcesNext)
+set(SLIC3R_RESOURCES_DIR ${CMAKE_SOURCE_DIR}/resources)
 
 include("version.inc")
 include(GNUInstallDirs)

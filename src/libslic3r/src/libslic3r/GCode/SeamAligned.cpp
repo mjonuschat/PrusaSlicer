@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <span>
 #include <stdexcept>
 #include <utility>
 
@@ -11,7 +12,6 @@
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/Line.hpp"
-#include "tcbspan/span.hpp"
 
 namespace Slic3r::Seams::Aligned {
 using Perimeters::PointType;
@@ -497,8 +497,8 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
         }
 
         const std::size_t layer_index{shell.front().layer_index};
-        tcb::span<const SeamPerimeterChoice> previous_seams{
-            layer_index == 0 ?  tcb::span<const SeamPerimeterChoice>{} : layer_seams[layer_index - 1]};
+        std::span<const SeamPerimeterChoice> previous_seams{
+            layer_index == 0 ?  std::span<const SeamPerimeterChoice>{} : layer_seams[layer_index - 1]};
         std::vector<Vec2d> previous_seams_positions;
         std::transform(
             previous_seams.begin(), previous_seams.end(),

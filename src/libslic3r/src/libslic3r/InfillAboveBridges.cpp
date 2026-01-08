@@ -1,4 +1,4 @@
-#include <tcbspan/span.hpp>
+#include <span>
 #include "libslic3r/InfillAboveBridges.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 
@@ -22,7 +22,7 @@ namespace Slic3r::PrepareInfill {
         }
 
         const SurfaceRefsByRegion *previous_layer{&surfaces.front()};
-        for (const SurfaceRefsByRegion &layer : tcb::span{surfaces}.subspan(1)) {
+        for (const SurfaceRefsByRegion &layer : std::span{surfaces}.subspan(1)) {
             ExPolygons bridges;
             for (const SurfaceCollectionRef &region : *previous_layer) {
                 for (const Surface *bridge : region.get().filter_by_type(stBottomBridge)) {

@@ -9,6 +9,7 @@
 #include <functional>
 #include <numeric>
 #include <optional>
+#include <span>
 #include <utility>
 
 #include <boost/variant.hpp>
@@ -17,7 +18,6 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/Point.hpp"
-#include "tcbspan/span.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 
@@ -67,7 +67,7 @@ struct Extrusion
 
 using Extrusions = std::vector<Extrusion>;
 
-std::vector<Extrusions> get_extrusions(tcb::span<const Slic3r::Layer *const> object_layers);
+std::vector<Extrusions> get_extrusions(std::span<const Slic3r::Layer *const> object_layers);
 
 struct BoundedPolygon {
     Polygon polygon;

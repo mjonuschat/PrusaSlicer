@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <span>
 #include <tuple>
 #include <utility>
 #include <cassert>
@@ -22,7 +23,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
-#include "tcbspan/span.hpp"
 #include "libslic3r/ShortestPath.hpp"
 
 using namespace Slic3r::Biz;
@@ -165,7 +165,7 @@ double ElevatedTravelFormula::operator()(const double distance_from_start) const
     return slope_function(distance_from_start);
 }
 
-Points3 generate_flat_travel(tcb::span<const Point> xy_path, const float elevation) {
+Points3 generate_flat_travel(std::span<const Point> xy_path, const float elevation) {
     Points3 result;
     result.reserve(xy_path.size());
     for (const Point &point : xy_path) {
@@ -182,7 +182,7 @@ Vec2d place_at_segment(
 }
 
 std::vector<DistancedPoint> slice_xy_path(
-    tcb::span<const Point> xy_path, tcb::span<const double> sorted_distances
+    std::span<const Point> xy_path, std::span<const double> sorted_distances
 ) {
     assert(xy_path.size() >= 2);
     std::vector<DistancedPoint> result;
@@ -216,7 +216,7 @@ std::vector<DistancedPoint> slice_xy_path(
 }
 
 Points3 generate_elevated_travel(
-    const tcb::span<const Point> xy_path,
+    const std::span<const Point> xy_path,
     const std::vector<double> &ensure_points_at_distances,
     const double initial_elevation,
     const std::function<double(double)> &elevation
@@ -248,7 +248,7 @@ struct Intersection
 };
 
 double get_first_crossed_line_distance(
-    tcb::span<const Line> xy_path,
+    std::span<const Line> xy_path,
     const AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &distancer,
     const ObjectsLayerToPrint &objects_to_print,
     const std::function<bool(const ObjectOrExtrusionLinef &)> &predicate,

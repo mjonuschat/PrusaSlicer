@@ -4,7 +4,7 @@
 #include <ankerl/unordered_dense.h>
 #include <optional>
 #include <vector>
-#include <tcbspan/span.hpp>
+#include <span>
 
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
@@ -61,7 +61,7 @@ public:
     Geometry::ArcWelder::Path        resolve_or_fit(const ExtrusionPath &path, bool reverse, double resolution) const;
 
     // Look-up a smooth representation of path in the cache. If it does not exist, produce a simplified polyline.
-    SmoothPath                       resolve_or_fit(tcb::span<const ExtrusionPath> paths, bool reverse, double resolution) const;
+    SmoothPath                       resolve_or_fit(std::span<const ExtrusionPath> paths, bool reverse, double resolution) const;
     SmoothPath                       resolve_or_fit(const ExtrusionMultiPath &path, bool reverse, double resolution) const;
 
     // Look-up a smooth representation of path in the cache. If it does not exist, produce a simplified polyline.

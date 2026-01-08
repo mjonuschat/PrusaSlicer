@@ -170,7 +170,7 @@ Overhangs get_overhangs(const ExtrusionPaths& paths) {
         start_point = paths.front().first_point();
     }
     Point previous_last_point{paths.front().last_point()};
-    for (const ExtrusionPath& path : tcb::span{paths}.subspan(1)) {
+    for (const ExtrusionPath& path : std::span{paths}.subspan(1)) {
         if(path.role().is_bridge() && !start_point) {
             start_point = path.first_point();
         }
@@ -241,7 +241,7 @@ Geometry::Extrusions get_external_perimeters(const Slic3r::Layer &layer, const L
     return result;
 }
 
-std::vector<Extrusions> get_extrusions(tcb::span<const Slic3r::Layer *const> object_layers) {
+std::vector<Extrusions> get_extrusions(std::span<const Slic3r::Layer *const> object_layers) {
     std::vector<Extrusions> result;
     result.reserve(object_layers.size());
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <regex>
 #include <fstream>
+#include <span>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/GCode.hpp"
@@ -185,8 +186,8 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     const unsigned layer_count = 20 / 0.4;
     INFO("Complete_objects generates the correct number of Z moves.");
     CHECK(z_moves.size() == layer_count * 2);
-    auto first_moves = tcb::span{z_moves}.subspan(0, layer_count);
-    auto second_moves = tcb::span{z_moves}.subspan(layer_count);
+    auto first_moves = std::span{z_moves}.subspan(0, layer_count);
+    auto second_moves = std::span{z_moves}.subspan(layer_count);
 
     CHECK( std::vector(first_moves.begin(), first_moves.end()) == std::vector(second_moves.begin(), second_moves.end()));
     const Polygon convex_hull{Geometry::convex_hull(extrusions)};

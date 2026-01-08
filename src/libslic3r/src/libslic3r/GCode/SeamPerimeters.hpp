@@ -1,7 +1,7 @@
 #ifndef libslic3r_SeamPerimeters_hpp_
 #define libslic3r_SeamPerimeters_hpp_
 
-#include <tcbspan/span.hpp>
+#include <span>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -63,7 +63,7 @@ using LayerInfos = std::vector<LayerInfo>;
  * @brief Construct LayerInfo for each of the provided layers.
  */
 LayerInfos get_layer_infos(
-    tcb::span<const Slic3r::Layer* const> object_layers, const double elephant_foot_compensation
+    std::span<const Slic3r::Layer* const> object_layers, const double elephant_foot_compensation
 );
 
 struct PerimeterPoint {
@@ -132,11 +132,11 @@ struct Perimeter
 {
     struct IndexToCoord
     {
-        IndexToCoord(const tcb::span<const Vec2d> positions): positions(positions) {}
+        IndexToCoord(const std::span<const Vec2d> positions): positions(positions) {}
         IndexToCoord() = default;
         double operator()(const size_t index, size_t dim) const;
 
-        tcb::span<const Vec2d> positions;
+        std::span<const Vec2d> positions;
     };
 
     using PointTree = KDTreeIndirect<2, double, IndexToCoord>;

@@ -48,7 +48,6 @@
 #include "libslic3r/Support/SupportLayer.hpp"
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Surface.hpp"
-#include "tcbspan/span.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Log.hpp"
 

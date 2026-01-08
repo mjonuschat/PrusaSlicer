@@ -26,7 +26,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Layer.hpp"
-#include "tcbspan/span.hpp"
 
 namespace Slic3r {
 
