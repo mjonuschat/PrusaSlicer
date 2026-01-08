@@ -22,6 +22,7 @@ class ProjectButton;
 class LayoutButton;
 class Rectangle;
 class ScrollArea;
+class Menu;
 } // namespace Yoga
 
 struct ThumbnailStore;
@@ -41,13 +42,16 @@ public:
     void on_selected_project_changed(size_t index) override;
 
     void focus_search();
+    void register_menu_commands();
 
 private:
-    void add_load_project_btn(Item* parent);
+    void load_project();
+    void save_project_as();
+
     void add_save_project_btn(Item* parent);
     void add_show_ui_btn(Item* parent);
 
-    void add_new_project_btn(Item* parent);
+    void add_menu_btns(Item* parent);
 
 private:
     using ProjectButtonListView = Yoga::ListView<
@@ -61,14 +65,17 @@ private:
 
     ProjectButtonListView* m_list_view{nullptr};
 
-    Yoga::LayoutButton* m_new_btn{nullptr};
-    Yoga::LayoutButton* m_load_btn{nullptr};
+    Yoga::LayoutButton* m_main_menu_btn{nullptr};
+    Yoga::LayoutButton* m_file_menu_btn{nullptr};
     Yoga::LayoutButton* m_save_btn{nullptr};
     Yoga::LayoutButton* m_show_ui_btn{nullptr};
 
+    Yoga::Menu* m_main_menu{nullptr};
+    Yoga::Menu* m_file_menu{nullptr};
+
     SearchBar* m_search_bar{nullptr};
 
-    Biz::ProjectInteractor* m_project_interactor{nullptr};
+    Biz::ProjectInteractor& m_project_interactor;
     Platform::AbstractRenderModule* m_render_module{nullptr};
     ThumbnailStore& m_thumbnail_store;
     Navigator& m_navigator;

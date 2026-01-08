@@ -17,6 +17,8 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/CommandBindingManager.hpp"
 
 #include <memory>
 
@@ -54,7 +56,9 @@ public:
         m_project_interactor(project_interactor),
         m_thumbnail_store(thumbnail_store),
         m_thumbnail_store_updater(thumbnail_store_updater),
-        m_thumbnail_image_generator(thumbnail_image_generator)
+        m_thumbnail_image_generator(thumbnail_image_generator),
+        m_menu_manager(m_command_registry),
+        m_command_binding_manager(m_command_registry)
     {}
 
     /**
@@ -113,6 +117,16 @@ public:
 
     void set_object_list_collapsed(bool collapsed);
 
+    MenuManager& menu_manager() override
+    {
+        return m_menu_manager;
+    }
+
+    CommandBindingManager& command_binding_manager() override
+    {
+        return m_command_binding_manager;
+    }
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface
@@ -132,8 +146,9 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     std::unique_ptr<PreviewScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
-    bool m_use_yoga_layout = true;
     DialogNavigation m_dialog_navigation;
+    MenuManager m_menu_manager;
+    CommandBindingManager m_command_binding_manager;
 
     PreviewCameraGizmo* m_camera_gizmo{ nullptr };
 

@@ -14,6 +14,8 @@ namespace Slic3r::App::Platform {
 class CommandRegistry
 {
 public:
+    using CommandsMap = std::unordered_map<std::string, std::unique_ptr<ICommand>>;
+
     virtual ~CommandRegistry() = default;
 
     /**
@@ -29,8 +31,11 @@ public:
      */
     bool process_keyboard_event(const KeyboardEvent& e);
 
+    ICommand& command(const char* name);
+    const CommandsMap& commands() { return m_commands_by_id; }
+
 private:
-    std::unordered_map<std::string, std::unique_ptr<ICommand>> m_commands_by_id;
+    CommandsMap m_commands_by_id;
 };
 
 } // Slic3r::App::Platform

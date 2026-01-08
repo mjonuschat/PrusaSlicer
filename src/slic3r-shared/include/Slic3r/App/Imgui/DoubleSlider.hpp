@@ -10,6 +10,11 @@
 #include <vector>
 #include <functional>
 
+namespace Slic3r::App {
+class MenuManager;
+class CommandBindingManager;
+} // namespace Slic3r::App
+
 namespace Slic3r::App::Imgui::DoubleSlider {
 
 typedef std::function<void(void)> OnThumbMoveCallback;
@@ -264,6 +269,12 @@ public:
         process_thumb_move();
     }
 
+    virtual void register_commands(
+        MenuManager& menu_manager,
+        CommandBindingManager& command_binding_manager
+    )
+    {}
+
 protected:
     virtual std::string label(int pos) const {
         if (m_values.empty())
@@ -288,6 +299,9 @@ protected:
     std::vector<ValType> m_alternate_values;
     Control* m_ctrl;
     float m_scale{ 1.0f };
+
+    MenuManager* m_menu_manager{nullptr};
+    CommandBindingManager* m_command_binding_manager{nullptr};
 
 private:
     bool m_allow_process_thumb_move{ true };

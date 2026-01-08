@@ -15,6 +15,8 @@ namespace Slic3r::App {
 
 Navigator::~Navigator() {}
 
+Navigator::Callbacks& Navigator::callbacks() { return m_callbacks; }
+
 void Navigator::on_init(
     Plater::PlaterRenderModule& plater_module,
     Preview::PreviewRenderModule& preview_module,
@@ -42,12 +44,17 @@ void Navigator::navigate_to_module_type(Render::ModuleType type)
 void Navigator::set_render_module_type(Render::ModuleType type)
 {
     ProjectContext& context = m_project_contexts->selected();
+    const bool force_render_modele_switch = context.type != type;
     context.type            = type;
 
     if (type == Render::ModuleType::Plater) {
         m_canvas->set_next_render_module(m_plater_module);
     } else if (type == Render::ModuleType::Preview) {
         m_canvas->set_next_render_module(m_preview_module);
+    }
+
+    if (force_render_modele_switch && m_callbacks.render_module_switched) {
+        m_callbacks.render_module_switched();
     }
 }
 

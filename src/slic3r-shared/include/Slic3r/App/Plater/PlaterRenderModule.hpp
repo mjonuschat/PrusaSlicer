@@ -8,6 +8,9 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
+#include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
 namespace Slic3r::Biz {
@@ -100,6 +103,16 @@ public:
     bool is_opened_preferences();
 
     void set_object_list_collapsed(bool collapsed);
+
+    MenuManager& menu_manager() override
+    {
+        return m_menu_manager;
+    }
+
+    CommandBindingManager& command_binding_manager() override
+    {
+        return m_command_binding_manager;
+    }
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
@@ -198,6 +211,9 @@ private:
     Navigator* m_render_module_navigator{nullptr};
 
     DialogNavigation m_dialog_navigation;
+    MenuManager m_menu_manager;
+    CommandBindingManager m_command_binding_manager;
+
     std::set<Yoga::Dialog*> m_gizmo_dialogs;
 };
 

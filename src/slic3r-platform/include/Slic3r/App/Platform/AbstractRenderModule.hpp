@@ -5,10 +5,13 @@
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
+#include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 namespace Slic3r::App {
 class Navigator;
+class MenuManager;
+class CommandBindingManager;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Platform {
@@ -49,6 +52,11 @@ public:
 
     void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};
+
+    ICommand& command(const char* name);
+    const CommandRegistry::CommandsMap& commands();
+    virtual CommandBindingManager& command_binding_manager() = 0;
+    virtual MenuManager& menu_manager() = 0;
 
 protected:
     /**

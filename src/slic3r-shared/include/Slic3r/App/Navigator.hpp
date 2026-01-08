@@ -43,6 +43,12 @@ class Navigator : public Biz::ISelectedProjectChangedListener
 public:
     ~Navigator();
 
+    struct Callbacks {
+        std::function<void()> render_module_switched;
+    };
+
+    Callbacks& callbacks();
+
     void on_init(
         Plater::PlaterRenderModule& plater_module,
         Preview::PreviewRenderModule& preview_module,
@@ -85,6 +91,7 @@ private:
     Preview::PreviewRenderModule* m_preview_module{nullptr};
     Platform::AbstractRenderCanvas* m_canvas{nullptr};
     bool m_object_list_collapsed{false};
+    Callbacks m_callbacks;
 };
 
 } // namespace Slic3r::App

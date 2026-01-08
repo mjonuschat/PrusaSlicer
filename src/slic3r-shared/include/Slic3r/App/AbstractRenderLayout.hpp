@@ -63,32 +63,24 @@ public:
     Yoga::ToolbarButton* add_toolbar_item(
         ToolbarID id,
         Render::Icon icon,
-        const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks
+        const std::string& tooltip
     );
     Yoga::ToolbarButton* add_toolbar_item_checkable(
         ToolbarID id,
         Render::Icon icon,
         const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
         bool checked = false
     );
     Yoga::ToolbarButton* add_toolbar_item_gizmo(
         ToolbarID id,
         Render::Icon icon,
         const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
         Scene::IToolGizmo* tool
     );
     Yoga::ToolbarSwitchButton* add_toolbar_item_switch(
         ToolbarID id,
         Render::Icon icon,
         const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
         Yoga::ToolbarSwitchButton::SwitchPosition switch_position
     );
 

@@ -44,8 +44,8 @@ void AbstractRenderModule::ensure_initialized(Render::Device& device, Render::Im
     Platform::AnimationManager& animation_manager)
 {
     if (!m_initialized) {
-        on_init(device, imgui_render, animation_manager);
         register_commands();
+        on_init(device, imgui_render, animation_manager);
         m_initialized = true;
     }
 }
@@ -64,6 +64,16 @@ void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &
     m_device = &device;
     m_imgui_render = &imgui_render;
     m_animation_manager = &animation_manager;
+}
+
+ICommand& AbstractRenderModule::command(const char* name)
+{
+    return m_command_registry.command(name);
+}
+
+const CommandRegistry::CommandsMap& AbstractRenderModule::commands()
+{
+    return m_command_registry.commands();
 }
 
 } // namespace Slic3r::App::Platform

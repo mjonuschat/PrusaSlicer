@@ -6,6 +6,8 @@
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/CommandBindingManager.hpp"
 
 namespace Slic3r::App {
 
@@ -19,6 +21,16 @@ public:
     void on_scene_mouse_event(const Platform::MouseEvent &e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent &e) override;
     void set_navigator(Navigator* n) override {};
+
+    MenuManager& menu_manager() override
+    {
+        return m_menu_manager;
+    }
+
+    CommandBindingManager& command_binding_manager() override
+    {
+        return m_command_binding_manager;
+    }
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
@@ -58,6 +70,8 @@ private:
 
     std::unique_ptr<Scene::Scene> m_scene;
     Scene::Node::NodeList m_highlighted_nodes;
+    MenuManager m_menu_manager;
+    CommandBindingManager m_command_binding_manager;
 
     int m_last_mouse_x{0};
     int m_last_mouse_y{0};

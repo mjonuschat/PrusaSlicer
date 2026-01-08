@@ -104,9 +104,7 @@ void AbstractRenderLayout::update_left_separator_enable()
 ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
     Render::Icon icon,
-    const std::string& tooltip,
-    const std::string& shortcut,
-    AbstractButton::Callbacks callbacks
+    const std::string& tooltip
 )
 {
     Toolbar* toolbar = find_toolbar(id);
@@ -115,8 +113,6 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     toolbar->set_visible(true);
 
     ToolbarButton* button = toolbar->emplace_back<ToolbarButton>(icon, tooltip);
-    button->set_shortcut(shortcut);
-    button->callbacks() = callbacks;
 
     return button;
 }
@@ -125,12 +121,10 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
-    const std::string& shortcut,
-    AbstractButton::Callbacks callbacks,
     bool checked
 )
 {
-    ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
+    ToolbarButton* button = add_toolbar_item(id, icon, tooltip);
     ASSERT(button);
 
     button->set_checked(checked);
@@ -143,12 +137,10 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
-    const std::string& shortcut,
-    Yoga::AbstractButton::Callbacks callbacks,
     Scene::IToolGizmo* tool
 )
 {
-    ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
+    ToolbarButton* button = add_toolbar_item(id, icon, tooltip);
     ASSERT(button);
 
     return button;
@@ -158,8 +150,6 @@ ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
-    const std::string& shortcut,
-    Yoga::AbstractButton::Callbacks callbacks,
     ToolbarSwitchButton::SwitchPosition switch_position
 )
 {
@@ -170,8 +160,6 @@ ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
 
     ToolbarSwitchButton* switch_button =
         toolbar->emplace_back<ToolbarSwitchButton>(switch_position, icon, tooltip);
-    switch_button->set_shortcut(shortcut);
-    switch_button->callbacks() = callbacks;
 
     return switch_button;
 }

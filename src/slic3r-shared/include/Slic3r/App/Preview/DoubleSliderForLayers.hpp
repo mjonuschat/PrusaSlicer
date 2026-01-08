@@ -104,6 +104,11 @@ public:
 
     static int find_close_layer_idx(const std::vector<float>& zs, float z, float eps);
 
+    void register_commands(
+        MenuManager& menu_manager,
+        CommandBindingManager& command_binding_manager
+    ) override;
+
 private:
     bool is_wipe_tower_layer(int tick) const;
 

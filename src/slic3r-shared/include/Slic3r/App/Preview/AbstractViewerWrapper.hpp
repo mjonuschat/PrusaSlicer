@@ -79,8 +79,6 @@ public:
 
     std::unique_ptr<DoubleSliderForLayers> unload_double_slider_layers();
 
-protected:
-
     void slider_layers_move_current_thumb(int delta) { m_slider_layers->move_current_thumb(delta); }
     void slider_layers_jump_to_value() { m_slider_layers->jump_to_value(); }
 

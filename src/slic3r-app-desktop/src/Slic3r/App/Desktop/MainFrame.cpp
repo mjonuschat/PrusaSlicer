@@ -23,6 +23,9 @@
 #include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 
+#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include "Slic3r/App/Platform/KeyboardShortcut.hpp"
+
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/WindowMetrics.hpp"
 
@@ -265,6 +268,16 @@ MainFrame::MainFrame(
     );
 #endif
 
+    Bind(
+        wxEVT_SHOW,
+        [this](wxShowEvent& event)
+        {
+            wxTheApp->CallAfter([this]() { 
+                this->update_accel_table(); });
+            event.Skip();
+        }
+    );
+
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::on_close, this);
 
     Bind(
@@ -280,6 +293,38 @@ MainFrame::MainFrame(
     );
 
     persist_window_geometry(this, true);
+
+    // We enable or disable the accelerator table depending on whether the canvas has focus.
+    //
+    // Reason:
+    // wxAcceleratorTable intercepts wxEVT_KEY_DOWN and wxEVT_CHAR events before they reach
+    // child controls. As a result, wxGLCanvas receives only wxEVT_KEY_UP, while KEY_DOWN and
+    // CHAR are lost whenever an accelerator matches the pressed key.
+    //
+    // To allow the canvas to process raw keyboard input (e.g. camera controls) while it is
+    // focused, we temporarily disable the accelerator table on wxEVT_SET_FOCUS, and restore it
+    // on wxEVT_KILL_FOCUS. This ensures:
+    //
+    // * When the canvas IS focused -> it receives full keyboard events (DOWN/UP/CHAR)
+    // * When the canvas is NOT focused -> global accelerators function normally
+    //
+    // This is the only cross-platform way to combine wxGLCanvas keyboard handling with
+    // application-wide accelerators in wxWidgets.
+    m_canvas->Bind(
+        wxEVT_SET_FOCUS,
+        [this](wxFocusEvent&)
+        {
+            this->SetAcceleratorTable(wxNullAcceleratorTable);
+            // Canvas now receives normal key events again
+        }
+    );
+    m_canvas->Bind(
+        wxEVT_KILL_FOCUS,
+        [this](wxFocusEvent&) { this->SetAcceleratorTable(m_accel_table); }
+    );
+
+    m_navigator.callbacks().render_module_switched = [this]()
+    { wxTheApp->CallAfter([this]() { this->update_accel_table(); }); };
 }
 
 MainFrame::~MainFrame()
@@ -305,6 +350,52 @@ void MainFrame::on_close(wxCloseEvent& event)
 {
     Slic3r::Biz::Platform::close();
     event.Skip();
+}
+
+void MainFrame::update_accel_table()
+{
+    std::vector<wxAcceleratorEntry> entries;
+    entries.reserve(100);
+
+    for (const auto& [cmd_id, cmd] : m_canvas->get_render_module()->commands()) {
+        if (!cmd->keyboard_shortcut().has_value()) {
+            // menus with
+            continue;
+        }
+
+        wxWindow* parent{nullptr};
+        int entry_id = wxNewId();
+        if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(
+                WX::from_u8("\t" + cmd->keyboard_shortcut_string())
+            ))
+        {
+            entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry_id);
+
+            this->Bind(
+                wxEVT_MENU,
+                [cmd_ptr = cmd.get(), this](wxCommandEvent& event)
+                {
+                    if (!m_canvas->HasFocus()) {
+                        m_canvas->SetFocus();
+                    }
+                    if (cmd_ptr->enabled()) {
+                        cmd_ptr->execute();
+                    }
+                },
+                entry_id
+            );
+        }
+    }
+
+    // Add here something extra into acceleration table, if we need it
+
+    m_accel_table = wxAcceleratorTable(entries.size(), entries.data());
+
+    if (m_canvas->HasFocus()) {
+        this->SetAcceleratorTable(wxNullAcceleratorTable);
+    } else {
+        this->SetAcceleratorTable(m_accel_table);
+    }
 }
 
 void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
