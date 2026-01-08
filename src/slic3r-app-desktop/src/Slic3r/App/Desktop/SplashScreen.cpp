@@ -112,7 +112,7 @@ SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
     this->SetPosition(pos);
     // The splash screen size may change after being moved to another display,
     // so update it based on the bitmap size.
-    this->SetClientSize(m_main_bitmap.GetWidth(), m_main_bitmap.GetHeight());
+    this->SetClientSize(m_main_bitmap.GetLogicalWidth(), m_main_bitmap.GetLogicalHeight());
     this->CenterOnScreen();
 
     // Initialize constant texts and scale fonts using the determined scale factor.
