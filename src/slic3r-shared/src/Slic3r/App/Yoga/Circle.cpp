@@ -21,7 +21,13 @@ void Circle::render(Vec2f pos, Vec2f size)
 
     draw_list->AddCircleFilled(rect.GetCenter(), 0.5f*rect.GetHeight(), fill_color, 36);
     if (border_width() > 0) {
-        draw_list->AddCircle(rect.GetCenter(), 0.5f * rect.GetHeight(), border_color(), 36, border_width());
+        draw_list->AddCircle(
+            rect.GetCenter(),
+            0.5f * rect.GetHeight(),
+            enabled() ? border_color() : border_color_disabled(),
+            36,
+            border_width()
+        );
     }
 
     render_item_end(pos, size);

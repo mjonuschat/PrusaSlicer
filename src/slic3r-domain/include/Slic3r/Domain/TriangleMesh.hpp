@@ -65,7 +65,6 @@ struct RepairedMeshErrors {
 
 struct TriangleMeshStats {
     // Mesh metrics.
-    uint32_t      number_of_facets          = 0;
     stl_vertex    max                       = stl_vertex::Zero();
     stl_vertex    min                       = stl_vertex::Zero();
     stl_vertex    size                      = stl_vertex::Zero();
@@ -80,23 +79,17 @@ struct TriangleMeshStats {
 
     void clear() { *this = TriangleMeshStats(); }
 
-    TriangleMeshStats merge(const TriangleMeshStats &rhs) const {
-      if (this->number_of_facets == 0)
-        return rhs;
-      else if (rhs.number_of_facets == 0)
-        return *this;
-      else {
+    TriangleMeshStats merge(const TriangleMeshStats& rhs) const
+    {
         TriangleMeshStats out;
-        out.number_of_facets        = this->number_of_facets + rhs.number_of_facets;
-        out.min                     = this->min.cwiseMin(rhs.min);
-        out.max                     = this->max.cwiseMax(rhs.max);
-        out.size                    = out.max - out.min;
-        out.number_of_parts         = this->number_of_parts     + rhs.number_of_parts;
-        out.open_edges              = this->open_edges          + rhs.open_edges;
-        out.volume                  = this->volume              + rhs.volume;
+        out.min             = this->min.cwiseMin(rhs.min);
+        out.max             = this->max.cwiseMax(rhs.max);
+        out.size            = out.max - out.min;
+        out.number_of_parts = this->number_of_parts + rhs.number_of_parts;
+        out.open_edges      = this->open_edges + rhs.open_edges;
+        out.volume          = this->volume + rhs.volume;
         out.repaired_errors.merge(rhs.repaired_errors);
         return out;
-      }
     }
 
     bool manifold() const { return open_edges == 0; }
@@ -127,7 +120,7 @@ public:
     // Return the size of the mesh in coordinates.
     Domain::Vec3d size() const { return m_stats.size.cast<double>(); }
     // Returns the convex hull of this TriangleMesh
-    size_t facets_count() const { assert(m_stats.number_of_facets == this->its.indices.size()); return m_stats.number_of_facets; }
+    size_t facets_count() const { return this->its.indices.size(); }
     bool   empty() const { return this->facets_count() == 0; }
     bool   has_zero_volume() const;
     // Estimate of the memory occupied by this structure, important for keeping an eye on the Undo / Redo stack allocation.

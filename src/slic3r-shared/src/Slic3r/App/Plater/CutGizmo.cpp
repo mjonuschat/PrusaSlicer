@@ -542,10 +542,14 @@ CutGizmo::CutGizmo(
 
     m_dialog->callbacks().z_changed = [this](double new_Z)
     {
-        m_plane_center.z() = new_Z;
-        update_cut_plane_trafo();
-
-        preprocess_cut();
+        if (!Domain::fuzzy_compare(m_plane_center.z(), new_Z)) {
+            m_plane_center.z() = new_Z;
+            update_cut_plane_trafo();
+            if (is_planar_mode()) {
+                update_clipper_presenter();
+            }
+            preprocess_cut();
+        }
     };
 
     m_dialog->callbacks().mode_changed = [this]()
@@ -602,8 +606,8 @@ CutGizmo::CutGizmo(
         set_plane_center(m_bb_center);
         m_start_dragging_m = context().rotation_m = Transform3d::Identity();
 
-        update_cut_plane_mesh();
         update_cut_plane_trafo();
+        update_cut_plane_mesh();
     };
 
     m_dialog->callbacks().flip_cut_plane = [this]() { flip_cut_plane(); };
@@ -611,6 +615,7 @@ CutGizmo::CutGizmo(
     m_dialog->callbacks().connectors_editing_changed = [this](bool connectors_editing)
     {
         update_nodes_on_mode_changed();
+        update_cut_plane_color();
         context().connectors_editing = connectors_editing;
     };
 }
@@ -867,9 +872,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
                 if (is_planar_mode()) {
                     update_clipper_presenter();
                 }
-                if (is_planar_mode() || m_hovered_handle.is_move_x()) {
-                    update_cut_plane_trafo();
-                }
+                update_cut_plane_trafo();
             }
             m_can_flip_plane = false;
         }
@@ -1035,6 +1038,16 @@ void CutGizmo::on_stop_dragging()
 
 bool CutGizmo::set_plane_center(const Vec3d& center_pos)
 {
+    if (!is_planar_mode()) {
+        // Non-planar mode allows translation of the cut plane while keeping its normal fixed.
+        // Ensure the new plane center stays inside the bounding sphere of the bounding box.
+        const double dist = (m_bb_center - center_pos).norm();
+        const double radius = (m_bb_center - m_bounding_box.min).norm();
+        if (dist > radius) {
+            return false;
+        }
+    }
+
     // Compute the projection radius of the bounding box onto the plane normal.
     // Absolute values are used because extents contribute regardless of direction.
     Vec3d bb_half_extents = (m_bounding_box.max - m_bounding_box.min) * 0.5;
@@ -1148,7 +1161,7 @@ void CutGizmo::update_scene_nodes()
 
     m_is_cut_plane_recreation_suppressed = true;
 
-    m_dialog->set_build_size(bb_size);
+    m_dialog->set_build_size(bb_size, m_bb_center.z());
     m_dialog->set_groove_values(context().groove, m_mean_size);
     m_dialog->set_connector_defaults(m_mean_size);
 
@@ -1346,6 +1359,8 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
 {
     SPDLOG_DEBUG("build_volume type:Cut plane handles");
 
+    static constexpr double SCALE_FACTOR = 0.075;
+
     builder.set_debug_name("Handles");
     builder.set_tag(CutHandleNodeTag());
 
@@ -1416,6 +1431,7 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
                 material,
                 Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
             )
+            .set_screen_space_sized_modifier(SCALE_FACTOR)
             .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Sphere)->aabb_mesh());
     };
 
@@ -1454,6 +1470,7 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
                 material,
                 Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
             )
+            .set_screen_space_sized_modifier(SCALE_FACTOR)
             .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Cone)->aabb_mesh());
     };
 
@@ -1502,6 +1519,14 @@ void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
     );
 }
 
+void CutGizmo::update_cut_plane_color()
+{
+    ColorRGBA cp_clr          = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
+    Render::Material material = m_plane_node->render_component()->material();
+    material.set_uniform("uniform_color", cp_clr).set_transparent(cp_clr.is_transparent());
+    m_plane_node->set_material_override(material);
+}
+
 void CutGizmo::update_cut_plane_mesh()
 {
     if (m_is_cut_plane_recreation_suppressed)
@@ -1534,10 +1559,8 @@ void CutGizmo::update_cut_plane_mesh()
     if (is_planar_mode()) {
         update_clipper_presenter();
     }
-    ColorRGBA cp_clr          = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
-    Render::Material material = m_plane_node->render_component()->material();
-    material.set_uniform("uniform_color", cp_clr).set_transparent(cp_clr.is_transparent());
-    m_plane_node->set_material_override(material);
+
+    update_cut_plane_color();
 
     preprocess_cut();
 }
@@ -1736,7 +1759,7 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                             trafo
                             * translation_transform(offset)
                             * rotation_transform(rotation)
-                            * scale_transform(scale)
+           //                 * scale_transform(scale)
                         );
                     }
                 } else if (tag_h.is_y_axis()) {
@@ -1754,7 +1777,7 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                             trafo
                             * translation_transform(offset)
                             * rotation_transform(rotation)
-                            * scale_transform(scale)
+           //                 * scale_transform(scale)
                         );
                     }
                 } else if (tag_h.is_z_axis()) {
@@ -1771,13 +1794,13 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
                                 trafo
                                 * translation_transform(offset)
                                 * rotation_transform(rotation)
-                                * scale_transform(scale)
+                   //             * scale_transform(scale)
                             );
                         } else {
                             node_child->set_local_transform(
                                 trafo
                                 * translation_transform(handle_y_shift * Vec3d::UnitY())
-                                * scale_transform(size)
+             //                   * scale_transform(size)
                             );
                         }
                     }
@@ -1837,7 +1860,7 @@ void CutGizmo::put_connectors_on_cut_plane(const Vec3d& cp_normal, double cp_off
 
 void CutGizmo::update_clipper_presenter(bool force_reset_ignored)
 {
-    if (!is_planar_mode())
+    if (!is_planar_mode() || m_is_cut_plane_recreation_suppressed)
         return;
 
     auto rotate_vec3d_around_plane_center = [&](Vec3d& vec) -> void
@@ -1877,6 +1900,8 @@ void CutGizmo::update_clipper_presenter(bool force_reset_ignored)
     m_clipper_presenter.update_clipper(m_clp_normal, offset, dist, force_reset_ignored);
 
     put_connectors_on_cut_plane(m_clp_normal, offset);
+
+    check_and_update_connectors_state();
 }
 
 void CutGizmo::init_scene_nodes()
@@ -2437,11 +2462,14 @@ void CutGizmo::update_dialog_state()
 {
     bool is_planar = is_planar_mode();
     m_dialog->update_state(
-        is_planar ? m_info_stats.outside_cut_contour : 0,
-        is_planar ? m_info_stats.outside_bb : 0,
-        is_planar ? m_info_stats.is_overlap : 0,
-        is_planar ? !m_clipper_presenter.has_valid_contour() : false,
-        is_planar ? false : !is_valid_groove()
+        CutDialog::OutState{
+            .connectors_outside_cut_contour = is_planar ? m_info_stats.outside_cut_contour : 0,
+            .connectors_outside_object      = is_planar ? m_info_stats.outside_bb : 0,
+            .connectors_overlap             = is_planar ? m_info_stats.is_overlap : false,
+            .plane_outside_object = is_planar ? !m_clipper_presenter.has_valid_contour() : false,
+            .invalid_groove       = is_planar ? false : !is_valid_groove(),
+            .has_connectors       = !context().selected_object->cut_connectors.empty()
+        }
     );
 }
 
@@ -2704,6 +2732,8 @@ void CutGizmo::perform_cut()
         // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
     }
+
+    context().invalidate();
 }
 
 void CutGizmo::reset_preprocess_cut()

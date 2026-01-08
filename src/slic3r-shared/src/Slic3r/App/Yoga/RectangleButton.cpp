@@ -40,8 +40,11 @@ void RectangleButton::set_background_color(const ImColor& color)
     m_background_color = color;
     if (color.Value.w == 0.f)
         m_background_color_hover = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    else
+    else {
         m_background_color_hover = Imgui::adjust_brightness(m_background_color, 1.2f);
+        m_background_color_disabled = Imgui::adjust_brightness(m_background_color, 0.85f);
+        m_background->set_disabled_fill(m_background_color_disabled);
+    }
     update_fill();
 }
 

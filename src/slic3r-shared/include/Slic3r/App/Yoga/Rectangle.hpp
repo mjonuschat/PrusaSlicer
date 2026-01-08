@@ -18,6 +18,7 @@ public:
     const ImColor& fill() const;
     std::optional<ImColor> disabled_fill() const;
     const ImColor& border_color() const;
+    const ImColor& border_color_disabled() const;
     float border_width() const;
     float rounding() const;
     ImDrawFlags flags() const;
@@ -25,6 +26,7 @@ public:
     void set_fill(const ImColor& fill);
     void set_disabled_fill(const ImColor& fill);
     void set_border_color(const ImColor& border_color);
+    void set_border_color_disabled(const ImColor& border_color_disabled);
     void set_border_width(float border_width);
     void set_rounding(float rounding);
     void set_flags(ImDrawFlags flags);
@@ -36,6 +38,7 @@ private:
     ImColor m_fill = IM_COL32_WHITE;
     std::optional<ImColor> m_disabled_fill;
     ImColor m_border_color = IM_COL32_WHITE;
+    ImColor m_border_color_disabled = ImColor(95, 95, 95);
     float m_border_width = 0;
     float m_rounding = 5.f;
     ImDrawFlags m_flags = ImDrawFlags_RoundCornersAll;

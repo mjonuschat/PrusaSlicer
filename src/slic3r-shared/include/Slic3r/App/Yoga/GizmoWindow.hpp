@@ -21,6 +21,7 @@ public:
     struct GizmoCallbacks
     {
         std::function<void()> close_requested{nullptr};
+        std::function<void()> revert_requested{nullptr};
     };
 
     explicit GizmoWindow(const std::string& title, Render::Icon icon);
@@ -43,17 +44,19 @@ protected:
     Item* content() const;
 
     LayoutButton* close_button() const;
+    LayoutButton* revert_button() const;
 
 protected:
     GizmoCallbacks m_gizmo_callback;
 
     GizmoDialogHelp m_help;
 
-    LayoutButton* m_close_button = nullptr;
-    Item* m_content              = nullptr;
-    Item* m_top_row              = nullptr;
-    Item* m_tab_container        = nullptr;
-    size_t m_current_tab_index   = 0;
+    LayoutButton* m_close_button  = nullptr;
+    LayoutButton* m_revert_button = nullptr;
+    Item* m_content               = nullptr;
+    Item* m_top_row               = nullptr;
+    Item* m_tab_container         = nullptr;
+    size_t m_current_tab_index    = 0;
 
     ImColor m_color_bg           = ImColor(27, 27, 27);
     ImColor m_color_bg_alternate = ImColor(41, 41, 41);

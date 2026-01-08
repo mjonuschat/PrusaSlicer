@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include <fmt/format.h>
@@ -16,6 +17,18 @@ SliderWithInput::Callbacks& SliderWithInput::callbacks()
 }
 
 SliderWithInput::SliderWithInput() : Item()
+{
+    Create();
+}
+
+SliderWithInput::SliderWithInput(const std::string& unit) : Item()
+{
+    Create();
+    m_unit->set_visible(true);
+    set_unit(unit);
+}
+
+void SliderWithInput::Create()
 {
     set_gap(10.f);
     set_align_items(YGAlignCenter);
@@ -40,6 +53,9 @@ SliderWithInput::SliderWithInput() : Item()
     std::unique_ptr<DoubleValidator> validator = std::make_unique<DoubleValidator>();
     validator->set_precision(2);
     m_input->set_validator(std::move(validator));
+
+    m_unit = emplace_back<Text>("");
+    m_unit->set_visible(false);
 
     m_slider = emplace_back<Slider>();
     m_slider->set_flex_grow(1);
@@ -178,6 +194,16 @@ void SliderWithInput::reset()
 void SliderWithInput::set_undef_value()
 {
     // ToDo! set empty value and don't process the value_changed
+}
+
+const std::string& SliderWithInput::unit() const
+{
+    return m_unit->text();
+}
+
+void SliderWithInput::set_unit(const std::string& unit)
+{
+    m_unit->set_text(unit);
 }
 
 } // namespace Slic3r::App::Yoga
