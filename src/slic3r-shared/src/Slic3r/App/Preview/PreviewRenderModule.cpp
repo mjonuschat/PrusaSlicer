@@ -25,6 +25,7 @@
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
+#include "Slic3r/App/UIItemCommand.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -58,6 +59,9 @@ namespace Slic3r::App::Preview {
 
 using Domain::TriangleMesh;
 namespace CustomGCode = Domain::CustomGCode;
+
+using CommandName          = Platform::CommandName;
+using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
 
 void PreviewRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
@@ -206,52 +210,43 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         [this](const Plater::BedThumbnailTextures& textures) { update_bed_instances(); }
     );
 
-    // temporary to allow to switch yoga layout on/off
-    if (m_use_yoga_layout) {
-        Domain::PrinterTechnology printer_technology =
-            m_project_interactor.selected_config_container().print_technology();
-        bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
-            && m_fdm_viewer.has_data()
-            && printer_technology == Domain::PrinterTechnology::FFF;
+    Domain::PrinterTechnology printer_technology =
+        m_project_interactor.selected_config_container().print_technology();
+    bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
+        && m_fdm_viewer.has_data()
+        && printer_technology == Domain::PrinterTechnology::FFF;
 
-        if (m_layout) {
-            m_button_gcode_inspect->set_visible(gcode_window_enabled);
-            if (m_button_gcode_inspect->checked() && !gcode_window_enabled) {
-                m_button_gcode_inspect->set_checked(false);
-            }
-            m_legend->set_visible(gcode_window_enabled);
-            m_slider_layers->set_visible(m_fdm_viewer.has_data());
-            m_sla_slider_layers->set_visible(m_sla_viewer.has_data());
-            m_slider_gcode->set_visible(m_fdm_viewer.has_data());
+    if (m_layout) {
+        m_button_gcode_inspect->set_visible(gcode_window_enabled);
+        if (m_button_gcode_inspect->checked() && !gcode_window_enabled) {
+            m_button_gcode_inspect->set_checked(false);
         }
+        m_legend->set_visible(gcode_window_enabled);
+        m_slider_layers->set_visible(m_fdm_viewer.has_data());
+        m_sla_slider_layers->set_visible(m_sla_viewer.has_data());
+        m_slider_gcode->set_visible(m_fdm_viewer.has_data());
+    }
 
-        m_cube_view->set_camera_data(
-            m_scene_presenter->scene().camera(),
-            m_scene_presenter->scene().camera_trackball()
-        );
+    m_cube_view->set_camera_data(
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
 
-        m_layout->render({m_screen_info.logical_width(), m_screen_info.logical_height()});
+    m_layout->render({m_screen_info.logical_width(), m_screen_info.logical_height()});
 
-        if (m_cube_view->require_render())
-            request_render();
+    if (m_cube_view->require_render())
+        request_render();
 
-        if (gcode_window_enabled != m_fdm_viewer.tool_marker_enabled()) {
-            m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
-            update_scene_aabb();
-        }
-    } else {
-        const libvgcode::Interval& visible_range = m_fdm_viewer.view_visible_range();
-        const libvgcode::Interval& enabled_range = m_fdm_viewer.view_enabled_range();
-        bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
-            && m_fdm_viewer.has_data()
-            && visible_range[1] != enabled_range[1];
+    if (gcode_window_enabled != m_fdm_viewer.tool_marker_enabled()) {
         m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
-        WrapperLayoutData layout;
-        // TODO: setup layout if needed
-        m_fdm_viewer.render_gui(layout);
+        update_scene_aabb();
     }
 
     m_scene_presenter->render_imgui(m_screen_info);
+
+#if ENABLED_SHORTCUTS_LIST
+    imgui_shortcuts_list(m_command_registry);
+#endif
 
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr))
@@ -483,187 +478,194 @@ void PreviewRenderModule::on_screen_resized()
 
 void PreviewRenderModule::register_commands()
 {
+    // Layers slider specific commands, which should be called for active viewer
     m_command_registry
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-increase-slow",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(1); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Right}
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-decrease-slow",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-1); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Left}
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-increase-medium",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(5); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Right
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-decrease-medium",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-5); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Left
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-increase-fast",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(10); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Right
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-gcode-decrease-fast",
-                [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-10); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Left
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-slow",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(1); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
+                [this]() { m_viewer->slider_layers_move_current_thumb(1); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
+                }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-slow",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-1); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Down}
+                [this]() { m_viewer->slider_layers_move_current_thumb(-1); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Down}
+                }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-medium",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(5); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Up
+                [this]() { m_viewer->slider_layers_move_current_thumb(5); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                            Platform::KeyCode::Up
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-medium",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-5); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Down
+                [this]() { m_viewer->slider_layers_move_current_thumb(-5); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                            Platform::KeyCode::Down
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-fast",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(10); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Up
+                [this]() { m_viewer->slider_layers_move_current_thumb(10); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                            Platform::KeyCode::Up
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-fast",
-                [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-10); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Down
+                [this]() { m_viewer->slider_layers_move_current_thumb(-10); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Down
+                    }
                 }
             )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
+        );
+
+    m_menu_manager
+        // Menu items
+        .register_menu_item(
+            {MenuItemName::JumpToValue},
+            std::make_unique<UIItemCommand>(
                 "slider-layers-jump-to_value",
-                [this]() { m_fdm_viewer.slider_layers_jump_to_value(); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::G
+                [this]() { m_viewer->slider_layers_jump_to_value(); },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                            Platform::KeyCode::G
+                        },
+                    .enabled = [this]() { return m_viewer->has_data(); }
+                }
+            )
+        );
+
+    // Toolbar commands
+    m_command_registry
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::SwitchToPlater,
+                [this]()
+                { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                            Platform::KeyCode::Num5
+                        }
                 }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-layers-add-current-tick",
-                [this]() { m_fdm_viewer.slider_layers_add_current_tick(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Plus}
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowTravels,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-layers-add-current-tick-kp",
-                [this]() { m_fdm_viewer.slider_layers_add_current_tick(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowWipes,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-layers-delete-current-tick",
-                [this]() { m_fdm_viewer.slider_layers_delete_current_tick(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Minus}
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowRetractions,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "slider-layers-delete-current-tick-kp",
-                [this]() { m_fdm_viewer.slider_layers_delete_current_tick(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::KpMinus}
-            )
-        )
-        // temporary to allow to switch yoga layout on/off
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "use-yoga-layout",
-                [this]() { m_use_yoga_layout = !m_use_yoga_layout; },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Y}
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowUnretractions,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "search",
-                [this]() { m_render_module_navigator->request_search(); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::F
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowSeams,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowToolChanges,
+                [this]()
+                {
+                    m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
+                    update_scene_aabb();
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowColorChanges,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowPausePrints,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowCustomGCodes,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowCenterOfGravity,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowToolMarker,
+                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::ShowShell,
+                [this]() { /*ToDo*/ }
+            )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::SwitchToInspect,
+                [this]() {},
+                UIItemCommandExtraOpts{
+                    .checked_changed = [this](bool checked) { update_current_right_sidebar(); }
                 }
             )
         );
@@ -855,147 +857,124 @@ void PreviewRenderModule::init_scene_layout()
     ));
     m_layout->init();
 
+    // register FDM layer_slider specific commands
+    m_slider_layers->register_commands(m_menu_manager, m_command_binding_manager);
+    // register SLA layer_slider specific commands
+    m_sla_slider_layers->register_commands(m_menu_manager, m_command_binding_manager);
+    // G-code slider specific commands
+    m_slider_gcode->register_commands(m_menu_manager, m_command_binding_manager);
+
     m_button_travels = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendTravel,
         to_string(OptionType::Travels),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); }},
         m_fdm_viewer.is_option_visible(OptionType::Travels)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowTravels, m_button_travels);
 
     m_button_wipes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendWipe,
         to_string(OptionType::Wipes),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); }},
         m_fdm_viewer.is_option_visible(OptionType::Wipes)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowWipes, m_button_wipes);
 
     m_button_retractions = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendRetract,
         to_string(OptionType::Retractions),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); }},
         m_fdm_viewer.is_option_visible(OptionType::Retractions)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowRetractions, m_button_retractions);
 
     m_button_unretractions = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendDeretract,
         to_string(OptionType::Unretractions),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); }},
         m_fdm_viewer.is_option_visible(OptionType::Unretractions)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowUnretractions, m_button_unretractions);
 
     m_button_seams = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendSeams,
         to_string(OptionType::Seams),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); }},
         m_fdm_viewer.is_option_visible(OptionType::Seams)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowSeams, m_button_seams);
 
     m_button_tool_changes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendToolChanges,
         to_string(OptionType::ToolChanges),
-        "",
-        {.action =
-             [this]()
-         {
-             m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
-             update_scene_aabb();
-         }},
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowToolChanges, m_button_tool_changes);
 
     m_button_color_changes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendColorChanges,
         to_string(OptionType::ColorChanges),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); }},
         m_fdm_viewer.is_option_visible(OptionType::ColorChanges)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowColorChanges, m_button_color_changes);
 
     m_button_pause_prints = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendPausePrints,
         to_string(OptionType::PausePrints),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); }},
         m_fdm_viewer.is_option_visible(OptionType::PausePrints)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowPausePrints, m_button_pause_prints);
 
     m_button_custom_gcodes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendCustomGCodes,
         to_string(OptionType::CustomGCodes),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); }},
         m_fdm_viewer.is_option_visible(OptionType::CustomGCodes)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowCustomGCodes, m_button_custom_gcodes);
 
     m_button_center_of_gravity = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendCOG,
         to_string(OptionType::CenterOfGravity),
-        "",
-        {.action = [this]()
-         { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }},
         m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowCenterOfGravity, m_button_center_of_gravity);
 
     m_button_tool_marker = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendToolMarker,
         to_string(OptionType::ToolMarker),
-        "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); }},
         m_fdm_viewer.is_option_visible(OptionType::ToolMarker)
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowToolMarker, m_button_tool_marker);
 
-    m_button_shells = m_layout->add_toolbar_item(
+    m_button_shells = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
         Render::Icon::LegendShells,
-        "Shells",
-        "",
-        {.action = [this]() { /* TODO */ },
-         .checked_changed =
-             [this](bool checked)
-         {
-             return m_viewer == &m_fdm_viewer
-                 && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer;
-         }}
+        "Shells"
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ShowShell, m_button_shells);
 
     // init toolbars
 
-    m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
-        Render::Icon::ObjectIcon,
-        _u8L("Plater view"),
-        "Ctrl + 5",
-        {.action = [this]()
-         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); }},
-        Yoga::ToolbarSwitchButton::SwitchPosition::Left
+    m_command_binding_manager.bind_tb_item(
+        CommandName::SwitchToPlater,
+        m_layout->add_toolbar_item_switch(
+            ToolbarID::Right,
+            Render::Icon::ObjectIcon,
+            _u8L("Plater view"),
+            Yoga::ToolbarSwitchButton::SwitchPosition::Left
+        )
     );
 
     ToolbarButton* preview_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
         _u8L("Preview view"),
-        "Ctrl + 6",
-        {.action =
-             []()
-         {
-             // Do absolutely nothing
-         }},
         Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
     preview_button->set_checked(true);
@@ -1003,10 +982,10 @@ void PreviewRenderModule::init_scene_layout()
     m_button_gcode_inspect = m_layout->add_toolbar_item_checkable(
         ToolbarID::Right,
         Render::Icon::LayersInspect,
-        _u8L("G-code inspect"),
-        std::string{},
-        {.checked_changed = [this](bool checked) { update_current_right_sidebar(); }}
+        _u8L("G-code inspect")
     );
+
+    m_command_binding_manager.bind_tb_item(CommandName::SwitchToInspect, m_button_gcode_inspect);
 
     // Initialize toolbar buttons visibility
     update_toolbar_visibility();

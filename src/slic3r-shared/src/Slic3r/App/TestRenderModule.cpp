@@ -42,7 +42,9 @@ std::chrono::duration<double, std::milli> get_delta()
     return delta;
 }
 
-TestRenderModule::TestRenderModule()
+TestRenderModule::TestRenderModule() :
+    m_menu_manager(m_command_registry),
+    m_command_binding_manager(m_command_registry)
 {
     memset(m_text_buffer, 0, sizeof(m_text_buffer));
 
@@ -446,27 +448,29 @@ void TestRenderModule::register_commands()
             std::make_unique<Platform::FuncCommand>(
                 "zoom-in",
                 [&]() { m_scene->camera_trackball().update_zoom(1.); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                Platform::FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "switch-camera-type",
                 [&]() { m_scene->camera_trackball().switch_projection_type(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                Platform::FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "zoom-out",
                 [&]() { m_scene->camera_trackball().update_zoom(-1.); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                Platform::FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                }
             )
-        )
-    ;
+        );
 }
 
 }

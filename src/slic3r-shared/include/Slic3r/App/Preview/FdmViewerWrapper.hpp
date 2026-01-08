@@ -122,7 +122,6 @@ public:
         Biz::libpgcode::MoveType::Extrude }) const { return m_viewer.bounding_box(types); }
 
     void render_toolpaths();
-    void render_gui(const WrapperLayoutData& layout);
 
     std::unique_ptr<GCodeWindow> unload_gcode_window();
     std::unique_ptr<LegendWindow> unload_legend();
@@ -164,11 +163,6 @@ public:
     uint8_t used_extruders_count() const { return m_viewer.used_extruders_count(); }
     std::vector<uint8_t> used_extruders_ids() const { return m_viewer.used_extruders_ids(); }
 
-    void slider_gcode_move_current_thumb(int delta) { m_slider_gcode->move_current_thumb(delta); }
-    void slider_layers_move_current_thumb(int delta) { m_slider_layers->move_current_thumb(delta); }
-    void slider_layers_jump_to_value() { m_slider_layers->jump_to_value(); }
-    void slider_layers_add_current_tick() { m_slider_layers->add_current_tick(); }
-    void slider_layers_delete_current_tick() { m_slider_layers->delete_current_tick(); }
     Domain::CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers->ticks_values(); }
 
     void reset_default_extrusion_roles_colors() { m_viewer.reset_default_extrusion_roles_colors(); }

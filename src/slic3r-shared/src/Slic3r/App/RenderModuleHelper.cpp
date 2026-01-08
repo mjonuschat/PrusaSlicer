@@ -6,6 +6,11 @@
 #include <imgui/imgui.h>
 #endif // ENABLED_DEBUG_OUTLINE
 
+#if ENABLED_SHORTCUTS_LIST
+#include "Slic3r/App/Platform/CommandRegistry.hpp"
+#include <imgui/imgui.h>
+#endif // ENABLED_DEBUG_OUTLINE
+
 namespace Slic3r::App {
 
 #if ENABLED_DEBUG_OUTLINE
@@ -94,5 +99,29 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
       ImGui::PopStyleColor();
 }
 #endif // ENABLED_DEBUG_OUTLINE
+
+#if ENABLED_SHORTCUTS_LIST
+void imgui_shortcuts_list(Platform::CommandRegistry& command_registry)
+{
+    ImGui::SetNextWindowPos(
+        ImGui::GetMainViewport()->GetCenter(),
+        ImGuiCond_Appearing,
+        ImVec2(0.5f, 0.5f)
+    );
+    if (ImGui::Begin("Shortcuts List", nullptr)) {
+        if (ImGui::IsWindowAppearing()) {
+            ImGui::SetWindowCollapsed(true);
+        }
+        for (const auto& [command_name, command] : command_registry.commands()) {
+            ImGui::Text("%s", command_name.c_str());
+            ImGui::SameLine(200);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+            ImGui::Text("%s", command.get()->keyboard_shortcut_string().c_str());
+            ImGui::PopStyleColor();
+        }
+    }
+    ImGui::End();
+}
+#endif
 
 } // namespace Slic3r::App

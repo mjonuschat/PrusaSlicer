@@ -5,7 +5,6 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Image.hpp"
 
-#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -51,7 +50,6 @@
 #include "Slic3r/App/Plater/CutGizmo.hpp"
 #include "Slic3r/App/Plater/CutDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
-#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 #include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
@@ -81,6 +79,7 @@
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/App/UIItemCommand.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -99,6 +98,32 @@ namespace Slic3r::App::Plater {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
+using CommandName          = Platform::CommandName;
+using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
+
+static const Domain::ConfigContainer* active_config_container(
+    Biz::ProjectInteractor& project_interactor
+)
+{
+    Domain::SelectionId config_container_id =
+        project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* config_container =
+        project_interactor.selected_project().find_config_container(config_container_id);
+    if (config_container == nullptr) {
+        if (const Biz::Scene::BedSelection& bed_selection =
+                project_interactor.scene_interactor().bed_selection();
+            !bed_selection.empty())
+        {
+            config_container_id = bed_selection.config_container_id();
+        }
+
+        ASSERT(config_container_id != Domain::INVALID_ID);
+        config_container =
+            project_interactor.selected_project().find_config_container(config_container_id);
+    }
+    return config_container;
+}
+
 PlaterRenderModule::PlaterRenderModule(
     const Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
@@ -110,7 +135,9 @@ PlaterRenderModule::PlaterRenderModule(
     m_project_interactor(project_interactor),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
-    m_thumbnail_image_generator(thumbnail_image_generator)
+    m_thumbnail_image_generator(thumbnail_image_generator),
+    m_menu_manager(m_command_registry),
+    m_command_binding_manager(m_command_registry)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -261,28 +288,219 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
 
 void PlaterRenderModule::register_commands()
 {
+    auto is_object_selected = [this]() -> bool
+    { return !m_project_interactor.scene_interactor().object_selection().empty(); };
+
+    auto is_instance_from_same_object_selected = [this]() -> bool
+    {
+        const Biz::Scene::ObjectSelection& selection =
+            m_project_interactor.scene_interactor().object_selection();
+        if (selection.empty())
+            return false;
+        const size_t obj_id = selection.elements[0].object_id;
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.object_id != obj_id) {
+                return false;
+            }
+        }
+        return selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance;
+    };
+
+    auto is_fff_print = [this]() -> bool
+    {
+        const Domain::ConfigContainer* config_container =
+            active_config_container(m_project_interactor);
+        return config_container
+            && config_container->print_technology() == Domain::PrinterTechnology::FFF;
+    };
+
+    auto add_instance = [this]() -> void
+    {
+        m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+        m_scene_presenter->scene().log_nodes();
+    };
+
+    // Toolbar commands
     m_command_registry
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "search",
-                [this]() { m_render_module_navigator->request_search(); },
-                nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::F
+                CommandName::AddVolume,
+                [this]() { m_add_volumes_menu->open(); },
+                FuncCommandExtraOpts{.enabled = is_instance_from_same_object_selected}
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::AddInstance,
+                add_instance,
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
+                    .enabled           = is_instance_from_same_object_selected
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "clear-selection",
-                [this]() {
-                    auto& scene_interactor = m_project_interactor.scene_interactor();
-                    if (!scene_interactor.object_selection().empty())
-                        scene_interactor.clear_object_selection();
+                CommandName::AddInstanceKp,
+                add_instance,
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus},
+                    .enabled           = is_instance_from_same_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::MoveGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::Translation); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::M},
+                    .enabled           = is_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::RotateGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::Rotation); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::R},
+                    .enabled           = is_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::ScaleGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::Scale); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::S},
+                    .enabled           = is_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::ArrangeGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::A}
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::SimplifyGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::Simplify); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::
+                        KeyboardShortcut{0, Platform::KeyCode::E /*B*/}, // "B" is used for camera
+                    .enabled = is_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::PaintOnSupportsGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::L},
+                    .enabled           = [is_object_selected, is_fff_print]()
+                    { return is_object_selected() && is_fff_print(); }
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::PaintOnSeamsGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSeamsGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::P},
+                    .enabled           = [is_object_selected, is_fff_print]()
+                    { return is_object_selected() && is_fff_print(); }
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::PaintOnFuzzySkinGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnFuzzySkinGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::H},
+                    .enabled           = [is_object_selected, is_fff_print]()
+                    { return is_object_selected() && is_fff_print(); }
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::MultiMaterialPaintingGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::MultiMaterialPaintingGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::N},
+                    .enabled =
+                        [is_object_selected, this]()
+                    {
+                        if (const Domain::ConfigContainer* config_container =
+                                active_config_container(m_project_interactor))
+                        {
+                            const Domain::ConfigPack& print_config =
+                                config_container->print_config();
+                            const size_t tool_count =
+                                std::holds_alternative<Domain::ConfigPackFDM>(print_config) ?
+                                std::get<Domain::ConfigPackFDM>(print_config).tool.size() :
+                                1;
+                            return is_object_selected()
+                                && tool_count > 1
+                                && config_container->print_technology()
+                                == Domain::PrinterTechnology::FFF;
+                        }
+                        return false;
+                    }
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::TextGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::CutGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::C},
+                    .enabled           = is_instance_from_same_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::MeasureGizmo,
+                [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::U}
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::SwitchToPreview,
+                [this]()
+                {
+                    m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview);
                 },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Num6
+                    }
+                }
             )
         );
 }
@@ -348,218 +566,160 @@ void PlaterRenderModule::init_scene_layout()
     // init toolbars
 
     // m_layout->add_toolbar_item_panel(
-    //     ToolbarID::Bottom,
-    //     Render::Icon::ToolbarHistory,
-    //     "Actions History",
-    //     "Shift + Alt + H",
-    //     {},
-    //     m_history.get()
+    // ToolbarID::Bottom,
+    // Render::Icon::ToolbarHistory,
+    // "Actions History",
+    // "Shift + Alt + H",
+    // {},
+    // m_history.get()
     // );
 
-    m_layout->add_toolbar_item(
-        ToolbarID::Left,
-        Render::Icon::CubeAdd,
-        _u8L("Add..."),
-        "Ctrl + I",
-        {.action = [this]() {
-        IDialogManager::FileCallback callback =
-            [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-            if (success) {
-                m_project_interactor.load_models_to_project(file_paths);
-                m_scene_presenter->scene().log_nodes();
-            }
-        };
-
-        auto& dlg_manager = App::AppServices::instance().dialog_manager();
-        dlg_manager.show_file_dialog(
-            FileDialogType::OpenMultiple,
-            _u8L("Import File"),
-            m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
-            "",
-            Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl, Wildcards::TypeFlag::Stl),
-            callback
-        );
-    }}
+    m_command_binding_manager.bind_tb_item(
+        CommandName::AddObject,
+        m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::CubeAdd, _u8L("Add..."))
     );
 
-    m_toolbar_add_volume = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
-        Render::Icon::AddVolume,
-        _u8L("Add Volume"),
-        "",
-        {.action = [this]() { m_add_volumes_menu->open(); }}
-    );
+    m_toolbar_add_volume =
+        m_layout->add_toolbar_item(ToolbarID::Middle, Render::Icon::AddVolume, _u8L("Add Volume"));
+    m_command_binding_manager.bind_tb_item(CommandName::AddVolume, m_toolbar_add_volume);
     init_add_volume_menu(m_toolbar_add_volume);
 
     m_toolbar_delete = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::DeleteBtnIcon,
-        _u8L("Delete selection"),
-        "",
-        {.action = [this]()
-         {
-             std::optional<std::string> last_solid_part_name =
-                 m_project_interactor.scene_interactor().delete_selected_elements();
-
-             if (last_solid_part_name) {
-                 // Show warning dialog
-                 auto& dlg_manager = App::AppServices::instance().dialog_manager();
-                 dlg_manager.show_warning_dialog(
-                     fmt::vformat(
-                         _u8L(
-                             "Part {} could not be deleted from the object,\n"
-                             "as removing the last solid part is not permitted."
-                         ),
-                         fmt::make_format_args(last_solid_part_name.value())
-                     ) + "\n",
-                     _u8L("Delete selection")
-                 );
-             }
-         }}
+        _u8L("Delete selection")
     );
+    m_command_binding_manager.bind_tb_item(CommandName::DeleteSelected, m_toolbar_delete);
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::RectangleAdd,
-        _u8L("Add instance"),
-        "+",
-        {.action = [this]()
-         {
-             m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-             m_scene_presenter->scene().log_nodes();
-         }}
+        _u8L("Add instance")
     );
+    m_command_binding_manager.bind_tb_item(CommandName::AddInstance, m_toolbar_add_instance);
 
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Move,
         _u8L("Move"),
-        "M",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
         m_translation_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::MoveGizmo, m_toolbar_move);
+
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Rotate,
         _u8L("Rotate"),
-        "R",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::RotateGizmo, m_toolbar_rotate);
+
     m_toolbar_scale = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Scale,
         _u8L("Scale"),
-        "S",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::Scale);
-    }},
         m_scale_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ScaleGizmo, m_toolbar_scale);
+
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Left,
         Render::Icon::Layout,
         _u8L("Arrange"),
-        "A",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); }},
         m_arrange_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::ArrangeGizmo, m_toolbar_arrange);
+
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Simplify,
         _u8L("Simplify"),
-        "B",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
         m_simplify_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::SimplifyGizmo, m_toolbar_simplify);
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,
         _u8L("Paint-on supports"),
-        "L",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
+    );
+    m_command_binding_manager.bind_tb_item(
+        CommandName::PaintOnSupportsGizmo,
+        m_toolbar_paint_on_supports
     );
 
     m_toolbar_paint_on_seams = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintSeams,
         _u8L("Paint-on seams"),
-        "P",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSeamsGizmo); }},
         m_paint_on_seams_gizmo
+    );
+    m_command_binding_manager.bind_tb_item(
+        CommandName::PaintOnSeamsGizmo,
+        m_toolbar_paint_on_seams
     );
 
     m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintFuzzySkin,
         _u8L("Paint-on fuzzy skin"),
-        "H",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnFuzzySkinGizmo); }},
         m_paint_on_fuzzy_skin_gizmo
+    );
+    m_command_binding_manager.bind_tb_item(
+        CommandName::PaintOnFuzzySkinGizmo,
+        m_toolbar_paint_on_fuzzy_skin
     );
 
     m_toolbar_multi_material_painting = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintMultiMaterial,
         _u8L("Multimaterial painting"),
-        "N",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MultiMaterialPaintingGizmo); }},
         m_multi_material_painting_gizmo
+    );
+    m_command_binding_manager.bind_tb_item(
+        CommandName::MultiMaterialPaintingGizmo,
+        m_toolbar_multi_material_painting
     );
 
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Text,
         _u8L("Text"),
-        "T",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); }},
         m_text_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::TextGizmo, m_toolbar_text);
 
-    m_toolbar_cut = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle,
-        Render::Icon::Scissors,
-        "Cut",
-        "C",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); }},
-        m_cut_gizmo
-    );
-    m_toolbar_cut->set_enabled(false);
+    m_toolbar_cut =
+        m_layout
+            ->add_toolbar_item_gizmo(ToolbarID::Middle, Render::Icon::Scissors, "Cut", m_cut_gizmo);
+    m_command_binding_manager.bind_tb_item(CommandName::CutGizmo, m_toolbar_cut);
 
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Ruler,
         _u8L("Measure"),
-        "U",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); }},
         m_measure_gizmo
     );
+    m_command_binding_manager.bind_tb_item(CommandName::MeasureGizmo, m_toolbar_measure);
 
-    ToolbarButton* plater_button = m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
-        Render::Icon::ObjectIcon,
-        _u8L("Plater view"),
-        "Ctrl + 5",
-        {.action =
-             []()
-         {
-             // Do absolutely nothing
-         }},
-        Yoga::ToolbarSwitchButton::SwitchPosition::Left
-    );
-    plater_button->set_checked(true);
+    m_layout
+        ->add_toolbar_item_switch(
+            ToolbarID::Right,
+            Render::Icon::ObjectIcon,
+            _u8L("Plater view"),
+            Yoga::ToolbarSwitchButton::SwitchPosition::Left
+        )
+        ->set_checked(true);
 
-    m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
-        Render::Icon::Preview,
-        _u8L("Preview view"),
-        "Ctrl + 6",
-        {.action = [this]()
-         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview); }},
-        Yoga::ToolbarSwitchButton::SwitchPosition::Right
+    m_command_binding_manager.bind_tb_item(
+        CommandName::SwitchToPreview,
+        m_layout->add_toolbar_item_switch(
+            ToolbarID::Right,
+            Render::Icon::Preview,
+            _u8L("Preview view"),
+            Yoga::ToolbarSwitchButton::SwitchPosition::Right
+        )
     );
 
     this->update_toolbar_visibility();
@@ -649,11 +809,11 @@ void PlaterRenderModule::update_object_selection()
         }
     }
     m_toolbar_add_instance->set_visible(can_add_instance);
-    m_toolbar_cut->set_enabled(can_add_instance && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance);
-
     m_toolbar_add_volume->set_visible(can_add_instance);
 
     update_current_right_sidebar();
+
+    m_command_binding_manager.update_ui_items();
 }
 
 void PlaterRenderModule::update_current_right_sidebar()
@@ -663,12 +823,10 @@ void PlaterRenderModule::update_current_right_sidebar()
 
     const bool empty_selection = selection.empty();
 
-    const Scene::ToolType tool_type=  m_gizmo_manager->current_tool_type();
+    const Scene::ToolType tool_type  = m_gizmo_manager->current_tool_type();
     SidebarStackLayout* stack_layout = m_layout->sidebar_stack_layout();
 
-    if (tool_type != Scene::ToolType::None
-        && stack_layout->contains_gizmo(tool_type))
-    {
+    if (tool_type != Scene::ToolType::None && stack_layout->contains_gizmo(tool_type)) {
         stack_layout->switch_to_gizmo(tool_type);
     } else if (!empty_selection) {
         stack_layout->switch_to_item(SidebarStackLayout::ItemType::Object);
@@ -679,24 +837,9 @@ void PlaterRenderModule::update_current_right_sidebar()
 
 void PlaterRenderModule::update_toolbar_visibility()
 {
-    Domain::SelectionId config_container_id =
-        m_project_interactor.scene_interactor().selected_config_container_id();
-    const Domain::ConfigContainer* config_container =
-        m_project_interactor.selected_project().find_config_container(config_container_id);
+    const Domain::ConfigContainer* config_container = active_config_container(m_project_interactor);
     if (config_container == nullptr) {
-        if (const Biz::Scene::BedSelection& bed_selection =
-                m_project_interactor.scene_interactor().bed_selection();
-            !bed_selection.empty())
-        {
-            config_container_id = bed_selection.config_container_id();
-        }
-
-        ASSERT(config_container_id != Domain::INVALID_ID);
-        config_container =
-            m_project_interactor.selected_project().find_config_container(config_container_id);
-        if (config_container == nullptr) {
-            return;
-        }
+        return;
     }
 
     const Domain::PrinterTechnology print_technology = config_container->print_technology();
@@ -838,66 +981,53 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
-    m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
-    m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
+    m_text_gizmo    = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
+    m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
         *m_device,
         m_project_interactor,
         *m_scene_presenter
     );
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
-        m_measure_gizmo
-    );
+    m_project_interactor.scene_interactor()
+        .add_listener<Biz::Scene::ISceneSelectionChangedListener>(m_measure_gizmo);
     m_cut_gizmo = &m_gizmo_manager->add_tool_gizmo<CutGizmo>(
         *m_device,
         m_gizmo_manager->data_factory(),
         *m_scene_presenter,
         &m_project_interactor
     );
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
-        m_cut_gizmo
-    );
+    m_project_interactor.scene_interactor()
+        .add_listener<Biz::Scene::ISceneSelectionChangedListener>(m_cut_gizmo);
 }
 
 void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
 {
-    m_add_volumes_menu = parent->emplace_back<Yoga::Menu>(
-        "add_volume_menu",
-        Yoga::Position::Bottom
-    );
+    m_add_volumes_menu =
+        parent->emplace_back<Yoga::Menu>("add_volume_menu", Yoga::Position::Bottom);
 
     m_add_volumes_menu
         ->append_item(_u8L("Solid Part Volume"), nullptr, Render::Icon::SolidPartVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::MODEL_PART);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::MODEL_PART); };
     m_add_volumes_menu->append_item(_u8L("Negative Volume"), nullptr, Render::Icon::NegativeVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME); };
     m_add_volumes_menu->append_item(_u8L("Modifier Volume"), nullptr, Render::Icon::ModifierVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER); };
     m_add_volumes_menu->append_item(_u8L("Support Blocker"), nullptr, Render::Icon::SupportBlocker)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER); };
     m_add_volumes_menu
         ->append_item(_u8L("Support Modifier"), nullptr, Render::Icon::SupportModifier)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER); };
 }
 
 void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
 {
     IDialogManager::FileCallback callback =
-        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
         if (success) {
             Biz::FileLoadingLogic::import_volumes_into_selected_object(
                 file_paths,
@@ -1003,6 +1133,11 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 
     m_scene_presenter->render_imgui(m_screen_info);
     m_gizmo_manager->render_imgui();
+
+#if ENABLED_SHORTCUTS_LIST
+    imgui_shortcuts_list(m_command_registry);
+#endif
+
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());

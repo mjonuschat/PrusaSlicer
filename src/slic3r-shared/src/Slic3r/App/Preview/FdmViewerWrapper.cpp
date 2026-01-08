@@ -276,35 +276,6 @@ void FdmViewerWrapper::render_toolpaths()
     m_viewer.render();
 }
 
-void FdmViewerWrapper::render_gui(const WrapperLayoutData& layout)
-{
-    m_legend_height = 0.0f;
-
-    if (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode) {
-        // render_legend(layout);
-        // render_slider_gcode(layout);
-    }
-
-    // render_slider_layers(layout);
-
-
-    // render_gcodewindow(layout);
-
-    if (m_viewer.view_visible_range()[1] != m_viewer.view_enabled_range()[1])
-        render_vertex_properties(layout);
-
-    if (m_extrusion_roles_colors_popup_visible)
-        render_customize_extrusion_roles_colors_popup();
-    else if (m_options_colors_popup_visible)
-        render_customize_options_colors_popup();
-    else if (m_range_colors_popup_type != ViewType::COUNT)
-        render_customize_range_colors_popup();
-    else if (m_radius_popup_type != MoveType::COUNT)
-        render_customize_radius_popup();
-    else if (m_scale_factor_popup_type != OptionType::COUNT)
-        render_customize_scale_factor_popup();
-}
-
 std::unique_ptr<GCodeWindow> FdmViewerWrapper::unload_gcode_window()
 {
     return m_gcode_window.release();

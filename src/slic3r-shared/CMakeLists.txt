@@ -543,6 +543,15 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/AbstractRenderLayout.hpp
         include/Slic3r/App/ResourceResolver.hpp
         src/Slic3r/App/ResourceResolver.cpp
+        include/Slic3r/App/MenuItemName.hpp
+        include/Slic3r/App/MenuItem.hpp
+        include/Slic3r/App/UIItemCommand.hpp
+        include/Slic3r/App/MenuBuilder.hpp
+        src/Slic3r/App/MenuBuilder.cpp
+        include/Slic3r/App/MenuManager.hpp
+        src/Slic3r/App/MenuManager.cpp
+        include/Slic3r/App/CommandBindingManager.hpp
+        src/Slic3r/App/CommandBindingManager.cpp
 
         include/Slic3r/App/PopNotification/PopNotificationCenter.hpp
         include/Slic3r/App/PopNotification/PopNotificationData.hpp

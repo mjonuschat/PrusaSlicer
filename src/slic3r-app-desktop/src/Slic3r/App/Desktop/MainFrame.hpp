@@ -64,6 +64,8 @@ public:
 
     void switch_left_tab(LeftBarTabs id, const std::string& data);
 
+    void update_accel_table();
+
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
     void init_printer_page(Biz::ProjectInteractor& project_interactor);
@@ -98,6 +100,8 @@ private:
 
     TabsBarMenus m_tabs_bar_menus;
     LeftBar* m_left_bar{nullptr};
+
+    wxAcceleratorTable m_accel_table;
 
 #ifdef WIN32
     void* m_hDeviceNotify{nullptr};

@@ -22,12 +22,12 @@ public:
         return m_wrapped_command->name();
     }
 
-    void execute() override
+    void execute() const override
     {
         m_wrapped_command->execute();
     }
 
-    const Platform::KeyboardShortcut* keyboard_shortcut() const override
+    const std::optional<Platform::KeyboardShortcut> keyboard_shortcut() const override
     {
         return m_wrapped_command->keyboard_shortcut();
     }

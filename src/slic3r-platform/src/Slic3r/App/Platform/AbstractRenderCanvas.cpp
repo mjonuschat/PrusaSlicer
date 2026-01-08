@@ -225,7 +225,7 @@ void AbstractRenderCanvas::enqueue_keyboard(const KeyboardEvent& e)
 void AbstractRenderCanvas::emit_enqueued_events()
 {
     ImGuiIO& io = ImGui::GetIO();
-    if (!io.WantCaptureKeyboard) {
+    if (!io.WantTextInput) {
         for (const auto& e : m_enqueued_keyboard_events)
             emit_keyboard(e);
     }

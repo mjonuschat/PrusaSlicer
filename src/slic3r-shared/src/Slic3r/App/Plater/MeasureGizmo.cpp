@@ -28,6 +28,8 @@ using namespace magic_enum::bitwise_operators;
 
 namespace Slic3r::App::Plater {
 
+using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
+
 static constexpr double SPHERE_RADIUS                    = 0.75;
 static constexpr double SPHERE_RESOLUTION_ANGLE          = Slic3r::deg2rad(360.0 / 64.0);
 static constexpr double CYLINDER_RADIUS                  = 0.5;
@@ -478,8 +480,9 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
 
                     update_measurement();
                 },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                }
             )
         )
         .register_command(
@@ -495,8 +498,9 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
 
                     update_measurement();
                 },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
+                }
             )
         );
 }

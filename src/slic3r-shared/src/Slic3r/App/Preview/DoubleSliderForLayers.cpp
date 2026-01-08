@@ -7,6 +7,11 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 
+#include "Slic3r/App/CommandBindingManager.hpp"
+#include "Slic3r/App/MenuItem.hpp"
+#include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/MenuBuilder.hpp"
+
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -43,6 +48,7 @@ using Slic3r::Biz::GCodeReader::contains_reserved_tags;
 namespace Slic3r::App::Preview {
 
 namespace CustomGCode = Domain::CustomGCode;
+using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
 
 static constexpr float EPSILON = 0.0011f;
 
@@ -67,7 +73,6 @@ DoubleSliderForLayers::DoubleSliderForLayers()
     };
 
     m_cog_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSSettings);
-    create_cog_menu(m_cog_btn);
     m_cog_btn->callbacks().action = [this]() { m_cog_menu->open(); };
 
     Vec2f btns_size = { 22.f, 22.f };
@@ -95,8 +100,8 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
 {
     m_cog_menu = parent->emplace_back<Yoga::Menu>("cog_menu", Yoga::Position::Top);
 
-    Yoga::MenuItem* jump_to_value_item = m_cog_menu->append_item(_u8L("Jump to height"), nullptr, Render::Icon::None, "Shift + G");
-    jump_to_value_item->callbacks().action = [this]() { jump_to_value(); };
+    MenuBuilder menu_builder(*m_menu_manager, *m_command_binding_manager);
+    menu_builder.add_menu_item(m_cog_menu, MenuItemName::JumpToValue);
 
     Yoga::MenuItem* show_estimated_times_item = m_cog_menu->append_item(_u8L("Show estimated print time on hover"), &m_show_estimated_times);
     show_estimated_times_item->callbacks().action = [this, show_estimated_times_item]() {
@@ -152,10 +157,12 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
 
 void DoubleSliderForLayers::update_visibility_cog_menu_items()
 {
-    m_edit_extruder_sequence_menu_item->set_visible(m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular);
-    m_seq_top_layer_only_item->set_visible(m_draw_mode != DrawMode::SlaPrint);
-    m_use_default_colors_menu_item->set_visible(can_edit());
-    m_auto_color_change_menu_item->set_visible(can_edit() && m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular);
+    if (m_cog_menu) {
+        m_edit_extruder_sequence_menu_item->set_visible(m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular);
+        m_seq_top_layer_only_item->set_visible(m_draw_mode != DrawMode::SlaPrint);
+        m_use_default_colors_menu_item->set_visible(can_edit());
+        m_auto_color_change_menu_item->set_visible(can_edit() && m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular);
+    }
 }
 
 void DoubleSliderForLayers::change_one_layer_lock()
@@ -416,6 +423,67 @@ int DoubleSliderForLayers::find_close_layer_idx(const std::vector<float>& zs, fl
             return (dist_l < dist_h) ? int(it_l - zs.begin()) : int(it_h - zs.begin());
     }
     return -1;
+}
+
+void DoubleSliderForLayers::register_commands(
+    MenuManager& menu_manager,
+    CommandBindingManager& command_binding_manager
+)
+{
+    if (m_draw_mode != DrawMode::SlaPrint) {
+        command_binding_manager.command_registry()
+            .register_command(
+                std::make_unique<Platform::FuncCommand>(
+                    "slider-layers-add-current-tick",
+                    [this]() { add_current_tick(); },
+                    FuncCommandExtraOpts{
+                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Plus}
+                    }
+                )
+            )
+            .register_command(
+                std::make_unique<Platform::FuncCommand>(
+                    "slider-layers-add-current-tick-kp",
+                    [this]() { add_current_tick(); },
+                    FuncCommandExtraOpts{
+                        .keyboard_shortcut =
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+                    }
+                )
+            )
+            .register_command(
+                std::make_unique<Platform::FuncCommand>(
+                    "slider-layers-delete-current-tick",
+                    [this]() { delete_current_tick(); },
+                    FuncCommandExtraOpts{
+                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Minus}
+                    }
+                )
+            )
+            .register_command(
+                std::make_unique<Platform::FuncCommand>(
+                    "slider-layers-delete-current-tick-kp",
+                    [this]() { delete_current_tick(); },
+                    FuncCommandExtraOpts{
+                        .keyboard_shortcut =
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpMinus}
+                    }
+                )
+            );
+    }
+
+    if (!m_menu_manager) {
+         m_menu_manager = &menu_manager;
+    }
+
+    if (!m_command_binding_manager) {
+        m_command_binding_manager = &command_binding_manager;
+    }
+
+    if (!m_cog_menu) {
+        create_cog_menu(m_cog_btn);
+        update_visibility_cog_menu_items();
+    }
 }
 
 bool DoubleSliderForLayers::is_wipe_tower_layer(int tick) const
