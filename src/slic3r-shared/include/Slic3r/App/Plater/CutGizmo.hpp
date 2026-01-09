@@ -212,7 +212,7 @@ private:
     double snap_space_proportion() const;
 
     Scene::GizmoActivationState
-        on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active);
+    on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active);
     void update_cut_line_node();
 
     struct ProjectContext;
@@ -231,7 +231,11 @@ private:
         Domain::Transform3d trafo;
         // Given a point and direction in world coords, returns whether the respective line
         // intersects the mesh if it is transformed into world by trafo.
-        bool intersects_line(Domain::Vec3d point, Domain::Vec3d direction) const;
+        bool intersects_line(
+            Domain::Vec3d point,
+            Domain::Vec3d direction,
+            const Domain::Transform3d& inst_trafo
+        ) const;
     };
 
     // solid object meshes used for groove validation
@@ -240,7 +244,7 @@ private:
 
     struct ProjectContext
     {
-        //List of nodes
+        // List of nodes
         Scene::Node* main_node{nullptr};
         Scene::Node* handles_node{nullptr};
         Scene::Node* plane_node{nullptr};
@@ -252,11 +256,11 @@ private:
         const Domain::ModelInstance* selected_instance{nullptr};
         size_t instance_idx{size_t(-1)};
 
-        Vec3d center_offset{ Vec3d::Zero() };
+        Vec3d center_offset{Vec3d::Zero()};
         Domain::Transform3d rotation_m{Domain::Transform3d::Identity()};
 
-        bool connectors_editing{ false };
-        bool is_planar_mode{ true };
+        bool connectors_editing{false};
+        bool is_planar_mode{true};
         Biz::Cut::Groove groove;
 
         void invalidate()

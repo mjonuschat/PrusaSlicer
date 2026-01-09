@@ -40,8 +40,8 @@
 
 using namespace Slic3r::App::Yoga;
 
-using Slic3r::Domain::ColorRGBA;
 using Slic3r::App::Scene::SceneNodeTag;
+using Slic3r::Domain::ColorRGBA;
 
 static const ColorRGBA UPPER_PART_COLOR    = ColorRGBA(0.0f, 1.0f, 1.0f, 1.0f);
 static const ColorRGBA LOWER_PART_COLOR    = ColorRGBA(1.0f, 0.0f, 1.0f, 1.0f);
@@ -511,9 +511,13 @@ static Vec3d extract_position(const App::Scene::Transform& xform)
     return xform.matrix().block<3, 1>(0, 3);
 }
 
-bool CutGizmo::SolidAABBMesh::intersects_line(Domain::Vec3d point, Domain::Vec3d direction) const
+bool CutGizmo::SolidAABBMesh::intersects_line(
+    Domain::Vec3d point,
+    Domain::Vec3d direction,
+    const Domain::Transform3d& inst_trafo
+) const
 {
-    Transform3d trafo_inv = trafo.inverse();
+    Transform3d trafo_inv = (inst_trafo * trafo).inverse();
     Vec3d to              = trafo_inv * (point + direction);
     point                 = trafo_inv * point;
     direction             = (to - point).normalized();
@@ -635,6 +639,9 @@ void CutGizmo::on_deactivated()
     set_enabled_scene_nodes(true);
     m_clipper_presenter.set_enable_mesh(true);
     m_clipper_presenter.deactivate();
+
+    // Clear solid meshes to force their recreation when the selected object is changed
+    m_solid_meshes.clear();
 }
 
 void CutGizmo::on_project_activated(size_t new_project_id)
@@ -1041,7 +1048,7 @@ bool CutGizmo::set_plane_center(const Vec3d& center_pos)
     if (!is_planar_mode()) {
         // Non-planar mode allows translation of the cut plane while keeping its normal fixed.
         // Ensure the new plane center stays inside the bounding sphere of the bounding box.
-        const double dist = (m_bb_center - center_pos).norm();
+        const double dist   = (m_bb_center - center_pos).norm();
         const double radius = (m_bb_center - m_bounding_box.min).norm();
         if (dist > radius) {
             return false;
@@ -1096,24 +1103,25 @@ void CutGizmo::update_scene_nodes()
         force_full_reset          = true;
     }
 
+    if (m_solid_meshes.empty()) {
+        for (const ModelVolume* volume : context().selected_object->volumes) {
+            if (volume->is_model_part()) {
+                m_solid_meshes.emplace_back(
+                    SolidAABBMesh{
+                        std::make_shared<AABBMesh>(volume->mesh().its),
+                        volume->get_matrix()
+                    }
+                );
+            }
+        }
+    }
+
     bool force_just_trafo_reset{false};
 
     const Domain::ModelInstance* new_inst =
         project.find_instance_by_id(element.object_id, element.instance_id);
     if (context().selected_instance != new_inst) {
         context().selected_instance = new_inst;
-
-        // fill solid meshes
-        m_solid_meshes.clear();
-        for (const ModelVolume* volume : context().selected_object->volumes) {
-            if (volume->is_model_part()) {
-                Domain::Transform3d trafo =
-                    context().selected_instance->get_matrix() * volume->get_matrix();
-                m_solid_meshes.emplace_back(
-                    SolidAABBMesh{std::make_shared<AABBMesh>(volume->mesh().its), trafo}
-                );
-            }
-        }
 
         // get instance index
         context().instance_idx = 0;
@@ -2021,7 +2029,8 @@ bool CutGizmo::is_valid_groove() const
     if (flaps_width > context().groove.width)
         return false;
 
-    const Transform3d trafo = translation_transform(m_plane_center) * context().rotation_m;
+    const Transform3d trafo      = translation_transform(m_plane_center) * context().rotation_m;
+    const Transform3d inst_trafo = context().selected_instance->get_matrix();
 
     for (size_t id = 0; id < m_groove_vertices.size(); id += 2) {
         const Vec3d beg = trafo * m_groove_vertices[id];
@@ -2029,7 +2038,7 @@ bool CutGizmo::is_valid_groove() const
 
         bool intersection = false;
         for (const auto& solid_mesh : m_solid_meshes) {
-            if (intersection = solid_mesh.intersects_line(beg, end - beg)) {
+            if (intersection = solid_mesh.intersects_line(beg, end - beg, inst_trafo)) {
                 break;
             }
         }
@@ -2754,9 +2763,7 @@ void CutGizmo::preprocess_cut()
     if (!context().selected_instance || m_dragging || m_is_cut_plane_recreation_suppressed)
         return;
 
-    if (is_planar_mode() || is_valid_groove()) {
-        reset_cut_part_meshes();
-    }
+    reset_cut_part_meshes();
 
     //! wxBusyCursor wait;
 
@@ -2778,8 +2785,8 @@ void CutGizmo::preprocess_cut()
             if (!new_objects.empty())
                 m_part_selection = CutPartSelection(new_objects.front(), context().instance_idx);
         } else {
-            update_parts_nodes_colors_from_selection();
-            return;
+            // reset cut parts with default object volums
+            m_part_selection = CutPartSelection(context().selected_object, context().instance_idx);
         }
     }
     Scene::Scene& scene = m_scene_presenter.scene();
@@ -2794,6 +2801,10 @@ void CutGizmo::preprocess_cut()
             builder
         );
         scene.add_child(builder.build().release(), m_main_node);
+    }
+
+    if (!is_planar_mode() && !is_valid_groove()) {
+        update_parts_nodes_colors_from_selection();
     }
 }
 
