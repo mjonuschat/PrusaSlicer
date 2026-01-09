@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+#include "Slic3r/App/Plater/SimplifyNotification.hpp"
 #include "Slic3r/App/Plater/SimplifyDialog.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
@@ -21,40 +22,20 @@
 
 #include "Slic3r/Assert.hpp"
 
+#include "fmt/format.h"
+
 #include "imgui/imgui.h"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
-// TODO: 
-// 1. add Notification: there is volume with a lot of small triangles and suggest simplify
-// 2. Esc key down: cancel simplification
-// 3. validate volume exchange(Scne::Node are correct but object list is invalid)
+// TODO: Esc key down: cancel simplification
 namespace Slic3r::App::Plater {
-
-using Slic3r::App::Render::Geometry;
-using Slic3r::App::Render::Device;
-using Slic3r::App::Scene::GizmoActivationState;
-using Slic3r::App::Scene::GizmoEventContext;
-using Slic3r::App::Scene::Node;
-using Slic3r::App::Scene::NodeBuilder;
-using Slic3r::Biz::Scene::SceneInteractor;
-using Slic3r::Biz::Scene::ObjectSelection;
-using Slic3r::Biz::ProjectInteractor;
-using Slic3r::Biz::Platform::PlatformServices;
-using Slic3r::App::Scene::SceneNodeTag;
-
 namespace { 
 // Static variables
 const float wireframe_width = 0.5f;
 const Domain::ColorRGBA wireframe_color = Domain::ColorRGBA::BLUE();
 const Domain::ColorRGBA model_color = Domain::ColorRGBA::WHITE();
-
-struct SimplifyNodeTag {};
-bool is_simplify_node(const Node* n){
-    const SimplifyNodeTag* tag = n->tag_of_type<SimplifyNodeTag>();
-    return tag != nullptr;
-}
 
 const Domain::ModelVolume* get_volume_by_id(const Domain::ObjectID& volume_id, const Domain::Project& project) {
     for (const Domain::ModelObject* object : project.model().objects) {
@@ -163,6 +144,7 @@ struct SimplifyJobData {
 };
 
 // Data dependent on the project
+using Nodes = std::vector<Scene::Node*>;
 struct ProjectContext {
     Configuration configuration;
     SelectedVolumeIds volume_ids; // current processing volumes
@@ -172,10 +154,11 @@ struct ProjectContext {
     SimplifyLevelDetail detail = SimplifyLevelDetail::Medium; // current level of detail
     std::string mesh_name = "no name"; // showed name of the mesh (we are working on)
     Phantoms phantoms; // keep phantoms geometries
+    Nodes phantom_nodes;
     
     bool show_wireframe = true; // flag that material is set to wireframe
 
-    std::vector<Scene::Node*> to_enable; // node to enable on close
+    Nodes to_enable; // node to enable on close
 
     // NOTE: write by job but on the main thread
     int progress = 0; // percent of done work (100 == done)
@@ -192,21 +175,28 @@ struct NodeInput {
 };
 using NodeInputs = std::vector<NodeInput>;
 
+bool exist_node(Scene::Node& root, const Scene::Node* node) {
+    Scene::Node::NodeList volume_nodes;
+    root.query([node](const Scene::Node* n) { return n == node; }, volume_nodes, true);
+    return !volume_nodes.empty();
+}
 } // namespace
 
 // use definition from anonym namespace
 struct SimplifyGizmo::ProjectContext: public Plater::ProjectContext {};
 
 SimplifyGizmo::SimplifyGizmo(
-    Device& device,
+    Render::Device& device,
     PlaterScenePresenter& scene_presenter,
-    ProjectInteractor& project_interactor,
-    CloseFn close_fn
+    Biz::ProjectInteractor& project_interactor,
+    Scene::IGizmoController& gizmo_controller,
+    std::unique_ptr<SimplifyNotification> notification
 ) :
     m_device(device),
     m_scene_presenter(scene_presenter),
     m_project_interactor(project_interactor),
-    m_close_fn(close_fn),
+    m_gizmo_controller(gizmo_controller),
+    m_notification(std::move(notification)),
     m_proj_ctxs(std::make_unique<Biz::ProjectScoped<ProjectContext>>(project_interactor))
 {
     m_dialog = std::make_unique<SimplifyDialog>();
@@ -250,10 +240,12 @@ SimplifyGizmo::SimplifyGizmo(
 
         Scene::Scene& scene = m_scene_presenter.scene();
         Render::Material material = get_material(proj_ctx.show_wireframe, m_device, scene);
-        Node::NodeList simplify_nodes;
-        scene.root().query(is_simplify_node, simplify_nodes);        
-        for (Node* node : simplify_nodes)
+        for (Scene::Node* node : proj_ctx.phantom_nodes) {
+            if(!exist_node(scene.root(), node)) 
+                continue;
             node->set_material_override(material);
+        }
+
     };
 
     m_dialog->callbacks().apply = [this]() {
@@ -264,7 +256,7 @@ SimplifyGizmo::SimplifyGizmo(
 namespace {
 std::string create_job_name(Domain::SelectionId project_id) {
     // Each project has its own rewritable job
-    return std::string("SimplifyJob " + std::to_string(project_id));
+    return fmt::format("SimplifyJob {}", project_id);
 }
 
 void stop_worker_thread_request(Domain::SelectionId project_id) {
@@ -282,9 +274,9 @@ SimplifyGizmo::~SimplifyGizmo() {
     }
 }
 
-GizmoActivationState SimplifyGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
-{
-    return GizmoActivationState::Inactive;
+Scene::GizmoActivationState SimplifyGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
+{    
+    return Scene::GizmoActivationState::Inactive;
 }
 
 namespace {
@@ -307,7 +299,7 @@ void update_dialog(SimplifyDialog& dialog, const ProjectContext& proj_ctx) {
     ASSERT(!proj_ctx.volume_ids.empty());
     dialog.set_multipart(proj_ctx.volume_ids.size() != 1);
 }
-SelectedVolumeIds get_volume_ids(const ObjectSelection& selection, const Domain::Project& project)
+SelectedVolumeIds get_volume_ids(const Biz::Scene::ObjectSelection& selection, const Domain::Project& project)
 {
     SelectedVolumeIds ids;
     for (const Domain::ElementRef& element : selection.elements) {
@@ -351,8 +343,8 @@ std::string create_mesh_name(const SelectedVolumeIds& volume_ids, const Domain::
         return get_volume_by_id(*volume_ids.begin(), project)->get_object()->name;
     }
 
-    // create multi volume name
-    std::string name = "MultiVolume[cnt" + std::to_string(volume_ids.size()) + "]:";
+    // Create multi volume name shown in Simplification as name for simplified selection
+    std::string name = fmt::format("{}[{}]:", _u8L("Multi-volume"), volume_ids.size());
     for (const Domain::ObjectID& volume_id : volume_ids) {
         const Domain::ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
         name += volume_ptr->get_object()->name + "-" + volume_ptr->name + ",";
@@ -372,17 +364,17 @@ NodeInputs create_node_inputs(const SelectedVolumeIds& volume_ids, const Domain:
     return node_inputs;
 }
 
-std::vector<Scene::Node*> disable_nodes(const SelectedVolumeIds& volume_ids, Scene::Scene& scene) {
-    std::vector<Scene::Node*> to_enable;
+Nodes disable_nodes(const SelectedVolumeIds& volume_ids, Scene::Scene& scene) {
+    Nodes to_enable;
     for (const Domain::ObjectID& volume_id : volume_ids) {
-        Node::NodeList volume_nodes;
-        scene.root().query([volume_id](const Node* n) -> bool {
-            const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+        Scene::Node::NodeList volume_nodes;
+        scene.root().query([volume_id](const Scene::Node* n) -> bool {
+            const Scene::SceneNodeTag* tag = n->tag_of_type<Scene::SceneNodeTag>();
             return tag != nullptr && tag->volume_id == volume_id.id;
             }, volume_nodes);
         ASSERT(!volume_nodes.empty());
         to_enable.reserve(to_enable.size() + volume_nodes.size());
-        for (Node* volume_node : volume_nodes) {
+        for (Scene::Node* volume_node : volume_nodes) {
             ASSERT(volume_node->enabled());
             volume_node->set_enabled(false); // make original volume invisible
             to_enable.push_back(volume_node); // save for later enable
@@ -391,20 +383,31 @@ std::vector<Scene::Node*> disable_nodes(const SelectedVolumeIds& volume_ids, Sce
     return to_enable;
 }
 
+void remove_simplify_nodes(Nodes& phantom_nodes, Scene::Scene& scene) {
+    for (Scene::Node* node : phantom_nodes) {
+        if (!exist_node(scene.root(), node)) {
+            continue;
+        }
+        scene.remove_child(node);
+    }
+    phantom_nodes.clear();
+}
+
 void set_nodes(const NodeInputs& node_inputs, ProjectContext& proj_ctx, Render::Device& device, 
     Scene::Scene& scene, const PlaterScenePresenter::MeshManager& mesh_manager, const Domain::Project& project)
 {
     proj_ctx.phantoms.clear();
     proj_ctx.phantoms.reserve(node_inputs.size());
+    remove_simplify_nodes(proj_ctx.phantom_nodes, scene);
 
     const auto layer_index = Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects);
     Render::Material material = get_material(proj_ctx.show_wireframe, device, scene);
     bool enable_ignored = true;
     for (const NodeInput& node_input: node_inputs) {
         const Domain::ObjectID& volume_id = node_input.volume_id;
-        Node::NodeList volume_nodes;
-        scene.root().query([volume_id](const Node* n) -> bool {
-                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+        Scene::Node::NodeList volume_nodes;
+        scene.root().query([volume_id](const Scene::Node* n) -> bool {
+                const Scene::SceneNodeTag* tag = n->tag_of_type<Scene::SceneNodeTag>();
                 return tag != nullptr && 
                     tag->volume_id == volume_id.id;
             }, volume_nodes, enable_ignored);
@@ -418,25 +421,23 @@ void set_nodes(const NodeInputs& node_inputs, ProjectContext& proj_ctx, Render::
         // generate clone of goemetry (copy Node)
         const Domain::ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
         const Domain::Transform3d volume_tr = volume_ptr->get_matrix();
-        Phantom phantom{
+        Phantom phantom{ // keep geometry alive
             .volume_id = volume_id,
             .geometry = Render::geometry_from_triangle_mesh(device, *node_input.its)
         };
         proj_ctx.phantoms.emplace_back(std::move(phantom));
-
-        for (Node* volume_node : volume_nodes) {
-            Node * volume_parent = volume_node->parent();
-            ASSERT(!volume_node->enabled()); // make original volume invisible
-
-            SimplifyNodeTag tag{};
+        const Render::Geometry* geometry = proj_ctx.phantoms.back().geometry.get();
+        for (Scene::Node* volume_node : volume_nodes) {
+            ASSERT(!volume_node->enabled()); // original MUST be invisible (disabled)
             Scene::NodeBuilder builder{scene};
             builder
                 .set_debug_name("Simplified volume")
                 .set_transform(volume_tr)
-                .set_tag(tag)
-                .set_mesh(proj_ctx.phantoms.back().geometry.get(), material, layer_index)
+                .set_mesh(geometry, material, layer_index)
                 .set_aabb(aabb_mesh);
-            scene.add_child(builder.build().release(), volume_parent);
+            Scene::Node* phantom_node = builder.build().release();
+            proj_ctx.phantom_nodes.push_back(phantom_node); // remember for removing
+            scene.add_child(phantom_node, volume_node->parent());
         }
     }
 }
@@ -496,11 +497,11 @@ void SimplifyGizmo::on_selection_change(Domain::SelectionId project_id, const Bi
 }
 
 namespace {
-void add_listeners(SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
+void add_listeners(Biz::Scene::SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(gizmo);
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(gizmo);
 }
-void remove_listeners(SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
+void remove_listeners(Biz::Scene::SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
     scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(gizmo);
     scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(gizmo);
 }
@@ -508,7 +509,7 @@ void remove_listeners(SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
 
 void SimplifyGizmo::on_activated() 
 {
-    SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     Domain::SelectionId project_id = m_project_interactor.selected_project_id();
     on_selection_change(project_id, scene_interactor.object_selection());
     add_listeners(scene_interactor, this);
@@ -556,13 +557,6 @@ void SimplifyGizmo::on_scene_selection_changed(Domain::SelectionId project_id, c
 }
 
 namespace {
-void remove_simplify_nodes(Scene::Scene& scene) {
-    Node::NodeList simplify_nodes;
-    scene.root().query(is_simplify_node, simplify_nodes);
-    for (Node* node : simplify_nodes)
-        scene.remove_children(is_simplify_node, node->parent());
-}
-
 NodeInputs into_node_inputs(const SimplifyData& data) {
     NodeInputs node_inputs;
     node_inputs.reserve(data.size());
@@ -581,7 +575,6 @@ void recreate_simplify_nodes(Domain::SelectionId project_id,
     const Biz::ProjectInteractor& project_interactor) 
 {
     Scene::Scene& scene = scene_presenter.project_scene(project_id);
-    remove_simplify_nodes(scene);
     const Domain::Project& project = project_interactor.project(project_id);    
     NodeInputs node_inputs = (proj_ctx.job_data.data.empty())?
         create_node_inputs(proj_ctx.volume_ids, project) :
@@ -612,12 +605,15 @@ void SimplifyGizmo::deactivate(Domain::SelectionId project_id) {
     ProjectContext& proj_ctx = m_proj_ctxs->project(project_id);
     proj_ctx.is_job_running = false; // for sure that thread did not finish without setting flag
 
+    Scene::Scene& scene = m_scene_presenter.project_scene(project_id);
     // Enable previously disabled node
-    for (Node* node : proj_ctx.to_enable) // TODO: iterate over existing and enable only when exist
-        node->set_enabled(true);    // make original volume visible again
+    for (Scene::Node* node : proj_ctx.to_enable) {// TODO: iterate over existing and enable only when exist
+        if (!exist_node(scene.root(), node))
+            continue;
+        node->set_enabled(true); // make original volume visible again
+    }
     proj_ctx.to_enable.clear();
-
-    remove_simplify_nodes(m_scene_presenter.project_scene(project_id));
+    remove_simplify_nodes(proj_ctx.phantom_nodes, scene);
 
     // Free geometries
     proj_ctx.phantoms.clear();
@@ -625,7 +621,7 @@ void SimplifyGizmo::deactivate(Domain::SelectionId project_id) {
     proj_ctx.job_data = {};
 }
 
-void SimplifyGizmo::close(){ m_close_fn(); }
+void SimplifyGizmo::close(){ m_gizmo_controller.deactivate_current_tool(); }
 void SimplifyGizmo::apply_simplify()
 {
     ProjectContext& proj_ctx = m_proj_ctxs->selected();
@@ -635,7 +631,7 @@ void SimplifyGizmo::apply_simplify()
     assert(proj_ctx.job_data.volume_ids == proj_ctx.volume_ids);
     const Domain::Project& project = m_project_interactor.selected_project();
 
-    SceneInteractor::RefMeshes meshes;
+    Biz::Scene::SceneInteractor::RefMeshes meshes;
     SimplifyData& result = proj_ctx.job_data.data;
     meshes.reserve(result.size());
     for (auto& item : result) {
@@ -655,16 +651,36 @@ void SimplifyGizmo::apply_simplify()
 
     close(); // unregistr on_selection_change
 
-    SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    Domain::ElementRefs refs;
+    refs.reserve(result.size());
+    std::ranges::transform(meshes, std::back_inserter(refs), [](const auto& m) { return m.first; });
+    m_notification->on_simplify(m_project_interactor.selected_project_id(), refs);
+
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.change_volume_meshes(std::move(meshes));
 }
 
 namespace {
 // Run on main thread
-void finalize_job(SimplifyJobData&& result, ProjectContext& proj_ctx, 
+void finalize_job(SimplifyJobData&& result, SimplifyGizmo::ProjectContexts& proj_ctxs, 
     const Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, 
     Render::Device& device, SimplifyDialog& dialog) 
 {
+    if (!project_interactor.project_exists(result.project_id))
+        return; // Project doesnt exist
+
+    ProjectContext& proj_ctx = proj_ctxs.project(result.project_id);
+    proj_ctx.is_job_running = false;
+
+    if (proj_ctx.volume_ids.empty())
+        return; // SimplifyGizmo is already closed, do not apply result
+
+    if (proj_ctx.volume_ids != result.volume_ids)
+        return; // Result is for previous selection NOT current 
+
+    if (result.data.empty())
+        return; // No data to finalize
+
     Configuration& cfg = proj_ctx.configuration;
     cfg = result.configuration; // update curren configuration
 
@@ -698,8 +714,68 @@ void finalize_job(SimplifyJobData&& result, ProjectContext& proj_ctx,
             dialog.set_info_line(cfg.wanted_count);
             dialog.set_decimate_ratio(cfg.decimate_ratio);        
         }
-        PlatformServices::instance().render_request_handler().request_render();
+        Biz::Platform::PlatformServices::instance()
+            .render_request_handler().request_render();
     }
+}
+
+// Create a copy of current meshes to pass to the worker thread.
+// Using unique_ptr instead of pass-by-value to avoid an extra
+// copy (which would happen when passing to std::thread).
+SimplifyData create_simplify_data(const Domain::Project& project, const SelectedVolumeIds& volume_ids) {
+    SimplifyData simplify_data;    
+    for (const Domain::ObjectID& volume_id : volume_ids) {
+        const Domain::ModelVolume* volume = get_volume_by_id(volume_id, project);
+        simplify_data[volume_id] = std::make_unique<indexed_triangle_set>(volume->mesh().its); // copy
+    }
+    return simplify_data;
+}
+
+// Copy current configuration that will be used in job.
+SimplifyJobData create_job_data(const ProjectContext& proj_ctx, const Biz::ProjectInteractor& project_interactor) {
+    const Domain::Project& project = project_interactor.selected_project();
+    return SimplifyJobData {
+        .data = create_simplify_data(project, proj_ctx.volume_ids),
+        .configuration = proj_ctx.configuration, // copy current configuration
+        .volume_ids = proj_ctx.volume_ids, // copy current input definition
+        .project_id = project_interactor.selected_project_id() // current project
+    };
+}
+
+void set_progress(int percent, Domain::SelectionId project_id, 
+    SimplifyGizmo::ProjectContexts& proj_ctxs,
+    const Biz::ProjectInteractor& project_interactor,
+    SimplifyDialog& dialog ) 
+{
+    if (!project_interactor.project_exists(project_id))
+        return;
+    ProjectContext& proj_ctx = proj_ctxs.project(project_id);
+    if (!proj_ctx.is_job_running)
+        return; // already finished
+
+    proj_ctx.progress = percent;
+    if (project_interactor.selected_project_id() == project_id) {
+        dialog.set_progress(percent);
+        // Redraw the UI to show progress bar.
+        Biz::Platform::PlatformServices::instance()
+            .render_request_handler().request_render();
+    }
+}
+
+std::function<void(int)> create_status_fn(Domain::SelectionId project_id,
+    SimplifyGizmo::ProjectContexts& proj_ctxs,
+    const Biz::ProjectInteractor& project_interactor,
+    SimplifyDialog& dialog) {
+    // Called by worker thread, updates progress bar.
+    // Using CallAfter so the rerequest function is run in UI thread.
+    // This is only the way to solved lock for previously removed project
+    return [project_id, &proj_ctxs, &project_interactor, &dialog](int percent) {
+        Biz::Platform::PlatformServices::instance()
+            .main_thread_dispatcher().dispatch_on_main_thread(
+            [percent, project_id, &proj_ctxs, &project_interactor, &dialog]() {
+                set_progress(percent, project_id, proj_ctxs, project_interactor, dialog);
+            });
+        };
 }
 } // namespace
 
@@ -719,50 +795,17 @@ void SimplifyGizmo::process()
 
     // invalidate option to apply result
     m_dialog->set_enable_apply_button(false);
-
-    // Copy configuration that will be used.
-    SimplifyJobData job_data;
-    job_data.configuration = proj_ctx.configuration; // copy current configuration
-    job_data.volume_ids = proj_ctx.volume_ids; // copy current input definition
-    job_data.project_id = m_project_interactor.selected_project_id();
-
-    // Create a copy of current meshes to pass to the worker thread.
-    // Using unique_ptr instead of pass-by-value to avoid an extra
-    // copy (which would happen when passing to std::thread).
-    const Domain::Project& project = m_project_interactor.selected_project();
-    for (const Domain::ObjectID& volume_id : proj_ctx.volume_ids) {
-        const Domain::ModelVolume* volume = get_volume_by_id(volume_id, project);
-        job_data.data[volume_id] = std::make_unique<indexed_triangle_set>(volume->mesh().its); // copy
-    }
-
+    
     using Biz::JThread::StopToken;
     std::function<SimplifyJobData(StopToken, SimplifyJobData&&)> process = 
-        [this](StopToken stop_token, SimplifyJobData&& job_data) -> SimplifyJobData
+        [this](StopToken stop_token, SimplifyJobData&& job_data)
     {
         // Checks that the UI thread did not request cancellation, throws if so.
         std::function<bool(void)> is_stopped = [&stop_token]() {
             return stop_token.stop_requested(); };
 
-        // Called by worker thread, updates progress bar.
-        // Using CallAfter so the rerequest function is run in UI thread.
-        std::function<void(int)> statusfn = [this, project_id = job_data.project_id](int percent) {
-            Biz::Platform::PlatformServices::instance().main_thread_dispatcher()
-                .dispatch_on_main_thread([this, project_id, percent]() {
-                // NOTE: still not solved lock for remove project
-                if (!m_project_interactor.project_exists(project_id))
-                    return;
-                ProjectContext& proj_ctx = m_proj_ctxs->project(project_id);
-                if (!proj_ctx.is_job_running)
-                    return; // already finished
-
-                proj_ctx.progress = percent;
-                if (m_project_interactor.selected_project_id() == project_id) {
-                    m_dialog->set_progress(percent);
-                    // Redraw the UI to show progress bar.
-                    PlatformServices::instance().render_request_handler().request_render();
-                }                    
-            });            
-        };
+        std::function<void(int)> statusfn = 
+            create_status_fn(job_data.project_id, *m_proj_ctxs, m_project_interactor, dialog());
         statusfn(0); // initialize percentage
 
         // Initialize.
@@ -780,18 +823,7 @@ void SimplifyGizmo::process()
     };
 
     std::function<void(SimplifyJobData&&)> finalize = [this](SimplifyJobData&& result) {
-        if (!m_project_interactor.project_exists(result.project_id))
-            return; // Project doesnt exist
-        ProjectContext& proj_ctx = m_proj_ctxs->project(result.project_id);
-        proj_ctx.is_job_running = false;
-
-        if (proj_ctx.volume_ids.empty())
-            return; // SimplifyGizmo is already closed, do not apply result
-
-        if (result.data.empty())
-            return; // No data to finalize
-
-        finalize_job(std::move(result), proj_ctx, m_project_interactor, 
+        finalize_job(std::move(result), *m_proj_ctxs, m_project_interactor, 
             m_scene_presenter, m_device, dialog());
     };
 
@@ -799,7 +831,7 @@ void SimplifyGizmo::process()
     proj_ctx.is_job_running = true;
     Biz::Platform::PlatformServices::instance()
         .job_manager()
-        .create_job(job_name, process, std::move(job_data))
+        .create_job(job_name, process, create_job_data(proj_ctx, m_project_interactor))
         .on_result(finalize)
         .start();
 }

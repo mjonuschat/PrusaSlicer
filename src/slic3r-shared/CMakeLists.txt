@@ -35,6 +35,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/RotationDialog.cpp
         include/Slic3r/App/Plater/SimplifyGizmo.hpp
         src/Slic3r/App/Plater/SimplifyGizmo.cpp
+        include/Slic3r/App/Plater/SimplifyNotification.hpp
+        src/Slic3r/App/Plater/SimplifyNotification.cpp
         include/Slic3r/App/Plater/SimplifyDialog.hpp
         src/Slic3r/App/Plater/SimplifyDialog.cpp
         include/Slic3r/App/Plater/ArrangeDialog.hpp

@@ -102,7 +102,13 @@ public:
     auto& create_job(const std::string& name, F&& function, Args&&... args)
     {
         auto job{init_job(name, std::forward<F>(function), std::forward<Args>(args)...)};
-        job->call_after([this, name]() { m_jobs.erase(name); });
+        job->call_after([this, name](size_t id) { 
+            auto it = m_jobs.find(name);
+            if (it != m_jobs.end() &&
+                it->second->get_id() == id) {
+                m_jobs.erase(it);
+            }
+        });
         auto& job_ref{*job.get()};
         m_jobs.insert_or_assign(name, std::move(job));
         return job_ref;

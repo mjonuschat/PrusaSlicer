@@ -31,6 +31,7 @@
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/App/Plater/ScaleGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
+#include "Slic3r/App/Plater/SimplifyNotification.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/PaintOnSeamsGizmo.hpp"
@@ -948,15 +949,16 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         m_workbench
     );
-
-    std::function<void()> close_fn = [this] {
-        m_gizmo_manager->deactivate_current_tool();
-    };
     m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
         *m_device,
         *m_scene_presenter,
         m_project_interactor,
-        close_fn
+        *m_gizmo_manager,
+        std::make_unique<SimplifyNotification>(
+            m_project_interactor,
+            *m_gizmo_manager,
+            AppServices::instance().pop_notification_center()
+        )
     );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>(
         *m_device,

@@ -38,13 +38,13 @@ void ProjectInteractor::Selection::set_config_container_id(Domain::SelectionId c
 
 const Domain::Project& ProjectInteractor::selected_project() const
 {
-    DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+    ASSERT(m_selection.project_id != Domain::INVALID_ID);
     return m_workbench.project(m_selection.project_id);
 }
 
 Domain::Project& ProjectInteractor::selected_project()
 {
-    DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+    ASSERT(m_selection.project_id != Domain::INVALID_ID);
     return m_workbench.project(m_selection.project_id);
 }
 

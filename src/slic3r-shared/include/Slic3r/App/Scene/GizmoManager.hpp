@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include <Slic3r/App/Platform/CommandRegistry.hpp>
 #include <Slic3r/Biz/Platform/ListenerScope.hpp>
@@ -53,8 +54,8 @@ public:
     template<typename G, typename... ArgsT>
     G& add_base_gizmo(ArgsT&&... args)
     {
-        m_base_gizmos.emplace_back(std::make_unique<G>(args...));
-        auto& ptr = m_base_gizmos.back();
+        m_base_gizmos.emplace_back(std::make_unique<G>(std::forward<ArgsT>(args)...));
+        const auto& ptr = m_base_gizmos.back();
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
         ptr->provide_clipper(m_clipper);
@@ -64,8 +65,8 @@ public:
     template<typename G, typename... ArgsT>
     G& add_tool_gizmo(ArgsT&&... args)
     {
-        m_tool_gizmos.emplace_back(std::make_unique<G>(args...));
-        auto& ptr = m_tool_gizmos.back();
+        m_tool_gizmos.emplace_back(std::make_unique<G>(std::forward<ArgsT>(args)...));
+        const auto& ptr = m_tool_gizmos.back();
         m_command_registry.set_registering_tool_gizmo(*ptr);
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);

@@ -13,6 +13,7 @@ public:
     virtual ~JobBase()                                = default;
     virtual void cancel()                             = 0;
     virtual const ProgressTracker& progress_tracker() = 0;
+    virtual size_t get_id() const = 0;
 };
 
 namespace Impl {
@@ -46,7 +47,7 @@ class Job : public JobBase
 public:
     using Result      = R;
     using OnResult    = Impl::get_on_result_type_t<Result>;
-    using CallAfter   = std::function<void()>;
+    using CallAfter   = std::function<void(size_t)>;
     using OnException = std::function<void(std::exception_ptr, cpptrace::stacktrace)>;
 
     Job& on_result(OnResult on_result)
@@ -133,6 +134,8 @@ private:
         m_progress_tracker{progress_tracker},
         m_args{std::move(args)}
     {
+        static size_t last_id = 0;
+        m_unique_id = last_id++;
         if constexpr (std::is_same_v<Result, void>) {
             m_on_result = []() {};
         } else {
@@ -141,12 +144,13 @@ private:
     }
 
     std::string m_name;
+    size_t m_unique_id = 0;
     std::function<R(JThread::StopToken, Args...)> m_function;
     std::reference_wrapper<IMainThreadDispatcher> m_dispatcher;
     ProgressTracker m_progress_tracker;
     ArgsTuple m_args;
     OnResult m_on_result{};
-    CallAfter m_call_after;
+    std::function<void()> m_call_after;
     OnException m_on_exception{
         [](const std::exception_ptr exception, const cpptrace::stacktrace& stacktrace)
         {
@@ -167,7 +171,7 @@ private:
 
     void call_after(CallAfter call_after)
     {
-        m_call_after = call_after;
+        m_call_after = [call_after, id = m_unique_id]() {call_after(id); };
     }
 
     void cancel() override
@@ -178,6 +182,11 @@ private:
     const ProgressTracker& progress_tracker() override
     {
         return m_progress_tracker;
+    }
+
+    size_t get_id() const override
+    {
+        return m_unique_id;
     }
 };
 } // namespace Slic3r::Biz::Platform::JobManager
