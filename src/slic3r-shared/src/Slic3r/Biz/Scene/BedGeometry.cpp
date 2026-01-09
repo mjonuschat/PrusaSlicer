@@ -75,17 +75,23 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
         return ret;
     }
 
-    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
     using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2f;
-    std::vector<Vec2f> triangles = triangulate_expolygon_2f(contour, NORMALS_UP);
-    if (triangles.empty() || triangles.size() % 3 != 0) {
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+    std::vector<Vec2f> triangles_up = triangulate_expolygon_2f(contour, NORMALS_UP);
+    if (triangles_up.empty() || triangles_up.size() % 3 != 0) {
+        SPDLOG_ERROR("Unable to triangulate bed contour");
+        return ret;
+    }
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
+    std::vector<Vec2f> triangles_down = triangulate_expolygon_2f(contour, NORMALS_DOWN);
+    if (triangles_down.empty() || triangles_down.size() % 3 != 0) {
         SPDLOG_ERROR("Unable to triangulate bed contour");
         return ret;
     }
 
     Vec2f min = {FLT_MAX, FLT_MAX};
     Vec2f max = {-FLT_MAX, -FLT_MAX};
-    for (const Vec2f& v : triangles) {
+    for (const Vec2f& v : triangles_up) {
         min.x() = std::min(v.x(), min.x());
         min.y() = std::min(v.y(), min.y());
         max.x() = std::max(v.x(), max.x());
@@ -93,10 +99,21 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
     }
     Vec2f size = {max.x() - min.x(), max.y() - min.y()};
 
-    ret.reserve(triangles.size());
+    ret.reserve(triangles_up.size() + triangles_down.size());
     std::transform(
-        triangles.begin(),
-        triangles.end(),
+        triangles_up.begin(),
+        triangles_up.end(),
+        std::back_inserter(ret),
+        [&min, &size](const Vec2f& v) {
+            return std::make_pair(
+                Algorithms::Point::to_3d(v, 0.0f),
+                Vec2f((v.x() - min.x()) / size.x(), (v.y() - min.y()) / size.y())
+            );
+        }
+    );
+    std::transform(
+        triangles_down.begin(),
+        triangles_down.end(),
         std::back_inserter(ret),
         [&min, &size](const Vec2f& v) {
             return std::make_pair(

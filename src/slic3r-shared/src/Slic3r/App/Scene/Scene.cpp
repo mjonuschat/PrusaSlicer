@@ -115,8 +115,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
     cmd_buf.set_blending_enabled(true);
     Render::Blending blending { {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha}};
     cmd_buf.set_blending(blending);
-//    cmd_buf.set_depth_write_enabled(false);
-    cmd_buf.set_cull_face_enabled(false);
+    cmd_buf.set_depth_write_enabled(false);
 }
 
 void MinimalSceneRenderCustomizer::on_transparent_pass_end(

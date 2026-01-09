@@ -12,26 +12,6 @@ void PreviewSceneRenderCustomizer::on_opaque_pass_begin(Render::CommandBuffer& c
     cmd_buf.set_depth_test_enabled(id != PreviewSceneLayer::CogMarker);
     // FIXME: this is currently required because the segments_xxx vertex shaders produce triangles with inconsistent winding
     cmd_buf.set_cull_face_enabled(id != PreviewSceneLayer::Toolpaths);
-  }
-
-void PreviewSceneRenderCustomizer::on_transparent_pass_begin(
-    Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_index
-)
-{
-    cmd_buf.set_depth_test_enabled(true);
-    cmd_buf.set_blending_enabled(true);
-    Render::Blending blending { {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha}};
-    cmd_buf.set_blending(blending);
-    cmd_buf.set_depth_write_enabled(false);
-    cmd_buf.set_cull_face_enabled(false);
-}
-
-void PreviewSceneRenderCustomizer::on_transparent_pass_end(
-    Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_index
-)
-{
-    cmd_buf.set_blending_enabled(false);
-    cmd_buf.set_depth_write_enabled(true);
 }
 
 void PreviewSceneRenderCustomizer::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
