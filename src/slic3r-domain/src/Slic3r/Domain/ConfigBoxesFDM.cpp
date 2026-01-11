@@ -1880,6 +1880,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::substitutions;
     def->tooltip = L("Find / replace patterns in G-code lines and substitute them.");
     def->mode = comExpert;
+    def->full_width = true;
     def->init_fn = init_with(std::vector<std::string>{});
 
     def = defs.add("high_current_on_filament_swap", typeid(bool));

@@ -206,6 +206,7 @@ enum class Icon : wchar_t
     Rotate,
     Simplify,
     ExclamationRed,
+    Plus
 };
 
 } // namespace Slic3r::App::Render

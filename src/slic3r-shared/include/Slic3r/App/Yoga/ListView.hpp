@@ -35,13 +35,12 @@ public:
         );
     }
 
-
     using ViewCustomizer = std::function<void(View& view)>;
     /**
      * @brief If set it will be called on every created new view, so it can be
      * customized (modified) before used.
      */
-     ViewCustomizer view_customizer{nullptr};
+    ViewCustomizer view_customizer{nullptr};
 
 private:
     std::tuple<Args...> m_args;
@@ -112,8 +111,14 @@ public:
     {
         ASSERT(index_range.to <= m_items.size());
 
-        for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            this->remove_later(m_items[i]);
+        if (m_immediate) {
+            for (size_t i = index_range.from; i <= index_range.to; ++i) {
+                this->remove(m_items[i]);
+            }
+        } else {
+            for (size_t i = index_range.from; i <= index_range.to; ++i) {
+                this->remove_later(m_items[i]);
+            }
         }
         m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
         update_indexes(index_range.from);
@@ -183,24 +188,28 @@ public:
         update_indexes(from);
     }
 
-    void set_source_list(Biz::IObservableList<Data>* source_list)
+    void set_source_list(Biz::IObservableList<Data>* source_list, bool immediate = false)
     {
-        set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list});
+        set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list}, immediate);
     }
 
     template <
         typename Derived,
         typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
-    void set_source_list(const std::weak_ptr<Derived>& source_list)
+    void set_source_list(const std::weak_ptr<Derived>& source_list, bool immediate = false)
     {
         set_source_list(
             Biz::WeakerPointer<Biz::IObservableList<Data>>{
                 std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
-            }
+            },
+            immediate
         );
     }
 
-    void set_source_list(const Biz::WeakerPointer<Biz::IObservableList<Data>>& source_list)
+    void set_source_list(
+        const Biz::WeakerPointer<Biz::IObservableList<Data>>& source_list,
+        bool immediate = false
+    )
     {
         if (m_source_list != source_list) {
             if (m_source_list.is_valid()) {
@@ -212,7 +221,9 @@ public:
                 m_source_list->template add_listener<Biz::IListObserver<Data>>(this);
             }
 
+            m_immediate = immediate;
             on_reset();
+            m_immediate = false;
         }
     }
 
@@ -235,6 +246,7 @@ private:
     ViewFactoryT m_factory;
 
     Items m_items;
+    bool m_immediate = false;
 };
 
 } // namespace Slic3r::App::Yoga

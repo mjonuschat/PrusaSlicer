@@ -101,6 +101,7 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
     PageListView* page_list_view = tab_item->emplace_back<PageListView>(std::move(factory));
     page_list_view->set_orientation(Orientation::Vertical);
     page_list_view->set_min_size({125, 0});
+    page_list_view->set_flex_shrink(0);
 
     tab_item->emplace_back<Separator>(Orientation::Vertical);
 

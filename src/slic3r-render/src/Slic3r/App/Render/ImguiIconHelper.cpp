@@ -190,6 +190,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Rotate, "rotate"},
     {Icon::Simplify, "simplify"},
     {Icon::ExclamationRed, "exclamation_red"},
+    {Icon::Plus, "plus"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};
