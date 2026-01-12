@@ -247,10 +247,12 @@ std::vector<Domain::Index3> create_face_neighbors_index(ExPolicy &&ex, const ind
             for (int edge_index = 0; edge_index < 3; ++edge_index) {
                 // check if done
                 int& neighbor_edge = neighbor[edge_index];
-                if (neighbor_edge != no_value) 
+                if (neighbor_edge != no_value) {
                     // This edge already has a neighbor assigned.
                     continue;
-                    Domain::Index2 edge_indices = TriMesh::its_triangle_edge(triangle_indices, edge_index);
+                }
+
+                Domain::Index2 edge_indices = TriMesh::its_triangle_edge(triangle_indices, edge_index);
                 // IMPROVE: use same vector for 2 sides of triangle
                 for (const size_t other_face : vertex_triangles[edge_indices[0]]) {
                     if (other_face <= face_idx) continue;

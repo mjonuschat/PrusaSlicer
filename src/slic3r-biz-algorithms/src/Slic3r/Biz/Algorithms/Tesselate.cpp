@@ -58,8 +58,8 @@ public:
         gluTessBeginPolygon(m_tesselator, (void*)this);
         gluTessBeginContour(m_tesselator);
         for (const Point &pt : expoly.contour.points) {
-            coords.emplace_back(unscaled(pt[0]));
-            coords.emplace_back(unscaled(pt[1]));
+            coords.emplace_back(unscaled<double>(pt[0]));
+            coords.emplace_back(unscaled<double>(pt[1]));
             coords.emplace_back(0.);
             gluTessVertex(m_tesselator, &coords[coords.size() - 3], &coords[coords.size() - 3]);
         }
@@ -67,8 +67,8 @@ public:
         for (const Polygon &poly : expoly.holes) {
             gluTessBeginContour(m_tesselator);
             for (const Point &pt : poly.points) {
-                coords.emplace_back(unscaled(pt[0]));
-                coords.emplace_back(unscaled(pt[1]));
+                coords.emplace_back(unscaled<double>(pt[0]));
+                coords.emplace_back(unscaled<double>(pt[1]));
                 coords.emplace_back(0.);
                 gluTessVertex(m_tesselator, &coords[coords.size() - 3], &coords[coords.size() - 3]);
             }
@@ -100,8 +100,8 @@ public:
             gluTessBeginContour(m_tesselator);
             size_t idx = 0;
             for (const Point &pt : expoly.contour.points) {
-                coords[idx ++] = unscaled(pt[0]);
-                coords[idx ++] = unscaled(pt[1]);
+                coords[idx ++] = unscaled<double>(pt[0]);
+                coords[idx ++] = unscaled<double>(pt[1]);
                 coords[idx ++] = 0.;
                 gluTessVertex(m_tesselator, &coords[idx - 3], &coords[idx - 3]);
             }
@@ -109,8 +109,8 @@ public:
             for (const Polygon &poly : expoly.holes) {
                 gluTessBeginContour(m_tesselator);
                 for (const Point &pt : poly.points) {
-                    coords[idx ++] = unscaled(pt[0]);
-                    coords[idx ++] = unscaled(pt[1]);
+                    coords[idx ++] = unscaled<double>(pt[0]);
+                    coords[idx ++] = unscaled<double>(pt[1]);
                     coords[idx ++] = 0.;
                     gluTessVertex(m_tesselator, &coords[idx - 3], &coords[idx - 3]);
                 }
