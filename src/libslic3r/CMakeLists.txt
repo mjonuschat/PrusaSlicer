@@ -163,10 +163,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Fill/Lightning/TreeNode.cpp
     src/libslic3r/Fill/Lightning/TreeNode.hpp
     src/libslic3r/Flow.cpp
-    src/libslic3r/Format/OBJ.cpp
-    src/libslic3r/Format/OBJ.hpp
-    src/libslic3r/Format/objparser.cpp
-    src/libslic3r/Format/objparser.hpp
     #src/libslic3r/Format/PrintRequest.cpp
     #src/libslic3r/Format/PrintRequest.cpp
     src/libslic3r/Format/SL1.cpp

@@ -2,10 +2,10 @@
 #define SLIC3R_TEST_UTILS
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include <random>
-
-#include "libslic3r/Format/OBJ.hpp"
 
 #if defined(WIN32) || defined(_WIN32)
 #define PATH_SEPARATOR R"(\)"
@@ -15,10 +15,10 @@
 
 inline Slic3r::Domain::TriangleMesh load_model(const std::string &obj_filename)
 {
-    Slic3r::Domain::TriangleMesh mesh;
     auto fpath = TEST_DATA_DIR PATH_SEPARATOR + obj_filename;
-    Slic3r::load_obj(fpath.c_str(), &mesh);
-    return mesh;
+    auto mesh = Slic3r::Biz::load_obj(fpath.c_str());
+    ASSERT(mesh);
+    return mesh.value();
 }
 
 template<class T>

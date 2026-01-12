@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
 
 #include <arrange-wrapper/ModelArrange.hpp>
 

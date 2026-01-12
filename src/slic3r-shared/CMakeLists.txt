@@ -857,6 +857,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/FileLoadingLogic.cpp
         include/Slic3r/Biz/Format/STL.hpp
         src/Slic3r/Biz/Format/STL.cpp
+        src/Slic3r/Biz/Format/OBJ.cpp
+        include/Slic3r/Biz/Format/OBJ.hpp
+        src/Slic3r/Biz/Format/objparser.cpp
+        src/Slic3r/Biz/Format/objparser.hpp
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp

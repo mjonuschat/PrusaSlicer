@@ -6,42 +6,28 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include "Slic3r/Biz/Format/OBJ.hpp"
+
 #include <string>
 #include <utility>
 #include <cassert>
 #include <cstring>
 
+#include "fmt/format.h"
+
 #include "Slic3r/Biz/Algorithms/Model.hpp"
-#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "OBJ.hpp"
 #include "objparser.hpp"
-#include "admesh/stl.h"
 
-#ifdef _WIN32
-#define DIR_SEPARATOR '\\'
-#else
-#define DIR_SEPARATOR '/'
-#endif
+namespace Slic3r::Biz {
 
-using namespace Slic3r::Biz;
 
-namespace Slic3r {
-
-using Domain::TriangleMesh;
-namespace TriMesh = Biz::Algorithms::TriangleMesh;
-
-bool load_obj(const char *path, TriangleMesh *meshptr)
-{
-    if (meshptr == nullptr)
-        return false;
-    
+tl::expected<Domain::TriangleMesh, std::string> load_obj(const std::string& path)
+{    
     // Parse the OBJ file.
     ObjParser::ObjData data;
-    if (! ObjParser::objparse(path, data)) {
-        BOOST_LOG_TRIVIAL(error) << "load_obj: failed to parse " << path;
-        return false;
+    if (! ObjParser::objparse(path.c_str(), data)) {
+        return tl::make_unexpected(fmt::format("load_obj: failed to parse {}.", path));
     }
     
     // Count the faces and verify, that all faces are triangular.
@@ -54,12 +40,10 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
         if (size_t num_face_vertices = j - i; num_face_vertices > 0) {
             if (num_face_vertices > 4) {
                 // Non-triangular and non-quad faces are not supported as of now.
-                BOOST_LOG_TRIVIAL(error) << "load_obj: failed to parse " << path << ". The file contains polygons with more than 4 vertices.";
-                return false;
+                return tl::make_unexpected(fmt::format("load_obj: failed to parse {}. The file contains polygons with more than 4 vertices.", path));
             } else if (num_face_vertices < 3) {
                 // Non-triangular and non-quad faces are not supported as of now.
-                BOOST_LOG_TRIVIAL(error) << "load_obj: failed to parse " << path << ". The file contains polygons with less than 2 vertices.";
-                return false;
+                return tl::make_unexpected(fmt::format("load_obj: failed to parse {}. The file contains polygons with less than 2 vertices.", path));
             }
             if (num_face_vertices == 4)
                 ++ num_quads;
@@ -89,8 +73,7 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
                 } else {
                     assert(cnt < 4);
                     if (vertex.coordIdx < 0 || vertex.coordIdx >= int(its.vertices.size())) {
-                        BOOST_LOG_TRIVIAL(error) << "load_obj: failed to parse " << path << ". The file contains invalid vertex index.";
-                        return false;
+                        return tl::make_unexpected(fmt::format("load_obj: failed to parse {}. The file contains invalid vertex index.", path));
                     }
                     indices[cnt ++] = vertex.coordIdx;
                 }
@@ -104,53 +87,29 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
         }
 
     using Biz::Algorithms::TriangleMesh::construct;
-    *meshptr = TriangleMesh(construct(std::move(its)));
-    if (meshptr->empty()) {
-        BOOST_LOG_TRIVIAL(error) << "load_obj: This OBJ file couldn't be read because it's empty. " << path;
-        return false;
+    Domain::TriangleMesh mesh_out(construct(std::move(its)));
+    if (mesh_out.empty()) {
+        return tl::make_unexpected(fmt::format("load_obj: This OBJ file couldn't be read because it's empty. {}", path));
     }
-    if (meshptr->volume() < 0)
-        meshptr->flip_triangles();
-    return true;
+    if (mesh_out.volume() < 0)
+        mesh_out.flip_triangles();
+    return mesh_out;
 }
 
-bool load_obj(const char *path, Domain::Model *model, const char *object_name_in)
-{
-    TriangleMesh mesh;
-    
-    bool ret = load_obj(path, &mesh);
-    
-    if (ret) {
-        std::string  object_name;
-        if (object_name_in == nullptr) {
-            const char *last_slash = strrchr(path, DIR_SEPARATOR);
-            object_name.assign((last_slash == nullptr) ? path : last_slash + 1);
-        } else
-           object_name.assign(object_name_in);
-    
-        Algorithms::Model::add_object(model, object_name.c_str(), path, std::move(mesh));
-    }
-    
-    return ret;
-}
 
-bool store_obj(const char *path, TriangleMesh *mesh)
+namespace {
+bool store_obj(const std::string& path, Domain::TriangleMesh *mesh)
 {
     //FIXME returning false even if write failed.
-    TriMesh::write_obj_file(*mesh, path);
+    Biz::Algorithms::TriangleMesh::write_obj_file(*mesh, path.c_str());
     return true;
 }
+} // anonymous namespace
 
-bool store_obj(const char *path, Domain::ModelObject *model_object)
+bool store_obj(const std::string& path, Domain::Model *model)
 {
-    TriangleMesh mesh = Algorithms::ModelObject::mesh(*model_object);
+    Domain::TriangleMesh mesh = Algorithms::Model::flatten_to_mesh(*model);
     return store_obj(path, &mesh);
 }
 
-bool store_obj(const char *path, Domain::Model *model)
-{
-    TriangleMesh mesh = Algorithms::Model::flatten_to_mesh(*model);
-    return store_obj(path, &mesh);
-}
-
-}; // namespace Slic3r
+}; // namespace Slic3r::Biz

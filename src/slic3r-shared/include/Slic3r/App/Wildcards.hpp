@@ -15,8 +15,10 @@ enum class TypeFlag : int
     Sl1         = 1 << 2,
     Sl1S        = 1 << 3,
     Stl         = 1 << 4,
-    Project3mf  = 1 << 5,
-    AllFlags    = 1 << 6
+    Obj         = 1 << 5,
+    Project3mf  = 1 << 6,
+    AllImportFiles = 1 << 7,
+    AllFlags    = 1 << 8
 };
 
 constexpr TypeFlag operator|(TypeFlag lhs, TypeFlag rhs)

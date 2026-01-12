@@ -9,7 +9,9 @@ const std::map<TypeFlag, std::string> flag_to_wildcard_map = {
     {TypeFlag::Sl1, "SL1 files (*.sl1)|*.sl1"},
     {TypeFlag::Sl1S, "SL1S files (*.sl1s)|*.sl1s"},
     {TypeFlag::Stl, "STL files (*.stl)|*.stl"},
+    {TypeFlag::Obj, "OBJ files (*.obj)|*.obj"},
     {TypeFlag::Project3mf, "3MF files (*.3mf)|*.3mf"},
+    {TypeFlag::AllImportFiles, "All supported files|*.3mf;*.obj;*.stl"}
 };
 }
 

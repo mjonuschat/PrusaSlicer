@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -462,17 +463,20 @@ tl::expected<ReturnData, std::string> read_data_from_file(
 )
 {
     ReturnData ret = {input_file_path.filename().string()};
+    const bool is_stl = boost::algorithm::iends_with(input_file_path.string(), ".stl");
+    const bool is_3mf = boost::algorithm::iends_with(input_file_path.string(), ".3mf");
+    const bool is_obj = boost::algorithm::iends_with(input_file_path.string(), ".obj");
 
     bool result = false;
-    if (boost::algorithm::iends_with(input_file_path.string(), ".stl")) {
-        auto loaded_mesh = Biz::load_stl(input_file_path.string());
+    if (is_stl || is_obj) {
+        auto loaded_mesh = is_stl ? Biz::load_stl(input_file_path.string()) : Biz::load_obj(input_file_path.string());
         if (loaded_mesh) {
             Domain::TriangleMesh mesh = loaded_mesh.value();
             ret.mesh                  = mesh;
             return ret;
         }
         return tl::make_unexpected(loaded_mesh.error());
-    } else if (boost::algorithm::iends_with(input_file_path.string(), ".3mf")) {
+    } else if (is_3mf) {
         Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
         if (loaded_3mf.model.objects.empty()) {
             return tl::make_unexpected(

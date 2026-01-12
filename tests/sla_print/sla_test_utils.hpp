@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/SLA/Pad.hpp"

@@ -41,7 +41,7 @@
 
 #include <arrange-wrapper/ModelArrange.hpp>
 
-#include "libslic3r/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 
@@ -476,7 +476,7 @@ static bool export_projects(
         bool success           = false;
         switch (format) {
         case IO::OBJ: {
-            success = Slic3r::store_obj(path.c_str(), &project.model());
+            success = Slic3r::Biz::store_obj(path.c_str(), &project.model());
             break;
         }
         case IO::STL: {

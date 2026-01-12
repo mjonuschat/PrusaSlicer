@@ -1083,8 +1083,8 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
         ),
         "",
         Wildcards::generate_wildcards(
-            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl,
-            Wildcards::TypeFlag::Stl
+            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj,
+            Wildcards::TypeFlag::AllImportFiles
         ),
         callback
     );
