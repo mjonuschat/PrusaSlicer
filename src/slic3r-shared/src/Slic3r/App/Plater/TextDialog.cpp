@@ -371,7 +371,6 @@ Item* TextDialog::add_row(
     text->set_debug_border(set_debug);
 
     Item* revert_space = row->emplace_back<Item>();
-    revert_space->set_width_percent(10);
     revert_space->set_justify_content(YGJustifyFlexEnd);
     if (!revert_tooltip.empty()) {
         LayoutButton* revert = revert_space->emplace_back<LayoutButton>(
@@ -380,7 +379,7 @@ Item* TextDialog::add_row(
             revert_tooltip
         );
         revert->set_self_align(YGAlignCenter);
-        revert->set_aspect_ratio(1);
+        revert->set_min_size(Vec2f{ 20.f,20.f });
         revert->set_visible(false);
         // set revert button fot control
         if (RevertableControl* revertable_control = dynamic_cast<RevertableControl*>(control.get()))
