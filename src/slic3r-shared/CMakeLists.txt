@@ -1103,6 +1103,18 @@ if (SLIC3R_ENABLE_WEBKIT)
    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT) 
 endif()
 
+if (SLIC3R_ENABLE_FORMAT_STEP)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
+    get_target_property(OCCT_TYPE OCCTWrapper TYPE)
+    if (OCCT_TYPE STREQUAL "MODULE_LIBRARY")
+        add_dependencies(slic3r-shared OCCTWrapper)
+        # We cannot link against a MODULE library, so we add the include directory manually.
+        target_include_directories(slic3r-shared PRIVATE ${CMAKE_SOURCE_DIR}/src/occt_wrapper)
+    else ()
+        target_link_libraries(slic3r-shared PRIVATE OCCTWrapper)
+    endif ()
+endif()
+
 add_target_to_doxygen(slic3r-shared)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

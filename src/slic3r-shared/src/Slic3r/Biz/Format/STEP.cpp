@@ -2,11 +2,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "STEP.hpp"
-#include "../../occt_wrapper/OCCTWrapper.hpp"
+#include "Slic3r/Biz/Format/STEP.hpp"
+#include "OCCTWrapper.hpp"
 
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
@@ -22,7 +22,6 @@
 #ifdef _WIN32
     #include<windows.h>
 #else
-    #include "../../occt_wrapper/OCCTWrapper.hpp"
     #include <dlfcn.h>
 #endif
 
