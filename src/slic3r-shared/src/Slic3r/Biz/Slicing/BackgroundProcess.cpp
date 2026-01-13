@@ -150,7 +150,7 @@ void BackgroundProcess::update(
     const Domain::BedInstance& bed
 )
 {
-    SPDLOG_INFO("{}: update", fmt::streamed(m_id));
+    SPDLOG_TRACE("{}: update", fmt::streamed(m_id));
     ASSERT(preset_metadata.hw_config.id == m_hw_config_id);
 
     const LoggingScopeLock lock{m_mutex, "background process"};

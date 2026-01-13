@@ -44,7 +44,7 @@ void SlicingInteractor::create_process(
     const SlicingId id
 )
 {
-    SPDLOG_INFO("{}: create process", fmt::streamed(id));
+    SPDLOG_TRACE("{}: create process", fmt::streamed(id));
     update_status(id, StatusCode::Modified);
     m_processes.emplace(
         std::piecewise_construct,
@@ -72,7 +72,7 @@ void SlicingInteractor::update_process(
     const Domain::SelectionId bed_instance_id{bed.id().id};
     const SlicingId id{get_process_id(bed_instance_id)};
     if (m_processes.contains(id)) {
-        SPDLOG_INFO("{}: update process", fmt::streamed(id));
+        SPDLOG_TRACE("{}: update process", fmt::streamed(id));
 
         stop_slicing_bed(id);
         m_update_requests.insert_or_assign(
@@ -114,7 +114,7 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
 void SlicingInteractor::slice_bed(const SlicingId id)
 {
     ASSERT(m_processes.contains(id));
-    SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
+    SPDLOG_TRACE("{}: slicing request", fmt::streamed(id));
 
     m_slicing_queue.push_back(id);
     process_slicing_queue();
@@ -128,7 +128,7 @@ void SlicingInteractor::stop_slicing_bed(const Domain::SlicingId id)
 
     const auto it{std::ranges::find(m_slicing_queue, id)};
     if (it != m_slicing_queue.end()) {
-        SPDLOG_INFO("{}: slicing_queue: remove", fmt::streamed(id));
+        SPDLOG_TRACE("{}: slicing_queue: remove", fmt::streamed(id));
         m_slicing_queue.erase(it);
     }
 
@@ -144,7 +144,7 @@ void SlicingInteractor::slice_all()
         if (status == StatusCode::Empty || status == StatusCode::Finished) {
             continue;
         }
-        SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
+        SPDLOG_TRACE("{}: slicing request", fmt::streamed(id));
         m_slicing_queue.push_back(id);
     }
     process_slicing_queue();
@@ -186,7 +186,7 @@ void SlicingInteractor::on_status(const StatusUpdate status_update, const Slicin
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
 
-    SPDLOG_INFO("{}: status_update: {}", fmt::streamed(id), fmt::streamed(status_update));
+    SPDLOG_TRACE("{}: status_update: {}", fmt::streamed(id), fmt::streamed(status_update));
 
     if (!m_statuses.contains(id)) {
         return;
@@ -211,7 +211,7 @@ void SlicingInteractor::on_status(const StatusUpdate status_update, const Slicin
         });
     }))
     {
-        SPDLOG_INFO("{}: status update dispatched", fmt::streamed(id), fmt::streamed(status_update));
+        SPDLOG_TRACE("{}: status update dispatched", fmt::streamed(id), fmt::streamed(status_update));
     }
 }
 
@@ -239,13 +239,13 @@ void SlicingInteractor::on_exception(std::exception_ptr exception, Domain::Slici
             }
         }))
     {
-        SPDLOG_INFO("{}: exception not dispatched", fmt::streamed(id));
+        SPDLOG_TRACE("{}: exception not dispatched", fmt::streamed(id));
     }
 }
 
 void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id)
 {
-    SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.const_moves()->size());
+    SPDLOG_TRACE("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.const_moves()->size());
 
     using Platform::MoveOnlyFunction;
 
@@ -257,13 +257,13 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id)
         });
     }))
     {
-        SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.const_moves()->size());
+        SPDLOG_TRACE("{}: fdm result not dispatched", fmt::streamed(id), result.const_moves()->size());
     }
 }
 
 void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result)
 {
-    SPDLOG_INFO("{}: SLAResult{{}}", fmt::streamed(id));
+    SPDLOG_TRACE("{}: SLAResult{{}}", fmt::streamed(id));
     auto changed = [id, _result = std::move(result)](auto* listener) mutable {
         listener->on_sla_result_changed(id, std::move(_result));
     };
@@ -271,13 +271,13 @@ void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result)
         invoke_listener<ISLAResultListener>(std::move(_changed));
     };
     if (!m_dispatcher.dispatch_on_main_thread(std::move(invoke))) {
-        SPDLOG_INFO("{}: sla result not dispatched", fmt::streamed(id));
+        SPDLOG_TRACE("{}: sla result not dispatched", fmt::streamed(id));
     }
 }
 
 void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instance)
 {
-    SPDLOG_INFO("{}: SLAInstance{{}}", fmt::streamed(id));
+    SPDLOG_TRACE("{}: SLAInstance{{}}", fmt::streamed(id));
     auto changed = [id, _instance = std::move(instance)](auto* listener) mutable {
         listener->on_sla_object_changed(id, std::move(_instance));
     };
@@ -285,7 +285,7 @@ void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instanc
         invoke_listener<ISLAObjectListener>(std::move(_changed));
     };
     if (!m_dispatcher.dispatch_on_main_thread(std::move(invoke))) {
-        SPDLOG_INFO("{}: sla instance not dispatched", fmt::streamed(id));
+        SPDLOG_TRACE("{}: sla instance not dispatched", fmt::streamed(id));
     }
 }
 
@@ -295,9 +295,9 @@ void SlicingInteractor::on_wipe_tower_geometry(
 )
 {
     if (wipe_tower_geometry) {
-        SPDLOG_INFO("{}: OptWipeTowerGeometry{{depths.size: {}}}", fmt::streamed(id), wipe_tower_geometry->depths.size());
+        SPDLOG_TRACE("{}: OptWipeTowerGeometry{{depths.size: {}}}", fmt::streamed(id), wipe_tower_geometry->depths.size());
     } else {
-        SPDLOG_INFO("{}: OptWipeTowerGeometry{{nullopt}}", fmt::streamed(id));
+        SPDLOG_TRACE("{}: OptWipeTowerGeometry{{nullopt}}", fmt::streamed(id));
     }
 
     if (!m_dispatcher.dispatch_on_main_thread(
@@ -308,7 +308,7 @@ void SlicingInteractor::on_wipe_tower_geometry(
     }
         ))
     {
-        SPDLOG_INFO("{}: wipe tower geometry not dispatched", fmt::streamed(id));
+        SPDLOG_TRACE("{}: wipe tower geometry not dispatched", fmt::streamed(id));
     }
 }
 
@@ -334,13 +334,13 @@ void SlicingInteractor::process_slicing_queue()
         return;
     }
 
-    SPDLOG_INFO("slicing_queue: {}", m_slicing_queue.size());
+    SPDLOG_TRACE("slicing_queue: {}", m_slicing_queue.size());
 
     const SlicingId to_slice{m_slicing_queue.front()};
     m_slicing_queue.pop_front();
 
     if (!m_processes.contains(to_slice)) {
-        SPDLOG_INFO("{}: removed: nonexistent", fmt::streamed(to_slice));
+        SPDLOG_TRACE("{}: removed: nonexistent", fmt::streamed(to_slice));
         return;
     }
 
@@ -358,7 +358,7 @@ void SlicingInteractor::process_update_requests()
         return !m_processes.contains(id);
     });
 
-    SPDLOG_INFO("update_requests: {}", m_update_requests.size());
+    SPDLOG_TRACE("update_requests: {}", m_update_requests.size());
 
     std::set<SlicingId> to_remove;
     for (auto& [id, request] : m_update_requests) {

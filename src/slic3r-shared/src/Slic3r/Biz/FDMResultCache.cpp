@@ -20,9 +20,9 @@ void FDMResultCache::on_fdm_result_changed(
 
     if (m_results[id].const_moves()->empty()) {
         m_results.erase(id);
-        SPDLOG_INFO("{}: cleared", fmt::streamed(id));
+        SPDLOG_TRACE("{}: cleared", fmt::streamed(id));
     } else {
-        SPDLOG_INFO("{}: updated", fmt::streamed(id));
+        SPDLOG_TRACE("{}: updated", fmt::streamed(id));
     }
 
     invoke_listeners<IFDMResultCacheChangedListener>([&](auto* listener) {
