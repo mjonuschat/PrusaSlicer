@@ -123,7 +123,7 @@ public:
         config.print.items.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Firmware);
         config.print.items.opt("gcode_comments").set(true);
         config.printer.items.opt("use_relative_e_distances").set(true);
-        config.tool.at(0).items.opt("wipe").set(false);
+        config.print.items.opt("wipe").set(false);
         config.print.items.opt("skirts").set(0);
 
         add_object(two_cubes, "no_offset_cube", 0);
@@ -132,9 +132,9 @@ public:
         add_object(multimaterial_cubes, "no_offset_cube", 1);
         add_object(multimaterial_cubes, "offset_cube", 2, {30.0, 0.0, 0.0});
 
-        retract_length = config.tool.at(0).items.opt("retract_length").get<double>();
+        retract_length = config.print.items.opt("retract_length").get<double>();
         retract_length_toolchange =
-            config.tool.at(0).items.opt("retract_length_toolchange").get<double>();
+            config.print.items.opt("retract_length_toolchange").get<double>();
 
     }
 

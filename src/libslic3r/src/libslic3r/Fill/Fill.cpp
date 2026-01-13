@@ -174,12 +174,13 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	        if (surface.surface_type == stInternalVoid)
 	        	has_internal_voids = true;
 	        else {
-		        const PrintRegionConfigView &region_config = layerm.region().config();
+		        const PrintRegion &region = layerm.region();
+		        const PrintRegionConfigView &region_config = region.config();
 		        FlowRole extrusion_role = surface.is_top() ? frTopSolidInfill : (surface.is_solid() ? frSolidInfill : frInfill);
 		        bool     is_bridge 	    = layer.id() > 0 && surface.is_bridge();
 		        params.extruder 	 = layerm.region().extruder(extrusion_role);
-		        params.pattern 		 = region_config.get<Domain::InfillPattern>("fill_pattern");
-		        params.density       = float(region_config.get<Domain::Percentage>("fill_density").value);
+		        params.pattern 		 = layerm.region().extruder_config_value<Domain::InfillPattern>("fill_pattern", extrusion_role);
+		        params.density       = float(region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill).value);
 
 		        if (surface.is_solid()) {
 		            params.density = 100.f;
@@ -226,8 +227,8 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 					// so that internall infill will be aligned over all layers of the current region.
 		            params.spacing = layerm.region().flow(*layer.object(), frInfill, layer.object()->config().get<double>("layer_height"), false).spacing();
 		            // Anchor a sparse infill to inner perimeters with the following anchor length:
-			        params.anchor_length = float(region_config.get<Domain::FloatOrPercentage>("infill_anchor").get_abs_value(params.spacing));
-					params.anchor_length_max = float(region_config.get<Domain::FloatOrPercentage>("infill_anchor_max").get_abs_value(params.spacing));
+			        params.anchor_length = float(layerm.region().extruder_config_value<Domain::FloatOrPercentage>("infill_anchor", FlowRole::frInfill).get_abs_value(params.spacing));
+					params.anchor_length_max = float(layerm.region().extruder_config_value<Domain::FloatOrPercentage>("infill_anchor_max", FlowRole::frInfill).get_abs_value(params.spacing));
 					params.anchor_length = std::min(params.anchor_length, params.anchor_length_max);
 				}
 
@@ -828,13 +829,14 @@ void Layer::make_ironing()
 	for (uint32_t region_id = 0; region_id < uint32_t(this->regions().size()); ++region_id)
 		if (LayerRegion *layerm = this->get_region(region_id); ! layerm->slices().empty()) {
 			IroningParams ironing_params;
+			const PrintRegion &region = layerm->region();
 			const PrintRegionConfigView &config = layerm->region().config();
 			if (config.get<bool>("ironing") && 
 				(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::AllSolid ||
-				 	(config.get<int>("top_solid_layers") > 0 && 
+				 	(region.extruder_config_value<int>("top_solid_layers", FlowRole::frTopSolidInfill) > 0 && 
 						(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::TopSurfaces ||
 					 	(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::TopmostOnly && layerm->layer()->upper_layer == nullptr))))) {
-				if (config.get<int>("perimeter_extruder") == config.get<int>("solid_infill_extruder") || config.get<int>("perimeters") == 0) {
+				if (config.get<int>("perimeter_extruder") == config.get<int>("solid_infill_extruder") || region.extruder_config_value<int>("perimeters", FlowRole::frPerimeter) == 0) {
 					// Iron the whole face.
 					ironing_params.extruder = config.get<int>("solid_infill_extruder");
 				} else {
@@ -888,12 +890,13 @@ void Layer::make_ironing()
 			Polygons infills;
 			for (size_t k = i; k < j; ++ k) {
 				const IroningParams		 &ironing_params  = by_extruder[k];
-				const PrintRegionConfigView  &region_config   = ironing_params.layerm->region().config();
+				const PrintRegion &region   = ironing_params.layerm->region();
+				const PrintRegionConfigView  &region_config   = region.config();
 				bool					  iron_everything = region_config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::AllSolid;
 				bool					  iron_completely = iron_everything;
 				if (iron_everything) {
 					// Check whether there is any non-solid hole in the regions.
-					bool internal_infill_solid = region_config.get<Domain::Percentage>("fill_density") > Domain::Percentage{95.};
+					bool internal_infill_solid = region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill) > Domain::Percentage{95.};
 					for (const Surface &surface : ironing_params.layerm->fill_surfaces())
 						if ((! internal_infill_solid && surface.surface_type == stInternal) || surface.surface_type == stInternalBridge || surface.surface_type == stInternalVoid) {
 							// Some fill region is not quite solid. Don't iron over the whole surface.

@@ -85,8 +85,8 @@ SCENARIO("travel_speed_z is zero should use travel_speed.", "[GCodeWriter]") {
     GIVEN("GCodeWriter instance") {
         WHEN("travel_speed_z is set to 0") {
             Test::TestConfig config;
-            config.tool.at(0).items.opt("travel_speed").set(1000.0);
-            config.tool.at(0).items.opt("travel_speed_z").set(0.0);
+            config.print.items.opt("travel_speed").set(1000.0);
+            config.print.items.opt("travel_speed_z").set(0.0);
             GCodeWriter writer{config.get_view()};
             THEN("XYZ move feed rate should be equal to travel_speed") {
                 const Vec3d move{10, 10, 10};
@@ -104,8 +104,8 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
     GIVEN("GCodeWriter instance") {
         WHEN("travel_speed_z is set to 10") {
             Test::TestConfig config;
-            config.tool.at(0).items.opt("travel_speed").set(1000.0);
-            config.tool.at(0).items.opt("travel_speed_z").set(10.0);
+            config.print.items.opt("travel_speed").set(1000.0);
+            config.print.items.opt("travel_speed_z").set(10.0);
             GCodeWriter writer{config.get_view()};
             THEN("Z move feed rate should be equal to travel_speed_z") {
                 const Vec3d move{0, 0, 10};

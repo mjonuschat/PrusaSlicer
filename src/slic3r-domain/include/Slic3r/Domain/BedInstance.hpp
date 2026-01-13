@@ -37,6 +37,7 @@ struct BedInstance : public ObjectBase
     bool print_volume_enabled{false};
     ModelWipeTower wipe_tower{};
     std::optional<CustomGCode::Info> custom_gcode;
+    std::vector<unsigned> extruder_candidates;
 
 private:
     size_t m_index{0};

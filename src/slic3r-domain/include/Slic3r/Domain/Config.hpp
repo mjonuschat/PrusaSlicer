@@ -184,9 +184,41 @@ using BoxOrBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
 using LocationSize = std::optional<std::size_t>;
 using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
 
+enum class CompatibilityRule {
+    IgnoreOverrides,
+    Min,
+    Max,
+    Average
+};
+
+const std::map<std::string, CompatibilityRule>& get_compatibility_rules();
+
+/* @param default_value: Used if any of the items is nullptr. Might be nullptr,
+ *     but then all the item values need to be specified.
+ *
+ * @param items: Vector with the **same length** as used tools count.
+ *     If a value for some tool is not specified, **there must be a nullptr**.
+ *
+ * @param extruder_candidates: A vector of extruders that are actually potentially used.
+ *     Value for unused extruders are ignored. Extruder candidates can be empty,
+ *     in that case all extruders are taken into account.
+ *
+ * @return the bool is true if the rule was applied, if all the item values are the same,
+ *     there is no need to apply the rule
+ */
+std::pair<ConfigValue, bool> apply_compatibility_rule(
+    const ConfigValue* default_value,
+    const std::vector<const ConfigItem*>& items,
+    const std::vector<unsigned>& extruder_candidates
+);
+
 class SquashedConfig {
 public:
-    SquashedConfig(const BoxOrBoxesVector& boxes, const ConfigLocationSizes& sizes);
+    SquashedConfig(
+        const BoxOrBoxesVector& boxes,
+        const std::vector<unsigned>& extruder_candidates,
+        const ConfigLocationSizes& sizes
+    );
 
     std::vector<std::string> diff_keys(const SquashedConfig& other) const;
 
@@ -210,7 +242,11 @@ protected:
 
 private:
     void add(const ConfigBox& box, const ConfigLocationSizes& location_sizes);
-    void add(const BoxRefs& boxes, const ConfigLocationSizes& location_sizes);
+    void add(
+        const BoxRefs& boxes,
+        const std::vector<unsigned>& extruder_candidates,
+        const ConfigLocationSizes& location_sizes
+    );
 };
 
 class FullConfig : public SquashedConfig {
@@ -226,7 +262,11 @@ public:
 
     virtual ~FullConfig() = default;
 protected:
-    FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes);
+    FullConfig(
+        const BoxOrBoxesVector& input,
+        const std::vector<unsigned>& extruder_candidates,
+        const ConfigLocationSizes& location_sizes
+    );
 
 private:
     std::vector<std::string> m_keys;
@@ -246,7 +286,10 @@ public:
 
 
 protected:
-    PartialConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes);
+    PartialConfig(
+        const BoxOrBoxesVector& input,
+        const ConfigLocationSizes& location_sizes
+    );
 
 private:
     friend class ConfigView;

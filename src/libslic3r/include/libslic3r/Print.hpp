@@ -149,6 +149,11 @@ public:
 
     void set_print_region_id(const int id) {m_print_region_id = id;}
 
+    template <typename T>
+    T extruder_config_value(const std::string& key, FlowRole role) const {
+        return m_config.get<std::vector<T>>(key).at(extruder(role) - 1);
+    }
+
 private:
     friend Print;
     friend void print_region_ref_inc(PrintRegion&);
@@ -538,9 +543,14 @@ private: // Prevents erroneous use by other classes.
 public:
     using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
     using OnWipeTowerGeometry = std::function<void(Biz::Print::OptWipeTowerGeometry)>;
+    using OnExtruderCandidates = std::function<void(std::vector<unsigned>)>;
     Print();
-    Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry);
-	virtual ~Print() { this->clear(); }
+    Print(
+        const OnFdmResult& on_fdm_result,
+        const OnWipeTowerGeometry& on_wipe_tower_geometry,
+        const OnExtruderCandidates& on_extruder_candidates
+    );
+    virtual ~Print() { this->clear(); }
 
     Domain::PrinterTechnology	technology() const noexcept override { return Domain::PrinterTechnology::FFF; }
 
@@ -653,6 +663,7 @@ public:
     size_t                      num_print_regions() const throw() { return m_print_regions.size(); }
     const PrintRegion&          get_print_region(size_t idx) const  { return *m_print_regions[idx]; }
     const ToolOrdering&         get_tool_ordering() const { return m_tool_ordering; }
+    const std::vector<unsigned>& get_extruder_candidates() const { return m_extruder_candidates; }
 
     // Invalidates the step, and its depending steps in Print.
     bool                invalidate_step(PrintStep step);
@@ -677,6 +688,7 @@ public:
 
     OnFdmResult         m_on_fdm_result;
     OnWipeTowerGeometry m_on_wipe_tower_geometry;
+    OnExtruderCandidates m_on_extruder_candidates;
 
     PrintConfigView m_config;
     Domain::Preset::HwPrinterConfig m_hw_config;

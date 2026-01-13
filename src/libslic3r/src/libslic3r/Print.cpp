@@ -81,10 +81,17 @@ template class PrintState<PrintObjectStep, posCount>;
 Print::Print()
     : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
     , m_on_wipe_tower_geometry([](Biz::Print::OptWipeTowerGeometry&&) {})
+    , m_on_extruder_candidates([](std::vector<unsigned>){})
 {}
 
-Print::Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry)
-    : m_on_fdm_result(on_fdm_result), m_on_wipe_tower_geometry(on_wipe_tower_geometry)
+Print::Print(
+    const OnFdmResult& on_fdm_result,
+    const OnWipeTowerGeometry& on_wipe_tower_geometry,
+    const OnExtruderCandidates& on_extruder_candidates
+) :
+    m_on_fdm_result(on_fdm_result),
+    m_on_wipe_tower_geometry(on_wipe_tower_geometry),
+    m_on_extruder_candidates(on_extruder_candidates)
 {}
 
 void Print::clear()
@@ -164,10 +171,8 @@ check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
     }
 
     for (const char* key : {"support_material_extruder", "support_material_interface_extruder"}) {
-        for (const Domain::ToolPrintSettings& tool : config.tool) {
-            if (!in_range(tool.items.opt(key), 0, tool_count)) {
-                result.push_back(key);
-            }
+        if (!in_range(config.print.items.opt(key), 0, tool_count)) {
+            result.push_back(key);
         }
         for (const Domain::ModelObject* object : model.objects) {
             const auto object_extruder{object->object_settings.overrides.get(key)};
@@ -230,7 +235,12 @@ Biz::Print::ApplyStatus::Status Print::update(
             result = ApplyStatus::InvalidData{std::move(errors)};
             return;
         }
-        const auto slicing_input{prepare_slicing_input(config_fdm)};
+
+        const std::vector<unsigned> extruder_candidates{
+            Biz::Slicing::get_extruder_candidates(model, config_fdm)
+        };
+
+        const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates)};
         if (!slicing_input.has_value()) {
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
             return;
@@ -243,7 +253,7 @@ Biz::Print::ApplyStatus::Status Print::update(
             hw_config,
             bed.wipe_tower,
             bed.custom_gcode,
-            Biz::Slicing::get_extruder_candidates(model, config_fdm)
+            extruder_candidates
         );
         if (std::holds_alternative<ApplyStatus::Changed>(result)) {
             Biz::Print::ValidationResult validation_result{validate()};
@@ -752,6 +762,33 @@ DONE:;
             return true;
         };
 
+        auto validate_extrusion_width_vector = [](const Domain::ConfigView& config,
+                                            const char* opt_key,
+                                            double layer_height,
+                                            Error& error) -> bool
+        {
+            const auto nozzle_diameter{config.get<std::vector<double>>("nozzle_diameter")};
+            const auto extrusion_width =
+                config.get<std::vector<Domain::FloatOrPercentage>>(opt_key);
+
+            for (std::size_t tool_index{}; tool_index < nozzle_diameter.size(); ++tool_index) {
+                double diameter{nozzle_diameter[tool_index]};
+                double width{extrusion_width[tool_index].get_abs_value(diameter)};
+
+                if (width == 0) {
+                    // Default "auto-generated" extrusion width is always valid.
+                } else if (width <= layer_height) {
+                    error = Error{ErrorCode::InsufficientExtrusionWidth, {opt_key}};
+                    return false;
+                } else if (width >= diameter * 3.) {
+                    error = Error{ErrorCode::ExcesiveExtrusionWidth, {opt_key}};
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
         for (PrintObject* object : m_objects) {
             if (object->has_support_material()) {
                 if ((object->config().get<int>("support_material_extruder") == 0
@@ -882,7 +919,7 @@ DONE:;
 
             // Validate extrusion widths.
             Error error;
-            if (!validate_extrusion_width(object->config(), "extrusion_width", layer_height, error))
+            if (!validate_extrusion_width_vector(object->config(), "extrusion_width", layer_height, error))
             {
                 errors.push_back(error);
             }
@@ -904,7 +941,7 @@ DONE:;
                   "top_infill_extrusion_width"})
             {
                 for (const PrintRegion& region : object->all_regions()) {
-                    if (!validate_extrusion_width(region.config(), opt_key, layer_height, error)) {
+                    if (!validate_extrusion_width_vector(region.config(), opt_key, layer_height, error)) {
                         errors.push_back(error);
                     }
                 }
@@ -957,11 +994,17 @@ double Print::skirt_first_layer_height() const
 
 Flow Print::brim_flow() const
 {
-    Domain::FloatOrPercentage width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
+    const int extruder_id{m_print_regions.front()->config().get<int>("perimeter_extruder") - 1};
+    ASSERT(extruder_id >= 0);
+
+    Domain::FloatOrPercentage width = m_config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_extrusion_width").at(extruder_id);
     if (width.is_zero())
-        width = m_print_regions.front()->config().get<Domain::FloatOrPercentage>("perimeter_extrusion_width");
+        width = m_print_regions.front()
+                    ->config()
+                    .get<std::vector<Domain::FloatOrPercentage>>("perimeter_extrusion_width")
+                    .at(extruder_id);
     if (width.is_zero())
-        width = m_objects.front()->config().get<Domain::FloatOrPercentage>("extrusion_width");
+        width = m_objects.front()->config().get<std::vector<Domain::FloatOrPercentage>>("extrusion_width").at(extruder_id);
 
     /* We currently use a random region's perimeter extruder.
        While this works for most cases, we should probably consider all of the perimeter
@@ -971,18 +1014,12 @@ Flow Print::brim_flow() const
     return Flow::new_from_config_width(
         frPerimeter,
 		width,
-        (float)m_config.get<std::vector<double>>("nozzle_diameter").at(m_print_regions.front()->config().get<int>("perimeter_extruder")-1),
+        (float)m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id),
 		(float)this->skirt_first_layer_height());
 }
 
 Flow Print::skirt_flow() const
 {
-    Domain::FloatOrPercentage width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
-    if (width.is_zero())
-        width = m_print_regions.front()->config().get<Domain::FloatOrPercentage>("perimeter_extrusion_width");
-    if (width.is_zero())
-        width = m_objects.front()->config().get<Domain::FloatOrPercentage>("extrusion_width");
-    
     /* We currently use a random object's support material extruder.
        While this works for most cases, we should probably consider all of the support material
        extruders and take the one with, say, the smallest index;
@@ -990,6 +1027,21 @@ Flow Print::skirt_flow() const
        generation as well. */
     // If support_material_extruder == 0 use the 0th nozzle diameter.
     const int support_material_extruder_idx = std::max<int>(m_objects.front()->config().get<int>("support_material_extruder") - 1, 0);
+
+    Domain::FloatOrPercentage width =
+        m_config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_extrusion_width")
+            .at(support_material_extruder_idx);
+    if (width.is_zero())
+        width = m_print_regions.front()
+                    ->config()
+                    .get<std::vector<Domain::FloatOrPercentage>>("perimeter_extrusion_width")
+                    .at(support_material_extruder_idx);
+    if (width.is_zero())
+        width = m_objects.front()
+                    ->config()
+                    .get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
+                    .at(support_material_extruder_idx);
+
     return Flow::new_from_config_width(
         frPerimeter,
 		width,
@@ -1685,7 +1737,14 @@ std::optional<WipeTowerData> Print::generate_wipe_tower_data()
     this->throw_if_canceled();
 
     // Initialize the wipe tower.
-    WipeTower wipe_tower(this->wipe_tower()->position.cast<float>(), this->wipe_tower()->rotation, m_config, wipe_volumes, m_tool_ordering.first_extruder());
+    WipeTower wipe_tower(
+        this->wipe_tower()->position.cast<float>(),
+        this->wipe_tower()->rotation,
+        m_config,
+        wipe_volumes,
+        m_tool_ordering.first_extruder(),
+        m_extruder_candidates
+    );
 
     // Set the extruder & material properties at the wipe tower object.
     for (size_t i = 0; i < m_config.get<std::vector<double>>("nozzle_diameter").size(); ++ i)

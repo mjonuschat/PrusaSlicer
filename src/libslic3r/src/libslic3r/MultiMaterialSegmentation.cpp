@@ -857,10 +857,12 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
     int max_bottom_layers = 0;
     int granularity = 1;
     for (size_t i = 0; i < print_object.num_printing_regions(); ++ i) {
-        const PrintRegionConfigView &config = print_object.printing_region(i).config();
-        max_top_layers    = std::max(max_top_layers, config.get<int>("top_solid_layers"));
-        max_bottom_layers = std::max(max_bottom_layers, config.get<int>("bottom_solid_layers"));
-        granularity       = std::max(granularity, std::max(config.get<int>("top_solid_layers"), config.get<int>("bottom_solid_layers")) - 1);
+        const PrintRegion &region = print_object.printing_region(i);
+        auto bottom_solid_layers{region.extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill)};
+        auto top_solid_layers{region.extruder_config_value<int>("top_solid_layers", FlowRole::frTopSolidInfill)};
+        max_top_layers    = std::max(max_top_layers, top_solid_layers);
+        max_bottom_layers = std::max(max_bottom_layers, bottom_solid_layers);
+        granularity       = std::max(granularity, std::max(top_solid_layers, bottom_solid_layers) - 1);
     }
 
     // Project upwards pointing painted triangles over top surfaces,
@@ -1004,16 +1006,17 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
     auto layer_color_stat = [&layers = std::as_const(layers)](const size_t layer_idx, const size_t color_idx) -> LayerColorStat {
         LayerColorStat out;
         const Layer &layer = *layers[layer_idx];
-        for (const LayerRegion *region : layer.regions())
+        for (const LayerRegion *region : layer.regions()) {
+            const PrintRegion &print_region = region->region();
             if (const PrintRegionConfigView &config = region->region().config();
                 // color_idx == 0 means "don't know" extruder aka the underlying extruder.
                 // As this region may split existing regions, we collect statistics over all regions for color_idx == 0.
                 color_idx == 0 || config.get<int>("perimeter_extruder") == int(color_idx)) {
                 const Flow perimeter_flow = region->flow(FlowRole::frPerimeter);
                 out.extrusion_width     = std::max<float>(out.extrusion_width, perimeter_flow.width());
-                out.top_solid_layers    = std::max<int>(out.top_solid_layers, config.get<int>("top_solid_layers"));
-                out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, config.get<int>("bottom_solid_layers"));
-                out.small_region_threshold = config.get<bool>("gap_fill_enabled") && config.get<double>("gap_fill_speed") > 0 ?
+                out.top_solid_layers    = std::max<int>(out.top_solid_layers, print_region.extruder_config_value<int>("top_solid_layers", FlowRole::frTopSolidInfill));
+                out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, print_region.extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill));
+                out.small_region_threshold = print_region.extruder_config_value<bool>("gap_fill_enabled", FlowRole::frPerimeter) && print_region.extruder_config_value<double>("gap_fill_speed", FlowRole::frPerimeter) > 0 ?
                                              // Gap fill enabled. Enable a single line of 1/2 extrusion width.
                                              0.5f * perimeter_flow.width() :
                                              // Gap fill disabled. Enable two lines slightly overlapping.
@@ -1021,6 +1024,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                 out.small_region_threshold = scaled<float>(out.small_region_threshold * 0.5f);
                 ++ out.num_regions;
             }
+        }
         assert(out.num_regions > 0);
         out.extrusion_width = scaled<float>(out.extrusion_width);
         return out;

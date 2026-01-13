@@ -576,6 +576,24 @@ void PresetInteractor::on_selected_config_container_changed(
     bag.add([this] { invoke_slicing_input_changed(); });
 }
 
+void PresetInteractor::on_bed_instance_extruder_candidates_changed(
+    Domain::SelectionId project_id,
+    Domain::BedRef instance,
+    const std::vector<unsigned>& extruder_candidates
+) {
+    std::stringstream temp;
+    temp << "{";
+    for (unsigned extruder : std::span{extruder_candidates}.subspan(0, extruder_candidates.size() - 1)) {
+        temp << extruder << ", ";
+    }
+    if (!extruder_candidates.empty()) {
+        temp << extruder_candidates.back();
+    }
+    temp << "}" << std::endl;
+
+    SPDLOG_CRITICAL("TODO extruders: {}", temp.str());
+}
+
 bool PresetInteractor::update_changed_selected_preset_hw_config(Domain::Preset::HwPrinterConfig& hw_config)
 {
     auto& p = get_or_fail_project_context(m_selected_project_id);

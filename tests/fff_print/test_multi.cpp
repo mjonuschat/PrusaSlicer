@@ -36,11 +36,8 @@ SCENARIO("Basic tests", "[Multi]")
     WHEN("Slicing multi-material print with non-consecutive extruders") {
 
         Test::TestConfig config{4};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.6);
-            tool_settings.items.opt("support_material_extruder").set(0);
-        }
-
+        config.print.items.opt("nozzle_diameter").set(0.6);
+        config.print.items.opt("support_material_extruder").set(0);
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
@@ -53,14 +50,12 @@ SCENARIO("Basic tests", "[Multi]")
             REQUIRE(T1_found);
         }
     }
+
     WHEN("Slicing with multiple skirts with a single, non-zero extruder") {
         Test::TestConfig config{4};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.6);
-            tool_settings.items.opt("support_material_extruder").set(0);
-            tool_settings.items.opt("support_material_interface_extruder").set(2);
-        }
-
+        config.print.items.opt("nozzle_diameter").set(0.6);
+        config.print.items.opt("support_material_interface_extruder").set(2);
+        config.print.items.opt("support_material_extruder").set(0);
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
@@ -76,10 +71,8 @@ TEST_CASE("Ooze prevention", "[Multi]")
 {
     TestConfig config{4};
 
-    for (auto& tool_settings : config.tool) {
-        tool_settings.items.opt("nozzle_diameter").set(0.6);
-        tool_settings.items.opt("support_material_extruder").set(4);
-    }
+    config.print.items.opt("nozzle_diameter").set(0.6);
+    config.print.items.opt("support_material_extruder").set(4);
     config.print.items.opt("raft_layers").set(2);
     config.print.items.opt("infill_extruder").set(2);
     config.print.items.opt("solid_infill_extruder").set(3);
@@ -225,14 +218,12 @@ TEST_CASE("Stacked cubes", "[Multi]")
     static constexpr const double solid_infill_speed = 99;
     TestConfig config{4};
 
-    for (auto& tool_settings : config.tool) {
-        tool_settings.items.opt("nozzle_diameter").set(0.6);
-        tool_settings.items.opt("fill_density").set(Percentage{0});
-        tool_settings.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
-        tool_settings.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
-        // for preventing speeds from being altered
-        tool_settings.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
-    }
+    config.print.items.opt("nozzle_diameter").set(0.6);
+    config.print.items.opt("fill_density").set(Percentage{0});
+    config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    // for preventing speeds from being altered
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     // for preventing speeds from being altered
     for (auto& filament_settings : config.filament) {
@@ -279,9 +270,7 @@ TEST_CASE("Stacked cubes", "[Multi]")
     }
     WHEN("Slicing with auto-assigned extruders") {
         TestConfig config{4};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.6);
-        }
+        config.print.items.opt("nozzle_diameter").set(0.6);
         config.print.items.opt("layer_height").set(0.4);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
         config.print.items.opt("skirts").set(0);

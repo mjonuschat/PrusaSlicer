@@ -7,8 +7,10 @@
 
 namespace Slic3r {
 
-[[nodiscard]] tl::expected<Domain::FullConfigFDMPtr, std::vector<Biz::Slicing::Error>> prepare_slicing_input(
-    const Domain::ConfigPackFDM& config_pack
+[[nodiscard]] tl::expected<Domain::FullConfigFDMPtr, std::vector<Biz::Slicing::Error>>
+prepare_slicing_input(
+    const Domain::ConfigPackFDM& config_pack,
+    const std::vector<unsigned>& extruder_candidates
 );
 
 [[nodiscard]] tl::expected<Domain::PartialObjectConfigFDMPtr, std::vector<Biz::Slicing::Error>>

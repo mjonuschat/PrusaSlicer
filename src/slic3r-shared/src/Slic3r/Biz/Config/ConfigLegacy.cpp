@@ -739,10 +739,17 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
         Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
 
         for (const auto& [box, filament_id] : boxes) {
-            const auto [item, is_override]{box->find(key)};
-            if (item && !is_override) {
+            const ConfigItem* item{box->items.find(key)};
+
+            if (!item && box->location != legacy_data.override_box_type) {
+                if (auto override{box->overrides.get(key)}) {
+                    item = box->overrides.find(key);
+                }
+            }
+            if (item) {
                 convert_new_to_old(*item, opt, *cfg_old->def()->get(key), filament_id);
             }
+
             if (!item && box->location == legacy_data.override_box_type
              && std::ranges::find(legacy_data.overrides, key) != legacy_data.overrides.end()) {
                 // This old item is not present in any of the boxes, but it is an override of something.

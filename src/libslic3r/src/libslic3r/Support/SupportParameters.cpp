@@ -71,7 +71,7 @@ SupportParameters::SupportParameters(const PrintObject &object)
     for (size_t region_id = 0; region_id < object.num_printing_regions(); ++ region_id) {
         const PrintRegion &region = object.printing_region(region_id);
         external_perimeter_width = std::max(external_perimeter_width, double(region.flow(object, frExternalPerimeter, slicing_params.layer_height).width()));
-        bridge_flow_ratio += region.config().get<double>("bridge_flow_ratio");
+        bridge_flow_ratio += region.extruder_config_value<double>("bridge_flow_ratio", frExternalPerimeter);
     }
     this->gap_xy = object_config.get<Domain::FloatOrPercentage>("support_material_xy_spacing").get_abs_value(external_perimeter_width);
     bridge_flow_ratio /= object.num_printing_regions();

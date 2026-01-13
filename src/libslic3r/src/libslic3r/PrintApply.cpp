@@ -483,7 +483,10 @@ bool Print::invalidate_object_steps(
 
 namespace {
 
-PrintRegionConfigView create_mm_painted_region_config(const PrintRegionConfigView &parent_config, const int painted_extruder_id)
+PrintRegionConfigView create_mm_painted_region_config(
+    const PrintRegionConfigView& parent_config,
+    const int painted_extruder_id
+)
 {
     Domain::VolumeSettings volume_settings;
     volume_settings.overrides.set("infill_extruder", painted_extruder_id);
@@ -492,23 +495,33 @@ PrintRegionConfigView create_mm_painted_region_config(const PrintRegionConfigVie
 
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
-        volume_settings, parent_config.tools_count(), parent_config.filaments_count()
+        volume_settings,
+        parent_config.tools_count(),
+        parent_config.filaments_count()
     };
-    painted_region_cfg.add_override(std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config));
+    painted_region_cfg.add_override(
+        std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
+    );
 
     return painted_region_cfg;
 };
 
-PrintRegionConfigView create_fuzzy_skin_painted_region_config(const PrintRegionConfigView &parent_config)
+PrintRegionConfigView create_fuzzy_skin_painted_region_config(
+    const PrintRegionConfigView& parent_config
+)
 {
     Domain::VolumeSettings volume_settings;
     volume_settings.overrides.set("fuzzy_skin", Domain::FuzzySkinType::All);
 
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
-        volume_settings, parent_config.tools_count(), parent_config.filaments_count()
+        volume_settings,
+        parent_config.tools_count(),
+        parent_config.filaments_count()
     };
-    painted_region_cfg.add_override(std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config));
+    painted_region_cfg.add_override(
+        std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
+    );
 
     return painted_region_cfg;
 };
@@ -1371,6 +1384,9 @@ Biz::Print::ApplyStatus::Status Print::apply(
         return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
     }
 
+    if (m_extruder_candidates != extruder_candidates) {
+        m_on_extruder_candidates(extruder_candidates);
+    }
     m_extruder_candidates = extruder_candidates;
     m_shrinkage_compensation = shrinkage_compensation;
     m_hw_config         = hw_config;

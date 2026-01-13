@@ -120,10 +120,15 @@ std::string WipeTowerIntegration::append_tcr(
     std::string tcr_gcode;
     Biz::Algorithms::unescape_string_cstyle(tcr_rotated_gcode, tcr_gcode);
 
-    if (config.get<double>("default_acceleration") > 0)
+    const int acceleation_extruder{new_extruder_id > -1 ? new_extruder_id : tcr.initial_tool};
+    if (config.get<std::vector<double>>("default_acceleration").at(acceleation_extruder) > 0)
         gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(config.get<double>("wipe_tower_acceleration")));
     gcode += tcr_gcode;
-    gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(config.get<double>("default_acceleration")));
+    gcode += gcodegen.writer().set_print_acceleration(
+        fast_round_up<unsigned int>(
+            config.get<std::vector<double>>("default_acceleration").at(acceleation_extruder)
+        )
+    );
 
     // A phony move to the end position at the wipe tower.
     gcodegen.writer().travel_to_xy(end_pos.cast<double>());

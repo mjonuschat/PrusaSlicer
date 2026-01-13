@@ -259,7 +259,6 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading FloatOrPercentage works", "[Conf
     CHECK(seam_gap_distance.is_percentage());
     CHECK(seam_gap_distance.percentage() == Percentage{23.1});
     CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "first_layer_height"));
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "first_layer_infill_speed"));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::optional<int> works", "[ConfigLoad]")
@@ -389,11 +388,10 @@ TEST_CASE_METHOD(
     "[ConfigLoad]"
 )
 {
-    json["filament_settings"] = {{"filament_colour", ordered_json::array({"red", "blue", "green"})}};
-    json["toolprint_settings"] = {
-        {"nozzle_diameter", ordered_json::array({1.4, 1.4})},
-        {"retract_before_travel", ordered_json::array({10.0, 10.0, 10.0})},
-        {"retract_layer_change", ordered_json::array({true, false, false})}
+    json["filament_settings"] = {
+        {"filament_colour", ordered_json::array({"red", "blue", "green"})},
+        {"temperature", ordered_json::array({100, 200})},
+        {"extrusion_multiplier", ordered_json::array({1.1, 1.2, 1.3})},
     };
 
     const auto result{load(json)};
@@ -402,14 +400,14 @@ TEST_CASE_METHOD(
     REQUIRE(result_config.tool.size() == 3);
     CHECK(result_config.filament.size() == 3);
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 2)
+        get_issue(result->issues, FDMConfigLocation::Filament, "temperature", 2)
         == ItemParsingIssueType::NotFound
     );
 
     const ConfigPackFDM default_config;
     CHECK(
-        result_config.tool[2].items.opt("nozzle_diameter").get<double>()
-        == default_config.tool.front().items.opt("nozzle_diameter").get<double>()
+        result_config.filament[2].items.opt("temperature").get<int>()
+        == default_config.filament.front().items.opt("temperature").get<int>()
     );
 }
 
@@ -428,20 +426,6 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are repor
     );
 }
 
-TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per tool missing values are reported per tool", "[ConfigLoad]")
-{
-    const auto result{load(json)};
-    REQUIRE(result.has_value());
-    CHECK(
-        get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 0)
-        == ItemParsingIssueType::NotFound
-    );
-    CHECK(
-        get_issue(result->issues, FDMConfigLocation::Tool, "retract_before_travel", 0)
-        == ItemParsingIssueType::NotFound
-    );
-}
-
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[ConfigLoad]")
 {
     json["toolprint_settings"] = {
@@ -454,13 +438,9 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[Config
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     REQUIRE(result_config.tool.size() == 3);
 
-    CHECK(result_config.tool.at(0).items.opt("nozzle_diameter").get<double>() == Catch::Approx(1.4));
-    CHECK(result_config.tool.at(1).items.opt("nozzle_diameter").get<double>() == Catch::Approx(1.5));
-    CHECK(result_config.tool.at(2).items.opt("nozzle_diameter").get<double>() == Catch::Approx(1.6));
-
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 0));
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 1));
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 2));
+    CHECK(result_config.tool.at(0).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.4));
+    CHECK(result_config.tool.at(1).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.5));
+    CHECK(result_config.tool.at(2).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.6));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing overrides are not reported in issues", "[ConfigLoad]")

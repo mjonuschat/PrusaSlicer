@@ -172,10 +172,13 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(const Extru
     return result;
 };
 
-static std::map<float, float> calc_print_speed_sections(const ExtrusionAttributes &attributes,
-                                                        const Domain::ConfigView  &config,
-                                                        const float                external_perimeter_reference_speed,
-                                                        const float                default_speed)
+static std::map<float, float> calc_print_speed_sections(
+    const ExtrusionAttributes& attributes,
+    const Domain::ConfigView& config,
+    const float external_perimeter_reference_speed,
+    const float default_speed,
+    const std::size_t extruder_id
+)
 {
     struct OverhangWithSpeed
     {
@@ -184,11 +187,11 @@ static std::map<float, float> calc_print_speed_sections(const ExtrusionAttribute
     };
 
     std::vector<OverhangWithSpeed> overhangs_with_speeds = {{100, Domain::FloatOrPercentage{default_speed}}};
-    if (config.get<bool>("enable_dynamic_overhang_speeds")) {
-        overhangs_with_speeds = {{  0, config.get<Domain::FloatOrPercentage>("overhang_speed_0")},
-                                 { 25, config.get<Domain::FloatOrPercentage>("overhang_speed_1")},
-                                 { 50, config.get<Domain::FloatOrPercentage>("overhang_speed_2")},
-                                 { 75, config.get<Domain::FloatOrPercentage>("overhang_speed_3")},
+    if (config.get<std::vector<bool>>("enable_dynamic_overhang_speeds").at(extruder_id)) {
+        overhangs_with_speeds = {{  0, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_0").at(extruder_id)},
+                                 { 25, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_1").at(extruder_id)},
+                                 { 50, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_2").at(extruder_id)},
+                                 { 75, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_3").at(extruder_id)},
                                  {100, Domain::FloatOrPercentage{default_speed}}};
     }
 
@@ -262,7 +265,13 @@ OverhangSpeeds calculate_overhang_speed(
         return (1.0f - t) * lower_dist->second + t * upper_dist->second;
     };
 
-    const std::map<float, float> speed_sections     = calc_print_speed_sections(attributes, config, external_perimeter_reference_speed, default_speed);
+    const std::map<float, float> speed_sections = calc_print_speed_sections(
+        attributes,
+        config,
+        external_perimeter_reference_speed,
+        default_speed,
+        extruder_id
+    );
     const std::map<float, float> fan_speed_sections = calc_fan_speed_sections(attributes, config, extruder_id);
 
     const float extrusion_speed   = std::min(interpolate_speed(speed_sections, attributes.overhang_attributes->start_distance_from_prev_layer),
@@ -273,7 +282,7 @@ OverhangSpeeds calculate_overhang_speed(
                                              interpolate_speed(fan_speed_sections, attributes.overhang_attributes->end_distance_from_prev_layer));
 
     OverhangSpeeds overhang_speeds = {std::min(curled_base_speed, extrusion_speed), fan_speed};
-    if (!config.get<bool>("enable_dynamic_overhang_speeds")) {
+    if (!config.get<std::vector<bool>>("enable_dynamic_overhang_speeds").at(extruder_id)) {
         overhang_speeds.print_speed = -1;
     }
 

@@ -149,67 +149,111 @@ double Flow::mm3_per_mm() const
     return res;
 }
 
-static float min_nozzle_diameter(const PrintObject &print_object)
-{
-    const auto nozzle_diameters = print_object.print()->config().get<std::vector<double>>(
-        "nozzle_diameter"
-    );
-    float min_nozzle_diameter = std::numeric_limits<float>::max();
-
-    for (const double nozzle_diameter : nozzle_diameters) {
-        min_nozzle_diameter = std::min(min_nozzle_diameter, static_cast<float>(nozzle_diameter));
+static unsigned get_support_extruder_id(const PrintObject& object, bool is_interface = false) {
+    const std::string key{is_interface ? "support_material_interface_extruder" : "support_material_extruder"};
+    const int extruder{object.config().get<int>(key) - 1};
+    if (extruder >= 0) {
+        return static_cast<unsigned>(extruder);
     }
 
-    return min_nozzle_diameter;
+    // If object->config().support_material_extruder == 0 (which means to not trigger tool change,
+    // but use the current extruder instead), use the smallest nozzle diameter.
+    const auto nozzle_diameters = object.print()->config().get<std::vector<double>>(
+        "nozzle_diameter"
+    );
+    double min_nozzle_diameter{std::numeric_limits<double>::max()};
+    int min_nozzle_extruder_id{-1};
+
+    const std::vector<unsigned>& extruders{object.print()->get_extruder_candidates()};
+
+    for (unsigned extruder_id : extruders) {
+        const double nozzle_diameter{nozzle_diameters[extruder_id]};
+        min_nozzle_diameter = std::min(min_nozzle_diameter, nozzle_diameter);
+        min_nozzle_extruder_id = extruder_id;
+    }
+
+    ASSERT(min_nozzle_extruder_id >= 0);
+    return min_nozzle_extruder_id;
 }
 
 Flow support_material_flow(const PrintObject *object, float layer_height)
 {
-    const PrintConfigView &print_config = object->print()->config();
-    const int          extruder     = object->config().get<int>("support_material_extruder") - 1;
+    const PrintObjectConfigView &config{object->config()};
+    const unsigned extruder{get_support_extruder_id(*object)};
 
-    // If object->config().support_material_extruder == 0 (which means to not trigger tool change, but use the current extruder instead), use the smallest nozzle diameter.
-    const float nozzle_diameter = extruder >= 0 ? static_cast<float>(print_config.get<std::vector<double>>("nozzle_diameter").at(extruder)) : min_nozzle_diameter(*object);
+    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const float default_width{
+        static_cast<float>(config.get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
+                               .at(extruder)
+                               .get_abs_value(nozzle_diameter))
+    };
 
     return Flow::new_from_config_width(
         frSupportMaterial,
         // The width parameter accepted by new_from_config_width is of type ConfigOptionFloatOrPercent, the Flow class takes care of the percent to value substitution.
-        !object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width").is_zero() ? object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width") : object->config().get<Domain::FloatOrPercentage>("extrusion_width"),
+        !object->config()
+                .get<Domain::FloatOrPercentage>("support_material_extrusion_width")
+                .is_zero() ?
+            object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width") :
+            default_width,
         nozzle_diameter,
-        (layer_height > 0.f) ? layer_height : float(object->config().get<double>("layer_height")));
+        (layer_height > 0.f) ? layer_height : float(object->config().get<double>("layer_height"))
+    );
 }
 
 Flow support_material_1st_layer_flow(const PrintObject *object, float layer_height)
 {
-    const PrintConfigView &print_config = object->print()->config();
-    const int          extruder     = object->config().get<int>("support_material_extruder") - 1;
+    const PrintObjectConfigView &config{object->config()};
+    const unsigned extruder{get_support_extruder_id(*object)};
 
-    // If object->config().support_material_extruder == 0 (which means to not trigger tool change, but use the current extruder instead), use the smallest nozzle diameter.
-    const float nozzle_diameter = extruder >= 0 ? static_cast<float>(print_config.get<std::vector<double>>("nozzle_diameter").at(extruder)) : min_nozzle_diameter(*object);
-    const auto &width           = !print_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width").is_zero() ? print_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width") : object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width");
+    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const Domain::FloatOrPercentage first_layer_extrusion_width{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_extrusion_width")
+            .at(extruder)
+    };
+    const auto width =
+        !first_layer_extrusion_width.is_zero() ?
+        first_layer_extrusion_width :
+        object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width");
+
+    const float default_width{
+        static_cast<float>(config.get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
+                               .at(extruder)
+                               .get_abs_value(nozzle_diameter))
+    };
 
     return Flow::new_from_config_width(
         frSupportMaterial,
         // The width parameter accepted by new_from_config_width is of type ConfigOptionFloatOrPercent, the Flow class takes care of the percent to value substitution.
-        !width.is_zero() ? width : object->config().get<Domain::FloatOrPercentage>("extrusion_width"),
+        !width.is_zero() ? width : default_width,
         nozzle_diameter,
-        (layer_height > 0.f) ? layer_height : float(print_config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(object->config().get<double>("layer_height"))));
+        (layer_height > 0.f) ? layer_height : float(config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(object->config().get<double>("layer_height"))));
 }
 
 Flow support_material_interface_flow(const PrintObject *object, float layer_height)
 {
-    const PrintConfigView &print_config = object->print()->config();
-    const int          extruder     = object->config().get<int>("support_material_interface_extruder") - 1;
+    const PrintObjectConfigView& config{object->config()};
+    const unsigned extruder{get_support_extruder_id(*object)};
 
     // If object->config().support_material_interface_extruder == 0 (which means to not trigger tool change, but use the current extruder instead), use the smallest nozzle diameter.
-    const float nozzle_diameter = extruder >= 0 ? static_cast<float>(print_config.get<std::vector<double>>("nozzle_diameter").at(extruder)) : min_nozzle_diameter(*object);
+    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const float default_width{
+        static_cast<float>(config.get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
+                               .at(extruder)
+                               .get_abs_value(nozzle_diameter))
+    };
 
     return Flow::new_from_config_width(
         frSupportMaterialInterface,
         // The width parameter accepted by new_from_config_width is of type ConfigOptionFloatOrPercent, the Flow class takes care of the percent to value substitution.
-        !object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width").is_zero() ? object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width") : object->config().get<Domain::FloatOrPercentage>("extrusion_width"),
+        !object->config()
+                .get<Domain::FloatOrPercentage>("support_material_extrusion_width")
+                .is_zero() ?
+            object->config().get<Domain::FloatOrPercentage>("support_material_extrusion_width") :
+            default_width,
         nozzle_diameter,
-        (layer_height > 0.f) ? layer_height : float(object->config().get<double>("layer_height")));
+        (layer_height > 0.f) ? layer_height : float(object->config().get<double>("layer_height"))
+    );
 }
 
 }

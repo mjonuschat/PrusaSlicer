@@ -58,19 +58,27 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const TestConfig& confi
             CHECK(!wait_for_toolchange);
         }
 
-        const double retract_length = config.tool.at(tool).items.opt("retract_length").get<double>();
-        const double retract_before_travel = config.tool.at(tool).items.opt("retract_before_travel").get<double>();
-        const double retract_length_toolchange = config.tool.at(tool).items.opt("retract_length_toolchange").get<double>();
-        const double retract_restart_extra = config.tool.at(tool).items.opt("retract_restart_extra").get<double>();
-        const double retract_restart_extra_toolchange = config.tool.at(tool).items.opt("retract_restart_extra_toolchange").get<double>();
+        auto get_tool_value_double{[&](const std::string& key) {
+            std::optional<Domain::ConfigItem> override{config.tool.at(tool).overrides.get(key)};
+            if (override) {
+                return override->get<double>();
+            }
+            return config.print.items.opt(key).get<double>();
+        }};
 
-        const double travel_speed = config.tool.at(0).items.opt("travel_speed").get<double>();
+        const double retract_length = get_tool_value_double("retract_length");
+        const double retract_before_travel = get_tool_value_double("retract_before_travel");
+        const double retract_length_toolchange = get_tool_value_double("retract_length_toolchange");
+        const double retract_restart_extra = get_tool_value_double("retract_restart_extra");
+        const double retract_restart_extra_toolchange = get_tool_value_double("retract_restart_extra_toolchange");
+
+        const double travel_speed = config.print.items.opt("travel_speed").get<double>();
 
         const double feedrate = line.has_f() ? line.f() : self.f();
 
         if (line.dist_Z(self) != 0) {
             // lift move or lift + change layer
-            const double retract_lift = config.tool.at(tool).items.opt("retract_lift").get<double>();
+            const double retract_lift = get_tool_value_double("retract_lift");
             if (
                 line.dist_Z(self) == Approx(retract_lift)
                 || (
@@ -96,7 +104,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const TestConfig& confi
                 lift_dist = 0;
                 lifted = false;
             }
-            const double travel_speed_z = config.tool.at(0).items.opt("travel_speed_z").get<double>();
+            const double travel_speed_z = config.print.items.opt("travel_speed_z").get<double>();
             if (travel_speed_z) {
                 Vec3d move{line.dist_X(self), line.dist_Y(self), line.dist_Z(self)};
                 const double move_u_z = move.z() / move.norm();
@@ -158,14 +166,14 @@ void test_slicing(std::initializer_list<TestMesh> meshes, TestConfig& config, co
 
     SECTION("Restart extra length") {
         for (auto& tool : config.tool) {
-            tool.items.opt("retract_restart_extra").set(1.0);
+            tool.overrides.set("retract_restart_extra", 1.0);
         }
         check_gcode(meshes, config, duplicate);
     }
 
     SECTION("Retract_lift") {
-        config.tool.at(0).items.opt("retract_lift").set(1.0);
-        config.tool.at(1).items.opt("retract_lift").set(2.0);
+        config.tool.at(0).overrides.set("retract_lift", 1.0);
+        config.tool.at(1).overrides.set("retract_lift", 2.0);
         check_gcode(meshes, config, duplicate);
     }
 }
@@ -173,20 +181,14 @@ void test_slicing(std::initializer_list<TestMesh> meshes, TestConfig& config, co
 TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
     TestConfig config{4};
 
-    for (auto& tool : config.tool) {
-        tool.items.opt("nozzle_diameter").set(0.6);
-    }
-
+    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
-
-    for (auto& tool : config.tool) {
-        tool.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
-        tool.items.opt("retract_length").set(1.5);
-        tool.items.opt("retract_before_travel").set(3.0);
-        tool.items.opt("retract_layer_change").set(true);
-        tool.items.opt("only_retract_when_crossing_perimeters").set(false);
-    }
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.print.items.opt("only_retract_when_crossing_perimeters").set(false);
+    config.print.items.opt("retract_length").set(1.5);
+    config.print.items.opt("retract_before_travel").set(3.0);
+    config.print.items.opt("retract_layer_change").set(true);
 
     SECTION("Standard run") {
         test_slicing({TestMesh::cube_20x20x20}, config);
@@ -205,23 +207,17 @@ TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
 TEST_CASE("Slicing with retraction and lifting with travel_speed_z=10", "[retraction]") {
     TestConfig config{4};
 
-    for (auto& tool : config.tool) {
-        tool.items.opt("nozzle_diameter").set(0.6);
-    }
-
+    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.print.items.opt("travel_speed").set(600.0);
+    config.print.items.opt("travel_speed_z").set(10.0);
+    config.print.items.opt("only_retract_when_crossing_perimeters").set(false);
 
-    for (auto& tool : config.tool) {
-        tool.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
-        tool.items.opt("retract_length").set(1.5);
-        tool.items.opt("retract_before_travel").set(3.0);
-        tool.items.opt("retract_layer_change").set(true);
-        tool.items.opt("only_retract_when_crossing_perimeters").set(false);
-        tool.items.opt("travel_speed").set(600.0);
-        tool.items.opt("travel_speed_z").set(10.0);
-    }
-
+    config.print.items.opt("retract_length").set(1.5);
+    config.print.items.opt("retract_before_travel").set(3.0);
+    config.print.items.opt("retract_layer_change").set(true);
 
     SECTION("Standard run") {
         test_slicing({TestMesh::cube_20x20x20}, config);
@@ -241,10 +237,9 @@ TEST_CASE("Z moves", "[retraction]") {
 
     TestConfig config;
     config.printer.items.opt("start_gcode").set("");
-
-    config.tool.at(0).items.opt("retract_length").set(0.0);
-    config.tool.at(0).items.opt("retract_layer_change").set(false);
-    config.tool.at(0).items.opt("retract_lift").set(0.2);
+    config.print.items.opt("retract_length").set(0.0);
+    config.print.items.opt("retract_layer_change").set(false);
+    config.print.items.opt("retract_lift").set(0.2);
 
     bool retracted = false;
     unsigned layer_changes_with_retraction = 0;
@@ -316,7 +311,7 @@ TEST_CASE("Firmware retraction when length is 0", "[retraction]") {
 
     TestConfig config;
     config.printer.items.opt("use_firmware_retraction").set(true);
-    config.tool.at(0).items.opt("retract_length").set(0.0);
+    config.print.items.opt("retract_length").set(0.0);
 
     bool retracted = false;
 
@@ -360,15 +355,15 @@ TEST_CASE("Lift above/bellow layers", "[retraction]") {
 
     TestConfig config{4};
 
+    config.print.items.opt("nozzle_diameter").set(0.6);
     for (auto& tool : config.tool) {
-        tool.items.opt("nozzle_diameter").set(0.6);
-        tool.items.opt("retract_lift").set(3.0);
-        tool.items.opt("retract_lift_above").set(0.0);
-        tool.items.opt("retract_lift_below").set(0.0);
+        tool.overrides.set("retract_lift", 3.0);
+        tool.overrides.set("retract_lift_above", 0.0);
+        tool.overrides.set("retract_lift_below", 0.0);
     }
-    config.tool.at(1).items.opt("retract_lift").set(4.0);
-    config.tool.at(1).items.opt("retract_lift_above").set(0.0);
-    config.tool.at(1).items.opt("retract_lift_below").set(0.0);
+    config.tool.at(1).overrides.set("retract_lift", 4.0);
+    config.tool.at(1).overrides.set("retract_lift_above", 0.0);
+    config.tool.at(1).overrides.set("retract_lift_below", 0.0);
 
     config.printer.items.opt("start_gcode").set("" );
 
@@ -377,19 +372,19 @@ TEST_CASE("Lift above/bellow layers", "[retraction]") {
     CHECK(!lift_layers.empty());
 
     for (auto& tool : config.tool) {
-        tool.items.opt("retract_lift_above").set(5.0);
-        tool.items.opt("retract_lift_below").set(15.0);
+        tool.overrides.set("retract_lift_above", 5.0);
+        tool.overrides.set("retract_lift_below", 15.0);
     }
 
-    config.tool.at(1).items.opt("retract_lift_above").set(6.0);
-    config.tool.at(1).items.opt("retract_lift_below").set(13.0);
+    config.tool.at(1).overrides.set("retract_lift_above", 6.0);
+    config.tool.at(1).overrides.set("retract_lift_below", 13.0);
 
     lift_layers = get_lift_layers(config);
     INFO("lift takes place when above/below != 0");
     CHECK(!lift_layers.empty());
 
-    double retract_lift_above = config.tool.at(0).items.opt("retract_lift_above").get<double>();
-    double retract_lift_below = config.tool.at(0).items.opt("retract_lift_below").get<double>();
+    double retract_lift_above = config.tool.at(0).overrides.get("retract_lift_above")->get<double>();
+    double retract_lift_below = config.tool.at(0).overrides.get("retract_lift_below")->get<double>();
 
     INFO("Z is not lifted above/below the configured value");
     CHECK(values_are_in_range(lift_layers, retract_lift_above, retract_lift_below));
@@ -399,30 +394,30 @@ TEST_CASE("Lift above/bellow layers", "[retraction]") {
     config.print.items.opt("infill_extruder").set(2);
 
     for (auto& tool : config.tool) {
-        tool.items.opt("retract_lift_above").set(0.0);
-        tool.items.opt("retract_lift_below").set(0.0);
+        tool.overrides.set("retract_lift_above", 0.0);
+        tool.overrides.set("retract_lift_below", 0.0);
     }
 
-    config.tool.at(1).items.opt("retract_lift_above").set(0.0);
-    config.tool.at(1).items.opt("retract_lift_below").set(0.0);
+    config.tool.at(1).overrides.set("retract_lift_above", 0.0);
+    config.tool.at(1).overrides.set("retract_lift_below", 0.0);
 
     lift_layers = get_lift_layers(config);
     INFO("lift takes place when above/below == 0  for 2. extruder");
     CHECK(!lift_layers.empty());
 
     for (auto& tool : config.tool) {
-        tool.items.opt("retract_lift_above").set(5.0);
-        tool.items.opt("retract_lift_below").set(15.0);
+        tool.overrides.set("retract_lift_above", 5.0);
+        tool.overrides.set("retract_lift_below", 15.0);
     }
-    config.tool.at(1).items.opt("retract_lift_above").set(6.0);
-    config.tool.at(1).items.opt("retract_lift_below").set(13.0);
+    config.tool.at(1).overrides.set("retract_lift_above", 6.0);
+    config.tool.at(1).overrides.set("retract_lift_below", 13.0);
 
     lift_layers = get_lift_layers(config);
     INFO("lift takes place when above/below != 0 for 2. extruder");
     CHECK(!lift_layers.empty());
 
-    retract_lift_above = config.tool.at(1).items.opt("retract_lift_above").get<double>();
-    retract_lift_below = config.tool.at(1).items.opt("retract_lift_below").get<double>();
+    retract_lift_above = config.tool.at(1).overrides.get("retract_lift_above")->get<double>();
+    retract_lift_below = config.tool.at(1).overrides.get("retract_lift_below")->get<double>();
 
     INFO("Z is not lifted above/below the configured value for 2. extruder");
     CHECK(values_are_in_range(lift_layers, retract_lift_above, retract_lift_below));

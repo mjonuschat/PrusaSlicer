@@ -48,7 +48,7 @@ TEST_CASE("Layer heights are correct", "[Layers]") {
     config.printer.items.opt("start_gcode").set("" );
     config.print.items.opt("layer_height").set(0.3);
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-    config.tool.at(0).items.opt("retract_length").set(0.0);
+    config.print.items.opt("retract_length").set(0.0);
 
     SECTION("Absolute first layer height") {
         check_layers(config);
@@ -73,7 +73,7 @@ TEST_CASE("Layer heights are correct", "[Layers]") {
 
 TEST_CASE("GCode has reasonable height", "[Layers]") {
     TestConfig config;
-    config.tool.at(0).items.opt("fill_density").set(Percentage{0});
+    config.print.items.opt("fill_density").set(Percentage{0});
 
     Print print;
     Domain::Model model;

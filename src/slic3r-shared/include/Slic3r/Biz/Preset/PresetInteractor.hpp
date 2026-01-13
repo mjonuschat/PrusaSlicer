@@ -87,6 +87,7 @@ struct SelectedPresetIds
 class PresetInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
+    public Scene::ISceneBedInstanceChangedListener,
     public WithListeners<
         IPresetChangedListener,
         IBedPresetSwitchedListener,
@@ -245,6 +246,12 @@ public:
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId container_id
+    ) override;
+
+    void on_bed_instance_extruder_candidates_changed(
+        Domain::SelectionId project_id,
+        Domain::BedRef instance,
+        const std::vector<unsigned>& extruder_candidates
     ) override;
 
     ConfigBoxInteractor& printer_cbi();

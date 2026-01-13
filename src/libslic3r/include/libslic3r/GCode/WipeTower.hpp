@@ -136,14 +136,16 @@ public:
 	// y			-- y coordinates of wipe tower in mm ( left bottom corner )
 	// width		-- width of wipe tower in mm ( default 60 mm - leave as it is )
 	// wipe_area	-- space available for one toolchange in mm
-    WipeTower(const Domain::Vec2f& position,
-		      double rotation_deg,
-		      const PrintConfigView& config,
-			  const std::vector<std::vector<float>>& wiping_matrix,
-			  size_t initial_tool);
+    WipeTower(
+        const Domain::Vec2f& position,
+        double rotation_deg,
+        const PrintConfigView& config,
+        const std::vector<std::vector<float>>& wiping_matrix,
+        size_t initial_tool,
+        const std::vector<unsigned>& extruder_candidates
+    );
 
-
-	// Set the extruder properties.
+    // Set the extruder properties.
     void set_extruder(size_t idx, const PrintConfigView& config);
 
 	// Appends into internal structure m_plan containing info about the future wipe tower

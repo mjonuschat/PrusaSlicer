@@ -705,7 +705,6 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
     m_layer_index(-1),
     m_layer(nullptr),
     m_object_layer_over_raft(false),
-    m_volumetric_speed(0),
     m_last_extrusion_role(GCodeExtrusionRole::None),
     m_last_width(0.0f),
     m_brim_done(false),
@@ -787,7 +786,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 // free functions called by GCodeGenerator::_do_export()
 namespace DoExport {
 
-    static double autospeed_volumetric_limit(const Print &print)
+    static double extruder_autospeed_volumetric_limit(const Print &print, unsigned extruder_id)
 	{
         using Domain::FloatOrPercentage;
 	    // get the minimum cross-section used in the print
@@ -797,16 +796,17 @@ namespace DoExport {
 	            const PrintRegion &region = object->printing_region(region_id);
 	            for (auto layer : object->layers()) {
 	                const LayerRegion* layerm = layer->regions()[region_id];
-	                if (region.config().get<double>("perimeter_speed") == 0.0 ||
-	                    region.config().get<FloatOrPercentage>("small_perimeter_speed").is_zero() ||
-	                    region.config().get<FloatOrPercentage>("external_perimeter_speed").is_zero() ||
-	                    region.config().get<double>("bridge_speed") == 0.0)
+
+	                if (region.config().get<std::vector<double>>("perimeter_speed").at(extruder_id) == 0.0 ||
+	                    region.config().get<std::vector<FloatOrPercentage>>("small_perimeter_speed").at(extruder_id).is_zero() ||
+	                    region.config().get<std::vector<FloatOrPercentage>>("external_perimeter_speed").at(extruder_id).is_zero() ||
+	                    region.config().get<std::vector<double>>("bridge_speed").at(extruder_id) == 0.0)
 	                    mm3_per_mm.push_back(layerm->perimeters().min_mm3_per_mm());
-	                if (region.config().get<double>("infill_speed") == 0.0 ||
-	                    region.config().get<FloatOrPercentage>("solid_infill_speed").is_zero() ||
-	                    region.config().get<FloatOrPercentage>("top_solid_infill_speed").is_zero() ||
-                        region.config().get<double>("bridge_speed") == 0.0 ||
-                        region.config().get<FloatOrPercentage>("over_bridge_speed").is_zero())
+	                if (region.config().get<std::vector<double>>("infill_speed").at(extruder_id) == 0.0 ||
+	                    region.config().get<std::vector<FloatOrPercentage>>("solid_infill_speed").at(extruder_id).is_zero() ||
+	                    region.config().get<std::vector<FloatOrPercentage>>("top_solid_infill_speed").at(extruder_id).is_zero() ||
+                        region.config().get<std::vector<double>>("bridge_speed").at(extruder_id) == 0.0 ||
+                        region.config().get<std::vector<FloatOrPercentage>>("over_bridge_speed").at(extruder_id).is_zero())
                     {
                         // Minimal volumetric flow should not be calculated over ironing extrusions.
                         // Use following lambda instead of the built-it method.
@@ -837,14 +837,22 @@ namespace DoExport {
 	        // volumetric speed as the volumetric speed produced by printing the 
 	        // smallest cross-section at the maximum speed: any larger cross-section
 	        // will need slower feedrates.
-	        volumetric_speed = *std::min_element(mm3_per_mm.begin(), mm3_per_mm.end()) * print.config().get<double>("max_print_speed");
+	        volumetric_speed = *std::min_element(mm3_per_mm.begin(), mm3_per_mm.end()) * print.config().get<std::vector<double>>("max_print_speed").at(extruder_id);
 	        // limit such volumetric speed with max_volumetric_speed if set
-	        if (print.config().get<double>("max_volumetric_speed") > 0)
-	            volumetric_speed = std::min(volumetric_speed, print.config().get<double>("max_volumetric_speed"));
+	        if (print.config().get<std::vector<double>>("max_volumetric_speed").at(extruder_id) > 0)
+	            volumetric_speed = std::min(volumetric_speed, print.config().get<std::vector<double>>("max_volumetric_speed").at(extruder_id));
 	    }
 	    return volumetric_speed;
 	}
 
+    static std::map<unsigned, double> autospeed_volumetric_limit(const Print &print)
+    {
+        std::map<unsigned, double> result;
+        for (unsigned extruder_id : print.get_extruder_candidates()) {
+            result.insert({extruder_id, extruder_autospeed_volumetric_limit(print, extruder_id)});
+        }
+        return result;
+    }
 
     static void init_ooze_prevention(const Print &print, OozePrevention &ooze_prevention)
 	{
@@ -1102,7 +1110,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
         file.write_format("; top infill extrusion width = %.2fmm\n",          region.flow(*first_object, frTopSolidInfill,    layer_height).width());
         if (print.has_support_material())
             file.write_format("; support material extrusion width = %.2fmm\n", support_material_flow(first_object).width());
-        if (!print.config().get<Domain::FloatOrPercentage>("first_layer_extrusion_width").is_zero())
+        if (!region.extruder_config_value<Domain::FloatOrPercentage>("first_layer_extrusion_width", frPerimeter).is_zero())
             file.write_format("; first layer extrusion width = %.2fmm\n",   region.flow(*first_object, frPerimeter, first_layer_height, true).width());
         file.write_format("\n");
     }
@@ -2609,7 +2617,7 @@ LayerResult GCodeGenerator::process_layer(
         bool enable = (layer.id() > 0 || !print.has_brim()) && (layer.id() >= (size_t)print.config().get<int>("skirt_height") && ! print.has_infinite_skirt());
         if (enable) {
             for (const LayerRegion *layer_region : layer.regions())
-                if (size_t(layer_region->region().config().get<int>("bottom_solid_layers")) > layer.id() ||
+                if (size_t(layer_region->region().extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill)) > layer.id() ||
                     layer_region->perimeters().items_count() > 1u ||
                     layer_region->fills().items_count() > 0) {
                     enable = false;
@@ -3097,7 +3105,11 @@ std::string GCodeGenerator::extrude_smooth_path(
     }
 
     // reset acceleration
-    gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(config.get<double>("default_acceleration")));
+    gcode += m_writer.set_print_acceleration(
+        fast_round_up<unsigned int>(
+            config.get<std::vector<double>>("default_acceleration").at(m_writer.extruder()->id())
+        )
+    );
 
     if (is_loop) {
         GCode::SmoothPath wipe{smooth_path.begin() + wipe_offset, smooth_path.end()};
@@ -3160,9 +3172,15 @@ std::string GCodeGenerator::extrude_perimeters(
         double speed{-1};
         // Apply the small perimeter speed.
         if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
-            speed = region.config()
-                        .get<Domain::FloatOrPercentage>("small_perimeter_speed")
-                        .get_abs_value(region.config().get<double>("perimeter_speed"));
+            speed = region
+                        .extruder_config_value<Domain::FloatOrPercentage>(
+                            "small_perimeter_speed",
+                            FlowRole::frExternalPerimeter
+                        )
+                        .get_abs_value(region.extruder_config_value<double>(
+                            "perimeter_speed",
+                            FlowRole::frExternalPerimeter
+                        ));
         gcode += this->extrude_smooth_path(
             perimeter.smooth_path,
             perimeter.extrusion_entity->is_loop(),
@@ -3185,7 +3203,7 @@ std::string GCodeGenerator::extrude_perimeters(
             !m_wipe.enabled()
             && perimeter.extrusion_entity->role().is_external_perimeter()
             && m_layer != nullptr
-            && region.config().get<int>("perimeters") > 1
+            && region.extruder_config_value<int>("perimeters", FlowRole::frPerimeter) > 1
             && is_extruding
         ) {
             // Only wipe inside if the wipe along the perimeter is disabled.
@@ -3321,7 +3339,7 @@ std::string GCodeGenerator::travel_to_first_position(
 double cap_speed(
     double speed, const Domain::ConfigView &config, int extruder_id, const ExtrusionAttributes &path_attr
 ) {
-    const double general_volumetric_cap{config.get<double>("max_volumetric_speed")};
+    const double general_volumetric_cap{config.get<std::vector<double>>("max_volumetric_speed").at(extruder_id)};
     if (general_volumetric_cap > 0) {
         speed = std::min(speed, general_volumetric_cap / path_attr.mm3_per_mm);
     }
@@ -3395,27 +3413,29 @@ std::string GCodeGenerator::_extrude(
         m_pending_pre_extrusion_gcode.clear();
     }
 
+    const unsigned extruder_id{m_writer.extruder()->id()};
+
     // adjust acceleration
-    if (config.get<double>("default_acceleration") > 0) {
+    if (config.get<std::vector<double>>("default_acceleration").at(extruder_id) > 0) {
         double acceleration;
-        if (this->on_first_layer() && config.get<double>("first_layer_acceleration") > 0) {
-            acceleration = config.get<double>("first_layer_acceleration");
-        } else if (this->object_layer_over_raft() && config.get<double>("first_layer_acceleration_over_raft") > 0) {
-            acceleration = config.get<double>("first_layer_acceleration_over_raft");
-        } else if (config.get<double>("bridge_acceleration") > 0 && path_attr.role.is_bridge()) {
-            acceleration = config.get<double>("bridge_acceleration");
-        } else if (config.get<double>("top_solid_infill_acceleration") > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
-            acceleration = config.get<double>("top_solid_infill_acceleration");
-        } else if (config.get<double>("solid_infill_acceleration") > 0 && path_attr.role.is_solid_infill()) {
-            acceleration = config.get<double>("solid_infill_acceleration");
-        } else if (config.get<double>("infill_acceleration") > 0 && path_attr.role.is_infill()) {
-            acceleration = config.get<double>("infill_acceleration");
-        } else if (config.get<double>("external_perimeter_acceleration") > 0 && path_attr.role.is_external_perimeter()) {
-            acceleration = config.get<double>("external_perimeter_acceleration");
-        } else if (config.get<double>("perimeter_acceleration") > 0 && path_attr.role.is_perimeter()) {
-            acceleration = config.get<double>("perimeter_acceleration");
+        if (this->on_first_layer() && config.get<std::vector<double>>("first_layer_acceleration").at(extruder_id) > 0) {
+            acceleration = config.get<std::vector<double>>("first_layer_acceleration").at(extruder_id);
+        } else if (this->object_layer_over_raft() && config.get<std::vector<double>>("first_layer_acceleration_over_raft").at(extruder_id) > 0) {
+            acceleration = config.get<std::vector<double>>("first_layer_acceleration_over_raft").at(extruder_id);
+        } else if (config.get<std::vector<double>>("bridge_acceleration").at(extruder_id) > 0 && path_attr.role.is_bridge()) {
+            acceleration = config.get<std::vector<double>>("bridge_acceleration").at(extruder_id);
+        } else if (config.get<std::vector<double>>("top_solid_infill_acceleration").at(extruder_id) > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
+            acceleration = config.get<std::vector<double>>("top_solid_infill_acceleration").at(extruder_id);
+        } else if (config.get<std::vector<double>>("solid_infill_acceleration").at(extruder_id) > 0 && path_attr.role.is_solid_infill()) {
+            acceleration = config.get<std::vector<double>>("solid_infill_acceleration").at(extruder_id);
+        } else if (config.get<std::vector<double>>("infill_acceleration").at(extruder_id) > 0 && path_attr.role.is_infill()) {
+            acceleration = config.get<std::vector<double>>("infill_acceleration").at(extruder_id);
+        } else if (config.get<std::vector<double>>("external_perimeter_acceleration").at(extruder_id) > 0 && path_attr.role.is_external_perimeter()) {
+            acceleration = config.get<std::vector<double>>("external_perimeter_acceleration").at(extruder_id);
+        } else if (config.get<std::vector<double>>("perimeter_acceleration").at(extruder_id) > 0 && path_attr.role.is_perimeter()) {
+            acceleration = config.get<std::vector<double>>("perimeter_acceleration").at(extruder_id);
         } else {
-            acceleration = config.get<double>("default_acceleration");
+            acceleration = config.get<std::vector<double>>("default_acceleration").at(extruder_id);
         }
         gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
     }
@@ -3427,31 +3447,33 @@ std::string GCodeGenerator::_extrude(
         e_per_mm = 0;
 
     using Domain::FloatOrPercentage;
-    const auto perimeter_speed = config.get<double>("perimeter_speed");
-    const auto infill_speed = config.get<double>("infill_speed");
-    const auto solid_infill_speed = config.get<FloatOrPercentage>("solid_infill_speed").get_abs_value(infill_speed);
+    const auto perimeter_speed = config.get<std::vector<double>>("perimeter_speed").at(extruder_id);
+    const auto infill_speed = config.get<std::vector<double>>("infill_speed").at(extruder_id);
+    const auto solid_infill_speed = config.get<std::vector<FloatOrPercentage>>("solid_infill_speed")
+                                        .at(extruder_id)
+                                        .get_abs_value(infill_speed);
     // set speed
     if (speed == -1) {
         if (path_attr.role == ExtrusionRole::Perimeter) {
             speed = perimeter_speed;
         } else if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
-            speed = config.get<FloatOrPercentage>("external_perimeter_speed").get_abs_value(perimeter_speed);
+            speed = config.get<std::vector<FloatOrPercentage>>("external_perimeter_speed").at(extruder_id).get_abs_value(perimeter_speed);
         } else if (path_attr.role.is_bridge()) {
             assert(path_attr.role.is_perimeter() || path_attr.role == ExtrusionRole::BridgeInfill);
-            speed = config.get<double>("bridge_speed");
+            speed = config.get<std::vector<double>>("bridge_speed").at(extruder_id);
         } else if (path_attr.role == ExtrusionRole::InternalInfill) {
             speed = infill_speed;
         } else if (path_attr.role == ExtrusionRole::SolidInfill) {
             speed = solid_infill_speed;
         } else if (path_attr.role == ExtrusionRole::InfillOverBridge) {
-            const double over_bridge_speed{config.get<FloatOrPercentage>("over_bridge_speed").get_abs_value(solid_infill_speed)};
+            const double over_bridge_speed{config.get<std::vector<FloatOrPercentage>>("over_bridge_speed").at(extruder_id).get_abs_value(solid_infill_speed)};
             if (over_bridge_speed > 0) {
                 speed = over_bridge_speed;
             } else {
                 speed = solid_infill_speed;
             }
         } else if (path_attr.role == ExtrusionRole::TopSolidInfill) {
-            speed = config.get<FloatOrPercentage>("top_solid_infill_speed").get_abs_value(solid_infill_speed);
+            speed = config.get<std::vector<FloatOrPercentage>>("top_solid_infill_speed").at(extruder_id).get_abs_value(solid_infill_speed);
         } else if (path_attr.role == ExtrusionRole::Ironing) {
             speed = config.get<double>("ironing_speed");
         } else if (path_attr.role == ExtrusionRole::GapFill) {
@@ -3460,24 +3482,27 @@ std::string GCodeGenerator::_extrude(
             throw Slic3r::InvalidArgument("Invalid speed");
         }
     }
-    if (m_volumetric_speed != 0. && speed == 0)
-        speed = m_volumetric_speed / path_attr.mm3_per_mm;
+    if (m_volumetric_speed.at(extruder_id) != 0. && speed == 0)
+        speed = m_volumetric_speed.at(extruder_id) / path_attr.mm3_per_mm;
     if (this->on_first_layer()) {
-        const double first_layer_infill_speed{config.get<FloatOrPercentage>("first_layer_infill_speed").get_abs_value(speed)};
+        const double first_layer_infill_speed{config.get<std::vector<FloatOrPercentage>>("first_layer_infill_speed").at(extruder_id).get_abs_value(speed)};
         if (path_attr.role == ExtrusionRole::SolidInfill && first_layer_infill_speed > 0) {
             speed = first_layer_infill_speed;
         } else {
-            speed = config.get<FloatOrPercentage>("first_layer_speed").get_abs_value(speed);
+            speed = config.get<std::vector<FloatOrPercentage>>("first_layer_speed").at(extruder_id).get_abs_value(speed);
         }
     }
     else if (this->object_layer_over_raft())
-        speed = config.get<FloatOrPercentage>("first_layer_speed_over_raft").get_abs_value(speed);
+        speed = config.get<std::vector<FloatOrPercentage>>("first_layer_speed_over_raft").at(extruder_id).get_abs_value(speed);
 
     ExtrusionProcessor::OverhangSpeeds dynamic_print_and_fan_speeds = {-1.f, -1.f};
     if (path_attr.overhang_attributes.has_value()) {
-        double external_perimeter_reference_speed = config.get<FloatOrPercentage>("external_perimeter_speed").get_abs_value(perimeter_speed);
+        double external_perimeter_reference_speed =
+            config.get<std::vector<FloatOrPercentage>>("external_perimeter_speed")
+                .at(extruder_id)
+                .get_abs_value(perimeter_speed);
         if (external_perimeter_reference_speed == 0) {
-            external_perimeter_reference_speed = m_volumetric_speed / path_attr.mm3_per_mm;
+            external_perimeter_reference_speed = m_volumetric_speed.at(extruder_id) / path_attr.mm3_per_mm;
         }
 
         external_perimeter_reference_speed = cap_speed(external_perimeter_reference_speed, config, m_writer.extruder()->id(), path_attr);
@@ -3702,6 +3727,8 @@ bool GCodeGenerator::needs_retraction(
     const Polyline& travel, const Domain::ConfigView& config, ExtrusionRole role
 )
 {
+    const unsigned extruder_id{m_writer.extruder()->id()};
+
     if (! m_writer.extruder() || travel.length() < scale_(config.get<std::vector<double>>("retract_before_travel").at(m_writer.extruder()->id()))) {
         // skip retraction if the move is shorter than the configured threshold
         return false;
@@ -3728,8 +3755,11 @@ bool GCodeGenerator::needs_retraction(
                 }
         }
 
-    if (config.get<bool>("only_retract_when_crossing_perimeters") && m_layer != nullptr &&
-        config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0} && m_retract_when_crossing_perimeters.travel_inside_internal_regions(*m_layer, travel))
+    if (config.get<bool>("only_retract_when_crossing_perimeters")
+        && m_layer != nullptr
+        && config.get<std::vector<Domain::Percentage>>("fill_density").at(extruder_id)
+            > Domain::Percentage{0}
+        && m_retract_when_crossing_perimeters.travel_inside_internal_regions(*m_layer, travel))
         // Skip retraction if travel is contained in an internal slice *and*
         // internal infill is enabled (so that stringing is entirely not visible).
         //FIXME any_internal_region_slice_contains() is potentionally very slow, it shall test for the bounding boxes first.

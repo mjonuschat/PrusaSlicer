@@ -83,6 +83,7 @@ enum class ErrorCode
     SettingMustBeEqualForAllExtruders,
     PlaceholderParser,
     FailedToParseCustomParameters,
+    FatalError,
 
     // FDM
     NoLayers, // "No layers were detected. You might want to repair your STL file(s) or check their size or thickness and retry.\n"

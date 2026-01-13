@@ -135,9 +135,9 @@ static bool is_dirty_selected_preset(
 
     if (preset_interactor.selected_printer_preset().technology() == Domain::PrinterTechnology::FFF)
     {
-        Domain::FullConfigFDM full_config_init(std::get<Domain::ConfigPackFDM>(config_initial));
+        Domain::FullConfigFDM full_config_init(std::get<Domain::ConfigPackFDM>(config_initial), {});
         Domain::FullConfigFDM full_config_selected(
-            std::get<Domain::ConfigPackFDM>(config_selected)
+            std::get<Domain::ConfigPackFDM>(config_selected), {}
         );
 
         diff_keys = full_config_init.diff_keys(full_config_selected);

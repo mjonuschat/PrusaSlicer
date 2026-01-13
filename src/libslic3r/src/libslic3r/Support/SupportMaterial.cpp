@@ -2561,7 +2561,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                             some_region_overlaps = true;
                             Slic3r::append(polygons_trimming,
                                 offset(region->fill_surfaces().filter_by_type(stBottomBridge), gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
-                            if (region->region().config().get<bool>("overhangs"))
+                            if (region->region().extruder_config_value<bool>("overhangs", FlowRole::frPerimeter))
                                 // Add bridging perimeters.
                                 SupportMaterialInternal::collect_bridging_perimeter_areas(region->perimeters(), gap_xy_scaled, polygons_trimming);
                         }

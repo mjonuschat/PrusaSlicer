@@ -53,16 +53,16 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
     config.filament[0].items.opt("min_print_speed").set(10.0);
     config.filament[0].items.opt("slowdown_below_layer_time").set(5);
     // Default print speeds.
-    config.tool.at(0).items.opt("bridge_speed").set(60.0);
-    config.tool.at(0).items.opt("external_perimeter_speed").set(FloatOrPercentage{Percentage{50}});
-    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{30.0});
-    config.tool.at(0).items.opt("gap_fill_speed").set(20.0);
-    config.tool.at(0).items.opt("infill_speed").set(80.0);
-    config.tool.at(0).items.opt("perimeter_speed").set(60.0);
-    config.tool.at(0).items.opt("small_perimeter_speed").set(FloatOrPercentage{15.0});
-    config.tool.at(0).items.opt("solid_infill_speed").set(FloatOrPercentage{20.0});
-    config.tool.at(0).items.opt("top_solid_infill_speed").set(FloatOrPercentage{15.0});
-    config.tool.at(0).items.opt("max_print_speed").set(80.0);
+    config.print.items.opt("bridge_speed").set(60.0);
+    config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{Percentage{50}});
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{30.0});
+    config.print.items.opt("gap_fill_speed").set(20.0);
+    config.print.items.opt("infill_speed").set(80.0);
+    config.print.items.opt("perimeter_speed").set(60.0);
+    config.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{15.0});
+    config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{20.0});
+    config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{15.0});
+    config.print.items.opt("max_print_speed").set(80.0);
     // Override for tests.
     config.filament[0].items.opt("disable_fan_first_layers").set(0);
 
@@ -197,17 +197,17 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
         config.filament[0].items.opt("bridge_fan_speed").set(100);
         config.filament[0].items.opt("fan_below_layer_time").set(0);
         config.filament[0].items.opt("slowdown_below_layer_time").set(0);
-        config.tool.at(0).items.opt("bridge_speed").set(99.0);
-        config.tool.at(0).items.opt("enable_dynamic_overhang_speeds").set(false);
+        config.print.items.opt("bridge_speed").set(99.0);
+        config.print.items.opt("enable_dynamic_overhang_speeds").set(false);
         // internal bridges use solid_infil speed
-        config.tool.at(0).items.opt("bottom_solid_layers").set(1);
+        config.print.items.opt("bottom_solid_layers").set(1);
 
         GCodeReader parser;
         int fan = 0;
         int fan_with_incorrect_speeds = 0;
         int fan_with_incorrect_print_speeds = 0;
         int bridge_with_no_fan = 0;
-        const double bridge_speed = config.tool.at(0).items.opt("bridge_speed").get<double>() * 60;
+        const double bridge_speed = config.print.items.opt("bridge_speed").get<double>() * 60;
         parser.parse_buffer(
             Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config),
             [&fan, &fan_with_incorrect_speeds, &fan_with_incorrect_print_speeds, &bridge_with_no_fan, bridge_speed]
@@ -247,12 +247,12 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
         config.filament[0].items.opt("slowdown_below_layer_time").set(10);
         config.filament[0].items.opt("min_print_speed").set(0.0);
         config.printer.items.opt("start_gcode").set(std::string{""});
-        config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
         // internal bridges use solid_infil speed
-        config.tool.at(0).items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
+        config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
 
         GCodeReader parser;
-        const double external_perimeter_speed = config.tool.at(0).items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60;
+        const double external_perimeter_speed = config.print.items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60;
         std::vector<double> layer_times;
         // z => 1
         std::map<coord_t, int> layer_external;

@@ -24,6 +24,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
 
     constexpr auto sla_object{SLAConfigLocation::Object};
     constexpr auto sla_material{SLAConfigLocation::Material};
+    constexpr auto fdm_tool{FDMConfigLocation::Tool};
     constexpr auto fdm_object{FDMConfigLocation::Object};
     constexpr auto fdm_volume{FDMConfigLocation::Volume};
 
@@ -94,8 +95,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
         def->option_group = L("Corrections");
     }
     if (technology == FFF) {
-        def->location = FDMConfigLocation::Tool;
-        def->overrides_in = Locations{ fdm_object, fdm_volume };
+        def->location = FDMConfigLocation::Print;
+        def->require_compatibility_rule = true;
+        def->overrides_in = Locations{ fdm_tool, fdm_object, fdm_volume };
         def->option_group = L("Slicing");
     }
     def->label = L("Elephant foot compensation");

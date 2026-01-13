@@ -46,6 +46,7 @@ Generator::Generator(const PrintObject &print_object, const double fill_density,
 {
     const PrintConfigView         &print_config         = print_object.print()->config();
     const PrintObjectConfigView   &object_config        = print_object.config();
+    const std::unique_ptr<PrintRegion> &region          = print_object.shared_regions()->all_regions.front();
     const PrintRegionConfigView   &region_config        = print_object.shared_regions()->all_regions.front()->config();
     const std::vector<double> &nozzle_diameters     = print_config.get<std::vector<double>>("nozzle_diameter");
     double                     max_nozzle_diameter  = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
@@ -54,8 +55,8 @@ Generator::Generator(const PrintObject &print_object, const double fill_density,
     // Note: There's not going to be a layer below the first one, so the 'initial layer height' doesn't have to be taken into account.
     const double               layer_thickness      = scaled<double>(object_config.get<double>("layer_height"));
 
-    const double input_extrusion_width{region_config
-        .get<Domain::FloatOrPercentage>("infill_extrusion_width")
+    const double input_extrusion_width{
+        region->extruder_config_value<Domain::FloatOrPercentage>("infill_extrusion_width", FlowRole::frInfill)
         .get_abs_value(default_infill_extrusion_width)
     };
     m_infill_extrusion_width = scaled<float>(input_extrusion_width != 0. ? input_extrusion_width : default_infill_extrusion_width);

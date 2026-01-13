@@ -311,15 +311,20 @@ std::pair<double, double> adaptive_fill_line_spacing(const PrintObject &print_ob
     double                     max_nozzle_diameter            = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
     double                     default_infill_extrusion_width = Flow::auto_extrusion_width(FlowRole::frInfill, float(max_nozzle_diameter));
     for (size_t region_id = 0; region_id < print_object.num_printing_regions(); ++ region_id) {
-        const PrintRegionConfigView &config                 = print_object.printing_region(region_id).config();
-        bool                     nonempty               = config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0};
-        bool                     has_adaptive_infill    = nonempty && config.get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipAdaptiveCubic;
-        bool                     has_support_infill     = nonempty && config.get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipSupportCubic;
-        double                   infill_extrusion_width = config.get<Domain::FloatOrPercentage>("infill_extrusion_width").get_abs_value(default_infill_extrusion_width);
+        const PrintRegion &region                       = print_object.printing_region(region_id);
+        bool                     nonempty               = region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill) > Domain::Percentage{0};
+        bool                     has_adaptive_infill    = nonempty && region.extruder_config_value<Domain::InfillPattern>("fill_pattern", FlowRole::frInfill) == Domain::InfillPattern::ipAdaptiveCubic;
+        bool                     has_support_infill     = nonempty && region.extruder_config_value<Domain::InfillPattern>("fill_pattern", FlowRole::frInfill) == Domain::InfillPattern::ipSupportCubic;
+        double infill_extrusion_width = region
+            .extruder_config_value<Domain::FloatOrPercentage>(
+                "infill_extrusion_width",
+                FlowRole::frInfill
+            )
+            .get_abs_value(default_infill_extrusion_width);
         region_fill_data.push_back(RegionFillData({
             has_adaptive_infill ? Tristate::Maybe : Tristate::No,
             has_support_infill ? Tristate::Maybe : Tristate::No,
-            config.get<Domain::Percentage>("fill_density"),
+            region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill),
             infill_extrusion_width != 0. ? infill_extrusion_width : default_infill_extrusion_width
         }));
         build_octree |= has_adaptive_infill || has_support_infill;

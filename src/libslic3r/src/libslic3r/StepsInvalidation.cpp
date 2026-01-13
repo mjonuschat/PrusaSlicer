@@ -550,21 +550,37 @@ std::set<Step> handle_special_cases(
                 result.insert(posSlice);
             }
         } else if (opt_key == "over_bridge_speed") {
-            const auto old_speed = old_config.get<FloatOrPercentage>(opt_key);
-            const auto new_speed = new_config.get<FloatOrPercentage>(opt_key);
-            if (old_speed.is_zero() || new_speed.is_zero()) {
+            const auto old_speed = old_config.get<std::vector<FloatOrPercentage>>(opt_key);
+            const auto new_speed = new_config.get<std::vector<FloatOrPercentage>>(opt_key);
+
+            const auto is_zero{[](auto v) { return v.is_zero(); }};
+
+            if (std::ranges::any_of(old_speed, is_zero) || std::ranges::any_of(new_speed, is_zero))
+            {
                 result.insert(posPrepareInfill);
             }
         } else if (opt_key == "fill_density") {
             // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
             // normal infill and 100% (solid) infill.
-            const auto old_density = old_config.get<Percentage>(opt_key);
-            const auto new_density = new_config.get<Percentage>(opt_key);
+            const auto old_density = old_config.get<std::vector<Percentage>>(opt_key);
+            const auto new_density = new_config.get<std::vector<Percentage>>(opt_key);
             // FIXME Vojtech is not quite sure about the 100% here, maybe it is not needed.
-            if (is_approx(old_density.value, 0.)
-                || is_approx(old_density.value, 100.)
-                || is_approx(new_density.value, 0.)
-                || is_approx(new_density.value, 100.))
+            if (std::ranges::any_of(
+                    old_density,
+                    [](Percentage v) { return is_approx(v.value, 0.); }
+                )
+                || std::ranges::any_of(
+                    old_density,
+                    [](Percentage v) { return is_approx(v.value, 100.0); }
+                )
+                || std::ranges::any_of(
+                    new_density,
+                    [](Percentage v) { return is_approx(v.value, 0.); }
+                )
+                || std::ranges::any_of(
+                    new_density,
+                    [](Percentage v) { return is_approx(v.value, 100.0); }
+                ))
             {
                 result.insert(posPerimeters);
             }

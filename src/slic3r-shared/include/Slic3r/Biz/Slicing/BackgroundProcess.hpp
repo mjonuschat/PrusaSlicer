@@ -44,6 +44,7 @@ public:
     virtual void on_status(const StatusUpdate, Domain::SlicingId) = 0;
     virtual void on_exception(std::exception_ptr exception, Domain::SlicingId) = 0;
     virtual void on_wipe_tower_geometry(Print::OptWipeTowerGeometry&&, Domain::SlicingId) = 0;
+    virtual void on_extruder_candidates(std::vector<unsigned>&& extruder_candidates, Domain::SlicingId) = 0;
     virtual StatusCode get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };

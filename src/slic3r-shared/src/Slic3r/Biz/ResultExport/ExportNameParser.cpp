@@ -31,7 +31,7 @@ ExportNameData parse_fdm_export_name(
 )
 {
     ExportNameData result {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
-    Domain::FullConfigFDM full_config{fdm_config};
+    Domain::FullConfigFDM full_config{fdm_config, {}};
     Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
     Biz::Parser::PlaceholderParser parser{io_config};
     const std::optional<Biz::FDMResultRef> fdm_result_opt{project_interactor.fdm_result_cache().get_result(project_interactor.selected_bed_slicing_id())};

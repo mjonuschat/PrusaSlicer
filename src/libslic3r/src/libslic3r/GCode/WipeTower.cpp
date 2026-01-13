@@ -546,9 +546,48 @@ WipeTower::ToolChangeResult WipeTower::construct_tcr(WipeTowerWriter& writer,
     return result;
 }
 
+static float
+get_min_speed(const std::vector<double>& speeds, const std::vector<unsigned>& extruder_candidates)
+{
+    double min{std::numeric_limits<double>::max()};
+    for (unsigned tool_index : extruder_candidates) {
+        double value{speeds[tool_index]};
+        if (value == 0.0) {
+            value = 80.0;
+        }
+        if (value < min) {
+            min = value;
+        }
+    }
+    return static_cast<float>(min);
+}
 
+static float
+get_min_speed(const std::vector<Domain::FloatOrPercentage>& speeds, const std::vector<unsigned>& extruder_candidates, double default_value)
+{
+    double min{std::numeric_limits<double>::max()};
+    for (unsigned tool_index : extruder_candidates) {
+        const Domain::FloatOrPercentage float_or_percent_value{speeds[tool_index]};
+        double value{float_or_percent_value.get_abs_value(default_value)};
+        if (value == 0.0) {
+            // just to make sure autospeed doesn't break it.
+            value = default_value / 2.f;
+        }
+        if (value < min) {
+            min = value;
+        }
+    }
+    return static_cast<float>(min);
+}
 
-WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigView& config, const std::vector<std::vector<float>>& wiping_matrix, size_t initial_tool) :
+WipeTower::WipeTower(
+    const Vec2f& pos,
+    double rotation_deg,
+    const PrintConfigView& config,
+    const std::vector<std::vector<float>>& wiping_matrix,
+    size_t initial_tool,
+    const std::vector<unsigned>& extruder_candidates
+) :
     m_semm(config.get<bool>("single_extruder_multi_material")),
     m_wipe_tower_pos(pos),
     m_wipe_tower_width(float(config.get<double>("wipe_tower_width"))),
@@ -557,30 +596,33 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigVie
     m_y_shift(0.f),
     m_z_pos(0.f),
     m_travel_speed(config.get<double>("travel_speed")),
-    m_infill_speed(config.get<double>("infill_speed")),
-    m_perimeter_speed(config.get<double>("perimeter_speed")),
+    m_infill_speed(get_min_speed(config.get<std::vector<double>>("infill_speed"), extruder_candidates)),
+    m_perimeter_speed(get_min_speed(config.get<std::vector<double>>("perimeter_speed"), extruder_candidates)),
     m_bridging(config.get<double>("wipe_tower_bridging")),
     m_no_sparse_layers(config.get<bool>("wipe_tower_no_sparse_layers")),
     m_gcode_flavor(config.get<GCodeFlavor>("gcode_flavor")),
     m_current_tool(initial_tool),
     wipe_volumes(wiping_matrix),
     m_extra_flow(float(config.get<Domain::Percentage>("wipe_tower_extra_flow").get_abs_value(1.0))),
-    m_extra_spacing_wipe(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0) * config.get<Domain::Percentage>("wipe_tower_extra_flow").get_abs_value(1.0))),
-    m_extra_spacing_ramming(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0)))
+    m_extra_spacing_wipe(
+        float(
+            config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0)
+            * config.get<Domain::Percentage>("wipe_tower_extra_flow").get_abs_value(1.0)
+        )
+    ),
+    m_extra_spacing_ramming(
+        float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0))
+    )
 {
     // Read absolute value of first layer speed, if given as percentage,
     // it is taken over following default. Speeds from config are not
     // easily accessible here.
     const float default_speed = 60.f;
-    m_first_layer_speed = config.get<Domain::FloatOrPercentage>("first_layer_speed").get_abs_value(default_speed);
-    if (m_first_layer_speed == 0.f) // just to make sure autospeed doesn't break it.
-        m_first_layer_speed = default_speed / 2.f;
-
-    // Autospeed may be used...
-    if (m_infill_speed == 0.f)
-        m_infill_speed = 80.f;
-    if (m_perimeter_speed == 0.f)
-        m_perimeter_speed = 80.f;
+    m_first_layer_speed       = get_min_speed(
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_speed"),
+        extruder_candidates,
+        default_speed
+    );
 
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.

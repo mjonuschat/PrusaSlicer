@@ -37,7 +37,7 @@ SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
         WHEN("make_perimeters() is called")  {
             Slic3r::Print print;
             TestConfig config;
-            config.tool.at(0).items.opt("fill_density").set(Percentage{0});
+            config.print.items.opt("fill_density").set(Percentage{0});
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			const PrintObject &object = *print.objects().front();
 			THEN("67 layers exist in the model") {
@@ -89,8 +89,8 @@ void update(Print& print, Domain::Model& model, const TestConfig& config)
 SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces to become internal.", "[Print]") {
     GIVEN("sliced 20mm cube and config with top_solid_surfaces = 2 and bottom_solid_surfaces = 1") {
         TestConfig config;
-        config.tool.at(0).items.opt("top_solid_layers").set(2);
-        config.tool.at(0).items.opt("bottom_solid_layers").set(1);
+        config.print.items.opt("top_solid_layers").set(2);
+        config.print.items.opt("bottom_solid_layers").set(1);
         config.print.items.opt("layer_height").set(0.25);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.25});
         Slic3r::Print print;
@@ -112,7 +112,7 @@ SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces t
         test_is_solid_infill(0, 79); // should be solid
         test_is_solid_infill(0, 78); // should be solid
         WHEN("Model is re-sliced with top_solid_layers == 3") {
-			config.tool.at(0).items.opt("top_solid_layers").set(3);
+			config.print.items.opt("top_solid_layers").set(3);
             update(print, model, config);
             print.process();
             THEN("Print object does not have 0 solid bottom layers.") {
@@ -132,7 +132,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 3mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
             config.print.items.opt("brim_width").set(3.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 3 loops in it") {
@@ -142,7 +142,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 6 loops in it") {
@@ -152,7 +152,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm, extrusion width 0.5mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			print.process();
@@ -183,9 +183,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
     }
     GIVEN("Model with multiple objects") {
         TestConfig config{4};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.4);
-        }
+        config.print.items.opt("nozzle_diameter").set(0.4);
         Print print;
         Domain::Model model;
         Slic3r::Test::init_print({ TestMesh::cube_20x20x20 }, print, model, config);
@@ -196,7 +194,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
         WHEN("fill_density overridden") {
             update(print, model2, config);
             THEN("region config inherits model object config") {
-                REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density").value == Percentage{100}.value);
+                REQUIRE(print.get_print_region(0).config().get<std::vector<Percentage>>("fill_density").at(0).value == Percentage{100}.value);
             }
         }
 
@@ -204,7 +202,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
         WHEN("fill_density resetted") {
             update(print, model2, config);
             THEN("region config is resetted") {
-                REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density") == Percentage{20});
+                REQUIRE(print.get_print_region(0).config().get<std::vector<Percentage>>("fill_density").at(0) == Percentage{20});
             }
         }
 
@@ -347,7 +345,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     Domain::Model model;
     Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
 
-    auto full_config_result{prepare_slicing_input(config)};
+    auto full_config_result{prepare_slicing_input(config, {})};
     REQUIRE(full_config_result.has_value());
     auto& full_config{*full_config_result};
     Biz::Print::SerializedConfig serialized_config{};
@@ -381,7 +379,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
         }
     }
 
-    full_config_result = prepare_slicing_input(config);
+    full_config_result = prepare_slicing_input(config, {});
     REQUIRE(full_config_result.has_value());
     full_config = *full_config_result;
 
@@ -467,7 +465,7 @@ void apply_and_check(
     REQUIRE(is_exclusively_undone(context.print, {}));
 
     modify_config(context.config);
-    const auto slicing_input{prepare_slicing_input(context.config)};
+    const auto slicing_input{prepare_slicing_input(context.config, {})};
     REQUIRE(slicing_input);
     const auto full_config{*slicing_input};
 
@@ -501,7 +499,7 @@ TEST_CASE_METHOD(
 {
     apply_and_check(
         *this,
-        [](TestConfig& c) { c.tool.at(0).items.opt("brim_separation").set<double>(2.0); },
+        [](TestConfig& c) { c.print.items.opt("brim_separation").set<double>(2.0); },
         {
             posSupportSpotsSearch,
             posSupportMaterial,
@@ -542,7 +540,7 @@ TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - fill densi
 {
     apply_and_check(
         *this,
-        [](TestConfig& c) { c.tool.at(0).items.opt("fill_density").set(Percentage{40.0}); },
+        [](TestConfig& c) { c.print.items.opt("fill_density").set(Percentage{40.0}); },
         {
             posPrepareInfill,
             posInfill,
@@ -591,9 +589,7 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     config.print.items.opt("wipe_tower_extruder").set(-1);
 
     // Can be <0, 3> on print and object.
-    for (auto& tool : config.tool) {
-        tool.items.opt("support_material_extruder").set(4);
-    }
+    config.print.items.opt("support_material_extruder").set(4);
     model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 4);
 
     Status status{print.update(model, config, bed_instance, serialized_config, hw_config)};
@@ -623,9 +619,7 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
 
     config.print.items.opt("wipe_tower_extruder").set(0);
 
-    for (auto& tool : config.tool) {
-        tool.items.opt("support_material_extruder").set(0);
-    }
+    config.print.items.opt("support_material_extruder").set(0);
     model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 2);
 
     status = print.update(model, config, bed_instance, serialized_config, hw_config);

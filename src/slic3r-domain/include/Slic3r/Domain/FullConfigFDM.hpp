@@ -11,7 +11,10 @@ BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack);
 class FullConfigFDM : public FullConfig
 {
 public:
-    FullConfigFDM(const ConfigPackFDM& config_pack);
+    FullConfigFDM(
+        const ConfigPackFDM& config_pack,
+        const std::vector<unsigned>& extruder_candidates
+    );
 
     std::size_t tools_count() const {
         return m_tools_count;
@@ -22,7 +25,7 @@ public:
     }
 
     static FullConfigFDM defaults() {
-        return {ConfigPackFDM{}};
+        return {ConfigPackFDM{}, {0}};
     }
 
 private:

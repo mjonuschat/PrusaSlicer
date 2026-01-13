@@ -268,7 +268,9 @@ std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
 }
 
 SquashedConfig::SquashedConfig(
-    const BoxOrBoxesVector& all_boxes, const ConfigLocationSizes& location_sizes
+    const BoxOrBoxesVector& all_boxes,
+    const std::vector<unsigned>& extruder_candidates,
+    const ConfigLocationSizes& location_sizes
 )
 {
     for (const auto& box_or_boxes : all_boxes) {
@@ -277,7 +279,7 @@ SquashedConfig::SquashedConfig(
             if constexpr (std::is_same_v<ValueType, BoxRef>) {
                 this->add(box_or_boxes.get(), location_sizes);
             } else if constexpr (std::is_same_v<ValueType, BoxRefs>) {
-                this->add(box_or_boxes, location_sizes);
+                this->add(box_or_boxes, extruder_candidates, location_sizes);
             }
         }, box_or_boxes);
     }
@@ -303,6 +305,10 @@ LocationSize get_max_location_size(
     const ConfigItemDef& def, const ConfigLocationSizes& location_sizes
 )
 {
+    if (def.require_compatibility_rule) {
+        return std::nullopt;
+    }
+
     LocationSize result{location_sizes.at(def.location)};
     for (const ConfigLocation& location : def.overrides_in) {
         const auto location_size_it{location_sizes.find(location)};
@@ -405,7 +411,233 @@ void iterate_together(
     }
 }
 
-void SquashedConfig::add(const BoxRefs& boxes, const ConfigLocationSizes& location_sizes)
+static Percentage get_average(const std::vector<Percentage>& values)
+{
+    double sum{};
+    for (const Percentage& value : values) {
+        sum += value.value;
+    }
+    return {sum / (double) values.size()};
+}
+
+static double get_average(const std::vector<double>& values)
+{
+    double sum{};
+    for (const double& value : values) {
+        sum += value;
+    }
+    return sum / (double) values.size();
+}
+
+template <typename T>
+static T get_min(const std::vector<T>& values)
+{
+    using Type = std::remove_cvref_t<T>;
+    if constexpr (std::is_same_v<Type, Percentage>) {
+        double min{std::numeric_limits<double>::max()};
+        for (const Percentage& value : values) {
+            if (value.value < min) {
+                min = value.value;
+            }
+        }
+        return Percentage{min};
+    } else {
+        auto min{std::numeric_limits<T>::max()};
+        for (const T& value : values) {
+            if (value < min) {
+                min = value;
+            }
+        }
+        return {min};
+    }
+}
+
+template <typename T>
+static T get_max(const std::vector<T>& values)
+{
+    using Type = std::remove_cvref_t<T>;
+    if constexpr (std::is_same_v<Type, Percentage>) {
+        double max{std::numeric_limits<double>::lowest()};
+        for (const Percentage& value : values) {
+            if (value.value > max) {
+                max = value.value;
+            }
+        }
+        return Percentage{max};
+    } else {
+        auto max{std::numeric_limits<T>::lowest()};
+        for (const T& value : values) {
+            if (value > max) {
+                max = value;
+            }
+        }
+        return {max};
+    }
+}
+
+const std::map<std::string, CompatibilityRule>& get_compatibility_rules() {
+    static const std::map<std::string, CompatibilityRule> result{
+        {"brim_separation", CompatibilityRule::Average},
+        {"dont_support_bridges", CompatibilityRule::IgnoreOverrides},
+        {"travel_acceleration", CompatibilityRule::IgnoreOverrides},
+        {"max_volumetric_extrusion_rate_slope_positive", CompatibilityRule::IgnoreOverrides},
+        {"max_volumetric_extrusion_rate_slope_negative", CompatibilityRule::IgnoreOverrides},
+        {"only_retract_when_crossing_perimeters", CompatibilityRule::IgnoreOverrides},
+        {"raft_contact_distance", CompatibilityRule::Average},
+        {"raft_expansion", CompatibilityRule::Max},
+        {"raft_first_layer_density", CompatibilityRule::Average},
+        {"raft_first_layer_expansion", CompatibilityRule::Max},
+        {"gcode_resolution", CompatibilityRule::IgnoreOverrides},
+        {"seam_position", CompatibilityRule::IgnoreOverrides},
+        {"support_material_xy_spacing", CompatibilityRule::IgnoreOverrides},
+        {"support_material_angle", CompatibilityRule::Average},
+        {"support_material_contact_distance", CompatibilityRule::Average},
+        {"support_material_bottom_contact_distance", CompatibilityRule::Average},
+        {"support_material_enforce_layers", CompatibilityRule::Max},
+        {"support_material_extrusion_width", CompatibilityRule::IgnoreOverrides},
+        {"support_material_interface_contact_loops", CompatibilityRule::IgnoreOverrides},
+        {"support_material_interface_layers", CompatibilityRule::Max},
+        {"support_material_bottom_interface_layers", CompatibilityRule::Max},
+        {"support_material_closing_radius", CompatibilityRule::Min},
+        {"support_material_interface_spacing", CompatibilityRule::Min},
+        {"support_material_interface_speed", CompatibilityRule::IgnoreOverrides},
+        {"support_material_pattern", CompatibilityRule::IgnoreOverrides},
+        {"support_material_interface_pattern", CompatibilityRule::IgnoreOverrides},
+        {"support_material_spacing", CompatibilityRule::Min},
+        {"support_material_speed", CompatibilityRule::Min},
+        {"support_material_style", CompatibilityRule::IgnoreOverrides},
+        {"support_material_synchronize_layers", CompatibilityRule::IgnoreOverrides},
+        {"support_material_threshold", CompatibilityRule::IgnoreOverrides},
+        {"support_material_with_sheath", CompatibilityRule::IgnoreOverrides},
+        {"support_tree_angle", CompatibilityRule::Min},
+        {"support_tree_angle_slow", CompatibilityRule::Min},
+        {"support_tree_tip_diameter", CompatibilityRule::Min},
+        {"support_tree_branch_diameter", CompatibilityRule::Min},
+        {"support_tree_branch_diameter_angle", CompatibilityRule::IgnoreOverrides},
+        {"support_tree_branch_diameter_double_wall", CompatibilityRule::IgnoreOverrides},
+        {"support_tree_branch_distance", CompatibilityRule::Max},
+        {"support_tree_top_rate", CompatibilityRule::IgnoreOverrides},
+        {"thick_bridges", CompatibilityRule::IgnoreOverrides},
+        {"travel_speed", CompatibilityRule::Min},
+        {"travel_speed_z", CompatibilityRule::Min},
+        {"travel_short_distance_acceleration", CompatibilityRule::Min},
+        {"wipe_tower_extra_spacing", CompatibilityRule::Max},
+        {"wipe_tower_extra_flow", CompatibilityRule::Max},
+        {"wipe_tower_bridging", CompatibilityRule::Min},
+        {"elefant_foot_compensation", CompatibilityRule::Average},
+        {"min_feature_size", CompatibilityRule::IgnoreOverrides},
+        {"min_bead_width", CompatibilityRule::IgnoreOverrides}
+    };
+
+    return result;
+}
+
+std::pair<ConfigValue, bool> apply_compatibility_rule(
+    const ConfigValue* default_value,
+    const std::vector<const ConfigItem*>& items,
+    const std::vector<unsigned>& extruder_candidates
+)
+{
+    auto it{std::ranges::find_if(
+        items,
+        [](const ConfigItem* item) { return item != nullptr; }
+    )};
+    if (it == items.end()) {
+        ASSERT(default_value);
+        return {*default_value, false};
+    }
+
+    const ConfigItem& first_item{**it};
+
+    if (!first_item.def().require_compatibility_rule) {
+        return {*default_value, false};
+    }
+    const CompatibilityRule compatibility_rule{
+        get_compatibility_rules().at(first_item.name())
+    };
+
+    if (!extruder_candidates.empty()) {
+        bool all_same{true};
+        for (unsigned extruder : extruder_candidates) {
+            const ConfigItem* item{items[extruder]};
+            if (item == nullptr && *ASSERT_VAL(default_value) != first_item.value()) {
+                all_same = false;
+                break;
+            }
+            if (item != nullptr && item->value() != first_item.value()) {
+                all_same = false;
+                break;
+            }
+        }
+        if (all_same) {
+            return {first_item.value(), false};
+        }
+    }
+
+    if (compatibility_rule == CompatibilityRule::IgnoreOverrides) {
+        ASSERT(default_value);
+        return {*default_value, true};
+    }
+
+    const std::set<unsigned> used_extruders{extruder_candidates.begin(), extruder_candidates.end()};
+
+    return first_item.visit(
+        [&](const auto& value) -> std::pair<ConfigValue, bool>
+        {
+            using Type = std::remove_cvref_t<decltype(value)>;
+            if constexpr (std::is_same_v<Type, int>
+                          || std::is_same_v<Type, Percentage>
+                          || std::is_same_v<Type, double>)
+            {
+                std::vector<Type> values;
+                for (std::size_t tool_index{}; tool_index < items.size(); ++tool_index) {
+                    const auto& item{items[tool_index]};
+                    if (!used_extruders.empty() && !used_extruders.contains(tool_index)) {
+                        continue;
+                    }
+                    if (item != nullptr) {
+                        values.push_back(item->get<Type>());
+                    } else {
+                        values.push_back(default_value->get<Type>());
+                    }
+                }
+
+                switch (compatibility_rule) {
+                case CompatibilityRule::Average: {
+                    if constexpr (std::is_same_v<Type, double>
+                                  || std::is_same_v<Type, Percentage>) {
+                        return {ConfigValue{get_average(values)}, true};
+                    } else {
+                        PANIC("Average is only possible on doubles and percentages: " + first_item.def().name);
+                        return {ConfigValue{0}, false};
+                    }
+                } break;
+                case CompatibilityRule::Min: {
+                    return {ConfigValue{get_min(values)}, true};
+                } break;
+                case CompatibilityRule::Max: {
+                    return {ConfigValue{get_max(values)}, true};
+                } break;
+                case CompatibilityRule::IgnoreOverrides: {
+                    PANIC("Ignore overrides should be handled before this");
+                    return {ConfigValue{0}, false};
+                } break;
+                }
+            } else {
+                PANIC("Invalid compatibility rule - only possible is Ignore overrides: " + first_item.def().name);
+                return {ConfigValue{0}, false};
+            }
+            PANIC("Unreachble");
+            return {ConfigValue{0}, false};
+        }
+    );
+}
+
+void SquashedConfig::add(
+    const BoxRefs& boxes,
+    const std::vector<unsigned>& extruder_candidates,
+    const ConfigLocationSizes& location_sizes
+)
 {
     ASSERT(!boxes.empty());
 
@@ -421,40 +653,89 @@ void SquashedConfig::add(const BoxRefs& boxes, const ConfigLocationSizes& locati
     ASSERT(location_size_it != location_sizes.end(), "Location size must be provided!");
     ASSERT(location_size_it->second == boxes.size());
 
-    iterate_together(begins, ends, [&](const std::vector<ConfigItem>& items){
-        m_values.insert({items.front().def().name, extract_values(items)});
-    });
+    iterate_together(
+        begins,
+        ends,
+        [&](const std::vector<ConfigItem>& items)
+        {
+            if (items.front().def().require_compatibility_rule) {
+                const CompatibilityRule compatibility_rule{
+                    get_compatibility_rules().at(items.front().name())
+                };
+                ASSERT(compatibility_rule != CompatibilityRule::IgnoreOverrides);
+
+                std::vector<const ConfigItem*> item_pointers;
+                std::ranges::transform(
+                    items,
+                    std::back_inserter(item_pointers),
+                    [](const ConfigItem& item) { return &item; }
+                );
+
+                const auto [config_value, _]{
+                    apply_compatibility_rule(nullptr, item_pointers, extruder_candidates)
+                };
+
+                m_values.insert({items.front().def().name, config_value});
+            } else {
+                m_values.insert({items.front().def().name, extract_values(items)});
+            }
+        }
+    );
+
+    using ConfigItemPointers = std::vector<const ConfigItem*>;
+    std::map<std::string, ConfigItemPointers> to_apply_compatibility_rule;
 
     for (std::size_t i{}; i < boxes.size(); ++i) {
         const ConfigOverrides& overrides{boxes[i].get().overrides};
         for (const auto& item : overrides.overriden_items()) {
             const std::string& key{item.get().def().name};
-            item.get().visit([&](auto&& value){
-                using ValueType = std::remove_cvref_t<decltype(value)>;
-                if constexpr (std::is_same_v<ValueType, EnumWrapper>) {
-                    auto enum_vector_wrapper{m_values.at(key).get<EnumVectorWrapper>()};
-                    std::vector<int> enum_values{enum_vector_wrapper.values()};
-                    ASSERT(i < enum_values.size());
-                    enum_values[i] = value.value();
-                    const EnumVectorWrapper new_enum_vector_wrapper{
-                        enum_values,
-                        enum_vector_wrapper.type(),
-                        enum_vector_wrapper.def()
-                    };
-                    m_values.at(key).set(new_enum_vector_wrapper);
-                } else if constexpr (
-                    std::is_same_v<ValueType, EnumVectorWrapper>
-                    || is_std_vector_v<ValueType>
-                ) {
-                    PANIC("Vector of vectors is not supported!");
-                } else {
-                    auto values{m_values.at(key).get<std::vector<ValueType>>()};
-                    ASSERT(i < values.size());
-                    values[i] = value;
-                    m_values.at(key).set(values);
+
+            const bool is_vector{m_values.at(key).visit([](const auto& value) {
+                using Type = std::remove_cvref_t<decltype(value)>;
+                return Domain::is_std_vector_v<Type> || std::is_same_v<Type, EnumVectorWrapper>;
+            })};
+
+            if (is_vector) {
+                item.get().visit([&](auto&& value){
+                    using ValueType = std::remove_cvref_t<decltype(value)>;
+                    if constexpr (std::is_same_v<ValueType, EnumWrapper>) {
+                        auto enum_vector_wrapper{m_values.at(key).get<EnumVectorWrapper>()};
+                        std::vector<int> enum_values{enum_vector_wrapper.values()};
+                        ASSERT(i < enum_values.size());
+                        enum_values[i] = value.value();
+                        const EnumVectorWrapper new_enum_vector_wrapper{
+                            enum_values,
+                            enum_vector_wrapper.type(),
+                            enum_vector_wrapper.def()
+                        };
+                        m_values.at(key).set(new_enum_vector_wrapper);
+                    } else if constexpr (
+                        std::is_same_v<ValueType, EnumVectorWrapper>
+                        || is_std_vector_v<ValueType>
+                    ) {
+                        PANIC("Vector of vectors is not supported!");
+                    } else {
+                        auto values{m_values.at(key).get<std::vector<ValueType>>()};
+                        ASSERT(i < values.size());
+                        values[i] = value;
+                        m_values.at(key).set(values);
+                    }
+                });
+            } else {
+                ASSERT(item.get().def().require_compatibility_rule);
+                const auto it{to_apply_compatibility_rule.find(key)};
+                if (it == to_apply_compatibility_rule.end()) {
+                    to_apply_compatibility_rule[key] = ConfigItemPointers(boxes.size());
                 }
-            });
+                to_apply_compatibility_rule.at(key)[i] = &item.get();
+            }
         }
+    }
+
+    for (const auto& [key, values] : to_apply_compatibility_rule) {
+        m_values.at(key).set(
+            apply_compatibility_rule(&m_values.at(key), values, extruder_candidates).first
+        );
     }
 }
 
@@ -462,10 +743,18 @@ const std::vector<std::string>& FullConfig::keys() const {
     return m_keys;
 }
 
-FullConfig::FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes): SquashedConfig{input, location_sizes} {
-    std::ranges::transform(m_values, std::back_inserter(m_keys), [](const auto& pair) {
-        return pair.first;
-    });
+FullConfig::FullConfig(
+    const BoxOrBoxesVector& input,
+    const std::vector<unsigned>& extruder_candidates,
+    const ConfigLocationSizes& location_sizes
+) :
+    SquashedConfig{input, extruder_candidates, location_sizes}
+{
+    std::ranges::transform(
+        m_values,
+        std::back_inserter(m_keys),
+        [](const auto& pair) { return pair.first; }
+    );
 }
 
 const ConfigValue& FullConfig::get_value(const std::string& key) const {
@@ -474,8 +763,11 @@ const ConfigValue& FullConfig::get_value(const std::string& key) const {
     return it->second;
 }
 
-PartialConfig::PartialConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes)
-    : SquashedConfig{input, location_sizes}
+PartialConfig::PartialConfig(
+    const BoxOrBoxesVector& input,
+    const ConfigLocationSizes& location_sizes
+) :
+    SquashedConfig{input, {}, location_sizes}
 {}
 
 std::optional<ConfigValue> PartialConfig::get_value(const std::string& key) const {

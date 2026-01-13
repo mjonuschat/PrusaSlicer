@@ -200,9 +200,9 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                         params.mode = MeshSlicingParams::SlicingMode::PositiveLargestContour;
                         // Slice the bottom layers with SlicingMode::Regular.
                         // This needs to be in sync with LayerRegion::make_perimeters() spiral_vase!
-                        const PrintRegionConfigView &region_config = it->region->config();
-                        params.slicing_mode_normal_below_layer = size_t(region_config.get<int>("bottom_solid_layers"));
-                        for (; params.slicing_mode_normal_below_layer < zs.size() && zs[params.slicing_mode_normal_below_layer] < region_config.get<double>("bottom_solid_min_thickness") - EPSILON;
+                        const PrintRegion &region = *it->region;
+                        params.slicing_mode_normal_below_layer = size_t(region.extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill));
+                        for (; params.slicing_mode_normal_below_layer < zs.size() && zs[params.slicing_mode_normal_below_layer] < region.extruder_config_value<double>("bottom_solid_min_thickness", FlowRole::frSolidInfill) - EPSILON;
                             ++ params.slicing_mode_normal_below_layer);
                     }
                     out.push_back({

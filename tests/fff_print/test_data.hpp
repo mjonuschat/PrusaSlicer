@@ -53,12 +53,12 @@ struct TestConfig : public Domain::ConfigPackFDM
     using ConfigPackFDM::ConfigPackFDM;
 
     Biz::Parser::IO::Config get_parser_config() const {
-        Domain::FullConfigFDMPtr config{*ASSERT_VAL(prepare_slicing_input(*this))};
+        Domain::FullConfigFDMPtr config{*ASSERT_VAL(prepare_slicing_input(*this, {}))};
         return Biz::Parser::IO::get_parser_config(*config);
     };
-    Domain::FullConfigFDM get_full_config() const { return **ASSERT_VAL(prepare_slicing_input(*this)); };
+    Domain::FullConfigFDM get_full_config() const { return **ASSERT_VAL(prepare_slicing_input(*this, {})); };
     PrintConfigView get_view() const {
-        return PrintConfigView{*ASSERT_VAL(prepare_slicing_input(*this))};
+        return PrintConfigView{*ASSERT_VAL(prepare_slicing_input(*this, {}))};
     };
 };
 

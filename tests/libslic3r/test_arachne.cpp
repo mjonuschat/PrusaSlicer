@@ -39,7 +39,7 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 namespace {
 PrintRegionConfigView get_region_config_view(const ObjectSettings& object_settings)
 {
-    const auto full_config{*prepare_slicing_input(Domain::ConfigPackFDM{})};
+    const auto full_config{*prepare_slicing_input(Domain::ConfigPackFDM{}, {})};
 
     return {
         full_config,

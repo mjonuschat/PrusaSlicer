@@ -40,7 +40,9 @@ std::unique_ptr<IPrint> init_print(
             callbacks_ref.get().on_fdm_result(std::move(result), id); };
         Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](OptWipeTowerGeometry&& geometry) {
             callbacks_ref.get().on_wipe_tower_geometry(std::move(geometry), id); };
-        print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
+        Print::OnExtruderCandidates on_extruder_candidates = [callbacks_ref, id](std::vector<unsigned> extruder_candidates) {
+            callbacks_ref.get().on_extruder_candidates(std::move(extruder_candidates), id); };
+        print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry, on_extruder_candidates);
         break;
     }
     case Domain::PrinterTechnology::SLA: {
@@ -159,15 +161,23 @@ void BackgroundProcess::update(
     ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
     std::optional<ApplyStatus::Status> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
+        StatusUpdate status_update;
+        status_update.clear_progress = true;
+        status_update.clear_warnings = true;
+        status_update.clear_errors = true;
+
+        // Status is not set, this means that update threw an exception and we are failing.
+        if (!apply_status) {
+            status_update.code = StatusCode::InvalidData;
+            status_update.errors_to_append = {Error()};
+            return;
+        }
+
         const bool invalid_data{std::holds_alternative<ApplyStatus::InvalidData>(*apply_status)};
         const bool unchanged{std::holds_alternative<ApplyStatus::Unchanged>(*apply_status)};
         const bool changed{std::holds_alternative<ApplyStatus::Changed>(*apply_status)};
         const bool empty{std::holds_alternative<ApplyStatus::Empty>(*apply_status)};
 
-        StatusUpdate status_update;
-        status_update.clear_progress = true;
-        status_update.clear_warnings = true;
-        status_update.clear_errors = true;
         if (invalid_data) {
             const auto& invalid_data_status{std::get<ApplyStatus::InvalidData>(*apply_status)};
             status_update.code = StatusCode::InvalidData;

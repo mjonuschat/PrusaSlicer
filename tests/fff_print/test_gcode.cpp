@@ -48,8 +48,8 @@ TEST_CASE("Origin manipulation", "[GCode]") {
 TEST_CASE("Wiping speeds", "[GCode]") {
 
     TestConfig config;
-    config.tool.at(0).items.opt("wipe").set(true);
-    config.tool.at(0).items.opt("retract_layer_change").set(false);
+    config.print.items.opt("wipe").set(true);
+    config.print.items.opt("retract_layer_change").set(false);
 
     bool have_wipe = false;
     std::vector<double> retract_speeds;
@@ -72,7 +72,7 @@ TEST_CASE("Wiping speeds", "[GCode]") {
         }
     });
     CHECK(have_wipe);
-    double expected_retract_speed = config.tool.at(0).items.opt("retract_speed").get<double>() * 60;
+    double expected_retract_speed = config.print.items.opt("retract_speed").get<double>() * 60;
     for (const double retract_speed : retract_speeds) {
         INFO("Wipe moves don\'t retract faster than configured speed");
         CHECK(retract_speed < expected_retract_speed);
@@ -103,11 +103,11 @@ TEST_CASE("Z moves with offset", "[GCode]") {
     INFO("No lift");
     CHECK(!has_moves_below_z_offset(config));
 
-    config.tool.at(0).items.opt("retract_lift").set(3.0);
+    config.print.items.opt("retract_lift").set(3.0);
     INFO("Lift < z offset");
     CHECK(!has_moves_below_z_offset(config));
 
-    config.tool.at(0).items.opt("retract_lift").set(6.0);
+    config.print.items.opt("retract_lift").set(6.0);
     INFO("Lift > z offset");
     CHECK(!has_moves_below_z_offset(config));
 }
@@ -138,7 +138,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
     config.filament.at(0).items.opt("temperature").set(200);
     config.filament.at(0).items.opt("first_layer_temperature").set(210);
-    config.tool.at(0).items.opt("retract_length").set(0.0);
+    config.print.items.opt("retract_length").set(0.0);
 
     std::vector<double> z_moves;
     Points travel_moves;
@@ -214,7 +214,7 @@ std::optional<float> parse_option_from_gcode(
 
 TEST_CASE("Used filament", "[GCode]") {
     TestConfig config1;
-    config1.tool.at(0).items.opt("retract_length").set(0.0);
+    config1.print.items.opt("retract_length").set(0.0);
     config1.printer.items.opt("use_relative_e_distances").set(true);
     config1.printer.items.opt("layer_gcode").set("G92 E0\n");
     Print print1;
@@ -223,7 +223,7 @@ TEST_CASE("Used filament", "[GCode]") {
     std::string gcode1{Test::gcode(print1)};
 
     TestConfig config2;
-    config2.tool.at(0).items.opt("retract_length").set(999.0);
+    config2.print.items.opt("retract_length").set(999.0);
     config2.printer.items.opt("use_relative_e_distances").set(true);
     config2.printer.items.opt("layer_gcode").set("G92 E0\n");
     Print print2;
@@ -325,7 +325,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
 TEST_CASE("M201 for acceleation reset", "[GCode]") {
     TestConfig config;
     config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfRepetier);
-    config.tool.at(0).items.opt("default_acceleration").set(1337.0);
+    config.print.items.opt("default_acceleration").set(1337.0);
 
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_with_hole}, config);

@@ -166,7 +166,7 @@ struct TestFullConfig : public FullConfig
     TestFullConfig(
         const TestPrintSettings& test_box, const std::vector<TestFilamentSettings>& boxes_with_overrides
     )
-        : FullConfig{get_input(test_box, boxes_with_overrides), location_sizes}
+        : FullConfig{get_input(test_box, boxes_with_overrides), {}, location_sizes}
     {}
 };
 

@@ -56,6 +56,11 @@ struct IWipeTowerGeometryListener : ISlicingListener
     virtual void on_wipe_tower_geometry_changed(Print::OptWipeTowerGeometry, const Domain::SlicingId) = 0;
 };
 
+struct IExtruderCandidatesListener : ISlicingListener
+{
+    virtual void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) = 0;
+};
+
 struct UpdateRequest
 {
     std::reference_wrapper<Domain::Model> model;
@@ -74,7 +79,7 @@ struct FatalSlicingError : public std::runtime_error {
 class SlicingInteractor :
     public ISelectedProjectChangedListener,
     public IProcessCallbacks,
-    public WithListeners<IStatusListener, IWipeTowerGeometryListener>,
+    public WithListeners<IStatusListener, IWipeTowerGeometryListener, IExtruderCandidatesListener>,
     public WithListener<IFDMResultListener, ISLAResultListener, ISLAObjectListener>
 {
 public:
@@ -114,6 +119,7 @@ public:
     void on_status(const StatusUpdate, Domain::SlicingId) override;
     void on_exception(std::exception_ptr exception, Domain::SlicingId) override;
     void on_wipe_tower_geometry(Print::OptWipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
+    void on_extruder_candidates(std::vector<unsigned>&& extruder_candidates, const Domain::SlicingId id) override;
     StatusCode get_status(const Domain::SlicingId id) const override;
 
 private:

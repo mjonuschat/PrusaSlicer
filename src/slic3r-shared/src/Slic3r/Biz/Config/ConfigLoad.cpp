@@ -238,7 +238,7 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
     if (!is_object(tool_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidFDMToolSettings};
     }
-    const auto tool_load_result{load_boxes<ToolPrintSettings>(json[tool_location_name])};
+    auto tool_load_result{load_boxes<ToolPrintSettings>(json[tool_location_name])};
     if (tool_load_result.settings.empty()) {
         return tl::unexpected{GlobalParsingIssue::InvalidFDMToolSettings};
     }
@@ -259,7 +259,15 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
         return tl::unexpected{GlobalParsingIssue::InvalidFDMFilamentSettings};
     }
     if (filament_load_result.settings.size() != tool_load_result.settings.size()) {
-        return tl::unexpected{GlobalParsingIssue::FilamentsAndToolsCountIsNotEqual};
+        // In case of empty (no) tool settings, we can just expand those to all filaments.
+        if (tool_load_result.settings.size() == 1
+            && tool_load_result.settings.front().items.all_items().empty()
+            && tool_load_result.settings.front().overrides.overriden_items().empty())
+        {
+            tool_load_result.settings.resize(filament_load_result.settings.size());
+        } else {
+            return tl::unexpected{GlobalParsingIssue::FilamentsAndToolsCountIsNotEqual};
+        }
     }
 
     const std::string project_location_name{get_location_name(FDMConfigLocation::Project)};

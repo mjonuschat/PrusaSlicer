@@ -14,6 +14,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
     switch (code) {
     case ErrorCode::None:
         return _u8L("No error.");
+    case ErrorCode::FatalError:
+        return _u8L("Fatal slicing error, if you see this, please restart the application!");
     case ErrorCode::NoExtruders:
         return _u8L("The supplied settings will cause an empty print.");
     case ErrorCode::InvalidExtruders:

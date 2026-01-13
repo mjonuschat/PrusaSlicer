@@ -312,6 +312,24 @@ void SlicingInteractor::on_wipe_tower_geometry(
     }
 }
 
+void SlicingInteractor::on_extruder_candidates(
+    std::vector<unsigned>&& extruder_candidates,
+    const Domain::SlicingId id
+)
+{
+    SPDLOG_TRACE("{}: extruder_candidates", fmt::streamed(id));
+    if (!m_dispatcher.dispatch_on_main_thread(
+            [this, id, candidates = std::move(extruder_candidates)]() mutable {
+        invoke_listeners<IExtruderCandidatesListener>([&](auto* listener) {
+            listener->on_extruder_candidates_changed(candidates, id);
+        });
+    }
+        ))
+    {
+        SPDLOG_TRACE("{}: extruder_candidates not dispatched", fmt::streamed(id));
+    }
+}
+
 void SlicingInteractor::process_slicing_queue()
 {
     process_update_requests();

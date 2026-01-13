@@ -42,13 +42,14 @@ get_painting_extruders(const Domain::ModelObject& model_object, const unsigned i
 
 static std::set<unsigned> get_extra_support_extruders(
     const Domain::ObjectSettings& object_settings,
-    const std::vector<Domain::ToolPrintSettings>& tool_settings
+    const Domain::PrintSettings& print_settings
 ) {
-    const auto support_material{tool_settings.front().items.opt("support_material").get<bool>()};
+    const auto support_material{print_settings.items.opt("support_material").get<bool>()};
+    const bool raft{print_settings.items.opt("raft_layers").get<int>() > 0};
 
     std::optional<Domain::ConfigItem> object_support_material_opt{object_settings.overrides.get("support_material")};
     const bool object_support_material{object_support_material_opt && (*object_support_material_opt).get<bool>()};
-    if (!support_material && !object_support_material) {
+    if (!support_material && !object_support_material && !raft) {
         return {};
     }
 
@@ -67,9 +68,9 @@ static std::set<unsigned> get_extra_support_extruders(
                 continue;
             }
         }
-        const int tool_supports_extruder{tool_settings.front().items.opt(key).get<int>()};
-        if (tool_supports_extruder > 0) {
-            result.insert(static_cast<unsigned>(tool_supports_extruder - 1));
+        const int print_supports_extruder{print_settings.items.opt(key).get<int>()};
+        if (print_supports_extruder > 0) {
+            result.insert(static_cast<unsigned>(print_supports_extruder - 1));
         }
     }
     return result;
@@ -161,7 +162,7 @@ get_extruder_candidates(const Domain::Model& model, const Domain::ConfigPackFDM&
         }
 
         std::set<unsigned> support_extruders{
-            get_extra_support_extruders(object_settings, config.tool)
+            get_extra_support_extruders(object_settings, config.print)
         };
         extruders.merge(support_extruders);
     }

@@ -137,6 +137,11 @@ public:
     virtual void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
     virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
     virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) {};
+    virtual void on_bed_instance_extruder_candidates_changed(
+        Domain::SelectionId project_id,
+        Domain::BedRef instance,
+        const std::vector<unsigned>& extruder_candidates
+    ) {};
 };
 
 struct TransformMemento;
@@ -146,6 +151,7 @@ class SceneInteractor final :
     public ISelectedConfigContainerChangedListener,
     public Preset::IPresetChangedListener,
     public Slicing::IWipeTowerGeometryListener,
+    public Slicing::IExtruderCandidatesListener,
     public WithListeners<
         ISceneSelectionChangedListener,
         ISceneChangedListener,
@@ -341,6 +347,12 @@ public:
     );
 
     bool current_project_has_wipe_tower(std::size_t bed_instance_id) const;
+
+    void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
+    const std::vector<unsigned> get_extruder_candidates(
+        Domain::SelectionId project_id,
+        Domain::SelectionId bed_instance_id
+    ) const;
 
 private:
     void layout_after_project_load(Domain::Project& added_project);

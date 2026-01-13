@@ -89,12 +89,14 @@ public:
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_slicing_interactor.add_listener<Slicing::IWipeTowerGeometryListener>(&m_scene_interactor);
+        m_slicing_interactor.add_listener<Slicing::IExtruderCandidatesListener>(&m_scene_interactor);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
         m_file_downloader_interactor.add_listener<FileDownloader::IFileDownloaderListener>(this);
         m_scene_interactor.add_listener<Scene::ISceneSelectionChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );
+        m_scene_interactor.add_listener<Scene::ISceneBedInstanceChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );

@@ -132,6 +132,10 @@ struct ConfigItemDef
 
     bool require_tool_parity = false; // Requires number of elements to be same as number of tools
 
+    // The backend expects a single option, but it can be specified multiple times on the frontend.
+    // Hence a compatibility rule needs to be specified to obtain a single value from multiple.
+    bool require_compatibility_rule = false;
+
     static constexpr const char* nocli = "~~nocli";
 
     // ARE THE FOLLOWING EVER USED?

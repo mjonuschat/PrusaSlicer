@@ -22,7 +22,7 @@ ConfigLocationSizes get_sla_location_sizes() {
 }
 
 FullConfigSLA::FullConfigSLA(const ConfigPackSLA& config_pack)
-    : FullConfig{as_boxes(config_pack), get_sla_location_sizes()}
+    : FullConfig{as_boxes(config_pack), {}, get_sla_location_sizes()}
 {}
 
 PartialObjectConfigSLA::PartialObjectConfigSLA(

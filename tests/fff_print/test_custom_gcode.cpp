@@ -48,10 +48,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     };
 
     Test::TestConfig config{4};
-    for (auto& tool_settings : config.tool) {
-        tool_settings.items.opt("nozzle_diameter").set(0.6);
-    }
-
+    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("infill_extruder").set(2);
     config.print.items.opt("perimeter_extruder").set(2);
     config.filament[0].items.opt("first_layer_temperature").set(200);
@@ -125,7 +122,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         TestConfig config;
         config.printer.items.opt("before_layer_gcode").set(";BEFORE [layer_num]" );
         config.printer.items.opt("layer_gcode").set(";CHANGE [layer_num]" );
-        config.tool.at(0).items.opt("support_material").set(true);
+        config.print.items.opt("support_material").set(true);
         config.print.items.opt("layer_height").set(0.2);
         WHEN("before and after layer change G-codes set") {
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config);
@@ -159,10 +156,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     {
 
         Test::TestConfig config{5};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.6);
-        }
-
+        config.print.items.opt("nozzle_diameter").set(0.6);
         config.printer.items.opt("start_gcode").set(
                 ";substitution:{if infill_extruder==1}if block"
                 "{elsif infill_extruder==2}elsif block 1"
@@ -196,9 +190,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     }
     GIVEN("nested if / if / else / endif") {
         Test::TestConfig config{5};
-        for (auto& tool_settings : config.tool) {
-            tool_settings.items.opt("nozzle_diameter").set(0.6);
-        }
+        config.print.items.opt("nozzle_diameter").set(0.6);
 
         config.printer.items.opt("start_gcode").set(
             ";substitution:{if infill_extruder==1}{if perimeter_extruder==1}block11{else}block12{endif}"

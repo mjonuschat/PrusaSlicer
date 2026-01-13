@@ -13,8 +13,8 @@
 #include <string>
 #include <cassert>
 
+#include "Slic3r/Domain/Percentage.hpp"
 #include "Slic3r/Exception.hpp"
-#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Types.hpp"
 

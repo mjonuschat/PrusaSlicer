@@ -65,12 +65,12 @@ Flow LayerRegion::bridging_flow(FlowRole role, bool force_thick_bridges) const
         // The old Slic3r way (different from all other slicers): Use rounded extrusions.
         // Get the configured nozzle_diameter for the extruder associated to the flow role requested.
         // Here this->extruder(role) - 1 may underflow to MAX_INT, but then the get_at() will follback to zero'th element, so everything is all right.
-        auto nozzle_diameter = float(print_object.print()->config().get<std::vector<double>>("nozzle_diameter").at(region.extruder(role) - 1));
+        auto nozzle_diameter = float(region.extruder_config_value<double>("nozzle_diameter", role));
         // Applies default bridge spacing.
-        return Flow::bridging_flow(float(sqrt(region_config.get<double>("bridge_flow_ratio"))) * nozzle_diameter, nozzle_diameter);
+        return Flow::bridging_flow(float(sqrt(region.extruder_config_value<double>("bridge_flow_ratio", role))) * nozzle_diameter, nozzle_diameter);
     } else {
         // The same way as other slicers: Use normal extrusions. Apply bridge_flow_ratio while maintaining the original spacing.
-        return this->flow(role).with_flow_ratio(region_config.get<double>("bridge_flow_ratio"));
+        return this->flow(role).with_flow_ratio(region.extruder_config_value<double>("bridge_flow_ratio", role));
     }
 }
 
@@ -113,12 +113,13 @@ void LayerRegion::make_perimeters(
     fill_expolygons_ranges.reserve(fill_expolygons_ranges.size() + slices.size());
 
     const PrintConfigView &print_config  = this->layer()->object()->print()->config();
+    const PrintRegion &region = this->region();
     const PrintRegionConfigView &region_config = this->region().config();
     // This needs to be in sync with PrintObject::_slice() slicing_mode_normal_below_layer!
     bool spiral_vase = print_config.get<bool>("spiral_vase") &&
         //FIXME account for raft layers.
-        (this->layer()->id() >= size_t(region_config.get<int>("bottom_solid_layers")) &&
-         this->layer()->print_z >= region_config.get<double>("bottom_solid_min_thickness") - EPSILON);
+        (this->layer()->id() >= size_t(region.extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill)) &&
+         this->layer()->print_z >= region.extruder_config_value<double>("bottom_solid_min_thickness", FlowRole::frSolidInfill) - EPSILON);
 
     PerimeterGenerator::Parameters params(
         this->layer()->height,
@@ -473,7 +474,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
     // Width of the perimeters.
     float shell_width = 0;
     float expansion_min = 0;
-    if (int num_perimeters = this->region().config().get<int>("perimeters"); num_perimeters > 0) {
+    if (int num_perimeters = this->region().extruder_config_value<int>("perimeters", FlowRole::frPerimeter); num_perimeters > 0) {
         Flow external_perimeter_flow = this->flow(frExternalPerimeter);
         Flow perimeter_flow          = this->flow(frPerimeter);
         shell_width  = 0.5f * external_perimeter_flow.scaled_width() + external_perimeter_flow.scaled_spacing();
@@ -880,19 +881,19 @@ void LayerRegion::prepare_fill_surfaces()
     // if no solid layers are requested, turn top/bottom surfaces to internal
     // For Lightning infill, infill_only_where_needed is ignored because both
     // do a similar thing, and their combination doesn't make much sense.
-    if (! spiral_vase && this->region().config().get<int>("top_solid_layers") == 0) {
+    if (! spiral_vase && this->region().extruder_config_value<int>("top_solid_layers", FlowRole::frTopSolidInfill) == 0) {
         for (Surface &surface : m_fill_surfaces)
             if (surface.is_top())
                 surface.surface_type = /*this->layer()->object()->config().infill_only_where_needed && this->region().config().fill_pattern != ipLightning ? stInternalVoid :*/ stInternal;
     }
-    if (this->region().config().get<int>("bottom_solid_layers") == 0) {
+    if (this->region().extruder_config_value<int>("bottom_solid_layers", FlowRole::frSolidInfill) == 0) {
         for (Surface &surface : m_fill_surfaces)
             if (surface.is_bottom()) // (surface.surface_type == stBottom)
                 surface.surface_type = stInternal;
     }
 
     // turn too small internal regions into solid regions according to the user setting
-    if (! spiral_vase && this->region().config().get<Domain::Percentage>("fill_density") > Domain::Percentage{0}) {
+    if (! spiral_vase && this->region().extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill) > Domain::Percentage{0}) {
         // scaling an area requires two calls!
         double min_area = scale_(scale_(this->region().config().get<double>("solid_infill_below_area")));
         for (Surface &surface : m_fill_surfaces)
