@@ -169,8 +169,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Format/SL1.hpp
     src/libslic3r/Format/SL1_SVG.cpp
     src/libslic3r/Format/SL1_SVG.hpp
-    src/libslic3r/Format/STEP.cpp
-    src/libslic3r/Format/STEP.hpp
     src/libslic3r/Format/SVG.cpp
     src/libslic3r/Format/SVG.hpp
     src/libslic3r/GCode.cpp

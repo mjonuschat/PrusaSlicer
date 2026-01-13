@@ -880,6 +880,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Format/OBJ.hpp
         src/Slic3r/Biz/Format/objparser.cpp
         src/Slic3r/Biz/Format/objparser.hpp
+        include/Slic3r/Biz/Format/STEP.hpp
+        src/Slic3r/Biz/Format/STEP.cpp
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
