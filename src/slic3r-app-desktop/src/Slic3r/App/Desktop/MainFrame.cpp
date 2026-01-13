@@ -363,11 +363,9 @@ void MainFrame::update_accel_table()
             continue;
         }
 
-        wxWindow* parent{nullptr};
         int entry_id = wxNewId();
-        if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(
-                WX::from_u8("\t" + cmd->keyboard_shortcut_accel_string())
-            ))
+        if (auto entry{ std::unique_ptr<wxAcceleratorEntry>{wxAcceleratorEntry::Create(
+                WX::from_u8("\t" + cmd->keyboard_shortcut_accel_string()))} })
         {
             entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry_id);
 
