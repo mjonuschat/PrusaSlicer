@@ -1318,7 +1318,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
                 assert(final_extruder_id != (unsigned int)-1);
             }
             print.throw_if_canceled();
-            this->set_origin(unscale((*print_object_instance_sequential_active)->shift));
+            this->set_origin(unscale((*print_object_instance_sequential_active)->shift()));
             if (finished_objects > 0) {
                 // Move to the origin position for the copy we're going to print.
                 // This happens before Z goes down to layer 0 again, so that no collision happens hopefully.
@@ -2683,7 +2683,7 @@ LayerResult GCodeGenerator::process_layer(
         const InstanceToPrint instance_to_print{instances_to_print.front()};
         this->m_avoid_crossing_perimeters.init_layer(
             *layers[instance_to_print.object_layer_to_print_id].layer());
-        this->set_origin(unscale(first_instance->shift));
+        this->set_origin(unscale(first_instance->shift()));
 
         const GCode::PrintObjectInstance next_instance{
             &instances_to_print.front().print_object,
@@ -2747,8 +2747,8 @@ LayerResult GCodeGenerator::process_layer(
             if (layer_to_print.object() == nullptr)
                 continue;
             for (const auto &instance : layer_to_print.object()->instances()) {
-                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.object_layer, instance.shift);
-                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.support_layer, instance.shift);
+                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.object_layer, instance.shift());
+                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.support_layer, instance.shift());
             }
         }
     }
@@ -2798,7 +2798,7 @@ LayerResult GCodeGenerator::process_layer(
         }
 
         if (!this->m_moved_to_first_layer_point) {
-            const Point shift{first_instance->shift};
+            const Point shift{first_instance->shift()};
             this->set_origin(unscale(shift));
 
             const GCode::PrintObjectInstance next_instance{
@@ -2922,7 +2922,7 @@ void GCodeGenerator::initialize_instance(
     const Print       &print        = *print_object.print();
 
     m_layer = layer_to_print.layer();
-    const Point &offset = print_object.instances()[print_instance.instance_id].shift;
+    const Point offset = print_object.instances()[print_instance.instance_id].shift();
     GCode::PrintObjectInstance next_instance = {&print_object, int(print_instance.instance_id)};
 
     if (print.config().get<bool>("avoid_crossing_perimeters") && !is_first) {

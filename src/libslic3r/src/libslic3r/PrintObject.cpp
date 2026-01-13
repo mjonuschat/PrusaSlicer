@@ -141,7 +141,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
 	}
 
     // Center of the transformed mesh (without translation).
-    m_center_offset = scaled(Vec2d(bbox_center.x(), bbox_center.y()));
+    m_center_offset_unscaled = Vec2d(bbox_center.x(), bbox_center.y());
     // Size of the transformed mesh. This bounding may not be snug in XY plane, but it is snug in Z.
     m_size = (BB::sizes(bbox) * (1. / SCALING_FACTOR)).cast<coord_t>();
     m_size.z() = coord_t(model_object->max_z() * (1. / SCALING_FACTOR));
@@ -153,13 +153,15 @@ SlicingSync::PrintSteps PrintObject::set_instances(PrintInstances &&instances)
 {
     using SlicingSync::PrintSteps;
 
-    for (PrintInstance &i : instances)
-    	// Add the center offset, which will be subtracted from the mesh when slicing.
-    	i.shift += m_center_offset;
+    for (PrintInstance& i : instances) {
+        // Add the center offset, which will be subtracted from the mesh when slicing.
+        i.m_shift += Algorithms::Scaling::scaled<int64_t>(m_center_offset_unscaled);
+    }
+
     // Invalidate and set copies.
     bool equal_length = instances.size() == m_instances.size();
     bool equal = equal_length && std::equal(instances.begin(), instances.end(), m_instances.begin(), 
-    	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift == rhs.shift; });
+    	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift() == rhs.shift(); });
 
     PrintSteps steps{};
     if (!equal) {

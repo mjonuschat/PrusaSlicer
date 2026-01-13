@@ -1156,7 +1156,7 @@ static Polygons get_boundary_external(const Layer &layer)
             size_t boundary_idx = boundary.size();
             append(boundary, holes_per_obj);
             for (; boundary_idx < boundary.size(); ++boundary_idx)
-                boundary[boundary_idx].translate(instance.shift);
+                boundary[boundary_idx].translate(instance.shift());
 #ifdef INCLUDE_SUPPORTS_IN_BOUNDARY
             size_t support_idx = supports_boundary.size();
             append(supports_boundary, supports_per_obj);

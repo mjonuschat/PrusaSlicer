@@ -54,14 +54,14 @@ static void append_and_translate(ExPolygons &dst, const ExPolygons &src, const P
     size_t dst_idx = dst.size();
     Slic3r::append(dst, src);
     for (; dst_idx < dst.size(); ++dst_idx)
-        dst[dst_idx].translate(instance.shift.x(), instance.shift.y());
+        dst[dst_idx].translate(instance.shift().x(), instance.shift().y());
 }
 
 static void append_and_translate(Polygons &dst, const Polygons &src, const PrintInstance &instance) {
     size_t dst_idx = dst.size();
     Slic3r::append(dst, src);
     for (; dst_idx < dst.size(); ++dst_idx)
-        dst[dst_idx].translate(instance.shift.x(), instance.shift.y());
+        dst[dst_idx].translate(instance.shift().x(), instance.shift().y());
 }
 
 static float max_brim_width(const SpanOfConstPtrs<PrintObject> &objects)
@@ -109,7 +109,7 @@ static ConstPrintObjectPtrs get_top_level_objects_with_brim(const Print &print, 
         for (const PrintInstance &instance : object->instances())
             for (Polygon &poly : islands_object) {
                 islands.emplace_back(poly);
-                islands.back().translate(instance.shift);
+                islands.back().translate(instance.shift());
                 island_to_object.emplace_back(object);
             }
     }

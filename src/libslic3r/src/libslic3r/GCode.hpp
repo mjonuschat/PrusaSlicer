@@ -54,7 +54,7 @@ namespace Slic3r {
 class GCodeGenerator;
 struct WipeTowerData;
 
-struct PrintInstance;
+class PrintInstance;
 
 class OozePrevention {
 public:

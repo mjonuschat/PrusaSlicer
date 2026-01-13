@@ -10,7 +10,7 @@
 
 namespace Slic3r {
 
-struct PrintInstance;
+class PrintInstance;
 class Print;
 class GCodeWriter;
 

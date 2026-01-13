@@ -59,7 +59,7 @@ ClipperLib::PolyNodes				 chain_clipper_polynodes(const Points &points, const Cl
 // Chain instances of print objects by an approximate shortest path.
 // Returns pairs of PrintObject idx and instance of that PrintObject.
 class Print;
-struct PrintInstance;
+class PrintInstance;
 
 std::vector<const PrintInstance*> 	 chain_print_object_instances(const Print &print);
 

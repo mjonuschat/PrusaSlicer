@@ -432,7 +432,7 @@ std::vector<OverridenExtrusions> get_overriden_extrusions(
             };
 
             const PrintObject &print_object{instance.print_object};
-            const Point &offset{print_object.instances()[instance.instance_id].shift};
+            const Point offset{print_object.instances()[instance.instance_id].shift()};
 
             std::vector<SliceExtrusions> slices_extrusions{get_slices_extrusions(
                 print, *layer, should_pick_extrusion, smooth_path, offset, extruder_id, previous_position
@@ -457,7 +457,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
         const InstanceToPrint &instance{instances_to_print[i]};
         const PrintObject &print_object = instance.print_object;
-        const Point &offset = print_object.instances()[instance.instance_id].shift;
+        const Point offset = print_object.instances()[instance.instance_id].shift();
 
         result.emplace_back();
         result.back().instance_offset = offset;

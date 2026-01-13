@@ -394,7 +394,7 @@ MoveVerticesPerLayer get_perimeters_preview(
                 .extruder_id = extruder_id};
 
             result[scaled(layer.print_z)] = convert_to_vertices(
-                region.perimeters(), layer.print_z, vertex_template, instance.shift
+                region.perimeters(), layer.print_z, vertex_template, instance.shift()
             );
         }
     );
@@ -433,7 +433,7 @@ MoveVerticesPerLayer get_infill_preview(
                 };
 
                 result[scaled(layer.print_z)] =
-                    convert_to_vertices(fill, layer.print_z, vertex_template, instance.shift);
+                    convert_to_vertices(fill, layer.print_z, vertex_template, instance.shift());
             }
         }
     );
@@ -478,7 +478,7 @@ MoveVerticesPerLayer get_supports_preview(
                     .extruder_id = extruder_id};
 
                 result[scaled(layer.print_z)] = convert_to_vertices(
-                    region.perimeters(), layer.print_z, vertex_template, instance.shift
+                    region.perimeters(), layer.print_z, vertex_template, instance.shift()
                 );
             }
         }

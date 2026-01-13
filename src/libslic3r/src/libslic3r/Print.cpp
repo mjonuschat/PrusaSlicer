@@ -80,6 +80,19 @@ using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
 
+PrintInstance::PrintInstance(const Domain::ModelInstance& model_instance, std::size_t model_instance_index, const Domain::Vec2big& shift)
+    : print_object(nullptr)
+    , model_instance(model_instance)
+    , model_instance_index(model_instance_index)
+    , m_shift(shift)
+{}
+
+Domain::Point PrintInstance::shift() const
+{
+    ASSERT(std::in_range<coord_t>(m_shift.x()) && std::in_range<coord_t>(m_shift.y()));
+    return m_shift.cast<coord_t>();
+}
+
 Print::Print()
     : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
     , m_on_wipe_tower_geometry([](Biz::Print::OptWipeTowerGeometry&&) {})
@@ -1335,7 +1348,7 @@ void Print::_make_skirt()
         for (const PrintInstance &instance : object->instances()) {
             Points copy_points = object_points;
             for (Point &pt : copy_points)
-                pt += instance.shift;
+                pt += instance.shift();
             append(points, copy_points);
         }
     }
@@ -1452,7 +1465,7 @@ Polygons Print::first_layer_islands() const
         for (const PrintInstance &instance : object->instances())
             for (Polygon &poly : object_islands) {
                 islands.push_back(poly);
-                islands.back().translate(instance.shift);
+                islands.back().translate(instance.shift());
             }
     }
     return islands;
