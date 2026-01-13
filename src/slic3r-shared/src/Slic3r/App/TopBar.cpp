@@ -489,7 +489,7 @@ void TopBar::register_menu_commands()
                         ),
                         "",
                         Wildcards::generate_wildcards(
-                            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj,
+                            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj | Wildcards::TypeFlag::Step,
                             Wildcards::TypeFlag::AllImportFiles
                         ),
                         callback

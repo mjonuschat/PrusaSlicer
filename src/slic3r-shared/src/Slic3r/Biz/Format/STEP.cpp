@@ -2,9 +2,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#if SLIC3R_ENABLE_FORMAT_STEP
+
 #include "Slic3r/Biz/Format/STEP.hpp"
 #include "OCCTWrapper.hpp"
 
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
@@ -25,9 +28,9 @@
     #include <dlfcn.h>
 #endif
 
-using namespace Slic3r::Biz;
 
-namespace Slic3r {
+
+namespace Slic3r::Biz {
 
 #if __APPLE__
 extern "C" bool load_step_internal(const char *path, OCCTResult* res, std::optional<std::pair<double, double>> deflections /*= std::nullopt*/);
@@ -86,26 +89,32 @@ LoadStepFn get_load_step_fn()
     return load_step_fn;
 }
 
-bool load_step(const char *path, Domain::Model *model /*BBS:, ImportStepProgressFn proFn*/, std::optional<std::pair<double, double>> deflections)
+tl::expected<Domain::Model, std::string> load_step(
+    const std::string& path,
+    std::optional<std::pair<double, double>> deflections)
 {
     OCCTResult occt_object;
 
-    LoadStepFn load_step_fn = get_load_step_fn();
+    LoadStepFn load_step_fn;
+    try {
+        load_step_fn = get_load_step_fn();
+    } catch (Slic3r::RuntimeError& ex) {
+        return tl::make_unexpected(ex.what());
+    }
 
-    if (!load_step_fn)
-        return false;
+    if (! load_step_fn(path.c_str(), &occt_object, deflections)) {
+        return tl::make_unexpected(occt_object.error_str);
+    }
 
-    load_step_fn(path, &occt_object, deflections);
-
-    assert(! occt_object.volumes.empty());
+    ASSERT(! occt_object.volumes.empty());
     
-    assert(boost::algorithm::iends_with(occt_object.object_name, ".stp")
+    ASSERT(boost::algorithm::iends_with(occt_object.object_name, ".stp")
         || boost::algorithm::iends_with(occt_object.object_name, ".step"));
     occt_object.object_name.erase(occt_object.object_name.find("."));
-    assert(! occt_object.object_name.empty());
+    ASSERT(! occt_object.object_name.empty());
 
-
-    Domain::ModelObject* new_object = model->add_object();
+    Domain::Model model;
+    Domain::ModelObject* new_object = model.add_object();
     new_object->input_file = path;
     if (new_object->volumes.size() == 1 && ! occt_object.volumes.front().volume_name.empty())
         new_object->name = new_object->volumes.front()->name;
@@ -121,11 +130,13 @@ bool load_step(const char *path, Domain::Model *model /*BBS:, ImportStepProgress
                        ? std::string("Part") + std::to_string(i + 1)
                        : occt_object.volumes[i].volume_name;
         new_volume->source.input_file = path;
-        new_volume->source.object_idx = (int)model->objects.size() - 1;
+        new_volume->source.object_idx = (int)model.objects.size() - 1;
         new_volume->source.volume_idx = (int)new_object->volumes.size() - 1;
     }
 
-    return true;
+    return model;
 }
 
-}; // namespace Slic3r
+} // namespace Slic3r::Biz
+
+#endif // SLIC3R_ENABLE_FORMAT_STEP

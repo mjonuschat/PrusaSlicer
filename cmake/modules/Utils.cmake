@@ -87,6 +87,13 @@ function(prusaslicer_copy_dlls target)
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/deps/+MPFR/mpfr/lib/win${_bits}/libmpfr-4.dll ${_out_dir}
         COMMENT "Copy mpfr runtime to build tree"
         VERBATIM)
+
+    if (TARGET OCCTWrapper)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:OCCTWrapper>" ${_out_dir}
+            COMMENT "Copy OCCTWrapper to build tree"
+            VERBATIM)
+    endif()
 endfunction()
 
 function(slic3r_app_extract_symbols target)

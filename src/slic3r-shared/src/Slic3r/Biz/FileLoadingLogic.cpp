@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/STEP.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -483,6 +484,7 @@ tl::expected<ReturnData, std::string> read_data_from_file(
     const bool is_stl = boost::algorithm::iends_with(input_file_path.string(), ".stl");
     const bool is_3mf = boost::algorithm::iends_with(input_file_path.string(), ".3mf");
     const bool is_obj = boost::algorithm::iends_with(input_file_path.string(), ".obj");
+    const bool is_step = boost::algorithm::iends_with(input_file_path.string(), ".step") || boost::algorithm::iends_with(input_file_path.string(), ".stp");
 
     bool result = false;
     if (is_stl || is_obj) {
@@ -506,6 +508,14 @@ tl::expected<ReturnData, std::string> read_data_from_file(
 
         ret.model = loaded_3mf.model;
         return ret;
+    } else if (is_step) {
+        auto out = load_step(input_file_path.string());
+        if (out) {
+            ret.model = std::move(out.value());
+            return ret;
+        } else {
+            return tl::make_unexpected(out.error());
+        }
     }
 
     return tl::make_unexpected(_u8L(
