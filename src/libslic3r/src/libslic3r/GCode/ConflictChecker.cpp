@@ -31,6 +31,11 @@ namespace Slic3r {
 
 namespace {
 
+struct LayerPaths {
+    ExtrusionPaths paths;
+    double height;
+};
+
 struct LineWithID
 {
     Line _line;
@@ -50,19 +55,23 @@ private:
     double   _curHeight  = 0.0;
     unsigned _curPileIdx = 0;
 
-    std::vector<ExtrusionPaths> _piles;
+    std::vector<LayerPaths> _piles;
     int                         _id;
     Points                      _offsets;
 
 public:
-    LinesBucket(std::vector<ExtrusionPaths> &&paths, int id, Points offsets) : _piles(paths), _id(id), _offsets(offsets) {}
+    LinesBucket(std::vector<LayerPaths> &&paths, int id, Points offsets)
+    : _piles(std::move(paths)),
+      _id(id),
+      _offsets(offsets)
+      {}
     LinesBucket(LinesBucket &&) = default;
 
     bool valid() const { return _curPileIdx < _piles.size(); }
     void raise()
     {
         if (valid()) {
-            if (_piles[_curPileIdx].empty() == false) { _curHeight += _piles[_curPileIdx].front().height(); }
+            _curHeight += _piles[_curPileIdx].height;
             _curPileIdx++;
         }
     }
@@ -72,7 +81,7 @@ public:
         using Slic3r::Biz::Algorithms::Polyline::to_lines;
 
         LineWithIDs lines;
-        for (const ExtrusionPath &path : _piles[_curPileIdx]) {
+        for (const ExtrusionPath &path : _piles[_curPileIdx].paths) {
             Polyline check_polyline;
             for (int i = 0; i < (int)_offsets.size(); ++i) {
                 check_polyline = path.polyline;
@@ -103,7 +112,7 @@ private:
     std::map<const void *, int>                                                        _objsPtrToId;
 
 public:
-    void        emplace_back_bucket(std::vector<ExtrusionPaths> &&paths, const void *objPtr, Points offset);
+    void        emplace_back_bucket(std::vector<LayerPaths> &&paths, const void *objPtr, Points offset);
     void        build_queue();
     bool        valid() const { return _pq.empty() == false; }
     const void *idToObjsPtr(int id)
@@ -212,7 +221,7 @@ inline Grids line_rasterization(const Line &line, int64_t xdist = RasteXDistance
 
 using Slic3r::Biz::Algorithms::Point::round;
 
-static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const WipeTowerData& wtd)
+static std::vector<LayerPaths> getFakeExtrusionPathsFromWipeTower(const WipeTowerData& wtd)
 {
     float h = wtd.height;
     float lh = wtd.first_layer_height;
@@ -229,7 +238,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
 
     const auto [cone_base_R, cone_scale_x] = WipeTower::get_wipe_tower_cone_base(width, height, depth, cone_angle);
 
-    std::vector<ExtrusionPaths> paths;
+    std::vector<LayerPaths> paths;
     for (float hh = 0.f; hh < h; hh += lh) {
         
         if (hh != 0.f) {
@@ -246,13 +255,13 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
 
         ExtrusionPath path({ minCorner, {maxCorner.x(), minCorner.y()}, maxCorner, {minCorner.x(), maxCorner.y()}, minCorner },
             ExtrusionAttributes{ ExtrusionRole::WipeTower, ExtrusionFlow{ 0.0, 0.0, lh } });
-        paths.push_back({ path });
+        paths.push_back(LayerPaths{{path}, lh});
 
         // We added the border, now add several parallel lines so we can detect an object that is fully inside the tower.
         // For now, simply use fixed spacing of 3mm.
         for (coord_t y=minCorner.y()+scale_(3.); y<maxCorner.y(); y+=scale_(3.)) {
             path.polyline = { {minCorner.x(), y}, {maxCorner.x(), y} };
-            paths.back().emplace_back(path);
+            paths.back().paths.emplace_back(path);
         }
 
         // And of course the stabilization cone and its base...
@@ -261,7 +270,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
             double r = cone_base_R * (1 - hh/height);
             for (double alpha=0; alpha<2.01*M_PI; alpha+=2*M_PI/20.)
                 path.polyline.points.emplace_back(scaled(Vec2d(width/2. + r * std::cos(alpha)/cone_scale_x, depth/2. + r * std::sin(alpha))));
-            paths.back().emplace_back(path);
+            paths.back().paths.emplace_back(path);
             if (hh == 0.f) { // Cone brim.
                 for (float bw=wtd.brim_width; bw>0.f; bw-=3.f) {
                     path.polyline.clear();
@@ -270,7 +279,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
                             width/2. + cone_base_R * std::cos(alpha)/cone_scale_x * (1. + cone_scale_x*bw/cone_base_R),
                             depth/2. + cone_base_R * std::sin(alpha) * (1. + bw/cone_base_R)))
                         );
-                    paths.back().emplace_back(path);
+                    paths.back().paths.emplace_back(path);
                 }
             }
         }
@@ -283,8 +292,8 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
     }
 
     // Rotate and translate the tower into the final position.
-    for (ExtrusionPaths& ps : paths) {
-        for (ExtrusionPath& p : ps) {
+    for (LayerPaths& ps : paths) {
+        for (ExtrusionPath& p : ps.paths) {
             p.polyline.rotate(deg2rad(wtd.rotation_angle));
             p.polyline.translate(scale_(wtd.position.x()), scale_(wtd.position.y()));
         }
@@ -295,7 +304,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
 
 
 
-void LinesBucketQueue::emplace_back_bucket(std::vector<ExtrusionPaths> &&paths, const void *objPtr, Points offsets)
+void LinesBucketQueue::emplace_back_bucket(std::vector<LayerPaths> &&paths, const void *objPtr, Points offsets)
 {
     if (_objsPtrToId.find(objPtr) == _objsPtrToId.end()) {
         _objsPtrToId.insert({objPtr, _objsPtrToId.size()});
@@ -361,30 +370,35 @@ void getExtrusionPathsFromEntity(const ExtrusionEntityCollection *entity, Extrus
     getExtrusionPathImpl(entity, paths);
 }
 
-ExtrusionPaths getExtrusionPathsFromLayer(LayerRegionPtrs layerRegionPtrs)
+LayerPaths getExtrusionPathsFromLayer(LayerRegionPtrs layerRegionPtrs)
 {
     ExtrusionPaths paths;
     for (auto regionPtr : layerRegionPtrs) {
         getExtrusionPathsFromEntity(&regionPtr->perimeters(), paths);
         if (!regionPtr->perimeters().empty()) { getExtrusionPathsFromEntity(&regionPtr->fills(), paths); }
     }
-    return paths;
+    return {std::move(paths), layerRegionPtrs.front()->layer()->height};
 }
 
-ExtrusionPaths getExtrusionPathsFromSupportLayer(const SupportLayer *supportLayer)
+LayerPaths getExtrusionPathsFromSupportLayer(const SupportLayer *supportLayer)
 {
     ExtrusionPaths paths;
     getExtrusionPathsFromEntity(&supportLayer->support_fills, paths);
-    return paths;
+    return {std::move(paths), supportLayer->height};
 }
 
-std::pair<std::vector<ExtrusionPaths>, std::vector<ExtrusionPaths>> getAllLayersExtrusionPathsFromObject(const PrintObject *obj)
+std::pair<std::vector<LayerPaths>, std::vector<LayerPaths>> getAllLayersExtrusionPathsFromObject(const PrintObject *obj)
 {
-    std::vector<ExtrusionPaths> objPaths, supportPaths;
+    std::vector<LayerPaths> objPaths;
+    std::vector<LayerPaths> supportPaths;
 
-    for (auto layerPtr : obj->layers()) { objPaths.push_back(getExtrusionPathsFromLayer(layerPtr->regions())); }
+    for (auto layerPtr : obj->layers()) {
+        objPaths.emplace_back(getExtrusionPathsFromLayer(layerPtr->regions()));
+    }
 
-    for (auto supportLayerPtr : obj->support_layers()) { supportPaths.push_back(getExtrusionPathsFromSupportLayer(supportLayerPtr)); }
+    for (auto supportLayerPtr : obj->support_layers()) {
+        supportPaths.emplace_back(getExtrusionPathsFromSupportLayer(supportLayerPtr));
+    }
 
     return {std::move(objPaths), std::move(supportPaths)};
 }
@@ -446,11 +460,11 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
     if (! wipe_tower_data.z_and_depth_pairs.empty()) {
         // The wipe tower is being generated.
         const Point plate_origin = Point::Zero();
-        std::vector<ExtrusionPaths> wtpaths = getFakeExtrusionPathsFromWipeTower(wipe_tower_data);
+        std::vector<LayerPaths> wtpaths = getFakeExtrusionPathsFromWipeTower(wipe_tower_data);
         conflictQueue.emplace_back_bucket(std::move(wtpaths), &wtptr, Points{plate_origin});
     }
     for (const PrintObject *obj : objs) {
-        std::pair<std::vector<ExtrusionPaths>, std::vector<ExtrusionPaths>> layers = getAllLayersExtrusionPathsFromObject(obj);
+        std::pair<std::vector<LayerPaths>, std::vector<LayerPaths>> layers = getAllLayersExtrusionPathsFromObject(obj);
 
         Points instances_shifts;
         for (const PrintInstance& inst : obj->instances())
@@ -470,28 +484,26 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
         layersLines.push_back(std::move(lines));
     }
 
-    bool                                   find = false;
-    tbb::concurrent_vector<std::pair<ConflictComputeResult,int>> conflict;
+    tbb::concurrent_vector<std::pair<ConflictComputeResult,double>> conflict;
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, layersLines.size()), [&](tbb::blocked_range<size_t> range) {
         for (size_t i = range.begin(); i < range.end(); i++) {
             auto interRes = find_inter_of_lines(layersLines[i]);
             if (interRes.has_value()) {
-                find = true;
-                conflict.emplace_back(*interRes, i);
+                conflict.emplace_back(*interRes, i+1 < heights.size() ? heights[i+1] : heights.back());
                 break;
             }
         }
     });
 
-    if (find) {
-        std::sort(conflict.begin(), conflict.end(), [&heights](const std::pair<ConflictComputeResult, int>& i1, const std::pair<ConflictComputeResult, int>& i2) {
-            return heights[i1.second] < heights[i2.second];
+    if (! conflict.empty()) {
+        std::sort(conflict.begin(), conflict.end(), [](const std::pair<ConflictComputeResult, double>& i1, const std::pair<ConflictComputeResult, double>& i2) {
+            return i1.second < i2.second;
         });
 
         const void *ptr1   = conflictQueue.idToObjsPtr(conflict[0].first._obj1);
         const void *ptr2   = conflictQueue.idToObjsPtr(conflict[0].first._obj2);
-        int conflict_layer = conflict[0].second;
+        double conflict_z  = conflict[0].second;
         if (ptr1 == &wtptr || ptr2 == &wtptr) {
             assert(! wipe_tower_data.z_and_depth_pairs.empty());
             if (ptr2 == &wtptr) { std::swap(ptr1, ptr2); }
@@ -499,10 +511,9 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
             ConflictResult out = {
                 .obj_name_1 = "WipeTower",
                 .obj_name_2 = obj2->model_object()->name,
-                .height = float(heights[conflict_layer]),
+                .height = float(conflict_z),
                 .obj_1 = nullptr,
                 .obj_2 = ptr2,
-                .layer = conflict_layer
             };
             return out;
         }
@@ -511,10 +522,9 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
         ConflictResult out = {
             .obj_name_1 = obj1->model_object()->name,
             .obj_name_2 = obj2->model_object()->name,
-            .height = float(heights[conflict_layer]),
+            .height = float(conflict_z),
             .obj_1 = ptr1,
-            .obj_2 = ptr2,
-            .layer = conflict_layer
+            .obj_2 = ptr2
         };
         return out;
     } else
@@ -525,7 +535,6 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> 
 
 void ConflictResult::reset()
 {
-    layer = -1;
     height = 0.0f;
     obj_1 = nullptr;
     obj_2 = nullptr;

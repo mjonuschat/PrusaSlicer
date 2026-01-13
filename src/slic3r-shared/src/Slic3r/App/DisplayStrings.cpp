@@ -324,8 +324,8 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
         const auto& detail = std::get<Biz::Slicing::GCodeConflictWarningPayload>(warning.payload);
         // TRN %3% is name of Object1, %4% is name of Object2
         return fmt::format(fmt::runtime(_u8L("Conflicts in G-code paths have been detected at "
-            "layer {0}, z={1:.2f} mm. Please reposition the conflicting objects ({2} <-> {3}) further apart.")),
-            detail.layer_id, detail.height, detail.object_names[0], detail.object_names[1]);
+            "print height {0:.2f} mm. Please reposition the conflicting objects ({1} <-> {2}) further apart.")),
+            detail.height, detail.object_names[0], detail.object_names[1]);
     }
 
     case WarningCode::None:

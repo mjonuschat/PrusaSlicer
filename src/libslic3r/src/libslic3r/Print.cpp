@@ -1135,8 +1135,7 @@ void Print::process()
             .model_object_id = std::nullopt,
             .payload = Biz::Slicing::GCodeConflictWarningPayload{
                 .object_names = {conflict->obj_name_1, conflict->obj_name_2},
-                .height = conflict->height,
-                .layer_id = size_t(conflict->layer)
+                .height = conflict->height
             },
             .severity = Biz::Slicing::WarningSeverity::HIGH
         });

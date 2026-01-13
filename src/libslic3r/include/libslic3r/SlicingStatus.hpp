@@ -150,7 +150,6 @@ struct InvalidToolchangeWarningPayload {
 struct GCodeConflictWarningPayload {
     std::array<std::string, 2> object_names;
     double height{0.};
-    size_t layer_id{0};
 };
 
 using WarningPayload = std::variant<

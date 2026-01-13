@@ -30,7 +30,6 @@ struct ConflictResult
     float height{ 0.0f };
     const void* obj_1{ nullptr }; // nullptr means wipe tower
     const void* obj_2{ nullptr };
-    int layer{ -1 };
 
     void reset();
 };
