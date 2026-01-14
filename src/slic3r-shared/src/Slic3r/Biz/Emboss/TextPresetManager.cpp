@@ -58,6 +58,15 @@ void TextPresetManager::init()
         m_data.current_index = 0;
     }
 
+    // Different monitor(scale factor) creates different wxFont descriptor
+    // (3rd serialized param on the windows is font size in pixels -> pixelSize)
+    for (Preset& preset : m_data.presets) {
+        Domain::FontDescriptor &fd = preset.emboss_style.descriptor;
+        auto current_fd = m_font_manager.get_current_descriptor(fd);
+        if(current_fd.has_value())
+            fd.path = current_fd->path;
+    }
+
     // find valid font item
     if (load_preset(m_data.current_index))
         return; // style is loaded
