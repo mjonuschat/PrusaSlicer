@@ -260,6 +260,67 @@ SCENARIO( "TriangleMeshSlicer: Cut behavior.") {
             }
         }
     }
+
+    GIVEN(
+        "A large cube centered at origin with unusual vertex coordinates (regression test for float/double precision issue)"
+    )
+    {
+        // This mesh triggered an assertion failure in cut_mesh due to float vs double
+        // mismatch in unscaled() function that happens during refactoring.
+        std::vector<Vec3f> vertices{
+            {24.9459496f, 24.9459534f, -24.9459515f},
+            {24.9459496f, -24.9459534f, -24.9459515f},
+            {-24.9459496f, -24.9459534f, -24.9459515f},
+            {-24.9459496f, 24.9459534f, -24.9459515f},
+            {24.9459496f, 24.9459534f, 24.9459515f},
+            {-24.9459496f, 24.9459534f, 24.9459515f},
+            {-24.9459496f, -24.9459534f, 24.9459515f},
+            {24.9459496f, -24.9459534f, 24.9459515f}
+        };
+        std::vector<Index3> facets{
+            {0, 1, 2},
+            {0, 2, 3},
+            {4, 5, 6},
+            {4, 6, 7},
+            {0, 4, 7},
+            {0, 7, 1},
+            {1, 7, 6},
+            {1, 6, 2},
+            {2, 6, 5},
+            {2, 5, 3},
+            {4, 0, 3},
+            {4, 3, 5}
+        };
+
+        indexed_triangle_set mesh;
+        mesh.vertices = vertices;
+        mesh.indices  = facets;
+
+        WHEN("Object is cut at z=0 with triangulate_caps=true")
+        {
+            indexed_triangle_set upper{};
+            indexed_triangle_set lower{};
+
+            cut_mesh(mesh, 0.0f, &upper, &lower, true);
+
+            THEN("Upper mesh is valid (has triangles)")
+            {
+                REQUIRE(upper.indices.size() > 0);
+            }
+            THEN("Lower mesh is valid (has triangles)")
+            {
+                REQUIRE(lower.indices.size() > 0);
+            }
+            THEN("Upper mesh has no open edges (is watertight)")
+            {
+                REQUIRE(triangle_mesh::its_num_open_edges(upper) == 0);
+            }
+            THEN("Lower mesh has no open edges (is watertight)")
+            {
+                REQUIRE(triangle_mesh::its_num_open_edges(lower) == 0);
+            }
+        }
+    }
 }
 #ifdef TEST_PERFORMANCE
 TEST_CASE("Regression test for issue #4486 - files take forever to slice") {

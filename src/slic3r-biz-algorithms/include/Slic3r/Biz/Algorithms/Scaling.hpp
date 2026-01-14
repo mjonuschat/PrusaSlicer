@@ -14,7 +14,7 @@ constexpr OutputType scaled(const Domain::UnscaledScalar auto &v)
     return static_cast<OutputType>(v / static_cast<InputType>(SCALING_FACTOR));
 }
 
-template <Domain::UnscaledScalar OutputType = float>
+template <Domain::UnscaledScalar OutputType = double>
 constexpr OutputType unscaled(const Domain::ScaledScalar auto &v)
 {
     return static_cast<OutputType>(v) * static_cast<OutputType>(SCALING_FACTOR);

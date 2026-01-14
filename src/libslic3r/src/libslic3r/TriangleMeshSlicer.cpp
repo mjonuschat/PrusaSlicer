@@ -1423,7 +1423,7 @@ static void chain_open_polylines_close_gaps(std::vector<OpenPolyline>           
                 auto color_it = next_start->polyline->colors.begin();
                 if (*pt_it == opl->points.back()) {
                     ++pt_it;
-                } else {
+                } else if (!next_start->polyline->colors.empty()) {
                     handle_color_at_gap_between_open_polylines<mesh_info>(*opl, *pt_it, *color_it);
                 }
 
@@ -1434,7 +1434,7 @@ static void chain_open_polylines_close_gaps(std::vector<OpenPolyline>           
                 auto color_it = next_start->polyline->colors.rbegin();
                 if (*pt_it == opl->points.back()) {
                     ++pt_it;
-                } else {
+                } else if (!next_start->polyline->colors.empty()) {
                     handle_color_at_gap_between_open_polylines<mesh_info>(*opl, *pt_it, *color_it);
                 }
 
