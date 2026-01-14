@@ -3,7 +3,7 @@ name: Build windows
 on:
   push:
     branches-ignore:
-      - lm_kill_resources
+      - master
       - release
     tags:
       - 'version_*'
@@ -29,10 +29,10 @@ on:
 
 jobs:
   build_win:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@lm_kill_resources
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@master
     secrets: inherit
     with:
-      actions_branch: lm_kill_resources
+      actions_branch: master
       create_pdb: ${{ inputs.create_pdb || false }}
       create_installer: ${{ inputs.create_installer || false }}
       enable_sentry: ${{ inputs.enable_sentry || false }}

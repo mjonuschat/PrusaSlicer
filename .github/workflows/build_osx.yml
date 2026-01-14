@@ -3,7 +3,7 @@ name: Build osx
 on:
   push:
     branches-ignore:
-      - lm_kill_resources
+      - master
       - release
     tags:
       - 'version_*'
@@ -20,9 +20,9 @@ on:
 
 jobs:
   build_osx:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@lm_kill_resources
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@master
     secrets: inherit
     with:
-      actions_branch: lm_kill_resources
+      actions_branch: master
       enable_sentry: ${{ inputs.enable_sentry || false }}
       release_build: ${{ inputs.release_build || startsWith(github.ref, 'refs/tags/version_') }}

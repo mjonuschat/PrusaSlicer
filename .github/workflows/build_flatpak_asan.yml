@@ -3,17 +3,17 @@ name: Build flatpak asan
 on:
   push:
     branches:
-      - lm_kill_resources
+      - master
       - release
   workflow_dispatch:
 
 jobs:
   build_flatpak_asan:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@lm_kill_resources
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@master
     secrets: inherit
     with:
       with_asan: true
       debug_symbols: true
       enable_sentry:  false
       release_build: false
-      actions_branch: lm_kill_resources
+      actions_branch: master
