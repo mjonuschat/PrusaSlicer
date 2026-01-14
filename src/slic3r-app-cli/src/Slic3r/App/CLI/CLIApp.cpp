@@ -87,6 +87,9 @@ public:
     {
         return {};
     }
+
+    void show_load_step_dialog(const std::string& filename) override
+    {}
 };
 
 int run(InitParams& init_params)

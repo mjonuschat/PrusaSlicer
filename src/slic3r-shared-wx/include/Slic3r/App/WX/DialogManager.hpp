@@ -41,6 +41,7 @@ public:
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
     ) override;
     std::string show_ramming_dialog(const std::string& ramming_parameters) override;
+    void show_load_step_dialog(const std::string& filename) override;
 
 private:
     boost::filesystem::path m_last_dir;

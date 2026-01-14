@@ -477,7 +477,8 @@ load_from_project(const boost::filesystem::path& project_file_path, OptionalPres
 }
 
 tl::expected<ReturnData, std::string> read_data_from_file(
-    const boost::filesystem::path& input_file_path
+    const boost::filesystem::path& input_file_path,
+    IMessageDialogProvider* dialog_provider
 )
 {
     ReturnData ret = {input_file_path.filename().string()};
@@ -509,6 +510,9 @@ tl::expected<ReturnData, std::string> read_data_from_file(
         ret.model = loaded_3mf.model;
         return ret;
     } else if (is_step) {
+        if (dialog_provider) {
+            dialog_provider->show_load_step_dialog(input_file_path.filename().string());
+        }
         auto out = load_step(input_file_path.string());
         if (out) {
             ret.model = std::move(out.value());
@@ -532,7 +536,7 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
     Answer* answer_convert_from_imperial_units = nullptr
 )
 {
-    auto data = read_data_from_file(input_file_path);
+    auto data = read_data_from_file(input_file_path, dialog_provider);
     if (!data) {
         return data;
     }

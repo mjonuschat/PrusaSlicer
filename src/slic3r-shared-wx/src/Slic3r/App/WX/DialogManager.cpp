@@ -7,6 +7,7 @@
 #include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
 #include "Slic3r/App/WX/RammingDialog.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/LoadStepDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -189,5 +190,12 @@ std::string DialogManager::show_ramming_dialog(const std::string& ramming_parame
         return dlg.get_parameters();
     }
     return ramming_parameters;
+}
+
+
+void DialogManager::show_load_step_dialog(const std::string& filename)
+{
+    LoadStepDialog dlg(filename, 0., 0., true);
+    dlg.ShowModal();
 }
 } // namespace Slic3r::App::WX
