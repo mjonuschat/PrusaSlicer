@@ -14,6 +14,7 @@
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/GraphicsSettings.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
@@ -77,9 +78,10 @@ public:
  *   and in-memory geometry (triangle_mesh_manager())
  * .
  */
-class Scene final : public WithListeners<ISceneChangedListener>,
-                    public IGraphicsSettingsChangedListener,
-                    public INodeChangedListener
+class Scene final :
+    public WithListeners<ISceneChangedListener, IThumbnailRenderListener>,
+    public IGraphicsSettingsChangedListener,
+    public INodeChangedListener
 {
 public:
     Scene();
@@ -157,6 +159,14 @@ public:
     void render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer,
         Camera* camera_override = nullptr) const;
     void render_imgui(const Render::ScreenInfo& screen_info) const;
+    /** @} */
+
+    /**
+     * @name Thumbnail render notification
+     * @{
+     */
+    void notify_thumbnail_render_begin();
+    void notify_thumbnail_render_end();
     /** @} */
 
     /**
