@@ -52,10 +52,10 @@ namespace pt = boost::property_tree;
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
+#include "Slic3r/Biz/Emboss/NSVGUtils.hpp"
 
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/miniz_extension.hpp"
-#include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Utils.hpp"
 
 using Slic3r::Domain::TriangleMesh;
@@ -4480,7 +4480,7 @@ bool to_xml(std::stringstream &stream, const EmbossShape::SvgFile &svg, const Do
     std::shared_ptr<std::string> file_data = svg.file_data;
     assert(file_data != nullptr); 
     if (file_data == nullptr && !svg.path.empty())
-        file_data = read_from_disk(svg.path);
+        file_data = Biz::Emboss::read_from_disk(svg.path);
     if (file_data == nullptr) {
         BOOST_LOG_TRIVIAL(warning) << "Can't write svg file no filedata";
         return false;

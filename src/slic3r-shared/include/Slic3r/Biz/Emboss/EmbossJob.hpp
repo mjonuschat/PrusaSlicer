@@ -1,21 +1,15 @@
-///|/ Copyright (c) Prusa Research 2021 - 2022 Oleksandra Iushchenko @YuSanka, Filip Sykala @Jony01
+///|/ Copyright (c) Prusa Research 2021 - 2026 Filip Sykala @Jony01
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #ifndef slic3r_EmbossJob_hpp_
 #define slic3r_EmbossJob_hpp_
 
-#include <atomic>
 #include <memory>
 #include <string>
-#include "Slic3r/App/Scene/Ray.hpp"
-#include "Slic3r/App/Scene/Scene.hpp" // NodePickResults
-#include "Slic3r/App/Scene/IGizmo.hpp" // ToolType
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
-#include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 
 namespace Slic3r::Biz::Emboss {
@@ -29,6 +23,11 @@ Different store into volume
 class ShapeProvider
 {
 public:
+    explicit ShapeProvider(const Domain::EmbossShape& shape, TextLines text_lines = {}):
+        m_shape(shape), // copy
+        m_text_lines(text_lines)
+    {}
+
     virtual ~ShapeProvider() = default;
 
     /**
@@ -38,6 +37,13 @@ public:
     virtual void write(Domain::ModelVolume& volume) const
     {
         volume.emboss_shape = m_shape;
+
+        // Fix for object: stored attribute that volume use surface when it is object
+        // Can appear when remove source volume in the object
+        if (volume.is_the_only_one_part() &&
+            m_shape.projection.use_surface) {
+            volume.emboss_shape->projection.use_surface = false;
+        }
     }
 
     /**
@@ -138,16 +144,17 @@ struct CreateVolumeParams
     std::optional<float> angle = {};
 };
 
+bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor);
+
 /**
-@brief Create new volume on position of mouse cursor
-@param input Cantain all needed data for start creation job
-@param pick_ray Ray into scene given by coordinate on screen
-@param picks Scene Node with intersection of picked ray
-@return True on success otherwise False
+@brief Start job for add new volume to object with given transformation
+@param instance Define where to add
+@param volume_tr Wanted volume transformation
+@param data Define what to emboss - shape
+@param volume_type Type of volume: Part, negative, modifier
+@return Nullptr when job is sucessfully add to worker otherwise return data to be processed different way
 */
-bool start_create(       CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
-bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
-bool start_create_object(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
+bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type);
 
 /**
 @brief Parameters for call start_update_volume function
@@ -173,6 +180,9 @@ struct UpdateVolumeParams
 */
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
 
+ProjectTransform create_projection(const Domain::EmbossShape& es, bool is_outside);
+
+const Domain::ModelInstance* get_selected_instance(const Domain::ElementRefs& elms, const Domain::Project& project);
 const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor);
 
 } // namespace Slic3r::Biz::Emboss

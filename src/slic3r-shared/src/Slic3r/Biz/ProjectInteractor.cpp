@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
+#include <Slic3r/Assert.hpp>
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/Bed.hpp>
@@ -7,10 +8,8 @@
 
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
-#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
-#include "Slic3r/Biz/Units.hpp"
-#include "Slic3r/Biz/Parser/IO.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -18,6 +17,7 @@
 
 #include "Slic3r/Directories.hpp"
 
+#include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <boost/filesystem/path.hpp>
 
 namespace Slic3r::Biz {
@@ -203,11 +203,117 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .start();
 }
 
+namespace {
+std::string get_file_name(const std::string& file_path)
+{
+    size_t pos_last_delimiter = file_path.find_last_of("/\\");
+    size_t pos_point = file_path.find_last_of('.');
+    size_t offset = pos_last_delimiter + 1;
+    size_t count = pos_point - pos_last_delimiter - 1;
+    return file_path.substr(offset, count);
+}
+using SvgFile = Domain::EmbossShape::SvgFile;
+using SvgFiles = std::vector<SvgFile*>;
+std::string create_unique_3mf_filepath(const std::string& file, const SvgFiles svgs)
+{
+    // const std::string MODEL_FOLDER = "3D/"; // copy from file 3mf.cpp
+    std::string path_in_3mf = "3D/" + file + ".svg";
+    size_t suffix_number = 0;
+    bool is_unique = false;
+    do {
+        is_unique = true;
+        path_in_3mf = "3D/" + file + ((suffix_number++) ? ("_" + std::to_string(suffix_number)) : "") + ".svg";
+        for (SvgFile* svgfile : svgs) {
+            if (svgfile->path_in_3mf.empty())
+                continue;
+            if (svgfile->path_in_3mf.compare(path_in_3mf) == 0) {
+                is_unique = false;
+                break;
+            }
+        }
+    } while (!is_unique);
+    return path_in_3mf;
+}
+
+bool set_by_local_path(SvgFile& svg, const SvgFiles& svgs)
+{
+    // Try to find already used svg file
+    for (SvgFile* svg_ : svgs) {
+        if (svg_->path_in_3mf.empty())
+            continue;
+        if (svg.path.compare(svg_->path) == 0) {
+            svg.path_in_3mf = svg_->path_in_3mf;
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+    @brief Function to secure private data before store to 3mf
+    @param model    - Data(also private) to clean before publishing
+    @param messager - Ability to polite ask users
+**/
+void publish(Domain::Model& model, IMessageDialogProvider* messager) {
+
+    // SVG file publishing
+    bool exist_new_svg = false;
+    SvgFiles svgs;
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelVolume* mv : mo->volumes) {
+            if (!mv->emboss_shape.has_value())
+                continue; // do not contain emboss shape
+            if (!mv->emboss_shape->svg_file.has_value())
+                continue; // do not contain svg file
+            SvgFile* svg = &(*mv->emboss_shape->svg_file);
+            if (svg->path_in_3mf.empty())
+                exist_new_svg = true;
+            svgs.push_back(svg);
+        }
+    }
+
+    if (exist_new_svg && messager != nullptr) {
+        std::string message_title = Biz::_u8L("SVG file obfuscate");
+        std::string message_text = Biz::_u8L("Are you sure you want to store original SVGs with their local paths into the 3MF file ? \n"
+            "If you hit 'NO', all SVGs in the project will not be editable any more.");
+        IMessageDialogProvider::YesNoCallback callback = [&model](bool answer) {
+            if (answer == false) {
+                for (Domain::ModelObject* mo : model.objects) {
+                    for (Domain::ModelVolume* mv : mo->volumes) {
+                        if (mv->emboss_shape.has_value() &&
+                            mv->emboss_shape->svg_file.has_value() &&
+                            mv->emboss_shape->svg_file->path_in_3mf.empty()) {
+                            mv->emboss_shape.reset(); // became regular volume
+                        }
+                    }
+                }
+            }
+        };
+        messager->show_yesno_dialog(message_title, message_text, callback);
+    }
+
+    for (SvgFile* svgfile : svgs) {
+        if (!svgfile->path_in_3mf.empty())
+            continue; // already suggested path (previous save)
+        // create unique name for svgs, when local path differ
+        std::string filename = "unknown";
+        if (!svgfile->path.empty()) {
+            if (set_by_local_path(*svgfile, svgs))
+                continue;
+            // check whether original filename is already in:
+            filename = get_file_name(svgfile->path);
+        }
+        svgfile->path_in_3mf = create_unique_3mf_filepath(filename, svgs);
+    }
+}
+}
+
 void ProjectInteractor::save_project(const boost::filesystem::path& file_path, const Store3mfParam& params)
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
     selected_project.set_file_name(file_path.stem().string());
+    publish(selected_project.model(), m_dialog_provider);
     store_3mf(file_path.string(), selected_project, params);
 
     selected_project.directory_storage().set_project_dir(file_path);

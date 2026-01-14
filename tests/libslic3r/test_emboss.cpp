@@ -221,7 +221,7 @@ TEST_CASE("Visualize glyph from font", "[Emboss]")
 
 #include "test_utils.hpp"
 #include <nanosvg/nanosvg.h> // load SVG file
-#include <libslic3r/NSVGUtils.hpp>
+#include <Slic3r/Biz/Emboss/NSVGUtils.hpp>
 #include <Slic3r/Biz/Algorithms/IntersectionPoints.hpp>
 #include <Slic3r/Biz/Algorithms/HealPolygon.hpp>
 
@@ -278,9 +278,9 @@ Polygons load_polygons(const std::string& svg_file)
 {
     std::string file_path = TEST_DATA_DIR PATH_SEPARATOR + svg_file;
     NSVGimage* image      = nsvgParseFromFile(file_path.c_str(), "px", 96.0f);
-    NSVGLineParams param{1'000};
+    Biz::Emboss::NSVGLineParams param{1'000};
     param.scale       = 10.;
-    Polygons polygons = to_polygons(*image, param);
+    Polygons polygons = Biz::Emboss::to_polygons(*image, param);
     nsvgDelete(image);
     return polygons;
 }
@@ -320,14 +320,12 @@ TEST_CASE("Heal of 'm' in Allura_Script.ttf", "[Emboss]")
     auto a            = heal_and_check(polygons);
 }
 
-#include "libslic3r/NSVGUtils.hpp"
-
 TEST_CASE("Heal of svg contour overlap", "[Emboss]")
 {
     std::string svg_file = "contour_neighbor.svg";
-    auto image           = nsvgParseFromFile(TEST_DATA_DIR PATH_SEPARATOR + svg_file, "mm");
-    NSVGLineParams param(1e10);
-    ExPolygonsWithIds shapes = create_shape_with_ids(*image, param);
+    auto image = Biz::Emboss::nsvgParseFromFile(TEST_DATA_DIR PATH_SEPARATOR + svg_file, "mm");
+    Biz::Emboss::NSVGLineParams param(1e10);
+    ExPolygonsWithIds shapes = Biz::Emboss::create_shape_with_ids(*image, param);
     Polygons polygons;
     for (ExPolygonsWithId& shape : shapes)
         polygons.push_back(shape.expoly.front().contour);
@@ -368,7 +366,7 @@ TEST_CASE("Heal of points close to line", "[Emboss]")
     std::string file_name = "points_close_to_line.svg";
     std::string file_path = TEST_DATA_DIR PATH_SEPARATOR + file_name;
     NSVGimage* image      = nsvgParseFromFile(file_path.c_str(), "px", 96.0f);
-    NSVGLineParams param{1'000};
+    Biz::Emboss::NSVGLineParams param{1'000};
     param.scale       = 1.;
     Polygons polygons = to_polygons(*image, param);
     nsvgDelete(image);

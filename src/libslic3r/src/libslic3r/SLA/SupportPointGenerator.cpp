@@ -1096,9 +1096,8 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Utils.hpp"
 std::vector<Vec2f> load_curve_from_file() {
-    std::string filePath = Slic3r::resources_dir() + "/data/sla_support.svg";
-    EmbossShape::SvgFile svg_file{filePath};
-    NSVGimage *image = init_image(svg_file);
+    std::string file_path = Slic3r::resources_dir() + "/data/sla_support.svg";
+    NSVGimage *image = nsvgParse(file_path);
     if (image == nullptr) {
         // In test is not known resource_dir!
         // File is not located soo return DEFAULT permanent radius 5mm is returned

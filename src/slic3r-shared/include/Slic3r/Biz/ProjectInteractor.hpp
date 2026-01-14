@@ -25,8 +25,6 @@
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 #include "Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp"
 
-#include "Slic3r/Biz/FileLoadingLogic.hpp"
-
 namespace Slic3r::Domain {
 class Project;
 class Workbench;

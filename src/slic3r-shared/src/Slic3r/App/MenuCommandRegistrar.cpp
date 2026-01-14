@@ -18,6 +18,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 namespace Slic3r::App {
 
@@ -821,6 +822,8 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
                     {
                         if (success) {
                             m_project_interactor.load_models_to_project(file_paths);
+                            // open SvgGizmo, when svg volume is selected(was imported)
+                            m_render_module.command(CommandName::SvgGizmo).execute();
                             m_navigator.navigate_to_module_type(App::Render::ModuleType::Plater);
                         }
                     };
@@ -840,6 +843,7 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
                             Wildcards::TypeFlag::Project3mf
                                 | Wildcards::TypeFlag::Stl
                                 | Wildcards::TypeFlag::Obj
+                                | Wildcards::TypeFlag::Svg
                                 | Wildcards::TypeFlag::Step,
                             Wildcards::TypeFlag::AllImportFiles
                         ),

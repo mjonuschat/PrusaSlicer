@@ -331,9 +331,15 @@ const ObjectSelection& SceneInteractor::object_selection() const
     return it->second.object_selection;
 }
 
-void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection)
+void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection){
+    set_object_selection(raw_selection, m_selected_project_id);
+}
+
+void SceneInteractor::set_object_selection(
+    const ObjectSelection& raw_selection,
+    Domain::SelectionId project_id) 
 {
-    const auto it = m_projects.find(m_selected_project_id);
+    const auto it = m_projects.find(project_id);
     ASSERT(it != m_projects.end());
 
     ObjectSelection selection = raw_selection;
@@ -663,6 +669,17 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
+void SceneInteractor::add_volume_into_selected_object(const Domain::ModelVolume& volume)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    const ObjectSelection& sel = object_selection();
+    ASSERT(sel.mode == SelectionMode::Volume || sel.only_single_object());
+    add_volume(m_selected_project_id, sel.elements[0].instance_id,
+        [&volume](Domain::ModelObject& object){
+            return object.add_volume(volume);
+        });
+}
+
 void SceneInteractor::add_volume(
     Domain::SelectionId project_id,
     Domain::SelectionId instance_id,
@@ -688,8 +705,7 @@ void SceneInteractor::add_volume(
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_volume_added(project_id, updated);
     });
-
-    set_object_selection({ SelectionMode::Volume, updated});
+    set_object_selection({ SelectionMode::Volume, updated}, project_id);
 
     auto changes = m_bed_tracking.update_instances_bed_placement(p, updated);
     for (const auto& bed_ref : changes.updated_beds)

@@ -681,54 +681,55 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
 
     PrusaFilesResult prusa_files_result = load_prusa_files(archive, model_map, model, collected_issues);
 
-    // std::vector<bool>& used_files = prusa_files_result.used_file_indices;
-    // assert(used_files.size() == mz_zip_reader_get_num_files(&archive));
-    // assert(used_files.size() == loaded_model.used_files.size());
-    // for (size_t i = 0; i < loaded_model.used_files.size(); ++i)
-    // if (loaded_model.used_files[i]) {
-    // assert(!used_files[i]);
-    // used_files[i] = true;
-    // }
-    // used_files[relations.realtions_file_index] = true;
-    // bool found_content_file = false;
+    std::vector<bool>& used_files = prusa_files_result.used_file_indices;
+    assert(used_files.size() == mz_zip_reader_get_num_files(&archive));
+    assert(used_files.size() == loaded_model.used_files.size());
+    for (size_t i = 0; i < loaded_model.used_files.size(); ++i)
+        if (loaded_model.used_files[i]) {
+            assert(!used_files[i]);
+            used_files[i] = true;
+        }
+    if(relations.has_value())
+        used_files[relations->realtions_file_index] = true;
+    bool found_content_file = false;
 
-    //// Loop all files in archive
-    // mz_zip_archive_file_stat stat;
-    // mz_uint num_entries = static_cast<mz_uint>(used_files.size());
-    // for (mz_uint i = 0; i < num_entries; ++i) {
-    // if (used_files[i])
-    // continue; // already processed
+    // Loop all files in archive
+    mz_zip_archive_file_stat stat;
+    mz_uint num_entries = static_cast<mz_uint>(used_files.size());
+    for (mz_uint i = 0; i < num_entries; ++i) {
+        if (used_files[i])
+            continue; // already processed
 
-    // if (!mz_zip_reader_file_stat(&archive, i, &stat)) {
-    // collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::cant_read_file_stats, std::to_string(i)));
-    // continue; // can't read filename
-    // }
+        if (!mz_zip_reader_file_stat(&archive, i, &stat)) {
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::cant_read_file_stats, std::to_string(i)));
+            continue; // can't read filename
+        }
 
-    // std::string name(stat.m_filename);
+        std::string name(stat.m_filename);
 
-    // // QUESTION: When it appears(OR on which platform??), that miniz change notation of the filepath?
-    // // TODO: Next line is unneccessary and SHOULD be removed. (@Filip opinion)
-    // std::replace(name.begin(), name.end(), '\\', '/');
+        // QUESTION: When it appears(OR on which platform??), that miniz change notation of the filepath?
+        // TODO: Next line is unneccessary and SHOULD be removed. (@Filip opinion)
+        std::replace(name.begin(), name.end(), '\\', '/');
 
-    // if (boost::algorithm::iequals(name, CONTENT_TYPES_FILE)) {
-    // // Do not use content types file, so App skip it for now
-    // found_content_file = true;
-    // continue;
-    // } else if (boost::algorithm::iequals(name, THUMBNAIL_FILE)) {
-    // // Do not report unprocessed thumbnail file
-    // continue;
-    // } else if (boost::algorithm::ends_with(name, ".svg") &&
-    // process_embossed_svg(archive, stat, model, collected_issues)) {
-    // continue;
-    // //} else if (boost::algorithm::iequals(name, BUILD_TICKET_FILE)) {
-    // //    process_build_ticket(archive, stat, model_3mf.build.items, model_map.instances, config, config_substitutions);
-    // } else {
-    // collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::unprocessed_file_in_3mf, name, std::to_string(i)));
-    // }
-    //}
+        if (boost::algorithm::iequals(name, CONTENT_TYPES_FILE)) {
+            // Do not use content types file, so App skip it for now
+            found_content_file = true;
+            continue;
+        } else if (boost::algorithm::iequals(name, THUMBNAIL_FILE)) {
+            // Do not report unprocessed thumbnail file
+            continue;
+        } else if (boost::algorithm::ends_with(name, ".svg") &&
+            process_embossed_svg(archive, stat, model, collected_issues)) {
+            continue;
+        //} else if (boost::algorithm::iequals(name, BUILD_TICKET_FILE)) {
+        //    process_build_ticket(archive, stat, model_3mf.build.items, model_map.instances, config, config_substitutions);
+        } else {
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::unprocessed_file_in_3mf, name, std::to_string(i)));
+        }
+    }
 
-    // if (!found_content_file)
-    // collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::content_types_file_missing, std::string(CONTENT_TYPES_FILE)));
+    if (!found_content_file)
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::content_types_file_missing, std::string(CONTENT_TYPES_FILE)));
 
     Loaded3MF loaded_3mf;
     loaded_3mf.metadata               = prusa_files_result.project_metadata;

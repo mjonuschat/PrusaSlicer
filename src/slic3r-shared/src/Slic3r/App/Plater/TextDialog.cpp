@@ -4,15 +4,13 @@
 ///|/
 
 #include "Slic3r/App/Plater/TextDialog.hpp"
+#include "Slic3r/App/Plater/DialogUtils.hpp"
 
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
-
-#include <boost/assign.hpp>
-#include <boost/bimap.hpp>
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include <fmt/format.h>
@@ -23,10 +21,6 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
 namespace {
-constexpr double MM_TO_INCH = 25.4;
-constexpr double INCH_TO_MM = 1. / MM_TO_INCH;
-constexpr double RAD_TO_DEG = 180.0 / M_PI;
-constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double SURFACE_DISTANCE_STEP = 0.01;
 } // namespace
 
@@ -178,6 +172,10 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     }
 
     add_part_specific_panel();
+
+    // update limits
+    update_units(true); update_units(false);
+    update_angle(true); update_angle(false);
 }
 
 void TextDialog::add_advanced_panel()
@@ -307,7 +305,6 @@ otherwise, the whole text has the same orthogonal projection.")
     );
     m_lock_offset_btn = row->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
     m_lock_offset_btn->set_self_align(YGAlignCenter);
-    m_lock_offset_btn->set_checkable(true);
     m_lock_offset_btn->callbacks().checked_changed = [this](bool checked) {
         if (m_callbacks.unlock_rotation)
             m_callbacks.unlock_rotation(checked);
@@ -317,6 +314,8 @@ otherwise, the whole text has the same orthogonal projection.")
                       _u8L("Unlock the text's rotation when moving text along the object's surface.")
         );
     };
+    m_lock_offset_btn->set_checkable(false); // initialize icon and tooltip(hover message)
+    m_lock_offset_btn->set_checkable(true);
 
     for (SliderWithInput* input :
          {m_char_gap.get(),
@@ -337,10 +336,6 @@ otherwise, the whole text has the same orthogonal projection.")
         if (m_callbacks.set_on_face_camera)
             m_callbacks.set_on_face_camera();
     };
-
-    // update limits
-    update_units(true); update_units(false);
-    update_angle(true); update_angle(false);
 }
 
 namespace {
@@ -460,28 +455,6 @@ void TextDialog::show_part_specific_panel(bool show)
     m_part_specific_panel->set_visible(show);
 }
 
-namespace {
-static void set_spin_limits(
-    InputTextWithSpin* spin,
-    double from,
-    double to,
-    double step,
-    double step_fast)
-{
-    DoubleValidator* validator = dynamic_cast<DoubleValidator*>(spin->validator());
-    validator->set_from(from);
-    validator->set_to(to);
-    spin->set_step(step);
-    spin->set_step_fast(step_fast);
-}
-void set_limist(SliderWithInput* slider, double max_val, double step)
-{
-    slider->set_begin_value(-max_val);
-    slider->set_end_value(max_val);
-    slider->set_step(step);
-}
-} // namespace
-
 void TextDialog::update_units(bool use_inches)
 {
     if (m_use_inches == use_inches)
@@ -495,15 +468,15 @@ void TextDialog::update_units(bool use_inches)
     if (use_inches) {
         set_spin_limits(m_height.get(), .005, 4., .005, .05);
         set_spin_limits(m_depth.get(), .005, 4., .005, .05);
-        set_limist(m_char_gap.get(), .2, .005);
-        set_limist(m_line_gap.get(), .2, .005);
-        set_limist(m_boldness.get(), .2, .005);
+        set_limit_step(m_char_gap.get(), .2, .005);
+        set_limit_step(m_line_gap.get(), .2, .005);
+        set_limit_step(m_boldness.get(), .2, .005);
     } else {
         set_spin_limits(m_height.get(), .1, 100., .1, 1.);
         set_spin_limits(m_depth.get(), .1, 100., .1, 1.);
-        set_limist(m_char_gap.get(), 5., .1);
-        set_limist(m_line_gap.get(), 5., .1);
-        set_limist(m_boldness.get(), 5., .1);
+        set_limit_step(m_char_gap.get(), 5., .1);
+        set_limit_step(m_line_gap.get(), 5., .1);
+        set_limit_step(m_boldness.get(), 5., .1);
     }
 }
 
@@ -516,13 +489,9 @@ void TextDialog::update_angle(bool use_radians)
 
     m_angle_unit->set_text(use_radians ? _u8L("rad") : _u8L("°"));
     if (use_radians) {
-        m_rotation->set_begin_value(-M_PI);
-        m_rotation->set_end_value(M_PI);
-        m_rotation->set_step(.02);
+        set_limit_step(m_rotation.get(), M_PI, .02);
     } else {
-        m_rotation->set_begin_value(-180.);
-        m_rotation->set_end_value(180.);
-        m_rotation->set_step(1.);
+        set_limit_step(m_rotation.get(), 180., 1.);
     }
 }
 

@@ -16,17 +16,22 @@
 #include <limits>
 
 #include "Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp"
+#include "Slic3r/Biz/Emboss/NSVGUtils.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp"
 #include "Slic3r/Biz/Algorithms/HealPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp" // expoly scaling
 #include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp" // CGAL project
 #include "admesh/stl.h" // indexed_triangle_set
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Utils.hpp" // append(ExPolygons)
+
+#include "fmt/format.h"
+#include <Slic3r/Biz/I18N/I18N.hpp> // translations
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <imgui/imstb_truetype.h>
@@ -752,6 +757,77 @@ Domain::ExPolygons union_with_delta(Domain::EmbossShape& shape, float delta, uns
             shape.final_shape.is_healed = false;
     return shape.final_shape.expolygons;
 }
+
+namespace {
+constexpr double get_tesselation_tolerance(
+    const std::optional<double>& scale_x,
+    const std::optional<double>& scale_y) {
+    double scale = std::max(scale_x.value_or(1.), scale_y.value_or(1.));
+    constexpr double tesselation_tolerance_in_mm = .1; //8e-2;
+    using Algorithms::Scaling::SCALING_FACTOR;
+    constexpr double tesselation_tolerance_scaled =
+        (tesselation_tolerance_in_mm * tesselation_tolerance_in_mm)
+        / SCALING_FACTOR / SCALING_FACTOR;
+    return tesselation_tolerance_scaled / scale / scale;
+}
+}
+
+ReadShapeResult read_shape_from_file(Domain::EmbossShape& shape,
+    const std::optional<double>& volume_scale_x,
+    const std::optional<double>& volume_scale_y) {
+    ASSERT(shape.svg_file.has_value());
+    Domain::EmbossShape::SvgFile& svg_file = *shape.svg_file;
+    if (svg_file.file_data == nullptr) {
+        svg_file.file_data = read_from_disk(svg_file.path);
+        if (svg_file.file_data == nullptr)
+            return ReadShapeResult::file_inaccessible;
+        svg_file.image = nullptr;
+    }
+    if (svg_file.image == nullptr) {
+        ASSERT(svg_file.file_data != nullptr);
+        // init svg image
+        svg_file.image = nsvgParse(*svg_file.file_data);
+        if (svg_file.image.get() == NULL)
+            return ReadShapeResult::nsvg_issue;
+        ASSERT(svg_file.image != nullptr);
+        shape.shapes_with_ids = {}; // clear shapes with ids        
+    }
+    ASSERT(shape.shapes_with_ids.empty());
+    NSVGLineParams params{ get_tesselation_tolerance(volume_scale_x, volume_scale_y) };
+    shape.shapes_with_ids = create_shape_with_ids(*svg_file.image, params);
+    if (shape.shapes_with_ids.empty())
+        return ReadShapeResult::no_shape;
+
+    shape.final_shape = {}; // clear final shape
+    union_with_delta(shape, UNION_DELTA, UNION_MAX_ITERATIN);
+    if (!shape.final_shape.is_healed)
+        // cant remove selfintersection and double points -> imposssible triangulation
+        return ReadShapeResult::cant_heal;
+    if (shape.final_shape.expolygons.empty())
+        // appear when shapes with id are soo small that during healing it disapear.
+        return ReadShapeResult::no_shape; 
+
+    return ReadShapeResult::success;
+}
+std::string to_string(ReadShapeResult issue, const std::string& svg_file_path) {
+    auto add_file = [&svg_file_path](const std::string& message) {
+        return fmt::format(fmt::runtime(message), svg_file_path);};
+    switch (issue) {
+    case ReadShapeResult::file_inaccessible: 
+        return add_file(_u8L("SVG file(\"{}\") is not accessible. Check application rights."));
+    case ReadShapeResult::nsvg_issue:
+        return add_file(_u8L("SVG file(\"{}\") can't be processed by NanoSVG."));
+    case ReadShapeResult::no_shape:
+        return add_file(_u8L("SVG file(\"{}\") do not contain embossabled path."));
+    case ReadShapeResult::cant_heal:
+        return add_file(_u8L("SVG file(\"{}\") contain path with unrepairabled shape for emboss."));
+    case ReadShapeResult::success:
+        return "sucessfull load of the svg file";
+    default: 
+        return "unknown issue";
+    }    
+}
+
 
 Domain::HealedExPolygons text2shapes(
     FontFileWithCache& font_with_cache,

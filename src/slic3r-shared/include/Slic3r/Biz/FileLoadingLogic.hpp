@@ -10,11 +10,9 @@
 
 namespace Slic3r::Biz {
 class IMessageDialogProvider;
+class ProjectInteractor;
+namespace Scene { class SceneInteractor; }
 } // namespace Slic3r::Biz
-
-namespace Slic3r::Biz::Scene {
-class SceneInteractor;
-} // namespace Slic3r::Biz::Scene
 
 namespace Slic3r::Domain::Preset {
 struct Bundle;

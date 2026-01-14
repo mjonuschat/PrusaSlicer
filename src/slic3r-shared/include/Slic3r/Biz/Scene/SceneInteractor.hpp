@@ -180,6 +180,7 @@ public:
         const std::string& name = std::string(),
         const Transform& xform  = Domain::SquareMatrix4d::Identity()
     );
+    void add_volume_into_selected_object(const Domain::ModelVolume& volume);
     using VolumeFactory = std::function<Domain::ModelVolume*(Domain::ModelObject&)>;
     void add_volume(
         Domain::SelectionId project_id,
@@ -280,6 +281,7 @@ public:
      */
     const ObjectSelection& object_selection() const;
     void set_object_selection(const ObjectSelection& object_selection);
+    void set_object_selection(const ObjectSelection& object_selection, Domain::SelectionId project_id);
 
     Domain::ElementRefs selected_volumes_with_shear() const;
     std::set<SelectionReferenceFrame> object_selection_reference_frame_options() const;

@@ -89,10 +89,20 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/HeightRangeRow.cpp
         include/Slic3r/App/Plater/LayerRangeSettingsDialog.hpp
         src/Slic3r/App/Plater/LayerRangeSettingsDialog.cpp
+
+        include/Slic3r/App/Plater/DialogUtils.hpp
+        include/Slic3r/App/Scene/EmbossCreate.hpp
         include/Slic3r/App/Plater/TextGizmo.hpp
-        src/Slic3r/App/Plater/TextGizmo.cpp
         include/Slic3r/App/Plater/TextDialog.hpp
+        include/Slic3r/App/Plater/SvgGizmo.hpp
+        include/Slic3r/App/Plater/SvgDialog.hpp
+
+        src/Slic3r/App/Scene/EmbossCreate.cpp
+        src/Slic3r/App/Plater/SvgGizmo.cpp
+        src/Slic3r/App/Plater/SvgDialog.cpp
+        src/Slic3r/App/Plater/TextGizmo.cpp
         src/Slic3r/App/Plater/TextDialog.cpp
+
         include/Slic3r/App/Plater/CutGizmo.hpp
         src/Slic3r/App/Plater/CutGizmo.cpp
         include/Slic3r/App/Plater/CutDialog.hpp
@@ -852,12 +862,14 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Emboss/IFontManager.hpp
         include/Slic3r/Biz/Emboss/Emboss.hpp
         include/Slic3r/Biz/Emboss/EmbossJob.hpp
+        include/Slic3r/Biz/Emboss/NSVGUtils.hpp
         include/Slic3r/Biz/Emboss/TextPresetManager.hpp
         include/Slic3r/Biz/Emboss/TextLines.hpp
         include/Slic3r/Biz/Emboss/SurfaceDrag.hpp
         include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp
         src/Slic3r/Biz/Emboss/Emboss.cpp
         src/Slic3r/Biz/Emboss/EmbossJob.cpp
+        src/Slic3r/Biz/Emboss/NSVGUtils.cpp
         src/Slic3r/Biz/Emboss/TextPresetManager.cpp
         src/Slic3r/Biz/Emboss/TextLines.cpp
         src/Slic3r/Biz/Emboss/SurfaceDrag.cpp
@@ -975,6 +987,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/FileLoadingLogic.cpp
         include/Slic3r/Biz/Format/STL.hpp
         src/Slic3r/Biz/Format/STL.cpp
+        include/Slic3r/Biz/Format/SVG.hpp
+        src/Slic3r/Biz/Format/SVG.cpp
         src/Slic3r/Biz/Format/OBJ.cpp
         include/Slic3r/Biz/Format/OBJ.hpp
         src/Slic3r/Biz/Format/objparser.cpp

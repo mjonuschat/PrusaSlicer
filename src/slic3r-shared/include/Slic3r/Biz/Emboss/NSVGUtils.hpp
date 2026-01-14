@@ -5,20 +5,16 @@
 #ifndef slic3r_NSVGUtils_hpp_
 #define slic3r_NSVGUtils_hpp_
 
-#include <stddef.h>
 #include <memory>
 #include <string>
-#include <sstream>
 #include <cmath>
-#include <cstddef>
 
-#include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 // Helper function to work with nano svg
-namespace Slic3r {
+namespace Slic3r::Biz::Emboss {
 
 /**
 @brief Paramreters for conversion curve from SVG to lines in Polygon
@@ -75,7 +71,6 @@ std::unique_ptr<std::string> read_from_disk(const std::string &path);
 using NSVGimage_ptr = std::unique_ptr<NSVGimage, void (*)(NSVGimage*)>;
 NSVGimage_ptr nsvgParseFromFile(const std::string &svg_file_path, const char *units = "mm", float dpi = 96.0f);
 NSVGimage_ptr nsvgParse(const std::string& file_data, const char *units = "mm", float dpi = 96.0f);
-NSVGimage *init_image(Domain::EmbossShape::SvgFile &svg_file);
 
 /**
 @brief Iterate over shapes and calculate count

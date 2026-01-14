@@ -139,6 +139,7 @@ enum class ToolType : uint8_t
     Translation,
     Rotation,
     Scale,
+    Svg, // embosing tool for Scalable vector graphics(.svg files)
     PlaceOnFace,
     Simplify,
     PaintOnSupportsGizmo,

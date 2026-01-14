@@ -29,10 +29,10 @@
 text OR polygons onto model surface
 */
 namespace Slic3r::Biz::Emboss {
-
+// Limit direction of up vector on model between side and top surface
+static const double UP_LIMIT = 0.9; // absolut size of z of the normalized vector [in range 0 - 1]
 static const float UNION_DELTA           = 50.0f; // [approx in nano meters depends on volume scale]
 static const unsigned UNION_MAX_ITERATIN = 10; // [count]
-static const double UP_LIMIT = 0.9; // absolut size of z of the normalized vector [in range 0 - 1]
 /**
 @brief Collect fonts registred inside OS
 @return OS registred TTF font files(full path) with names
@@ -442,6 +442,18 @@ std::vector<double> calculate_angles(
 // delta .. safe offset before union (use as boolean close)
 // NOTE: remove unprintable spaces between neighbor curves (made by linearization of curve)
 Domain::ExPolygons union_with_delta(Domain::EmbossShape& shape, float delta, unsigned max_heal_iteration);
+
+enum class ReadShapeResult {
+    file_inaccessible,
+    nsvg_issue,
+    no_shape, // svg do not conatain path
+    cant_heal, // double point and self intersection
+    success // no issue -> successfull
+};
+ReadShapeResult read_shape_from_file(Domain::EmbossShape& shape,
+    const std::optional<double>& volume_scale_x,
+    const std::optional<double>& volume_scale_y);
+std::string to_string(ReadShapeResult issue, const std::string& file_path);
 
 /**
  *  @brief  Check whether transformation matrix contains odd number of mirroring.

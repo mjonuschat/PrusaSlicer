@@ -120,6 +120,11 @@ enum class Icon : wchar_t
     AlignVCenterBtn,
     AlignVBottomBtn,
 
+    // Gizmo Svg
+    Reload,
+    ReflectionX,
+    ReflectionY,
+
     // Gizmo Arrange
     ArrangeTopLeft,
     ArrangeTopRight,
@@ -175,6 +180,7 @@ enum class Icon : wchar_t
     PaintMultiMaterial,
     Ruler,
     Text,
+    Svg,
     Scissors,
     Cut,
     RectangleAdd,

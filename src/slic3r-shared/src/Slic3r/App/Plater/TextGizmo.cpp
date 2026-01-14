@@ -1,4 +1,4 @@
-///|/ Copyright (c) Prusa Research 2025 Oleksandra Iushchenko @YuSanka
+///|/ Copyright (c) Prusa Research 2026 Filip Sykala @Jony01
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -6,7 +6,7 @@
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include <Slic3r/App/Scene/SceneNodeTag.hpp>
-#include <Slic3r/App/Scene/NodeVisitor.hpp> // visit_conditional_transform()
+#include <Slic3r/App/Scene/EmbossCreate.hpp>
 
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -14,7 +14,6 @@
 #include <boost/nowide/convert.hpp>
 
 #include <Slic3r/Directories.hpp>
-#include <Slic3r/Domain/TriangleMesh.hpp>
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
@@ -69,25 +68,6 @@ bool set_opt(std::optional<T>& val_opt, double new_value, double scale) {
         val_opt = scaled_new;
     return true;
 }
-
-// work only with selected Text volume/object
-// NOTE: move function near SceneInteractor::transform_selection
-void transform_selection_relative(const Domain::Transform3d& tr, Biz::ProjectInteractor& project_interactor)
-{
-    // get current transformation of the volume
-    const Domain::Project& project = project_interactor.selected_project();
-    Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
-    const Domain::ElementRef& el = scene_interactor.object_selection().elements.front();
-    Domain::Transform3d instance_tr = project.find_instance_by_id(el.object_id, el.instance_id)->get_matrix();
-    const Domain::ModelVolume& volume = (el.volume_id != 0) ?
-        *project.find_volume_by_id(el.object_id, el.volume_id) :
-        *project.find_object_by_id(el.object_id)->volumes.front();
-    Domain::Transform3d volume_tr = volume.get_matrix();
-    Domain::Transform3d world_relative = instance_tr * volume_tr * tr * volume_tr.inverse() * instance_tr.inverse();
-    scene_interactor.transform_selection(world_relative.matrix());
-}
-
-
 } // namespace
 
 namespace Slic3r::App::Plater {
@@ -104,12 +84,12 @@ TextGizmo::TextGizmo(
     PlaterScenePresenter& scene_presenter,
     Biz::ProjectInteractor& project_interactor,
     Biz::Emboss::IFontManager& font_manager,
-    Scene::GizmoManager& gizmo_manager
+    Scene::IGizmoController& gizmo_controller
 ) :
     m_scene_presenter(scene_presenter),
     m_project_interactor(project_interactor),
     m_font_manager(font_manager),
-    m_gizmo_manager(gizmo_manager),
+    m_gizmo_controller(gizmo_controller),
     m_preset_manager(
         font_manager,
         Slic3r::data_dir() + "/text_emboss_presets.cereal",
@@ -234,13 +214,13 @@ TextGizmo::TextGizmo(
             diff = diff / (*scale);
 
         Domain::Transform3d relative_volume_tr{ Eigen::Translation3d(Domain::Vec3d(0., 0., diff)) };
-        transform_selection_relative(relative_volume_tr, m_project_interactor);
+        Biz::Emboss::transform_selection_relative(relative_volume_tr, m_project_interactor);
 
         // calculate current surface distance
         const Domain::Project& project = m_project_interactor.selected_project();
         const Domain::ElementRef& ref = m_project_interactor.scene_interactor().object_selection().elements.front();
         Scene::Node& root = m_scene_presenter.scene().root();
-        distance = calc_distance(project, ref, root);
+        distance = Biz::Emboss::calc_distance(project, ref, root);
 
         if (m_preset_manager.get_font_prop().per_glyph) {
             // Slice of object(text lines) are relative to text volume position so need recalculate
@@ -285,7 +265,7 @@ TextGizmo::TextGizmo(
         scene_interactor.transform_selection(volume_relative.matrix());
 
         if (!up_limit.has_value()) { // recalculate angle when not locked
-            m_preset_manager.get_preset().angle = calc_rotation(project, ref);
+            m_preset_manager.get_preset().angle = Biz::Emboss::calc_rotation(project, ref);
             set_dialog_rotation(dialog(), m_preset_manager);
         }
 
@@ -339,9 +319,6 @@ TextGizmo::TextGizmo(
     m_dialog->callbacks().operation_selection_changed = [this](Domain::ModelVolumeType type) {
         update_volume(type);
     };
-
-    m_dialog->set_rotation_lock(true); // TODO: remove temporary fix for uninitialized tooltip
-    m_dialog->set_rotation_lock(false);
 }
 
 TextGizmo::~TextGizmo() = default;
@@ -395,7 +372,7 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
         const Domain::ElementRef& element = 
             m_project_interactor.scene_interactor().object_selection().elements.front();
 
-        m_preset_manager.get_preset().angle = calc_rotation(project, element);
+        m_preset_manager.get_preset().angle = Biz::Emboss::calc_rotation(project, element);
         set_dialog_rotation(dialog(), m_preset_manager);
     }
 
@@ -612,19 +589,11 @@ void activate_preset(
     }
 }
 
-Domain::Transform3d world_tr(const Domain::Project& project, const Domain::ElementRef& ref) {
-    const Domain::ModelInstance& instance = *project.find_instance_by_id(ref.object_id, ref.instance_id);
-    const Domain::ModelVolume& volume = (ref.volume_id != 0) ?
-        *project.find_volume_by_id(ref.object_id, ref.volume_id) :
-        *project.find_object_by_id(ref.object_id)->volumes.front();
-    return instance.get_matrix() * volume.get_matrix();
-}
-
 // True when exist change in scale otherwise false
 bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Domain::ElementRef& ref,
     Biz::Emboss::TextPresetManager& preset_manager) 
 {
-    Domain::Transform3d to_world = world_tr(project, ref);
+    Domain::Transform3d to_world = Biz::Emboss::world_tr(project, ref);
     auto to_world_linear = to_world.linear();
     auto calc = [&to_world_linear](const Domain::Vec3d& axe, std::optional<double>& scale) {
         Domain::Vec3d  axe_world = to_world_linear * axe;        
@@ -684,7 +653,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     Biz::Emboss::TextPresetManager::Preset preset{
         .emboss_style = tc.style, // copy
         .projection = volume.emboss_shape->projection, // copy
-        .angle = calc_rotation(project, ref)
+        .angle = Biz::Emboss::calc_rotation(project, ref)
     };
 
     // use one of the current font descriptor
@@ -730,7 +699,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     calc_scales(proj_ctx.volume_scale, project, ref, m_preset_manager); // volume scale for each axis
     if (is_part) {
         Scene::Node& root = m_scene_presenter.scene().root();
-        m_preset_manager.get_preset().distance = calc_distance(project, ref, root);
+        m_preset_manager.get_preset().distance = Biz::Emboss::calc_distance(project, ref, root);
     }
 
     activate_preset(dialog(), m_preset_manager, proj_ctx, volume);
@@ -738,7 +707,6 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
 
 void TextGizmo::on_project_activated(size_t new_project_id)
 {
-    ASSERT(m_gizmo_manager.current_tool_type() == type());
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
@@ -750,59 +718,10 @@ void TextGizmo::on_project_activated(size_t new_project_id)
     activate_preset(dialog(), m_preset_manager, m_proj_ctxs->project(new_project_id), *volume_ptr);
 }
 
-std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref) {
-    Domain::Transform3d to_world = world_tr(project, ref);
-    return Biz::Emboss::calc_up(to_world, Biz::Emboss::UP_LIMIT);
-}
-
-std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref, Scene::Node& root) {
-    Domain::Transform3d world = world_tr(project, ref);
-    Domain::Vec3d pos_world = world.translation();
-    // Emboss direction in world coordinate(negative Z axis)
-    Domain::Vec3d dir_world = world.linear() * Domain::Vec3d::UnitZ() * -1.;
-    dir_world.normalize();
-
-    auto ray_cast = [&ref, &root](const Scene::Ray& ray) {
-        return Scene::visit_conditional_transform<Scene::RaycastResult>(root,
-            [&ray, &ref](Scene::Node& n, Scene::RaycastResult& t) {
-                auto* tag = n.tag_of_type<Scene::SceneNodeTag>();
-                if (tag == nullptr || // Not a scene node tag (object)
-                    tag->volume_type != Domain::ModelVolumeType::MODEL_PART ||
-                    tag->object_id != ref.object_id || // different object
-                    tag->instance_id != ref.instance_id || // different instance
-                    tag->volume_id == ref.volume_id || // skip itself
-                    !n.has_raycast_component()) // only for sure
-                    return false;
-                return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
-            });
-        };
-
-    double overlap = 1.;
-    Scene::Ray ray_positive{ .origin = pos_world - dir_world * overlap, .direction = dir_world };
-    Scene::Ray ray_negative{ .origin = pos_world + dir_world * overlap, .direction = -dir_world };
-    auto r_positive = ray_cast(ray_positive);
-    auto r_negative = ray_cast(ray_negative);
-    for (auto& r : r_positive) r.second.distance = r.second.distance - overlap;
-    for (auto& r : r_negative) r.second.distance = overlap - r.second.distance;
-    r_positive.insert(r_positive.end(), r_negative.begin(), r_negative.end());
-    if (r_positive.empty())
-        return {}; // no intersection
-
-    std::sort(r_positive.begin(), r_positive.end(), [](const auto& a, const auto& b) {
-        return fabs(a.second.distance) < fabs(b.second.distance);  });
-
-    const auto& closest = r_positive.front();
-    double distance = closest.second.distance;
-    if (Domain::is_approx(distance, 0., 1e-4))
-        return {}; // numerical discrepancy -> lay on surface
-
-    return distance;
-}
-
 namespace {
 Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain::ModelInstance& instance, const Scene::Camera& camera) {
     const Domain::Transform3d to_world = instance.get_matrix() * volume.get_matrix();
-    const Domain::TriangleMesh& hull = volume.get_convex_hull();    
+    const Domain::TriangleMesh& hull = volume.get_convex_hull();
     Domain::Points points;
     points.reserve(hull.its.vertices.size());
     for (const Domain::Vec3f& v : hull.its.vertices) {
@@ -878,16 +797,17 @@ public:
         const Biz::Emboss::TextLines& text_lines,
         Biz::Emboss::FontFileWithCache& font_with_cache
     ) 
-        : m_text_configuration(text_configuration) // copy
+        : ShapeProvider(Domain::EmbossShape{
+            .scale = Biz::Emboss::get_text_shape_scale(
+                text_configuration.style.prop,
+                *font_with_cache.font_file),
+            .projection = projection
+            },
+            text_lines
+        )
+        , m_text_configuration(text_configuration) // copy
         , m_font_with_cache(font_with_cache) // copy shared pointers
-    {
-        m_shape.projection = projection; // copy current projection
-
-        const Domain::FontFile& ff = *m_font_with_cache.font_file;
-        const Domain::FontProp& fp = m_text_configuration.style.prop;
-        m_shape.scale = Biz::Emboss::get_text_shape_scale(fp, ff);
-        m_text_lines = text_lines; // copy
-    }
+    {}
 
     bool create_shape() override
     {
@@ -920,13 +840,10 @@ public:
         volume.text_configuration = m_text_configuration; // copy
         ASSERT(volume.emboss_shape.has_value());
 
-        // Fix for object: stored attribute that volume is embossed per glyph when it is object
-        // Removing object without text gizmo
-        if (volume.is_the_only_one_part()) {
-            if (m_text_configuration.style.prop.per_glyph)
-                volume.text_configuration->style.prop.per_glyph = false;
-            if (m_shape.projection.use_surface)
-                volume.emboss_shape->projection.use_surface = false;
+        // Fix for object: stored attribute that volume is embossed per glyph
+        if (volume.is_the_only_one_part() &&
+            m_text_configuration.style.prop.per_glyph) {
+            volume.text_configuration->style.prop.per_glyph = false;
         }
     }
 
@@ -947,7 +864,6 @@ Biz::Emboss::BaseData create_base_data(
 ) {
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     Domain::TextConfiguration text_config{ .style = preset.emboss_style, .text = text };
-    Domain::SelectionId project_id = project_interactor.selected_project_id();
     Biz::Emboss::FontFileWithCache& font_file = preset_manager.get_font_file_with_cache();
     std::optional<float> from_surface = preset.distance;
     if (from_surface.has_value() && depth_scale.has_value())
@@ -960,7 +876,7 @@ Biz::Emboss::BaseData create_base_data(
             font_file
         ),
         .project_interactor = project_interactor,
-        .project_id = project_id,
+        .project_id = project_interactor.selected_project_id(),
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
         .per_glyph_surface_distance = from_surface,
         .volume_name = text,
@@ -975,7 +891,7 @@ bool is_text_empty(std::string_view text) {
 Biz::Emboss::BaseData::IssueFn create_issue_fn(
     TextDialog& dialog, 
     std::string& warning_tooltip,
-    Biz::ProjectInteractor& project_interactor
+    const Biz::ProjectInteractor& project_interactor
 ) {
     auto prepend_tooltip = [&dialog, &warning_tooltip, &project_interactor, 
         project_id = project_interactor.selected_project_id()]
@@ -1016,7 +932,7 @@ bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type
     }
 
     // without text there is nothing to emboss
-    const std::string& text = m_proj_ctxs->selected().text;
+    const std::string& text = proj_ctx.text;
     if (is_text_empty(text)) {
         proj_ctx.warning_tooltip = _u8L("Embossed text cannot contain only white spaces.");
         // full priority(remove other warnings)
@@ -1039,7 +955,7 @@ bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type
 
 void TextGizmo::close()
 {
-    m_gizmo_manager.deactivate_current_tool();
+    m_gizmo_controller.deactivate_current_tool();
 }
 
 void TextGizmo::rotate(double absolut_angle_in_rad) {
@@ -1049,12 +965,12 @@ void TextGizmo::rotate(double absolut_angle_in_rad) {
 
     double diff_angle = absolut_angle_in_rad - current;
     Domain::Transform3d relative_volume_tr{ Eigen::AngleAxisd(diff_angle, Domain::Vec3d::UnitZ()) };
-    transform_selection_relative(relative_volume_tr, m_project_interactor);
+    Biz::Emboss::transform_selection_relative(relative_volume_tr, m_project_interactor);
 
     // recalculate current rotation
     const Domain::Project& project = m_project_interactor.selected_project();
     const Domain::ElementRef& el = m_project_interactor.scene_interactor().object_selection().elements.front();
-    m_preset_manager.get_preset().angle = calc_rotation(project, el);
+    m_preset_manager.get_preset().angle = Biz::Emboss::calc_rotation(project, el);
 
     // Is set what was wanted?
     // assert(Domain::is_approx(m_preset_manager.get_preset().angle.value_or(0.f), (float)value, 1e-3f));
@@ -1091,6 +1007,6 @@ bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ra
         .base = create_base_data(text, volume_type, m_preset_manager, m_project_interactor, text_lines, issue_fn),
         .volume_type = volume_type
     };
-    return Biz::Emboss::start_create(params, ray, results);
+    return Scene::start_create(params, ray, results);
 }
 } // namespace Slic3r::App::Plater

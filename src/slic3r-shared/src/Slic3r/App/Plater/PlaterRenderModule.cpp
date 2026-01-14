@@ -45,6 +45,8 @@
 #include "Slic3r/App/Plater/MeasureDialog.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include "Slic3r/App/Plater/TextGizmo.hpp"
+#include "Slic3r/App/Plater/SvgDialog.hpp"
+#include "Slic3r/App/Plater/SvgGizmo.hpp"
 #include "Slic3r/App/Plater/ArrangeGizmo.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
@@ -316,6 +318,8 @@ static const char* tool_type_to_command_name(Scene::ToolType tool_type)
         return CommandName::MultiMaterialPaintingGizmo;
     case Scene::ToolType::TextGizmo:
         return CommandName::TextGizmo;
+    case Scene::ToolType::Svg:
+        return CommandName::SvgGizmo;
     case Scene::ToolType::MeasureGizmo:
         return CommandName::MeasureGizmo;
     case Scene::ToolType::CutGizmo:
@@ -432,6 +436,7 @@ void PlaterRenderModule::register_commands()
         {Scene::ToolType::PaintOnFuzzySkinGizmo, Platform::KeyCode::H},
         {Scene::ToolType::MultiMaterialPaintingGizmo, Platform::KeyCode::N},
         {Scene::ToolType::TextGizmo, Platform::KeyCode::T},
+        {Scene::ToolType::Svg, Platform::KeyCode::G},
         {Scene::ToolType::CutGizmo, Platform::KeyCode::C},
         {Scene::ToolType::MeasureGizmo, Platform::KeyCode::U},
         {Scene::ToolType::VariableLayerHeightGizmo, Platform::KeyCode::V},
@@ -636,8 +641,15 @@ void PlaterRenderModule::init_scene_layout()
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Text,
-        _u8L("Text"),
+        _u8L("Emboss text"),
         m_text_gizmo
+    );
+
+    m_toolbar_svg = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::Svg,
+        _u8L("Scalable vector graphics(SVG)"),
+        m_svg_gizmo
     );
 
     m_toolbar_cut =
@@ -740,6 +752,7 @@ void PlaterRenderModule::init_dialog_navigation()
     );
     init_gizmo_dialog(Scene::ToolType::Simplify, m_simplify_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::TextGizmo, m_text_gizmo->release_ui_window());
+    init_gizmo_dialog(Scene::ToolType::Svg, m_svg_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::CutGizmo, m_cut_gizmo->release_ui_window());
     init_gizmo_dialog(
         Scene::ToolType::VariableLayerHeightGizmo,
@@ -919,6 +932,11 @@ void PlaterRenderModule::init_gizmos()
         *m_font_manager,
         *m_gizmo_manager
     );
+    m_svg_gizmo = &m_gizmo_manager->add_tool_gizmo<SvgGizmo>(
+        *m_scene_presenter,
+        m_project_interactor,
+        *m_gizmo_manager
+    );
     m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
         *m_device,
         m_project_interactor,
@@ -987,6 +1005,9 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
                 m_project_interactor.scene_interactor(),
                 &AppServices::instance().dialog_manager()
             );
+            // open SvgGizmo, when svg volume is selected(was imported into object)
+            if(m_gizmo_manager->current_tool_type() != Scene::ToolType::Svg)
+                command(CommandName::SvgGizmo).execute();
 #if ENABLED_NODE_LOGGING
             m_scene_presenter->scene().log_nodes();
 #endif
@@ -1003,7 +1024,8 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
         ),
         "",
         Wildcards::generate_wildcards(
-            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj | Wildcards::TypeFlag::Step,
+            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj |
+            Wildcards::TypeFlag::Svg | Wildcards::TypeFlag::Step,
             Wildcards::TypeFlag::AllImportFiles
         ),
         callback
@@ -1035,6 +1057,8 @@ Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool
         return m_toolbar_multi_material_painting;
     case Scene::ToolType::TextGizmo:
         return m_toolbar_text;
+    case Scene::ToolType::Svg:
+        return m_toolbar_svg;
     case Scene::ToolType::MeasureGizmo:
         return m_toolbar_measure;
     case Scene::ToolType::CutGizmo:

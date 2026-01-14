@@ -1,4 +1,4 @@
-///|/ Copyright (c) Prusa Research 2021 - 2023 Oleksandra Iushchenko @YuSanka, Filip Sykala @Jony01
+///|/ Copyright (c) Prusa Research 2021 - 2026 Filip Sykala @Jony01
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -18,9 +18,6 @@
 // Provide job executor
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-
-#include "Slic3r/App/Scene/BedNodeTag.hpp"
-#include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp" // use surface cuts
 
 // #include "libslic3r/Format/OBJ.hpp" // load_obj for default mesh
@@ -37,25 +34,6 @@ using ExpectedTM = tl::expected<Domain::TriangleMesh, JobIssue>;
 
 bool check(const CreateVolumeParams& input);
 bool check(const UpdateVolumeParams& input);
-
-/**
-@brief Start job for add new volume to object with given transformation
-@param instance Define where to add
-@param volume_tr Wanted volume transformation
-@param data Define what to emboss - shape
-@param volume_type Type of volume: Part, negative, modifier
-@return Nullptr when job is sucessfully add to worker otherwise return data to be processed different way
-*/
-bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type);
-
-/**
-@brief Start job for add object with text into scene
-@param input Contain worker, build shape, gizmo,
-emboss_data is moved out soo it can't be const
-@param coor Screen coordinat, where to create new object laying on bed
-@return True when can add job to worker otherwise FALSE
-*/
-bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor);
 
 using namespace Slic3r::Biz::Emboss;
 using Biz::JThread::StopToken;
@@ -90,7 +68,7 @@ struct DataCreateVolume
 };
 
 // Offset of clossed side to model
-constexpr float SAFE_SURFACE_OFFSET = 0.015f; // [in mm]
+constexpr double SAFE_SURFACE_OFFSET = 0.015; // [in mm]
 
 /**
 @brief Create new TextVolume on the surface of ModelObject
@@ -256,28 +234,19 @@ public:
     static void update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base, const Domain::ObjectID& instance_id);
 };
 
+/**
+@brief Copied triangles from object to be able create mesh for cut surface from
+@param volumes Source object volumes for cut surface from
+@param text_volume_id Source volume id
+@return Source data for cut surface from
+*/
+ModelSources create_sources(const Domain::ModelVolumePtrs& volumes, std::optional<size_t> text_volume_id = {});
+
 bool queue_job(std::unique_ptr<Job> job);
-
-const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor);
-
 } // namespace
 
 namespace Slic3r::Biz::Emboss {
-
-namespace {
-std::optional<Domain::Vec2d> get_z_zero_coor(const App::Scene::Ray& pick_ray) {
-    double d_z = pick_ray.direction.z();
-    if (fabs(d_z) - 1e-4 <= 0.)
-        return std::nullopt; // almost parallel to Z axis solve as no bed under mouse
-
-    // prerequisity: bed is alligned -> parallel with Z plane AND Z = 0
-    Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
-    return Domain::Vec2d(z0.x(), z0.y());
-}
-} // namespace
-
-const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor) {
-    const Domain::ElementRefs& elms = project_interactor.scene_interactor().object_selection().elements;
+const Domain::ModelInstance* get_selected_instance(const Domain::ElementRefs& elms, const Domain::Project& project) {
     if (elms.empty())
         return nullptr;
 
@@ -292,75 +261,54 @@ const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor&
     }
     if (!selected.has_value())
         return nullptr; // no object selected    
-    const Domain::Project& project = project_interactor.selected_project();
     return project.find_instance_by_id(selected->object_id, selected->instance_id);
 }
 
-bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks)
-{
-    ASSERT(check(input)); // bad input data
-    const Biz::ProjectInteractor& project_interactor = input.base.project_interactor;
-    const Domain::ModelInstance* selected_instance = get_selected_instance(project_interactor);
+const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor) {
+    const Domain::ElementRefs& elms = project_interactor.scene_interactor().object_selection().elements;
     const Domain::Project& project = project_interactor.selected_project();
-    const App::Scene::NodePickResult* bed_pick = nullptr;
-    for (const App::Scene::NodePickResult& pick : picks) {
-        if (pick.node->has_tag_of_type<App::Scene::SceneNodeTag>()) {
-            const auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
-            const Domain::ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
-            if (volume == nullptr)
-                continue; // no volume under mouse
-            // TODO: What to do with Negative volume
-            if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
-                continue; // skip modifiers + SupportBlock/Enforce
-
-            Domain::Vec3d pick_point  = pick_ray.point_at(pick.cast.distance);
-            Domain::Vec3d pick_normal = pick.cast.normal;
-            // normal could be from scaled object it needs normalize
-            pick_normal.normalize();
-            
-            const Domain::ModelObject& object = selected_instance != nullptr ? 
-                *selected_instance->get_object() : *volume->get_object();
-            const Domain::ModelInstance* instance = project.find_instance_by_id(object.id().id, tag->instance_id);
-            Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
-            Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
-            return ::start_create_volume_job(*instance, tr, input.base, input.volume_type);
-        }
-        if (bed_pick == nullptr && // use only first crossed bed
-            pick.node->has_tag_of_type<App::Scene::BedNodeTag>()) {
-            bed_pick = &pick;
-        }
-    }
-
-    auto bed_coor = get_z_zero_coor(pick_ray);
-    if (bed_coor.has_value())
-    {
-        if (selected_instance == nullptr){
-            return ::start_create_object_job(input, *bed_coor);
-        } else {
-            Domain::Vec3d pick_point(bed_coor->x(), bed_coor->y(), 0.);
-            Domain::Vec3d pick_normal(0., 0., 1.);
-            Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
-            Domain::Transform3d tr = selected_instance->get_matrix().inverse() * surface_trmat;
-            return ::start_create_volume_job(*selected_instance, tr, input.base, input.volume_type);
-        }
-    }
-    return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray
+    return get_selected_instance(elms, project);
 }
 
-bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks) {
-    ASSERT(check(input)); // bad input data
-    const Domain::ModelInstance* selected_instance = get_selected_instance(input.base.project_interactor);
-    ASSERT(selected_instance != nullptr); // no object selected
-    return false;
+bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
+{
+    const Domain::ModelObject& object = *instance.get_object();
+    data.shape_provider->create_text_lines(volume_tr, object); // only when needed
+
+    bool use_surface = data.shape_provider->get_projection().use_surface;
+    std::unique_ptr<Job> job;
+    if (use_surface) {
+        // Model to cut surface from.
+        ModelSources sources = create_sources(object.volumes);
+        if (sources.empty()) {
+            use_surface = false; // can't use surface, try CreateVolumeJob
+        }
+        else {
+            SurfaceVolumeData sfvd{ volume_tr, std::move(sources) };
+            CreateSurfaceVolumeData
+                surface_data{ std::move(sfvd), std::move(data), volume_type, instance.id() };
+            job = std::make_unique<CreateSurfaceVolumeJob>(std::move(surface_data));
+        }
+    }
+    if (!use_surface) {
+        // create volume
+        DataCreateVolume create_volume_data{
+            .base = std::move(data),
+            .volume_type = volume_type,
+            .instance_id = instance.id(),
+            .transform = volume_tr };
+        job = std::make_unique<CreateVolumeJob>(std::move(create_volume_data));
+    }
+    return queue_job(std::move(job));
 }
 
-// ignore selection and create object in center ray direction
-bool start_create_object(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks) {
-    ASSERT(check(input)); // bad input data
-    auto bed_coor = get_z_zero_coor(pick_ray);
-    if (!bed_coor.has_value())
-        return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray    
-    return ::start_create_object_job(input, *bed_coor);
+bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor)
+{
+    ASSERT(check(input));
+    // create transformation on the coordinate
+    DataCreateObject data{ .base = std::move(input.base), .bed_coor = coor, .angle = input.angle };
+    auto job = std::make_unique<CreateObjectJob>(std::move(data));
+    return queue_job(std::move(job));
 }
 
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume)
@@ -378,6 +326,17 @@ bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& v
     UpdateSurfaceVolumeData surface_data{std::move(data), {volume.get_matrix(), std::move(sources)}};
     return queue_job(std::make_unique<UpdateSurfaceVolumeJob>(std::move(surface_data)));
 }
+
+ProjectTransform create_projection(const Domain::EmbossShape& es, bool is_outside) {
+    // NOTE: SHAPE_SCALE is applied in ProjectZ
+    double scale = es.scale;
+    double depth = es.projection.depth / scale;
+    auto projectZ = std::make_unique<ProjectZ>(depth);
+    double offset = is_outside ? -SAFE_SURFACE_OFFSET : (SAFE_SURFACE_OFFSET - es.projection.depth);
+    Domain::Transform3d tr = Eigen::Translation<double, 3>(0., 0., offset) * Eigen::Scaling(scale);
+    return ProjectTransform(std::move(projectZ), tr);
+}
+
 } // namespace Slic3r::Biz::Emboss
 
 // Private implementation for create volume and objects jobs
@@ -465,15 +424,6 @@ template <typename Fnc>
 ExpectedTM cut_surface(/*const*/ BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled
 );
 
-/**
-@brief Copied triangles from object to be able create mesh for cut surface from
-@param volumes Source object volumes for cut surface from
-@param text_volume_id Source volume id
-@return Source data for cut surface from
-*/
-ModelSources create_sources(const Domain::ModelVolumePtrs& volumes, std::optional<size_t> text_volume_id = {});
-
-void create_message(const std::string& message); // only in finalize
 auto was_canceled(StopToken& stop)
 {
     return [&stop]() { return stop.stop_requested(); };
@@ -504,7 +454,6 @@ void CreateVolumeJob::process(StopToken& stop)
 void CreateVolumeJob::finalize()
 {
     if (!m_result.has_value()) {
-        create_message("Can't create empty volume(" + to_string(m_result.error()) + ").");
         m_input.base.issue_fn(JobIssue::default_volume);
         m_result = create_default_mesh();
     }
@@ -552,7 +501,6 @@ void CreateObjectJob::process(StopToken& stop)
 void CreateObjectJob::finalize()
 {
     if (!m_result.has_value()) {
-        create_message("Can't create empty object(" + to_string(m_result.error()) + ").");
         m_input.base.issue_fn(JobIssue::default_volume);
         m_result = create_default_mesh();
     }
@@ -592,7 +540,6 @@ void UpdateJob::process(StopToken& stop)
 void UpdateJob::finalize()
 {
     if (!m_result.has_value()) {
-        create_message("Created text volume is empty. Change text or font.");
         return m_input.base.issue_fn(m_result.error());
     }
     ::final_update_volume(std::move(m_result.value()), m_input);
@@ -646,7 +593,6 @@ void CreateSurfaceVolumeJob::process(StopToken& stop)
 void CreateSurfaceVolumeJob::finalize()
 {
     if (!m_result.has_value()) {
-        create_message("Can't create surface volume(" + to_string(m_result.error()) + ").");
         m_input.base.issue_fn(JobIssue::default_volume);
         m_result = create_default_mesh();
     }
@@ -754,6 +700,8 @@ bool check(const UpdateVolumeParams& input)
     bool res = check(input.base);
     assert(!input.volume_id.invalid());
     res &= !input.volume_id.invalid();
+    assert(!input.instance_id.invalid());
+    res &= !input.instance_id.invalid();
     return res;
 }
 
@@ -934,17 +882,7 @@ ExpectedTM try_create_mesh(BaseData& input, const Fnc& was_canceled)
     if (was_canceled())
         return tl::unexpected{ JobIssue::canceled };
 
-    // NOTE: SHAPE_SCALE is applied in ProjectZ
-    const Domain::EmbossShape& es = input.shape_provider->get_shape();
-    double scale    = es.scale;
-    double depth    = es.projection.depth / scale;
-    auto projectZ   = std::make_unique<ProjectZ>(depth);
-    float offset = input.is_outside ? -SAFE_SURFACE_OFFSET : (SAFE_SURFACE_OFFSET - es.projection.depth);
-    Domain::Transform3d tr = Eigen::Translation<double, 3>(0., 0., static_cast<double>(offset)) * Eigen::Scaling(scale);
-    ProjectTransform project(std::move(projectZ), tr);
-    if (was_canceled())
-        return tl::unexpected{ JobIssue::canceled };
-
+    ProjectTransform project = create_projection(input.shape_provider->get_shape(), input.is_outside);
     return Biz::Algorithms::TriangleMesh::construct(polygons2model(shapes, project));
 }
 
@@ -978,7 +916,7 @@ void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data)
 {
     // all used symbol in text conain only empty glyphs
     if (mesh.its.empty())
-        return create_message("Empty mesh can't be created.");
+        return; // Empty mesh can't be created.
 
     // select project
     Biz::ProjectInteractor& project_interactor = data.base.project_interactor;
@@ -1010,7 +948,7 @@ void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& instance
 {
     // create volume
     if (mesh.its.empty())
-        return create_message("Can't create empty volume.");
+        return;
 
     auto& scene_interactor = data.project_interactor.scene_interactor();
     scene_interactor.add_volume(
@@ -1059,7 +997,8 @@ OrthoProject create_projection_for_cut(Domain::Transform3d tr, double shape_scal
 
 OrthoProject3d create_emboss_projection(bool is_outside, float emboss, Domain::Transform3d tr, Biz::CGAL::Algorithms::SurfaceCut& cut)
 {
-    float front_move = (is_outside) ? emboss : SAFE_SURFACE_OFFSET, back_move = -((is_outside) ? SAFE_SURFACE_OFFSET : emboss);
+    float front_move = (is_outside) ? emboss : SAFE_SURFACE_OFFSET, 
+           back_move = -((is_outside) ? SAFE_SURFACE_OFFSET : emboss);
     its_transform(cut, tr.pretranslate(Domain::Vec3d(0., 0., front_move)));
     Domain::Vec3d from_front_to_back(0., 0., back_move - front_move);
     return OrthoProject3d(from_front_to_back);
@@ -1279,6 +1218,9 @@ ModelSources create_sources(const Domain::ModelVolumePtrs& volumes, std::optiona
 
 bool queue_job(std::unique_ptr<Job> job)
 {
+    if (job == nullptr)
+        return false;
+
     std::function<std::unique_ptr<Job>(StopToken, std::unique_ptr<Job>&&)> process =
         [](StopToken stop_token, std::unique_ptr<Job>&& job) -> std::unique_ptr<Job>
     {
@@ -1294,50 +1236,6 @@ bool queue_job(std::unique_ptr<Job> job)
         .on_result(finalize)
         .start();
     return true;
-}
-
-bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
-{
-    const Domain::ModelObject& object = *instance.get_object();
-    data.shape_provider->create_text_lines(volume_tr, object); // only when needed
-
-    bool use_surface = data.shape_provider->get_projection().use_surface;
-    std::unique_ptr<Job> job;
-    if (use_surface) {
-        // Model to cut surface from.
-        ModelSources sources = create_sources(object.volumes);        
-        if (sources.empty()) {
-            use_surface = false; // can't use surface, try CreateVolumeJob
-        } else {
-            SurfaceVolumeData sfvd{volume_tr, std::move(sources)};
-            CreateSurfaceVolumeData
-                surface_data{std::move(sfvd), std::move(data), volume_type, instance.id()};
-            job = std::make_unique<CreateSurfaceVolumeJob>(std::move(surface_data));
-        }
-    }
-    if (!use_surface) {
-        // create volume
-        DataCreateVolume create_volume_data{
-            .base = std::move(data), 
-            .volume_type = volume_type,
-            .instance_id = instance.id(),
-            .transform = volume_tr};
-        job = std::make_unique<CreateVolumeJob>(std::move(create_volume_data));
-    }
-    return queue_job(std::move(job));
-}
-
-bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor)
-{
-    // create transformation on the coordinate
-    DataCreateObject data{.base = std::move(input.base), .bed_coor = coor, .angle = input.angle};
-    auto job = std::make_unique<CreateObjectJob>(std::move(data));
-    return queue_job(std::move(job));
-}
-
-void create_message(const std::string& message)
-{
-    SPDLOG_WARN(message);
 }
 
 } // namespace

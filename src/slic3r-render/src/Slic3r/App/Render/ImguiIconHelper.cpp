@@ -158,12 +158,18 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::PlusHeightRange, "plus_height_range"},
     {Icon::PlusModifier, "plus_modifier"},
 
+    // Gizmo Emboss
     {Icon::AlignHLeftBtn, "align_horizontal_left"},
     {Icon::AlignHCenterBtn, "align_horizontal_center"},
     {Icon::AlignHRightBtn, "align_horizontal_right"},
     {Icon::AlignVTopBtn, "align_vertical_top"},
     {Icon::AlignVCenterBtn, "align_vertical_center"},
     {Icon::AlignVBottomBtn, "align_vertical_bottom"},
+
+    // Gizmo Svg
+    {Icon::Reload, "refresh"},
+    {Icon::ReflectionX, "reflection_x"},
+    {Icon::ReflectionY, "reflection_y"},
 
     {Icon::Layers, "layers"},
     {Icon::Infill, "infill"},
@@ -205,6 +211,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::PaintMultiMaterial, "paint_multi_material"},
     {Icon::Ruler, "ruler"},
     {Icon::Text, "text"},
+    {Icon::Svg, "toolbar_svg"},
     {Icon::Palette, "palette"},
     {Icon::Scissors, "scissors"},
     {Icon::Cut, "cut"},

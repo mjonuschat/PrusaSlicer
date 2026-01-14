@@ -168,8 +168,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Format/SL1.hpp
     src/libslic3r/Format/SL1_SVG.cpp
     src/libslic3r/Format/SL1_SVG.hpp
-    src/libslic3r/Format/SVG.cpp
-    src/libslic3r/Format/SVG.hpp
     src/libslic3r/GCode.cpp
     src/libslic3r/GCode.hpp
     src/libslic3r/GCode/AvoidCrossingPerimeters.cpp
@@ -276,7 +274,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/MutablePriorityQueue.hpp
     src/libslic3r/NormalUtils.cpp
     src/libslic3r/NormalUtils.hpp
-    src/libslic3r/NSVGUtils.cpp
     src/libslic3r/Optimize/BruteforceOptimizer.hpp
     src/libslic3r/PerimeterGenerator.cpp
     src/libslic3r/PerimeterGenerator.hpp
@@ -420,7 +417,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/MinAreaBoundingBox.hpp
     include/libslic3r/miniz_extension.hpp
     include/libslic3r/ModelUtils.hpp
-    include/libslic3r/NSVGUtils.hpp
     include/libslic3r/OpenVDBUtils.hpp
     include/libslic3r/Optimize/NLoptOptimizer.hpp
     include/libslic3r/Optimize/Optimizer.hpp

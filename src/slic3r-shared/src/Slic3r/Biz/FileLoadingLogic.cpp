@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
+#include "Slic3r/Biz/Format/SVG.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
 #include "Slic3r/Biz/Format/STEP.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
@@ -424,18 +425,16 @@ namespace {
 void fix_volume_transformation(ModelVolume& volume) {
     if (!volume.emboss_shape.has_value())
         return;
-        
-    if (!volume.emboss_shape->legacy_fix_3mf_tr.has_value())
+    std::optional<Transform3d> &fix_opt = volume.emboss_shape->legacy_fix_3mf_tr;
+    if (!fix_opt.has_value())
         return; // version without storing fix matrix (can't help)
     
-    const Transform3d& fix_tr = *volume.emboss_shape->legacy_fix_3mf_tr;
-    volume.set_transformation(volume.get_matrix() * fix_tr.inverse());
+    volume.set_transformation(volume.get_matrix() * fix_opt->inverse());
     indexed_triangle_set its = volume.mesh_ptr()->its; // copy
-    its_transform(its, fix_tr);
-    TriangleMesh tm = TriangleMesh(std::move(its));
-    volume.set_mesh(std::move(tm));
+    its_transform(its, *fix_opt);
+    volume.set_mesh(Algorithms::TriangleMesh::construct(std::move(its)));
     // data for fix transformation is not useable anymore
-    volume.emboss_shape->legacy_fix_3mf_tr.reset();
+    fix_opt.reset();
 }
 
 // For legacy 3mf tranform triangles by fix tr mat
@@ -545,13 +544,15 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
 )
 {
     ReturnData ret = {input_file_path.filename().string()};
-    const bool is_stl = boost::algorithm::iends_with(input_file_path.string(), ".stl");
-    const bool is_3mf = boost::algorithm::iends_with(input_file_path.string(), ".3mf");
-    const bool is_obj = boost::algorithm::iends_with(input_file_path.string(), ".obj");
-    const bool is_step = boost::algorithm::iends_with(input_file_path.string(), ".step") || boost::algorithm::iends_with(input_file_path.string(), ".stp");
-
+    std::string path_str = input_file_path.string();
+    const bool is_stl = boost::algorithm::iends_with(path_str, ".stl");
+    const bool is_3mf = boost::algorithm::iends_with(path_str, ".3mf");
+    const bool is_obj = boost::algorithm::iends_with(path_str, ".obj");
+    const bool is_svg = boost::algorithm::iends_with(path_str, ".svg");
+    const bool is_step = boost::algorithm::iends_with(path_str, ".step") ||
+                         boost::algorithm::iends_with(path_str, ".stp");
     if (is_stl || is_obj) {
-        auto loaded_mesh = is_stl ? Biz::load_stl(input_file_path.string()) : Biz::load_obj(input_file_path.string());
+        auto loaded_mesh = is_stl ? Biz::load_stl(path_str) : Biz::load_obj(path_str);
         if (loaded_mesh) {
             Domain::TriangleMesh mesh = loaded_mesh.value();
             ret.mesh                  = mesh;
@@ -628,6 +629,13 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
         } else {
             return tl::make_unexpected(FileLoadError::error(out.error()));
         }
+    } else if (is_svg) {
+        auto result = Biz::load_svg(path_str);
+        if (!result) {
+            return tl::make_unexpected(FileLoadError::error(result.error()));
+        }
+        ret.model = std::move(result.value());
+        return ret;
     }
 
     return tl::make_unexpected(FileLoadError::error(_u8L(
@@ -911,6 +919,16 @@ void import_volumes_into_selected_object(
             bbox = mesh->bounding_box();
         } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
+            if (model.objects.size() == 1 &&
+                model.objects.front()->volumes.size() == 1) {
+                // Model conatin only one object with one volume(e.g. svg import)
+                // Use volume not only TriangleMesh
+                Domain::ModelVolume& volume_loaded = *model.objects.front()->volumes.front();
+                volume_loaded.set_type(volume_type);
+                volume_loaded.name = file_data.file_name;
+                scene_interactor.add_volume_into_selected_object(volume_loaded);
+                continue;
+            }
             // Convert objects from the model into separate meshes and add them for selected object
             TriangleMesh mesh;
             for (const ModelObject* object : model.objects) {
@@ -961,6 +979,7 @@ const std::vector<std::string>& get_import_extensions()
         ".3mf",
         ".stl",
         ".obj",
+        ".svg",
         ".step", ".stp"
     };
     return extensions;

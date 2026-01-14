@@ -52,6 +52,7 @@ class PaintOnFuzzySkinGizmo;
 class MultiMaterialPaintingGizmo;
 class SimplifyGizmo;
 class TextGizmo;
+class SvgGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
 class CutGizmo;
@@ -224,6 +225,7 @@ private:
     Yoga::ToolbarButton* m_toolbar_paint_on_fuzzy_skin     = nullptr;
     Yoga::ToolbarButton* m_toolbar_multi_material_painting = nullptr;
     Yoga::ToolbarButton* m_toolbar_text                    = nullptr;
+    Yoga::ToolbarButton* m_toolbar_svg                     = nullptr;
     Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
     Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
     Yoga::ToolbarButton* m_toolbar_variable_layer_height   = nullptr;
@@ -243,6 +245,7 @@ private:
     PaintOnFuzzySkinGizmo* m_paint_on_fuzzy_skin_gizmo          = nullptr;
     MultiMaterialPaintingGizmo* m_multi_material_painting_gizmo = nullptr;
     TextGizmo* m_text_gizmo                                     = nullptr;
+    SvgGizmo* m_svg_gizmo                                       = nullptr;
     MeasureGizmo* m_measure_gizmo                               = nullptr;
     PlaterCameraGizmo* m_camera_gizmo                           = nullptr;
     CutGizmo* m_cut_gizmo                                       = nullptr;

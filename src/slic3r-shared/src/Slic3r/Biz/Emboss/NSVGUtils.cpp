@@ -2,12 +2,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/NSVGUtils.hpp"
+#include "Slic3r/Biz/Emboss/NSVGUtils.hpp"
 
 #include <boost/nowide/fstream.hpp>
 #include <nanosvg/nanosvg.h>
 #include <array>
-#include <algorithm>
 #include <sstream>
 #include <cassert>
 #include <cstring>
@@ -18,19 +17,12 @@
 #include "Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp"
 #include "Slic3r/Biz/Algorithms/HealPolygon.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
-#include "Slic3r/Exception.hpp"
 #include "Slic3r/Utils.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
 namespace {
-
-using Domain::EmbossShape;
-using Domain::ExPolygonsWithIds;
-using Domain::HealedExPolygons;
-
-using namespace Slic3r; // Polygon
 // see function nsvg__lineTo(NSVGparser* p, float x, float y)
 bool is_line(const float* p, float precision = 1e-4f);
 
@@ -41,24 +33,24 @@ struct LinesPath
     Domain::Polylines polylines;
 };
 
-LinesPath linearize_path(NSVGpath* first_path, const NSVGLineParams& param);
-HealedExPolygons fill_to_expolygons(
+LinesPath linearize_path(NSVGpath* first_path, const Emboss::NSVGLineParams& param);
+Domain::HealedExPolygons fill_to_expolygons(
     const LinesPath& lines_path,
     const NSVGshape& shape,
-    const NSVGLineParams& param
+    const Emboss::NSVGLineParams& param
 );
-HealedExPolygons stroke_to_expolygons(
+Domain::HealedExPolygons stroke_to_expolygons(
     const LinesPath& lines_path,
     const NSVGshape& shape,
-    const NSVGLineParams& param
+    const Emboss::NSVGLineParams& param
 );
 } // namespace
 
-namespace Slic3r {
+namespace Slic3r::Biz::Emboss {
 
-ExPolygonsWithIds create_shape_with_ids(const NSVGimage& image, const NSVGLineParams& param)
+Domain::ExPolygonsWithIds create_shape_with_ids(const NSVGimage& image, const NSVGLineParams& param)
 {
-    ExPolygonsWithIds result;
+    Domain::ExPolygonsWithIds result;
     size_t shape_id = 0;
     for (NSVGshape* shape_ptr = image.shapes; shape_ptr != NULL;
          shape_ptr            = shape_ptr->next, ++shape_id)
@@ -77,12 +69,12 @@ ExPolygonsWithIds create_shape_with_ids(const NSVGimage& image, const NSVGLinePa
 
         if (is_fill_used) {
             unsigned unique_id      = static_cast<unsigned>(2 * shape_id);
-            HealedExPolygons expoly = fill_to_expolygons(lines_path, shape, param);
+            Domain::HealedExPolygons expoly = fill_to_expolygons(lines_path, shape, param);
             result.push_back({unique_id, expoly.expolygons, expoly.is_healed});
         }
         if (is_stroke_used) {
             unsigned unique_id      = static_cast<unsigned>(2 * shape_id + 1);
-            HealedExPolygons expoly = stroke_to_expolygons(lines_path, shape, param);
+            Domain::HealedExPolygons expoly = stroke_to_expolygons(lines_path, shape, param);
             result.push_back({unique_id, expoly.expolygons, expoly.is_healed});
         }
     }
@@ -132,6 +124,8 @@ NSVGimage_ptr nsvgParseFromFile(const std::string& filename, const char* units, 
 
 std::unique_ptr<std::string> read_from_disk(const std::string& path)
 {
+    if (path.empty())
+        return nullptr;
     boost::nowide::ifstream fs{path};
     if (!fs.is_open())
         return nullptr;
@@ -150,29 +144,6 @@ NSVGimage_ptr nsvgParse(const std::string& file_data, const char* units, float d
     data_copy[size]  = '\0'; // data for nsvg must be null terminated
     NSVGimage* image = ::nsvgParse(data_copy.get(), units, dpi);
     return {image, &nsvgDelete};
-}
-
-NSVGimage* init_image(EmbossShape::SvgFile& svg_file)
-{
-    // is already initialized?
-    if (svg_file.image.get() != nullptr)
-        return svg_file.image.get();
-
-    if (svg_file.file_data == nullptr) {
-        // chech if path is known
-        if (svg_file.path.empty())
-            return nullptr;
-        svg_file.file_data = read_from_disk(svg_file.path);
-        if (svg_file.file_data == nullptr)
-            return nullptr;
-    }
-
-    // init svg image
-    svg_file.image = nsvgParse(*svg_file.file_data);
-    if (svg_file.image.get() == NULL)
-        return nullptr;
-
-    return svg_file.image.get();
 }
 
 size_t get_shapes_count(const NSVGimage& image)
@@ -376,7 +347,7 @@ void flatten_cubic_bez(
     flatten_cubic_bez(points, tessTol, p1234, p234, p34, p4, level);
 }
 
-LinesPath linearize_path(NSVGpath* first_path, const NSVGLineParams& param)
+LinesPath linearize_path(NSVGpath* first_path, const Emboss::NSVGLineParams& param)
 {
     LinesPath result;
     Domain::Polygons& polygons   = result.polygons;
@@ -434,10 +405,10 @@ LinesPath linearize_path(NSVGpath* first_path, const NSVGLineParams& param)
     return result;
 }
 
-HealedExPolygons fill_to_expolygons(
+Domain::HealedExPolygons fill_to_expolygons(
     const LinesPath& lines_path,
     const NSVGshape& shape,
-    const NSVGLineParams& param
+    const Emboss::NSVGLineParams& param
 )
 {
     Domain::Polygons fill = lines_path.polygons; // copy
@@ -561,10 +532,10 @@ Domain::Polylines to_dashes(const Domain::Polyline& polyline, const DashesParam&
     return dashes;
 }
 
-HealedExPolygons stroke_to_expolygons(
+Domain::HealedExPolygons stroke_to_expolygons(
     const LinesPath& lines_path,
     const NSVGshape& shape,
-    const NSVGLineParams& param
+    const Emboss::NSVGLineParams& param
 )
 {
     // convert stroke to polygon

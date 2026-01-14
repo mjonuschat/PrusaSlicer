@@ -8,13 +8,13 @@
 #include <nlohmann/json.hpp>
 #include <tl/expected.hpp>
 
-#include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/ProjectMetadataJson.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
+#include "Slic3r/Biz/Emboss/NSVGUtils.hpp" // open content of svg file
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
@@ -455,7 +455,7 @@ void write_svg_files(mz_zip_archive &archive, const Domain::Model &model) {
             const EmbossShape::SvgFile &svg = *es.svg_file;
             std::shared_ptr<std::string> file_data = svg.file_data; // copy pointer
             if (file_data == nullptr && !svg.path.empty()) {
-                file_data = read_from_disk(svg.path);
+                file_data = Biz::Emboss::read_from_disk(svg.path);
                 if (file_data == nullptr)
                     SPDLOG_WARN("Can't load svg file from path: {}", svg.path);
             }

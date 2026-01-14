@@ -1,6 +1,9 @@
 #include "Slic3r/Biz/Emboss/SurfaceDrag.hpp"
 
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
+#include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
+#include "Slic3r/App/Scene/Ray.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 
 namespace {
@@ -290,6 +293,82 @@ Domain::Transform3d get_volume_transformation(
         Biz::Emboss::apply_transformation({}, current_distance, volume_new);
     }
     return volume_new;
+}
+
+Domain::Transform3d world_tr(const Domain::Project& project, const Domain::ElementRef& ref) {
+    const Domain::ModelInstance& instance = *project.find_instance_by_id(ref.object_id, ref.instance_id);
+    const Domain::ModelVolume& volume = (ref.volume_id != 0) ?
+        *project.find_volume_by_id(ref.object_id, ref.volume_id) :
+        *project.find_object_by_id(ref.object_id)->volumes.front();
+    return instance.get_matrix() * volume.get_matrix();
+}
+
+std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref) 
+{
+    Domain::Transform3d to_world = world_tr(project, ref);
+    return Biz::Emboss::calc_up(to_world, Biz::Emboss::UP_LIMIT);
+}
+
+std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref,
+    App::Scene::Node& root)
+{
+    Domain::Transform3d world = world_tr(project, ref);
+    Domain::Vec3d pos_world = world.translation();
+    // Emboss direction in world coordinate(negative Z axis)
+    Domain::Vec3d dir_world = world.linear() * Domain::Vec3d::UnitZ() * -1.;
+    dir_world.normalize();
+
+    auto ray_cast = [&ref, &root](const App::Scene::Ray& ray) {
+        return App::Scene::visit_conditional_transform<App::Scene::RaycastResult>(root,
+            [&ray, &ref](App::Scene::Node& n, App::Scene::RaycastResult& t) {
+                auto* tag = n.tag_of_type<App::Scene::SceneNodeTag>();
+                if (tag == nullptr || // Not a scene node tag (object)
+                    tag->volume_type != Domain::ModelVolumeType::MODEL_PART ||
+                    tag->object_id != ref.object_id || // different object
+                    tag->instance_id != ref.instance_id || // different instance
+                    tag->volume_id == ref.volume_id || // skip itself
+                    !n.has_raycast_component()) // only for sure
+                    return false;
+                return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
+            });
+        };
+
+    double overlap = 1.;
+    App::Scene::Ray ray_positive{ .origin = pos_world - dir_world * overlap, .direction = dir_world };
+    App::Scene::Ray ray_negative{ .origin = pos_world + dir_world * overlap, .direction = -dir_world };
+    auto r_positive = ray_cast(ray_positive);
+    auto r_negative = ray_cast(ray_negative);
+    for (auto& r : r_positive) r.second.distance = r.second.distance - overlap;
+    for (auto& r : r_negative) r.second.distance = overlap - r.second.distance;
+    r_positive.insert(r_positive.end(), r_negative.begin(), r_negative.end());
+    if (r_positive.empty())
+        return {}; // no intersection
+
+    std::sort(r_positive.begin(), r_positive.end(), [](const auto& a, const auto& b) {
+        return fabs(a.second.distance) < fabs(b.second.distance);  });
+
+    const auto& closest = r_positive.front();
+    double distance = closest.second.distance;
+    if (Domain::is_approx(distance, 0., 1e-4))
+        return {}; // numerical discrepancy -> lay on surface
+
+    return distance;
+}
+
+void transform_selection_relative(const Domain::Transform3d& tr, Biz::ProjectInteractor& project_interactor)
+{
+    // get current transformation of the volume
+    const Domain::Project& project = project_interactor.selected_project();
+    Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
+    ASSERT(!scene_interactor.object_selection().elements.empty());
+    const Domain::ElementRef& el = scene_interactor.object_selection().elements.front();
+    Domain::Transform3d instance_tr = project.find_instance_by_id(el.object_id, el.instance_id)->get_matrix();
+    const Domain::ModelVolume& volume = (el.volume_id != 0) ?
+        *project.find_volume_by_id(el.object_id, el.volume_id) :
+        *project.find_object_by_id(el.object_id)->volumes.front();
+    Domain::Transform3d volume_tr = volume.get_matrix();
+    Domain::Transform3d world_relative = instance_tr * volume_tr * tr * volume_tr.inverse() * instance_tr.inverse();
+    scene_interactor.transform_selection(world_relative.matrix());
 }
 
 } // Slic3r::Biz::Emboss
