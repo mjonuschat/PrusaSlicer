@@ -177,6 +177,15 @@ void ConfigDefinitions::check_valid() const
                 );
             }
         }
+
+        if (def.category == ConfigItemDef::Category::Unkown) {
+            PANIC("All config items must have a category (failed for item: " + def.name + ").");
+        }
+        if (def.category != ConfigItemDef::Category::Hidden) {
+            if (def.label.empty() || def.gui_type == ConfigItemDef::GUIType::undefined) {
+                PANIC("All non-hidden config items must have label and gui_type. (failed for item: " + def.name + ").");
+            }
+        }
     }
 }
 } // namespace Slic3r::Domain

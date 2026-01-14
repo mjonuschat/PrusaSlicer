@@ -2,7 +2,7 @@
 
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-#include "Slic3r/Biz/Platform/IDownloadConfigProvider.hpp"
+#include "Slic3r/Biz/Platform/IAppConfigProvider.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Log.hpp"
 #include <fmt/format.h>
@@ -94,7 +94,7 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
         input_data.file_name = filename_from_url(escaped_url);
     }
     
-    boost::filesystem::path dest_directory = Platform::PlatformServices::instance().download_config_provider().download_dir();
+    boost::filesystem::path dest_directory = Platform::PlatformServices::instance().app_config_provider().download_dir();
     FileDownloaderJobData data{
         std::move(input_data),
         get_next_id(),
@@ -187,7 +187,7 @@ void FileDownloaderInteractor::init_multi_job(FileDownloaderMultiTicket ticket)
                 input_data.file_name = filename_from_url(escaped_url);
             }
 
-            boost::filesystem::path dest_directory = Platform::PlatformServices::instance().download_config_provider().download_dir();
+            boost::filesystem::path dest_directory = Platform::PlatformServices::instance().app_config_provider().download_dir();
 
             double percent_chunk = 1.0 / ticket.jobs.size();
             FileDownloaderJobData data{

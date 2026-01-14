@@ -137,7 +137,13 @@ void LoadStepDialog::add_params(wxSizer* sizer)
 #endif
 
     const wxSize def_slider_size = wxSize(15 * em, wxDefaultCoord);
-    const wxSize def_editor_size = wxSize(5 * em, wxDefaultCoord);
+
+    #ifdef __linux__
+        const int ed_size = 7;
+    #else
+        const int ed_size = 5;
+    #endif
+    const wxSize def_editor_size = wxSize(ed_size * em, wxDefaultCoord);
 
     const int hgap = 5;
     wxFlexGridSizer* grid_sizer = new wxFlexGridSizer(4, em, hgap);

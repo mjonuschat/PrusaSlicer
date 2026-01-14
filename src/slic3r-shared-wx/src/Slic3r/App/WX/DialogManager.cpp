@@ -193,9 +193,21 @@ std::string DialogManager::show_ramming_dialog(const std::string& ramming_parame
 }
 
 
-void DialogManager::show_load_step_dialog(const std::string& filename)
+std::optional<Biz::StepLoadDialogResult> DialogManager::show_load_step_dialog(
+    const std::string& filename,
+    double linear_precision,
+    double angle_precision,
+    bool multiple)
 {
-    LoadStepDialog dlg(filename, 0., 0., true);
-    dlg.ShowModal();
+    LoadStepDialog dlg(filename, linear_precision, angle_precision, multiple);
+    if (dlg.ShowModal() == wxID_OK) {
+        Biz::StepLoadDialogResult result;
+        result.do_not_show_again = dlg.IsCheckBoxChecked();
+        result.linear_precision  = dlg.get_linear_precision();
+        result.angle_precision   = dlg.get_angle_precision();
+        result.apply_to_all      = dlg.IsApplyToAllClicked();
+        return result;
+    }
+    return std::nullopt;
 }
 } // namespace Slic3r::App::WX

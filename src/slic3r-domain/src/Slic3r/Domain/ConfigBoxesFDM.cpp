@@ -4446,6 +4446,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wiping_volumes_matrix", typeid(std::vector<double>));
     def->location = Project;
+    def->category = ConfigItemDef::Category::Hidden;
     def->label = L("Purging volumes - matrix");
     def->tooltip = L("This matrix describes volumes (in cubic milimetres) required to purge the"
                      " new filament on the wipe tower for any given pair of tools.");
@@ -4458,6 +4459,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wiping_volumes_use_custom_matrix", typeid(bool));
     def->location = Project;
+    def->category = ConfigItemDef::Category::Hidden;
     def->label = "";
     def->tooltip = "";
     def->init_fn = init_with(false);

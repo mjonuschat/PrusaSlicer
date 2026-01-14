@@ -1,6 +1,6 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
-#include <Slic3r/Biz/Platform/IDownloadConfigProvider.hpp>
+#include <Slic3r/Biz/Platform/IAppConfigProvider.hpp>
 
 namespace Slic3r::Biz::Platform {
 
@@ -51,15 +51,15 @@ JobManager::JobManager& PlatformServices::job_manager()
     return *m_job_manager;
 }
 
-void PlatformServices::set_download_config_provider(std::unique_ptr<FileDownloader::IDownloadConfigProvider>&& provider)
+void PlatformServices::set_app_config_provider(std::unique_ptr<IAppConfigProvider>&& provider)
 {
-    m_download_config_provider = std::move(provider);
+    m_app_config_provider = std::move(provider);
 }
 
-FileDownloader::IDownloadConfigProvider& PlatformServices::download_config_provider()
+IAppConfigProvider& PlatformServices::app_config_provider()
 {
-    ASSERT(m_download_config_provider);
-    return *m_download_config_provider;
+    ASSERT(m_app_config_provider);
+    return *m_app_config_provider;
 }
 
 } // namespace Slic3r::Biz::Platform

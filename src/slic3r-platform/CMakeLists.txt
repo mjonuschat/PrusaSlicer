@@ -42,7 +42,7 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/Biz/Platform/JobManager/IJobManagerStatusChangedListener.hpp
     include/Slic3r/Biz/Platform/BlacklistedLibraryCheck.hpp
     src/Slic3r/Biz/Platform/BlacklistedLibraryCheck.cpp
-    include/Slic3r/Biz/Platform/IDownloadConfigProvider.hpp
+    include/Slic3r/Biz/Platform/IAppConfigProvider.hpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

@@ -28,6 +28,12 @@ public:
     get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
     void set_item_value(
+        const std::string& item_name,
+        const Domain::ConfigValue& value,
+        size_t index = 0
+    );
+
+    void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
         size_t index = 0
