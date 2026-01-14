@@ -32,7 +32,9 @@ PlaceOnFaceGizmo::PlaceOnFaceGizmo(
     m_scene_presenter(scene_presenter),
     m_project_interactor(project_interactor),
     m_scene_interactor(project_interactor.scene_interactor())
-{}
+{
+    m_scene_presenter.scene().add_listener<ISceneChangedListener>(this);
+}
 
 void PlaceOnFaceGizmo::on_activated()
 {
@@ -80,6 +82,12 @@ void PlaceOnFaceGizmo::on_scene_selection_transformed(
         // of volumes changed. However, let's now rely on the fact
         // that none of these cases can happen while the gizmo is active.
     }
+}
+
+void PlaceOnFaceGizmo::on_node_removed(Scene::Node* node)
+{
+    if (node == m_main_node)
+        m_main_node = nullptr;
 }
 
 void PlaceOnFaceGizmo::build_plane_node(Scene::NodeBuilder& bldr, indexed_triangle_set&& mesh_its, size_t plane_id)

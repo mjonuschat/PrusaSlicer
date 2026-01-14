@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
@@ -18,7 +19,7 @@ namespace Slic3r::App::Scene { class NodeBuilder; }
 namespace Slic3r::App::Plater {
 class PlaterScenePresenter;
 
-class PlaceOnFaceGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener
+class PlaceOnFaceGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener, public App::Scene::ISceneChangedListener
 {
     using ModelGeometryManager     = Render::GeometryManager<Scene::AuxiliaryElementId>;
     using ModelTriangleMeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
@@ -56,6 +57,10 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection
     ) override;
+
+    void on_node_added(Scene::Node* node) override {}
+    void on_node_changed(Scene::Node* node) override {}
+    void on_node_removed(Scene::Node* node) override;
 
     Scene::ToolType type() const override
     {
