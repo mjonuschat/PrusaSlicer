@@ -23,10 +23,11 @@
 
 using namespace std;
 
-namespace Slic3r { namespace Test {
+using namespace Slic3r::Biz;
+
+namespace Slic3r::Test {
 
 using Biz::Algorithms::ModelObject::add_volume;
-using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Domain::TriangleMesh;
 using Domain::Preset::HwPrinterConfig;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
@@ -249,7 +250,14 @@ static bool verbose_gcode()
     return s == "1" || s == "on" || s == "yes";
 }
 
-void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(
+    std::vector<TriangleMesh>&& meshes,
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in,
+    unsigned duplicate_count,
+    bool ensure_on_bed
+)
 {
     TestConfig config{config_in};
     if (verbose_gcode())
@@ -276,9 +284,11 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
     }
 
     arrange_objects(model, bed, arrange_settings);
-    Slic3r::Biz::Algorithms::Model::center_instances_around_point(model, {100, 100});
-	for (Domain::ModelObject *mo : model.objects) {
-        ensure_on_bed(*mo);
+    Algorithms::Model::center_instances_around_point(model, {100, 100});
+    if (ensure_on_bed) {
+        for (Domain::ModelObject* mo : model.objects) {
+            Algorithms::ModelObject::ensure_on_bed(*mo);
+        }
     }
 
     const Biz::Print::SerializedConfig serialized_config{
@@ -297,36 +307,60 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
     print.set_status_silent();
 }
 
-void init_print(std::initializer_list<TestMesh> test_meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(
+    std::initializer_list<TestMesh> test_meshes,
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in,
+    unsigned duplicate_count,
+    bool ensure_on_bed
+)
 {
-	std::vector<TriangleMesh> triangle_meshes;
-	triangle_meshes.reserve(test_meshes.size());
-	for (const TestMesh test_mesh : test_meshes)
-		triangle_meshes.emplace_back(mesh(test_mesh));
-	init_print(std::move(triangle_meshes), print, model, config_in, comments, duplicate_count);
+    std::vector<TriangleMesh> triangle_meshes;
+    triangle_meshes.reserve(test_meshes.size());
+    for (const TestMesh test_mesh : test_meshes)
+        triangle_meshes.emplace_back(mesh(test_mesh));
+    init_print(std::move(triangle_meshes), print, model, config_in, duplicate_count, ensure_on_bed);
 }
 
-void init_print(std::initializer_list<TriangleMesh> input_meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(
+    std::initializer_list<TriangleMesh> input_meshes,
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in,
+    unsigned duplicate_count,
+    bool ensure_on_bed
+)
 {
-	std::vector<TriangleMesh> triangle_meshes;
-	triangle_meshes.reserve(input_meshes.size());
-	for (const TriangleMesh &input_mesh : input_meshes)
-		triangle_meshes.emplace_back(input_mesh);
-	init_print(std::move(triangle_meshes), print, model, config_in, comments, duplicate_count);
+    std::vector<TriangleMesh> triangle_meshes;
+    triangle_meshes.reserve(input_meshes.size());
+    for (const TriangleMesh& input_mesh : input_meshes)
+        triangle_meshes.emplace_back(input_mesh);
+    init_print(std::move(triangle_meshes), print, model, config_in, duplicate_count, ensure_on_bed);
 }
 
-void init_and_process_print(std::initializer_list<TestMesh> meshes, Slic3r::Print &print, const TestConfig& config, bool comments)
+void init_and_process_print(
+    std::initializer_list<TestMesh> meshes,
+    Slic3r::Print& print,
+    const TestConfig& config,
+    bool ensure_on_bed
+)
 {
     Domain::Model model;
-	init_print(meshes, print, model, config, comments);
-	print.process();
+    init_print(meshes, print, model, config, 1, ensure_on_bed);
+    print.process();
 }
 
-void init_and_process_print(std::initializer_list<TriangleMesh> meshes, Slic3r::Print &print, const TestConfig& config, bool comments)
+void init_and_process_print(
+    std::initializer_list<TriangleMesh> meshes,
+    Slic3r::Print& print,
+    const TestConfig& config,
+    bool ensure_on_bed
+)
 {
     Domain::Model model;
-	init_print(meshes, print, model, config, comments);
-	print.process();
+    init_print(meshes, print, model, config, 1, ensure_on_bed);
+    print.process();
 }
 
 std::string gcode(Print & print)
@@ -347,20 +381,22 @@ Domain::Model model(const std::string &model_name, TriangleMesh &&_mesh)
     return result;
 }
 
-std::string slice(std::initializer_list<TestMesh> meshes, const TestConfig& config, bool comments)
+std::string
+slice(std::initializer_list<TestMesh> meshes, const TestConfig& config, bool ensure_on_bed)
 {
-	Slic3r::Print print;
+    Slic3r::Print print;
     Domain::Model model;
-	init_print(meshes, print, model, config, comments);
-	return gcode(print);
+    init_print(meshes, print, model, config, 1, ensure_on_bed);
+    return gcode(print);
 }
 
-std::string slice(std::initializer_list<TriangleMesh> meshes, const TestConfig& config, bool comments)
+std::string
+slice(std::initializer_list<TriangleMesh> meshes, const TestConfig& config, bool ensure_on_bed)
 {
-	Slic3r::Print print;
+    Slic3r::Print print;
     Domain::Model model;
-	init_print(meshes, print, model, config, comments);
-	return gcode(print);
+    init_print(meshes, print, model, config, 1, ensure_on_bed);
+    return gcode(print);
 }
 
 bool contains(const std::string &data, const std::string &pattern)
@@ -374,7 +410,7 @@ bool contains_regex(const std::string &data, const std::string &pattern)
     return boost::regex_match(data, re);
 }
 
-} } // namespace Slic3r::Test
+} // namespace Slic3r::Test
 
 
 SCENARIO("init_print functionality", "[test_data]") {

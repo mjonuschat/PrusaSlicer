@@ -8,6 +8,8 @@
 
 #include "test_data.hpp" // get access to init_print, etc
 
+#include <set>
+
 using namespace Slic3r::Test;
 using namespace Slic3r;
 using namespace Catch;
@@ -268,6 +270,64 @@ TEST_CASE("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
             config.print.items.opt("min_skirt_length").set(20.0);
             THEN("Gcode generation doesn't crash") {
                 REQUIRE(! Slic3r::Test::slice({TestMesh::cube_20x20x20}, config).empty());
+            }
+        }
+    }
+}
+
+SCENARIO("Draft shield for levitating objects", "[Skirt][DraftShield]")
+{
+    using Slic3r::Biz::Algorithms::TriangleMesh::make_cube;
+
+    GIVEN(
+        "A levitating 20mm cube (10mm above the bed) with support material and draft shield enabled"
+    )
+    {
+        Domain::TriangleMesh cube = make_cube(20.0, 20.0, 20.0);
+        cube.translate(Vec3f(0.0f, 0.0f, 10.0f));
+
+        TestConfig config;
+        config.print.items.opt("layer_height").set(0.2);
+        config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
+        config.print.items.opt("skirts").set(1);
+        config.print.items.opt("draft_shield").set(Domain::DraftShield::dsEnabled);
+        config.tool.at(0).items.opt("support_material").set(true);
+        config.print.items.opt("gcode_comments").set(true);
+
+        std::string gcode = Slic3r::Test::slice({cube}, config, false);
+        REQUIRE(!gcode.empty());
+
+        THEN("Draft shield (skirt) has no large gaps between layers")
+        {
+            // Parse G-code and find all Z heights with skirt.
+            std::set<double> skirt_layers;
+            GCodeReader parser;
+            parser.parse_buffer(
+                gcode,
+                [&skirt_layers](GCodeReader& self, const GCodeReader::GCodeLine& line)
+                {
+                    if (line.raw().find("; skirt") != std::string::npos) {
+                        skirt_layers.insert(self.z());
+                    }
+                }
+            );
+
+            REQUIRE(!skirt_layers.empty());
+
+            // Check that there are no large gaps between consecutive skirt layers.
+            // Max allowed gap is 2x layer_height. If there's a gap larger than this,
+            // it means draft shield is missing on some support layers.
+            const double layer_height    = config.print.items.opt("layer_height").get<double>();
+            const double max_allowed_gap = layer_height * 2.;
+
+            double prev_z = 0.;
+            for (double z : skirt_layers) {
+                if (prev_z > 0) {
+                    double gap = z - prev_z;
+                    REQUIRE(gap <= max_allowed_gap);
+                }
+
+                prev_z = z;
             }
         }
     }
