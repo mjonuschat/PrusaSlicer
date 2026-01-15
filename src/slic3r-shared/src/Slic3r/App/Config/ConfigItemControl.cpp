@@ -16,6 +16,7 @@
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemSubstitutions.hpp"
 #include "Slic3r/App/Config/ConfigItemExtruderSelection.hpp"
+#include "Slic3r/App/Config/ConfigItemRammingParams.hpp"
 
 #include <fmt/format.h>
 
@@ -250,6 +251,15 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::substitutions:
         item_control = container->emplace<ConfigItemSubstitutions>(
+            child_index,
+            data_index,
+            item,
+            cbi_container,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::ramming_params:
+        item_control = container->emplace<ConfigItemRammingParams>(
             child_index,
             data_index,
             item,

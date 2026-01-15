@@ -15,40 +15,6 @@
 #include "Widgets/SpinInput.hpp"
 
 
-class RammingPanel : public wxPanel {
-public:
-    RammingPanel(wxWindow* parent);
-    RammingPanel(wxWindow* parent,const std::string& data);
-    std::string get_parameters();
-
-private:
-    Chart* m_chart = nullptr;
-    ::SpinInput* m_widget_volume = nullptr;
-    ::SpinInput* m_widget_ramming_line_width_multiplicator = nullptr;
-    ::SpinInput* m_widget_ramming_step_multiplicator = nullptr;
-    ::SpinInputDouble* m_widget_time = nullptr;
-    int m_ramming_step_multiplicator;
-    int m_ramming_line_width_multiplicator;
-      
-    void line_parameters_changed();
-};
-
-
-class RammingDialog : public wxDialog {
-public:
-    RammingDialog(wxWindow* parent,const std::string& parameters);    
-    std::string get_parameters() { return m_output_data; }
-private:
-    RammingPanel* m_panel_ramming = nullptr;
-    std::string m_output_data;
-};
-
-
-
-
-
-
-
 class WipingPanel : public wxPanel {
 public:
     WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,

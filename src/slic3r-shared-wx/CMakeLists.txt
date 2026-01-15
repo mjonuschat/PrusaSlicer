@@ -44,6 +44,10 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/UnsavedChangesDialog.cpp
         include/Slic3r/App/WX/WindowMetrics.hpp
         src/Slic3r/App/WX/WindowMetrics.cpp
+        include/Slic3r/App/WX/RammingDialog.hpp
+        src/Slic3r/App/WX/RammingDialog.cpp
+        include/Slic3r/App/WX/RammingChart.hpp
+        src/Slic3r/App/WX/RammingChart.cpp
 
 	    # our widgets
         include/Slic3r/App/WX/Widgets/UIColors.hpp

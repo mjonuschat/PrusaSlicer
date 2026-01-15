@@ -1316,7 +1316,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Ramming parameters");
     def->option_group = L("Toolchange parameters with single extruder MM printers");
     def->category = ConfigItemDef::Category::Advanced;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->gui_type = ConfigItemDef::GUIType::ramming_params;
     def->tooltip = L("This string is edited by RammingDialog and contains ramming specific parameters.");
     def->mode = comExpert;
     def->init_fn = init_with("120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0|"

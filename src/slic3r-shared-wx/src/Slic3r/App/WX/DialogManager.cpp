@@ -5,6 +5,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/DiffDialog.hpp"
 #include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
+#include "Slic3r/App/WX/RammingDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -178,5 +179,14 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
     );
     dlg.ShowModal();
     return dlg.exit_states();
+}
+
+std::string DialogManager::show_ramming_dialog(const std::string& ramming_parameters)
+{
+    RammingDialog dlg(ramming_parameters);
+    if (dlg.ShowModal() == wxID_OK) {
+        return dlg.get_parameters();
+    }
+    return ramming_parameters;
 }
 } // namespace Slic3r::App::WX

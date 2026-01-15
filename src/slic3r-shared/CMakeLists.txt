@@ -256,6 +256,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigItemSubstitutions.cpp
         include/Slic3r/App/Config/ConfigItemExtruderSelection.hpp
         src/Slic3r/App/Config/ConfigItemExtruderSelection.cpp
+        include/Slic3r/App/Config/ConfigItemRammingParams.hpp
+        src/Slic3r/App/Config/ConfigItemRammingParams.cpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp

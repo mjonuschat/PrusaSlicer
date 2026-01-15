@@ -56,6 +56,11 @@ public:
     ) override
     {}
 
+    std::string show_ramming_dialog(const std::string& ramming_parameters) override
+    {
+        PANIC("Ramming dialog not implemented for CLI");
+    }
+
     void show_info_dialog(const std::string& text, const std::string& title, bool is_marked = false) override
     {
         SPDLOG_INFO("{}: {}", title, text);

@@ -30,7 +30,9 @@ enum class FileDialogType
     Save
 };
 
-class IDialogManager : public Biz::IMessageDialogProvider, public Slic3r::Biz::Preset::IPresetDialogManager
+class IDialogManager :
+    public Biz::IMessageDialogProvider,
+    public Slic3r::Biz::Preset::IPresetDialogManager
 {
 public:
     using FileCallback =
@@ -57,6 +59,8 @@ public:
         const Slic3r::Biz::Preset::PresetInteractor& preset_interactor,
         std::optional<Domain::Preset::PresetKind> kind = std::nullopt
     ) = 0;
+
+    virtual std::string show_ramming_dialog(const std::string& ramming_parameters) = 0;
 };
 
 } // namespace Slic3r::App

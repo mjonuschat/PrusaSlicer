@@ -170,6 +170,7 @@ struct ConfigItemDef
         comboboxes,
         points,
         substitutions,
+        ramming_params,
         extruder_selection
     };
     GUIType gui_type = GUIType::undefined;

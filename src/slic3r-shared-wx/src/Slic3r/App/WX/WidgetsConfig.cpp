@@ -276,6 +276,30 @@ int WidgetsConfig::em_unit(wxWindow* win) const
     return m_em_unit;
 }
 
+const std::string& WidgetsConfig::shortkey_ctrl_prefix()
+{
+    static const std::string str =
+#ifdef __APPLE__
+        "⌘"
+#else
+        "Ctrl+"
+#endif
+        ;
+    return str;
+}
+
+const std::string& WidgetsConfig::shortkey_alt_prefix()
+{
+    static const std::string str =
+#ifdef __APPLE__
+        "⌥"
+#else
+        "Alt+"
+#endif
+        ;
+    return str;
+}
+
 [[maybe_unused]] static bool is_default(wxWindow* win)
 {
     wxTopLevelWindow* tlw = WidgetsConfig::find_toplevel_parent(win);

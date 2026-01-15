@@ -277,7 +277,7 @@ WarningDialog::WarningDialog(wxWindow *parent,
     : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s warning"), from_u8(SLIC3R_APP_NAME)) : caption, 
                         wxString::Format(_L("%s has a warning")+from_u8(":"), from_u8(SLIC3R_APP_NAME)), style)
 {
-    add_msg_content(this, content_sizer, HtmlContent{ message });
+    add_msg_content(this, content_sizer, HtmlContent{ get_wraped_wxString(message) });
     finalize();
 }
 

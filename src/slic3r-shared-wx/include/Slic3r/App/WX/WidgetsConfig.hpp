@@ -145,6 +145,10 @@ public:
     int             em_unit() const                 { return m_em_unit; }
     bool            dark_mode() const               { return m_is_dark; }
 
+    // Platform specific Ctrl+/Alt+ (Windows, Linux) vs. ⌘/⌥ (OSX) prefixes 
+    const std::string& shortkey_ctrl_prefix();
+    const std::string& shortkey_alt_prefix();
+
     bool            suppress_round_corners() const { return true;/* app_config->get("suppress_round_corners") == "1";*/ }
 };
 

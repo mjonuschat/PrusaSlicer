@@ -466,7 +466,7 @@ SpinInputDouble::SpinInputDouble(wxWindow *     parent,
                                  long           style,
                                  double min, double max, double initial,
                                  double         inc)
-    : SpinInputBase()
+    : SpinInputBase(), min(min), max(max), val(initial)
 {
     Create(parent, text, label, pos, size, style, min, max, initial, inc);
 }
@@ -485,6 +485,13 @@ void SpinInputDouble::Create(wxWindow *parent,
 
     state_handler.attach({&label_color, &text_color});
     state_handler.update_binds();
+
+    double initialFromText;
+    if (text.ToDouble(&initialFromText)) {
+        initial = initialFromText;
+    } else {
+        text = text.FromDouble(initial, 2);
+    }
 
     text_ctrl = new wxTextCtrl(this, wxID_ANY, text, {20, 4}, wxDefaultSize, style | wxBORDER_NONE | wxTE_PROCESS_ENTER, wxTextValidator(wxFILTER_NUMERIC));
 #ifdef __WXOSX__
@@ -509,8 +516,6 @@ void SpinInputDouble::Create(wxWindow *parent,
         SetForegroundColour(parent->GetForegroundColour());
     }
 
-    double initialFromText;
-    if (text.ToDouble(&initialFromText)) initial = initialFromText;
     SetRange(min, max);
     SetIncrement(inc);
     SetValue(initial);
@@ -554,7 +559,7 @@ void SpinInputDouble::SetValue(const wxString &text)
 
 static bool is_approx(double d1, double d2)
 {
-    return std::fabs(d1 - d1) < 0.0001;
+    return std::fabs(d1 - d2) < 0.0001;
 }
 
 void SpinInputDouble::SetValue(double value)
