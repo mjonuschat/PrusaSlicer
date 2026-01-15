@@ -738,7 +738,6 @@ public:
     // Allow PrintObject to access m_mutex and m_cancel_callback.
     friend class PrintObject;
 
-    Biz::libpgcode::ConflictResultOpt m_conflict_result;
     std::optional<std::pair<std::string, std::string>> m_sequential_collision_detected; // names of objects (hit first when printing second)
 };
 

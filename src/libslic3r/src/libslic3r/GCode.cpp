@@ -377,7 +377,10 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
 
         // Check that there are extrusions on the very first layer. The case with empty
         // first layer may result in skirt/brim in the air and maybe other issues.
-        if (layers_to_print.size() == 1u) {
+        // UPDATE: Commented out for now - if we want to support floating objects,
+        // this check must go. It is possible that some things (raft/skirt/brim and such)
+        // are still broken though.
+        /*if (layers_to_print.size() == 1u) {
             if (!has_extrusions) {
                 throw Biz::Slicing::Exception{
                     Biz::Slicing::Error{
@@ -387,7 +390,7 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
                     }
                 };
             }
-        }
+        }*/
 
         // In case there are extrusions on this layer, check there is a layer to lay it on.
         if ((layer_to_print.object_layer && layer_to_print.object_layer->has_extrusions())

@@ -74,7 +74,6 @@ void ProcessorResult::reset()
     custom_gcode_per_print_z.clear();
     print_statistics = {};
     print_settings.reset();
-    conflict_result = std::nullopt;
 }
 
 } // namespace Slic3r::Biz::libpgcode
