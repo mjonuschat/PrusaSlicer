@@ -377,11 +377,8 @@ void register_prusaslicer_url()
 {
     boost::filesystem::path binary_path(boost::filesystem::canonical(boost::dll::program_location()));
     // the path to binary needs to be correctly saved in string with respect to localized characters
-    wxString wbinary = wxString::FromUTF8(binary_path.string());
-    std::string binary_string = (boost::format("%1%") % wbinary).str();
-    SPDLOG_INFO("Downloader registration: Path of binary: {}", binary_string);
-
-    std::string key_string = "\"" + binary_string + "\" \"--single-instance\" \"%1\"";
+    wxString key_wstring = L"\"" + from_u8(binary_path.string()) + L"\" \"--single-instance\" \"%1\"";
+    SPDLOG_INFO("Downloader registration: Path of binary: {}", into_u8(key_wstring));
     wxRegKey key_first(wxRegKey::HKCU, L"Software\\Classes\\prusaslicer");
     wxRegKey key_full(wxRegKey::HKCU, L"Software\\Classes\\prusaslicer\\shell\\open\\command");
     if (!key_first.Exists()) {
@@ -391,7 +388,11 @@ void register_prusaslicer_url()
     if (!key_full.Exists()) {
         key_full.Create(false);
     }
-    key_full = from_u8(key_string);
+    bool success = key_full.SetValue(L"", key_wstring);
+
+    if (!success) {
+        SPDLOG_ERROR("Failed to write registry value.");
+    }
 }
 
 } // Slic3r::App::WX::WebView

@@ -392,8 +392,8 @@ public:
      */
     void on_download_models(std::vector<std::string> message) override 
     {
-        if (raise_app_fn) {
-            raise_app_fn();
+        if (m_raise_app_fn) {
+            m_raise_app_fn();
         }
         m_file_downloader_interactor.download_files_prusaslicer_url(message);
     }
@@ -500,7 +500,12 @@ public:
      */
     void set_raise_app_fn(std::function<void(void)> fn)
     {
-        raise_app_fn = fn;
+        m_raise_app_fn = fn;
+    }
+
+    const std::function<void(void)>& raise_app_fn() const
+    {
+        return m_raise_app_fn;
     }
 
 private:
@@ -551,7 +556,7 @@ private:
     /*
      * @brief Callback to mainframe to bring application forward.
      */
-    std::function<void(void)> raise_app_fn;
+    std::function<void(void)> m_raise_app_fn;
 };
 
 } // namespace Slic3r::Biz

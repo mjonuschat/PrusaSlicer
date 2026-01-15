@@ -25,7 +25,11 @@ std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_loaded_webview_ev
     if (url.find("/web/" + m_loading_html) != std::string::npos && m_load_default_url) {
         m_load_default_url = false;
         m_redirect_url     = m_user_account.on_log_in_request("en", true);
-        return {{BrowserLogicCommandType::RegisterPrusaSlicerURL, std::string()}, {BrowserLogicCommandType::LoadResourcesPage, "login_redirected"}, {BrowserLogicCommandType::OpenExternalBrowser, m_redirect_url}};
+        return {
+            {BrowserLogicCommandType::RegisterPrusaSlicerURL, std::string()},
+            {BrowserLogicCommandType::LoadResourcesPage, "login_redirected"},
+            {BrowserLogicCommandType::OpenExternalBrowser, m_redirect_url}
+        };
     }
     return {};
 }

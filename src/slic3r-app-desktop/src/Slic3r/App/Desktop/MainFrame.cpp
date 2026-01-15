@@ -201,15 +201,10 @@ MainFrame::MainFrame(
                     std::make_unique<Browser::BrowserLogicLogInRedirect>(project_interactor.user_account_interactor()),
                     &project_interactor
                 );
-                bool was_maximized = IsMaximized();
-                this->Show(true);
-                this->Restore();
-                this->Raise();
-                this->SetFocus();
-                // Maximize call fixes 2 issues.
-                // - On windows the window did de-maximize without reason.
-                // - On linux the windows did not come forward at all.
-                this->Maximize(was_maximized);
+                if (project_interactor.raise_app_fn()) {
+                    project_interactor.raise_app_fn()();
+                }
+
             } else {
                 project_interactor.user_account_interactor().do_log_out(true);
             }
@@ -239,13 +234,15 @@ MainFrame::MainFrame(
         {
             bool was_maximized = IsMaximized();
             this->Show(true);
-            this->Restore();
-            this->Raise();
-            this->SetFocus();
-            // Maximize call fixes 2 issues.
-            // - On windows the window did de-maximize without reason.
-            // - On linux the windows did not come forward at all.
-            this->Maximize(was_maximized);
+            CallAfter([this, was_maximized]() {
+                this->Restore();
+                this->Raise();
+                this->SetFocus();
+                // Maximize call fixes 2 issues.
+                // - On windows the window did de-maximize without reason.
+                // - On linux the windows did not come forward at all.
+                this->Maximize(was_maximized);
+            });
         }
     );
 
