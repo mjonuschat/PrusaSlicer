@@ -56,7 +56,7 @@ float shadow_pcf(vec4 position, float NdotL)
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
 
-    if (proj_coords.x < 0.0 || proj_coords.x > 1.0 || proj_coords.y < 0.0 || proj_coords.y > 1.0 || proj_coords.z > 1.0)
+    if (proj_coords.x < 0.0 || proj_coords.x > 1.0 || proj_coords.y < 0.0 || proj_coords.y > 1.0)
         // Fully lit
         return 1.0;
 
@@ -68,7 +68,11 @@ float shadow_pcf(vec4 position, float NdotL)
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             float pcf_depth = texture(shadowsmap, proj_coords.xy + vec2(x, y) * texel_size).r;
-            shadow += proj_coords.z - bias > pcf_depth ? 1.0 : 0.0;
+            // Unified test: 
+            // If z > 1, use the shadowsmap as a silhouette
+            // If z <= 1, use the standard biased depth test
+            float compare_val = (proj_coords.z > 1.0) ? 1.0 : proj_coords.z - bias;
+            shadow += (compare_val > pcf_depth) ? 1.0 : 0.0;
         }    
     }
     shadow /= 9.0;

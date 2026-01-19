@@ -39,7 +39,6 @@ public:
 struct Shadows
 {
     bool bed_model_cast_shadow{ false };
-    Eigen::AlignedBox3d aabb;
 
     mutable float intensity{DEFAULT_INTENSITY};
 
@@ -114,7 +113,6 @@ public:
     bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
     int shadowsmap_size() const { return m_shadows.framebuffer_size; }
     float shadows_intensity() const { return m_shadows.intensity; }
-    const Eigen::AlignedBox3d& shadows_aabb() const { return m_shadows.aabb; }
 
     Domain::Index2 ao_framebuffer_size() const { return m_ao.tex_fb_size; }
     float ao_intensity() const { return m_ao.intensity; }
@@ -142,7 +140,6 @@ private:
     void set_bed_model_cast_shadow(bool cast) { m_shadows.bed_model_cast_shadow = cast; }
     void set_shadowsmap_size(int size) { m_shadows.pending_framebuffer_size = size; }
     void set_shadows_intensity(float intensity) { m_shadows.intensity = intensity; }
-    void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.aabb = aabb; }
 
     void set_ao_intensity(float intensity) { m_ao.intensity = intensity; }
     void set_ao_kernel_size(size_t size) { m_ao.pending_kernel_size = size; }

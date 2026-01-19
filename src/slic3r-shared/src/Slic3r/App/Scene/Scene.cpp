@@ -413,12 +413,11 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
     cmd_buffer->set_cull_face_enabled(true);
     cmd_buffer->clear_buffers(false, true);
 
-    Eigen::AlignedBox3d world_aabb = shadows.aabb;
-
     NodeMaterials nodes = collect_nodes_with_material([](auto n) {
         return n->has_render_component() && n->render_component()->cast_shadows() && !resolve_material(*n).transparent();
     });
 
+    Eigen::AlignedBox3d world_aabb;
     if (!nodes.empty()) {
         // extend the bounding box to contain all shadow casters
         for (const auto& [node, material] : nodes) {
@@ -426,51 +425,46 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
                 world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform().matrix()).cast<double>());
         }
 
-        Vec3d center = world_aabb.center();
-
         auto it = std::find_if(m_lighting.lights.begin(), m_lighting.lights.end(),
-            [](const Light& l) {
-                return l.shadows;
-            }
+            [](const Light& l) { return l.shadows; }
         );
         DEBUG_ASSERT(it != m_lighting.lights.end());
 
         Vec3d world_light_dir = (it->system == LightReferenceSystem::Camera) ?
             Vec3d(camera.model().matrix().block<3, 3>(0, 0) * it->direction.cast<double>()) :
             it->direction.cast<double>();
+        Vec3d center = world_aabb.center();
         Vec3d world_light_pos = center - 1000.0f * world_light_dir;
         shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
 
         Eigen::AlignedBox3d light_aabb = world_aabb.transformed(Transform3d(shadows.light_cam.view()));
 
-        Vec3d eye_min = { DBL_MAX, DBL_MAX, DBL_MAX };
-        Vec3d eye_max = { -DBL_MAX, -DBL_MAX, -DBL_MAX };
+        double eye_max_x = -DBL_MAX;
+        double eye_max_y = -DBL_MAX;
+        double eye_min_z = DBL_MAX;
+        double eye_max_z = -DBL_MAX;
         for (int i = 0; i < 8; ++i) {
             Vec3d eye_c = light_aabb.corner(Eigen::AlignedBox3d::CornerType(i));
-            eye_min.x() = std::min(eye_min.x(), eye_c.x());
-            eye_min.y() = std::min(eye_min.y(), eye_c.y());
-            eye_min.z() = std::min(eye_min.z(), -eye_c.z());
-            eye_max.x() = std::max(eye_max.x(), eye_c.x());
-            eye_max.y() = std::max(eye_max.y(), eye_c.y());
-            eye_max.z() = std::max(eye_max.z(), -eye_c.z());
+            eye_max_x = std::max(eye_max_x, eye_c.x());
+            eye_max_y = std::max(eye_max_y, eye_c.y());
+            eye_min_z = std::min(eye_min_z, -eye_c.z());
+            eye_max_z = std::max(eye_max_z, -eye_c.z());
         }
 
         // ensure the bbox is in front of the light camera
-        if (eye_min.z() < 100.0) {
-            double delta_z = 100.0 - eye_min.z();
+        if (eye_min_z < 100.0) {
+            double delta_z = 100.0 - eye_min_z;
+            eye_min_z += delta_z;
+            eye_max_z += delta_z;
             world_light_pos -= delta_z * world_light_dir;
-            eye_min.z() += delta_z;
-            eye_max.z() += delta_z;
             shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
         }
 
-        double max_x = std::max(std::abs(eye_min.x()), std::abs(eye_max.x()));
-        double max_y = std::max(std::abs(eye_min.y()), std::abs(eye_max.y()));
+        static constexpr double Z_MARGIN = 10.0;
+        eye_min_z -= Z_MARGIN;
+        eye_max_z += Z_MARGIN;
 
-        double z_margin = 0.5 * (eye_max.z() - eye_min.z());
-        eye_min.z() -= z_margin;
-        eye_max.z() += z_margin;
-        shadows.light_cam.set_projection(Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
+        shadows.light_cam.set_projection(Render::ortho(-eye_max_x, eye_max_x, -eye_max_y, eye_max_y, eye_min_z, eye_max_z));
 
         if (customizer)
             customizer->on_render_begin(*cmd_buffer);

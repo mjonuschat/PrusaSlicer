@@ -288,7 +288,6 @@ public:
     static void set_shadowsmap_size(int size) { s_graphics_settings.set_shadowsmap_size(size); }
     static void set_default_shadows_intensity() { s_graphics_settings.set_default_shadows_intensity(); }
     static void set_shadows_intensity(float intensity) { s_graphics_settings.set_shadows_intensity(intensity); }
-    static void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { s_graphics_settings.set_shadows_aabb(aabb); }
     static void set_bed_model_cast_shadow(bool cast) { s_graphics_settings.set_bed_model_cast_shadow(cast); }
     /** @} */
 
