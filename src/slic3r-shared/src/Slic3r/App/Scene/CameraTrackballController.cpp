@@ -51,7 +51,7 @@ void CameraTrackballController::add_azimuth_and_zenith(double delta_azimuth, dou
     m_target = model * old_eye_target;
 }
 
-void CameraTrackballController::update_synch_data(Platform::CameraSynchData& data)
+void CameraTrackballController::update_synch_data(Platform::CameraSynchData& data) const
 {
     data.target        = target();
     data.pivot         = pivot();

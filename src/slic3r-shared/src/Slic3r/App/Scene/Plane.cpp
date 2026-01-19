@@ -41,15 +41,19 @@ bool Plane::intersects(const Ray& ray, double& t) const
 
 bool Plane::intersects(const Eigen::AlignedBox3d& box) const
 {
-    // reference: https://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
-    Vec3d b_min = box.min();
-    Vec3d b_max = box.max();
-    Vec3d p_min = box.max();
-    Vec3d p_max = box.min();
-    if (normal.x() >= 0.0) { p_min.x() = b_min.x(); p_max.x() = b_max.x(); }
-  	if (normal.y() >= 0.0) { p_min.y() = b_min.y(); p_max.y() = b_max.y(); }
-  	if (normal.z() >= 0.0) { p_min.z() = b_min.z(); p_max.z() = b_max.z(); }
+    const Vec3d& b_min = box.min();
+    const Vec3d& b_max = box.max();
+    Vec3d p_min = {
+        (normal.x() >= 0.0) ? b_min.x() : b_max.x(),
+        (normal.y() >= 0.0) ? b_min.y() : b_max.y(),
+        (normal.z() >= 0.0) ? b_min.z() : b_max.z()
+    };
+    Vec3d p_max = {
+        (normal.x() >= 0.0) ? b_max.x() : b_min.x(),
+        (normal.y() >= 0.0) ? b_max.y() : b_min.y(),
+        (normal.z() >= 0.0) ? b_max.z() : b_min.z()
+    };
     return signed_distance(p_max) > 0.0 && signed_distance(p_min) < 0.0;
 }
 
-}
+} // namespace Slic3r::App::Scene

@@ -2,6 +2,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 
 #include <Slic3r/Assert.hpp>
 
@@ -9,7 +10,7 @@ using Slic3r::Domain::Vec3d;
 
 namespace Slic3r::App::Scene {
 
-bool Frustum::intersects(const Eigen::AlignedBox3d& box) const
+bool Frustum::intersects_fast(const Eigen::AlignedBox3d& box) const
 {
     size_t tested_planes = 0;
     // degenerated frustum
@@ -64,12 +65,12 @@ struct FrustumCorners
     Vec3d flt; // far left top
 };
 
-static FrustumCorners detect_corners(const Camera& camera, const Render::ScreenInfo& screen_info, const Render::Rect& rect)
+static FrustumCorners detect_corners(const Camera& camera, const Render::Rect& rect)
 {
-    Scene::Ray ray_lt = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_lb = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y + rect.height));
-    Scene::Ray ray_rt = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_rb = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y + rect.height));
+    Scene::Ray ray_lt = camera.ray_at(rect.x, rect.y);
+    Scene::Ray ray_lb = camera.ray_at(rect.x, rect.y + rect.height);
+    Scene::Ray ray_rt = camera.ray_at(rect.x + rect.width, rect.y);
+    Scene::Ray ray_rb = camera.ray_at(rect.x + rect.width, rect.y + rect.height);
 
     const Scene::AbstractCameraProjection& cam_proj = camera.cam_projection();
     double near_z = cam_proj.z_near();
@@ -93,14 +94,13 @@ static FrustumCorners detect_corners(const Camera& camera, const Render::ScreenI
     return ret;
 }
 
-Frustum Frustum::from(const Camera& camera, const Render::ScreenInfo& screen_info, const Render::Rect& rect)
+void Frustum::set_from(const Camera& camera, const Render::Rect& rect)
 {
-    FrustumCorners vs = detect_corners(camera, screen_info, rect);
-    Scene::Frustum ret;
+    FrustumCorners vs = detect_corners(camera, rect);
     // rectangle degenerated into a vertical segment
     if (vs.nlb.isApprox(vs.nrb)) {
-        ret.m_vertices = { vs.nlb, vs.nlt, vs.flb, vs.flt };
-        ret.m_planes = {
+        m_vertices = { vs.nlb, vs.nlt, vs.flb, vs.flt };
+        m_planes = {
             // vertical
             Scene::Plane::from_three_points(vs.nlb, vs.flb, vs.nlt).normalized(),
             // horizontal bottom
@@ -111,8 +111,8 @@ Frustum Frustum::from(const Camera& camera, const Render::ScreenInfo& screen_inf
     }
     // rectangle degenerated into an horizontal segment
     else if (vs.nlb.isApprox(vs.nlt)) {
-        ret.m_vertices = { vs.nlb, vs.nrb, vs.flb, vs.frb };
-        ret.m_planes = {
+        m_vertices = { vs.nlb, vs.nrb, vs.flb, vs.frb };
+        m_planes = {
             // horizontal
             Scene::Plane::from_three_points(vs.nlb, vs.nrb, vs.flb).normalized(),
             // vertical left
@@ -123,8 +123,8 @@ Frustum Frustum::from(const Camera& camera, const Render::ScreenInfo& screen_inf
     }
     // regular rectangle
     else {
-        ret.m_vertices = { vs.nlb, vs.nrb, vs.nrt, vs.nlt, vs.flb, vs.frb, vs.frt, vs.flt };
-        ret.m_planes = {
+        m_vertices = { vs.nlb, vs.nrb, vs.nrt, vs.nlt, vs.flb, vs.frb, vs.frt, vs.flt };
+        m_planes = {
             // near
             Scene::Plane::from_three_points(vs.nrb, vs.nlb, vs.nlt).normalized(),
             // far
@@ -139,33 +139,6 @@ Frustum Frustum::from(const Camera& camera, const Render::ScreenInfo& screen_inf
             Scene::Plane::from_three_points(vs.nrt, vs.nlt, vs.frt).normalized()
         };
     }
-    return ret;
 }
 
-Frustum Frustum::from(const Camera& camera, const Render::ScreenInfo& screen_info)
-{
-    Render::Rect rect = camera.viewport();
-    rect.x      = screen_info.physical_to_logical(rect.x);
-    rect.y      = screen_info.physical_to_logical(rect.y);
-    rect.width  = screen_info.logical_width();
-    rect.height = screen_info.logical_height();
-    FrustumCorners vs = detect_corners(camera, screen_info, rect);
-    Scene::Frustum ret;
-    ret.m_vertices = { vs.nlb, vs.nrb, vs.nrt, vs.nlt, vs.flb, vs.frb, vs.frt, vs.flt };
-    ret.m_planes = {
-        // near
-        Scene::Plane::from_three_points(vs.nrb, vs.nlb, vs.nlt).normalized(),
-        // far
-        Scene::Plane::from_three_points(vs.flb, vs.frb, vs.flt).normalized(),
-        // left
-        Scene::Plane::from_three_points(vs.nlb, vs.flb, vs.nlt).normalized(),
-        // right
-        Scene::Plane::from_three_points(vs.frb, vs.nrb, vs.frt).normalized(),
-        // bottom
-        Scene::Plane::from_three_points(vs.nlb, vs.nrb, vs.flb).normalized(),
-        // top
-        Scene::Plane::from_three_points(vs.nrt, vs.nlt, vs.frt).normalized()
-    };
-    return ret;
-}
 } // namespace Slic3r::App::Scene

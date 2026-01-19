@@ -1,6 +1,6 @@
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
-#include "Slic3r/App/Scene/Frustum.hpp"
+#include "Slic3r/App/Scene/PickerFrustum.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::SquareMatrix4d;
@@ -119,7 +119,13 @@ AABBMesh::hit_result AabbRaycastNodeComponent::hit_result(
 bool AabbRaycastNodeComponent::intersects(const SquareMatrix4d& world, const Frustum& frustum) const
 {
     ASSERT(m_aabb_mesh != nullptr);
-    return frustum.intersects(world_bounding_box(world).cast<double>());
+    return frustum.intersects_fast(world_bounding_box(world).cast<double>());
 }
 
+bool AabbRaycastNodeComponent::intersects(const Domain::SquareMatrix4d& world, const PickerFrustum& frustum) const
+{
+    ASSERT(m_aabb_mesh != nullptr);
+    return frustum.intersects_precise(world_bounding_box(world).cast<double>());
 }
+
+} // namespace Slic3r::App::Scene

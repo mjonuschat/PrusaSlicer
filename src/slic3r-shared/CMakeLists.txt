@@ -115,6 +115,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PlaterGizmosHelper.cpp
         include/Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp
         src/Slic3r/App/Plater/PlaterScenePresenterProjectContext.cpp
+        include/Slic3r/App/Plater/RectangleSelectionPicker.hpp
+        src/Slic3r/App/Plater/RectangleSelectionPicker.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -316,6 +318,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/Plane.cpp
         include/Slic3r/App/Scene/Frustum.hpp
         src/Slic3r/App/Scene/Frustum.cpp
+        include/Slic3r/App/Scene/PickerFrustum.hpp
+        src/Slic3r/App/Scene/PickerFrustum.cpp
         include/Slic3r/App/Scene/IGizmo.hpp
         src/Slic3r/App/Scene/IGizmo.cpp
         include/Slic3r/App/Scene/GizmoEventContext.hpp

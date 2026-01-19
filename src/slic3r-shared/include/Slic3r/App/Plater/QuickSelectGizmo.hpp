@@ -7,8 +7,8 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
-#include "Slic3r/App/Scene/Frustum.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/App/Plater/RectangleSelectionPicker.hpp"
 
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
@@ -53,9 +53,6 @@ public:
     void render(Render::CommandBuffer& cmd_buffer);
 
 private:
-    Scene::Node::NodeList collect_contained_nodes();
-
-private:
     const Render::ScreenInfo& m_screen_info;
     Render::Device& m_device;
     Scene::ISceneProvider& m_scene_provider;
@@ -68,7 +65,7 @@ private:
     MousePosition m_initial_mouse_pos;
     Render::Geometry m_geometry;
     Render::Material m_material;
-    Scene::Frustum m_frustum;
+    RectangleSelectionPicker m_picker;
     Scene::Node::NodeList m_contained_nodes;
 };
 

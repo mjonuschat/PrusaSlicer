@@ -269,7 +269,7 @@ public:
             forward().z() >= 0.0;
     }
 
-    void update_synch_data(Platform::CameraSynchData& data);
+    void update_synch_data(Platform::CameraSynchData& data) const;
     void synchronize_from(const Platform::CameraSynchData& data);
 
 private:

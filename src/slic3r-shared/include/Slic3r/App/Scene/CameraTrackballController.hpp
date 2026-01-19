@@ -54,7 +54,7 @@ public:
     const Eigen::Quaterniond& view_rotation() const { return m_view_rotation; }
     void set_view_rotation(const Eigen::Quaterniond& view_rotation) { m_view_rotation = view_rotation; }
 
-    void update_synch_data(Platform::CameraSynchData& data);
+    void update_synch_data(Platform::CameraSynchData& data) const;
     void synchronize_from(const Platform::CameraSynchData& data);
 
 private:

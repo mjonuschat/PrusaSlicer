@@ -9,6 +9,7 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
 #include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/App/Scene/Plane.hpp"
 
 #include <Slic3r/App/Render/GeometryBuilder.hpp>
 #include "Slic3r/App/Scene/Node.hpp"

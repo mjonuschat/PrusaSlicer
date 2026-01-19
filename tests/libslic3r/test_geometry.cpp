@@ -619,6 +619,26 @@ TEST_CASE("Convex polygon intersection on two overlapping squares", "[Geometry][
     REQUIRE(is_inters == true);
 }
 
+TEST_CASE("Convex polygons intersection with two almost identical rectangles", "[Geometry][Rotcalip]") {  
+    Polygon A{ {786, 434}, {916, 357}, {1020, 418}, {1009, 547}, {892, 635}, {797, 563} };
+    Polygon B1{ {572, 187}, {1020, 187}, {1020, 237}, {572, 237} };
+    Polygon B2{ {572, 187}, {1021, 187}, {1021, 237}, {572, 237} };
+
+    bool is_inters_a_b1 = Geometry::convex_polygons_intersect(A, B1);
+    REQUIRE(is_inters_a_b1 == false);
+
+    /* The following test was returning a false positive (is_inters_a_b2 == true)              */
+    /* when commenting out the two lines:                                                      */
+    /*                                                                                         */
+    /*     if (!bbA.overlap(bbB))                                                              */
+    /*         return false;                                                                   */
+    /*                                                                                         */
+    /* in function:                                                                            */
+    /*     bool convex_polygons_intersect(const Polygon& A, const Polygon& B) [ConvexHull.cpp] */
+    bool is_inters_a_b2 = Geometry::convex_polygons_intersect(A, B2);
+    REQUIRE(is_inters_a_b2 == false);
+}
+
 //// Only for benchmarking
 //static Polygon gen_convex_poly(std::mt19937_64 &rg, size_t point_cnt)
 //{

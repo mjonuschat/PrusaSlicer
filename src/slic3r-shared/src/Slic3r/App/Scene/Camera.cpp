@@ -127,7 +127,7 @@ Vec2d Camera::project_to_screen_space(const Vec3d& world_pos) const
     return { half_w * ndc.x() + double(m_viewport.x) + half_w, half_h * ndc.y() + double(m_viewport.y) + half_h };
 }
 
-void Camera::update_synch_data(Platform::CameraSynchData& data)
+void Camera::update_synch_data(Platform::CameraSynchData& data) const
 {
     data.type  = uint8_t(cam_projection().type());
     data.model = model();

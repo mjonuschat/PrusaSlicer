@@ -7,6 +7,7 @@
 namespace Slic3r::App::Scene {
 
 class Frustum;
+class PickerFrustum;
 
 /**
  * @brief Generic interface for raycast collision detection component.
@@ -34,6 +35,7 @@ public:
      * @return True if associated node and frustum intersect
      */
     virtual bool intersects(const Domain::SquareMatrix4d& world, const Frustum& frustum) const = 0;
+    virtual bool intersects(const Domain::SquareMatrix4d& world, const PickerFrustum& frustum) const = 0;
 };
 
 /**

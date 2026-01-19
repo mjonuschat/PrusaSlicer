@@ -310,8 +310,8 @@ bool convex_polygons_intersect(const Polygon& A, const Polygon& B)
     Domain::BoundingBox2crd bbA{{A[bA.xmin].x(), A[bA.ymin].y()}, {A[bA.xmax].x(), A[bA.ymax].y()}};
     Domain::BoundingBox2crd bbB{{B[bB.xmin].x(), B[bB.ymin].y()}, {B[bB.xmax].x(), B[bB.ymax].y()}};
 
-    //    if (!bbA.overlap(bbB))
-    //        return false;
+    if (!bbA.overlap(bbB))
+        return false;
 
     // Establish starting antipodals as extreme vertex pairs in X or Y direction
     // which reside on different polygons. If no such pair is found, the two

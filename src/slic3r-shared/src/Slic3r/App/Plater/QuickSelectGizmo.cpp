@@ -25,6 +25,7 @@ RectangleSelection::RectangleSelection(const Render::ScreenInfo& screen_info, Re
     , m_scene_provider(scene_provider)
     , m_scene_interactor(scene_interactor)
     , m_geometry(device)
+    , m_picker(device)
 {
     m_material = Render::Material{}
         .set_shader(m_device.context().shader_manager().shader("flat"));
@@ -60,15 +61,25 @@ void RectangleSelection::activate(Type type, const MousePosition& initial_mouse_
 
 void RectangleSelection::update(const MousePosition& curr_mouse_pos)
 {
-    Render::Rect rect{
-        std::min(m_initial_mouse_pos[0], curr_mouse_pos[0]),
-        std::min(m_initial_mouse_pos[1], curr_mouse_pos[1]),
-        std::abs(curr_mouse_pos[0] - m_initial_mouse_pos[0]),
-        std::abs(curr_mouse_pos[1] - m_initial_mouse_pos[1])
+    Domain::Vec2f initial_mouse_pos = {
+        m_screen_info.mouse_to_screen(m_initial_mouse_pos[0]),
+        m_screen_info.mouse_to_screen(m_initial_mouse_pos[1])
     };
 
-    float scr_w = m_screen_info.logical_width();
-    float scr_h = m_screen_info.logical_height();
+    Domain::Vec2f final_mouse_pos = {
+        m_screen_info.mouse_to_screen(curr_mouse_pos[0]),
+        m_screen_info.mouse_to_screen(curr_mouse_pos[1])
+    };
+
+    Render::Rect rect{
+        int(std::min(initial_mouse_pos.x(), final_mouse_pos.x())),
+        int(std::min(initial_mouse_pos.y(), final_mouse_pos.y())),
+        int(std::abs(final_mouse_pos.x() - initial_mouse_pos.x())),
+        int(std::abs(final_mouse_pos.y() - initial_mouse_pos.y()))
+    };
+
+    float scr_w = m_screen_info.physical_width();
+    float scr_h = m_screen_info.physical_height();
 
     DEBUG_ASSERT(scr_w > 0.0f && scr_h > 0.0f);
 
@@ -84,9 +95,9 @@ void RectangleSelection::update(const MousePosition& curr_mouse_pos)
     vm(1, 3) = bottom;
     m_material.set_uniform("projection_view_model_matrix", vm);
 
-    m_frustum = Scene::Frustum::from(m_scene_provider.scene().camera(), m_screen_info, rect);
+    m_picker.pick(m_scene_provider.scene(), m_screen_info, rect);
+    m_contained_nodes = m_picker.contained_nodes();
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
-    m_contained_nodes = collect_contained_nodes();
 }
 
 static Scene::Node::NodeList extract_instance_nodes(const Scene::Node::NodeList& nodes)
@@ -178,23 +189,6 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
     if (!m_active || !m_defined || m_already_processed)
         return;
     cmd_buffer.bind_and_draw(m_geometry, m_material);
-}
-
-Scene::Node::NodeList RectangleSelection::collect_contained_nodes()
-{
-    Scene::Node::NodeList nodes;
-    m_scene_provider.scene().root().query([this](const Scene::Node* n)->bool {
-        auto* rcc = n->raycast_component();
-        return
-          // node has Raycast component present
-          rcc != nullptr &&
-          // node represents volume/instance
-          n->has_tag_of_type<SceneNodeTag>() &&
-          // node intersects frustum
-          rcc->intersects(n->world_transform().matrix(), m_frustum);
-    }, nodes);
-
-    return nodes;
 }
 
 static void promote_hover_data_to_full_instance(HoverData& hover_data, const Scene::Node& node, Scene::Scene& scene)

@@ -20,6 +20,7 @@ public:
     AABBMesh::hit_result hit_result(const Domain::SquareMatrix4d& world, const Ray& ray) const;
 
     bool intersects(const Domain::SquareMatrix4d& world, const Frustum& frustum) const override;
+    bool intersects(const Domain::SquareMatrix4d& world, const PickerFrustum& frustum) const override;
 
     // Eigen::AlignedBox<float, 2> projected_bounding_box(
     //     const Matrix4f& mvp, const Slic3r::App::Render::Rect& viewport
