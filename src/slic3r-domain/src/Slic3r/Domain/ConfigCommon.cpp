@@ -61,8 +61,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->location = printer;
     def->label = L("Bed shape");
     def->option_group = L("Size and coordinates");
-    def->category = ConfigItemDef::Category::General;
-    def->gui_type = ConfigItemDef::GUIType::points;
+    def->full_width = true;
+    def->category = ConfigItemDef::Category::Bed;
+    def->gui_type = ConfigItemDef::GUIType::bed_shape;
     def->mode = comAdvanced;
     def->init_fn = init_with((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
 
@@ -70,8 +71,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->location = printer;
     def->label = L("Bed custom texture");
     def->option_group = L("Size and coordinates");
-    def->category = ConfigItemDef::Category::General;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->full_width = true;
+    def->category = ConfigItemDef::Category::Bed;
+    def->gui_type = ConfigItemDef::GUIType::file_picker;
     def->mode = comAdvanced;
     def->init_fn = init_with("");
 
@@ -79,8 +81,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->location = printer;
     def->label = L("Bed custom model");
     def->option_group = L("Size and coordinates");
-    def->category = ConfigItemDef::Category::General;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->full_width = true;
+    def->category = ConfigItemDef::Category::Bed;
+    def->gui_type = ConfigItemDef::GUIType::file_picker;
     def->mode = comAdvanced;
     def->init_fn = init_with("");
 

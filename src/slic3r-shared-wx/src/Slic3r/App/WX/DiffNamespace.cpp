@@ -9,6 +9,7 @@
 #include "Slic3r/App/WX/I18N.hpp"
 
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Config/BedShape.hpp"
 
 #include <Slic3r/Assert.hpp>
 
@@ -16,6 +17,10 @@ namespace Slic3r::App::WX::Diff {
 
 std::string get_as_string(const Domain::ConfigItem& item)
 {
+    if (item.name() == "bed_shape") {
+        Biz::Config::BedShape bed_shape(item.get<std::vector<Domain::Vec2d>>());
+        return bed_shape.get_full_name_with_params();
+    }
     std::string val;
     if (auto var = Slic3r::Biz::value_as_string(item); std::holds_alternative<std::string>(var)) {
         return std::get<std::string>(var);

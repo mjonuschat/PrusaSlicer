@@ -56,6 +56,8 @@ std::string ConfigItemDef::translate_category(Category category, const PrinterTe
         return L("Single extruder MM setup");
     case Domain::ConfigItemDef::Category::MaterialPrintingProfile:
         return L("Material printing profile");
+    case Domain::ConfigItemDef::Category::Bed:
+        return L("Bed");
     case Domain::ConfigItemDef::Category::PreferencesGeneral:
         return L("General");
     case Domain::ConfigItemDef::Category::Appearance:

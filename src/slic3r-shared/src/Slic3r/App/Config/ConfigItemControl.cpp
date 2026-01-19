@@ -12,6 +12,8 @@
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
 #include "Slic3r/App/Config/ConfigItemTextFields.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
+#include "Slic3r/App/Config/ConfigItemBedShape.hpp"
+#include "Slic3r/App/Config/ConfigItemFilePicker.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemSubstitutions.hpp"
@@ -233,6 +235,24 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
         item_control = container->emplace<ConfigItemSpinBox>(
+            child_index,
+            data_index,
+            item,
+            cbi_container,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::file_picker:
+        item_control = container->emplace<ConfigItemFilePicker>(
+            child_index,
+            data_index,
+            item,
+            cbi_container,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::bed_shape:
+        item_control = container->emplace<ConfigItemBedShape>(
             child_index,
             data_index,
             item,

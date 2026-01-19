@@ -258,6 +258,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigItemExtruderSelection.cpp
         include/Slic3r/App/Config/ConfigItemRammingParams.hpp
         src/Slic3r/App/Config/ConfigItemRammingParams.cpp
+        include/Slic3r/App/Config/ConfigItemFilePicker.hpp
+        src/Slic3r/App/Config/ConfigItemFilePicker.cpp
+        include/Slic3r/App/Config/ConfigItemBedShape.hpp
+        src/Slic3r/App/Config/ConfigItemBedShape.cpp
+        include/Slic3r/App/Config/BedShapePreview.hpp
+        src/Slic3r/App/Config/BedShapePreview.cpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -831,6 +837,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/ConfigLoad.cpp
         src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
+
+        include/Slic3r/Biz/Config/BedShape.hpp
+        src/Slic3r/Biz/Config/BedShape.cpp
 
         src/Slic3r/Biz/JsonValueJson.cpp
         src/Slic3r/Biz/JsonValueJson.hpp

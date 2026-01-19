@@ -9,35 +9,36 @@ namespace Slic3r::App::Wildcards {
 
 enum class TypeFlag : int
 {
-    None        = 0,
-    GCode       = 1 << 0,
-    BinaryGCode = 1 << 1,
-    Sl1         = 1 << 2,
-    Sl1S        = 1 << 3,
-    Stl         = 1 << 4,
-    Obj         = 1 << 5,
-    Project3mf  = 1 << 6,
+    None           = 0,
+    GCode          = 1 << 0,
+    BinaryGCode    = 1 << 1,
+    Sl1            = 1 << 2,
+    Sl1S           = 1 << 3,
+    Stl            = 1 << 4,
+    Obj            = 1 << 5,
+    Project3mf     = 1 << 6,
     AllImportFiles = 1 << 7,
-    AllFlags    = 1 << 8
+    Png            = 1 << 8,
+    Svg            = 1 << 9,
+    AllTextures    = 1 << 10,
+    AllFlags       = 1 << 11
 };
 
 constexpr TypeFlag operator|(TypeFlag lhs, TypeFlag rhs)
 {
     using underlying_type = std::underlying_type_t<TypeFlag>;
-    
+
     return static_cast<TypeFlag>(
-        static_cast<underlying_type>(lhs) | 
-        static_cast<underlying_type>(rhs)
+        static_cast<underlying_type>(lhs) | static_cast<underlying_type>(rhs)
     );
 }
 
 constexpr TypeFlag operator&(TypeFlag lhs, TypeFlag rhs)
 {
     using underlying_type = std::underlying_type_t<TypeFlag>;
-    
+
     return static_cast<TypeFlag>(
-        static_cast<underlying_type>(lhs) &
-        static_cast<underlying_type>(rhs)
+        static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs)
     );
 }
 
@@ -53,4 +54,4 @@ inline TypeFlag& operator|=(TypeFlag& lhs, TypeFlag rhs)
  */
 std::string generate_wildcards(TypeFlag all_type, TypeFlag primary_type = TypeFlag::None);
 
-}
+} // namespace Slic3r::App::Wildcards

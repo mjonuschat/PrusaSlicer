@@ -26,8 +26,9 @@ inline std::string to_string(KeyModifier modifier)
         return "Shift";
     case KeyModifier::Ctrl:
         return "Ctrl"; // need to respect Platform ("Cmd" for OSX)
+    default:
+        return std::string();
     }
-    return std::string();
 }
 
 inline std::string to_string(KeyModifiers modifiers)

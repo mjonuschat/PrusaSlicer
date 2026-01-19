@@ -14,6 +14,7 @@ Render::Icon category_render_icon(
 
     switch (category) {
     case Domain::ConfigItemDef::Category::General:
+    case Domain::ConfigItemDef::Category::Bed:
         icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker :
                                                       Render::Icon::PrinterSlaIconMarker;
         break;

@@ -11,7 +11,10 @@ const std::map<TypeFlag, std::string> flag_to_wildcard_map = {
     {TypeFlag::Stl, "STL files (*.stl)|*.stl"},
     {TypeFlag::Obj, "OBJ files (*.obj)|*.obj"},
     {TypeFlag::Project3mf, "3MF files (*.3mf)|*.3mf"},
-    {TypeFlag::AllImportFiles, "All supported files|*.3mf;*.obj;*.stl"}
+    {TypeFlag::AllImportFiles, "All supported files|*.3mf;*.obj;*.stl"},
+    {TypeFlag::Png, "PNG files (*.png)|*.png"},
+    {TypeFlag::Svg, "SVG files (*.svg)|*.svg"},
+    {TypeFlag::AllTextures, "Texture files|*.png;*.svg"},
 };
 }
 
