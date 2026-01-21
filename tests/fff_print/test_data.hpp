@@ -20,7 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <unordered_map>
 
-namespace Slic3r { namespace Test {
+namespace Slic3r::Test {
 
 constexpr double MM_PER_MIN = 60.0;
 
@@ -85,53 +85,52 @@ template<typename T> bool _equiv(const T &a, const T &b, double epsilon) {
     return abs(a - b) < epsilon;
 }
 
-Domain::Model model(const std::string &model_name, Domain::TriangleMesh &&_mesh);
+Domain::Model model(const std::string& model_name, Domain::TriangleMesh&& _mesh);
 void init_print(
-    std::vector<Domain::TriangleMesh> &&meshes,
-    Slic3r::Print &print,
-    Domain::Model &model,
-    const TestConfig &config_in,
-    bool comments = false,
-    unsigned duplicate_count = 1
+    std::vector<Domain::TriangleMesh>&& meshes,
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in,
+    unsigned duplicate_count = 1,
+    bool ensure_on_bed       = true
 );
 void init_print(
     std::initializer_list<TestMesh> meshes,
-    Slic3r::Print &print,
-    Domain::Model &model,
-    const TestConfig &config_in = {},
-    bool comments = false,
-    unsigned duplicate_count = 1
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in = {},
+    unsigned duplicate_count    = 1,
+    bool ensure_on_bed          = true
 );
 void init_print(
     std::initializer_list<Domain::TriangleMesh> meshes,
-    Slic3r::Print &print,
-    Domain::Model &model,
-    const TestConfig &config_in = {},
-    bool comments = false,
-    unsigned duplicate = 1
+    Slic3r::Print& print,
+    Domain::Model& model,
+    const TestConfig& config_in = {},
+    unsigned duplicate          = 1,
+    bool ensure_on_bed          = true
 );
 void init_and_process_print(
     std::initializer_list<TestMesh> meshes,
-    Slic3r::Print &print,
-    const TestConfig &config,
-    bool comments = false
+    Slic3r::Print& print,
+    const TestConfig& config,
+    bool ensure_on_bed = true
 );
 void init_and_process_print(
     std::initializer_list<Domain::TriangleMesh> meshes,
-    Slic3r::Print &print,
-    const TestConfig &config,
-    bool comments = false
+    Slic3r::Print& print,
+    const TestConfig& config,
+    bool ensure_on_bed = true
 );
 
-std::string gcode(Print &print);
+std::string gcode(Print& print);
 
-std::string slice(
-    std::initializer_list<TestMesh> meshes, const TestConfig &config, bool comments = false
-);
+std::string
+slice(std::initializer_list<TestMesh> meshes, const TestConfig& config, bool ensure_on_bed = true);
 std::string slice(
     std::initializer_list<Domain::TriangleMesh> meshes,
-    const TestConfig &config,
-    bool comments = false
+    const TestConfig& config,
+    bool ensure_on_bed = true
 );
 
 bool contains(const std::string &data, const std::string &pattern);
@@ -235,7 +234,6 @@ inline double arrange_min_distance(const TestConfig& config)
     return out;
 }
 
-
-}} // namespace Slic3r::Test
+} // namespace Slic3r::Test
 
 #endif // SLIC3R_TEST_DATA_HPP

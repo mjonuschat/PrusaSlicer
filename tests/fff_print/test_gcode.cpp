@@ -149,7 +149,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
 
     Print print;
     Domain::Model model;
-    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
+    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, 2);
     std::string gcode = Test::gcode(print);
 
     if constexpr (debug_files) {
@@ -287,7 +287,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
         Print print;
         Domain::Model model;
 
-        Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
+        Test::init_print({TestMesh::cube_20x20x20}, print, model, config, 2);
         check_m73s(print);
 
         if constexpr (debug_files) {

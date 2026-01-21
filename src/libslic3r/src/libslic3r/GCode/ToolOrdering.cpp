@@ -575,8 +575,19 @@ void ToolOrdering::mark_skirt_layers(const Domain::ConfigView &config, double ma
         return;
     }
 
-    size_t i = 0;
-    for (;;) {
+    // For levitating objects with draft shield, mark all support layers below the first object layer.
+    for (LayerTools& layer_tools : m_layer_tools) {
+        if (layer_tools.has_object) {
+            break;
+        }
+
+        if (layer_tools.has_support) {
+            assert(layer_tools.extruders.empty());
+            layer_tools.has_skirt = true;
+        }
+    }
+
+    for (size_t i = 0;;) {
         m_layer_tools[i].has_skirt = true;
         size_t j = i + 1;
         for (; j < m_layer_tools.size() && ! m_layer_tools[j].has_object; ++ j);

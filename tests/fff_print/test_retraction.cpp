@@ -34,7 +34,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const TestConfig& confi
 
     Print print;
     Domain::Model model;
-    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, duplicate);
+    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, duplicate);
     std::string gcode = Test::gcode(print);
 
     if constexpr(debug_files) {
@@ -334,7 +334,7 @@ TEST_CASE("Firmware retraction when length is 0", "[retraction]") {
 std::vector<double> get_lift_layers(const TestConfig& config) {
     Print print;
     Domain::Model model;
-    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
+    Test::init_print({TestMesh::cube_20x20x20}, print, model, config, 2);
     std::string gcode = Test::gcode(print);
 
     std::vector<double> result;
