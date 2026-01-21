@@ -1018,6 +1018,18 @@ void Scene::render_imgui(const Render::ScreenInfo& screen_info) const
     }
 }
 
+void Scene::notify_thumbnail_render_begin()
+{
+    invoke_listeners<IThumbnailRenderListener>([](IThumbnailRenderListener* l)
+                                               { l->on_thumbnail_render_begin(); });
+}
+
+void Scene::notify_thumbnail_render_end()
+{
+    invoke_listeners<IThumbnailRenderListener>([](IThumbnailRenderListener* l)
+                                               { l->on_thumbnail_render_end(); });
+}
+
 bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results, Ray* out_ray) const
 {
     Node::ConstNodeList query_result;

@@ -165,6 +165,26 @@ void PaintOnGizmoBase::hide_visible_volumes()
     }
 }
 
+void PaintOnGizmoBase::on_thumbnail_render_begin()
+{
+    // Before rendering thumbnail, hide gizmo nodes and show original model nodes.
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(false);
+    }
+
+    this->restore_visible_volumes();
+}
+
+void PaintOnGizmoBase::on_thumbnail_render_end()
+{
+    // After rendering thumbnail, restore gizmo nodes and hide original model nodes,
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(true);
+    }
+
+    this->hide_visible_volumes();
+}
+
 void PaintOnGizmoBase::apply_painting_to_model() const
 {
     Domain::ElementRefs modified_volumes_refs;
@@ -344,12 +364,15 @@ void PaintOnGizmoBase::on_activated()
     this->init_clipper_presenters();
     this->update_clipping_plane();
     this->update_overhang_detection();
+
+    scene.add_listener<Scene::IThumbnailRenderListener>(this);
 }
 
 void PaintOnGizmoBase::on_deactivated()
 {
     Biz::Scene::SceneInteractor& scene_interactor       = m_project_interactor.scene_interactor();
     const Biz::Scene::ObjectSelection& object_selection = scene_interactor.object_selection();
+    Scene::Scene& scene                                 = m_scene_presenter.scene();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
         m_visible_volumes_nodes.clear();
@@ -360,7 +383,6 @@ void PaintOnGizmoBase::on_deactivated()
 
     // Remove all the scene nodes created by this gizmo.
     if (m_main_node != nullptr) {
-        Scene::Scene& scene = m_scene_presenter.scene();
         scene.remove_child(m_main_node);
         m_main_node               = nullptr;
         m_cursors_node            = nullptr;
@@ -372,6 +394,8 @@ void PaintOnGizmoBase::on_deactivated()
 
     m_clipping_plane_presenter.deactivate();
     m_sinking_plane_presenter.deactivate();
+
+    scene.remove_listener<Scene::IThumbnailRenderListener>(this);
 }
 
 void PaintOnGizmoBase::on_project_activated(size_t new_project_id)

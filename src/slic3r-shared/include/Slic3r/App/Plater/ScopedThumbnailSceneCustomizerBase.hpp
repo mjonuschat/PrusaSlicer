@@ -24,6 +24,9 @@ public:
     ScopedThumbnailSceneCustomizerBase(Scene::Scene& scene, const Domain::Project& project, Scene::CameraProjectionType camera_type)
         : m_project(project), m_scene(scene), m_camera_trackball(m_camera)
     {
+        // Notify listeners that thumbnail rendering begins.
+        m_scene.notify_thumbnail_render_begin();
+
         if (m_camera.cam_projection().type() != camera_type)
             m_camera.switch_projection_type();
     }

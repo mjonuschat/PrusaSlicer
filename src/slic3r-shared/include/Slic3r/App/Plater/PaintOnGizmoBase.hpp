@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
@@ -24,7 +25,7 @@ enum class CursorType
     HEIGHT_RANGE
 };
 
-class PaintOnGizmoBase : public Scene::IToolGizmo
+class PaintOnGizmoBase : public Scene::IToolGizmo, public Scene::IThumbnailRenderListener
 {
 public:
     enum class ToolType
@@ -76,6 +77,9 @@ public:
 
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    void on_thumbnail_render_begin() override;
+    void on_thumbnail_render_end() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void render_scene(Render::CommandBuffer& cmd_buffer) override;

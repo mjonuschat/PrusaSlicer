@@ -45,6 +45,9 @@ ScopedThumbnailSceneCustomizerBase::~ScopedThumbnailSceneCustomizerBase()
 
     // shading
     Scene::Scene::set_shading_type(m_cache.shading_type);
+
+    // Notify listeners that thumbnail rendering ends.
+    m_scene.notify_thumbnail_render_end();
 }
 
 void ScopedThumbnailSceneCustomizerBase::store_shading_type()
