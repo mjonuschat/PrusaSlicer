@@ -168,7 +168,8 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
     const Domain::ConfigPack& config_selected,
     Domain::ConfigPack* config_new_selected,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
-    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
+    const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
 )
 {
     UnsavedChangesDialog dlg(
@@ -177,7 +178,8 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
         config_selected,
         config_new_selected,
         preset_names,
-        preset_names_new
+        preset_names_new,
+        preset_interactor
     );
     dlg.ShowModal();
     return dlg.exit_states();

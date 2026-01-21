@@ -25,6 +25,21 @@
 
 namespace Slic3r::Biz::Preset {
 
+// Minimal interface used by NameValidator to query existing preset names.
+class IPresetNameProvider
+{
+public:
+    virtual ~IPresetNameProvider() = default;
+
+    virtual Domain::Preset::PresetNames get_all_vendor_preset_names(
+        Domain::Preset::PresetKind kind,
+        const std::optional<std::string>& vendor_id = std::nullopt
+    ) const = 0;
+
+    virtual boost::filesystem::path
+    selected_user_preset_path(Domain::Preset::PresetKind kind, const std::string& preset_name) const = 0;
+};
+
 class IBedPresetSwitchedListener;
 class IPresetChangedListener;
 
@@ -61,6 +76,7 @@ class PresetInteractor final :
         IPresetChangedListener,
         IBedPresetSwitchedListener,
         ISlicingInputChangedListener>,
+    public IPresetNameProvider,
     public IConfigBoxSetter
 {
 public:
@@ -193,7 +209,12 @@ public:
     Domain::Preset::PresetNames get_all_vendor_preset_names(
         Domain::Preset::PresetKind kind,
         const std::optional<std::string>& vendor_id = std::nullopt
-    ) const;
+    ) const override;
+
+    virtual boost::filesystem::path selected_user_preset_path(
+        Domain::Preset::PresetKind kind,
+        const std::string& preset_name
+    ) const override;
 
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(

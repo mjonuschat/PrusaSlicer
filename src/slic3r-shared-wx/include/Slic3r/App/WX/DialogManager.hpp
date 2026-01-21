@@ -38,7 +38,8 @@ public:
         const Domain::ConfigPack& config_selected,
         Domain::ConfigPack* config_new_selected,
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
-        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
+        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
     ) override;
     std::string show_ramming_dialog(const std::string& ramming_parameters) override;
     std::optional<Biz::StepLoadDialogResult> show_load_step_dialog(

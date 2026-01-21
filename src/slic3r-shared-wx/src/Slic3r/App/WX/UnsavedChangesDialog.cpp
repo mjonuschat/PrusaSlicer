@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
+#include "Slic3r/App/WX/SavePresetDialog.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
@@ -39,7 +40,8 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     const Domain::ConfigPack& config_selected,
     Domain::ConfigPack* config_new_selected,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
-    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
+    const Biz::Preset::PresetInteractor& preset_interactor
 ) :
     wxDialog(
         wxTheApp->GetTopWindow(),
@@ -53,7 +55,8 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     m_config_selected(config_selected),
     m_config_new(config_new_selected),
     m_preset_names(preset_names),
-    m_preset_names_new(preset_names_new)
+    m_preset_names_new(preset_names_new),
+    m_preset_interactor(preset_interactor)
 {
     if (std::get_if<Domain::ConfigPackFDM>(&m_config_original) == nullptr) {
         m_printer_technology = Domain::PrinterTechnology::SLA;
@@ -583,6 +586,29 @@ void UnsavedChangesDialog::show_info_line(
     Refresh();
 }
 
+static std::string preset_name(
+    const Biz::Preset::PresetSelectionNames& preset_names,
+    Domain::Preset::PresetKind kind,
+    size_t tool_id
+)
+{
+    switch (kind) {
+    case Domain::Preset::PresetKind::FdmPrinter:
+    case Domain::Preset::PresetKind::SlaPrinter:
+        return preset_names.printer.name;
+    case Domain::Preset::PresetKind::FdmPrint:
+    case Domain::Preset::PresetKind::SlaPrint:
+        return preset_names.print.name;
+    case Domain::Preset::PresetKind::FdmToolPrint:
+    case Domain::Preset::PresetKind::SlaToolPrint:
+        return preset_names.tools[tool_id].name;
+    case Domain::Preset::PresetKind::FdmMaterial:
+    case Domain::Preset::PresetKind::SlaMaterial:
+        return preset_names.materials[tool_id].name;
+    }
+    return std::string();
+}
+
 void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
 {
     if (operation == PresetDiffOperation::Undef) {
@@ -604,8 +630,24 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
             std::string new_preset_name = "TEMP new name";
             // ToDo: get new preset name using SavePresetDialog
 
+            SavePresetDialog save_dlg(
+                this,
+                {{kind_id.kind, preset_name(m_preset_names, kind_id.kind, kind_id.id.value_or(0))}},
+                m_preset_interactor
+            );
+            if (save_dlg.ShowModal() == wxID_OK)
+                new_preset_name = save_dlg.get_name();
+            else
+                return;
             m_exit_states[kind_id].new_preset_name = new_preset_name;
         }
+
+        // Note:
+        // For operation == PresetDiffOperation::Save,
+        // we get values of *unselected* parameters with values from the original configuration.
+        //
+        // For operation == PresetDiffOperation::Transfer,
+        // we get values of *selected* parameters with values from the selected configuration.
 
         const Domain::ConfigPack& config_pack =
             operation == PresetDiffOperation::Save ? m_config_original : m_config_selected;

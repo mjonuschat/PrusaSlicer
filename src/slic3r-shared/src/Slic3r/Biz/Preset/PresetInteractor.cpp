@@ -160,7 +160,6 @@ std::vector<std::string> save_preset(
     std::string&& new_name
 )
 {
-    namespace fs = boost::filesystem;
 
     const bool needs_copy = t.origin == Domain::Preset::PresetOrigin::System;
     std::vector<std::string> ids_to_detach;
@@ -189,11 +188,8 @@ std::vector<std::string> save_preset(
         bundle.update_presets(t);
     }
 
-    auto dir_path = paths.user_preset_dir_path(vendor_id, repo_id);
-    if (!fs::exists(dir_path))
-        fs::create_directories(dir_path);
-    std::string file_name = IO::preset_file_prefix(t.kind) + t.name + ".yaml";
-    IO::save_evaluated_preset_as_user(t, (dir_path / file_name).string());
+    auto path = IO::preset_path(paths, t.kind, t.name, vendor_id, repo_id);
+    IO::save_evaluated_preset_as_user(t, (path).string());
 
     return ids_to_detach;
 }
@@ -603,13 +599,22 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     const auto& hw_config      = get_printer_config(printer_hw_config_id).first.get();
 
     if (printer_only) {
-        const auto& printer_preset = get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
+        const auto& printer_preset =
+            get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
         auto& selected_preset     = cc.mutable_selected_preset();
+
+        const Domain::Preset::PresetKind kind = Domain::Preset::printer_kind(selected_preset.technology());
+        // process unsaved changes, if any exist before update selected preset
+        process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, kind);
+
         selected_preset.hw_config = hw_config;
         selected_preset.printer   = printer_preset;
 
         resize_tool_dependant_presets(hw_config, selected_preset.tools);
         resize_tool_dependant_presets(hw_config, selected_preset.materials);
+
+        // Set transfered values after switch to new selected preset
+        process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer, kind);
 
         return;
     }
@@ -1319,6 +1324,21 @@ Domain::Preset::PresetNames PresetInteractor::get_all_vendor_preset_names(
     return vendor_bundle.preset_names.at(kind);
 }
 
+boost::filesystem::path PresetInteractor::selected_user_preset_path(
+    Domain::Preset::PresetKind kind,
+    const std::string& preset_name
+) const
+{
+    const auto& selected_preset = selected_printer_preset();
+
+    return IO::preset_path(
+        m_bundle_paths,
+        kind,
+        preset_name,
+        selected_preset.hw_config.vendor_id,
+        selected_preset.hw_config.repo_id
+    );
+}
 
 void PresetInteractor::set_preset_value(
     Domain::ConfigLocation location,
@@ -1603,6 +1623,19 @@ void PresetInteractor::process_operation_from_unsaved_changes(
                        const PresetSwitchState& state
                    )
     {
+        // Note:
+        // For state.operation == Biz::Preset::PresetDiffOperation::Save,
+        // we replace values of *unselected* parameters in the selected preset
+        // with values from the original preset.
+        // That is why process_operation_from_unsaved_changes() is called with
+        // the Save operation *before* updating selected_preset.
+        //
+        // For state.operation == Biz::Preset::PresetDiffOperation::Transfer,
+        // we replace values of *selected* parameters from the previously selected
+        // preset into the newly selected preset.
+        // That is why process_operation_from_unsaved_changes() is called with
+        // the Transfer operation *after* updating selected_preset.
+
         if (preset_id.kind == Domain::Preset::printer_kind(selected_preset.technology())) {
             for (const auto& [key, item_val] : state.items) {
                 selected_preset.printer.config_box().items.opt(key).set(item_val);
@@ -1650,8 +1683,11 @@ void PresetInteractor::process_operation_from_unsaved_changes(
 
         if (state.operation == Biz::Preset::PresetDiffOperation::Save) {
             // save preset from selected_preset with state.new_preset_name
-            // ToDo !!!
-            save_user_preset(preset_id.kind, preset_id.id.value_or(0), state.new_preset_name.value_or(""));
+            save_user_preset(
+                preset_id.kind,
+                preset_id.id.value_or(0),
+                state.new_preset_name.value_or("")
+            );
         }
     };
 

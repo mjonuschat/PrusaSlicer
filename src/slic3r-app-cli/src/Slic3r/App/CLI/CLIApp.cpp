@@ -83,7 +83,8 @@ public:
         const Domain::ConfigPack& config_selected,
         Domain::ConfigPack* config_new_selected,
         const Biz::Preset::PresetSelectionNames& preset_names,
-        const Biz::Preset::PresetSelectionNames& preset_names_new
+        const Biz::Preset::PresetSelectionNames& preset_names_new,
+        const Biz::Preset::PresetInteractor& preset_interactor
     ) override
     {
         return {};

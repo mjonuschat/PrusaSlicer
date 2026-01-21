@@ -659,6 +659,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/PresetSelectionNames.hpp
         include/Slic3r/Biz/Preset/PresetDiffOperation.hpp
         include/Slic3r/Biz/Preset/IPresetDialogManager.hpp
+        include/Slic3r/Biz/Preset/NameValidator.hpp
+        src/Slic3r/Biz/Preset/NameValidator.cpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
         include/Slic3r/Biz/Preset/ProjectPresetView.hpp
@@ -1165,6 +1167,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
         test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
+        test/Slic3r/Biz/Preset/PresetNameValidatorTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

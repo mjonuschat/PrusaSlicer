@@ -1,7 +1,10 @@
 #include "Slic3r/Biz/Preset/IO/PresetSaver.hpp"
+#include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp"
+
+#include "boost/filesystem/operations.hpp"
 
 namespace Slic3r::Biz::Preset::IO::Details {
 
@@ -220,6 +223,25 @@ std::string preset_file_prefix(Domain::Preset::PresetKind kind)
         prefix += "-";
     }
     return prefix;
+}
+
+boost::filesystem::path preset_path(
+    const BundlePaths& paths,
+    Domain::Preset::PresetKind kind,
+    const std::string& preset_name,
+    const std::string& vendor_id,
+    const std::string& repo_id
+)
+{
+    namespace fs = boost::filesystem;
+
+    auto dir_path = paths.user_preset_dir_path(vendor_id, repo_id);
+    if (!fs::exists(dir_path))
+        fs::create_directories(dir_path);
+
+    std::string file_name = preset_file_prefix(kind) + preset_name + ".yaml";
+
+    return dir_path / file_name;
 }
 
 }

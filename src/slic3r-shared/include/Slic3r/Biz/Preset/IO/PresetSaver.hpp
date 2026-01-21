@@ -3,6 +3,7 @@
 #include "Slic3r/Uuid.hpp"
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 
+#include "boost/filesystem/path.hpp"
 
 namespace Slic3r::Biz::Preset::IO {
 
@@ -49,6 +50,7 @@ Domain::Preset::RootPresetNode transform_for_saving(
 
 } // namespace Details
 
+struct BundlePaths;
 
 template <typename FdmConfig, typename SlaConfig>
 void save_evaluated_preset_as_user(
@@ -61,7 +63,13 @@ void save_evaluated_preset_as_user(
 
 std::string preset_file_prefix(Domain::Preset::PresetKind kind);
 
-
+boost::filesystem::path preset_path(
+    const BundlePaths& paths,
+    Domain::Preset::PresetKind kind,
+    const std::string& preset_name,
+    const std::string& vendor_id,
+    const std::string& repo_id
+);
 
 } // namespace Slic3r::Biz::Preset::IO
 

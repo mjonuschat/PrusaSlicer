@@ -7,6 +7,7 @@
 namespace Slic3r::Biz::Preset {
 
 struct PresetSelectionNames;
+class PresetInteractor;
 
 struct PresetSwitchKindId
 {
@@ -45,7 +46,8 @@ public:
         const Domain::ConfigPack& config_selected,
         Domain::ConfigPack* config_new_selected,
         const PresetSelectionNames& preset_names,
-        const PresetSelectionNames& preset_names_new
+        const PresetSelectionNames& preset_names_new,
+        const PresetInteractor& preset_interactor
     ) = 0;
 };
 } // namespace Slic3r::Biz::Preset

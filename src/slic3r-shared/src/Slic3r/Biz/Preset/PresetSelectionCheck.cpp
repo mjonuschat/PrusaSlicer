@@ -283,7 +283,8 @@ bool can_select_printer_preset(
             selected_preset.config(),
             nullptr,
             selected_preset_names(preset_interactor),
-            PresetSelectionNames()
+            PresetSelectionNames(),
+            preset_interactor
         );
 
         const bool ret = !exit_states.empty();
@@ -330,7 +331,8 @@ bool can_select_printer_preset(
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
-        names_new
+        names_new,
+        preset_interactor
     );
 
     const bool ret = !exit_states.empty();
@@ -395,7 +397,8 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
-        names_new
+        names_new,
+        preset_interactor
     );
 
     const bool ret = !exit_states.empty();
@@ -478,7 +481,8 @@ bool can_select_tool_print_preset(
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
-        names_new
+        names_new,
+        preset_interactor
     );
 
     const bool ret = !exit_states.empty();
@@ -547,7 +551,8 @@ bool can_select_material_preset(
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
-        names_new
+        names_new,
+        preset_interactor
     );
 
     const bool ret = !exit_states.empty();

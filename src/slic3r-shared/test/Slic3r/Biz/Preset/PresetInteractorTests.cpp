@@ -47,7 +47,8 @@ public:
         const Slic3r::Domain::ConfigPack& config_selected,
         Slic3r::Domain::ConfigPack* config_new_selected,
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
-        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
+        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
     ) override
     {
         PresetsSwitchStates ret;
