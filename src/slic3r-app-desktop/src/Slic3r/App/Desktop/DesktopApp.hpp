@@ -26,16 +26,12 @@ class DesktopApp : public wxApp
 {
 public:
     bool OnInit() override;
+    ~DesktopApp();
 
     void set_init_params(const InitParams& init_params)
     {
         m_init_params = init_params;
     }
-
-    // TODO: Any recoverable exception should be handled here.
-    bool OnExceptionInMainLoop() override;
-
-    void OnUnhandledException() override;
 
     /**
      * @brief On Windows, accepting message from other instance must be done in wxApp implementation. See register_win32_device_notification_event()

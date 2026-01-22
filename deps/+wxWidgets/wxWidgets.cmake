@@ -55,6 +55,7 @@ add_cmake_project(wxWidgets
         -DwxUSE_GLCANVAS_EGL=OFF
         -DwxUSE_WEBREQUEST=OFF
         -DwxUSE_UNSAFE_WXSTRING_CONV=OFF
+        -DwxUSE_EXCEPTIONS=OFF
         ${_wx_webview}
         ${_wx_secretstore}
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
