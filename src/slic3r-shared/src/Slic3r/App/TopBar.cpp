@@ -332,8 +332,14 @@ void TopBar::register_menu_commands()
                 },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Delete},
-                    .enabled           = [this]()
-                    { return !m_project_interactor.scene_interactor().object_selection().empty(); }
+                    .enabled =
+                        [this]()
+                    {
+                        const Scene::ObjectSelection& selection{
+                            m_project_interactor.scene_interactor().object_selection()
+                        };
+                        return !selection.empty() && !selection.contains_wipe_tower();
+                    }
                 }
             )
         )
@@ -438,7 +444,7 @@ void TopBar::register_menu_commands()
                 }
             )
         )
-            // File -> Import -> children
+        // File -> Import -> children
         .register_menu_item(
             {MenuItemName::FileMenu, MenuItemName::Import, MenuItemName::ImportGeometry},
             std::make_unique<UIItemCommand>(

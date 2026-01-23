@@ -30,6 +30,7 @@
 #define ENABLE_DEBUG_HOVER 0
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SquareMatrix3d;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3d;
 
@@ -402,6 +403,7 @@ void PlaterScenePresenter::update_volume_materials()
             const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
+                bool is_wipe_tower = tag->wipe_tower_id != Domain::SlicingId{};
                 bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
                 bool is_on_selected_bed = std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
@@ -412,7 +414,11 @@ void PlaterScenePresenter::update_volume_materials()
                 const Domain::BedInstance* bed_inst = nullptr;
                 const Domain::Bed* bed = nullptr;
                 bool is_colliding = false;
-                bool is_selected = selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id });
+
+                bool is_selected = is_wipe_tower ?
+                    selection.is_selected(Domain::ElementRef{tag->wipe_tower_id}) :
+                    selection.is_selected({tag->object_id, tag->instance_id, tag->volume_id});
+
                 bool is_disabled = (selection.mode == Biz::Scene::SelectionMode::Volume && !selection.empty()) ?
                     tag->instance_id != selection.elements.front().instance_id : false;
                 bool is_hovered = std::find_if(m_hover_data.nodes.begin(), m_hover_data.nodes.end(),
@@ -420,18 +426,27 @@ void PlaterScenePresenter::update_volume_materials()
                 HoverType hover_type = is_hovered ? m_hover_data.type : HoverType::None;
 
                 std::optional<ColorRGBA> color;
-                if (is_on_bed) {
+                if (is_wipe_tower) {
+                    color = select_color(true, is_selected, false, false, hover_type);
+                } else if (is_on_bed) {
                     bed_inst = find_bed_instance_by_model_instance_id(mi_to_bi_map, inst->id().id);
                     if (bed_inst == nullptr) {
-                        bed_inst = find_bed_instance_by_model_instance_id(ci_to_bi_map, inst->id().id);
+                        bed_inst =
+                            find_bed_instance_by_model_instance_id(ci_to_bi_map, inst->id().id);
                         is_colliding = true;
                     }
                     bed = &bed_inst->bed.get();
 
-                    color = select_color(is_model_part, is_selected, is_colliding, is_disabled, hover_type);
-                }
-                else
+                    color = select_color(
+                        is_model_part,
+                        is_selected,
+                        is_colliding,
+                        is_disabled,
+                        hover_type
+                    );
+                } else {
                     color = select_color(is_model_part, is_selected, true, is_disabled, hover_type);
+                }
 
                 if (!color.has_value())
                     n.remove_material_override();
@@ -600,11 +615,11 @@ void PlaterScenePresenter::build_volume_node(
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
 
-struct WipeTowerTag {
-    Domain::SlicingId slicing_id;
-};
-
 const double wipe_tower_brim_height{0.2};
+
+static Scene::SceneNodeTag wipe_tower_tag(Domain::SlicingId id) {
+    return Scene::SceneNodeTag{0, 0, 0, Domain::ModelVolumeType::INVALID, id};
+}
 
 void build_wipe_tower_cube(
     Scene::NodeBuilder& builder,
@@ -623,7 +638,7 @@ void build_wipe_tower_cube(
 
             builder.set_debug_name("wipe_tower_cube")
                 .set_material_override(material)
-                .set_tag(WipeTowerTag{slicing_id})
+                .set_tag(wipe_tower_tag(slicing_id))
                 .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
                 .set_aabb(mesh->aabb_mesh());
 
@@ -635,20 +650,12 @@ void build_wipe_tower_cube(
     );
 }
 
-Domain::Vec2d wipe_tower_center(
-    const Domain::Vec2d& wipe_tower_position,
+static Domain::Vec3d wipe_tower_offset(
     double wipe_tower_width,
-    double wipe_tower_depth,
-    double wipe_tower_rotation
+    double wipe_tower_depth
 )
 {
-    Vec3d position{wipe_tower_position.x(), wipe_tower_position.y(), 0.0};
-    const auto rotation_transformation{
-        Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower_rotation), Vec3d::UnitZ()}
-    };
-    const Domain::Vec3d offset{wipe_tower_width / 2.0, wipe_tower_depth / 2.0, 0.0};
-    position += Vec3d{rotation_transformation * offset};
-    return {position.x(), position.y()};
+     return {wipe_tower_width / 2.0, wipe_tower_depth / 2.0, 0.0};
 }
 
 void build_wipe_tower_cone(
@@ -677,7 +684,7 @@ void build_wipe_tower_cone(
 
             builder.set_debug_name("wipe_tower_cone")
                 .set_material_override(material)
-                .set_tag(WipeTowerTag{slicing_id})
+                .set_tag(wipe_tower_tag(slicing_id))
                 .set_mesh(
                     geom,
                     material,
@@ -700,7 +707,7 @@ void build_wipe_tower_cone(
 
             builder.set_debug_name("wipe_tower_cone_brim")
                 .set_material_override(material)
-                .set_tag(WipeTowerTag{slicing_id})
+                .set_tag(wipe_tower_tag(slicing_id))
                 .set_mesh(
                     geom,
                     material,
@@ -719,7 +726,6 @@ void build_wipe_tower_cone(
 void PlaterScenePresenter::build_unknown_wipe_tower_node(
     Scene::NodeBuilder& builder,
     const Biz::Print::WipeTowerGeometry& wipe_tower,
-    const Domain::Transformation& bed_transformation,
     Domain::SlicingId slicing_id
 )
 {
@@ -730,56 +736,58 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
             .set_uniform("uniform_color", color)
     };
 
-    const double height{10.0};
-    const double depth{7.0};
+    const double height{wipe_tower.fallback_height};
+    const double depth{wipe_tower.fallback_depth};
     const double width{wipe_tower.width};
 
-    const Domain::Vec2d center{
-        wipe_tower_center(wipe_tower.position, width, depth, wipe_tower.rotation)
-    };
-    Domain::Transform3d transform{bed_transformation.get_matrix()};
-    transform.translate(Vec3d{center.x(), center.y(), 0.0});
-    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
-    builder.set_transform(transform);
+    const Domain::Vec3d offset{wipe_tower_offset(width, depth)};
 
-    build_wipe_tower_cube(
-        builder,
-        m_data_factory,
-        material,
-        0.0,
-        Domain::Vec3d{
-            width + 2 * wipe_tower.brim_width,
-            depth + 2 * wipe_tower.brim_width,
-            wipe_tower_brim_height
-        },
-        slicing_id
-    );
+    builder.child(
+        [&](Scene::NodeBuilder& builder)
+        {
+            Domain::Transform3d transform{Domain::Transform3d::Identity()};
+            transform.translate(offset);
+            builder.set_transform(transform).set_tag(wipe_tower_tag(slicing_id));
 
-    build_wipe_tower_cube(
-        builder,
-        m_data_factory,
-        material,
-        0.0,
-        Domain::Vec3d{width, depth, height},
-        slicing_id
-    );
+            build_wipe_tower_cube(
+                builder,
+                m_data_factory,
+                material,
+                0.0,
+                Domain::Vec3d{
+                    width + 2 * wipe_tower.brim_width,
+                    depth + 2 * wipe_tower.brim_width,
+                    wipe_tower_brim_height
+                },
+                slicing_id
+            );
 
-    build_wipe_tower_cone(
-        builder,
-        m_data_factory,
-        material,
-        Domain::Vec2d{0.0, -depth / 2.0},
-        wipe_tower.cone_angle,
-        height,
-        wipe_tower.brim_width,
-        slicing_id
+            build_wipe_tower_cube(
+                builder,
+                m_data_factory,
+                material,
+                0.0,
+                Domain::Vec3d{width, depth, height},
+                slicing_id
+            );
+
+            build_wipe_tower_cone(
+                builder,
+                m_data_factory,
+                material,
+                Domain::Vec2d{0.0, -depth / 2.0},
+                wipe_tower.cone_angle,
+                height,
+                wipe_tower.brim_width,
+                slicing_id
+            );
+        }
     );
 }
 
 void PlaterScenePresenter::build_wipe_tower_node(
     Scene::NodeBuilder& builder,
     const Biz::Print::WipeTowerGeometry& wipe_tower,
-    const Domain::Transformation& bed_transformation,
     Domain::SlicingId slicing_id
 )
 {
@@ -795,49 +803,54 @@ void PlaterScenePresenter::build_wipe_tower_node(
 
     const double depth{wipe_tower.depths.front().depth};
 
-    const Domain::Vec2d center{
-        wipe_tower_center(wipe_tower.position, wipe_tower.width, depth, wipe_tower.rotation)
+    const Domain::Vec3d offset{
+        wipe_tower_offset(wipe_tower.width, depth)
     };
-    Domain::Transform3d transform{bed_transformation.get_matrix()};
-    transform.translate(Vec3d{center.x(), center.y(), 0.0});
-    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
-    builder.set_transform(transform);
 
-    build_wipe_tower_cube(
-        builder,
-        m_data_factory,
-        material,
-        0.0,
-        Domain::Vec3d{
-            wipe_tower.width + 2 * wipe_tower.brim_width,
-            wipe_tower.depths.front().depth + 2 * wipe_tower.brim_width,
-            wipe_tower_brim_height
-        },
-        slicing_id
-    );
+    builder.child(
+        [&](Scene::NodeBuilder& builder)
+        {
+            Domain::Transform3d transform{Domain::Transform3d::Identity()};
+            transform.translate(offset);
+            builder.set_transform(transform).set_tag(wipe_tower_tag(slicing_id));
 
-    for (int i{1}; i < wipe_tower.depths.size(); ++i) {
-        const double next_z{wipe_tower.depths[i].z};
-        const auto [z, depth]{wipe_tower.depths[i - 1]};
-        build_wipe_tower_cube(
-            builder,
-            m_data_factory,
-            material,
-            z,
-            Domain::Vec3d{wipe_tower.width, depth, next_z - z},
-            slicing_id
-        );
-    }
+            build_wipe_tower_cube(
+                builder,
+                m_data_factory,
+                material,
+                0.0,
+                Domain::Vec3d{
+                    wipe_tower.width + 2 * wipe_tower.brim_width,
+                    wipe_tower.depths.front().depth + 2 * wipe_tower.brim_width,
+                    wipe_tower_brim_height
+                },
+                slicing_id
+            );
 
-    build_wipe_tower_cone(
-        builder,
-        m_data_factory,
-        material,
-        Domain::Vec2d{0.0, 0.0},
-        wipe_tower.cone_angle,
-        wipe_tower.depths.back().z,
-        wipe_tower.brim_width,
-        slicing_id
+            for (int i{1}; i < wipe_tower.depths.size(); ++i) {
+                const double next_z{wipe_tower.depths[i].z};
+                const auto [z, depth]{wipe_tower.depths[i - 1]};
+                build_wipe_tower_cube(
+                    builder,
+                    m_data_factory,
+                    material,
+                    z,
+                    Domain::Vec3d{wipe_tower.width, depth, next_z - z},
+                    slicing_id
+                );
+            }
+
+            build_wipe_tower_cone(
+                builder,
+                m_data_factory,
+                material,
+                Domain::Vec2d{0.0, 0.0},
+                wipe_tower.cone_angle,
+                wipe_tower.depths.back().z,
+                wipe_tower.brim_width,
+                slicing_id
+            );
+        }
     );
 }
 
@@ -1084,7 +1097,37 @@ void PlaterScenePresenter::update_selection_obb(
         project.selection_bounding_box = get_instance_obb(project_id, selection);
     } break;
     case SelectionReferenceFrame::Bed: {
-        project.selection_bounding_box = get_global_obb(project_id, selection);
+        const Scene::OrientedBoundingBox obb{get_global_obb(project_id, selection)};
+        ASSERT(obb.rotation.isApprox(SquareMatrix3d::Identity()));
+        Eigen::AlignedBox3f bounding_box{
+            (obb.center - obb.dimensions / 2.0).cast<float>(),
+            (obb.center + obb.dimensions / 2.0).cast<float>()
+        };
+
+        for (const Domain::ElementRef& element : selection.elements) {
+            if (!element.is_wipe_tower()) {
+                continue;
+            }
+            Scene::Node::NodeList nodes;
+            project.scene().root().query([&](const Scene::Node* node){
+                const auto tag{node->tag_of_type<SceneNodeTag>()};
+                if (!tag) {
+                    return false;
+                }
+                return tag->wipe_tower_id == element.wipe_tower_id && node->raycast_component() != nullptr;
+            }, nodes);
+            for (const Scene::Node* node : nodes) {
+                const Eigen::AlignedBox3f wipe_tower_bounding_box{
+                    node->raycast_component()->world_bounding_box(node->world_transform().matrix())
+                };
+                bounding_box.extend(wipe_tower_bounding_box);
+            }
+        }
+        project.selection_bounding_box = Scene::OrientedBoundingBox{
+            .center = bounding_box.center().cast<double>(),
+            .dimensions = bounding_box.sizes().cast<double>(),
+            .rotation = obb.rotation
+        };
     } break;
     }
 
@@ -1184,6 +1227,9 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
                 return;
             if (t->volume_id == 0) {
                 for (const auto& e : elements) {
+                    if (e.is_wipe_tower()) {
+                        continue;
+                    }
                     if (t->instance_id != 0 && t->instance_id == e.instance_id) {
                         const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
                         ASSERT(inst);
@@ -1342,12 +1388,12 @@ void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId proje
 
 static void remove_wipe_tower_node(Scene::Scene& scene, Domain::SlicingId slicing_id) {
     Scene::Node* node{scene.root().query_first([&](const Scene::Node* node){
-        auto tag{node->tag_of_type<WipeTowerTag>()};
+        auto tag{node->tag_of_type<Scene::SceneNodeTag>()};
         if (tag == nullptr) {
             return false;
         }
-        return tag->slicing_id == slicing_id;
-    })};
+        return tag->wipe_tower_id == slicing_id;
+    }, true)};
     if (node == nullptr) {
         return;
     }
@@ -1359,8 +1405,12 @@ void PlaterScenePresenter::on_wipe_tower_changed(
     const Biz::Print::WipeTowerGeometry& wipe_tower
 )
 {
-    Scene::Scene& current_scene{scene()};
-    remove_wipe_tower_node(current_scene, slicing_id);
+    auto it{m_projects.find(slicing_id.project_id)};
+    if (it == m_projects.end()) {
+        return;
+    }
+    Scene::Scene& project_scene{it->second.scene()};
+    remove_wipe_tower_node(project_scene, slicing_id);
 
     const Domain::Project& project{m_workbench.project(slicing_id.project_id)};
     const Domain::BedInstance* bed_instance{
@@ -1370,26 +1420,85 @@ void PlaterScenePresenter::on_wipe_tower_changed(
         return;
     }
 
-    const Domain::Transformation& bed_transformation{bed_instance->transformation};
-
-    Scene::NodeBuilder builder{current_scene};
+    Scene::NodeBuilder builder{project_scene};
     builder.set_debug_name("wipe_tower");
-    builder.set_tag(WipeTowerTag{slicing_id});
+    builder.set_tag(wipe_tower_tag(slicing_id));
+
+    Domain::Transform3d transform{bed_instance->transformation.get_matrix()};
+    transform.translate(
+        Vec3d{bed_instance->wipe_tower.position.x(), bed_instance->wipe_tower.position.y(), 0.0}
+    );
+    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(bed_instance->wipe_tower.rotation), Vec3d::UnitZ()});
+    builder.set_transform(transform);
+
     if (!wipe_tower.depths.empty()) {
-        build_wipe_tower_node(builder, wipe_tower, bed_transformation, slicing_id);
-        current_scene.add_child(builder.build().release());
+        build_wipe_tower_node(builder, wipe_tower, slicing_id);
+        project_scene.add_child(builder.build().release());
     } else {
-        build_unknown_wipe_tower_node(builder, wipe_tower, bed_transformation, slicing_id);
-        current_scene.add_child(builder.build().release());
+        build_unknown_wipe_tower_node(builder, wipe_tower, slicing_id);
+        project_scene.add_child(builder.build().release());
     }
+    m_volume_materials_dirty = true;
     invoke_bed_visually_changed(slicing_id.project_id);
+    update_wipe_tower_obb(slicing_id.project_id);
+}
+
+void PlaterScenePresenter::on_wipe_tower_moved(Domain::SlicingId slicing_id)
+{
+    auto it{m_projects.find(slicing_id.project_id)};
+    if (it == m_projects.end()) {
+        return;
+    }
+    Scene::Scene& project_scene{it->second.scene()};
+    Scene::Node* node{project_scene.root().query_first([&](const Scene::Node* node){
+        auto tag{node->tag_of_type<Scene::SceneNodeTag>()};
+        if (tag == nullptr) {
+            return false;
+        }
+        return tag->wipe_tower_id == slicing_id;
+    })};
+    if (node == nullptr) {
+        return;
+    }
+    const Domain::BedInstance* bed_instance{
+        m_workbench.project(slicing_id.project_id)
+            .find_bed_instance_by_id(slicing_id.bed_instance_id)
+    };
+    if (bed_instance == nullptr) {
+        return;
+    }
+
+    const Domain::ModelWipeTower wipe_tower{bed_instance->wipe_tower};
+
+    Domain::Transform3d transform{bed_instance->transformation.get_matrix()};
+    transform.translate(Vec3d{wipe_tower.position.x(), wipe_tower.position.y(), 0.0});
+    transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
+    node->set_local_transform(transform);
+    update_wipe_tower_obb(slicing_id.project_id);
 }
 
 void PlaterScenePresenter::on_wipe_tower_removed(Domain::SlicingId slicing_id)
 {
-    Scene::Scene& current_scene{scene()};
-    remove_wipe_tower_node(current_scene, slicing_id);
+    auto it{m_projects.find(slicing_id.project_id)};
+    if (it == m_projects.end()) {
+        return;
+    }
+    Scene::Scene& project_scene{it->second.scene()};
+    remove_wipe_tower_node(project_scene, slicing_id);
     invoke_bed_visually_changed(slicing_id.project_id);
+    update_wipe_tower_obb(slicing_id.project_id);
+}
+
+void PlaterScenePresenter::update_wipe_tower_obb(std::size_t project_id)
+{
+    if (project_id == m_selected_project_id
+        && m_project_interactor.scene_interactor().object_selection().contains_wipe_tower())
+    {
+        update_selection_obb(
+            project_id,
+            m_project_interactor.scene_interactor().object_selection()
+        );
+    }
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)

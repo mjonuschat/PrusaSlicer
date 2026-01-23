@@ -16,7 +16,8 @@ class TripleInput;
 class RotationDialog final :
     public Yoga::GizmoWindow,
     public App::Plater::ISelectionBoundingBoxChangedListener,
-    public Biz::ISelectedProjectChangedListener
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     RotationDialog(
@@ -32,6 +33,11 @@ public:
     ) override;
 
     void on_selected_project_changed_final(size_t index) override;
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
 
     void on_activated(Domain::SelectionId project_id);
     void on_deactivated();

@@ -11,13 +11,6 @@
 
 namespace Slic3r::App::Plater {
 
-
-/*
-*/
-
-
-
-
 using Domain::ColorRGBA;
 using Domain::SquareMatrix4d;
 using Domain::Transform3d;
@@ -114,7 +107,8 @@ TranslationGizmo::TranslationGizmo(
     m_scene_provider(scene_provider),
     m_scene_interactor(project_interactor.scene_interactor()),
     m_project_interactor(project_interactor),
-    m_projects(project_interactor)
+    m_projects(project_interactor),
+    m_on_scene_selection_changed_scope(m_scene_interactor, *this)
 {
 }
 
@@ -186,17 +180,40 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
     return Scene::GizmoActivationState::Active;
 }
 
+static void enable_all_nodes(Scene::Node* handle_nodes)
+{
+    if (handle_nodes != nullptr) {
+        visit(*handle_nodes, [](Scene::Node& node) { node.set_enabled(true); }, true);
+    }
+}
+
+static void hide_z_axis(Scene::Node& handles_node)
+{
+    visit(
+        handles_node,
+        [](Scene::Node& node)
+        {
+            const auto tag{node.tag_of_type<TranslationGizmoNodeTag>()};
+            if (!tag) {
+                return;
+            }
+            node.set_enabled(tag->primary_axis != AxisType::ZAxis);
+        },
+        true
+    );
+}
+
 void TranslationGizmo::clear_highlight()
 {
     ProjectContext& project_context{m_projects.selected()};
     if (project_context.highlighted) {
-        // show all axes
         Scene::Node* handle_nodes{get_handle_nodes()};
-        if (handle_nodes != nullptr) {
-            visit(
-                *handle_nodes, [](Scene::Node& node) { node.set_enabled(true); },
-                true
-            );
+        if (handle_nodes == nullptr) {
+            return;
+        }
+        enable_all_nodes(handle_nodes);
+        if (m_scene_interactor.object_selection().contains_wipe_tower()) {
+            hide_z_axis(*handle_nodes);
         }
     }
     project_context.highlighted = false;
@@ -227,7 +244,15 @@ void TranslationGizmo::on_activated()
     m_projects.selected().activated = true;
     m_window->on_activated();
     Scene::Scene& scene{m_scene_provider.scene()};
-    scene.add_child(generate_handle_nodes().release(), &m_scene_provider.selection_root());
+
+    auto node{generate_handle_nodes()};
+    Scene::Node* handles_node{node.get()};
+
+    scene.add_child(node.release(), &m_scene_provider.selection_root());
+
+    if (m_scene_interactor.object_selection().contains_wipe_tower()) {
+        hide_z_axis(*handles_node);
+    }
 }
 
 void TranslationGizmo::on_deactivated()
@@ -235,6 +260,27 @@ void TranslationGizmo::on_deactivated()
     m_projects.selected().activated = false;
     m_window->on_deactivated();
     m_scene_provider.clear_selection_root_children();
+}
+
+void TranslationGizmo::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::ObjectSelection& selection
+) {
+    if (!m_projects.selected().activated) {
+        return;
+    }
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+    Scene::Node* handles_node{get_handle_nodes()};
+    if (!handles_node) {
+        return;
+    }
+    if (selection.contains_wipe_tower()) {
+        hide_z_axis(*handles_node);
+    } else {
+        enable_all_nodes(get_handle_nodes());
+    }
 }
 
 std::unique_ptr<Yoga::GizmoWindow> TranslationGizmo::release_ui_window()

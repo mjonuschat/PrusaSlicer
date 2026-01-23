@@ -4,6 +4,7 @@
 #include <tuple>
 #include <boost/functional/hash.hpp>
 #include <cstdint>
+#include "Slic3r/Domain/SlicingId.hpp"
 
 namespace Slic3r::Domain {
 
@@ -12,14 +13,19 @@ struct ElementRef
     size_t object_id{0};
     size_t instance_id{0};
     size_t volume_id{0};
+    SlicingId wipe_tower_id{};
 
     ElementRef() = default;
     ElementRef(const ElementRef&) = default;
     ElementRef(ElementRef&&) = default;
 
-    ElementRef(size_t obj_id, size_t inst_id = 0, size_t vol_id = 0)
-        : object_id(obj_id), instance_id(inst_id), volume_id(vol_id)
+    ElementRef(size_t obj_id, size_t inst_id = 0, size_t vol_id = 0) :
+        object_id(obj_id),
+        instance_id(inst_id),
+        volume_id(vol_id)
     {}
+
+    explicit ElementRef(SlicingId wipe_tower_id) : wipe_tower_id(wipe_tower_id) {}
 
     ElementRef& operator=(const ElementRef&) = default;
     ElementRef& operator=(ElementRef&&) = default;
@@ -36,20 +42,40 @@ struct ElementRef
 
     bool operator>=(const ElementRef& rhs) const { return as_tuple() >= rhs.as_tuple(); }
 
-    bool valid() const { return object_id != 0; }
-    bool has_instance() const { return instance_id != 0; }
-    bool has_volume() const { return volume_id != 0; }
+    bool has_instance() const
+    {
+        return instance_id != 0;
+    }
+
+    bool has_volume() const
+    {
+        return volume_id != 0;
+    }
+
+    bool is_wipe_tower() const
+    {
+        return wipe_tower_id != SlicingId{};
+    }
 
     bool is_part_of(const ElementRef& this_or_parent) const
     {
+        if (is_wipe_tower()) {
+            return wipe_tower_id == this_or_parent.wipe_tower_id;
+        }
         return object_id == this_or_parent.object_id && this_or_parent.instance_id == instance_id &&
             (volume_id == this_or_parent.volume_id || this_or_parent.volume_id == 0);
     }
 
 private:
-    constexpr std::tuple<size_t, size_t, size_t> as_tuple() const
+    constexpr std::tuple<size_t, size_t, size_t, size_t, size_t> as_tuple() const
     {
-        return std::tie(object_id, instance_id, volume_id);
+        return std::tie(
+            object_id,
+            instance_id,
+            volume_id,
+            wipe_tower_id.project_id,
+            wipe_tower_id.bed_instance_id
+        );
     }
 };
 

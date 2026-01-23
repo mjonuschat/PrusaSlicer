@@ -141,7 +141,6 @@ enum class ToolType : uint8_t
     Scale,
     PlaceOnFace,
     Simplify,
-    Text,
     PaintOnSupportsGizmo,
     PaintOnSeamsGizmo,
     PaintOnFuzzySkinGizmo,

@@ -66,8 +66,7 @@ ScaleDialog::ScaleDialog(
     auto title = content()->emplace_back<Text>("Size");
     title->set_font_type(Render::ImguiFontType::Bold);
 
-    m_absolute_input =
-        content()->emplace_back<TripleInput>(_u8L("mm"), get_axis_header({"X", "Y", "Z"}));
+    m_absolute_input = content()->emplace_back<TripleInput>(_u8L("mm"));
 
     m_absolute_input->on_change = [this](const Domain::Vec3d& value, int index) {
         const std::optional<Vec3d> current_dimensions{get_current_absolute_scale()};
@@ -89,10 +88,7 @@ ScaleDialog::ScaleDialog(
     auto* header_item{m_absolute_percent_input_item->emplace_back<Yoga::Item>()};
     auto* percentage_text{header_item->emplace_back<Yoga::Text>(_u8L("Scale"))};
     percentage_text->set_font_type(Render::ImguiFontType::Bold);
-    m_absolute_percent_input = m_absolute_percent_input_item->emplace_back<TripleInput>(
-        _u8L("%"),
-        get_axis_header({"X", "Y", "Z"})
-    );
+    m_absolute_percent_input = m_absolute_percent_input_item->emplace_back<TripleInput>(_u8L("%"));
     m_absolute_percent_input->on_change = [this](const Domain::Vec3d& value, int index)
     {
         const std::optional<Vec3d> current_scale{get_current_relative_scale()};
@@ -111,10 +107,7 @@ ScaleDialog::ScaleDialog(
     m_relative_input_item->set_gap(gap);
     auto* unaligned_text{m_relative_input_item->emplace_back<Yoga::Text>(_u8L("Relative scale"))};
     unaligned_text->set_font_type(Render::ImguiFontType::Bold);
-    m_relative_input = m_relative_input_item->emplace_back<TripleInput>(
-        _u8L("%"),
-        get_axis_header({"X", "Y", "Z"})
-    );
+    m_relative_input = m_relative_input_item->emplace_back<TripleInput>(_u8L("%"));
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
     {
         if (m_lock->checked()) {
@@ -251,7 +244,9 @@ std::optional<Domain::Vec3d> ScaleDialog::get_current_relative_scale() const
 
     std::optional<Domain::Vec3d> first_volume_scale;
     for (const Domain::ElementRef& element : scene_interactor.object_selection().elements) {
-        ASSERT(element.has_instance());
+        if (!element.has_instance()) {
+            continue;
+        }
         const Domain::ModelInstance* instance{project.find_instance_by_id(element.object_id, element.instance_id)};
         if (element.has_volume()) {
             const Domain::ModelVolume* volume{project.find_volume_by_id(element.object_id, element.volume_id)};
@@ -380,7 +375,9 @@ Biz::Scene::SceneInteractor::ElementTransforms ScaleDialog::get_reset_scale_cand
     }
 
     for (const Domain::ElementRef& element : scene_interactor.object_selection().elements) {
-        ASSERT(element.has_instance());
+        if (!element.has_instance()) {
+            continue;
+        }
         const Domain::ModelInstance* instance{
             m_project_interactor.workbench()
                 .project(m_project_interactor.selected_project_id())

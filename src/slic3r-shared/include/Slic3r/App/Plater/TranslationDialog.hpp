@@ -26,7 +26,8 @@ class TranslationDialog final :
     public Yoga::GizmoWindow,
     public App::Plater::ISelectionBoundingBoxChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
-    public Biz::ISelectedProjectChangedListener
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     using PositinUpdatedCallback = std::function<void(const Domain::Vec3d&)>;
@@ -49,6 +50,11 @@ public:
     ) override;
 
     void on_selected_project_changed_final(size_t index) override;
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
 
     void on_activated();
     void on_deactivated();

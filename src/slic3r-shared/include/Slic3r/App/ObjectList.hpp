@@ -71,6 +71,7 @@ private:
     bool render_out_of_beds();
     void render_drop_target_area();
     bool render_bed_node(const Domain::BedInstance* bed, size_t config_container_id, bool can_be_deleted);
+    bool render_wipe_tower_node(const Domain::BedInstance* bed);
     bool render_object_node(const Domain::ModelObject* object, const Domain::BedInstance* bed = nullptr, bool is_sla_config = false);
     bool render_connectors_node(const Domain::ModelObject* object, size_t bed_id);
     bool render_volumes(const Domain::ModelObject* object, size_t bed_id, bool is_sla_config);

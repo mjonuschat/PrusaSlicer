@@ -14,7 +14,9 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging
     if (tag == nullptr)
         return;
 
-    Domain::ElementRef element = {tag->object_id, tag->instance_id, tag->volume_id};
+    Domain::ElementRef element = tag->wipe_tower_id != Domain::SlicingId{} ?
+        Domain::ElementRef{tag->wipe_tower_id} :
+        Domain::ElementRef{tag->object_id, tag->instance_id, tag->volume_id};
 
     const Biz::Scene::ObjectSelection& object_selection = m_scene_interactor.object_selection();
     if (object_selection.is_selected(element)) {
@@ -25,14 +27,20 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging
         return;
     }
 
-    auto selection_mode = object_selection.mode;
-
-    auto new_selection_mode = tag->volume_type == Domain::ModelVolumeType::MODEL_PART ?
-        Biz::Scene::SelectionMode::Instance :
-        replace ? Biz::Scene::SelectionMode::Volume : selection_mode;
+    Biz::Scene::SelectionMode new_selection_mode{};
+    if (element.is_wipe_tower()) {
+        new_selection_mode = object_selection.mode;
+    } else if (tag->volume_type == Domain::ModelVolumeType::MODEL_PART) {
+        new_selection_mode = Biz::Scene::SelectionMode::Instance;
+    } else if (replace) {
+        new_selection_mode = Biz::Scene::SelectionMode::Volume;
+    } else {
+        new_selection_mode = object_selection.mode;
+    }
 
     if (new_selection_mode == Biz::Scene::SelectionMode::Instance)
         element.volume_id = 0;
+
     Biz::Scene::ObjectSelection selection = replace
         ? Biz::Scene::ObjectSelection{new_selection_mode}
         : object_selection;
@@ -48,7 +56,11 @@ void SelectionHandler::mark_unselected(Scene::Node& n)
     const auto* tag = n.tag_of_type<SceneNodeTag>();
     if (tag == nullptr)
         return;
-    selection.remove({ tag->object_id, tag->instance_id, tag->volume_id });
+
+    const Domain::ElementRef element = tag->wipe_tower_id != Domain::SlicingId{} ?
+        Domain::ElementRef{tag->wipe_tower_id} :
+        Domain::ElementRef{tag->object_id, tag->instance_id, tag->volume_id};
+    selection.remove(element);
 
     m_scene_interactor.set_object_selection(selection);
 }

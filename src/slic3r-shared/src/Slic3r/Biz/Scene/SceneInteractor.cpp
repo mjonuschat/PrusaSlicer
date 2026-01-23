@@ -8,10 +8,14 @@
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Math.hpp"
+#include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Directories.hpp>
+#include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <vector>
 #include <algorithm>
@@ -77,15 +81,12 @@ Transformation transform_product(const SceneInteractor::Transform& orig_xform, c
 }
 
 /**
- * @brief Determines if a transform must be applied to a volume node.
- * * This is required if the transform contains any rotation component around
- * the X or Y axes, which would change the direction of the Z-axis.
- * Scaling along the Z-axis is permitted for instance-level transforms.
- *
  * @param xform The relative transformation matrix to check.
- * @return True if the transform has X/Y rotation or a delta z different from zero, false otherwise.
+ * @return true if the transform contains any rotation component around
+ * the X or Y axes, which would change the direction of the Z-axis or
+ * any tranlation in z.
  */
-bool requires_volume_transform(const Eigen::Matrix4d& xform)
+static bool changes_z_rotation_or_position(const Eigen::Matrix4d& xform)
 {
     // Extract the third column of the linear part (rotation/scaling).
     // This vector shows where the original Z-axis (0,0,1) points after transformation.
@@ -108,28 +109,95 @@ bool requires_volume_transform(const Eigen::Matrix4d& xform)
     return !transformed_z.isApprox(Eigen::Vector3d::UnitZ()) || std::abs(dz) > Domain::EPSILON;
 }
 
-SelectionMode
-transform_selection_instance_mode(const SceneInteractorProjectContext& proj, const SceneInteractor::Transform& relative_transform, TransformMemento& memento)
+static Domain::SquareMatrix4d get_wipe_tower_transform(const Domain::BedInstance& bed_instance)
+{
+    Domain::Transform3d result{bed_instance.transformation.get_matrix()};
+    const Vec2d position{bed_instance.wipe_tower.position};
+    result.translate(Vec3d{position.x(), position.y(), 0.0});
+    result.rotate(
+        Eigen::AngleAxisd{Slic3r::deg2rad(bed_instance.wipe_tower.rotation), Vec3d::UnitZ()}
+    );
+
+    return result.matrix();
+};
+
+static double get_xy_rotation(
+    const Transformation& transformation
+) {
+    const Domain::SquareMatrix3d rotation{transformation.get_rotation_matrix().rotation()};
+    return std::atan2(rotation(1, 0), rotation(0, 0));
+}
+
+static void set_wipe_tower_transformation(
+    const Transformation& transformation,
+    Domain::BedInstance& bed_instance
+)
+{
+    if (changes_z_rotation_or_position(transformation.get_matrix().matrix())) {
+        return;
+    }
+    Domain::ModelWipeTower& wipe_tower{bed_instance.wipe_tower};
+    wipe_tower.position =
+        transformation.get_offset().head<2>() - bed_instance.transformation.get_offset().head<2>();
+    const double angle =
+        get_xy_rotation(transformation) - get_xy_rotation(bed_instance.transformation);
+    wipe_tower.rotation = Slic3r::rad2deg(Slic3r::angle_to_0_2PI(angle));
+}
+
+SelectionMode transform_selection_instance_mode(
+    const SceneInteractorProjectContext& proj,
+    const SceneInteractor::Transform& relative_transform,
+    TransformMemento& memento
+)
 {
     const bool initialize_memento = memento.elements.empty();
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
 
-    const bool volume_transform_mode = memento.forced_volume_mode || requires_volume_transform(relative_transform);
+    const bool volume_transform_mode = memento.forced_volume_mode || changes_z_rotation_or_position(relative_transform);
 
-    if (initialize_memento)
+    if (initialize_memento) {
         memento.elements.reserve(sel.elements.size());
 
-    std::set<size_t> object_ids;
+        for (const auto& e : sel.elements) {
+            if (!e.is_wipe_tower()) {
+                continue;
+            }
+            Domain::BedInstance* bed_instance =
+                proj.project.find_bed_instance_by_id(e.wipe_tower_id.bed_instance_id);
+            ASSERT(bed_instance);
+            memento.elements.insert({e, {e, get_wipe_tower_transform(*bed_instance)}});
+        }
+    }
 
+    for (const auto& [_, e] : memento.elements) {
+        if (!e.element.is_wipe_tower()) {
+            continue;
+        }
+        Domain::BedInstance* bed_instance =
+            proj.project.find_bed_instance_by_id(e.element.wipe_tower_id.bed_instance_id);
+        ASSERT(bed_instance);
+        set_wipe_tower_transformation(
+            transform_product(e.original_xform, relative_transform),
+            *bed_instance
+        );
+    }
+
+    std::set<size_t> object_ids;
     for (const auto& e : sel.elements) {
-        auto* inst = proj.project.find_instance_by_id(e.object_id, e.instance_id);
-        if (volume_transform_mode)
+        ModelInstance* inst = proj.project.find_instance_by_id(e.object_id, e.instance_id);
+        if (!inst) {
+            continue;
+        }
+        if (volume_transform_mode) {
             object_ids.insert(inst->get_object()->id().id);
-        else {
-            if (initialize_memento)
+        } else {
+            if (initialize_memento) {
                 memento.elements.insert({e, {e, inst->get_matrix().matrix()}});
-            inst->set_transformation(transform_product(memento.elements[e].original_xform, relative_transform));
+            }
+            inst->set_transformation(
+                transform_product(memento.elements[e].original_xform, relative_transform)
+            );
         }
     }
 
@@ -159,6 +227,7 @@ transform_selection_instance_mode(const SceneInteractorProjectContext& proj, con
             vol->set_transformation(transform_product(memento.elements[e].original_xform, volume_relative_transform));
         }
     }
+
     return SelectionMode::Volume;
 }
 
@@ -250,7 +319,7 @@ void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection)
     auto& project_context = it->second;
     ObjectSelection sel{.mode = selection.mode};
     for (const auto& e : selection.elements) {
-        if (e.has_instance()) {
+        if (e.has_instance() || e.is_wipe_tower()) {
             sel.elements.push_back(e);
             continue;
         }
@@ -420,8 +489,13 @@ void SceneInteractor::normalize_object_selection(ObjectSelection& selection) con
         selection.mode = SelectionMode::Instance;
         std::unordered_set<Domain::ElementRef> unique_inst_elements;
 
-        for (const auto& e : selection.elements)
+        for (const auto& e : selection.elements) {
+            if (e.is_wipe_tower()) {
+                unique_inst_elements.insert(e);
+                continue;
+            }
             unique_inst_elements.insert(Domain::ElementRef{e.object_id, e.instance_id, 0});
+        }
 
         selection.elements.clear();
         selection.elements.insert(selection.elements.end(), unique_inst_elements.begin(), unique_inst_elements.end());
@@ -779,7 +853,7 @@ void SceneInteractor::extract_selected_instances()
         for (size_t idx = old_object->instances.size() - 1; idx > 0; idx--)
             old_object->delete_instance(idx);
 
-        Domain::ElementRef stay_el({sel_object_id, old_object->instances[0]->id().id});
+        Domain::ElementRef stay_el{sel_object_id, old_object->instances[0]->id().id};
         to_remove.erase(
             std::remove_if(
                 to_remove.begin(),
@@ -818,6 +892,12 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
     Domain::Model& model                   = project.model();
     const ObjectSelection& scene_selection = object_selection();
     ObjectSelection::ElementRefs to_remove = scene_selection.elements;
+
+    for (const Domain::ElementRef& element : to_remove) {
+        if (element.is_wipe_tower()) {
+            return std::nullopt;
+        }
+    }
 
     std::optional<std::string> last_solid_part_name;
     ObjectSelection new_selection = {};
@@ -1342,8 +1422,9 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
             instance_mode  = false;
             selection.mode = SelectionMode::Volume;
             selection.elements.clear();
-            for (const auto& e : memento.elements)
+            for (const auto& e : memento.elements) {
                 selection.elements.push_back(e.first);
+            }
         }
     } else
         transform_selection_volume_mode(proj, relative_transform, memento);
@@ -1351,6 +1432,13 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
         proj.object_selection.elements,
         selection.mode == SelectionMode::Volume || memento.forced_volume_mode
     );
+    for (const auto& [_, e] : memento.elements) {
+        if (e.element.is_wipe_tower()) {
+            invoke_listeners<ISceneChangedListener>(
+                [&](auto listener) { listener->on_wipe_tower_moved(e.element.wipe_tower_id); }
+            );
+        }
+    }
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
         {
@@ -1390,6 +1478,7 @@ void SceneInteractor::transform_instances(const InstanceTransforms& transformati
     }
 
     const BedTrackingChanges changes{m_bed_tracking.update_instances_bed_placement(project, elements)};
+
     for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
     }
@@ -1400,9 +1489,119 @@ void SceneInteractor::transform_instances(const InstanceTransforms& transformati
     );
 }
 
+static Vec2d rotate_around(
+    const Vec2d& p,
+    const Vec2d& center,
+    double angle_rad)
+{
+    Eigen::Rotation2Dd rotation(angle_rad);
+    return rotation * (p - center) + center;
+}
+
+static Domain::BoundingBox2d get_wipe_tower_bounding_box(
+    const Print::WipeTowerGeometry& wipe_tower_geometry,
+    const Domain::BedInstance& bed_instance
+)
+{
+    const Vec2d position{
+        bed_instance.wipe_tower.position + bed_instance.transformation.get_offset().head<2>()
+    };
+    const double rotation{
+        bed_instance.wipe_tower.rotation + get_xy_rotation(bed_instance.transformation)
+    };
+
+    const double block_width{wipe_tower_geometry.width};
+    double block_depth{wipe_tower_geometry.fallback_depth};
+
+    const double width{wipe_tower_geometry.width + 2 * wipe_tower_geometry.brim_width};
+    double height{wipe_tower_geometry.fallback_height};
+    double depth{wipe_tower_geometry.fallback_depth + 2 * wipe_tower_geometry.brim_width};
+
+    if (!wipe_tower_geometry.depths.empty()) {
+        block_depth = wipe_tower_geometry.depths.front().depth;
+        depth  = wipe_tower_geometry.depths.front().depth + 2 * wipe_tower_geometry.brim_width;
+        height = wipe_tower_geometry.depths.back().z;
+    }
+
+    const double cone_depth{
+        2.0 * height * std::tan(Slic3r::deg2rad(wipe_tower_geometry.cone_angle / 2.0))
+        + 2 * wipe_tower_geometry.brim_width
+    };
+    if (depth < cone_depth) {
+        depth = cone_depth;
+    }
+
+    const Vec2d front_left{
+        position.x() - (width - block_width) / 2.0,
+        position.y() - (depth - block_depth) / 2.0
+    };
+    const Vec2d front_right{
+        front_left.x() + width,
+        front_left.y()
+    };
+    const Vec2d back_right{
+        front_left.x() + width,
+        front_left.y() + depth
+    };
+    const Vec2d back_left{
+        front_left.x(),
+        front_left.y() + depth
+    };
+
+    Domain::Vec2ds square{
+        front_left,
+        front_right,
+        back_right,
+        back_left
+    };
+
+    Domain::BoundingBox2d bounding_box;
+    for (const Vec2d& point : square) {
+        const Vec2d rotated_point{rotate_around(
+            point,
+            position,
+            Slic3r::deg2rad(rotation)
+        )};
+        bounding_box = Biz::Algorithms::BoundingBox::merge(bounding_box, rotated_point);
+    }
+    return bounding_box;
+}
+
 void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bool canceled)
 {
     auto& proj = m_projects.find(m_selected_project_id)->second;
+
+    std::vector<TransformMemento::Element> removed_wipe_towers;
+    std::vector<TransformMemento::Element> wipe_towers_outside;
+    for (const auto& [_, e] : memento.elements) {
+        if (!e.element.is_wipe_tower()) {
+            continue;
+        }
+        const Domain::BedInstance* bed_instance{
+            proj.project.find_bed_instance_by_id(e.element.wipe_tower_id.bed_instance_id)
+        };
+        if (!bed_instance) {
+            removed_wipe_towers.push_back(e);
+            continue;
+        }
+        const auto it{proj.wipe_tower_geometries.find(e.element.wipe_tower_id.bed_instance_id)};
+        if (it == proj.wipe_tower_geometries.end()){
+            removed_wipe_towers.push_back(e);
+            continue;
+        }
+
+        // Here the wipe tower geometry is not updated yet. The backend callback comes after this.
+        // Make sure to check with the position and rotation after transformation.
+        // Also, the wipe tower position and rotation are bed relative.
+        Print::WipeTowerGeometry geometry{it->second};
+        const Domain::BoundingBox2d bounding_box{get_wipe_tower_bounding_box(geometry, *bed_instance)};
+        using Algorithms::Bed::BedContainmentState;
+        const BedContainmentState contains{Algorithms::Bed::contains_2d(*bed_instance, bounding_box)};
+        if (contains != BedContainmentState::Inside) {
+            wipe_towers_outside.push_back(e);
+        }
+    };
+
     const bool vol_mode = memento.forced_volume_mode || proj.object_selection.mode == SelectionMode::Volume;
 
     auto selected_elements = proj.object_selection.elements;
@@ -1412,10 +1611,55 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
             selected_elements.push_back(e.first);
     }
 
-    BedTrackingChanges changes;
+    std::vector<TransformMemento::Element> wipe_towers_to_restore;
     if (canceled) {
         for (const auto& [_, e] : memento.elements) {
+            if (!e.element.is_wipe_tower()) {
+                continue;
+            }
+            wipe_towers_to_restore.push_back(e);
+        }
+    } else {
+        wipe_towers_to_restore.insert(
+            wipe_towers_to_restore.end(),
+            removed_wipe_towers.begin(),
+            removed_wipe_towers.end()
+        );
+        wipe_towers_to_restore.insert(
+            wipe_towers_to_restore.end(),
+            wipe_towers_outside.begin(),
+            wipe_towers_outside.end()
+        );
+    }
+
+    for (const TransformMemento::Element& e : wipe_towers_to_restore) {
+        const Transformation xform{Transform3d{e.original_xform}};
+        Domain::BedInstance* bed_instance =
+            proj.project.find_bed_instance_by_id(e.element.wipe_tower_id.bed_instance_id);
+        ASSERT(bed_instance);
+        set_wipe_tower_transformation(xform, *bed_instance);
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto listener) { listener->on_wipe_tower_moved(e.element.wipe_tower_id); }
+        );
+    }
+
+    for (const TransformMemento::Element& e : removed_wipe_towers) {
+        proj.object_selection.remove(Domain::ElementRef{e.element.wipe_tower_id});
+    }
+    if (!removed_wipe_towers.empty()) {
+        invoke_listeners<ISceneSelectionChangedListener>(
+            [&](auto* l)
+            { l->on_scene_selection_changed(m_selected_project_id, proj.object_selection); }
+        );
+    }
+
+    BedTrackingChanges changes;
+    if (canceled || !wipe_towers_outside.empty()) {
+        for (const auto& [_, e] : memento.elements) {
             const Transformation xform{Transform3d{e.original_xform}};
+            if (e.element.is_wipe_tower()) {
+                continue;
+            }
             if (vol_mode) {
                 auto* vol = proj.project.find_volume_by_id(e.element.object_id, e.element.volume_id);
                 vol->set_transformation(xform);
@@ -1427,6 +1671,7 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
 
         changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode);
     }
+
 
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
@@ -1467,6 +1712,12 @@ void SceneInteractor::on_wipe_tower_geometry_changed(
 
 void SceneInteractor::remove_wipe_tower(const Domain::SlicingId slicing_id)
 {
+    const auto& project_it{m_projects.find(slicing_id.project_id)};
+    if (project_it == m_projects.end()) {
+        return;
+    }
+    SceneInteractorProjectContext& context{project_it->second};
+    context.wipe_tower_geometries.erase(slicing_id.bed_instance_id);
     invoke_listeners<ISceneChangedListener>([&](auto listener)
                                             { listener->on_wipe_tower_removed(slicing_id); });
 }
@@ -1476,9 +1727,24 @@ void SceneInteractor::change_wipe_tower(
     const Domain::SlicingId slicing_id
 )
 {
+    const auto& project_it{m_projects.find(m_selected_project_id)};
+    if (project_it == m_projects.end()) {
+        return;
+    }
+    SceneInteractorProjectContext& context{project_it->second};
+    context.wipe_tower_geometries[slicing_id.bed_instance_id] = wipe_tower;
+
     invoke_listeners<ISceneChangedListener>(
         [&](auto listener) { listener->on_wipe_tower_changed(slicing_id, wipe_tower); }
     );
+}
+
+bool SceneInteractor::current_project_has_wipe_tower(std::size_t bed_instance_id) const {
+    const auto& project_it{m_projects.find(m_selected_project_id)};
+    if (project_it == m_projects.end()) {
+        return false;
+    }
+    return project_it->second.wipe_tower_geometries.contains(bed_instance_id);
 }
 
 BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)
@@ -1487,17 +1753,28 @@ BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::
     auto& proj          = m_projects.find(m_selected_project_id)->second;
     if (volume_mode) {
         std::set<size_t> object_ids;
-        for (const auto& e : elements)
-            object_ids.insert(e.object_id);
-        for (size_t obj_id : object_ids)
+        Domain::ElementRefs wipe_tower_refs;
+        for (const auto& e : elements) {
+            if (e.is_wipe_tower()) {
+                wipe_tower_refs.push_back(e);
+            } else {
+                object_ids.insert(e.object_id);
+            }
+        }
+        for (size_t obj_id : object_ids) {
             changes.append(
                 m_bed_tracking.update_instances_bed_placement(proj.project, proj.project.find_object_by_id(obj_id)->instances)
             );
+        }
+        changes.append(
+            m_bed_tracking.update_instances_bed_placement(proj.project, wipe_tower_refs)
+        );
     } else {
         changes = m_bed_tracking.update_instances_bed_placement(proj.project, elements);
     }
-    for (const auto& bed_ref : changes.updated_beds)
+    for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
+    }
 
     return changes;
 }

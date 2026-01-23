@@ -205,7 +205,7 @@ void ScopedThumbnailSceneCustomizerBase::override_non_printable_volumes_material
             const auto* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
                 const Domain::ModelInstance* model_inst = m_project.find_instance_by_id(tag->object_id, tag->instance_id);
-                if (!model_inst->printable) {
+                if (model_inst != nullptr && !model_inst->printable) {
                     Render::Material material = n.render_component()->material();
                     material.set_uniform("uniform_color", Domain::ColorRGBA::GRAY());
                     m_cache.materials.push_back(std::make_pair(&n, std::nullopt));

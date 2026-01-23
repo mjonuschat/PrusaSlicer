@@ -232,7 +232,9 @@ private:
         Domain::SlicingId slicing_id,
         const Biz::Print::WipeTowerGeometry& wipe_tower
     ) override;
+    void on_wipe_tower_moved(Domain::SlicingId slicing_id) override;
     void on_wipe_tower_removed(Domain::SlicingId slicing_id) override;
+    void update_wipe_tower_obb(std::size_t project_id);
 
     void on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
     void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
@@ -244,13 +246,11 @@ private:
     void build_unknown_wipe_tower_node(
         Scene::NodeBuilder& builder,
         const Biz::Print::WipeTowerGeometry& wipe_tower,
-        const Domain::Transformation& bed_transformation,
         Domain::SlicingId slicing_id
     );
     void build_wipe_tower_node(
         Scene::NodeBuilder& builder,
         const Biz::Print::WipeTowerGeometry& wipe_tower,
-        const Domain::Transformation& bed_transformation,
         Domain::SlicingId slicing_id
     );
 

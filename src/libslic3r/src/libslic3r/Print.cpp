@@ -1016,8 +1016,6 @@ Biz::Print::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_
             return ZDepth{z_depth.first, z_depth.second};
         }
     );
-    result.position = wipe_tower_data.position;
-    result.rotation = wipe_tower_data.rotation_angle;
     result.width = wipe_tower_data.width;
     result.cone_angle = wipe_tower_data.cone_angle;
     result.brim_width = wipe_tower_data.brim_width;

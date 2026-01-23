@@ -542,13 +542,21 @@ void ObjectList::update_selection_from_scene()
         scene_selection.elements.begin(),
         scene_selection.elements.end()
     );
+
     if (selected_items_tmp != ctx.selected_items) {
         clear_all_ms();
         if (scene_selection.mode == Biz::Scene::SelectionMode::Volume) {
-            for (const auto& el : scene_selection.elements)
+            for (const auto& el : scene_selection.elements) {
+                if (el.is_wipe_tower()) {
+                    continue;
+                }
                 ctx.volumes_ms.at(el.object_id).SetItemSelected(el.volume_id, true);
+            }
         } else if (scene_selection.mode == Biz::Scene::SelectionMode::Instance) {
             for (const auto& el : scene_selection.elements) {
+                if (el.is_wipe_tower()) {
+                    continue;
+                }
                 ctx.instances_ms.at(el.object_id).SetItemSelected(el.instance_id, true);
             }
         }
@@ -945,6 +953,11 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     }
 
     if (is_open) {
+        if (m_scene_interactor->current_project_has_wipe_tower(bed->id().id)) {
+            bg.set_next();
+            is_changed_selection |= render_wipe_tower_node(bed);
+        }
+
         bg.set_next();
         for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(bed->model_instances, object))
@@ -953,6 +966,42 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
         ImGui::TreePop();
     }
 
+    return is_changed_selection;
+}
+
+bool ObjectList::render_wipe_tower_node(const Domain::BedInstance* bed) {
+    const Domain::SlicingId wipe_tower_id{
+        m_project_interactor->selected_project_id(), bed->id().id
+    };
+    const Domain::ElementRef wipe_tower_ref{wipe_tower_id};
+    const bool is_selected{m_scene_interactor->object_selection().is_selected(wipe_tower_ref)};
+    RowBackground bg{is_selected};
+    new_row();
+
+    ImGuiTreeNodeFlags flags = m_node_flags;
+    if (is_selected) {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    const std::string imgui_id{
+        "##wipe_tower_id"
+        + std::to_string(wipe_tower_id.project_id)
+        + ":"
+        + std::to_string(wipe_tower_id.bed_instance_id)
+    };
+
+    const bool open{tree_node(
+        imgui_id.c_str(),
+        flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_AllowOverlap,
+        icon_str(Render::Icon::Palette) + "Wipe tower",
+        false
+    )};
+
+    const bool is_changed_selection{handle_selection(wipe_tower_ref)};
+
+    if (open) {
+        ImGui::TreePop();
+    }
     return is_changed_selection;
 }
 

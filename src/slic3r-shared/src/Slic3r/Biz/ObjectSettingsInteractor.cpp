@@ -60,6 +60,9 @@ void ObjectSettingsInteractor::update_sources()
 
         if (m_current_selection.mode == Scene::SelectionMode::Instance) {
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
+                if (ref.is_wipe_tower()) {
+                    continue;
+                }
                 Domain::ModelObject* model_object = project.find_object_by_id(ref.object_id);
                 if (m_current_print_technology == Domain::PrinterTechnology::FFF) {
                     sources.push_back(&model_object->object_settings);
@@ -69,6 +72,9 @@ void ObjectSettingsInteractor::update_sources()
             }
         } else if (m_current_selection.mode == Scene::SelectionMode::Volume) {
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
+                if (ref.is_wipe_tower()) {
+                    continue;
+                }
                 Domain::ModelVolume* model_volume =
                     project.find_volume_by_id(ref.object_id, ref.volume_id);
                 if (model_volume->type() == Domain::ModelVolumeType::MODEL_PART

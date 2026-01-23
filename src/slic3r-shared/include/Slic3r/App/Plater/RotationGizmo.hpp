@@ -19,7 +19,10 @@ namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter;
 
-class RotationGizmo : public Scene::IToolGizmo, public ISelectionBoundingBoxChangedListener
+class RotationGizmo :
+    public Scene::IToolGizmo,
+    public ISelectionBoundingBoxChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
@@ -50,6 +53,11 @@ public:
         const std::optional<Scene::OrientedBoundingBox>&
     ) override;
 
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
 private:
@@ -74,6 +82,7 @@ private:
         bool was_floating{false};
         Biz::Scene::TransformMemento xform_memento;
         Scene::Node* highlight_node{nullptr};
+        Scene::Node* main_node{nullptr};
         Scene::Node::NodeList handles;
     };
 

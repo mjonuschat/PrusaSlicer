@@ -27,6 +27,8 @@ RotationDialog::RotationDialog(
 {
     m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.scene_interactor()
+        .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     content()->set_padding({20, 20});
     content()->set_orientation(Orientation::Vertical);
@@ -60,10 +62,7 @@ RotationDialog::RotationDialog(
     auto title = content()->emplace_back<Text>("Relative rotation");
     title->set_font_type(Render::ImguiFontType::Bold);
 
-    m_relative_input = content()->emplace_back<TripleInput>(
-        _u8L("°"),
-        get_axis_header({"X", "Y", "Z"})
-    );
+    m_relative_input = content()->emplace_back<TripleInput>(_u8L("°"));
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
     { add_rotation(Vec3d{deg2rad(value(0)), deg2rad(value(1)), deg2rad(value(2))}); };
 
@@ -79,6 +78,8 @@ RotationDialog::~RotationDialog()
 {
     m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.scene_interactor()
+        .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
 void RotationDialog::on_scene_selection_bounding_box_changed(
@@ -90,6 +91,13 @@ void RotationDialog::on_scene_selection_bounding_box_changed(
 
 void RotationDialog::on_selected_project_changed_final(size_t index) {
     reload(index);
+}
+
+void RotationDialog::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::ObjectSelection& selection
+) {
+    reload(project_id);
 }
 
 void RotationDialog::on_activated(Domain::SelectionId project_id) {
@@ -124,6 +132,12 @@ void RotationDialog::reload(std::optional<Domain::SelectionId> project_id) {
         m_revert_button->set_visible(false);
     } else {
         m_revert_button->set_visible(true);
+    }
+
+    if (m_project_interactor.scene_interactor().object_selection().contains_wipe_tower()) {
+        m_relative_input->set_visible({false, false, true});
+    } else {
+        m_relative_input->set_visible({true, true, true});
     }
 }
 

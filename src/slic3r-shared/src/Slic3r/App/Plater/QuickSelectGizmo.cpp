@@ -6,7 +6,6 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 
@@ -100,29 +99,87 @@ void RectangleSelection::update(const MousePosition& curr_mouse_pos)
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
 }
 
-static Scene::Node::NodeList extract_instance_nodes(const Scene::Node::NodeList& nodes)
+template <typename T, typename F>
+void unique(std::vector<T>& range, F less_than) {
+    std::sort(
+        range.begin(),
+        range.end(),
+        less_than
+    );
+    range.erase(
+        std::unique(
+            range.begin(),
+            range.end(),
+            [&](const T& a, const T& b) { return !less_than(a, b) && !less_than(b, a); }
+        ),
+        range.end()
+    );
+}
+
+static Scene::Node::NodeList extract_instance_or_wipe_tower_nodes(const Scene::Node::NodeList& nodes)
 {
     Scene::Node::NodeList ret;
     for (auto n : nodes) {
-        ret.emplace_back(n->parent());
+        const auto tag{n->tag_of_type<SceneNodeTag>()};
+        if (!tag) {
+            continue;
+        }
+        if (tag->wipe_tower_id != Domain::SlicingId{}) {
+            Scene::Node* node_to_append{n};
+            while (true) {
+                Scene::Node* new_parent_node{node_to_append->parent()};
+                if (!new_parent_node) {
+                    break;
+                }
+                SceneNodeTag* new_parent_node_tag{new_parent_node->tag_of_type<SceneNodeTag>()};
+                if (!new_parent_node_tag
+                    || new_parent_node_tag->wipe_tower_id != tag->wipe_tower_id)
+                {
+                    break;
+                }
+                node_to_append = new_parent_node;
+            }
+            ret.emplace_back(node_to_append);
+        } else if (tag->volume_id != 0) {
+            ret.emplace_back(n->parent());
+        }
     }
-    std::sort(ret.begin(), ret.end(),
-        [](const Scene::Node* a, const Scene::Node* b) { return a->id() < b->id(); });
-    ret.erase(std::unique(ret.begin(), ret.end(),
-        [](const Scene::Node* a, const Scene::Node* b) { return a->id() == b->id(); }), ret.end());
+    unique(ret, [](const Scene::Node* a, const Scene::Node* b) { return a->id() < b->id(); });
     return ret;
 }
 
-static Scene::Node::NodeList all_nodes_from_same_instance(const Scene::Node& node, Scene::Scene& scene)
+static void promote_wipe_tower_nodes(Scene::Node::NodeList& nodes, Scene::Scene& scene)
 {
-    Scene::Node::NodeList ret;
-    const auto tag = node.tag_of_type<SceneNodeTag>();
-    DEBUG_ASSERT(tag != nullptr);
-    scene.root().query([&](const Scene::Node* n) {
-        const auto t = n->tag_of_type<SceneNodeTag>();
-        return (t == nullptr) ? false : tag->object_id == t->object_id && tag->instance_id == t->instance_id && t->volume_id != 0;
-    }, ret);
-    return ret;
+    std::vector<Domain::SlicingId> wipe_tower_ids;
+    std::erase_if(nodes, [&](const Scene::Node* node){
+        const auto tag{node->tag_of_type<SceneNodeTag>()};
+        if (tag && tag->wipe_tower_id != Domain::SlicingId{}) {
+            wipe_tower_ids.push_back(tag->wipe_tower_id);
+            return true;
+        }
+        return false;
+    });
+
+    Scene::Node::NodeList wipe_tower_nodes;
+    for (Domain::SlicingId wipe_tower_id : wipe_tower_ids) {
+        scene.root().query(
+            [&](const Scene::Node* n)
+            {
+                auto tag{n->tag_of_type<SceneNodeTag>()};
+                if (tag == nullptr) {
+                    return false;
+                }
+                return tag->wipe_tower_id == wipe_tower_id;
+            },
+            wipe_tower_nodes
+        );
+    }
+
+    unique(
+        wipe_tower_nodes,
+        [](const Scene::Node* a, const Scene::Node* b) { return a->id() < b->id(); }
+    );
+    nodes.insert(nodes.end(), wipe_tower_nodes.begin(), wipe_tower_nodes.end());
 }
 
 static bool are_all_nodes_from_same_instance(const Scene::Node::NodeList& nodes)
@@ -130,20 +187,35 @@ static bool are_all_nodes_from_same_instance(const Scene::Node::NodeList& nodes)
     if (nodes.empty())
         return false;
 
+    const auto first_tag{nodes.front()->tag_of_type<SceneNodeTag>()};
+    if (!first_tag || first_tag->volume_id == 0) {
+        return false;
+    }
+
     size_t inst_id = nodes.front()->parent()->id();
     return std::all_of(nodes.begin(), nodes.end(), [&](const Scene::Node* n) {
         return n->parent()->id() == inst_id;
     });
 }
 
-static bool contains_any_part(const Scene::Node::NodeList& nodes)
+static bool contains_any_selectable_part(const Scene::Node::NodeList& nodes)
 {
-    return nodes.empty() ? false :
-           std::any_of(nodes.begin(), nodes.end(),
-               [&](const Scene::Node* n) { 
-                   return n->tag_of_type<SceneNodeTag>()->volume_type == Domain::ModelVolumeType::MODEL_PART;
-               }
-           );
+    if (nodes.empty()) {
+        return false;
+    }
+    return std::any_of(
+        nodes.begin(),
+        nodes.end(),
+        [&](const Scene::Node* n)
+        {
+            const auto tag{n->tag_of_type<SceneNodeTag>()};
+            if (tag == nullptr) {
+                return false;
+            }
+            return tag->volume_type == Domain::ModelVolumeType::MODEL_PART
+                || tag->wipe_tower_id != Domain::SlicingId{};
+        }
+    );
 }
 
 bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
@@ -156,14 +228,23 @@ bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
 
     if (m_type == Type::Remove) {
         if (m_scene_interactor.object_selection().mode == Biz::Scene::SelectionMode::Instance)
-            nodes = extract_instance_nodes(nodes);
+            nodes = extract_instance_or_wipe_tower_nodes(nodes);
     }
     else if (m_type == Type::Replace) {
-        if (std::any_of(nodes.begin(), nodes.end(),
-            [&](const Scene::Node* n) {
-                return n->tag_of_type<SceneNodeTag>()->volume_type == Domain::ModelVolumeType::MODEL_PART;
-            }))
-            nodes = extract_instance_nodes(nodes);
+        if (std::any_of(
+                nodes.begin(),
+                nodes.end(),
+                [&](const Scene::Node* n)
+                {
+                    auto tag{n->tag_of_type<SceneNodeTag>()};
+                    if (!tag) {
+                        return false;
+                    }
+                    return tag->volume_type == Domain::ModelVolumeType::MODEL_PART
+                        || tag->wipe_tower_id != Domain::SlicingId{};
+                }
+            ))
+            nodes = extract_instance_or_wipe_tower_nodes(nodes);
         else if (nodes.size() != 1) {
             if (m_scene_interactor.object_selection().mode == Biz::Scene::SelectionMode::Volume &&
                 !are_all_nodes_from_same_instance(nodes)) {
@@ -191,23 +272,42 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
     cmd_buffer.bind_and_draw(m_geometry, m_material);
 }
 
-static void promote_hover_data_to_full_instance(HoverData& hover_data, const Scene::Node& node, Scene::Scene& scene)
+static void promote_hover_data_to_full_instances(Scene::Node::NodeList& nodes, Scene::Scene& scene)
 {
-    hover_data.nodes = all_nodes_from_same_instance(node, scene);
-}
+    std::vector<std::size_t> instance_ids;
+    std::erase_if(nodes, [&](const Scene::Node* node){
+        const auto tag{node->tag_of_type<SceneNodeTag>()};
+        if (tag && tag->instance_id != 0) {
+            instance_ids.push_back(tag->instance_id);
+            return true;
+        }
+        return false;
+    });
+    unique(instance_ids, std::less<std::size_t>{});
 
-static void promote_hover_data_to_full_instances(HoverData& hover_data, const Scene::Node::NodeList& instances, Scene::Scene& scene)
-{
-    Scene::Node::NodeList nodes;
-    scene.root().query([&](const Scene::Node* n) {
-        const auto tag = n->tag_of_type<SceneNodeTag>();
-        return (tag == nullptr || tag->volume_id == 0) ? false : 
-            std::find_if(instances.begin(), instances.end(), [&](const Scene::Node* i) {
-                const auto t = i->tag_of_type<SceneNodeTag>();
-                return (t->object_id == tag->object_id && t->instance_id == tag->instance_id);
-            }) != instances.end();
-    }, nodes);
-    hover_data.nodes = nodes;
+    Scene::Node::NodeList volume_nodes;
+    for (std::size_t instance_id: instance_ids) {
+        scene.root().query(
+            [&](const Scene::Node* n)
+            {
+                auto tag{n->tag_of_type<SceneNodeTag>()};
+                if (tag == nullptr) {
+                    return false;
+                }
+                if (tag->volume_id == 0) {
+                    return false;
+                }
+                return tag->instance_id == instance_id;
+            },
+            volume_nodes
+        );
+    }
+    unique(
+        volume_nodes,
+        [](const Scene::Node* a, const Scene::Node* b) { return a->id() < b->id(); }
+    );
+
+    nodes.insert(nodes.end(), volume_nodes.begin(), volume_nodes.end());
 }
 
 static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, Biz::Scene::ObjectSelection selection, Scene::Scene& scene)
@@ -216,6 +316,8 @@ static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, Biz:
     if (hover_data.nodes.size() != 1)
         return;
 
+    promote_wipe_tower_nodes(hover_data.nodes, scene);
+
     const auto first_node = hover_data.nodes.front();
     const auto tag = first_node->tag_of_type<SceneNodeTag>();
     if (selection.mode == Biz::Scene::SelectionMode::Volume && !selection.empty()) {
@@ -223,18 +325,18 @@ static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, Biz:
         if (std::any_of(selection.elements.begin(), selection.elements.end(),
             [&](const Domain::ElementRef& r) { return r.is_part_of(ref); })) {
             if (tag->volume_type == Domain::ModelVolumeType::MODEL_PART)
-                promote_hover_data_to_full_instance(hover_data, *first_node, scene);
+                promote_hover_data_to_full_instances(hover_data.nodes, scene);
         }
         else
             hover_data.nodes = Scene::Node::NodeList();
     }
     else if (selection.mode == Biz::Scene::SelectionMode::Instance && !selection.empty()) {
         if (tag->volume_type == Domain::ModelVolumeType::MODEL_PART || modifier_pressed)
-            promote_hover_data_to_full_instance(hover_data, *first_node, scene);
+            promote_hover_data_to_full_instances(hover_data.nodes, scene);
     }
     else if (tag->volume_type == Domain::ModelVolumeType::MODEL_PART ||
         (selection.mode == Biz::Scene::SelectionMode::Instance && hover_data.type == HoverType::Unselect))
-        promote_hover_data_to_full_instance(hover_data, *first_node, scene);
+        promote_hover_data_to_full_instances(hover_data.nodes, scene);
 }
 
 static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::ObjectSelection selection, RectangleSelection::Type type,
@@ -246,8 +348,13 @@ static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::Objec
         nodes.reserve(hover_data.nodes.size());
         for (auto n : hover_data.nodes) {
             const auto tag = n->tag_of_type<SceneNodeTag>();
-            if (selection.is_selected(Domain::ElementRef(tag->object_id, tag->instance_id, tag->volume_id)))
+            if (selection.is_selected(
+                    Domain::ElementRef(tag->object_id, tag->instance_id, tag->volume_id)
+                )
+                || selection.is_selected(Domain::ElementRef(tag->wipe_tower_id)))
+            {
                 nodes.emplace_back(n);
+            }
         }
         hover_data.nodes = nodes;
     }
@@ -270,16 +377,18 @@ static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::Objec
             return;
         }
         else {
-            if (std::any_of(hover_data.nodes.begin(), hover_data.nodes.end(),
-                [&](const Scene::Node* n) {
-                    return n->tag_of_type<SceneNodeTag>()->instance_id != inst_id;
-               })
-             ) {
+            if (std::any_of(
+                    hover_data.nodes.begin(),
+                    hover_data.nodes.end(),
+                    [&](const Scene::Node* n)
+                    { return n->tag_of_type<SceneNodeTag>()->instance_id != inst_id; }
+                ))
+            {
                 hover_data.nodes = Scene::Node::NodeList();
                 return;
             }
-    
-            if (contains_any_part(hover_data.nodes))
+
+            if (contains_any_selectable_part(hover_data.nodes))
                 promote_to_full_instance = true;
             else
                 return;
@@ -288,10 +397,12 @@ static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::Objec
     else
         promote_to_full_instance = type == RectangleSelection::Type::Add ||
                                    type == RectangleSelection::Type::Remove ||
-                                   contains_any_part(hover_data.nodes);
+                                   contains_any_selectable_part(hover_data.nodes);
+
+    promote_wipe_tower_nodes(hover_data.nodes, scene);
 
     if (promote_to_full_instance)
-        promote_hover_data_to_full_instances(hover_data, extract_instance_nodes(hover_data.nodes), scene);
+        promote_hover_data_to_full_instances(hover_data.nodes, scene);
     else if (!are_all_nodes_from_same_instance(hover_data.nodes))
         hover_data.nodes = Scene::Node::NodeList();
 }

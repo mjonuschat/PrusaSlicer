@@ -185,6 +185,17 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
 {
     BedTrackingChanges changes;
     for (const auto& e : instances) {
+        if (e.is_wipe_tower()) {
+            const std::size_t bed_instance_id{e.wipe_tower_id.bed_instance_id};
+            const Domain::ConfigContainer* config_container{
+                project.find_config_container_by_bed_instance_id(bed_instance_id)
+            };
+            if (config_container == nullptr) {
+                continue;
+            }
+            changes.updated_beds.insert(Domain::BedRef{config_container->id().id, bed_instance_id});
+            continue;
+        }
         auto* inst = DEBUG_ASSERT_VAL(project.find_instance_by_id(e.object_id, e.instance_id));
         if (remove_original_links)
             remove_instance_from_bed(project, inst, changes);

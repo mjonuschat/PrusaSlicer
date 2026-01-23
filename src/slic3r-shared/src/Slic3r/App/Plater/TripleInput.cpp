@@ -43,26 +43,34 @@ emplace_coordinate_input(Item* item, const std::string& suffix)
     return {input, validator_ptr};
 }
 
-TripleInput::TripleInput(const std::string& suffix, const std::vector<TripleInput::Header>& header) {
+TripleInput::TripleInput(const std::string& suffix) {
     this->set_width_percent(100);
     this->set_orientation(Yoga::Orientation::Vertical);
     this->set_gap(4);
 
+    const std::array<Header, 3> header{
+        Header{"X", ImColor{220, 63, 63}},
+        Header{"Y", ImColor{101, 201, 0}},
+        Header{"Z", ImColor{64, 200, 232}}
+    };
+
     auto header_row{this->emplace_back<Item>()};
     header_row->set_width_percent(100);
     header_row->set_gap(10);
-    for (const Header& label : header) {
-        auto text{header_row->emplace_back<Text>(label.text)};
-        text->set_height_percent(100);
-        text->set_align_items(YGAlignCenter);
-        text->set_justify_content(YGJustifyCenter);
-        text->set_text_color(label.color);
-        text->set_flex_grow(1);
+    for (int i{}; i < 3; ++i) {
+        const Header& label{header[i]};
+        m_header[i] = header_row->emplace_back<Text>(label.text);
+        m_header[i]->set_height_percent(100);
+        m_header[i]->set_align_items(YGAlignCenter);
+        m_header[i]->set_justify_content(YGJustifyCenter);
+        m_header[i]->set_text_color(label.color);
+        m_header[i]->set_flex_grow(1);
     }
     if (header.empty()) {
         header_row->set_visible(false);
     } else {
         header_row->append(small_label(""));
+        ASSERT(header.size() == 3);
     }
 
     auto input_row{this->emplace_back<Item>()};
@@ -94,6 +102,13 @@ void TripleInput::set_value(const Domain::Vec3d& value)
     m_input[0]->set_text(fmt::format("{:.2f}", value.x()));
     m_input[1]->set_text(fmt::format("{:.2f}", value.y()));
     m_input[2]->set_text(fmt::format("{:.2f}", value.z()));
+}
+
+void TripleInput::set_visible(const std::array<bool, 3>& is_visible) {
+    for (int i{}; i < 3; ++i) {
+        m_input[i]->set_visible(is_visible[i]);
+        m_header[i]->set_visible(is_visible[i]);
+    }
 }
 
 } // namespace Slic3r::App::Plater

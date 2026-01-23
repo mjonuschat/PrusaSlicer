@@ -38,6 +38,7 @@ TranslationDialog::TranslationDialog(
         this
     );
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     content()->set_padding({20, 20});
     content()->set_orientation(Orientation::Vertical);
@@ -47,10 +48,7 @@ TranslationDialog::TranslationDialog(
     m_absolute_input_row->set_orientation(Orientation::Vertical);
     auto absolute_text{m_absolute_input_row->emplace_back<Text>("Translation")};
     absolute_text->set_font_type(Render::ImguiFontType::Bold);
-    m_absolute_input = m_absolute_input_row->emplace_back<TripleInput>(
-        _u8L("mm"),
-        get_axis_header({"X", "Y", "Z"})
-    );
+    m_absolute_input = m_absolute_input_row->emplace_back<TripleInput>(_u8L("mm"));
     m_absolute_input->on_change = [this](const Domain::Vec3d& value, int)
     {
         const std::optional<Scene::OrientedBoundingBox> bounding_box{
@@ -71,10 +69,7 @@ TranslationDialog::TranslationDialog(
     m_relative_input_row->set_orientation(Orientation::Vertical);
     auto relative_text{m_relative_input_row->emplace_back<Text>("Relative translation")};
     relative_text->set_font_type(Render::ImguiFontType::Bold);
-    m_relative_input = m_relative_input_row->emplace_back<TripleInput>(
-        _u8L("mm"),
-        get_axis_header({"X", "Y", "Z"})
-    );
+    m_relative_input = m_relative_input_row->emplace_back<TripleInput>(_u8L("mm"));
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int)
     { apply_relative_translation(value); };
 
@@ -92,6 +87,7 @@ TranslationDialog::~TranslationDialog()
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.scene_interactor().remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
 void TranslationDialog::on_selected_bed_instances_changed(
@@ -112,6 +108,13 @@ void TranslationDialog::on_scene_selection_bounding_box_changed(
 
 void TranslationDialog::on_selected_project_changed_final(size_t index) {
     reload(index);
+}
+
+void TranslationDialog::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::ObjectSelection& selection
+) {
+    reload(project_id);
 }
 
 void TranslationDialog::on_activated()
@@ -151,23 +154,22 @@ std::optional<Vec3d> TranslationDialog::get_absolute_position_reference_point() 
     if (selection.empty()) {
         return std::nullopt;
     }
-    const Domain::ElementRef& element{selection.elements.front()};
-    ASSERT(element.has_instance());
-    const Domain::ModelInstance* instance{
-        m_project_interactor.workbench()
-            .project(m_project_interactor.selected_project_id())
-            .find_instance_by_id(element.object_id, element.instance_id)
-    };
 
     const Domain::Vec3d bed_offset{get_selected_bed_translation(m_project_interactor)};
 
     if (selection.state() == SelectionState::SingleVolume) {
         ASSERT(selection.elements.size() == 1);
-        ASSERT(element.has_volume());
 
         if (reference_frame == SelectionReferenceFrame::Bed) {
             return bed_offset;
         } else if (reference_frame == SelectionReferenceFrame::Instance) {
+            const Domain::ElementRef& element{selection.elements.front()};
+            ASSERT(element.has_instance());
+            const Domain::ModelInstance* instance{
+                m_project_interactor.workbench()
+                    .project(m_project_interactor.selected_project_id())
+                    .find_instance_by_id(element.object_id, element.instance_id)
+            };
             return instance->get_matrix().translation();
         }
     }
@@ -207,6 +209,14 @@ void TranslationDialog::reload(Domain::SelectionId project_id)
     } else {
         m_absolute_input_row->set_visible(true);
         m_absolute_input->set_value(bounding_box->center - *reference_point);
+    }
+
+    if (m_project_interactor.scene_interactor().object_selection().contains_wipe_tower()) {
+        m_relative_input->set_visible({true, true, false});
+        m_absolute_input->set_visible({true, true, false});
+    } else {
+        m_relative_input->set_visible({true, true, true});
+        m_absolute_input->set_visible({true, true, true});
     }
 }
 

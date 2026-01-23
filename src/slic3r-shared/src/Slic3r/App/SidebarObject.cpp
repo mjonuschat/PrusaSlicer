@@ -11,6 +11,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
+#include "Slic3r/App/WipeTowerSettings.hpp"
 
 #include <fmt/format.h>
 
@@ -39,6 +40,8 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_text_object_name = scroll_area->emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
     m_text_object_name->set_flex_shrink(0);
+
+    m_wipe_tower_settings = scroll_area->emplace_back<WipeTowerSettings>(m_project_interactor);
 
     m_config_item_filter = std::make_shared<ConfigItemFilter>();
     m_config_item_filter->set_filter_fn(
@@ -129,6 +132,8 @@ void SidebarObject::update_object_name()
     std::string text;
     if (m_selection.elements.size() > 1) {
         text = fmt::format("{} Selected", m_selection.elements.size());
+    } else if (m_selection.elements.front().is_wipe_tower()) {
+        text = Biz::_u8L("Wipe tower");
     } else if (m_selection.mode == Biz::Scene::SelectionMode::Instance) {
         Domain::ModelObject* object = m_project_interactor.selected_project().find_object_by_id(
             m_selection.elements.front().object_id
@@ -172,6 +177,17 @@ void SidebarObject::update_enable_modifiers()
         }
     }
 
+    const bool wipe_tower_selected{std::ranges::any_of(
+        m_selection.elements,
+        [](const Domain::ElementRef& element) { return element.is_wipe_tower(); }
+    )};
+
+    if (wipe_tower_selected) {
+        enable = false;
+    }
+
+    m_wipe_tower_settings->set_visible(wipe_tower_selected && m_selection.elements.size() == 1);
+    m_add_settings_button->set_visible(!wipe_tower_selected);
     m_add_settings_button->set_enabled(enable);
     m_config_item_list_view->set_visible(enable);
     m_override_group_list_view->set_visible(enable);

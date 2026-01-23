@@ -87,6 +87,7 @@
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
+#include <magic_enum/magic_enum.hpp>
 
 #define ENABLED_DEBUG_BEDS 0
 #define ENABLED_NODE_LOGGING 0
@@ -302,6 +303,14 @@ void PlaterRenderModule::register_commands()
     auto is_object_selected = [this]() -> bool
     { return !m_project_interactor.scene_interactor().object_selection().empty(); };
 
+    auto is_wipe_tower_selected = [this]() -> bool
+    {
+        const Biz::Scene::ObjectSelection& selection{
+            m_project_interactor.scene_interactor().object_selection()
+        };
+        return selection.contains_wipe_tower();
+    };
+
     auto is_instance_from_same_object_selected = [this]() -> bool
     {
         const Biz::Scene::ObjectSelection& selection =
@@ -309,6 +318,9 @@ void PlaterRenderModule::register_commands()
         if (selection.empty())
             return false;
         const size_t obj_id = selection.elements[0].object_id;
+        if (obj_id == 0) {
+            return false;
+        }
         for (const Domain::ElementRef& el : selection.elements) {
             if (el.object_id != obj_id) {
                 return false;
@@ -325,6 +337,9 @@ void PlaterRenderModule::register_commands()
             return false;
 
         const size_t inst_id = selection.elements[0].instance_id;
+        if (inst_id == 0) {
+            return false;
+        }
         for (const Domain::ElementRef& el : selection.elements) {
             if (el.instance_id != inst_id) {
                 return false;
@@ -404,7 +419,7 @@ void PlaterRenderModule::register_commands()
                 [this]() { toggle_activate_tool(Scene::ToolType::Scale); },
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::S},
-                    .enabled           = is_object_selected
+                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
                 }
             )
         )
@@ -423,7 +438,8 @@ void PlaterRenderModule::register_commands()
                 CommandName::ArrangeGizmo,
                 [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::A}
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::A},
+                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
                 }
             )
         )
@@ -434,7 +450,7 @@ void PlaterRenderModule::register_commands()
                 FuncCommandExtraOpts{
                     .keyboard_shortcut = Platform::
                         KeyboardShortcut{0, Platform::KeyCode::E /*B*/}, // "B" is used for camera
-                    .enabled = is_object_selected
+                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
                 }
             )
         )
@@ -504,7 +520,8 @@ void PlaterRenderModule::register_commands()
                 CommandName::TextGizmo,
                 [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T},
+                    .enabled           = [=]() { return !is_wipe_tower_selected(); }
                 }
             )
         )
@@ -523,7 +540,8 @@ void PlaterRenderModule::register_commands()
                 CommandName::MeasureGizmo,
                 [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::U}
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::U},
+                    .enabled           = [=]() { return !is_wipe_tower_selected(); }
                 }
             )
         )
@@ -828,6 +846,42 @@ void PlaterRenderModule::init_dialog_navigation()
     init_gizmo_dialog(Scene::ToolType::CutGizmo, m_cut_gizmo->release_ui_window());
 }
 
+static const char* tool_type_to_command_name(Scene::ToolType tool_type)
+{
+    switch (tool_type) {
+    case Scene::ToolType::Translation:
+        return CommandName::MoveGizmo;
+    case Scene::ToolType::Rotation:
+        return CommandName::RotateGizmo;
+    case Scene::ToolType::Scale:
+        return CommandName::ScaleGizmo;
+    case Scene::ToolType::PlaceOnFace:
+        return CommandName::PlaceOnFace;
+    case Scene::ToolType::Simplify:
+        return CommandName::SimplifyGizmo;
+    case Scene::ToolType::ArrangeGizmo:
+        return CommandName::ArrangeGizmo;
+    case Scene::ToolType::PaintOnSupportsGizmo:
+        return CommandName::PaintOnSupportsGizmo;
+    case Scene::ToolType::PaintOnSeamsGizmo:
+        return CommandName::PaintOnSeamsGizmo;
+    case Scene::ToolType::PaintOnFuzzySkinGizmo:
+        return CommandName::PaintOnFuzzySkinGizmo;
+    case Scene::ToolType::MultiMaterialPaintingGizmo:
+        return CommandName::MultiMaterialPaintingGizmo;
+    case Scene::ToolType::TextGizmo:
+        return CommandName::TextGizmo;
+    case Scene::ToolType::MeasureGizmo:
+        return CommandName::MeasureGizmo;
+    case Scene::ToolType::CutGizmo:
+        return CommandName::CutGizmo;
+    case Scene::ToolType::None:
+        return nullptr;
+    default:
+        PANIC("Unknown gizmo!");
+    }
+}
+
 void PlaterRenderModule::update_object_selection()
 {
     const Biz::Scene::ObjectSelection& selection =
@@ -835,6 +889,17 @@ void PlaterRenderModule::update_object_selection()
 
     const bool empty_selection = selection.empty();
     m_layout->middle_toolbar()->set_visible(!empty_selection);
+
+    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
+        if (tool_type == Scene::ToolType::None) {
+            continue;
+        }
+        if (m_gizmo_manager->current_tool_type() == tool_type
+            && !m_command_registry.command(tool_type_to_command_name(tool_type)).enabled())
+        {
+            m_gizmo_manager->deactivate_current_tool();
+        }
+    }
 
     if (empty_selection && m_gizmo_manager->current_tool_type() != Scene::ToolType::None) {
         m_gizmo_manager->deactivate_current_tool();
@@ -872,39 +937,24 @@ void PlaterRenderModule::update_current_right_sidebar()
 
 void PlaterRenderModule::update_toolbar_visibility()
 {
-    m_toolbar_add_instance->set_visible(m_command_registry.command(CommandName::AddInstance).enabled());
-    m_toolbar_add_volume->set_visible(m_command_registry.command(CommandName::AddInstance).enabled());
-
-    m_toolbar_cut->set_visible(m_command_registry.command(CommandName::CutGizmo).enabled());
-    m_toolbar_place_on_face->set_visible(m_command_registry.command(CommandName::PlaceOnFace).enabled());
-
-    m_toolbar_paint_on_supports->set_visible(m_command_registry.command(CommandName::PaintOnSupportsGizmo).enabled());
-    m_toolbar_paint_on_seams->set_visible(m_command_registry.command(CommandName::PaintOnSeamsGizmo).enabled());
-    m_toolbar_paint_on_fuzzy_skin->set_visible(m_command_registry.command(CommandName::PaintOnFuzzySkinGizmo).enabled());
-    m_toolbar_multi_material_painting->set_visible(m_command_registry.command(CommandName::MultiMaterialPaintingGizmo).enabled());
+    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
+        if (tool_type == Scene::ToolType::None) {
+            continue;
+        }
+        get_toolbar_button(tool_type)->set_visible(
+            m_command_registry.command(tool_type_to_command_name(tool_type)).enabled()
+        );
+    }
 }
 
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
 {
-    m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
-    m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
-    m_toolbar_scale->set_checked(current_tool_type == Scene::ToolType::Scale);
-    m_toolbar_place_on_face->set_checked(current_tool_type == Scene::ToolType::PlaceOnFace);
-    m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
-    m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
-    m_toolbar_paint_on_supports->set_checked(
-        current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
-    );
-    m_toolbar_paint_on_seams->set_checked(current_tool_type == Scene::ToolType::PaintOnSeamsGizmo);
-    m_toolbar_paint_on_fuzzy_skin->set_checked(
-        current_tool_type == Scene::ToolType::PaintOnFuzzySkinGizmo
-    );
-    m_toolbar_multi_material_painting->set_checked(
-        current_tool_type == Scene::ToolType::MultiMaterialPaintingGizmo
-    );
-    m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
-    m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
-    m_toolbar_cut->set_checked(current_tool_type == Scene::ToolType::CutGizmo);
+    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
+        if (tool_type == Scene::ToolType::None) {
+            continue;
+        }
+        get_toolbar_button(tool_type)->set_checked(current_tool_type == tool_type);
+    }
 
     update_current_right_sidebar();
 }
@@ -1096,6 +1146,42 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
         ),
         callback
     );
+}
+
+Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type) const
+{
+    switch (tool_type) {
+    case Scene::ToolType::Translation:
+        return m_toolbar_move;
+    case Scene::ToolType::Rotation:
+        return m_toolbar_rotate;
+    case Scene::ToolType::Scale:
+        return m_toolbar_scale;
+    case Scene::ToolType::PlaceOnFace:
+        return m_toolbar_place_on_face;
+    case Scene::ToolType::Simplify:
+        return m_toolbar_simplify;
+    case Scene::ToolType::ArrangeGizmo:
+        return m_toolbar_arrange;
+    case Scene::ToolType::PaintOnSupportsGizmo:
+        return m_toolbar_paint_on_supports;
+    case Scene::ToolType::PaintOnSeamsGizmo:
+        return m_toolbar_paint_on_seams;
+    case Scene::ToolType::PaintOnFuzzySkinGizmo:
+        return m_toolbar_paint_on_fuzzy_skin;
+    case Scene::ToolType::MultiMaterialPaintingGizmo:
+        return m_toolbar_multi_material_painting;
+    case Scene::ToolType::TextGizmo:
+        return m_toolbar_text;
+    case Scene::ToolType::MeasureGizmo:
+        return m_toolbar_measure;
+    case Scene::ToolType::CutGizmo:
+        return m_toolbar_cut;
+    case Scene::ToolType::None:
+        return nullptr;
+    default:
+        PANIC("Unknown gizmo!");
+    }
 }
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)

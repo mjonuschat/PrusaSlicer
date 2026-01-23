@@ -162,6 +162,8 @@ private:
     void init_add_volume_menu(Yoga::Item* parent);
     void add_volume(const Domain::ModelVolumeType& type);
 
+    Yoga::ToolbarButton* get_toolbar_button(Scene::ToolType tool_type) const;
+
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;

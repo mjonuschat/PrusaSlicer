@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/ModelVolume.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
+#include "Slic3r/Domain/SlicingId.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -12,6 +13,7 @@ struct SceneNodeTag
     const Domain::SelectionId volume_id{0};
     const Domain::SelectionId instance_id{0};
     const Domain::ModelVolumeType volume_type{Domain::ModelVolumeType::INVALID};
+    const Domain::SlicingId wipe_tower_id{};
 
     bool matches_element(const Domain::ElementRef& e) const
     {

@@ -77,13 +77,4 @@ Domain::SquareMatrix4d get_translation_matrix(
     return result;
 }
 
-std::vector<TripleInput::Header> get_axis_header(const std::array<std::string, 3>& labels)
-{
-    return std::vector<TripleInput::Header>{
-        {labels[0], ImColor{220, 63, 63}},
-        {labels[1], ImColor{101, 201, 0}},
-        {labels[2], ImColor{64, 200, 232}}
-    };
-}
-
 } // namespace Slic3r::App::Plater

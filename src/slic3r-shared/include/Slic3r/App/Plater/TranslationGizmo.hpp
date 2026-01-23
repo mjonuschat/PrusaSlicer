@@ -11,7 +11,7 @@ class GeometryDataFactory;
 
 namespace Slic3r::App::Plater {
 
-class TranslationGizmo : public Scene::IToolGizmo
+class TranslationGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     TranslationGizmo(
@@ -27,6 +27,10 @@ public:
     void on_cycle_prepare() override;
     void on_activated() override;
     void on_deactivated() override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
     Scene::ToolType type() const override { return Scene::ToolType::Translation; }
 
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
@@ -51,6 +55,11 @@ private:
     ProjectContexts m_projects;
 
     TranslationDialog* m_window{nullptr};
+    Biz::ListenerScope<
+        Biz::Scene::ISceneSelectionChangedListener,
+        Biz::Scene::SceneInteractor,
+        TranslationGizmo>
+        m_on_scene_selection_changed_scope;
 
     std::unique_ptr<Scene::Node> generate_handle_nodes() const;
     Scene::Node* get_handle_nodes() const;

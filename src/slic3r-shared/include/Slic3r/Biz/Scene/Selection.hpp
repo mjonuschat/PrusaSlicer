@@ -47,6 +47,8 @@ struct ObjectSelection
 
     [[nodiscard]] bool only_single_object() const;
 
+    [[nodiscard]] bool contains_wipe_tower() const;
+
     [[nodiscard]] bool is_valid() const;
 };
 

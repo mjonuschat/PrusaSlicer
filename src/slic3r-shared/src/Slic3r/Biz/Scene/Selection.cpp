@@ -77,10 +77,21 @@ bool ObjectSelection::remove(const Domain::ElementRef& ref)
     return false;
 }
 
+bool ObjectSelection::contains_wipe_tower() const
+{
+    return std::ranges::any_of(
+        elements,
+        [](const Domain::ElementRef& element) { return element.is_wipe_tower(); }
+    );
+}
+
 bool ObjectSelection::is_valid() const
 {
     const bool require_zero_vol_id = mode == SelectionMode::Instance;
-    return std::all_of(elements.begin(), elements.end(), [require_zero_vol_id](const auto& e) {
+    return std::all_of(elements.begin(), elements.end(), [require_zero_vol_id](const Domain::ElementRef& e) {
+        if (e.is_wipe_tower()) {
+            return true;
+        }
         return require_zero_vol_id == (e.volume_id == 0) && e.instance_id != 0;
     });
 }

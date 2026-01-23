@@ -1386,7 +1386,17 @@ Biz::Print::ApplyStatus::Status Print::apply(
     if (can_have_wipe_tower()) {
         // Check the position and rotation of the wipe tower.
         if (wipe_tower != m_wipe_tower) {
-            std::get<PrintSteps>(wipe_tower_invalidated_steps.print).insert(psSkirtBrim);
+            for (const auto& step : SlicingSync::propagate(psSkirtBrim)) {
+                std::visit(
+                    Domain::overloaded{
+                        [&](const PrintStep& step)
+                        { std::get<PrintSteps>(wipe_tower_invalidated_steps.print).insert(step); },
+                        [&](const PrintObjectStep& step)
+                        { PANIC("No object steps can be invalidated by this!"); },
+                    },
+                    step
+                );
+            }
         }
         m_wipe_tower = wipe_tower;
     } else {
@@ -1445,8 +1455,8 @@ Biz::Print::ApplyStatus::Status Print::apply(
             m_on_wipe_tower_geometry(
                 Biz::Print::WipeTowerGeometry{
                     .depths   = {},
-                    .position = wipe_tower.position,
-                    .rotation = wipe_tower.rotation,
+                    .fallback_depth = 7.0,
+                    .fallback_height = 10.0,
                     .width = new_full_config_ptr->get<double>("wipe_tower_width"),
                     .cone_angle = new_full_config_ptr->get<double>("wipe_tower_cone_angle"),
                     .brim_width = new_full_config_ptr->get<double>("wipe_tower_brim_width")

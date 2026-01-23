@@ -325,6 +325,7 @@ RotationGizmo::RotationGizmo(
     m_projects(project_interactor)
 {
     m_scene_presenter.add_listener<ISelectionBoundingBoxChangedListener>(this);
+    m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
 RotationGizmo::Snap RotationGizmo::m_snap = {
@@ -336,6 +337,7 @@ RotationGizmo::Snap RotationGizmo::m_snap = {
 RotationGizmo::~RotationGizmo()
 {
     m_scene_presenter.remove_listener<ISelectionBoundingBoxChangedListener>(this);
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
 Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
@@ -492,6 +494,24 @@ void RotationGizmo::on_cycle_prepare()
     m_projects.selected().dragging = false;
 }
 
+static void hide_xy_axis(Scene::Node& main_node)
+{
+    visit(
+        main_node,
+        [](Scene::Node& node)
+        {
+            const auto tag{node.tag_of_type<RotationGizmoNodeTag>()};
+            if (!tag) {
+                return;
+            }
+            node.set_enabled(
+                tag->primary_axis != AxisType::XAxis && tag->primary_axis != AxisType::YAxis
+            );
+        },
+        true
+    );
+}
+
 void RotationGizmo::on_activated()
 {
     ProjectContext& project_context{m_projects.selected()};
@@ -502,15 +522,24 @@ void RotationGizmo::on_activated()
 
     Scene::NodeBuilder builder{scene};
     build_main_node("main", false, builder, m_device, m_data_factory);
-    scene.add_child(builder.build().release(), &m_scene_presenter.selection_root());
+    auto node{builder.build()};
+    project_context.main_node = node.get();
+    scene.add_child(node.release(), &m_scene_presenter.selection_root());
+
+    if (m_scene_interactor.object_selection().contains_wipe_tower()) {
+        hide_xy_axis(*project_context.main_node);
+    }
 }
 
 void RotationGizmo::on_deactivated()
 {
+    ProjectContext& project_context{m_projects.selected()};
     remove_highlight_node();
-    m_projects.selected().activated = false;
+    project_context.activated = false;
+    project_context.main_node = nullptr;
     m_window->on_deactivated();
     m_scene_presenter.clear_selection_root_children();
+
 }
 
 void RotationGizmo::on_scene_selection_bounding_box_changed(
@@ -521,6 +550,34 @@ void RotationGizmo::on_scene_selection_bounding_box_changed(
     ProjectContext& project_context{m_projects.selected()};
     if (project_context.activated && project_context.dragging) {
         m_scene_presenter.selection_root().set_enabled(false);
+    }
+}
+
+static void enable_all_nodes(Scene::Node& main_node)
+{
+    visit(main_node, [](Scene::Node& node) { node.set_enabled(true); }, true);
+}
+
+void RotationGizmo::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::ObjectSelection& selection
+)
+{
+    ProjectContext& project_context{m_projects.selected()};
+    if (!m_projects.selected().activated) {
+        return;
+    }
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+    Scene::Node* handles_node{project_context.main_node};
+    if (!handles_node) {
+        return;
+    }
+    if (selection.contains_wipe_tower()) {
+        hide_xy_axis(*handles_node);
+    } else {
+        enable_all_nodes(*handles_node);
     }
 }
 

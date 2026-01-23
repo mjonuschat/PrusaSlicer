@@ -45,7 +45,7 @@ void CommandBindingManager::update_ui_items()
     for (auto& [command_name, items] : m_ui_items) {
         const bool enabled = m_command_registry.command(command_name.c_str()).enabled();
         for (Yoga::AbstractButton* ui_item : items) {
-            ui_item->set_enabled(enabled);
+            ui_item->set_visible(enabled);
         }
     }
 }

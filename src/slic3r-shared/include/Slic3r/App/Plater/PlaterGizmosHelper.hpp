@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/App/Plater/TripleInput.hpp"
 
 
 namespace Slic3r::App::Scene {
@@ -40,6 +39,4 @@ Domain::SquareMatrix4d get_translation_matrix(
     const Domain::SquareMatrix3d& basis,
     const Domain::Vec3d& translate_by
 );
-
-std::vector<TripleInput::Header> get_axis_header(const std::array<std::string, 3>& labels);
 } // namespace Slic3r::App::Plater

@@ -85,7 +85,7 @@ void RectangleSelectionPicker::setup_scene(Scene::Scene& scene, const Render::Re
                 const auto* tag = n.tag_of_type<SceneNodeTag>();
                 if (tag != nullptr) {
                     // volume nodes
-                    if (tag->volume_id != 0) {
+                    if (tag->volume_id != 0 || tag->wipe_tower_id != Domain::SlicingId{}) {
                         DEBUG_ASSERT(n.has_raycast_component());
                         const auto* rcc = n.raycast_component();
                         // if the node's bounding box intersects the selection frustum

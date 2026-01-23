@@ -95,6 +95,7 @@ static const std::unordered_set<Icon> FONT_ICONS = {
     Icon::DelBedIcon                   ,
     Icon::OverridesMarker              ,
     Icon::AllBeds                      ,
+    Icon::Palette                      ,
 };
 
 static const std::unordered_set<Icon> FONT_ICONS_MEDIUM = {

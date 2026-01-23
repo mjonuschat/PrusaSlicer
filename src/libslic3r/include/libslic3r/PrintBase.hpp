@@ -431,8 +431,8 @@ struct ZDepth{
 
 struct WipeTowerGeometry {
     std::vector<ZDepth> depths;
-    Domain::Vec2d position{Domain::Vec2d::Zero()};
-    double rotation{};
+    double fallback_depth{};
+    double fallback_height{};
     double width{};
     double cone_angle{};
     double brim_width{};

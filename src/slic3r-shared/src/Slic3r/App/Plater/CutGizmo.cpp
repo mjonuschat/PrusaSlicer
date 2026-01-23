@@ -1098,6 +1098,10 @@ void CutGizmo::update_scene_nodes()
 
     Domain::Project& project          = m_project_interactor->selected_project();
     const Domain::ElementRef& element = selection.elements.front();
+    if (element.is_wipe_tower()) {
+        return;
+    }
+
     ASSERT(element.volume_id == 0); // Whole object is selected
 
     bool force_full_reset{false};

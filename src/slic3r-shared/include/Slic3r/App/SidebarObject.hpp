@@ -26,6 +26,7 @@ class LayoutButton;
 namespace Slic3r::App {
 
 class OverrideSettingsDialog;
+class WipeTowerSettings;
 
 class SidebarObject : public Yoga::Window, public Biz::Scene::ISceneSelectionChangedListener
 {
@@ -75,6 +76,8 @@ private:
     Biz::Scene::ObjectSelection m_selection;
 
     OverrideSettingsDialog* m_override_settings_dialog{nullptr};
+
+    WipeTowerSettings* m_wipe_tower_settings{nullptr};
 };
 
 } // namespace Slic3r::App
