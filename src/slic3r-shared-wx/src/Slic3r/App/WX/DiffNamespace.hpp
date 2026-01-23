@@ -8,7 +8,7 @@
 #include <wx/sizer.h>
 
 namespace Slic3r::Domain {
-class ConfigItem;
+struct ConfigBox;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::WX {
@@ -23,7 +23,7 @@ class ScalableButton;
 
 namespace Diff {
 
-std::string get_as_string(const Domain::ConfigItem& item);
+std::string get_display_value_or_na(const Domain::ConfigBox* config, const std::string& key);
 
 enum class Location
 {

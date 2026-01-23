@@ -15,7 +15,7 @@
 
 namespace Slic3r::App::WX::Diff {
 
-std::string get_as_string(const Domain::ConfigItem& item)
+static std::string get_as_string(const Domain::ConfigItem& item)
 {
     if (item.name() == "bed_shape") {
         Biz::Config::BedShape bed_shape(item.get<std::vector<Domain::Vec2d>>());
@@ -24,8 +24,7 @@ std::string get_as_string(const Domain::ConfigItem& item)
     std::string val;
     if (auto var = Slic3r::Biz::value_as_string(item); std::holds_alternative<std::string>(var)) {
         return std::get<std::string>(var);
-    }
-    else {
+    } else {
         auto values = std::get<std::vector<std::string>>(var);
         for (size_t id = 0; id < values.size(); id++) {
             val += values[id];
@@ -35,6 +34,17 @@ std::string get_as_string(const Domain::ConfigItem& item)
         }
     }
     return val;
+}
+
+std::string get_display_value_or_na(const Domain::ConfigBox* config, const std::string& key)
+{
+    if (config) {
+        if (const auto override = config->overrides.get(key))
+            return get_as_string(*override);
+        if (const auto item = config->items.find(key))
+            return get_as_string(*item);
+    }
+    return Biz::_u8L("N/A");
 }
 
 BCB::BCB(
@@ -127,9 +137,12 @@ Row::Row(
             }
 
             // We can equalize right to left, only when m_depends_on_row.state == State::Equal
-            // OR this row doesn't have m_depends_on_row 
+            // OR this row doesn't have m_depends_on_row
             // OR m_depends_on_row is hidden
-            if (!m_depends_on_row || !m_depends_on_row->IsShown(1) || m_depends_on_row->state == State::Equal) {
+            if (!m_depends_on_row
+                || !m_depends_on_row->IsShown(1)
+                || m_depends_on_row->state == State::Equal)
+            {
                 int left_selection = m_left->GetSelection();
                 m_right->SetSelection(left_selection);
                 if (m_select_fn) {

@@ -603,20 +603,6 @@ static void append_diff_key_in_tree(
     wxDataViewItem item = tree->model->AddPreset(kind, kind_preset_name);
 
     for (const std::string& key : diff_keys) {
-        std::string val_left, val_right = val_left = "N/A";
-
-        if (const auto overide = config_left->overrides.get(key)) {
-            val_left = Diff::get_as_string(*overide);
-        } else if (const auto item = config_left->items.find(key)) {
-            val_left = Diff::get_as_string(*item);
-        }
-
-        if (const auto overide = config_right->overrides.get(key)) {
-            val_right = Diff::get_as_string(*overide);
-        } else if (const auto item = config_right->items.find(key)) {
-            val_right = Diff::get_as_string(*item);
-        }
-
         const Domain::ConfigItem& item_left = *config_left->find(key).item;
         const Domain::ConfigItemDef& def    = item_left.def();
         tree->Append(
@@ -626,8 +612,8 @@ static void append_diff_key_in_tree(
             Domain::ConfigItemDef::translate_category(def.category, pt),
             def.option_group.empty() ? def.label : def.option_group,
             def.full_label.empty() ? def.label : def.full_label,
-            val_left,
-            val_right,
+            Diff::get_display_value_or_na(config_left, key),
+            Diff::get_display_value_or_na(config_right, key),
             "",
             CategoryUtils::category_icon_name(def.category, pt)
         );
