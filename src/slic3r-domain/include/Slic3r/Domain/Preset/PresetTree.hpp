@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 
+#include <cereal/types/base_class.hpp>
+
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "Slic3r/Domain/Preset/SourceLocatedExpr.hpp"
 
@@ -34,7 +36,8 @@ struct PresetNode
     std::vector<PresetNode> variants;
     SourceLocation source_location;
 
-    template<class Archive> void serialize(Archive& archive)
+    template<class Archive>
+    void serialize(Archive& archive)
     {
         archive(id, name, inherits, unconditional_inherits, condition, match_mode, values, features, variants, source_location);
     }

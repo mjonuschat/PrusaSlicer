@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Slic3r/Uuid.hpp"
+#include <ranges>
+
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 
 #include "boost/filesystem/path.hpp"
@@ -9,19 +10,24 @@ namespace Slic3r::Biz::Preset::IO {
 
 constexpr const char* FEATURE_BASED_ID = "based_id";
 constexpr const char* FEATURE_BASED_ROOT_ID = "based_root_id";
+using KeySet = std::set<std::string>;
 
 namespace Details {
 
 Domain::Expr::ExprAst and_chain_exprs(const Domain::Preset::Expressions& exprs);
-Domain::Preset::PresetValueMap config_box_to_values(const Domain::ConfigBox& cfg);
-void save_transformed_preset_as_user(
-    const Domain::Preset::RootPresetNode& root_preset,
-    const std::string& path
-);
+Domain::Preset::PresetValueMap
+config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_omit);
+
+
+} // namespace Details
+
+struct BundlePaths;
 
 template <typename FdmConfig, typename SlaConfig>
 Domain::Preset::RootPresetNode transform_for_saving(
-    const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& source
+    const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& source,
+    const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& system,
+    const KeySet& items_to_omit
 )
 {
     using namespace Domain::Preset;
@@ -31,34 +37,50 @@ Domain::Preset::RootPresetNode transform_for_saving(
     ret.origin = PresetOrigin::User;
     ret.id = source.root_id;
     ret.user_file = source.user_file;
-    auto it = source.features.find(FEATURE_BASED_ROOT_ID);
-    if (it != source.features.end()) {
-        ret.inherits = {std::get<std::string>(it->second)};
-    }
+
     PresetNode main;
+    auto it = source.features.find(FEATURE_BASED_ID);
+    if (it != source.features.end()) {
+        main.unconditional_inherits = {std::get<std::string>(it->second)};
+    }
 
     main.condition = SourceLocatedExpr{Details::and_chain_exprs(source.conditions)};
     main.id = source.id;
     main.name = source.name;
     main.features = source.features;
-    main.values = config_box_to_values(source.config_box());
+
+    const auto& source_cb = source.config_box();
+    const auto& system_cb = system.config_box();
+    const auto& diff_keys = source_cb.diff_keys(system_cb);
+
+    KeySet items_to_include;
+    auto not_omitted = [&items_to_omit](const auto& key) { return !items_to_omit.contains(key); };
+    std::ranges::copy(
+        diff_keys | std::views::filter(not_omitted),
+        std::inserter(items_to_include, items_to_include.begin())
+    );
+
+    main.values = Details::config_box_to_values(source.config_box(), items_to_include);
 
     ret.variants.emplace_back(main);
 
     return ret;
 }
 
-} // namespace Details
+void save_transformed_preset_as_user(
+    const Domain::Preset::RootPresetNode& root_preset,
+    const std::string& path
+);
 
-struct BundlePaths;
 
 template <typename FdmConfig, typename SlaConfig>
 void save_evaluated_preset_as_user(
     const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& preset,
-    const std::string& path
+    const std::string& path,
+    const KeySet& items_to_omit
 )
 {
-    Details::save_transformed_preset_as_user(Details:: transform_for_saving(preset), path);
+    save_transformed_preset_as_user(transform_for_saving(preset, items_to_omit), path);
 }
 
 std::string preset_file_prefix(Domain::Preset::PresetKind kind);

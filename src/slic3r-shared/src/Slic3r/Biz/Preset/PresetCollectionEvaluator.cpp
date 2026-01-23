@@ -350,7 +350,7 @@ bool PresetCollectionEvaluator::eval_condition(
     SPDLOG_DEBUG(
         "Evaluating expression defined in {}",
         expr.source_location.to_string(),
-        Biz::Expr::to_string(expr.value)
+        Domain::Expr::to_string(expr.value)
     );
 #endif
 

@@ -108,7 +108,7 @@ namespace cereal {
 
     template<class Archive> void serialize(Archive& archive, Slic3r::Domain::Preset::RootPresetNode& node)
     {
-        archive(cereal::base_class<Slic3r::Domain::Preset::PresetNode>(&node), node.kind);
+        archive(cereal::base_class<Slic3r::Domain::Preset::PresetNode>(&node), node.kind, node.origin, node.user_file);
     }
 
     template <class Archive> void serialize(Archive & ar, const std::nullptr_t &) {

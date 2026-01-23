@@ -221,7 +221,7 @@ std::vector<std::string> DiffViewCtrl::unselected_options()
             ret.emplace_back(item.second.opt_key);
         }
     }
-    return std::vector<std::string>();
+    return ret;
 }
 
 } // namespace Slic3r::App::WX

@@ -179,7 +179,7 @@ static size_t get_cache_footprint(const BundlePaths& bundle_paths, const std::st
     size_t hash = combine_hashes(folder_hash, std::hash<std::string>{}(slicer_version));
 
     // Increment the following value to enforce invalidation of caches from older versions:
-    size_t cache_epoch = 6;
+    size_t cache_epoch = 7;
     return combine_hashes(hash, std::hash<int>{}(cache_epoch));
 }
 

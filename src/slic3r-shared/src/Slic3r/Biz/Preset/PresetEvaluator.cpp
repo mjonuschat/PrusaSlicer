@@ -437,9 +437,10 @@ void PresetEvaluator::collect_preset_ids(
     const PresetNodePath& node_path
 )
 {
-    if (!node.id.empty()) {
+    const auto& id = node.id.empty() && node.name.has_value() ? node.name.value() : node.id;
+    if (!id.empty()) {
         std::string name;
-        m_preset_ids[kind].emplace(std::make_pair(node.id, node_path));
+        m_preset_ids[kind].emplace(std::make_pair(id, node_path));
     }
 
     for (const auto& v : node.variants) {

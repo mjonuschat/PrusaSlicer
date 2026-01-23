@@ -145,10 +145,15 @@ Domain::Preset::PresetValue convert(const std::vector<T>& v)
     return ret;
 }
 
-Domain::Preset::PresetValueMap config_box_to_values(const Domain::ConfigBox& cfg)
+Domain::Preset::PresetValueMap
+config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_include)
 {
     Domain::Preset::PresetValueMap ret;
     for (const auto& item : cfg.items.all_items()) {
+        if (!items_to_include.contains(item.name())) {
+            continue;;
+        }
+
         ret.insert(
             {item.name(),
              item.visit(
@@ -173,14 +178,15 @@ Domain::Preset::PresetValueMap config_box_to_values(const Domain::ConfigBox& cfg
     return ret;
 }
 
-void save_transformed_preset_as_user(const Domain::Preset::RootPresetNode& root_preset, const std::string& path)
-{
-    Yaml::write_file(root_preset, path.c_str());
-}
 
 } // namespace Slic3r::Biz::Preset::IO::Details
 
 namespace Slic3r::Biz::Preset::IO {
+
+void save_transformed_preset_as_user(const Domain::Preset::RootPresetNode& root_preset, const std::string& path)
+{
+    Yaml::write_file(root_preset, path.c_str());
+}
 
 std::string preset_file_prefix(Domain::Preset::PresetKind kind)
 {

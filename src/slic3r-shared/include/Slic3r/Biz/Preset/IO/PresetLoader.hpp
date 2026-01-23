@@ -6,6 +6,13 @@
 
 namespace Slic3r::Biz::Preset::IO {
 
+namespace Details {
+
+using PresetNamesMap = std::map<std::string, Domain::Preset::PresetName>;
+using PresetNamesMapCollection = std::map<Domain::Preset::PresetKind, PresetNamesMap>;
+
+} // namespace Details
+
 class PresetLoader
 {
 public:
@@ -20,15 +27,14 @@ public:
     void load_dir(const std::string& dir_path, PresetOrigin origin = PresetOrigin::System);
     const PresetCollection& presets() const { return m_presets; }
     std::tuple<PresetCollection, PresetNamesCollection> release();
-private:
-    void collect_names(const Domain::Preset::PresetNode& node, PresetKind kind, PresetOrigin origin);
 
 private:
-    using PresetNamesMap = std::map<std::string, Domain::Preset::PresetName>;
-    using PresetNamesMapCollection = std::map<PresetKind, PresetNamesMap>;
-
     PresetCollection m_presets;
-    PresetNamesMapCollection m_preset_names;
+    Details::PresetNamesMapCollection m_preset_names;
 };
+
+Domain::Preset::PresetNamesCollection collect_names(
+    const Domain::Preset::PresetCollection& presets
+);
 
 }

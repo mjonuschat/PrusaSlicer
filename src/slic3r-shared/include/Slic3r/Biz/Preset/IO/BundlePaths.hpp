@@ -33,7 +33,7 @@ struct BundlePaths
     boost::filesystem::path
     user_preset_dir_path(const std::string& vendor_id, const std::string& repo_id) const
     {
-        return boost::filesystem::path{user_bundle_path} / vendor_id / repo_id;
+        return boost::filesystem::path{user_bundle_path} / repo_id / vendor_id;
     }
 
     static BundlePaths make_standard_runtime();

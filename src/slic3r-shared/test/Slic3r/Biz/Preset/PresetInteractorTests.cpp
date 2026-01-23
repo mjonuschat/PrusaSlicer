@@ -5,10 +5,11 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
-#include "Slic3r/Biz/ObservableList.hpp"
+#include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+#include "Slic3r/Biz/Preset/IO/PresetSaver.hpp"
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 
 namespace fs = boost::filesystem;
@@ -38,7 +39,7 @@ void update_diff(
     }
 }
 
-class TestPresetDialogManager : Slic3r::Biz::Preset::IPresetDialogManager
+class TestPresetDialogManager : public Slic3r::Biz::Preset::IPresetDialogManager
 {
 public:
     PresetsSwitchStates show_unsaved_changes_dialog(
@@ -152,6 +153,12 @@ struct BaseProjectInteractorFixture
     Slic3r::Biz::ProjectInteractor project_interactor{workbench, main_thread_dispatcher, thumbnail_image_generator};
     TestPresetDialogManager preset_dialog_manager;
 
+    BaseProjectInteractorFixture()
+    {
+        Slic3r::set_log_level(5);
+        project_interactor.preset_interactor().set_dialog_manager(&preset_dialog_manager);
+    }
+
     virtual ~BaseProjectInteractorFixture()
     {
         main_thread_dispatcher.close();
@@ -185,14 +192,21 @@ const T* find_if(const Slic3r::Biz::IObservableList<T>& list, const std::functio
     return nullptr;
 }
 
-TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[PresetInteractor]")
+template <typename T>
+const T* find_by_name(const Slic3r::Biz::IObservableList<T>& list, const std::string& name)
+{
+    return find_if<T>(list, [&](const T& item) { return item.name == name; });
+}
+
+
+TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[PresetInteractor][preset]")
 {
     project_interactor.new_project();
     auto& preset_interactor = project_interactor.preset_interactor();
     const auto& printer_items = preset_interactor.printer_presets();
     REQUIRE(printer_items.items().size() > 0);
 
-    auto switch_pritner_and_verify = [&](const std::string& printer_name)     {
+    auto switch_printer_and_verify = [&](const std::string& printer_name)     {
         std::optional<size_t> printer_idx;
         for (size_t i = 0, n = printer_items.items().size(); i < n; ++i) {
             const auto& item = printer_items.items().at(i);
@@ -210,6 +224,18 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
         REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name == printer_name);
     };
 
+    auto switch_print_and_verify = [&](const std::string& print_name) -> const auto&
+    {
+        const auto& p_ptr = find_by_name(preset_interactor.print_presets().items(), print_name);
+        REQUIRE(p_ptr != nullptr);
+        const auto& p = *p_ptr;
+        REQUIRE(p.id.empty() == false);
+        preset_interactor.select_print_preset(p.id);
+        const auto& selected_idx = preset_interactor.print_presets().selected_index();
+        REQUIRE(preset_interactor.print_presets().items().at(selected_idx).name == print_name);
+        return p.id;
+    };
+
 
     // Validate precondition: selected printer
     {
@@ -219,28 +245,28 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
     }
 
     // Make sure the printer is switched to Core ONE 0.4 HF
-    switch_pritner_and_verify("CORE One 0.4 HF");
+    switch_printer_and_verify("CORE One 0.4 HF");
 
     // Switch print to 0.20mm
-    {
-        preset_interactor.select_print_preset("0.20mm");
-        const auto& print_presets = preset_interactor.print_presets();
-        const auto print_preset_idx = print_presets.selected_index();
-        REQUIRE(print_presets.items().at(print_preset_idx).id == "0.20mm");
-    }
+    switch_print_and_verify("0.20mm");
 
     // Switch printer to CORE One 0.6 HF
-    switch_pritner_and_verify("CORE One 0.6 HF");
+    switch_printer_and_verify("CORE One 0.6 HF");
 
     // Verify that printer preset stays 0.20mm
     {
         const auto& print_presets = preset_interactor.print_presets();
         const auto print_preset_idx = print_presets.selected_index();
-        REQUIRE(print_presets.items().at(print_preset_idx).id == "0.20mm");
+        REQUIRE(print_presets.items().at(print_preset_idx).name == "0.20mm");
     }
 
     {
-        auto user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        const auto user_preset_name = preset_dialog_manager.new_name;
+
+        auto user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(
+            preset_interactor.print_presets().items(),
+            [&](const auto& p) -> bool { return p.name == user_preset_name; }
+        );
         REQUIRE(user_preset == nullptr);
 
         preset_interactor.set_preset_value(
@@ -249,17 +275,38 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
             "brim_width",
             [](auto& p) { p.set(2.0); }
         );
-        bool can_select = Slic3r::Biz::Preset::PresetSelectionCheck::can_select_print_preset(preset_interactor, "0.20mm");
+        const auto* p20 = find_by_name(preset_interactor.print_presets().items(), "0.20mm");
+        REQUIRE(p20 != nullptr);
+
+        bool can_select = Slic3r::Biz::Preset::PresetSelectionCheck::can_select_print_preset(
+            preset_interactor,
+            p20->id
+        );
         REQUIRE(can_select);
         const auto& hw_config = preset_interactor.current_printer_config();
-        fs::path saved_preset_path = bundle_paths.user_preset_dir_path(hw_config.repo_id, hw_config.vendor_id) / ("print-" + preset_dialog_manager.new_name + ".yaml");
+        preset_interactor.select_print_preset(p20->id);
+        fs::path saved_preset_path = Slic3r::Biz::Preset::IO::preset_path(
+            bundle_paths,
+            Slic3r::Domain::Preset::PresetKind::FdmPrint,
+            preset_dialog_manager.new_name,
+            hw_config.vendor_id,
+            hw_config.repo_id
+        );
         REQUIRE(fs::exists(saved_preset_path));
 
-        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(
+            preset_interactor.print_presets().items(),
+            [&](const auto& p) -> bool { return p.name == user_preset_name; }
+        );
         REQUIRE(user_preset != nullptr);
 
         preset_interactor.load_preset_bundle(bundle_paths);
-        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        switch_printer_and_verify("CORE One 0.6 HF");
+        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(
+            preset_interactor.print_presets().items(),
+            [&](const auto& p) -> bool { return p.name == user_preset_name; }
+        );
+        INFO(preset_interactor.current_printer_config().name);
         REQUIRE(user_preset != nullptr);
     }
 }

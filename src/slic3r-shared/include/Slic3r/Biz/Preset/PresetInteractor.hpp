@@ -66,6 +66,8 @@ using SheetConfigItemObservableList = ObservableListWithSelection<Domain::Preset
 
 using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStates;
 
+using KeySet = std::set<std::string>;
+
 /**
  * Manipulates presets associated with config containers.
  */
@@ -85,7 +87,12 @@ public:
     PresetInteractor(PresetInteractor&&) = default;
 
     void load_preset_bundle(const IO::BundlePaths& paths);
-    void save_user_preset(Domain::Preset::PresetKind kind, size_t slot_index, std::string new_name={});
+    void save_user_preset(
+        Domain::Preset::PresetKind kind,
+        size_t slot_index,
+        const KeySet& item_names_to_omit,
+        std::string new_name = {}
+    );
 
     const PresetInteractorConfigContainerContext& config_container_context(
         Domain::SelectionId project_id,
@@ -668,11 +675,17 @@ private:
     bool update_changed_selected_preset_hw_config(Domain::Preset::HwPrinterConfig& hw_config);
 
     const std::string& selected_hw_config_id() const;
+
+    void save_user_preset_internal(Domain::Preset::PresetKind kind, size_t slot_index, const KeySet& item_names_to_omit, std::string new_name, InvokeLaterBag& bag);
+    void update_vendor_presets(std::mutex& mut, Domain::Preset::Bundle& preset_bundle, const std::string& vendor_id);
+    void reload_vendor_presets(const std::string& vendor_id);
+
     void fill_config_container_with_selected_preset(
         Domain::ConfigContainer& cc,
         const std::string& printer_hw_config_id,
         const std::string& printer_preset_id,
-        bool printer_only
+        bool printer_only,
+        ListenerInvokeLaterBag& bag
     );
 
     void select_printer_preset_internal(
@@ -709,6 +722,7 @@ private:
     void process_operation_from_unsaved_changes(
         Domain::Preset::SelectedPreset& selected_preset,
         PresetDiffOperation operation,
+        ListenerInvokeLaterBag& bag,
         std::optional<Domain::Preset::PresetKind> kind = std::nullopt,
         std::optional<size_t> tool_id = std::nullopt
     );
