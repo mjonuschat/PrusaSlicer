@@ -4,6 +4,7 @@
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/libvgcode/FdmViewer.hpp"
+#include "Slic3r/App/Scene/VertexPulledRenderNodeComponent.hpp"
 #include "Slic3r/App/libvgcode/Utils.hpp"
 #include "Slic3r/App/libvgcode/ObjExport.hpp"
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
@@ -443,7 +444,7 @@ void FdmViewer::set_scene(Scene::Scene& scene)
     builder.child([&](Scene::NodeBuilder& bldr) {
         m_tool_marker.init(*m_device, bldr, *m_data_factory);
     });
-    builder.child([&](Scene::NodeBuilder& bldr) { m_segment_template.init(*m_device, bldr); });
+    builder.child([&](Scene::NodeBuilder& bldr) { init_segments_node(*m_device, bldr); });
     builder.child([&](Scene::NodeBuilder& bldr) {
         m_option_template.init(*m_device, bldr, *m_data_factory);
     });
@@ -1569,9 +1570,15 @@ void FdmViewer::render_segments(const Vec3f& camera_position)
         .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
         .set_texture_buffer(ENABLED_SEGMENTS_TEX_ID, m_enabled_segments_buffer);
 
+    const std::size_t total_vertex_count{m_enabled_segments_count * 24};
+    material
+        .set_uniform("total_vertex_count", (int) total_vertex_count);
+
     node->set_material_override(material);
-    Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
-    r_comp->set_instances_count(m_enabled_segments_count);
+    Scene::VertexPulledRenderNodeComponent* r_comp =
+        dynamic_cast<Scene::VertexPulledRenderNodeComponent*>(node->render_component());
+    ASSERT(r_comp);
+    r_comp->set_total_vertex_count(total_vertex_count);
 #else
     for (size_t i = 0; i < m_texture_data.count(); ++i) {
         auto [es_tex, count] = m_texture_data.enabled_segments_tex(i);

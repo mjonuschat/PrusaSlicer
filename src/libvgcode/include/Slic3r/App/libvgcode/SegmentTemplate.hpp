@@ -7,35 +7,16 @@
 
 #include <Slic3r/App/Render/Geometry.hpp>
 
-#include <cstddef>
-#include <memory>
-
 namespace Slic3r::App::Render {
 class Device;
-class Material;
 } // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
-class Scene;
 } // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::libvgcode {
 
-class SegmentTemplate
-{
-public:
-    SegmentTemplate() = default;
-    ~SegmentTemplate() = default;
-    SegmentTemplate(const SegmentTemplate&) = delete;
-    SegmentTemplate(SegmentTemplate&&) = delete;
-    SegmentTemplate& operator = (const SegmentTemplate&) = delete;
-    SegmentTemplate& operator = (SegmentTemplate&&) = delete;
-
-    void init(Render::Device& device, Scene::NodeBuilder& builder);
-
-private:
-    std::unique_ptr<Render::Geometry> m_geometry;
-};
+void init_segments_node(Render::Device& device, Scene::NodeBuilder& builder);
 
 } // namespace Slic3r::App::libvgcode

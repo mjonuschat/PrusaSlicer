@@ -171,6 +171,12 @@ void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
     m_needs_submit = true;
 }
 
+void CommandBuffer::bind_pull_geometry(const PullGeometry& g) {
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_pull_geometry(g);
+    m_needs_submit = true;
+}
+
 void CommandBuffer::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
     BlitFramebufferMask mask, BlitFramebufferFilter filter)
 {

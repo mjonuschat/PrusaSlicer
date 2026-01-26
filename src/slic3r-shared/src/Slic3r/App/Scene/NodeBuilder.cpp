@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/VertexPulledRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
@@ -56,6 +57,22 @@ NodeBuilder& NodeBuilder::set_mesh_instanced(const Render::Geometry* geometry, c
     auto render_component = std::make_unique<InstancedMeshRenderNodeComponent>(geometry, material, 0, 0);
     render_component->set_layer_index(layer_index);
     render_component->set_instances_count(instances_count);
+    m_current->set_render_component(std::move(render_component));
+    return *this;
+}
+
+NodeBuilder& NodeBuilder::set_vertex_pulling(
+    Render::Device& device,
+    const Render::DrawCommand& draw_command,
+    const Render::Material& material,
+    RenderLayerId layer_index
+)
+{
+    ensure_current();
+
+    auto render_component =
+        std::make_unique<VertexPulledRenderNodeComponent>(device, draw_command, material);
+    render_component->set_layer_index(layer_index);
     m_current->set_render_component(std::move(render_component));
     return *this;
 }

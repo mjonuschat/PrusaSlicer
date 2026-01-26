@@ -285,10 +285,6 @@ private:
     std::array<Domain::ColorRGB, Biz::libpgcode::OPTION_TYPES_COUNT> m_options_colors;
 
     //
-    // The OpenGL element used to represent all toolpath segments
-    //
-    SegmentTemplate m_segment_template;
-    //
     // The OpenGL element used to represent all option markers
     //
     OptionTemplate m_option_template;

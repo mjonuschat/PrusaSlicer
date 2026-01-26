@@ -5,9 +5,26 @@
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
-#include "Slic3r/App/Render/GL/GLTypes.hpp"
 
 namespace Slic3r::App::Render {
+
+PullGeometry::PullGeometry(Device& device)
+    : WithInternal(InternalType<GL::GLPullGeometryInternal>()),
+    m_device{device}
+{
+    auto& self{get_internal_as<GL::GLPullGeometryInternal>()};
+    glGenVertexArrays(1, &self.m_vao_id);
+    glCheck();
+    auto& internal_device{m_device.get_internal_as<GL::GLDeviceInternal>()};
+    internal_device.bind_vao(0);
+}
+
+PullGeometry::~PullGeometry() {
+    auto& self{get_internal_as<GL::GLPullGeometryInternal>()};
+    if (self.m_vao_id != 0) {
+        glDeleteVertexArrays(1, &self.m_vao_id);
+    }
+}
 
 Geometry::Geometry(Device& device, BufferUsage vertex_usage, BufferUsage index_usage)
     : WithInternal(InternalType<GL::GLGeometryInternal>())

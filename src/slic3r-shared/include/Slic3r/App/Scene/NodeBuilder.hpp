@@ -30,6 +30,12 @@ public:
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, RenderLayerId layer_index = 0);
     NodeBuilder& set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
         size_t instances_count, RenderLayerId layer_index = 0);
+    NodeBuilder& set_vertex_pulling(
+        Render::Device& device,
+        const Render::DrawCommand& draw_command,
+        const Render::Material& material,
+        RenderLayerId layer_index
+    );
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_shadows(const Render::Shadows& shadows);
     NodeBuilder& set_pbr(const PBRParams& pbr);

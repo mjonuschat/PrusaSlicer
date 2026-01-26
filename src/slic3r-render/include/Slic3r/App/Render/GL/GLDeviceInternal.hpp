@@ -8,6 +8,7 @@
 #include "Slic3r/App/Render/Types.hpp"
 
 namespace Slic3r::App::Render {
+class PullGeometry;
 class Geometry;
 class Shader;
 class Context;
@@ -29,7 +30,9 @@ public:
     void bind_buffer(BufferTarget target, ResourceId buffer);
     void unbind_buffer(BufferTarget target);
     void bind_geometry(const Geometry& g, const Shader& s);
+    void bind_pull_geometry(const PullGeometry& g);
     void unbind_geometry();
+    void unbing_pull_geometry(const PullGeometry& g);
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -56,6 +59,7 @@ public:
     void print_buffer_info(const char* action = nullptr);
 private:
     friend class ::Slic3r::App::Render::Geometry;
+    friend class ::Slic3r::App::Render::PullGeometry;
     void activate_texture_unit(uint8_t unit);
     void bind_vertex_buffer(ResourceId vb);
     void bind_index_buffer(ResourceId ib);

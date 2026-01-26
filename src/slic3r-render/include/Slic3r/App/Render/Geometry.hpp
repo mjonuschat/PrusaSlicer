@@ -10,6 +10,15 @@ namespace Slic3r::App::Render {
 
 class Device;
 
+class PullGeometry : public WithInternal
+{
+public:
+    PullGeometry(Device& device);
+    ~PullGeometry();
+private:
+    Device& m_device;
+};
+
 /**
  * @brief Static GPU geometry container.
  *

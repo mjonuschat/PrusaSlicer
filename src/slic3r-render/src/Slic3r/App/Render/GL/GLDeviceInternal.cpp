@@ -366,6 +366,11 @@ void GLDeviceInternal::bind_geometry(const Geometry& g, const Shader& shader)
     }
 }
 
+void GLDeviceInternal::bind_pull_geometry(const PullGeometry& g) {
+    bind_vao(g.get_internal_as<GLPullGeometryInternal>().m_vao_id);
+    m_bound_indices = false;
+}
+
 void GLDeviceInternal::unbind_geometry()
 {
 #if RENDER_TRACE_LOG
@@ -376,6 +381,7 @@ void GLDeviceInternal::unbind_geometry()
         bind_vao(0);
         bind_vertex_buffer(0);
         bind_index_buffer(0);
+        m_bound_indices = false;
 #if RENDER_TRACE_LOG
         SPDLOG_INFO("(unbind_geometry) Setting bound VB {}", 0);
 #endif
@@ -387,6 +393,10 @@ void GLDeviceInternal::unbind_geometry()
 #if RENDER_TRACE_LOG
     print_buffer_info("after bind_geometry");
 #endif
+}
+
+void GLDeviceInternal::unbing_pull_geometry(const PullGeometry& g) {
+    bind_vao(0);
 }
 
 void GLDeviceInternal::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,

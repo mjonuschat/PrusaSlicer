@@ -9,6 +9,7 @@
 namespace Slic3r::App::Render {
 
 class Geometry;
+class PullGeometry;
 class Shader;
 class Texture;
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -45,6 +46,7 @@ public:
 
     void bind_shader(const Shader& s);
     void bind_geometry(const Geometry& g, const Shader& s);
+    void bind_pull_geometry(const PullGeometry& g);
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -74,6 +76,7 @@ public:
 
     void bind_and_draw(const Geometry& g, const Material& material_override);
     void bind_and_draw_instanced(const Geometry& g, const Material& material_override, size_t instances_count);
+    void bind_and_draw_vertex_pulled(const PullGeometry& g, const DrawCommand& command, const Material& material_override);
 
     void begin_debug_group(const std::string& message);
     void end_debug_group();

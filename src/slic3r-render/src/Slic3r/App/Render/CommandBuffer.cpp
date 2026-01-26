@@ -112,4 +112,24 @@ void CommandBuffer::bind_and_draw_instanced(const Geometry& g, const Material& m
     }
 }
 
+void CommandBuffer::bind_and_draw_vertex_pulled(
+    const PullGeometry& g,
+    const DrawCommand& command,
+    const Material& material_override
+)
+{
+    const Shader* top_shader{material_override.shader()};
+    bind_pull_geometry(g);
+
+    Material material = command.material;
+    material.update(material_override);
+    if (const auto* shader{command.material.shader()}) {
+        bind_shader(*shader);
+    } else {
+        bind_shader(*DEBUG_ASSERT_VAL(top_shader));
+    }
+    bind_material(material);
+    draw(command);
+    unbind_material(material);
 }
+} // namespace Slic3r::App::Render

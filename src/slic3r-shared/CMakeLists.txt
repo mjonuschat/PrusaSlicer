@@ -304,6 +304,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
         src/Slic3r/App/Scene/InstancedMeshRenderNodeComponent.cpp
         include/Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp
+        src/Slic3r/App/Scene/VertexPulledRenderNodeComponent.cpp
+        include/Slic3r/App/Scene/VertexPulledRenderNodeComponent.hpp
         include/Slic3r/App/Scene/NodeBuilder.hpp
         src/Slic3r/App/Scene/NodeBuilder.cpp
         include/Slic3r/App/Scene/IRaycastNodeComponent.hpp
