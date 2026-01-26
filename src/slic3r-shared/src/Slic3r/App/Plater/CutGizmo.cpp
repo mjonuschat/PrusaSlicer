@@ -1089,6 +1089,10 @@ void CutGizmo::update_scene_nodes()
         || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance)
     {
         // We can't perform a cut for multiple objects simultaneously.
+        // So, just deactivate CutGizmo
+        if (m_controller) {
+            m_controller->deactivate_current_tool();
+        }
         return;
     }
 
@@ -1121,17 +1125,23 @@ void CutGizmo::update_scene_nodes()
 
     const Domain::ModelInstance* new_inst =
         project.find_instance_by_id(element.object_id, element.instance_id);
-    if (context().selected_instance != new_inst) {
+
+    const Domain::ModelInstancePtrs& instances = context().selected_object->instances;
+
+    if (context().selected_instance != new_inst
+        || context().instance_idx >= instances.size()
+        || instances[context().instance_idx] != new_inst)
+    {
         context().selected_instance = new_inst;
 
         // get instance index
         context().instance_idx = 0;
-        for (const auto* inst : context().selected_object->instances) {
+        for (const auto* inst : instances) {
             if (inst == context().selected_instance)
                 break;
             context().instance_idx++;
         }
-        ASSERT(context().instance_idx < context().selected_object->instances.size());
+        ASSERT(context().instance_idx < instances.size());
 
         force_just_trafo_reset = !force_full_reset;
     }
@@ -1181,6 +1191,7 @@ void CutGizmo::update_scene_nodes()
     } else {
         set_plane_center(m_bb_center + context().center_offset);
     }
+    update_cut_normal();
 
     m_is_cut_plane_recreation_suppressed = false;
 
@@ -1196,6 +1207,7 @@ void CutGizmo::update_scene_nodes()
 
     if (force_just_trafo_reset) {
         preprocess_cut();
+        update_clipper_presenter();
     } else {
         update_cut_plane_mesh();
     }
@@ -1576,10 +1588,7 @@ void CutGizmo::update_cut_plane_mesh()
 
 void CutGizmo::update_cut_plane_trafo()
 {
-    // update cut_normal
-    Vec3d normal = context().rotation_m * Vec3d::UnitZ();
-    normal.normalize();
-    m_cut_normal = normal;
+    update_cut_normal();
 
     ColorRGBA cp_clr = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
 
@@ -1987,10 +1996,7 @@ void CutGizmo::flip_cut_plane()
 
     m_start_dragging_m = context().rotation_m;
 
-    // update cut_normal
-    Vec3d normal = context().rotation_m * Vec3d::UnitZ();
-    normal.normalize();
-    m_cut_normal = normal;
+    update_cut_normal();
 
     if (is_planar_mode()) {
         m_part_selection.turn_over_selection();
@@ -2004,6 +2010,13 @@ void CutGizmo::flip_cut_plane()
     if (!m_dialog->connectors_editing) {
         update_cut_plane_trafo();
     }
+}
+
+void CutGizmo::update_cut_normal()
+{
+    Vec3d normal = context().rotation_m * Vec3d::UnitZ();
+    normal.normalize();
+    m_cut_normal = normal;
 }
 
 bool CutGizmo::can_perform_cut() const

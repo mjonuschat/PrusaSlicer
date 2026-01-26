@@ -157,6 +157,7 @@ private:
 
     Domain::Transform3d get_cut_matrix();
     void flip_cut_plane();
+    void update_cut_normal();
 
     bool can_perform_cut() const;
     bool is_valid_groove() const;
