@@ -1,5 +1,6 @@
 #include "Slic3r/App/Scene/BedMaterials.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/PrintVolumeData.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -56,6 +57,11 @@ Render::Material BedMaterials::plate_default_material(const Render::Device& devi
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", PLATE_DEFAULT_REGULAR)
         .set_transparent(PLATE_DEFAULT_REGULAR.is_transparent());
+
+    // disable in-shader print volume detection for bed plate
+    PrintVolumeData print_volume;
+    print_volume.type = Domain::BedType::Invalid;
+    set_uniforms(print_volume, ret);
     return ret;
 }
 
@@ -108,6 +114,11 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", MODEL_REGULAR)
         .set_transparent(MODEL_REGULAR.is_transparent());
+
+    // disable in-shader print volume detection for bed model
+    PrintVolumeData print_volume;
+    print_volume.type = Domain::BedType::Invalid;
+    set_uniforms(print_volume, ret);
     return ret;
 }
 
@@ -128,6 +139,11 @@ Render::Material BedMaterials::axis_material(const Render::Device& device, uint8
     ret.set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
+
+    // disable in-shader print volume detection for bed axis
+    PrintVolumeData print_volume;
+    print_volume.type = Domain::BedType::Invalid;
+    set_uniforms(print_volume, ret);
     return ret;
 }
 
