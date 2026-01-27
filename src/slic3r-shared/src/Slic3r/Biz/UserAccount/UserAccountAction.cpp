@@ -30,13 +30,20 @@ void UserAccountActionPost::perform(
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     if (!shared_data->input.empty())
         http->set_post_body(shared_data->input);
-    if (shared_data->additional_headers.empty()) {
-        http->header("Content-type", "application/x-www-form-urlencoded");
-    } else {
+
+    bool content_type_added = false;
+    if (!shared_data->additional_headers.empty()) {
         for (const auto& [key, value] : shared_data->additional_headers) {
+            if (key == "Content-Type") {
+                content_type_added = true;
+            }
             http->header(key, value);
         }
     }
+    if (!content_type_added) {
+        http->header("Content-Type", "application/x-www-form-urlencoded");
+    }
+
     http->on_progress(
             [shared_data](Network::IHttp::Progress progress, bool& cancel)
             {

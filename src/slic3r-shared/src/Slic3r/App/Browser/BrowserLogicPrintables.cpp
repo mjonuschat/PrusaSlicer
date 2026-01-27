@@ -179,7 +179,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_secret_to
         {"event", "secretTokenChange"},
         {"secretToken", token}
     };
-    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage('" + payload.dump() + "');");
+    result.emplace_back(BrowserLogicCommandType::RunScript, fmt::format("window.postMessage(JSON.stringify({}));", payload.dump()));
 
     if (m_reload_after_secret_token && m_next_show_url.empty()) {
         result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");

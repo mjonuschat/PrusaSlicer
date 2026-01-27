@@ -152,7 +152,7 @@ void UserAccountCommunication::request_printables_secret_token()
         succ_fn,
         fail_fn,
         j.dump(),
-        {{"Content-type", "application/json"},
+        {{"Content-Type", "application/json"},
          {"Origin", Network::ServiceConfig::instance().printables_url()}}
     };
     m_session.enqueue_action(std::move(action));
