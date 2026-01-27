@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Slic3r/Biz/PrintHost/IPrintHost.hpp>
-#include <Slic3r/Biz/PrintHost/PrintHostConfig.hpp>
 #include <Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp>
 #include "Slic3r/Assert.hpp"
 

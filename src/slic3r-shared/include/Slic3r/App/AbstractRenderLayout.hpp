@@ -8,6 +8,7 @@
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/SidebarPhysical.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
@@ -48,7 +49,8 @@ public:
         std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print,
-        std::unique_ptr<SidebarObject> sidebar_object
+        std::unique_ptr<SidebarObject> sidebar_object,
+        std::unique_ptr<SidebarPhysical> sidebar_physical
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other)            = delete;
@@ -139,6 +141,7 @@ protected:
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
+    Yoga::Passthrough<SidebarPhysical> m_sidebar_physical;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 };
 

@@ -23,9 +23,9 @@ public:
     /**
      * @brief Accepts data from PrintHostJobManager and passes it to ResultExportDataFinalizer and process_gcode_inner.
      */
-    void perform(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data);
+    void perform(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data);
 
-    void on_result_export_binarize_success(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data) override;
+    void on_result_export_binarize_success(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data) override;
     void on_result_export_binarize_fail(const std::string& msg) override;
 
 private:
@@ -36,11 +36,11 @@ private:
     /**
      * @brief Passes data to PrintHostJobManager to first start storage resolve job and stages upload job data to m_storage_callbacks_map.
      */
-    void upload_gcode_with_storage_choice(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data);
+    void upload_gcode_with_storage_choice(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data);
 
     /**
      * @brief Passes data to PrintHostJobManager to create and start export / upload job.
      */
-    void process_gcode_inner(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data);
+    void process_gcode_inner(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data);
 };
 } // namespace Slic3r::Biz::PrintHost

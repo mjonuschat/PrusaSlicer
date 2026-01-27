@@ -12,7 +12,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostPrusaLink : public IPrintHost{
 
 public:
-    PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data);
+    PrintHostPrusaLink(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data);
     
     PrintHostPrusaLink(const PrintHostPrusaLink&) = delete;
     PrintHostPrusaLink& operator=(const PrintHostPrusaLink&) = delete;

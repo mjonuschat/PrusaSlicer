@@ -27,7 +27,7 @@ struct PrintHostFailed : std::runtime_error
     using std::runtime_error::runtime_error;
 };
 
-size_t PrintHostJobManager::emplace_job(PrintHostConfig config, PrintHostJobData data)
+size_t PrintHostJobManager::emplace_job(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data)
 {
     size_t id      = next_id();
     m_wrappers[id] = std::make_shared<PrintHostJobWrapper>(

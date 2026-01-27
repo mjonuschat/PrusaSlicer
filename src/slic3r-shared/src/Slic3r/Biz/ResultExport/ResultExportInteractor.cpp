@@ -24,26 +24,31 @@ void ResultExportInteractor::on_storage_resolved(size_t id, const std::string& s
     }
 }
 
-void ResultExportInteractor::perform(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
+void ResultExportInteractor::perform(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
     m_result_export_data_finalizer.finalize(std::move(config), std::move(data));
 }
 
-void ResultExportInteractor::process_gcode_inner(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
+void ResultExportInteractor::process_gcode_inner(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
-    if (config.type == Domain::PrintHostType::PrusaLink) {
+    if (const auto* auth = std::get_if<PhysicalPrinter::LocalAuth>(&config.connection_data);
+        auth && auth->type == Domain::PrintHostType::PrusaLink)
+    {
         upload_gcode_with_storage_choice(std::move(config), std::move(data));
         return;
     }
     size_t id = m_print_host_job_manager.emplace_job(std::move(config), std::move(data));
 }
 
-void ResultExportInteractor::upload_gcode_with_storage_choice(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
+void ResultExportInteractor::upload_gcode_with_storage_choice(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
-    // Since copy constructor and assign are deleted for PrintHostConfig and PrintHostJobData,
+    // Since copy constructor and assign are deleted for PhysicalPrinter::PhysicalPrinterConfig and PrintHostJobData,
     // We use shared pointer to be able to move them to the callback lambda and copy the lambda
-    auto config_ptr = std::make_shared<PrintHost::PrintHostConfig>(std::move(config));
+    auto config_ptr = std::make_shared<PhysicalPrinter::PhysicalPrinterConfig>(std::move(config));
     auto data_ptr   = std::make_shared<PrintHost::PrintHostJobData>(std::move(data));
+
+    PhysicalPrinter::LocalAuth* other_auth = std::get_if<PhysicalPrinter::LocalAuth>(&config_ptr->connection_data);
+    ASSERT(other_auth);
 
     StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& storage) mutable
     {
@@ -52,22 +57,26 @@ void ResultExportInteractor::upload_gcode_with_storage_choice(PrintHost::PrintHo
     };
 
     // Create PrusaLinkStorage config by copying the shared pointer.
-    // PrintHostConfig has deleted copy constructor.
-    PrintHost::PrintHostConfig storage_config = {Domain::PrintHostType::PrusaLinkStorage, config_ptr->host};
-    storage_config.ca_file         = config_ptr->ca_file;
-    storage_config.ssl_revoke_best_effort = config_ptr->ssl_revoke_best_effort;
-    storage_config.port                   = config_ptr->port;
-    storage_config.auth_type              = config_ptr->auth_type;
-    storage_config.api_key                = config_ptr->api_key;
-    storage_config.username               = config_ptr->username;
-    storage_config.password               = config_ptr->password;
+    // PhysicalPrinter::PhysicalPrinterConfig has deleted copy constructor.
+    PhysicalPrinter::PhysicalPrinterConfig storage_config = {PhysicalPrinter::OperationType::PrusaLinkStorage};
+    storage_config.host = config_ptr->host;
+    PhysicalPrinter::LocalAuth new_auth;
+    new_auth.type                   = Domain::PrintHostType::PrusaLink;
+    new_auth.ca_file                = other_auth->ca_file;
+    new_auth.ssl_revoke_best_effort = other_auth->ssl_revoke_best_effort;
+    new_auth.port                   = other_auth->port;
+    new_auth.auth_type              = other_auth->auth_type;
+    new_auth.api_key                = other_auth->api_key;
+    new_auth.username               = other_auth->username;
+    new_auth.password               = other_auth->password;
+    storage_config.connection_data = std::move(new_auth);
 
     size_t id = m_print_host_job_manager.emplace_job(std::move(storage_config), {std::monostate{}, data_ptr->dest_path, PrintHost::PrintHostExportFormat::Undefined});
 
     m_storage_callbacks_map[id] = std::move(callback);
 }
 
-void ResultExportInteractor::on_result_export_binarize_success(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
+void ResultExportInteractor::on_result_export_binarize_success(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
     process_gcode_inner(std::move(config), std::move(data));
 }

@@ -56,7 +56,7 @@ struct SlicingStatusListener : public Slic3r::Biz::Slicing::IStatusListener
                     const std::optional<FDMResultRef> fdm_result{m_pi.fdm_result_cache().get_result(id)};
                     ASSERT(fdm_result);
                     m_pi.set_output_dir(id.project_id, path);
-                    PrintHost::PrintHostConfig config{Slic3r::Domain::PrintHostType::Local, ""};
+                    PhysicalPrinter::PhysicalPrinterConfig config{Slic3r::Biz::PhysicalPrinter::OperationType::Local, ""};
                     PrintHost::PrintHostJobData data{
                         fdm_result.value().get().const_gcode(),
                         path,
@@ -67,7 +67,7 @@ struct SlicingStatusListener : public Slic3r::Biz::Slicing::IStatusListener
                     const std::optional<SLAResultRef> sla_result{m_pi.sla_result_cache().get_result(id)};
                     ASSERT(sla_result);
                     m_pi.set_output_dir(id.project_id, path);
-                    PrintHost::PrintHostConfig config{Slic3r::Domain::PrintHostType::Local, ""};
+                    PhysicalPrinter::PhysicalPrinterConfig config{Slic3r::Biz::PhysicalPrinter::OperationType::Local, ""};
                     PrintHost::PrintHostJobData data{
                         sla_result.value().get().export_data,
                         path,

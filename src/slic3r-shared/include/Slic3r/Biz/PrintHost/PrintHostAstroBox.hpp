@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostAstroBox : public IPrintHost {
 
 public:
-    PrintHostAstroBox(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostAstroBox(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostAstroBox(const PrintHostAstroBox&) = delete;
     PrintHostAstroBox& operator=(const PrintHostAstroBox&) = delete;

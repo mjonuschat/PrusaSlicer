@@ -1,7 +1,10 @@
 #include "Slic3r/App/PrusaLinkStorageListener.hpp"
 
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/Biz/ResultExport/ResultExportInteractor.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJob.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <nlohmann/json.hpp>
@@ -72,10 +75,31 @@ void PrusaLinkStorageListener::on_job_manager_status_changed(const Biz::Platform
             if (storage_list.empty()) {
                 continue;
             }
-            // TODO: here user should choose storage
-            // for now we just use the first one
-            std::string storage = storage_list[0].path;
+            
+            std::vector<std::string> candidates;
+            for (const PrintHostStorageInfo& info : storage_list) {
+                // -1 in free_space means data not available
+                if (info.free_space == 0 || info.read_only) {
+                    continue;
+                }
+                candidates.emplace_back(info.path);
+                
+            }
+
+            if (candidates.empty()) {
+                // TODO: error notification
+                SPDLOG_ERROR("Upload to PrusaLink has failed: No suitable storage found.");
+                continue;
+            }
+
+            std::string storage = AppServices::instance().dialog_manager().show_combo_dialog(Biz::_u8L("Choose Storage"),Biz::_u8L("Choose storage for upload:"), candidates);
+
+            if (storage.empty()) {
+                // canceled by user
+                continue;
+            }
             m_project_interactor.result_export_interactor().on_storage_resolved(payload->id, storage);
+
         } else {
             // Ignore all progress without payload. It should be only first started status.
             ASSERT(progress.status == Domain::JobStatus::Started);

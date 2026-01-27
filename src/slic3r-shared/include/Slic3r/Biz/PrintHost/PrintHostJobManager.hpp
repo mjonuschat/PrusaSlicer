@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJob.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
@@ -25,7 +26,7 @@ public:
     /*
      * @brief Defines and starts job in job manager. 
      */
-    size_t emplace_job(PrintHostConfig config, PrintHostJobData data);
+    size_t emplace_job(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data);
 
     void cancel_job(size_t id);
 

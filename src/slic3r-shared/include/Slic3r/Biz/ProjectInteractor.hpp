@@ -24,6 +24,7 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 #include "Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -69,6 +70,7 @@ public:
         m_preset_updater_interactor(dispatcher),
         m_removable_drive_service(dispatcher),
         m_file_downloader_interactor(dispatcher),
+        m_physical_printer_interactor(dispatcher, m_preset_interactor),
         m_project_list(*this)
     {
         m_scene_interactor.set_preset_visual_getter(&m_preset_interactor);
@@ -94,6 +96,7 @@ public:
         add_listener<ISelectedConfigContainerChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );
+
     }
 
     const Domain::Workbench& workbench() const
@@ -310,16 +313,16 @@ public:
     /** @} */
 
     /**
-     * @brief Creates PrintHostConfig and PrintHostData and passes it to ResultExportInteractor to start export.
+     * @brief Creates PhysicalPrinter::PhysicalPrinterConfig and PrintHostData and passes it to ResultExportInteractor to start export.
      * PrintHostData copies gcode data from m_fdm_result_cache.
-     * PrintHostConfig origin is yet to be decided.
+     * PhysicalPrinter::PhysicalPrinterConfig origin is yet to be decided.
      */
     void do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path);
 
     /**
-     * @brief Creates PrintHostConfig and PrintHostData and passes it to ResultExportInteractor to start upload.
+     * @brief Creates PhysicalPrinter::PhysicalPrinterConfig and PrintHostData and passes it to ResultExportInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
-     * PrintHostConfig origin is yet to be decided.
+     * PhysicalPrinter::PhysicalPrinterConfig origin is yet to be decided.
      */
     void do_result_upload(const Domain::SlicingId id, const std::string& filename);
 
@@ -505,6 +508,11 @@ public:
         return m_raise_app_fn;
     }
 
+    PhysicalPrinter::PhysicalPrinterInteractor& physical_printer_interactor()
+    {
+        return m_physical_printer_interactor;
+    }
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -515,7 +523,7 @@ private:
 
     void do_result_export_inner(
         const Domain::SlicingId id,
-        PrintHost::PrintHostConfig&& print_host_config,
+        PhysicalPrinter::PhysicalPrinterConfig&& print_host_config,
         PrintHost::PrintHostJobData&& job_data
     );
 
@@ -546,10 +554,12 @@ private:
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;
     RemovableDrive::RemovableDriveService m_removable_drive_service;
     FileDownloader::FileDownloaderInteractor m_file_downloader_interactor;
+    PhysicalPrinter::PhysicalPrinterInteractor m_physical_printer_interactor;
 
     ObservableProjectList m_project_list;
     IMessageDialogProvider* m_dialog_provider{ nullptr };
 
+    
     /*
      * @brief Callback to mainframe to bring application forward.
      */

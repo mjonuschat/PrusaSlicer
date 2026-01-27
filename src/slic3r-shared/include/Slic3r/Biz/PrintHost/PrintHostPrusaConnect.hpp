@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostPrusaConnect : public IPrintHost {
 
 public:
-    PrintHostPrusaConnect(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data))
+    PrintHostPrusaConnect(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data))
     {}
 
     PrintHostPrusaConnect(const PrintHostPrusaConnect&) = delete;

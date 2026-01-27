@@ -34,8 +34,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
         m_printer_add_dialog,
         m_navigator
     );
-    m_physical_printer_settings_dialog =
-        emplace_back<PhysicalPrinterSettingsDialog>(m_printer_add_dialog, m_navigator);
+
     m_material_selection_dialog =
         emplace_back<MaterialSelectionDialog>(project_interactor, m_navigator);
 
@@ -52,12 +51,6 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_bed_name->set_margin(Paddings(0.f, -5.f, 0.f, 0.f));
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
-    m_physical_printer_button = emplace_back<PrinterSettingsButton>("Physical printer");
-    m_physical_printer_button->set_printer_name("NEXT/Elsa");
-    m_physical_printer_button->set_preset_name("Prusa NEXT 1T");
-    m_physical_printer_button->set_visible(false); // Hide Physical printers for now
-    m_physical_printer_button->set_flex_grow(1.f);
-
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
     m_logical_printer_button->set_flex_grow(1.f);
     m_logical_printer_button->set_visible_cog(true);
@@ -67,12 +60,6 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     { m_logical_printer_button->set_checked(true); };
     m_logical_printer_settings_dialog->callbacks().closed = [this]()
     { m_logical_printer_button->set_checked(false); };
-
-    m_physical_printer_settings_dialog->attach_to_item(this, Position::Left);
-    m_physical_printer_settings_dialog->callbacks().opened = [this]()
-    { m_physical_printer_button->set_checked(true); };
-    m_physical_printer_settings_dialog->callbacks().closed = [this]()
-    { m_physical_printer_button->set_checked(false); };
 
     auto toggle_logical_printer_settings_dialog = [this]()
     {
@@ -88,15 +75,6 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     {
         toggle_logical_printer_settings_dialog();
         m_logical_printer_settings_dialog->select_page_settings();
-    };
-
-    m_physical_printer_button->callbacks().action = [this]()
-    {
-        if (m_physical_printer_settings_dialog->opened()) {
-            m_navigator.set_opened_dialog(nullptr);
-        } else {
-            m_navigator.set_opened_dialog(m_physical_printer_settings_dialog);
-        }
     };
 
     m_list_view = emplace_back<MaterialListView>(MaterialListViewFactory{
@@ -200,11 +178,6 @@ void SidebarBed::on_selected_bed_instances_changed(
     ASSERT(bed_instance);
 
     m_bed_name->set_text(bed_instance->name());
-}
-
-PhysicalPrinterSettingsDialog& SidebarBed::physical_printer_settings_dialog()
-{
-    return *m_physical_printer_settings_dialog;
 }
 
 LogicalPrinterSettingsDialog& SidebarBed::logical_printer_settings_dialog()

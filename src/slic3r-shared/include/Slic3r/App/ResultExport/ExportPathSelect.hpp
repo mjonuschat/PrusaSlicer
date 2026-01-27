@@ -20,4 +20,10 @@ show_modal_dialog(
     const std::string& wildcards_overide = std::string()
 );
 
+void
+show_upload_modal_dialog(
+    const Biz::ProjectInteractor& project_interactor,
+    const std::function<void(const std::string&)>& callback
+);
+
 } // namespace Slic3r::App::ExportPathSelect

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Slic3r/Biz/PrintHost/IPrintHost.hpp"
-#include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 
 #include <boost/optional.hpp>
 
@@ -10,7 +11,7 @@ namespace Slic3r::Biz::PrintHost {
 
 class PrintHostPrusaLinkStorage : public IPrintHost {
 public:
-    PrintHostPrusaLinkStorage(PrintHostConfig config, PrintHostJobData data);
+    PrintHostPrusaLinkStorage(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data);
     
     PrintHostPrusaLinkStorage(const PrintHostPrusaLinkStorage&) = delete;
     PrintHostPrusaLinkStorage& operator=(const PrintHostPrusaLinkStorage&) = delete;

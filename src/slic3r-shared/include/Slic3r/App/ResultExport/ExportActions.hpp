@@ -16,6 +16,8 @@ namespace Slic3r::App::ExportActions {
 std::function<void()> export_gcode(Biz::ProjectInteractor& project_interactor);
 std::function<void()> export_gcode_to_flash(Biz::ProjectInteractor& project_interactor);
 std::function<void()> send_gcode_to_connect(Biz::ProjectInteractor& project_interactor);
+std::function<void()> upload_gcode_to_print_host(Biz::ProjectInteractor& project_interactor);
+
 
 /**
  * @brief Check whether export is currently possible.

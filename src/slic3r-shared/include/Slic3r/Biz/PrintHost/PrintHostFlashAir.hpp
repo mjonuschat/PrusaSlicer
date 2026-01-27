@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostFlashAir : public IPrintHost {
 
 public:
-    PrintHostFlashAir(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostFlashAir(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostFlashAir(const PrintHostFlashAir&) = delete;
     PrintHostFlashAir& operator=(const PrintHostFlashAir&) = delete;

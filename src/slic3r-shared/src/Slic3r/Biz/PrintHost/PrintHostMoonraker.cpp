@@ -16,6 +16,9 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 {
     // POST /server/files/upload
 
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name              = get_name();
     const auto upload_filename    = m_upload_data.dest_path.filename();
     const auto upload_parent_path = m_upload_data.dest_path.parent_path();
@@ -101,7 +104,7 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
 #endif
         .perform_sync();
 
@@ -111,6 +114,9 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 bool PrintHostMoonraker::test(std::string& msg, RetryFn retry_fn) const
 {
     // GET /server/info
+
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
 
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
@@ -158,7 +164,7 @@ bool PrintHostMoonraker::test(std::string& msg, RetryFn retry_fn) const
             }
         })
 #ifdef _WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .on_ip_resolve([&](std::string address) {
             // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
             // Remember resolved address to be reused at successive REST API call.
@@ -187,19 +193,22 @@ std::string PrintHostMoonraker::make_url(const std::string& path) const
 
 void PrintHostMoonraker::set_auth(Network::IHttp* http) const
 {
-    switch (m_print_host_config.auth_type) {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
+    switch (auth->auth_type) {
     case Domain::PrintHostAuthType::ApiKey:
-        http->header("X-Api-Key", m_print_host_config.api_key);
+        http->header("X-Api-Key", auth->api_key);
         break;
     case Domain::PrintHostAuthType::Digest:
-        http->auth_digest(m_print_host_config.username, m_print_host_config.password);
+        http->auth_digest(auth->username, auth->password);
         break;
     default:
         break;
     }
 
-    if (!m_print_host_config.ca_file.empty()) {
-        http->ca_file(m_print_host_config.ca_file);
+    if (!auth->ca_file.empty()) {
+        http->ca_file(auth->ca_file);
     }
 }
 

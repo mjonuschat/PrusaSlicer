@@ -178,7 +178,6 @@ void PopNotificationCenter::on_job_print_host(const std::string& string, const P
         payload_id = payload->id;
         payload_tag = payload->tag;
         payload_message = payload->message;
-
     } else {
         // Ignore all progress without payload. It should be only first started status.
         ASSERT(progress.status == JobStatus::Started);
@@ -616,6 +615,32 @@ PopNotificationLayout upload_layout(const PrintHostProgressNotificationData& dat
     return PopNotificationLayoutText("");
 }
 
+PopNotificationLayout storage_resolve_layout(const PrintHostProgressNotificationData& data)
+{
+    switch (data.status) {
+    case PrintHostJobStatus::None: {
+        std::string msg = _u8L("Resolving PrusaLink storage.");
+        return PopNotificationLayoutText(std::move(msg));
+    }
+    case PrintHostJobStatus::Started: {
+        std::string msg = _u8L("Resolving PrusaLink storage.");
+        return PopNotificationLayoutTextProgress(std::move(msg), data.progress);
+    }
+    case PrintHostJobStatus::Finished: {
+        std::string msg = _u8L("Resolving storage has finished.");
+        return PopNotificationLayoutText(std::move(msg));
+    }
+    case PrintHostJobStatus::Failed: {
+        std::string translatable_part = _u8L("Resolving storage has Failed.");
+        std::string msg = fmt::format("{} {}", translatable_part, data.additional_msg);       
+        return PopNotificationLayoutText(std::move(msg));
+    }
+    default:
+        ASSERT(false);
+    }
+    return PopNotificationLayoutText("");
+}
+
 PopNotificationLayout export_layout(const PrintHostProgressNotificationData& data)
 {
     switch (data.status) {
@@ -706,6 +731,9 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
 
 PopNotificationLayout print_host_layout(const PrintHostProgressNotificationData& data)
 {
+    if (data.is_storage_resolve) {
+        return storage_resolve_layout(data);
+    }
     if (data.is_upload) {
         return upload_layout(data);
     } else {
@@ -789,6 +817,23 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
+    if (payload.is_storage_resolve)
+    {
+        // close notification
+        m_notification_list.erase_notification_by_predicate(
+            [print_host_id](const PopNotificationData& notification)
+            {
+                const auto payload{
+                    std::get_if<PrintHostProgressNotificationData>(&notification.payload)
+                };
+                if (payload == nullptr) {
+                    return false;
+                }
+                return payload->print_host_id == print_host_id;
+            }
+        );
+        return;
+    }
     payload.status   = PrintHostJobStatus::Finished;
     payload.progress = 100;
     auto layout      = print_host_layout(payload);
@@ -831,9 +876,13 @@ void PopNotificationCenter::on_print_host_info(
                 };
         }
     }
-    if (tag == PrintHostJobInfoTag::OperationType && msg == "export") { // todo: also msg "storage"
+    if (tag == PrintHostJobInfoTag::OperationType && msg == "export") {
         payload.is_upload = false;
     }
+    if (tag == PrintHostJobInfoTag::OperationType && msg == "storage") {
+        payload.is_storage_resolve = true;
+    }
+    
     auto layout = print_host_layout(payload);
     m_notification_list.upsert_notifcation(
         PopNotificationData{

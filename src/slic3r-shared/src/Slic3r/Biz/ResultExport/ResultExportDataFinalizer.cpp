@@ -122,7 +122,7 @@ boost::filesystem::path get_temporary_file_path(const std::string& extension)
 } // namespace
 
 
-void ResultExportDataFinalizer::finalize(PrintHost::PrintHostConfig&& config, PrintHost::PrintHostJobData&& data)
+void ResultExportDataFinalizer::finalize(PhysicalPrinter::PhysicalPrinterConfig&& config, PrintHost::PrintHostJobData&& data)
 {
     JThread::JThread thread = JThread::JThread([this, config = std::move(config),  data = std::move(data)](JThread::StopToken stop_token) mutable {
         data.source_path = get_temporary_file_path(data.dest_path.extension().string());
@@ -150,7 +150,7 @@ void ResultExportDataFinalizer::finalize(PrintHost::PrintHostConfig&& config, Pr
     });
 }
 
-void ResultExportDataFinalizer::dispatch_success(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
+void ResultExportDataFinalizer::dispatch_success(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);

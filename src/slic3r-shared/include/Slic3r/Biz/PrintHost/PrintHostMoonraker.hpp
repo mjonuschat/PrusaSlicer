@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostMoonraker : public IPrintHost {
 
 public:
-    PrintHostMoonraker(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostMoonraker(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostMoonraker(const PrintHostMoonraker&) = delete;
     PrintHostMoonraker& operator=(const PrintHostMoonraker&) = delete;

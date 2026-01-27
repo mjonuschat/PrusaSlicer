@@ -23,7 +23,6 @@ class Navigator;
 class LogicalPrinterSettingsDialog;
 class PrinterAddDialog;
 class MaterialSelectionDialog;
-class PhysicalPrinterSettingsDialog;
 class MaterialListView;
 
 namespace Yoga {
@@ -48,7 +47,6 @@ public:
     ) override;
 
     LogicalPrinterSettingsDialog& logical_printer_settings_dialog();
-    PhysicalPrinterSettingsDialog& physical_printer_settings_dialog();
     PrinterAddDialog& printer_add_dialog();
     MaterialSelectionDialog& material_selection_dialog();
 
@@ -57,7 +55,6 @@ private:
     Navigator& m_navigator;
 
     Yoga::Text* m_bed_name{nullptr};
-    Yoga::PrinterSettingsButton* m_physical_printer_button{nullptr};
     Yoga::PrinterSettingsButton* m_logical_printer_button{nullptr};
 
     std::shared_ptr<Yoga::ButtonGroup> m_material_button_group;
@@ -73,7 +70,6 @@ private:
 
     MaterialListView* m_list_view{nullptr};
     LogicalPrinterSettingsDialog* m_logical_printer_settings_dialog{nullptr};
-    PhysicalPrinterSettingsDialog* m_physical_printer_settings_dialog{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
     MaterialSelectionDialog* m_material_selection_dialog{nullptr};
 };

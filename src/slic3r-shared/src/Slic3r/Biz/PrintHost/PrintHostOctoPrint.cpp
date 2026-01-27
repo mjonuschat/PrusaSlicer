@@ -16,7 +16,7 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostOctoPrint::PrintHostOctoPrint(PrintHostConfig config, PrintHostJobData data) :
+PrintHostOctoPrint::PrintHostOctoPrint(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) :
     IPrintHost(std::move(config), std::move(data))
 {}
 
@@ -107,6 +107,9 @@ bool PrintHostOctoPrint::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
 bool PrintHostOctoPrint::test(std::string& msg, RetryFn retry_fn) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
     bool res         = true;
     auto url         = make_url("api/version");
@@ -151,7 +154,7 @@ bool PrintHostOctoPrint::test(std::string& msg, RetryFn retry_fn) const
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .on_ip_resolve([&](std::string address) {
             // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
             // Remember resolved address to be reused at successive REST API call.
@@ -168,6 +171,10 @@ bool PrintHostOctoPrint::test_with_resolved_ip(std::string& msg, RetryFn retry_f
 {
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
+
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
     bool res         = true;
     // Msg contains ip string.
@@ -228,7 +235,7 @@ bool PrintHostOctoPrint::test_with_resolved_ip(std::string& msg, RetryFn retry_f
                 msg = "Could not parse server response.";
             }
         })
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .perform_sync();
 
     return res;
@@ -242,6 +249,9 @@ bool PrintHostOctoPrint::upload_inner_with_host(
     InfoFn info_fn
 ) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
 
     const auto upload_filename    = m_upload_data.dest_path.filename();
@@ -330,7 +340,7 @@ bool PrintHostOctoPrint::upload_inner_with_host(
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
 #endif
         .perform_sync();
 
@@ -346,6 +356,9 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(
     const boost::asio::ip::address& resolved_addr
 ) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     info_fn(PrintHostJobInfoTag::Resolve, resolved_addr.to_string());
 
     // If test fails, test_msg contains the error message.
@@ -419,7 +432,7 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(
                 result = false;
             }
         })
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .perform_sync();
 
     return result;
@@ -443,10 +456,13 @@ std::string PrintHostOctoPrint::make_url(const std::string& path) const
 
 void PrintHostOctoPrint::set_auth(Network::IHttp* http) const
 {
-    http->header("X-Api-Key", m_print_host_config.api_key);
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
 
-    if (!m_print_host_config.ca_file.empty()) {
-        http->ca_file(m_print_host_config.ca_file);
+    http->header("X-Api-Key", auth->api_key);
+
+    if (!auth->ca_file.empty()) {
+        http->ca_file(auth->ca_file);
     }
 }
 

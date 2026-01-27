@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostRepetier : public IPrintHost {
 
 public:
-    PrintHostRepetier(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostRepetier(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostRepetier(const PrintHostRepetier&) = delete;
     PrintHostRepetier& operator=(const PrintHostRepetier&) = delete;

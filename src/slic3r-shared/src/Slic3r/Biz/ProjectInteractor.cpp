@@ -512,7 +512,7 @@ void ProjectInteractor::rename_project(Domain::SelectionId project_id, const std
                                                { l->on_project_changed(project_id); });
 }
 
-void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, PrintHost::PrintHostConfig&& print_host_config, PrintHost::PrintHostJobData&& job_data)
+void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, PhysicalPrinter::PhysicalPrinterConfig&& print_host_config, PrintHost::PrintHostJobData&& job_data)
 {
     // Find confing container with matching bed instance id.
     const Domain::ConfigContainer* config_container = nullptr;
@@ -549,7 +549,7 @@ void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, Print
 void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     set_output_dir(id.project_id, dest_path);
-    PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
+    PhysicalPrinter::PhysicalPrinterConfig config{PhysicalPrinter::OperationType::Local, ""};
     PrintHost::PrintHostJobData data{
         std::monostate{},
         dest_path,
@@ -560,7 +560,7 @@ void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost
 
 void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::string& filename)
 {
-    PrintHost::PrintHostConfig config{Domain::PrintHostType::OctoPrint, ""};
+    PhysicalPrinter::PhysicalPrinterConfig config {m_physical_printer_interactor.selected_physical_printer_data()};
     boost::filesystem::path dest_path(filename);
     PrintHost::PrintHostJobData data{
         std::monostate{},
@@ -572,9 +572,13 @@ void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::
 
 void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
 {
-    PrintHost::PrintHostConfig
-        config{Domain::PrintHostType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
-    config.access_token = m_user_account_interactor.access_token();
+    PhysicalPrinter::PhysicalPrinterConfig
+        config{PhysicalPrinter::OperationType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
+
+    PhysicalPrinter::CloudAuth auth;
+    auth.access_token = m_user_account_interactor.access_token();
+    config.connection_data = std::move(auth);
+
     std::string filename;
     std::string body_json;
     if (!UserAccount::ConnectUtils::config_from_json(connect_msg, config, filename, body_json)) {

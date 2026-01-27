@@ -51,7 +51,7 @@ std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor& p
     auto result{std::make_unique<LayoutButton>(
         "",
         Render::Icon::SavePrintToLocal,
-        "Send directly to a printer\nAdd a physical printer to enable.\n(WIP)"
+        "Send directly to a printer\nAdd a physical printer to enable."
     )};
     style_secondary_button(result.get());
     result->set_enabled(false);
@@ -146,6 +146,8 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
         this
     );
     m_project_interactor->removable_drive_service().add_status_listener(this);
+    m_project_interactor->physical_printer_interactor()
+        .add_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
 
     const float gap{15.0f};
 
@@ -358,6 +360,10 @@ void SidebarPreviewActionButtons::update_buttons()
             primary_button->set_tooltip(export_tooltip);
             primary_button->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
 
+            if (m_project_interactor->physical_printer_interactor().is_local_auth_selected()) {
+                secondary_buttons.at(0)->set_enabled(true);
+                secondary_buttons.at(0)->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
+            }
             if (m_project_interactor->removable_drive_service().has_removable_drives()) {
                 secondary_buttons.at(1)->set_enabled(true);
                 secondary_buttons.at(1)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
@@ -370,6 +376,10 @@ void SidebarPreviewActionButtons::update_buttons()
 
             secondary_buttons.at(0)->set_enabled(true);
             secondary_buttons.at(0)->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
+            if (m_project_interactor->physical_printer_interactor().is_local_auth_selected()) {
+                secondary_buttons.at(1)->set_enabled(true);
+                secondary_buttons .at(1)->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
+            }
             if (m_project_interactor->removable_drive_service().has_removable_drives()) {
                 secondary_buttons.at(2)->set_enabled(true);
                 secondary_buttons.at(2)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
@@ -400,6 +410,13 @@ void SidebarPreviewActionButtons::update_buttons()
 void SidebarPreviewActionButtons::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 {
     SidebarActionButtons::render_body(pos, size);
+}
+
+
+
+void SidebarPreviewActionButtons::on_selected_physical_printer_changed()
+{
+    update_buttons();
 }
 
 } // namespace Slic3r::App::Preview

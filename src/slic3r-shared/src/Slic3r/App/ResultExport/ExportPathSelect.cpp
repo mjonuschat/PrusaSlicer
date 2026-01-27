@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "boost/filesystem/path.hpp"
 
@@ -127,6 +128,46 @@ void show_modal_dialog(
      );
 }
 
+void
+show_upload_modal_dialog(
+    const Biz::ProjectInteractor& project_interactor,
+    const std::function<void(const std::string&)>& callback
+)
+{
 
+    ExportNameData name_data;
+    try {
+        name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
+     } catch (const Slic3r::PlaceholderParserError& e) {
+         SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
+
+         std::string what_short = shorten_error(e.what());
+         AppServices::instance().pop_notification_center().upsert_notifcation(
+             {PopNotification::PopNotificationType::Custom,
+              PopNotification::PopNotificationLevel::Error,
+              0s,
+              PopNotification::PopNotificationLayoutHeaderText("Failed to parse output filename",what_short)},
+             [](const PopNotification::PopNotificationPayload&,
+                const PopNotification::PopNotificationPayload&) { return false; }
+         );
+         // Retrieves some filename since parsing failed.
+         name_data = Biz::ExportNameParser::error_state_export_name(project_interactor);
+     }
+
+
+     std::string filename = name_data.filename;
+
+     Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread(
+         [filename, callback]()
+         {
+             AppServices::instance().dialog_manager().show_input_dialog_with_buttons(
+                 Biz::_u8L("Send G-Code to printer host"),
+                 Biz::_u8L("Upload to printer host with the following filename:"),
+                 filename,
+                 {{Biz::_u8L("Upload"), callback}}
+             );
+         }
+     );
+}
 
 } // namespace  Slic3r::App

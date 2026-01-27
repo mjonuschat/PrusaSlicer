@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostMKS : public IPrintHost {
 
 public:
-    PrintHostMKS(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)), m_console_port{"8080"} {}
+    PrintHostMKS(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)), m_console_port{"8080"} {}
     
     PrintHostMKS(const PrintHostMKS&) = delete;
     PrintHostMKS& operator=(const PrintHostMKS&) = delete;

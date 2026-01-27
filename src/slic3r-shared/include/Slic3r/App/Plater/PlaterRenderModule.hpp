@@ -26,6 +26,7 @@ class ObjectListWindow;
 class SidebarBed;
 class SidebarObject;
 class SidebarPrint;
+class SidebarPhysical;
 class CubeView;
 class TopBar;
 class PreferencesDialog;
@@ -210,6 +211,7 @@ private:
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
+    Yoga::Passthrough<SidebarPhysical> m_sidebar_physical;
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;

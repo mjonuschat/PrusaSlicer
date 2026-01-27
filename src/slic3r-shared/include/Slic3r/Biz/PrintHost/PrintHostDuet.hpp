@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostDuet : public IPrintHost {
 
 public:
-    PrintHostDuet(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostDuet(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostDuet(const PrintHostDuet&) = delete;
     PrintHostDuet& operator=(const PrintHostDuet&) = delete;

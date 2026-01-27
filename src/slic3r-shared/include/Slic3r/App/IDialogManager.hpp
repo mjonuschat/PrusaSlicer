@@ -38,6 +38,11 @@ public:
     using FileCallback =
         std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>;
 
+    struct ButtonWithCallback {
+        std::string text;
+        std::function<void(const std::string& result)> callback;
+    };
+
     IDialogManager()          = default;
     virtual ~IDialogManager() = default;
 
@@ -54,6 +59,19 @@ public:
         const std::string& title,
         const std::string& text,
         const std::string& default_value
+    ) = 0;
+
+    virtual void show_input_dialog_with_buttons(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value,
+        const std::vector<ButtonWithCallback>& buttons
+    ) = 0;
+
+    virtual std::string show_combo_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::vector<std::string>& values
     ) = 0;
 
     virtual void show_webview_dialog(

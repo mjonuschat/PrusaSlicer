@@ -29,6 +29,9 @@ bool validate_repetier(const boost::optional<std::string>& name, const boost::op
 
 bool PrintHostRepetier::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
 
     const auto upload_filename    = m_upload_data.dest_path.filename();
@@ -43,8 +46,8 @@ bool PrintHostRepetier::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
     bool res = true;
 
     auto url = m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ?
-        make_url(fmt::format("printer/job/{}", m_print_host_config.port)) :
-        make_url(fmt::format("printer/model/{}", m_print_host_config.port));
+        make_url(fmt::format("printer/job/{}", auth->port)) :
+        make_url(fmt::format("printer/model/{}", auth->port));
 
     SPDLOG_INFO(
         fmt::format(
@@ -172,10 +175,13 @@ std::string PrintHostRepetier::make_url(const std::string& path) const
 
 void PrintHostRepetier::set_auth(Network::IHttp* http) const
 {
-    http->header("X-Api-Key", m_print_host_config.api_key);
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
 
-    if (!m_print_host_config.ca_file.empty()) {
-        http->ca_file(m_print_host_config.ca_file);
+    http->header("X-Api-Key", auth->api_key);
+
+    if (!auth->ca_file.empty()) {
+        http->ca_file(auth->ca_file);
     }
 }
 

@@ -310,6 +310,7 @@ void AbstractRenderLayout::init_right_column()
     sidebar_bed_print->set_flex_grow(1);
     sidebar_bed_print->append(m_sidebar_bed.release());
     sidebar_bed_print->append(m_sidebar_print.release());
+    sidebar_bed_print->append(m_sidebar_physical.release());
     m_layout_sidebar_stack_layout->insert_item(
         SidebarStackLayout::ItemType::Bed,
         std::move(sidebar_bed_print)
@@ -394,7 +395,8 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print,
-    std::unique_ptr<SidebarObject> sidebar_object
+    std::unique_ptr<SidebarObject> sidebar_object,
+    std::unique_ptr<SidebarPhysical> sidebar_physical
 ) :
     m_navigator(navigator),
     m_top_bar(std::move(top_bar)),
@@ -404,6 +406,7 @@ AbstractRenderLayout::AbstractRenderLayout(
     m_sidebar_bed(std::move(sidebar_bed)),
     m_sidebar_print(std::move(sidebar_print)),
     m_sidebar_object(std::move(sidebar_object)),
+    m_sidebar_physical(std::move(sidebar_physical)),
     m_preferences_dialog(std::move(preferences_dialog))
 {}
 

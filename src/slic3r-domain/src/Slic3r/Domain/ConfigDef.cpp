@@ -86,6 +86,8 @@ std::string ConfigItemDef::translate_category(Category category, const PrinterTe
         return L("General");
     case ConfigItemDef::Category::AppConfig_Services:
         return L("Services");
+    case ConfigItemDef::Category::PhysicalPrinter_General:
+        return L("General");
     }
 
     return {};
@@ -396,17 +398,12 @@ void ConfigDefinitions::check_valid() const
     for (const ConfigItemDef& def : m_defs) {
         ASSERT(def.type != nullptr);
 
-        std::visit(
-            overloaded{
-                [](const FDMConfigLocation location)
-                { ASSERT(location != FDMConfigLocation::None); },
-                [](const SLAConfigLocation location)
-                { ASSERT(location != SLAConfigLocation::None); },
-                [](const PhysicalPrinterLocation location) {},
-                [](const AppConfigLocation location) {}
-            },
-            def.location
-        );
+        std::visit(overloaded{
+            [](const FDMConfigLocation location) {ASSERT(location != FDMConfigLocation::None);},
+            [](const SLAConfigLocation location) {ASSERT(location != SLAConfigLocation::None);},
+            [](const PhysicalPrinterLocation location) {},
+            [](const AppConfigLocation location) {}
+        }, def.location);
 
         ASSERT(!def.overrides_in.contains(def.location));
 

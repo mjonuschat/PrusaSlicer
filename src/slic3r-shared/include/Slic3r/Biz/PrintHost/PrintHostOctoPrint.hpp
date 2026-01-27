@@ -12,7 +12,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostOctoPrint : public IPrintHost {
 
 public:
-    PrintHostOctoPrint(PrintHostConfig config, PrintHostJobData data);
+    PrintHostOctoPrint(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data);
     
     PrintHostOctoPrint(const PrintHostOctoPrint&) = delete;
     PrintHostOctoPrint& operator=(const PrintHostOctoPrint&) = delete;

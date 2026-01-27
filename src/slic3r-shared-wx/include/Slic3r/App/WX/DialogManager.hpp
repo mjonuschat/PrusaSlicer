@@ -32,6 +32,17 @@ public:
     void show_warning_dialog(const std::string& text, const std::string& title = std::string()) override;
     void show_error_dialog(const std::string& text, const std::string& title = std::string()) override;
     std::string show_input_dialog(const std::string& title, const std::string& text, const std::string& default_value) override;
+    void show_input_dialog_with_buttons(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value,
+        const std::vector<ButtonWithCallback>& buttons
+    ) override;
+    std::string show_combo_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::vector<std::string>& values
+    ) override;
     void show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind = std::nullopt) override;
     PresetsSwitchStates show_unsaved_changes_dialog(
         const std::string& dialog_name,

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Slic3r/Biz/Network/IHttp.hpp"
-#include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
 #include "Slic3r/Assert.hpp"
 
@@ -14,7 +15,7 @@ namespace Slic3r::Biz::PrintHost {
 class IPrintHost
 {
 public:
-    explicit IPrintHost(PrintHostConfig config, PrintHostJobData data) :
+    explicit IPrintHost(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) :
         m_print_host_config(std::move(config)),
         m_upload_data(std::move(data))
     {}
@@ -59,7 +60,7 @@ public:
     virtual std::string operation_type() const { return "upload"; }
 
 protected:
-    PrintHostConfig m_print_host_config;
+    PhysicalPrinter::PhysicalPrinterConfig m_print_host_config;
     PrintHostJobData m_upload_data;
 
     virtual std::string format_error(const std::string& body, const std::string& error, unsigned status) const

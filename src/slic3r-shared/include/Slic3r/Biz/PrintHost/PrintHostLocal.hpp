@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostLocal : public IPrintHost {
 
 public:
-    PrintHostLocal(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
+    PrintHostLocal(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostLocal(const PrintHostLocal&) = delete;
     PrintHostLocal& operator=(const PrintHostLocal&) = delete;

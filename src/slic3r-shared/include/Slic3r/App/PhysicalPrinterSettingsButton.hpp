@@ -3,23 +3,25 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #pragma once
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
 
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/App/PhysicalPrinter.hpp"
 
 namespace Slic3r::App {
 
 class PhysicalPrinterSettingsButton
     : public Yoga::PrinterSettingsButton,
-      public Biz::DataObserver<PhysicalPrinter>
+    public Biz::DataObserver<Biz::PhysicalPrinter::PhysicalPrinterConfig>
 {
 public:
     using FnIndexClicked = std::function<void(size_t)>;
 
     PhysicalPrinterSettingsButton(
-        size_t index, const PhysicalPrinter& physical_printer, FnIndexClicked on_clicked
+        size_t index, const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer, FnIndexClicked on_clicked
     );
+
+    void update_button_text();
 
 protected:
     void on_data_update() override;

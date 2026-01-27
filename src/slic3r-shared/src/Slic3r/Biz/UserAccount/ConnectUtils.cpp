@@ -1,13 +1,17 @@
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include <nlohmann/json.hpp>
 
 namespace Slic3r::Biz::UserAccount::ConnectUtils {
 
-bool config_from_json(const std::string& json, PrintHost::PrintHostConfig& config, std::string& filename, std::string& body_json)
+bool config_from_json(const std::string& json, PhysicalPrinter::PhysicalPrinterConfig& config, std::string& filename, std::string& body_json)
 {
+    PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&config.connection_data);
+    ASSERT(auth);
+
     // {"action":"PRINT","set_ready":false,"team_id":12345,"printer_uuid":"12345-12345-12345-12345-12345","filename":"file.gcode","data":{"set_ready":false,"team_id":10533,"printer_uuid":"12345-12345-12345-12345-12345","filename":"file.gcode"}}
     try {
         nlohmann::json j = nlohmann::json::parse(json);
@@ -20,16 +24,16 @@ bool config_from_json(const std::string& json, PrintHost::PrintHostConfig& confi
         }
 
         if (j.contains("team_id") && j["team_id"].is_string()) {
-            config.team_id = j["team_id"].get<std::string>();
+            auth->team_id = j["team_id"].get<std::string>();
         } else if (j.contains("team_id") && j["team_id"].is_number_integer()) {
-            config.team_id = std::to_string(j["team_id"].get<int>());
+            auth->team_id = std::to_string(j["team_id"].get<int>());
         } else {
             SPDLOG_ERROR("Could not find team_id in Connect message.");
             return false;
         }
 
         if (j.contains("printer_uuid") && j["printer_uuid"].is_string()) {
-            config.printer_uuid = j["printer_uuid"].get<std::string>();
+            auth->printer_uuid = j["printer_uuid"].get<std::string>();
         } else {
             SPDLOG_ERROR("Could not find printer_uuid in Connect message.");
             return false;

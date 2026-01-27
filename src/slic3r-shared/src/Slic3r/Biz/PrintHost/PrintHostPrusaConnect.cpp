@@ -101,12 +101,16 @@ std::string replace_placeholders(const std::string& text, const std::string& v1,
 bool PrintHostPrusaConnect::test(std::string& curl_msg, RetryFn retry_fn) const
 {
     // Test is not used by upload and gets list of files on a device.
+
+    const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const std::string name = get_name();
     std::string url        = fmt::format(
         "{}/{}/files?printer_uuid={}",
         Network::ServiceConfig::instance().connect_teams_url(),
-        m_print_host_config.team_id,
-        m_print_host_config.printer_uuid
+        auth->team_id,
+        auth->printer_uuid
     );
     SPDLOG_INFO("{}: Get files/raw at: {}", name, url);
     bool res = true;
@@ -116,7 +120,7 @@ bool PrintHostPrusaConnect::test(std::string& curl_msg, RetryFn retry_fn) const
         std::move(url),
         retry_fn
     );
-    http->header("Authorization", "Bearer " + m_print_host_config.access_token);
+    http->header("Authorization", "Bearer " + auth->access_token);
     http->on_error([&](std::string body, std::string error, unsigned status) {
             SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
             res      = false;
@@ -137,6 +141,10 @@ bool PrintHostPrusaConnect::init_upload(
 ) const
 {
     // Register upload. Then upload must be performed immediately with returned "id"
+
+    const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     bool res = true;
     boost::system::error_code ec;
     boost::uintmax_t size = boost::filesystem::file_size(upload_data.source_path, ec);
@@ -149,7 +157,7 @@ bool PrintHostPrusaConnect::init_upload(
     std::string url                   = fmt::format(
         "{}/app/users/teams/{}/uploads",
         m_print_host_config.host,
-        m_print_host_config.team_id
+        auth->team_id
     );
 
     std::string request_body_json;
@@ -169,7 +177,7 @@ bool PrintHostPrusaConnect::init_upload(
         std::move(url),
         retry_fn
     );
-    http->header("Authorization", "Bearer " + m_print_host_config.access_token)
+    http->header("Authorization", "Bearer " + auth->access_token)
         .header("Content-Type", "application/json")
         .set_post_body(std::move(request_body_json))
         .on_complete([&](std::string body, unsigned status) {
@@ -194,10 +202,13 @@ bool PrintHostPrusaConnect::perform(
     InfoFn info_fn
 ) const
 {
+     const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     std::string printer_page_url = fmt::format(
         "{}/printer/{}/dashboard",
         Network::ServiceConfig::instance().connect_url(),
-        m_print_host_config.printer_uuid
+        auth->printer_uuid
     );
     //info_fn(PrintHostJobInfoTag::ConnectPrinterAddress, printer_page_url);
 
@@ -225,7 +236,7 @@ bool PrintHostPrusaConnect::perform(
         "{}/app/teams/{}/files/raw"
                "?upload_id={}",
         Network::ServiceConfig::instance().connect_url(),
-        m_print_host_config.team_id,
+        auth->team_id,
         upload_id
     );
     bool res = true;
@@ -246,7 +257,7 @@ bool PrintHostPrusaConnect::perform(
     );
     http->set_put_body(m_upload_data.source_path)
         .header("Content-Type", "text/x.gcode")
-        .header("Authorization", "Bearer " + m_print_host_config.access_token)
+        .header("Authorization", "Bearer " + auth->access_token)
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
         })

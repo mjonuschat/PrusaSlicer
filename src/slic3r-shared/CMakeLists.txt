@@ -193,8 +193,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PhysicalPrinterSettingsButton.cpp
         include/Slic3r/App/LogicalPrinterSettingsButton.hpp
         src/Slic3r/App/LogicalPrinterSettingsButton.cpp
-        include/Slic3r/App/PhysicalPrinter.hpp
-        src/Slic3r/App/PhysicalPrinter.cpp
         include/Slic3r/App/PrinterAddDialog.hpp
         src/Slic3r/App/PrinterAddDialog.cpp
         include/Slic3r/App/ConfigSubcategoryListView.hpp
@@ -255,6 +253,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/ToolLabel.cpp
         include/Slic3r/App/Theme.hpp
         src/Slic3r/App/Theme.cpp
+        include/Slic3r/App/SidebarPhysical.hpp
+        src/Slic3r/App/SidebarPhysical.cpp
+        include/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp
+        src/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -829,7 +831,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PrintHost/IPrintHost.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
-        include/Slic3r/Biz/PrintHost/PrintHostConfig.hpp
         include/Slic3r/Biz/PrintHost/PrintHostFactory.hpp
         include/Slic3r/Biz/PrintHost/PrintHostLocal.hpp
         include/Slic3r/Biz/PrintHost/PrintHostOctoPrint.hpp
@@ -844,6 +845,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
         include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostJobData.hpp
         src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
         src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
         src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
@@ -858,6 +860,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
         src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
         src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostJobData.cpp
 
         include/Slic3r/Biz/Emboss/IFontManager.hpp
         include/Slic3r/Biz/Emboss/Emboss.hpp
@@ -1054,6 +1057,15 @@ set(SLIC3R_SHARED_FILES
 
         src/Slic3r/Biz/Utils/MeshRaycaster.cpp
         include/Slic3r/Biz/Utils/MeshRaycaster.hpp
+
+        include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp
+        src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.cpp
+        include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp
+        src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.cpp
+        include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterStorage.hpp
+        src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterStorage.cpp
+        include/Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp
+
 )
 
 if (WIN32)

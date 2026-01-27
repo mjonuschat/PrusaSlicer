@@ -170,6 +170,70 @@ std::string DialogManager::show_input_dialog(const std::string& title, const std
     return {};
 }
 
+void DialogManager::show_input_dialog_with_buttons(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value,
+        const std::vector<ButtonWithCallback>& buttons
+    )
+{    
+    wxDialog dialog(nullptr, wxID_ANY, from_u8(title), wxDefaultPosition, wxDefaultSize);
+    wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+
+    wxStaticText* label = new wxStaticText(&dialog, wxID_ANY, from_u8(text));
+    main_sizer->Add(label, 0, wxALL, 10);
+
+    wxTextCtrl* text_ctrl = new wxTextCtrl(&dialog, wxID_ANY, from_u8(default_value));
+    main_sizer->Add(text_ctrl, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
+    wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+    for (const auto& btn_data : buttons) {
+        wxButton* btn = new wxButton(&dialog, wxID_ANY, from_u8(btn_data.text));
+        
+        btn->Bind(wxEVT_BUTTON, [&dialog, text_ctrl, cb = btn_data.callback](wxCommandEvent&) {
+            if (cb) {
+                cb(into_u8(text_ctrl->GetValue()));
+            }
+            dialog.EndModal(wxID_OK);
+        });
+        
+        button_sizer->Add(btn, 0, wxALL, 5);
+    }
+    wxButton* cancel_btn = new wxButton(&dialog, wxID_CANCEL);
+    button_sizer->Add(cancel_btn, 0, wxALL, 5);
+    main_sizer->Add(button_sizer, 0, wxALIGN_RIGHT | wxBOTTOM, 5);
+
+    dialog.SetSizerAndFit(main_sizer);
+    dialog.CenterOnParent();
+    dialog.ShowModal();
+}
+
+std::string DialogManager::show_combo_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::vector<std::string>& values
+    )
+{
+    wxArrayString choices;
+    choices.Alloc(values.size());
+    for (const auto& val : values) {
+        choices.Add(from_u8(val));
+    }
+
+    wxSingleChoiceDialog dialog(
+        nullptr, 
+        from_u8(text), 
+        from_u8(title), 
+        choices
+    );
+    
+    if (dialog.ShowModal() == wxID_OK) {
+        return into_u8(dialog.GetStringSelection());
+    }
+
+    return {};
+}
+
 void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind)
 {
     DiffDialog(preset_interactor, kind).ShowModal();

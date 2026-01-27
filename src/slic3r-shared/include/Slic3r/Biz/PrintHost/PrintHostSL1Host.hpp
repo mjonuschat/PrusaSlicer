@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostSL1Host : public PrintHostPrusaLink {
 
 public:
-    PrintHostSL1Host(PrintHostConfig config, PrintHostJobData data) : PrintHostPrusaLink(std::move(config), std::move(data)) {}
+    PrintHostSL1Host(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) : PrintHostPrusaLink(std::move(config), std::move(data)) {}
     
     PrintHostSL1Host(const PrintHostSL1Host&) = delete;
     PrintHostSL1Host& operator=(const PrintHostSL1Host&) = delete;

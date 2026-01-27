@@ -53,6 +53,7 @@ struct PrintHostProgressNotificationData
     std::string filename;
     std::string target;
     bool is_upload{true};
+    bool is_storage_resolve{false};
     std::string additional_msg;
     std::function<void(const boost::filesystem::path&)> eject_fn{nullptr};
 };

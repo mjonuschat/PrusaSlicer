@@ -36,12 +36,9 @@ enum class SLAConfigLocation
     Object,
 };
 
-struct PhysicalPrinterLocation
-{
+struct PhysicalPrinterLocation {
     bool operator==(const PhysicalPrinterLocation&) const = default;
-
-    bool operator<(const PhysicalPrinterLocation&) const
-    {
+    bool operator<(const PhysicalPrinterLocation&) const {
         return false;
     }
 };
@@ -56,8 +53,7 @@ struct AppConfigLocation
     }
 };
 
-using ConfigLocation =
-    std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation, AppConfigLocation>;
+using ConfigLocation = std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation, AppConfigLocation>;
 
 std::string get_location_name(const ConfigLocation& location);
 
@@ -135,6 +131,8 @@ struct ConfigItemDef
 
         AppConfig_General  = 600,
         AppConfig_Services = 601,
+
+        PhysicalPrinter_General = 700,
     };
 
     enum class OptionGroup : uint16_t

@@ -54,6 +54,11 @@ void PrinterSettingsButton::set_image(const std::string& image)
     m_icon->set_image(image);
 }
 
+void PrinterSettingsButton::set_icon(Render::Icon icon)
+{
+     m_icon->set_icon(icon);
+}
+
 void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
 {
     m_printer_name->set_text(printer_name);

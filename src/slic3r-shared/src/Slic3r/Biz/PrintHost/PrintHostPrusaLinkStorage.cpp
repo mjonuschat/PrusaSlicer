@@ -11,7 +11,7 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostPrusaLinkStorage::PrintHostPrusaLinkStorage(PrintHostConfig config, PrintHostJobData data) :
+PrintHostPrusaLinkStorage::PrintHostPrusaLinkStorage(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) :
     IPrintHost(std::move(config), std::move(data))
 {}
 
@@ -22,6 +22,9 @@ bool PrintHostPrusaLinkStorage::perform(
     InfoFn info_fn
 ) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
 
     bool res = true;
@@ -49,8 +52,11 @@ bool PrintHostPrusaLinkStorage::perform(
             // If 0, we can show error to the user now, as we know the communication has failed.
             // if not 0, we must not show error, as not all printers support api/v1/storage endpoint.
             // So we must be extra careful here, or we might be showing errors on perfectly fine communication.
-            if (status != 0)
+            if (status != 0) {
                 res = true;
+                return;
+            }
+            error_fn(error);
         })
         .on_complete([&](std::string body, unsigned) {
             SPDLOG_INFO("{}: Got storage: {}", name, body);
@@ -67,7 +73,7 @@ bool PrintHostPrusaLinkStorage::perform(
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
 #endif // WIN32
         .perform_sync();
 
@@ -95,20 +101,23 @@ std::string PrintHostPrusaLinkStorage::make_url(const std::string& path) const
 
 void PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http) const
 {
-    switch (m_print_host_config.auth_type) {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
+    switch (auth->auth_type) {
     case Domain::PrintHostAuthType::ApiKey:
-        http->header("X-Api-Key", m_print_host_config.api_key);
+        http->header("X-Api-Key", auth->api_key);
         break;
     case Domain::PrintHostAuthType::Digest:
-        http->auth_digest(m_print_host_config.username, m_print_host_config.password);
+        http->auth_digest(auth->username, auth->password);
         break;
     default:
         ASSERT(false, "PrusaLink does not support other auth method than api key or http digest.");
         break;
     }
 
-    if (!m_print_host_config.ca_file.empty()) {
-        http->ca_file(m_print_host_config.ca_file);
+    if (!auth->ca_file.empty()) {
+        http->ca_file(auth->ca_file);
     }
 }
 } // namespace Slic3r::Biz::PrintHost

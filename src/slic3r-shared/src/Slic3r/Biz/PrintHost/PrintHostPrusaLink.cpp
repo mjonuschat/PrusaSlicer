@@ -16,7 +16,7 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostPrusaLink::PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data) :
+PrintHostPrusaLink::PrintHostPrusaLink(PhysicalPrinter::PhysicalPrinterConfig config, PrintHostJobData data) :
     IPrintHost(std::move(config), std::move(data))
 {}
 
@@ -29,20 +29,23 @@ bool PrintHostPrusaLink::validate_version_text(const boost::optional<std::string
 
 void PrintHostPrusaLink::set_auth(Network::IHttp* http) const
 {
-    switch (m_print_host_config.auth_type) {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
+    switch (auth->auth_type) {
     case Domain::PrintHostAuthType::ApiKey:
-        http->header("X-Api-Key", m_print_host_config.api_key);
+        http->header("X-Api-Key", auth->api_key);
         break;
     case Domain::PrintHostAuthType::Digest:
-        http->auth_digest(m_print_host_config.username, m_print_host_config.password);
+        http->auth_digest(auth->username, auth->password);
         break;
     default:
         ASSERT(false, "PrusaLink does not support other auth method than api key or http digest.");
         break;
     }
 
-    if (!m_print_host_config.ca_file.empty()) {
-        http->ca_file(m_print_host_config.ca_file);
+    if (!auth->ca_file.empty()) {
+        http->ca_file(auth->ca_file);
     }
 }
 
@@ -148,6 +151,9 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
 bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
     const char* name = get_name();
@@ -195,7 +201,7 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .on_ip_resolve([&](std::string address) {
             // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
             // Remember resolved address to be reused at successive REST API call.
@@ -211,6 +217,9 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
 {
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
+
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
 
     const char* name = get_name();
 
@@ -266,7 +275,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .on_ip_resolve([&](std::string address) {
             // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
             // Remember resolved address to be reused at successive REST API call.
@@ -287,6 +296,10 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(
 {
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
+
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     const char* name = get_name();
     bool res         = true;
     // Msg contains ip string.
@@ -356,7 +369,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(
                 msg = "Could not parse server response";
             }
         })
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
         .perform_sync();
 
     return res;
@@ -482,6 +495,8 @@ bool PrintHostPrusaLink::put_inner(
 ) const
 {
     //info_fn("set_complete_off", {});
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
 
     bool res = true;
     // Percent escape all filenames in on path and add it to the url. This is different from POST.
@@ -526,7 +541,7 @@ bool PrintHostPrusaLink::put_inner(
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
 #endif
         .perform_sync();
 
@@ -542,6 +557,9 @@ bool PrintHostPrusaLink::post_inner(
     InfoFn info_fn
 ) const
 {
+    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    ASSERT(auth);
+
     //info_fn("set_complete_off", {});
     bool res                      = true;
     const auto upload_filename    = m_upload_data.dest_path.filename();
@@ -587,7 +605,7 @@ bool PrintHostPrusaLink::post_inner(
             }
         })
 #ifdef WIN32
-        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .ssl_revoke_best_effort(auth->ssl_revoke_best_effort)
 #endif
         .perform_sync();
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/SidebarActionButtons.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp"
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -29,7 +30,8 @@ class SidebarPreviewActionButtons :
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IStatusCacheChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
-    public Biz::RemovableDrive::IRemovableDriveStatusListener
+    public Biz::RemovableDrive::IRemovableDriveStatusListener,
+    public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
 {
 public:
     SidebarPreviewActionButtons(Navigator* render_module_navigator);
@@ -54,6 +56,8 @@ public:
         const boost::filesystem::path&,
         Biz::RemovableDrive::RemovableDriveStatus
     ) override;
+
+    void on_selected_physical_printer_changed() override;
 
 private:
     ActionButtonsLayout m_layout_with_connect;

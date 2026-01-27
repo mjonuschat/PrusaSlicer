@@ -36,6 +36,20 @@ public:
     ) override 
     { return {}; }
 
+    void show_input_dialog_with_buttons(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value,
+        const std::vector<ButtonWithCallback>& buttons
+    ) override
+    {}
+
+    std::string show_combo_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::vector<std::string>& values
+    ) override  { return {}; }
+
     void show_webview_dialog(
         std::unique_ptr<Browser::AbstractBrowserLogic>&& logic,
         Biz::ProjectInteractor* project_interactor

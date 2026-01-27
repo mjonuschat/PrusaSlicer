@@ -83,4 +83,26 @@ std::function<void()> send_gcode_to_connect(Biz::ProjectInteractor& project_inte
     };
 }
 
+std::function<void()> upload_gcode_to_print_host(Biz::ProjectInteractor& project_interactor)
+{
+    auto upload_fn{
+        [pi_raw = &project_interactor]()
+        {
+            ExportPathSelect::show_upload_modal_dialog(
+                *pi_raw,
+                [pi_raw](const std::string& file_path)
+                { pi_raw->do_result_upload(pi_raw->selected_bed_slicing_id(), file_path); }
+            );
+        }
+    };
+
+    return [=]()
+    {
+        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
+        if (!dispatcher.dispatch_on_main_thread_after(upload_fn)) {
+            SPDLOG_INFO("Upload to Print Host not dispatched!");
+        }
+    };
+}
+
 } // namespace Slic3r::App::ExportActions
