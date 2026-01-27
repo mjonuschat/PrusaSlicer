@@ -48,7 +48,14 @@ PrintSettingsDialog::PrintSettingsDialog(
             Domain::Preset::PresetKind::FdmPrint
         );
     };
-    footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
+    footer_items->emplace_back<LayoutButton>(_u8("Save preset"))->callbacks().action = [&]
+    {
+        const auto tab_index  = current_tab_index();
+        const auto kind       = tab_index == 0 ? Domain::Preset::PresetKind::FdmPrint :
+                                           Domain::Preset::PresetKind::FdmToolPrint;
+        const auto slot_index = tab_index == 0 ? 0 : tab_index - 1;
+        m_project_interactor->preset_interactor().save_user_preset(kind, slot_index);
+    };
 
     m_tool_cbi_list.add_listener<Biz::IListObserver<Biz::ConfigBoxInteractor>>(this);
 

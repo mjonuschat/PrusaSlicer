@@ -229,6 +229,38 @@ std::vector<std::string> save_preset(
 
 void PresetInteractor::save_user_preset(
     Domain::Preset::PresetKind kind,
+    size_t slot_index
+)
+{
+    InvokeLaterBag bag;
+    ASSERT(m_dialog_manager != nullptr);
+    const auto& sel_pres = selected_printer_preset();
+    std::optional<std::string> preset_name;
+    switch (kind) {
+    case Domain::Preset::PresetKind::FdmPrinter:
+    case Domain::Preset::PresetKind::SlaPrinter:
+        preset_name = sel_pres.printer.short_name();
+        break;
+    case Domain::Preset::PresetKind::FdmPrint:
+    case Domain::Preset::PresetKind::SlaPrint:
+        preset_name = sel_pres.print.short_name();
+        break;
+    case Domain::Preset::PresetKind::FdmToolPrint:
+    case Domain::Preset::PresetKind::SlaToolPrint:
+        preset_name = sel_pres.tools.at(slot_index).short_name();
+        break;
+    case Domain::Preset::PresetKind::FdmMaterial:
+    case Domain::Preset::PresetKind::SlaMaterial:
+        preset_name = sel_pres.materials.at(slot_index).short_name();
+        break;
+    }
+
+    auto new_name = m_dialog_manager->show_save_dialog(kind, preset_name.value(), *this);
+    save_user_preset_internal(kind, slot_index, {}, std::move(new_name), bag);
+}
+
+void PresetInteractor::save_user_preset(
+    Domain::Preset::PresetKind kind,
     size_t slot_index,
     const KeySet& item_names_to_omit,
     std::string new_name
@@ -2042,7 +2074,7 @@ void PresetInteractor::delete_preset(Domain::Preset::PresetKind kind, const std:
             case Domain::Preset::PresetKind::FdmMaterial:
             case Domain::Preset::PresetKind::SlaMaterial: {
                 const auto used_slots =
-                    preset_bundle.get_tool_print_preset_used_slots(
+                    preset_bundle.get_material_preset_used_slots(
                         usage.hw_config_id,
                         usage.printer_id.value(),
                         usage.print_id.value()

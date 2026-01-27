@@ -36,6 +36,8 @@ struct PresetNode
     std::vector<PresetNode> variants;
     SourceLocation source_location;
 
+    std::optional<std::string_view> short_name() const;
+
     template<class Archive>
     void serialize(Archive& archive)
     {
@@ -78,5 +80,6 @@ using PresetNamesCollection = std::map<PresetKind, PresetNames>;
 
 bool is_public_name(const std::string& name);
 std::string derive_name(const std::string& name, const std::string& parent_name);
+std::string_view short_name(const std::string& name);
 
 } // namespace Slic3r::Domain::Presets

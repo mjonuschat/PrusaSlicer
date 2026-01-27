@@ -2,6 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include "Slic3r/Log.hpp"
 #include "Slic3r/App/WX/SavePresetDialog.hpp"
 
 #include "Slic3r/App/WX/StringConversions.hpp"
@@ -11,7 +12,9 @@
 
 #include <vector>
 #include <memory>
+#include <ranges>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -117,6 +120,19 @@ SavePresetDialog::Item::Item(
             break;
         }
     }
+#ifndef  _NDEBUG
+    if (init_name.empty()) {
+        SPDLOG_ERROR(
+            "Cannot find '{}' in {}",
+            name,
+            fmt::join(
+                m_validator.preset_names()
+                    | std::views::transform([](const auto& pn) { return fmt::format("- '{}'", pn.name); }),
+                "\n"
+            )
+        );
+    }
+#endif
     ASSERT(!init_name.empty());
 
     init_input_name_ctrl(input_name_sizer, init_name);

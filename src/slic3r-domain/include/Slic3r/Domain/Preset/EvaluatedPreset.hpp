@@ -88,11 +88,7 @@ struct EvaluatedPreset
 
     [[nodiscard]] std::string_view short_name() const
     {
-        size_t idx = name.find('@');
-        if (idx == 0 || idx == std::string_view::npos)
-            return name;
-        while (idx > 0 && name[idx] == ' ') idx--;
-        return std::string_view{name.data(), idx};
+        return Domain::Preset::short_name(name);
     }
 
     [[nodiscard]] const ConfigBox& config_box() const

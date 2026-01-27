@@ -183,8 +183,8 @@ static PresetSelectionNames selected_preset_names(const PresetInteractor& preset
     );
 
     PresetSelectionNames names = {
-        .printer = {printer_ref.get().name, printer_is_runtime},
-        .print   = {print_ref.get().name, print_is_runtime}
+        .printer = {std::string{printer_ref.get().short_name()}, printer_is_runtime},
+        .print   = {std::string{print_ref.get().short_name()}, print_is_runtime}
     };
 
     size_t tool_index = 0;
@@ -196,7 +196,9 @@ static PresetSelectionNames selected_preset_names(const PresetInteractor& preset
             tool_index++,
             tool.id
         );
-        names.tools.emplace_back(PresetSelectionNames::PresetName{ref.get().name, is_runtime});
+        names.tools.emplace_back(
+            PresetSelectionNames::PresetName{std::string{ref.get().short_name()}, is_runtime}
+        );
     }
 
     size_t material_index = 0;
@@ -208,7 +210,9 @@ static PresetSelectionNames selected_preset_names(const PresetInteractor& preset
             material_index++,
             material.id
         );
-        names.materials.emplace_back(PresetSelectionNames::PresetName{ref.get().name, is_runtime});
+        names.materials.emplace_back(
+            PresetSelectionNames::PresetName{std::string{ref.get().short_name()}, is_runtime}
+        );
     }
 
     return names;
@@ -237,8 +241,8 @@ get_printer_and_print_infos(
     const Domain::Preset::EvaluatedPrintPreset::Preset& print_preset = print_ref.get();
 
     PresetSelectionNames names = {
-        .printer = {printer_preset.name, printer_is_runtime},
-        .print   = {print_preset.name, print_is_runtime}
+        .printer = {std::string{printer_preset.short_name()}, printer_is_runtime},
+        .print   = {std::string{print_preset.short_name()}, print_is_runtime}
     };
 
     const auto [hw_printer_config_ref, is_runtime] =
@@ -302,7 +306,9 @@ bool can_select_printer_preset(
         )[0];
         const Domain::Preset::EvaluatedToolPrintPreset::Preset& tool_print = ref.get();
         tools.emplace_back(&tool_print);
-        names_new.tools.emplace_back(PresetSelectionNames::PresetName{tool_print.name, is_runtime});
+        names_new.tools.emplace_back(
+            PresetSelectionNames::PresetName{std::string{tool_print.short_name()}, is_runtime}
+        );
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
@@ -319,7 +325,7 @@ bool can_select_printer_preset(
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
         materials.emplace_back(&material_preset);
         names_new.materials.emplace_back(
-            PresetSelectionNames::PresetName{material_preset.name, is_runtime}
+            PresetSelectionNames::PresetName{std::string{material_preset.short_name()}, is_runtime}
         );
     }
 
@@ -367,7 +373,9 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
         )[0];
         const Domain::Preset::EvaluatedToolPrintPreset::Preset& tool_print = ref.get();
         tools.emplace_back(&tool_print);
-        names_new.tools.emplace_back(PresetSelectionNames::PresetName{tool_print.name, is_runtime});
+        names_new.tools.emplace_back(
+            PresetSelectionNames::PresetName{std::string{tool_print.short_name()}, is_runtime}
+        );
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
@@ -384,7 +392,7 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
         materials.emplace_back(&material_preset);
         names_new.materials.emplace_back(
-            PresetSelectionNames::PresetName{material_preset.name, is_runtime}
+            PresetSelectionNames::PresetName{std::string{material_preset.short_name()}, is_runtime}
         );
     }
 
@@ -439,7 +447,9 @@ bool can_select_tool_print_preset(
         );
         const Domain::Preset::EvaluatedToolPrintPreset::Preset& tool_print = ref.get();
         tools.emplace_back(&tool_print);
-        names_new.tools.emplace_back(PresetSelectionNames::PresetName{tool_print.name, is_runtime});
+        names_new.tools.emplace_back(
+            PresetSelectionNames::PresetName{std::string{tool_print.short_name()}, is_runtime}
+        );
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
@@ -454,7 +464,10 @@ bool can_select_tool_print_preset(
             const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
             materials.emplace_back(&material_preset);
             names_new.materials.emplace_back(
-                PresetSelectionNames::PresetName{material_preset.name, is_runtime}
+                PresetSelectionNames::PresetName{
+                    std::string{material_preset.short_name()},
+                    is_runtime
+                }
             );
         } else {
             const auto& [ref, is_runtime] = preset_interactor.get_material_preset(
@@ -467,7 +480,10 @@ bool can_select_tool_print_preset(
             const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
             materials.emplace_back(&material_preset);
             names_new.materials.emplace_back(
-                PresetSelectionNames::PresetName{material_preset.name, is_runtime}
+                PresetSelectionNames::PresetName{
+                    std::string{material_preset.short_name()},
+                    is_runtime
+                }
             );
         }
     }
@@ -523,7 +539,9 @@ bool can_select_material_preset(
         );
         const Domain::Preset::EvaluatedToolPrintPreset::Preset& tool_print = ref.get();
         tools.emplace_back(&tool_print);
-        names_new.tools.emplace_back(PresetSelectionNames::PresetName{tool_print.name, is_runtime});
+        names_new.tools.emplace_back(
+            PresetSelectionNames::PresetName{std::string{tool_print.short_name()}, is_runtime}
+        );
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
@@ -538,7 +556,7 @@ bool can_select_material_preset(
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
         materials.emplace_back(&material_preset);
         names_new.materials.emplace_back(
-            PresetSelectionNames::PresetName{material_preset.name, is_runtime}
+            PresetSelectionNames::PresetName{std::string{material_preset.short_name()}, is_runtime}
         );
     }
 

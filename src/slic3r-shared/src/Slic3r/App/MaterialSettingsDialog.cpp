@@ -44,7 +44,13 @@ MaterialSettingsDialog::MaterialSettingsDialog(
             Domain::Preset::PresetKind::FdmMaterial
         );
     };
-    footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
+    footer_items->emplace_back<LayoutButton>(_u8("Save preset"))->callbacks().action = [&]
+    {
+        m_project_interactor->preset_interactor().save_user_preset(
+            Domain::Preset::PresetKind::FdmMaterial,
+            current_tab_index()
+        );
+    };
 
     on_reset();
 }

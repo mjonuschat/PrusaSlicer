@@ -98,6 +98,16 @@ public:
     {
         return std::nullopt;
     }
+
+    std::string show_save_dialog(
+        Domain::Preset::PresetKind kind,
+        const std::string& original_name,
+        const Biz::Preset::PresetInteractor& preset_interactor
+    ) override
+    {
+        return "";
+    }
+
 };
 
 int run(InitParams& init_params)

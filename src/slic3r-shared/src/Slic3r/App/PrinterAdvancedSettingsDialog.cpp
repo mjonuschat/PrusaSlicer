@@ -48,7 +48,13 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
             Domain::Preset::PresetKind::FdmPrinter
         );
     };
-    footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
+    footer_items->emplace_back<LayoutButton>(_u8("Save preset"))->callbacks().action = [&]
+    {
+        m_project_interactor->preset_interactor().save_user_preset(
+            Domain::Preset::PresetKind::FdmPrinter,
+            0
+        );
+    };
 }
 
 void PrinterAdvancedSettingsDialog::close_action()

@@ -89,6 +89,10 @@ public:
     void load_preset_bundle(const IO::BundlePaths& paths);
     void save_user_preset(
         Domain::Preset::PresetKind kind,
+        size_t slot_index
+    );
+    void save_user_preset(
+        Domain::Preset::PresetKind kind,
         size_t slot_index,
         const KeySet& item_names_to_omit,
         std::string new_name = {}

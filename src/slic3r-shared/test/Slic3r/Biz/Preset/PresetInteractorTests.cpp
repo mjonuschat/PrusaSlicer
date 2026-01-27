@@ -139,6 +139,16 @@ public:
         return ret;
     }
 
+    std::string show_save_dialog(
+        Slic3r::Domain::Preset::PresetKind kind,
+        const std::string& original_name,
+        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
+    ) override
+    {
+        return new_name;
+    }
+
+
     Slic3r::Biz::Preset::PresetDiffOperation operation = Slic3r::Biz::Preset::PresetDiffOperation::Save;
     std::string new_name{"test"};
 };

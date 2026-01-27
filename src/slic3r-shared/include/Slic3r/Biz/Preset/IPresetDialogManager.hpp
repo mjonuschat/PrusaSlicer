@@ -49,5 +49,11 @@ public:
         const PresetSelectionNames& preset_names_new,
         const PresetInteractor& preset_interactor
     ) = 0;
+
+    virtual std::string show_save_dialog(
+        Domain::Preset::PresetKind kind,
+        const std::string& original_name,
+        const PresetInteractor& preset_interactor
+    ) = 0;
 };
 } // namespace Slic3r::Biz::Preset

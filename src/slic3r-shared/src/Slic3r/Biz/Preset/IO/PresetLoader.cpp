@@ -16,7 +16,7 @@ void collect_names(PresetNamesMapCollection& preset_names, const Domain::Preset:
     if (node.name.has_value()) {
         auto& dest = preset_names[kind];
 
-        std::string name = node.name.value();
+        std::string name{node.short_name().value()};
         if (auto it = dest.find(name); it != dest.end()) {
             it->second.id.insert(node.id);
         } else {

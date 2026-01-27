@@ -41,6 +41,12 @@ public:
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
         const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
     ) override;
+    std::string show_save_dialog(
+        Domain::Preset::PresetKind kind,
+        const std::string& original_name,
+        const Biz::Preset::PresetInteractor& preset_interactor
+    ) override;
+
     std::string show_ramming_dialog(const std::string& ramming_parameters) override;
     std::optional<Biz::StepLoadDialogResult> show_load_step_dialog(
         const std::string& filename,

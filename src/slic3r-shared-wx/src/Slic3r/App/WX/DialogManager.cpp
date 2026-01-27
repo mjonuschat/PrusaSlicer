@@ -15,6 +15,7 @@
 
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/WX/SavePresetDialog.hpp"
 
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
@@ -183,6 +184,20 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
     );
     dlg.ShowModal();
     return dlg.exit_states();
+}
+
+std::string DialogManager::show_save_dialog(
+    Domain::Preset::PresetKind kind,
+    const std::string& original_name,
+    const Biz::Preset::PresetInteractor& preset_interactor
+)
+{
+    SavePresetDialog save_dlg(nullptr, kind, original_name, preset_interactor, "");
+
+    if (save_dlg.ShowModal() == wxID_OK)
+        return save_dlg.get_name();
+    else
+        return "";
 }
 
 std::string DialogManager::show_ramming_dialog(const std::string& ramming_parameters)
