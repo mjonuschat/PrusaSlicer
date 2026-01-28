@@ -287,6 +287,8 @@ bool DesktopApp::OnInit()
 
     canvas.set_render_module(m_plater_module.get());
 
+    m_main_frame->update_graphics_settings();
+
     m_main_frame->Show();
     if (scrn)
         scrn->Destroy();

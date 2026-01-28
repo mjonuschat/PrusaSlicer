@@ -1,4 +1,4 @@
-#include "ConfigDefUtils.hpp"
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
 #include "Slic3r/Domain/ConfigValue.hpp"
 
 namespace Slic3r::Domain {

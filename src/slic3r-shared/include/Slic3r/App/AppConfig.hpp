@@ -6,6 +6,13 @@
 
 namespace Slic3r::App {
 
+enum class GraphicsQuality
+{
+    Legacy,
+    Low,
+    Medium,
+    High
+};
 
 class AppSettings : public Domain::ConfigBox
 {

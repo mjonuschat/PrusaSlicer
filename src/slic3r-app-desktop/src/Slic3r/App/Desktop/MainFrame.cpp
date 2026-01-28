@@ -26,6 +26,8 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Platform/KeyboardShortcut.hpp"
 
+#include "Slic3r/App/Scene/Scene.hpp"
+
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/WindowMetrics.hpp"
 
@@ -344,6 +346,7 @@ void MainFrame::on_language_changed()
 void MainFrame::on_app_config_changed()
 {
     update_left_bar();
+    update_graphics_settings();
 }
 
 void MainFrame::on_close(wxCloseEvent& event)
@@ -639,6 +642,28 @@ void MainFrame::update_canvas_ui_settings()
     m_canvas->set_language(localization().active_language());
     m_canvas->set_font_size(float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
     m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
+}
+
+static Scene::ShadingType shading_type(App::GraphicsQuality graphics_quality)
+{
+    switch (graphics_quality) {
+    case App::GraphicsQuality::Legacy:
+        return Scene::ShadingType::Legacy;
+    case App::GraphicsQuality::Low:
+        return Scene::ShadingType::Shadows;
+    case App::GraphicsQuality::Medium:
+        return Scene::ShadingType::AO;
+    case App::GraphicsQuality::High:
+        return Scene::ShadingType::PBR;
+    }
+    return Scene::ShadingType::Legacy;
+};
+
+void MainFrame::update_graphics_settings()
+{
+    Scene::Scene::set_shading_type(shading_type(
+        AppServices::instance().app_config().get<App::GraphicsQuality>("graphics_quality")
+    ));
 }
 
 #ifdef WIN32

@@ -53,6 +53,7 @@ public:
 
     // set language, font and all other ui settings for canvas
     void update_canvas_ui_settings();
+    void update_graphics_settings();
 
 #ifdef WIN32
     // Register Win32 RawInput callbacks (3DConnexion) and removable media insert / remove callbacks.

@@ -1,5 +1,5 @@
 ﻿#include "Slic3r/Domain/ConfigPhysical.hpp"
-#include "ConfigDefUtils.hpp"
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 
 namespace Slic3r::Domain {

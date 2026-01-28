@@ -1,7 +1,7 @@
 ﻿#include "Slic3r/Domain/ConfigCommon.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include "ConfigDefUtils.hpp"
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 namespace Slic3r::Domain {
 

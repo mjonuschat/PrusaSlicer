@@ -1,5 +1,5 @@
 ﻿#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
-#include "ConfigDefUtils.hpp"
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 

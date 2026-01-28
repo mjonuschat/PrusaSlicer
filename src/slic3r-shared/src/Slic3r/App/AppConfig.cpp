@@ -6,6 +6,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 #include "nlohmann/json.hpp"
 #include "boost/filesystem.hpp"
@@ -62,6 +63,23 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Category::Hidden;
     def->init_fn = []() { return Domain::ConfigValue(std::string()); };
+
+    def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
+    def->location     = Domain::AppConfigLocation{};
+    def->label        = L("Graphics quality");
+    def->option_group = L("Application");
+    def->category     = Category::PreferencesGeneral;
+    def->gui_type     = GUIType::combobox;
+    def->tooltip      = L("Controls rendering quality and performance of the 3D scene");
+    def->init_fn      = Domain::init_with(
+        App::GraphicsQuality::High,
+        {
+            {int(App::GraphicsQuality::Legacy), "legacy", L("Legacy")},
+            {int(App::GraphicsQuality::Low), "low", L("Low")},
+            {int(App::GraphicsQuality::Medium), "medium", L("Medium")},
+            {int(App::GraphicsQuality::High), "high", L("High")},
+        }
+    );
 
 #ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
