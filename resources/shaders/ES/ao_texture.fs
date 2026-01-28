@@ -16,16 +16,16 @@ uniform sampler2D tex_noise;
 
 varying vec2 tex_coord;
 
-vec3 evaluate_eye_position(vec2 xy, float depth)
+vec3 eye_position_from_depth(vec2 uv, float depth)
 {
-    vec4 eye = inverse_projection_matrix * vec4(vec3(xy, depth) * 2.0 - vec3(1.0), 1.0);
+    vec4 eye = inverse_projection_matrix * vec4(vec3(uv, depth) * 2.0 - vec3(1.0), 1.0);
     return eye.xyz / eye.w;
 }
 
 void main()
 {
     // get input for SSAO algorithm
-    vec3 eye_position = evaluate_eye_position(gl_FragCoord.xy / viewport_size, texture(g_depth, tex_coord).r);
+    vec3 eye_position = eye_position_from_depth(tex_coord, texture(g_depth, tex_coord).r);
     vec3 eye_normal = normalize(texture(g_eye_normal, tex_coord).xyz);
     vec2 tex_noise_size = textureSize(tex_noise, 0);
     vec2 noise_scale = viewport_size / tex_noise_size; 
@@ -49,7 +49,7 @@ void main()
 
         // get sample depth
         float sample_depth = texture(g_depth, offset.xy).r; // get depth value of kernel sample
-        vec3 sample_eye_position = evaluate_eye_position(offset.xy, sample_depth);        
+        vec3 sample_eye_position = eye_position_from_depth(offset.xy, sample_depth);        
 
         // range check & accumulate
         float range_check = smoothstep(0.0, 1.0, z_threshold / abs(eye_position.z - sample_eye_position.z));

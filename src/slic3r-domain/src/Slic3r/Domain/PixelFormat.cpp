@@ -9,6 +9,8 @@ std::size_t pixel_format_bytes_per_pixel(PixelFormat pf)
         return 3;
     case PixelFormat::RGBA8:
         return 4;
+    case PixelFormat::R16F:
+        return 2;
     case PixelFormat::R32F:
         return 4;
     case PixelFormat::R32UI:

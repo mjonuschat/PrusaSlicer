@@ -45,7 +45,6 @@ const vec2 HORIZONTAL_VERTICAL_VIEW_SIGNS_ARRAY[16] = vec2[](
 uniform mat4 projection_view_model_matrix;
 uniform mat3 view_normal_matrix;
 uniform vec3 camera_position;
-uniform mat4 light_matrix;
 uniform int total_vertex_count;
 uniform bool camera_looking_down;
 
@@ -55,7 +54,6 @@ uniform sampler2D color_tex;
 uniform usampler2D segment_index_tex;
 
 out vec3 eye_normal;
-out vec4 light_position;
 out vec4 color;
 
 vec3 decode_color(float color)
@@ -142,7 +140,6 @@ void main()
         }
     }
     eye_normal = view_normal_matrix * (pos - endpoint_pos);
-    light_position = light_matrix * vec4(pos, 1.0);
     color = vec4(decode_color(texelFetch(color_tex, tex_coord(color_tex, id), 0).r), 1.0);
     gl_Position = projection_view_model_matrix * vec4(pos, 1.0);
 }

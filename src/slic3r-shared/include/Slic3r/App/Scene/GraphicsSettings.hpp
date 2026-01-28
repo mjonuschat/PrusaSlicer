@@ -56,6 +56,9 @@ struct Shadows
 struct AmbientOcclusion
 {
     mutable Domain::Index2 framebuffer_size{0, 0};
+    mutable Domain::Index2 tex_fb_size{0, 0};
+    mutable Domain::Index2 hblur_fb_size{0, 0};
+    mutable Domain::Index2 vblur_fb_size{0, 0};
     mutable Render::Framebuffer* gbuffer_fb{nullptr};
     mutable Render::Framebuffer* ao_tex_fb{nullptr};
     mutable Render::Framebuffer* hblur_fb{nullptr};
@@ -74,16 +77,14 @@ struct AmbientOcclusion
     mutable float z_threshold{DEFAULT_Z_THRESHOLD};
     mutable size_t blur_filter_size{DEFAULT_BLUR_FILTER_SIZE};
 
-    static constexpr int LIGHT_POS_CLR_ATTR = 0;
-    static constexpr int EYE_NORM_CLR_ATTR = 1;
-    static constexpr int COLOR_CLR_ATTR = 2;
+    static constexpr int EYE_NORM_CLR_ATTR = 0;
+    static constexpr int COLOR_CLR_ATTR = 1;
 
     static constexpr int NOISE_TEX_UNIT = 8;
     static constexpr int DEPTH_TEX_UNIT = 9;
-    static constexpr int LIGHT_POS_TEX_UNIT = 10;
-    static constexpr int EYE_NORM_TEX_UNIT = 11;
-    static constexpr int COLOR_TEX_UNIT = 12;
-    static constexpr int AO_TEX_UNIT = 13;
+    static constexpr int EYE_NORM_TEX_UNIT = 10;
+    static constexpr int COLOR_TEX_UNIT = 11;
+    static constexpr int AO_TEX_UNIT = 12;
 
     static constexpr float DEFAULT_INTENSITY = 1.0f;
     static constexpr int DEFAULT_KERNEL_SIZE = 32;
@@ -115,7 +116,7 @@ public:
     float shadows_intensity() const { return m_shadows.intensity; }
     const Eigen::AlignedBox3d& shadows_aabb() const { return m_shadows.aabb; }
 
-    Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
+    Domain::Index2 ao_framebuffer_size() const { return m_ao.tex_fb_size; }
     float ao_intensity() const { return m_ao.intensity; }
     size_t ao_kernel_size() const { return m_ao.kernel.size(); }
     size_t ao_noise_size() const { return m_ao.noise_size; }

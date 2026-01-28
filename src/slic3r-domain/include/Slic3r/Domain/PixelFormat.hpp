@@ -8,6 +8,7 @@ enum class PixelFormat
 {
     RGB8 = 0,
     RGBA8,
+    R16F,
     R32F,
     R32UI,
     RGBA32F,

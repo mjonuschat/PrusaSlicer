@@ -6,13 +6,11 @@ uniform bool transparent_background;
 uniform vec3 back_color_dark;
 uniform vec3 back_color_light;
 
-varying vec4 light_position;
 varying vec3 eye_normal;
 varying vec2 tex_coord;
 
-layout (location = 0) out vec4 g_light_position;
-layout (location = 1) out vec4 g_eye_normal;
-layout (location = 2) out vec4 g_color;
+layout (location = 0) out vec4 g_eye_normal;
+layout (location = 1) out vec4 g_color;
 
 vec4 gradient_color()
 {
@@ -36,6 +34,5 @@ void main()
 
     g_eye_normal.xyz = normalize(eye_normal);
     g_eye_normal.w = material_id;
-    g_light_position = light_position;
     g_color = color;
 }
