@@ -66,6 +66,10 @@ Domain::BoundingBox3d transformed_bounding_box(
     const Domain::Transform3d& trafo
 );
 
+// Returns the bbox of the part of the given TriangleMesh, transformed by the given transformation,
+// above the given z in world coordinates.
+Domain::BoundingBox3d transformed_bounding_box(const Domain::TriangleMesh& mesh, const Domain::Transform3d& trafo, double world_z);
+
 void write_obj_file(const Domain::TriangleMesh& mesh, const char* output_file);
 
 void trianglemesh_repair_on_import(stl_file& stl);

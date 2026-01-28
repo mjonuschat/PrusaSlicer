@@ -233,6 +233,19 @@ Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_obj
     return bb;
 }
 
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_object, const Domain::ModelInstance& instance,
+    double world_z, bool dont_translate)
+{
+    const Domain::Transform3d inst_matrix = dont_translate ? instance.get_transformation().get_matrix_no_offset()
+                                                           : instance.get_transformation().get_matrix();
+    Domain::BoundingBox3d bb;
+    for (Domain::ModelVolume* v : model_object.volumes) {
+        if (v->is_model_part())
+            bb = BoundingBox::merge(bb, TriangleMesh::transformed_bounding_box(v->mesh(), inst_matrix * v->get_matrix(), world_z));
+    }
+    return bb;
+}
+
 const Domain::BoundingBox3d& raw_mesh_bounding_box(const Domain::ModelObject& model_object)
 {
     if (!model_object.m_raw_mesh_bounding_box_valid) {

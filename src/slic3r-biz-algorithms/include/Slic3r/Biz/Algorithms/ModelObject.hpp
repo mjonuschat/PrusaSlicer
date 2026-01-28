@@ -63,6 +63,12 @@ Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_obj
 Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_object, const Domain::ModelInstance& instance, bool dont_translate = false);
 
 /**
+ * A snug bounding box around the part of the transformed non-modifier object volumes above the given z in world coordinates.
+ */
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_object, const Domain::ModelInstance& instance, double world_z,
+    bool dont_translate = false);
+
+/**
  * A snug bounding box of a non-transformed (non-rotated, non-scaled, non-translated) sum of non-modifier object volumes.
  */
 const Domain::BoundingBox3d& raw_mesh_bounding_box(const Domain::ModelObject& model_object);

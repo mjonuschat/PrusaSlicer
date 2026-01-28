@@ -103,9 +103,11 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
         }
     }
 
-    if (! cache_used)
+    if (! cache_used) {
         // We must calculate the transformed bounding box in this case.
-        cache_entry = { trafo, Algorithms::ModelObject::instance_bounding_box(*inst.get_object(), inst) };
+        auto bb = Algorithms::ModelObject::instance_bounding_box(*inst.get_object(), inst, Domain::SINKING_Z_THRESHOLD);
+        cache_entry = { trafo, bb };
+    }
 
     // Clear the cache every now and then.
     if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_last_cache_clear_time).count() > 20) {

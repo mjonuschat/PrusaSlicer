@@ -276,6 +276,50 @@ BoundingBox3d transformed_bounding_box(const TriangleMesh& mesh, const Transform
     return bbox;
 }
 
+BoundingBox3d transformed_bounding_box(const Domain::TriangleMesh& mesh, const Domain::Transform3d& trafo, double world_z)
+{
+    // 1) Allocate transformed vertices with their position with respect to print bed surface.
+    std::vector<char>            sides;
+    size_t                       num_above = 0;
+    Eigen::AlignedBox<double, 3> bbox;
+    Transform3f                  trafof = trafo.cast<float>();
+    sides.reserve(mesh.its.vertices.size());
+    for (const stl_vertex& v : mesh.its.vertices) {
+        stl_vertex pt   = trafof * v;
+        int        sign = pt.z() > world_z ? 1 : pt.z() < world_z ? -1 : 0;
+        sides.emplace_back(sign);
+        if (sign >= 0) {
+            // Vertex above or on print bed surface. Test whether it is inside the build volume.
+            ++ num_above;
+            bbox.extend(pt.cast<double>());
+        }
+    }
+
+    // 2) Calculate intersections of triangle edges with the build surface.
+    if (num_above < mesh.its.vertices.size()) {
+        // Not completely above the build surface and status may still change by testing edges intersecting the build platform.
+        for (const stl_triangle_vertex_indices& tri : mesh.its.indices) {
+            int s[3] = { sides[tri[0]], sides[tri[1]], sides[tri[2]] };
+            if (std::min({ s[0], s[1], s[2] }) < 0 && std::max({ s[0], s[1], s[2] }) > 0) {
+                // Some edge of this triangle intersects the build platform. Calculate the intersection.
+                int iprev = 2;
+                for (int iedge = 0; iedge < 3; ++ iedge) {
+                    if (s[iprev] * s[iedge] == -1) {
+                        // Edge crosses the z plane. Calculate intersection point with the plane.
+                        stl_vertex p1 = trafof * mesh.its.vertices[tri[iprev]];
+                        stl_vertex p2 = trafof * mesh.its.vertices[tri[iedge]];
+                        float t = (world_z - p1.z()) / (p2.z() - p1.z());
+                        bbox.extend(Vec3d(p1.x() + (p2.x() - p1.x()) * t, p1.y() + (p2.y() - p1.y()) * t, world_z));
+                    }
+                    iprev = iedge;
+                }
+            }
+        }
+    }
+
+    return BoundingBox3d(bbox.min(), bbox.max());
+}
+
 TriangleMesh convex_hull_3d(const TriangleMesh& mesh)
 {
     using Biz::Algorithms::TriangleMesh::construct;
