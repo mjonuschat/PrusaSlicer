@@ -221,7 +221,7 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
 
 TriangleMesh BedGeometry::axis(const Domain::Bed& bed)
 {
-    const Vec2d& aabb_extent                   = bed.contour_aabb_extent();
+    Vec2d aabb_extent                          = bed.contour_aabb_extent();
     double height                              = double(bed.max_print_height());
     static constexpr double SCALE_FACTOR       = 0.1;
     static constexpr double STEM_LENGTH_FACTOR = 0.8;
@@ -248,12 +248,20 @@ std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> BedGeometry::label(
 {
     std::vector<std::pair<Vec3f, Vec2f>> ret;
     ret = {
+        // Top face
         {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
         {{width, 0.0f, 0.0f}, {1.0f, 0.0f}},
         {{width, height, 0.0f}, {1.0f, 1.0f}},
         {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
         {{width, height, 0.0f}, {1.0f, 1.0f}},
-        {{0.0f, height, 0.0f}, {0.0f, 1.0f}}
+        {{0.0f, height, 0.0f}, {0.0f, 1.0f}},
+        // Bottom face
+        {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{width, height, 0.0f}, {1.0f, 1.0f}},
+        {{width, 0.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.0f, height, 0.0f}, {0.0f, 1.0f}},
+        {{width, height, 0.0f}, {1.0f, 1.0f}},
     };
     return ret;
 }

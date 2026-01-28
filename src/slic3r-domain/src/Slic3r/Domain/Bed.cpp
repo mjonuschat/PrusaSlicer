@@ -53,8 +53,8 @@ Bed Bed::from(const Vec2ds& contour, float max_print_height, const std::optional
         max.y() = std::max(v.y(), max.y());
     }
 
-    ret.m_contour_aabb_extent = max - min;
-    ret.m_center              = 0.5 * (min + max);
+    ret.m_contour_aabb = BoundingBoxf{ min, max };
+    ret.m_center       = 0.5 * (min + max);
     // TODO: calculate offset as done in libslic3r BuildVolume
     // ret.m_offset = /*TODO*/;
     return ret;
@@ -74,9 +74,6 @@ bool Bed::operator==(const Bed& rhs) const
         return false;
     }
     if (!vec2d_equal(m_offset, rhs.m_offset)) {
-        return false;
-    }
-    if (!vec2d_equal(m_contour_aabb_extent, rhs.m_contour_aabb_extent)) {
         return false;
     }
     if (!Domain::fuzzy_compare(m_max_print_height, rhs.m_max_print_height)) {

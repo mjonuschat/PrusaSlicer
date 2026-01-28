@@ -455,13 +455,12 @@ void PlaterScenePresenter::update_volume_materials()
                         );
                     }
                     else {
-                        Domain::Vec2d center = offset + bed->center();
-                        Domain::Vec2d half_bbox_size = 0.5 * bed->contour_aabb_extent();
+                        const BoundingBoxf& aabb = bed->contour_aabb();
                         print_volume.xy_data = Domain::Vec4f(
-                            is_model_part ? float(center.x() - half_bbox_size.x()) : -FLT_MAX,
-                            is_model_part ? float(center.y() - half_bbox_size.y()) : -FLT_MAX,
-                            is_model_part ? float(center.x() + half_bbox_size.x()) : FLT_MAX,
-                            is_model_part ? float(center.y() + half_bbox_size.y()) : FLT_MAX
+                            is_model_part ? float(offset.x() + aabb.min.x()) : -FLT_MAX,
+                            is_model_part ? float(offset.y() + aabb.min.y()) : -FLT_MAX,
+                            is_model_part ? float(offset.x() + aabb.max.x()) : FLT_MAX,
+                            is_model_part ? float(offset.y() + aabb.max.y()) : FLT_MAX
                         );
                     }
                 }

@@ -78,9 +78,14 @@ public:
         return m_contour;
     }
 
-    [[nodiscard]] const Vec2d& contour_aabb_extent() const
+    [[nodiscard]] const BoundingBoxf& contour_aabb() const
     {
-        return m_contour_aabb_extent;
+        return m_contour_aabb;
+    }
+
+    [[nodiscard]] Vec2d contour_aabb_extent() const
+    {
+        return m_contour_aabb.max - m_contour_aabb.min;
     }
 
     [[nodiscard]] float max_print_height() const
@@ -134,7 +139,7 @@ private:
     Vec2d m_center{Vec2d::Zero()};
     Vec2d m_offset{Vec2d::Zero()};
     Vec2ds m_contour;
-    Vec2d m_contour_aabb_extent{Vec2d::Zero()};
+    BoundingBoxf m_contour_aabb;
     float m_max_print_height{0.0f};
     std::string m_model_filename;
     std::string m_texture_filename;

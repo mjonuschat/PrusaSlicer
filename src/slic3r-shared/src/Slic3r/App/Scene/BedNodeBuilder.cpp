@@ -325,14 +325,17 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
         [&]() { return Render::geometry_from_triangles(device, triangles); }
     );
 
+    Vec3d label_position =
+        Biz::Algorithms::Point::to_3d(bed.contour_aabb().min, 0.0) + Vec3d(5.0, 5.0, z_offset(BedElementType::Label));
+
     builder.child(
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} label", tag.instance_id))
                 .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Label})
                 .set_mesh(geom, material, layer_id)
-                .transform([](Transform3d& xform)
-                    { xform.translate(Vec3d(5.0, 5.0, z_offset(BedElementType::Label))); });
+                .transform([&](Transform3d& xform)
+                    { xform.translate(label_position); });
         }
     );
 }
