@@ -25,7 +25,7 @@ set(WX_COMPONENTS base core adv html gl)
 if(SLIC3R_ENABLE_WEBKIT)
     list(APPEND WX_COMPONENTS webview)
 endif()
-find_package(wxWidgets 3.2 CONFIG REQUIRED COMPONENTS ${WX_COMPONENTS})
+find_package(wxWidgets 3.3 CONFIG REQUIRED COMPONENTS ${WX_COMPONENTS})
 
 slic3r_remap_configs(wx::wxhtml wx::wxadv wx::wxgl wx::wxcore wx::wxbase RelWithDebInfo Release)
 
