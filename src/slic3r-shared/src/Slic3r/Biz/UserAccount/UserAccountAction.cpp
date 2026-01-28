@@ -34,7 +34,17 @@ void UserAccountActionPost::perform(
     bool content_type_added = false;
     if (!shared_data->additional_headers.empty()) {
         for (const auto& [key, value] : shared_data->additional_headers) {
-            if (key == "Content-Type") {
+            bool is_content_type = std::ranges::equal(
+                key,
+                "Content-Type",
+                [](char a, char b)
+                {
+                    return std::tolower(static_cast<unsigned char>(a))
+                        == std::tolower(static_cast<unsigned char>(b));
+                }
+            );
+
+            if (is_content_type) {
                 content_type_added = true;
             }
             http->header(key, value);
