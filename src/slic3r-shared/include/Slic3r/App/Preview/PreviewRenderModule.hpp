@@ -225,7 +225,7 @@ private:
     bool on_slider_layers_get_extruders_sequence(ExtrudersSequence& sequence);
     int on_slider_layers_show_info_msg(const std::string& message, int btns_flag);
     std::set<int> on_slider_layers_get_used_extruders_in_print(float print_z);
-    void on_slider_layers_app_config_changed(const std::string& key, const std::string& val);
+    void on_slider_layers_app_config_changed(const std::string& key, bool val);
     void on_slider_gcode_on_thumb_move();
 
     void update_shells();

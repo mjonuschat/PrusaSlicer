@@ -33,7 +33,7 @@ typedef std::function<std::string(Domain::CustomGCode::Type)>               GetG
 typedef std::function<std::set<int>(float)>                         GetUsedExtrudersInPrintCallback;
 typedef std::function<void(void)>                                   GCodeViewTypeChangedCallback;
 typedef std::function<void(void)>                                   ExtrusionRoleVisibilityChangedCallback;
-typedef std::function<void(const std::string&, const std::string&)> AppConfigChangedCallback;
+typedef std::function<void(const std::string&, bool)>               AppConfigChangedCallback;
 
 std::string to_string(Biz::libpgcode::MoveType type);
 std::string to_string(Domain::GCodeExtrusionRole role);

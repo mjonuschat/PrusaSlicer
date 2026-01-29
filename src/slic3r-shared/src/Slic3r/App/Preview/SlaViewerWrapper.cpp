@@ -44,13 +44,13 @@ bool SlaViewerWrapper::set_settings(const ViewerWrapperBaseSettings& settings)
 
     try {
         m_slider_layers = Yoga::Passthrough(std::make_unique<DoubleSliderForLayers>());
-        m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
+        set_layers_slider_base_flags(m_settings.layers_slider_base_flags);
 
         m_slider_layers->set_draw_mode(true, false);
-        m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
         // set layers slider callbacks
         m_slider_layers->set_on_thumb_move_callback(std::bind(&SlaViewerWrapper::on_slider_layers_scroll_changed, this));
-        m_slider_layers->set_request_extra_frames_callback(m_settings.cb_request_extra_frames);
+        m_slider_layers->set_request_extra_frames_callback(m_settings.layers_slider_base_callbacks.request_extra_frames);
+        m_slider_layers->set_app_config_changed_callback(m_settings.layers_slider_base_callbacks.app_config_changed);
 
         return true;
     }
@@ -161,8 +161,8 @@ void SlaViewerWrapper::on_slider_layers_scroll_changed()
 {
     if (m_slider_layers->is_visible()) {
         set_layers_range(uint32_t(m_slider_layers->lower_pos()), uint32_t(m_slider_layers->higher_pos()));
-        if (m_settings.cb_slider_layers_on_thumb_move != nullptr)
-            m_settings.cb_slider_layers_on_thumb_move();
+        if (m_settings.layers_slider_base_callbacks.on_thumb_move != nullptr)
+            m_settings.layers_slider_base_callbacks.on_thumb_move();
     }
 }
 

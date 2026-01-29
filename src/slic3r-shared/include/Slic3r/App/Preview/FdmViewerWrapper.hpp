@@ -54,7 +54,6 @@ struct FdmViewerWrapperSettings : public ViewerWrapperBaseSettings
     GetExtrudersSequenceCallback                    cb_slider_layers_get_extruders_sequence{ nullptr };
     ShowInfoMsgCallback                             cb_slider_layers_show_info_msg{ nullptr };
     GetUsedExtrudersInPrintCallback                 cb_slider_layers_get_used_extruders_in_print{ nullptr };
-    AppConfigChangedCallback                        cb_slider_layers_app_config_changed{ nullptr };
     //
     // gcode slider callbacks
     //

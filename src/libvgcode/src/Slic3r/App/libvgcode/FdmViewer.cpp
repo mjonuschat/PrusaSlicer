@@ -1373,6 +1373,9 @@ bool FdmViewer::export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const Ob
 
 void FdmViewer::update_view_full_range()
 {
+    if (!m_vertices)
+        return;
+
     const Interval& layers_range = m_layers.view_range();
     bool travels_visible = m_settings.options_visibility[size_t(OptionType::Travels)];
     bool wipes_visible   = m_settings.options_visibility[size_t(OptionType::Wipes)];

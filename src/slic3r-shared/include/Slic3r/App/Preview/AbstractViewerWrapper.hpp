@@ -23,16 +23,24 @@ class AbstractViewer;
 
 namespace Slic3r::App::Preview {
 
+struct LayersSliderBaseFlags
+{
+    bool show_ruler{false};
+    bool show_ruler_bg{false};
+    bool show_estimated_times{false};
+};
+
+struct LayersSliderBaseCallbacks
+{
+    std::function<void()> on_thumb_move{nullptr};
+    std::function<void(unsigned)> request_extra_frames{nullptr};
+    AppConfigChangedCallback app_config_changed{nullptr};
+};
+
 struct ViewerWrapperBaseSettings
 {
-    bool slider_layers_show_ruler{ false };
-    bool slider_layers_show_ruler_bg{ false };
-    bool slider_layers_show_estimated_times{ false };
-    //
-    // layers slider callbacks
-    //
-    std::function<void(void)>   cb_slider_layers_on_thumb_move{ nullptr };
-    std::function<void(unsigned int)> cb_request_extra_frames{ nullptr };
+    LayersSliderBaseFlags layers_slider_base_flags;
+    LayersSliderBaseCallbacks layers_slider_base_callbacks;
 };
 
 struct WrapperLayoutData
@@ -81,6 +89,8 @@ public:
 
     void slider_layers_move_current_thumb(int delta) { m_slider_layers->move_current_thumb(delta); }
     void slider_layers_jump_to_value() { m_slider_layers->jump_to_value(); }
+
+    void set_layers_slider_base_flags(LayersSliderBaseFlags flags);
 
 protected:
 

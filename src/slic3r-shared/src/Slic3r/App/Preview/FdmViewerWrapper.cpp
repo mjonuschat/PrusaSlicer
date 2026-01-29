@@ -57,14 +57,12 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
     m_settings = settings;
 
     try {
-        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
-            m_viewer.toggle_top_layer_only_view_range();
-
         m_slider_layers = Yoga::Passthrough<DoubleSliderForLayers>(std::make_unique<DoubleSliderForLayers>());
-        m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
-        m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
+        set_layers_slider_base_flags(m_settings.layers_slider_base_flags);
+        m_slider_layers->seq_top_layer_only(m_settings.seq_top_layer_only);
         m_slider_layers->set_use_default_colors(m_settings.slider_layers_use_default_colors);
         // set layers slider callbacks
+        m_slider_layers->set_app_config_changed_callback(m_settings.layers_slider_base_callbacks.app_config_changed);
         m_slider_layers->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_layers->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_layers_scroll_changed, this));
         m_slider_layers->set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
@@ -76,12 +74,14 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_slider_layers->set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
         m_slider_layers->set_get_gcode_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_gcode, this, std::placeholders::_1));
         m_slider_layers->set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
-        m_slider_layers->set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
 
         m_slider_gcode = Yoga::Passthrough<DoubleSliderForGcode>{std::make_unique<DoubleSliderForGcode>()};
         // set gcode slider callbacks
         m_slider_gcode->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_gcode->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
+
+        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
+            m_viewer.toggle_top_layer_only_view_range();
 
         m_legend = Yoga::Passthrough<LegendWindow>(std::make_unique<LegendWindow>(&m_viewer, this));
         m_legend->callbacks().cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
@@ -475,7 +475,7 @@ void FdmViewerWrapper::update_slider_layers()
     }
 
     m_slider_layers->set_extruder_colors(convert(m_viewer.tool_colors()));
-    bool one_extruder_printed_model = m_viewer.used_extruders_count() == 1;
+    bool one_extruder_printed_model = m_viewer.extruders_count() == 1; // ysFIXME: used_extruders_count() == 1;
     int8_t only_extruder = (one_extruder_printed_model && m_viewer.extruders_count() > 1) ? m_viewer.used_extruders_ids().front() : -1;
     m_slider_layers->set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
     m_slider_layers->set_slider_values(std::move(layers_zs));
@@ -544,16 +544,16 @@ void FdmViewerWrapper::update_view_visible_range(size_t first, size_t last)
         }
     }
 
-    if (m_settings.cb_request_extra_frames != nullptr)
-        m_settings.cb_request_extra_frames(1);
+    if (m_settings.layers_slider_base_callbacks.request_extra_frames != nullptr)
+        m_settings.layers_slider_base_callbacks.request_extra_frames(1);
 }
 
 void FdmViewerWrapper::on_slider_layers_scroll_changed()
 {
     if (m_slider_layers->is_visible()) {
         set_layers_range(uint32_t(m_slider_layers->lower_pos()), uint32_t(m_slider_layers->higher_pos()));
-        if (m_settings.cb_slider_layers_on_thumb_move != nullptr)
-            m_settings.cb_slider_layers_on_thumb_move();
+        if (m_settings.layers_slider_base_callbacks.on_thumb_move != nullptr)
+            m_settings.layers_slider_base_callbacks.on_thumb_move();
     }
 }
 
@@ -574,8 +574,8 @@ void FdmViewerWrapper::on_extrusion_role_visibility_changed()
 
 void FdmViewerWrapper::on_request_extra_frames(unsigned int count)
 {
-    if (m_settings.cb_request_extra_frames != nullptr)
-        m_settings.cb_request_extra_frames(count);
+    if (m_settings.layers_slider_base_callbacks.request_extra_frames != nullptr)
+        m_settings.layers_slider_base_callbacks.request_extra_frames(count);
 }
 
 void FdmViewerWrapper::on_slider_layers_ticks_changed()

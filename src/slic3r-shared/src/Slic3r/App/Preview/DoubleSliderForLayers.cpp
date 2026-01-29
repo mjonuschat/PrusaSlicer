@@ -103,53 +103,75 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
     MenuBuilder menu_builder(*m_menu_manager, *m_command_binding_manager);
     menu_builder.add_menu_item(m_cog_menu, MenuItemName::JumpToValue);
 
-    Yoga::MenuItem* show_estimated_times_item = m_cog_menu->append_item(_u8L("Show estimated print time on hover"), &m_show_estimated_times);
-    show_estimated_times_item->callbacks().action = [this, show_estimated_times_item]() {
-        m_show_estimated_times = show_estimated_times_item->checked();
+    m_show_estimated_times_item = m_cog_menu->append_item(
+        _u8L("Show estimated print time on hover"),
+        &m_show_estimated_times
+    );
+    m_show_estimated_times_item->callbacks().checked_changed = [this](bool checked)
+    {
+        m_show_estimated_times = checked;
         if (m_cb_app_config_changed)
-            m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times ? "1" : "0");
+            m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times);
     };
 
     Yoga::MenuItem* ruler_submenu = m_cog_menu->append_item_as_menu(_u8L("Ruler"));
 
-    Yoga::MenuItem* show_ruler_item = ruler_submenu->append_sub_menu_item(_u8L("Show"), &m_show_ruler);
-    show_ruler_item->callbacks().action = [this, show_ruler_item]() {
-        m_show_ruler = show_ruler_item->checked();
+    m_show_ruler_item = ruler_submenu->append_sub_menu_item(_u8L("Show"), &m_show_ruler);
+    m_show_ruler_item->callbacks().checked_changed = [this](bool checked)
+    {
+        m_show_ruler = checked;
         m_ctrl->update_draw_options(m_scale, m_show_ruler);
-        m_ctrl->set_min_size({ m_show_ruler ? 115: 95, 0 });
-        if (m_cb_app_config_changed != nullptr)
-            m_cb_app_config_changed("show_ruler_in_dbl_slider", m_show_ruler ? "1" : "0");
+        m_ctrl->set_min_size({m_show_ruler ? 115 : 95, 0});
+        if (m_cb_app_config_changed) {
+            m_cb_app_config_changed("show_ruler_in_dbl_slider", m_show_ruler);
+        }
     };
 
-    Yoga::MenuItem* show_ruler_background_item = ruler_submenu->append_sub_menu_item(_u8L("Show background"), &m_show_ruler_bg);
-    show_ruler_background_item->callbacks().action = [this, show_ruler_background_item]() {
-        m_show_ruler_bg = show_ruler_background_item->checked();
+    m_show_ruler_background_item =
+        ruler_submenu->append_sub_menu_item(_u8L("Show background"), &m_show_ruler_bg);
+    m_show_ruler_background_item->callbacks().checked_changed = [this](bool checked)
+    {
+        m_show_ruler_bg = checked;
         // ToDo set transparent window BG, if m_show_ruler_bg == false
-        if (m_cb_app_config_changed != nullptr)
-            m_cb_app_config_changed("show_ruler_bg_in_dbl_slider", m_show_ruler_bg ? "1" : "0");
+        if (m_cb_app_config_changed) {
+            m_cb_app_config_changed("show_ruler_bg_in_dbl_slider", m_show_ruler_bg);
+        }
     };
 
     m_cog_menu->append_separator();
 
-    m_edit_extruder_sequence_menu_item = m_cog_menu->append_item(_u8L("Set extruder sequence for the entire print"));
-    m_edit_extruder_sequence_menu_item->callbacks().action = [this]() {
+    m_edit_extruder_sequence_menu_item =
+        m_cog_menu->append_item(_u8L("Set extruder sequence for the entire print"));
+    m_edit_extruder_sequence_menu_item->callbacks().action = [this]()
+    {
         if (m_ticks.edit_extruder_sequence(m_ctrl->max_pos(), m_mode))
             process_ticks_changed();
     };
 
-    m_seq_top_layer_only_item = m_cog_menu->append_item(_u8L("Sequential slider applied only to top layer"), &m_seq_top_layer_only);
-    m_seq_top_layer_only_item->callbacks().action = [this]() {
-        m_seq_top_layer_only = !m_seq_top_layer_only;
-        if (m_cb_app_config_changed)
-            m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only ? "1" : "0");
+    m_seq_top_layer_only_item = m_cog_menu->append_item(
+        _u8L("Sequential slider applied only to top layer"),
+        &m_seq_top_layer_only
+    );
+    m_seq_top_layer_only_item->callbacks().action = [this]()
+    {
+        m_seq_top_layer_only = m_seq_top_layer_only_item->checked();
+        if (m_cb_app_config_changed) {
+            m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only);
+        }
     };
 
     m_cog_menu->append_separator();
 
     bool use_default_colors = m_ticks.use_default_colors();
-    m_use_default_colors_menu_item = m_cog_menu->append_item(_u8L("Use default colors").c_str(), &use_default_colors);
-    m_edit_extruder_sequence_menu_item->callbacks().action = [this]() {
-        set_use_default_colors(!m_ticks.use_default_colors()); };
+    m_use_default_colors_menu_item =
+        m_cog_menu->append_item(_u8L("Use default colors").c_str(), &use_default_colors);
+    m_use_default_colors_menu_item->callbacks().checked_changed = [this](bool checked)
+    {
+        set_use_default_colors(checked);
+        if (m_cb_app_config_changed) {
+            m_cb_app_config_changed("use_default_colors_in_dbl_slider", checked);
+        }
+    };
 
     m_auto_color_change_menu_item = m_cog_menu->append_item(_u8L("Set auto color changes"));
     m_auto_color_change_menu_item->callbacks().action = [this]() { auto_color_change(); };
@@ -294,6 +316,30 @@ bool DoubleSliderForLayers::is_new_print(const std::string& idxs)
 
     m_print_obj_idxs = idxs;
     return true;
+}
+
+void DoubleSliderForLayers::show_estimated_times(bool show)
+{
+    if (m_show_estimated_times_item) {
+        m_show_estimated_times_item->set_checked(show);
+    } else {
+        m_show_estimated_times = show;
+    }
+}
+
+void DoubleSliderForLayers::show_ruler(bool show, bool show_bg)
+{
+    if (m_show_ruler_item) {
+        m_show_ruler_item->set_checked(show);
+    } else {
+        m_show_ruler = show;
+    }
+
+    if (m_show_ruler_background_item) {
+        m_show_ruler_background_item->set_checked(show_bg);
+    } else {
+        m_show_ruler_bg = show_bg;
+    }
 }
 
 void DoubleSliderForLayers::add_current_tick()

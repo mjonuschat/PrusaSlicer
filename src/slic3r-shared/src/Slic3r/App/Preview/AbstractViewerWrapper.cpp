@@ -23,4 +23,12 @@ std::unique_ptr<DoubleSliderForLayers> AbstractViewerWrapper::unload_double_slid
     return m_slider_layers.release();
 }
 
+void AbstractViewerWrapper::set_layers_slider_base_flags(LayersSliderBaseFlags flags)
+{
+    if (m_slider_layers.get()) {
+        m_slider_layers->show_ruler(flags.show_ruler, flags.show_ruler_bg);
+        m_slider_layers->show_estimated_times(flags.show_estimated_times);
+    }
+}
+
 } // namespace Slic3r::App::Preview

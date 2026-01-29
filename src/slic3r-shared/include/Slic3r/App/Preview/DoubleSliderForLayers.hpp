@@ -66,8 +66,8 @@ public:
     void set_extruder_colors(const std::vector<std::string>& extruder_colors) { m_ticks.colors = extruder_colors; }
     void set_use_default_colors(bool use) { m_ticks.set_use_default_colors(use); }
     bool is_new_print(const std::string& print_obj_idxs);
-    void show_estimated_times(bool show) { m_show_estimated_times = show; }
-    void show_ruler(bool show, bool show_bg) { m_show_ruler = show; m_show_ruler_bg = show_bg; }
+    void show_estimated_times(bool show);
+    void show_ruler(bool show, bool show_bg);
     void seq_top_layer_only(bool show) { m_seq_top_layer_only = show; }
 
     // manipulation with slider from keyboard
@@ -201,6 +201,10 @@ private:
     Yoga::MenuItem* m_seq_top_layer_only_item{ nullptr };
     Yoga::MenuItem* m_use_default_colors_menu_item{ nullptr };
     Yoga::MenuItem* m_auto_color_change_menu_item{ nullptr };
+
+    Yoga::MenuItem* m_show_estimated_times_item{ nullptr };
+    Yoga::MenuItem* m_show_ruler_item{ nullptr };
+    Yoga::MenuItem* m_show_ruler_background_item{ nullptr };
 
     struct TickPopup
     {

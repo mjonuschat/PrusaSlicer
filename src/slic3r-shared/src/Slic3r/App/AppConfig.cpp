@@ -125,6 +125,33 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->category = Category::Services;
     def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(system_downloads_dir().string()); };
+
+    // Settings for LayersDoubleSlider
+
+    def = defs.add("show_estimated_times_in_dbl_slider", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("show_ruler_in_dbl_slider", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("show_ruler_bg_in_dbl_slider", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(false); };
+
+    def = defs.add("seq_top_layer_only", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(false); };
+
+    def = defs.add("use_default_colors_in_dbl_slider", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(false); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)

@@ -26,6 +26,7 @@
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -705,24 +706,25 @@ void PreviewRenderModule::init_gizmos()
 
 void PreviewRenderModule::init_viewers(Render::Device& device)
 {
-    // the following values should be taken from the app.ini config
-    bool show_ruler_in_dbl_slider           = false;
-    bool show_ruler_bg_in_dbl_slider        = false;
-    bool show_estimated_times_in_dbl_slider = true;
-    bool use_default_colors_in_dbl_slider   = false;
-    bool seq_top_layer_only                 = false;
+    AppConfig& app_config = AppServices::instance().app_config();
 
     // Initialize the SLA ViewerWrapper
 
     ViewerWrapperBaseSettings base_settings;
-    base_settings.slider_layers_show_ruler           = show_ruler_in_dbl_slider;
-    base_settings.slider_layers_show_ruler_bg        = show_ruler_bg_in_dbl_slider;
-    base_settings.slider_layers_show_estimated_times = show_estimated_times_in_dbl_slider;
+    base_settings.layers_slider_base_flags.show_ruler           = app_config.get<bool>("show_ruler_in_dbl_slider");
+    base_settings.layers_slider_base_flags.show_ruler_bg        = app_config.get<bool>("show_ruler_bg_in_dbl_slider");
+    base_settings.layers_slider_base_flags.show_estimated_times = app_config.get<bool>("show_estimated_times_in_dbl_slider");
     // set layers slider callbacks
-    base_settings.cb_slider_layers_on_thumb_move =
+    base_settings.layers_slider_base_callbacks.on_thumb_move =
         std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
-    base_settings.cb_request_extra_frames =
+    base_settings.layers_slider_base_callbacks.request_extra_frames =
         std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
+    base_settings.layers_slider_base_callbacks.app_config_changed = std::bind(
+        &PreviewRenderModule::on_slider_layers_app_config_changed,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2
+    );
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
         && m_sla_viewer.set_settings(base_settings))
@@ -742,8 +744,8 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     settings.ViewerWrapperBaseSettings::operator=(base_settings);
 
     settings.mode                             = mode;
-    settings.slider_layers_use_default_colors = use_default_colors_in_dbl_slider;
-    settings.seq_top_layer_only               = seq_top_layer_only;
+    settings.slider_layers_use_default_colors = app_config.get<bool>("use_default_colors_in_dbl_slider");
+    settings.seq_top_layer_only               = app_config.get<bool>("seq_top_layer_only");
     // set wrapper callbacks
     settings.cb_invalidate_slice = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
     settings.cb_update_layers_slider =
@@ -751,7 +753,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     settings.cb_gcode_view_type_changed =
         std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
     // set layers slider callbacks
-    settings.cb_slider_layers_on_thumb_move =
+    settings.layers_slider_base_callbacks.on_thumb_move =
         std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
     settings.cb_slider_layers_ticks_changed =
         std::bind(&PreviewRenderModule::on_slider_layers_ticks_changed, this);
@@ -776,12 +778,6 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
         &PreviewRenderModule::on_slider_layers_get_used_extruders_in_print,
         this,
         std::placeholders::_1
-    );
-    settings.cb_slider_layers_app_config_changed = std::bind(
-        &PreviewRenderModule::on_slider_layers_app_config_changed,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2
     );
     // set gcode slider callbacks
     settings.cb_slider_gcode_on_thumb_move =
@@ -1262,14 +1258,11 @@ std::set<int> PreviewRenderModule::on_slider_layers_get_used_extruders_in_print(
     return ret;
 }
 
-void PreviewRenderModule::on_slider_layers_app_config_changed(
-    const std::string& key,
-    const std::string& val
-)
+void PreviewRenderModule::on_slider_layers_app_config_changed(const std::string& key, bool val)
 {
     if (key == "seq_top_layer_only") {
         bool active   = m_fdm_viewer.is_top_layer_only_view_range();
-        bool required = val == "1";
+        bool required = val;
         if (active != required) {
             m_fdm_viewer.toggle_top_layer_only_view_range();
             const Interval& range = m_fdm_viewer.layers_range();
@@ -1277,7 +1270,34 @@ void PreviewRenderModule::on_slider_layers_app_config_changed(
         }
     }
 
-    // TODO: update app config
+    AppConfig& app_config = AppServices::instance().app_config();
+
+    app_config.set(key, val);
+
+    constexpr std::array<std::string_view, 3> layers_slider_base_flags_keys = {
+        "show_ruler_in_dbl_slider",
+        "show_ruler_bg_in_dbl_slider",
+        "show_estimated_times_in_dbl_slider"
+    };
+
+    if (std::find(layers_slider_base_flags_keys.begin(), layers_slider_base_flags_keys.end(), key)
+        != layers_slider_base_flags_keys.end())
+    {
+        // synchronise base layer slider flags between sliders
+        LayersSliderBaseFlags layers_slider_base_flags;
+        layers_slider_base_flags.show_ruler = app_config.get<bool>("show_ruler_in_dbl_slider");
+        layers_slider_base_flags.show_ruler_bg =
+            app_config.get<bool>("show_ruler_bg_in_dbl_slider");
+        layers_slider_base_flags.show_estimated_times =
+            app_config.get<bool>("show_estimated_times_in_dbl_slider");
+
+        if (m_viewer != &m_fdm_viewer) {
+            m_fdm_viewer.set_layers_slider_base_flags(layers_slider_base_flags);
+        }
+        if (m_viewer != &m_sla_viewer) {
+            m_sla_viewer.set_layers_slider_base_flags(layers_slider_base_flags);
+        }
+    }
 }
 
 void PreviewRenderModule::on_slider_gcode_on_thumb_move()
