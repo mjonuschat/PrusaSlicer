@@ -20,12 +20,9 @@ public:
     class SetAccessor
     {
     public:
-        using ConfigBoxSetter = std::function<void(Domain::ConfigBox*)>;
-
         void set_source(
             std::weak_ptr<ConfigBoxObservableList> config_box_list,
-            std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list,
-            ConfigBoxSetter config_box_setter
+            std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list
         );
 
         void set_value(const std::string& key, const Domain::ConfigValue& value);
@@ -37,7 +34,6 @@ public:
     private:
         std::weak_ptr<ConfigBoxObservableList> m_config_box_list;
         std::weak_ptr<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
-        ConfigBoxSetter m_config_box_setter;
     };
 
     ConfigBoxInteractor();
@@ -50,8 +46,6 @@ public:
     std::weak_ptr<const ConfigBoxObservableList> config_box_list() const;
 
     std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list();
-
-    void set_config_box(Domain::ConfigBox* config_box);
 
 private:
     // These shared_ptrs should not be shared to anywhere, only pass weak_ptrs

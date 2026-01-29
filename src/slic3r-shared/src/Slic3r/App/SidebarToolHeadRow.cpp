@@ -6,7 +6,6 @@
 
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -20,12 +19,10 @@ namespace Slic3r::App {
 SidebarToolHeadRow::SidebarToolHeadRow(
     size_t index,
     const Biz::Preset::PresetItemObservableList& data,
-    std::weak_ptr<Yoga::ButtonGroup> button_group,
     Biz::ProjectInteractor& project_interactor
 ) :
     Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, data),
-    m_project_interactor(project_interactor),
-    m_button_group(button_group)
+    m_project_interactor(project_interactor)
 {
     set_flex_shrink(0);
     Rectangle* rect = emplace_back<Rectangle>();
@@ -64,23 +61,7 @@ SidebarToolHeadRow::SidebarToolHeadRow(
         }
     };
 
-    m_cog_button = emplace_back<LayoutButton>("", Render::Icon::Cog);
-    m_cog_button->set_checkable(true);
-    m_button_group.lock()->insert_button(m_cog_button);
-
     on_data_update();
-}
-
-SidebarToolHeadRow::~SidebarToolHeadRow()
-{
-    if (!m_button_group.expired()) {
-        m_button_group.lock()->remove_button(m_cog_button);
-    }
-}
-
-LayoutButton* SidebarToolHeadRow::cog_button() const
-{
-    return m_cog_button;
 }
 
 void SidebarToolHeadRow::on_data_update()

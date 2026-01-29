@@ -16,7 +16,7 @@ InputTextField::InputTextField(const std::string& name)
     m_tooltip = emplace_back<Tooltip>(this, "", "");
     set_padding(1);
     set_disabled_fill(ImColor(32, 32, 32));
-    m_input_text = emplace_back<InputText>(name);
+    m_input_text = emplace_back<InputText>(name.empty() ? "InputText" : name);
     m_input_text->set_flex_grow(1);
 
     callbacks().update_revert_button = [this]() { update_revert_button(); };

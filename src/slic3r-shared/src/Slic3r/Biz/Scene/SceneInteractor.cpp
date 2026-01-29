@@ -293,7 +293,8 @@ void SceneInteractor::on_selected_config_container_changed(Domain::SelectionId p
     ASSERT(cc->bed_instances().size() >= 1);
     const auto& bed_instances = cc->bed_instances();
     auto& selection           = bed_selection();
-    if (selection.empty() || selection.last_selected_bed().config_container_id != container_id) {
+    ASSERT(!selection.empty());
+    if (selection.last_selected_bed().config_container_id != container_id) {
         // Select CC's first bed if not already selected any of CC's
         selection.select_one({container_id, bed_instances.front()->id().id});
     }

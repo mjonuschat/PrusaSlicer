@@ -14,6 +14,8 @@ ColorPickerButton::ColorPickerButton(const std::string& name)
     set_object_name(name.empty() ? "ColorPickerButton" : name);
     set_width(30);
     set_height(25);
+    set_background_border_width(2);
+    set_background_color(ImColor(50, 50, 50));
 
     m_popup = emplace_back<ContextPopup>("ColorPickerPopup");
     m_popup->set_orientation(Orientation::Vertical);
@@ -72,4 +74,4 @@ void ColorPickerButton::on_color_edited(const ImColor& color)
     }
 }
 
-}
+} // namespace Slic3r::App::Yoga

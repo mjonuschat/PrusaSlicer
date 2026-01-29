@@ -209,4 +209,12 @@ private:
     bool m_finalized{ false };
     std::set<ConfigLocation> m_acceptable_boxes;
 };
+
+enum class CompatibilityRule {
+    Undefined,
+    IgnoreOverrides,
+    Min,
+    Max,
+    Average
+};
 }

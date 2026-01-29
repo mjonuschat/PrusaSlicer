@@ -141,6 +141,14 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
                     m_preset_interactor.initialize_config_container_with_default(*cc);
                     initialize_bed(project_id, cc->id().id, added_project.bed_container());
                 }
+                // Ensure bed selection is valid for the config container.
+                const Domain::ConfigContainer& config_container{
+                    *added_project.config_containers().front()
+                };
+                m_scene_interactor.bed_selection().select_one(
+                    {config_container.id().id, config_container.bed_instances().front()->id().id}
+                );
+
                 do_select_config_container(added_project.config_containers().front()->id().id);
 
                 m_scene_interactor.prepare_added_project(project_id);

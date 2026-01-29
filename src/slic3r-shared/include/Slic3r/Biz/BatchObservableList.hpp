@@ -92,9 +92,8 @@ public:
 private:
     void notify_item_changed_at(size_t index) override
     {
-        IndexRange range{index, index + 1};
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&range](IListObserver<T>* l) {
-            l->on_updated(range);
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([index](IListObserver<T>* l) {
+            l->on_updated(index);
         });
     }
 

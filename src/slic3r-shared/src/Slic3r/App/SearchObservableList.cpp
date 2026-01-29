@@ -3,10 +3,12 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/SearchObservableList.hpp"
+
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 
 namespace {
 inline std::string string_to_lower(std::string_view input)
@@ -53,16 +55,10 @@ inline void rtrim(std::string& string)
 namespace Slic3r::App {
 
 SearchObservableList::SearchObservableList(Biz::Preset::PresetInteractor& preset_interactor) :
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_preset_changed_listener_scope(preset_interactor, *this)
 {
-    m_preset_interactor.add_listener<Biz::Preset::IPresetChangedListener>(this);
-
     invalidate_source_items();
-}
-
-SearchObservableList::~SearchObservableList()
-{
-    m_preset_interactor.remove_listener<Biz::Preset::IPresetChangedListener>(this);
 }
 
 const Domain::ConfigItem& SearchObservableList::at(size_t index) const
@@ -126,9 +122,34 @@ void SearchObservableList::invalidate_source_items()
             m_source_items.push_back(item);
         }
     };
+    auto extract_printtool_cbol =
+        [this](std::shared_ptr<const Biz::PrintToolConfigObservableList> cbol)
+    {
+        const size_t cbol_size = cbol->size();
+        m_source_items.reserve(m_source_items.size() + cbol_size);
+
+        for (size_t index = 0; index < cbol_size; ++index) {
+            const Biz::PrintToolItem& item = cbol->at(index);
+
+            if (item.print_item->def().category == Domain::ConfigItemDef::Category::Hidden) {
+                continue;
+            }
+
+            m_source_items.push_back(item.print_item);
+
+            std::transform(
+                item.tool_overrides.cbegin(),
+                item.tool_overrides.cend(),
+                std::back_inserter(m_source_items),
+                [](const Biz::PrintToolItem::ToolOverride& tool_override)
+                    -> const Domain::ConfigItem* { return tool_override.first; }
+            );
+        }
+    };
 
     extract_cbol(m_preset_interactor.printer_cbi().config_box_list().lock());
-    extract_cbol(m_preset_interactor.print_cbi().config_box_list().lock());
+
+    extract_printtool_cbol(m_preset_interactor.print_tool_cbi().observable_list().lock());
 
     // Only extract first cbol encountered in tools and materials
     if (m_preset_interactor.material_cbi_list().size()) {
@@ -136,13 +157,6 @@ void SearchObservableList::invalidate_source_items()
             m_preset_interactor.material_cbi_list().at(0).config_box_list().lock();
         if (material_cbi_list) {
             extract_cbol(material_cbi_list);
-        }
-    }
-    if (m_preset_interactor.tool_cbi_list().size()) {
-        std::shared_ptr<const Biz::ConfigBoxObservableList> tool_cbi_list =
-            m_preset_interactor.tool_cbi_list().at(0).config_box_list().lock();
-        if (tool_cbi_list) {
-            extract_cbol(tool_cbi_list);
         }
     }
 

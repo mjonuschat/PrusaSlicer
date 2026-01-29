@@ -4,16 +4,15 @@
 ///|/
 #pragma once
 
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
+
 #include "Slic3r/App/ConfigSubcategoryItem.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
-#include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/App/IConfigNavigable.hpp"
 
 namespace Slic3r::Biz {
 class ConfigBoxInteractor;
-} // namespace Slic3r::Biz
-
-namespace Slic3r::Biz {
 class IConfigBoxSetter;
 } // namespace Slic3r::Biz
 
@@ -36,7 +35,8 @@ class ConfigSubcategoryListView :
         Domain::ConfigItem,
         ConfigSubcategoryListViewFactory,
         Yoga::ScrollArea>,
-    public Biz::DataObserver<Domain::ConfigItem>
+    public Biz::DataObserver<Domain::ConfigItem>,
+    public IConfigNavigable
 {
 public:
     explicit ConfigSubcategoryListView(
@@ -47,8 +47,8 @@ public:
         size_t cbi_index
     );
 
-    void navigate_to_item(const Domain::ConfigItem* config_item);
-    void clear_navigation();
+    void navigate_to_item(const Domain::ConfigItem* config_item) override;
+    void clear_navigation() override;
 
 protected:
     void on_data_update() override;

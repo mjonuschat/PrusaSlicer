@@ -27,10 +27,18 @@ public:
     virtual ObjectPtr remove(Object* child) override;
 
     const ImColor& background_color() const;
-    void set_background_color(const ImColor& color);
+    void set_background_color(const ImColor& color, bool adjust_hover = true);
 
     const ImColor& background_color_checked() const;
-    void set_background_color_checked(const ImColor& background_color_checked);
+    void
+    set_background_color_checked(const ImColor& background_color_checked, bool adjust_hover = true);
+
+    const ImColor& background_color_border() const;
+    void
+    set_background_color_border(const ImColor& background_color_border, bool adjust_hover = true);
+
+    float background_border_width() const;
+    void set_background_border_width(float width);
 
     const Paddings& content_padding();
     void set_content_padding(const Paddings& padding);
@@ -58,17 +66,20 @@ protected:
     void hovered_updated_internal() override;
 
 private:
-    void update_fill();
+    void update_colors();
 
 private:
     Rectangle* m_background = nullptr;
 
-    ImColor m_background_color               = IM_COL32_WHITE;
-    ImColor m_background_color_disabled      = IM_COL32_WHITE;
-    ImColor m_background_color_hover         = IM_COL32_WHITE;
-    ImColor m_background_color_checked       = IM_COL32_WHITE;
-    ImColor m_background_color_checked_hover = IM_COL32_WHITE;
+    ImColor m_background_color                  = IM_COL32_WHITE;
+    ImColor m_background_color_disabled         = IM_COL32_WHITE;
+    ImColor m_background_color_hover            = IM_COL32_WHITE;
+    ImColor m_background_color_checked          = IM_COL32_WHITE;
+    ImColor m_background_color_checked_hover    = IM_COL32_WHITE;
     ImColor m_background_color_checked_disabled = IM_COL32_WHITE;
+    ImColor m_background_color_border           = IM_COL32_WHITE;
+    ImColor m_background_color_border_hover     = IM_COL32_WHITE;
+    ImColor m_background_color_border_disabled  = IM_COL32_WHITE;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -65,6 +65,16 @@ void LayoutButton::set_expand_label(bool expand)
     m_text->set_flex_grow(expand ? 1.f : 0.f);
 }
 
+const ImColor& LayoutButton::label_color() const
+{
+    return m_text->text_color();
+}
+
+void LayoutButton::set_label_color(const ImColor& color)
+{
+    m_text->set_text_color(color);
+}
+
 Render::Icon LayoutButton::icon() const
 {
     return m_icon->icon();
@@ -76,6 +86,16 @@ void LayoutButton::set_icon(Render::Icon icon)
         m_icon->set_icon(icon);
         m_icon->set_visible(icon != Render::Icon::None);
     }
+}
+
+ImColor LayoutButton::icon_tint() const
+{
+    return m_icon->tint();
+}
+
+void LayoutButton::set_icon_tint(const ImColor& tint)
+{
+    m_icon->set_tint(tint);
 }
 
 Text* LayoutButton::text() const

@@ -7,6 +7,8 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
 
+#include <deque>
+
 namespace Slic3r::App::Yoga {
 
 class Popup;
@@ -34,6 +36,10 @@ public:
 
     void push_event(EventPtr event) override;
 
+    template <class F>
+    void for_each_popup_reconcile(F&& fn);
+
+
 protected:
     Vec2f get_available_size() const override;
 
@@ -46,8 +52,10 @@ protected:
 
     Vec2f m_size;
 
-    using Popups = std::vector<Popup*>;
+    using Popups = std::deque<Popup*>;
     Popups m_popups;
+    Popups m_popups_to_be_added;
+    Popups m_popups_to_be_deleted;
 };
 
 } // namespace Slic3r::App::Yoga

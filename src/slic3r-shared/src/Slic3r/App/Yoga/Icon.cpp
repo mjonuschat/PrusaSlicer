@@ -76,6 +76,7 @@ void Icon::set_icon(Render::Icon icon)
     m_icon_type = IconType::Icon;
     update_texture();
     update_draw_sizes();
+    set_style_dirty();
 }
 
 std::string Icon::image() const

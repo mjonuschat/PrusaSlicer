@@ -142,7 +142,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     size_t child_index,
     size_t data_index,
     const Domain::ConfigItem& item,
-    Biz::IConfigBoxSetter& cbi_container,
+    Biz::IConfigBoxSetter& cb_setter,
     size_t cbi_index
 )
 {
@@ -150,38 +150,30 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
 
     switch (item.def().gui_type) {
     case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
-        item_control = container->emplace<ConfigItemTextField>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemTextField>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
         item_control = container->emplace<ConfigItemTextFields>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
-        item_control = container->emplace<ConfigItemCheckBox>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemCheckBox>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkboxes:
         item_control = container->emplace<ConfigItemCheckBoxes>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
@@ -189,20 +181,16 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::s_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
-        item_control = container->emplace<ConfigItemComboBox>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemComboBox>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::extruder_selection:
         item_control = container->emplace<ConfigItemExtruderSelection>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
@@ -211,70 +199,54 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
-        item_control = container->emplace<ConfigItemPoints>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemPoints>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::color:
         item_control = container->emplace<ConfigItemColorPicker>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        item_control = container->emplace<ConfigItemSpinBox>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemSpinBox>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::file_picker:
         item_control = container->emplace<ConfigItemFilePicker>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::bed_shape:
-        item_control = container->emplace<ConfigItemBedShape>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemBedShape>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
-        item_control = container->emplace<ConfigItemSpinBoxes>(
-            child_index,
-            data_index,
-            item,
-            cbi_container,
-            cbi_index
-        );
+        item_control =
+            container
+                ->emplace<ConfigItemSpinBoxes>(child_index, data_index, item, cb_setter, cbi_index);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::substitutions:
         item_control = container->emplace<ConfigItemSubstitutions>(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;
@@ -283,7 +255,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            cbi_container,
+            cb_setter,
             cbi_index
         );
         break;

@@ -25,9 +25,13 @@ public:
     Render::ImguiFontType label_font_type() const;
     void set_label_font_type(Render::ImguiFontType label_font_type);
     void set_expand_label(bool expand);
+    const ImColor& label_color() const;
+    void set_label_color(const ImColor& color);
 
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);
+    ImColor icon_tint() const;
+    void set_icon_tint(const ImColor& tint);
 
     Text* text() const;
 

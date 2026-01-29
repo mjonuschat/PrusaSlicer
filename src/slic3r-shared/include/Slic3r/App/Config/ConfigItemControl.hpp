@@ -29,7 +29,7 @@ public:
         size_t child_index,
         size_t data_index,
         const Domain::ConfigItem& item,
-        Biz::IConfigBoxSetter& cbi_container,
+        Biz::IConfigBoxSetter& cb_setter,
         size_t cbi_index
     );
 

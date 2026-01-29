@@ -41,8 +41,6 @@ private:
     void create_favorite_params();
     void create_favorite_params_page(Item* container);
 
-    void print_dialog_tab_selected(size_t tab_index);
-
 private:
     using ToolHeadListView = Yoga::ListView<
         SidebarToolHeadRow,
@@ -50,7 +48,6 @@ private:
         Yoga::ViewFactory<
             SidebarToolHeadRow,
             Biz::Preset::PresetItemObservableList,
-            std::weak_ptr<Yoga::ButtonGroup>,
             Biz::ProjectInteractor&>>;
 
     Biz::ProjectInteractor& m_project_interactor;
@@ -63,7 +60,6 @@ private:
     Yoga::ComboBox* m_combo_pattern{nullptr};
     Item* m_tool_container{nullptr};
     std::vector<Item*> m_tools;
-    std::shared_ptr<Yoga::ButtonGroup> m_group_print_tools;
     Yoga::ScrollArea* m_content_area{nullptr};
     Yoga::ComboBox* m_combo_tools{nullptr};
     Yoga::Item* m_favorite_params_layout{nullptr};

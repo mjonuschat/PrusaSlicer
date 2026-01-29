@@ -7,6 +7,8 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
+
 namespace Slic3r::App {
 
 ConfigItemCheckBox::ConfigItemCheckBox(
@@ -22,7 +24,7 @@ ConfigItemCheckBox::ConfigItemCheckBox(
     set_width(150);
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
-    set_tooltip(tooltip_text());
+    set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
 
     callbacks().action = [this] {
         m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{checked()}, m_cbi_index);

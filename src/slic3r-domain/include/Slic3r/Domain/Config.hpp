@@ -66,6 +66,8 @@ public:
         return m_current_location;
     }
 
+    CompatibilityRule compatibility_rule() const;
+
 private:
     ConfigValue m_value;
     ConfigLocation m_current_location;
@@ -184,14 +186,8 @@ using BoxOrBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
 using LocationSize = std::optional<std::size_t>;
 using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
 
-enum class CompatibilityRule {
-    IgnoreOverrides,
-    Min,
-    Max,
-    Average
-};
-
-const std::map<std::string, CompatibilityRule>& get_compatibility_rules();
+using CompatibilityRules = std::map<std::string, CompatibilityRule>;
+const CompatibilityRules& get_compatibility_rules();
 
 /* @param default_value: Used if any of the items is nullptr. Might be nullptr,
  *     but then all the item values need to be specified.
@@ -210,6 +206,11 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
     const ConfigValue* default_value,
     const std::vector<const ConfigItem*>& items,
     const std::vector<unsigned>& extruder_candidates
+);
+std::pair<ConfigValue, bool> apply_compatibility_rule(
+    const ConfigValue* default_value,
+    const std::vector<const ConfigItem*>& items,
+    const std::set<unsigned>& extruder_candidates
 );
 
 class SquashedConfig {

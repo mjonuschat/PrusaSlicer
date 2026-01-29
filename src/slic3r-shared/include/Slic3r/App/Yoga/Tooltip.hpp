@@ -17,7 +17,7 @@ public:
         Item* parent,
         const std::string& text,
         const std::string& shortcut,
-        const std::string& window_name = "Tooltip"
+        const std::string& window_name = {}
     );
 
     const std::string& text() const;

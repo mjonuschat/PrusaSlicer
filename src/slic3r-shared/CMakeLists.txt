@@ -225,6 +225,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarStackLayout.cpp
         include/Slic3r/App/CurrentPresetLabel.hpp
         src/Slic3r/App/CurrentPresetLabel.cpp
+        include/Slic3r/App/IConfigNavigable.hpp
+        include/Slic3r/App/PrintMetadataSettings.hpp
+        src/Slic3r/App/PrintMetadataSettings.cpp
+        include/Slic3r/App/ToolLabel.hpp
+        src/Slic3r/App/ToolLabel.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -268,6 +273,20 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigItemBedShape.cpp
         include/Slic3r/App/Config/BedShapePreview.hpp
         src/Slic3r/App/Config/BedShapePreview.cpp
+        include/Slic3r/App/Config/ConfigItemUtils.hpp
+        src/Slic3r/App/Config/ConfigItemUtils.cpp
+        include/Slic3r/App/Config/PrintToolRowButton.hpp
+        src/Slic3r/App/Config/PrintToolRowButton.cpp
+        include/Slic3r/App/Config/ToolRowControl.hpp
+        src/Slic3r/App/Config/ToolRowControl.cpp
+        include/Slic3r/App/Config/PrintToolSubcategoryListView.hpp
+        include/Slic3r/App/Config/PrintToolSubcategoryItem.hpp
+        src/Slic3r/App/Config/PrintToolSubcategoryItem.cpp
+        src/Slic3r/App/Config/PrintToolSubcategoryListView.cpp
+        include/Slic3r/App/Config/PrintToolRowItem.hpp
+        src/Slic3r/App/Config/PrintToolRowItem.cpp
+        include/Slic3r/App/Config/ConfigItemPreview.hpp
+        src/Slic3r/App/Config/ConfigItemPreview.cpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -673,15 +692,15 @@ set(SLIC3R_SHARED_FILES
         #include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         #src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
-#		include/Slic3r/Biz/Preset/Bundle.hpp
-#		src/Slic3r/Biz/Preset/Bundle.cpp
+        #include/Slic3r/Biz/Preset/Bundle.hpp
+        #src/Slic3r/Biz/Preset/Bundle.cpp
 
-		include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
-		src/Slic3r/Biz/Preset/IO/BundlePaths.cpp
+	include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
+        src/Slic3r/Biz/Preset/IO/BundlePaths.cpp
         include/Slic3r/Biz/Preset/IO/PresetLoader.hpp
         src/Slic3r/Biz/Preset/IO/PresetLoader.cpp
-		include/Slic3r/Biz/Preset/IO/PresetSaver.hpp
-		src/Slic3r/Biz/Preset/IO/PresetSaver.cpp
+	include/Slic3r/Biz/Preset/IO/PresetSaver.hpp
+	src/Slic3r/Biz/Preset/IO/PresetSaver.cpp
         include/Slic3r/Biz/Preset/IO/HwConfigLoader.hpp
         src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
         include/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp
@@ -693,7 +712,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
-		src/Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp
+	src/Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp
 
         include/Slic3r/Biz/Preset/PresetEvaluator.hpp
         src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -708,8 +727,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Expr/Parser.cpp
         include/Slic3r/Biz/Expr/Eval.hpp
         src/Slic3r/Biz/Expr/Eval.cpp
-		include/Slic3r/Biz/Expr/Simplify.hpp
-		src/Slic3r/Biz/Expr/Simplify.cpp
+	include/Slic3r/Biz/Expr/Simplify.hpp
+	src/Slic3r/Biz/Expr/Simplify.cpp
 
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
@@ -724,6 +743,12 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Units.hpp
         src/Slic3r/Biz/Units.cpp
         include/Slic3r/Biz/Units.hpp
+        include/Slic3r/Biz/PrintToolItem.hpp
+        src/Slic3r/Biz/PrintToolItem.cpp
+        include/Slic3r/Biz/PrintToolConfigBoxInteractor.hpp
+        src/Slic3r/Biz/PrintToolConfigBoxInteractor.cpp
+        include/Slic3r/Biz/PrintToolConfigObservableList.hpp
+        src/Slic3r/Biz/PrintToolConfigObservableList.cpp
 
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
@@ -1161,7 +1186,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
-		test/Slic3r/Biz/Expr/SimplifyTests.cpp
+	test/Slic3r/Biz/Expr/SimplifyTests.cpp
 
         test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp

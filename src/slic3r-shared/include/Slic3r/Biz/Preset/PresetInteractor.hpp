@@ -1,28 +1,28 @@
 #pragma once
 
-#include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
-
 #include <unordered_map>
+
+#include "Slic3r/Domain/Workbench.hpp"
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/InvokeLaterBag.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
-#include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetDiffOperation.hpp"
 #include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
+#include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
+#include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetVisualGetter.hpp"
-
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
-#include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -87,7 +87,6 @@ struct SelectedPresetIds
 class PresetInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
-    public Scene::ISceneBedInstanceChangedListener,
     public WithListeners<
         IPresetChangedListener,
         IBedPresetSwitchedListener,
@@ -248,16 +247,9 @@ public:
         Domain::SelectionId container_id
     ) override;
 
-    void on_bed_instance_extruder_candidates_changed(
-        Domain::SelectionId project_id,
-        Domain::BedRef instance,
-        const std::vector<unsigned>& extruder_candidates
-    ) override;
-
     ConfigBoxInteractor& printer_cbi();
-    ConfigBoxInteractor& print_cbi();
+    PrintToolConfigBoxInteractor& print_tool_cbi();
     CBIObservableList& material_cbi_list();
-    CBIObservableList& tool_cbi_list();
 
     const Domain::ConfigValue* get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
@@ -807,8 +799,8 @@ private:
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
-    void fill_selected_tool_print_cbis(Domain::Preset::SelectedPreset& selected_preset);
     void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
+    void update_print_tool_cbi(Domain::Preset::SelectedPreset& selected_preset);
 
     void duplicate_hw_config_if_needed_and_update(Domain::Preset::HwPrinterConfig& hw_config, ListenerInvokeLaterBag& bag);
 
@@ -846,9 +838,9 @@ private:
     ProjectContexts m_project_contexts;
 
     ConfigBoxInteractor m_printer_cbi;
-    ConfigBoxInteractor m_print_cbi;
+    PrintToolConfigBoxInteractor::SetAccessor m_print_tool_cbi_accessor;
+    PrintToolConfigBoxInteractor m_print_tool_cbi;
     CBIObservableList m_material_cbi_list;
-    CBIObservableList m_tool_cbi_list;
     SetAccessorMap m_cbi_accessors; ///< Contains All SetAccessors currently in use
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};

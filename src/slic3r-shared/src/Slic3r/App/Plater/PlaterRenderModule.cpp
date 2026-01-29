@@ -175,7 +175,7 @@ void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
         {
             using T = std::decay_t<decltype(location)>;
 
-            ConfigSettingsDialog* dialog_to_open = nullptr;
+            IConfigNavigable* dialog_to_open = nullptr;
 
             if constexpr (std::is_same_v<T, Domain::FDMConfigLocation>) {
                 switch (location) {
@@ -217,7 +217,9 @@ void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
             }
 
             if (dialog_to_open) {
-                m_render_module_navigator->set_opened_dialog(dialog_to_open);
+                m_render_module_navigator->set_opened_dialog(
+                    dynamic_cast<Yoga::Dialog*>(dialog_to_open)
+                );
                 dialog_to_open->navigate_to_item(config_item);
             }
         },

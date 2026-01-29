@@ -19,7 +19,7 @@ public:
      */
     DataObserver(size_t index, const Data& data) : m_index(index), m_state(&data) {}
 
-    virtual ~DataObserver() {}
+    virtual ~DataObserver() = default;
 
     const Data* state() const
     {

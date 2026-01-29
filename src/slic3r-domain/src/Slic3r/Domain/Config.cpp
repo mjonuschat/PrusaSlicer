@@ -43,6 +43,13 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, ConfigLocation location)
     : m_value{def.init_fn ? def.init_fn() : def.init_fn_ex(location)}, m_current_location{location}, m_def{&def}
 {}
 
+CompatibilityRule ConfigItem::compatibility_rule() const
+{
+    const CompatibilityRules& rules       = get_compatibility_rules();
+    CompatibilityRules::const_iterator it = rules.find(name());
+    return it == rules.cend() ? CompatibilityRule::Undefined : it->second;
+}
+
 ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location) :
     m_location{location}
 {
@@ -475,8 +482,9 @@ static T get_max(const std::vector<T>& values)
     }
 }
 
-const std::map<std::string, CompatibilityRule>& get_compatibility_rules() {
-    static const std::map<std::string, CompatibilityRule> result{
+const CompatibilityRules& get_compatibility_rules()
+{
+    static const CompatibilityRules result{
         {"brim_separation", CompatibilityRule::Average},
         {"dont_support_bridges", CompatibilityRule::IgnoreOverrides},
         {"travel_acceleration", CompatibilityRule::IgnoreOverrides},
@@ -535,7 +543,20 @@ const std::map<std::string, CompatibilityRule>& get_compatibility_rules() {
 std::pair<ConfigValue, bool> apply_compatibility_rule(
     const ConfigValue* default_value,
     const std::vector<const ConfigItem*>& items,
-    const std::vector<unsigned>& extruder_candidates
+    const std::vector<unsigned int>& extruder_candidates
+)
+{
+    return apply_compatibility_rule(
+        default_value,
+        items,
+        std::set<unsigned>{extruder_candidates.cbegin(), extruder_candidates.cend()}
+    );
+}
+
+std::pair<ConfigValue, bool> apply_compatibility_rule(
+    const ConfigValue* default_value,
+    const std::vector<const ConfigItem*>& items,
+    const std::set<unsigned>& extruder_candidates
 )
 {
     auto it{std::ranges::find_if(
@@ -579,8 +600,6 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
         return {*default_value, true};
     }
 
-    const std::set<unsigned> used_extruders{extruder_candidates.begin(), extruder_candidates.end()};
-
     return first_item.visit(
         [&](const auto& value) -> std::pair<ConfigValue, bool>
         {
@@ -592,7 +611,7 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
                 std::vector<Type> values;
                 for (std::size_t tool_index{}; tool_index < items.size(); ++tool_index) {
                     const auto& item{items[tool_index]};
-                    if (!used_extruders.empty() && !used_extruders.contains(tool_index)) {
+                    if (!extruder_candidates.empty() && !extruder_candidates.contains(tool_index)) {
                         continue;
                     }
                     if (item != nullptr) {
@@ -603,7 +622,7 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
                 }
 
                 switch (compatibility_rule) {
-                case CompatibilityRule::Average: {
+                case CompatibilityRule::Average:
                     if constexpr (std::is_same_v<Type, double>
                                   || std::is_same_v<Type, Percentage>) {
                         return {ConfigValue{get_average(values)}, true};
@@ -611,17 +630,16 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
                         PANIC("Average is only possible on doubles and percentages: " + first_item.def().name);
                         return {ConfigValue{0}, false};
                     }
-                } break;
-                case CompatibilityRule::Min: {
+                case CompatibilityRule::Min:
                     return {ConfigValue{get_min(values)}, true};
-                } break;
-                case CompatibilityRule::Max: {
+                case CompatibilityRule::Max:
                     return {ConfigValue{get_max(values)}, true};
-                } break;
-                case CompatibilityRule::IgnoreOverrides: {
+                case CompatibilityRule::IgnoreOverrides:
                     PANIC("Ignore overrides should be handled before this");
                     return {ConfigValue{0}, false};
-                } break;
+                case Slic3r::Domain::CompatibilityRule::Undefined:
+                    PANIC("Undefined Compatibility rule in use");
+                    return {ConfigValue{0}, false};
                 }
             } else {
                 PANIC("Invalid compatibility rule - only possible is Ignore overrides: " + first_item.def().name);

@@ -129,7 +129,8 @@ private:
 protected:
     Object* root_item() const;
 
-    virtual void root_item_updated_internal();
+    virtual void root_item_about_to_update();
+    virtual void root_item_updated();
 
 protected:
     /**
@@ -217,6 +218,7 @@ public:
     const Vec2f& min_size() const;
     const Vec2f& max_size() const;
     bool is_visible() const;
+    bool is_self_visible() const;
     float flex_grow() const;
     float flex_shrink() const;
     YGDirection direction() const;
@@ -375,6 +377,7 @@ protected:
     YGDirection m_direction          = YGDirectionLTR;
 
     std::vector<Item*> m_children_render_order;
+    std::vector<Item*> m_removed_children;
 
 #ifdef DEBUG
     static Item* m_debug_item;

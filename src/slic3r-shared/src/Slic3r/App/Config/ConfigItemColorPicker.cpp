@@ -7,6 +7,8 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -23,7 +25,7 @@ ConfigItemColorPicker::ConfigItemColorPicker(
 {
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
-    set_tooltip(tooltip_text());
+    set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
 
     on_data_update();
 

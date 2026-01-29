@@ -96,7 +96,6 @@ public:
         m_scene_interactor.add_listener<Scene::ISceneSelectionChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );
-        m_scene_interactor.add_listener<Scene::ISceneBedInstanceChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );

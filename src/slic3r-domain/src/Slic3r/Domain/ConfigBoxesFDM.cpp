@@ -2996,6 +2996,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_first_layer_expansion", typeid(double));
     def->location = Print;
+    def->label = L("Raft first layer expansion");
     def->require_compatibility_rule = true;
     def->overrides_in = Locations{ Tool, Object };
     def->option_group = L("Support material");

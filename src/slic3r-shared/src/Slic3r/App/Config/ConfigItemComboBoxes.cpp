@@ -5,7 +5,9 @@
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+
 #include "Slic3r/App/Yoga/ComboBox.hpp"
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -55,7 +57,7 @@ void ConfigItemComboBoxes::reconstruct_boxes()
         [](const Domain::EnumValueDef& value) { return value.str_ui; }
     );
 
-    const std::string tooltip_value           = tooltip_text();
+    const std::string tooltip_value           = ConfigItemUtils::config_item_tooltip(*m_state);
     const std::vector<size_t> current_indexes = vector_wrapper.get_indexes();
     m_combo_boxes.reserve(current_indexes.size());
     for (int index : current_indexes) {

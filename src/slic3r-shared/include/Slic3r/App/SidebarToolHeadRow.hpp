@@ -31,12 +31,8 @@ public:
     explicit SidebarToolHeadRow(
         size_t index,
         const Biz::Preset::PresetItemObservableList& data,
-        std::weak_ptr<Yoga::ButtonGroup> button_group,
         Biz::ProjectInteractor& project_interactor
     );
-    virtual ~SidebarToolHeadRow();
-
-    Yoga::LayoutButton* cog_button() const;
 
     void on_view_will_be_removed() override;
 
@@ -45,9 +41,7 @@ protected:
 
 private:
     Biz::ProjectInteractor& m_project_interactor;
-    std::weak_ptr<Yoga::ButtonGroup> m_button_group;
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_box{nullptr};
-    Yoga::LayoutButton* m_cog_button{nullptr};
     Biz::Preset::PresetItemObservableList* m_last_preset_item_observable_list{nullptr};
 
     int m_last_selected_index{-1};

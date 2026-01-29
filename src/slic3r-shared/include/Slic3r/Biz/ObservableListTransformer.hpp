@@ -22,7 +22,7 @@ public:
         }
     }
 
-    using TransformFn = std::function<TargetData(const SourceData& source_data)>;
+    using TransformFn = std::function<TargetData(const SourceData& source_data, size_t index)>;
 
     IObservableList<SourceData>* source_model() const
     {
@@ -85,7 +85,10 @@ public:
             return;
         }
 
-        m_transformed_items.insert(m_transformed_items.cbegin() + index, m_transform_fn(data));
+        m_transformed_items.insert(
+            m_transformed_items.cbegin() + index,
+            m_transform_fn(data, index)
+        );
 
         this->template invoke_listeners<IListObserver<TargetData>>(
             [&](auto* l) { l->on_inserted(m_transformed_items.at(index), index); }
@@ -111,7 +114,7 @@ public:
     {
         if (m_transform_fn && m_source_model.is_valid()) {
             for (size_t i = index_range.from; i < index_range.to; ++i) {
-                m_transformed_items[i] = m_transform_fn(m_source_model->at(i));
+                m_transformed_items[i] = m_transform_fn(m_source_model->at(i), i);
             }
 
             this->template invoke_listeners<IListObserver<TargetData>>(
@@ -131,7 +134,7 @@ public:
             const size_t source_size = m_source_model->size();
             m_transformed_items.reserve(source_size);
             for (size_t i = 0; i < source_size; ++i) {
-                m_transformed_items.push_back(m_transform_fn(m_source_model->at(i)));
+                m_transformed_items.push_back(m_transform_fn(m_source_model->at(i), i));
             }
         }
 

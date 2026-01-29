@@ -11,7 +11,9 @@
 namespace Slic3r::Biz {
 
 /**
- * @note both from and to indexes are inclusive
+ * @note both from and to indexes are INCLUSIVE
+ * This means IndexRange that should affect only index 10
+ * should have from and to set to 10
  */
 struct IndexRange
 {

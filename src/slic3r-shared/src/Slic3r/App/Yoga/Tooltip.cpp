@@ -17,7 +17,7 @@ Tooltip::Tooltip(
     const std::string& window_name
 )
 {
-    WindowPtr window = std::make_unique<Window>(window_name);
+    WindowPtr window = std::make_unique<Window>(window_name.empty() ? "Tooltip" : window_name);
 
     window->set_orientation(Orientation::Horizontal);
     window->set_flags(

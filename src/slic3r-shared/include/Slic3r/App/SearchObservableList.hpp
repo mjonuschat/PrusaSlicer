@@ -4,18 +4,15 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
+#include <Slic3r/Domain/Config.hpp>
 
+#include <Slic3r/Biz/Platform/ListenerScope.hpp>
 #include "Slic3r/Biz/IObservableList.hpp"
-#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::Biz {
 class ConfigBoxInteractor;
 } // namespace Slic3r::Biz
-
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App {
 
@@ -25,7 +22,6 @@ class SearchObservableList :
 {
 public:
     explicit SearchObservableList(Biz::Preset::PresetInteractor& preset_interactor);
-    ~SearchObservableList();
 
     const Domain::ConfigItem& at(size_t index) const override;
     size_t size() const override;
@@ -50,6 +46,12 @@ private:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
+
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        SearchObservableList>
+        m_preset_changed_listener_scope;
 
     std::string m_search_text;
     std::string m_search_text_cleaned;

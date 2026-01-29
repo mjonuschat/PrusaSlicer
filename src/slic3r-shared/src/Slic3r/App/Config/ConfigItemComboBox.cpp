@@ -7,6 +7,8 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
+
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
@@ -35,7 +37,7 @@ ConfigItemComboBox::ConfigItemComboBox(
 
     on_data_update();
 
-    m_tooltip->set_text(tooltip_text());
+    m_tooltip->set_text(ConfigItemUtils::config_item_tooltip(*m_state));
     m_tooltip->content_item()->set_width(350);
     m_tooltip->set_text_wrap(true);
 

@@ -7,6 +7,7 @@
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
 #include "Slic3r/App/Config/ObservableCategorizer.hpp"
 #include "Slic3r/App/Config/CategoryPageTransformer.hpp"
+#include "Slic3r/App/IConfigNavigable.hpp"
 
 #include <Slic3r/Biz/IListObserver.hpp>
 
@@ -20,7 +21,7 @@ namespace Slic3r::App {
 class ConfigSubcategoryListView;
 class Navigator;
 
-class ConfigSettingsDialog : public Yoga::AbstractSettingsDialog
+class ConfigSettingsDialog : public Yoga::AbstractSettingsDialog, public IConfigNavigable
 {
 public:
     ConfigSettingsDialog(
@@ -35,8 +36,8 @@ public:
         const std::string& name = {}
     );
 
-    virtual void navigate_to_item(const Domain::ConfigItem* config_item);
-    virtual void clear_navigation();
+    void navigate_to_item(const Domain::ConfigItem *config_item) override;
+    void clear_navigation() override;
 
 protected:
     void remove_tab(size_t index) override;

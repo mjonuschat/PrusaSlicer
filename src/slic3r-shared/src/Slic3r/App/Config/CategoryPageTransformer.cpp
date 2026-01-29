@@ -11,13 +11,14 @@ namespace Slic3r::App {
 CategoryPageTransformer::CategoryPageTransformer()
 {
     set_transform_fn(
-        [this](const Domain::ConfigItem& data)
+        [this](const Domain::ConfigItem& data, size_t index)
         {
             const Domain::ConfigItemDef::Category category = data.def().category;
 
-            Domain::PrinterTechnology
-                pt = m_project_interactor ? m_project_interactor->selected_config_container().print_technology() : Domain::PrinterTechnology::FFF;
-            Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
+            Domain::PrinterTechnology pt = m_project_interactor ?
+                m_project_interactor->selected_config_container().print_technology() :
+                Domain::PrinterTechnology::FFF;
+            Render::Icon icon            = CategoryUtils::category_render_icon(category, pt);
 
             return PageEntry{Domain::ConfigItemDef::translate_category(category, pt), icon};
         }

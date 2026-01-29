@@ -86,11 +86,7 @@ public:
 
     void on_inserted(const Data& data, size_t index) override
     {
-        ASSERT(index <= m_items.size());
-
-        Passthrough<View> item_view(m_factory.create(index, data));
-        this->insert(item_view.release(), index);
-        m_items.emplace(m_items.cbegin() + index, item_view.get());
+        insert_internal(data, index);
 
         update_indexes(++index);
     }
@@ -109,27 +105,15 @@ public:
      */
     void on_removed(const Biz::IndexRange& index_range) override
     {
-        ASSERT(index_range.to <= m_items.size());
-
-        if (m_immediate) {
-            for (size_t i = index_range.from; i <= index_range.to; ++i) {
-                this->remove(m_items[i]);
-            }
-        } else {
-            for (size_t i = index_range.from; i <= index_range.to; ++i) {
-                this->remove_later(m_items[i]);
-            }
-        }
-        m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
+        remove_internal(index_range);
         update_indexes(index_range.from);
     }
 
     void on_updated(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());
-        size_t index = 0;
-        for (View* view : std::as_const(m_items)) {
-            view->set_state(m_source_list->at(index++));
+        for (size_t from = index_range.from; from <= index_range.to; ++from) {
+            m_items.at(from)->set_state(m_source_list->at(from));
         }
     }
 
@@ -155,27 +139,16 @@ public:
         const size_t new_size = m_source_list->size();
         if (new_size < m_items.size()) {
             on_removed({new_size, m_items.size() - 1});
-
-            if (m_items.size()) {
-                // update all elements
-                on_updated({0, m_items.size() - 1});
-            }
         } else if (new_size > m_items.size()) {
-            if (m_items.size()) {
-                // update existing
-                on_updated({0, m_items.size() - 1});
-            }
-
             // insert new
             for (size_t new_index = m_items.size(); new_index < new_size; ++new_index) {
                 on_inserted(m_source_list->at(new_index), new_index);
             }
-        } else { // new_size == m_items.size()
-            if (m_items.size()) {
-                // update all elements
-                on_updated({0, m_items.size() - 1});
-            }
         }
+
+        // Run through every item and update their index/data
+        // TODO: Still possibile to optimize
+        update_indexes(0);
     }
 
     void on_moved(size_t from, size_t to) override
@@ -233,6 +206,37 @@ public:
     }
 
 private:
+    /**
+     * @note Does not update indexes
+     */
+    void insert_internal(const Data& data, size_t index)
+    {
+        ASSERT(index <= m_items.size());
+
+        Passthrough<View> item_view(m_factory.create(index, data));
+        this->insert(item_view.release(), index);
+        m_items.emplace(m_items.cbegin() + index, item_view.get());
+    }
+
+    /**
+     * @note Does not update indexes
+     */
+    void remove_internal(const Biz::IndexRange& index_range)
+    {
+        ASSERT(index_range.to <= m_items.size());
+
+        if (m_immediate) {
+            for (size_t i = index_range.from; i <= index_range.to; ++i) {
+                this->remove(m_items[i]);
+            }
+        } else {
+            for (size_t i = index_range.from; i <= index_range.to; ++i) {
+                this->remove_later(m_items[i]);
+            }
+        }
+        m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
+    }
+
     void update_indexes(size_t from)
     {
         // update indexes for remaining objects at index_range.from+

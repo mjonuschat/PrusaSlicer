@@ -18,24 +18,25 @@ namespace Slic3r::App {
 ConfigRowItem::ConfigRowItem(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
+    Biz::IConfigBoxSetter& cb_setter,
     size_t cbi_index,
-    bool small
+    bool small,
+    std::optional<std::string> force_label
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
-    m_cbi_container(cbi_container),
+    m_cb_setter(cb_setter),
     m_small(small),
-    m_cbi_index(cbi_index)
+    m_cbi_index(cbi_index),
+    m_force_label(force_label)
 {
     set_flex_shrink(0);
-    set_padding(5);
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_width(2);
     set_border_color(IM_COL32_BLACK_TRANS);
 
     m_left_side = emplace_back<Item>();
 
-    m_label = m_left_side->emplace_back<Text>(data.def().label);
+    m_label = m_left_side->emplace_back<Text>(m_force_label.value_or(data.def().label));
     m_label->set_height(40);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
     m_label->set_align({AlignH::Left, AlignV::Center});
@@ -54,11 +55,16 @@ ConfigRowItem::ConfigRowItem(
     } else {
         m_label->set_flex_grow(1);
 
-        m_left_side->set_width(175);
+        m_left_side->set_width(m_force_label.has_value() ? 90 : 175);
         m_left_side->set_max_size({175, YGUndefined});
     }
 
     on_data_update();
+}
+
+void ConfigRowItem::set_label_text_color(const ImColor& color)
+{
+    m_label->set_text_color(color);
 }
 
 void ConfigRowItem::on_data_update()
@@ -76,7 +82,7 @@ void ConfigRowItem::on_data_update()
             1,
             m_index,
             *m_state,
-            m_cbi_container,
+            m_cb_setter,
             m_cbi_index
         );
 
@@ -119,7 +125,7 @@ void ConfigRowItem::on_data_update()
                     value = m_config_item_spin_box->value();
                 }
 
-                m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
+                m_cb_setter.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
             };
         } else {
             if (m_toggle_enable) {
@@ -129,7 +135,7 @@ void ConfigRowItem::on_data_update()
         }
     }
 
-    m_label->set_text(m_state->def().label);
+    m_label->set_text(m_force_label.value_or(m_state->def().label));
     m_sidetext->set_text(m_state->def().sidetext);
 
     if (*m_state->def().type == typeid(std::optional<int>)) {

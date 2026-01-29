@@ -14,7 +14,7 @@ namespace Slic3r::App::Yoga {
 class InputTextField : public Rectangle, public Yoga::RevertableControl
 {
 public:
-    explicit InputTextField(const std::string& name = "InputText");
+    explicit InputTextField(const std::string& name = {});
 
     InputText::Callbacks& callbacks();
 

@@ -7,6 +7,8 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
+
 #include <imgui_internal.h>
 #include <fmt/format.h>
 
@@ -47,7 +49,7 @@ ConfigItemTextField::ConfigItemTextField(
     }
 
     set_min_size({150, 0});
-    set_tooltip(tooltip_text());
+    set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
 

@@ -23,7 +23,7 @@ public:
     };
 
     Popup();
-    ~Popup();
+    ~Popup() override;
 
     /**
      * @param item that the Popup is attached to
@@ -55,6 +55,8 @@ public:
 
 protected:
     void set_content_item(WindowPtr content_item);
+
+    void root_item_about_to_update() override;
 
 private:
     virtual void on_about_to_show();

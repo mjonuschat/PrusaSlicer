@@ -4,13 +4,16 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Domain/Config.hpp"
+
+#include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/ConfigRowItem.hpp"
-#include "Slic3r/Biz/ObservableListSortFilter.hpp"
-#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/App/IConfigNavigable.hpp"
 
 namespace Slic3r::Biz {
 class IConfigBoxSetter;
@@ -24,14 +27,13 @@ namespace Slic3r::App {
 
 class ConfigItemSpinBox;
 
-class ConfigRowItems : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigRowItems :
+    public Biz::DataObserver<Domain::ConfigItem>,
+    public Yoga::Item,
+    public IConfigNavigable
 {
-    using ConfigRowListViewFactory = Yoga::ViewFactory<
-        ConfigRowItem,
-        Domain::ConfigItem,
-        Biz::IConfigBoxSetter&,
-        size_t,
-        bool>;
+    using ConfigRowListViewFactory =
+        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::IConfigBoxSetter&, size_t, bool>;
     using ConfigRowListView =
         Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
 
@@ -44,8 +46,8 @@ public:
         size_t cbi_index
     );
 
-    void navigate_to_item(const Domain::ConfigItem* config_item);
-    void clear_navigation();
+    void navigate_to_item(const Domain::ConfigItem* config_item) override;
+    void clear_navigation() override;
 
 private:
     void on_data_update() override;

@@ -107,6 +107,12 @@ void Popup::set_preferred_position(Position preferred_position)
     m_preferred_position = preferred_position;
 }
 
+void Popup::root_item_about_to_update()
+{
+    // Before any tree change, attempt to close itself
+    close();
+}
+
 void Popup::on_about_to_show() {}
 
 void Popup::on_about_to_close() {}
@@ -189,6 +195,7 @@ void Popup::close()
     }
 
     RootItem* root = dynamic_cast<RootItem*>(root_item());
+    ASSERT(root, "Unclosed popup is not inserted into complete tree");
     if (root) {
         on_about_to_close();
 

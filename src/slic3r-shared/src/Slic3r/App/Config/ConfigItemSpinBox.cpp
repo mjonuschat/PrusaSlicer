@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -45,7 +46,7 @@ ConfigItemSpinBox::ConfigItemSpinBox(
         }
     };
 
-    set_tooltip(tooltip_text());
+    set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
 

@@ -14,7 +14,7 @@ struct ConfigValue;
 namespace Slic3r::Biz {
 
 /**
- * @brief The IConfigBoxSetter class acts as Container for ConfigBoxInteractor
+ * @brief The IConfigBoxSetter class acts as an Interface for methods covered by PresetInteractor
  */
 class IConfigBoxSetter
 {

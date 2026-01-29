@@ -4,8 +4,10 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
 
-#include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+
+#include "Slic3r/App/Yoga/Validator.hpp"
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -50,7 +52,7 @@ void ConfigItemSpinBoxes::reconstruct_spin_buttons()
     const int min = static_cast<int>(m_state->def().min.value_or(std::numeric_limits<int>::min()));
     const int max = static_cast<int>(m_state->def().max.value_or(std::numeric_limits<int>::max()));
 
-    const std::string tooltip = tooltip_text();
+    const std::string tooltip = ConfigItemUtils::config_item_tooltip(*m_state);
 
     for (size_t index = 0; index < size; ++index) {
         Box& box = m_boxes.emplace_back();

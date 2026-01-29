@@ -289,8 +289,9 @@ void Object::add_child(ObjectPtr child, size_t index)
             child.get(),
             [this](Object* object)
             {
+                object->root_item_about_to_update();
                 object->m_root = m_root;
-                object->root_item_updated_internal();
+                object->root_item_updated();
             }
         );
     }
@@ -321,8 +322,9 @@ ObjectPtr Object::remove_child(Object* child)
         [child](Object* object)
         {
             if (object->m_root) {
+                object->root_item_about_to_update();
                 object->m_root = child;
-                object->root_item_updated_internal();
+                object->root_item_updated();
             }
         }
     );
@@ -338,7 +340,9 @@ Object* Object::root_item() const
     return m_root;
 }
 
-void Object::root_item_updated_internal() {}
+void Object::root_item_about_to_update() {}
+
+void Object::root_item_updated() {}
 
 size_t Object::object_count() const
 {
@@ -454,6 +458,11 @@ const Vec2f& Item::max_size() const
 bool Item::is_visible() const
 {
     return is_node_visible(m_node);
+}
+
+bool Item::is_self_visible() const
+{
+    return m_visible;
 }
 
 bool Item::debug_border() const
@@ -1067,11 +1076,8 @@ void Item::render_item_end(Vec2f pos, Vec2f size)
 {
     render_debug(pos, size);
 
-    // Render node can modify m_children_render_order,
-    // make a copy.
-    const std::vector<Item*> to_render = m_children_render_order;
-    for (Item* child : to_render) {
-        render_node(pos, child);
+    for (size_t render_index = 0; render_index < m_children_render_order.size(); ++render_index) {
+        render_node(pos, m_children_render_order.at(render_index));
     }
 }
 

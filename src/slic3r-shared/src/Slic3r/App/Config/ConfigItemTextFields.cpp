@@ -5,6 +5,7 @@
 #include "Slic3r/App/Config/ConfigItemTextFields.hpp"
 
 #include "Slic3r/App/Yoga/InputTextField.hpp"
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
@@ -49,7 +50,7 @@ void ConfigItemTextFields::reconstruct_fields()
     }
     m_fields.clear();
 
-    const std::string tooltip = tooltip_text();
+    const std::string tooltip = ConfigItemUtils::config_item_tooltip(*m_state);
 
     const std::vector<double> values = m_state->get<std::vector<double>>();
     m_fields.reserve(values.size());
