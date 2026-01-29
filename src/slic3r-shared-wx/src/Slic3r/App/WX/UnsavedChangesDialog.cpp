@@ -17,7 +17,7 @@
 #include "Slic3r/App/WX/DiffDVCModel.hpp"
 #include "Slic3r/App/WX/DiffNamespace.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include "Slic3r/App/WX/Scalable.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/app.h>
@@ -86,7 +86,6 @@ UnsavedChangesDialog::UnsavedChangesDialog(
 
     this->SetMinSize(wxSize(30 * w_config()->em_unit(), 50 * w_config()->em_unit()));
     this->CenterOnParent();
-    w_config()->UpdateDlgDarkUI(this);
 
     this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& evt) { m_tree->model->Rescale(); });
 
@@ -97,11 +96,11 @@ UnsavedChangesDialog::UnsavedChangesDialog(
 void UnsavedChangesDialog::create_tree()
 {
     int em = w_config()->em_unit();
-    m_tree = new DiffViewCtrl(this, wxSize(em * (m_config_new ? 80 : 65), em * 40));
+    m_tree = new DiffViewCtrl(this, wxSize(em * (m_config_new ? 90 : 65), em * 40));
     m_tree->SetFont(this->GetFont());
 
 #ifdef __linux__
-    const int toggle_column_width = 9;
+    const int toggle_column_width = 10;
 #else
     const int toggle_column_width = 6;
 #endif
@@ -120,7 +119,7 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
     wxFont btn_font = this->GetFont().Scaled(1.4f);
 
     auto add_btn = [this, buttons, btn_font](
-                       ScalableButton** btn,
+                       wxButton** btn,
                        const std::string& icon_name,
                        Biz::Preset::PresetDiffOperation close_act,
                        const wxString& label,
@@ -128,16 +127,16 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
                        std::function<void()> fn            = nullptr
                    )
     {
-        *btn = new ScalableButton(
+        *btn = new wxButton(
             this,
             wxID_ANY,
-            icon_name,
             label,
-            wxSize(wxDefaultCoord, 30),
             wxDefaultPosition,
-            wxNO_BORDER,
-            20
+            wxSize(wxDefaultCoord, 30),
+            wxBORDER_SIMPLE
         );
+        (*btn)->SetBitmap(*get_bmp_bundle(icon_name, 20, 20));
+        (*btn)->SetBitmapMargins(int(0.5 * w_config()->em_unit(this)), 0);
 
         buttons->Add(*btn, 1, wxLEFT, buttons->IsEmpty() ? 0 : 5);
         (*btn)->SetFont(btn_font);
@@ -219,7 +218,7 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
     );
     m_save_btn->Enable(false); // Temporary: until save functionality is implemented
 
-    ScalableButton* cancel_btn;
+    wxButton* cancel_btn;
     add_btn(&cancel_btn, "cross", Biz::Preset::PresetDiffOperation::Undef, _L("Cancel"));
 }
 
@@ -366,7 +365,14 @@ void UnsavedChangesDialog::update_transfer_button(PresetSwitchKindId kind_id)
         break;
     };
 
-    m_transfer_btn->SetLabel(is_keep ? _L("Keep") : _L("Transfer"));
+    wxString new_label = is_keep ? _L("Keep") : _L("Transfer");
+    if (m_transfer_btn->GetLabel() != new_label) {
+        m_transfer_btn->SetLabel(new_label);
+#ifdef __APPLE__
+        // Workaround to invalidate the size and force its recalculation
+        m_transfer_btn->SetBitmap(*get_bmp_bundle("paste_menu", 20, 20));
+#endif
+    }
 }
 
 void UnsavedChangesDialog::append_diff_keys(

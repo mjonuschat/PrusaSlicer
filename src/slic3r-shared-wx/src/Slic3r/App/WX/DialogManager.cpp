@@ -6,6 +6,7 @@
 #include "Slic3r/App/WX/DiffDialog.hpp"
 #include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
 #include "Slic3r/App/WX/RammingDialog.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -114,7 +115,7 @@ void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBr
 
 void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)
 {
-    wxMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxYES_NO);
+    MessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxYES_NO);
     if (dlg.ShowModal() == wxID_YES)
         callback(true);
     else

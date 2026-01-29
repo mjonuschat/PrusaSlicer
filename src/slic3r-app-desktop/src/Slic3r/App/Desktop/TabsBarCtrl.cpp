@@ -21,7 +21,7 @@ TabsBarCtrl::Button::Button(
     wxSize size_def)
 :wxPanel(parent, wxID_ANY, wxDefaultPosition, size_def, wxBORDER_NONE | wxTAB_TRAVERSAL)
 ,m_parent(parent)
-#if 1//def _WIN32
+#ifdef _WIN32
 ,m_background_color(m_parent->GetBackgroundColour())
 #else
 ,m_background_color(wxTransparentColor)
@@ -96,15 +96,17 @@ void TabsBarCtrl::Button::messure_min_size()
 
 void TabsBarCtrl::Button::set_selected(bool selected)
 {
-    m_is_selected = selected;
+    if (m_is_selected != selected) {
+        m_is_selected = selected;
 
-    m_background_color = m_is_selected ? w_config()->get_color_selected_btn_bg() :
-#if 1//def _WIN32
-                                         m_parent->GetBackgroundColour();
+        m_background_color = m_is_selected ? w_config()->get_color_selected_btn_bg() :
+#ifdef _WIN32
+            m_parent->GetBackgroundColour();
 #else
-                                         wxTransparentColor;
+            wxTransparentColor;
 #endif
-    Refresh();
+        Refresh();
+    }
 }
 
 void TabsBarCtrl::Button::set_hovered(bool hovered)
@@ -117,7 +119,7 @@ void TabsBarCtrl::Button::set_hovered(bool hovered)
     m_background_color =    m_is_selected ? w_config()->get_color_selected_btn_bg():
                             hovered       ? w_config()->get_color_hovered_btn_bg() :
              
-#if 1//def _WIN32
+#ifdef _WIN32
                                             m_parent->GetBackgroundColour();
 #else
                                             wxTransparentColor;
@@ -314,8 +316,6 @@ TabsBarCtrl::TabsBarCtrl(wxWindow *parent, int orient, TabsBarMenus* menus/* = n
     ,m_orient(orient)
     ,m_menus(menus)
 {
-    w_config()->UpdateDarkUI(this);
-
 #ifdef _WIN32
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
@@ -364,8 +364,6 @@ void TabsBarCtrl::Rescale()
 
 void TabsBarCtrl::OnColorsChanged()
 {
-    w_config()->UpdateDarkUI(this);
-
     for (Button* button : m_pageButtons) {
         button->sys_color_changed();
     }

@@ -27,8 +27,6 @@ DiffViewCtrl::DiffViewCtrl(wxWindow* parent, wxSize size) :
     ),
     m_em_unit(w_config()->em_unit(/*parent*/))
 {
-    w_config()->UpdateDVCDarkUI(this);
-
     model = new DiffDVCModel(parent);
     this->AssociateModel(model);
     model->SetAssociatedControl(this);
@@ -51,9 +49,7 @@ void DiffViewCtrl::AppendBmpTextColumn(const wxString& label, unsigned model_col
     m_columns_width.emplace(this->GetColumnCount(), width);
 #ifdef __linux__
     wxDataViewIconTextRenderer* rd = new wxDataViewIconTextRenderer();
-#ifdef SUPPORTS_MARKUP
     rd->EnableMarkup(true);
-#endif
     wxDataViewColumn* column = new wxDataViewColumn(label, rd, model_column, width * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_CELL_INERT);
 #else
     wxDataViewColumn* column = new wxDataViewColumn(label, new BitmapTextRenderer(true, wxDATAVIEW_CELL_INERT), model_column, width * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE);

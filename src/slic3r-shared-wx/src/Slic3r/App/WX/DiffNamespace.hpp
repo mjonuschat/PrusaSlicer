@@ -4,18 +4,17 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
 #include <wx/sizer.h>
+#include <wx/combobox.h>
+
+class wxCheckBox;
+class wxButton;
 
 namespace Slic3r::Domain {
 struct ConfigBox;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::WX {
-
-namespace Widgets {
-class CheckBox;
-} // namespace Widgets
 
 class ScalableButton;
 
@@ -38,7 +37,7 @@ enum class State
     NotEqual,
 };
 
-class BCB : public Widgets::BitmapComboBox
+class BCB : public wxComboBox
 {
 public:
     BCB(wxWindow* parent, std::function<void(int selection, Location location)> fn, Location location);
@@ -90,16 +89,14 @@ struct Row : public wxBoxSizer
     void set_checkbox_callback(std::function<void()> fn);
     bool is_checked_checkbox() const;
     void show_checkbox(bool show);
-    void rescale();
 
 private:
-    Widgets::CheckBox* m_checkbox{nullptr};
+    wxCheckBox* m_checkbox{nullptr};
     BCB* m_left{nullptr};
-    ScalableButton* m_equal_bmp{nullptr};
+    wxButton* m_equal_bmp{nullptr};
     BCB* m_right{nullptr};
 
     std::function<void(int selection, Location location)> m_select_fn{nullptr};
-
 
     // Row on its statate current row state depends
     Row* m_depends_on_row{nullptr};

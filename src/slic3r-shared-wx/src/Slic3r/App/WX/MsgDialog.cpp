@@ -123,7 +123,6 @@ void MsgDialog::apply_style(long style)
 
 void MsgDialog::finalize()
 {
-    w_config()->UpdateDlgDarkUI(this);
     Fit();
     this->CenterOnParent();
 }
@@ -225,7 +224,6 @@ static void add_msg_content(MsgDialog* parent, wxBoxSizer* content_sizer, const 
     });
 
     content_sizer->Add(html, 1, wxEXPAND);
-    w_config()->UpdateDarkUI(html);
 }
 
 // ErrorDialog
@@ -317,7 +315,6 @@ RichMessageDialogBase::RichMessageDialogBase(wxWindow* parent, const HtmlContent
     m_checkBox = new wxCheckBox(this, wxID_ANY, m_checkBoxText);
 #endif
 
-    w_config()->UpdateDarkUI(m_checkBox);
     m_checkBox->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent&) { m_checkBoxValue = m_checkBox->GetValue(); });
 
     btn_sizer->Insert(0, m_checkBox, 1, wxALIGN_CENTER_VERTICAL);

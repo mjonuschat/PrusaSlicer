@@ -311,6 +311,8 @@ const std::string& WidgetsConfig::shortkey_alt_prefix()
 
 void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool just_font/* = false*/)
 {
+    return;
+
     bool is_focused_button = false;
     bool is_default_button = false;
     if (wxButton* btn = dynamic_cast<wxButton*>(window)) {
@@ -390,6 +392,7 @@ void WidgetsConfig::UpdateDlgDarkUI(wxDialog* dlg, bool just_buttons_update/* = 
 
 void WidgetsConfig::UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited/* = false*/)
 {
+    return;
     UpdateDarkUI(dvc, highlited ? dark_mode() : false);
 #ifdef _MSW_DARK_MODE
     if (!dvc->HasFlag(wxDV_NO_HEADER))
@@ -403,6 +406,7 @@ void WidgetsConfig::UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited/* = fals
 
 void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
 {
+    return;
     UpdateDarkUI(parent);
 
     auto children = parent->GetChildren();

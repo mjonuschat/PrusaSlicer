@@ -5,13 +5,16 @@
 #include "DiffNamespace.hpp"
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include "Slic3r/App/WX/Widgets/CheckBox.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/BedShape.hpp"
 
 #include <Slic3r/Assert.hpp>
+#include <wx/checkbox.h>
+#include <wx/button.h>
 
 namespace Slic3r::App::WX::Diff {
 
@@ -52,7 +55,7 @@ BCB::BCB(
     std::function<void(int selection, Location location)> fn,
     Location location
 ) :
-    Widgets::BitmapComboBox(
+    wxComboBox(
         parent,
         wxID_ANY,
         wxEmptyString,
@@ -102,7 +105,7 @@ void BCB::SetSelection(int n)
         }
     }
 
-    Widgets::BitmapComboBox::SetSelection(n);
+    wxComboBox::SetSelection(n);
     m_old_selection = n;
 }
 
@@ -117,7 +120,7 @@ Row::Row(
 {
     const int em = w_config()->em_unit();
 
-    m_checkbox = new Widgets::CheckBox(parent_win);
+    m_checkbox = new wxCheckBox(parent_win, wxID_ANY, wxEmptyString);
     m_checkbox->SetValue(true);
     m_checkbox->SetToolTip(
         _L("When enabled, the difference for this preset type is displayed in the tree below.")
@@ -126,7 +129,15 @@ Row::Row(
     m_left  = new BCB(parent_win, fn, Location::Left);
     m_right = new BCB(parent_win, fn, Location::Right);
 
-    m_equal_bmp = new ScalableButton(parent_win, wxID_ANY, "equal");
+    m_equal_bmp = new wxButton(
+        parent_win,
+        wxID_ANY,
+        wxEmptyString,
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxBU_EXACTFIT
+    );
+    m_equal_bmp->SetBitmap(*get_bmp_bundle("equal"));
     m_equal_bmp->Bind(
         wxEVT_BUTTON,
         [this](wxEvent&)
@@ -152,9 +163,9 @@ Row::Row(
         }
     );
 
-    this->Add(m_checkbox);
+    this->Add(m_checkbox, 0, wxALIGN_CENTER_VERTICAL);
     this->Add(m_left, 1, wxEXPAND | wxLEFT | wxRIGHT, em);
-    this->Add(m_equal_bmp);
+    this->Add(m_equal_bmp, 0, wxALIGN_CENTER_VERTICAL);
     this->Add(m_right, 1, wxEXPAND | wxLEFT, em);
 }
 
@@ -191,7 +202,7 @@ void Row::set_state(State new_state)
 {
     if (new_state != State::Undef) {
         // check comboboxes for the content
-        if (m_left->IsEmpty() || m_right->IsEmpty()) {
+        if (m_left->IsListEmpty() || m_right->IsListEmpty()) {
             // if some of them is empty => it's Undefind state
             new_state = State::Undef;
         }
@@ -199,11 +210,11 @@ void Row::set_state(State new_state)
 
     state = new_state;
 
-    m_equal_bmp->SetBitmap_(
+    m_equal_bmp->SetBitmap(*get_bmp_bundle(
         state == State::Equal        ? "equal" :
             state == State::NotEqual ? "not_equal" :
                                        "empty"
-    );
+    ));
 
     wxString tooltip = wxEmptyString;
     if (state == State::NotEqual) {
@@ -238,12 +249,6 @@ bool Row::is_checked_checkbox() const
 void Row::show_checkbox(bool show)
 {
     m_checkbox->Show(show);
-}
-
-void Row::rescale()
-{
-    m_left->Rescale();
-    m_right->Rescale();
 }
 
 } // namespace Slic3r::App::WX::Diff

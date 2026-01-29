@@ -161,6 +161,8 @@ int run(const Slic3r::App::InitParams& init_params)
 
 bool DesktopApp::OnInit()
 {
+    SetAppearance(wxAppBase::Appearance::Dark);
+
     std::unique_ptr<AppConfig> app_config = AppConfig::create_app_config();
 
     // Set initialization of image handlers before any UI actions - See GH issue #7469

@@ -10,7 +10,7 @@
 #include <atlbase.h>
 #include <unordered_map>
 
-#include "wx/msw/private/comptr.h"
+//#include "wx/msw/private/comptr.h"
 #include <wx/msw/registry.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -30,40 +30,40 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
         SPDLOG_ERROR("setup_webview_with_credentials Failed: Webview 2 is null.");
         return;
     }
-    wxCOMPtr<ICoreWebView2_10> wv2_10;
-    HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
-    if (FAILED(hr)) {
-        SPDLOG_ERROR("setup_webview_with_credentials Failed: ICoreWebView2_10 is null.");
-        return;        
-    }
+    //wxCOMPtr<ICoreWebView2_10> wv2_10;
+    //HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
+    //if (FAILED(hr)) {
+    //    SPDLOG_ERROR("setup_webview_with_credentials Failed: ICoreWebView2_10 is null.");
+    //    return;        
+    //}
 
-    remove_webview_credentials(webview);
+    //remove_webview_credentials(webview);
 
-    // should it be stored?
-    EventRegistrationToken basicAuthenticationRequestedToken = {};
-    if (FAILED(wv2_10->add_BasicAuthenticationRequested(
-            Microsoft::WRL::Callback<ICoreWebView2BasicAuthenticationRequestedEventHandler>(
-                [username, password](ICoreWebView2 *sender, ICoreWebView2BasicAuthenticationRequestedEventArgs *args) {
-                    wxCOMPtr<ICoreWebView2BasicAuthenticationResponse> basicAuthenticationResponse;
-                    if (FAILED(args->get_Response(&basicAuthenticationResponse))) {
-                        return -1;
-                    }
-                    if (FAILED(basicAuthenticationResponse->put_UserName(from_u8(username).c_str()))) {
-                        return -1;
-                    }
-                    if (FAILED(basicAuthenticationResponse->put_Password(from_u8(password).c_str()))) {
-                        return -1;
-                    }
-                    return 0;
-                }
-            ).Get(),
-            &basicAuthenticationRequestedToken
-        ))) {
+    //// should it be stored?
+    //EventRegistrationToken basicAuthenticationRequestedToken = {};
+    //if (FAILED(wv2_10->add_BasicAuthenticationRequested(
+    //        Microsoft::WRL::Callback<ICoreWebView2BasicAuthenticationRequestedEventHandler>(
+    //            [username, password](ICoreWebView2 *sender, ICoreWebView2BasicAuthenticationRequestedEventArgs *args) {
+    //                wxCOMPtr<ICoreWebView2BasicAuthenticationResponse> basicAuthenticationResponse;
+    //                if (FAILED(args->get_Response(&basicAuthenticationResponse))) {
+    //                    return -1;
+    //                }
+    //                if (FAILED(basicAuthenticationResponse->put_UserName(from_u8(username).c_str()))) {
+    //                    return -1;
+    //                }
+    //                if (FAILED(basicAuthenticationResponse->put_Password(from_u8(password).c_str()))) {
+    //                    return -1;
+    //                }
+    //                return 0;
+    //            }
+    //        ).Get(),
+    //        &basicAuthenticationRequestedToken
+    //    ))) {
 
-        SPDLOG_ERROR("WebView: Cannot register authentication request handler");
-    } else {
-        g_basic_auth_handler_tokens[webView2] = basicAuthenticationRequestedToken;
-    }
+    //    SPDLOG_ERROR("WebView: Cannot register authentication request handler");
+    //} else {
+    //    g_basic_auth_handler_tokens[webView2] = basicAuthenticationRequestedToken;
+    //}
 }
 
 void remove_webview_credentials(wxWebView* webview)
@@ -73,24 +73,24 @@ void remove_webview_credentials(wxWebView* webview)
         SPDLOG_ERROR("remove_webview_credentials Failed: webView2 is null.");
         return;
     }
-    wxCOMPtr<ICoreWebView2_10> wv2_10;
-    HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
-    if (FAILED(hr)) {
-        SPDLOG_ERROR("remove_webview_credentials Failed: ICoreWebView2_10 is null.");
-        return;
-    }
+    //wxCOMPtr<ICoreWebView2_10> wv2_10;
+    //HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
+    //if (FAILED(hr)) {
+    //    SPDLOG_ERROR("remove_webview_credentials Failed: ICoreWebView2_10 is null.");
+    //    return;
+    //}
 
-    if (auto it = g_basic_auth_handler_tokens.find(webView2);
-        it != g_basic_auth_handler_tokens.end()) {
+    //if (auto it = g_basic_auth_handler_tokens.find(webView2);
+    //    it != g_basic_auth_handler_tokens.end()) {
 
-        if (FAILED(wv2_10->remove_BasicAuthenticationRequested(it->second))) {
-            SPDLOG_ERROR("WebView: Unregistering authentication request handler failed");
-        } else {
-            g_basic_auth_handler_tokens.erase(it);
-        }
-    } else {
-        SPDLOG_ERROR("WebView: Cannot unregister authentication request handler");
-    }
+    //    if (FAILED(wv2_10->remove_BasicAuthenticationRequested(it->second))) {
+    //        SPDLOG_ERROR("WebView: Unregistering authentication request handler failed");
+    //    } else {
+    //        g_basic_auth_handler_tokens.erase(it);
+    //    }
+    //} else {
+    //    SPDLOG_ERROR("WebView: Cannot unregister authentication request handler");
+    //}
 
 }
 void delete_cookies(wxWebView* webview, const std::string& url)
@@ -227,27 +227,27 @@ static wxString filter_patern;
 namespace {
 void RequestHeadersToLog(ICoreWebView2HttpRequestHeaders* requestHeaders)
 {
-    wxCOMPtr<ICoreWebView2HttpHeadersCollectionIterator> iterator;
-    requestHeaders->GetIterator(&iterator);
+    //wxCOMPtr<ICoreWebView2HttpHeadersCollectionIterator> iterator;
+    //requestHeaders->GetIterator(&iterator);
     BOOL hasCurrent = FALSE;
      SPDLOG_ERROR("Logging request headers:");
 
-    while (SUCCEEDED(iterator->get_HasCurrentHeader(&hasCurrent)) && hasCurrent)
-    {
-        wchar_t* name = nullptr;
-        wchar_t* value = nullptr;
+    //while (SUCCEEDED(iterator->get_HasCurrentHeader(&hasCurrent)) && hasCurrent)
+    //{
+    //    wchar_t* name = nullptr;
+    //    wchar_t* value = nullptr;
 
-        iterator->GetCurrentHeader(&name, &value);
-        if (name) {
-            CoTaskMemFree(name);
-        }
-        if (value) {
-            CoTaskMemFree(value);
-        }
+    //    iterator->GetCurrentHeader(&name, &value);
+    //    if (name) {
+    //        CoTaskMemFree(name);
+    //    }
+    //    if (value) {
+    //        CoTaskMemFree(value);
+    //    }
 
-        BOOL hasNext = FALSE;
-        iterator->MoveNext(&hasNext);
-    }
+    //    BOOL hasNext = FALSE;
+    //    iterator->MoveNext(&hasNext);
+    //}
 }
 }
 
@@ -261,51 +261,51 @@ void add_request_authorization(wxWebView* webview, const wxString& address, cons
         SPDLOG_ERROR("Adding request Authorization Failed: Webview 2 is null.");
         return;
     }
-    wxCOMPtr<ICoreWebView2_2> wv2_2;
-    HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_2));
-    if (FAILED(hr)) {
-        SPDLOG_ERROR("Adding request Authorization Failed: QueryInterface ICoreWebView2_2 has failed.");
-        return;        
-    }
+    //wxCOMPtr<ICoreWebView2_2> wv2_2;
+    //HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_2));
+    //if (FAILED(hr)) {
+    //    SPDLOG_ERROR("Adding request Authorization Failed: QueryInterface ICoreWebView2_2 has failed.");
+    //    return;        
+    //}
     filter_patern =  address + L"/*";
     webView2->AddWebResourceRequestedFilter( filter_patern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_DOCUMENT);
     
-    if (FAILED(webView2->add_WebResourceRequested(
-            Microsoft::WRL::Callback<ICoreWebView2WebResourceRequestedEventHandler>(
-                [token](ICoreWebView2 *sender, ICoreWebView2WebResourceRequestedEventArgs *args) {
-                    // Get the web resource request
-                    wxCOMPtr<ICoreWebView2WebResourceRequest> request;
-                    HRESULT hr = args->get_Request(&request);
-                    if (FAILED(hr))
-                    {
-                        SPDLOG_ERROR("Adding request Authorization: Failed to get_Request.");
-                        return S_OK;
-                    }
-                    // Get the request headers
-                    wxCOMPtr<ICoreWebView2HttpRequestHeaders> headers;
-                    hr = request->get_Headers(&headers);
-                    if (FAILED(hr))
-                    {
-                         SPDLOG_ERROR("Adding request Authorization: Failed to get_Headers.");
-                         return S_OK;
-                    }
-                    LPWSTR wideUri = nullptr; 
-                    request->get_Uri(&wideUri);
-                    std::wstring ws(wideUri);
+    //if (FAILED(webView2->add_WebResourceRequested(
+    //        Microsoft::WRL::Callback<ICoreWebView2WebResourceRequestedEventHandler>(
+    //            [token](ICoreWebView2 *sender, ICoreWebView2WebResourceRequestedEventArgs *args) {
+    //                // Get the web resource request
+    //                wxCOMPtr<ICoreWebView2WebResourceRequest> request;
+    //                HRESULT hr = args->get_Request(&request);
+    //                if (FAILED(hr))
+    //                {
+    //                    SPDLOG_ERROR("Adding request Authorization: Failed to get_Request.");
+    //                    return S_OK;
+    //                }
+    //                // Get the request headers
+    //                wxCOMPtr<ICoreWebView2HttpRequestHeaders> headers;
+    //                hr = request->get_Headers(&headers);
+    //                if (FAILED(hr))
+    //                {
+    //                     SPDLOG_ERROR("Adding request Authorization: Failed to get_Headers.");
+    //                     return S_OK;
+    //                }
+    //                LPWSTR wideUri = nullptr; 
+    //                request->get_Uri(&wideUri);
+    //                std::wstring ws(wideUri);
 
-                    std::string val = "External " + token;
-                    // Add or modify the Authorization header
-                    hr = headers->SetHeader(L"Authorization", from_u8(val).c_str());
+    //                std::string val = "External " + token;
+    //                // Add or modify the Authorization header
+    //                hr = headers->SetHeader(L"Authorization", from_u8(val).c_str());
 
-                    // This function is only needed for debug purpose
-                    RequestHeadersToLog(headers.Get());    
-                    return S_OK;
-                }
-            ).Get(), &m_webResourceRequestedTokenForImageBlocking
-            ))) {
+    //                // This function is only needed for debug purpose
+    //                RequestHeadersToLog(headers.Get());    
+    //                return S_OK;
+    //            }
+    //        ).Get(), &m_webResourceRequestedTokenForImageBlocking
+    //        ))) {
 
-        SPDLOG_ERROR("Adding request Authorization: Failed to add callback.");
-    }
+    //    SPDLOG_ERROR("Adding request Authorization: Failed to add callback.");
+    //}
     
     
 }
@@ -337,40 +337,40 @@ void load_request(wxWebView* web_view, const std::string& address, const std::st
         return;
     }
    
-    // GetEnviroment does not exists
-    wxCOMPtr<ICoreWebView2Environment> webViewEnvironment;
-    //webViewEnvironment = static_cast<ICoreWebView2Environment *>(web_view->GetEnviroment());
-    if (!webViewEnvironment.Get()) {
-        SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment is null.");
-        return;
-    }
+    //// GetEnviroment does not exists
+    //wxCOMPtr<ICoreWebView2Environment> webViewEnvironment;
+    ////webViewEnvironment = static_cast<ICoreWebView2Environment *>(web_view->GetEnviroment());
+    //if (!webViewEnvironment.Get()) {
+    //    SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment is null.");
+    //    return;
+    //}
 
-    wxCOMPtr<ICoreWebView2Environment2> webViewEnvironment2;
-    if (FAILED(webViewEnvironment->QueryInterface(IID_PPV_ARGS(&webViewEnvironment2))))
-    {
-        SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment2 is null.");
-        return;
-    }
-     wxCOMPtr<ICoreWebView2WebResourceRequest> webResourceRequest;
-    
-    wxString printables_address = from_u8(Biz::Network::ServiceConfig::instance().printables_url());
-    if (FAILED(webViewEnvironment2->CreateWebResourceRequest(
-        printables_address.wc_str(), L"GET", NULL,
-        L"Content-Type: application/x-www-form-urlencoded", &webResourceRequest)))
-    {
-        SPDLOG_ERROR("load_request Failed: CreateWebResourceRequest failed.");
-        return;
-    }
-    wxCOMPtr<ICoreWebView2_2> wv2_2;
-    if (FAILED(webView2->QueryInterface(IID_PPV_ARGS(&wv2_2)))) {
-        SPDLOG_ERROR("load_request Failed: ICoreWebView2_2 is null.");
-        return;        
-    }
-    if (FAILED(wv2_2->NavigateWithWebResourceRequest(webResourceRequest.get())))
-    {
-        SPDLOG_ERROR("load_request Failed: NavigateWithWebResourceRequest failed.");
-        return;
-    } 
+    //wxCOMPtr<ICoreWebView2Environment2> webViewEnvironment2;
+    //if (FAILED(webViewEnvironment->QueryInterface(IID_PPV_ARGS(&webViewEnvironment2))))
+    //{
+    //    SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment2 is null.");
+    //    return;
+    //}
+    // wxCOMPtr<ICoreWebView2WebResourceRequest> webResourceRequest;
+    //
+    //wxString printables_address = from_u8(Biz::Network::ServiceConfig::instance().printables_url());
+    //if (FAILED(webViewEnvironment2->CreateWebResourceRequest(
+    //    printables_address.wc_str(), L"GET", NULL,
+    //    L"Content-Type: application/x-www-form-urlencoded", &webResourceRequest)))
+    //{
+    //    SPDLOG_ERROR("load_request Failed: CreateWebResourceRequest failed.");
+    //    return;
+    //}
+    //wxCOMPtr<ICoreWebView2_2> wv2_2;
+    //if (FAILED(webView2->QueryInterface(IID_PPV_ARGS(&wv2_2)))) {
+    //    SPDLOG_ERROR("load_request Failed: ICoreWebView2_2 is null.");
+    //    return;        
+    //}
+    //if (FAILED(wv2_2->NavigateWithWebResourceRequest(webResourceRequest.get())))
+    //{
+    //    SPDLOG_ERROR("load_request Failed: NavigateWithWebResourceRequest failed.");
+    //    return;
+    //} 
 }
 
 void register_prusaslicer_url()

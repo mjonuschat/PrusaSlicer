@@ -7,21 +7,11 @@
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/dc.h>
 #include <wx/dcclient.h>
 #include <wx/bmpcbox.h>
-#ifdef wxHAS_GENERIC_DATAVIEWCTRL
-#include "wx/generic/private/markuptext.h"
-#include "wx/generic/private/rowheightcache.h"
-#include "wx/generic/private/widthcalc.h"
-#endif
-
-#if wxUSE_ACCESSIBILITY
-#include "wx/private/markupparser.h"
-#endif // wxUSE_ACCESSIBILITY
-
-#include "Slic3r/App/WX/I18N.hpp"
 
 namespace Slic3r::App::WX {
 
@@ -46,6 +36,166 @@ static wxSize get_size(const wxBitmap& icon)
 // BitmapTextRenderer
 // ---------------------------------------------------------
 
+MarkupText::Token::Token(const wxString& text, bool bold, bool italic, const wxColour& color) :
+    text(text),
+    color(color)
+{
+    font = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
+    if (bold) {
+        font.MakeBold();
+    }
+    if (italic) {
+        font.MakeItalic();
+    }
+}
+
+static wxColour ParseSpanColor(const wxString& tag)
+{
+    static const wxString marker = from_u8("color=");
+
+    wxString lower = tag.Lower();
+
+    int pos = lower.Find(marker);
+    if (pos == wxNOT_FOUND)
+        return wxNullColour;
+
+    wxChar quote = lower[pos + 6];
+    if (quote != '"' && quote != '\'')
+        return wxNullColour;
+
+    int start = pos + 7;
+    int end   = lower.find(quote, start);
+    if (end == wxNOT_FOUND)
+        return wxNullColour;
+
+    wxString value = lower.Mid(start, end - start);
+    wxColour col;
+    if (col.Set(value))
+        return col;
+
+    return wxNullColour;
+}
+
+static std::vector<MarkupText::Token> ParseMarkup(const wxString& input)
+{
+    static const wxString bold_beg   = from_u8("b");
+    static const wxString bold_end   = from_u8("/b");
+    static const wxString italic_beg = from_u8("i");
+    static const wxString italic_end = from_u8("/i");
+    static const wxString span_beg   = from_u8("span");
+    static const wxString span_end   = from_u8("/span");
+
+    std::vector<MarkupText::Token> tokens;
+
+    bool bold      = false;
+    bool italic    = false;
+    wxColour color = wxNullColour;
+
+    wxString buffer;
+    bool inTag = false;
+    wxString tag;
+
+    auto flush = [&]()
+    {
+        if (!buffer.empty()) {
+            tokens.push_back(MarkupText::Token(buffer, bold, italic, color));
+            buffer.clear();
+        }
+    };
+
+    for (wxChar c : input) {
+        if (c == '<') {
+            flush();
+            inTag = true;
+            tag.clear();
+            continue;
+        }
+
+        if (c == '>' && inTag) {
+            inTag      = false;
+            wxString t = tag.Lower();
+
+            if (t == bold_beg)
+                bold = true;
+            else if (t == bold_end)
+                bold = false;
+            else if (t == italic_beg)
+                italic = true;
+            else if (t == italic_end)
+                italic = false;
+            else if (t.StartsWith(span_beg))
+                color = ParseSpanColor(tag);
+            else if (t == span_end)
+                color = wxNullColour;
+
+            continue;
+        }
+
+        if (inTag) {
+            tag += c;
+            continue;
+        }
+
+        buffer += c;
+    }
+
+    flush();
+    return tokens;
+}
+
+void MarkupText::SetMarkup(const wxString& text)
+{
+    m_tokens = ParseMarkup(text);
+}
+
+wxSize MarkupText::Measure(wxDC& dc) const
+{
+    wxSize size{0, 0};
+
+    for (const auto& token : m_tokens) {
+        dc.SetFont(token.font);
+        wxSize ext = dc.GetTextExtent(token.text);
+        size.x += ext.x;
+        size.y = std::max(size.y, ext.y);
+    }
+    return size;
+}
+
+void MarkupText::Render(wxDC& dc, const wxRect& rect, wxEllipsizeMode ellipsize) const
+{
+    // NOTE: Ellipsizing is intentionally not supported for markup text
+
+    int x = rect.x;
+    int y = rect.y;
+
+    for (const auto& token : m_tokens) {
+        dc.SetFont(token.font);
+
+        wxColour old = dc.GetTextForeground();
+        if (token.color.IsOk())
+            dc.SetTextForeground(token.color);
+
+        wxString text = token.text;
+        if (ellipsize != wxELLIPSIZE_NONE)
+            text = wxControl::Ellipsize(
+                text, dc, ellipsize, rect.width - (x - rect.x)
+            );
+
+        dc.DrawText(text, x, y);
+        dc.SetTextForeground(old);
+
+        x += dc.GetTextExtent(text).x;
+    }
+}
+
+wxString MarkupText::GetPlainText() const
+{
+    wxString out;
+    for (const auto& token : m_tokens)
+        out += token.text;
+    return out;
+}
+
 #if ENABLE_NONCUSTOM_DATA_VIEW_RENDERING
 BitmapTextRenderer::BitmapTextRenderer(wxDataViewCellMode mode /*= wxDATAVIEW_CELL_EDITABLE*/, 
                                                  int align /*= wxDVR_DEFAULT_ALIGNMENT*/): 
@@ -56,55 +206,21 @@ wxDataViewRenderer(wxT("PrusaDataViewBitmapText"), mode, align)
 }
 #endif // ENABLE_NONCUSTOM_DATA_VIEW_RENDERING
 
-BitmapTextRenderer::~BitmapTextRenderer()
-{
-#ifdef SUPPORTS_MARKUP
-    #ifdef wxHAS_GENERIC_DATAVIEWCTRL
-    delete m_markupText;
-    #endif //wxHAS_GENERIC_DATAVIEWCTRL
-#endif // SUPPORTS_MARKUP
-}
+BitmapTextRenderer::~BitmapTextRenderer() {}
 
 void BitmapTextRenderer::EnableMarkup(bool enable)
 {
-#ifdef SUPPORTS_MARKUP
-#ifdef wxHAS_GENERIC_DATAVIEWCTRL
-    if (enable) {
-        if (!m_markupText)
-            m_markupText = new wxItemMarkupText(wxString());
+    if (enable && !m_markupText) {
+        m_markupText = std::make_unique<MarkupText>();
     }
-    else {
-        if (m_markupText) {
-            delete m_markupText;
-            m_markupText = nullptr;
-        }
-    }
-#else
-    m_is_markupText = enable;
-#endif //wxHAS_GENERIC_DATAVIEWCTRL
-#endif // SUPPORTS_MARKUP
 }
 
 bool BitmapTextRenderer::SetValue(const wxVariant &value)
 {
     m_value << value;
 
-#ifdef SUPPORTS_MARKUP
-#ifdef wxHAS_GENERIC_DATAVIEWCTRL
     if (m_markupText)
         m_markupText->SetMarkup(m_value.GetText());
-    /* 
-#else 
-#if defined(__WXGTK__)
-   GValue gvalue = G_VALUE_INIT;
-    g_value_init(&gvalue, G_TYPE_STRING);
-    g_value_set_string(&gvalue, wxGTK_CONV_FONT(str.GetText(), GetOwner()->GetOwner()->GetFont()));
-    g_object_set_property(G_OBJECT(m_renderer/ *.GetText()* /), m_is_markupText ? "markup" : "text", &gvalue);
-    g_value_unset(&gvalue);
-#endif // __WXGTK__
-    */
-#endif // wxHAS_GENERIC_DATAVIEWCTRL
-#endif // SUPPORTS_MARKUP
 
     return true;
 }
@@ -117,12 +233,7 @@ bool BitmapTextRenderer::GetValue(wxVariant& WXUNUSED(value)) const
 #if ENABLE_NONCUSTOM_DATA_VIEW_RENDERING && wxUSE_ACCESSIBILITY
 wxString BitmapTextRenderer::GetAccessibleDescription() const
 {
-#ifdef SUPPORTS_MARKUP
-    if (m_markupText)
-        return wxMarkupParser::Strip(m_text);
-#endif // SUPPORTS_MARKUP
-
-    return m_value.GetText();
+    return m_markupText ? m_markupText->GetPlainText() : m_value.GetText();
 }
 #endif // wxUSE_ACCESSIBILITY && ENABLE_NONCUSTOM_DATA_VIEW_RENDERING
 
@@ -138,27 +249,11 @@ bool BitmapTextRenderer::Render(wxRect rect, wxDC *dc, int state)
         xoffset = icon_sz.x + 4;
     }
 
-#if defined(SUPPORTS_MARKUP) && defined(wxHAS_GENERIC_DATAVIEWCTRL)
-    if (m_markupText)
-    {
+    if (m_markupText) {
         rect.x += xoffset;
-        m_markupText->Render(GetView(), *dc, rect, 0, GetEllipsizeMode());
+        rect.width -= xoffset;
+        m_markupText->Render(*dc, rect, wxELLIPSIZE_MIDDLE);
     }
-    else
-#endif // SUPPORTS_MARKUP && wxHAS_GENERIC_DATAVIEWCTRL
-#ifdef _WIN32 
-        // workaround for Windows DarkMode : Don't respect to the state & wxDATAVIEW_CELL_SELECTED to avoid update of the text color
-        RenderText(m_value.GetText(), xoffset, rect, dc, state & wxDATAVIEW_CELL_SELECTED ? 0 :state);
-#else
-    {
-        wxDataViewCtrl* const view = GetView();
-        if (GetAttr().HasFont())
-            dc->SetFont(GetAttr().GetEffectiveFont(view->GetFont()));
-        else
-            dc->SetFont(view->GetFont());
-        RenderText(m_value.GetText(), xoffset, rect, dc, state);
-    }
-#endif
 
     return true;
 }
@@ -175,11 +270,9 @@ wxSize BitmapTextRenderer::GetSize() const
         else
             dc.SetFont(view->GetFont());
 
-#if defined(SUPPORTS_MARKUP) && defined(wxHAS_GENERIC_DATAVIEWCTRL)
         if (m_markupText)
             size = m_markupText->Measure(dc);
         else
-#endif // SUPPORTS_MARKUP && wxHAS_GENERIC_DATAVIEWCTRL
             size = dc.GetTextExtent(m_value.GetText());
 
         int lines = m_value.GetText().Freq('\n') + 1;
@@ -325,10 +418,6 @@ wxWindow* BitmapChoiceRenderer::CreateEditorCtrl(wxWindow* parent, wxRect labelR
 #endif
         labelRect.GetTopLeft(), wxSize(labelRect.GetWidth(), -1), 
         0, nullptr , wxCB_READONLY);
-
-#ifdef _WIN32
-    w_config()->UpdateDarkUI(c_editor);
-#endif
 
     int def_id = m_get_default_extruder_idx ? m_get_default_extruder_idx() : 0;
     c_editor->Append(_L("default"), def_id < 0 ? wxNullBitmap : *icons[def_id]);
