@@ -191,127 +191,6 @@ class GLCanvas3D
 {
     static const double DefaultCameraZoomToBoxMarginFactor;
 
-    class LayersEditing
-    {
-    public:
-        enum EState : unsigned char
-        {
-            Unknown,
-            Editing,
-            Completed,
-            Paused,
-            Num_States
-        };
-
-        static const float THICKNESS_BAR_WIDTH;
-
-    private:
-        bool                        m_enabled{ false };
-        unsigned int                m_z_texture_id{ 0 };
-        // Not owned by LayersEditing.
-        const DynamicPrintConfig   *m_config{ nullptr };
-        // ModelObject for the currently selected object (Model::objects[last_object_id]).
-        const ModelObject          *m_model_object{ nullptr };
-        // Maximum z of the currently selected object (Model::objects[last_object_id]).
-        float                       m_object_max_z{ 0.0f };
-        // Owned by LayersEditing.
-        SlicingParameters           *m_slicing_parameters{ nullptr };
-        std::vector<double>         m_layer_height_profile;
-        bool                        m_layer_height_profile_modified{ false };
-        // Shrinkage compensation to apply when we need to use object_max_z with Z compensation.
-        Vec3d                       m_shrinkage_compensation{ Vec3d::Ones() };
-
-        mutable float               m_adaptive_quality{ 0.5f };
-        mutable HeightProfileSmoothingParams m_smooth_params;
-        
-        static float                s_overlay_window_width;
-
-        struct LayersTexture
-        {
-            // Texture data
-            std::vector<char>   data;
-            // Width of the texture, top level.
-            size_t              width{ 0 };
-            // Height of the texture, top level.
-            size_t              height{ 0 };
-            // For how many levels of detail is the data allocated?
-            size_t              levels{ 0 };
-            // Number of texture cells allocated for the height texture.
-            size_t              cells{ 0 };
-            // Does it need to be refreshed?
-            bool                valid{ false };
-        };
-        LayersTexture   m_layers_texture;
-
-    public:
-        EState state{ Unknown };
-        float band_width{ 2.0f };
-        float strength{ 0.005f };
-        int last_object_id{ -1 };
-        float last_z{ 0.0f };
-        LayerHeightEditActionType last_action{ LAYER_HEIGHT_EDIT_ACTION_INCREASE };
-
-        struct Profile
-        {
-            GLModel baseline;
-            GLModel profile;
-            GLModel background;
-            struct OldCanvasWidth
-            {
-                float background{ 0.0f };
-                float baseline{ 0.0f };
-                float profile{ 0.0f };
-            };
-            OldCanvasWidth old_canvas_width;
-            std::vector<double> old_layer_height_profile;
-        };
-        Profile m_profile;
-
-        LayersEditing() = default;
-        ~LayersEditing();
-
-        void init();
-
-        void set_config(const DynamicPrintConfig* config);
-        void select_object(const Model &model, int object_id);
-
-        bool is_allowed() const;
-
-        bool is_enabled() const { return m_enabled; }
-        void set_enabled(bool enabled) { m_enabled = is_allowed() && enabled; }
-
-        void render_overlay(const GLCanvas3D& canvas);
-        void render_volumes(const GLCanvas3D& canvas, const GLVolumeCollection& volumes);
-
-		void adjust_layer_height_profile();
-		void accept_changes(GLCanvas3D& canvas);
-        void reset_layer_height_profile(GLCanvas3D& canvas);
-        void adaptive_layer_height_profile(GLCanvas3D& canvas, float quality_factor);
-        void smooth_layer_height_profile(GLCanvas3D& canvas, const HeightProfileSmoothingParams& smoothing_params);
-
-        static float get_cursor_z_relative(const GLCanvas3D& canvas);
-        static bool bar_rect_contains(const GLCanvas3D& canvas, float x, float y);
-        static Rect get_bar_rect_screen(const GLCanvas3D& canvas);
-        static float get_overlay_window_width() { return LayersEditing::s_overlay_window_width; }
-
-        float object_max_z() const { return m_object_max_z; }
-
-        std::string get_tooltip(const GLCanvas3D& canvas) const;
-
-        std::pair<SlicingParameters, const std::vector<double>> get_layers_height_data();
-
-        void set_shrinkage_compensation(const Vec3d &shrinkage_compensation) { m_shrinkage_compensation = shrinkage_compensation; };
-
-    private:
-        bool is_initialized() const;
-        void generate_layer_height_texture();
-        void render_active_object_annotations(const GLCanvas3D& canvas);
-        void render_profile(const GLCanvas3D& canvas);
-        void update_slicing_parameters();
-
-        static float thickness_bar_width(const GLCanvas3D &canvas);        
-    };
-
     struct Mouse
     {
         struct Drag
@@ -1040,8 +919,6 @@ private:
 
     void _update_volumes_hover_state();
 
-    void _perform_layer_editing_action(wxMouseEvent* evt = nullptr);
-
     // Convert the screen space coordinate to an object space coordinate.
     // If the Z screen space coordinate is not provided, a depth buffer value is substituted.
     Vec3d _mouse_to_3d(const Point& mouse_pos, const float* z = nullptr, bool use_ortho = false);
@@ -1069,8 +946,6 @@ private:
     bool _deactivate_undo_redo_toolbar_items();
     bool _deactivate_collapse_toolbar_items();
     bool _deactivate_arrange_menu();
-
-    float get_overlay_window_width() { return LayersEditing::get_overlay_window_width(); }
 
 #if ENABLE_BINARIZED_GCODE_DEBUG_WINDOW
     void show_binary_gcode_debug_window();
