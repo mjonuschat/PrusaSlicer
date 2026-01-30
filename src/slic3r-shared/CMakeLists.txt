@@ -74,6 +74,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/MultiMaterialPaintingGizmo.cpp
         include/Slic3r/App/Plater/MultiMaterialPaintingDialog.hpp
         src/Slic3r/App/Plater/MultiMaterialPaintingDialog.cpp
+		include/Slic3r/App/Plater/LayerHeightGizmoHelper.hpp
+		src/Slic3r/App/Plater/LayerHeightGizmoHelper.cpp
+        include/Slic3r/App/Plater/VariableLayerHeightGizmo.hpp
+		src/Slic3r/App/Plater/VariableLayerHeightGizmo.cpp
+        include/Slic3r/App/Plater/VariableLayerHeightDialog.hpp
+        src/Slic3r/App/Plater/VariableLayerHeightDialog.cpp
         include/Slic3r/App/Plater/TextGizmo.hpp
         src/Slic3r/App/Plater/TextGizmo.cpp
         include/Slic3r/App/Plater/TextDialog.hpp

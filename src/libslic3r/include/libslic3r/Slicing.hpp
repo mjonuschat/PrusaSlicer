@@ -23,6 +23,7 @@ class DynamicPrintConfig;
 
 namespace Domain {
 struct ConfigPackFDM;
+class ObjectSettings;
 }
 
 // Parameters to guide object slicing and support generation.
@@ -33,10 +34,18 @@ struct SlicingParameters
 	SlicingParameters() = default;
 
     static SlicingParameters create_from_config(
-        const PrintObjectConfigView     &config,
-        double                           object_height,
-        const std::vector<unsigned int> &object_extruders,
-        const Domain::Vec3d             &object_shrinkage_compensation);
+        const PrintObjectConfigView& config,
+        double object_height,
+        const std::vector<unsigned int>& object_extruders,
+        const Domain::Vec3d& object_shrinkage_compensation
+    );
+
+    static SlicingParameters create_from_config(
+        const Domain::ConfigPackFDM& config,
+        const Domain::ObjectSettings& object_settings,
+        double object_height,
+        const std::vector<unsigned int>& object_extruders
+    );
 
     // Has any raft layers?
     bool        has_raft() const { return raft_layers() > 0; }

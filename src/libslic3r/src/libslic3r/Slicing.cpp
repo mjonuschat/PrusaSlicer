@@ -9,6 +9,10 @@
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+#include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/ShrinkageCompensation.hpp"
+#include "libslic3r/SlicingInput.hpp"
+
 #include <limits>
 #include <algorithm>
 
@@ -131,6 +135,34 @@ SlicingParameters SlicingParameters::create_from_config(
 
     params.valid = true;
     return params;
+}
+
+SlicingParameters SlicingParameters::create_from_config(
+    const Domain::ConfigPackFDM& config,
+    const Domain::ObjectSettings& object_settings,
+    double object_height,
+    const std::vector<unsigned int>& object_extruders
+)
+{
+    const auto full_config_fdm = prepare_slicing_input(config, object_extruders);
+    ASSERT(full_config_fdm.has_value());
+
+    const PrintConfigView print_config_view{full_config_fdm.value()};
+    const Vec3d shrinkage = Slicing::get_shrinkage_compensation(object_extruders, print_config_view)
+                                .value_or(Vec3d{1., 1., 1.});
+
+    const auto partial_object_config_fdm = prepare_slicing_object_input(
+        object_settings,
+        full_config_fdm.value()->tools_count(),
+        full_config_fdm.value()->filaments_count()
+    );
+    ASSERT(partial_object_config_fdm.has_value());
+
+    const PrintObjectConfigView config_view{
+        full_config_fdm.value(),
+        partial_object_config_fdm.value()
+    };
+    return create_from_config(config_view, object_height, object_extruders, shrinkage);
 }
 
 ZHeightPairs layer_height_profile_from_ranges(
