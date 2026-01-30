@@ -723,11 +723,8 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
 
     std::sort(object_ids.begin(), object_ids.end());
     object_ids.erase(std::unique(object_ids.begin(), object_ids.end()), object_ids.end());
-    for (size_t object_id : object_ids) {
-        Domain::ModelObject& object = *project.find_object_by_id(object_id);
-        object.invalidate_bounding_box();
-        Algorithms::ModelObject::ensure_on_bed(object, true); // disallow negative z
-    }
+    for (size_t object_id : object_ids)
+        project.find_object_by_id(object_id)->invalidate_bounding_box();
 
     invoke_listeners<ISceneChangedListener>(
         [&removed_ids, &updated_ids, project_id = m_selected_project_id](auto* l)
@@ -738,9 +735,9 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     );
 
     Domain::ElementRefs selection_ids;
-    for (const auto& update_id : updated_ids) {
-        Domain::ModelObject& object = *project.find_object_by_id(update_id.object_id);
-        for (const auto& inst : object.instances)
+    for (const Domain::ElementRef &update_id : updated_ids) {
+        for (const Domain::ModelInstance* inst :
+            project.find_object_by_id(update_id.object_id)->instances)
             selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
     }
     set_object_selection({SelectionMode::Volume, selection_ids});
