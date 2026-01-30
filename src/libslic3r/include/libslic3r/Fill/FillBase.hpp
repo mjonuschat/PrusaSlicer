@@ -87,7 +87,7 @@ struct FillParams
     // For infills that produce closed loops to force printing those loops clockwise.
     bool        prefer_clockwise_movements { false };
 };
-static_assert(IsTriviallyCopyable<FillParams>::value, "FillParams class is not POD (and it should be - see constructor).");
+static_assert(std::is_trivially_copyable_v<FillParams>, "FillParams class is not POD (and it should be - see constructor).");
 
 class Fill
 {

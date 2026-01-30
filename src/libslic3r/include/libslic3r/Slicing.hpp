@@ -18,8 +18,6 @@
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/Utils.hpp"
-
 namespace Slic3r
 {
 
@@ -118,7 +116,7 @@ struct SlicingParameters
     // Scaling factor for compensating shrinkage in Z-axis.
     double    object_shrinkage_compensation_z { 0 };
 };
-static_assert(IsTriviallyCopyable<SlicingParameters>::value, "SlicingParameters class is not POD (and it should be - see constructor).");
+static_assert(std::is_trivially_copyable_v<SlicingParameters>, "SlicingParameters class is not POD (and it should be - see constructor).");
 
 // The two slicing parameters lead to the same layering as long as the variable layer thickness is not in action.
 inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters &sp2)
