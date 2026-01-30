@@ -124,8 +124,8 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
                        const std::string& icon_name,
                        Biz::Preset::PresetDiffOperation close_act,
                        const wxString& label,
-                       bool process_enable      = true,
-                       std::function<void()> fn = nullptr
+                       std::function<bool()> is_enabled_fn = nullptr,
+                       std::function<void()> fn            = nullptr
                    )
     {
         *btn = new ScalableButton(
@@ -156,10 +156,10 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
 
         (*btn)->Bind(
             wxEVT_UPDATE_UI,
-            [this, process_enable](wxUpdateUIEvent& evt)
+            [this, is_enabled_fn](wxUpdateUIEvent& evt)
             {
-                if (process_enable)
-                    evt.Enable(m_tree->has_selection());
+                if (is_enabled_fn)
+                    evt.Enable(is_enabled_fn());
             }
         );
 
@@ -188,7 +188,7 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
             "chevron_left",
             Biz::Preset::PresetDiffOperation::Undef,
             _L("Back"),
-            false,
+            nullptr,
             [this]()
             {
                 m_exit_queue++;
@@ -202,30 +202,25 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
             &m_transfer_btn,
             "paste_menu",
             Biz::Preset::PresetDiffOperation::Transfer,
-            _L("Transfer")
+            _L("Transfer"),
+            [this]() { return m_is_enabled_transfer && m_tree->has_selection(); }
         );
     }
 
-    add_btn(
-        &m_discard_btn,
-        "exit",
-        Biz::Preset::PresetDiffOperation::Discard,
-        _L("Discard"),
-        false
-    );
+    add_btn(&m_discard_btn, "exit", Biz::Preset::PresetDiffOperation::Discard, _L("Discard"));
 
     // "Save" button
     add_btn(
         &m_save_btn,
         "save",
         Biz::Preset::PresetDiffOperation::Save,
-        _L("Save"),
-        false // Temporary: until save functionality is implemented
+        _L("Save") //,
+        // [this]() {return m_tree->has_selection(); }// Temporary: until save functionality is implemented
     );
     m_save_btn->Enable(false); // Temporary: until save functionality is implemented
 
     ScalableButton* cancel_btn;
-    add_btn(&cancel_btn, "cross", Biz::Preset::PresetDiffOperation::Undef, _L("Cancel"), false);
+    add_btn(&cancel_btn, "cross", Biz::Preset::PresetDiffOperation::Undef, _L("Cancel"));
 }
 
 void UnsavedChangesDialog::compare()
@@ -234,50 +229,68 @@ void UnsavedChangesDialog::compare()
     std::vector<std::string> diff_keys;
 
     if (m_printer_technology == Domain::PrinterTechnology::FFF) {
-        Domain::FullConfigFDM full_config_init(std::get<Domain::ConfigPackFDM>(m_config_original));
-        Domain::FullConfigFDM full_config_selected(
-            std::get<Domain::ConfigPackFDM>(m_config_selected)
-        );
+        auto config_pack_original = std::get<Domain::ConfigPackFDM>(m_config_original);
+        auto config_pack_selected = std::get<Domain::ConfigPackFDM>(m_config_selected);
 
-        diff_keys = full_config_init.diff_keys(full_config_selected);
+        diff_keys = config_pack_original.printer.diff_keys(config_pack_selected.printer);
+        if (!diff_keys.empty()) {
+            m_diffs_per_kind[{PresetKind::FdmPrinter}] = diff_keys;
+        }
 
-        SPDLOG_INFO("UnChDlg: Diffs count: {} ", diff_keys.size());
+        diff_keys = config_pack_original.print.diff_keys(config_pack_selected.print);
+        if (!diff_keys.empty()) {
+            m_diffs_per_kind[{PresetKind::FdmPrint}] = diff_keys;
+        }
 
-        // Distribute diffs per type.
-        // Material may contain overrides for the same parameters from other config boxes,
-        // so it must be checked first.
-        Domain::ConfigPackFDM config = std::get<Domain::ConfigPackFDM>(m_config_original);
-        for (const std::string& key : diff_keys) {
-            if (config.filament[0].find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::FdmMaterial].emplace_back(key);
-            } else if (config.tool[0].find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::FdmToolPrint].emplace_back(key);
-            } else if (config.print.find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::FdmPrint].emplace_back(key);
-            } else if (config.printer.find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::FdmPrinter].emplace_back(key);
+        for (size_t
+                 i = 0,
+                 n = std::min(config_pack_original.tool.size(), config_pack_selected.tool.size());
+             i < n;
+             i++)
+        {
+            diff_keys = config_pack_original.tool[i].diff_keys(config_pack_selected.tool[i]);
+            if (!diff_keys.empty()) {
+                m_diffs_per_kind[{PresetKind::FdmToolPrint, i}] = diff_keys;
+            }
+        }
+
+        for (size_t i = 0,
+                    n = std::min(
+                        config_pack_original.filament.size(),
+                        config_pack_selected.filament.size()
+                    );
+             i < n;
+             i++)
+        {
+            diff_keys =
+                config_pack_original.filament[i].diff_keys(config_pack_selected.filament[i]);
+            if (!diff_keys.empty()) {
+                m_diffs_per_kind[{PresetKind::FdmMaterial, i}] = diff_keys;
             }
         }
     } else {
-        Domain::ConfigPackSLA config = std::get<Domain::ConfigPackSLA>(m_config_original);
-        Domain::FullConfigSLA full_config_init(std::get<Domain::ConfigPackSLA>(m_config_original));
-        Domain::FullConfigSLA full_config_selected(
-            std::get<Domain::ConfigPackSLA>(m_config_selected)
+        auto config_pack_original = std::get<Domain::ConfigPackSLA>(m_config_original);
+        auto config_pack_selected = std::get<Domain::ConfigPackSLA>(m_config_selected);
+
+        diff_keys = config_pack_original.sla_printer_settings.diff_keys(
+            config_pack_selected.sla_printer_settings
         );
+        if (!diff_keys.empty()) {
+            m_diffs_per_kind[{PresetKind::SlaPrinter}] = diff_keys;
+        }
 
-        diff_keys = full_config_init.diff_keys(full_config_selected);
+        diff_keys = config_pack_original.sla_print_settings.diff_keys(
+            config_pack_selected.sla_print_settings
+        );
+        if (!diff_keys.empty()) {
+            m_diffs_per_kind[{PresetKind::SlaPrint}] = diff_keys;
+        }
 
-        // Distribute diffs per type.
-        // Material may contain overrides for the same parameters from other config boxes,
-        // so it must be checked first.
-        for (const std::string& key : diff_keys) {
-            if (config.sla_material_settings.find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::SlaMaterial].emplace_back(key);
-            } else if (config.sla_print_settings.find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::SlaPrint].emplace_back(key);
-            } else if (config.sla_printer_settings.find(key).item) {
-                m_diffs_per_kind[Domain::Preset::PresetKind::SlaPrinter].emplace_back(key);
-            }
+        diff_keys = config_pack_original.sla_material_settings.diff_keys(
+            config_pack_selected.sla_material_settings
+        );
+        if (!diff_keys.empty()) {
+            m_diffs_per_kind[{PresetKind::SlaMaterial, 0}] = diff_keys;
         }
     }
 }
@@ -301,12 +314,11 @@ void UnsavedChangesDialog::show_current_diffs()
     }
     m_top_info_line->SetLabel(info);
 
-    auto it         = std::next(m_diffs_per_kind.begin(), step - 1);
-    PresetKind kind = it->first;
-    update_tree(kind, it->second);
+    auto it = std::next(m_diffs_per_kind.begin(), step - 1);
+    update_tree(it->first, it->second);
 
     size_t tool_id = 0;
-    update_transfer_button(kind, tool_id);
+    update_transfer_button(it->first);
 
     if (m_back_btn) {
         m_back_btn->Enable(step > 1);
@@ -315,30 +327,39 @@ void UnsavedChangesDialog::show_current_diffs()
     show_info_line(PresetDiffOperation::Undef);
 }
 
-void UnsavedChangesDialog::update_transfer_button(PresetKind kind, size_t tool_id)
+void UnsavedChangesDialog::update_transfer_button(PresetSwitchKindId kind_id)
 {
     if (!m_transfer_btn)
         return;
 
     bool is_keep{false};
-    switch (kind) {
+    switch (kind_id.kind) {
     case PresetKind::FdmPrinter:
     case PresetKind::SlaPrinter: {
-        is_keep = m_preset_names.printer == m_preset_names_new.printer;
+        is_keep               = m_preset_names.printer == m_preset_names_new.printer;
+        m_is_enabled_transfer = true;
         break;
     }
     case PresetKind::FdmPrint:
     case PresetKind::SlaPrint: {
-        is_keep = m_preset_names.print == m_preset_names_new.print;
+        is_keep               = m_preset_names.print == m_preset_names_new.print;
+        m_is_enabled_transfer = true;
         break;
     }
     case PresetKind::FdmToolPrint: {
-        is_keep = m_preset_names.tools[tool_id] == m_preset_names_new.tools[tool_id];
+        ASSERT(kind_id.id);
+        size_t tool_id = kind_id.id.value();
+        if (m_is_enabled_transfer = m_preset_names_new.tools.size() > tool_id) {
+            is_keep = m_preset_names.tools[tool_id] == m_preset_names_new.tools[tool_id];
+        }
         break;
     }
     case PresetKind::FdmMaterial:
     case PresetKind::SlaMaterial: {
-        is_keep = m_preset_names.materials[tool_id] == m_preset_names_new.materials[tool_id];
+        size_t tool_id = kind_id.id.value_or(0);
+        if (m_is_enabled_transfer = m_preset_names_new.materials.size() > tool_id) {
+            is_keep = m_preset_names.materials[tool_id] == m_preset_names_new.materials[tool_id];
+        }
         break;
     }
     default:
@@ -389,19 +410,27 @@ static std::string name(Slic3r::Biz::Preset::PresetSelectionNames::PresetName pr
     return prefix + preset_name.name;
 }
 
-void UnsavedChangesDialog::update_tree(PresetKind kind, const std::vector<std::string>& diff_keys)
+void UnsavedChangesDialog::update_tree(
+    PresetSwitchKindId kind_id,
+    const std::vector<std::string>& diff_keys
+)
 {
     m_tree->Clear();
 
     const Domain::ConfigBox* config_left{nullptr};
     const Domain::ConfigBox* config_mid{nullptr};
     const Domain::ConfigBox* config_right{nullptr};
+
     std::string preset_name;
+    std::string new_preset_name = std::string();
+
+    PresetKind kind = kind_id.kind;
 
     switch (kind) {
     case PresetKind::FdmPrinter:
     case PresetKind::SlaPrinter: {
-        preset_name = fmt::format("{} \"{}\"", _u8L("Printer"), name(m_preset_names.printer));
+        preset_name     = fmt::format("{} \"{}\"", _u8L("Printer"), name(m_preset_names.printer));
+        new_preset_name = name(m_preset_names_new.printer);
         if (kind == PresetKind::FdmPrinter) {
             config_left = &std::get<Domain::ConfigPackFDM>(m_config_original).printer;
             config_mid  = &std::get<Domain::ConfigPackFDM>(m_config_selected).printer;
@@ -419,8 +448,9 @@ void UnsavedChangesDialog::update_tree(PresetKind kind, const std::vector<std::s
     }
     case PresetKind::FdmPrint:
     case PresetKind::SlaPrint: {
-        preset_name = fmt::format("{} \"{}\"", _u8L("Print"), name(m_preset_names.print));
-        if (kind == PresetKind::FdmPrint) {
+        preset_name     = fmt::format("{} \"{}\"", _u8L("Print"), name(m_preset_names.print));
+        new_preset_name = name(m_preset_names_new.printer);
+        if (kind_id.kind == PresetKind::FdmPrint) {
             config_left = &std::get<Domain::ConfigPackFDM>(m_config_original).print;
             config_mid  = &std::get<Domain::ConfigPackFDM>(m_config_selected).print;
             if (m_config_new) {
@@ -436,57 +466,49 @@ void UnsavedChangesDialog::update_tree(PresetKind kind, const std::vector<std::s
         break;
     }
     case PresetKind::FdmToolPrint: {
-        for (size_t i = 0, n = m_preset_names.tools.size(); i < n; i++) {
-            config_left = &std::get<Domain::ConfigPackFDM>(m_config_original).tool[i];
-            config_mid  = &std::get<Domain::ConfigPackFDM>(m_config_selected).tool[i];
-            if (m_config_new && std::get<Domain::ConfigPackFDM>(*m_config_new).tool.size() > i) {
-                config_right = &std::get<Domain::ConfigPackFDM>(*m_config_new).tool[i];
-            } else {
-                config_right = nullptr;
-            }
-
-            preset_name =
-                fmt::format("{} {} \"{}\"", _u8L("Tool Print"), i, name(m_preset_names.tools[i]));
-            append_diff_keys(
-                kind,
-                preset_name,
-                m_preset_names_new.tools.empty() ? "" : name(m_preset_names_new.tools[i]),
-                config_left,
-                config_mid,
-                config_right,
-                diff_keys
-            );
-            preset_name.clear();
+        ASSERT(kind_id.id);
+        size_t tool_id = kind_id.id.value();
+        config_left    = &std::get<Domain::ConfigPackFDM>(m_config_original).tool[tool_id];
+        config_mid     = &std::get<Domain::ConfigPackFDM>(m_config_selected).tool[tool_id];
+        if (m_config_new && std::get<Domain::ConfigPackFDM>(*m_config_new).tool.size() > tool_id) {
+            config_right = &std::get<Domain::ConfigPackFDM>(*m_config_new).tool[tool_id];
+        } else {
+            config_right = nullptr;
         }
+
+        preset_name = fmt::format(
+            "{} {} \"{}\"",
+            _u8L("Tool Print"),
+            tool_id + 1,
+            name(m_preset_names.tools[tool_id])
+        );
+        if (tool_id < m_preset_names_new.tools.size()) {
+            new_preset_name = name(m_preset_names_new.tools[tool_id]);
+        }
+
         break;
     }
     case PresetKind::FdmMaterial: {
-        for (size_t i = 0, n = m_preset_names.materials.size(); i < n; i++) {
-            config_left = &std::get<Domain::ConfigPackFDM>(m_config_original).filament[i];
-            config_mid  = &std::get<Domain::ConfigPackFDM>(m_config_selected).filament[i];
-            if (m_config_new && std::get<Domain::ConfigPackFDM>(*m_config_new).filament.size() > i)
-            {
-                config_right = &std::get<Domain::ConfigPackFDM>(*m_config_new).filament[i];
-            } else {
-                config_right = nullptr;
-            }
+        ASSERT(kind_id.id);
+        size_t tool_id = kind_id.id.value();
+        config_left    = &std::get<Domain::ConfigPackFDM>(m_config_original).filament[tool_id];
+        config_mid     = &std::get<Domain::ConfigPackFDM>(m_config_selected).filament[tool_id];
+        if (m_config_new
+            && std::get<Domain::ConfigPackFDM>(*m_config_new).filament.size() > tool_id)
+        {
+            config_right = &std::get<Domain::ConfigPackFDM>(*m_config_new).filament[tool_id];
+        } else {
+            config_right = nullptr;
+        }
 
-            preset_name = fmt::format(
-                "{} {} \"{}\"",
-                _u8L("Tool Filament"),
-                i,
-                name(m_preset_names.materials[i])
-            );
-            append_diff_keys(
-                kind,
-                preset_name,
-                m_preset_names_new.materials.empty() ? "" : name(m_preset_names_new.materials[i]),
-                config_left,
-                config_mid,
-                config_right,
-                diff_keys
-            );
-            preset_name.clear();
+        preset_name = fmt::format(
+            "{} {} \"{}\"",
+            _u8L("Tool Filament"),
+            tool_id + 1,
+            name(m_preset_names.materials[tool_id])
+        );
+        if (tool_id < m_preset_names_new.materials.size()) {
+            new_preset_name = name(m_preset_names_new.materials[tool_id]);
         }
         break;
     }
@@ -496,22 +518,13 @@ void UnsavedChangesDialog::update_tree(PresetKind kind, const std::vector<std::s
         config_mid  = &std::get<Domain::ConfigPackSLA>(m_config_selected).sla_material_settings;
         if (m_config_new) {
             config_right = &std::get<Domain::ConfigPackSLA>(*m_config_new).sla_material_settings;
+            new_preset_name = name(m_preset_names_new.materials[0]);
         }
         break;
     }
     default:
         break;
     };
-
-    if (preset_name.empty()) {
-        return;
-    }
-
-    std::string new_preset_name = kind == PresetKind::SlaMaterial ?
-        name(m_preset_names_new.materials[0]) :
-        kind == PresetKind::FdmPrint || kind == PresetKind::SlaPrint ?
-        name(m_preset_names_new.print) :
-        name(m_preset_names_new.printer);
 
     append_diff_keys(
         kind,
@@ -573,15 +586,10 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
     }
 
     const size_t step = m_diffs_per_kind.size() - m_exit_queue;
-    PresetKind kind   = std::next(m_diffs_per_kind.begin(), step)->first;
 
-    size_t tool_id = 0; // ToDo: detect tool/material id
+    PresetSwitchKindId kind_id = std::next(m_diffs_per_kind.begin(), step)->first;
 
-    Slic3r::Biz::Preset::PresetSwitchKindId id = {kind};
-    if (kind == PresetKind::FdmToolPrint || kind == PresetKind::FdmMaterial) {
-        id.id = tool_id;
-    }
-    m_exit_states[id] = {operation, {}, {}};
+    m_exit_states[kind_id] = {operation, {}, {}};
 
     if (operation == PresetDiffOperation::Discard) {
         // ignore this state
@@ -590,7 +598,7 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
             std::string new_preset_name = "TEMP new name";
             // ToDo: get new preset name using SavePresetDialog
 
-            m_exit_states[id].new_preset_name = new_preset_name;
+            m_exit_states[kind_id].new_preset_name = new_preset_name;
         }
 
         const Domain::ConfigPack& config_pack =
@@ -600,21 +608,24 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
             m_tree->unselected_options() :
             m_tree->selected_options();
 
-        auto store_exit_state_values = [this, id](
-                                             const std::vector<std::string>& options,
-                                             const Domain::ConfigItems& items,
-                                             const Domain::ConfigOverrides& overrides
-                                         )
+        auto store_exit_state_values = [this, kind_id](
+                                           const std::vector<std::string>& options,
+                                           const Domain::ConfigItems& items,
+                                           const Domain::ConfigOverrides& overrides
+                                       )
         {
             for (const std::string& key : options) {
                 if (const Domain::ConfigItem* item = items.find(key)) {
-                    m_exit_states[id].items.insert({key, item->value()});
+                    m_exit_states[kind_id].items.insert({key, item->value()});
                 }
                 if (const Domain::ConfigItem* override = overrides.find(key)) {
-                    m_exit_states[id].overrides.insert({key, override->value()});
+                    m_exit_states[kind_id].overrides.insert({key, override->value()});
                 }
             }
         };
+
+        PresetKind kind = kind_id.kind;
+        size_t tool_id  = kind_id.id.value_or(0);
 
         if (m_printer_technology == Domain::PrinterTechnology::FFF) {
             Domain::ConfigPackFDM config = std::get<Domain::ConfigPackFDM>(config_pack);

@@ -14,6 +14,7 @@
 
 class wxStaticText;
 class wxBoxSizer;
+
 namespace Slic3r::App::WX {
 class DiffViewCtrl;
 class ScalableButton;
@@ -24,6 +25,7 @@ public:
     using PresetKind          = Domain::Preset::PresetKind;
     using PresetDiffOperation = Biz::Preset::PresetDiffOperation;
     using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStates;
+    using PresetSwitchKindId  = Biz::Preset::PresetSwitchKindId;
 
     UnsavedChangesDialog(
         const std::string& dialog_name,
@@ -45,8 +47,8 @@ private:
     void add_buttons(wxBoxSizer* sizer);
     void compare();
     void show_current_diffs();
-    void update_transfer_button(PresetKind kind, size_t tool_id = 0);
-    void update_tree(PresetKind kind, const std::vector<std::string>& diff_keys);
+    void update_transfer_button(PresetSwitchKindId kind_id);
+    void update_tree(PresetSwitchKindId kind_id, const std::vector<std::string>& diff_keys);
     void append_diff_keys(
         PresetKind kind,
         const std::string& preset_name,
@@ -79,13 +81,14 @@ private:
     const Domain::ConfigPack m_config_selected;
     Domain::ConfigPack* m_config_new{nullptr};
 
-    using DiffsPerKind = std::map<PresetKind, std::vector<std::string>>;
+    using DiffsPerKind = std::map<PresetSwitchKindId, std::vector<std::string>>;
     DiffsPerKind m_diffs_per_kind;
 
     PresetsSwitchStates m_exit_states;
 
     // Indicates a count of preset checkes in queue before close the dialog
     int m_exit_queue{0};
+    bool m_is_enabled_transfer{false};
 };
 
 } // namespace Slic3r::App::WX

@@ -305,10 +305,16 @@ bool can_select_printer_preset(
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
-    for (const auto [ref, is_runtime] :
-         preset_interactor
-             .get_material_presets(printer_hw_config_id, printer_preset_id, print_preset.id, 0))
-    {
+    size_t tool_cnt = hw_printer_config.technology == Domain::PrinterTechnology::SLA ?
+        1 :
+        tool_count(hw_printer_config);
+    for (size_t tool_index = 0; tool_index < tool_cnt; tool_index++) {
+        const auto& [ref, is_runtime] = preset_interactor.get_material_presets(
+            printer_hw_config_id,
+            printer_preset_id,
+            print_preset.id,
+            tool_index
+        )[0];
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
         materials.emplace_back(&material_preset);
         names_new.materials.emplace_back(
@@ -326,7 +332,7 @@ bool can_select_printer_preset(
         selected_preset_names(preset_interactor),
         names_new
     );
-    
+
     const bool ret = !exit_states.empty();
     preset_interactor.set_unsaved_changes(std::move(exit_states));
     return ret;
@@ -363,10 +369,16 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
     }
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
-    for (const auto [ref, is_runtime] :
-         preset_interactor
-             .get_material_presets(printer_hw_config_id, printer_preset_id, print_preset.id, 0))
-    {
+    size_t tool_cnt = hw_printer_config.technology == Domain::PrinterTechnology::SLA ?
+        1 :
+        tool_count(hw_printer_config);
+    for (size_t tool_index = 0; tool_index < tool_cnt; tool_index++) {
+        const auto& [ref, is_runtime] = preset_interactor.get_material_presets(
+            printer_hw_config_id,
+            printer_preset_id,
+            print_preset.id,
+            0
+        )[0];
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset = ref.get();
         materials.emplace_back(&material_preset);
         names_new.materials.emplace_back(
@@ -377,7 +389,7 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+    PresetsSwitchStates exit_states   = dlg_manager->show_unsaved_changes_dialog(
         dialog_name(),
         original_config(preset_interactor, true),
         selected_preset.config(),
@@ -460,7 +472,7 @@ bool can_select_tool_print_preset(
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+    PresetsSwitchStates exit_states   = dlg_manager->show_unsaved_changes_dialog(
         dialog_name(),
         original_config(preset_interactor, true, true),
         selected_preset.config(),
@@ -529,7 +541,7 @@ bool can_select_material_preset(
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+    PresetsSwitchStates exit_states   = dlg_manager->show_unsaved_changes_dialog(
         dialog_name(),
         original_config(preset_interactor, true, true, true),
         selected_preset.config(),
