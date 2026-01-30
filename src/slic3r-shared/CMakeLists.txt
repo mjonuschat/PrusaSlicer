@@ -1175,10 +1175,25 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
+
+        test/Slic3r/Biz/Format/STEPTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
     target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
+
+    if (SLIC3R_ENABLE_FORMAT_STEP)
+        add_dependencies(slic3r-shared-tests OCCTWrapper)
+        target_compile_definitions(slic3r-shared-tests PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
+
+        # Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
+        add_custom_command(TARGET slic3r-shared-tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:OCCTWrapper>
+                $<TARGET_FILE_DIR:slic3r-shared-tests>
+            COMMENT "Copying OCCTWrapper library for tests"
+        )
+    endif()
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
     file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)
