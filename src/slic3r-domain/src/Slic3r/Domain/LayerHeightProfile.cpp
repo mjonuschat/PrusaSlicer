@@ -4,6 +4,16 @@
 
 namespace Slic3r::Domain {
 
+double LayerZRange::height() const
+{
+    return top_z - bottom_z;
+}
+
+double LayerZRange::middle_z() const
+{
+    return 0.5 * (bottom_z + top_z);
+};
+
 void LayerHeightProfile::assign(const LayerHeightProfile& rhs)
 {
     if (!this->timestamp_matches(rhs)) {
@@ -20,9 +30,15 @@ void LayerHeightProfile::assign(LayerHeightProfile&& rhs)
     }
 }
 
-const std::vector<double>& LayerHeightProfile::get() const noexcept { return m_data; }
+const std::vector<double>& LayerHeightProfile::get() const noexcept
+{
+    return m_data;
+}
 
-bool LayerHeightProfile::empty() const noexcept { return m_data.empty(); }
+bool LayerHeightProfile::empty() const noexcept
+{
+    return m_data.empty();
+}
 
 void LayerHeightProfile::set(const std::vector<double>& data)
 {

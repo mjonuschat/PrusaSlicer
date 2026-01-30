@@ -13,6 +13,7 @@
 #include <cmath>
 
 using Slic3r::Domain::LayerHeightRange;
+using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::VolumeSettings;
 
 namespace Slic3r::Biz::Algorithms::LayerHeight {
@@ -383,7 +384,7 @@ smooth_height_profile(const std::vector<double>& profile, const SmoothParams& pa
     return gauss_blur(profile);
 }
 
-std::vector<double> generate_object_layers(
+LayerZRanges generate_object_layers(
     const GenerateLayersParams& params,
     const std::vector<double>& layer_height_profile
 )
@@ -393,12 +394,11 @@ std::vector<double> generate_object_layers(
     double print_z = 0;
     double height  = 0;
 
-    std::vector<double> out;
+    LayerZRanges out;
 
     if (params.first_object_layer_height_fixed) {
-        out.push_back(0);
         print_z = params.first_object_layer_height;
-        out.push_back(print_z);
+        out.push_back({0, print_z});
     }
 
     const double shrinkage_compensation_z = params.object_shrinkage_compensation_z;
@@ -441,10 +441,11 @@ std::vector<double> generate_object_layers(
 
         assert(height > params.min_layer_height - Domain::EPSILON);
         assert(height < params.max_layer_height + Domain::EPSILON);
-        out.push_back(print_z);
+        const double bottom_z = print_z;
+
         print_z += height;
         slice_z = print_z + 0.5 * params.min_layer_height;
-        out.push_back(print_z);
+        out.push_back({bottom_z, print_z});
     }
 
     // FIXME: Adjust the last layer to align with the top object layer exactly?

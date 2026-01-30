@@ -526,11 +526,11 @@ DONE:;
                 layer_height_profile(print_object_idx)
             );
             !layers.empty()
-            && layers.back() > this->config().get<double>("max_print_height") + EPSILON)
+            && layers.back().top_z > this->config().get<double>("max_print_height") + EPSILON)
         {
             const double shrinkage_compensation_z = this->m_shrinkage_compensation.z();
             if (shrinkage_compensation_z != 1.
-                && layers.back()
+                && layers.back().top_z
                     > (this->config().get<double>("max_print_height") / shrinkage_compensation_z
                        + EPSILON))
             {
@@ -542,7 +542,7 @@ DONE:;
                         print_object.model_object()->id()
                     }
                 );
-            } else if (0.5 * (layers[layers.size() - 2] + layers.back())
+            } else if (layers.back().middle_z()
                        > this->config().get<double>("max_print_height") + EPSILON)
             {
                 // The last slicing plane is below the print volume.

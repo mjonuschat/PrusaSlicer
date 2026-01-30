@@ -149,7 +149,7 @@ std::vector<double> layer_height_profile_from_ranges(
     );
 }
 
-std::vector<double> generate_object_layers(
+Domain::LayerZRanges generate_object_layers(
     const SlicingParameters& slicing_params,
     const std::vector<double>& layer_height_profile
 )

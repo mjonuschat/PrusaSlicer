@@ -148,7 +148,7 @@ std::vector<double> layer_height_profile_from_ranges(
 
 // Produce object layers as pairs of low / high layer boundaries, stored into a linear vector.
 // The object layers are based at z=0, ignoring the raft layers.
-std::vector<double> generate_object_layers(
+Domain::LayerZRanges generate_object_layers(
     const SlicingParameters& slicing_params,
     const std::vector<double>& layer_height_profile
 );

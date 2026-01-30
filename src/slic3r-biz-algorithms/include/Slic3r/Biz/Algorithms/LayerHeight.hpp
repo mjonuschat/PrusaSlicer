@@ -170,9 +170,9 @@ struct GenerateLayersParams
  * @brief Produce object layers as pairs of low / high layer boundaries, stored into a linear vector.
  * The object layers are based at z=0, ignoring the raft layers.
  *
- * @returnReturns vector of pairs [low_z, high_z, low_z, high_z, ...].
+ * @return Vector of LayerZRange, each representing one layer's bottom and top Z boundaries.
  */
-std::vector<double> generate_object_layers(
+Domain::LayerZRanges generate_object_layers(
     const GenerateLayersParams& params,
     const std::vector<double>& layer_height_profile
 );
