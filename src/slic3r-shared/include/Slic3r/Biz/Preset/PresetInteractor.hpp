@@ -68,6 +68,18 @@ using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStat
 
 using KeySet = std::set<std::string>;
 
+struct SelectedPresetIds
+{
+    std::string hw_config_id;
+    std::string repo_id;
+    std::string vendor_id;
+    std::string printer_id;
+    std::string print_id;
+    std::vector<std::string> tool_ids;
+    std::vector<std::string> material_ids;
+};
+
+
 /**
  * Manipulates presets associated with config containers.
  */
@@ -259,12 +271,36 @@ public:
         const std::string& hw_config_id,
         const std::string& printer_preset_id
     ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedPrinterPreset::Preset&
+    get_printer_system_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
+    const std::string& get_printer_system_preset_id(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
     [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedPrintPreset::Preset> get_print_preset(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,
         const std::string& print_id
     ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedPrintPreset::Preset& get_print_system_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_id
+    ) const;
+    const std::string& get_print_system_preset_id(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_id
+    ) const;
+
     [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedToolPrintPreset::Preset>
     get_tool_print_preset(
         Domain::SelectionId project_id,
@@ -274,8 +310,43 @@ public:
         size_t tool_index,
         const std::string& tool_print_preset_id
     ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedToolPrintPreset::Preset&
+    get_tool_print_system_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index,
+        const std::string& tool_print_preset_id
+    ) const;
+    const std::string& get_tool_print_system_preset_id(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index,
+        const std::string& tool_print_preset_id
+    ) const;
+
     [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedMaterialPreset::Preset>
     get_material_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index,
+        const std::string& material_preset_id
+    ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedMaterialPreset::Preset&
+    get_material_system_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index,
+        const std::string& material_preset_id
+    ) const;
+    const std::string& get_material_system_preset_id(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,
@@ -764,6 +835,7 @@ private:
 
     IPresetDialogManager* m_dialog_manager{ nullptr };
     PresetsSwitchStates m_unsaved_changes;
+    SelectedPresetIds m_unsaved_changes_selected_ids;
 
 };
 } // namespace Slic3r::Biz::Preset

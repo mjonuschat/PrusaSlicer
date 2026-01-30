@@ -85,22 +85,22 @@ NameValidator::ValidationResult NameValidator::validate(const std::string& prese
         valid_type = ValidationType::Invalid;
     }
 
-    constexpr std::string_view unusable_symbols = "<>[]:/\\|?*\"";
+    constexpr std::string_view illegal_chars = "<>[]:/\\|?*\"@";
     if (valid_type == ValidationType::Valid
-        && preset_name.find_first_of(unusable_symbols) != std::string::npos)
+        && preset_name.find_first_of(illegal_chars) != std::string::npos)
     {
         info_line = _u8L("The following characters are not allowed in the name")
             + ": "
-            + unusable_symbols.data();
+            + illegal_chars.data();
         valid_type = ValidationType::Invalid;
     }
 
-    const std::string unusable_suffix = Biz::_u8L("(modified)");
+    const std::string illegal_suffix = Biz::_u8L("(modified)");
     if (valid_type == ValidationType::Valid
-        && preset_name.find(unusable_suffix) != std::string::npos)
+        && preset_name.find(illegal_suffix) != std::string::npos)
     {
         info_line =
-            _u8L("The following suffix is not allowed in the name") + ":\n\t" + unusable_suffix;
+            _u8L("The following suffix is not allowed in the name") + ":\n\t" + illegal_suffix;
         valid_type = ValidationType::Invalid;
     }
 
