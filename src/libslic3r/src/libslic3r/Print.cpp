@@ -21,6 +21,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
+#include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
@@ -67,13 +68,14 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 using SlicingSync::PrintAndObjectSteps;
-using SlicingSync::PrintSteps;
 using SlicingSync::PrintObjectSteps;
+using SlicingSync::PrintSteps;
 using ParserConfig = Biz::Parser::IO::Config;
 using Biz::Parser::PlaceholderParser;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
+using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -584,7 +586,13 @@ DONE:;
             if (const std::vector<double>& layers = layer_height_profile(print_object_idx);
                 !layers.empty())
             {
-                if (!check_object_layers_fixed(print_object.slicing_parameters(), layers)) {
+                const SlicingParameters& slicing_parameters = print_object.slicing_parameters();
+                if (!check_object_layers_fixed(
+                        slicing_parameters.layer_height,
+                        slicing_parameters.first_object_layer_height,
+                        layers
+                    ))
+                {
                     errors.push_back(
                         Error{
                             ErrorCode::VariableLayerHeightAndOrganicSupports,

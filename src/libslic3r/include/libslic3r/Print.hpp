@@ -368,12 +368,6 @@ public:
     // The slicing parameters are dependent on various configuration values
     // (layer height, first layer height, raft settings, print nozzle diameter etc).
     const SlicingParameters&    slicing_parameters() const { return m_slicing_params; }
-    static SlicingParameters slicing_parameters(
-        const PrintObjectConfigView& full_config,
-        const Domain::ModelObject& model_object,
-        float object_max_z,
-        const Domain::Vec3d& object_shrinkage_compensation
-    );
 
     size_t                      num_printing_regions() const throw() { return m_shared_regions->all_regions.size(); }
     const PrintRegion&          printing_region(size_t idx) const throw() { return *m_shared_regions->all_regions[idx].get(); }

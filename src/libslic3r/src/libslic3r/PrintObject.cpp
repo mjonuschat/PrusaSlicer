@@ -2478,38 +2478,6 @@ void PrintObject::update_slicing_parameters() {
     }
 }
 
-SlicingParameters PrintObject::slicing_parameters(
-    const PrintObjectConfigView& object_config,
-    const Domain::ModelObject& model_object,
-    float object_max_z,
-    const Vec3d& object_shrinkage_compensation
-)
-{
-    std::vector<unsigned int> object_extruders;
-	for (const Domain::ModelVolume* model_volume : model_object.volumes)
-		if (model_volume->is_model_part()) {
-			PrintRegion::collect_object_printing_extruders(
-				object_config,
-                object_config.get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim && object_config.get<double>("brim_width") > 0.,
-				object_extruders);
-			for (const std::pair<const Domain::LayerHeightRange, Domain::VolumeSettings> &range_and_config : model_object.layer_config_ranges)
-				if (!range_and_config.second.overrides.get("perimeter_extruder").has_value() ||
-					!range_and_config.second.overrides.get("infill_extruder").has_value() ||
-					!range_and_config.second.overrides.get("solid_infill_extruder").has_value())
-					PrintRegion::collect_object_printing_extruders(
-						object_config,
-                        object_config.get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim && object_config.get<double>("brim_width") > 0.,
-						object_extruders);
-		}
-    sort_remove_duplicates(object_extruders);
-    //FIXME add painting extruders
-
-    if (object_max_z <= 0.f)
-        object_max_z = (float)BB::sizes(Algorithms::ModelObject::raw_bounding_box(model_object)).z();
-
-    return SlicingParameters::create_from_config(object_config, object_max_z, object_extruders, object_shrinkage_compensation);
-}
-
 // returns 0-based indices of extruders used to print the object (without brim, support and other helper extrusions)
 std::vector<unsigned int> PrintObject::object_extruders() const
 {

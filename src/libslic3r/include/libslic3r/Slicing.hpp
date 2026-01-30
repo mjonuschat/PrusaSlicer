@@ -7,10 +7,6 @@
 #ifndef slic3r_Slicing_hpp_
 #define slic3r_Slicing_hpp_
 
-#include <cstring>
-#include <map>
-#include <set>
-#include <type_traits>
 #include <vector>
 #include <utility>
 #include <cassert>
@@ -146,69 +142,17 @@ inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters
 }
 
 std::vector<double> layer_height_profile_from_ranges(
-    const SlicingParameters &slicing_params,
-    const Domain::LayerConfigRanges &layer_config_ranges);
-
-std::vector<double> layer_height_profile_adaptive(
     const SlicingParameters& slicing_params,
-    const Domain::ModelObject& object, float quality_factor);
-
-struct HeightProfileSmoothingParams
-{
-    unsigned int radius;
-    bool keep_min;
-
-    HeightProfileSmoothingParams() : radius(5), keep_min(false) {}
-    HeightProfileSmoothingParams(unsigned int radius, bool keep_min) : radius(radius), keep_min(keep_min) {}
-};
-
-std::vector<double> smooth_height_profile(
-    const std::vector<double>& profile, const SlicingParameters& slicing_params,
-    const HeightProfileSmoothingParams& smoothing_params);
-
-enum LayerHeightEditActionType : unsigned int {
-    LAYER_HEIGHT_EDIT_ACTION_INCREASE = 0,
-    LAYER_HEIGHT_EDIT_ACTION_DECREASE = 1,
-    LAYER_HEIGHT_EDIT_ACTION_REDUCE   = 2,
-    LAYER_HEIGHT_EDIT_ACTION_SMOOTH   = 3
-};
-
-void adjust_layer_height_profile(
-    const SlicingParameters     &slicing_params,
-    std::vector<double>       &layer_height_profile,
-    double                     z,
-    double                     layer_thickness_delta, 
-    double                     band_width,
-    LayerHeightEditActionType    action);
+    const Domain::LayerConfigRanges& layer_config_ranges
+);
 
 // Produce object layers as pairs of low / high layer boundaries, stored into a linear vector.
 // The object layers are based at z=0, ignoring the raft layers.
 std::vector<double> generate_object_layers(
-    const SlicingParameters     &slicing_params,
-    const std::vector<double> &layer_height_profile);
+    const SlicingParameters& slicing_params,
+    const std::vector<double>& layer_height_profile
+);
 
-// Check whether the layer height profile describes a fixed layer height profile.
-bool check_object_layers_fixed(
-    const SlicingParameters     &slicing_params,
-    const std::vector<double> &layer_height_profile);
-
-// Produce a 1D texture packed into a 2D texture describing in the RGBA format
-// the planned object layers.
-// Returns number of cells used by the texture of the 0th LOD level.
-int generate_layer_height_texture(
-    const SlicingParameters     &slicing_params,
-    const std::vector<double> &layers,
-    void *data, int rows, int cols, bool level_of_detail_2nd_level);
-
-namespace Slicing {
-    // Minimum layer height for the variable layer height algorithm. Nozzle index is 1 based.
-	double min_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
-
-	// Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle dimaeter by default,
-	// it should not be smaller than the minimum layer height.
-	// Nozzle index is 1 based.
-	double max_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
-} // namespace Slicing
 } // namespace Slic3r
 
 namespace cereal

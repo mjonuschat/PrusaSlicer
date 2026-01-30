@@ -7,8 +7,8 @@
 
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/format.hpp"
-#include "libslic3r/Slicing.hpp"
 
+#include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -287,7 +287,7 @@ std::string PresetHints::top_bottom_shell_thickness_explanation(const Domain::Co
     double  layer_height                    = get<double>(pack.print, "layer_height");
     bool    variable_layer_height			= get<bool>(pack.printer, "variable_layer_height");
     //FIXME the following line takes into account the 1st extruder only.
-    double  min_layer_height				= variable_layer_height ? Slicing::min_layer_height_from_nozzle(pack, 1) : layer_height;
+    double  min_layer_height				= variable_layer_height ? Algorithms::LayerHeight::min_layer_height_from_nozzle(pack, 1) : layer_height;
 
 	if (layer_height <= 0.f) {
 		out += _u8L("Top / bottom shell thickness hint: Not available due to invalid layer height.");
