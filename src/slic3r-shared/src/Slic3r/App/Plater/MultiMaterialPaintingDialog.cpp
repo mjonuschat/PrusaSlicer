@@ -121,12 +121,14 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
     m_smart_fill_button->set_min_size(tool_type_button_size);
     m_smart_fill_button->set_content_padding(5);
 
-    m_bucket_fill_button = tool_type_buttons->emplace_back<LayoutButton>("BF");
+    m_bucket_fill_button =
+        tool_type_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::FillDrip);
     m_bucket_fill_button->set_checkable(true);
     m_bucket_fill_button->set_min_size(tool_type_button_size);
     m_bucket_fill_button->set_content_padding(5);
 
-    m_height_range_button = tool_type_buttons->emplace_back<LayoutButton>("HR");
+    m_height_range_button =
+        tool_type_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::LineHeight);
     m_height_range_button->set_checkable(true);
     m_height_range_button->set_min_size(tool_type_button_size);
     m_height_range_button->set_content_padding(5);
