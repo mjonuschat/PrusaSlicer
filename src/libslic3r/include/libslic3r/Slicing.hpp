@@ -141,16 +141,16 @@ inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters
             sp1.object_print_z_min                  == sp2.object_print_z_min;
 }
 
-std::vector<double> layer_height_profile_from_ranges(
+Domain::ZHeightPairs layer_height_profile_from_ranges(
     const SlicingParameters& slicing_params,
     const Domain::LayerConfigRanges& layer_config_ranges
 );
 
-// Produce object layers as pairs of low / high layer boundaries, stored into a linear vector.
+// Produce object layers as LayerZRange boundaries.
 // The object layers are based at z=0, ignoring the raft layers.
 Domain::LayerZRanges generate_object_layers(
     const SlicingParameters& slicing_params,
-    const std::vector<double>& layer_height_profile
+    const Domain::ZHeightPairs& layer_height_profile
 );
 
 } // namespace Slic3r

@@ -361,7 +361,7 @@ public:
     
     // Initialize the layer_height_profile from the model_object's layer_height_profile, from model_object's layer height table, or from slicing parameters.
     // Returns true, if the layer_height_profile was changed.
-    static bool     update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile);
+    static bool     update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, Domain::ZHeightPairs &layer_height_profile);
 
     // Collect the slicing parameters, to be used by variable layer thickness algorithm,
     // by the interactive layer height editor and by the printing process itself.

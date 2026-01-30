@@ -30,7 +30,7 @@ void LayerHeightProfile::assign(LayerHeightProfile&& rhs)
     }
 }
 
-const std::vector<double>& LayerHeightProfile::get() const noexcept
+const ZHeightPairs& LayerHeightProfile::get() const noexcept
 {
     return m_data;
 }
@@ -40,7 +40,7 @@ bool LayerHeightProfile::empty() const noexcept
     return m_data.empty();
 }
 
-void LayerHeightProfile::set(const std::vector<double>& data)
+void LayerHeightProfile::set(const ZHeightPairs& data)
 {
     if (m_data != data) {
         m_data = data;
@@ -48,7 +48,7 @@ void LayerHeightProfile::set(const std::vector<double>& data)
     }
 }
 
-void LayerHeightProfile::set(std::vector<double>&& data)
+void LayerHeightProfile::set(ZHeightPairs&& data)
 {
     if (m_data != data) {
         m_data = std::move(data);

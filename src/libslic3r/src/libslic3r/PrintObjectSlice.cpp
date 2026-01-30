@@ -539,7 +539,7 @@ void PrintObject::slice()
     if (! this->set_started(posSlice))
         return;
     m_print->set_status(Domain::Percentage{10}, Biz::Slicing::ProgressInfo::ProcessingTriangulatedMesh);
-    std::vector<double> layer_height_profile;
+    Domain::ZHeightPairs layer_height_profile;
     this->update_layer_height_profile(*this->model_object(), m_slicing_params, layer_height_profile);
     m_print->throw_if_canceled();
     m_typed_slices = false;

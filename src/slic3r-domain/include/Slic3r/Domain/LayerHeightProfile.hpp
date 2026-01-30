@@ -10,6 +10,16 @@
 
 namespace Slic3r::Domain {
 
+struct ZHeightPair
+{
+    double z{0.};
+    double layer_height{0.};
+
+    bool operator==(const ZHeightPair&) const = default;
+};
+
+using ZHeightPairs = std::vector<ZHeightPair>;
+
 struct LayerZRange
 {
     double bottom_z{0.};
@@ -24,13 +34,13 @@ using LayerZRanges = std::vector<LayerZRange>;
 class LayerHeightProfile final : public Domain::ObjectWithTimestamp
 {
 private:
-    std::vector<double> m_data;
+    ZHeightPairs m_data;
 
 public:
-    const std::vector<double>& get() const noexcept;
+    const ZHeightPairs& get() const noexcept;
     bool empty() const noexcept;
-    void set(const std::vector<double>& data);
-    void set(std::vector<double>&& data);
+    void set(const ZHeightPairs& data);
+    void set(ZHeightPairs&& data);
     void clear();
 
     // Assign the content if the timestamp differs, don't assign an ObjectID.

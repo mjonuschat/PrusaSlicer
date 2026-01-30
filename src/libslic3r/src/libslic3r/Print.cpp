@@ -500,14 +500,14 @@ DONE:;
     // 1) Whether all layers are synchronized if printing with wipe tower and / or unsynchronized supports.
     // 2) Whether layer height is constant for Organic supports.
     // 3) Whether build volume Z is not violated.
-    std::vector<std::vector<double>> layer_height_profiles;
+    std::vector<Domain::ZHeightPairs> layer_height_profiles;
     auto layer_height_profile =
-        [this, &layer_height_profiles](const size_t print_object_idx) -> const std::vector<double>&
+        [this, &layer_height_profiles](const size_t print_object_idx) -> const Domain::ZHeightPairs&
     {
         const PrintObject& print_object = *m_objects[print_object_idx];
         if (layer_height_profiles.empty())
-            layer_height_profiles.assign(m_objects.size(), std::vector<double>());
-        std::vector<double>& profile = layer_height_profiles[print_object_idx];
+            layer_height_profiles.assign(m_objects.size(), Domain::ZHeightPairs());
+        Domain::ZHeightPairs& profile = layer_height_profiles[print_object_idx];
         if (profile.empty())
             PrintObject::update_layer_height_profile(
                 *print_object.model_object(),
@@ -583,7 +583,7 @@ DONE:;
                 == Domain::SupportMaterialStyle::smsOrganic
             && print_object.model_object()->has_custom_layering())
         {
-            if (const std::vector<double>& layers = layer_height_profile(print_object_idx);
+            if (const Domain::ZHeightPairs& layers = layer_height_profile(print_object_idx);
                 !layers.empty())
             {
                 const SlicingParameters& slicing_parameters = print_object.slicing_parameters();
@@ -698,7 +698,7 @@ DONE:;
                 if (has_custom_layering) {
                     auto& lh         = layer_height_profile(i);
                     auto& lh_tallest = layer_height_profile(tallest_object_idx);
-                    if (*(lh.end() - 2) > *(lh_tallest.end() - 2))
+                    if (lh.back().z > lh_tallest.back().z)
                         tallest_object_idx = i;
                 }
             }
@@ -715,21 +715,25 @@ DONE:;
                     const double eps = 0.5
                         * EPSILON; // layers closer than EPSILON will be merged later. Let's make
                     // this check a bit more sensitive to make sure we never consider two different layers as one.
-                    while (i < layer_height_profiles[idx_object].size()
-                           && i < layer_height_profiles[tallest_object_idx].size())
-                    {
-                        if (i % 2 == 0
-                            && layer_height_profiles[tallest_object_idx][i] > layer_height_profiles
-                                    [idx_object][layer_height_profiles[idx_object].size() - 2])
+                    const Domain::ZHeightPairs& profile_object = layer_height_profiles[idx_object];
+                    const Domain::ZHeightPairs& profile_tallest_object =
+                        layer_height_profiles[tallest_object_idx];
+                    while (i < profile_object.size() && i < profile_tallest_object.size()) {
+                        if (profile_tallest_object[i].z > profile_object.back().z) {
                             break;
-                        if (std::abs(
-                                layer_height_profiles[idx_object][i]
-                                - layer_height_profiles[tallest_object_idx][i]
-                            )
-                            > eps)
+                        }
+
+                        if (std::abs(profile_object[i].z - profile_tallest_object[i].z) > eps
+                            || std::abs(
+                                   profile_object[i].layer_height
+                                   - profile_tallest_object[i].layer_height
+                               ) > eps)
+                        {
                             errors.push_back(
                                 Error{ErrorCode::WipeTowerDifferentObjectsVariableHeight}
                             );
+                        }
+
                         ++i;
                     }
                 }

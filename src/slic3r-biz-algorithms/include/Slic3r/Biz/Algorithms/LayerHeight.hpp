@@ -92,7 +92,7 @@ struct AdjustParams
  */
 void adjust_layer_height_profile(
     const AdjustParams& params,
-    std::vector<double>& layer_height_profile,
+    Domain::ZHeightPairs& layer_height_profile,
     double z,
     double layer_thickness_delta,
     double band_width,
@@ -130,8 +130,8 @@ struct SmoothParams
 /**
  * @brief Applies Gaussian smoothing to the layer height profile.
  */
-std::vector<double>
-smooth_height_profile(const std::vector<double>& profile, const SmoothParams& params);
+Domain::ZHeightPairs
+smooth_height_profile(const Domain::ZHeightPairs& profile, const SmoothParams& params);
 
 struct GenerateLayersParams
 {
@@ -174,7 +174,7 @@ struct GenerateLayersParams
  */
 Domain::LayerZRanges generate_object_layers(
     const GenerateLayersParams& params,
-    const std::vector<double>& layer_height_profile
+    const Domain::ZHeightPairs& layer_height_profile
 );
 
 struct AdaptiveParams
@@ -214,7 +214,7 @@ struct AdaptiveParams
 /**
  * @brief Generates adaptive layer height profile based on mesh geometry.
  */
-std::vector<double> layer_height_profile_adaptive(
+Domain::ZHeightPairs layer_height_profile_adaptive(
     const AdaptiveParams& params,
     const Domain::ModelObject& object,
     float quality_factor
@@ -256,7 +256,7 @@ struct ProfileFromRangesParams
  * in the height profile and the printed object may be lifted by the raft
  * thickness at the time of the G-code generation.
  */
-std::vector<double> layer_height_profile_from_ranges(
+Domain::ZHeightPairs layer_height_profile_from_ranges(
     const ProfileFromRangesParams& params,
     const Domain::LayerConfigRanges& layer_config_ranges
 );
@@ -275,7 +275,7 @@ std::vector<double> layer_height_profile_from_ranges(
 bool check_object_layers_fixed(
     double layer_height,
     double first_object_layer_height,
-    const std::vector<double>& layer_height_profile
+    const Domain::ZHeightPairs& layer_height_profile
 );
 
 } // namespace Slic3r::Biz::Algorithms::LayerHeight

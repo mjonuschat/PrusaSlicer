@@ -2489,7 +2489,7 @@ std::vector<unsigned int> PrintObject::object_extruders() const
     return extruders;
 }
 
-bool PrintObject::update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile)
+bool PrintObject::update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, Domain::ZHeightPairs &layer_height_profile)
 {
     bool updated = false;
 
@@ -2503,10 +2503,13 @@ bool PrintObject::update_layer_height_profile(const Domain::ModelObject &model_o
 
     // Verify the layer_height_profile.
     if (!layer_height_profile.empty() &&
-        // Must not be of even length.
-        ((layer_height_profile.size() & 1) != 0 ||
-            // Last entry must be at the top of the object.
-            std::abs(layer_height_profile[layer_height_profile.size() - 2] - slicing_parameters.object_print_z_uncompensated_max + slicing_parameters.object_print_z_min) > 1e-3)) {
+        // Last entry must be at the top of the object.
+        std::abs(
+            layer_height_profile.back().z
+            - slicing_parameters.object_print_z_uncompensated_max
+            + slicing_parameters.object_print_z_min
+        ) > 1e-3)
+    {
         layer_height_profile.clear();
     }
 

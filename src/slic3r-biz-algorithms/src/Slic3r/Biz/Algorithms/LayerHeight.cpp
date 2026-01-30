@@ -15,6 +15,8 @@
 using Slic3r::Domain::LayerHeightRange;
 using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::VolumeSettings;
+using Slic3r::Domain::ZHeightPair;
+using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r::Biz::Algorithms::LayerHeight {
 
@@ -60,7 +62,7 @@ double max_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_n
 
 void adjust_layer_height_profile(
     const AdjustParams& params,
-    std::vector<double>& layer_height_profile,
+    ZHeightPairs& layer_height_profile,
     double z,
     double layer_thickness_delta,
     double band_width,
@@ -76,26 +78,23 @@ void adjust_layer_height_profile(
         return;
     }
 
-    assert(layer_height_profile.size() >= 2);
+    assert(!layer_height_profile.empty());
     assert(
-        std::abs(
-            layer_height_profile[layer_height_profile.size() - 2]
-            - params.object_print_z_uncompensated_height
-        )
+        std::abs(layer_height_profile.back().z - params.object_print_z_uncompensated_height)
         < Domain::EPSILON
     );
 
     // 1) Get the current layer thickness at z.
     double current_layer_height = params.layer_height;
-    for (size_t i = 0; i < layer_height_profile.size(); i += 2) {
-        if (i + 2 == layer_height_profile.size()) {
-            current_layer_height = layer_height_profile[i + 1];
+    for (size_t i = 0; i < layer_height_profile.size(); ++i) {
+        if (i + 1 == layer_height_profile.size()) {
+            current_layer_height = layer_height_profile[i].layer_height;
             break;
-        } else if (layer_height_profile[i + 2] > z) {
-            double z1            = layer_height_profile[i];
-            double h1            = layer_height_profile[i + 1];
-            double z2            = layer_height_profile[i + 2];
-            double h2            = layer_height_profile[i + 3];
+        } else if (layer_height_profile[i + 1].z > z) {
+            double z1            = layer_height_profile[i].z;
+            double h1            = layer_height_profile[i].layer_height;
+            double z2            = layer_height_profile[i + 1].z;
+            double h2            = layer_height_profile[i + 1].layer_height;
             current_layer_height = std::lerp(h1, h2, (z - z1) / (z2 - z1));
             break;
         }
@@ -144,30 +143,30 @@ void adjust_layer_height_profile(
     double hi     = z + 0.5 * band_width;
     double z_step = 0.1;
     size_t idx    = 0;
-    while (idx < layer_height_profile.size() && layer_height_profile[idx] < lo) {
-        idx += 2;
+    while (idx < layer_height_profile.size() && layer_height_profile[idx].z < lo) {
+        ++idx;
     }
 
-    idx -= 2;
+    --idx;
 
-    std::vector<double> profile_new;
+    ZHeightPairs profile_new;
     profile_new.reserve(layer_height_profile.size());
-    assert(idx >= 0 && idx + 1 < layer_height_profile.size());
+    assert(idx + 1 < layer_height_profile.size());
     profile_new.insert(
         profile_new.end(),
         layer_height_profile.begin(),
-        layer_height_profile.begin() + idx + 2
+        layer_height_profile.begin() + idx + 1
     );
     double zz                = lo;
     size_t i_resampled_start = profile_new.size();
     while (zz < hi) {
-        size_t next   = idx + 2;
-        double z1     = layer_height_profile[idx];
-        double h1     = layer_height_profile[idx + 1];
+        size_t next   = idx + 1;
+        double z1     = layer_height_profile[idx].z;
+        double h1     = layer_height_profile[idx].layer_height;
         double height = h1;
         if (next < layer_height_profile.size()) {
-            double z2 = layer_height_profile[next];
-            double h2 = layer_height_profile[next + 1];
+            double z2 = layer_height_profile[next].z;
+            double h2 = layer_height_profile[next].layer_height;
             height    = std::lerp(h1, h2, (zz - z1) / (z2 - z1));
         }
 
@@ -199,48 +198,43 @@ void adjust_layer_height_profile(
         height = std::clamp(height, params.min_layer_height, params.max_layer_height);
         if (zz == z_span_variable.second) {
             // This is the last point of the profile.
-            if (profile_new[profile_new.size() - 2] + Domain::EPSILON > zz) {
-                profile_new.pop_back();
+            if (profile_new.back().z + Domain::EPSILON > zz) {
                 profile_new.pop_back();
             }
 
-            profile_new.push_back(zz);
-            profile_new.push_back(height);
+            profile_new.push_back({zz, height});
             idx = layer_height_profile.size();
             break;
         }
 
         // Avoid entering a too short segment.
-        if (profile_new[profile_new.size() - 2] + Domain::EPSILON < zz) {
-            profile_new.push_back(zz);
-            profile_new.push_back(height);
+        if (profile_new.back().z + Domain::EPSILON < zz) {
+            profile_new.push_back({zz, height});
         }
 
         // Limit zz to the object height, so the next iteration the last profile point will be set.
         zz  = std::min(zz + z_step, z_span_variable.second);
         idx = next;
-        while (idx < layer_height_profile.size() && layer_height_profile[idx] < zz) {
-            idx += 2;
+        while (idx < layer_height_profile.size() && layer_height_profile[idx].z < zz) {
+            ++idx;
         }
 
-        idx -= 2;
+        --idx;
     }
 
-    idx += 2;
+    ++idx;
     assert(idx > 0);
     size_t i_resampled_end = profile_new.size();
     if (idx < layer_height_profile.size()) {
-        assert(zz >= layer_height_profile[idx - 2]);
-        assert(zz <= layer_height_profile[idx]);
+        assert(zz >= layer_height_profile[idx - 1].z);
+        assert(zz <= layer_height_profile[idx].z);
         profile_new.insert(
             profile_new.end(),
             layer_height_profile.begin() + idx,
             layer_height_profile.end()
         );
-    } else if (profile_new[profile_new.size() - 2] + 0.5 * Domain::EPSILON < z_span_variable.second)
-    {
-        profile_new
-            .insert(profile_new.end(), layer_height_profile.end() - 2, layer_height_profile.end());
+    } else if (profile_new.back().z + 0.5 * Domain::EPSILON < z_span_variable.second) {
+        profile_new.push_back(layer_height_profile.back());
     }
 
     layer_height_profile = std::move(profile_new);
@@ -251,56 +245,55 @@ void adjust_layer_height_profile(
         }
 
         if (i_resampled_end == layer_height_profile.size()) {
-            i_resampled_end -= 2;
+            --i_resampled_end;
         }
 
         size_t n_rounds = 6;
         for (size_t i_round = 0; i_round < n_rounds; ++i_round) {
             profile_new = layer_height_profile;
-            for (size_t i = i_resampled_start; i < i_resampled_end; i += 2) {
-                double zz = profile_new[i];
+            for (size_t i = i_resampled_start; i < i_resampled_end; ++i) {
+                double zz = profile_new[i].z;
                 double t  = std::abs(zz - z) < 0.5 * band_width ?
                      (0.25 + 0.25 * cos(2. * M_PI * (zz - z) / band_width)) :
                      0.;
                 assert(t >= 0. && t <= 0.5000001);
                 if (i == 0) {
-                    layer_height_profile[i + 1] =
-                        (1. - t) * profile_new[i + 1] + t * profile_new[i + 3];
+                    layer_height_profile[i].layer_height = (1. - t) * profile_new[i].layer_height
+                        + t * profile_new[i + 1].layer_height;
                 } else if (i + 1 == profile_new.size()) {
-                    layer_height_profile[i + 1] =
-                        (1. - t) * profile_new[i + 1] + t * profile_new[i - 1];
+                    layer_height_profile[i].layer_height = (1. - t) * profile_new[i].layer_height
+                        + t * profile_new[i - 1].layer_height;
                 } else {
-                    layer_height_profile[i + 1] = (1. - t) * profile_new[i + 1]
-                        + 0.5 * t * (profile_new[i - 1] + profile_new[i + 3]);
+                    layer_height_profile[i].layer_height = (1. - t) * profile_new[i].layer_height
+                        + 0.5
+                            * t
+                            * (profile_new[i - 1].layer_height + profile_new[i + 1].layer_height);
                 }
             }
         }
     }
 
-    assert(layer_height_profile.size() > 2);
-    assert(layer_height_profile.size() % 2 == 0);
-    assert(layer_height_profile[0] == 0.);
+    assert(layer_height_profile.size() > 1);
+    assert(layer_height_profile.front().z == 0.);
     assert(
-        std::abs(
-            layer_height_profile[layer_height_profile.size() - 2]
-            - params.object_print_z_uncompensated_height
-        )
+        std::abs(layer_height_profile.back().z - params.object_print_z_uncompensated_height)
         < Domain::EPSILON
     );
 #ifdef _DEBUG
-    for (size_t i = 2; i < layer_height_profile.size(); i += 2)
-        assert(layer_height_profile[i - 2] <= layer_height_profile[i]);
-    for (size_t i = 1; i < layer_height_profile.size(); i += 2) {
-        assert(layer_height_profile[i] > params.min_layer_height - Domain::EPSILON);
-        assert(layer_height_profile[i] < params.max_layer_height + Domain::EPSILON);
+    for (size_t i = 1; i < layer_height_profile.size(); ++i) {
+        assert(layer_height_profile[i - 1].z <= layer_height_profile[i].z);
+    }
+
+    for (size_t i = 0; i < layer_height_profile.size(); ++i) {
+        assert(layer_height_profile[i].layer_height > params.min_layer_height - Domain::EPSILON);
+        assert(layer_height_profile[i].layer_height < params.max_layer_height + Domain::EPSILON);
     }
 #endif /* _DEBUG */
 }
 
-std::vector<double>
-smooth_height_profile(const std::vector<double>& profile, const SmoothParams& params)
+ZHeightPairs smooth_height_profile(const ZHeightPairs& profile, const SmoothParams& params)
 {
-    auto gauss_blur = [&params](const std::vector<double>& profile) -> std::vector<double>
+    auto gauss_blur = [&params](const ZHeightPairs& profile) -> ZHeightPairs
     {
         auto gauss_kernel = [](unsigned int radius) -> std::vector<double>
         {
@@ -322,10 +315,10 @@ smooth_height_profile(const std::vector<double>& profile, const SmoothParams& pa
         };
 
         // Skip the first layer if fixed.
-        size_t skip_count = params.first_object_layer_height_fixed ? 4 : 0;
+        size_t skip_count = params.first_object_layer_height_fixed ? 2 : 0;
 
-        // Not enough data to smooth (need at least 3 layers = 6 values).
-        if (static_cast<int>(profile.size()) - static_cast<int>(skip_count) < 6) {
+        // Not enough data to smooth (need at least 3 layers).
+        if (static_cast<int>(profile.size()) - static_cast<int>(skip_count) < 3) {
             return profile;
         }
 
@@ -333,7 +326,7 @@ smooth_height_profile(const std::vector<double>& profile, const SmoothParams& pa
         std::vector<double> kernel = gauss_kernel(radius);
         int two_radius             = 2 * static_cast<int>(radius);
 
-        std::vector<double> ret;
+        ZHeightPairs ret;
         size_t size = profile.size();
         ret.reserve(size);
 
@@ -348,22 +341,21 @@ smooth_height_profile(const std::vector<double>& profile, const SmoothParams& pa
         double inv_delta_h = (delta_h != 0.0) ? 1.0 / delta_h : 1.0;
 
         double max_dz_band = static_cast<double>(radius) * params.layer_height;
-        for (size_t i = skip_count; i < size; i += 2) {
-            double zi = profile[i];
-            double hi = profile[i + 1];
-            ret.push_back(zi);
-            ret.push_back(0.0);
-            double& height = ret.back();
+        for (size_t i = skip_count; i < size; ++i) {
+            double zi = profile[i].z;
+            double hi = profile[i].layer_height;
+            ret.push_back({zi, 0.});
+            double& height = ret.back().layer_height;
             int begin = std::max(static_cast<int>(i) - two_radius, static_cast<int>(skip_count));
-            int end   = std::min(static_cast<int>(i) + two_radius, static_cast<int>(size) - 2);
-            double weight_total = 0.0;
-            for (int j = begin; j <= end; j += 2) {
-                int kernel_id = static_cast<int>(radius) + (j - static_cast<int>(i)) / 2;
-                double dz     = std::abs(zi - profile[j]);
+            int end   = std::min(static_cast<int>(i) + two_radius, static_cast<int>(size) - 1);
+            double weight_total = 0.;
+            for (int j = begin; j <= end; ++j) {
+                int kernel_id = static_cast<int>(radius) + (j - static_cast<int>(i));
+                double dz     = std::abs(zi - profile[j].z);
                 if (dz * params.layer_height <= max_dz_band) {
-                    double dh     = std::abs(params.max_layer_height - profile[j + 1]);
+                    double dh     = std::abs(params.max_layer_height - profile[j].layer_height);
                     double weight = kernel[kernel_id] * std::sqrt(dh * inv_delta_h);
-                    height += weight * profile[j + 1];
+                    height += weight * profile[j].layer_height;
                     weight_total += weight;
                 }
             }
@@ -384,10 +376,8 @@ smooth_height_profile(const std::vector<double>& profile, const SmoothParams& pa
     return gauss_blur(profile);
 }
 
-LayerZRanges generate_object_layers(
-    const GenerateLayersParams& params,
-    const std::vector<double>& layer_height_profile
-)
+LayerZRanges
+generate_object_layers(const GenerateLayersParams& params, const ZHeightPairs& layer_height_profile)
 {
     assert(!layer_height_profile.empty());
 
@@ -408,25 +398,25 @@ LayerZRanges generate_object_layers(
     while (slice_z < params.object_print_z_height) {
         height = params.min_layer_height;
         if (idx_layer_height_profile < layer_height_profile.size()) {
-            size_t next = idx_layer_height_profile + 2;
+            size_t next = idx_layer_height_profile + 1;
             for (;;) {
                 if (next >= layer_height_profile.size()
-                    || slice_z < layer_height_profile[next] * shrinkage_compensation_z)
+                    || slice_z < layer_height_profile[next].z * shrinkage_compensation_z)
                 {
                     break;
                 }
 
                 idx_layer_height_profile = next;
-                next += 2;
+                ++next;
             }
 
             const double z1 =
-                layer_height_profile[idx_layer_height_profile] * shrinkage_compensation_z;
-            const double h1 = layer_height_profile[idx_layer_height_profile + 1];
+                layer_height_profile[idx_layer_height_profile].z * shrinkage_compensation_z;
+            const double h1 = layer_height_profile[idx_layer_height_profile].layer_height;
             height          = h1;
             if (next < layer_height_profile.size()) {
-                const double z2 = layer_height_profile[next] * shrinkage_compensation_z;
-                const double h2 = layer_height_profile[next + 1];
+                const double z2 = layer_height_profile[next].z * shrinkage_compensation_z;
+                const double h2 = layer_height_profile[next].layer_height;
                 height          = std::lerp(h1, h2, (slice_z - z1) / (z2 - z1));
                 assert(
                     height >= params.min_layer_height - Domain::EPSILON
@@ -452,7 +442,7 @@ LayerZRanges generate_object_layers(
     return out;
 }
 
-std::vector<double> layer_height_profile_from_ranges(
+ZHeightPairs layer_height_profile_from_ranges(
     const ProfileFromRangesParams& params,
     const Domain::LayerConfigRanges& layer_config_ranges
 )
@@ -487,33 +477,36 @@ std::vector<double> layer_height_profile_from_ranges(
 
     // 2) Convert the trimmed ranges to a height profile, fill in the undefined intervals between
     // z=0 and z=params.object_print_z_uncompensated_height with params.layer_height.
-    std::vector<double> layer_height_profile;
+    ZHeightPairs layer_height_profile;
     auto last_z = [&layer_height_profile]()
-    { return layer_height_profile.empty() ? 0. : *(layer_height_profile.end() - 2); };
+    { return layer_height_profile.empty() ? 0. : layer_height_profile.back().z; };
 
     auto lh_append = [&layer_height_profile](double z, double layer_height)
     {
         if (!layer_height_profile.empty()) {
-            bool last_z_matches = Domain::is_approx(*(layer_height_profile.end() - 2), z);
-            bool last_h_matches = Domain::is_approx(layer_height_profile.back(), layer_height);
+            bool last_z_matches = Domain::is_approx(layer_height_profile.back().z, z);
+            bool last_h_matches =
+                Domain::is_approx(layer_height_profile.back().layer_height, layer_height);
             if (last_h_matches) {
                 if (last_z_matches) {
                     // Drop a duplicate.
                     return;
                 }
 
-                if (layer_height_profile.size() >= 4
-                    && Domain::is_approx(*(layer_height_profile.end() - 3), layer_height))
+                if (layer_height_profile.size() >= 2
+                    && Domain::is_approx(
+                        layer_height_profile[layer_height_profile.size() - 2].layer_height,
+                        layer_height
+                    ))
                 {
                     // Third repetition of the same layer_height. Update z of the last entry.
-                    *(layer_height_profile.end() - 2) = z;
+                    layer_height_profile.back().z = z;
                     return;
                 }
             }
         }
 
-        layer_height_profile.push_back(z);
-        layer_height_profile.push_back(layer_height);
+        layer_height_profile.push_back({z, layer_height});
     };
 
     for (const std::pair<LayerHeightRange, double>& non_overlapping_range : ranges_non_overlapping)
@@ -544,40 +537,46 @@ std::vector<double> layer_height_profile_from_ranges(
 bool check_object_layers_fixed(
     const double layer_height,
     const double first_object_layer_height,
-    const std::vector<double>& layer_height_profile
+    const ZHeightPairs& layer_height_profile
 )
 {
-    assert(layer_height_profile.size() >= 4);
-    assert(layer_height_profile.size() % 2 == 0);
-    assert(layer_height_profile[0] == 0);
+    assert(layer_height_profile.size() >= 2);
+    assert(layer_height_profile.front().z == 0.);
 
-    if (layer_height_profile.size() != 4 && layer_height_profile.size() != 8) {
+    if (layer_height_profile.size() != 2 && layer_height_profile.size() != 4) {
         return false;
     }
 
-    const bool fixed_step1 = Domain::is_approx(layer_height_profile[1], layer_height_profile[3]);
-    const bool fixed_step2 = layer_height_profile.size() == 4
-        || (layer_height_profile[2] == layer_height_profile[4]
-            && Domain::is_approx(layer_height_profile[5], layer_height_profile[7]));
+    const bool fixed_step1 = Domain::is_approx(
+        layer_height_profile[0].layer_height,
+        layer_height_profile[1].layer_height
+    );
+    const bool fixed_step2 = layer_height_profile.size() == 2
+        || (layer_height_profile[1].z == layer_height_profile[2].z
+            && Domain::is_approx(
+                layer_height_profile[2].layer_height,
+                layer_height_profile[3].layer_height
+            ));
 
     if (!fixed_step1 || !fixed_step2) {
         return false;
     }
 
-    if (layer_height_profile[2] < 0.5 * first_object_layer_height + Domain::EPSILON
-        || !Domain::is_approx(layer_height_profile[3], first_object_layer_height))
+    if (layer_height_profile[1].z < 0.5 * first_object_layer_height + Domain::EPSILON
+        || !Domain::is_approx(layer_height_profile[1].layer_height, first_object_layer_height))
     {
         return false;
     }
 
-    const double z_max = layer_height_profile[layer_height_profile.size() - 2];
+    const double z_max = layer_height_profile.back().z;
     const double z_2nd = first_object_layer_height + 0.5 * layer_height;
     if (z_2nd > z_max) {
         return true;
     }
 
-    if (z_2nd < *(layer_height_profile.end() - 4) + Domain::EPSILON
-        || !Domain::is_approx(layer_height_profile.back(), layer_height))
+    const ZHeightPair& prev_last = layer_height_profile[layer_height_profile.size() - 2];
+    if (z_2nd < prev_last.z + Domain::EPSILON
+        || !Domain::is_approx(layer_height_profile.back().layer_height, layer_height))
     {
         return false;
     }
@@ -812,7 +811,7 @@ namespace Slic3r::Biz::Algorithms::LayerHeight {
  *
  * @note Based on the work of @platsch.
  */
-std::vector<double> layer_height_profile_adaptive(
+ZHeightPairs layer_height_profile_adaptive(
     const AdaptiveParams& params,
     const Domain::ModelObject& object,
     const float quality_factor
@@ -822,12 +821,12 @@ std::vector<double> layer_height_profile_adaptive(
     const std::vector<Adaptive::FaceZ> faces = Adaptive::prepare_faces(object);
 
     // 2) Generate layers using the algorithm of @platsch.
-    std::vector<double> layer_height_profile;
-    layer_height_profile.push_back(0.);
-    layer_height_profile.push_back(params.first_object_layer_height);
+    ZHeightPairs layer_height_profile;
+    layer_height_profile.push_back({0., params.first_object_layer_height});
     if (params.first_object_layer_height_fixed) {
-        layer_height_profile.push_back(params.first_object_layer_height);
-        layer_height_profile.push_back(params.first_object_layer_height);
+        layer_height_profile.push_back(
+            {params.first_object_layer_height, params.first_object_layer_height}
+        );
     }
 
     double print_z = params.first_object_layer_height;
@@ -847,17 +846,15 @@ std::vector<double> layer_height_profile_adaptive(
 
         height = std::min(cusp_height, height);
 
-        layer_height_profile.push_back(print_z);
-        layer_height_profile.push_back(height);
+        layer_height_profile.push_back({print_z, static_cast<double>(height)});
         print_z += height;
     }
 
-    const double z_gap =
-        params.object_print_z_uncompensated_height - *(layer_height_profile.end() - 2);
+    const double z_gap = params.object_print_z_uncompensated_height - layer_height_profile.back().z;
     if (z_gap > 0.0) {
-        layer_height_profile.push_back(params.object_print_z_uncompensated_height);
         layer_height_profile.push_back(
-            std::clamp(z_gap, params.min_layer_height, params.max_layer_height)
+            {params.object_print_z_uncompensated_height,
+             std::clamp(z_gap, params.min_layer_height, params.max_layer_height)}
         );
     }
 

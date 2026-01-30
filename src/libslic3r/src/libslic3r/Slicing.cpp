@@ -19,7 +19,9 @@ using Slic3r::Biz::Algorithms::LayerHeight::max_layer_height_from_nozzle;
 using Slic3r::Biz::Algorithms::LayerHeight::MIN_LAYER_HEIGHT;
 using Slic3r::Biz::Algorithms::LayerHeight::min_layer_height_from_nozzle;
 using Slic3r::Biz::Algorithms::LayerHeight::ProfileFromRangesParams;
+using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r {
 
@@ -131,7 +133,7 @@ SlicingParameters SlicingParameters::create_from_config(
     return params;
 }
 
-std::vector<double> layer_height_profile_from_ranges(
+ZHeightPairs layer_height_profile_from_ranges(
 	const SlicingParameters         &slicing_params,
 	const Domain::LayerConfigRanges &layer_config_ranges)
 {
@@ -149,9 +151,9 @@ std::vector<double> layer_height_profile_from_ranges(
     );
 }
 
-Domain::LayerZRanges generate_object_layers(
+LayerZRanges generate_object_layers(
     const SlicingParameters& slicing_params,
-    const std::vector<double>& layer_height_profile
+    const ZHeightPairs& layer_height_profile
 )
 {
     const GenerateLayersParams generate_layers_params{
