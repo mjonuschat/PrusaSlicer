@@ -257,19 +257,55 @@ public:
 
 bool queue_job(std::unique_ptr<Job> job);
 
+const Domain::ModelObject* get_selected_object(const Biz::ProjectInteractor& project_interactor);
+
 } // namespace
 
 namespace Slic3r::Biz::Emboss {
-bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks)
-{
-    if (!check(input))
-        return false; // bad input data
 
-    const Domain::Project& project = input.base.project_interactor.selected_project();
+namespace {
+std::optional<Domain::Vec2d> get_z_zero_coor(const App::Scene::Ray& pick_ray) {
+    double d_z = pick_ray.direction.z();
+    if (fabs(d_z) - 1e-4 <= 0.)
+        return std::nullopt; // almost parallel to Z axis solve as no bed under mouse
+
+    // prerequisity: bed is alligned -> parallel with Z plane AND Z = 0
+    Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
+    return Domain::Vec2d(z0.x(), z0.y());
+}
+
+const Domain::ModelObject* get_selected_object(const Biz::ProjectInteractor& project_interactor) {
+    const Domain::ElementRefs& elms = project_interactor.scene_interactor().object_selection().elements;
+    if (elms.empty())
+        return nullptr;
+    
+    size_t object_id = 0; // zero is invalid value    
+    for (const Domain::ElementRef& el : elms) {
+        if (object_id == 0) {
+            object_id = el.object_id;
+            continue;
+        }
+        if (object_id != el.object_id)
+            return nullptr; // multiple object selection
+    }
+    if (object_id == 0)
+        return nullptr; // no object selected
+
+    const Domain::Project& project = project_interactor.selected_project();
+    return project.find_object_by_id(object_id);
+}
+} // namespace
+
+bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks)
+{
+    ASSERT(check(input)); // bad input data
+    const Biz::ProjectInteractor& project_interactor = input.base.project_interactor;
+    const Domain::ModelObject* selected_object = get_selected_object(project_interactor);
+    const Domain::Project& project = project_interactor.selected_project();
     const App::Scene::NodePickResult* bed_pick = nullptr;
     for (const App::Scene::NodePickResult& pick : picks) {
         if (pick.node->has_tag_of_type<App::Scene::SceneNodeTag>()) {
-            auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
+            const auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
             const Domain::ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
             if (volume == nullptr)
                 continue; // no volume under mouse
@@ -277,15 +313,14 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
             if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
                 continue; // skip modifiers + SupportBlock/Enforce
 
-            double UP_LIMIT           = 0.9;
             Domain::Vec3d pick_point  = pick_ray.point_at(pick.cast.distance);
             Domain::Vec3d pick_normal = pick.cast.normal;
-            const Domain::ModelInstance* instance = project.find_instance_by_id(tag->object_id, tag->instance_id);
+            const Domain::ModelObject& object = selected_object != nullptr ? 
+                *selected_object : 
+                *volume->get_object();
+            const Domain::ModelInstance* instance = project.find_instance_by_id(object.id().id, tag->instance_id);
             Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
             Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
-
-            // Create text lines for Per Glyph projection when needed
-            const Domain::ModelObject& object = *volume->get_object();
             return ::start_create_volume_job(object, tr, input.base, input.volume_type);
         }
         if (bed_pick == nullptr && // use only first crossed bed
@@ -294,19 +329,39 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
         }
     }
 
-    // use first cross of the bed
-    if (double d_z = pick_ray.direction.z();
-        bed_pick != nullptr && 
-        fabs(d_z) - 1e-4 <= 0.  // almost parallel to Z axis solve as no bed under mouse
-        )
+    auto bed_coor = get_z_zero_coor(pick_ray);
+    if (bed_coor.has_value())
     {
-        // prerequisity: bed is alligned -> parallel with Z plane AND Z = 0
-        Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
-        Domain::Vec2d bed_coor(z0.x(), z0.y());
-        return ::start_create_object_job(input, bed_coor);
+        if (selected_object == nullptr){
+            return ::start_create_object_job(input, *bed_coor);
+        } else {
+            Domain::Vec3d pick_point(bed_coor->x(), bed_coor->y(), 0.);
+            Domain::Vec3d pick_normal(0., 0., 1.);
+            
+            // TODO: check wheather add into exactly this instance
+            const Domain::ModelInstance* instance = selected_object->instances.front();
+            Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
+            Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
+            return ::start_create_volume_job(*selected_object, tr, input.base, input.volume_type);
+        }
     }
-
     return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray
+}
+
+bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks) {
+    ASSERT(check(input)); // bad input data
+    const Domain::ModelObject* selected_object = get_selected_object(input.base.project_interactor);
+    ASSERT(selected_object != nullptr); // no object selected
+    return false;
+}
+
+// ignore selection and create object in center ray direction
+bool start_create_object(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks) {
+    ASSERT(check(input)); // bad input data
+    auto bed_coor = get_z_zero_coor(pick_ray);
+    if (!bed_coor.has_value())
+        return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray    
+    return ::start_create_object_job(input, *bed_coor);
 }
 
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume)

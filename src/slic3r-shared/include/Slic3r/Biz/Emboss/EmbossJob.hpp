@@ -145,11 +145,9 @@ struct CreateVolumeParams
 @param picks Scene Node with intersection of picked ray
 @return True on success otherwise False
 */
-bool start_create_volume(
-    CreateVolumeParams& input,
-    const App::Scene::Ray& pick_ray,
-    const App::Scene::NodePickResults& picks
-);
+bool start_create(       CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
+bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
+bool start_create_object(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks);
 
 /**
 @brief Parameters for call start_update_volume function

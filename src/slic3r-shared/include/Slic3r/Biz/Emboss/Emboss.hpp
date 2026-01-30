@@ -38,7 +38,7 @@ namespace Slic3r::Biz::Emboss {
 
 static const float UNION_DELTA           = 50.0f; // [approx in nano meters depends on volume scale]
 static const unsigned UNION_MAX_ITERATIN = 10; // [count]
-
+static const double UP_LIMIT = 0.9; // absolut size of z of the normalized vector [in range 0 - 1]
 /**
 @brief Collect fonts registred inside OS
 @return OS registred TTF font files(full path) with names
@@ -245,7 +245,7 @@ indexed_triangle_set polygons2model(
 @param up_limit Is compared with normal.z to suggest up direction
 @return Wanted up vector
 */
-Domain::Vec3d suggest_up(const Domain::Vec3d normal, double up_limit = 0.9);
+Domain::Vec3d suggest_up(const Domain::Vec3d normal, double up_limit = UP_LIMIT);
 
 /**
 @brief By transformation calculate angle between suggested and actual up vector
@@ -253,7 +253,7 @@ Domain::Vec3d suggest_up(const Domain::Vec3d normal, double up_limit = 0.9);
 @param up_limit Is compared with normal.z to suggest up direction
 @return Rotation of suggested up-vector[in rad] in the range [-Pi, Pi], When rotation is not zero
 */
-std::optional<float> calc_up(const Domain::Transform3d& tr, double up_limit = 0.9);
+std::optional<float> calc_up(const Domain::Transform3d& tr, double up_limit = UP_LIMIT);
 
 /**
 @brief Create transformation for emboss text object to lay on surface point
@@ -265,7 +265,7 @@ std::optional<float> calc_up(const Domain::Transform3d& tr, double up_limit = 0.
 Domain::Transform3d create_transformation_onto_surface(
     const Domain::Vec3d& position,
     const Domain::Vec3d& normal,
-    double up_limit = 0.9
+    double up_limit = UP_LIMIT
 );
 
 class ProjectZ : public Algorithms::IProjection

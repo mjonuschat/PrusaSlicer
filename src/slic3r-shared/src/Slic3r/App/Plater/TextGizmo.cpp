@@ -36,7 +36,6 @@ using namespace Slic3r;
 // Constants 
 double MM_TO_INCH = 25.4;
 double INCH_TO_MM = 1. / MM_TO_INCH;
-double UP_LIMIT = 0.9; // absolut size of z of the normalized vector [in range 0 - 1]
 double MIN_DEPTH = 1e-3; // minimal embossing depth [in mm]
 double MIN_HEIGHT = 1e-3; // minimal Text height [in mm]
 
@@ -56,7 +55,7 @@ struct ProjectContext {
     std::string warning_tooltip;
 
     // when it has value, than lock of the up vector is set
-    std::optional<double> up_limit = UP_LIMIT; // default: lock up-vector for surface drag
+    std::optional<double> up_limit = Biz::Emboss::UP_LIMIT; // default: lock up-vector for surface drag
 
     Scale volume_scale; // setted in function calc_scale()
 
@@ -261,7 +260,7 @@ TextGizmo::TextGizmo(
         if (check){
             up_limit.reset();
         } else { // Limit direction of the up vector on the model, between side and top surface
-            up_limit = UP_LIMIT;
+            up_limit = Biz::Emboss::UP_LIMIT;
         }
     };
     m_dialog->callbacks().set_on_face_camera = [this]() {
@@ -816,7 +815,7 @@ void TextGizmo::on_project_activated(size_t new_project_id)
 
 std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref) {
     Domain::Transform3d to_world = world_tr(project, ref);
-    return Biz::Emboss::calc_up(to_world, UP_LIMIT);
+    return Biz::Emboss::calc_up(to_world, Biz::Emboss::UP_LIMIT);
 }
 
 std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref, Scene::Node& root) {
@@ -1099,6 +1098,6 @@ bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ra
         .base = create_base_data(text, volume_type, m_preset_manager, m_project_interactor, text_lines, issue_fn),
         .volume_type = volume_type
     };
-    return Biz::Emboss::start_create_volume(params, ray, results);
+    return Biz::Emboss::start_create(params, ray, results);
 }
 } // namespace Slic3r::App::Plater
