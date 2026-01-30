@@ -466,6 +466,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Dialog.cpp
         include/Slic3r/App/Yoga/GizmoWindow.hpp
         src/Slic3r/App/Yoga/GizmoWindow.cpp
+        include/Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.hpp
+        src/Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.cpp
         include/Slic3r/App/Yoga/GizmoDialogHelp.hpp
         src/Slic3r/App/Yoga/GizmoDialogHelp.cpp
         src/Slic3r/App/Yoga/Separator.cpp
@@ -551,6 +553,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/ColorPicker.cpp
         include/Slic3r/App/Yoga/ColorPickerButton.hpp
         src/Slic3r/App/Yoga/ColorPickerButton.cpp
+        include/Slic3r/App/Yoga/LayerHeightProfileControl.hpp
+        src/Slic3r/App/Yoga/LayerHeightProfileControl.cpp
+        include/Slic3r/App/Yoga/VariableLayerHeightControl.hpp
+        src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
