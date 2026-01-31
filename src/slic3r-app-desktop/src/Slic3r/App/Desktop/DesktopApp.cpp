@@ -146,6 +146,12 @@ void register_win32_device_notification_event()
 
 int run(const Slic3r::App::InitParams& init_params)
 {
+#ifdef __WXGTK__
+    // https://github.com/prusa3d/PrusaSlicer/issues/12969
+    ::setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", /* replace */ false);
+    ::setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", /* replace */ false);
+#endif
+
     bool single_instance_app_config =
         init_params.misc.single_instance.has_value() && init_params.misc.single_instance;
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
