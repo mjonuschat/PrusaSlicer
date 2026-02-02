@@ -339,13 +339,12 @@ bool move_mesh(CT_Object& object_3mf, ModelObject& temp_object, ObjectMap& objec
             object_3mf.mesh.its
         );
         Domain::TriangleMesh tm(std::move(object_3mf.mesh.its), std::move(stats));
-
-        //Because of centering during add_volume is firstly added temporary tetrahedron
-        ModelVolume* vol = Biz::Algorithms::ModelObject::add_volume(&temp_object,
-            Biz::Algorithms::TriangleMesh::construct(
-                Biz::Algorithms::TriangleMesh::its_make_tetrahedron()),
-            Domain::ModelVolumeType::MODEL_PART);
-        vol->set_mesh(std::move(tm));
+        
+        ModelVolume* vol = Biz::Algorithms::ModelObject::add_volume(
+            &temp_object,
+            std::move(tm),
+            Domain::ModelVolumeType::MODEL_PART
+        );
 
         // copy name of volume
         vol->name = object_3mf.name;
