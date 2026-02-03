@@ -16,7 +16,8 @@ using App::Yoga::Text;
 ReferenceFramePicker::ReferenceFramePicker(
     Biz::ProjectInteractor& project_interactor
 ) :
-    m_project_interactor{project_interactor}
+    m_project_interactor{project_interactor},
+    m_projects{project_interactor}
 {
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
@@ -66,19 +67,19 @@ Biz::Scene::SelectionReferenceFrame ReferenceFramePicker::selected_frame() const
 }
 
 void ReferenceFramePicker::on_activated() {
-    m_activated = true;
+    m_projects.selected().activated = true;
     reload();
 }
 
 void ReferenceFramePicker::on_deactivated() {
-    m_activated = false;
+    m_projects.selected().activated = false;
 }
 
 void ReferenceFramePicker::reload(std::optional<Domain::SelectionId> project_id)
 {
     using Biz::Scene::SelectionReferenceFrame;
 
-    if (!m_activated) {
+    if (!m_projects.selected().activated) {
         return;
     }
 

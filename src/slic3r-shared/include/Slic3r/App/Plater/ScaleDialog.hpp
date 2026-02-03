@@ -17,7 +17,8 @@ class TripleInput;
 class ScaleDialog final :
     public Yoga::GizmoWindow,
     public Biz::Scene::ISceneSelectionChangedListener,
-    public App::Plater::ISelectionBoundingBoxChangedListener
+    public App::Plater::ISelectionBoundingBoxChangedListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     ScaleDialog(
@@ -43,6 +44,8 @@ public:
         const std::optional<Scene::OrientedBoundingBox>&
     ) override;
 
+    void on_selected_project_changed_final(size_t index) override;
+
     void on_activated(Domain::SelectionId project_id);
     void on_deactivated();
 
@@ -60,11 +63,16 @@ private:
     TripleInput* m_relative_input{nullptr};
     Yoga::Item* m_relative_input_item{nullptr};
     Yoga::ToggleButton* m_lock{nullptr};
-    bool m_activated{false};
     PlaceOnBedButton* m_place_on_bed_button{nullptr};
-    Biz::Scene::SceneInteractor::ElementTransforms m_reset_scale_candidates;
-
     ReferenceFramePicker* m_reference_frame_picker;
+
+    struct ProjectContext {
+        bool activated{false};
+        Biz::Scene::SceneInteractor::ElementTransforms reset_scale_candidates;
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
 
     void reload(std::optional<Domain::SelectionId> project_id = std::nullopt);
     void apply_relative_scale(const Domain::Vec3d& scale);

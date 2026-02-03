@@ -50,16 +50,23 @@ private:
     PlaterScenePresenter& m_scene_provider;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Biz::ProjectInteractor& m_project_interactor;
-    Scene::Node* m_handle_nodes{nullptr};
-    bool m_activated{false};
 
-    Biz::Scene::TransformMemento m_xform_memento;
-    Scene::Ray m_scale_ray;
-    AxisType m_scale_axis{AxisType::None};
-    Scene::OrientedBoundingBox m_start_obb;
-    bool m_was_floating{false};
-    double m_start_t{0};
-    bool m_dragging{false};
+    struct ProjectContext
+    {
+        Scene::Node* handle_nodes{nullptr};
+        bool activated{false};
+        Biz::Scene::TransformMemento xform_memento;
+        Scene::Ray scale_ray;
+        AxisType scale_axis{AxisType::None};
+        Scene::OrientedBoundingBox start_obb;
+        bool was_floating{false};
+        double start_t{0};
+        bool dragging{false};
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
+
     ScaleDialog* m_window;
 };
 }

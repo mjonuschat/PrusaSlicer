@@ -145,6 +145,7 @@ target_link_libraries(slic3r-shared-wx PUBLIC
 )
 
 if (UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
     find_package(GTK${SLIC3R_GTK} REQUIRED)
     target_include_directories(slic3r-shared-wx PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
 

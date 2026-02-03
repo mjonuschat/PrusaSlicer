@@ -17,7 +17,8 @@ ScaleGizmo::ScaleGizmo(
     m_data_factory(data_factory),
     m_scene_provider(scene_provider),
     m_scene_interactor(project_interactor.scene_interactor()),
-    m_project_interactor(project_interactor)
+    m_project_interactor(project_interactor),
+    m_projects(project_interactor)
 {
     m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
     m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
@@ -61,12 +62,13 @@ static Domain::Vec3d get_drag_cube_direction(DragCube drag_cube)
 
 Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
+    ProjectContext& project_context{m_projects.selected()};
     const auto event_type = ctx.mouse_event().type();
     if (event_type != Platform::MouseEvent::Type::ButtonDown
         && event_type != Platform::MouseEvent::Type::Move
         && event_type != Platform::MouseEvent::Type::ButtonUp)
     {
-        m_dragging = false;
+        project_context.dragging = false;
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -75,7 +77,7 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<ScaleGizmoNodeTag>();
         if (node == nullptr) {
-            m_dragging = false;
+            project_context.dragging = false;
             return Scene::GizmoActivationState::Inactive;
         }
         const Domain::Transform3d transform{
@@ -84,18 +86,18 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
 
         const ScaleGizmoNodeTag& tag{*node->tag_of_type<ScaleGizmoNodeTag>()};
         if (tag.drag_cube == DragCube::None) {
-            m_dragging = false;
+            project_context.dragging = false;
             return Scene::GizmoActivationState::Inactive;
         }
 
-        m_scale_ray.origin    = transform.translation();
-        m_scale_ray.direction = transform.rotation() * get_drag_cube_direction(tag.drag_cube);
-        m_scale_axis          = tag.axis;
+        project_context.scale_ray.origin    = transform.translation();
+        project_context.scale_ray.direction = transform.rotation() * get_drag_cube_direction(tag.drag_cube);
+        project_context.scale_axis          = tag.axis;
     }
 
     double t;
-    if (!m_scale_ray.closest_point_from_ray(pick_ray, t)) {
-        m_dragging = false;
+    if (!project_context.scale_ray.closest_point_from_ray(pick_ray, t)) {
+        project_context.dragging = false;
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -107,21 +109,21 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        m_start_t   = t;
-        m_start_obb = *selection_bounding_box;
-        m_was_floating = m_window->place_on_bed_button().is_floating;
-        m_dragging  = true;
+        project_context.start_t   = t;
+        project_context.start_obb = *selection_bounding_box;
+        project_context.was_floating = m_window->place_on_bed_button().is_floating;
+        project_context.dragging  = true;
         return Scene::GizmoActivationState::Active;
     }
 
-    if (!m_dragging)
+    if (!project_context.dragging)
         return Scene::GizmoActivationState::Inactive;
 
-    const std::optional<int> axis{get_axis_index(m_scale_axis)};
-    const double delta{t - m_start_t};
+    const std::optional<int> axis{get_axis_index(project_context.scale_axis)};
+    const double delta{t - project_context.start_t};
     const double min_abs_scale{1};
 
-    const Domain::Vec3d initial_scale{m_start_obb.dimensions};
+    const Domain::Vec3d initial_scale{project_context.start_obb.dimensions};
 
     Domain::Vec3d scale_by{Domain::Vec3d::Ones()};
     if (axis) {
@@ -137,18 +139,18 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
     }
 
     const Domain::SquareMatrix4d scale_matrix{get_scale_matrix(
-        m_start_obb.rotation,
-        m_start_obb.center,
+        project_context.start_obb.rotation,
+        project_context.start_obb.center,
         scale_by
     )};
 
-    m_xform_memento.forced_volume_mode = true;
-    m_scene_interactor.transform_selection(scale_matrix, m_xform_memento);
+    project_context.xform_memento.forced_volume_mode = true;
+    m_scene_interactor.transform_selection(scale_matrix, project_context.xform_memento);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
-        m_dragging = false;
-        if (!m_was_floating) {
+        m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
+        project_context.dragging = false;
+        if (!project_context.was_floating) {
             m_window->place_on_bed_button().trigger();
         }
         return Scene::GizmoActivationState::Done;
@@ -161,14 +163,14 @@ void ScaleGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx) {}
 
 void ScaleGizmo::on_activated()
 {
-    m_activated = true;
+    m_projects.selected().activated = true;
     m_window->on_activated(m_project_interactor.selected_project_id());
     update_handle_nodes();
 }
 
 void ScaleGizmo::on_deactivated()
 {
-    m_activated = false;
+    m_projects.selected().activated = false;
     m_window->on_deactivated();
     m_scene_provider.clear_selection_root_children();
 }
@@ -509,7 +511,8 @@ std::unique_ptr<Scene::Node> ScaleGizmo::generate_handle_nodes() const
 
 void ScaleGizmo::update_handle_nodes()
 {
-    if (!m_activated) {
+    ProjectContext& project_context{m_projects.selected()};
+    if (!project_context.activated) {
         return;
     }
     m_scene_provider.clear_selection_root_children();
@@ -520,7 +523,7 @@ void ScaleGizmo::update_handle_nodes()
     if (!handle_nodes) {
         return;
     }
-    m_handle_nodes = handle_nodes.get();
+    project_context.handle_nodes = handle_nodes.get();
     scene.add_child(handle_nodes.release(), &m_scene_provider.plain_selection_root());
 }
 

@@ -9,12 +9,13 @@
 namespace Slic3r::App::Plater {
 class PlaceOnBedButton :
     public Yoga::LayoutButton,
-    public Biz::Scene::ISceneSelectionChangedListener
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     PlaceOnBedButton(
         App::Plater::PlaterScenePresenter& scene_provider,
-        Biz::Scene::SceneInteractor& scene_interactor
+        Biz::ProjectInteractor& project_interactor
     );
 
     ~PlaceOnBedButton();
@@ -29,6 +30,8 @@ public:
         const Biz::Scene::ObjectSelection&
     ) override;
 
+    void on_selected_project_changed_final(size_t) override;
+
     bool is_floating{false};
     void trigger();
 
@@ -36,6 +39,7 @@ private:
     void reload();
 
     App::Plater::PlaterScenePresenter& m_scene_provider;
+    Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
 };
 } // namespace Slic3r::App::Plater

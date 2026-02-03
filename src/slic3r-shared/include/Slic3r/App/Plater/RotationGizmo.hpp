@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -62,10 +63,25 @@ private:
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
-    bool m_activated{ false };
-    bool m_dragging{ false };
-    AxisType m_curr_axis{ AxisType::None };
-    Scene::Ray m_translation_ray;
+
+    struct ProjectContext {
+        bool activated{false};
+        bool dragging{false};
+        AxisType curr_axis{AxisType::None};
+        Scene::Ray translation_ray;
+        Domain::Vec2d start_direction{Domain::Vec2d::Zero()};
+        Scene::OrientedBoundingBox start_obb;
+        bool was_floating{false};
+        Biz::Scene::TransformMemento xform_memento;
+        Scene::Node* highlight_node{nullptr};
+        Scene::Node::NodeList handles;
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
+
+    RotationDialog* m_window{nullptr};
+
     struct Snap
     {
         struct Radii
@@ -76,14 +92,7 @@ private:
         Radii coarse;
         Radii fine;
     };
-    Snap m_snap;
-    Domain::Vec2d m_start_direction{Domain::Vec2d::Zero()};
-    Scene::OrientedBoundingBox m_start_obb;
-    bool m_was_floating{false};
-    Biz::Scene::TransformMemento m_xform_memento;
-    RotationDialog* m_window{nullptr};
-    Scene::Node* m_highlight_node{nullptr};
-    Scene::Node::NodeList m_handles;
+    static Snap m_snap;
 };
 
 } // namespace Slic3r::App::Plater

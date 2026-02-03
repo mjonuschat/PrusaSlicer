@@ -25,7 +25,8 @@ namespace Slic3r::App::Plater {
 class TranslationDialog final :
     public Yoga::GizmoWindow,
     public App::Plater::ISelectionBoundingBoxChangedListener,
-    public Biz::ISelectedBedInstancesChangedListener
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     using PositinUpdatedCallback = std::function<void(const Domain::Vec3d&)>;
@@ -47,6 +48,8 @@ public:
         const std::optional<Scene::OrientedBoundingBox>&
     ) override;
 
+    void on_selected_project_changed_final(size_t index) override;
+
     void on_activated();
     void on_deactivated();
 
@@ -59,7 +62,13 @@ private:
     Yoga::Item* m_relative_input_row{nullptr};
     App::Plater::PlaterScenePresenter& m_scene_provider;
     Biz::ProjectInteractor& m_project_interactor;
-    bool m_activated{false};
+
+    struct ProjectContext {
+        bool activated{false};
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
 
     void reload(Domain::SelectionId project_id);
 

@@ -113,22 +113,24 @@ TranslationGizmo::TranslationGizmo(
     m_data_factory(data_factory),
     m_scene_provider(scene_provider),
     m_scene_interactor(project_interactor.scene_interactor()),
-    m_project_interactor(project_interactor)
+    m_project_interactor(project_interactor),
+    m_projects(project_interactor)
 {
 }
 
 void TranslationGizmo::on_cycle_prepare()
 {
-    m_dragging = false;
+    m_projects.selected().dragging = false;
 }
 
 Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
+    ProjectContext& project_context{m_projects.selected()};
     const auto event_type = ctx.mouse_event().type();
     if (event_type != Platform::MouseEvent::Type::ButtonDown &&
         event_type != Platform::MouseEvent::Type::Move &&
         event_type != Platform::MouseEvent::Type::ButtonUp) {
-        m_dragging = false;
+        project_context.dragging = false;
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -138,7 +140,7 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
         const std::optional<Scene::OrientedBoundingBox> obb{m_scene_provider.selection_bounding_box()};
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<TranslationGizmoNodeTag>();
         if (node == nullptr || !obb) {
-            m_dragging = false;
+            project_context.dragging = false;
             return Scene::GizmoActivationState::Inactive;
         }
 
@@ -146,37 +148,37 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
         Transform3d transform{Transform3d::Identity()};
         transform.translate(obb->center);
         transform.rotate(obb->rotation);
-        m_translation_ray
+        project_context.translation_ray
             .origin = transform.translation();
-        m_translation_ray.direction = transform.rotation() * tag.primary_axis_dir();
+        project_context.translation_ray.direction = transform.rotation() * tag.primary_axis_dir();
     }
 
     double t;
-    if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
-        m_dragging = false;
+    if (!project_context.translation_ray.closest_point_from_ray(pick_ray, t)) {
+        project_context.dragging = false;
         return Scene::GizmoActivationState::Inactive;
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        m_start_t = t;
-        m_dragging = true;
+        project_context.start_t = t;
+        project_context.dragging = true;
         return Scene::GizmoActivationState::Active;
     }
 
-    if (!m_dragging)
+    if (!project_context.dragging)
         return Scene::GizmoActivationState::Inactive;
 
-    Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
+    Vec3d delta = project_context.translation_ray.point_at(t) - project_context.translation_ray.point_at(project_context.start_t);
 
     SquareMatrix4d translation_matrix = SquareMatrix4d::Identity();
     translation_matrix.col(3).head(3) = delta;
 
     m_scene_interactor
-        .transform_selection(translation_matrix, m_xform_memento);
+        .transform_selection(translation_matrix, project_context.xform_memento);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
-        m_dragging = false;
+        m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
+        project_context.dragging = false;
         clear_highlight();
         return Scene::GizmoActivationState::Done;
     }
@@ -186,7 +188,8 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
 
 void TranslationGizmo::clear_highlight()
 {
-    if (m_highlighted) {
+    ProjectContext& project_context{m_projects.selected()};
+    if (project_context.highlighted) {
         // show all axes
         Scene::Node* handle_nodes{get_handle_nodes()};
         if (handle_nodes != nullptr) {
@@ -196,12 +199,13 @@ void TranslationGizmo::clear_highlight()
             );
         }
     }
-    m_highlighted = false;
+    project_context.highlighted = false;
 }
 
 void TranslationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
 {
-    if (!m_activated || m_dragging)
+    ProjectContext& project_context{m_projects.selected()};
+    if (!project_context.activated || project_context.dragging)
         return;
     auto* n = ctx.pick_result_node_with_tag_of_type<TranslationGizmoNodeTag>();
     if (n == nullptr) {
@@ -214,13 +218,13 @@ void TranslationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
         for (auto& child : gp->children()){
             child->set_enabled(child.get() == p);
         }
-        m_highlighted = true;
+        project_context.highlighted = true;
     }
 }
 
 void TranslationGizmo::on_activated()
 {
-    m_activated = true;
+    m_projects.selected().activated = true;
     m_window->on_activated();
     Scene::Scene& scene{m_scene_provider.scene()};
     scene.add_child(generate_handle_nodes().release(), &m_scene_provider.selection_root());
@@ -228,7 +232,7 @@ void TranslationGizmo::on_activated()
 
 void TranslationGizmo::on_deactivated()
 {
-    m_activated = false;
+    m_projects.selected().activated = false;
     m_window->on_deactivated();
     m_scene_provider.clear_selection_root_children();
 }

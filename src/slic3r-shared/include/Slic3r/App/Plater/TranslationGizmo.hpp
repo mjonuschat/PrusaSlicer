@@ -37,12 +37,19 @@ private:
     PlaterScenePresenter& m_scene_provider;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Biz::ProjectInteractor& m_project_interactor;
-    Biz::Scene::TransformMemento m_xform_memento;
-    Scene::Ray m_translation_ray;
-    double m_start_t{0};
-    bool m_dragging{ false };
-    bool m_activated{false};
-    bool m_highlighted{false};
+
+    struct ProjectContext {
+        Biz::Scene::TransformMemento xform_memento;
+        Scene::Ray translation_ray;
+        double start_t{0};
+        bool dragging{ false };
+        bool activated{false};
+        bool highlighted{false};
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
+
     TranslationDialog* m_window{nullptr};
 
     std::unique_ptr<Scene::Node> generate_handle_nodes() const;

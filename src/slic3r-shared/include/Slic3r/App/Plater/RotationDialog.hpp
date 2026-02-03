@@ -4,6 +4,7 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/ReferenceFramePicker.hpp"
 #include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 
 namespace Slic3r::Biz {
     class ProjectInteractor;
@@ -14,7 +15,8 @@ class TripleInput;
 
 class RotationDialog final :
     public Yoga::GizmoWindow,
-    public App::Plater::ISelectionBoundingBoxChangedListener
+    public App::Plater::ISelectionBoundingBoxChangedListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     RotationDialog(
@@ -29,6 +31,8 @@ public:
         const std::optional<Scene::OrientedBoundingBox>&
     ) override;
 
+    void on_selected_project_changed_final(size_t index) override;
+
     void on_activated(Domain::SelectionId project_id);
     void on_deactivated();
     PlaceOnBedButton& place_on_bed_button();
@@ -39,11 +43,17 @@ private:
     App::Plater::PlaterScenePresenter& m_scene_provider;
     Biz::ProjectInteractor& m_project_interactor;
     TripleInput* m_relative_input;
-    bool m_activated{false};
     Yoga::LayoutButton* m_revert_button{nullptr};
     PlaceOnBedButton* m_place_on_bed_button{nullptr};
     ReferenceFramePicker* m_reference_frame_picker;
-    Biz::Scene::SceneInteractor::ElementTransforms m_reset_rotation_candidates;
+
+    struct ProjectContext {
+        bool activated{false};
+        Biz::Scene::SceneInteractor::ElementTransforms reset_rotation_candidates;
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
 
     void add_rotation(Domain::Vec3d rotate_by_rads);
     Biz::Scene::SceneInteractor::ElementTransforms get_reset_rotation_candidates() const;

@@ -3,6 +3,7 @@
 #include <functional>
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
@@ -49,6 +50,13 @@ private:
     Yoga::RadioButton* m_bed_radio_button;
     Yoga::RadioButton* m_instance_radio_button;
     Yoga::RadioButton* m_volume_radio_button;
-    bool m_activated{false};
+
+    struct ProjectContext {
+        bool activated{false};
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    ProjectContexts m_projects;
+
 };
 } // namespace Slic3r::App::Plater

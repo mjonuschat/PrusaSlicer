@@ -25,10 +25,12 @@ ScaleDialog::ScaleDialog(
 ) :
     Yoga::GizmoWindow{_u8L("Scale"), Render::Icon::Scale},
     m_scene_provider{scene_provider},
-    m_project_interactor{project_interactor}
+    m_project_interactor{project_interactor},
+    m_projects{project_interactor}
 {
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
 
     content()->set_padding({20, 20});
@@ -48,11 +50,14 @@ ScaleDialog::ScaleDialog(
     m_revert_button->set_min_size({25.0, 25.0});
     m_revert_button->callbacks().action = [this]()
     {
-        if (m_reset_scale_candidates.empty()) {
+        ProjectContext& project_context{m_projects.selected()};
+        if (project_context.reset_scale_candidates.empty()) {
             return;
         }
         const bool was_floating{m_place_on_bed_button->is_floating};
-        m_project_interactor.scene_interactor().set_element_transforms(m_reset_scale_candidates);
+        m_project_interactor.scene_interactor().set_element_transforms(
+            project_context.reset_scale_candidates
+        );
         if (!was_floating) {
             m_place_on_bed_button->trigger();
         }
@@ -122,7 +127,7 @@ ScaleDialog::ScaleDialog(
 
     m_place_on_bed_button = content()->emplace_back<PlaceOnBedButton>(
         m_scene_provider,
-        m_project_interactor.scene_interactor()
+        m_project_interactor
     );
 
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(m_project_interactor);
@@ -134,6 +139,7 @@ ScaleDialog::~ScaleDialog()
 {
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
     m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
 }
 
@@ -159,15 +165,19 @@ void ScaleDialog::on_scene_selection_bounding_box_changed(
     reload(project_id);
 }
 
+void ScaleDialog::on_selected_project_changed_final(size_t index) {
+    reload(index);
+}
+
 void ScaleDialog::on_activated(Domain::SelectionId project_id) {
-    m_activated = true;
+    m_projects.selected().activated = true;
     m_reference_frame_picker->on_activated();
     reload(project_id);
 }
 
 void ScaleDialog::on_deactivated() {
     m_reference_frame_picker->on_deactivated();
-    m_activated = false;
+    m_projects.selected().activated = false;
 }
 
 PlaceOnBedButton& ScaleDialog::place_on_bed_button() {
@@ -278,7 +288,8 @@ std::optional<Domain::Vec3d> ScaleDialog::get_current_relative_scale() const
 
 void ScaleDialog::reload(std::optional<Domain::SelectionId> project_id)
 {
-    if (!m_activated) {
+    ProjectContext& project_context{m_projects.selected()};
+    if (!project_context.activated) {
         return;
     }
     if (project_id && project_id != m_project_interactor.selected_project_id()) {
@@ -304,9 +315,9 @@ void ScaleDialog::reload(std::optional<Domain::SelectionId> project_id)
         m_relative_input_item->set_visible(true);
     }
 
-    m_reset_scale_candidates = get_reset_scale_candidates();
+    project_context.reset_scale_candidates = get_reset_scale_candidates();
 
-    if (m_reset_scale_candidates.empty()) {
+    if (project_context.reset_scale_candidates.empty()) {
         m_revert_button->set_visible(false);
     } else {
         m_revert_button->set_visible(true);

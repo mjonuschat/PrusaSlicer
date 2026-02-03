@@ -1184,8 +1184,9 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
                 return;
             if (t->volume_id == 0) {
                 for (const auto& e : elements) {
-                    if (t->instance_id == e.instance_id) {
+                    if (t->instance_id != 0 && t->instance_id == e.instance_id) {
                         const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
+                        ASSERT(inst);
                         n.set_local_transform(Scene::Transform{inst->get_matrix()});
                     }
                 }

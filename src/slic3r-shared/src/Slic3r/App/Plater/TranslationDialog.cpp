@@ -30,12 +30,14 @@ TranslationDialog::TranslationDialog(
 ) :
     Yoga::GizmoWindow{_u8L("Translation"), Render::Icon::Move},
     m_scene_provider(scene_provider),
-    m_project_interactor{project_interactor}
+    m_project_interactor{project_interactor},
+    m_projects{project_interactor}
 {
     m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     content()->set_padding({20, 20});
     content()->set_orientation(Orientation::Vertical);
@@ -78,7 +80,7 @@ TranslationDialog::TranslationDialog(
 
     content()->emplace_back<PlaceOnBedButton>(
         m_scene_provider,
-        m_project_interactor.scene_interactor()
+        m_project_interactor
     );
 
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(m_project_interactor);
@@ -89,6 +91,7 @@ TranslationDialog::~TranslationDialog()
     m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
 }
 
 void TranslationDialog::on_selected_bed_instances_changed(
@@ -107,16 +110,20 @@ void TranslationDialog::on_scene_selection_bounding_box_changed(
     reload(project_id);
 }
 
+void TranslationDialog::on_selected_project_changed_final(size_t index) {
+    reload(index);
+}
+
 void TranslationDialog::on_activated()
 {
-    m_activated = true;
+    m_projects.selected().activated = true;
     m_reference_frame_picker->on_activated();
     reload(m_project_interactor.selected_project_id());
 }
 
 void TranslationDialog::on_deactivated()
 {
-    m_activated = false;
+    m_projects.selected().activated = false;
     m_reference_frame_picker->on_deactivated();
 }
 
@@ -176,7 +183,7 @@ std::optional<Vec3d> TranslationDialog::get_absolute_position_reference_point() 
 
 void TranslationDialog::reload(Domain::SelectionId project_id)
 {
-    if (!m_activated) {
+    if (!m_projects.selected().activated) {
         return;
     }
     if (project_id != m_project_interactor.selected_project_id()) {

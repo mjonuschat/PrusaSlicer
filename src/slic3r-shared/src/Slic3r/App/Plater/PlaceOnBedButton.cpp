@@ -7,13 +7,15 @@ using Biz::_u8L;
 
 PlaceOnBedButton::PlaceOnBedButton(
     App::Plater::PlaterScenePresenter& scene_provider,
-    Biz::Scene::SceneInteractor& scene_interactor
+    Biz::ProjectInteractor& project_interactor
 ) :
     Yoga::LayoutButton{_u8L("Place on bed")},
     m_scene_provider(scene_provider),
-    m_scene_interactor(scene_interactor)
+    m_project_interactor(project_interactor),
+    m_scene_interactor(project_interactor.scene_interactor())
 {
     m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     set_flex_grow(1);
     constexpr ImColor color_primary{223, 93, 45};
@@ -25,6 +27,7 @@ PlaceOnBedButton::PlaceOnBedButton(
 PlaceOnBedButton::~PlaceOnBedButton()
 {
     m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
 }
 
 void PlaceOnBedButton::on_scene_selection_changed(
@@ -40,6 +43,10 @@ void PlaceOnBedButton::on_scene_selection_transformed(
     const Biz::Scene::ObjectSelection&
 )
 {
+    reload();
+}
+
+void PlaceOnBedButton::on_selected_project_changed_final(size_t) {
     reload();
 }
 
