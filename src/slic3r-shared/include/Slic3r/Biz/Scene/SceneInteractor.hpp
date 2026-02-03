@@ -184,6 +184,16 @@ public:
         const std::function<bool(const Domain::ElementRef&, Domain::ModelVolume&)>& modifier
     );
 
+    /**
+     * @brief Modify the layer height profile for the given object.
+     * @param object_ref Reference to the object to modify (only object_id is used).
+     * @param modifier Called with the ModelObject to perform modification of the layer height profile.
+     */
+    void modify_layer_height_profile(
+        const Domain::ElementRef& object_ref,
+        const std::function<void(Domain::ModelObject&)>& modifier
+    );
+
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();
