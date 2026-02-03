@@ -90,6 +90,13 @@ void Slider::render(Vec2f pos, Vec2f size)
         update_area_width();
     }
 
+    // Note: Temporary workaround to suppress slider editing when it's disabled.
+    // Main fix will be done in SPE-3380.
+    if (!enabled()) {
+        Oval::render(pos, size);
+        return;
+    }
+
     ImRect ctrl_rc(to_im(pos), to_im(pos + size));
     set_hovered(ImGui::IsMouseHoveringRect(ctrl_rc.Min, ctrl_rc.Max, false));
 
