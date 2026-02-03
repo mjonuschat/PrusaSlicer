@@ -56,7 +56,7 @@ public:
         const Domain::ModelObject& model_object;
         const Domain::ModelInstance& model_instance;
         Domain::ModelVolume& model_volume;
-        std::unique_ptr<AABBMesh> aabb_mesh;
+        const AABBMesh& aabb_mesh;
         Domain::Transform3d world_trafo;
         Domain::Transform3d world_trafo_no_translate;
     };

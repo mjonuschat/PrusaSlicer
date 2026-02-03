@@ -27,7 +27,10 @@ using namespace Slic3r::Biz::Utils;
 using namespace magic_enum::bitwise_operators;
 
 using Slic3r::App::Plater::TriangleSelectorRenderWrapper;
+using Slic3r::App::Scene::SceneNodeTag;
 using Slic3r::Biz::Algorithms::TriangleSelector;
+using Slic3r::Biz::Scene::ObjectSelection;
+using Slic3r::Biz::Scene::SceneInteractor;
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
@@ -39,7 +42,6 @@ using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
-using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 
@@ -79,8 +81,9 @@ collect_visible_volumes_nodes(const Project& project, Scene::Scene& scene)
 }
 
 static PaintOnGizmoBase::PaintableVolumes collect_paintable_volumes(
-    const Biz::Scene::ObjectSelection& object_selection,
-    const Project& project
+    const ObjectSelection& object_selection,
+    const Project& project,
+    const PlaterScenePresenter::MeshManager& mesh_manager
 )
 {
     std::set<std::pair<size_t, size_t>> paintable_objects_instances_ids;
@@ -103,11 +106,18 @@ static PaintOnGizmoBase::PaintableVolumes collect_paintable_volumes(
                 continue;
             }
 
+            const Scene::AuxiliaryElementId volume_id{
+                Scene::AuxiliaryElementId::Type::Volume,
+                model_volume->id().id
+            };
+            const Scene::TriangleMesh* mesh = mesh_manager.get(volume_id);
+            ASSERT(mesh != nullptr);
+
             paintable_volumes.push_back(
                 {*model_object,
                  *model_instance,
                  *model_volume,
-                 std::make_unique<AABBMesh>(model_volume->mesh().its),
+                 mesh->aabb_mesh(),
                  model_instance->get_matrix() * model_volume->get_matrix(),
                  model_instance->get_matrix_no_offset() * model_volume->get_matrix_no_offset()}
             );
@@ -315,10 +325,13 @@ void PaintOnGizmoBase::clear_all_paintings()
 
 void PaintOnGizmoBase::on_activated()
 {
-    Biz::Scene::SceneInteractor& scene_interactor       = m_project_interactor.scene_interactor();
-    const Biz::Scene::ObjectSelection& object_selection = scene_interactor.object_selection();
-    const Project& project                              = m_project_interactor.selected_project();
-    Scene::Scene& scene                                 = m_scene_presenter.scene();
+    using MeshManager = PlaterScenePresenter::MeshManager;
+
+    const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const ObjectSelection& object_selection = scene_interactor.object_selection();
+    const Project& project                  = m_project_interactor.selected_project();
+    const MeshManager& mesh_manager         = m_scene_presenter.model_trinagle_mesh_manager();
+    Scene::Scene& scene                     = m_scene_presenter.scene();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
         on_deactivated();
@@ -327,7 +340,7 @@ void PaintOnGizmoBase::on_activated()
     }
 
     m_visible_volumes_nodes  = collect_visible_volumes_nodes(project, scene);
-    m_paintable_volumes      = collect_paintable_volumes(object_selection, project);
+    m_paintable_volumes      = collect_paintable_volumes(object_selection, project, mesh_manager);
     m_default_painting_color = this->create_default_painting_color();
     m_painting_colors        = this->create_painting_colors();
     m_mouse_dragging         = false;
@@ -345,7 +358,7 @@ void PaintOnGizmoBase::on_activated()
 
         m_triangle_selector_wrappers.emplace_back(
             triangle_mesh,
-            *paintable_volume.aabb_mesh,
+            paintable_volume.aabb_mesh,
             m_painting_colors,
             m_default_painting_color
         );
@@ -1204,7 +1217,7 @@ std::vector<PaintOnGizmoBase::VolumeHitPoints> PaintOnGizmoBase::get_projected_m
                 const Vec3d new_hit_point =
                     plane->origin + x_cord * plane->first_axis + y_cord * plane->second_axis;
                 const int facet_idx = MeshRaycaster::get_closest_facet(
-                    *m_paintable_volumes[volume_idx].aabb_mesh,
+                    m_paintable_volumes[volume_idx].aabb_mesh,
                     new_hit_point.cast<float>()
                 );
                 new_hit_points.push_back({new_hit_point, volume_idx, size_t(facet_idx)});
@@ -1264,7 +1277,7 @@ PaintOnGizmoBase::perform_raycast(const Vec2d& mouse_position, const Scene::Came
 
         const std::optional<MeshRaycaster::UnprojectResult> unproject_result =
             MeshRaycaster::unproject_on_mesh(
-                *paintable_volume.aabb_mesh,
+                paintable_volume.aabb_mesh,
                 ray,
                 paintable_volume.world_trafo,
                 m_clipping_plane_clipper.get_clipping_plane(),
