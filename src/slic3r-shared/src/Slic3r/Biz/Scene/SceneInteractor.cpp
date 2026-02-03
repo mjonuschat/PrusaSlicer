@@ -22,6 +22,7 @@ using Slic3r::Domain::ConstModelInstanceList;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
@@ -644,34 +645,39 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         invoke_slicing_input_changed(bed_ref);
 }
 
-void SceneInteractor::notify_facets_annotations_changed(
-    const Domain::ElementRefs& changed_volume_refs
+void SceneInteractor::modify_facets_annotations(
+    const Domain::ElementRefs& volume_refs,
+    const std::function<bool(const Domain::ElementRef&, ModelVolume&)>& modifier
 )
 {
-    if (changed_volume_refs.empty()) {
+    if (volume_refs.empty()) {
         return;
     }
 
-    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Project& project = m_workbench.project(m_selected_project_id);
 
-    Domain::ElementRefs updated_instances;
-    for (const Domain::ElementRef& changed_volume_ref : changed_volume_refs) {
-        Domain::ModelObject* model_object = project.find_object_by_id(changed_volume_ref.object_id);
+    Domain::ElementRefs instances_to_update;
+    for (const Domain::ElementRef& volume_ref : volume_refs) {
+        ModelObject* model_object = project.find_object_by_id(volume_ref.object_id);
+        ModelVolume* model_volume =
+            project.find_volume_by_id(volume_ref.object_id, volume_ref.volume_id);
 
         ASSERT(model_object != nullptr);
-        for (const Domain::ModelInstance* model_instance : model_object->instances) {
-            updated_instances.emplace_back(
-                changed_volume_ref.object_id,
-                model_instance->id().id,
-                changed_volume_ref.volume_id
-            );
+        for (const ModelInstance* model_instance : model_object->instances) {
+            if (modifier(volume_ref, *model_volume)) {
+                instances_to_update.emplace_back(
+                    volume_ref.object_id,
+                    model_instance->id().id,
+                    volume_ref.volume_id
+                );
+            }
         }
     }
 
     BedTrackingChanges changes =
-        m_bed_tracking.update_instances_bed_placement(project, updated_instances);
+        m_bed_tracking.update_instances_bed_placement(project, instances_to_update);
     for (const Domain::BedRef& bed_ref : changes.updated_beds) {
-        invoke_slicing_input_changed(bed_ref);
+        this->invoke_slicing_input_changed(bed_ref);
     }
 }
 

@@ -1,5 +1,7 @@
 //
 #pragma once
+
+#include <functional>
 #include <unordered_map>
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
@@ -173,12 +175,14 @@ public:
     void change_volume_meshes(RefMeshes&& meshes);
 
     /**
-     * @brief Notify that facets annotations have changed for given volumes.
-     * @param changed_volume_refs List of volumes whose facets annotations were changed.
-     *
-     * @note The facets annotation data must be already updated before calling this method.
+     * @brief Modify facets annotations for given volumes.
+     * @param volume_refs List of volumes to modify.
+     * @param modifier Called for each volume to perform modification of facets annotations.
      */
-    void notify_facets_annotations_changed(const Domain::ElementRefs& changed_volume_refs);
+    void modify_facets_annotations(
+        const Domain::ElementRefs& volume_refs,
+        const std::function<bool(const Domain::ElementRef&, Domain::ModelVolume&)>& modifier
+    );
 
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);

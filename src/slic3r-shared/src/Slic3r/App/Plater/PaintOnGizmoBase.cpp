@@ -187,26 +187,33 @@ void PaintOnGizmoBase::on_thumbnail_render_end()
 
 void PaintOnGizmoBase::apply_painting_to_model() const
 {
-    Domain::ElementRefs modified_volumes_refs;
+    Domain::ElementRefs volume_refs;
+    std::unordered_map<size_t, size_t> volume_id_to_idx;
     for (const PaintableVolume& paintable_volume : m_paintable_volumes) {
         const size_t volume_idx = &paintable_volume - &m_paintable_volumes.front();
-        const TriangleSelectorRenderWrapper& triangle_selector_wrappers =
+
+        volume_refs.emplace_back(
+            paintable_volume.model_object.id().id,
+            paintable_volume.model_instance.id().id,
+            paintable_volume.model_volume.id().id
+        );
+
+        volume_id_to_idx[paintable_volume.model_volume.id().id] = volume_idx;
+    }
+
+    const auto facets_annotations_modificator =
+        [this, &volume_id_to_idx](const Domain::ElementRef& ref, ModelVolume& volume) -> bool
+    {
+        const size_t volume_idx = volume_id_to_idx.at(ref.volume_id);
+
+        const TriangleSelectorRenderWrapper& triangle_selector_wrapper =
             m_triangle_selector_wrappers[volume_idx];
-        const TriangleSelector& triangle_selector = triangle_selector_wrappers.triangle_selector();
+        const TriangleSelector& triangle_selector = triangle_selector_wrapper.triangle_selector();
 
-        if (this->set_facets_annotation(paintable_volume.model_volume, triangle_selector)) {
-            modified_volumes_refs.emplace_back(
-                paintable_volume.model_object.id().id,
-                paintable_volume.model_instance.id().id,
-                paintable_volume.model_volume.id().id
-            );
-        }
-    }
+        return this->set_facets_annotation(volume, triangle_selector);
+    };
 
-    // Notify SceneInteractor that facets annotations changed.
-    if (!modified_volumes_refs.empty()) {
-        m_scene_interactor.notify_facets_annotations_changed(modified_volumes_refs);
-    }
+    m_scene_interactor.modify_facets_annotations(volume_refs, facets_annotations_modificator);
 }
 
 void PaintOnGizmoBase::init_main_nodes()
