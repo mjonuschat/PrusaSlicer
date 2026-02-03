@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
@@ -348,6 +349,22 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
 
     auto bed = Domain::Bed::from(pts, max_height, std::nullopt, "", "");
     bed.set_type(detect_bed_type(bed));
+    switch (bed.type())
+    {
+    case Domain::BedType::Circle:
+    {
+        Algorithms::Geometry::Circled circle = Algorithms::Bed::as_circular_bed(bed);
+        bed.set_circle({ circle.center, circle.radius });
+        break;
+    }
+    case Domain::BedType::Convex:
+    {
+        bed.set_top_bottom_convex_hull_decomposition(Algorithms::Geometry::decompose_convex_polygon_top_bottom(bed.contour()));
+        break;
+    }
+    default: { break; }
+    }
+
     double size_x = bed.contour_aabb_extent().x();
     double size_y = bed.contour_aabb_extent().y();
 
