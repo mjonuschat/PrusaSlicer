@@ -315,6 +315,9 @@ bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, co
 
             Domain::Vec3d pick_point  = pick_ray.point_at(pick.cast.distance);
             Domain::Vec3d pick_normal = pick.cast.normal;
+            // normal could be from scaled object it needs normalize
+            pick_normal.normalize();
+            
             const Domain::ModelObject& object = selected_object != nullptr ? 
                 *selected_object : 
                 *volume->get_object();

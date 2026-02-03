@@ -52,10 +52,10 @@ public:
     struct Callbacks
     {
         std::function<void(const std::string&)> text_changed{ nullptr };
-        std::function<void(const Domain::FontDescriptor& font_descriptor)> font_selection_changed{nullptr};
+        std::function<void(const Domain::FontDescriptor&)> font_selection_changed{nullptr};
 
-        std::function<void(double value)> height_changed{nullptr};
-        std::function<void(double value)> depth_changed{nullptr};
+        std::function<void(double height_in_mm)> height_changed{nullptr};
+        std::function<void(double depth_in_mm)> depth_changed{nullptr};
 
         std::function<void(bool checked)> use_surface_checked{nullptr};
         std::function<void(bool checked)> per_glyph_checked{nullptr};
@@ -64,8 +64,8 @@ public:
         std::function<void(double value)> line_gap_changed{nullptr};
         std::function<void(double value)> boldness_changed{nullptr};
         std::function<void(double value)> skew_ratio_changed{nullptr};
-        std::function<void(double value)> surface_distance_changed{nullptr};
-        std::function<void(double value)> rotation_changed{nullptr};
+        std::function<void(double distance_in_mm)> surface_distance_changed{nullptr};
+        std::function<void(double angle_in_rad)> rotation_changed{nullptr};
         std::function<void(bool unlocked)> unlock_rotation{nullptr};
         std::function<void()> set_on_face_camera{nullptr};
 
@@ -81,25 +81,26 @@ public:
     Callbacks& callbacks();
 
     void update_units(bool use_inches);
+    void update_angle(bool use_radians);
 
     void set_editor(const std::string& text);
     void set_presets(const std::vector<std::string>& presets, int selected_preset_id);
     void set_fonts(const Domain::FontList& fonts);
     void set_font(const Domain::FontDescriptor& font, bool set_as_default);
-    void set_height(double from, double to, double step, double step_fast, double height, double default_height);
-    void set_depth(double from, double to, double step, double step_fast, double depth, double default_depth);
+    void set_text_height(double height_in_mm, double default_height_in_mm);
+    void set_depth(double depth_in_mm, double default_depth_in_mm);
 
     void set_use_surface(bool checked, bool default_checked);
     void set_per_glyph(bool checked, bool default_checked);
 
     void set_align(const Domain::FontProp::Align& align, const Domain::FontProp::Align& align_default);
 
-    void set_char_gap(double max_val, double step, double value, double default_value = 0.);
-    void set_line_gap(double max_val, double step, double value, double default_value = 0.);
-    void set_boldness(double max_val, double step, double value, double default_value = 0.);
-    void set_skew_ratio(double max_val, double step, double value, double default_value = 0.);
-    void set_surface_distance(double max_val, double step, double value, double default_value = 0.);
-    void set_rotation(double max_val, double step, double value, double default_value = 0.);
+    void set_char_gap(double char_gap_in_mm, double default_char_gap_in_mm);
+    void set_line_gap(double line_gap_in_mm, double default_line_gap_in_mm);
+    void set_boldness(double boldness_in_mm, double default_boldness_in_mm);
+    void set_skew_ratio(double value, double default_value);
+    void set_surface_distance(double maximal_value_in_mm, double surface_distance_in_mm, double default_surface_distance_in_mm);
+    void set_rotation(const std::optional<float>& angle_in_rad, const std::optional<float>& default_angle_in_rad);
     void set_rotation_lock(bool lock);
 
     void set_enable_use_surface(bool enable);
@@ -140,7 +141,7 @@ private:
     // vector of Text items used for mm/inch units
     // Will be updated on units sweetching
     std::vector<Yoga::Text*> m_units;
-
+    Yoga::Text* m_angle_unit{nullptr};
     Yoga::ToggleButton* m_advanced{nullptr};
 
     Yoga::Item* m_advanced_panel{nullptr};
@@ -165,6 +166,9 @@ private:
 
     Yoga::Item* m_part_specific_panel{nullptr};
     Yoga::Passthrough<Yoga::ComboBox> m_operation;
+
+    bool m_use_inches{ false }; // use milimeters
+    bool m_use_radians{ false }; // use degrees
 
     Callbacks m_callbacks;
 };

@@ -21,6 +21,13 @@
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
+namespace {
+constexpr double MM_TO_INCH = 25.4;
+constexpr double INCH_TO_MM = 1. / MM_TO_INCH;
+constexpr double RAD_TO_DEG = 180.0 / M_PI;
+constexpr double DEG_TO_RAD = M_PI / 180.0;
+} // namespace
+
 namespace Slic3r::App::Plater {
 
 bool set_debug = false;
@@ -75,8 +82,11 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(0.1, 100.), 0.1, 1.)
     };
     m_height->callbacks().text_edited = [this]() {
+        double height = std::stod(m_height->text());
+        if (m_use_inches)
+            height *= INCH_TO_MM;
         if (m_callbacks.height_changed)
-            m_callbacks.height_changed(std::stod(m_height->text()));
+            m_callbacks.height_changed(height);
     };
     add_row(_u8L("Height"), m_height.release(), content(), _u8L("Revert text size."), "mm");
 
@@ -84,8 +94,11 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(0.1, 100.), 0.1, 1.)
     };
     m_depth->callbacks().text_edited = [this]() {
+        double depth = std::stod(m_depth->text());
+        if (m_use_inches)
+            depth *= INCH_TO_MM;
         if (m_callbacks.depth_changed)
-            m_callbacks.depth_changed(std::stod(m_depth->text()));
+            m_callbacks.depth_changed(depth);
     };
     add_row(_u8L("Depth"), m_depth.release(), content(), _u8L("Revert embossed depth."), "mm");
 
@@ -237,11 +250,16 @@ otherwise, the whole text has the same orthogonal projection.")
         if (m_callbacks.skew_ratio_changed)
             m_callbacks.skew_ratio_changed(value);
     };
+    m_skew_ratio->set_begin_value(-2);
+    m_skew_ratio->set_end_value(2);
+    m_skew_ratio->set_step(0.01);
     // m_skew_ratio->set_tooltip(_u8L("Italic strength ratio");
     add_row(_u8L("Skew ratio"), m_skew_ratio.release(), m_advanced_panel, _u8L("Undo letter's skew"), "mm");
 
     m_surface_distance = Passthrough{std::make_unique<SliderWithInput>()};
     m_surface_distance->callbacks().value_changed = [this](double value) {
+        if (m_use_inches)
+            value *= INCH_TO_MM;
         if (m_callbacks.surface_distance_changed)
             m_callbacks.surface_distance_changed(value);
     };
@@ -256,6 +274,8 @@ otherwise, the whole text has the same orthogonal projection.")
 
     m_rotation                            = Passthrough{std::make_unique<SliderWithInput>()};
     m_rotation->callbacks().value_changed = [this](double value) {
+        if (!m_use_radians)
+            value *= DEG_TO_RAD;
         if (m_callbacks.rotation_changed)
             m_callbacks.rotation_changed(value);
     };
@@ -300,6 +320,10 @@ otherwise, the whole text has the same orthogonal projection.")
         if (m_callbacks.set_on_face_camera)
             m_callbacks.set_on_face_camera();
     };
+
+    // update limits
+    update_units(true); update_units(false);
+    update_angle(true); update_angle(false);
 }
 
 namespace {
@@ -401,6 +425,8 @@ Item* TextDialog::add_row(
             // Means that unit will be changed in respect to the "use_inches" app_config option
             // so, add it to the m_units vector
             m_units.emplace_back(unit_text);
+        } else if(unit == "°") {
+            m_angle_unit = unit_text;
         }
         unit_text->set_self_align(YGAlignCenter);
         return box;
@@ -414,10 +440,69 @@ void TextDialog::show_part_specific_panel(bool show)
     m_part_specific_panel->set_visible(show);
 }
 
+namespace {
+static void set_spin_limits(
+    InputTextWithSpin* spin,
+    double from,
+    double to,
+    double step,
+    double step_fast)
+{
+    DoubleValidator* validator = dynamic_cast<DoubleValidator*>(spin->validator());
+    validator->set_from(from);
+    validator->set_to(to);
+    spin->set_step(step);
+    spin->set_step_fast(step_fast);
+}
+void set_limist(SliderWithInput* slider, double max_val, double step)
+{
+    slider->set_begin_value(-max_val);
+    slider->set_end_value(max_val);
+    slider->set_step(step);
+}
+} // namespace
+
 void TextDialog::update_units(bool use_inches)
 {
+    if (m_use_inches == use_inches)
+        return; // already setted
+    m_use_inches = use_inches;
+
     for (Text* unit : m_units) {
         unit->set_text(use_inches ? _u8L("in") : _u8L("mm"));
+    }
+    // update limits
+    if (use_inches) {
+        set_spin_limits(m_height.get(), .005, 4., .005, .05);
+        set_spin_limits(m_depth.get(), .005, 4., .005, .05);
+        set_limist(m_char_gap.get(), .2, .005);
+        set_limist(m_line_gap.get(), .2, .005);
+        set_limist(m_boldness.get(), .2, .005);
+    } else {
+        set_spin_limits(m_height.get(), .1, 100., .1, 1.);
+        set_spin_limits(m_depth.get(), .1, 100., .1, 1.);
+        set_limist(m_char_gap.get(), 5., .1);
+        set_limist(m_line_gap.get(), 5., .1);
+        set_limist(m_boldness.get(), 5., .1);
+    }
+}
+
+
+void TextDialog::update_angle(bool use_radians)
+{
+    if (m_use_radians == use_radians)
+        return; // already setted
+    m_use_radians = use_radians;
+
+    m_angle_unit->set_text(use_radians ? _u8L("rad") : _u8L("°"));
+    if (use_radians) {
+        m_rotation->set_begin_value(-M_PI);
+        m_rotation->set_end_value(M_PI);
+        m_rotation->set_step(.02);
+    } else {
+        m_rotation->set_begin_value(-180.);
+        m_rotation->set_end_value(180.);
+        m_rotation->set_step(1.);
     }
 }
 
@@ -517,40 +602,24 @@ void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_defaul
     set_enable_all_except_font(true);
 }
 
-static void set_double_spin(
-    InputTextWithSpin* spin,
-    double from,
-    double to,
-    double step,
-    double step_fast,
-    double value,
-    double default_value
-)
-{
-    DoubleValidator* validator = dynamic_cast<DoubleValidator*>(spin->validator());
-    validator->set_from(from);
-    validator->set_to(to);
-    spin->set_step(step);
-    spin->set_step_fast(step_fast);
-    spin->set_text(fmt::format("{:.10g}", value));
-    spin->set_default(default_value);
+namespace {
+void set_value(InputTextWithSpin* spin, double value_in_mm, double default_value_in_mm, bool use_inches) {
+    if (use_inches) {
+        spin->set_text(fmt::format("{:.10g}", value_in_mm));
+        spin->set_default(default_value_in_mm);    
+    } else {
+        spin->set_text(fmt::format("{:.10g}", value_in_mm * MM_TO_INCH));
+        spin->set_default(default_value_in_mm * MM_TO_INCH);
+    }
+}
+} // namespace
+
+void TextDialog::set_text_height(double height_in_mm, double default_height) {
+    set_value(m_height.get(), height_in_mm, default_height, m_use_inches);
 }
 
-void TextDialog::set_height(
-    double from,
-    double to,
-    double step,
-    double step_fast,
-    double height,
-    double default_height
-)
-{
-    set_double_spin(m_height.get(), from, to, step, step_fast, height, default_height);
-}
-
-void TextDialog::set_depth(double from, double to, double step, double step_fast, double depth, double default_depth)
-{
-    set_double_spin(m_depth.get(), from, to, step, step_fast, depth, default_depth);
+void TextDialog::set_depth(double depth_in_mm, double default_depth) {
+    set_value(m_depth.get(), depth_in_mm, default_depth, m_use_inches);
 }
 
 void TextDialog::set_use_surface(bool checked, bool default_checked)
@@ -571,44 +640,47 @@ void TextDialog::set_align(const Domain::FontProp::Align& align, const Domain::F
     m_align->set_default(align_default);
 }
 namespace {
-static void set_slider(SliderWithInput* slider, double max_val, double step, double value, double default_value)
+void set_value(SliderWithInput* slider, double value, double default_value, bool use_inches)
 {
-    slider->set_begin_value(-max_val);
-    slider->set_end_value(max_val);
-    slider->set_step(step);
-    slider->set_value(value);
-    slider->set_default(default_value);
+    if (use_inches) {
+        slider->set_value(value * MM_TO_INCH);
+        slider->set_default(default_value * MM_TO_INCH);
+    } else {
+        slider->set_value(value);
+        slider->set_default(default_value);
+    }
 }
 } // namespace
 
-void TextDialog::set_char_gap(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_char_gap.get(), max_val, step, value, default_value);
+void TextDialog::set_char_gap(double char_gap_in_mm, double default_char_gap_in_mm) {
+    set_value(m_char_gap.get(), char_gap_in_mm, default_char_gap_in_mm, m_use_inches);
+}
+void TextDialog::set_line_gap(double line_gap_in_mm, double default_line_gap_in_mm) {
+    set_value(m_line_gap.get(), line_gap_in_mm, default_line_gap_in_mm, m_use_inches);
+}
+void TextDialog::set_boldness(double boldness_in_mm, double default_boldness_in_mm) {
+    set_value(m_boldness.get(), boldness_in_mm, default_boldness_in_mm, m_use_inches);
+}
+void TextDialog::set_skew_ratio(double value, double default_value) {
+    set_value(m_skew_ratio.get(), value, default_value, false); // unit less value
+}
+void TextDialog::set_surface_distance(double maximal_value_in_mm, double surface_distance_in_mm, double default_surface_distance_in_mm) {
+    set_value(m_surface_distance.get(), surface_distance_in_mm, default_surface_distance_in_mm, m_use_inches);
+    if (m_use_inches) {
+        maximal_value_in_mm *= MM_TO_INCH;
+    }
+    m_surface_distance->set_begin_value(-maximal_value_in_mm);
+    m_surface_distance->set_end_value(maximal_value_in_mm);
 }
 
-void TextDialog::set_line_gap(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_line_gap.get(), max_val, step, value, default_value);
-}
-
-void TextDialog::set_boldness(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_boldness.get(), max_val, step, value, default_value);
-}
-
-void TextDialog::set_skew_ratio(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_skew_ratio.get(), max_val, step, value, default_value);
-}
-
-void TextDialog::set_surface_distance(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_surface_distance.get(), max_val, step, value, default_value);
-}
-
-void TextDialog::set_rotation(double max_val, double step, double value, double default_value)
-{
-    set_slider(m_rotation.get(), max_val, step, value, default_value);
+void TextDialog::set_rotation(const std::optional<float>& angle_in_rad, const std::optional<float>& default_angle_in_rad){
+    double v = angle_in_rad.value_or(0.);
+    double d = default_angle_in_rad.value_or(0.);
+    if (!m_use_radians) {
+        v *= RAD_TO_DEG;
+        d *= RAD_TO_DEG;
+    }
+    set_value(m_rotation.get(), v, d, false); // unit already converted
 }
 
 void TextDialog::set_rotation_lock(bool lock)

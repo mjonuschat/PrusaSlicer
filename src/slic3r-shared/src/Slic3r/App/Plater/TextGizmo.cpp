@@ -23,10 +23,13 @@
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/I18N/I18N.hpp>
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
+#include <Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp> // calc 2d convex hull for adding new text
+#include <Slic3r/Biz/Algorithms/Polygon.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
 #include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs
 #include <Slic3r/Biz/Platform/PlatformServices.hpp> // main_thread_dispatcher
 #include "libslic3r/Utils.hpp"
+
 
 using Slic3r::Biz::_u8L;
 
@@ -34,8 +37,6 @@ namespace {
 using namespace Slic3r;
 
 // Constants 
-double MM_TO_INCH = 25.4;
-double INCH_TO_MM = 1. / MM_TO_INCH;
 double MIN_DEPTH = 1e-3; // minimal embossing depth [in mm]
 double MIN_HEIGHT = 1e-3; // minimal Text height [in mm]
 
@@ -100,8 +101,8 @@ void transform_selection_relative(const Domain::Transform3d& tr, Biz::ProjectInt
 namespace Slic3r::App::Plater {
 
 namespace {
-void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, bool use_deg);
-void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, bool use_inch);
+void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager);
+void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<float>& scale);
 } // namespace
 
 struct TextGizmo::ProjectContext : public ::ProjectContext {};
@@ -155,8 +156,6 @@ TextGizmo::TextGizmo(
     }; 
     // NOTE: style is only subcategory of font    
     m_dialog->callbacks().height_changed = [this](double value) {
-        if (m_proj_ctxs->selected().use_inch)
-            value *= INCH_TO_MM;
         if (value <= MIN_HEIGHT) {
             value = MIN_HEIGHT;
             if (Domain::is_approx(m_preset_manager.get_font_prop().size_in_mm, (float)value))
@@ -168,9 +167,6 @@ TextGizmo::TextGizmo(
         update_volume();
     };
     m_dialog->callbacks().depth_changed = [this](double value) {
-        bool use_inch = m_proj_ctxs->selected().use_inch;
-        if (use_inch)
-            value *= INCH_TO_MM;
         if (value <= MIN_DEPTH) {
             value = MIN_DEPTH;
             if (Domain::is_approx(m_preset_manager.get_preset().projection.depth, value))
@@ -178,7 +174,7 @@ TextGizmo::TextGizmo(
         }
         m_preset_manager.get_preset().projection.depth = value;
         // change from surface limits
-        set_dialog_surface_distance(dialog(), m_preset_manager, use_inch);
+        set_dialog_surface_distance(dialog(), m_preset_manager, m_proj_ctxs->selected().volume_scale.depth);
         update_volume();
     };
 
@@ -219,24 +215,28 @@ TextGizmo::TextGizmo(
     m_dialog->callbacks().line_gap_changed = [this, set_optional](double value) {
         set_optional(m_preset_manager.get_font_prop().line_gap, value, m_proj_ctxs->selected().volume_scale.line_gap);
     };
-    m_dialog->callbacks().boldness_changed = [this](double value) {
-        if (set_opt(m_preset_manager.get_font_prop().boldness, value, m_proj_ctxs->selected().volume_scale.char_gap)) {
-            m_preset_manager.clear_glyphs_cache();
-            update_volume();        
-        }
-    };
-    m_dialog->callbacks().skew_ratio_changed = [this](double value) {
-        if (set_opt(m_preset_manager.get_font_prop().skew, value, 1.)) {
+    auto set_optional_f = [this](std::optional<float>& val_opt, double new_value, double scale) {
+        if (set_opt(val_opt, new_value, scale)) {        
             m_preset_manager.clear_glyphs_cache();
             update_volume();
         }
     };
-    m_dialog->callbacks().surface_distance_changed = [this](double value_unit) { 
-        double value = m_proj_ctxs->selected().use_inch ? value_unit * INCH_TO_MM: value_unit;
+    m_dialog->callbacks().boldness_changed = [this, set_optional_f](double value) {
+        set_optional_f(m_preset_manager.get_font_prop().boldness, value, m_proj_ctxs->selected().volume_scale.char_gap);
+    };
+    m_dialog->callbacks().skew_ratio_changed = [this, set_optional_f](double value) {
+        set_optional_f(m_preset_manager.get_font_prop().skew, value, 1.); // no scale
+    };
+    m_dialog->callbacks().surface_distance_changed = [this](double distance_in_mm) { 
+        
         std::optional<float>& distance = m_preset_manager.get_preset().distance;
-        double diff = value - distance.value_or(0.f);
+        double diff = distance_in_mm - distance.value_or(0.f);
         if (Domain::is_approx(diff, 0., 1e-3))
             return; // no change
+                
+        if (const std::optional<float>& scale = m_proj_ctxs->selected().volume_scale.depth;
+            scale.has_value()) 
+            diff *= *scale;
 
         Domain::Transform3d relative_volume_tr{ Eigen::Translation3d(Domain::Vec3d(0., 0., diff)) };
         transform_selection_relative(relative_volume_tr, m_project_interactor);
@@ -254,7 +254,7 @@ TextGizmo::TextGizmo(
         }
         //ASSERT(Domain::is_approx(distance.value_or(0.f), (float)value, 1e-3f));
     };
-    m_dialog->callbacks().rotation_changed = [this](double value) { rotate(value); };
+    m_dialog->callbacks().rotation_changed = [this](double angle_in_rad) { rotate(angle_in_rad); };
     m_dialog->callbacks().unlock_rotation = [this](bool check) {
         auto& up_limit = m_proj_ctxs->selected().up_limit;
         if (check){
@@ -291,7 +291,7 @@ TextGizmo::TextGizmo(
 
         if (!up_limit.has_value()) { // recalculate angle when not locked
             m_preset_manager.get_preset().angle = calc_rotation(project, ref);
-            set_dialog_rotation(dialog(), m_preset_manager, proj_ctx.use_deg);
+            set_dialog_rotation(dialog(), m_preset_manager);
         }
 
         if (m_preset_manager.get_font_prop().per_glyph) // change position of the text line
@@ -404,7 +404,7 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
             m_project_interactor.scene_interactor().object_selection().elements.front();
 
         m_preset_manager.get_preset().angle = calc_rotation(project, element);
-        set_dialog_rotation(dialog(), m_preset_manager, proj_ctx.use_deg);
+        set_dialog_rotation(dialog(), m_preset_manager);
     }
 
     if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
@@ -524,40 +524,23 @@ bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext
 }
 
 namespace {
-void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, bool use_deg) {
+void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager) {
     bool exist_stored = preset_manager.exist_stored_style();
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
         *preset_manager.get_stored_preset() : preset;
-
-    if (use_deg) {
-        double rotation_max = 180.;
-        double rotation_step = 0.1;
-        double rotation = preset.angle.value_or(0.f) * 180 / M_PI;
-        double rotation_ = preset_.angle.value_or(0.f) * 180 / M_PI;
-        dialog.set_rotation(rotation_max, rotation_step, rotation, rotation_);
-    } else {
-        dialog.set_rotation(M_PI, 1e-2, preset.angle.value_or(0.f), preset_.angle.value_or(0.f));
-    }
+    dialog.set_rotation(preset.angle, preset_.angle);
 }
 
-void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, bool use_inch) {
+void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<float>& scale) {
     bool exist_stored = preset_manager.exist_stored_style();
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
         *preset_manager.get_stored_preset() : preset;
-
-    if (use_inch) {
-        double surface_distance = preset.distance.value_or(0.f) * MM_TO_INCH;
-        double surface_distance_ = preset_.distance.value_or(0.f) * MM_TO_INCH;
-        double max_distance = 2 * preset.projection.depth * MM_TO_INCH;
-        dialog.set_surface_distance(max_distance, 0.005, surface_distance, surface_distance_);
-    } else {
-        double surface_distance = preset.distance.value_or(0.f);
-        double surface_distance_ = preset_.distance.value_or(0.f);
-        double max_distance = 2 * preset.projection.depth;
-        dialog.set_surface_distance(max_distance, 0.01, surface_distance, surface_distance_);
-    }
+    double surface_distance = preset.distance.value_or(0.f) * scale.value_or(1.f);
+    double surface_distance_ = preset_.distance.value_or(0.f) * scale.value_or(1.f);
+    double max_distance = 2 * preset.projection.depth * scale.value_or(1.f);
+    dialog.set_surface_distance(max_distance, surface_distance, surface_distance_);
 }
 
 void activate_preset(
@@ -570,13 +553,15 @@ void activate_preset(
     TextDialog::Callbacks temp_callbacks = std::move(dialog.callbacks());
     dialog.callbacks() = TextDialog::Callbacks{};
     ScopeGuard sg_callbacks([&dialog, &temp_callbacks]() { dialog.callbacks() = std::move(temp_callbacks); });
-
+    dialog.update_units(proj_ctx.use_inch);
+    dialog.update_angle(!proj_ctx.use_deg);
     dialog.set_warning(proj_ctx.warning_tooltip);
 
     bool exist_stored = preset_manager.exist_stored_style();
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
         *preset_manager.get_stored_preset() : preset;
+    // NOTE: _ (suffix) means stored preset in this function
 
     bool use_surface = preset.projection.use_surface;
     bool is_part = volume.get_object()->volumes.size() != 1;
@@ -593,21 +578,15 @@ void activate_preset(
     
     const Domain::FontProp& prop = es.prop;
     const Domain::FontProp& prop_ = es_.prop;
-    if (proj_ctx.use_inch) {
-        double height = prop.size_in_mm * MM_TO_INCH;
-        double height_default = prop_.size_in_mm * MM_TO_INCH;
-        dialog.set_height(.005, 4., .005, .05, height, height_default);
-    } else {
-        dialog.set_height(.1, 100., .1, 1, prop.size_in_mm, prop_.size_in_mm);
-    }
-
+    double height =         prop.size_in_mm * proj_ctx.volume_scale.height.value_or(1.f);
+    double height_default = prop_.size_in_mm * proj_ctx.volume_scale.height.value_or(1.f);
+    dialog.set_text_height(height, height_default);
+    
     const Domain::EmbossProjection& ep = preset.projection;
     const Domain::EmbossProjection& ep_ = preset_.projection;
-    if (proj_ctx.use_inch) {
-        dialog.set_depth(.005, 4., .005, .05, ep.depth* MM_TO_INCH, ep_.depth* MM_TO_INCH);
-    } else {
-        dialog.set_depth(.1, 100., .1, 1, ep.depth, ep_.depth);
-    }
+    double depth =         ep.depth * proj_ctx.volume_scale.depth.value_or(1.f);
+    double depth_default = ep_.depth * proj_ctx.volume_scale.depth.value_or(1.f);
+    dialog.set_depth(depth, depth_default);
 
     // advanced
     dialog.set_enable_use_surface(is_part);
@@ -621,36 +600,28 @@ void activate_preset(
     double scale_char_gap = proj_ctx.volume_scale.char_gap;
     double char_gap_in_mm = prop.char_gap.value_or(0) * scale_char_gap;
     double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale_char_gap;
-    double char_gap_max = proj_ctx.use_inch ? .2 /* inch */ : 5. /* mm */;
-    double char_gap_step = proj_ctx.use_inch ? .005 /* inch */ : .1 /* mm */;
-    dialog.set_char_gap(char_gap_max, char_gap_step, char_gap_in_mm, char_gap_in_mm_);
+    dialog.set_char_gap(char_gap_in_mm, char_gap_in_mm_);
 
     bool is_multiline = Biz::Emboss::get_count_lines(proj_ctx.text) > 1;
     dialog.set_enable_line_gap(is_multiline);
-    double line_gap_max = char_gap_max;
-    double line_gap_step = char_gap_step;
     double line_gap_in_mm = prop.line_gap.value_or(0) * proj_ctx.volume_scale.line_gap;
     double line_gap_in_mm_ = prop_.line_gap.value_or(0) * proj_ctx.volume_scale.line_gap;
-    dialog.set_line_gap(line_gap_max, line_gap_step, line_gap_in_mm, line_gap_in_mm_);
+    dialog.set_line_gap(line_gap_in_mm, line_gap_in_mm_);
 
-    double boldness_max = proj_ctx.use_inch ? .2 /* inch */ : 5. /* mm */;
-    double boldness_step = proj_ctx.use_inch ? .005 /* inch */ : .1 /* mm */;
     double boldness_in_mm = prop.boldness.value_or(0) * scale_char_gap;
     double boldness_in_mm_ = prop_.boldness.value_or(0) * scale_char_gap;
-    dialog.set_boldness(boldness_max, boldness_step, boldness_in_mm, boldness_in_mm_);
+    dialog.set_boldness(boldness_in_mm, boldness_in_mm_);
 
-    double skew_ratio_max = 1.;
-    double skew_ratio_step = 0.01;
     double skew_ratio = prop.skew.value_or(0.f);
     double skew_ratio_ = prop_.skew.value_or(0.f);
-    dialog.set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio, skew_ratio_);
+    dialog.set_skew_ratio(skew_ratio, skew_ratio_);
 
     dialog.set_enable_surface_distance(is_part && !use_surface);
-    set_dialog_surface_distance(dialog, preset_manager, proj_ctx.use_inch);
+    set_dialog_surface_distance(dialog, preset_manager, proj_ctx.volume_scale.depth);
 
     bool rotation_lock = !proj_ctx.up_limit.has_value();
     dialog.set_rotation_lock(rotation_lock);
-    set_dialog_rotation(dialog, preset_manager, proj_ctx.use_deg);
+    set_dialog_rotation(dialog, preset_manager);
 
     // NOTE: not neccessary to write pressets names every time when volume loads
     dialog.set_presets(preset_manager.get_presets_names(), preset_manager.get_preset_index());
@@ -658,7 +629,6 @@ void activate_preset(
     dialog.show_part_specific_panel(is_part);
     if (is_part) {
         dialog.set_operation(volume.type());
-        set_dialog_surface_distance(dialog, preset_manager, proj_ctx.use_inch);
     }
 }
 
@@ -681,20 +651,19 @@ Domain::Transform3d world_tr(const Domain::Project& project, const Domain::Eleme
 
 // True when exist change in scale otherwise false
 bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Domain::ElementRef& ref,
-    Biz::Emboss::TextPresetManager& preset_manager, bool use_inch) 
+    Biz::Emboss::TextPresetManager& preset_manager) 
 {
     Domain::Transform3d to_world = world_tr(project, ref);
     auto to_world_linear = to_world.linear();
     auto calc = [&to_world_linear](const Domain::Vec3d& axe, std::optional<float>& scale) {
-        Domain::Vec3d  axe_world = to_world_linear * axe;
-        double norm_sq = axe_world.squaredNorm();
-        if (Domain::is_approx(norm_sq, 1.)) {
+        Domain::Vec3d  axe_world = to_world_linear * axe;        
+        if (double norm_sq = axe_world.squaredNorm();
+            Domain::is_approx(norm_sq, 1.)) {
             if (scale.has_value())
                 scale.reset();
             else
                 return false;
-        }
-        else {
+        } else {
             scale = sqrt(norm_sq);
         }
         return true;
@@ -704,15 +673,12 @@ bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Doma
     exist_change |= calc(Domain::Vec3d::UnitX(), volume_scale.width);
     exist_change |= calc(Domain::Vec3d::UnitZ(), volume_scale.depth);
 
-    auto font_point_to_world = [&preset_manager, use_inch](const std::optional<float>& scale)->double {
+    auto font_point_to_world = [&preset_manager](const std::optional<float>& scale)->double {
         const Domain::FontFile& ff = *preset_manager.get_font_file_with_cache().font_file; /* not const */
         const Domain::FontProp& fp = preset_manager.get_font_prop();
         const Domain::FontFile::Info& font_info = Biz::Emboss::get_font_info(ff, fp);
         double font_point_to_volume_mm = fp.size_in_mm / (double)font_info.unit_per_em;
-        double font_point_to_world_mm = font_point_to_volume_mm * scale.value_or(1.f);
-        if (use_inch)
-            return font_point_to_world_mm * INCH_TO_MM;
-        return font_point_to_world_mm;
+        return font_point_to_volume_mm * scale.value_or(1.f); // font_point_to_world_mm
     };
 
     // TODO: solve first initialization and than recaluculate only when exist change
@@ -790,7 +756,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         m_text_lines.reset(); // remove previous text lines 
     }
 
-    calc_scales(proj_ctx.volume_scale, project, ref, m_preset_manager, proj_ctx.use_inch); // volume scale for each axis
+    calc_scales(proj_ctx.volume_scale, project, ref, m_preset_manager); // volume scale for each axis
     if (is_part) {
         Scene::Node& root = m_scene_presenter.scene().root();
         m_preset_manager.get_preset().distance = calc_distance(project, ref, root);
@@ -862,6 +828,25 @@ std::optional<float> calc_distance(const Domain::Project& project, const Domain:
     return distance;
 }
 
+namespace {
+Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain::ModelInstance& instance, const Scene::Camera& camera) {
+    const Domain::Transform3d to_world = instance.get_matrix() * volume.get_matrix();
+    const Domain::TriangleMesh& hull = volume.get_convex_hull();    
+    Domain::Points points;
+    points.reserve(hull.its.vertices.size());
+    for (const Domain::Vec3f& v : hull.its.vertices) {
+        Domain::Vec3d v_world = to_world * v.cast<double>();
+        Domain::Vec2d coor = camera.project_to_screen_space(v_world);
+        // projection to screen coor space has reverse Y against mouse coordinate
+        coor.y() = camera.viewport().height - coor.y();
+        points.push_back(coor.cast<Domain::coord_t>());
+    }
+
+    Domain::Polygon hull_2d = Biz::Algorithms::Geometry::convex_hull(points);
+    return hull_2d.centroid();
+}
+} // namespace
+
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
 {
     if (!init_create(volume_type))
@@ -869,12 +854,42 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
 
     // get (pickray + pickresults) from screen center
     Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
-    const Render::Rect& v = scene.camera().viewport();
-    Domain::Point logic_center{ v.x + v.width / 2, v.y + v.height / 2 };
+    const Scene::Camera& camera = scene.camera();
+    const Render::Rect& v = camera.viewport();
+    Domain::Vec2f logic_center{ v.x + v.width / 2.f, v.y + v.height / 2.f };
+
+    // get selected object centroid center
+    const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::ElementRefs& els = m_project_interactor.scene_interactor().object_selection().elements;
+    float squared_norm = std::numeric_limits<float>::max();
+    std::optional<Domain::Point> screen_coor;
+    auto eval_center_closest = [&camera, &squared_norm, &screen_coor, &logic_center]
+    (const Domain::ModelVolume& volume, const Domain::ModelInstance& instance) {
+        Domain::Point center = get_screen_center(volume, instance, camera);
+        if (float norm = (center.cast<float>() - logic_center).squaredNorm();
+            squared_norm > norm) { // is cloeser to screen center
+            squared_norm = norm;
+            screen_coor = center;
+        }
+    };
+
+    for (const Domain::ElementRef& el: els) {
+        const Domain::ModelInstance* instance = project.find_instance_by_id(el.object_id, el.instance_id);
+        if (el.volume_id == 0) { // Whole object selected
+            const Domain::ModelObject* obj = project.find_object_by_id(el.object_id);
+            for (const Domain::ModelVolume* vol : obj->volumes) {
+                eval_center_closest(*vol, *instance);
+            }
+            continue;
+        }
+        const Domain::ModelVolume* vol = project.find_volume_by_id(el.object_id, el.volume_id);
+        eval_center_closest(*vol, *instance);
+    }
+
+    const Domain::Vec2f p = screen_coor.has_value() ? screen_coor->cast<float>() : logic_center;
     Scene::NodePickResults pick_results;
     Scene::Ray pick_ray;
-    scene.pick_at(logic_center.x(), logic_center.y(), pick_results, &pick_ray);
-
+    scene.pick_at(p.x(), p.y(), pick_results, &pick_ray);
     return emboss_text(volume_type, pick_ray, pick_results);
 }
 
@@ -1048,15 +1063,12 @@ void TextGizmo::close()
     m_gizmo_manager.deactivate_current_tool();
 }
 
-void TextGizmo::rotate(double absolut_angle) {
-    double value = absolut_angle;
-    if (m_proj_ctxs->selected().use_deg)
-        value *= M_PI / 180;
+void TextGizmo::rotate(double absolut_angle_in_rad) {
     double current = m_preset_manager.get_preset().angle.value_or(0.f);
-    if (Domain::is_approx(current, value, 1e-3))
+    if (Domain::is_approx(current, absolut_angle_in_rad, 1e-3))
         return; // approx same
 
-    double diff_angle = value - current;
+    double diff_angle = absolut_angle_in_rad - current;
     Domain::Transform3d relative_volume_tr{ Eigen::AngleAxisd(diff_angle, Domain::Vec3d::UnitZ()) };
     transform_selection_relative(relative_volume_tr, m_project_interactor);
 

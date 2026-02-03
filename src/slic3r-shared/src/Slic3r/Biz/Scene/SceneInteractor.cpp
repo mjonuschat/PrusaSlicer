@@ -635,6 +635,12 @@ void SceneInteractor::add_volume(const Domain::ModelVolume* volume)
     });
 
     set_object_selection({ SelectionMode::Volume, updated});
+
+    // Fix out of bed color settings
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 }
 
 void SceneInteractor::add_instance(const Vec2d& offset)
