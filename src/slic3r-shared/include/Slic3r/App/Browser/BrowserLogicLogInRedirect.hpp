@@ -16,7 +16,7 @@ public:
     std::vector<BrowserLogicCommand> on_navigation_request_webview_event(const std::string& new_url, const std::string& current_url) override;
     std::vector<BrowserLogicCommand> on_loaded_webview_event(const std::string& url) override;
     std::vector<BrowserLogicCommand> on_script_message_webview_event(const std::string& message) override;
-    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) override;
+    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh, const std::string& current_url) override;
 
 private:
     Biz::UserAccount::UserAccountInteractor& m_user_account;

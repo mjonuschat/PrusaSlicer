@@ -26,5 +26,6 @@ protected:
     std::vector<BrowserLogicCommand> request_compatible_printers_SLA();
     std::vector<BrowserLogicCommand> on_webview_reload_event(const std::string& message_data) override;
     std::vector<BrowserLogicCommand> on_connect_action_close_dialog(const std::string& message_data) override;
+    std::vector<BrowserLogicCommand> on_connect_action_log_in_in_browser(const std::string& data) override;
 };
 } // namespace Slic3r::App::Browser 

@@ -76,5 +76,9 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_cl
     return {{BrowserLogicCommandType::EndModalOK, {}}};
 }
 
+std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_log_in_in_browser(const std::string& data)
+{
+    return {};
+}
 
 } // namespace Slic3r::App::Browser 

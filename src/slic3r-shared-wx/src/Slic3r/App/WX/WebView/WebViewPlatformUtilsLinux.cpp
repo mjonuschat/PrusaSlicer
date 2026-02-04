@@ -119,18 +119,17 @@ void delete_cookies_with_counter(wxWebView* web_view, const std::string& url, st
 
 void add_request_authorization(wxWebView* web_view, const wxString& address, const std::string& token)
 {
-    // unused on Linux
-    DEBUG_ASSERT(false);
+    PANIC("Unused on Linux");
 }
 void remove_request_authorization(wxWebView* web_view)
 {
-    // unused on Linux
-    DEBUG_ASSERT(false);
+    PANIC("Unused on Linux");
 }
 
 void register_prusaslicer_url()
 {
     // unused on Linux
+    // Should stay empty.
 }
 
 void load_request(wxWebView* web_view, const std::string& address, const std::string& token)

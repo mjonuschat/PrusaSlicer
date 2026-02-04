@@ -70,6 +70,7 @@ private:
     void on_navigation_request(wxWebViewEvent& evt);
     void on_loaded(wxWebViewEvent& evt);
     void on_page_will_load();
+    void on_created(wxWebViewEvent& evt);
 
     void on_error(wxWebViewEvent& evt);
     void on_idle(wxIdleEvent& evt);
@@ -123,8 +124,6 @@ protected:
     bool handle_logic_command_Veto(const std::string& data) override;
     bool handle_logic_command_DoReload(const std::string& data) override;
     bool handle_logic_command_AddUserScript(const std::string& data) override;
-    bool handle_logic_command_AddRequestAuthorization(const std::string& data) override;
-    bool handle_logic_command_RemoveRequestAuthorization(const std::string& data) override;
     bool handle_logic_command_LoadResourcesPage(const std::string& data) override;
     bool handle_logic_command_OpenExternalBrowser(const std::string& data) override;
     bool handle_logic_command_RegisterPrusaSlicerURL(const std::string& data) override;

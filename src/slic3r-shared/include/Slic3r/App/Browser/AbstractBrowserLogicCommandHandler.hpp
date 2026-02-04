@@ -26,8 +26,6 @@ protected:
     virtual bool handle_logic_command_Veto(const std::string& data) = 0;
     virtual bool handle_logic_command_DoReload(const std::string& data) = 0;
     virtual bool handle_logic_command_AddUserScript(const std::string& data) = 0;
-    virtual bool handle_logic_command_AddRequestAuthorization(const std::string& data) = 0;
-    virtual bool handle_logic_command_RemoveRequestAuthorization(const std::string& data) = 0;
     virtual bool handle_logic_command_LoadResourcesPage(const std::string& data) = 0;
     virtual bool handle_logic_command_OpenExternalBrowser(const std::string& data) = 0;
     virtual bool handle_logic_command_RegisterPrusaSlicerURL(const std::string& data) = 0;
@@ -59,8 +57,6 @@ protected:
         case BrowserLogicCommandType::Veto:                          return handle_logic_command_Veto(command.data);
         case BrowserLogicCommandType::DoReload:                      return handle_logic_command_DoReload(command.data);
         case BrowserLogicCommandType::AddUserScript:                 return handle_logic_command_AddUserScript(command.data);
-        case BrowserLogicCommandType::AddRequestAuthorization:       return handle_logic_command_AddRequestAuthorization(command.data);
-        case BrowserLogicCommandType::RemoveRequestAuthorization:    return handle_logic_command_RemoveRequestAuthorization(command.data);
         case BrowserLogicCommandType::LoadResourcesPage:             return handle_logic_command_LoadResourcesPage(command.data);
         case BrowserLogicCommandType::OpenExternalBrowser:           return handle_logic_command_OpenExternalBrowser(command.data);
         case BrowserLogicCommandType::RegisterPrusaSlicerURL:        return handle_logic_command_RegisterPrusaSlicerURL(command.data);

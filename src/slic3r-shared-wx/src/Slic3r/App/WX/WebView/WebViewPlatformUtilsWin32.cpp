@@ -309,7 +309,6 @@ void add_request_authorization(wxWebView* webview, const wxString& address, cons
                     std::string val = "External " + token;
                     // Add or modify the Authorization header
                     hr = headers->SetHeader(L"Authorization", from_u8(val).c_str());
-
                     // This function is only needed for debug purpose
                     //RequestHeadersToLog(headers.Get());    
                     return S_OK;
@@ -323,6 +322,7 @@ void add_request_authorization(wxWebView* webview, const wxString& address, cons
 
 void remove_request_authorization(wxWebView* webview)
 {
+    return;
     ICoreWebView2 *webView2 = static_cast<ICoreWebView2 *>(webview->GetNativeBackend());
     if (!webView2) {
         SPDLOG_ERROR("{} Failed: webView2 is null.", __FUNCTION__);
@@ -336,58 +336,42 @@ void remove_request_authorization(wxWebView* webview)
 
 void load_request(wxWebView* web_view, const std::string& address, const std::string& token)
 {
-    // This function should create its own GET request and send it (works on linux)
-    // For that we would use NavigateWithWebResourceRequest.
-    // For that we need ICoreWebView2Environment smart pointer.
-    // Such pointer does exists inside wxWebView edge backend. (wxWebViewEdgeImpl::m_webViewEnvironment)
-    // But its currently private and not getable. (It wouldn't be such problem to create the getter)
+    if (!web_view) return;
+
+    ICoreWebView2* native_backend = static_cast<ICoreWebView2*>(web_view->GetNativeBackend());
+    if (!native_backend) return;
+
+    // 1. Query ICoreWebView2_9 to get the WebView2 Environment
+    Microsoft::WRL::ComPtr<ICoreWebView2_9> webview2_9;
+    if (FAILED(native_backend->QueryInterface(IID_PPV_ARGS(&webview2_9)))) return;
+
+    Microsoft::WRL::ComPtr<ICoreWebView2Environment> env;
+    if (FAILED(webview2_9->get_Environment(&env))) return;
+
+    // 2. Query Environment2 to create the request
+    Microsoft::WRL::ComPtr<ICoreWebView2Environment2> env2;
+    if (FAILED(env.As(&env2))) return;
+
+    // 3. Query ICoreWebView2_2 to execute the custom navigation
+    Microsoft::WRL::ComPtr<ICoreWebView2_2> webview2_2;
+    if (FAILED(native_backend->QueryInterface(IID_PPV_ARGS(&webview2_2)))) return;
+
+    std::wstring w_url = wxString::FromUTF8(address).ToStdWstring();
     
-    PANIC("Not implemented for Wi32.");
+    // WebView2 requires HTTP headers to be \r\n separated
+    std::wstring headers = L"Authorization: External " + wxString::FromUTF8(token).ToStdWstring() + L"\r\n";
 
-    //ICoreWebView2 *webView2 = static_cast<ICoreWebView2 *>(web_view->GetNativeBackend());
-    //if (!webView2) {
-    //    SPDLOG_ERROR("load_request Failed: webView2 is null.");
-    //    return;
-    //}
-   
-    //// GetEnviroment does not exists
-    //ComPtr<ICoreWebView2Environment> webViewEnvironment;
-    ////webViewEnvironment = static_cast<ICoreWebView2Environment *>(web_view->GetEnviroment());
-    //if (!webViewEnvironment.Get()) {
-    //    SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment is null.");
-    //    return;
-    //}
-
-    //ComPtr<ICoreWebView2Environment2> webViewEnvironment2;
-    //if (FAILED(webViewEnvironment->QueryInterface(IID_PPV_ARGS(&webViewEnvironment2))))
-    //{
-    //    SPDLOG_ERROR("load_request Failed: ICoreWebView2Environment2 is null.");
-    //    return;
-    //}
-    // ComPtr<ICoreWebView2WebResourceRequest> webResourceRequest;
-    //
-    //wxString printables_address = from_u8(Biz::Network::ServiceConfig::instance().printables_url());
-    //if (FAILED(webViewEnvironment2->CreateWebResourceRequest(
-    //    printables_address.wc_str(), L"GET", NULL,
-    //    L"Content-Type: application/x-www-form-urlencoded", &webResourceRequest)))
-    //{
-    //    SPDLOG_ERROR("load_request Failed: CreateWebResourceRequest failed.");
-    //    return;
-    //}
-
-    //ComPtr<ICoreWebView2> wv2(webView2);
-    //ComPtr<ICoreWebView2_2> wv2_2;
-    //HRESULT hr = wv2.As(&wv2_2);
-    //if (FAILED(hr)) {
-    //    SPDLOG_ERROR("setup_webview_with_credentials Failed: ICoreWebView2_10 interface not supported by runtime.");
-    //    return;
-    //}
-
-    //if (FAILED(wv2_2->NavigateWithWebResourceRequest(webResourceRequest.Get())))
-    //{
-    //    SPDLOG_ERROR("load_request Failed: NavigateWithWebResourceRequest failed.");
-    //    return;
-    //} 
+    // 4. Create and execute the request
+    Microsoft::WRL::ComPtr<ICoreWebView2WebResourceRequest> request;
+    if (SUCCEEDED(env2->CreateWebResourceRequest(
+            w_url.c_str(),
+            L"GET",
+            nullptr, // IStream* postData
+            headers.c_str(),
+            &request))) {
+        
+        webview2_2->NavigateWithWebResourceRequest(request.Get());
+    }
 }
 
 void register_prusaslicer_url()

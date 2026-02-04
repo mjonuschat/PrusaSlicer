@@ -445,7 +445,7 @@ void WebViewDialog::do_reload()
 
 void WebViewDialog::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
-    bool r = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh));
+    bool r = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh, into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
 }
 
@@ -521,26 +521,6 @@ bool WebViewDialog::handle_logic_command_DoReload(const std::string& data)
 bool WebViewDialog::handle_logic_command_AddUserScript(const std::string& data)
 {
     m_web_view->AddUserScript(from_u8(data));
-    return true;
-}
-
-bool WebViewDialog::handle_logic_command_AddRequestAuthorization(const std::string& data)
-{
-#ifdef WIN32
-    add_request_authorization(m_web_view, from_u8(data), m_logic->access_token());
-#else
-    DEBUG_ASSERT(false, "add_request_authorization is supported only on windows.");
-#endif // WIN32
-    return true;
-}
-
-bool WebViewDialog::handle_logic_command_RemoveRequestAuthorization(const std::string& data)
-{
-#ifdef WIN32
-    remove_request_authorization(m_web_view);
-#else
-    DEBUG_ASSERT(false, "remove_request_authorization is supported only on windows.");
-#endif // WIN32
     return true;
 }
 

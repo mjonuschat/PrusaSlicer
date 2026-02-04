@@ -22,7 +22,7 @@ public:
     std::vector<BrowserLogicCommand> on_show_webview_event(bool show) override;
     std::vector<BrowserLogicCommand> on_loaded_webview_event(const std::string& url) override;
     std::vector<BrowserLogicCommand> on_load_default_url() override;
-    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) override;
+    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh, const std::string& current_url) override;
     std::vector<BrowserLogicCommand> on_user_account_logged_out(const std::string& current_url) override;
     std::vector<BrowserLogicCommand> on_user_account_will_refresh() override;
     std::vector<BrowserLogicCommand> on_printables_secret_token(const std::string& body) override;
@@ -41,11 +41,10 @@ private:
     std::vector<BrowserLogicCommand> on_printables_event_open_url(const std::string& message_data);
     std::vector<BrowserLogicCommand> on_webview_reload_event(const std::string& message_data);
 
-    std::vector<BrowserLogicCommand> logout(const std::string& url);
-    std::vector<BrowserLogicCommand> login(const std::string& access_token, const std::string& override_url = std::string());
+    std::vector<BrowserLogicCommand> log_out(const std::string& url);
 
     void emplace_define_css_commands(std::vector<BrowserLogicCommand>& res);
-    void emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res);
+    void emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res, const std::string& override_url = std::string());
 
     std::string script_hide_loading_overlay() const;
     std::string script_show_loading_overlay() const;
@@ -58,8 +57,6 @@ private:
     bool m_styles_defined {false};
     bool m_refreshing_token {false};
     bool m_load_default_url { true };
-    bool m_remove_request_auth {false};
-    bool m_reload_after_secret_token {false};
     std::string m_last_loaded_url;
 };
 } // namespace Slic3r::App::Browser 

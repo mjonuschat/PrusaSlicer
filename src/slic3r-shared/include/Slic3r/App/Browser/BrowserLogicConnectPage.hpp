@@ -22,7 +22,7 @@ public:
     std::vector<BrowserLogicCommand> on_page_will_load_webview_event() override;
     std::vector<BrowserLogicCommand> on_webview_created() override;
     std::vector<BrowserLogicCommand> on_loaded_webview_event(const std::string& url) override;
-    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh) override;
+    std::vector<BrowserLogicCommand> on_user_account_id_success(bool is_refresh, const std::string& current_url) override;
     std::vector<BrowserLogicCommand> on_user_account_logged_out(const std::string& current_url) override;
 
     /**

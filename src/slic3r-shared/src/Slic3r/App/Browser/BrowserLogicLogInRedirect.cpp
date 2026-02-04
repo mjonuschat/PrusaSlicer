@@ -53,7 +53,7 @@ std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_script_message_we
     return {};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_user_account_id_success(bool is_refresh)
+std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_user_account_id_success(bool is_refresh, const std::string& current_url)
 {
     return {{BrowserLogicCommandType::EndModalOK, {}}};
 }

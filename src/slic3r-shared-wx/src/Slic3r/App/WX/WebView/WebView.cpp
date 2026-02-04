@@ -24,7 +24,11 @@ wxWebView* web_view_new()
 
     wxWebView* webView = nullptr;
     if (backend_available)
-        webView = wxWebView::New();
+#if wxUSE_WEBVIEW_EDGE || wxUSE_WEBVIEW_EDGE_STATIC
+        webView = wxWebView::New(from_u8(wxWebViewBackendEdge));
+#else
+        webView = wxWebView::New(from_u8(wxWebViewBackendWebKit));
+#endif
     if (!webView)
         SPDLOG_ERROR("Failed to create wxWebView object.");
     return webView;

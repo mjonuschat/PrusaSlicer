@@ -40,7 +40,7 @@ std::string BrowserLogicPrintables::access_token()
 std::vector<BrowserLogicCommand>
 BrowserLogicPrintables::on_navigation_request_webview_event(const std::string& new_url, const std::string& current_url)
 {
-    SPDLOG_INFO("{} {}", __FUNCTION__, new_url);
+    //SPDLOG_INFO("{} {}", __FUNCTION__, new_url);
     if (new_url.find(m_url) == 0) {
         m_reached_default_url = true;
         if (new_url == current_url) {
@@ -61,31 +61,21 @@ BrowserLogicPrintables::on_navigation_request_webview_event(const std::string& n
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_show_webview_event(bool show)
 {
+    //SPDLOG_INFO("{} {}", __FUNCTION__, show);
     std::vector<BrowserLogicCommand> result;
     result.emplace_back(BrowserLogicCommandType::SetLoadDefaultURLOnErrorTrue, std::string());
-
-    // in case login changed, resend login / logout
-    // DK: it seems to me, it is safer to do login / logout (where logout means requesting the page again)
-    // on every show of panel,
-    // than to keep information if we have printables page in same state as slicer in terms of login
-    const std::string access_token = m_project_interactor.user_account_interactor().access_token();
-    std::vector<BrowserLogicCommand> auth_cmds;
-    if (access_token.empty()) {
-        auth_cmds = logout(m_next_show_url);
+    // We do not care about token here. This should be called only if webview was visited before.
+    // So it is receiving calls from user account to log in / log out.
+    if (!m_next_show_url.empty()) {
+        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(m_next_show_url));
         m_next_show_url.clear();
-    } else {
-        auth_cmds = login(access_token, m_next_show_url);
     }
-
-    result.insert(result.end(), 
-                  std::make_move_iterator(auth_cmds.begin()), 
-                  std::make_move_iterator(auth_cmds.end()));
-
     return result;
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_loaded_webview_event(const std::string& url)
 {
+    //SPDLOG_INFO("{} {}", __FUNCTION__, url);
     std::vector<BrowserLogicCommand> result;
     if (url.find("/web/" + m_loading_html) != std::string::npos && m_load_default_url) {
         m_load_default_url = false;
@@ -99,13 +89,6 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_loaded_webview_event
         m_styles_defined = false;
     }
 
-#ifdef _WIN32
-    // This is needed only once after add_request_authorization
-    if (m_remove_request_auth) {
-        m_remove_request_auth = false;
-        result.emplace_back(BrowserLogicCommandType::RemoveRequestAuthorization, std::string());
-    }
-#endif
     result.emplace_back(BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse, std::string());
     return result;
 }
@@ -117,16 +100,19 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_load_default_url()
     return res;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_success(bool is_refresh)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_success(bool is_refresh, const std::string& current_url)
 {
     if (m_load_default_url) {
         return {};
     }
-    if (!is_refresh) {
-        return login(m_project_interactor.user_account_interactor().access_token());
-    }
-    SPDLOG_INFO("{}", __FUNCTION__);
     std::vector<BrowserLogicCommand> result;
+    if (!is_refresh) {
+        // Do full reload of page with access token in header
+        // This is only way to pass token to printables
+        emplace_load_default_url_commands(result, current_url);
+        return result;
+    }
+    //SPDLOG_INFO("{}", __FUNCTION__);
     result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
 
@@ -140,7 +126,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_logged_
     if (m_load_default_url) {
         return {};
     }
-    return logout(current_url);
+    return log_out(current_url);
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_will_refresh()
@@ -148,6 +134,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_will_re
     if (m_load_default_url) {
         return {};
     }
+    //SPDLOG_INFO("{}", __FUNCTION__);
     return {{BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))"}};
 }
 
@@ -169,7 +156,6 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_secret_to
 
     if (token.empty()) {
         SPDLOG_ERROR("Failed to retrieve Printables secret token - Account features might not work.");
-        m_reload_after_secret_token = false;
         // We failed to retrieve the secret token. Printables will sooner or later run into error state.
         // It is likely this is happening for a reason (f.e. severed connection), its better to let things fail than repeat the token exchange.
         return result;
@@ -180,14 +166,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_secret_to
         {"secretToken", token}
     };
     result.emplace_back(BrowserLogicCommandType::RunScript, fmt::format("window.postMessage(JSON.stringify({}));", payload.dump()));
-
-    if (m_reload_after_secret_token && m_next_show_url.empty()) {
-        result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");
-    } else if (!m_next_show_url.empty()) {
-        result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(m_next_show_url));
-        m_next_show_url.clear();
-    }
-    m_reload_after_secret_token = false;
+    // We just pass the token to Printables, rest should be done by their side.
+    // We used to "window.location.reload();" - that is probably not correct as it could be faster than proccessing the secret token.
     return result;
 }
 
@@ -405,7 +385,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_webview_reload_event
     }
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::string& url)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::log_out(const std::string& url)
 {
     std::vector<BrowserLogicCommand> result;
     m_refreshing_token = false;
@@ -418,26 +398,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
     result.emplace_back(BrowserLogicCommandType::RunScript, "localStorage.clear();");
 
     std::string next_url = url_lang_theme(url);
-#ifdef _WIN32
+
     result.emplace_back(BrowserLogicCommandType::LoadURL, next_url);
-#else
-    // We cannot do simple reload here, it would keep the access token in the header
-    result.emplace_back(BrowserLogicCommandType::LoadRequest, next_url);
-#endif //
-
-    return result;
-}
-
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string& access_token, const std::string& url)
-{
-    SPDLOG_INFO("{}", __FUNCTION__);
-    std::vector<BrowserLogicCommand> result;
-    m_refreshing_token = false;
-    m_styles_defined   = false;
-    m_reload_after_secret_token = true;
-    result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
-    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
-    m_project_interactor.user_account_interactor().request_printables_secret_token();
     return result;
 }
 
@@ -657,35 +619,28 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
     return url_string + "?" + new_params;
 }
 
-void BrowserLogicPrintables::emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res)
+void BrowserLogicPrintables::emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res, const std::string& override_url)
 {
-    SPDLOG_INFO("{}", __FUNCTION__);
+    
     res.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
     m_styles_defined = false;
-    std::string actual_default_url = url_lang_theme(Biz::Network::ServiceConfig::instance().printables_url() + "/homepage");
+    std::string url_base = override_url.empty() ? Biz::Network::ServiceConfig::instance().printables_url()  + "/homepage" : override_url;
+    std::string final_url = url_lang_theme(url_base);
     const std::string access_token = m_project_interactor.user_account_interactor().access_token();
     // in case of opening printables logged out - delete cookies and localstorage to get rid of last login
+    //SPDLOG_INFO("{} {} {}", __FUNCTION__, override_url, !access_token.empty());
     if (access_token.empty()) {
         res.emplace_back(
             BrowserLogicCommandType::DeleteCookies,
             Biz::Network::ServiceConfig::instance().printables_url()
         );
         res.emplace_back(BrowserLogicCommandType::AddUserScript, "localStorage.clear();");
-        res.emplace_back(BrowserLogicCommandType::LoadURL, std::move(actual_default_url));
+        res.emplace_back(BrowserLogicCommandType::LoadURL, std::move(final_url));
         return;
     }
 
-    m_project_interactor.user_account_interactor().request_printables_secret_token();
     res.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
-
-    // add token to first request
-#ifdef _WIN32
-    res.emplace_back(BrowserLogicCommandType::AddRequestAuthorization, m_url);
-    m_remove_request_auth = true;
-    res.emplace_back(BrowserLogicCommandType::LoadURL, std::move(actual_default_url));
-#else
-    res.emplace_back(BrowserLogicCommandType::LoadRequest, std::move(actual_default_url));
-#endif
+    res.emplace_back(BrowserLogicCommandType::LoadRequest, std::move(final_url));
 }
 
 } // namespace Slic3r::App::Browser

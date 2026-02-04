@@ -129,7 +129,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_page_will_load_webv
     return {{BrowserLogicCommandType::AddUserScript, std::move(javascript)}};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_user_account_id_success(bool is_refresh)
+std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_user_account_id_success(bool is_refresh, const std::string& current_url)
 {
     if (m_load_default_url) {
         return {};

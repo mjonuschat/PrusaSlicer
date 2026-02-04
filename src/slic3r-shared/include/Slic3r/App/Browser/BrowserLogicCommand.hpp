@@ -17,8 +17,6 @@ enum class BrowserLogicCommandType
     Veto,
     DoReload,
     AddUserScript,
-    AddRequestAuthorization,
-    RemoveRequestAuthorization,
     LoadResourcesPage,
     OpenExternalBrowser,
     RegisterPrusaSlicerURL,
