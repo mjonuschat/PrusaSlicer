@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <algorithm>
+#include <numeric>
 
 namespace std {
 
@@ -559,10 +560,7 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
     const std::set<unsigned>& extruder_candidates
 )
 {
-    auto it{std::ranges::find_if(
-        items,
-        [](const ConfigItem* item) { return item != nullptr; }
-    )};
+    auto it{std::ranges::find_if(items, [](const ConfigItem* item) { return item != nullptr; })};
     if (it == items.end()) {
         ASSERT(default_value);
         return {*default_value, false};
@@ -573,61 +571,47 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
     if (!first_item.def().require_compatibility_rule) {
         return {*default_value, false};
     }
-    const CompatibilityRule compatibility_rule{
-        get_compatibility_rules().at(first_item.name())
-    };
-
-    if (!extruder_candidates.empty()) {
-        bool all_same{true};
-        for (unsigned extruder : extruder_candidates) {
-            const ConfigItem* item{items[extruder]};
-            if (item == nullptr && *ASSERT_VAL(default_value) != first_item.value()) {
-                all_same = false;
-                break;
-            }
-            if (item != nullptr && item->value() != first_item.value()) {
-                all_same = false;
-                break;
-            }
-        }
-        if (all_same) {
-            return {first_item.value(), false};
-        }
-    }
-
-    if (compatibility_rule == CompatibilityRule::IgnoreOverrides) {
-        ASSERT(default_value);
-        return {*default_value, true};
-    }
+    const CompatibilityRule compatibility_rule{get_compatibility_rules().at(first_item.name())};
 
     return first_item.visit(
         [&](const auto& value) -> std::pair<ConfigValue, bool>
         {
             using Type = std::remove_cvref_t<decltype(value)>;
+            std::vector<Type> values;
+            for (std::size_t tool_index{}; tool_index < items.size(); ++tool_index) {
+                const auto& item{items[tool_index]};
+                if (!extruder_candidates.empty() && !extruder_candidates.contains(tool_index)) {
+                    continue;
+                }
+                if (item != nullptr) {
+                    values.push_back(item->get<Type>());
+                } else {
+                    values.push_back(default_value->get<Type>());
+                }
+            }
+            ASSERT(!values.empty());
+            const bool all_same{std::ranges::all_of(
+                values,
+                [&](const Type& value) { return value == values.front(); }
+            )};
+            if (all_same) {
+                return {ConfigValue{Type{values.front()}}, false};
+            }
+
             if constexpr (std::is_same_v<Type, int>
                           || std::is_same_v<Type, Percentage>
                           || std::is_same_v<Type, double>)
             {
-                std::vector<Type> values;
-                for (std::size_t tool_index{}; tool_index < items.size(); ++tool_index) {
-                    const auto& item{items[tool_index]};
-                    if (!extruder_candidates.empty() && !extruder_candidates.contains(tool_index)) {
-                        continue;
-                    }
-                    if (item != nullptr) {
-                        values.push_back(item->get<Type>());
-                    } else {
-                        values.push_back(default_value->get<Type>());
-                    }
-                }
-
                 switch (compatibility_rule) {
                 case CompatibilityRule::Average:
                     if constexpr (std::is_same_v<Type, double>
                                   || std::is_same_v<Type, Percentage>) {
                         return {ConfigValue{get_average(values)}, true};
                     } else {
-                        PANIC("Average is only possible on doubles and percentages: " + first_item.def().name);
+                        PANIC(
+                            "Average is only possible on doubles and percentages: "
+                            + first_item.def().name
+                        );
                         return {ConfigValue{0}, false};
                     }
                 case CompatibilityRule::Min:
@@ -635,15 +619,20 @@ std::pair<ConfigValue, bool> apply_compatibility_rule(
                 case CompatibilityRule::Max:
                     return {ConfigValue{get_max(values)}, true};
                 case CompatibilityRule::IgnoreOverrides:
-                    PANIC("Ignore overrides should be handled before this");
-                    return {ConfigValue{0}, false};
+                    ASSERT(default_value);
+                    return {*default_value, true};
                 case Slic3r::Domain::CompatibilityRule::Undefined:
                     PANIC("Undefined Compatibility rule in use");
                     return {ConfigValue{0}, false};
                 }
             } else {
-                PANIC("Invalid compatibility rule - only possible is Ignore overrides: " + first_item.def().name);
-                return {ConfigValue{0}, false};
+                ASSERT(
+                    compatibility_rule == CompatibilityRule::IgnoreOverrides,
+                    "Invalid compatibility rule - only possible is Ignore overrides: "
+                        + first_item.def().name
+                );
+                ASSERT(default_value);
+                return {*default_value, true};
             }
             PANIC("Unreachble");
             return {ConfigValue{0}, false};

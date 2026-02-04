@@ -128,10 +128,6 @@ std::vector<unsigned>
 get_extruder_candidates(const Domain::Model& model, const Domain::ConfigPackFDM& config)
 {
     ASSERT(config.tool.size() > 0);
-    if (config.tool.size() == 1) {
-        return {0};
-    }
-
     const Domain::PrintSettings& print_settings{config.print};
     std::set<unsigned> extruders;
     for (const Domain::ModelObject* object : model.objects) {
