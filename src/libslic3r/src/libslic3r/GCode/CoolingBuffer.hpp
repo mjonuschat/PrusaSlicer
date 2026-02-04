@@ -55,6 +55,11 @@ private:
     // Returns the adjusted G-code.
     std::string apply_layer_cooldown(const std::string &gcode, size_t layer_id, float layer_time, std::vector<PerExtruderAdjustments> &per_extruder_adjustments);
 
+    /**
+     * @brief Clamp fan speed to [min_fan_speed, max_fan_speed] range.
+     */
+    int clamp_fan_speed_to_allowed_range(int fan_speed) const;
+
     // G-code snippet cached for the support layers preceding an object layer.
     std::string                 m_gcode;
     // Internal data.

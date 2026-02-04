@@ -1151,6 +1151,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
     int  bridge_fan_speed   = 0;
     auto change_extruder_set_fan = [this, layer_id, layer_time, &new_gcode, &bridge_fan_control, &bridge_fan_speed](const int requested_fan_speed = -1) {
         const int min_fan_speed            = m_config.min_fan_speed.at(m_current_extruder);
+        const int max_fan_speed            = m_config.max_fan_speed.at(m_current_extruder);
         // Is the fan speed ramp enabled?
         const int full_fan_speed_layer     = m_config.full_fan_speed_layer.at(m_current_extruder);
         int       disable_fan_first_layers = m_config.disable_fan_first_layers.at(m_current_extruder);
@@ -1169,8 +1170,8 @@ std::string CoolingBuffer::apply_layer_cooldown(
             // so there will be a zero fan speed at least at the 1st layer.
             disable_fan_first_layers = 1;
         }
+
         if (int(layer_id) >= disable_fan_first_layers) {
-            int   max_fan_speed             = m_config.max_fan_speed.at(m_current_extruder);
             float slowdown_below_layer_time = float(m_config.slowdown_below_layer_time.at(m_current_extruder));
             float fan_below_layer_time      = float(m_config.fan_below_layer_time.at(m_current_extruder));
             if (m_config.cooling.at(m_current_extruder)) {
@@ -1210,6 +1211,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
         requested_fan_speed_limits.min_speed = std::min(requested_fan_speed_limits.min_speed, requested_fan_speed_limits.max_speed);
         if (requested_fan_speed >= 0) {
             fan_speed_new = std::clamp(requested_fan_speed, requested_fan_speed_limits.min_speed, requested_fan_speed_limits.max_speed);
+            fan_speed_new = this->clamp_fan_speed_to_allowed_range(fan_speed_new);
         }
 
         if (fan_speed_new != m_fan_speed) {
@@ -1406,6 +1408,19 @@ std::string CoolingBuffer::apply_layer_cooldown(
     // There should be no empty G1 lines emitted.
     assert(new_gcode.find("G1\n") == std::string::npos);
     return new_gcode;
+}
+
+int CoolingBuffer::clamp_fan_speed_to_allowed_range(const int fan_speed) const
+{
+    const int min_fan_speed = m_config.min_fan_speed.at(m_current_extruder);
+    const int max_fan_speed = m_config.max_fan_speed.at(m_current_extruder);
+    if (fan_speed == 0 || fan_speed < min_fan_speed) {
+        return 0;
+    } else if (fan_speed > max_fan_speed) {
+        return max_fan_speed;
+    }
+
+    return fan_speed;
 }
 
 } // namespace Slic3r
