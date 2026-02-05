@@ -555,7 +555,10 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
     ASSERT(m_left_bar);
 
     int page_index = get_tab_index_by_id(m_left_bar, id);
-    ASSERT(page_index != size_t(-1) && page_index<m_left_bar->GetPageCount());
+    if (page_index == size_t(-1) || page_index >= m_left_bar->GetPageCount()) {
+        // This could happen. F.e. notification trying to switch to disabled Printables.
+        return;
+    }
 
     if (id == LeftBarTabs::Printables) {
         WebView::AbstractWebViewPanel* webview_panel =
