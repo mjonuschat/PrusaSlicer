@@ -29,7 +29,7 @@ ToolLabel::ToolLabel(size_t index, const bool& data) :
 
 void ToolLabel::on_index_update()
 {
-    set_label(std::to_string(m_index));
+    set_label(std::to_string(m_index + 1));
     update_markings();
 }
 

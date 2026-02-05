@@ -251,8 +251,7 @@ void PrintToolRowItem::update_explanation()
     const ImColor text_color                           = ImGui::GetStyleColorVec4(ImGuiCol_Text);
     const Domain::CompatibilityRule compatibility_rule = m_state->print_item->compatibility_rule();
     if (m_state->print_item->def().require_compatibility_rule
-        && m_state->value.second
-        && m_state->extruder_candidates.size() > 1)
+        && m_state->value.second)
     {
         if (compatibility_rule == Domain::CompatibilityRule::IgnoreOverrides) {
             label_visible = true;
@@ -300,7 +299,9 @@ void PrintToolRowItem::update_explanation()
             for (size_t index = 0; index < m_state->tool_overrides.size(); ++index) {
                 const Biz::PrintToolItem::ToolOverride& tool_override =
                     m_state->tool_overrides.at(index);
-                if (!m_state->extruder_candidates.contains(index)) {
+                if (!m_state->extruder_candidates.empty()
+                    && !m_state->extruder_candidates.contains(index))
+                {
                     continue;
                 }
 
