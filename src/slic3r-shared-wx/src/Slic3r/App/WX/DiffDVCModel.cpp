@@ -57,25 +57,24 @@ static std::string def_text_color()
 
 static void color_string(std::string& str, const std::string& color)
 {
-#if defined(SUPPORTS_MARKUP) && !defined(__APPLE__)
     str = fmt::format("<span color=\"{}\">{}</span>", color, str);
-#endif
 }
 
 static void color_string(wxString& str, const std::string& color)
 {
-#if defined(SUPPORTS_MARKUP) && !defined(__APPLE__)
     std::string u8_str = into_u8(str);
     color_string(u8_str, color);
     str = from_u8(u8_str);
-#endif
 }
 
 static void make_string_bold(std::string& str)
 {
-#if defined(SUPPORTS_MARKUP) && !defined(__APPLE__)
     str = fmt::format("<b>{}</b>", str);
-#endif
+}
+
+static void make_string_italic(std::string& str)
+{
+    str = fmt::format("<i>{}</i>", str);
 }
 
 std::string ModelNode::grey()
@@ -194,11 +193,9 @@ void ModelNode::UpdateEnabling()
     auto change_text_color =
         [](wxString& str, const std::string& clr_from, const std::string& clr_to)
     {
-#if defined(SUPPORTS_MARKUP) && !defined(__APPLE__)
         std::string old_val = into_u8(str);
         boost::replace_all(old_val, clr_from, clr_to);
         str = WX::from_u8(old_val);
-#endif
     };
 
     if (!m_toggle) {
@@ -356,6 +353,7 @@ wxDataViewItem DiffDVCModel::AddOption(
 
     // "make" strings bold
     make_string_bold(category_name);
+    make_string_italic(group_name);
     make_string_bold(group_name);
 
     // "skin" the preset name to correct comparison

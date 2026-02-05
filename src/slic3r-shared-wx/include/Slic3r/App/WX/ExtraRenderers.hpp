@@ -9,10 +9,6 @@
 
 #include <wx/dataview.h>
 
-#if wxUSE_MARKUP && wxCHECK_VERSION(3, 1, 1)
-    #define SUPPORTS_MARKUP
-#endif
-
 namespace Slic3r::App::WX {
 
 // ----------------------------------------------------------------------------
@@ -58,6 +54,33 @@ DECLARE_VARIANT_OBJECT(DataViewBitmapText)
 // ----------------------------------------------------------------------------
 // BitmapTextRenderer
 // ----------------------------------------------------------------------------
+
+// Lightweight markup parser.
+// Supported tags: <b>, <i>, <span color="...">
+// Nesting is supported but malformed markup is ignored.
+class MarkupText
+{
+public:
+    ~MarkupText() = default;
+
+    void SetMarkup(const wxString& text);
+    wxSize Measure(wxDC& dc) const;
+    void Render(wxDC& dc, const wxRect& rect, wxEllipsizeMode ellipsize) const;
+    wxString GetPlainText() const;
+
+    struct Token
+    {
+        explicit Token(const wxString& text, bool bold, bool italic, const wxColour& color);
+
+        wxString text;
+        wxColour color;
+        wxFont font;
+    };
+
+private:
+    std::vector<Token> m_tokens;
+};
+
 #if ENABLE_NONCUSTOM_DATA_VIEW_RENDERING
 class BitmapTextRenderer : public wxDataViewRenderer
 #else
@@ -115,13 +138,7 @@ private:
     bool                    m_was_unusable_symbol       { false };
     std::function<bool()>   m_can_create_editor_ctrl    { nullptr };
 
-#ifdef SUPPORTS_MARKUP
-#ifdef wxHAS_GENERIC_DATAVIEWCTRL
-    class wxItemMarkupText* m_markupText { nullptr };;
-#else
-    bool                    m_is_markupText {false};
-#endif
-#endif // SUPPORTS_MARKUP
+    std::unique_ptr<MarkupText> m_markupText;
 };
 
 

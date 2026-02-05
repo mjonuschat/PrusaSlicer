@@ -93,7 +93,6 @@ void apply_extruder_selector(Widgets::BitmapComboBox**   ctrl,
 
     if (!*ctrl) {
         *ctrl = new Widgets::BitmapComboBox(parent, wxID_ANY, wxEmptyString, pos, size, 0, nullptr, wxCB_READONLY);
-        w_config()->UpdateDarkUI(*ctrl);
     }
     else
     {

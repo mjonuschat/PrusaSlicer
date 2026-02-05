@@ -9,6 +9,7 @@
 #include "Slic3r/Domain/Preset/Bundle.hpp"
 
 #include "DiffNamespace.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/DiffDialog.hpp"
 #include "Slic3r/App/WX/DiffViewCtrl.hpp"
 #include "Slic3r/App/WX/DiffDVCModel.hpp"
@@ -165,15 +166,9 @@ DiffDialog::DiffDialog(
     this->SetSize(wxSize(30 * em, 60 * em));
     this->CenterOnParent();
 
-    w_config()->UpdateDlgDarkUI(this);
-
     init_from_selection();
 
     this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& evt) {
-        m_printers->rescale();
-        m_prints->rescale();
-        m_tools_prints->rescale();
-        m_tool_materials->rescale();
         m_tree->model->Rescale();
     });
 }
@@ -392,7 +387,7 @@ void DiffDialog::select_tool_print(
     )[m_prints->selection(location)];
     const Domain::Preset::EvaluatedPrintPreset::Preset& print = print_ref.get();
 
-    if (!tool_cb->IsEmpty()) {
+    if (!tool_cb->IsListEmpty()) {
         int selection = 0;
         // get selection id from tool_print_id
         for (size_t i = 0; i <= tool_id; i++) {
@@ -431,7 +426,7 @@ void DiffDialog::select_material(int selection, Location location)
 
     m_tool_materials->select(selection, location);
 
-    if (!(*m_prints)[Location::Right]->IsEmpty()) {
+    if (!(*m_prints)[Location::Right]->IsListEmpty()) {
         // for the correct comparation all comboboxes should be filled
         compare();
         Layout();
@@ -441,7 +436,7 @@ void DiffDialog::select_material(int selection, Location location)
 void DiffDialog::create_tree()
 {
     int em = w_config()->em_unit();
-    m_tree = new DiffViewCtrl(this, wxSize(em * 65, em * 40));
+    m_tree = new DiffViewCtrl(this, wxSize(em * 80, em * 40));
     m_tree->SetFont(this->GetFont());
     m_tree->AppendBmpTextColumn(wxEmptyString, DiffDVCModel::colIconText, 35);
     {

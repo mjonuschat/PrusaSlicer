@@ -25,11 +25,6 @@ int ITEM_WIDTH()
     return scale(6);
 }
 
-static void update_ui(wxWindow* window)
-{
-    w_config()->UpdateDarkUI(window);
-}
-
 RammingDialog::RammingDialog(const std::string& parameters) :
     wxDialog(
         wxTheApp->GetTopWindow(),
@@ -42,7 +37,6 @@ RammingDialog::RammingDialog(const std::string& parameters) :
 {
     CenterOnParent();
     SetFont(w_config()->normal_font());
-    update_ui(this);
     m_panel_ramming = new RammingPanel(this, parameters);
 
     m_panel_ramming->Show(true);
@@ -56,8 +50,6 @@ RammingDialog::RammingDialog(const std::string& parameters) :
     main_sizer->Add(buttons, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP | wxBOTTOM, 10);
     SetSizer(main_sizer);
     main_sizer->SetSizeHints(this);
-
-    w_config()->UpdateDlgDarkUI(this);
 
     this->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& e) { EndModal(wxCANCEL); });
 
@@ -92,7 +84,6 @@ RammingPanel::RammingPanel(wxWindow* parent, const std::string& parameters) :
         wxDefaultSize /*,wxPoint(50,50), wxSize(800,350),wxBORDER_RAISED*/
     )
 {
-    update_ui(this);
     auto sizer_chart = new wxBoxSizer(wxVERTICAL);
     auto sizer_param = new wxBoxSizer(wxVERTICAL);
 
@@ -119,8 +110,6 @@ RammingPanel::RammingPanel(wxWindow* parent, const std::string& parameters) :
         0.25f,
         scale(1)
     );
-
-    update_ui(m_chart);
 
     sizer_chart->Add(m_chart, 0, wxALL, 5);
 
@@ -172,11 +161,6 @@ RammingPanel::RammingPanel(wxWindow* parent, const std::string& parameters) :
         300,
         100
     );
-
-    update_ui(m_widget_time->GetText());
-    update_ui(m_widget_volume);
-    update_ui(m_widget_ramming_line_width_multiplicator);
-    update_ui(m_widget_ramming_step_multiplicator);
 
     auto gsizer_param = new wxFlexGridSizer(2, 5, 15);
     gsizer_param->Add(

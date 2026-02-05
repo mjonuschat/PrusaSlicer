@@ -29,9 +29,9 @@ if (NOT EMSCRIPTEN)
     endif ()
 
 add_cmake_project(wxWidgets
-    URL https://github.com/prusa3d/wxWidgets/archive/5462e7d7cfac645926188443e842171e107b312c.zip
-    URL_HASH SHA256=3EBB971DDB45CEEA6D9B965C3D0266F44EDAE71F2A7DAA5D48DB34BD95AA878B
-    PATCH_COMMAND COMMAND ${PATCH_CMD} ${CMAKE_CURRENT_LIST_DIR}/wx-fixes.patch
+    URL https://github.com/wxWidgets/wxWidgets/archive/49c6810948f40c457e3d0848b9111627b5b61de5.zip
+    URL_HASH SHA256=5f5c34273ada47c50786749e7256efb3ca1281e5d430a9ca837b03a5aaab4a27
+    PATCH_COMMAND ${PATCH_CMD} ${CMAKE_CURRENT_LIST_DIR}/0001-Making-OSXStoreOpenFiles-virtual.patch ${CMAKE_CURRENT_LIST_DIR}/0002-Couple-more-fixes.patch
     CMAKE_ARGS
         "-DCMAKE_DEBUG_POSTFIX:STRING="
         -DwxBUILD_PRECOMP=ON
@@ -49,8 +49,10 @@ add_cmake_project(wxWidgets
         -DwxUSE_LIBXPM=builtin
         -DwxUSE_LIBJPEG=sys
         -DwxUSE_LIBTIFF=OFF
+        -DwxUSE_LIBWEBP=OFF
         -DwxUSE_EXPAT=sys
         -DwxUSE_LIBSDL=OFF
+        -DwxUSE_STC=OFF
         -DwxUSE_XTEST=OFF
         -DwxUSE_GLCANVAS_EGL=OFF
         -DwxUSE_WEBREQUEST=OFF

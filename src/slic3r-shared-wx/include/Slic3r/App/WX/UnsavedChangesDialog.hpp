@@ -14,10 +14,10 @@
 
 class wxStaticText;
 class wxBoxSizer;
+class wxButton;
 
 namespace Slic3r::App::WX {
 class DiffViewCtrl;
-class ScalableButton;
 
 class UnsavedChangesDialog : public wxDialog
 {
@@ -68,10 +68,10 @@ private:
 
     DiffViewCtrl* m_tree{nullptr};
 
-    ScalableButton* m_back_btn{nullptr};
-    ScalableButton* m_save_btn{nullptr};
-    ScalableButton* m_transfer_btn{nullptr};
-    ScalableButton* m_discard_btn{nullptr};
+    wxButton* m_back_btn{nullptr};
+    wxButton* m_save_btn{nullptr};
+    wxButton* m_transfer_btn{nullptr};
+    wxButton* m_discard_btn{nullptr};
 
     Biz::Preset::PresetSelectionNames m_preset_names;
     Biz::Preset::PresetSelectionNames m_preset_names_new;

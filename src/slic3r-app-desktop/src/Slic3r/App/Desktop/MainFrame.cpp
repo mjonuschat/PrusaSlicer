@@ -59,7 +59,6 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 #endif
 {
     wxPanel* test_panel = new wxPanel(top_bar, wxID_ANY);
-    w_config()->UpdateDarkUI(test_panel);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
     test_panel->SetSizer(main_sizer);
     main_sizer->SetSizeHints(test_panel);
@@ -106,11 +105,6 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
             test_btn->sys_color_changed();
             test_btn2->sys_color_changed();
             lang_selection_btn->sys_color_changed();
-
-            w_config()->UpdateDarkUI(test_txt);
-            w_config()->UpdateDarkUI(test_txt2);
-            w_config()->UpdateDarkUI(edit_font);
-            w_config()->UpdateDarkUI(test_panel);
             test_panel->Refresh();
         }
     );
@@ -188,7 +182,6 @@ MainFrame::MainFrame(
     w_config()->update_fonts(font, w_config()->em_unit());
 
     this->SetFont(w_config()->normal_font());
-    w_config()->UpdateDarkUI(this);
 
     init_left_bar(project_interactor);
     complete_and_bind_left_bar();
@@ -448,7 +441,6 @@ void MainFrame::init_preferences_button()
 static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
 {
     wxPanel* test_panel = new wxPanel(parent, id);
-    w_config()->UpdateDarkUI(test_panel);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
     test_panel->SetSizer(main_sizer);
     main_sizer->SetSizeHints(test_panel);
