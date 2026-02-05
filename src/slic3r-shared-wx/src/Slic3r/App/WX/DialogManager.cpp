@@ -192,7 +192,8 @@ std::string DialogManager::show_save_dialog(
     const Biz::Preset::PresetInteractor& preset_interactor
 )
 {
-    SavePresetDialog save_dlg(nullptr, kind, original_name, preset_interactor, "");
+    const std::map<Domain::Preset::PresetKind, std::string> kind_name{{kind, original_name}};
+    SavePresetDialog save_dlg(nullptr, kind_name, preset_interactor, "");
 
     if (save_dlg.ShowModal() == wxID_OK)
         return save_dlg.get_name();

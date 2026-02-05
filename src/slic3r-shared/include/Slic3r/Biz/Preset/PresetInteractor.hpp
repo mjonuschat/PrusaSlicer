@@ -780,6 +780,10 @@ private:
         ListenerInvokeLaterBag& bag
     );
 
+    bool print_has_unsaved_changes() const;
+    bool tool_print_has_unsaved_changes(size_t tool_index) const;
+    bool material_has_unsaved_changes(size_t tool_index) const;
+
     void fill_printer_presets(ListenerInvokeLaterBag& bag);
     void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
