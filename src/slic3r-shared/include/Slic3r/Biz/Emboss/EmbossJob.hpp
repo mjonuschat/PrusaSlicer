@@ -160,6 +160,8 @@ struct UpdateVolumeParams
     // unique identifier of volume to change
     Domain::ObjectID volume_id;
 
+    Domain::ObjectID instance_id;
+
     std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
 };
 

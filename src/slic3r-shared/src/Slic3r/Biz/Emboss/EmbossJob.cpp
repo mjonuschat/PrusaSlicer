@@ -41,13 +41,13 @@ bool check(const UpdateVolumeParams& input);
 
 /**
 @brief Start job for add new volume to object with given transformation
-@param object Define where to add
+@param instance Define where to add
 @param volume_tr Wanted volume transformation
 @param data Define what to emboss - shape
 @param volume_type Type of volume: Part, negative, modifier
 @return Nullptr when job is sucessfully add to worker otherwise return data to be processed different way
 */
-bool start_create_volume_job(const Domain::ModelObject& object, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type);
+bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type);
 
 /**
 @brief Start job for add object with text into scene
@@ -82,8 +82,9 @@ struct DataCreateVolume
     // define embossed volume type
     Domain::ModelVolumeType volume_type;
 
-    // parent ModelObject index where to create volume
-    Domain::ObjectID object_id;
+    // parent ModelInstance index where to create volume
+    // also instance contain object
+    Domain::ObjectID instance_id;
 
     // new created volume transformation
     Domain::Transform3d transform;
@@ -180,8 +181,8 @@ struct CreateSurfaceVolumeData : public SurfaceVolumeData
     // define embossed volume type
     Domain::ModelVolumeType volume_type;
 
-    // parent ModelObject index where to create volume
-    Domain::ObjectID object_id;
+    // parent ModelInstance index where to create volume
+    Domain::ObjectID instance_id;
 };
 
 /**
@@ -251,13 +252,14 @@ public:
     @param volume Volume to be updated
     @param mesh New Triangle mesh for volume
     @param base Data to write into volume
+    @param instance_id Define instance for update selection
     */
-    static void update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base);
+    static void update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base, const Domain::ObjectID& instance_id);
 };
 
 bool queue_job(std::unique_ptr<Job> job);
 
-const Domain::ModelObject* get_selected_object(const Biz::ProjectInteractor& project_interactor);
+const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor);
 
 } // namespace
 
@@ -274,25 +276,24 @@ std::optional<Domain::Vec2d> get_z_zero_coor(const App::Scene::Ray& pick_ray) {
     return Domain::Vec2d(z0.x(), z0.y());
 }
 
-const Domain::ModelObject* get_selected_object(const Biz::ProjectInteractor& project_interactor) {
+const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor) {
     const Domain::ElementRefs& elms = project_interactor.scene_interactor().object_selection().elements;
     if (elms.empty())
         return nullptr;
     
-    size_t object_id = 0; // zero is invalid value    
+    std::optional<Domain::ElementRef> selected;
     for (const Domain::ElementRef& el : elms) {
-        if (object_id == 0) {
-            object_id = el.object_id;
+        if (!selected.has_value()) {
+            selected = el;
             continue;
         }
-        if (object_id != el.object_id)
+        if (selected->object_id != el.object_id)
             return nullptr; // multiple object selection
     }
-    if (object_id == 0)
-        return nullptr; // no object selected
-
+    if (!selected.has_value())
+        return nullptr; // no object selected    
     const Domain::Project& project = project_interactor.selected_project();
-    return project.find_object_by_id(object_id);
+    return project.find_instance_by_id(selected->object_id, selected->instance_id);
 }
 } // namespace
 
@@ -300,7 +301,7 @@ bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, co
 {
     ASSERT(check(input)); // bad input data
     const Biz::ProjectInteractor& project_interactor = input.base.project_interactor;
-    const Domain::ModelObject* selected_object = get_selected_object(project_interactor);
+    const Domain::ModelInstance* selected_instance = get_selected_instance(project_interactor);
     const Domain::Project& project = project_interactor.selected_project();
     const App::Scene::NodePickResult* bed_pick = nullptr;
     for (const App::Scene::NodePickResult& pick : picks) {
@@ -318,13 +319,12 @@ bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, co
             // normal could be from scaled object it needs normalize
             pick_normal.normalize();
             
-            const Domain::ModelObject& object = selected_object != nullptr ? 
-                *selected_object : 
-                *volume->get_object();
+            const Domain::ModelObject& object = selected_instance != nullptr ? 
+                *selected_instance->get_object() : *volume->get_object();
             const Domain::ModelInstance* instance = project.find_instance_by_id(object.id().id, tag->instance_id);
             Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
             Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
-            return ::start_create_volume_job(object, tr, input.base, input.volume_type);
+            return ::start_create_volume_job(*instance, tr, input.base, input.volume_type);
         }
         if (bed_pick == nullptr && // use only first crossed bed
             pick.node->has_tag_of_type<App::Scene::BedNodeTag>()) {
@@ -335,17 +335,14 @@ bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, co
     auto bed_coor = get_z_zero_coor(pick_ray);
     if (bed_coor.has_value())
     {
-        if (selected_object == nullptr){
+        if (selected_instance == nullptr){
             return ::start_create_object_job(input, *bed_coor);
         } else {
             Domain::Vec3d pick_point(bed_coor->x(), bed_coor->y(), 0.);
             Domain::Vec3d pick_normal(0., 0., 1.);
-            
-            // TODO: check wheather add into exactly this instance
-            const Domain::ModelInstance* instance = selected_object->instances.front();
             Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
-            Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
-            return ::start_create_volume_job(*selected_object, tr, input.base, input.volume_type);
+            Domain::Transform3d tr = selected_instance->get_matrix().inverse() * surface_trmat;
+            return ::start_create_volume_job(*selected_instance, tr, input.base, input.volume_type);
         }
     }
     return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray
@@ -353,8 +350,8 @@ bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, co
 
 bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks) {
     ASSERT(check(input)); // bad input data
-    const Domain::ModelObject* selected_object = get_selected_object(input.base.project_interactor);
-    ASSERT(selected_object != nullptr); // no object selected
+    const Domain::ModelInstance* selected_instance = get_selected_instance(input.base.project_interactor);
+    ASSERT(selected_instance != nullptr); // no object selected
     return false;
 }
 
@@ -431,12 +428,12 @@ void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data);
 /**
 @brief Add new volume to object
 @param mesh triangles of new volume
-@param object_id Object where to add volume
+@param instance_id Define object where to add volume
 @param type Type of new volume
 @param trmat Transformation of volume inside of object
 @param data Project interactor + project_id + gizmo
 */
-void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const Domain::Transform3d& trmat, const BaseData& data);
+void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& instance_id, const Domain::ModelVolumeType type, const Domain::Transform3d& trmat, const BaseData& data);
 
 /**
 @brief Create projection for cut surface from mesh
@@ -515,7 +512,7 @@ void CreateVolumeJob::finalize()
 
     create_volume(
         std::move(m_result.value()),
-        m_input.object_id,
+        m_input.instance_id,
         m_input.volume_type,
         m_input.transform,
         m_input.base
@@ -602,7 +599,7 @@ void UpdateJob::finalize()
     ::final_update_volume(std::move(m_result.value()), m_input);
 }
 
-void UpdateJob::update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base)
+void UpdateJob::update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base, const Domain::ObjectID& instance_id)
 {
     // check inputs
     bool is_valid_input = !mesh.empty();
@@ -616,13 +613,15 @@ void UpdateJob::update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&
         volume.name = base.volume_name;
     }
 
-    Domain::ModelObject* object = volume.get_object();
+    const Domain::ModelObject* object = volume.get_object();
     assert(object != nullptr);
     if (object == nullptr)
         return;
 
-    size_t object_id = object->id().id;
-    Domain::ElementRef ref(object_id, 0, volume.id().id);
+    Domain::ElementRef ref(
+        object->id().id, 
+        instance_id.id, 
+        volume.id().id);
 
     Biz::Scene::SceneInteractor::RefMeshes meshes;
     meshes.emplace_back(ref, std::move(mesh));
@@ -655,7 +654,7 @@ void CreateSurfaceVolumeJob::finalize()
 
     create_volume(
         std::move(m_result.value()),
-        m_input.object_id,
+        m_input.instance_id,
         m_input.volume_type,
         m_input.transform,
         m_input.base
@@ -771,7 +770,7 @@ bool check(const CreateSurfaceVolumeData& input)
     bool res = check((const SurfaceVolumeData&) input);
     res &= check(input.base);
     // res &= check(input.volume_type);
-    res &= check(input.object_id);
+    res &= check(input.instance_id);
     assert(!input.sources.empty());
     res &= !input.sources.empty();
     assert(input.base.shape_provider->get_projection().use_surface);
@@ -996,15 +995,23 @@ void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data)
         volume.set_type(*data.volume_type);
     }
 
-    UpdateJob::update_volume(volume, std::move(mesh), data.base);
+    UpdateJob::update_volume(volume, std::move(mesh), data.base, data.instance_id);
 }
 
-void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const Domain::Transform3d& trmat, const BaseData& data)
+const Domain::ModelInstance* find_instance(const Domain::Project& project, const Domain::ObjectID& instance_id) {
+    for(const Domain::ModelObject* object: project.model().objects)
+        for (const Domain::ModelInstance* instance : object->instances) 
+            if(instance->id() == instance_id)
+                return instance;
+    return nullptr;
+}
+
+void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& instance_id, const Domain::ModelVolumeType type, const Domain::Transform3d& trmat, const BaseData& data)
 {
     /* TODO: find way to add volume into not selected project
     auto& project = data.project_interactor.workbench().project(data.project_id);
     /*/
-    auto& project = data.project_interactor.selected_project();
+    const Domain::Project& project = data.project_interactor.selected_project();
     ASSERT(data.project_interactor.selected_project_id() == data.project_id); // project does not match
     // */
 
@@ -1014,8 +1021,11 @@ void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_i
 
     //// only add volume without addition data
     // scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
-
-    auto obj = project.find_object_by_id(object_id.id);
+    const Domain::ModelInstance* instance = find_instance(project, instance_id.id);
+    if(instance == nullptr)
+        return create_message("Bad instance to create volume.");
+    
+    Domain::ModelObject* obj = instance->get_object();
     if (obj == nullptr)
         return create_message("Bad object to create volume.");
 
@@ -1029,7 +1039,7 @@ void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_i
     vol->set_transformation(trmat);
     
     data.shape_provider->write(*vol);
-    data.project_interactor.scene_interactor().add_volume(vol);
+    data.project_interactor.scene_interactor().add_volume(vol, instance_id);
 }
 
 OrthoProject create_projection_for_cut(Domain::Transform3d tr, double shape_scale, const std::pair<float, float>& z_range)
@@ -1293,8 +1303,9 @@ bool queue_job(std::unique_ptr<Job> job)
     return true;
 }
 
-bool start_create_volume_job(const Domain::ModelObject& object, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
+bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
 {
+    const Domain::ModelObject& object = *instance.get_object();
     data.shape_provider->create_text_lines(volume_tr, object); // only when needed
 
     bool use_surface = data.shape_provider->get_projection().use_surface;
@@ -1307,7 +1318,7 @@ bool start_create_volume_job(const Domain::ModelObject& object, const Domain::Tr
         } else {
             SurfaceVolumeData sfvd{volume_tr, std::move(sources)};
             CreateSurfaceVolumeData
-                surface_data{std::move(sfvd), std::move(data), volume_type, object.id()};
+                surface_data{std::move(sfvd), std::move(data), volume_type, instance.id()};
             job = std::make_unique<CreateSurfaceVolumeJob>(std::move(surface_data));
         }
     }
@@ -1316,7 +1327,7 @@ bool start_create_volume_job(const Domain::ModelObject& object, const Domain::Tr
         DataCreateVolume create_volume_data{
             .base = std::move(data), 
             .volume_type = volume_type,
-            .object_id = object.id(),
+            .instance_id = instance.id(),
             .transform = volume_tr};
         job = std::make_unique<CreateVolumeJob>(std::move(create_volume_data));
     }

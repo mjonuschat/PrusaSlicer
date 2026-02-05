@@ -623,11 +623,15 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
-void SceneInteractor::add_volume(const Domain::ModelVolume* volume)
+void SceneInteractor::add_volume(const Domain::ModelVolume* volume, const Domain::ObjectID& instance_id)
 {
     const Domain::ModelObject* obj = volume->get_object();
-    Domain::ElementRefs updated    = {
-        Domain::ElementRef(obj->id().id, obj->instances[0]->id().id, volume->id().id)
+    // check that object contain instance id
+    ASSERT(std::find_if(obj->instances.begin(), obj->instances.end(),
+        [instance_id](const Domain::ModelInstance* inst) { return inst->id() == instance_id; }
+    ) != obj->instances.end());
+    Domain::ElementRefs updated = {
+        Domain::ElementRef(obj->id().id, instance_id.id, volume->id().id)
     };
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
@@ -723,8 +727,8 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         volume.set_new_unique_id();
 
         object_ids.push_back(id.object_id);
-        removed_ids.emplace_back(id.object_id, 0, id.volume_id);
-        updated_ids.emplace_back(id.object_id, 0, volume.id().id);
+        removed_ids.emplace_back(id.object_id, id.instance_id, id.volume_id);
+        updated_ids.emplace_back(id.object_id, id.instance_id, volume.id().id);
     }
 
     std::sort(object_ids.begin(), object_ids.end());
@@ -739,15 +743,9 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
             l->on_volume_added(project_id, updated_ids);
         }
     );
-
-    Domain::ElementRefs selection_ids;
-    for (const Domain::ElementRef &update_id : updated_ids) {
-        for (const Domain::ModelInstance* inst :
-            project.find_object_by_id(update_id.object_id)->instances)
-            selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
-    }
-    set_object_selection({SelectionMode::Volume, selection_ids});
-    auto changes = m_bed_tracking.update_instances_bed_placement(project, selection_ids);
+    
+    set_object_selection({SelectionMode::Volume, updated_ids});
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated_ids);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 }

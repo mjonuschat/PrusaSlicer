@@ -77,11 +77,13 @@ public:
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
     /**
-     *  @brief  Create new text volume without given position
+     *  @brief  Create new text volume
+     *  When selected object add volume on object
+     *  No-selection or Multiple-objects creates new object(with one text volume)
      *  @param  volume_type - volume type(part/negative/modifier)
      *  @retval             - True on success otherwise False.
      */
-    bool add_text_by_view_direction(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
+    bool add_text_to_scene(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
 private:
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});

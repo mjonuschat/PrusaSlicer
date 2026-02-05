@@ -63,7 +63,11 @@ public:
     void reset();
 };
 
-const Domain::ModelVolume* get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection);
-const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor);
+struct SelectedText {
+    const Domain::ModelVolume* volume = nullptr;
+    Domain::SelectionId instance_id;
+};
+SelectedText get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection);
+SelectedText get_selected_text_volume(const Biz::ProjectInteractor& project_interactor);
 } // Slic3r::Biz::Emboss
 #endif // slic3r_TextLines_hpp_

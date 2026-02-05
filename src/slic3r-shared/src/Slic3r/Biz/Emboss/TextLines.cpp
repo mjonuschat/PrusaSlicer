@@ -325,7 +325,7 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
     App::Scene::Node* object_node = nullptr; // Place to append visualzation
     if (text_tr == nullptr) {
         // volume with text is selected and keep transformation
-        const Domain::ModelVolume* text_volume_ptr = get_selected_text_volume(m_project_interactor);
+        const Domain::ModelVolume* text_volume_ptr = get_selected_text_volume(m_project_interactor).volume;
         if (text_volume_ptr == nullptr)
             return;
         text_tr_data = text_volume_ptr->get_matrix(); // copy transformation
@@ -424,34 +424,40 @@ void TextLinesModel::reset()
     for (auto node : nodes) m_scene_presenter.scene().remove_child(node);
 }
 
-const Domain::ModelVolume* get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
+SelectedText get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
     if (selection.elements.size() != 1)
-        return nullptr; // multiple volumes selected
+        return {}; // multiple volumes selected
 
     const Domain::ElementRef& selected = selection.elements.front();
-    const Domain::ModelVolume* volume_ptr = nullptr;
+    SelectedText result;
     if (selected.has_volume()) {
-        volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);
+        result = SelectedText{
+            .volume = project.find_volume_by_id(selected.object_id, selected.volume_id),
+            .instance_id = selected.instance_id
+        };
     } else {
         // Check is selected object contain only volume with text
         const Domain::ModelObject* object_ptr = project.find_object_by_id(selected.object_id);
         if (object_ptr == nullptr)
-            return nullptr; // after delete volume
+            return {}; // after delete volume
         if (object_ptr->volumes.size() != 1)
-            return nullptr;
-        volume_ptr = object_ptr->volumes.front();
+            return {};
+        result = SelectedText{
+            .volume = object_ptr->volumes.front(),
+            .instance_id = selected.instance_id
+        };
     }
 
-    if (volume_ptr == nullptr)
-        return nullptr;
+    if (result.volume == nullptr)
+        return {};
 
-    if (!volume_ptr->text_configuration.has_value())
-        return nullptr; // selected volume is not text
+    if (!result.volume->text_configuration.has_value())
+        return {}; // selected volume is not text
 
-    return volume_ptr;
+    return result;
 }
 
-const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
+SelectedText get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
     const Domain::Project& project = project_interactor.selected_project();
     const Biz::Scene::ObjectSelection &selection = 
         project_interactor.scene_interactor().object_selection();

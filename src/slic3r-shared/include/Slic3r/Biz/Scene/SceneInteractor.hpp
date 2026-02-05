@@ -184,7 +184,7 @@ public:
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;
     void new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
     void new_object_from_mesh(Domain::TriangleMesh&& mesh, Domain::SelectionId project_id, UpdateObjectFn update_object);
-    void add_volume(const Domain::ModelVolume* volume);
+    void add_volume(const Domain::ModelVolume* volume, const Domain::ObjectID& instance_id);
 
     void add_instance(const Domain::Vec2d& offset);
 

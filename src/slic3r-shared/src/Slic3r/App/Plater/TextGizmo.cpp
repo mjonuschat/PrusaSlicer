@@ -364,7 +364,7 @@ void TextGizmo::register_commands(Platform::CommandRegistry& registry)
     registry.register_command(
         std::make_unique<Platform::FuncCommand>(
             "Create/Edit text",
-            [&]() { add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART); },
+            [this]() { add_text_to_scene(Domain::ModelVolumeType::MODEL_PART); },
             Platform::FuncCommandExtraOpts{
                 .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T}
             }            
@@ -447,7 +447,7 @@ void TextGizmo::on_activated()
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     // when text volume is not selected, create new one
-    if (Biz::Emboss::get_selected_text_volume(m_project_interactor) == nullptr) {
+    if (Biz::Emboss::get_selected_text_volume(m_project_interactor).volume == nullptr) {
         // create new text volume
         m_preset_manager.discard_preset_changes();
         // TRN: default text embossed from model
@@ -456,7 +456,7 @@ void TextGizmo::on_activated()
         // What shows few miliseconds till new item is created?
         m_dialog->set_enable_all_except_font(true);
 
-        add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART);
+        add_text_to_scene(Domain::ModelVolumeType::MODEL_PART);
         // after create it is called function on_scene_selection_changed()
         return;
     }
@@ -692,11 +692,11 @@ bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Doma
 void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
     const Domain::Project& project = m_project_interactor.project(project_id);
-    const Domain::ModelVolume* volume_ptr = Biz::Emboss::get_selected_text_volume(project, selection);
-    if (volume_ptr == nullptr)
+    Biz::Emboss::SelectedText selected = Biz::Emboss::get_selected_text_volume(project, selection);
+    if (selected.volume == nullptr)
         return close(); // unselection text volume
 
-    const Domain::ModelVolume& volume = *volume_ptr;
+    const Domain::ModelVolume& volume = *selected.volume;
     ProjectContext& proj_ctx = m_proj_ctxs->project(project_id);
     if (proj_ctx.last_loaded_volume_id == volume.id())
         return; // already loaded
@@ -774,7 +774,7 @@ void TextGizmo::on_project_activated(size_t new_project_id)
     // fill dialog with current data
     const Domain::Project& project = m_project_interactor.project(new_project_id);
     const Domain::ModelVolume* volume_ptr = 
-        Biz::Emboss::get_selected_text_volume(project, scene_interactor.object_selection());
+        Biz::Emboss::get_selected_text_volume(project, scene_interactor.object_selection()).volume;
     ASSERT(volume_ptr != nullptr);
     activate_preset(dialog(), m_preset_manager, m_proj_ctxs->project(new_project_id), *volume_ptr);
 }
@@ -847,7 +847,7 @@ Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain:
 }
 } // namespace
 
-bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
+bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
 {
     if (!init_create(volume_type))
         return false;    
@@ -1021,9 +1021,9 @@ Biz::Emboss::BaseData::IssueFn create_issue_fn(
 } // namespace
 
 bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type) {
-    const Domain::ModelVolume* volume_ptr = Biz::Emboss::get_selected_text_volume(m_project_interactor);
-    ASSERT(volume_ptr != nullptr); // no volume selected
-    const Domain::ModelVolume& volume = *volume_ptr;
+    Biz::Emboss::SelectedText selected = Biz::Emboss::get_selected_text_volume(m_project_interactor);
+    ASSERT(selected.volume != nullptr); // no volume selected
+    const Domain::ModelVolume& volume = *selected.volume;
     ProjectContext& proj_ctx = m_proj_ctxs->selected();
 
     // check that selection did not change without call 'on_scene_selection_changed()'
@@ -1048,9 +1048,10 @@ bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type
 
     Domain::ModelVolumeType new_type = volume_type.value_or(volume.type());
     auto issue_fn = create_issue_fn(dialog(), proj_ctx.warning_tooltip, m_project_interactor);
-    Biz::Emboss::UpdateVolumeParams params{
+    Biz::Emboss::UpdateVolumeParams params {
         .base = create_base_data(text, new_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines(), issue_fn),
         .volume_id = volume.id(),
+        .instance_id = selected.instance_id,
         .volume_type = volume_type
     };
 
