@@ -40,6 +40,7 @@ public:
         update_shadows(cam);
         update_positions();
         update_elements_state();
+        camera_updated(cam);
     }
 
     /**
