@@ -21,7 +21,7 @@
 
 namespace Slic3r::App {
 
-// #define SHOW_NOT_IMPLEMENTED_ITEMS
+#define SHOW_NOT_IMPLEMENTED_ITEMS
 
 using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
@@ -353,7 +353,11 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     }
                 },
                 UIItemCommandExtraOpts{
+#ifdef __APPLE__
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace},
+#else
                     .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Delete},
+#endif
                     .enabled           = [this]()
                     { return !m_project_interactor.scene_interactor().object_selection().empty(); }
                 }
@@ -758,23 +762,6 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
 void MenuCommandRegistrar::register_main_menu_commands()
 {
     register_main_menu_edit_commands();
-
-#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
-    m_menu_manager
-        // Menu -> Separator
-        .register_menu_separator_item({MenuItemName::MainMenu})
-        // Menu -> Shape Gallery
-        .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::ShapeGallery},
-            std::make_unique<UIItemCommand>(
-                CommandName::ShapeGallery,
-                [this]()
-                {
-                    // TODO: Implement shape gallery functionality
-                }
-            )
-        );
-#endif
     register_main_menu_view_commands();
 
     m_menu_manager
@@ -789,8 +776,12 @@ void MenuCommandRegistrar::register_main_menu_commands()
                 UIItemCommandExtraOpts{
                     .keyboard_shortcut = Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+#ifdef __APPLE__
+                        Platform::KeyCode::Comma
+#else
                         Platform::KeyCode::P
-                    }
+#endif
+                }
                 }
             )
         );
@@ -808,10 +799,16 @@ void MenuCommandRegistrar::register_main_menu_commands()
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Exit},
             std::make_unique<UIItemCommand>(
-                "",
+                CommandName::Exit,
                 [this]()
                 {
                     m_navigator.close_application();
+                },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Q
+                    }
                 }
             )
         );
@@ -1019,6 +1016,21 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 }
             )
         )
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
+        // Menu -> Separator
+        .register_menu_separator_item({ MenuItemName::FileMenu })
+        // Menu -> Shape Gallery
+        .register_menu_item(
+            { MenuItemName::FileMenu, MenuItemName::ShapeGallery },
+            std::make_unique<UIItemCommand>(
+                CommandName::ShapeGallery,
+                [this]()
+                {
+                    // TODO: Implement shape gallery functionality
+                }
+            )
+        )
+#endif
         // File -> Separator
         .register_menu_separator_item({MenuItemName::FileMenu});
 

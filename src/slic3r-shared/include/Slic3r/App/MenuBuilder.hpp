@@ -25,6 +25,7 @@ public:
 
     static std::string item_name_translated(MenuItemName menu_item_name);
     static Render::Icon item_icon(MenuItemName menu_item_name);
+    static std::string icon_name(MenuItemName menu_item_name);
 
     void add_menu_items(Yoga::Menu* menu, App::MenuItem* root_menu_item);
 

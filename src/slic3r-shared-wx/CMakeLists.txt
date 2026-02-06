@@ -90,6 +90,9 @@ set(SLIC3R_SHARED_WX_FILES
         include/Slic3r/App/WX/WebView/WebViewFactory.hpp
         include/Slic3r/App/WX/WebView/AbstractWebViewPanel.hpp
         include/Slic3r/App/WX/WebView/AbstractWebViewDialog.hpp
+
+        include/Slic3r/App/WX/MacOSNativeMenuBar.hpp
+        src/Slic3r/App/WX/MacOSNativeMenuBar.cpp
 )
 
 if (WIN32)

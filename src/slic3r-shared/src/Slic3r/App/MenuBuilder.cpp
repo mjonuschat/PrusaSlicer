@@ -7,6 +7,8 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 
+#include "Slic3r/App/Render/ImguiIconHelper.hpp"
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App {
@@ -39,7 +41,11 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::Search:
         return Biz::_u8L("Search");
     case MenuItemName::Preferences:
+#ifdef __APPLE__
+        return Biz::_u8L("Settings");
+#else
         return Biz::_u8L("Preferences");
+#endif
     case MenuItemName::FileMenu:
         return Biz::_u8L("File");
     case MenuItemName::NewProject:
@@ -170,6 +176,17 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     default:
         return Render::Icon::None;
     }
+}
+
+std::string MenuBuilder::icon_name(MenuItemName menu_item_name)
+{
+    if (Render::Icon icon = item_icon(menu_item_name); icon == Render::Icon::None) {
+        return std::string();
+    }
+    else {
+        return Render::ImguiIconHelper::icon_name(icon);
+    }
+    return std::string();
 }
 
 void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* menu_item)

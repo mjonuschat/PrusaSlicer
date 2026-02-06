@@ -130,7 +130,6 @@ void DialogManager::show_yesno_dialog(const std::string& title, const std::strin
 void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::string& text, const std::string& check_text, const YesNoCallback& callback, const CheckBoxCheckedCallback& cbc_callback)
 {
     RichMessageDialog dlg(wxTheApp->GetTopWindow(), from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);
-    dlg.CenterOnParent();
     dlg.ShowCheckBox(from_u8(check_text));
     if (dlg.ShowModal() == wxID_YES)
         callback(true);

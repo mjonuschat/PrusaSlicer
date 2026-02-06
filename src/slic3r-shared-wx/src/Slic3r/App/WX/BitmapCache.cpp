@@ -439,6 +439,39 @@ wxBitmapBundle* BitmapCache::from_svg(const std::string& bitmap_name, unsigned t
     return insert_bndl(bitmap_key, str.data(), target_width, target_height);
 }
 
+wxBitmapBundle* BitmapCache::from_svg_for_mac_menu(const std::string& bitmap_name, unsigned target_width, unsigned target_height)
+{
+    if (target_width == 0)
+        target_width = target_height;
+    std::string bitmap_key = bitmap_name + (target_height != 0 ?
+        "-h" + std::to_string(target_height) :
+        "-w" + std::to_string(target_width))
+        + "-mac-menu";
+
+    auto it = m_bndl_map.find(bitmap_key);
+    if (it != m_bndl_map.end())
+        return it->second;
+
+    // MacOS system menu renders icons as template images;
+    // light colors must be replaced for visibility.
+    constexpr const char* mac_menu_color = "#787878";
+
+    // map of color replaces
+    std::map<std::string, std::string> replaces;
+    replaces["#FFFFFF"] = mac_menu_color;
+    replaces["#F7F7F7"] = mac_menu_color;
+    replaces["#ffffff"] = mac_menu_color;
+    replaces["white"] = mac_menu_color;
+    replaces["WHITE"] = mac_menu_color;
+
+    std::string str;
+    nsvgGetDataFromFileWithReplace(var(bitmap_name + ".svg").c_str(), str, replaces);
+    if (str.empty())
+        return nullptr;
+
+    return insert_bndl(bitmap_key, str.data(), target_width, target_height);
+}
+
 wxBitmapBundle* BitmapCache::from_png(const std::string& bitmap_name, unsigned width, unsigned height)
 {
     std::string bitmap_key = bitmap_name + (height != 0 ?

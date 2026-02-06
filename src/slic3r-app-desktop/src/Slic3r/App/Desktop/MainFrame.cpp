@@ -25,11 +25,17 @@
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Platform/KeyboardShortcut.hpp"
+#include "Slic3r/App/CommandBindingManager.hpp"
+#include "Slic3r/App/MenuManager.hpp"
 
 #include "Slic3r/App/Scene/Scene.hpp"
 
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/WindowMetrics.hpp"
+
+#ifdef USE_NATIVE_MENU
+#include "Slic3r/App/WX/MacOSNativeMenuBar.hpp"
+#endif
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -264,8 +270,12 @@ MainFrame::MainFrame(
         wxEVT_SHOW,
         [this](wxShowEvent& event)
         {
-            wxTheApp->CallAfter([this]() { 
-                this->update_accel_table(); });
+            wxTheApp->CallAfter([this]() {
+#ifdef USE_NATIVE_MENU
+                this->setup_macos_native_menu_bar();
+#endif
+                this->update_accel_table();
+            });
             event.Skip();
         }
     );
@@ -306,17 +316,29 @@ MainFrame::MainFrame(
         wxEVT_SET_FOCUS,
         [this](wxFocusEvent&)
         {
-            this->SetAcceleratorTable(wxNullAcceleratorTable);
+            set_accel_table();
             // Canvas now receives normal key events again
         }
     );
     m_canvas->Bind(
         wxEVT_KILL_FOCUS,
-        [this](wxFocusEvent&) { this->SetAcceleratorTable(m_accel_table); }
+        [this](wxFocusEvent&)
+        {
+            set_accel_table();
+            // Events from acceleration table will be processed now
+        }
     );
 
     m_navigator.callbacks().render_module_switched = [this]()
-    { wxTheApp->CallAfter([this]() { this->update_accel_table(); }); };
+    {
+        wxTheApp->CallAfter([this]() {
+#ifdef USE_NATIVE_MENU
+            this->set_accel_table();
+#else
+            this->update_accel_table();
+#endif
+        });
+    };
 }
 
 MainFrame::~MainFrame()
@@ -347,6 +369,17 @@ void MainFrame::on_close(wxCloseEvent& event)
 
 void MainFrame::update_accel_table()
 {
+#ifdef USE_NATIVE_MENU
+    if (m_native_menu_bar) {
+        wxMenuBar* menu_bar = m_native_menu_bar->get_menu_bar();
+        if (auto* accel = menu_bar->GetAcceleratorTable()) {
+            m_accel_table = *accel;
+        }
+        if (!m_accel_table_window) {
+            m_accel_table_window = menu_bar;
+        }
+    }
+#else
     std::vector<wxAcceleratorEntry> entries;
     entries.reserve(100);
 
@@ -390,11 +423,24 @@ void MainFrame::update_accel_table()
     // Add here something extra into acceleration table, if we need it
 
     m_accel_table = wxAcceleratorTable(entries.size(), entries.data());
+    if (!m_accel_table_window) {
+        m_accel_table_window = this;
+    }
+#endif
+
+    set_accel_table();
+}
+
+void MainFrame::set_accel_table()
+{
+    if (!m_accel_table_window) {
+        return;
+    }
 
     if (m_canvas->HasFocus()) {
-        this->SetAcceleratorTable(wxNullAcceleratorTable);
+        m_accel_table_window->SetAcceleratorTable(wxNullAcceleratorTable);
     } else {
-        this->SetAcceleratorTable(m_accel_table);
+        m_accel_table_window->SetAcceleratorTable(m_accel_table);
     }
 }
 
@@ -807,5 +853,46 @@ void MainFrame::persist_window_geometry(wxTopLevelWindow* window, bool default_m
         window_pos_sanitize(window);
         });
 }
+
+#ifdef USE_NATIVE_MENU
+void MainFrame::setup_macos_native_menu_bar()
+{
+    // Only build once
+    if (m_native_menu_bar) {
+        return;
+    }
+
+    auto* render_module = m_canvas->get_render_module();
+    if (!render_module) {
+        return;
+    }
+
+    MenuManager& menu_manager                      = render_module->menu_manager();
+    CommandBindingManager& command_binding_manager = render_module->command_binding_manager();
+
+    m_native_menu_bar = std::make_unique<MacOSNativeMenuBar>(
+        menu_manager,
+        command_binding_manager,
+        [this]() { m_canvas->SetFocus(); }
+    );
+
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(
+        m_native_menu_bar.get()
+    );
+    m_project_interactor.user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(m_native_menu_bar.get());
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
+        m_native_menu_bar.get()
+    );
+    m_project_interactor.removable_drive_service().add_status_listener(m_native_menu_bar.get());
+
+    m_native_menu_bar->build_from_menu_manager();
+
+    this->SetMenuBar(m_native_menu_bar->get_menu_bar());
+
+    // Setup Apple menu (About, Preferences, Quit) - must be after SetMenuBar
+    m_native_menu_bar->setup_apple_menu();
+}
+#endif
 
 } // namespace Slic3r::App::Desktop

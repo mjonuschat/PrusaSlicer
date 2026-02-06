@@ -9,6 +9,7 @@
 
 #include "Slic3r/App/SearchBar.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
 #include "Slic3r/App/MenuBuilder.hpp"
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
@@ -50,7 +51,23 @@ TopBar::TopBar(
     Rectangle* left_wrapper = emplace_back<Rectangle>();
     left_wrapper->set_flex_shrink(0);
 
+#ifndef USE_NATIVE_MENU
     add_menu_btns(left_wrapper);
+    for (LayoutButton* btn : std::initializer_list<LayoutButton*>{m_save_btn, m_show_ui_btn}) {
+        if (!btn)
+            continue;
+        btn->callbacks().hovered_changed = [this](bool hovered)
+        {
+            if (hovered) {
+                if (m_file_menu->opened())
+                    m_file_menu->close();
+                if (m_main_menu->opened())
+                    m_main_menu->close();
+            }
+        };
+    }
+#endif // !USE_NATIVE_MENU
+
     add_save_project_btn(left_wrapper);
     add_show_ui_btn(left_wrapper);
 
@@ -85,20 +102,6 @@ TopBar::TopBar(
             continue;
         btn->set_background_color(IM_COL32_BLACK_TRANS);
         btn->set_tooltip_position(Position::Bottom);
-    }
-
-    for (LayoutButton* btn : std::initializer_list<LayoutButton*>{m_save_btn, m_show_ui_btn}) {
-        if (!btn)
-            continue;
-        btn->callbacks().hovered_changed = [this](bool hovered)
-        {
-            if (hovered) {
-                if (m_file_menu->opened())
-                    m_file_menu->close();
-                if (m_main_menu->opened())
-                    m_main_menu->close();
-            }
-        };
     }
 
     for (Rectangle* wrapper :

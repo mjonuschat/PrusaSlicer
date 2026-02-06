@@ -37,7 +37,7 @@ static const std::map<KeyCode, Key> key_code_mapping = {
     {KeyCode::RightParen, {")"}},
     {KeyCode::Asterisk, {"*", "Multiply"}},
     {KeyCode::Plus, {"+", "Add"}},
-    {KeyCode::Comma, {","}},
+    {KeyCode::Comma, {",", ","}},
     {KeyCode::Minus, {"-", "Subtract"}},
     {KeyCode::Period, {".", "Decimal"}},
     {KeyCode::Slash, {"/", "Divide"}},
@@ -292,7 +292,7 @@ std::string to_accel_table_string(KeyCode key_code)
     Key key = key_code_mapping.at(key_code);
     ASSERT(
         !key.accel_name.empty(),
-        fmt::format("KeyCode({}) with no accel string assigned", static_cast<int>(key_code))
+        fmt::format("KeyCode({}, \"{}\") with no accel string assigned", static_cast<int>(key_code), key.display_name)
     );
 
     return key.accel_name;

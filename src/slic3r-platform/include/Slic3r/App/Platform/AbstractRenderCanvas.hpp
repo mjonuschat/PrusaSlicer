@@ -14,11 +14,14 @@
 #include <Slic3r/App/Render/ImguiRender.hpp>
 #include <optional>
 
+#ifdef __APPLE__
+#define USE_NATIVE_MENU
+#endif
+
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
 }
-
 
 namespace Slic3r::App::Platform {
 

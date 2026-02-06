@@ -55,6 +55,7 @@ struct CommandName
     static constexpr const char* ShapeGallery     = "shape-gallery";
     static constexpr const char* ShowLabel        = "show-label";
     static constexpr const char* FullScreen       = "full-screen";
+    static constexpr const char* Exit             = "exit";
 
     static constexpr const char* Undo  = "undo";
     static constexpr const char* Redo  = "redo";
