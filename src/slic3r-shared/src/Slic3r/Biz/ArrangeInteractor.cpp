@@ -86,7 +86,13 @@ BoundingBox3d instance_bounding_box(const ModelInstance& instance)
         if (!volume->is_model_part()) {
             continue;
         }
-        result = merge(result, volume->mesh().bounding_box());
+        result = merge(
+            result,
+            Algorithms::BoundingBox::transformed(
+                volume->mesh().bounding_box(),
+                inst_matrix * volume->get_matrix()
+            )
+        );
     }
 
     return result;
@@ -664,89 +670,106 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
     const double unplaced_offset{-20.0};
 
     JobManager& job_manager{PlatformServices::instance().job_manager()};
-    if (settings.mode == Mode::Global) {
-        const BedRef last_selected_bed{m_scene_interactor.bed_selection().last_selected_bed()};
-        const ConstModelInstanceList instances{
-            get_model_instances(project_id, m_scene_interactor.bed_selection(), true)
-        };
-        job_manager
-            .create_job(
-                "arrange",
-                arrange_global,
-                settings,
-                get_arrange_bed(project_id, last_selected_bed, get_max_brim(instances), settings, m_workbench),
-                get_meshes(instances, ResetTranslation::True)
-            )
-            .on_result([this, project_id, settings, unplaced_offset](const std::optional<Packs>& packs) {
-                if (!packs) {
-                    return;
-                }
-                apply_arrange_result(
-                    project_id,
-                    m_scene_interactor.bed_selection(),
-                    OverflowMode::AddBeds,
-                    settings.scaled_offset,
-                    *packs,
-                    unplaced_offset
-                );
-            })
-            .start();
-    } else if (settings.mode == Mode::Local) {
-        const std::set<SelectionId> selected_model_instances{
-            to_instance_ids(m_scene_interactor.object_selection().elements)
-        };
 
-        const ModelInstancesPerBed model_instances_per_bed{get_model_instances_per_bed(
-            project_id,
-            m_scene_interactor.bed_selection(),
-            settings,
-            m_workbench,
-            selected_model_instances
-        )};
-
-        std::vector<InstanceMeshes> selected_extra_model_instances;
-        if (!selected_model_instances.empty()) {
-            const std::set<SelectionId> instance_ids{
-                get_extra_selected_instances(selected_model_instances, model_instances_per_bed)
-            };
+    try {
+        if (settings.mode == Mode::Global) {
+            const BedRef last_selected_bed{m_scene_interactor.bed_selection().last_selected_bed()};
             const ConstModelInstanceList instances{
-                get_instances(project_id, instance_ids, m_workbench)
+                get_model_instances(project_id, m_scene_interactor.bed_selection(), true)
             };
-            selected_extra_model_instances = get_meshes(instances, ResetTranslation::True);
-        }
-
-        job_manager
-            .create_job(
-                "arrange",
-                arrange_local,
-                settings,
-                model_instances_per_bed,
-                selected_extra_model_instances
-            )
-            .on_result([this, project_id, settings, unplaced_offset](
-                           const ArrangeLocalResult& packs_per_bed
-                       ) {
-                if (!packs_per_bed) {
-                    return;
-                }
-                double offset{unplaced_offset};
-
-                for (const auto& [bed_ref, packs] : *packs_per_bed) {
-                    BedSelection selection;
-                    selection.select_one(bed_ref);
-                    offset = apply_arrange_result(
+            job_manager
+                .create_job(
+                    "arrange",
+                    arrange_global,
+                    settings,
+                    get_arrange_bed(
                         project_id,
-                        selection,
-                        OverflowMode::MoveNextToFirstBed,
-                        settings.scaled_offset,
-                        packs,
-                        offset
-                    );
-                }
-            })
-            .start();
-    } else {
-        PANIC("Unknown arrange mode!");
+                        last_selected_bed,
+                        get_max_brim(instances),
+                        settings,
+                        m_workbench
+                    ),
+                    get_meshes(instances, ResetTranslation::True)
+                )
+                .on_result(
+                    [this, project_id, settings, unplaced_offset](const std::optional<Packs>& packs)
+                    {
+                        if (!packs) {
+                            return;
+                        }
+                        apply_arrange_result(
+                            project_id,
+                            m_scene_interactor.bed_selection(),
+                            OverflowMode::AddBeds,
+                            settings.scaled_offset,
+                            *packs,
+                            unplaced_offset
+                        );
+                    }
+                )
+                .start();
+        } else if (settings.mode == Mode::Local) {
+            const std::set<SelectionId> selected_model_instances{
+                to_instance_ids(m_scene_interactor.object_selection().elements)
+            };
+
+            const ModelInstancesPerBed model_instances_per_bed{get_model_instances_per_bed(
+                project_id,
+                m_scene_interactor.bed_selection(),
+                settings,
+                m_workbench,
+                selected_model_instances
+            )};
+
+            std::vector<InstanceMeshes> selected_extra_model_instances;
+            if (!selected_model_instances.empty()) {
+                const std::set<SelectionId> instance_ids{
+                    get_extra_selected_instances(selected_model_instances, model_instances_per_bed)
+                };
+                const ConstModelInstanceList instances{
+                    get_instances(project_id, instance_ids, m_workbench)
+                };
+                selected_extra_model_instances = get_meshes(instances, ResetTranslation::True);
+            }
+
+            job_manager
+                .create_job(
+                    "arrange",
+                    arrange_local,
+                    settings,
+                    model_instances_per_bed,
+                    selected_extra_model_instances
+                )
+                .on_result(
+                    [this, project_id, settings, unplaced_offset](
+                        const ArrangeLocalResult& packs_per_bed
+                    )
+                    {
+                        if (!packs_per_bed) {
+                            return;
+                        }
+                        double offset{unplaced_offset};
+
+                        for (const auto& [bed_ref, packs] : *packs_per_bed) {
+                            BedSelection selection;
+                            selection.select_one(bed_ref);
+                            offset = apply_arrange_result(
+                                project_id,
+                                selection,
+                                OverflowMode::MoveNextToFirstBed,
+                                settings.scaled_offset,
+                                packs,
+                                offset
+                            );
+                        }
+                    }
+                )
+                .start();
+        } else {
+            PANIC("Unknown arrange mode!");
+        }
+    } catch (const ArrangeFatalError& error) {
+        // TODO: notify user
     }
 }
 
