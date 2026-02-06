@@ -2430,29 +2430,16 @@ static void triangulate_slice(
     // its_remove_degenerate_faces(its);
 }
 
-void project_mesh(
-    const indexed_triangle_set       &mesh,
-    const Transform3d                &trafo,
-    Polygons                         *out_top,
-    Polygons                         *out_bottom,
-    std::function<void()>             throw_on_cancel)
-{
-    std::vector<Polygons> top, bottom;
-    std::vector<float>    zs { -1e10, 1e10 };
-    slice_mesh_slabs(mesh, zs, trafo, out_top ? &top : nullptr, out_bottom ? &bottom : nullptr, throw_on_cancel);
-    if (out_top)
-        *out_top = std::move(top.front());
-    if (out_bottom)
-        *out_bottom = std::move(bottom.back());
-}
-
 Polygons project_mesh(
-    const indexed_triangle_set       &mesh,
-    const Transform3d                &trafo,
-    std::function<void()>             throw_on_cancel)
+    const indexed_triangle_set& mesh,
+    const Transform3d& trafo,
+    std::function<void()> throw_on_cancel,
+    float slab_min,
+    float slab_max
+)
 {
     std::vector<Polygons> top, bottom;
-    std::vector<float>    zs { -1e10, 1e10 };
+    std::vector<float>    zs { slab_min, slab_max };
     slice_mesh_slabs(mesh, zs, trafo, &top, &bottom, throw_on_cancel);
 
     // We typically perform a union operation on a lot of overlapping polygons, which can be slow in some cases.

@@ -140,10 +140,11 @@ std::optional<ArbitraryShape> extract_outline(const InstanceMeshes& meshes, cons
 
     for (const InstanceMesh& mesh : meshes.meshes) {
         try {
-            const Polygons vol_outline{project_mesh(mesh.mesh_ptr->its, mesh.trafo, stop_condition)};
-            if (mesh.type == ModelVolumeType::MODEL_PART) {
-                result = union_ex(result, vol_outline);
+            if (mesh.type != ModelVolumeType::MODEL_PART) {
+                continue;
             }
+            const Polygons vol_outline{project_mesh(mesh.mesh_ptr->its, mesh.trafo, stop_condition, 0.0)};
+            result = union_ex(result, vol_outline);
         } catch (const CanceledException&) {
             return std::nullopt;
         }
@@ -200,7 +201,8 @@ std::vector<InstanceMeshes> get_meshes(
             if (std::holds_alternative<ResetTranslation>(translation)) {
                 const auto reset_translation{std::get<ResetTranslation>(translation)};
                 if (reset_translation == ResetTranslation::True) {
-                    instance_trafo.translation() = Vec3d::Zero();
+                    instance_trafo.translation().x() = 0;
+                    instance_trafo.translation().y() = 0;
                 }
             } else {
                 const auto translation_vector{std::get<Vec3d>(translation)};
@@ -239,6 +241,9 @@ std::optional<std::vector<InputShape>> get_arrange_input(
         const std::optional<ArbitraryShape> outline{extract_outline(instance, stop_condition)};
         if (!outline) {
             return std::nullopt;
+        }
+        if (outline->empty()) {
+            continue;
         }
         result.push_back({instance.element_ref, *outline});
     }

@@ -138,19 +138,18 @@ void slice_mesh_slabs(
     std::vector<Domain::Polygons>    *out_bottom,
     std::function<void()>             throw_on_cancel);
 
-// Project mesh upwards pointing surfaces / downwards pointing surfaces into 2D polygons.
-void project_mesh(
-    const indexed_triangle_set       &mesh,
-    const Domain::Transform3d        &trafo,
-    Domain::Polygons                 *out_top,
-    Domain::Polygons                 *out_bottom,
-    std::function<void()>             throw_on_cancel);
-
-// Project mesh into 2D polygons.
+/**
+ * @brief Project mesh into 2D polygons.
+ * @param slab_min: ignore verticies bellow slab_min
+ * @param slab_min: ignore verticies above slab_max
+ */
 Domain::Polygons project_mesh(
-    const indexed_triangle_set       &mesh,
-    const Domain::Transform3d        &trafo,
-    std::function<void()>             throw_on_cancel);
+    const indexed_triangle_set& mesh,
+    const Domain::Transform3d& trafo,
+    std::function<void()> throw_on_cancel,
+    float slab_min = -1e10,
+    float slab_max = 1e10
+);
 
 void cut_mesh(
     const indexed_triangle_set      &mesh,
