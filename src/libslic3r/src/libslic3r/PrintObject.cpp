@@ -2429,7 +2429,7 @@ void PrintObject::set_shared_regions(const std::shared_ptr<PrintObjectRegions>& 
 
 void PrintObject::update_slicing_parameters() {
     if (!m_slicing_params.valid) {
-        m_slicing_params = SlicingParameters::create_from_config(this->print()->config(), this->model_object()->max_z(),
+        m_slicing_params = SlicingParameters::create_from_config(this->config(), this->model_object()->max_z(),
                                                                  this->object_extruders(), this->print()->m_shrinkage_compensation);
     }
 }

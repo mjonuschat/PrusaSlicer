@@ -2281,7 +2281,8 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::raft_and_intermediate_supp
             }
         } else {
             // Insert intermediate layers.
-            size_t        n_layers_extra = size_t(ceil(dist / m_slicing_params.max_suport_layer_height)); 
+            ASSERT(m_slicing_params.max_suport_layer_height > std::numeric_limits<double>::epsilon());
+            size_t        n_layers_extra = size_t(ceil(dist / m_slicing_params.max_suport_layer_height));
             assert(n_layers_extra > 0);
             double      step   = dist / double(n_layers_extra);
             if (extr1 != nullptr && extr1->layer_type == SupporLayerType::TopContact &&

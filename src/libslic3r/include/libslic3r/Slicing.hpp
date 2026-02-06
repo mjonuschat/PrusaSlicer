@@ -39,7 +39,7 @@ struct SlicingParameters
 	SlicingParameters() = default;
 
     static SlicingParameters create_from_config(
-        const Domain::ConfigView        &config,
+        const PrintObjectConfigView     &config,
         double                           object_height,
         const std::vector<unsigned int> &object_extruders,
         const Domain::Vec3d             &object_shrinkage_compensation);

@@ -67,7 +67,7 @@ double Slicing::max_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, 
 }
 
 SlicingParameters SlicingParameters::create_from_config(
-	const Domain::ConfigView     &config,
+	const PrintObjectConfigView     &config,
 	double				         object_height,
     const std::vector<unsigned int> &object_extruders,
     const Vec3d                     &object_shrinkage_compensation)
