@@ -34,6 +34,7 @@ GizmoManager::GizmoManager(
 ) :
     m_project_changed_listener_scope(project_interactor, *this),
     m_selected_project_changed_listener_scope(project_interactor, *this),
+    m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this),
     m_projects(project_interactor),
     m_scene_provider(scene_provider),
     m_project_interactor(project_interactor),
@@ -170,6 +171,23 @@ void GizmoManager::on_project_will_be_removed(Domain::SelectionId project_id)
         last_p.active_tool->on_project_deactivated(m_last_project_id);
 
     m_last_project_id = Domain::INVALID_ID;
+}
+
+void GizmoManager::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::ObjectSelection& selection
+) {
+    if (selection.empty() && current_tool_type() != ToolType::None) {
+        deactivate_current_tool();
+    }
+
+    for (const IToolGizmoPtr& tool_gizmo : m_tool_gizmos) {
+        if (current_tool_type() == tool_gizmo->type()
+            && !tool_gizmo->enabled())
+        {
+            deactivate_current_tool();
+        }
+    }
 }
 
 void GizmoManager::prepare_cycle()

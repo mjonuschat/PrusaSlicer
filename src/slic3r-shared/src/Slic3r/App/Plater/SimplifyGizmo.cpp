@@ -446,7 +446,7 @@ void set_nodes(const NodeInputs& node_inputs, ProjectContext& proj_ctx, Render::
 
 void SimplifyGizmo::on_selection_change(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) {
     bool is_current = project_id == m_project_interactor.selected_project_id();
-    if (selection.elements.empty()) {
+    if (!enabled() || selection.elements.empty()) {
         if (is_current) close();
         return;
     }
@@ -543,6 +543,14 @@ void SimplifyGizmo::on_project_deactivated(size_t old_project_id)
 Scene::ToolType SimplifyGizmo::type() const 
 { 
     return Scene::ToolType::Simplify; 
+}
+
+bool SimplifyGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection{
+        m_project_interactor.scene_interactor().object_selection()
+    };
+    return !selection.empty() && !selection.contains_wipe_tower();
 }
 
 Yoga::GizmoWindowPtr SimplifyGizmo::release_ui_window()

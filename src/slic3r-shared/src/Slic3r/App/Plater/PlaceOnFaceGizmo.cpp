@@ -63,7 +63,7 @@ void PlaceOnFaceGizmo::on_scene_selection_changed(
     const Biz::Scene::ObjectSelection& selection
 )
 {
-    if (m_is_active) {
+    if (m_is_active && enabled()) {
         // TODO: An optimization is possible. If the user switched from one instance
         // to another one belonging to the same object, it is not necessary to
         // recalculate planes - hanging the existing nodes in scene graph
@@ -88,6 +88,13 @@ void PlaceOnFaceGizmo::on_node_removed(Scene::Node* node)
 {
     if (node == m_main_node)
         m_main_node = nullptr;
+}
+
+bool PlaceOnFaceGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
+    return selection.state() == Biz::Scene::SelectionState::WholeInstance;
 }
 
 void PlaceOnFaceGizmo::build_plane_node(Scene::NodeBuilder& bldr, indexed_triangle_set&& mesh_its, size_t plane_id)

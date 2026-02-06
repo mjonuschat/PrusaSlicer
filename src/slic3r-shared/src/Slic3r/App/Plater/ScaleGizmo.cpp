@@ -175,6 +175,12 @@ void ScaleGizmo::on_deactivated()
     m_scene_provider.clear_selection_root_children();
 }
 
+bool ScaleGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection{m_scene_interactor.object_selection()};
+    return !selection.empty() && !selection.contains_wipe_tower();
+}
+
 std::unique_ptr<Yoga::GizmoWindow> ScaleGizmo::release_ui_window()
 {
     auto window{std::make_unique<ScaleDialog>(m_scene_provider, m_project_interactor)};
@@ -532,6 +538,9 @@ void ScaleGizmo::on_scene_selection_changed(
     const Biz::Scene::ObjectSelection&
 )
 {
+    if (!enabled()) {
+        return;
+    }
     update_handle_nodes();
 }
 

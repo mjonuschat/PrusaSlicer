@@ -70,6 +70,7 @@ protected:
     virtual void on_set_imgui_render() {}
 
     virtual void register_commands() {}
+    virtual void bind_commands() {}
     void request_render();
 
     virtual void set_navigator(Navigator* n) = 0;

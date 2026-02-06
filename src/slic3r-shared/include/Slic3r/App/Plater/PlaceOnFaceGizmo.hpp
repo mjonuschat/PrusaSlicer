@@ -67,6 +67,8 @@ public:
         return Scene::ToolType::PlaceOnFace;
     }
 
+    bool enabled() const override;
+
     /**@}*/
 private:
     void build_plane_node(Scene::NodeBuilder& builder, indexed_triangle_set&& its, size_t plane_id);

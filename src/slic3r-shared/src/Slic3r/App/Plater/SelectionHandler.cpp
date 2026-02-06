@@ -14,7 +14,7 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging
     if (tag == nullptr)
         return;
 
-    Domain::ElementRef element = tag->wipe_tower_id != Domain::SlicingId{} ?
+    Domain::ElementRef element = tag->is_wipe_tower() ?
         Domain::ElementRef{tag->wipe_tower_id} :
         Domain::ElementRef{tag->object_id, tag->instance_id, tag->volume_id};
 

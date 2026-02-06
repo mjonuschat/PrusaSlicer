@@ -661,7 +661,7 @@ void CutGizmo::on_scene_selection_changed(
 )
 {
     // the gizmo is active
-    if (m_dialog->is_visible()) {
+    if (m_dialog->is_visible() && enabled()) {
         update_scene_nodes();
     }
 }
@@ -680,6 +680,13 @@ void CutGizmo::on_scene_selection_transformed(
 Scene::ToolType CutGizmo::type() const
 {
     return Scene::ToolType::CutGizmo;
+}
+
+bool CutGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor->scene_interactor().object_selection();
+    return selection.state() == Biz::Scene::SelectionState::WholeInstance;
 }
 
 Yoga::GizmoWindowPtr CutGizmo::release_ui_window()

@@ -32,6 +32,8 @@ public:
     void on_activated() override;
     void on_deactivated() override;
     Scene::ToolType type() const override { return Scene::ToolType::Scale; }
+    bool enabled() const override;
+
 
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 

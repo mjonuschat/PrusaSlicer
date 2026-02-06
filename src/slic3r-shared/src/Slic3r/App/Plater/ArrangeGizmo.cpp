@@ -135,6 +135,14 @@ Scene::ToolType ArrangeGizmo::type() const
     return Scene::ToolType::ArrangeGizmo;
 }
 
+bool ArrangeGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection{
+        m_project_interactor.scene_interactor().object_selection()
+    };
+    return !selection.empty() && !selection.contains_wipe_tower();
+}
+
 Yoga::GizmoWindowPtr ArrangeGizmo::release_ui_window()
 {
     return m_dialog.release();

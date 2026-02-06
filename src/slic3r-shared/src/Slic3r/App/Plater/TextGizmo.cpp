@@ -6,12 +6,14 @@
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
-TextGizmo::TextGizmo()
+TextGizmo::TextGizmo(Biz::ProjectInteractor& project_interactor) :
+    m_project_interactor{project_interactor}
 {
     m_dialog = std::make_unique<TextDialog>();
 
@@ -65,6 +67,14 @@ void TextGizmo::on_deactivated() {}
 Scene::ToolType TextGizmo::type() const
 {
     return Scene::ToolType::TextGizmo;
+}
+
+bool TextGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection{
+        m_project_interactor.scene_interactor().object_selection()
+    };
+    return !selection.empty() && !selection.contains_wipe_tower();
 }
 
 Yoga::GizmoWindowPtr TextGizmo::release_ui_window()

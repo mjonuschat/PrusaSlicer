@@ -97,6 +97,8 @@ public:
 
     virtual void on_clipping_of_view_changed(double value) {}
 
+    bool enabled() const override;
+
 protected:
     Render::Device& m_device;
     Scene::GeometryDataFactory& m_data_factory;

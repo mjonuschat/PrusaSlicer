@@ -19,6 +19,11 @@ struct SceneNodeTag
     {
         return e.object_id == object_id && e.instance_id == instance_id && e.volume_id == volume_id;
     }
+
+    bool is_wipe_tower() const
+    {
+        return wipe_tower_id != Domain::SlicingId{};
+    }
 };
 
 } // namespace Slic3r::App::Scene

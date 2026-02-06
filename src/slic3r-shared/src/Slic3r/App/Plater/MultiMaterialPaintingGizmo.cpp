@@ -85,6 +85,31 @@ Scene::ToolType MultiMaterialPaintingGizmo::type() const
     return Scene::ToolType::MultiMaterialPaintingGizmo;
 }
 
+bool MultiMaterialPaintingGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
+    const bool whole_instance{selection.state() == Biz::Scene::SelectionState::WholeInstance};
+
+    const Domain::SelectionId config_container_id{
+        m_project_interactor.selected_config_container_id()
+    };
+    const Domain::Project& project{
+        m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
+    };
+    const Domain::ConfigContainer* config_container{
+        project.find_config_container(config_container_id)
+    };
+    if (config_container == nullptr) {
+        return false;
+    }
+
+    const size_t tool_count = config_container->selected_preset().hw_config.tool_count;
+    return whole_instance
+        && tool_count > 1
+        && config_container->print_technology() == Domain::PrinterTechnology::FFF;
+}
+
 std::unique_ptr<Yoga::GizmoWindow> MultiMaterialPaintingGizmo::release_ui_window()
 {
     return m_dialog.release();

@@ -44,8 +44,9 @@ void AbstractRenderModule::ensure_initialized(Render::Device& device, Render::Im
     Platform::AnimationManager& animation_manager)
 {
     if (!m_initialized) {
-        register_commands();
         on_init(device, imgui_render, animation_manager);
+        register_commands();
+        bind_commands();
         m_initialized = true;
     }
 }

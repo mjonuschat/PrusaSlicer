@@ -53,6 +53,8 @@ public:
 
     Scene::ToolType type() const override;
 
+    bool enabled() const override;
+
     Yoga::GizmoWindowPtr release_ui_window() override;
 
 private:

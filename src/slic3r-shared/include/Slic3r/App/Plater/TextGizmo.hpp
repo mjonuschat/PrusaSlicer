@@ -7,6 +7,10 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
+namespace Slic3r::Biz {
+    class ProjectInteractor;
+}
+
 namespace Slic3r::App::Yoga {
 class Dialog;
 } // namespace Slic3r::App::Yoga
@@ -18,12 +22,13 @@ class TextDialog;
 class TextGizmo : public Scene::IToolGizmo
 {
 public:
-    TextGizmo();
+    TextGizmo(Biz::ProjectInteractor& project_interactor);
 
     void on_activated() override;
     void on_deactivated() override;
 
     Scene::ToolType type() const override;
+    bool enabled() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
@@ -36,6 +41,7 @@ private:
 
 private:
     Yoga::Passthrough<TextDialog> m_dialog;
+    Biz::ProjectInteractor& m_project_interactor;
 };
 
 } // namespace Slic3r::App::Plater

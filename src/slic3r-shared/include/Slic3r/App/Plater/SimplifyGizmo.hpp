@@ -47,6 +47,7 @@ public:
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
     Scene::ToolType type() const override;
+    bool enabled() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
     /**@}*/
 

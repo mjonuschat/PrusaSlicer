@@ -87,7 +87,6 @@
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
-#include <magic_enum/magic_enum.hpp>
 
 #define ENABLED_DEBUG_BEDS 0
 #define ENABLED_NODE_LOGGING 0
@@ -102,33 +101,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Plater {
 
-namespace TriMesh = Biz::Algorithms::TriangleMesh;
-
 using CommandName          = Platform::CommandName;
 using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
-
-static const Domain::ConfigContainer* active_config_container(
-    Biz::ProjectInteractor& project_interactor
-)
-{
-    Domain::SelectionId config_container_id =
-        project_interactor.scene_interactor().selected_config_container_id();
-    const Domain::ConfigContainer* config_container =
-        project_interactor.selected_project().find_config_container(config_container_id);
-    if (config_container == nullptr) {
-        if (const Biz::Scene::BedSelection& bed_selection =
-                project_interactor.scene_interactor().bed_selection();
-            !bed_selection.empty())
-        {
-            config_container_id = bed_selection.config_container_id();
-        }
-
-        ASSERT(config_container_id != Domain::INVALID_ID);
-        config_container =
-            project_interactor.selected_project().find_config_container(config_container_id);
-    }
-    return config_container;
-}
 
 PlaterRenderModule::PlaterRenderModule(
     const Domain::Workbench& workbench,
@@ -298,19 +272,45 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     update_object_selection();
 }
 
+static const char* tool_type_to_command_name(Scene::ToolType tool_type)
+{
+    switch (tool_type) {
+    case Scene::ToolType::Translation:
+        return CommandName::MoveGizmo;
+    case Scene::ToolType::Rotation:
+        return CommandName::RotateGizmo;
+    case Scene::ToolType::Scale:
+        return CommandName::ScaleGizmo;
+    case Scene::ToolType::PlaceOnFace:
+        return CommandName::PlaceOnFace;
+    case Scene::ToolType::Simplify:
+        return CommandName::SimplifyGizmo;
+    case Scene::ToolType::ArrangeGizmo:
+        return CommandName::ArrangeGizmo;
+    case Scene::ToolType::PaintOnSupportsGizmo:
+        return CommandName::PaintOnSupportsGizmo;
+    case Scene::ToolType::PaintOnSeamsGizmo:
+        return CommandName::PaintOnSeamsGizmo;
+    case Scene::ToolType::PaintOnFuzzySkinGizmo:
+        return CommandName::PaintOnFuzzySkinGizmo;
+    case Scene::ToolType::MultiMaterialPaintingGizmo:
+        return CommandName::MultiMaterialPaintingGizmo;
+    case Scene::ToolType::TextGizmo:
+        return CommandName::TextGizmo;
+    case Scene::ToolType::MeasureGizmo:
+        return CommandName::MeasureGizmo;
+    case Scene::ToolType::CutGizmo:
+        return CommandName::CutGizmo;
+    case Scene::ToolType::None:
+        return nullptr;
+    default:
+        PANIC("Unknown gizmo!");
+    }
+}
+
+
 void PlaterRenderModule::register_commands()
 {
-    auto is_object_selected = [this]() -> bool
-    { return !m_project_interactor.scene_interactor().object_selection().empty(); };
-
-    auto is_wipe_tower_selected = [this]() -> bool
-    {
-        const Biz::Scene::ObjectSelection& selection{
-            m_project_interactor.scene_interactor().object_selection()
-        };
-        return selection.contains_wipe_tower();
-    };
-
     auto is_instance_from_same_object_selected = [this]() -> bool
     {
         const Biz::Scene::ObjectSelection& selection =
@@ -327,33 +327,6 @@ void PlaterRenderModule::register_commands()
             }
         }
         return selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance;
-    };
-
-    auto is_unique_instance_selected = [this]() -> bool
-    {
-        const Biz::Scene::ObjectSelection& selection =
-            m_project_interactor.scene_interactor().object_selection();
-        if (selection.empty() || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance)
-            return false;
-
-        const size_t inst_id = selection.elements[0].instance_id;
-        if (inst_id == 0) {
-            return false;
-        }
-        for (const Domain::ElementRef& el : selection.elements) {
-            if (el.instance_id != inst_id) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    auto is_fff_print = [this]() -> bool
-    {
-        const Domain::ConfigContainer* config_container =
-            active_config_container(m_project_interactor);
-        return config_container
-            && config_container->print_technology() == Domain::PrinterTechnology::FFF;
     };
 
     auto add_instance = [this]() -> void
@@ -395,158 +368,6 @@ void PlaterRenderModule::register_commands()
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                CommandName::MoveGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::Translation); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::M},
-                    .enabled           = is_object_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::RotateGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::Rotation); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::R},
-                    .enabled           = is_object_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::ScaleGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::Scale); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::S},
-                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::PlaceOnFace,
-                [this]() { toggle_activate_tool(Scene::ToolType::PlaceOnFace); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F},
-                    .enabled           = is_unique_instance_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::ArrangeGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::A},
-                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::SimplifyGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::Simplify); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::
-                        KeyboardShortcut{0, Platform::KeyCode::E /*B*/}, // "B" is used for camera
-                    .enabled = [=]() { return is_object_selected() && !is_wipe_tower_selected(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::PaintOnSupportsGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::L},
-                    .enabled           = [is_unique_instance_selected, is_fff_print]()
-                    { return is_unique_instance_selected() && is_fff_print(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::PaintOnSeamsGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSeamsGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::P},
-                    .enabled           = [is_unique_instance_selected, is_fff_print]()
-                    { return is_unique_instance_selected() && is_fff_print(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::PaintOnFuzzySkinGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::PaintOnFuzzySkinGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::H},
-                    .enabled           = [is_unique_instance_selected, is_fff_print]()
-                    { return is_unique_instance_selected() && is_fff_print(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::MultiMaterialPaintingGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::MultiMaterialPaintingGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::N},
-                    .enabled =
-                        [is_unique_instance_selected, this]()
-                    {
-                        if (const Domain::ConfigContainer* config_container =
-                                active_config_container(m_project_interactor))
-                        {
-                            const Domain::ConfigPack& print_config =
-                                config_container->print_config();
-                            const size_t tool_count =
-                                std::holds_alternative<Domain::ConfigPackFDM>(print_config) ?
-                                std::get<Domain::ConfigPackFDM>(print_config).tool.size() :
-                                1;
-                            return is_unique_instance_selected()
-                                && tool_count > 1
-                                && config_container->print_technology()
-                                == Domain::PrinterTechnology::FFF;
-                        }
-                        return false;
-                    }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::TextGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T},
-                    .enabled           = [=]() { return !is_wipe_tower_selected(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::CutGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::C},
-                    .enabled           = is_unique_instance_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::MeasureGizmo,
-                [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::U},
-                    .enabled           = [=]() { return !is_wipe_tower_selected(); }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
                 CommandName::SwitchToPreview,
                 [this]()
                 {
@@ -560,6 +381,53 @@ void PlaterRenderModule::register_commands()
                 }
             )
         );
+
+    const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
+        {Scene::ToolType::Translation, Platform::KeyCode::M},
+        {Scene::ToolType::Rotation, Platform::KeyCode::R},
+        {Scene::ToolType::Scale, Platform::KeyCode::S},
+        {Scene::ToolType::PlaceOnFace, Platform::KeyCode::F},
+        {Scene::ToolType::ArrangeGizmo, Platform::KeyCode::A},
+        {Scene::ToolType::Simplify, Platform::KeyCode::E},
+        {Scene::ToolType::PaintOnSupportsGizmo, Platform::KeyCode::L},
+        {Scene::ToolType::PaintOnSeamsGizmo, Platform::KeyCode::P},
+        {Scene::ToolType::PaintOnFuzzySkinGizmo, Platform::KeyCode::H},
+        {Scene::ToolType::MultiMaterialPaintingGizmo, Platform::KeyCode::N},
+        {Scene::ToolType::TextGizmo, Platform::KeyCode::T},
+        {Scene::ToolType::CutGizmo, Platform::KeyCode::C},
+        {Scene::ToolType::MeasureGizmo, Platform::KeyCode::U},
+    };
+
+    for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
+        const Scene::ToolType type{tool_gizmo->type()};
+        m_command_registry.register_command(
+            std::make_unique<Platform::FuncCommand>(
+                tool_type_to_command_name(type),
+                [this, type]() { toggle_activate_tool(type); },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, shortcuts.at(type)},
+                    .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); }
+                }
+            )
+        );
+    }
+}
+
+void PlaterRenderModule::bind_commands()
+{
+    m_command_binding_manager.bind_tb_item(CommandName::AddObject, m_toolbar_add);
+    m_command_binding_manager.bind_tb_item(CommandName::AddVolume, m_toolbar_add_volume);
+    m_command_binding_manager.bind_tb_item(CommandName::DeleteSelected, m_toolbar_delete);
+    m_command_binding_manager.bind_tb_item(CommandName::AddInstance, m_toolbar_add_instance);
+    m_command_binding_manager.bind_tb_item(CommandName::SwitchToPreview, m_toolbar_preview_switch);
+
+    for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
+        const Scene::ToolType type{tool_gizmo->type()};
+        m_command_binding_manager.bind_tb_item(
+            tool_type_to_command_name(type),
+            get_toolbar_button(type)
+        );
+    }
 }
 
 void PlaterRenderModule::init_scene_layout()
@@ -631,14 +499,10 @@ void PlaterRenderModule::init_scene_layout()
     // m_history.get()
     // );
 
-    m_command_binding_manager.bind_tb_item(
-        CommandName::AddObject,
-        m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::CubeAdd, _u8L("Add..."))
-    );
+    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::CubeAdd, _u8L("Add..."));
 
     m_toolbar_add_volume =
         m_layout->add_toolbar_item(ToolbarID::Middle, Render::Icon::AddVolume, _u8L("Add Volume"));
-    m_command_binding_manager.bind_tb_item(CommandName::AddVolume, m_toolbar_add_volume);
     init_add_volume_menu(m_toolbar_add_volume);
 
     m_toolbar_delete = m_layout->add_toolbar_item(
@@ -646,14 +510,12 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::DeleteBtnIcon,
         _u8L("Delete selection")
     );
-    m_command_binding_manager.bind_tb_item(CommandName::DeleteSelected, m_toolbar_delete);
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::RectangleAdd,
         _u8L("Add instance")
     );
-    m_command_binding_manager.bind_tb_item(CommandName::AddInstance, m_toolbar_add_instance);
 
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -661,7 +523,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Move"),
         m_translation_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::MoveGizmo, m_toolbar_move);
 
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -669,7 +530,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Rotate"),
         m_rotation_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::RotateGizmo, m_toolbar_rotate);
 
     m_toolbar_scale = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -677,7 +537,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Scale"),
         m_scale_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ScaleGizmo, m_toolbar_scale);
 
     m_toolbar_place_on_face = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -685,7 +544,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Place On Face"),
         m_place_on_face_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::PlaceOnFace, m_toolbar_place_on_face);
 
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Left,
@@ -693,7 +551,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Arrange"),
         m_arrange_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ArrangeGizmo, m_toolbar_arrange);
 
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -701,17 +558,12 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Simplify"),
         m_simplify_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::SimplifyGizmo, m_toolbar_simplify);
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,
         _u8L("Paint-on supports"),
         m_paint_on_supports_gizmo
-    );
-    m_command_binding_manager.bind_tb_item(
-        CommandName::PaintOnSupportsGizmo,
-        m_toolbar_paint_on_supports
     );
 
     m_toolbar_paint_on_seams = m_layout->add_toolbar_item_gizmo(
@@ -720,20 +572,12 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Paint-on seams"),
         m_paint_on_seams_gizmo
     );
-    m_command_binding_manager.bind_tb_item(
-        CommandName::PaintOnSeamsGizmo,
-        m_toolbar_paint_on_seams
-    );
 
     m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintFuzzySkin,
         _u8L("Paint-on fuzzy skin"),
         m_paint_on_fuzzy_skin_gizmo
-    );
-    m_command_binding_manager.bind_tb_item(
-        CommandName::PaintOnFuzzySkinGizmo,
-        m_toolbar_paint_on_fuzzy_skin
     );
 
     m_toolbar_multi_material_painting = m_layout->add_toolbar_item_gizmo(
@@ -742,10 +586,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Multimaterial painting"),
         m_multi_material_painting_gizmo
     );
-    m_command_binding_manager.bind_tb_item(
-        CommandName::MultiMaterialPaintingGizmo,
-        m_toolbar_multi_material_painting
-    );
 
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -753,12 +593,10 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Text"),
         m_text_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::TextGizmo, m_toolbar_text);
 
     m_toolbar_cut =
         m_layout
             ->add_toolbar_item_gizmo(ToolbarID::Middle, Render::Icon::Scissors, "Cut", m_cut_gizmo);
-    m_command_binding_manager.bind_tb_item(CommandName::CutGizmo, m_toolbar_cut);
 
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -766,7 +604,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Measure"),
         m_measure_gizmo
     );
-    m_command_binding_manager.bind_tb_item(CommandName::MeasureGizmo, m_toolbar_measure);
 
     m_layout
         ->add_toolbar_item_switch(
@@ -777,14 +614,11 @@ void PlaterRenderModule::init_scene_layout()
         )
         ->set_checked(true);
 
-    m_command_binding_manager.bind_tb_item(
-        CommandName::SwitchToPreview,
-        m_layout->add_toolbar_item_switch(
-            ToolbarID::Right,
-            Render::Icon::Preview,
-            _u8L("Preview view"),
-            Yoga::ToolbarSwitchButton::SwitchPosition::Right
-        )
+    m_toolbar_preview_switch = m_layout->add_toolbar_item_switch(
+        ToolbarID::Right,
+        Render::Icon::Preview,
+        _u8L("Preview view"),
+        Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
 
     this->update_toolbar_visibility();
@@ -846,42 +680,6 @@ void PlaterRenderModule::init_dialog_navigation()
     init_gizmo_dialog(Scene::ToolType::CutGizmo, m_cut_gizmo->release_ui_window());
 }
 
-static const char* tool_type_to_command_name(Scene::ToolType tool_type)
-{
-    switch (tool_type) {
-    case Scene::ToolType::Translation:
-        return CommandName::MoveGizmo;
-    case Scene::ToolType::Rotation:
-        return CommandName::RotateGizmo;
-    case Scene::ToolType::Scale:
-        return CommandName::ScaleGizmo;
-    case Scene::ToolType::PlaceOnFace:
-        return CommandName::PlaceOnFace;
-    case Scene::ToolType::Simplify:
-        return CommandName::SimplifyGizmo;
-    case Scene::ToolType::ArrangeGizmo:
-        return CommandName::ArrangeGizmo;
-    case Scene::ToolType::PaintOnSupportsGizmo:
-        return CommandName::PaintOnSupportsGizmo;
-    case Scene::ToolType::PaintOnSeamsGizmo:
-        return CommandName::PaintOnSeamsGizmo;
-    case Scene::ToolType::PaintOnFuzzySkinGizmo:
-        return CommandName::PaintOnFuzzySkinGizmo;
-    case Scene::ToolType::MultiMaterialPaintingGizmo:
-        return CommandName::MultiMaterialPaintingGizmo;
-    case Scene::ToolType::TextGizmo:
-        return CommandName::TextGizmo;
-    case Scene::ToolType::MeasureGizmo:
-        return CommandName::MeasureGizmo;
-    case Scene::ToolType::CutGizmo:
-        return CommandName::CutGizmo;
-    case Scene::ToolType::None:
-        return nullptr;
-    default:
-        PANIC("Unknown gizmo!");
-    }
-}
-
 void PlaterRenderModule::update_object_selection()
 {
     const Biz::Scene::ObjectSelection& selection =
@@ -890,20 +688,7 @@ void PlaterRenderModule::update_object_selection()
     const bool empty_selection = selection.empty();
     m_layout->middle_toolbar()->set_visible(!empty_selection);
 
-    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
-        if (tool_type == Scene::ToolType::None) {
-            continue;
-        }
-        if (m_gizmo_manager->current_tool_type() == tool_type
-            && !m_command_registry.command(tool_type_to_command_name(tool_type)).enabled())
-        {
-            m_gizmo_manager->deactivate_current_tool();
-        }
-    }
-
-    if (empty_selection && m_gizmo_manager->current_tool_type() != Scene::ToolType::None) {
-        m_gizmo_manager->deactivate_current_tool();
-    } else {
+    if (!empty_selection || m_gizmo_manager->current_tool_type() == Scene::ToolType::None) {
         m_text_gizmo->update_layout(
             !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
         );
@@ -937,23 +722,16 @@ void PlaterRenderModule::update_current_right_sidebar()
 
 void PlaterRenderModule::update_toolbar_visibility()
 {
-    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
-        if (tool_type == Scene::ToolType::None) {
-            continue;
-        }
-        get_toolbar_button(tool_type)->set_visible(
-            m_command_registry.command(tool_type_to_command_name(tool_type)).enabled()
-        );
+    for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
+        get_toolbar_button(tool_gizmo->type())->set_visible(tool_gizmo->enabled());
     }
 }
 
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
 {
-    for (Scene::ToolType tool_type : magic_enum::enum_values<Scene::ToolType>()) {
-        if (tool_type == Scene::ToolType::None) {
-            continue;
-        }
-        get_toolbar_button(tool_type)->set_checked(current_tool_type == tool_type);
+    for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
+        const Scene::ToolType type{tool_gizmo->type()};
+        get_toolbar_button(tool_gizmo->type())->set_checked(current_tool_type == type);
     }
 
     update_current_right_sidebar();
@@ -1071,7 +849,7 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
-    m_text_gizmo    = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
+    m_text_gizmo    = &m_gizmo_manager->add_tool_gizmo<TextGizmo>(m_project_interactor);
     m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
         *m_device,
         m_project_interactor,

@@ -1049,6 +1049,29 @@ void PaintOnGizmoBase::render_scene(Render::CommandBuffer& cmd_buffer)
     this->update_cursors();
 }
 
+bool PaintOnGizmoBase::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
+    const bool whole_instance{selection.state() == Biz::Scene::SelectionState::WholeInstance};
+
+    const Domain::SelectionId config_container_id{
+        m_project_interactor.selected_config_container_id()
+    };
+    const Domain::Project& project{
+        m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
+    };
+    const Domain::ConfigContainer* config_container{
+        project.find_config_container(config_container_id)
+    };
+    if (config_container == nullptr) {
+        return false;
+    }
+    const bool is_fdm{config_container->print_technology() == Domain::PrinterTechnology::FFF};
+
+    return whole_instance && is_fdm;
+}
+
 TriangleSelector::ClippingPlane PaintOnGizmoBase::get_clipping_plane_in_volume_coordinates(
     const Transform3d& trafo
 ) const

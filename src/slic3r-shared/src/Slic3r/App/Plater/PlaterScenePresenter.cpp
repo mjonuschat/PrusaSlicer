@@ -403,7 +403,7 @@ void PlaterScenePresenter::update_volume_materials()
             const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
-                bool is_wipe_tower = tag->wipe_tower_id != Domain::SlicingId{};
+                bool is_wipe_tower = tag->is_wipe_tower();
                 bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
                 bool is_on_selected_bed = std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();

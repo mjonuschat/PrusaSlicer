@@ -48,6 +48,8 @@ public:
     Scene::ToolType type() const override { return Scene::ToolType::Rotation; }
     /**@}*/
 
+    bool enabled() const override;
+
     void on_scene_selection_bounding_box_changed(
         Domain::SelectionId project_id,
         const std::optional<Scene::OrientedBoundingBox>&

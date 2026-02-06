@@ -32,6 +32,7 @@ public:
         const Biz::Scene::ObjectSelection& selection
     ) override;
     Scene::ToolType type() const override { return Scene::ToolType::Translation; }
+    bool enabled() const override;
 
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 

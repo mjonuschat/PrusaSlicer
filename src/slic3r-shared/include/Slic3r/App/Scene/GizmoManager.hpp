@@ -37,6 +37,7 @@ class GizmoManager :
     public WithListeners<IGizmoActiveToolListener>,
     public Biz::ISelectedProjectChangedListener,
     public Biz::IProjectsChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener,
     public IGizmoController
 {
 public:
@@ -50,6 +51,10 @@ public:
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
     bool on_scene_keyboard_event(const Platform::KeyboardEvent& e);
     void on_project_will_be_removed(Domain::SelectionId project_id) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
 
     template<typename G, typename... ArgsT>
     G& add_base_gizmo(ArgsT&&... args)
@@ -86,6 +91,20 @@ public:
 
     void render_imgui();
 
+    using IGizmoPtr = std::unique_ptr<IGizmo>;
+    using GizmoList = std::vector<IGizmoPtr>;
+
+    using IToolGizmoPtr = std::unique_ptr<IToolGizmo>;
+    using ToolGizmoList = std::vector<IToolGizmoPtr>;
+
+    const GizmoList& base_gizmos() const {
+        return m_base_gizmos;
+    }
+
+    const ToolGizmoList& tool_gizmos() const {
+        return m_tool_gizmos;
+    }
+
 private:
     void on_selected_project_changed(size_t index) override;
 
@@ -106,12 +125,11 @@ private:
         m_project_changed_listener_scope;
     Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, GizmoManager>
         m_selected_project_changed_listener_scope;
-
-    using IGizmoPtr = std::unique_ptr<IGizmo>;
-    using IToolGizmoPtr = std::unique_ptr<IToolGizmo>;
-
-    using GizmoList = std::vector<IGizmoPtr>;
-    using ToolGizmoList = std::vector<IToolGizmoPtr>;
+    Biz::ListenerScope<
+        Biz::Scene::ISceneSelectionChangedListener,
+        Biz::Scene::SceneInteractor,
+        GizmoManager>
+        m_scene_selection_changed_listener_scope;
 
     struct ProjectContext
     {

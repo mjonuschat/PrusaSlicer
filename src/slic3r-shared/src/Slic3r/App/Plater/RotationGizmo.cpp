@@ -542,6 +542,11 @@ void RotationGizmo::on_deactivated()
 
 }
 
+bool RotationGizmo::enabled() const
+{
+    return !m_scene_interactor.object_selection().empty();
+}
+
 void RotationGizmo::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
     const std::optional<Scene::OrientedBoundingBox>&
@@ -564,7 +569,7 @@ void RotationGizmo::on_scene_selection_changed(
 )
 {
     ProjectContext& project_context{m_projects.selected()};
-    if (!m_projects.selected().activated) {
+    if (!enabled() || !m_projects.selected().activated) {
         return;
     }
     if (project_id != m_project_interactor.selected_project_id()) {

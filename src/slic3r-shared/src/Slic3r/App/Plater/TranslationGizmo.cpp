@@ -266,7 +266,7 @@ void TranslationGizmo::on_scene_selection_changed(
     Domain::SelectionId project_id,
     const Biz::Scene::ObjectSelection& selection
 ) {
-    if (!m_projects.selected().activated) {
+    if (!enabled() || !m_projects.selected().activated) {
         return;
     }
     if (project_id != m_project_interactor.selected_project_id()) {
@@ -281,6 +281,10 @@ void TranslationGizmo::on_scene_selection_changed(
     } else {
         enable_all_nodes(get_handle_nodes());
     }
+}
+
+bool TranslationGizmo::enabled() const {
+    return !m_scene_interactor.object_selection().empty();
 }
 
 std::unique_ptr<Yoga::GizmoWindow> TranslationGizmo::release_ui_window()

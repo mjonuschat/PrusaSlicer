@@ -142,6 +142,14 @@ Scene::ToolType MeasureGizmo::type() const
     return Scene::ToolType::MeasureGizmo;
 }
 
+bool MeasureGizmo::enabled() const
+{
+    const Biz::Scene::ObjectSelection& selection{
+        m_project_interactor.scene_interactor().object_selection()
+    };
+    return !selection.contains_wipe_tower();
+}
+
 Yoga::GizmoWindowPtr MeasureGizmo::release_ui_window()
 {
     return m_dialog.release();
@@ -559,7 +567,8 @@ void MeasureGizmo::on_scene_selection_changed(
 )
 {
     // the gizmo is not active
-    if (m_current_project == nullptr
+    if (!enabled()
+        || m_current_project == nullptr
         || m_current_project->main_node == nullptr
         || m_current_project->id != project_id
         || !m_current_project->activated)

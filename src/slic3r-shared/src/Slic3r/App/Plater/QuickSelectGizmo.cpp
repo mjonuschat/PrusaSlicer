@@ -124,7 +124,7 @@ static Scene::Node::NodeList extract_instance_or_wipe_tower_nodes(const Scene::N
         if (!tag) {
             continue;
         }
-        if (tag->wipe_tower_id != Domain::SlicingId{}) {
+        if (tag->is_wipe_tower()) {
             Scene::Node* node_to_append{n};
             while (true) {
                 Scene::Node* new_parent_node{node_to_append->parent()};
@@ -153,7 +153,7 @@ static void promote_wipe_tower_nodes(Scene::Node::NodeList& nodes, Scene::Scene&
     std::vector<Domain::SlicingId> wipe_tower_ids;
     std::erase_if(nodes, [&](const Scene::Node* node){
         const auto tag{node->tag_of_type<SceneNodeTag>()};
-        if (tag && tag->wipe_tower_id != Domain::SlicingId{}) {
+        if (tag && tag->is_wipe_tower()) {
             wipe_tower_ids.push_back(tag->wipe_tower_id);
             return true;
         }
@@ -213,7 +213,7 @@ static bool contains_any_selectable_part(const Scene::Node::NodeList& nodes)
                 return false;
             }
             return tag->volume_type == Domain::ModelVolumeType::MODEL_PART
-                || tag->wipe_tower_id != Domain::SlicingId{};
+                || tag->is_wipe_tower();
         }
     );
 }
@@ -241,7 +241,7 @@ bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
                         return false;
                     }
                     return tag->volume_type == Domain::ModelVolumeType::MODEL_PART
-                        || tag->wipe_tower_id != Domain::SlicingId{};
+                        || tag->is_wipe_tower();
                 }
             ))
             nodes = extract_instance_or_wipe_tower_nodes(nodes);

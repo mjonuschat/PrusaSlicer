@@ -34,6 +34,7 @@ class PreferencesDialog;
 namespace Slic3r::App::Yoga {
 class Menu;
 class ToolbarButton;
+class ToolbarSwitchButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::PopNotification {
@@ -131,6 +132,7 @@ protected:
     void on_screen_resized() override;
     void on_set_imgui_render() override;
     void register_commands() override;
+    void bind_commands() override;
     /**
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface
      * @{
@@ -186,6 +188,7 @@ private:
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 
+    Yoga::ToolbarButton* m_toolbar_add                     = nullptr;
     Yoga::ToolbarButton* m_toolbar_add_volume              = nullptr;
     Yoga::ToolbarButton* m_toolbar_delete                  = nullptr;
     Yoga::ToolbarButton* m_toolbar_add_instance            = nullptr;
@@ -202,6 +205,7 @@ private:
     Yoga::ToolbarButton* m_toolbar_text                    = nullptr;
     Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
     Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
+    Yoga::ToolbarSwitchButton* m_toolbar_preview_switch    = nullptr;
 
     TranslationGizmo* m_translation_gizmo                       = nullptr;
     RotationGizmo* m_rotation_gizmo                             = nullptr;
