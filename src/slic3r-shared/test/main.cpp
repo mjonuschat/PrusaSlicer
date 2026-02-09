@@ -3,6 +3,18 @@
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 
+#if !defined(__has_feature)
+#define __has_feature(x) 0
+#endif
+
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+extern "C" {
+    const char* __lsan_default_suppressions()
+    {
+        return "leak:TPrsStd_DriverTable::Get\n"; // OpenCASCADE singleton, not a real leak.
+    }
+}
+#endif
 
 using Slic3r::App::Platform::StdMainThreadDispatcher;
 using Slic3r::Biz::SecretStoreDummy;

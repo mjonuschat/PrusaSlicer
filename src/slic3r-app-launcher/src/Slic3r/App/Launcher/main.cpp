@@ -37,7 +37,8 @@ extern "C" {
     const char* __lsan_default_suppressions()
     {
         return "leak:libfontconfig\n" // FontConfig looks like it leaks, but it doesn't.
-               "leak:libglib-2.0.so\n";
+               "leak:libglib-2.0.so\n"
+               "leak:TPrsStd_DriverTable::Get\n"; // OpenCASCADE singleton, not a real leak.
     }
 }
 

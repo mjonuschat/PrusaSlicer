@@ -4,6 +4,7 @@
 
 #include <cassert>
 
+
 #ifdef _WIN32
 #define DIR_SEPARATOR '\\'
 #else
