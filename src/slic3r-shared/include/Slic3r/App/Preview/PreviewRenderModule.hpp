@@ -140,6 +140,7 @@ protected:
     void on_deactivated() override;
     void on_screen_resized() override;
     void register_commands() override;
+    void bind_commands() override;
     /**@}*/
 
     void update_current_right_sidebar();
@@ -193,6 +194,7 @@ private:
     Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
     Yoga::ToolbarButton* m_button_tool_marker       = nullptr;
     Yoga::ToolbarButton* m_button_shells            = nullptr;
+    Yoga::ToolbarButton* m_button_plater_switch     = nullptr;
 
     Yoga::ToolbarButton* m_button_gcode_inspect = nullptr;
 

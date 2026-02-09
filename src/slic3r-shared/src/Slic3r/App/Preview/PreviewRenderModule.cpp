@@ -432,6 +432,24 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneBedInstanceChangedListener>(this);
 
+    m_menu_manager
+        // Menu items
+        .register_menu_item(
+            {MenuItemName::JumpToValue},
+            std::make_unique<UIItemCommand>(
+                "slider-layers-jump-to_value",
+                [this]() { m_viewer->slider_layers_jump_to_value(); },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcut =
+                        Platform::KeyboardShortcut{
+                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                            Platform::KeyCode::G
+                        },
+                    .enabled = [this]() { return m_viewer->has_data(); }
+                }
+            )
+        );
+
     init_gizmos();
     init_viewers(device);
     init_scene_layout();
@@ -558,24 +576,6 @@ void PreviewRenderModule::register_commands()
             )
         );
 
-    m_menu_manager
-        // Menu items
-        .register_menu_item(
-            {MenuItemName::JumpToValue},
-            std::make_unique<UIItemCommand>(
-                "slider-layers-jump-to_value",
-                [this]() { m_viewer->slider_layers_jump_to_value(); },
-                UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::G
-                        },
-                    .enabled = [this]() { return m_viewer->has_data(); }
-                }
-            )
-        );
-
     // Toolbar commands
     m_command_registry
         .register_command(
@@ -677,6 +677,23 @@ void PreviewRenderModule::register_commands()
                 }
             )
         );
+}
+
+void PreviewRenderModule::bind_commands() {
+    m_command_binding_manager.bind_tb_item(CommandName::ShowTravels, m_button_travels);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowWipes, m_button_wipes);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowRetractions, m_button_retractions);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowUnretractions, m_button_unretractions);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowSeams, m_button_seams);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowToolChanges, m_button_tool_changes);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowColorChanges, m_button_color_changes);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowPausePrints, m_button_pause_prints);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowCustomGCodes, m_button_custom_gcodes);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowCenterOfGravity, m_button_center_of_gravity);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowToolMarker, m_button_tool_marker);
+    m_command_binding_manager.bind_tb_item(CommandName::ShowShell, m_button_shells);
+    m_command_binding_manager.bind_tb_item(CommandName::SwitchToPlater, m_button_plater_switch);
+    m_command_binding_manager.bind_tb_item(CommandName::SwitchToInspect, m_button_gcode_inspect);
 }
 
 void PreviewRenderModule::update_current_right_sidebar()
@@ -864,7 +881,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::Travels),
         m_fdm_viewer.is_option_visible(OptionType::Travels)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowTravels, m_button_travels);
 
     m_button_wipes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -872,7 +888,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::Wipes),
         m_fdm_viewer.is_option_visible(OptionType::Wipes)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowWipes, m_button_wipes);
 
     m_button_retractions = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -880,7 +895,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::Retractions),
         m_fdm_viewer.is_option_visible(OptionType::Retractions)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowRetractions, m_button_retractions);
 
     m_button_unretractions = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -888,7 +902,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::Unretractions),
         m_fdm_viewer.is_option_visible(OptionType::Unretractions)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowUnretractions, m_button_unretractions);
 
     m_button_seams = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -896,7 +909,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::Seams),
         m_fdm_viewer.is_option_visible(OptionType::Seams)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowSeams, m_button_seams);
 
     m_button_tool_changes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -904,7 +916,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::ToolChanges),
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowToolChanges, m_button_tool_changes);
 
     m_button_color_changes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -912,7 +923,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::ColorChanges),
         m_fdm_viewer.is_option_visible(OptionType::ColorChanges)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowColorChanges, m_button_color_changes);
 
     m_button_pause_prints = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -920,7 +930,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::PausePrints),
         m_fdm_viewer.is_option_visible(OptionType::PausePrints)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowPausePrints, m_button_pause_prints);
 
     m_button_custom_gcodes = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -928,7 +937,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::CustomGCodes),
         m_fdm_viewer.is_option_visible(OptionType::CustomGCodes)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowCustomGCodes, m_button_custom_gcodes);
 
     m_button_center_of_gravity = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -936,7 +944,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::CenterOfGravity),
         m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowCenterOfGravity, m_button_center_of_gravity);
 
     m_button_tool_marker = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -944,7 +951,6 @@ void PreviewRenderModule::init_scene_layout()
         to_string(OptionType::ToolMarker),
         m_fdm_viewer.is_option_visible(OptionType::ToolMarker)
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowToolMarker, m_button_tool_marker);
 
     m_button_shells = m_layout->add_toolbar_item_checkable(
         ToolbarID::Middle,
@@ -952,19 +958,16 @@ void PreviewRenderModule::init_scene_layout()
         "Shells",
         m_scene_presenter->are_shells_visible()
     );
-    m_command_binding_manager.bind_tb_item(CommandName::ShowShell, m_button_shells);
 
     // init toolbars
 
-    m_command_binding_manager.bind_tb_item(
-        CommandName::SwitchToPlater,
-        m_layout->add_toolbar_item_switch(
+
+    m_button_plater_switch = m_layout->add_toolbar_item_switch(
             ToolbarID::Right,
             Render::Icon::ObjectIcon,
             _u8L("Plater view"),
             Yoga::ToolbarSwitchButton::SwitchPosition::Left
-        )
-    );
+        );
 
     ToolbarButton* preview_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
@@ -979,8 +982,6 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LayersInspect,
         _u8L("G-code inspect")
     );
-
-    m_command_binding_manager.bind_tb_item(CommandName::SwitchToInspect, m_button_gcode_inspect);
 
     // Initialize toolbar buttons visibility
     update_toolbar_visibility();
