@@ -9,8 +9,10 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/CurrentPresetLabel.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
-#include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 
 #include <fmt/format.h>
@@ -34,6 +36,14 @@ MaterialSettingsDialog::MaterialSettingsDialog(
 
     Item* footer_items = m_footer->emplace_back<Item>();
     footer_items->set_gap(5.f);
+
+    m_current_preset_label = footer_items->emplace_back<CurrentPresetLabel>(
+        m_project_interactor->preset_interactor().material_presets()
+    );
+    m_current_preset_label->set_align(Align{AlignH::Center, AlignV::Center});
+
+    footer_items->emplace_back<Separator>(Orientation::Vertical);
+
     footer_items->emplace_back<LayoutButton>(_u8("Compare"), Render::Icon::Compare)
         ->callbacks()
         .action = [this]
@@ -102,6 +112,15 @@ void MaterialSettingsDialog::on_reset()
 void MaterialSettingsDialog::close_action()
 {
     m_navigator.set_opened_dialog(m_material_selection_dialog);
+}
+
+void MaterialSettingsDialog::on_tab_selected(int current_index)
+{
+    ConfigSettingsDialog::on_tab_selected(current_index);
+
+    if (m_current_tab) {
+        m_current_preset_label->set_current_list(current_index);
+    }
 }
 
 } // namespace Slic3r::App

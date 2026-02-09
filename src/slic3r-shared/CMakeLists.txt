@@ -221,6 +221,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PreferencesDialog.cpp
         include/Slic3r/App/SidebarStackLayout.hpp
         src/Slic3r/App/SidebarStackLayout.cpp
+        include/Slic3r/App/CurrentPresetLabel.hpp
+        src/Slic3r/App/CurrentPresetLabel.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
