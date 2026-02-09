@@ -398,10 +398,10 @@ private:
     void update_view_full_range() override;
     void update_color_ranges();
     void update_heights_widths();
-    void render_segments(const Domain::Vec3f& camera_position);
-    void render_options();
-    void render_cog_marker();
-    void render_tool_marker();
+    void render_segments(Scene::Node* node, const Domain::Vec3f& camera_position);
+    void render_options(Scene::Node* node);
+    void render_cog_marker(Scene::Node* node);
+    void render_tool_marker(Scene::Node* node);
 };
 
 } // namespace Slic3r::App::libvgcode

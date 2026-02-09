@@ -852,11 +852,43 @@ void FdmViewer::update_colors()
 
 void FdmViewer::render()
 {
-    render_tool_marker();
-    render_cog_marker();
+    // update nodes visibility
+    Scene::Node* toolpaths_node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
+    }, true);
+    ASSERT(toolpaths_node != nullptr);
+    toolpaths_node->set_enabled(m_enabled_segments_count > 0);
+
+    Scene::Node* options_node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::Options;
+    }, true);
+    ASSERT(options_node != nullptr);
+    options_node->set_enabled(m_enabled_options_count > 0);
+
+    Scene::Node* toolmarker_node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+    }, true);
+    ASSERT(toolmarker_node != nullptr);
+    toolmarker_node->set_enabled(m_tool_marker.enabled() && m_settings.options_visibility[size_t(OptionType::ToolMarker)]);
+
+    Scene::Node* cogmarker_node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::CogMarker;
+    }, true);
+    ASSERT(cogmarker_node != nullptr);
+    cogmarker_node->set_enabled(m_cog_marker.total_mass() > 0.0f && m_settings.options_visibility[size_t(OptionType::CenterOfGravity)]);
 
     if (m_layers.empty())
         return;
+
+    if (toolmarker_node->enabled())
+       render_tool_marker(toolmarker_node);
+
+    if (cogmarker_node->enabled())
+        render_cog_marker(cogmarker_node);
 
     if (m_settings.update_view_full_range)
         update_view_full_range();
@@ -867,8 +899,11 @@ void FdmViewer::render()
     if (m_settings.update_colors)
         update_colors();
 
-    render_segments((m_inverse_transform * m_scene->camera().position()).cast<float>());
-    render_options();
+    if (toolpaths_node->enabled())
+        render_segments(toolpaths_node, (m_inverse_transform * m_scene->camera().position()).cast<float>());
+
+    if (options_node->enabled())
+        render_options(options_node);
 }
 
 #if ENABLE_RENDER_TO_TEXTURE
@@ -1543,16 +1578,8 @@ void FdmViewer::update_heights_widths()
 #endif // !USE_TEXTURE_BUFFER
 }
 
-void FdmViewer::render_segments(const Vec3f& camera_position)
+void FdmViewer::render_segments(Scene::Node* node, const Vec3f& camera_position)
 {
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
-    }, true);
-
-    assert(node != nullptr);
-    node->set_enabled(m_enabled_segments_count > 0);
-
     if (m_enabled_segments_count == 0)
         return;
 
@@ -1577,6 +1604,7 @@ void FdmViewer::render_segments(const Vec3f& camera_position)
     material
         .set_uniform("total_vertex_count", (int) total_vertex_count);
 
+    ASSERT(node != nullptr);
     node->set_material_override(material);
     Scene::VertexPulledRenderNodeComponent* r_comp =
         dynamic_cast<Scene::VertexPulledRenderNodeComponent*>(node->render_component());
@@ -1606,16 +1634,8 @@ void FdmViewer::render_segments(const Vec3f& camera_position)
 #endif // USE_TEXTURE_BUFFER
 }
 
-void FdmViewer::render_options()
+void FdmViewer::render_options(Scene::Node* node)
 {
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == GCodeElementType::Options;
-    }, true);
-
-    assert(node != nullptr);
-    node->set_enabled(m_enabled_options_count > 0);
-
     if (m_enabled_options_count == 0)
         return;
 
@@ -1635,6 +1655,7 @@ void FdmViewer::render_options()
         .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
         .set_texture_buffer(ENABLED_OPTIONS_TEX_ID, m_enabled_options_buffer);
 
+    ASSERT(node != nullptr);
     node->set_material_override(material);
     Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
     r_comp->set_instances_count(m_enabled_options_count);
@@ -1661,44 +1682,25 @@ void FdmViewer::render_options()
 #endif // USE_TEXTURE_BUFFER
 }
 
-void FdmViewer::render_cog_marker()
+void FdmViewer::render_cog_marker(Scene::Node* node)
 {
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == GCodeElementType::CogMarker;
-    }, true);
-
-    assert(node != nullptr);
-    bool enabled = m_cog_marker.total_mass() > 0.0f && m_settings.options_visibility[size_t(OptionType::CenterOfGravity)];
-    node->set_enabled(enabled);
-    if (!enabled)
-        return;
-
     Render::Material material;
     material
         .set_shader(m_device->context().shader_manager().shader("cog_marker"))
         .set_uniform("world_origin", m_cog_marker.position())
         .set_uniform("scale_factor", m_cog_marker.scale_factor());
     Scene::set_uniforms(m_lights, material);
+
+    ASSERT(node != nullptr);
     node->set_material_override(material);
 }
 
-void FdmViewer::render_tool_marker()
+void FdmViewer::render_tool_marker(Scene::Node* node)
 {
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
-    }, true);
-
-    assert(node != nullptr);
-    bool enabled = m_tool_marker.enabled() && m_settings.options_visibility[size_t(OptionType::ToolMarker)];
-    node->set_enabled(enabled);
-    if (!enabled)
-        return;
-
     Vec3f origin = tool_marker_position();
     ColorRGBA color = to_rgba(m_tool_marker.color(), m_tool_marker.alpha());
 
+    ASSERT(node != nullptr);
     Render::Material material = node->render_component()->material();
     material
         .set_uniform("uniform_color", color)
