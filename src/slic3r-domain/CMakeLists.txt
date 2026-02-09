@@ -32,6 +32,7 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/PrinterTechnology.hpp
 
     include/Slic3r/Domain/Expr/ExprAst.hpp
+    src/Slic3r/Domain/Expr/ExprAst.cpp
     include/Slic3r/Domain/Expr/RegEx.hpp
 
     include/Slic3r/Domain/JsonValue.hpp

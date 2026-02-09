@@ -37,6 +37,42 @@ inline PresetKind tool_print_kind(PrinterTechnology technology)
 inline PresetKind material_kind(PrinterTechnology technology)
 { return technology == PrinterTechnology::FFF ? PresetKind::FdmMaterial : PresetKind::SlaMaterial; }
 
+namespace Details {
+template <PresetKind fdm, PresetKind sla>
+bool is_either(PresetKind kind)
+{
+    return kind == fdm || kind == sla;
+}
+}
+
+inline bool is_printer(PresetKind kind)
+{
+    return Details::is_either<
+        PresetKind::FdmPrinter,
+        PresetKind::SlaPrinter>(kind);
+}
+
+inline bool is_print(PresetKind kind)
+{
+    return Details::is_either<
+        PresetKind::FdmPrint,
+        PresetKind::SlaPrint>(kind);
+}
+
+inline bool is_tool_print(PresetKind kind)
+{
+    return Details::is_either<
+        PresetKind::FdmToolPrint,
+        PresetKind::SlaToolPrint>(kind);
+}
+
+inline bool is_material(PresetKind kind)
+{
+    return Details::is_either<
+        PresetKind::FdmMaterial,
+        PresetKind::SlaMaterial>(kind);
+}
+
 using FeatureValue = JsonValue;
 using FeatureValueMap = std::map<std::string, FeatureValue>;
 
@@ -45,13 +81,19 @@ using Strings = std::vector<std::string>;
 using Doubles = std::vector<double>;
 using Ints = std::vector<int>;
 using OptInts = std::vector<std::optional<int>>;
-using Percentages = std::vector<Percentage>;
+using FloatOrPercentages = std::vector<FloatOrPercentage>;
 
 using PresetValue = std::variant<
     std::monostate,
-    Bools, Doubles, Ints, OptInts, Percentages, Vec2ds, Strings,
+    Bools, Doubles, Ints, OptInts, FloatOrPercentages, Vec2ds, Strings,
     bool, double, int, Percentage, Vec2d, std::string
 >;
 using PresetValueMap = std::map<std::string, PresetValue>;
+
+enum class PresetSaveStrategy
+{
+    StoreChangedValuesOnly,
+    StoreAllValues,
+};
 
 }

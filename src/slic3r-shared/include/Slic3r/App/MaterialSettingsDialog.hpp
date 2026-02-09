@@ -18,6 +18,7 @@ namespace Slic3r::App {
 class Navigator;
 class MaterialSelectionDialog;
 class ConfigSubcategoryListView;
+class CurrentPresetLabel;
 
 class MaterialSettingsDialog :
     public ConfigSettingsDialog,
@@ -36,9 +37,13 @@ public:
 protected:
     void close_action() override;
 
+    void on_tab_selected(int current_index) override;
+
 private:
     MaterialSelectionDialog* m_material_selection_dialog{nullptr};
     Biz::CBIObservableList& m_material_cbi_list;
+
+    CurrentPresetLabel* m_current_preset_label{nullptr};
 };
 
 } // namespace Slic3r::App

@@ -11,6 +11,7 @@
 #include <ranges>
 #include <utility>
 #include <string_view>
+#include <fstream>
 
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -25,6 +26,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "Slic3r/expected.hpp"
+#include "Slic3r/Domain/TemplateUtils.hpp"
 
 #if defined(SLIC3R_YAML_LIBFYAML)
 #include "YamlAdapterLibfyaml.hpp"
@@ -132,6 +134,16 @@ private:
     explicit ParseError(const char* msg) : std::runtime_error(msg) {}
 };
 
+struct SerializationError : std::runtime_error
+{
+    std::string file_name;
+
+    SerializationError(const std::string& msg, const char* file_name) :
+        std::runtime_error(msg),
+        file_name(file_name)
+    {}
+};
+
 template <typename T>
 T value_or_throw(const Result<T>& result)
 {
@@ -152,6 +164,9 @@ struct StructTraits
 
 template <typename T>
 Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::NodeRef& node);
+
+template <typename T>
+YamlAdapter::NodeRef serialize_struct(const typename Details::StructTraits<T>::Type& val);
 
 namespace Details {
 inline std::string node_type_value(const NodeType type)
@@ -221,6 +236,12 @@ struct TypeTraits<bool>
              fmt::format("Invalid bool value: '{}', allowed values are 'true' and 'false'", *value)}
         };
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(bool val)
+    {
+        std::string value = val ? "true" : "false";
+        return YamlAdapter::create_scalar_node(value);
+    }
 };
 
 template <typename T, typename P>
@@ -237,6 +258,12 @@ Result<T> parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
     return ret;
 }
 
+template <typename T>
+YamlAdapter::NodeRef serialize_via_to_string(T val)
+{
+    return YamlAdapter::create_scalar_node(std::to_string(val));
+}
+
 #define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)                     \
 template <>                                                     \
 struct TypeTraits<T>                                            \
@@ -244,6 +271,10 @@ struct TypeTraits<T>                                            \
     static Result<T> parse(const YamlAdapter::NodeRef& node)    \
     {                                                           \
         return parse_with_spirit<T>(node, P);                   \
+    }                                                           \
+    static std::optional<YamlAdapter::NodeRef> serialize(T val)                \
+    {                                                           \
+        return serialize_via_to_string(val);                    \
     }                                                           \
 };
 
@@ -266,6 +297,11 @@ struct TypeTraits<std::string>
     {
         auto value = get_node_scalar(node);
         return value.transform([](auto&& v) { return std::string(v); });
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::string& val)
+    {
+        return YamlAdapter::create_scalar_node(val);
     }
 };
 
@@ -294,6 +330,13 @@ struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
         }
         return std::nullopt;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::optional<T>& val)
+    {
+        if (val.has_value())
+            return TypeTraits<T>::serialize(val.value());
+        return std::nullopt;
+    }
 };
 
 template <typename T>
@@ -313,6 +356,17 @@ struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
         }
         return ret;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::vector<T>& val)
+    {
+        auto node = YamlAdapter::create_sequence_node();
+        for (const auto& v : val) {
+            auto element = TypeTraits<T>::serialize(v);
+            ASSERT(element.has_value());
+            YamlAdapter::sequence_append(node, element.value());
+        }
+        return node;
+    }
 };
 
 template <typename K, typename V>
@@ -327,7 +381,7 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
             auto kv_pair    = YamlAdapter::mapping_key_value_at(node, i);
             auto key_node   = YamlAdapter::key(kv_pair, node);
             auto value_node = YamlAdapter::value(kv_pair, node);
-            ;
+
             Result<K> key = TypeTraits<K>::parse(key_node);
             if (!key.has_value())
                 return ResultError{key.error()};
@@ -337,6 +391,18 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
             ret.emplace(std::move(*key), std::move(*value));
         }
         return ret;
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::map<K, V>& val)
+    {
+        auto node = YamlAdapter::create_mapping_node();
+        for (const auto& [k, v] : val) {
+            auto kn = TypeTraits<K>::serialize(k);
+            auto vn = TypeTraits<V>::serialize(v);
+            ASSERT(kn.has_value() && vn.has_value());
+            YamlAdapter::mapping_append(node, kn.value(), vn.value());
+        }
+        return node;
     }
 };
 
@@ -368,6 +434,14 @@ struct TypeTraits<std::variant<Ts...>, std::enable_if_t<AllHasTypeTraits<Ts...>:
     {
         return parse_variant<ValueType, Ts...>(node);
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::variant<Ts...>& val)
+    {
+        return std::visit(
+            []<typename T0>(const T0& v) { return TypeTraits<std::decay_t<T0>>::serialize(v); },
+            val
+        );
+    }
 };
 
 template <>
@@ -380,6 +454,11 @@ struct TypeTraits<std::monostate>
         if (node.is_null())
             return {};
         return ResultError{ParseErrorDesc(node, "Node must be null")};
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::monostate&)
+    {
+        return YamlAdapter::create_null_node();
     }
 };
 
@@ -475,10 +554,10 @@ Result<YamlAdapter::NodeRef> get_mapping_node_with_key(const YamlAdapter::NodeRe
 }
 
 template <typename T, typename F>
-struct ParseFieldTypeList;
+struct FieldTypeListHelper;
 
 template <typename S, typename... Fs>
-struct ParseFieldTypeList<S, TypeList<Fs...>>
+struct FieldTypeListHelper<S, TypeList<Fs...>>
 {
     static std::optional<ParseErrorDesc> parse(S& s, const YamlAdapter::NodeRef& node)
     {
@@ -487,6 +566,11 @@ struct ParseFieldTypeList<S, TypeList<Fs...>>
         } else {
             return parse_fields<Fs...>(s, node);
         }
+    }
+
+    static void serialize(YamlAdapter::NodeRef& node, const S& s)
+    {
+        serialize_fields<Fs...>(node, s);
     }
 
 private:
@@ -518,6 +602,27 @@ private:
         }
         return std::nullopt;
     }
+
+    template <typename F, typename... Rest>
+    static void serialize_fields(YamlAdapter::NodeRef& node, const S& s)
+    {
+        if (F::name != nullptr) {
+            auto key = YamlAdapter::create_scalar_node(F::name);
+
+            using FT                = typename F::Type;
+            const auto* raw_storage = reinterpret_cast<const char*>(&s) + F::offset;
+            const FT& typed_storage = *reinterpret_cast<const FT*>(raw_storage);
+
+            if (!F::has_implicit_value(typed_storage)) {
+                auto value = TypeTraits<FT>::serialize(typed_storage);
+                if (value.has_value())
+                    YamlAdapter::mapping_append(node, key, value.value());
+            }
+        }
+        if constexpr (sizeof...(Rest) > 0) {
+            serialize_fields<Rest...>(node, s);
+        }
+    }
 };
 
 template <typename S>
@@ -525,7 +630,7 @@ Result<typename S::Type> parse_struct_helper(const YamlAdapter::NodeRef& node)
 {
     typename S::Type ret;
 
-    auto opt_err = ParseFieldTypeList<typename S::Type, typename S::Fields>::parse(ret, node);
+    auto opt_err = FieldTypeListHelper<typename S::Type, typename S::Fields>::parse(ret, node);
 
     if (opt_err.has_value())
         return ResultError{opt_err.value()};
@@ -564,6 +669,11 @@ struct TypeTraits<T, std::enable_if_t<HasStructTraits<T>::value>>
     static Result<T> parse(const YamlAdapter::NodeRef& node)
     {
         return parse_struct<T>(node);
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const T& val)
+    {
+        return serialize_struct<T>(val);
     }
 };
 
@@ -610,6 +720,11 @@ struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::va
         }
         return ret.value();
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const T& val)
+    {
+        return TypeTraits<std::underlying_type_t<T>>::serialize(val);
+    }
 };
 
 template <typename T>
@@ -633,6 +748,18 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
         }
         return it->value;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const T& value)
+    {
+        const auto& values = EnumTraits<T>::values;
+        auto it            = std::find_if(
+            values.begin(),
+            values.end(),
+            [&](const auto& v) { return v.value == value; }
+        );
+        ASSERT(it != values.end());
+        return YamlAdapter::create_scalar_node(it->name);
+    }
 };
 
 } // namespace Details
@@ -653,6 +780,18 @@ Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::
 {
     return Details::parse_struct_helper<Details::StructTraits<T>>(node);
 }
+
+template <typename T>
+YamlAdapter::NodeRef serialize_struct(const typename Details::StructTraits<T>::Type& val)
+{
+    YamlAdapter::NodeRef node = YamlAdapter::create_mapping_node();
+    Details::FieldTypeListHelper<T, typename Details::StructTraits<T>::Fields>::serialize(
+        node,
+        val
+    );
+    return node;
+}
+
 
 /**
  * @brief Parse structure from yaml node
@@ -736,23 +875,95 @@ void parse_structs_by_discriminant(
     parse_discriminated_structs(doc.root(), discriminator_field_name, loaders...);
 }
 
+template <typename T>
+std::string write_string(const T& val)
+{
+    auto node = Details::TypeTraits<T>::serialize(val);
+    ASSERT(node.has_value());
+    auto emitter = YamlAdapter::create_emitter(node.value());
+    auto data = YamlAdapter::emitter_output(emitter);
+    return std::string{data};
+}
+
+
+template <typename T>
+void write_file(const T& val, const char* filename)
+{
+    auto data = write_string(val);
+    std::ofstream file(filename, std::ios::binary | std::ios::out);
+    if (!file.good()) {
+        throw SerializationError(fmt::format("Cannot write file {}", filename), filename);
+    }
+    file.write(data.data(), data.size());
+    file.close();
+
+}
+
+namespace Details {
+template <typename T>
+struct ImplicitValueHelper
+{
+    static constexpr bool is_implicit_value(const T& impl_val, const T& val)
+    {
+        return false;
+    }
+};
+
+template <Domain::DeepEquality T>
+struct ImplicitValueHelper<T>
+{
+    static constexpr bool is_implicit_value(const T& impl_val, const T& val)
+    {
+        return impl_val == val;
+    }
+};
+
+template <typename T, typename A>
+struct ImplicitValueHelper<std::vector<T, A>>
+{
+    using Type = std::vector<T, A>;
+
+    static constexpr bool is_implicit_value(const Type& impl_val, const Type& val)
+    {
+        return impl_val.empty() && val.empty();
+    }
+};
+
+template <typename K, typename V, typename A>
+struct ImplicitValueHelper<std::map<K, V, A>>
+{
+    using Type = std::map<K, V, A>;
+
+    static constexpr bool is_implicit_value(const Type& impl_val, const Type& val)
+    {
+        return impl_val.empty() && val.empty();
+    }
+};
+
+} // namespace Details
 } // namespace Slic3r::Biz::Yaml
 
 // For each field, generate a struct with type, name, and offset.
-#define DETAILS_STRUCT_DESC_FIELD(r, data, elem)                                            \
-struct BOOST_PP_CAT(Field_, BOOST_PP_TUPLE_ELEM(0, elem)) {                                 \
-    using Type = decltype(std::declval<data>().BOOST_PP_TUPLE_ELEM(0, elem));               \
-    static constexpr const char* name = BOOST_PP_IF(                                        \
-        BOOST_PP_IS_EMPTY(BOOST_PP_TUPLE_ELEM(1, elem)),                                    \
-        BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(0, elem)),                                   \
-        BOOST_PP_TUPLE_ELEM(1, elem)                                                        \
-    );                                                                                      \
-    static constexpr size_t offset = offsetof(data, BOOST_PP_TUPLE_ELEM(0,elem));           \
-    BOOST_PP_IF(                                                                            \
-        BOOST_PP_NOT(BOOST_PP_IS_EMPTY(BOOST_PP_TUPLE_ELEM(2, elem))),                      \
-        static Type implicit_value() { return BOOST_PP_TUPLE_ELEM(2, elem); }               \
-        ,                                                                                   \
-    )                                                                                       \
+#define DETAILS_STRUCT_DESC_FIELD(r, data, elem)                                                \
+struct BOOST_PP_CAT(Field_, BOOST_PP_TUPLE_ELEM(0, elem)) {                                     \
+    using Type = decltype(std::declval<data>().BOOST_PP_TUPLE_ELEM(0, elem));                   \
+    static constexpr const char* name = BOOST_PP_IF(                                            \
+        BOOST_PP_IS_EMPTY(BOOST_PP_TUPLE_ELEM(1, elem)),                                        \
+        BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(0, elem)),                                       \
+        BOOST_PP_TUPLE_ELEM(1, elem)                                                            \
+    );                                                                                          \
+    static constexpr size_t offset = offsetof(data, BOOST_PP_TUPLE_ELEM(0,elem));               \
+    BOOST_PP_IF(                                                                                \
+        BOOST_PP_NOT(BOOST_PP_IS_EMPTY(BOOST_PP_TUPLE_ELEM(2, elem))),                          \
+        static Type implicit_value() { return BOOST_PP_TUPLE_ELEM(2, elem); }                   \
+        static bool has_implicit_value(const Type& val)                                         \
+        {                                                                                       \
+            using namespace ::Slic3r::Biz::Yaml::Details;                                       \
+            return ImplicitValueHelper<Type>::is_implicit_value(implicit_value(), val);         \
+        }                                                                                       \
+        ,                                                                                       \
+        static constexpr bool has_implicit_value(const Type&) { return false; }                 \
+    )                                                                                           \
 };
 
 // This helper macro transforms a field name into its corresponding Field_ struct name.

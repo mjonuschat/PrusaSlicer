@@ -32,13 +32,17 @@ values:
   wipe_tower_cone_angle: 25
   # wipe_tower_rotation_angle: 90
 variants:
-  - condition: printer.base_model != "XL"
+- condition: printer.base_model != "XL"
+  id: LstDa/uFQ7C83OTARgFKWA
+  values:
+    ooze_prevention: 0
+  variants:
+  - condition: printer.base_model == "MK3"
+    id: Oz9QaisHTkWpZ1B+xGYQjg
     values:
-      ooze_prevention: 0
-    variants:
-      - condition: printer.base_model == "MK3"
-        values:
-          skirts: 1
-          wipe_tower_cone_angle: 0
-      - values: {}
-  - values: {}
+      skirts: 1
+      wipe_tower_cone_angle: 0
+  - id: SHG/phzGR+qeaszzK7nc5Q
+    values: {}
+- id: IrJnEF2sRyG2ytMgdLKgoA
+  values: {}

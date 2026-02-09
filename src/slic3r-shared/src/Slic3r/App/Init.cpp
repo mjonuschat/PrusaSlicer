@@ -113,25 +113,20 @@ void init_paths(const InitParams& init_params)
         boost::filesystem::create_directory(data_dir_path);
     }
     std::initializer_list<boost::filesystem::path> sub_datadirs = {
-        data_dir_path
-            / "update_sync", // Data prepared for installation, all that config wizard needs. (also pid subs?)
-        data_dir_path
-            / "shared_runtime", // all data needed for run of slicer, shared among all instances, App config, archive repo manifest,
-        data_dir_path
-            / "local_repositories", // Where local repositories are unzipped, each in own unique directory
+        // Data prepared for installation, all that config wizard needs. (also pid subs?)
+        data_dir_path / "update_sync",
+        // all data needed for run of slicer, shared among all instances, App config, archive repo manifest,
+        data_dir_path / "shared_runtime",
+        // Where local repositories are unzipped, each in own unique directory
+        data_dir_path / "local_repositories",
         data_dir_path / "snapshots",
-        data_dir_path / "profiles", // subs are local or userid
-        data_dir_path
-            / "profiles"
-            / "local", // All profiles that slicer reads on startup, vendor profiles gets here only from wizard, user profiles by user creation
-        data_dir_path / "profiles" / "local" / "vendor",
-        data_dir_path / "profiles" / "local" / "shapes",
-        data_dir_path / "profiles" / "local" / "print",
-        data_dir_path / "profiles" / "local" / "filament",
-        data_dir_path / "profiles" / "local" / "sla_print",
-        data_dir_path / "profiles" / "local" / "sla_material",
-        data_dir_path / "profiles" / "local" / "printer",
-        data_dir_path / "profiles" / "local" / "physical_printer"
+        // subs are local or userid
+        data_dir_path / "presets",
+        // All presets that slicer reads on startup, vendor presets gets here only from wizard, user presets by user creation
+        data_dir_path / "presets" / "local",
+        data_dir_path / "presets" / "user",
+        data_dir_path / "shapes",
+
     };
 
     for (const boost::filesystem::path& sub : sub_datadirs) {

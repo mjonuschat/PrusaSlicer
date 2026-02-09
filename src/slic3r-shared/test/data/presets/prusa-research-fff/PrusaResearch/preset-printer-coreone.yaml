@@ -1,7 +1,9 @@
+id: 9oiDZIygQrOmKuZubkyK+g
 kind: printer
 variants:
 - condition: printer.base_model == "COREONE"
   name: Prusa CORE One
+  id: P6ZsQDqxQUuKdhiVLj/hcg
   val ues:
     bed_shape:
     - '0x0'
@@ -166,6 +168,7 @@ variants:
       M221 S100 ; set flow to 100%
   variants:
   - condition: feeder.base_model == "MMU"
+    id: EQiG/w4URV2KPIajbrrqdA
     values:
       single_extruder_multi_material: 1
       start_gcode: |-

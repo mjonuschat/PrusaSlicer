@@ -100,10 +100,10 @@ TEST_CASE("PresetBundle caching - invalidation", "[preset]")
     std::string slicer_version = "1.2.3-alpha1";
 
     auto ser = [&]() {
-        IO::serialize_bundle(cache_file_fullpath, bundle, dir1, dir2, slicer_version);
+        IO::serialize_bundle(cache_file_fullpath, bundle, {dir1, dir2}, slicer_version);
     };
     auto deser = [&]() -> std::optional<Bundle> {
-        return IO::deserialize_bundle(cache_file_fullpath, dir1, dir2, slicer_version);
+        return IO::deserialize_bundle(cache_file_fullpath, {dir1, dir2}, slicer_version);
     };
 
     ser();

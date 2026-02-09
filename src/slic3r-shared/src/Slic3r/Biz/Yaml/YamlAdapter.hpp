@@ -1,7 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <type_traits>
 #include <string>
 #include <string_view>
 
@@ -38,14 +37,16 @@ concept YamlAdapterInterface = requires(
     const typename T::NodeRef& node,
     size_t index,
     std::string_view name,
-    const typename T::KeyValuePair& pair
+    const typename T::KeyValuePair& pair,
+    typename T::NodeRef& mutable_node,
+    typename T::Emitter& emitter,
+    std::string_view value
 )
 {
     typename T::NodeRef;
     typename T::Document;
     typename T::Parser;
     typename T::KeyValuePair;
-
     { T::create_file_parser(filename) } -> std::same_as<typename T::Parser>;
     { T::create_string_parser(yaml) } -> std::same_as<typename T::Parser>;
     { T::load(parser) } -> std::same_as<typename T::Document>;
@@ -59,6 +60,23 @@ concept YamlAdapterInterface = requires(
     { T::key(pair, node) } -> std::same_as<typename T::NodeRef>;
     { T::value(pair, node) } -> std::same_as<typename T::NodeRef>;
     { T::mark(node) } -> std::same_as<Mark>;
+
+    typename T::Emitter;
+    //    static NodeRef create_scalar_node();
+    { T::create_scalar_node(value) } -> std::same_as<typename T::NodeRef>;
+    { T::create_null_node() } -> std::same_as<typename T::NodeRef>;
+    //    static NodeRef create_sequence_node();
+    { T::create_sequence_node() } -> std::same_as<typename T::NodeRef>;
+    //    static void sequence_append(NodeRef& node, const NodeRef& item);
+    { T::sequence_append(mutable_node, node) } -> std::same_as<void>;
+    //    static NodeRef create_mapping_node();
+    { T::create_mapping_node() } -> std::same_as<typename T::NodeRef>;
+    //    static void mapping_append(NodeRef& node, std::string_view key, const NodeRef& value);
+    { T::mapping_append(mutable_node, node, node) } -> std::same_as<void>;
+    //    static Emitter create_emitter(const NodeRef& node);
+    { T::create_emitter(node) } -> std::same_as<typename T::Emitter>;
+    //    static std::string_view emitter_output(const Emitter& emitter);
+    { T::emitter_output(emitter) } -> std::same_as<std::string_view>;
 } && DocumentInterface<typename T::Document, typename T::NodeRef> && NodeRefInterface<typename T::NodeRef>;
 
 }

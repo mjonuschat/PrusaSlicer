@@ -31,6 +31,11 @@ using ExprAst = boost::variant<
     boost::recursive_wrapper<VarRef>
 >;
 
+bool equals_to(const ExprAst& lhs, const ExprAst& rhs);
+
+std::ostream& operator<<(std::ostream& os, const ExprAst& v);
+std::string to_string(const ExprAst& expr);
+
 enum class BinaryOp
 {
     Add, Subtract, Multiply, Divide,
@@ -131,5 +136,23 @@ struct VarRef
         archive(name);
     }
 };
+
+struct ExprPrinter : boost::static_visitor<std::ostream&>
+{
+    explicit ExprPrinter(std::ostream& os) : os(os) {}
+
+    std::ostream& operator()(bool val);
+    std::ostream& operator()(double val);
+    std::ostream& operator()(const std::string& val);
+    std::ostream& operator()(const RegEx& val);
+    std::ostream& operator()(const Binary& val);
+    std::ostream& operator()(const Unary& val);
+    std::ostream& operator()(const FuncCall& val);
+    std::ostream& operator()(const VarRef& val);
+
+protected:
+    std::ostream& os;
+};
+
 
 } // namespace Slic3r::Domain::Expr

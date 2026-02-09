@@ -221,6 +221,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PreferencesDialog.cpp
         include/Slic3r/App/SidebarStackLayout.hpp
         src/Slic3r/App/SidebarStackLayout.cpp
+        include/Slic3r/App/CurrentPresetLabel.hpp
+        src/Slic3r/App/CurrentPresetLabel.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -659,6 +661,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/PresetSelectionNames.hpp
         include/Slic3r/Biz/Preset/PresetDiffOperation.hpp
         include/Slic3r/Biz/Preset/IPresetDialogManager.hpp
+        include/Slic3r/Biz/Preset/NameValidator.hpp
+        src/Slic3r/Biz/Preset/NameValidator.cpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
         include/Slic3r/Biz/Preset/ProjectPresetView.hpp
@@ -669,8 +673,12 @@ set(SLIC3R_SHARED_FILES
 #		include/Slic3r/Biz/Preset/Bundle.hpp
 #		src/Slic3r/Biz/Preset/Bundle.cpp
 
+		include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
+		src/Slic3r/Biz/Preset/IO/BundlePaths.cpp
         include/Slic3r/Biz/Preset/IO/PresetLoader.hpp
         src/Slic3r/Biz/Preset/IO/PresetLoader.cpp
+		include/Slic3r/Biz/Preset/IO/PresetSaver.hpp
+		src/Slic3r/Biz/Preset/IO/PresetSaver.cpp
         include/Slic3r/Biz/Preset/IO/HwConfigLoader.hpp
         src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
         include/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp
@@ -682,6 +690,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
+		src/Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp
 
         include/Slic3r/Biz/Preset/PresetEvaluator.hpp
         src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -696,6 +705,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Expr/Parser.cpp
         include/Slic3r/Biz/Expr/Eval.hpp
         src/Slic3r/Biz/Expr/Eval.cpp
+		include/Slic3r/Biz/Expr/Simplify.hpp
+		src/Slic3r/Biz/Expr/Simplify.cpp
 
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
@@ -1147,6 +1158,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
+		test/Slic3r/Biz/Expr/SimplifyTests.cpp
 
         test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
@@ -1157,6 +1169,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
         test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
+        test/Slic3r/Biz/Preset/PresetNameValidatorTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

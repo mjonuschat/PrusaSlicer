@@ -689,9 +689,7 @@ bool process_actions(
         Preset::PresetInteractor& preset_interactor = project_interactor.preset_interactor();
 
         // Load new presets.
-        fs::path preset_bundle_dir = fs::path{Slic3r::resources_dir()} / "presets";
-        fs::path config_dir        = fs::path{Slic3r::data_dir()} / "configs";
-        preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+        preset_interactor.load_preset_bundle(Preset::IO::BundlePaths::make_standard_runtime());
 
         for (Project& project : projects) {
             Model &model = project.model();

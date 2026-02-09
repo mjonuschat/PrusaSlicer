@@ -60,11 +60,10 @@ struct ProjectInteractorFixture
         Slic3r::set_data_dir(Tests::get_datadir().string());
 
         auto data_dir              = Tests::get_datadir();
-        fs::path preset_bundle_dir = data_dir / "presets";
-        fs::path config_dir        = data_dir / "configs";
 
-        project_interactor.preset_interactor()
-            .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+        project_interactor.preset_interactor().load_preset_bundle(
+            Preset::IO::BundlePaths::make_test_runtime(data_dir)
+        );
     }
 
     ~ProjectInteractorFixture()

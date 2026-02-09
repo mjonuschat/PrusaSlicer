@@ -33,7 +33,8 @@ public:
         const Domain::ConfigPack& config_selected,
         Domain::ConfigPack* config_new_selected,
         const Biz::Preset::PresetSelectionNames& preset_names,
-        const Biz::Preset::PresetSelectionNames& preset_names_new
+        const Biz::Preset::PresetSelectionNames& preset_names_new,
+        const Biz::Preset::PresetInteractor& preset_interactor
     );
     ~UnsavedChangesDialog() = default;
 
@@ -85,7 +86,7 @@ private:
     DiffsPerKind m_diffs_per_kind;
 
     PresetsSwitchStates m_exit_states;
-
+    const Biz::Preset::PresetInteractor& m_preset_interactor;
     // Indicates a count of preset checkes in queue before close the dialog
     int m_exit_queue{0};
     bool m_is_enabled_transfer{false};

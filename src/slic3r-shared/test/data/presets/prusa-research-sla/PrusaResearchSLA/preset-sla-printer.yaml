@@ -26,8 +26,8 @@ values:
   printer_technology: SLA
   printer_variant: default
   thumbnails:
-  - '400x400'
-  - '800x480'
+  - 400x400
+  - 800x480
 ---
 id: sl1s
 kind: sla_printer
@@ -64,5 +64,5 @@ values:
   relative_correction: [1.0, 1.0]
   slow_tilt_time: '5'
   thumbnails:
-  - '400x400'
-  - '800x480'
+  - 400x400
+  - 800x480

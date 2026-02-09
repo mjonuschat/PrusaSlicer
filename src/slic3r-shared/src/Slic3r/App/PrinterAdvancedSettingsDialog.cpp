@@ -7,8 +7,9 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
-#include "Slic3r/App/ConfigSubcategoryListView.hpp"
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
@@ -24,6 +25,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
     LogicalPrinterSettingsDialog* logical_printer_settings_dialog
 ) :
     ConfigSettingsDialog(project_interactor, navigator, "PrinterAdvancedSettingsDialog"),
+    m_list_selection_changed_scope(project_interactor.preset_interactor().printer_presets(), *this),
     m_logical_printer_settings_dialog(logical_printer_settings_dialog)
 {
     Tab* tab = append_tab(_u8L("Printer"));
@@ -37,6 +39,12 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
     );
 
     Item* footer_items = m_footer->emplace_back<Item>();
+
+    m_label_preset_name = footer_items->emplace_back<Text>(std::string{});
+    m_label_preset_name->set_align({AlignH::Center, AlignV::Center});
+
+    footer_items->emplace_back<Separator>(Orientation::Vertical);
+
     footer_items->set_gap(5.f);
     footer_items->emplace_back<LayoutButton>(_u8("Compare"), Render::Icon::Compare)
         ->callbacks()
@@ -48,7 +56,25 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
             Domain::Preset::PresetKind::FdmPrinter
         );
     };
-    footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
+    footer_items->emplace_back<LayoutButton>(_u8("Save preset"))->callbacks().action = [&]
+    {
+        m_project_interactor->preset_interactor().save_user_preset(
+            Domain::Preset::PresetKind::FdmPrinter,
+            0
+        );
+    };
+}
+
+void PrinterAdvancedSettingsDialog::on_list_selection_changed(Domain::SelectionId new_selection)
+{
+    if (new_selection == Domain::INVALID_ID) {
+        return;
+    }
+
+    const Biz::Preset::PresetItem& preset_item =
+        m_project_interactor->preset_interactor().printer_presets().items().at(new_selection);
+
+    m_label_preset_name->set_text(preset_item.hw_printer_config_name);
 }
 
 void PrinterAdvancedSettingsDialog::close_action()

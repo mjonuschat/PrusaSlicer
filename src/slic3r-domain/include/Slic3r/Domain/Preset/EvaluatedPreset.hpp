@@ -36,6 +36,10 @@ struct EvaluatedPreset
     using PresetValues = std::variant<ConfigFdmType, ConfigSlaType>;
 
     PresetKind kind{PresetKind::FdmPrinter};
+    PresetOrigin origin{PresetOrigin::System};
+    // only for user presets
+    std::optional<std::string> user_file;
+
     std::string root_id;
     std::string id;
     std::string name;
@@ -59,6 +63,7 @@ struct EvaluatedPreset
             && values == rhs.values
             && features == rhs.features /*&& lhs.conditions == rhs.conditions*/;
     }
+
     static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
     {
         return {
@@ -83,11 +88,7 @@ struct EvaluatedPreset
 
     [[nodiscard]] std::string_view short_name() const
     {
-        size_t idx = name.find('@');
-        if (idx == 0 || idx == std::string_view::npos)
-            return name;
-        while (idx > 0 && name[idx] == ' ') idx--;
-        return std::string_view{name.data(), idx};
+        return Domain::Preset::short_name(name);
     }
 
     [[nodiscard]] const ConfigBox& config_box() const

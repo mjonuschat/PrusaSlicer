@@ -1,5 +1,7 @@
 #include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 
+#include "Slic3r/Domain/TemplateUtils.hpp"
+
 namespace Slic3r::Biz::Yaml::Details {
 
 Result<Domain::JsonValue> parse_json_value(const YamlAdapter::NodeRef& node)
@@ -18,6 +20,18 @@ Result<Domain::JsonValue> parse_json_value(const YamlAdapter::NodeRef& node)
     }
 
     PANIC("Unknown YAML node type");
+}
+
+std::optional<YamlAdapter::NodeRef> serialize_json_value(const Domain::JsonValue& val)
+{
+    return std::visit(
+        Domain::overloaded{
+            [](const std::nullptr_t&) -> std::optional<YamlAdapter::NodeRef>
+            { return YamlAdapter::create_null_node(); },
+            []<typename T>(const T& v) { return TypeTraits<T>::serialize(v); }
+        },
+        val
+    );
 }
 
 } // namespace Slic3r::Biz::Yaml::Details

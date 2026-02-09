@@ -63,6 +63,11 @@ WXComboBox::WXComboBox(wxWindow *      parent,
         drop_down = false;
         wxCommandEvent e(wxEVT_COMBOBOX_CLOSEUP);
         GetEventHandler()->ProcessEvent(e);
+        if (!HasFlag(wxCB_READONLY)) {
+            GetTextCtrl()->SetInsertionPointEnd();
+            OnEdit();
+            e.Skip();
+        }
     });
 
 #ifndef _WIN32
@@ -383,8 +388,10 @@ void WXComboBox::keyDown(wxKeyEvent& event)
 
 void WXComboBox::OnEdit()
 {
-    auto value = GetTextCtrl()->GetValue();
-    SetValue(value);
+    if (GetTextCtrl()) {
+        auto value = GetTextCtrl()->GetValue();
+        SetValue(value);
+    }
 }
 
 #ifdef __WIN32__

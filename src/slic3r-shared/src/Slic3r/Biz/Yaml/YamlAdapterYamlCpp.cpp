@@ -102,4 +102,52 @@ Yaml::Details::Mark YamlAdapterYamlCpp::mark(const NodeRef& node)
     auto mark = node.node->Mark();
     return {.file = node.file, .line = size_t(mark.line + 1), .column = size_t(mark.column + 1)};
 }
+
+
+YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::create_scalar_node(std::string_view value)
+{
+    NodeRef ret;
+    ret.node = std::string{value};
+    return ret;
+}
+
+YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::create_null_node()
+{
+    return {.node=YAML::Node{YAML::NodeType::Null}};
+}
+
+YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::create_sequence_node()
+{
+    return {.node=YAML::Node{YAML::NodeType::Sequence}};
+}
+
+void YamlAdapterYamlCpp::sequence_append(NodeRef& node, const NodeRef& item)
+{
+    node.node.value().push_back(item.node.value());
+}
+
+YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::create_mapping_node()
+{
+    return {.node=YAML::Node{YAML::NodeType::Map}};
+}
+
+void YamlAdapterYamlCpp::mapping_append(NodeRef& node, const NodeRef& key, const NodeRef& value)
+{
+    node.node.value()[*key.node] = value.node.value();
+}
+
+YamlAdapterYamlCpp::Emitter YamlAdapterYamlCpp::create_emitter(const NodeRef& node)
+{
+    Emitter emitter;
+    emitter.emitter = std::make_unique<YAML::Emitter>();
+    *emitter.emitter << YAML::LowerNull;
+    *emitter.emitter << node.node.value();
+    return emitter;
+}
+
+std::string_view YamlAdapterYamlCpp::emitter_output(const Emitter& emitter)
+{
+    return emitter.emitter->c_str();
+}
+
 } // namespace Slic3r::Biz::Yaml::YamlCpp

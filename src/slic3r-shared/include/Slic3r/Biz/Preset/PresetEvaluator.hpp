@@ -33,12 +33,13 @@ private:
 
     using PresetNode = Domain::Preset::PresetNode;
     using PresetNodePath = Domain::Preset::PresetNodePath;
-    using NamedPresets = Domain::Preset::NamedPresets;
-    using NamedPresetsCollection = Domain::Preset::NamedPresetsCollection;
+    using IdentifiedPresets = Domain::Preset::IdentifiedPresets;
+    using IdentifiedPresetsCollection = Domain::Preset::IdentifiedPresetsCollection;
     using SourceLocation = Domain::Preset::SourceLocation;
 
     struct EvalPresetContext
     {
+        Domain::Preset::PresetOrigin origin{Domain::Preset::PresetOrigin::System};
         std::string root_id;
         std::string id;
         std::string name;
@@ -49,6 +50,7 @@ private:
         Domain::Preset::PresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;
+        std::optional<std::string> user_file;
 
         bool has_same_values(const EvalPresetContext& rhs) const;
     };
@@ -56,20 +58,21 @@ private:
     using EvalPresetContexts = std::vector<EvalPresetContext>;
 
     void build_named_presets();
-    void collect_named_presets(PresetKind kind, const PresetNode& node, const PresetNodePath& node_path);
+    void collect_preset_ids(PresetKind kind, const PresetNode& node, const PresetNodePath& node_path);
     const PresetNode* find_node(PresetKind kind, std::string_view name) const;
 
     template <typename FdmConfigType, typename SlaConfigType>
     static Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> preset_from_context(
         const Domain::Preset::HwPrinterConfig& hw_config,
-        Domain::Preset::PresetKind kind, const EvalPresetContext& context
+        Domain::Preset::PresetKind kind,
+        const EvalPresetContext& context
     );
 
     static EvalPresetContexts merged_same_presets(const EvalPresetContexts& presets);
 
 private:
     const Domain::Preset::PresetCollection& m_presets;
-    NamedPresetsCollection m_named_presets;
+    IdentifiedPresetsCollection m_preset_ids;
     Expr::Eval m_eval;
 };
 

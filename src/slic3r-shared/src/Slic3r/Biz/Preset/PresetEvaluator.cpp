@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include <fmt/ranges.h>
+#include "Slic3r/Biz/Expr/Simplify.hpp"
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "Slic3r/Uuid.hpp"
@@ -114,6 +115,15 @@ struct CastingGetterVisitor
         requires(!ValueCast<FromType, ToType>::defined && !std::is_same_v<FromType, ToType>)
     bool operator()(const ToType& dest)
     {
+        if constexpr (Domain::is_std_vector_v<FromType> && Domain::is_std_vector_v<ToType>) {
+            // if we have empty vector as source, we don't really care about the FromType/ToType
+            // so let's allow casting empty vector of any type to vector of any type
+            if (value.empty()) {
+                ToType dest_value{};
+                item.set(dest_value);
+                return true;
+            }
+        }
         SPDLOG_ERROR(
             "Type mismatched for item {}: source type: {}  dest type: {}",
             item.name(),
@@ -136,7 +146,7 @@ struct ConfigValueSetterVisitor
 
     /*
     std::monostate,
-    Bools, Doubles, Ints, OptInts, Percentages, Vec2ds, Strings,
+    Bools, Doubles, Ints, OptInts, FloatOrPercentages, Vec2ds, Strings,
     bool, double, int, Percentage, Vec2d, std::string
      */
     bool operator()(const std::monostate& v)
@@ -149,7 +159,7 @@ struct ConfigValueSetterVisitor
     }
 
     template <typename ValueType>
-        requires AnyTypeOf<ValueType, double, Domain::Percentage>::value
+        requires AnyTypeOf<ValueType, double, Domain::Percentage, Domain::Preset::FloatOrPercentages>::value
     bool operator()(const ValueType& v)
     {
         return item.visit(CastingGetterVisitor<ValueType>{item, v});
@@ -234,7 +244,7 @@ struct ConfigValueSetterVisitor
             Domain::Preset::Doubles,
             Domain::Preset::Ints,
             Domain::Preset::OptInts,
-            Domain::Preset::Percentages,
+            //Domain::Preset::Percentages,
             bool,
             int,
             Domain::Vec2d>::value
@@ -250,9 +260,18 @@ struct ConfigValueSetterVisitor
             const bool set = item.visit(
                 [&v, &item=this->item]<typename T>(const T&) -> bool
                 {
-                    if constexpr (Domain::is_std_vector_v<T> && ValueCast<ValueType, T>::defined) {
-                        item.set(ValueCast<ValueType, T>::cast(v));
-                        return true;
+                    if constexpr (Domain::is_std_vector_v<T>)  {
+                        if constexpr (ValueCast<ValueType, T>::defined) {
+                            item.set(ValueCast<ValueType, T>::cast(v));
+                            return true;
+                        }
+
+                        // if the vector is empty, it can be in incompatible type
+                        // as the loader is unable to figure out what type the vector is
+                        if (v.empty()) {
+                            item.set(T{});
+                            return true;
+                        }
                     }
                     return false;
                 }
@@ -355,7 +374,8 @@ bool PresetEvaluator::EvalPresetContext::has_same_values(const EvalPresetContext
         && name == rhs.name
         && match_mode == rhs.match_mode
         && values == rhs.values
-        && features == rhs.features;
+        && features == rhs.features
+        && origin == rhs.origin;
 }
 
 template <typename FdmConfigType, typename SlaConfigType>
@@ -365,14 +385,25 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     const EvalPresetContext& context
 )
 {
+    Domain::Preset::Expressions conditions;
+    if (!context.conditions.empty()) {
+        // simplify
+        std::ranges::transform(context.conditions, std::back_inserter(conditions), Expr::simplify);
+
+        // remove duplicates
+        auto to_remove = std::ranges::unique(conditions, Domain::Expr::equals_to);
+        conditions.erase(std::ranges::begin(to_remove), std::ranges::end(to_remove));
+    }
+
     return {
         .kind       = kind,
-        .root_id   = context.root_id,
+        .origin     = context.origin,
+        .root_id    = context.root_id,
         .id         = context.id.empty() ? generate_uuid() : context.id,
         .name       = context.name,
         .values     = config_values<FdmConfigType, SlaConfigType>(hw_config, context.values),
         .features   = context.features,
-        .conditions = context.conditions,
+        .conditions = conditions,
         .last_node_location = context.last_node_location
     };
 }
@@ -393,26 +424,29 @@ PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const E
 
 void PresetEvaluator::build_named_presets()
 {
-    m_named_presets.clear();
+    m_preset_ids.clear();
     for (const auto& [kind, presets] : m_presets)
-        for (const auto& p : presets)
-            collect_named_presets(kind, p, {&p});
+        for (const auto& p : presets) {
+            collect_preset_ids(kind, p, {&p});
+        }
 }
 
-void PresetEvaluator::collect_named_presets(
+void PresetEvaluator::collect_preset_ids(
     PresetKind kind,
     const PresetNode& node,
     const PresetNodePath& node_path
 )
 {
-    if (!node.id.empty()) {
-        m_named_presets[kind].emplace(std::make_pair(node.id, node_path));
+    const auto& id = node.id.empty() && node.name.has_value() ? node.name.value() : node.id;
+    if (!id.empty()) {
+        std::string name;
+        m_preset_ids[kind].emplace(std::make_pair(id, node_path));
     }
 
     for (const auto& v : node.variants) {
         PresetNodePath child_path = node_path;
         child_path.push_back(&v);
-        collect_named_presets(kind, v, child_path);
+        collect_preset_ids(kind, v, child_path);
     }
 }
 
@@ -422,9 +456,11 @@ const Domain::Preset::PresetNode* PresetEvaluator::find_node(PresetKind kind, st
     if (presets_it == m_presets.end())
         return nullptr;
     const auto& presets = presets_it->second;
-    auto it             = std::find_if(presets.begin(), presets.end(), [&name](const auto& preset) {
-        return preset.name == name;
-    });
+    auto it             = std::find_if(
+        presets.begin(),
+        presets.end(),
+        [&name](const auto& preset) { return preset.name == name; }
+    );
     if (it == presets.end())
         return nullptr;
     return &*it;
@@ -446,8 +482,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
     // 1. Printer preset
     PresetKind printer_kind = Domain::Preset::printer_kind(hw_config.technology);
     auto printers_it        = m_presets.find(printer_kind);
-    auto printer_names_it   = m_named_presets.find(printer_kind);
-    ASSERT(printers_it != m_presets.end() && printer_names_it != m_named_presets.end());
+    auto printer_names_it   = m_preset_ids.find(printer_kind);
+    ASSERT(printers_it != m_presets.end() && printer_names_it != m_preset_ids.end());
 
     PresetCollectionEvaluator printer_eval(printers_it->second, printer_names_it->second, m_eval, {});
     auto printer_presets = printer_eval.eval_preset({printer_tools_values});
@@ -472,8 +508,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
         // 2. Print preset
         PresetKind print_kind = Domain::Preset::print_kind(hw_config.technology);
         auto prints_it        = m_presets.find(print_kind);
-        auto print_names_it   = m_named_presets.find(print_kind);
-        ASSERT(prints_it != m_presets.end() && print_names_it != m_named_presets.end());
+        auto print_names_it   = m_preset_ids.find(print_kind);
+        ASSERT(prints_it != m_presets.end() && print_names_it != m_preset_ids.end());
 
         PresetCollectionEvaluator print_eval(prints_it->second, print_names_it->second, m_eval, {});
         auto print_presets = print_eval.eval_preset(printer_tools_values);
@@ -482,8 +518,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
         // for each tool
         PresetKind tool_kind = Domain::Preset::tool_print_kind(hw_config.technology);
         auto tool_it         = m_presets.find(tool_kind);
-        auto tool_names_it   = m_named_presets.find(tool_kind);
-        ASSERT(hw_config.technology == Domain::PrinterTechnology::SLA || (tool_it != m_presets.end() && tool_names_it != m_named_presets.end()));
+        auto tool_names_it   = m_preset_ids.find(tool_kind);
+        ASSERT(hw_config.technology == Domain::PrinterTechnology::SLA || (tool_it != m_presets.end() && tool_names_it != m_preset_ids.end()));
 
         for (const auto& print_preset : print_presets) {
             auto evaluated_print_preset = preset_from_context<Domain::PrintSettings, Domain::SLAPrintSettings>(
@@ -522,8 +558,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             // 4. Material
             PresetKind mat_kind = Domain::Preset::material_kind(hw_config.technology);
             auto mats_it        = m_presets.find(mat_kind);
-            auto mat_names_it   = m_named_presets.find(mat_kind);
-            ASSERT(mats_it != m_presets.end() && mat_names_it != m_named_presets.end());
+            auto mat_names_it   = m_preset_ids.find(mat_kind);
+            ASSERT(mats_it != m_presets.end() && mat_names_it != m_preset_ids.end());
 
             Domain::Preset::AllToolsEvaluatedMaterialPresets materials;
             for (const auto& tool : hw_config.tools) {

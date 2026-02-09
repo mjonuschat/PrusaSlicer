@@ -103,6 +103,30 @@ public:
     [[nodiscard]] const Bed* find_bed_by_id(size_t id) const;
     [[nodiscard]] Bed* find_bed_by_id(size_t id);
 
+    /**
+     * @brief Updates all config container's printer presets with given @a preset if its IDs match.
+     * @param printer preset to update stored evaluated presets with.
+     */
+    void update_preset(const Preset::EvaluatedPrinterPreset::Preset& printer);
+
+    /**
+     * @brief Updates all config container's print presets with given @a preset if its IDs match.
+     * @param print preset to update stored evaluated presets with.
+     */
+    void update_preset(const Preset::EvaluatedPrintPreset::Preset& print);
+
+    /**
+     * @brief Updates all config container's tool-print presets with given @a preset if its IDs match.
+     * @param tool_print preset to update stored evaluated presets with.
+     */
+    void update_preset(const Preset::EvaluatedToolPrintPreset::Preset& tool_print);
+
+    /**
+     * @brief Updates all config container's material presets with given @a preset if its IDs match.
+     * @param material preset to update stored evaluated presets with.
+     */
+    void update_preset(const Preset::EvaluatedMaterialPreset::Preset& material);
+
     ModelInstanceList& unplaced_model_instances()
     {
         return m_unplaced_model_instances;

@@ -25,13 +25,12 @@ TEST_CASE("PresetMetadataLegacyLoader tests", "[preset][legacy]")
     Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};
 
     fs::path data_dir{Tests::get_datadir()};
-    fs::path preset_bundle_dir{data_dir / "presets"};
-    fs::path config_dir{data_dir / "configs"};
 
     set_data_dir(Tests::get_datadir().string());
 
-    project_interactor.preset_interactor()
-        .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+    project_interactor.preset_interactor().load_preset_bundle(
+        BundlePaths::make_test_runtime(data_dir)
+    );
 
 
 

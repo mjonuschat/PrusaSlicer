@@ -293,11 +293,8 @@ static bool process_input_files(
                 Preset::PresetInteractor preset_interactor{workbench, scene_interactor};
 
                 // Load new presets.
-                fs::path preset_bundle_dir = fs::path{Slic3r::resources_dir()} / "presets";
-                fs::path config_dir        = fs::path{Slic3r::data_dir()} / "configs";
                 preset_interactor.load_preset_bundle(
-                    preset_bundle_dir.string(),
-                    config_dir.string()
+                    Preset::IO::BundlePaths::make_standard_runtime()
                 );
 
                 // Load model and configuration from the file.

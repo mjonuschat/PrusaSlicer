@@ -26,6 +26,12 @@ struct TypeTraits<Slic3r::Domain::Expr::ExprAst>
             return ResultError(ParseErrorDesc(node, e.what()));
         }
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const ExprAst& val)
+    {
+        return YamlAdapter::create_scalar_node(to_string(val));
+    }
+
 };
 
 template <>
@@ -37,6 +43,11 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocation>
     {
         auto mark = YamlAdapter::mark(node);
         return Slic3r::Domain::Preset::SourceLocation{std::string{node.file}, mark.line, mark.column};
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const SourceLocation&)
+    {
+        return std::nullopt;
     }
 };
 
@@ -58,6 +69,11 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocated<T>>
 
         SourceLocated ret{*data, *source_location};
         return ret;
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const SourceLocated& v)
+    {
+        return TypeTraits<T>::serialize(v.value);
     }
 };
 
@@ -93,6 +109,11 @@ struct TypeTraits<Slic3r::Domain::Vec2d>
 
         return ret;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const Vec2d& val)
+    {
+        return YamlAdapter::create_scalar_node(fmt::format("{}x{}", val.x(), val.y()));
+    }
 };
 
 template <>
@@ -126,12 +147,40 @@ struct TypeTraits<Slic3r::Domain::Percentage>
 
         return ret;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const Percentage& val)
+    {
+        return YamlAdapter::create_scalar_node(fmt::format("{}%", val.value));
+    }
+};
+
+template <>
+struct TypeTraits<Slic3r::Domain::FloatOrPercentage>
+{
+    using FloatOrPercentage = Domain::FloatOrPercentage;
+    using Percentage = Domain::Percentage;
+
+    static Result<FloatOrPercentage> parse(const YamlAdapter::NodeRef& node)
+    {
+        auto val = TypeTraits<Percentage>::parse(node);
+        if (val.has_value())
+            return val.value();
+        return TypeTraits<double>::parse(node);
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const FloatOrPercentage& val)
+    {
+        if (val.is_percentage())
+            return TypeTraits<Percentage>::serialize(val.percentage());
+        return TypeTraits<double>::serialize(val.float_value());
+    }
 };
 
 template <>
 struct TypeTraits<Domain::JsonObject>;
 
 Result<Domain::JsonValue> parse_json_value(const YamlAdapter::NodeRef& node);
+std::optional<YamlAdapter::NodeRef> serialize_json_value(const Domain::JsonValue& val);
 
 template <>
 struct TypeTraits<Domain::JsonArray>
@@ -151,6 +200,18 @@ struct TypeTraits<Domain::JsonArray>
             ret.push_back(parsed_value.value());
         }
         return ret;
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const JsonArray& val)
+    {
+        auto node = YamlAdapter::create_sequence_node();
+        for (const auto& item : val) {
+            auto item_node = serialize_json_value(item);
+            if (!item_node.has_value())
+                return std::nullopt;
+            YamlAdapter::sequence_append(node, item_node.value());
+        }
+        return node;
     }
 };
 
@@ -176,6 +237,20 @@ struct TypeTraits<Domain::JsonObject>
         }
         return ret;
     }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const JsonObject& val)
+    {
+        auto node = YamlAdapter::create_mapping_node();
+        for (const auto& [k, v] : val) {
+            auto value_node = serialize_json_value(v);
+            if (!value_node.has_value())
+                return std::nullopt;
+            auto key_node = YamlAdapter::create_scalar_node(k);
+            YamlAdapter::mapping_append(node, key_node, value_node.value());
+        }
+        return node;
+
+    }
 };
 
 template <>
@@ -184,6 +259,11 @@ struct TypeTraits<Domain::JsonValue>
     static Result<Domain::JsonValue> parse(const YamlAdapter::NodeRef& node)
     {
         return parse_json_value(node);
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const Domain::JsonValue& val)
+    {
+        return serialize_json_value(val);
     }
 };
 

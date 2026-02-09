@@ -241,9 +241,7 @@ bool DesktopApp::OnInit()
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
     // load new presets
-    fs::path preset_bundle_dir = fs::path{Slic3r::resources_dir()} / "presets";
-    fs::path config_dir        = fs::path{data_dir()} / "configs";
-    preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+    preset_interactor.load_preset_bundle(Biz::Preset::IO::BundlePaths::make_standard_runtime());
 
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(

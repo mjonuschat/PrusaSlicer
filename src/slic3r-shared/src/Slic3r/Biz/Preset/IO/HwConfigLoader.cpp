@@ -3,6 +3,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Config/HwConfigJson.hpp" // IWYU pragma: keep
 
+#include <concepts>
 #include <ranges>
 #include <set>
 
