@@ -63,6 +63,12 @@ struct EjectNotificationData
     Biz::RemovableDrive::RemovableDriveStatus status;
 };
 
+enum class ArrangeEventType {
+    None,
+    ElementsNotArranged,
+    FatalError
+};
+
 // Define the variant type alias.
 using PopNotificationPayload = std::variant<
     std::monostate,
@@ -72,6 +78,8 @@ using PopNotificationPayload = std::variant<
     SlicingWarningNotificationData,
     PrintHostProgressNotificationData,
     EjectNotificationData,
-    DownloadProgressNotificationData>;
+    DownloadProgressNotificationData,
+    ArrangeEventType
+>;
 
 } // namespace Slic3r::App::PopNotification

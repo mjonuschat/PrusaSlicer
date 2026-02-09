@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Biz/IArrangeEventsListener.hpp"
 
 namespace Slic3r::Biz {
 
@@ -28,7 +29,7 @@ struct Pack
 
 using Packs = std::vector<Pack>;
 
-class ArrangeInteractor
+class ArrangeInteractor : public WithListeners<IArrangeEventsListener>
 {
 public:
     ArrangeInteractor(Scene::SceneInteractor& scene_interactor, const Domain::Workbench& workbench);
@@ -58,7 +59,8 @@ private:
         const OverflowMode& overflow_mode,
         const double scaled_offset,
         const std::vector<Pack>& packs,
-        const double initial_offset
+        const double initial_offset,
+        Domain::ElementRefs* not_arranged = nullptr
     );
 };
 } // namespace Slic3r::Biz

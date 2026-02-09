@@ -20,6 +20,7 @@ enum class PopNotificationType
     SlicingWarning,
     SlicingError,
     LoadError,
+    ArrangeEvent
 };
 
 /*

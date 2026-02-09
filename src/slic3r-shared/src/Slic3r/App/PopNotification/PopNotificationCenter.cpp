@@ -29,6 +29,7 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
 {
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
+    m_project_interactor.arrange_interactor().add_listener<Biz::IArrangeEventsListener>(this);
     m_list_sort_filter.set_source_model(&m_notification_list);
 
     auto sort_fn = [](const PopNotificationData& lhs, const PopNotificationData& rhs)
@@ -105,6 +106,16 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
         if (job_name.starts_with("file_download")) {
             on_download_job_status_changed(job_name, progress);
             continue;
+        }
+
+        if (job_name.starts_with("arrange")
+            && progress.status == Domain::JobStatus::Started
+            && progress.percent == std::nullopt)
+        {
+            m_notification_list.erase_notification_by_predicate(
+                [](const PopNotificationData& data)
+                { return data.type == PopNotificationType::ArrangeEvent; }
+            );
         }
 
         // Follows generic job notification logic. 
@@ -948,5 +959,104 @@ void PopNotificationCenter::on_project_load_failed(const std::string& error)
     );
 }
 
+std::optional<int>
+get_instance_index(const Domain::ModelObject& model_object, const Domain::SelectionId instance_id)
+{
+    for (int index = 0; index < model_object.instances.size(); ++index) {
+        const Domain::ModelInstance* model_instance{model_object.instances[index]};
+        ASSERT(model_instance);
+        if (model_instance->id().id == instance_id) {
+            return index;
+        }
+    }
+    return std::nullopt;
+}
+
+void PopNotificationCenter::on_elements_not_arranged(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& elements
+)
+{
+    std::map<std::string, std::vector<int>> instances;
+    for (const Domain::ElementRef& element_ref : elements) {
+        ASSERT(element_ref.has_instance());
+        const Domain::Project& project{m_project_interactor.workbench().project(project_id)};
+        const Domain::ModelObject* object{project.find_object_by_id(element_ref.object_id)};
+        if (!object) {
+            continue;
+        }
+        const std::optional<int> instance_index{
+            get_instance_index(*object, element_ref.instance_id)
+        };
+        if (!instance_index) {
+            instances[object->name];
+        } else {
+            instances[object->name].push_back(*instance_index);
+        }
+    }
+
+    const std::string header{_u8L("Some objects could not be arranged")};
+
+    std::string text;
+    for (const auto& [name, instance_indicies] : instances) {
+        text += name + "\n";
+        if (instance_indicies.size() > 1) {
+            for (int instance_index : instance_indicies) {
+                text += _u8L("  Instance ") + std::to_string(instance_index + 1) + "\n";
+            }
+        }
+    }
+    ASSERT(!text.empty());
+    ASSERT(text.back() == '\n');
+    text.pop_back();
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::ArrangeEvent,
+            PopNotificationLevel::Warning,
+            0s,
+            PopNotificationLayoutHeaderText{header, text},
+            ArrangeEventType::ElementsNotArranged,
+        },
+        [](const PopNotificationPayload& a, const PopNotificationPayload& b)
+        {
+            const auto a_event_type{std::get_if<ArrangeEventType>(&a)};
+            const auto b_event_type{std::get_if<ArrangeEventType>(&b)};
+            if (a_event_type == nullptr || b_event_type == nullptr) {
+                return false;
+            }
+            return *a_event_type == *b_event_type;
+        }
+    );
+}
+
+void PopNotificationCenter::on_fatal_arrange_error(
+    Domain::SelectionId project_id
+)
+{
+    const std::string header{_u8L("Fatal arrange error")};
+    const std::string text{
+        _u8L("Arrange failed, this is usually caused by an object being larger than slicer limits.")
+    };
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::ArrangeEvent,
+            PopNotificationLevel::Error,
+            0s,
+            PopNotificationLayoutHeaderText{header, text},
+            ArrangeEventType::FatalError,
+        },
+        [](const PopNotificationPayload& a, const PopNotificationPayload& b)
+        {
+            const auto a_event_type{std::get_if<ArrangeEventType>(&a)};
+            const auto b_event_type{std::get_if<ArrangeEventType>(&b)};
+            if (a_event_type == nullptr || b_event_type == nullptr) {
+                return false;
+            }
+            return *a_event_type == *b_event_type;
+        }
+    );
+}
 
 } // namespace Slic3r::App::PopNotification

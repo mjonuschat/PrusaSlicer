@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/PopNotification/PopNotificationObservableList.hpp"
+#include "Slic3r/Biz/IArrangeEventsListener.hpp"
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/Platform/JobManager/IJobManagerStatusChangedListener.hpp"
 #include "Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp"
@@ -22,7 +23,8 @@ class PopNotificationCenter :
     public Biz::IStatusCacheChangedListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
     public Biz::UserAccount::IUserAccountListener,
-    public Biz::IProjectsChangedListener
+    public Biz::IProjectsChangedListener,
+    public Biz::IArrangeEventsListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
@@ -57,6 +59,16 @@ public:
 
     // Projects Changed
     void on_project_load_failed(const std::string& error) override;
+
+    // Arrange
+    void on_elements_not_arranged(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& elements
+    ) override;
+
+    void on_fatal_arrange_error(
+        Domain::SelectionId project_id
+    ) override;
 
     PopNotificationObservableList& observable_list() {return m_notification_list;}
     Biz::ObservableListSortFilter<PopNotificationData>& source_list() { return m_list_sort_filter; }

@@ -16,7 +16,6 @@ namespace Slic3r::Biz {
 
 using Algorithms::BoundingBox::merge;
 using Algorithms::BoundingBox::to_2d;
-using Algorithms::ClipperUtils::diff_ex;
 using Algorithms::ClipperUtils::shrink;
 using Algorithms::ClipperUtils::union_ex;
 using Algorithms::ExPolygon::area;
@@ -153,7 +152,7 @@ std::optional<ArbitraryShape> extract_outline(const InstanceMeshes& meshes, cons
     return result;
 }
 
-Points get_bed_contour(const ArrangeBed& arrange_bed)
+Points get_bed_contour(const ArrangeBed& arrange_bed, const Settings& settings)
 {
     const Domain::Bed& bed{arrange_bed.bed_instance.bed.get()};
     Points points;
@@ -161,11 +160,8 @@ Points get_bed_contour(const ArrangeBed& arrange_bed)
         points.push_back(scaled(point));
     }
 
-    if (arrange_bed.offset <= 0) {
-        return points;
-    }
-
-    const Polygons offset_contour{shrink({Polygon{points}}, scaled(arrange_bed.offset))};
+    const int offset{static_cast<int>(settings.scaled_offset) -scaled(arrange_bed.offset)};
+    const Polygons offset_contour{Algorithms::ClipperUtils::offset({Polygon{points}}, offset)};
 
     if (offset_contour.size() != 1) {
         return points;
@@ -419,7 +415,8 @@ double ArrangeInteractor::apply_arrange_result(
     const OverflowMode& overflow_mode,
     const double scaled_offset,
     const Packs& packs,
-    const double initial_offset
+    const double initial_offset,
+    ElementRefs* not_arranged
 )
 {
     BedInstances bed_instances{get_selected_beds(project_id, selection, m_workbench)};
@@ -459,6 +456,10 @@ double ArrangeInteractor::apply_arrange_result(
         offset -= unscaled(static_cast<int>(scaled_offset));
         offset_trafos(pack.trafos, Vec2d{offset, 0.0});
         m_scene_interactor.transform_instances(pack.trafos);
+        for (auto trafo : pack.trafos) {
+            ASSERT(not_arranged);
+            not_arranged->push_back(trafo.instance_ref);
+        }
     }
 
     return offset;
@@ -469,7 +470,7 @@ namespace {
 struct PackingResult
 {
     Packs packs;
-    std::vector<ArrangeItem> unpacked_extra;
+    std::vector<ArrangeItem> unpacked;
 };
 
 std::optional<PackingResult> pack_to_bed(
@@ -489,7 +490,7 @@ std::optional<PackingResult> pack_to_bed(
     for (std::size_t count{}; count < limit; ++count) {
         ASSERT(count < limit - 1, "Infinite arrange loop!");
 
-        const Points bed_contour{get_bed_contour(arrange_bed)};
+        const Points bed_contour{get_bed_contour(arrange_bed, settings)};
 
         std::optional<ArrangeResult> result{
             Arrange::arrange(bed_contour, to_pack, fixed, settings, stop_condition)
@@ -532,10 +533,17 @@ std::optional<PackingResult> pack_to_bed(
 
         to_pack = result->not_packed;
     }
-    return PackingResult{packs, extra_to_pack};
+    PackingResult result{packs, extra_to_pack};
+    result.unpacked.insert(result.unpacked.end(), to_pack.begin(), to_pack.end());
+    return result;
 }
 
-std::optional<Packs> arrange_global(
+struct ArrangeGlobalResult {
+    Packs packs;
+    std::vector<ArrangeItem> failed;
+};
+
+std::optional<ArrangeGlobalResult> arrange_global(
     StopToken stop_token,
     ProgressTracker progress_tracker,
     const Settings settings,
@@ -557,14 +565,17 @@ std::optional<Packs> arrange_global(
     std::vector<ArrangeItem> to_pack{to_arrange_items(*arrange_input, settings)};
     std::vector<ArrangeItem> extra;
     if (auto result{pack_to_bed(to_pack, extra, {}, arrange_bed, stop_condition, settings)}) {
-        return std::move(result->packs);
+        return ArrangeGlobalResult{std::move(result->packs), std::move(result->unpacked)};
     }
     return std::nullopt;
 }
 
-using ArrangeLocalResult = std::optional<std::vector<std::pair<BedRef, Packs>>>;
+struct ArrangeLocalResult {
+    std::vector<std::pair<BedRef, Packs>> packs;
+    std::vector<ArrangeItem> failed;
+};
 
-ArrangeLocalResult arrange_local(
+std::optional<ArrangeLocalResult> arrange_local(
     StopToken stop_token,
     ProgressTracker progress_tracker,
     const Settings settings,
@@ -607,16 +618,16 @@ ArrangeLocalResult arrange_local(
             })
         {
             packs.push_back({bed_with_instances.bed_ref, std::move(packing_result->packs)});
-            extra = packing_result->unpacked_extra;
+            extra = packing_result->unpacked;
         } else {
             return std::nullopt;
         }
     }
 
-    if (!extra.empty()) {
-        // notify
-    }
-    return packs;
+    return ArrangeLocalResult{
+        packs,
+        extra
+    };
 }
 
 std::set<SelectionId> to_instance_ids(const ElementRefs& element_refs)
@@ -675,7 +686,6 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
     const double unplaced_offset{-20.0};
 
     JobManager& job_manager{PlatformServices::instance().job_manager()};
-
     try {
         if (settings.mode == Mode::Global) {
             const BedRef last_selected_bed{m_scene_interactor.bed_selection().last_selected_bed()};
@@ -697,19 +707,31 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                     get_meshes(instances, ResetTranslation::True)
                 )
                 .on_result(
-                    [this, project_id, settings, unplaced_offset](const std::optional<Packs>& packs)
+                    [this, project_id, settings, unplaced_offset](const std::optional<ArrangeGlobalResult>& result)
                     {
-                        if (!packs) {
+                        if (!result) {
                             return;
+                        }
+
+                        ElementRefs not_arranged;
+                        for (const ArrangeItem& arrange_item : result->failed) {
+                            not_arranged.push_back(arrange_item.get_element_ref());
                         }
                         apply_arrange_result(
                             project_id,
                             m_scene_interactor.bed_selection(),
                             OverflowMode::AddBeds,
                             settings.scaled_offset,
-                            *packs,
-                            unplaced_offset
+                            result->packs,
+                            unplaced_offset,
+                            &not_arranged
                         );
+                        if (!not_arranged.empty()) {
+                            invoke_listeners<IArrangeEventsListener>(
+                                [&](auto* listener)
+                                { listener->on_elements_not_arranged(project_id, not_arranged); }
+                            );
+                        }
                     }
                 )
                 .start();
@@ -747,15 +769,20 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                 )
                 .on_result(
                     [this, project_id, settings, unplaced_offset](
-                        const ArrangeLocalResult& packs_per_bed
+                        const std::optional<ArrangeLocalResult>& result
                     )
                     {
-                        if (!packs_per_bed) {
+                        if (!result) {
                             return;
+                        }
+
+                        ElementRefs not_arranged;
+                        for (const ArrangeItem& arrange_item : result->failed) {
+                            not_arranged.push_back(arrange_item.get_element_ref());
                         }
                         double offset{unplaced_offset};
 
-                        for (const auto& [bed_ref, packs] : *packs_per_bed) {
+                        for (const auto& [bed_ref, packs] : result->packs) {
                             BedSelection selection;
                             selection.select_one(bed_ref);
                             offset = apply_arrange_result(
@@ -764,7 +791,14 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                                 OverflowMode::MoveNextToFirstBed,
                                 settings.scaled_offset,
                                 packs,
-                                offset
+                                offset,
+                                &not_arranged
+                            );
+                        }
+                        if (!not_arranged.empty()) {
+                            invoke_listeners<IArrangeEventsListener>(
+                                [&](auto* listener)
+                                { listener->on_elements_not_arranged(project_id, not_arranged); }
                             );
                         }
                     }
@@ -773,8 +807,12 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
         } else {
             PANIC("Unknown arrange mode!");
         }
+
     } catch (const ArrangeFatalError& error) {
-        // TODO: notify user
+        invoke_listeners<IArrangeEventsListener>(
+            [&](auto* listener)
+            { listener->on_fatal_arrange_error(project_id); }
+        );
     }
 }
 
