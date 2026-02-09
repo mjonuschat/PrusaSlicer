@@ -604,13 +604,12 @@ void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_defaul
 
 namespace {
 void set_value(InputTextWithSpin* spin, double value_in_mm, double default_value_in_mm, bool use_inches) {
-    if (use_inches) {
-        spin->set_text(fmt::format("{:.10g}", value_in_mm));
-        spin->set_default(default_value_in_mm);    
-    } else {
-        spin->set_text(fmt::format("{:.10g}", value_in_mm * MM_TO_INCH));
-        spin->set_default(default_value_in_mm * MM_TO_INCH);
+    if (use_inches) { // convert values to inches
+        value_in_mm *= MM_TO_INCH;
+        default_value_in_mm *= MM_TO_INCH;
     }
+    spin->set_text(fmt::format("{:.10g}", value_in_mm));
+    spin->set_default(default_value_in_mm);
 }
 } // namespace
 
@@ -665,12 +664,12 @@ void TextDialog::set_skew_ratio(double value, double default_value) {
     set_value(m_skew_ratio.get(), value, default_value, false); // unit less value
 }
 void TextDialog::set_surface_distance(double maximal_value_in_mm, double surface_distance_in_mm, double default_surface_distance_in_mm) {
-    set_value(m_surface_distance.get(), surface_distance_in_mm, default_surface_distance_in_mm, m_use_inches);
     if (m_use_inches) {
         maximal_value_in_mm *= MM_TO_INCH;
     }
     m_surface_distance->set_begin_value(-maximal_value_in_mm);
     m_surface_distance->set_end_value(maximal_value_in_mm);
+    set_value(m_surface_distance.get(), surface_distance_in_mm, default_surface_distance_in_mm, m_use_inches);    
 }
 
 void TextDialog::set_rotation(const std::optional<float>& angle_in_rad, const std::optional<float>& default_angle_in_rad){
