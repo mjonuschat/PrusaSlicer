@@ -16,7 +16,7 @@ option(SLIC3R_FHS "Assume PrusaSlicer is to be installed in a FHS directory stru
 option(SLIC3R_PCH "Use precompiled headers" ON)
 option(SLIC3R_ASAN "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN "Enable UBSan on Clang and GCC" 0)
-option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" ON)
+option(SLIC3R_ENABLE_FORMAT_STEP "Support STEP loading (requires OpenCASCADE)" ON)
 option(SLIC3R_REPO_URL "Preset repo URL")
 option(SLIC3R_BUILD_TESTS "Build unit tests" ON)
 option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" ON)

@@ -8,6 +8,7 @@ using namespace Catch;
 using namespace Catch::Matchers;
 
 using Slic3r::Domain::ConfigDefinitions;
+using Slic3r::Domain::ConfigItemDef;
 using Slic3r::Domain::ConfigValue;
 using Slic3r::Domain::ConfigBox;
 using Slic3r::Domain::FullConfig;
@@ -45,23 +46,28 @@ const ConfigLocationSizes location_sizes{
 void init(ConfigDefinitions& defs) {
     auto def{defs.add("print_config_item_with_object_override", typeid(int))};
     def->location = Print;
+    def->category = ConfigItemDef::Category::Hidden;
     def->overrides_in = Locations{Object};
     def->init_fn = []() { return ConfigValue{0}; };
 
     def = defs.add("object_config_item", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Object;
     def->init_fn = []() { return ConfigValue{111}; };
 
     def = defs.add("print_config_item", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Print;
     def->init_fn = []() { return ConfigValue{1}; };
 
     def = defs.add("print_config_item_with_filament_override", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Print;
     def->overrides_in = {Filament};
     def->init_fn = []() { return ConfigValue{2}; };
 
     def = defs.add("filament_config_item", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Filament;
     def->init_fn = []() { return ConfigValue{3}; };
 
@@ -69,6 +75,7 @@ void init(ConfigDefinitions& defs) {
     def->location = Print;
     def->overrides_in = {Filament};
     def->init_fn = []() { return ConfigValue{EnumWrapper{TestEnum::Two, &test_enum_def}}; };
+    def->category = ConfigItemDef::Category::Hidden;
 }
 
 const ConfigDefinitions& defs() {

@@ -3,19 +3,17 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#ifndef slic3r_LoadStepDialog_hpp_
-#define slic3r_LoadStepDialog_hpp_
+#pragma once
 
 #include <string>
 #include <wx/dialog.h>
-#include "GUI_Utils.hpp"
 
 class wxBoxSizer;
 class wxTextCtrl;
 class wxSlider;
-class CheckBox;
+class wxCheckBox;
 
-namespace Slic3r::GUI {
+namespace Slic3r::App::WX {
 
 struct PrecisionParams
 {
@@ -54,10 +52,10 @@ struct SliderHelper
     }
 };
 
-class LoadStepDialog : public DPIDialog
+class LoadStepDialog : public wxDialog
 {
 public:
-    LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading);
+    LoadStepDialog(const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading);
     ~LoadStepDialog() = default;
 
     bool IsCheckBoxChecked();
@@ -66,11 +64,6 @@ public:
     double get_linear_precision() { return m_params.linear; }
     double get_angle_precision() { return m_params.angle; }
 
-protected:
-    void on_dpi_changed(const wxRect& suggested_rect) override {}
-    void on_sys_color_changed() override {};
-
-
 private:
     void add_params(wxSizer* sizer);
     void enable_customs(bool enable);
@@ -78,7 +71,7 @@ private:
 private:
     PrecisionParams     m_params;
 
-    ::CheckBox*         m_remember_chb              { nullptr };
+    wxCheckBox*         m_remember_chb              { nullptr };
 
     wxTextCtrl*         m_linear_precision_val      { nullptr };
     wxTextCtrl*         m_angle_precision_val       { nullptr };
@@ -95,6 +88,4 @@ private:
     SliderHelper        m_angle_precision_sl;
 };
 
-}    // namespace Slic3r::GUI
-
-#endif
+}    // namespace Slic3r::App::WX

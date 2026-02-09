@@ -127,7 +127,6 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->init_fn = []() { return Domain::ConfigValue(system_downloads_dir().string()); };
 
     // Settings for LayersDoubleSlider
-
     def = defs.add("show_estimated_times_in_dbl_slider", typeid(bool));
     def->location = Domain::AppConfigLocation{};
     def->category = Category::Hidden;
@@ -152,6 +151,26 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Category::Hidden;
     def->init_fn = []() { return Domain::ConfigValue(false); };
+
+    def = defs.add("show_step_import_parameters", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::PreferencesGeneral;
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Show STEP import parameters dialog");
+    def->option_group = L("General");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("step_linear_precision", typeid(double));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->option_group = L("General");
+    def->init_fn = []() { return Domain::ConfigValue(0.005); };
+
+    def = defs.add("step_angle_precision", typeid(double));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->option_group = L("General");
+    def->init_fn = []() { return Domain::ConfigValue(1.); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)

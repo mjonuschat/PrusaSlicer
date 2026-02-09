@@ -10,9 +10,7 @@
 
 namespace Slic3r::Biz::Platform {
     
-namespace FileDownloader {
-    class IDownloadConfigProvider;
-}
+class IAppConfigProvider;
 
 namespace JobManager {
     class JobManager;
@@ -30,7 +28,7 @@ public:
     void set_app_hash(size_t app_hash) { m_app_hash = app_hash; }
     void set_single_instance_checker(std::unique_ptr<ISingleInstanceChecker>&& single_instance_checker);
     void set_job_manager(std::unique_ptr<JobManager::JobManager>&& job_manager);
-    void set_download_config_provider(std::unique_ptr<FileDownloader::IDownloadConfigProvider>&& provider);
+    void set_app_config_provider(std::unique_ptr<IAppConfigProvider>&& provider);
 
     IRenderRequestHandler& render_request_handler()
     {
@@ -70,7 +68,7 @@ public:
 
     JobManager::JobManager& job_manager();
 
-    FileDownloader::IDownloadConfigProvider& download_config_provider();
+    IAppConfigProvider& app_config_provider();
 
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
@@ -85,7 +83,7 @@ private:
      */ 
     std::unique_ptr<ISingleInstanceChecker> m_single_instance_checker{nullptr};  
     std::unique_ptr<JobManager::JobManager> m_job_manager;
-    std::unique_ptr<FileDownloader::IDownloadConfigProvider> m_download_config_provider;
+    std::unique_ptr<IAppConfigProvider> m_app_config_provider;
 };
 
 } // namespace Slic3r::Biz::Platform

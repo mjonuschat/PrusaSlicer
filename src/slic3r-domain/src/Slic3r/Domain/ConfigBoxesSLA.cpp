@@ -1156,6 +1156,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(1.);
 
         def = defs.add(prefix.first + "support_pillar_diameter", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->row_group = L("Pillar diameter");

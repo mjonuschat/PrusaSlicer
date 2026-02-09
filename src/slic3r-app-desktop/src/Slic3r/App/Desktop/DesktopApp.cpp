@@ -19,7 +19,7 @@
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfig.hpp"
-#include <Slic3r/App/AppDownloadConfigProvider.hpp>
+#include <Slic3r/App/AppConfigProvider.hpp>
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
 #include "Slic3r/Directories.hpp"
@@ -228,7 +228,7 @@ bool DesktopApp::OnInit()
 
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
-    platform_services.set_download_config_provider(std::make_unique<FileDownloader::AppDownloadConfigProvider>());
+    platform_services.set_app_config_provider(std::make_unique<AppConfigProvider>());
 
     std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>(
     )};

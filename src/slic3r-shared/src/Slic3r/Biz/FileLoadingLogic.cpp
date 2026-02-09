@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/STEP.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -10,6 +11,7 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
+#include "Slic3r/Biz/Platform/IAppConfigProvider.hpp"
 
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -38,6 +40,15 @@ struct ReturnData
     std::string file_name;
     std::optional<Domain::TriangleMesh> mesh;
     std::optional<Domain::Model> model;
+};
+
+struct FileLoadError
+{
+    std::string message;
+    bool user_cancelled = false;
+
+    static FileLoadError cancelled() { return {"", true}; }
+    static FileLoadError error(std::string msg) { return {std::move(msg), false}; }
 };
 
 using namespace Domain;
@@ -163,6 +174,13 @@ enum class Answer
     Default,
     Yes,
     No
+};
+
+struct StepLoadingMultiple
+{
+    double linear_precision;
+    double angle_precision;
+    bool dismiss = false;
 };
 
 static void process_mesh(
@@ -475,14 +493,17 @@ load_from_project(const boost::filesystem::path& project_file_path, OptionalPres
     return load_legacy_project(project_file_name, bundle);
 }
 
-tl::expected<ReturnData, std::string> read_data_from_file(
-    const boost::filesystem::path& input_file_path
+static tl::expected<ReturnData, FileLoadError> read_data_from_file(
+    const boost::filesystem::path& input_file_path,
+    IMessageDialogProvider* dialog_provider,
+    StepLoadingMultiple* step_loading_multiple
 )
 {
     ReturnData ret = {input_file_path.filename().string()};
     const bool is_stl = boost::algorithm::iends_with(input_file_path.string(), ".stl");
     const bool is_3mf = boost::algorithm::iends_with(input_file_path.string(), ".3mf");
     const bool is_obj = boost::algorithm::iends_with(input_file_path.string(), ".obj");
+    const bool is_step = boost::algorithm::iends_with(input_file_path.string(), ".step") || boost::algorithm::iends_with(input_file_path.string(), ".stp");
 
     bool result = false;
     if (is_stl || is_obj) {
@@ -492,37 +513,86 @@ tl::expected<ReturnData, std::string> read_data_from_file(
             ret.mesh                  = mesh;
             return ret;
         }
-        return tl::make_unexpected(loaded_mesh.error());
+        return tl::make_unexpected(FileLoadError::error(loaded_mesh.error()));
     } else if (is_3mf) {
         Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
         if (loaded_3mf.model.objects.empty()) {
-            return tl::make_unexpected(
+            return tl::make_unexpected(FileLoadError::error(
                 fmt::vformat(
                     _u8L("Model from {} couldn't be read because it's empty"),
                     fmt::make_format_args(ret.file_name)
                 )
-            );
+            ));
         }
 
         ret.model = loaded_3mf.model;
         return ret;
+    } else if (is_step) {
+        Biz::Platform::IAppConfigProvider& app_config = Platform::PlatformServices::instance().app_config_provider();
+        double linear_precision = app_config.get_step_linear_precision();
+        double angle_precision = app_config.get_step_angle_precision();
+        bool show_dialog = app_config.get_show_step_import_parameters();
+
+        // Check if we should skip the dialog because "Apply to all" was clicked on a previous file
+        if (step_loading_multiple && step_loading_multiple->dismiss) {
+            linear_precision = step_loading_multiple->linear_precision;
+            angle_precision = step_loading_multiple->angle_precision;
+            show_dialog = false;
+        }
+
+        if (show_dialog) {
+            auto dialog_result = dialog_provider->show_load_step_dialog(
+                input_file_path.filename().string(),
+                linear_precision,
+                angle_precision,
+                step_loading_multiple != nullptr  // Show "Apply to all" button only when loading multiple files
+            );
+            if (!dialog_result)
+            {
+                // User cancelled the dialog
+                return tl::make_unexpected(FileLoadError::cancelled());
+            }
+
+            linear_precision = dialog_result->linear_precision;
+            angle_precision = dialog_result->angle_precision;
+            if (dialog_result->do_not_show_again) {
+                app_config.set_show_step_import_parameters(false);
+            }
+            app_config.set_step_linear_precision(linear_precision);
+            app_config.set_step_angle_precision(angle_precision);
+
+            // If "Apply to all" was clicked, store the values and suppress dialog for remaining files
+            if (dialog_result->apply_to_all && step_loading_multiple) {
+                step_loading_multiple->linear_precision = linear_precision;
+                step_loading_multiple->angle_precision = angle_precision;
+                step_loading_multiple->dismiss = true;
+            }
+        }
+        auto out = load_step(input_file_path.string(), std::make_pair(linear_precision, angle_precision));
+        if (out) {
+            ret.model = std::move(out.value());
+            return ret;
+        } else {
+            return tl::make_unexpected(FileLoadError::error(out.error()));
+        }
     }
 
-    return tl::make_unexpected(_u8L(
+    return tl::make_unexpected(FileLoadError::error(_u8L(
         "Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip)."
-    ));
+    )));
 }
 
 // Loading model from a file, it may be a simple geometry file as STL or OBJ, however it may be a project file as well.
-static tl::expected<ReturnData, std::string> read_and_process_file(
+static tl::expected<ReturnData, FileLoadError> read_and_process_file(
     const boost::filesystem::path& input_file_path,
     int tool_count,
     IMessageDialogProvider* dialog_provider,
     Answer* answer_convert_from_meters         = nullptr,
-    Answer* answer_convert_from_imperial_units = nullptr
+    Answer* answer_convert_from_imperial_units = nullptr,
+    StepLoadingMultiple* step_loading_multiple = nullptr
 )
 {
-    auto data = read_data_from_file(input_file_path);
+    auto data = read_data_from_file(input_file_path, dialog_provider, step_loading_multiple);
     if (!data) {
         return data;
     }
@@ -534,12 +604,12 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
     } else if (data.value().mesh) {
         TriangleMesh& mesh = data.value().mesh.value();
         if (has_zero_volume(mesh.stats())) {
-            return tl::make_unexpected(
+            return tl::make_unexpected(FileLoadError::error(
                 fmt::vformat(
                     _u8L("Mesh from file {} has zero volume. It will not be loaded."),
                     fmt::make_format_args(file_name)
                 )
-            );
+            ));
         }
         process_mesh(
             mesh,
@@ -549,7 +619,7 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
             dialog_provider
         );
     } else {
-        return tl::make_unexpected(_u8L("There is no data for either the mesh or the model."));
+        return tl::make_unexpected(FileLoadError::error(_u8L("There is no data for either the mesh or the model.")));
     }
 
     return data;
@@ -564,6 +634,7 @@ static std::vector<ReturnData> import_files(
 {
     Answer answer_convert_from_meters         = Answer::Default;
     Answer answer_convert_from_imperial_units = Answer::Default;
+    StepLoadingMultiple step_loading_multiple;
 
     std::vector<ReturnData> ret;
     std::string errors;
@@ -594,11 +665,15 @@ static std::vector<ReturnData> import_files(
             tool_count,
             dialog_provider,
             &answer_convert_from_meters,
-            &answer_convert_from_imperial_units
+            &answer_convert_from_imperial_units,
+            input_file_paths.size() > 1 ? &step_loading_multiple : nullptr
         );
 
         if (!data) {
-            errors += data.error() + "\n";
+            // Only accumulate actual errors, skip if user cancelled
+            if (!data.error().user_cancelled) {
+                errors += data.error().message + "\n";
+            }
         } else {
             if (extra_model && data.value().mesh) {
                 ModelObject* new_object = extra_model->add_object();
@@ -804,10 +879,16 @@ tl::expected<Domain::Model, std::string>
 read_model_from_file(const std::string& input_file, IMessageDialogProvider* dialog_provider)
 {
     const boost::filesystem::path input_file_path = boost::filesystem::path(input_file);
-    tl::expected<ReturnData, std::string> processed_file =
-        read_and_process_file(input_file, 1, dialog_provider);
+    tl::expected<ReturnData, FileLoadError> processed_file =
+        read_and_process_file(input_file_path, 1, dialog_provider);
     if (!processed_file) {
-        return tl::make_unexpected(processed_file.error());
+        const FileLoadError& error = processed_file.error();
+        // Convert FileLoadError back to string for the public API
+        // If user cancelled, provide a meaningful message
+        if (error.user_cancelled) {
+            return tl::make_unexpected(_u8L("File loading cancelled by user"));
+        }
+        return tl::make_unexpected(error.message);
     }
 
     Domain::Model model;

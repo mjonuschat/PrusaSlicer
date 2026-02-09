@@ -117,6 +117,7 @@ TEST_CASE("Preset::Bundle Serialization Roundtrip", "[Serialization][Preset]")
 
 
 using Slic3r::Domain::ConfigDefinitions;
+using Slic3r::Domain::ConfigItemDef;
 using Slic3r::Domain::ConfigValue;
 using Slic3r::Domain::ConfigBox;
 using Slic3r::Domain::FullConfig;
@@ -151,19 +152,23 @@ const ConfigLocationSizes location_sizes{
 
 void init(ConfigDefinitions& defs) {
     auto def{defs.add("print_config_item", typeid(int))};
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Print;
     def->init_fn = []() { return ConfigValue{1}; };
 
     def = defs.add("print_config_item_with_filament_override", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Print;
     def->overrides_in = {Filament};
     def->init_fn = []() { return ConfigValue{1}; };
 
     def = defs.add("filament_config_item", typeid(int));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Filament;
     def->init_fn = []() { return ConfigValue{1}; };
 
     def = defs.add("print_enum_config_items_with_filament_override", typeid(EnumWrapper));
+    def->category = ConfigItemDef::Category::Hidden;
     def->location = Print;
     def->overrides_in = {Filament};
     def->init_fn = []() { return ConfigValue{EnumWrapper{TestEnum::One, &test_enum_def}}; };

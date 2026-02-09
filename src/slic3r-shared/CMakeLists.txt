@@ -880,6 +880,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Format/OBJ.hpp
         src/Slic3r/Biz/Format/objparser.cpp
         src/Slic3r/Biz/Format/objparser.hpp
+        include/Slic3r/Biz/Format/STEP.hpp
+        src/Slic3r/Biz/Format/STEP.cpp
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
@@ -934,8 +936,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/FileDownloader/FileDownloaderJob.cpp
         include/Slic3r/Biz/FileDownloader/IFileDownloaderListener.hpp
         include/Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp
-        include/Slic3r/App/AppDownloadConfigProvider.hpp
-        src/Slic3r/App/AppDownloadConfigProvider.cpp
+        include/Slic3r/App/AppConfigProvider.hpp
+        src/Slic3r/App/AppConfigProvider.cpp
 
         src/Slic3r/Biz/Utils/MeshRaycaster.cpp
         include/Slic3r/Biz/Utils/MeshRaycaster.hpp
@@ -1101,6 +1103,18 @@ if (SLIC3R_ENABLE_WEBKIT)
    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT) 
 endif()
 
+if (SLIC3R_ENABLE_FORMAT_STEP)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
+    get_target_property(OCCT_TYPE OCCTWrapper TYPE)
+    if (OCCT_TYPE STREQUAL "MODULE_LIBRARY")
+        add_dependencies(slic3r-shared OCCTWrapper)
+        # We cannot link against a MODULE library, so we add the include directory manually.
+        target_include_directories(slic3r-shared PRIVATE ${CMAKE_SOURCE_DIR}/src/occt_wrapper)
+    else ()
+        target_link_libraries(slic3r-shared PRIVATE OCCTWrapper)
+    endif ()
+endif()
+
 add_target_to_doxygen(slic3r-shared)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
@@ -1161,10 +1175,25 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
+
+        test/Slic3r/Biz/Format/STEPTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
     target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
+
+    if (SLIC3R_ENABLE_FORMAT_STEP)
+        add_dependencies(slic3r-shared-tests OCCTWrapper)
+        target_compile_definitions(slic3r-shared-tests PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
+
+        # Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
+        add_custom_command(TARGET slic3r-shared-tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:OCCTWrapper>
+                $<TARGET_FILE_DIR:slic3r-shared-tests>
+            COMMENT "Copying OCCTWrapper library for tests"
+        )
+    endif()
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
     file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)

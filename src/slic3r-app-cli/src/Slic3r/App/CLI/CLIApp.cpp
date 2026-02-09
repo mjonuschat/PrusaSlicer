@@ -3,6 +3,7 @@
 #include "Slic3r/App/CLI/ProcessActions.hpp"
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
@@ -86,6 +87,15 @@ public:
     ) override
     {
         return {};
+    }
+
+    std::optional<Biz::StepLoadDialogResult> show_load_step_dialog(
+        const std::string& filename,
+        double linear_precision,
+        double angle_precision,
+        bool multiple) override
+    {
+        return std::nullopt;
     }
 };
 

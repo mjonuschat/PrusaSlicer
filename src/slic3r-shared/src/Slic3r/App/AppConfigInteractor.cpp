@@ -29,7 +29,16 @@ void AppConfigInteractor::set_item_value(
     size_t index
 )
 {
-    m_cbi_accessor.set_value(item.name(), value);
+    this->set_item_value(item.name(), value, index);
+}
+
+void AppConfigInteractor::set_item_value(
+    const std::string& item_name,
+    const Domain::ConfigValue& value,
+    size_t index
+)
+{
+    m_cbi_accessor.set_value(item_name, value);
 
     invoke_listeners<IAppConfigChangedListener>([](auto* l) { l->on_app_config_changed(); });
 }

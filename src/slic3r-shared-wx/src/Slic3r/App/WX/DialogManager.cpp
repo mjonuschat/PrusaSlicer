@@ -7,6 +7,7 @@
 #include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
 #include "Slic3r/App/WX/RammingDialog.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/LoadStepDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -189,5 +190,24 @@ std::string DialogManager::show_ramming_dialog(const std::string& ramming_parame
         return dlg.get_parameters();
     }
     return ramming_parameters;
+}
+
+
+std::optional<Biz::StepLoadDialogResult> DialogManager::show_load_step_dialog(
+    const std::string& filename,
+    double linear_precision,
+    double angle_precision,
+    bool multiple)
+{
+    LoadStepDialog dlg(filename, linear_precision, angle_precision, multiple);
+    if (dlg.ShowModal() == wxID_OK) {
+        Biz::StepLoadDialogResult result;
+        result.do_not_show_again = dlg.IsCheckBoxChecked();
+        result.linear_precision  = dlg.get_linear_precision();
+        result.angle_precision   = dlg.get_angle_precision();
+        result.apply_to_all      = dlg.IsApplyToAllClicked();
+        return result;
+    }
+    return std::nullopt;
 }
 } // namespace Slic3r::App::WX

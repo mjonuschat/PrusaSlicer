@@ -2,8 +2,16 @@
 
 #include <string>
 #include <functional>
+#include <optional>
 
 namespace Slic3r::Biz {
+
+struct StepLoadDialogResult {
+    bool    do_not_show_again = false;
+    double  linear_precision  = 0.1;
+    double  angle_precision   = 5.0;
+    bool    apply_to_all      = false;
+};
 
 class IMessageDialogProvider
 {
@@ -32,6 +40,14 @@ public:
     show_warning_dialog(const std::string& text, const std::string& title = std::string()) = 0;
     virtual void
     show_error_dialog(const std::string& text, const std::string& title = std::string()) = 0;
+
+    
+    virtual std::optional<StepLoadDialogResult> show_load_step_dialog(
+        const std::string& filename,
+        double linear_precision,
+        double angle_precision,
+        bool multiple
+    ) = 0;
 };
 
 } // namespace Slic3r::Biz
