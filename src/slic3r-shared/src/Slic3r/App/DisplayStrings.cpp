@@ -235,9 +235,9 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
         size_t shown = std::min(payload->ranges.size(), size_t(3));
         for (size_t i = 0; i < shown; ++i) {
             message += _u8L("Empty layers between") + " "
-                + std::to_string(payload->ranges[i].first)
+                + fmt::format("{:.2f}", payload->ranges[i].first)
                 + " " + _u8L("and") + " "
-                + std::to_string(payload->ranges[i].second)
+                + fmt::format("{:.2f}", payload->ranges[i].second)
                 + ".\n";
         }
         if (shown < payload->ranges.size()) {
