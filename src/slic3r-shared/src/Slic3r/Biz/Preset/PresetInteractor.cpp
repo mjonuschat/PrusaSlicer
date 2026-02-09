@@ -983,12 +983,10 @@ void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& select
         hw_config.name,
         selected_preset.print
     );
-    if (changed_selection_index || print_has_unsaved_changes()) {
-        const auto& item = m_print_presets.items().at(
-            changed_selection_index.value_or(m_print_presets.selected_index())
-        );
-        select_print_preset_internal(item.id, bag);
-    }
+    const auto& item = m_print_presets.items().at(
+        changed_selection_index.value_or(m_print_presets.selected_index())
+    );
+    select_print_preset_internal(item.id, bag);
 }
 
 void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
@@ -1037,17 +1035,11 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
              ++tool_index)
         {
             const auto changed_selected_index = changed_selected_indices.at(tool_index);
-            if (changed_selected_index.has_value() || tool_print_has_unsaved_changes(tool_index)) {
-                const auto& tool_print_presets = m_tool_print_presets.at(tool_index);
-                const auto& item = tool_print_presets.items().at(
-                    changed_selected_index.value_or(tool_print_presets.selected_index())
-                );
-                select_tool_print_preset_internal(tool_index, item.id, bag);
-            } else {
-                // reload selection
-                auto& tool_presets = m_tool_print_presets.at(tool_index);
-                tool_presets.set_selected_index(tool_presets.selected_index());
-            }
+            const auto& tool_print_presets = m_tool_print_presets.at(tool_index);
+            const auto& item = tool_print_presets.items().at(
+                changed_selected_index.value_or(tool_print_presets.selected_index())
+            );
+            select_tool_print_preset_internal(tool_index, item.id, bag);
         }
     }
 
@@ -1080,17 +1072,11 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
 
     for (size_t n = hw_config.tool_count, slot_index = 0; slot_index < n; ++slot_index) {
         const auto changed_selected_index = changed_selected_indices.at(slot_index);
-        if (changed_selected_index.has_value() || material_has_unsaved_changes(slot_index)) {
-            const auto& material_presets = m_material_presets.at(slot_index);
-            const auto& item             = material_presets.items().at(
-                changed_selected_index.value_or(material_presets.selected_index())
-            );
-            select_material_preset_internal(slot_index, item.id, bag);
-        } else {
-            // reload selection
-            auto& material_presets = m_material_presets.at(slot_index);
-            material_presets.set_selected_index(material_presets.selected_index());
-        }
+        const auto& material_presets = m_material_presets.at(slot_index);
+        const auto& item             = material_presets.items().at(
+            changed_selected_index.value_or(material_presets.selected_index())
+        );
+        select_material_preset_internal(slot_index, item.id, bag);
     }
 }
 
