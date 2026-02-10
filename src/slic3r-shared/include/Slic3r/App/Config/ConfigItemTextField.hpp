@@ -33,6 +33,7 @@ private:
     size_t m_cbi_index{0};
     Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
     Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;
+    const Domain::ConfigItem* m_last_item{nullptr};
 };
 
 } // namespace Slic3r::App

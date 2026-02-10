@@ -31,25 +31,7 @@ ConfigItemTextField::ConfigItemTextField(
         set_height(100);
     }
 
-    if (*m_state->def().type == typeid(double)) {
-        m_double_validator = std::make_unique<DoubleValidator>(
-            m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
-            m_state->def().max.value_or(std::numeric_limits<double>::max())
-        );
-        set_validator(m_double_validator.release());
-    } else if (*m_state->def().type == typeid(double)
-               || *m_state->def().type == typeid(Domain::Percentage)
-               || *m_state->def().type == typeid(Domain::FloatOrPercentage))
-    {
-        m_percentage_validator = std::make_unique<PercentageValidator>(
-            m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
-            m_state->def().max.value_or(std::numeric_limits<double>::max())
-        );
-        set_validator(m_percentage_validator.release());
-    }
-
     set_min_size({150, 0});
-    set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
 
@@ -94,6 +76,28 @@ ConfigItemTextField::ConfigItemTextField(
 
 void ConfigItemTextField::on_data_update()
 {
+    if (m_last_item != m_state) {
+        m_last_item = m_state;
+
+        set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
+
+        if (*m_state->def().type == typeid(double)) {
+            m_double_validator = std::make_unique<DoubleValidator>(
+                m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
+                m_state->def().max.value_or(std::numeric_limits<double>::max())
+            );
+            set_validator(m_double_validator.release());
+        } else if (*m_state->def().type == typeid(Domain::Percentage)
+                   || *m_state->def().type == typeid(Domain::FloatOrPercentage))
+        {
+            m_percentage_validator = std::make_unique<PercentageValidator>(
+                m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
+                m_state->def().max.value_or(std::numeric_limits<double>::max())
+            );
+            set_validator(m_percentage_validator.release());
+        }
+    }
+
     if (mixed()) {
         set_override_label(Biz::_u8L("Mixed"));
         set_font_type(Render::ImguiFontType::Italic);
