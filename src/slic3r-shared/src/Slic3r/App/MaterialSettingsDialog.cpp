@@ -118,7 +118,7 @@ void MaterialSettingsDialog::on_tab_selected(int current_index)
 {
     ConfigSettingsDialog::on_tab_selected(current_index);
 
-    if (m_current_tab) {
+    if (m_current_tab && current_index < m_material_cbi_list.size()) {
         m_current_preset_label->set_current_list(current_index);
     }
 }
