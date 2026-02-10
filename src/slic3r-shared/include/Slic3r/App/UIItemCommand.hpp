@@ -9,6 +9,7 @@ struct UIItemCommandExtraOpts
     std::optional<Platform::KeyboardShortcut> keyboard_shortcut = std::nullopt;
     std::function<bool()> enabled                               = nullptr;
     std::function<bool()> visible                               = nullptr;
+    std::function<bool()> checked                               = nullptr;
     std::function<void(bool)> checked_changed                   = nullptr;
 };
 
@@ -49,6 +50,11 @@ public:
     bool visible() const
     {
         return m_extra_opts.visible ? m_extra_opts.visible() : true;
+    }
+
+    bool checked() const
+    {
+        return m_extra_opts.checked ? m_extra_opts.checked() : false;
     }
 
     void checked_changed(bool checked) const

@@ -139,4 +139,26 @@ void Navigator::set_object_list_collapsed(bool collapsed)
     }
 }
 
+bool Navigator::has_fullscreen() const
+{
+    return m_canvas->has_fullscreen();
+}
+
+bool Navigator::is_fullscreen() const
+{
+    return m_canvas->is_fullscreen();
+}
+
+void Navigator::set_fullscreen(bool fullscreen)
+{
+    m_canvas->set_fullscreen(fullscreen);
+    m_plater_module->command_binding_manager().update_ui_items();
+    m_preview_module->command_binding_manager().update_ui_items();
+}
+
+void Navigator::close_application()
+{
+    m_canvas->close_application();
+}
+
 } // namespace Slic3r::App

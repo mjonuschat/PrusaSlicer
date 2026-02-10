@@ -5,6 +5,7 @@
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
+#include "Slic3r/Biz/Platform/IMainWindowHandler.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
@@ -28,7 +29,7 @@ namespace Slic3r::App::Platform {
  * - facilitate rendering of render module
  * - translate platform specific events and push them the render module
  */
-class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler
+class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler, Biz::Platform::IMainWindowHandler
 {
 public:
     AbstractRenderCanvas();
@@ -48,6 +49,13 @@ public:
 
     // IRenderRequestHandler interface impl
     void request_render() override;
+
+    /// Default fullscreen handling.
+    /// Platforms without native fullscreen support may ignore these calls.
+    bool has_fullscreen() const override { return false; }
+    bool is_fullscreen() const override { return false; }
+    void set_fullscreen(bool on) override {}
+    void close_application() override {}
 
 protected:
     virtual void begin_frame_platform() = 0;

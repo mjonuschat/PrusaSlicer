@@ -9,4 +9,4 @@ public:
     virtual void request_render() = 0;
 };
 
-}
+} // namespace Slic3r::Biz::Platform

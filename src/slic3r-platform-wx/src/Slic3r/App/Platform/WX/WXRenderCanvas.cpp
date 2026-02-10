@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <wx/frame.h>
 #include <wx/dcclient.h>
 #include <wx/clipbrd.h>
 #include <imgui/imgui.h>
@@ -934,6 +935,36 @@ void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatche
 std::unique_ptr<wxGLContext> WXRenderCanvas::release_context()
 {
     return std::move(m_gl_context_uniq);
+}
+
+bool WXRenderCanvas::has_fullscreen() const
+{
+    return dynamic_cast<wxFrame*>(wxTheApp->GetTopWindow()) != nullptr;
+}
+
+bool WXRenderCanvas::is_fullscreen() const
+{
+    if (wxFrame* mainframe = dynamic_cast<wxFrame*>(wxTheApp->GetTopWindow())) {
+        return mainframe->IsFullScreen();
+    }
+    return false;
+}
+
+void WXRenderCanvas::set_fullscreen(bool on)
+{
+    if (wxFrame* mainframe = dynamic_cast<wxFrame*>(wxTheApp->GetTopWindow())) {
+        mainframe->ShowFullScreen(
+            on,
+            wxFULLSCREEN_NOSTATUSBAR | wxFULLSCREEN_NOBORDER | wxFULLSCREEN_NOCAPTION
+        );
+    }
+}
+
+void WXRenderCanvas::close_application()
+{
+    if (wxFrame* mainframe = dynamic_cast<wxFrame*>(wxTheApp->GetTopWindow())) {
+        mainframe->Close();
+    }
 }
 
 } // namespace Slic3r::App::Platform::WX

@@ -72,6 +72,11 @@ public:
     bool object_list_collapsed() const;
     void set_object_list_collapsed(bool collapsed);
 
+    bool has_fullscreen() const;
+    bool is_fullscreen() const;
+    void set_fullscreen(bool fullscreen);
+    void close_application();
+
 private:
     void set_render_module_type(Render::ModuleType type);
 

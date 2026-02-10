@@ -20,6 +20,8 @@
 
 namespace Slic3r::App {
 
+#define SHOW_NOT_IMPLEMENTED_ITEMS 1
+
 using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
 
@@ -195,7 +197,7 @@ static std::string current_language_code_safe()
         //{ "zh", 	"zh_CN", },
         //{ "ru", 	"ru_RU", },
     };
-    
+
     std::string language_code = localization().active_language();
     auto it                   = mapping.find(language_code);
     if (it != mapping.end())
@@ -253,13 +255,11 @@ void MenuCommandRegistrar::open_browser(OpenBrowserParams params)
     } else if (opt_val == SuppressHyperLinksOption::AlwaysAllow) {
         // user already set checkbox to always open
         launch = true;
-    } else if (opt_val == SuppressHyperLinksOption::AlwaysSuppress
-               && params.force_remember_choice)
+    } else if (opt_val == SuppressHyperLinksOption::AlwaysSuppress && params.force_remember_choice)
     {
         // user already set checkbox or preferences to always supress
         launch = false;
-    } else if (opt_val == SuppressHyperLinksOption::AlwaysSuppress
-               && !params.force_remember_choice)
+    } else if (opt_val == SuppressHyperLinksOption::AlwaysSuppress && !params.force_remember_choice)
     {
         // user already set checkbox or preferences to always supress but it is overriden
         // no checkbox in dialog
@@ -285,16 +285,22 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 CommandName::SelectAll,
                 [this]()
                 {
-                    // TODO: Implement select all functionality
+                    Biz::Scene::ObjectSelection selection{Biz::Scene::SelectionMode::Instance, {}};
+
+                    const Domain::Model& model = m_project_interactor.selected_project().model();
+                    for (const auto object : model.objects) {
+                        for (const auto instance : object->instances) {
+                            selection.elements.push_back({object->id().id, instance->id().id});
+                        }
+                    }
+                    m_project_interactor.scene_interactor().set_object_selection(selection);
                 },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcut =
                         Platform::KeyboardShortcut{
                             Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                             Platform::KeyCode::A
-                        },
-                    .enabled = [this]()
-                    { return !m_project_interactor.scene_interactor().object_selection().empty(); }
+                        }
                 }
             )
         )
@@ -316,6 +322,8 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 }
             )
         )
+        // Menu -> Edit -> Separator
+        .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Edit})
         // Menu -> Edit -> Delete Selected
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::DeleteSelected},
@@ -351,6 +359,7 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 }
             )
         )
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Edit -> Separator
         .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Edit})
         // Menu -> Edit -> Undo
@@ -440,6 +449,7 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 }
             )
         )
+#endif // SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Edit -> Search
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::Search},
@@ -459,6 +469,7 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
 void MenuCommandRegistrar::register_main_menu_view_commands()
 {
     m_menu_manager
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> View -> Show Label
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::ShowLabel},
@@ -473,20 +484,7 @@ void MenuCommandRegistrar::register_main_menu_view_commands()
                 }
             )
         )
-        // Menu -> View -> Full Screen
-        .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::FullScreen},
-            std::make_unique<UIItemCommand>(
-                CommandName::FullScreen,
-                [this]()
-                {
-                    // TODO: Implement full screen functionality
-                },
-                UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F11}
-                }
-            )
-        )
+#endif
         // Menu -> View -> Change Camera Type
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::ChangeCameraType},
@@ -498,10 +496,33 @@ void MenuCommandRegistrar::register_main_menu_view_commands()
                 }
             )
         );
+#ifndef __APPLE__
+    // OSX adds its own menu item to toggle fullscreen.
+    if (m_navigator.has_fullscreen()) {
+        // Menu -> View -> Separator
+        m_menu_manager.register_menu_separator_item({ MenuItemName::MainMenu, MenuItemName::View })
+        // Menu -> View -> Full Screen
+        .register_menu_item(
+            { MenuItemName::MainMenu, MenuItemName::View, MenuItemName::FullScreen },
+            std::make_unique<UIItemCommand>(
+                CommandName::FullScreen,
+                [this]()
+                {
+                    m_navigator.set_fullscreen(!m_navigator.is_fullscreen());
+                },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F11},
+                    .checked = [this]() {return m_navigator.is_fullscreen(); }
+                }
+            )
+        );
+    }
+#endif // __APPLE__
 }
 
 void MenuCommandRegistrar::register_main_menu_config_commands()
 {
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
     m_menu_manager
         // Menu -> Configuration -> Configuration Wizard
         .register_menu_item(
@@ -551,6 +572,7 @@ void MenuCommandRegistrar::register_main_menu_config_commands()
                 }
             )
         );
+#endif
 }
 
 void MenuCommandRegistrar::register_main_menu_help_commands()
@@ -641,6 +663,7 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
         )
         // Menu -> Help -> Separator
         .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Help})
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Help -> System Info
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::SystemInfo},
@@ -663,6 +686,7 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 }
             )
         )
+#endif
         // Menu -> Help -> Report An Issue
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::ReportAnIssue},
@@ -679,6 +703,7 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 }
             )
         )
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Help -> About
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::About},
@@ -714,12 +739,14 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 }
             )
         );
+#endif
 }
 
 void MenuCommandRegistrar::register_main_menu_commands()
 {
     register_main_menu_edit_commands();
 
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
     m_menu_manager
         // Menu -> Separator
         .register_menu_separator_item({MenuItemName::MainMenu})
@@ -734,7 +761,7 @@ void MenuCommandRegistrar::register_main_menu_commands()
                 }
             )
         );
-
+#endif
     register_main_menu_view_commands();
 
     m_menu_manager
@@ -771,7 +798,7 @@ void MenuCommandRegistrar::register_main_menu_commands()
                 "",
                 [this]()
                 {
-                    // TODO: Implement exit functionality
+                    m_navigator.close_application();
                 }
             )
         );
