@@ -23,8 +23,6 @@ using Slic3r::App::Scene::BedNodeTag;
 
 namespace Slic3r::App::Plater {
 
-static constexpr size_t BED_ELEMENTS_COLOR_ID = 0;
-
 RectangleSelectionPicker::RectangleSelectionPicker(Render::Device& device)
     : m_device(device)
 {
@@ -56,10 +54,10 @@ static Domain::ColorRGBA index_to_color(size_t id)
     };
 }
 
-static size_t color_to_index(const Domain::ColorRGBA& color) {
-    return (static_cast<size_t>(color.r_uchar()) << 16) |
-           (static_cast<size_t>(color.g_uchar()) << 8) |
-           (static_cast<size_t>(color.b_uchar()));
+static size_t color_to_index(unsigned char r, unsigned char g, unsigned char b) {
+    return (static_cast<size_t>(r) << 16) |
+           (static_cast<size_t>(g) << 8) |
+           static_cast<size_t>(b);
 }
 
 void RectangleSelectionPicker::setup_scene(Scene::Scene& scene, const Render::Rect& rect)
@@ -98,7 +96,7 @@ void RectangleSelectionPicker::setup_scene(Scene::Scene& scene, const Render::Re
                             mod_node.shadows = { n.render_component()->cast_shadows(), n.render_component()->receive_shadows() };
 
                             n.render_component()->set_shadows(Render::Shadows{ false, false });
-                            m_material.set_uniform("uniform_color", index_to_color(m_modified_nodes.size() - BED_ELEMENTS_COLOR_ID));
+                            m_material.set_uniform("uniform_color", index_to_color(m_modified_nodes.size()));
                             n.set_material_override(m_material);
                         }
                         // if the node's bounding box does not intersect the selection frustum
@@ -137,7 +135,7 @@ void RectangleSelectionPicker::setup_scene(Scene::Scene& scene, const Render::Re
                         mod_node.shadows = { n.render_component()->cast_shadows(), n.render_component()->receive_shadows() };
 
                         n.render_component()->set_shadows(Render::Shadows{ false, false });
-                        m_material.set_uniform("uniform_color", index_to_color(BED_ELEMENTS_COLOR_ID));
+                        m_material.set_uniform("uniform_color", index_to_color(0));
                         n.set_material_override(m_material);
                     }
                 }
@@ -200,6 +198,7 @@ Domain::Image RectangleSelectionPicker::render(Scene::Scene& scene, const Render
     cmd_buffer->set_depth_test_enabled(true);
     cmd_buffer->set_cull_face_enabled(true);
     cmd_buffer->set_viewport(rect_viewport);
+    cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, true);
 
     Scene::MinimalSceneRenderCustomizer render_customizer;
@@ -237,12 +236,11 @@ Scene::Node::NodeList RectangleSelectionPicker::collect_contained_nodes(const Do
         for (int x = 0; x < image.width(); ++x) {
             size_t px_offset = 4 * size_t(y * image.width() + x);
             if (image.pixels[px_offset + 3] == 255)
-                local.emplace_back(color_to_index(Domain::ColorRGBA(
+                local.emplace_back(color_to_index(
                     image.pixels[px_offset + 0], 
                     image.pixels[px_offset + 1], 
-                    image.pixels[px_offset + 2], 
-                    255
-                )));
+                    image.pixels[px_offset + 2] 
+                ));
         }
 
         std::sort(local.begin(), local.end());
@@ -267,11 +265,10 @@ Scene::Node::NodeList RectangleSelectionPicker::collect_contained_nodes(const Do
 
     Scene::Node::NodeList ret;
     ret.reserve(nodes_ids.size());
-    for (const size_t& id : nodes_ids) {
-        if (id > BED_ELEMENTS_COLOR_ID)
-            ret.emplace_back(m_modified_nodes[id - (BED_ELEMENTS_COLOR_ID + 1)].node);
+    for (size_t id : nodes_ids) {
+        if (0 < id && id - 1 < m_modified_nodes.size())
+            ret.emplace_back(m_modified_nodes[id - 1].node);
     }
-
     return ret;
 }
 
