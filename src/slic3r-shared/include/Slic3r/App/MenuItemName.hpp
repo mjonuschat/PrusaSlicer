@@ -11,7 +11,6 @@ enum class MenuItemName
     SelectAll,
     DeselectAll,
     DeleteSelected,
-    DeleteAll,
     Undo,
     Redo,
     Copy,

@@ -8,7 +8,6 @@ struct CommandName
     static constexpr const char* AddInstance    = "add-instance";
     static constexpr const char* AddInstanceKp  = "add-instance-kp";
     static constexpr const char* DeleteSelected = "delete-selected";
-    static constexpr const char* DeleteAll      = "delete-all";
 
     static constexpr const char* NewProject    = "new-project";
     static constexpr const char* OpenProject   = "open-project";

@@ -67,6 +67,8 @@ public:
     ) = 0;
 
     virtual std::string show_ramming_dialog(const std::string& ramming_parameters) = 0;
+
+    virtual void open_in_browser(const std::string& link, int flag) = 0;
 };
 
 } // namespace Slic3r::App

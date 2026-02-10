@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
@@ -36,6 +38,14 @@ private:
     void load_project();
     void save_project();
     void save_project_as();
+
+    struct OpenBrowserParams
+    {
+        std::string url;
+        bool force_remember_choice{true};
+        bool is_localized_url{false};
+    };
+    void open_browser(OpenBrowserParams params);
 
     MenuManager& m_menu_manager;
     Biz::ProjectInteractor& m_project_interactor;

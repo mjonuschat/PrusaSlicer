@@ -24,8 +24,6 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Select All");
     case MenuItemName::DeselectAll:
         return Biz::_u8L("Deselect All");
-    case MenuItemName::DeleteAll:
-        return Biz::_u8L("Delete All");
     case MenuItemName::DeleteSelected:
         return Biz::_u8L("Delete selected");
     case MenuItemName::Undo:

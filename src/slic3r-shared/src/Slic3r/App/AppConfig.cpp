@@ -171,6 +171,24 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->category = Domain::ConfigItemDef::Category::Hidden;
     def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(1.); };
+
+    // Settings for open link in browser
+
+    def = defs.add("show_open_browser_warning_dialog", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Services;
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Show warning dialog before opening a link in default browser");
+    def->option_group = L("General");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("suppress_hyperlinks", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Category::Services;
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Suppress opening hyperlinks in browser");
+    def->option_group = L("General");
+    def->init_fn = []() { return Domain::ConfigValue(false); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
