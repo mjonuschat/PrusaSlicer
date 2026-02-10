@@ -110,7 +110,7 @@ struct BaseData
     // [optional] Define distance for surface
     // It is used only for flat surface (not cutted)
     // Position of Zero(not set value) differ for MODEL_PART and NEGATIVE_VOLUME
-    std::optional<float> from_surface;
+    std::optional<float> per_glyph_surface_distance;
 
     // new volume name
     std::string volume_name;
@@ -172,6 +172,8 @@ struct UpdateVolumeParams
 @return True when start job otherwise false
 */
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
+
+const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor);
 
 } // namespace Slic3r::Biz::Emboss
 

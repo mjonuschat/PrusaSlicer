@@ -275,12 +275,13 @@ std::optional<Domain::Vec2d> get_z_zero_coor(const App::Scene::Ray& pick_ray) {
     Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
     return Domain::Vec2d(z0.x(), z0.y());
 }
+} // namespace
 
 const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor& project_interactor) {
     const Domain::ElementRefs& elms = project_interactor.scene_interactor().object_selection().elements;
     if (elms.empty())
         return nullptr;
-    
+
     std::optional<Domain::ElementRef> selected;
     for (const Domain::ElementRef& el : elms) {
         if (!selected.has_value()) {
@@ -295,7 +296,6 @@ const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor&
     const Domain::Project& project = project_interactor.selected_project();
     return project.find_instance_by_id(selected->object_id, selected->instance_id);
 }
-} // namespace
 
 bool start_create(CreateVolumeParams& input, const App::Scene::Ray& pick_ray, const App::Scene::NodePickResults& picks)
 {
@@ -865,8 +865,9 @@ ExpectedTM create_mesh_per_glyph(BaseData& input, Fnc was_canceled)
 
             Domain::Vec2d to_zero_vec = Biz::Algorithms::BoundingBox::center(letter_bb).cast<double>() * shape.scale; // [in mm]
             float surface_offset = input.is_outside ? -SAFE_SURFACE_OFFSET : (-shape.projection.depth + SAFE_SURFACE_OFFSET);
-            if (input.from_surface.has_value())
-                surface_offset += *input.from_surface;
+            if (const std::optional<float>& distance = input.per_glyph_surface_distance;
+                distance.has_value())
+                surface_offset += *distance;
             Eigen::Translation<double, 3> to_zero(-to_zero_vec.x(), 0., static_cast<double>(surface_offset));
 
             const Biz::Emboss::PolygonPoint& sample = samples[i];

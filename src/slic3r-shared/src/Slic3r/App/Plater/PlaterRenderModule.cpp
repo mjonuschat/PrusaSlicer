@@ -33,7 +33,6 @@
 #include "Slic3r/App/Plater/PlaceOnFaceGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyNotification.hpp"
-#include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/PaintOnSeamsGizmo.hpp"
@@ -385,7 +384,14 @@ void PlaterRenderModule::register_commands()
                     }
                 }
             )
-        );
+        )
+        .register_command(std::make_unique<Platform::FuncCommand>(
+            CommandName::CreateText,
+            [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
+            Platform::FuncCommandExtraOpts{
+                .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T},
+                .enabled = [this]() { return !m_text_gizmo->enabled(); }
+            }));
 
     const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
         {Scene::ToolType::Translation, Platform::KeyCode::M},

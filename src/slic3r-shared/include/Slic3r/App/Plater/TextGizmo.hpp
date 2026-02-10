@@ -48,7 +48,6 @@ public:
      * @name Implementation of IGizmo interface
      */
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
-    void register_commands(Platform::CommandRegistry& registry) override;
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 
     /**
@@ -62,6 +61,7 @@ public:
     /**
      * @name Implementation of IToolGizmo interface
      */
+    bool enabled() const override;
     void on_activated() override;
     void on_deactivated() override;
     void on_project_activated(size_t new_project_id) override;
@@ -76,6 +76,7 @@ public:
      */
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
+private:
     /**
      *  @brief  Create new text volume
      *  When selected object add volume on object
@@ -84,7 +85,6 @@ public:
      *  @retval             - True on success otherwise False.
      */
     bool add_text_to_scene(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
-private:
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
     void close();

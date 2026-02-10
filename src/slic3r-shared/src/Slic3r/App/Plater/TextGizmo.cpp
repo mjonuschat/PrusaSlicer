@@ -41,9 +41,9 @@ double MIN_DEPTH = 1e-3; // minimal embossing depth [in mm]
 double MIN_HEIGHT = 1e-3; // minimal Text height [in mm]
 
 struct Scale {
-    std::optional<float> width;
-    std::optional<float> height;
-    std::optional<float> depth;
+    std::optional<double> width;
+    std::optional<double> height;
+    std::optional<double> depth;
     double char_gap = 1.;
     double line_gap = 1.;
 };
@@ -102,7 +102,7 @@ namespace Slic3r::App::Plater {
 
 namespace {
 void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager);
-void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<float>& scale);
+void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<double>& scale);
 } // namespace
 
 struct TextGizmo::ProjectContext : public ::ProjectContext {};
@@ -161,6 +161,10 @@ TextGizmo::TextGizmo(
             if (Domain::is_approx(m_preset_manager.get_font_prop().size_in_mm, (float)value))
                 return; // do not update already min value
         }
+        
+        if (const std::optional<double>& scale = m_proj_ctxs->selected().volume_scale.height;
+            scale.has_value())
+            value /= *scale;
         m_preset_manager.get_font_prop().size_in_mm = static_cast<float>(value);
         if (m_preset_manager.get_font_prop().per_glyph) // change size of line visualization
             m_text_lines.create_text_lines(m_text_lines.get_lines().size());
@@ -172,9 +176,13 @@ TextGizmo::TextGizmo(
             if (Domain::is_approx(m_preset_manager.get_preset().projection.depth, value))
                 return; // do not update already min value
         }
+
+        const std::optional<double>& scale = m_proj_ctxs->selected().volume_scale.height;
+        if (scale.has_value())
+            value /= *scale;
         m_preset_manager.get_preset().projection.depth = value;
         // change from surface limits
-        set_dialog_surface_distance(dialog(), m_preset_manager, m_proj_ctxs->selected().volume_scale.depth);
+        set_dialog_surface_distance(dialog(), m_preset_manager, scale);
         update_volume();
     };
 
@@ -234,9 +242,9 @@ TextGizmo::TextGizmo(
         if (Domain::is_approx(diff, 0., 1e-3))
             return; // no change
                 
-        if (const std::optional<float>& scale = m_proj_ctxs->selected().volume_scale.depth;
+        if (const std::optional<double>& scale = m_proj_ctxs->selected().volume_scale.depth;
             scale.has_value()) 
-            diff *= *scale;
+            diff = diff / (*scale);
 
         Domain::Transform3d relative_volume_tr{ Eigen::Translation3d(Domain::Vec3d(0., 0., diff)) };
         transform_selection_relative(relative_volume_tr, m_project_interactor);
@@ -347,30 +355,17 @@ TextGizmo::TextGizmo(
     };
 
     m_dialog->set_rotation_lock(true); // TODO: remove temporary fix for uninitialized tooltip
-    m_dialog->set_rotation_lock(false); 
+    m_dialog->set_rotation_lock(false);
 }
 
-TextGizmo::~TextGizmo() {}
-bool TextGizmo::enabled() const { return true; };
+TextGizmo::~TextGizmo() = default;
 Scene::ToolType TextGizmo::type() const { return Scene::ToolType::TextGizmo; }
-
-Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
-{
+Yoga::GizmoWindowPtr TextGizmo::release_ui_window(){
     return m_dialog.release();
 }
-
-void TextGizmo::register_commands(Platform::CommandRegistry& registry)
-{
-    registry.register_command(
-        std::make_unique<Platform::FuncCommand>(
-            "Create/Edit text",
-            [this]() { add_text_to_scene(Domain::ModelVolumeType::MODEL_PART); },
-            Platform::FuncCommandExtraOpts{
-                .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T}
-            }            
-        )
-    );
-}
+bool TextGizmo::enabled() const {
+    return Biz::Emboss::get_selected_instance(m_project_interactor) != nullptr;
+};
 
 Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
@@ -387,12 +382,25 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     return Scene::GizmoActivationState::Inactive;
 }
 
-bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) { return m_surface_drag.on_drag_start(ctx); }
+bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) { 
+    const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
+    const ProjectContext& proj_ctx = m_proj_ctxs->selected();
+    const auto& up_limit = proj_ctx.up_limit;
+    std::optional<float> distance = preset.distance;
+    if (const std::optional<double> d_scale = proj_ctx.volume_scale.depth;
+        distance.has_value() && d_scale.has_value())
+        distance = static_cast<float>((*distance) / (*d_scale));
+    return m_surface_drag.on_drag_start(ctx, distance); 
+}
 bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
     const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
     const ProjectContext& proj_ctx = m_proj_ctxs->selected();
     const auto& up_limit = proj_ctx.up_limit;
-    if (!m_surface_drag.on_dragging(ctx, preset.angle, preset.distance, up_limit))
+    std::optional<float> distance = preset.distance;
+    if (const std::optional<double> d_scale = proj_ctx.volume_scale.depth;
+        distance.has_value() && d_scale.has_value())
+        distance = static_cast<float>((*distance) / (*d_scale));
+    if (!m_surface_drag.on_dragging(ctx, preset.angle, distance, up_limit))
         return false;
 
     if (!m_surface_drag.is_dragging())
@@ -428,7 +436,6 @@ void TextGizmo::on_activated()
 {
     if (m_preset_manager.get_presets().empty())
         m_preset_manager.init();
-
     ProjectContext& proj_ctx = m_proj_ctxs->selected();
 
     // use_inch = wxGetApp().app_config->get_bool("use_inches");
@@ -448,11 +455,6 @@ void TextGizmo::on_activated()
 
     // when text volume is not selected, create new one
     if (Biz::Emboss::get_selected_text_volume(m_project_interactor).volume == nullptr) {
-        // create new text volume
-        m_preset_manager.discard_preset_changes();
-        // TRN: default text embossed from model
-        proj_ctx.text = _u8L("Embossed text");
-
         // What shows few miliseconds till new item is created?
         m_dialog->set_enable_all_except_font(true);
 
@@ -478,11 +480,6 @@ void TextGizmo::on_project_deactivated(size_t old_project_id)
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
-
-Scene::ToolType TextGizmo::type() const {
-    return Scene::ToolType::TextGizmo;
-}
-
 
 bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext& ctx)
 {
@@ -532,14 +529,14 @@ void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManage
     dialog.set_rotation(preset.angle, preset_.angle);
 }
 
-void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<float>& scale) {
+void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<double>& scale) {
     bool exist_stored = preset_manager.exist_stored_style();
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
         *preset_manager.get_stored_preset() : preset;
-    double surface_distance = preset.distance.value_or(0.f) * scale.value_or(1.f);
-    double surface_distance_ = preset_.distance.value_or(0.f) * scale.value_or(1.f);
-    double max_distance = 2 * preset.projection.depth * scale.value_or(1.f);
+    double surface_distance = preset.distance.value_or(0.f);
+    double surface_distance_ = preset_.distance.value_or(0.f);
+    double max_distance = 2 * preset.projection.depth * scale.value_or(1.);
     dialog.set_surface_distance(max_distance, surface_distance, surface_distance_);
 }
 
@@ -578,14 +575,14 @@ void activate_preset(
     
     const Domain::FontProp& prop = es.prop;
     const Domain::FontProp& prop_ = es_.prop;
-    double height =         prop.size_in_mm * proj_ctx.volume_scale.height.value_or(1.f);
-    double height_default = prop_.size_in_mm * proj_ctx.volume_scale.height.value_or(1.f);
+    double height =         prop.size_in_mm * proj_ctx.volume_scale.height.value_or(1.);
+    double height_default = prop_.size_in_mm;
     dialog.set_text_height(height, height_default);
     
     const Domain::EmbossProjection& ep = preset.projection;
     const Domain::EmbossProjection& ep_ = preset_.projection;
-    double depth =         ep.depth * proj_ctx.volume_scale.depth.value_or(1.f);
-    double depth_default = ep_.depth * proj_ctx.volume_scale.depth.value_or(1.f);
+    double depth =         ep.depth * proj_ctx.volume_scale.depth.value_or(1.);
+    double depth_default = ep_.depth;
     dialog.set_depth(depth, depth_default);
 
     // advanced
@@ -599,17 +596,17 @@ void activate_preset(
 
     double scale_char_gap = proj_ctx.volume_scale.char_gap;
     double char_gap_in_mm = prop.char_gap.value_or(0) * scale_char_gap;
-    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale_char_gap;
+    double char_gap_in_mm_ = prop_.char_gap.value_or(0);
     dialog.set_char_gap(char_gap_in_mm, char_gap_in_mm_);
 
     bool is_multiline = Biz::Emboss::get_count_lines(proj_ctx.text) > 1;
     dialog.set_enable_line_gap(is_multiline);
     double line_gap_in_mm = prop.line_gap.value_or(0) * proj_ctx.volume_scale.line_gap;
-    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * proj_ctx.volume_scale.line_gap;
+    double line_gap_in_mm_ = prop_.line_gap.value_or(0);
     dialog.set_line_gap(line_gap_in_mm, line_gap_in_mm_);
 
     double boldness_in_mm = prop.boldness.value_or(0) * scale_char_gap;
-    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale_char_gap;
+    double boldness_in_mm_ = prop_.boldness.value_or(0);
     dialog.set_boldness(boldness_in_mm, boldness_in_mm_);
 
     double skew_ratio = prop.skew.value_or(0.f);
@@ -655,7 +652,7 @@ bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Doma
 {
     Domain::Transform3d to_world = world_tr(project, ref);
     auto to_world_linear = to_world.linear();
-    auto calc = [&to_world_linear](const Domain::Vec3d& axe, std::optional<float>& scale) {
+    auto calc = [&to_world_linear](const Domain::Vec3d& axe, std::optional<double>& scale) {
         Domain::Vec3d  axe_world = to_world_linear * axe;        
         if (double norm_sq = axe_world.squaredNorm();
             Domain::is_approx(norm_sq, 1.)) {
@@ -673,12 +670,12 @@ bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Doma
     exist_change |= calc(Domain::Vec3d::UnitX(), volume_scale.width);
     exist_change |= calc(Domain::Vec3d::UnitZ(), volume_scale.depth);
 
-    auto font_point_to_world = [&preset_manager](const std::optional<float>& scale)->double {
+    auto font_point_to_world = [&preset_manager](const std::optional<double>& scale)->double {
         const Domain::FontFile& ff = *preset_manager.get_font_file_with_cache().font_file; /* not const */
         const Domain::FontProp& fp = preset_manager.get_font_prop();
         const Domain::FontFile::Info& font_info = Biz::Emboss::get_font_info(ff, fp);
         double font_point_to_volume_mm = fp.size_in_mm / (double)font_info.unit_per_em;
-        return font_point_to_volume_mm * scale.value_or(1.f); // font_point_to_world_mm
+        return font_point_to_volume_mm * scale.value_or(1.); // font_point_to_world_mm
     };
 
     // TODO: solve first initialization and than recaluculate only when exist change
@@ -849,6 +846,10 @@ Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain:
 
 bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
 {
+    if (m_preset_manager.get_presets().empty())
+        m_preset_manager.init();    
+    m_preset_manager.discard_preset_changes(); // create volume with stored settings
+
     if (!init_create(volume_type))
         return false;    
 
@@ -875,6 +876,9 @@ bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
 
     for (const Domain::ElementRef& el: els) {
         const Domain::ModelInstance* instance = project.find_instance_by_id(el.object_id, el.instance_id);
+        if (instance == nullptr) {
+            continue; // e.g. wipe tower
+        }
         if (el.volume_id == 0) { // Whole object selected
             const Domain::ModelObject* obj = project.find_object_by_id(el.object_id);
             for (const Domain::ModelVolume* vol : obj->volumes) {
@@ -968,12 +972,16 @@ Biz::Emboss::BaseData create_base_data(
     Biz::Emboss::TextPresetManager& preset_manager,
     Biz::ProjectInteractor& project_interactor,
     const Biz::Emboss::TextLines& text_lines,
-    Biz::Emboss::BaseData::IssueFn issue_fn
+    Biz::Emboss::BaseData::IssueFn issue_fn,
+    std::optional<double> depth_scale = {}
 ) {
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     Domain::TextConfiguration text_config{ .style = preset.emboss_style, .text = text };
     Domain::SelectionId project_id = project_interactor.selected_project_id();
     Biz::Emboss::FontFileWithCache& font_file = preset_manager.get_font_file_with_cache();
+    std::optional<float> from_surface = preset.distance;
+    if (from_surface.has_value() && depth_scale.has_value())
+        from_surface = (*from_surface) / (*depth_scale);
     return Biz::Emboss::BaseData{
         .shape_provider = std::make_unique<TextShapeProvider>(
             std::move(text_config),
@@ -984,7 +992,7 @@ Biz::Emboss::BaseData create_base_data(
         .project_interactor = project_interactor,
         .project_id = project_id,
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-        .from_surface = preset.distance,
+        .per_glyph_surface_distance = from_surface,
         .volume_name = text,
         .issue_fn = std::move(issue_fn)
     };
@@ -1049,7 +1057,7 @@ bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type
     Domain::ModelVolumeType new_type = volume_type.value_or(volume.type());
     auto issue_fn = create_issue_fn(dialog(), proj_ctx.warning_tooltip, m_project_interactor);
     Biz::Emboss::UpdateVolumeParams params {
-        .base = create_base_data(text, new_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines(), issue_fn),
+        .base = create_base_data(text, new_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines(), issue_fn, proj_ctx.volume_scale.depth),
         .volume_id = volume.id(),
         .instance_id = selected.instance_id,
         .volume_type = volume_type
@@ -1104,9 +1112,8 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
 {
     Biz::Emboss::TextLines text_lines;
-    ProjectContext& proj_ctx = m_proj_ctxs->selected();
-    const std::string& text = proj_ctx.text;
-    auto issue_fn = create_issue_fn(dialog(), proj_ctx.warning_tooltip, m_project_interactor);
+    const std::string& text = _u8L("Embossed text");
+    auto issue_fn = create_issue_fn(dialog(), m_proj_ctxs->selected().warning_tooltip, m_project_interactor);
     Biz::Emboss::CreateVolumeParams params{
         .base = create_base_data(text, volume_type, m_preset_manager, m_project_interactor, text_lines, issue_fn),
         .volume_type = volume_type

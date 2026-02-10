@@ -90,8 +90,6 @@ public:
 
     GeometryDataFactory& data_factory() { return m_data_factory; }
 
-    void render_imgui();
-
     using IGizmoPtr = std::unique_ptr<IGizmo>;
     using GizmoList = std::vector<IGizmoPtr>;
 

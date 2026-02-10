@@ -14,7 +14,7 @@ class SurfaceDrag {
 public:
     SurfaceDrag(App::Plater::PlaterScenePresenter& scene_presenter, Biz::ProjectInteractor& project_interactor);
     ~SurfaceDrag(); // for pimpl
-    bool on_drag_start(const App::Scene::GizmoEventContext& ctx);
+    bool on_drag_start(const App::Scene::GizmoEventContext& ctx, const std::optional<float>& distance);
     bool on_dragging(const App::Scene::GizmoEventContext& ctx, 
         const std::optional<float>& angle,
         const std::optional<float>& distance,

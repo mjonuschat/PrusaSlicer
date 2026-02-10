@@ -90,10 +90,9 @@ SurfaceDrag::SurfaceDrag(
     m_project_interactor(project_interactor),
     m_drag(nullptr)
 {}
+SurfaceDrag::~SurfaceDrag() = default;
 
-SurfaceDrag::~SurfaceDrag() {}
-
-bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx)
+bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx, const std::optional<float>& distance)
 {
     const Domain::ElementRefs& elements = m_project_interactor.scene_interactor().object_selection().elements;
     if (elements.empty())
@@ -104,13 +103,13 @@ bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx)
     for (const App::Scene::NodePickResult& pick : ctx.pick_results()) {
         if (!pick.node->has_tag_of_type<App::Scene::SceneNodeTag>())
             continue; // ignore staff(node) infront of text volume
-        
+
         auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
         if (!tag->matches_element(element))
             return false; // Only seleceted Volume could be dragged over surface
 
         const Domain::Project& project = m_project_interactor.selected_project();
-        const Domain::ModelVolume* volume_ptr = 
+        const Domain::ModelVolume* volume_ptr =
             project.find_volume_by_id(tag->object_id, tag->volume_id);
         ASSERT(volume_ptr != nullptr);
         const Domain::ModelVolume& volume = *volume_ptr;
@@ -118,7 +117,7 @@ bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx)
             return false; // Object is moved by default drag
 
         // calc mouse offset to volume center
-        const Domain::ModelInstance* instance_ptr = 
+        const Domain::ModelInstance* instance_ptr =
             project.find_instance_by_id(tag->object_id, tag->instance_id);
         ASSERT(instance_ptr != nullptr);
 
@@ -127,12 +126,15 @@ bool SurfaceDrag::on_drag_start(const App::Scene::GizmoEventContext& ctx)
         m_drag->instance = instance_ptr->get_matrix();
         m_drag->instance_inv = instance_ptr->get_matrix().inverse();
         m_drag->volume_inv = volume.get_matrix().inverse();
-        Domain::Vec3d volume_center = m_drag->to_world.translation();
-        // volume center screen coordinate
+
+        Domain::Transform3d dist_tr{ Eigen::Translation<double, 3>(Domain::Vec3d(0, 0, -distance.value_or(0.))) };
+        Domain::Vec3d surface_point = distance.has_value() ?
+            (Domain::Vec3d)(instance_ptr->get_matrix() * (volume.get_matrix() * dist_tr)).translation() :
+            (Domain::Vec3d)m_drag->to_world.translation();
 
         // Settings for cross hair
         const App::Scene::Camera& camera = m_scene_presenter.scene().camera();        
-        Domain::Vec2d scene_pos = camera.project_to_screen_space(volume_center); // physical position
+        Domain::Vec2d scene_pos = camera.project_to_screen_space(surface_point); // physical position
         scene_pos.y() = camera.viewport().height - scene_pos.y();
         m_drag->logical_offset = physical_to_logical(ctx.screen_info(), scene_pos) - get_mouse_coor(ctx);
         m_drag->cross_hair_pos = to_imvec2(get_mouse_coor(ctx) + m_drag->logical_offset);

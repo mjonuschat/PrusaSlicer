@@ -412,7 +412,7 @@ void TextLinesModel::reset()
         return; // already reseted
 
     proj_ctx.lines.clear();
-    proj_ctx.geometry.release();
+    proj_ctx.geometry = nullptr;
 
     auto is_text_line = [](const App::Scene::Node* n) {
         return n->has_tag_of_type<TextLineNodeTag>();

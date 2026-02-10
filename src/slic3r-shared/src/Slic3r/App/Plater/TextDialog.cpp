@@ -26,6 +26,7 @@ constexpr double MM_TO_INCH = 25.4;
 constexpr double INCH_TO_MM = 1. / MM_TO_INCH;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double DEG_TO_RAD = M_PI / 180.0;
+constexpr double SURFACE_DISTANCE_STEP = 0.01;
 } // namespace
 
 namespace Slic3r::App::Plater {
@@ -254,9 +255,12 @@ otherwise, the whole text has the same orthogonal projection.")
     m_skew_ratio->set_end_value(2);
     m_skew_ratio->set_step(0.01);
     // m_skew_ratio->set_tooltip(_u8L("Italic strength ratio");
-    add_row(_u8L("Skew ratio"), m_skew_ratio.release(), m_advanced_panel, _u8L("Undo letter's skew"), "mm");
+    add_row(_u8L("Skew ratio"), m_skew_ratio.release(), m_advanced_panel, _u8L("Undo letter's skew"));
 
     m_surface_distance = Passthrough{std::make_unique<SliderWithInput>()};
+    m_surface_distance->set_begin_value(-2.);
+    m_surface_distance->set_end_value(2.);
+    m_surface_distance->set_step(SURFACE_DISTANCE_STEP);
     m_surface_distance->callbacks().value_changed = [this](double value) {
         if (m_use_inches)
             value *= INCH_TO_MM;
@@ -667,6 +671,10 @@ void TextDialog::set_surface_distance(double maximal_value_in_mm, double surface
     if (m_use_inches) {
         maximal_value_in_mm *= MM_TO_INCH;
     }
+
+    // use N steps from zero to be able set to zero
+    maximal_value_in_mm = std::ceil(maximal_value_in_mm / SURFACE_DISTANCE_STEP) * SURFACE_DISTANCE_STEP;
+
     m_surface_distance->set_begin_value(-maximal_value_in_mm);
     m_surface_distance->set_end_value(maximal_value_in_mm);
     set_value(m_surface_distance.get(), surface_distance_in_mm, default_surface_distance_in_mm, m_use_inches);    
