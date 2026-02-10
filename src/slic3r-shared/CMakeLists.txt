@@ -685,7 +685,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/IConfigBoxSetter.hpp
 
         include/Slic3r/Biz/Preset/IPresetChangedListener.hpp
-        include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
         include/Slic3r/Biz/Preset/IConfigInteractor.hpp
         include/Slic3r/Biz/Preset/IPresetVisualGetter.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp

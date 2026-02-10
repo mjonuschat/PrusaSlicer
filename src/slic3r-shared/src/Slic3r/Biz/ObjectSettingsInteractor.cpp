@@ -51,6 +51,23 @@ void ObjectSettingsInteractor::on_selected_config_container_changed(
     update_sources();
 }
 
+void ObjectSettingsInteractor::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Preset::PresetItemType type
+)
+{
+    if (m_project_id == project_id) {
+        Domain::Project& project = m_workbench.project(project_id);
+        Domain::PrinterTechnology print_technology =
+            project.find_config_container(config_container_id)->print_technology();
+
+        m_current_print_technology = print_technology;
+
+        update_sources();
+    }
+}
+
 void ObjectSettingsInteractor::update_sources()
 {
     std::vector<Domain::ConfigBox*> sources;

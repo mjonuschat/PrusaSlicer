@@ -15,7 +15,8 @@ class SceneInteractor;
 
 class ObjectSettingsInteractor :
     public Scene::ISceneSelectionChangedListener,
-    public ISelectedConfigContainerChangedListener
+    public ISelectedConfigContainerChangedListener,
+    public Preset::IPresetChangedListener
 {
 public:
     class SetAccessor
@@ -46,6 +47,12 @@ public:
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId container_id
+    ) override;
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Preset::PresetItemType type
     ) override;
 
 private:

@@ -41,7 +41,6 @@ public:
     selected_user_preset_path(Domain::Preset::PresetKind kind, const std::string& preset_name) const = 0;
 };
 
-class IBedPresetSwitchedListener;
 class IPresetChangedListener;
 
 class PresetInteractor;
@@ -89,7 +88,6 @@ class PresetInteractor final :
     public ISelectedConfigContainerChangedListener,
     public WithListeners<
         IPresetChangedListener,
-        IBedPresetSwitchedListener,
         ISlicingInputChangedListener>,
     public IPresetNameProvider,
     public IConfigBoxSetter,
@@ -707,7 +705,6 @@ private:
     enum class ListenerType
     {
         IPresetChangedListener,
-        IBedPresetSwitchedListener,
         ISlicingInputChangedListener
     };
 

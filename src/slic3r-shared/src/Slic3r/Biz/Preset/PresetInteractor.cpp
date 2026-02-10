@@ -82,6 +82,8 @@ PresetInteractor::PresetInteractor(
     ConfigBoxInteractor::SetAccessor printer_accessor;
     m_printer_cbi                   = ConfigBoxInteractor(printer_accessor, nullptr);
     m_cbi_accessors[&m_printer_cbi] = std::move(printer_accessor);
+
+    add_listener<IPresetChangedListener>(&m_object_settings_interactor);
 }
 
 void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bundle& preset_bundle, const std::string& vendor_id)
