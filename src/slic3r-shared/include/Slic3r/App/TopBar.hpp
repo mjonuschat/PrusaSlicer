@@ -11,6 +11,8 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
+#include "Slic3r/App/MenuCommandRegistrar.hpp"
+
 namespace Slic3r::App::Platform {
 class AbstractRenderModule;
 } // namespace Slic3r::App::Platform
@@ -42,12 +44,8 @@ public:
     void on_selected_project_changed(size_t index) override;
 
     void focus_search();
-    void register_menu_commands();
 
 private:
-    void load_project();
-    void save_project_as();
-
     void add_save_project_btn(Item* parent);
     void add_show_ui_btn(Item* parent);
 
@@ -77,8 +75,9 @@ private:
 
     Biz::ProjectInteractor& m_project_interactor;
     Platform::AbstractRenderModule* m_render_module{nullptr};
-    ThumbnailStore& m_thumbnail_store;
     Navigator& m_navigator;
+
+    MenuCommandRegistrar m_menu_command_registrar;
 };
 
 } // namespace Slic3r::App

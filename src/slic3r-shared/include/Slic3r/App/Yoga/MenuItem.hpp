@@ -31,6 +31,7 @@ public:
         Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {}
     );
+    void append_sub_menu_separator();
     void clear_submenu();
 
     void set_shortcut_internal(const std::string& shortcut) override;

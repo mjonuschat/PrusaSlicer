@@ -254,6 +254,16 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>(m_scene_presenter.get());
     m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
 
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(
+        &m_command_binding_manager
+    );
+    m_project_interactor.user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(&m_command_binding_manager);
+    m_project_interactor.scene_interactor().add_listener<ISelectedBedInstancesChangedListener>(
+        &m_command_binding_manager
+    );
+    m_project_interactor.removable_drive_service().add_status_listener(&m_command_binding_manager);
+
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
     AbstractRenderLayout::set_our_style_colors();
@@ -719,8 +729,6 @@ void PlaterRenderModule::update_object_selection()
     update_toolbar_visibility();
 
     update_current_right_sidebar();
-
-    m_command_binding_manager.update_ui_items();
 }
 
 void PlaterRenderModule::update_current_right_sidebar()

@@ -58,4 +58,40 @@ void CommandBindingManager::bind(const char* command_name, Yoga::AbstractButton*
     m_ui_items.at(command_name).emplace_back(ui_item);
 }
 
+void CommandBindingManager::on_user_account_id_success(bool, const std::string&)
+{
+    update_ui_items();
+}
+
+void CommandBindingManager::on_user_account_logged_out()
+{
+    update_ui_items();
+}
+
+void CommandBindingManager::on_selected_bed_instances_changed(
+    Domain::SelectionId,
+    const Biz::Scene::BedSelection&
+)
+{
+    update_ui_items();
+}
+
+void CommandBindingManager::on_status_cache_status_code_changed(const Domain::SlicingId)
+{
+    update_ui_items();
+}
+
+void CommandBindingManager::on_removable_drive_status_changed(
+    const boost::filesystem::path&,
+    Biz::RemovableDrive::RemovableDriveStatus
+)
+{
+    update_ui_items();
+}
+
+void CommandBindingManager::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection&)
+{
+    update_ui_items();
+}
+
 } // namespace Slic3r::App

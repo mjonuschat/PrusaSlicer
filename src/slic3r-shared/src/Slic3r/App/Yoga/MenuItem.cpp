@@ -75,6 +75,11 @@ MenuItem* MenuItem::append_sub_menu_item(
     return m_sub_menu->append_item(label, init_checkable_value, icon, shortcut);
 }
 
+void MenuItem::append_sub_menu_separator()
+{
+    m_sub_menu->append_separator();
+}
+
 void MenuItem::clear_submenu()
 {
     // !!? add this as a clear() method fo rthe Item !!?

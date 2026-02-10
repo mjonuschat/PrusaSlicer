@@ -26,12 +26,22 @@ public:
     /**
      * @brief Register single menu item with related command
      * @param path Path to menu item as a stack of MenuItemNames, where first is a root item name
-     * @param command Pointer to command imeplementaiton
+     * @param command Pointer to command implementation
      */
     virtual MenuManager&
     register_menu_item(std::vector<MenuItemName> path, std::unique_ptr<UIItemCommand> command);
 
+    /**
+     * @brief Register menu separator item
+     * @param path Path to parent menu as a stack of MenuItemNames, where first is a root item name
+     */
+    virtual MenuManager&
+    register_menu_separator_item(std::vector<MenuItemName> path);
+
     MenuItem* menu_item(MenuItemName name);
+
+private:
+    void distribute_into_menu_hierarchy(MenuItemName child_name, std::vector<MenuItemName> path);
 
 private:
     Platform::CommandRegistry& m_command_registry;

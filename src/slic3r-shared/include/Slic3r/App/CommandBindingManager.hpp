@@ -2,6 +2,10 @@
 
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 
+#include "Slic3r/Biz/ProjectScoped.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+
 namespace Slic3r::App {
 
 namespace Yoga {
@@ -10,7 +14,12 @@ class AbstractButton;
 
 class UIItemCommand;
 
-class CommandBindingManager
+class CommandBindingManager :
+    public Biz::UserAccount::IUserAccountListener,
+    public Biz::IStatusCacheChangedListener,
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::RemovableDrive::IRemovableDriveStatusListener,
+    public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     using UIItemsPerCommandMap =
@@ -30,6 +39,25 @@ public:
     {
         return m_command_registry;
     }
+
+    void on_user_account_id_success(bool, const std::string&) override;
+    void on_user_account_logged_out() override;
+
+    void on_selected_bed_instances_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::BedSelection& bed_selection
+    ) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
+
+    void on_removable_drive_status_changed(
+        const boost::filesystem::path&,
+        Biz::RemovableDrive::RemovableDriveStatus
+    ) override;
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection&
+    ) override;
 
 private:
     void bind(const char* command_name, Yoga::AbstractButton* ui_item);

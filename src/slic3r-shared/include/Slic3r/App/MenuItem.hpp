@@ -5,6 +5,7 @@
 
 #include "Slic3r/App/MenuItemName.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include <Slic3r/Assert.hpp>
 
 namespace Slic3r::App {
 
@@ -17,6 +18,7 @@ public:
 
     void append(MenuItem* child)
     {
+        ASSERT(!is_separator());
         m_children.emplace_back(child);
     }
 
@@ -33,6 +35,9 @@ public:
     const std::vector<MenuItem*>& children() const
     {
         return m_children;
+    }
+    bool is_separator() const {
+        return m_name == MenuItemName::Separator;
     }
 
 private:
