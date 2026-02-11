@@ -349,7 +349,7 @@ public:
         const Domain::SlicingId slicing_id
     );
 
-    bool current_project_has_wipe_tower(std::size_t bed_instance_id) const;
+    const Print::WipeTowerGeometry* wipe_tower_geometry(std::size_t bed_instance_id) const;
 
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
 

@@ -105,25 +105,15 @@ double TMArrangeKernel::placement_fitness(const ArrangeItem& item, const Domain:
         // For small items in a mixed scene.
         SMALL_ITEM,
 
-        WIPE_TOWER,
     } compute_case;
 
-    bool is_wt    = item.is_wipe_tower;
     bool bigitems = is_big(movable_area(item)) || m_rtree.empty();
-    if (is_wt)
-        compute_case = WIPE_TOWER;
-    else if (bigitems)
+    if (bigitems)
         compute_case = BIG_ITEM;
     else
         compute_case = SMALL_ITEM;
 
     switch (compute_case) {
-    case WIPE_TOWER: {
-        score = (Biz::Algorithms::Scaling::unscaled<double>(itmcntr)
-                 - Biz::Algorithms::Scaling::unscaled<double>(active_sink))
-                    .squaredNorm();
-        break;
-    }
     case BIG_ITEM: {
         const Domain::Point& minc = ibb.min; // bottom left corner
         const Domain::Point& maxc = ibb.max; // top right corner
@@ -203,8 +193,16 @@ bool TMArrangeKernel::on_start_packing(
     std::span<const ArrangeItem> remaining_items
 )
 {
-    const std::optional<Domain::Vec2crd> gravity_sink{itm.gravity_sink};
-    item_sink = gravity_sink ? std::optional{Domain::Point{*gravity_sink}} : std::nullopt;
+    const std::optional<Domain::Vec2d> gravity_sink{itm.gravity_sink};
+    if (gravity_sink) {
+        const Domain::Vec2d dimensions{
+            Algorithms::BoundingBox::sizes(bed.bounding_box()).cast<double>()
+        };
+        const Domain::Vec2d min{bed.bounding_box().min.cast<double>()};
+        item_sink = (min + gravity_sink->cwiseProduct(dimensions)).cast<int>();
+    } else {
+        item_sink = std::nullopt;
+    }
 
     if (!sink) {
         sink = Biz::Algorithms::BoundingBox::center(bed.bounding_box());

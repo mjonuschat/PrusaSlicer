@@ -82,7 +82,7 @@ struct InputShape
 class ArrangeItem
 {
 public:
-    std::optional<Domain::Vec2crd> gravity_sink;
+    std::optional<Domain::Vec2d> gravity_sink;
     bool is_wipe_tower{false};
 
     ArrangeItem(const InputShape& shape, const Settings& settings);

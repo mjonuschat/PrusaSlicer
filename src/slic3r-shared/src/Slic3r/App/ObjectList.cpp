@@ -953,7 +953,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     }
 
     if (is_open) {
-        if (m_scene_interactor->current_project_has_wipe_tower(bed->id().id)) {
+        if (m_scene_interactor->wipe_tower_geometry(bed->id().id) != nullptr) {
             bg.set_next();
             is_changed_selection |= render_wipe_tower_node(bed);
         }

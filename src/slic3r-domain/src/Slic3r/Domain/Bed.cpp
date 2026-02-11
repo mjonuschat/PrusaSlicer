@@ -24,12 +24,20 @@ static bool check_model(const std::string& filename)
     return !filename.empty() && boost::algorithm::iends_with(filename, ".stl") && boost::filesystem::exists(filename, ec);
 }
 
-Bed Bed::from(const Vec2ds& contour, float max_print_height, const std::optional<Bed::Segments>& bed_segments, const std::string& model_filename, const std::string& texture_filename)
+Bed Bed::from(
+    const Vec2ds& contour,
+    float max_print_height,
+    const std::optional<Bed::Segments>& bed_segments,
+    const std::optional<Vec2d>& auxiliary_travel_anchor,
+    const std::string& model_filename,
+    const std::string& texture_filename
+)
 {
     Bed ret;
     ret.m_contour          = contour;
     ret.m_max_print_height = max_print_height;
     ret.m_segments         = bed_segments;
+    ret.m_auxiliary_travel_anchor = auxiliary_travel_anchor;
     ret.m_model_filename   = model_filename;
     ret.m_texture_filename = texture_filename;
 
@@ -115,6 +123,10 @@ bool Bed::matches(const Bed& rhs) const
 
     if (m_segments != rhs.m_segments)
         return false;
+
+    if (m_auxiliary_travel_anchor != rhs.m_auxiliary_travel_anchor) {
+        return false;
+    }
 
     if (m_model_filename != rhs.m_model_filename)
         return false;

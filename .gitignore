@@ -27,3 +27,4 @@ CMakeUserPresets.json
 /doc/doxy/
 
 .aider*
+/src/slic3r-shared/imgui.ini

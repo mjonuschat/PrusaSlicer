@@ -44,9 +44,6 @@ Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, co
             texture_filename = assets_path + bed_texture_filename;
     }
 
-    bool is_single_tool_XL = preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1;
-    std::optional<Bed::Segments> segments = is_single_tool_XL ? std::optional{Bed::Segments{4, 4}} : std::nullopt;
-
     item = config_box.find("max_print_height");
     float bed_max_print_height = (item.item != nullptr) ? float(item.item->value().get<double>()) : 0.0f;
 
@@ -56,10 +53,42 @@ Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, co
     item = config_box.find("bed_custom_texture");
     std::string custom_bed_texture_filename = (item.item != nullptr) ? item.item->value().get<std::string>() : std::string();
 
+    Bed::Segments bed_segments{1, 1};
+    if (auto bed_segments_x{
+            Preset::get_feature<int>(preset.hw_config.features, "bed_segments_x")
+    }) {
+        bed_segments.x_count = *bed_segments_x;
+    }
+    if (auto bed_segments_y{
+        Preset::get_feature<int>(preset.hw_config.features, "bed_segments_y")
+    }) {
+        bed_segments.y_count = *bed_segments_y;
+    }
+    const std::optional<Bed::Segments> segments{
+        bed_segments != Bed::Segments{1, 1} ? std::optional{bed_segments} : std::nullopt
+    };
+
+    Vec2d auxiliary_travel_anchor{-1, -1};
+    if (auto auxiliary_travel_anchor_x{
+        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_x")
+    }) {
+        auxiliary_travel_anchor.x() = *auxiliary_travel_anchor_x;
+    }
+    if (auto auxiliary_travel_anchor_y{
+        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_y")
+    }) {
+        auxiliary_travel_anchor.y() = *auxiliary_travel_anchor_y;
+    }
+    const std::optional<Vec2d> travel_anchor{
+        (auxiliary_travel_anchor.array() >= 0).all() ? std::optional{auxiliary_travel_anchor} :
+                                                       std::nullopt
+    };
+
     auto bed = Bed::from(
         bed_shape,
         bed_max_print_height,
         segments,
+        travel_anchor,
         custom_bed_model_filename.empty() ? model_filename : custom_bed_model_filename,
         custom_bed_texture_filename.empty() ? texture_filename : custom_bed_texture_filename
     );

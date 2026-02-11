@@ -365,7 +365,7 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
 
     using namespace Biz::Algorithms::Bed;
 
-    auto bed = Domain::Bed::from(pts, max_height, std::nullopt, "", "");
+    auto bed = Domain::Bed::from(pts, max_height, std::nullopt, std::nullopt, "", "");
     bed.set_type(detect_bed_type(bed));
     switch (bed.type())
     {

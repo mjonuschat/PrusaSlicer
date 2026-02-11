@@ -8,8 +8,8 @@ namespace Slic3r::Biz::Arrange {
 
 enum class Strategy
 {
-    Auto,
-    PullToCenter
+    Overfit,
+    Gravity
 };
 
 enum class GeometryHandling
@@ -26,7 +26,7 @@ enum class Mode
 
 struct Settings
 {
-    Strategy strategy{Strategy::Auto};
+    Strategy strategy{Strategy::Overfit};
     Mode mode{Mode::Global};
     double scaled_offset{0.0};
     double unscaled_bed_offset{0.0};
@@ -36,5 +36,6 @@ struct Settings
     std::optional<PivotPoint> bed_pivot_point;
     std::optional<Domain::Bed::Segments> bed_segments;
     int scaled_simplification_tolerance{Biz::Algorithms::Scaling::scaled(.2)};
+    std::optional<Domain::Vec2d> auxiliary_travel_anchor;
 };
 } // namespace Slic3r::Biz::Arrange

@@ -42,7 +42,7 @@ static const std::map<BedShape::Parameter, BedShape::ParamAttributes> param_attr
 
 BedShape::BedShape(const std::vector<Domain::Vec2d>& points)
 {
-    m_bed = Domain::Bed::from(points, 0.f, std::nullopt, "", "");
+    m_bed = Domain::Bed::from(points, 0.f, std::nullopt, std::nullopt, "", "");
 }
 
 bool BedShape::is_custom() const

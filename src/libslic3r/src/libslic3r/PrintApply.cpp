@@ -1474,7 +1474,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
                 Biz::Print::WipeTowerGeometry{
                     .depths   = {},
                     .fallback_depth = 7.0,
-                    .fallback_height = 10.0,
+                    .fallback_height = 25.0,
                     .width = new_full_config_ptr->get<double>("wipe_tower_width"),
                     .cone_angle = new_full_config_ptr->get<double>("wipe_tower_cone_angle"),
                     .brim_width = new_full_config_ptr->get<double>("wipe_tower_brim_width")

@@ -19,6 +19,14 @@ features:
       default: true
     supports_08_nozzle:
       default: true
+    bed_segments_x:
+      default: 1
+    bed_segments_y:
+      default: 1
+    auxiliary_travel_anchor_x:
+      default: -1
+    auxiliary_travel_anchor_y:
+      default: -1
   tool:
     nozzle_high_flow:
       default: false
@@ -45,6 +53,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+  bed_segments_x:
+    default: 4
+  bed_segments_y:
+    default: 4
 visual:
   bed_model: xl_bed.stl
   bed_texture: xl.svg
@@ -559,6 +571,9 @@ tools:
 sheet: satin
 visual:
   thumbnail: XL2_thumbnail.svg
+features:
+  auxiliary_travel_anchor_x: 0.5
+  auxiliary_travel_anchor_y: 1.0
 ---
 kind: printer_config
 id: xl-5t
@@ -571,6 +586,9 @@ tools:
 sheet: satin
 visual:
   thumbnail: XL5_thumbnail.svg
+features:
+  auxiliary_travel_anchor_x: 0.5
+  auxiliary_travel_anchor_y: 1.0
 ---
 kind: printer_config
 id: c1l

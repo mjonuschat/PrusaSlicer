@@ -35,9 +35,12 @@ public:
         const Biz::Arrange::Settings& settings
     );
 
+    void update_segments_visibility();
     void set_bed_segments(const std::optional<Domain::Bed::Segments>& bed_segments);
+    void set_auxiliary_travel_anchor(const std::optional<Domain::Vec2d>& auxiliary_travel_anchor);
 
     void update_status(const ArrangeTaskStatus status);
+
 
     Biz::Arrange::Mode get_arrange_mode() const;
     void set_arrange_mode(Biz::Arrange::Mode mode);
@@ -55,6 +58,7 @@ private:
     Yoga::Separator* m_bed_segments_separator{nullptr};
     Yoga::LayoutButton* m_arrange_button{nullptr};
     std::optional<Domain::Bed::Segments> m_bed_segments;
+    std::optional<Domain::Vec2d> m_auxiliary_travel_anchor;
 
     Biz::Arrange::Settings get_settings() const;
 };

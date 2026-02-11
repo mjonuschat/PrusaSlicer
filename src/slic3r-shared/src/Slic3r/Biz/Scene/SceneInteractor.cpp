@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
@@ -11,6 +12,7 @@
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ModelInstance.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
@@ -1609,20 +1611,53 @@ void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTra
 
     std::vector<Domain::ElementRef> elements;
     for (const Arrange::InstanceTransform2D& trafo : transformations) {
-        ModelInstance* instance{
-            project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
-        };
-        if (instance == nullptr) {
-            continue;
+        if (trafo.instance_ref.is_wipe_tower()) {
+            const Domain::SlicingId wipe_tower_id{trafo.instance_ref.wipe_tower_id};
+            Domain::BedInstance* bed_instance{
+                project.find_bed_instance_by_id(wipe_tower_id.bed_instance_id)
+            };
+            if (!bed_instance) {
+                continue;
+            }
+
+            const Print::WipeTowerGeometry* geometry{
+                wipe_tower_geometry(wipe_tower_id.bed_instance_id)
+            };
+            if (!geometry) {
+                continue;
+            }
+
+            Domain::Transform3d transformation{Domain::Transform3d::Identity()};
+            transformation.translate(
+                Vec3d{trafo.absolute_offset.x(), trafo.absolute_offset.y(), 0.0}
+            );
+            transformation.rotate(
+                Eigen::AngleAxisd(
+                    trafo.rotation_delta + Slic3r::deg2rad(bed_instance->wipe_tower.rotation),
+                    Eigen::Vector3d::UnitZ()
+                )
+            );
+
+            set_wipe_tower_transformation(Domain::Transformation{transformation}, *bed_instance);
+            invoke_listeners<ISceneChangedListener>(
+                [&](auto listener) { listener->on_wipe_tower_moved(wipe_tower_id); }
+            );
+        } else {
+            ModelInstance* instance{
+                project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
+            };
+            if (instance == nullptr) {
+                continue;
+            }
+            Domain::Transform3d offset_trafo{instance->get_transformation().get_matrix()};
+            offset_trafo.translation().x() = trafo.absolute_offset.x();
+            offset_trafo.translation().y() = trafo.absolute_offset.y();
+
+            auto rotation_trafo{Domain::Transform3d::Identity()};
+            rotation_trafo.rotate(Eigen::AngleAxisd(trafo.rotation_delta, Eigen::Vector3d::UnitZ()));
+
+            instance->set_transformation(Transformation{offset_trafo * rotation_trafo});
         }
-        Domain::Transform3d offset_trafo{instance->get_transformation().get_matrix()};
-        offset_trafo.translation().x() = trafo.absolute_offset.x();
-        offset_trafo.translation().y() = trafo.absolute_offset.y();
-
-        auto rotation_trafo{Transform3d::Identity()};
-        rotation_trafo.rotate(Eigen::AngleAxisd(trafo.rotation_delta, Eigen::Vector3d::UnitZ()));
-
-        instance->set_transformation(Transformation{offset_trafo * rotation_trafo});
         elements.push_back(trafo.instance_ref);
     }
 
@@ -1899,12 +1934,19 @@ void SceneInteractor::change_wipe_tower(
     );
 }
 
-bool SceneInteractor::current_project_has_wipe_tower(std::size_t bed_instance_id) const {
+const Print::WipeTowerGeometry* SceneInteractor::wipe_tower_geometry(
+    std::size_t bed_instance_id
+) const
+{
     const auto& project_it{m_projects.find(m_selected_project_id)};
     if (project_it == m_projects.end()) {
-        return false;
+        return nullptr;
     }
-    return project_it->second.wipe_tower_geometries.contains(bed_instance_id);
+    const auto it{project_it->second.wipe_tower_geometries.find(bed_instance_id)};
+    if (it == project_it->second.wipe_tower_geometries.end()) {
+        return nullptr;
+    }
+    return &it->second;
 }
 
 void SceneInteractor::on_extruder_candidates_changed(

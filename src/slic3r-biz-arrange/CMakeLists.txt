@@ -8,6 +8,8 @@ add_library(slic3r-biz-arrange
     src/Slic3r/Biz/Arrange/Kernels/GravityKernel.cpp
     include/Slic3r/Biz/Arrange/Kernels/RectangleOverfitKernelWrapper.hpp
     src/Slic3r/Biz/Arrange/Kernels/RectangleOverfitKernelWrapper.cpp
+    include/Slic3r/Biz/Arrange/Kernels/WipeTowerPositioningKernel.hpp
+    src/Slic3r/Biz/Arrange/Kernels/WipeTowerPositioningKernel.cpp
     include/Slic3r/Biz/Arrange/Kernels/SVGDebugOutputKernelWrapper.hpp
     src/Slic3r/Biz/Arrange/Kernels/SVGDebugOutputKernelWrapper.cpp
     include/Slic3r/Biz/Arrange/Kernels/TMArrangeKernel.hpp

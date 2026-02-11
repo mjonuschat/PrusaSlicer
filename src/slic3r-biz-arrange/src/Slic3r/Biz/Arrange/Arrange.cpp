@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Arrange/Kernels/GravityKernel.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/IKernel.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/RectangleOverfitKernelWrapper.hpp"
+#include "Slic3r/Biz/Arrange/Kernels/WipeTowerPositioningKernel.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/SVGDebugOutputKernelWrapper.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/TMArrangeKernel.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
@@ -14,6 +15,7 @@
 #include "libslic3r/Optimize/NLoptOptimizer.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "Slic3r/Domain/Model.hpp"
 
@@ -200,7 +202,12 @@ std::unique_ptr<IBed> guess_bed(const Points& bed_shape, const Settings& setting
         return std::make_unique<RectangleBed>(rectangle_bed);
     }
 
-    ASSERT(!settings.bed_pivot_point && !settings.bed_segments);
+    if (settings.bed_pivot_point) {
+        SPDLOG_ERROR("Bed pivot is not supported for non-rectangular bed!");
+    }
+    if (!settings.bed_segments) {
+        SPDLOG_ERROR("Bed segments are not supported for non-rectangular bed!");
+    }
 
     if (circle_bed && (1.0 - bed_shape_area / circle_bed->area()) < 1e-2) {
         return std::make_unique<CircleBed>(std::move(*circle_bed));
@@ -235,25 +242,19 @@ std::optional<ArrangeResult> arrange(
     }
 
     std::unique_ptr<Kernels::IKernel> base_kernel;
-    if (dynamic_cast<const CircleBed*>(bed.get()) != nullptr
-        || settings.strategy == Strategy::PullToCenter)
+    if (dynamic_cast<const CircleBed*>(bed.get()) != nullptr)
     {
         base_kernel = std::make_unique<Kernels::GravityKernel>();
     } else {
         base_kernel = std::make_unique<Kernels::TMArrangeKernel>(items.size(), bed->area());
     }
 
-    const bool with_wipe_tower{std::ranges::any_of(items, [](const ArrangeItem& item) {
-        return item.is_wipe_tower;
-    })};
-
     std::unique_ptr<Kernels::IKernel> final_kernel;
     const InfiniteBed infinite_bed{center(bed->bounding_box())};
     const IBed* final_bed{nullptr};
 
     const bool use_overfit{
-        !with_wipe_tower
-        && settings.strategy == Strategy::Auto
+        settings.strategy == Strategy::Overfit
         && dynamic_cast<const RectangleBed*>(bed.get()) != nullptr
         && fixed_items.empty()
     };
@@ -267,6 +268,15 @@ std::optional<ArrangeResult> arrange(
     } else {
         final_kernel = std::move(base_kernel);
         final_bed    = bed.get();
+    }
+
+    const auto wipe_tower_it{std::ranges::find_if(items, [](const ArrangeItem& item){
+        return item.is_wipe_tower;
+    })};
+
+    if (use_overfit && wipe_tower_it != items.end()) {
+        final_kernel =
+            std::make_unique<Kernels::WipeTowerPositioningKernel>(std::move(final_kernel));
     }
 
     if constexpr (use_debug_kernel) {

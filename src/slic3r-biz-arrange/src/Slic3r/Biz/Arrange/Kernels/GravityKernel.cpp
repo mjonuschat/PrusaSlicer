@@ -29,7 +29,16 @@ bool GravityKernel::on_start_packing(
 {
     bool ret = false;
 
-    item_sink = itm.gravity_sink;
+    const std::optional<Domain::Vec2d> gravity_sink{itm.gravity_sink};
+    if (gravity_sink) {
+        const Domain::Vec2d dimensions{
+            Algorithms::BoundingBox::sizes(bed.bounding_box()).cast<double>()
+        };
+        const Domain::Vec2d min{bed.bounding_box().min.cast<double>()};
+        item_sink = (min + gravity_sink->cwiseProduct(dimensions)).cast<int>();
+    } else {
+        item_sink = std::nullopt;
+    }
 
     if (!sink) {
         sink = Biz::Algorithms::BoundingBox::center(bed.bounding_box());

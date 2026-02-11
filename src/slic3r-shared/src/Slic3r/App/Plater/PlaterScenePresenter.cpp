@@ -662,7 +662,6 @@ void build_wipe_tower_cone(
     Scene::NodeBuilder& builder,
     Scene::GeometryDataFactory& data_factory,
     const Render::Material& material,
-    const Domain::Vec2d& relative_position,
     double apex_angle,
     double height,
     double brim_width,
@@ -672,8 +671,6 @@ void build_wipe_tower_cone(
     if (apex_angle <= 0) {
         return;
     }
-
-    const Domain::Vec3d offset{relative_position.x(), relative_position.y(), 0.0};
 
     const double base_size{2.0 * height * std::tan(Slic3r::deg2rad(apex_angle / 2.0))};
     builder.child(
@@ -693,7 +690,6 @@ void build_wipe_tower_cone(
                 .set_aabb(mesh->aabb_mesh());
 
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
-            transform.translate(offset);
             transform.scale(Vec3d{base_size, base_size, height});
             builder.set_transform(transform);
         }
@@ -716,7 +712,6 @@ void build_wipe_tower_cone(
                 .set_aabb(mesh->aabb_mesh());
             const double base_size_brim{base_size + 2 * brim_width};
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
-            transform.translate(offset);
             transform.scale(Vec3d{base_size_brim, base_size_brim, wipe_tower_brim_height});
             builder.set_transform(transform);
         }
@@ -775,7 +770,6 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
                 builder,
                 m_data_factory,
                 material,
-                Domain::Vec2d{0.0, -depth / 2.0},
                 wipe_tower.cone_angle,
                 height,
                 wipe_tower.brim_width,
@@ -844,7 +838,6 @@ void PlaterScenePresenter::build_wipe_tower_node(
                 builder,
                 m_data_factory,
                 material,
-                Domain::Vec2d{0.0, 0.0},
                 wipe_tower.cone_angle,
                 wipe_tower.depths.back().z,
                 wipe_tower.brim_width,

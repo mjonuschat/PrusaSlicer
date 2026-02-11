@@ -50,8 +50,14 @@ public:
         std::size_t y_count{1};
     };
 
-    [[nodiscard]] static Bed
-    from(const Vec2ds& contour, float max_print_height, const std::optional<Segments>& bed_segments, const std::string& model_filename, const std::string& texture_filename);
+    [[nodiscard]] static Bed from(
+        const Vec2ds& contour,
+        float max_print_height,
+        const std::optional<Segments>& bed_segments,
+        const std::optional<Vec2d>& auxiliary_travel_anchor,
+        const std::string& model_filename,
+        const std::string& texture_filename
+    );
 
     [[nodiscard]] BedType type() const
     {
@@ -91,6 +97,11 @@ public:
     [[nodiscard]] std::optional<Segments> segments() const
     {
         return m_segments;
+    }
+
+    [[nodiscard]] std::optional<Vec2d> auxiliary_travel_anchor() const
+    {
+        return m_auxiliary_travel_anchor;
     }
 
     using TopBottomDecomposition = std::pair<Vec2ds, Vec2ds>;
@@ -142,6 +153,7 @@ private:
     std::string m_model_filename;
     std::string m_texture_filename;
     std::optional<Segments> m_segments;
+    std::optional<Vec2d> m_auxiliary_travel_anchor;
     std::optional<TopBottomDecomposition> m_top_bottom_convex_hull_decomposition;
     std::optional<Circle> m_circle;
 };

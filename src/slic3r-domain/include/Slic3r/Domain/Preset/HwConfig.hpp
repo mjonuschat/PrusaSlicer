@@ -561,4 +561,25 @@ HwPrinterConfig remove_features_with_default(
 
 std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data);
 
+template <typename T>
+std::optional<T> get_feature(const Preset::FeatureValueMap& features, const std::string& key)
+{
+    auto feature_it{features.find(key)};
+    if (feature_it == features.end()) {
+        return std::nullopt;
+    }
+    int temp_value{};
+    const T* feature{nullptr};
+    if constexpr (std::is_same_v<T, int>) {
+        temp_value = int(*std::get_if<double>(&feature_it->second));
+        feature    = &temp_value;
+    } else {
+        feature = std::get_if<T>(&feature_it->second);
+    }
+    if (!feature) {
+        return std::nullopt;
+    }
+    return *feature;
+}
+
 } // namespace Slic3r::Domain::Preset
