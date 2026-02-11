@@ -43,6 +43,20 @@ void CommandBindingManager::bind_tb_item(const char* command_name, Yoga::Abstrac
     bind(command_name, ui_item);
 }
 
+const Platform::ICommand& CommandBindingManager::command(const char* command_name) const
+{
+    return m_gizmos_command_registry && m_gizmos_command_registry->has_command(command_name) ?
+        m_gizmos_command_registry->command(command_name) :
+        m_main_command_registry.command(command_name);
+}
+
+bool CommandBindingManager::has_command(const char* command_name) const
+{
+    if (m_gizmos_command_registry && m_gizmos_command_registry->has_command(command_name))
+        return true;
+    return m_main_command_registry.has_command(command_name);
+}
+
 void CommandBindingManager::update_ui_items()
 {
     for (auto& [command_name, items] : m_ui_items) {
@@ -53,7 +67,7 @@ void CommandBindingManager::update_ui_items()
         const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(&command);
         const bool checked              = ui_command ? ui_command->checked() : false;
         for (Yoga::AbstractButton* ui_item : items) {
-            ui_item->set_visible(command.enabled());
+            ui_item->set_enabled(command.enabled());
             ui_item->set_checked(checked);
         }
     }

@@ -24,6 +24,7 @@ public:
         const std::string& shortcut = {}
     );
     void append_separator();
+    void close_all_submenus() const;
 
 private:
     std::vector<MenuItem*> items;

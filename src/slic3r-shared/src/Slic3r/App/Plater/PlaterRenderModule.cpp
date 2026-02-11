@@ -755,6 +755,13 @@ void PlaterRenderModule::update_toolbar_visibility()
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
         get_toolbar_button(tool_gizmo->type())->set_visible(tool_gizmo->enabled());
     }
+
+    m_toolbar_add->set_visible(m_command_binding_manager.command(CommandName::AddObject).enabled());
+    if (m_command_binding_manager.has_command(CommandName::AddVolume)) {
+        m_toolbar_add_volume->set_visible(m_command_binding_manager.command(CommandName::AddVolume).enabled());
+        m_toolbar_delete->set_visible(m_command_binding_manager.command(CommandName::DeleteSelected).enabled());
+        m_toolbar_add_instance->set_visible(m_command_binding_manager.command(CommandName::AddInstance).enabled());
+    }
 }
 
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)

@@ -36,12 +36,7 @@ TopBar::TopBar(
     m_project_interactor(*project_interactor),
     m_render_module(render_module),
     m_navigator(navigator),
-    m_menu_command_registrar(
-        *render_module,
-        *project_interactor,
-        navigator,
-        thumbnail_store
-    )
+    m_menu_command_registrar(*render_module, *project_interactor, navigator, thumbnail_store)
 {
     m_menu_command_registrar.register_all();
     Paddings paddings = padding();
@@ -92,6 +87,20 @@ TopBar::TopBar(
         btn->set_tooltip_position(Position::Bottom);
     }
 
+    for (LayoutButton* btn : std::initializer_list<LayoutButton*>{m_save_btn, m_show_ui_btn}) {
+        if (!btn)
+            continue;
+        btn->callbacks().hovered_changed = [this](bool hovered)
+        {
+            if (hovered) {
+                if (m_file_menu->opened())
+                    m_file_menu->close();
+                if (m_main_menu->opened())
+                    m_main_menu->close();
+            }
+        };
+    }
+
     for (Rectangle* wrapper :
          std::initializer_list<Rectangle*>{left_wrapper, right_wrapper, project_actions_wrapper})
     {
@@ -136,6 +145,13 @@ void TopBar::add_show_ui_btn(Item* parent)
     };
 }
 
+static void toggle_menu_visibility(Menu* menu)
+{
+    if (!menu)
+        return;
+    menu->opened() ? menu->close() : menu->open();
+}
+
 void TopBar::add_menu_btns(Item* parent)
 {
     MenuBuilder menu_builder(
@@ -151,10 +167,17 @@ void TopBar::add_menu_btns(Item* parent)
             MenuBuilder::item_icon(main_menu_item->name())
         );
         m_main_menu_btn->set_background_color(IM_COL32_BLACK_TRANS);
-        m_main_menu_btn->callbacks().action = [this]() { m_main_menu->open(); };
+        m_main_menu_btn->callbacks().action = [this]() { toggle_menu_visibility(m_main_menu); };
+        m_main_menu_btn->callbacks().hovered_changed = [this](bool hovered)
+        {
+            if (hovered && m_file_menu->opened())
+                m_main_menu->open();
+        };
 
         m_main_menu =
             m_main_menu_btn->emplace_back<Yoga::Menu>("main_menu", Yoga::Position::Bottom);
+        m_main_menu->set_offset(0.f);
+
         menu_builder.add_menu_items(m_main_menu, main_menu_item);
     }
 
@@ -166,10 +189,16 @@ void TopBar::add_menu_btns(Item* parent)
             MenuBuilder::item_icon(file_menu_item->name())
         );
         m_file_menu_btn->set_background_color(IM_COL32_BLACK_TRANS);
-        m_file_menu_btn->callbacks().action = [this]() { m_file_menu->open(); };
+        m_file_menu_btn->callbacks().action = [this]() { toggle_menu_visibility(m_file_menu); };
+        m_file_menu_btn->callbacks().hovered_changed = [this](bool hovered)
+        {
+            if (hovered && m_main_menu->opened())
+                m_file_menu->open();
+        };
 
         m_file_menu =
             m_file_menu_btn->emplace_back<Yoga::Menu>("file_menu", Yoga::Position::Bottom);
+        m_file_menu->set_offset(0.f);
         menu_builder.add_menu_items(m_file_menu, file_menu_item);
     }
 }

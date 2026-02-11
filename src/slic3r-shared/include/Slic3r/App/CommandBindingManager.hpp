@@ -44,10 +44,13 @@ public:
 
     void update_ui_items();
 
-    Platform::CommandRegistry& command_registry()
+    Platform::CommandRegistry& main_command_registry()
     {
         return m_main_command_registry;
     }
+
+    const Platform::ICommand& command(const char* command_name) const;
+    bool has_command(const char* command_name) const;
 
     void on_user_account_id_success(bool, const std::string&) override;
     void on_user_account_logged_out() override;

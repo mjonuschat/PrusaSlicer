@@ -27,7 +27,7 @@ void DoubleSliderForGcode::register_commands(
     CommandBindingManager& command_binding_manager
 )
 {
-    command_binding_manager.command_registry()
+    command_binding_manager.main_command_registry()
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-increase-slow",

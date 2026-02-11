@@ -22,7 +22,7 @@ void ContextPopup::style_node()
         switch (m_position) {
         case Position::Right:
             set_right(-(m_offset + width()));
-            set_top(parent_item()->height() * 0.5f - height() * 0.5f);
+            set_top(0.f/*parent_item()->height() * 0.5f - height() * 0.5f*/); //#ysFIXME - WIP: need to improve
             break;
         case Position::Left:
             set_left(-(m_offset + width()));
@@ -34,7 +34,7 @@ void ContextPopup::style_node()
             break;
         case Position::Bottom:
             set_bottom(-(m_offset + height()));
-            set_left(parent_item()->width() * 0.5f - width() * 0.5f);
+            set_left(0.f/*parent_item()->width() * 0.5f - width() * 0.5f*/); //#ysFIXME - WIP: need to improve
             break;
         }
     }

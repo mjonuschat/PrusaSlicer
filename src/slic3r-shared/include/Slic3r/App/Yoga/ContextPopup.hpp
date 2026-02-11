@@ -34,7 +34,9 @@ private:
     float m_offset           = 10;
     Position m_position      = Position::Right;
     float m_rounding         = 5;
-    ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
+    ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration
+        | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoFocusOnAppearing;
     bool m_request_close     = false;
 
     std::string m_id_on_right_click;

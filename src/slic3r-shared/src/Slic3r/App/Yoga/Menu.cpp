@@ -20,20 +20,25 @@ MenuItem* Menu::append_item(
     const std::string& shortcut
 )
 {
-    MenuItem* item = emplace_back<MenuItem>(label, icon, shortcut);
+    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut);
     item->set_content_justify_content(YGJustifyFlexStart);
     if (init_checkable_value) {
         item->set_checkable(true);
         item->set_checked(*init_checkable_value);
     }
 
+    items.push_back(item);
     return item;
 }
 
-MenuItem*
-Menu::append_item_as_menu(const std::string& label, Render::Icon icon, const std::string& shortcut)
+MenuItem* Menu::append_item_as_menu(
+    const std::string& label,
+    Render::Icon icon,
+    const std::string& shortcut
+)
 {
-    MenuItem* item = emplace_back<MenuItem>(label, icon, shortcut, true);
+    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut, true);
+    items.push_back(item);
     return item;
 }
 
@@ -41,6 +46,13 @@ void Menu::append_separator()
 {
     Separator* sep = emplace_back<Separator>();
     sep->set_fill(ImColor(36, 36, 36));
+}
+
+void Menu::close_all_submenus() const
+{
+    for (MenuItem* item : items) {
+        item->close_submenu();
+    }
 }
 
 } // namespace Slic3r::App::Yoga
