@@ -359,35 +359,6 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
     return out;
 }
 
-BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volume_bbox_orig, bool ignore_bottom, int* bed_idx) const
-{
-    assert(m_type == Type::Rectangle);
-    Domain::BoundingBox3d build_volume = BB::inflated(this->bounding_volume(), SceneEpsilon);
-    if (m_max_print_height == 0.0)
-        build_volume.max.z() = std::numeric_limits<double>::max();
-    if (ignore_bottom)
-        build_volume.min.z() = -std::numeric_limits<double>::max();
-
-    ObjectState state = ObjectState::Outside;
-    int obj_bed_id = -1;
-    for (int bed_id = 0; bed_id <= std::min(s_multiple_beds.get_number_of_beds(), s_multiple_beds.get_max_beds() - 1); ++bed_id) {
-        BoundingBoxf3 volume_bbox = volume_bbox_orig;
-        volume_bbox = BB::translated(volume_bbox, Vec3d{-s_multiple_beds.get_bed_translation(bed_id)});
-
-        state = build_volume.max.z() <= -SceneEpsilon ? ObjectState::Below :
-            build_volume.contains(volume_bbox) ? ObjectState::Inside :
-            build_volume.overlap(volume_bbox) ? ObjectState::Colliding : ObjectState::Outside;
-        if (state != ObjectState::Outside) {
-            obj_bed_id = bed_id;
-            break;
-        }
-    }
-
-    if (bed_idx)
-        *bed_idx = obj_bed_id;
-    return state;
-}
-
 bool BuildVolume::all_paths_inside(const Biz::libpgcode::MoveVertices& moves) const
 {
     auto move_valid = [](const Biz::libpgcode::MoveVertex &move) {

@@ -11,14 +11,12 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Thread.hpp"
-#include "libslic3r/BuildVolume.hpp"
 
 #include <tbb/parallel_for.h>
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
 #include "Slic3r/Biz/Parser/IO.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
 

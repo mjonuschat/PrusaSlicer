@@ -13,13 +13,11 @@
 ///|/
 #include "Model.hpp"
 #include "libslic3r.h"
-#include "BuildVolume.hpp"
 #include "Slic3r/Exception.hpp"
 
 #include "Geometry/ConvexHull.hpp"
 #include "MTUtils.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 
 #include <float.h>
 
@@ -34,6 +32,7 @@
 
 #include "Slic3r/Biz/Algorithms/ModelInstance.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include <Eigen/Dense>
 #include "libslic3r/GCode/GCodeWriter.hpp"
 
@@ -55,59 +54,6 @@ using Domain::TriangleSelector::TriangleStateType;
 using Domain::indexed_triangle_set_with_color;
 
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
-
-unsigned int update_instances_print_volume_state(Domain::ModelObject& model_object, const BuildVolume& build_volume)
-{
-    unsigned int num_printable = 0;
-    enum {
-        INSIDE = 1,
-        OUTSIDE = 2
-    };
-    for (Domain::ModelInstance* model_instance : model_object.instances) {
-        int bed_idx = -1;
-        unsigned int inside_outside = 0;
-        for (const Domain::ModelVolume* vol : model_object.volumes)
-            if (vol->is_model_part()) {
-                const Transform3d matrix = model_instance->get_matrix() * vol->get_matrix();
-                int bed = -1;
-                BuildVolume::ObjectState state = build_volume.object_state(vol->mesh().its, matrix.cast<float>(), true /* may be below print bed */, true /*ignore_bottom*/, &bed);
-                if (bed_idx == -1) // instance will be assigned to the bed the first volume is assigned to.
-                    bed_idx = bed;
-                if (state == BuildVolume::ObjectState::Inside)
-                    // Volume is completely inside.
-                    inside_outside |= INSIDE;
-                else if (state == BuildVolume::ObjectState::Outside)
-                    // Volume is completely outside.
-                    inside_outside |= OUTSIDE;
-                else if (state == BuildVolume::ObjectState::Below) {
-                    // Volume below the print bed, thus it is completely outside, however this does not prevent the object to be printable
-                    // if some of its volumes are still inside the build volume.
-                } else
-                    // Volume colliding with the build volume.
-                    inside_outside |= INSIDE | OUTSIDE;
-            }
-        model_instance->print_volume_state =
-            inside_outside == (INSIDE | OUTSIDE) ? Domain::ModelInstancePVS_Partly_Outside :
-            inside_outside == INSIDE ? Domain::ModelInstancePVS_Inside : Domain::ModelInstancePVS_Fully_Outside;
-        if (inside_outside == INSIDE)
-            ++num_printable;
-        if (bed_idx != -1)
-            s_multiple_beds.set_instance_bed(model_instance->id(), model_instance->printable, bed_idx);
-    }
-    return num_printable;
-}
-
-unsigned int update_print_volume_state(Domain::Model& model, const BuildVolume& build_volume)
-{
-    unsigned int num_printable = 0;
-    s_multiple_beds.clear_inst_map();
-    for (Domain::ModelObject* model_object : model.objects) {
-        num_printable += update_instances_print_volume_state(*model_object, build_volume);
-    }
-
-    s_multiple_beds.inst_map_updated();
-    return num_printable;
-}
 
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs
 // ordered in the same order. In that case it is not necessary to kill the background processing.

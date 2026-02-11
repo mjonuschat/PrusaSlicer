@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
