@@ -14,7 +14,7 @@
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "libslic3r/PNGReadWrite.hpp"
+#include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"

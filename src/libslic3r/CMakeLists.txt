@@ -274,8 +274,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Optimize/BruteforceOptimizer.hpp
     src/libslic3r/PerimeterGenerator.cpp
     src/libslic3r/PerimeterGenerator.hpp
-    src/libslic3r/PNGReadWrite.cpp
-    src/libslic3r/PNGReadWrite.hpp
     src/libslic3r/Point.cpp
     src/libslic3r/Point.hpp
     src/libslic3r/PointGrid.hpp

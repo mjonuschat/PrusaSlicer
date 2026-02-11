@@ -5,7 +5,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "PNGReadWrite.hpp"
+#include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
 
 #include <png.h>
 #include <boost/log/trivial.hpp>

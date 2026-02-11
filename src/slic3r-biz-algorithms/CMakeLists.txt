@@ -28,6 +28,8 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/SVG.hpp
     src/Slic3r/Biz/Algorithms/SVG.cpp
+    include/Slic3r/Biz/Algorithms/PNGReadWrite.hpp
+    src/Slic3r/Biz/Algorithms/PNGReadWrite.cpp    
     include/Slic3r/Biz/Algorithms/TravelingSalesman.hpp
     src/Slic3r/Biz/Algorithms/TravelingSalesman.cpp
     include/Slic3r/Biz/Algorithms/ClipperUtils.hpp

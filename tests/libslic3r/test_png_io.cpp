@@ -6,7 +6,7 @@
 
 #include <numeric>
 
-#include "libslic3r/PNGReadWrite.hpp"
+#include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
 #include "libslic3r/SLA/AGGRaster.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 

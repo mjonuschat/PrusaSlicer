@@ -25,6 +25,9 @@
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Utils.hpp" // ScopeGuard
 
+#include "stb_image_resize2.h"
+#include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
+
 #include "LocalesUtils.hpp"
 
 using Slic3r::Domain::SquareMatrix3d;
@@ -817,6 +820,91 @@ void store_3mf(const std::string& filepath, const Domain::Project& project, cons
     archive_ptr = nullptr;
     if (!close_zip_writer(&archive))
         throw boost::filesystem::filesystem_error("Unable to close zip writer.", {});
+}
+
+static Domain::Image resize_and_crop(
+    const std::vector<unsigned char>& data,
+    const int width,
+    const int height,
+    const int width_new,
+    const int height_new
+)
+{
+    const float scale_x     = float(width_new) / width;
+    const float scale_y     = float(height_new) / height;
+    const float scale       = std::max(scale_x, scale_y); // Choose the larger scale to fill the box
+    const int resized_width = int(width * scale);
+    const int resized_height = int(height * scale);
+
+    std::vector<unsigned char> resized_rgba(resized_width * resized_height * 4);
+    stbir_resize_uint8_linear(
+        data.data(),
+        width,
+        height,
+        4 * width,
+        resized_rgba.data(),
+        resized_width,
+        resized_height,
+        4 * resized_width,
+        STBIR_RGBA
+    );
+
+    Domain::Image th(Domain::PixelFormat::RGBA8, width_new, height_new);
+
+    const int crop_x = (resized_width - width_new) / 2;
+    const int crop_y = (resized_height - height_new) / 2;
+
+    for (int y = 0; y < height_new; ++y) {
+        std::memcpy(
+            th.pixels.data() + y * width_new * 4,
+            resized_rgba.data() + ((y + crop_y) * resized_width + crop_x) * 4,
+            width_new * 4
+        );
+    }
+
+    return th;
+}
+
+std::vector<Domain::Image> get_thumbnail_images_from_3mf(const std::string& input_file, const std::vector<Domain::Size>& sizes)
+{
+    mz_zip_archive archive;
+    mz_zip_zero_struct(&archive);
+
+    if (!open_zip_reader(&archive, input_file))
+        return {};
+
+    int index = mz_zip_reader_locate_file(&archive, "Metadata/thumbnail.png", nullptr, 0);
+    if (index < 0) {
+        close_zip_reader(&archive);
+        return {};
+    }
+
+    mz_zip_archive_file_stat stat;
+    if (!mz_zip_reader_file_stat(&archive, index, &stat)) {
+        close_zip_reader(&archive);
+        return {};
+    }
+
+    std::string buffer;
+    buffer.resize(int(stat.m_uncomp_size));
+    mz_bool res = mz_zip_reader_extract_file_to_mem(&archive, stat.m_filename, buffer.data(), (size_t)stat.m_uncomp_size, 0);
+    close_zip_reader(&archive);
+
+    if (res == 0)
+        return {};
+
+    std::vector<unsigned char> data;
+    unsigned width = 0;
+    unsigned height = 0;
+    if (!png::decode_png(buffer, data, width, height))
+        return {};
+
+    std::vector<Domain::Image> results;
+    for (const Domain::Size& size : sizes) {
+        results.emplace_back(resize_and_crop(data, width, height, size.width, size.height));
+    }
+
+    return results;
 }
 
 } // namespace Slic3r

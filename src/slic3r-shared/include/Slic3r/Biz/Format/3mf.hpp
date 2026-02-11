@@ -10,6 +10,7 @@
 #include <limits>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
+#include "Slic3r/Domain/Size.hpp"
 
 namespace Slic3r {
 namespace Domain {
@@ -50,6 +51,11 @@ void store_3mf(
     const std::string& filepath,
     const Domain::Project& project,
     const Store3mfParam& param = Store3mfParam{}
+);
+
+std::vector<Domain::Image> get_thumbnail_images_from_3mf(
+    const std::string& input_file,
+    const std::vector<Domain::Size>& sizes
 );
 
 } // namespace Slic3r

@@ -30,6 +30,7 @@
 #include <sstream>
 #include <set>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/fstream.hpp>
@@ -45,8 +46,6 @@
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 
-#include "stb_image_resize2.h"
-
 namespace fs = boost::filesystem;
 
 using namespace Slic3r;
@@ -60,21 +59,73 @@ using Slic3r::Domain::Vec2ds;
 
 namespace Slic3r::App::CLI {
 
-// TODO: For now we use just a dummy implementation to pass all slicing steps.
+
+
+
 class CLIThumbnailImageGenerator : public Slicing::IThumbnailImageGenerator
 {
 public:
+    CLIThumbnailImageGenerator() = default;
+    explicit CLIThumbnailImageGenerator(const std::vector<std::string>& input_files)
+    {
+        if (input_files.size() == 1 && boost::iends_with(input_files[0], ".3mf")) {
+            m_filename = input_files[0];
+        }
+    }
+
     std::future<Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
         const Slicing::ThumbnailImageRequests& requests
     ) override
     {
         std::promise<Slicing::ThumbnailImageResults> promise;
         std::future<Slicing::ThumbnailImageResults> result{promise.get_future()};
-        promise.set_value(Slicing::ThumbnailImageResults{});
+        if (m_filename.empty()) {
+            promise.set_value(Slicing::ThumbnailImageResults{});
+            return result;
+        }
+
+        // Create a list of all sizes that we need to generate.
+        std::vector<Domain::Size> sizes;
+        for (const auto& request : requests) {
+            for (const auto& size : request.params.sizes) {
+                sizes.emplace_back(size);
+            }
+        }
+
+        // Now actually generate the thumbnails:
+        std::vector<Domain::Image> source_images = get_thumbnail_images_from_3mf(m_filename, sizes);
+        
+        if (source_images.empty() || source_images.size() != sizes.size()
+         || std::any_of(source_images.begin(), source_images.end(),
+             [](const Domain::Image& img) { return img.width() == 0 || img.height() == 0; })
+            ) {
+            promise.set_value(Slicing::ThumbnailImageResults{});
+            return result;
+        }
+
+        Slicing::ThumbnailImageResults results;
+        size_t j=0;
+        for (const auto& request : requests) {
+            Slicing::ThumbnailImageResult thumbnail_result;
+            thumbnail_result.type = request.type;
+            thumbnail_result.project_id = request.params.project_id;
+            thumbnail_result.bed_instance_id = request.params.bed_instance_id;
+
+            for (size_t i = 0; i < request.params.sizes.size(); ++i) {
+                thumbnail_result.images.push_back(source_images[j++]);
+                ASSERT(thumbnail_result.images.back().width() == request.params.sizes[i].width);
+                ASSERT(thumbnail_result.images.back().height() == request.params.sizes[i].height);
+            }
+            results.push_back(std::move(thumbnail_result));
+        }
+        ASSERT(j == source_images.size());
+        promise.set_value(std::move(results));
         return result;
     }
 
     void handle_enqueued_requests() override {}
+private:
+    std::string m_filename;
 };
 
 struct SlicingStatusChangeListener : Slicing::IStatusListener
@@ -511,49 +562,6 @@ static bool export_projects(
     return true;
 }
 
-static Domain::Image resize_and_crop(
-    const std::vector<unsigned char>& data,
-    const int width,
-    const int height,
-    const int width_new,
-    const int height_new
-)
-{
-    const float scale_x     = float(width_new) / width;
-    const float scale_y     = float(height_new) / height;
-    const float scale       = std::max(scale_x, scale_y); // Choose the larger scale to fill the box
-    const int resized_width = int(width * scale);
-    const int resized_height = int(height * scale);
-
-    std::vector<unsigned char> resized_rgba(resized_width * resized_height * 4);
-    stbir_resize_uint8_linear(
-        data.data(),
-        width,
-        height,
-        4 * width,
-        resized_rgba.data(),
-        resized_width,
-        resized_height,
-        4 * resized_width,
-        STBIR_RGBA
-    );
-
-    Domain::Image th(Domain::PixelFormat::RGBA8, width_new, height_new);
-
-    const int crop_x = (resized_width - width_new) / 2;
-    const int crop_y = (resized_height - height_new) / 2;
-
-    for (int y = 0; y < height_new; ++y) {
-        std::memcpy(
-            th.pixels.data() + y * width_new * 4,
-            resized_rgba.data() + ((y + crop_y) * resized_width + crop_x) * 4,
-            width_new * 4
-        );
-    }
-
-    return th;
-}
-
 bool process_actions(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
@@ -683,7 +691,7 @@ bool process_actions(
         Biz::Platform::IMainThreadDispatcher& dispatcher =
             platform_services.main_thread_dispatcher();
         Domain::Workbench workbench;
-        CLIThumbnailImageGenerator thumbnail_image_generator;
+        CLIThumbnailImageGenerator thumbnail_image_generator{init_params.input.input_files};
         ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
 
         Preset::PresetInteractor& preset_interactor = project_interactor.preset_interactor();
@@ -749,7 +757,7 @@ bool process_actions(
         Biz::Platform::IMainThreadDispatcher& dispatcher =
             platform_services.main_thread_dispatcher();
         Domain::Workbench workbench;
-        CLIThumbnailImageGenerator thumbnail_image_generator;
+        CLIThumbnailImageGenerator thumbnail_image_generator{init_params.input.input_files};
         ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
 
         PresetUpdaterCLI pu(project_interactor.preset_updater_interactor());
