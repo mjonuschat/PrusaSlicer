@@ -262,7 +262,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/MTUtils.hpp
     src/libslic3r/MultiMaterialSegmentation.cpp
     src/libslic3r/MultiMaterialSegmentation.hpp
-    src/libslic3r/MultipleBeds.cpp
     src/libslic3r/MultiPoint.cpp
     src/libslic3r/MultiPoint.hpp
     src/libslic3r/MutablePolygon.cpp
@@ -415,7 +414,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/MinAreaBoundingBox.hpp
     include/libslic3r/miniz_extension.hpp
     include/libslic3r/ModelUtils.hpp
-    include/libslic3r/MultipleBeds.hpp
     include/libslic3r/NSVGUtils.hpp
     include/libslic3r/OpenVDBUtils.hpp
     include/libslic3r/Optimize/NLoptOptimizer.hpp

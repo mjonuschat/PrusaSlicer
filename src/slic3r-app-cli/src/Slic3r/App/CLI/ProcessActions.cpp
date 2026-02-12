@@ -45,7 +45,6 @@
 
 #include "Slic3r/Biz/Format/OBJ.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 
 namespace fs = boost::filesystem;
 

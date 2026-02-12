@@ -21,7 +21,6 @@
 #include <spdlog/spdlog.h>
 
 #include "libslic3r/ModelProcessing.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 
 using Slic3r::App::InitParams;
 using Slic3r::Domain::Model;

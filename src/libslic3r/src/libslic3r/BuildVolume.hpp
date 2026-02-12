@@ -88,7 +88,7 @@ public:
     // Using SceneEpsilon for all tests.
     static constexpr const double SceneEpsilon = EPSILON;
     // Using SceneEpsilon
-    ObjectState  object_state(const indexed_triangle_set &its, const Transform3f& trafo, bool may_be_below_bed, bool ignore_bottom = true, int* bed_idx = nullptr) const;
+    ObjectState  object_state(const indexed_triangle_set &its, const Transform3f& trafo, bool may_be_below_bed, bool ignore_bottom = true) const;
 
     // 2) Test called on G-code paths.
     // Using BedEpsilon for all tests.

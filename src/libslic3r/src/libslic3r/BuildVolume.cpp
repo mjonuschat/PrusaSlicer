@@ -22,8 +22,6 @@
 #include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/Polygon.hpp"
 
-#include "libslic3r/MultipleBeds.hpp"
-
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
@@ -291,24 +289,9 @@ BuildVolume::ObjectState object_state_templ(const indexed_triangle_set &its, con
     return inside ? (outside ? BuildVolume::ObjectState::Colliding : BuildVolume::ObjectState::Inside) : BuildVolume::ObjectState::Outside;
 }
 
-BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& its, const Transform3f& trafo_orig, bool may_be_below_bed, bool ignore_bottom, int* bed_idx) const
+BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& its, const Transform3f& trafo, bool may_be_below_bed, bool ignore_bottom) const
 {
     ObjectState out = ObjectState::Outside;
-    if (bed_idx)
-        *bed_idx = -1;
-
-    // When loading an old project with more than the maximum number of beds,
-    // we still want to move the objects to the respective positions.
-    // Max beds number is momentarily increased when doing the rearrange, so use it.
-    const int max_bed = s_multiple_beds.get_loading_project_flag()
-                        ? s_multiple_beds.get_number_of_beds() - 1
-                        : std::min(s_multiple_beds.get_number_of_beds(), s_multiple_beds.get_max_beds() - 1);
-
-    for (int bed_id = 0; bed_id <= max_bed; ++bed_id) {
-
-
-    Transform3f trafo = trafo_orig;
-    trafo.pretranslate(-s_multiple_beds.get_bed_translation(bed_id).cast<float>());
 
     switch (m_type) {
     case Type::Rectangle:
@@ -344,16 +327,6 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
     default:
         out = ObjectState::Inside;
         break;
-    }
-
-    if (out != ObjectState::Outside) {
-        if (bed_idx)
-            *bed_idx = bed_id;
-        break;
-    }    
-
-
-
     }
 
     return out;
