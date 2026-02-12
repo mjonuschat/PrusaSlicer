@@ -16,7 +16,6 @@ add_library(slic3r-app-cli ${SLIC3R_APP_CLI_FILES})
 
 target_link_libraries(slic3r-app-cli PUBLIC
         slic3r-shared
-        slic3r-arrange-wrapper
 )
 
 target_include_directories(slic3r-app-cli PUBLIC include)

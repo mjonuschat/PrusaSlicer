@@ -11,8 +11,6 @@
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
 
-#include <arrange-wrapper/ModelArrange.hpp>
-
 #include <cstdlib>
 #include <string>
 
@@ -270,20 +268,27 @@ void init_print(
 		object->add_instance();
 	}
 
-    double distance = arrange_min_distance(config);
-    arr2::ArrangeSettings arrange_settings{};
-    arrange_settings.set_distance_from_objects(distance);
+    
+
+    
 
     auto pts = config.get_view().get<std::vector<Vec2d>>("bed_shape");
     Points pts_scaled(pts.size());
     std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return scaled(pt); });
 
-    arr2::ArrangeBed bed{arr2::to_arrange_bed(pts_scaled, Vec2crd{0, 0})};
-    if (duplicate_count > 1) {
-        duplicate(model, duplicate_count, bed, arrange_settings);
-    }
+    // After we removed the old arrange interface, we can only support a single mesh here.
+    // This should be rewritten using the new interface. Luckily, nobody currently calls
+    // it with multiple meshes, so this is not a problem.
+    ASSERT(meshes.size() == 1, "init_print: currently only supports a single mesh.");
+    // double distance = arrange_min_distance(config);
+    // arr2::ArrangeSettings arrange_settings{};
+    // arrange_settings.set_distance_from_objects(distance);
+    // arr2::ArrangeBed bed{arr2::to_arrange_bed(pts_scaled, Vec2crd{0, 0})};
+    // if (duplicate_count > 1) {
+    //     duplicate(model, duplicate_count, bed, arrange_settings);
+    // }
+    // arrange_objects(model, bed, arrange_settings);
 
-    arrange_objects(model, bed, arrange_settings);
     Algorithms::Model::center_instances_around_point(model, {100, 100});
     if (ensure_on_bed) {
         for (Domain::ModelObject* mo : model.objects) {

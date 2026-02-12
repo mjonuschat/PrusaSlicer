@@ -15,8 +15,6 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Math.hpp"
 
-#include "arrange-wrapper/ModelArrange.hpp"
-
 #include <spdlog/spdlog.h>
 
 #include "libslic3r/ModelProcessing.hpp"
@@ -102,13 +100,10 @@ bool process_transform(
 {
     const App::TransformParams& transform = init_params.transform;
 
-    const Vec2crd gap{s_multiple_beds.get_bed_gap()};
-    arr2::ArrangeBed bed = arr2::to_arrange_bed(get_bed_shape(config_pack), gap);
-    arr2::ArrangeSettings arrange_cfg;
-    if ((transform.merge.has_value() && transform.merge.value()) || transform.duplicate.has_value())
-    {
-        arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
-    }
+    // if ((transform.merge.has_value() && transform.merge.value()) || transform.duplicate.has_value())
+    // {
+    //     arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
+    // }
 
     if (transform.merge.has_value() && transform.merge.value() && !projects.empty()) {
         Project& merged_project = projects.front();
@@ -121,43 +116,49 @@ bool process_transform(
 
         // Rearrange instances unless --dont-arrange is supplied
         if (!transform.dont_arrange.has_value() && !transform.dont_arrange.value()) {
-            merged_model.add_default_instances();
-            if (init_params.action.slice) {
-                arrange_objects(merged_model, bed, arrange_cfg);
-            } else {
-                arrange_objects(merged_model, arr2::InfiniteBed{}, arrange_cfg); //??????
-            }
+            SPDLOG_ERROR("Arrange is not yet available from CLI.");
+            return false;
+            // merged_model.add_default_instances();
+            // if (init_params.action.slice) {
+            //     arrange_objects(merged_model, bed, arrange_cfg);
+            // } else {
+            //     arrange_objects(merged_model, arr2::InfiniteBed{}, arrange_cfg); //??????
+            // }
         }
 
         projects.resize(1);
     }
 
     if (transform.duplicate.has_value()) {
-        for (Project& project : projects) {
-            Model &model = project.model();
-            const bool all_objects_have_instances = std::none_of(
-                model.objects.begin(),
-                model.objects.end(),
-                [](ModelObject* o) { return o->instances.empty(); }
-            );
 
-            const uint32_t dups = transform.duplicate.value();
-            if (!all_objects_have_instances) {
-                model.add_default_instances();
-            }
+        SPDLOG_ERROR("Duplication is not yet available from CLI.");
+        return false;
 
-            try {
-                if (dups > 1) {
-                    // if all input objects have defined position(s) apply duplication to the whole model
-                    duplicate(model, size_t(dups), bed, arrange_cfg);
-                } else {
-                    arrange_objects(model, bed, arrange_cfg);
-                }
-            } catch (std::exception& ex) {
-                SPDLOG_ERROR("error: {}", ex.what());
-                return false;
-            }
-        }
+        // for (Project& project : projects) {
+        //     Model &model = project.model();
+        //     const bool all_objects_have_instances = std::none_of(
+        //         model.objects.begin(),
+        //         model.objects.end(),
+        //         [](ModelObject* o) { return o->instances.empty(); }
+        //     );
+
+        //     const uint32_t dups = transform.duplicate.value();
+        //     if (!all_objects_have_instances) {
+        //         model.add_default_instances();
+        //     }
+
+        //     try {
+        //         if (dups > 1) {
+        //             // if all input objects have defined position(s) apply duplication to the whole model
+        //             duplicate(model, size_t(dups), bed, arrange_cfg);
+        //         } else {
+        //             arrange_objects(model, bed, arrange_cfg);
+        //         }
+        //     } catch (std::exception& ex) {
+        //         SPDLOG_ERROR("error: {}", ex.what());
+        //         return false;
+        //     }
+        // }
     }
 
     if (transform.duplicate_grid.has_value()) {

@@ -21,8 +21,6 @@ add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
 add_subdirectory(libvgcode)
 add_subdirectory(slic3r-biz-arrange)
-add_subdirectory(slic3r-arrange)
-add_subdirectory(slic3r-arrange-wrapper)
 #add_subdirectory(libseqarrange)
 add_subdirectory(slic3r-app-cli)
 

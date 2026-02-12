@@ -40,8 +40,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <arrange-wrapper/ModelArrange.hpp>
-
 #include "Slic3r/Biz/Format/OBJ.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/MultipleBeds.hpp"
@@ -671,11 +669,6 @@ bool process_actions(
             return true;
         }
 
-        const Vec2crd gap{s_multiple_beds.get_bed_gap()};
-        arr2::ArrangeBed bed = arr2::to_arrange_bed(get_bed_shape(config_pack), gap);
-        arr2::ArrangeSettings arrange_cfg;
-        arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
-
         Biz::Platform::PlatformServices& platform_services =
             Biz::Platform::PlatformServices::instance();
         platform_services.set_secret_store(std::make_unique<Biz::SecretStoreDummy>());
@@ -706,16 +699,9 @@ bool process_actions(
             // is supplied); if any object has no instances, it will get a default one
             // and all instances will be rearranged (unless --dont-arrange is supplied).
             if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
-                if (transform.center.has_value()) {
-                    const Vec2d c = transform.center.value();
-                    arrange_objects(
-                        model,
-                        arr2::InfiniteBed{Algorithms::Scaling::scaled(c)},
-                        arrange_cfg
-                    );
-                } else {
-                    arrange_objects(model, bed, arrange_cfg);
-                }
+                // Arrange not yet implemented from CLI.
+                SPDLOG_ERROR("Arrange is not yet available from CLI.");
+                return true;
             }
 
             const std::optional<std::string> slicing_errors = slice_single_model_project(
