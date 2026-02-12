@@ -3,12 +3,14 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Biz {
 
 namespace {
+
 bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance* inst)
 {
     auto it = std::find(instances.begin(), instances.end(), inst);
@@ -47,11 +49,18 @@ void remove_instance_from_bed(
 }
 
 std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
-find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox3d& bounds)
+BedTracking::find_bed_instance_for_bounds(Domain::Project& project, const Algorithms::Bed::ObjectCollisionData& obj_collision_data)
 {
     for (auto& cc : project.config_containers()) {
+        const auto& bed = cc->bed();
+        auto it = m_bed_mesh_cache.find(bed.id().id);
+        if (it == m_bed_mesh_cache.end())
+            // bed contour's aabb mesh not found, create and cache it
+            it = m_bed_mesh_cache.try_emplace(bed.id().id, std::move(Algorithms::Bed::bed_contour_as_aabb_mesh(bed))).first;
+        AABBMesh* bed_aabb_mesh_ptr = bed_aabb_mesh_ptr = &it->second;
         for (auto& bi : cc->bed_instances()) {
-            Algorithms::Bed::BedContainmentState state = Algorithms::Bed::contains_3d(*bi, bounds);
+            Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bi, bed_aabb_mesh_ptr);
+            Algorithms::Bed::BedContainmentState state = Algorithms::Bed::contains_3d(bi_collision_data, obj_collision_data);
             if (state == Algorithms::Bed::BedContainmentState::Inside || state == Algorithms::Bed::BedContainmentState::Colliding)
                 return std::make_tuple(cc.get(), bi.get(), state);
         }
@@ -59,9 +68,10 @@ find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox
     return std::make_tuple(nullptr, nullptr, Algorithms::Bed::BedContainmentState::Outside);
 }
 
-Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst)
+const Algorithms::Bed::ObjectCollisionData& BedTracking::get_instance_collision_data(const Domain::Project& project,
+    const Domain::ModelInstance& inst)
 {
-    // This function calculates an instance's 3D bounding box, using a cache to boost performance.
+    // This function calculates an instance's 3D bounding box and 2D convex hull, using a cache to boost performance.
     // The cache is invalidated if the instance's transform, its object's internal volume transforms,
     // or any volume's ID or type are modified.
     // It reuses cached geometry for instances sharing the same rotation to further optimize.
@@ -98,22 +108,29 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
 
     // Try to use the cache
     bool cache_used = false;
-    if (cache_entry.cached_bb.defined) {
+    if (cache_entry.collision.bounding_box.defined) {
         if (cache_entry.inst_trafo.get_rotation().isApprox(trafo.get_rotation()) &&
             cache_entry.inst_trafo.get_scaling_factor().isApprox(trafo.get_scaling_factor()) &&
             cache_entry.inst_trafo.get_mirror().isApprox(trafo.get_mirror())) {
-            // Rotation, scale and mirror are the same as before. We can just translate the bounding box itself.
-            Domain::Vec3d shift = trafo.get_offset() - cache_entry.inst_trafo.get_offset();
-            cache_entry.cached_bb = Algorithms::BoundingBox::translated(cache_entry.cached_bb, shift);
+            // Rotation, scale and mirror are the same as before. We can just translate the collision data itself.
+            cache_entry.collision.translate(trafo.get_offset() - cache_entry.inst_trafo.get_offset());
             cache_entry.inst_trafo = trafo;
             cache_used = true;
         }
     }
 
     if (! cache_used) {
-        // We must calculate the transformed bounding box in this case.
-        auto bb = Algorithms::ModelObject::instance_bounding_box(*inst.get_object(), inst, Domain::SINKING_Z_THRESHOLD);
-        cache_entry = { trafo, bb };
+        // We must calculate the new collision data in this case.
+        const Domain::ModelObject& obj = *inst.get_object();
+        auto bb_3d = Algorithms::ModelObject::instance_bounding_box(obj, inst, Domain::SINKING_Z_THRESHOLD);
+        auto ch_2d = Algorithms::Point::unscaled(Algorithms::ModelObject::convex_hull_2d(obj, trafo.get_matrix()).points);
+        cache_entry = {
+            trafo,
+            {
+                std::move(bb_3d),
+                std::move(ch_2d)
+            }
+        };
     }
 
     // Clear the cache every now and then.
@@ -140,7 +157,7 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
         });
     }
 
-    return cache_entry.cached_bb;
+    return cache_entry.collision;
 }
 
 void BedTracking::update_instance_bed_placement(
@@ -149,9 +166,9 @@ void BedTracking::update_instance_bed_placement(
     BedTrackingChanges& changes
 )
 {
-    const Domain::BoundingBox3d& bb = get_instance_bb(project, inst);
+    const auto& collision_data = get_instance_collision_data(project, inst);
 
-    auto [cc, bi, state] = find_bed_instance_for_bounds(project, bb);
+    auto [cc, bi, state] = find_bed_instance_for_bounds(project, collision_data);
     if (bi != nullptr) {
         if (state == Algorithms::Bed::BedContainmentState::Inside) {
             bi->model_instances.push_back(&inst);
@@ -194,8 +211,20 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
     return changes;
 }
 
-BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links)
+BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ElementRefs& instances,
+    bool remove_original_links)
 {
+    // remove from cache meshes of beds whose shape has been changed from custom to non-custom
+    std::vector<size_t> bed_ids;
+    bed_ids.reserve(project.config_containers().size());
+    for (const auto& cc : project.config_containers()) {
+        bed_ids.emplace_back(cc->bed().id().id);
+    }
+    std::sort(bed_ids.begin(), bed_ids.end());
+    std::erase_if(m_bed_mesh_cache, [&](const auto& item) {
+        return !std::binary_search(bed_ids.begin(), bed_ids.end(), item.first);
+    });
+
     BedTrackingChanges changes;
     for (const auto& e : instances) {
         if (e.is_wipe_tower()) {
@@ -230,4 +259,5 @@ BedTracking::update_instances_bed_placement(Domain::Project& project, const Doma
     }
     return changes;
 }
+
 } // namespace Slic3r::Biz

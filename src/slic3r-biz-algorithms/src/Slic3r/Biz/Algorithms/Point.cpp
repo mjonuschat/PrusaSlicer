@@ -27,15 +27,24 @@ bool remove_consecutive_duplicate_points(Domain::Points& points, const bool chec
     return true;
 }
 
-Domain::Points scaled(const std::vector<Domain::Vec2d>& points)
+Domain::Points scaled(const Domain::Vec2ds& points)
 {
-    Domain::Points scaled_points;
-    scaled_points.reserve(points.size());
-    for (const Domain::Vec2d& pt : points) {
-        scaled_points.emplace_back(Scaling::scaled(Domain::Vec2d{pt.x(), pt.y()}));
-    }
+    Domain::Points ret;
+    ret.reserve(points.size());
+    std::ranges::transform(points, std::back_inserter(ret), [](const auto& p) {
+        return Scaling::scaled(p);
+    });
+    return ret;
+}
 
-    return scaled_points;
+Domain::Vec2ds unscaled(const Domain::Points& points)
+{
+    Domain::Vec2ds ret;
+    ret.reserve(points.size());
+    std::ranges::transform(points, std::back_inserter(ret), [](const auto& p) {
+        return Scaling::unscaled<double>(p);
+    });
+    return ret;
 }
 
 Domain::Points collect_duplicates(Domain::Points pts /* Copy */)

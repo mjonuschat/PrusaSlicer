@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelInstance.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/SelectionExtents.hpp"
 
 #include <Slic3r/Assert.hpp>
@@ -1867,8 +1868,19 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
         // Also, the wipe tower position and rotation are bed relative.
         Print::WipeTowerGeometry geometry{it->second};
         const Domain::BoundingBox2d bounding_box{get_wipe_tower_bounding_box(geometry, *bed_instance)};
+        // temporary placeholder until the convex hull of the wipe tower is implemented
+        const Domain::Vec2ds convex_hull;
         using Algorithms::Bed::BedContainmentState;
-        const BedContainmentState contains{Algorithms::Bed::contains_2d(*bed_instance, bounding_box)};
+        const auto& bed = bed_instance->bed.get();
+        std::optional<AABBMesh> bed_aabb_mesh;
+        if (bed.type() == Domain::BedType::Custom)
+            bed_aabb_mesh.emplace(Algorithms::Bed::bed_contour_as_aabb_mesh(bed));
+        AABBMesh* bed_aabb_mesh_ptr = bed_aabb_mesh.has_value() ? &*bed_aabb_mesh : nullptr;
+        Algorithms::Bed::BedInstanceCollisionData bi_collision_data(
+            *bed_instance,
+            bed_aabb_mesh.has_value() ? &*bed_aabb_mesh : nullptr
+        );
+        const BedContainmentState contains{ Algorithms::Bed::contains_2d(bi_collision_data, bounding_box, convex_hull) };
         if (contains != BedContainmentState::Inside) {
             wipe_towers_outside.push_back(e);
         }

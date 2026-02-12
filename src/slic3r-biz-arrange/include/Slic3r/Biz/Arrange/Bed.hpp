@@ -39,19 +39,19 @@ struct RectangleBed : public IBed
     RectangleBed(
         const Domain::BoundingBox2crd& bb,
         const PivotPoint pivot_point         = {},
-        const Domain::Bed::Segments segments = {}
+        const Domain::BedSegments segments   = {}
     );
 
     Domain::BoundingBox2crd bounding_box() const final;
     Domain::ExPolygons ifp_convex(const Domain::Polygon& convexpoly) const final;
     double area() const final;
     PivotPoint pivot_point() const;
-    Domain::Bed::Segments segments() const;
+    Domain::BedSegments segments() const;
 
 private:
     Domain::BoundingBox2crd m_bb;
     PivotPoint m_pivot_point;
-    Domain::Bed::Segments m_segments;
+    Domain::BedSegments m_segments;
 };
 
 struct CircleBed : public IBed

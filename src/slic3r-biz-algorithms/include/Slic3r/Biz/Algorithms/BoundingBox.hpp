@@ -105,6 +105,16 @@ inline Domain::Polygon to_polygon(const Domain::BoundingBox2crd& box)
     }};
 }
 
+inline Domain::Vec2ds to_polygon(const Domain::BoundingBox2d& box)
+{
+    return {
+        box.min,
+        { box.max.x(), box.min.y() },
+        box.max,
+        { box.min.x(), box.max.y() }
+    };
+}
+
 } // namespace Slic3r::Biz::Algorithms::BoundingBox
 
 namespace cereal {

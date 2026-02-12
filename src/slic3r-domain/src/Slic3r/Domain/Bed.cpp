@@ -1,7 +1,6 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
-#include "Slic3r/Domain/BoundingBox.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -9,6 +8,11 @@
 #include <cfloat>
 
 namespace Slic3r::Domain {
+
+bool operator==(const BedSegments& a, const BedSegments& b)
+{
+    return a.x_count == b.x_count && a.y_count == b.y_count;
+}
 
 static bool check_texture(const std::string& filename)
 {
@@ -24,22 +28,16 @@ static bool check_model(const std::string& filename)
     return !filename.empty() && boost::algorithm::iends_with(filename, ".stl") && boost::filesystem::exists(filename, ec);
 }
 
-Bed Bed::from(
-    const Vec2ds& contour,
-    float max_print_height,
-    const std::optional<Bed::Segments>& bed_segments,
-    const std::optional<Vec2d>& auxiliary_travel_anchor,
-    const std::string& model_filename,
-    const std::string& texture_filename
-)
+Bed Bed::create(const BedCreationData& data)
 {
     Bed ret;
-    ret.m_contour          = contour;
-    ret.m_max_print_height = max_print_height;
-    ret.m_segments         = bed_segments;
-    ret.m_auxiliary_travel_anchor = auxiliary_travel_anchor;
-    ret.m_model_filename   = model_filename;
-    ret.m_texture_filename = texture_filename;
+    ret.m_type             = data.type;
+    ret.m_contour          = data.contour;
+    ret.m_contour_mesh     = data.contour_mesh;
+    ret.m_max_print_height = data.max_print_height;
+    ret.m_segments         = data.segments;
+    ret.m_model_filename   = data.model_filename;
+    ret.m_texture_filename = data.texture_filename;
 
     if (!ret.m_model_filename.empty() && !check_model(ret.m_model_filename)) {
         SPDLOG_WARN("Invalid or unreachable bed model: {}", ret.m_model_filename);
@@ -99,17 +97,14 @@ bool Bed::operator==(const Bed& rhs) const
             return false;
         }
     }
-    if (m_top_bottom_convex_hull_decomposition != rhs.m_top_bottom_convex_hull_decomposition) {
-        return false;
-    }
-    if (m_circle != rhs.m_circle) {
-        return false;
-    }
     return true;
 }
 
 bool Bed::matches(const Bed& rhs) const
 {
+    if (m_type != rhs.m_type)
+        return false;
+
     if (m_contour.size() != rhs.m_contour.size())
         return false;
 
@@ -124,10 +119,6 @@ bool Bed::matches(const Bed& rhs) const
     if (m_segments != rhs.m_segments)
         return false;
 
-    if (m_auxiliary_travel_anchor != rhs.m_auxiliary_travel_anchor) {
-        return false;
-    }
-
     if (m_model_filename != rhs.m_model_filename)
         return false;
 
@@ -137,8 +128,4 @@ bool Bed::matches(const Bed& rhs) const
     return true;
 }
 
-bool operator==(const Bed::Segments& a, const Bed::Segments& b)
-{
-    return a.x_count == b.x_count && a.y_count == b.y_count;
-}
 } // namespace Slic3r::Domain

@@ -5,43 +5,33 @@
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Assert.hpp"
 
+#include <admesh/stl.h>
+
 namespace Slic3r::Biz::Algorithms::Bed {
 
-Domain::BedType detect_bed_type(const Domain::Bed& bed)
+void ObjectCollisionData::translate(const Domain::Vec3d& shift)
 {
-    //
-    // See BuildVolume constructor as reference.
-    //
-
-    const Domain::Vec2ds& contour = bed.contour();
-    if (contour.size() < 3)
-        return Domain::BedType::Invalid;
-
-    // Calculate various metrics of the input polygon.
-    Domain::Polygon polygon      = Polygon::scaled(contour);
-    Domain::Polygon convex_hull  = Geometry::convex_hull(polygon);
-    Domain::BoundingBox2crd bbox = Polygon::get_extents(convex_hull);
-    Domain::Vec2crd bbox_size    = BoundingBox::sizes(bbox);
-    double area                  = polygon.area();
-    double bbox_area             = double(bbox_size.x()) * double(bbox_size.y());
-
-    if (contour.size() >= 4 && std::abs(area - bbox_area) < sqr(Domain::SCALED_EPSILON))
-        return Domain::BedType::Rectangle;
-    else if (contour.size() > 3) {
-        Geometry::Circled circle = as_circular_bed(bed);
-        if (circle.radius > 0.0)
-            return Domain::BedType::Circle;
-    }
-
-    return ((convex_hull.area() - area) < sqr(Domain::SCALED_EPSILON)) ? Domain::BedType::Convex : Domain::BedType::Custom;
+    bounding_box = BoundingBox::translated(bounding_box, shift);
+    Domain::Vec2d shift_2d = Point::to_2d(shift);
+    std::for_each(convex_hull_2d.begin(), convex_hull_2d.end(), [&](Domain::Vec2d& v) {
+        v += shift_2d;
+    });
 }
 
-Geometry::Circled as_circular_bed(const Domain::Bed& bed)
+Domain::Vec2d BedInstanceCollisionData::instance_offset() const
 {
-    const Domain::Vec2ds& contour = bed.contour();
+    return Point::to_2d(instance.transformation.get_offset());
+}
+
+static Geometry::Circled as_circular_bed(const Domain::Vec2ds& contour)
+{
     Geometry::Circled circle      = Geometry::circle_ransac(contour);
     bool is_circle                = true;
     Domain::Vec2d prev            = contour.back();
@@ -56,120 +46,169 @@ Geometry::Circled as_circular_bed(const Domain::Bed& bed)
         }
         prev = p;
     }
-    return is_circle ? circle : Geometry::Circled(Domain::Vec2d(0.0, 0.0), 0.0);
+    return is_circle ? circle : Geometry::Circled(Domain::Vec2d::Zero(), 0.0);
 }
 
-static Domain::Vec2ds aabb_corners(const Domain::BoundingBox2d& aabb, const Domain::Vec2d& offset)
+Domain::BedType detect_bed_type_from_contour(const Domain::Vec2ds& contour)
 {
-    return {
-        offset + aabb.min,
-        offset + Domain::Vec2d(aabb.max.x(), aabb.min.y()),
-        offset + aabb.max,
-        offset + Domain::Vec2d(aabb.min.x(), aabb.max.y())
-    };
+    //
+    // See BuildVolume constructor as reference.
+    //
+    if (contour.size() < 3)
+        return Domain::BedType::Invalid;
+
+    // Calculate various metrics of the input polygon.
+    Domain::Polygon polygon      = Polygon::scaled(contour);
+    Domain::Polygon convex_hull  = Geometry::convex_hull(polygon);
+    Domain::BoundingBox2crd bbox = Polygon::get_extents(convex_hull);
+    Domain::Vec2crd bbox_size    = BoundingBox::sizes(bbox);
+    double area                  = polygon.area();
+    double bbox_area             = double(bbox_size.x()) * double(bbox_size.y());
+
+    if (contour.size() >= 4 && std::abs(area - bbox_area) < sqr(Domain::SCALED_EPSILON))
+        return Domain::BedType::Rectangle;
+    else if (contour.size() > 3) {
+        Geometry::Circled circle = as_circular_bed(contour);
+        if (circle.radius > 0.0)
+            return Domain::BedType::Circle;
+    }
+
+    return ((convex_hull.area() - area) < sqr(Domain::SCALED_EPSILON)) ? Domain::BedType::Convex : Domain::BedType::Custom;
 }
 
-static std::vector<Domain::Vec2crd> scaled_aabb_corners(const Domain::BoundingBox2d& aabb, const Domain::Vec2d& offset)
+static Domain::Vec2ds bed_contour_as_triangles(const Domain::Vec2ds& contour)
 {
-    return {
-        Scaling::scaled(offset + aabb.min),
-        Scaling::scaled(offset + Domain::Vec2d(aabb.max.x(), aabb.min.y())),
-        Scaling::scaled(offset + aabb.max),
-        Scaling::scaled(offset + Domain::Vec2d(aabb.min.x(), aabb.max.y()))
-    };
+    Domain::ExPolygon polygon(Algorithms::Polygon::scaled(contour));
+    return Algorithms::Tesselate::triangulate_expolygon_2d(polygon, false);
 }
 
-BedContainmentState contains_2d(const Domain::BedInstance& bed_instance, const Domain::BoundingBox2d& object_bb)
+Domain::Vec2ds bed_contour_as_triangles(const Domain::Bed& bed)
 {
-    const Domain::Bed& bed = bed_instance.bed.get();
-    Domain::Vec2d inst_pos = Point::to_2d(bed_instance.transformation.get_offset());
+    return bed_contour_as_triangles(bed.contour());
+}
 
-    switch (bed.type()) {
-    default:
-    case Domain::BedType::Invalid: {
+indexed_triangle_set bed_contour_as_its(const Domain::Vec2ds& contour)
+{
+    Domain::Vec2ds triangles = bed_contour_as_triangles(contour);
+    indexed_triangle_set its;
+    its.vertices.reserve(triangles.size());
+    std::ranges::transform(triangles, std::back_inserter(its.vertices), [](const Domain::Vec2d& p) {
+        return Algorithms::Point::to_3d(p.cast<float>(), 0.0f);
+    });
+    its.indices.reserve(triangles.size() / 3);
+    for (size_t i = 0; i < triangles.size(); i += 3) {
+        its.indices.push_back({ int(i + 0), int(i + 1), int(i + 2) });
+    }
+    return its;
+}
+
+AABBMesh bed_contour_as_aabb_mesh(const Domain::Bed& bed)
+{
+    return AABBMesh(bed.contour_mesh());
+}
+
+BedContainmentState contains_2d(const BedInstanceCollisionData& bed_instance, const Domain::BoundingBox2d& object_bb,
+    const Domain::Vec2ds& object_ch)
+{
+    const Domain::Bed& bed = bed_instance.instance.bed.get();
+    if (bed.type() == Domain::BedType::Invalid) {
         PANIC("Found invalid bed");
         return BedContainmentState::Outside;
     }
-    case Domain::BedType::Rectangle: {
-        Domain::Vec2d half_extent = 0.5 * bed.contour_aabb_extent();
-        Domain::Vec2d center      = bed.center() + inst_pos;
-        Domain::BoundingBox2d bed_bounds{center - half_extent, center + half_extent};
-        return bed_bounds.contains(object_bb) ?
-            BedContainmentState::Inside :
-            bed_bounds.overlap(object_bb) ?
-            BedContainmentState::Colliding :
-            BedContainmentState::Outside;
-    }
-    case Domain::BedType::Circle: {
-        std::optional<Domain::Bed::Circle> bed_circle = bed.circle();
-        DEBUG_ASSERT(bed_circle.has_value());
 
-        Geometry::Circle circle     = Geometry::Circle{bed_circle->first, bed_circle->second};
-        Domain::Vec2ds bbox_corners = aabb_corners(object_bb, -inst_pos);
-        size_t inside_count         = 0;
-        for (const auto& v : bbox_corners) {
-            if (circle.contains(v))
+    if (!object_bb.defined)
+        return BedContainmentState::Below;
+
+    Domain::Vec2d inst_offset = bed_instance.instance_offset();
+    Domain::BoundingBox2d local_obj_bb = BoundingBox::translated(object_bb, -inst_offset);
+    Domain::BoundingBox2d bed_aabb = bed.contour_aabb();
+
+    // early exit
+    if (!bed_aabb.overlap(local_obj_bb))
+        return BedContainmentState::Outside;
+
+    switch (bed.type())
+    {
+    default:
+    {
+        PANIC("Found invalid bed");
+        return BedContainmentState::Outside;
+    }
+    case Domain::BedType::Rectangle:
+    case Domain::BedType::Circle:
+    case Domain::BedType::Convex:
+    {
+        DEBUG_ASSERT(bed_instance.aabb_mesh != nullptr);
+
+        // first check the bounding box
+        Domain::Vec2ds object_bb_poly = BoundingBox::to_polygon(object_bb);
+        size_t inside_count = 0;
+        Domain::Vec3d ray_dir = -Domain::Vec3d::UnitZ();
+        for (const auto& v : object_bb_poly) {
+            AABBMesh::hit_result hit = bed_instance.aabb_mesh->query_ray_hit(Point::to_3d(v - inst_offset, 1.0), ray_dir);
+            if (hit.is_hit())
                 ++inside_count;
         }
-        return (inside_count == 0) ?
-            BedContainmentState::Outside :
-            (inside_count == bbox_corners.size()) ?
-            BedContainmentState::Inside :
-            BedContainmentState::Colliding;
-    }
-    case Domain::BedType::Convex: {
-        std::optional<Domain::Bed::TopBottomDecomposition> convex_hull_decomposition = bed.top_bottom_convex_hull_decomposition();
-        DEBUG_ASSERT(convex_hull_decomposition.has_value());
 
-        Domain::Vec2ds bbox_corners = aabb_corners(object_bb, -inst_pos);
-        size_t inside_count         = 0;
-        for (const auto& v : bbox_corners) {
-            if (Geometry::inside_convex_polygon(*convex_hull_decomposition, v))
+        if (inside_count == object_bb_poly.size())
+            return BedContainmentState::Inside;
+
+        // now check the 2D convex hull
+        bool any_outside = false;
+        inside_count = 0;
+        for (const auto& v : object_ch) {
+            AABBMesh::hit_result hit = bed_instance.aabb_mesh->query_ray_hit(Point::to_3d(v - inst_offset, 1.0), ray_dir);
+            if (hit.is_hit())
                 ++inside_count;
+            else
+                any_outside = true;
+
+            if (inside_count > 0 && any_outside)
+                return BedContainmentState::Colliding;
         }
-        return (inside_count == 0) ?
-            BedContainmentState::Outside :
-            (inside_count == bbox_corners.size()) ?
-            BedContainmentState::Inside :
-            BedContainmentState::Colliding;
+
+        if (inside_count == object_ch.size()) 
+            return BedContainmentState::Inside;
+
+        // check if the bed is intersecting the object (colliding case)
+        Domain::Polygon bed_contour = Polygon::scaled(bed.contour());
+        Domain::Polygon obj_contour = Polygon::scaled(object_ch);
+        obj_contour.translate(Scaling::scaled(-inst_offset));
+        Domain::Polygons inters = ClipperUtils::intersection(bed_contour, obj_contour);
+        return inters.empty()? BedContainmentState::Outside : BedContainmentState::Colliding;
     }
-    case Domain::BedType::Custom: {
-        // WARNING !!
-        // The following algorithm is NOT robust as a non convex polygon could contain all the vertices
-        // of the box without fully containing the box itself.
+    case Domain::BedType::Custom:
+    {
+        Domain::Polygon bed_contour = Polygon::scaled(bed.contour());
+        Domain::Polygon obj_contour = Polygon::scaled(object_ch);
+        obj_contour.translate(Scaling::scaled(-inst_offset));
+        Domain::Polygons diff = ClipperUtils::diff(obj_contour, bed_contour);
 
-        Domain::ExPolygon expolygon(Polygon::scaled(bed.contour()));
+        if (diff.empty())
+            return BedContainmentState::Inside;
+        else if (diff.size() > 1)
+            return BedContainmentState::Colliding;
 
-        std::vector<Domain::Vec2crd> bbox_corners = scaled_aabb_corners(object_bb, -inst_pos);
-        size_t inside_count                       = 0;
-        for (const auto& v : bbox_corners) {
-            if (ExPolygon::contains(expolygon, v))
-                ++inside_count;
-        }
-        return (inside_count == 0) ?
-            BedContainmentState::Outside :
-            (inside_count == bbox_corners.size()) ?
-            BedContainmentState::Inside :
-            BedContainmentState::Colliding;
+        return (diff.front().area() == obj_contour.area()) ? BedContainmentState::Outside : BedContainmentState::Colliding;
     }
     }
 }
 
-BedContainmentState contains_3d(const Domain::BedInstance& bed_instance, const Domain::BoundingBox3d& object_bb)
+BedContainmentState contains_3d(const BedInstanceCollisionData& bed_instance, const ObjectCollisionData& collision_data)
 {
-    BedContainmentState state = contains_2d(bed_instance, BoundingBox::to_2d(object_bb));
+    BedContainmentState state = contains_2d(bed_instance, BoundingBox::to_2d(collision_data.bounding_box),
+        collision_data.convex_hull_2d);
+
     if (state != BedContainmentState::Inside)
         return state;
 
-    if (object_bb.max.z() < 0.0)
+    double min_z = collision_data.bounding_box.min.z();
+    double max_z = collision_data.bounding_box.max.z();
+    if (max_z < 0.0)
         return BedContainmentState::Below;
-    const Domain::Bed& bed = bed_instance.bed.get();
-    if (object_bb.min.z() > bed.max_print_height())
-        return BedContainmentState::Outside;
-    else if (object_bb.max.z() > bed.max_print_height())
-        return BedContainmentState::Colliding;
-    else
-        return BedContainmentState::Inside;
+    float max_print_height = bed_instance.instance.bed.get().max_print_height();
+    return (min_z > max_print_height) ? BedContainmentState::Outside :
+           (max_z > max_print_height) ? BedContainmentState::Colliding : BedContainmentState::Inside;
 }
 
 } // namespace Slic3r::Biz::Algorithms::Bed

@@ -14,6 +14,7 @@ using Biz::Algorithms::Scaling::scaled;
 using Biz::Arrange::Settings;
 using Biz::Scene::BedSelection;
 using Domain::Bed;
+using Domain::BedSegments;
 using Domain::BedRefs;
 using Domain::coord_t;
 using Domain::Project;
@@ -31,18 +32,14 @@ using Domain::ConfigContainer;
 using Domain::JobStatus;
 
 namespace {
-void
-update_settings_from_bed(const Project& project, const BedSelection& selection, Settings& settings)
+std::optional<BedSegments> get_bed_segments(const Project& project, const BedSelection& selection)
 {
-    const ConfigContainer* config_container{
-        project.find_config_container(selection.config_container_id())
-    };
+    const ConfigContainer* config_container{project.find_config_container(selection.config_container_id())};
     if (!config_container) {
-        return;
+        return std::nullopt;
     }
     const Bed& bed{config_container->bed()};
-    settings.bed_segments = bed.segments();
-    settings.auxiliary_travel_anchor = bed.auxiliary_travel_anchor();
+    return bed.segments();
 }
 } // namespace
 
@@ -100,10 +97,8 @@ Scene::GizmoActivationState ArrangeGizmo::on_mouse(Scene::GizmoEventContext& ctx
 void ArrangeGizmo::on_selected_bed_instances_changed(SelectionId project_id, const BedSelection& bed_selection)
 {
     const Project& project{m_workbench.project(project_id)};
-    Settings settings;
-    update_settings_from_bed(project, bed_selection, settings);
-    m_dialog->set_bed_segments(settings.bed_segments);
-    m_dialog->set_auxiliary_travel_anchor(settings.auxiliary_travel_anchor);
+    const std::optional<BedSegments> bed_segments{get_bed_segments(project, bed_selection)};
+    m_dialog->set_bed_segments(bed_segments);
 };
 
 void ArrangeGizmo::on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status)
@@ -163,7 +158,9 @@ Settings ArrangeGizmo::default_settings() const
 
     const Project& project{m_project_interactor.selected_project()};
     const BedSelection& bed_selection{m_project_interactor.scene_interactor().bed_selection()};
-    update_settings_from_bed(project, bed_selection, settings);
+    const std::optional<BedSegments> bed_segments{get_bed_segments(project, bed_selection)};
+
+    settings.bed_segments = bed_segments;
     return settings;
 }
 

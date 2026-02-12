@@ -14,14 +14,12 @@ std::vector<size_t> BedContainer::beds_indices() const
     return ret;
 }
 
-Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, const std::string& resources_dir_path,
-    SelectionId project_id, SelectionId config_container_id, std::function<Vec2ds(SelectionId, SelectionId)> system_preset_bed_shape_getter)
+Bed& BedContainer::get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed_shape, const indexed_triangle_set& contour_mesh,
+    const ConfigContainer& config_container, const std::string& resources_dir_path, SelectionId project_id, SelectionId config_container_id,
+    std::function<Vec2ds(SelectionId, SelectionId)> system_preset_bed_shape_getter)
 {
     const auto& preset = config_container.selected_preset();
     const auto& config_box = preset.printer.config_box();
-
-    auto item = config_box.find("bed_shape");
-    Vec2ds bed_shape = (item.item != nullptr) ? item.item->value().get<Vec2ds>() : Vec2ds();
 
     bool use_model_and_texture = system_preset_bed_shape_getter != nullptr &&
                                  project_id != INVALID_ID &&
@@ -44,7 +42,10 @@ Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, co
             texture_filename = assets_path + bed_texture_filename;
     }
 
-    item = config_box.find("max_print_height");
+    bool is_single_tool_XL = preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1;
+    std::optional<BedSegments> segments = is_single_tool_XL ? std::optional{BedSegments{4, 4}} : std::nullopt;
+
+    auto item = config_box.find("max_print_height");
     float bed_max_print_height = (item.item != nullptr) ? float(item.item->value().get<double>()) : 0.0f;
 
     item = config_box.find("bed_custom_model");
@@ -53,46 +54,17 @@ Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, co
     item = config_box.find("bed_custom_texture");
     std::string custom_bed_texture_filename = (item.item != nullptr) ? item.item->value().get<std::string>() : std::string();
 
-    Bed::Segments bed_segments{1, 1};
-    if (auto bed_segments_x{
-            Preset::get_feature<int>(preset.hw_config.features, "bed_segments_x")
-    }) {
-        bed_segments.x_count = *bed_segments_x;
-    }
-    if (auto bed_segments_y{
-        Preset::get_feature<int>(preset.hw_config.features, "bed_segments_y")
-    }) {
-        bed_segments.y_count = *bed_segments_y;
-    }
-    const std::optional<Bed::Segments> segments{
-        bed_segments != Bed::Segments{1, 1} ? std::optional{bed_segments} : std::nullopt
+    BedCreationData data{
+        .type = bed_type,
+        .contour = bed_shape,
+        .contour_mesh = contour_mesh,
+        .max_print_height = bed_max_print_height,
+        .segments = segments,
+        .model_filename = custom_bed_model_filename.empty() ? model_filename : custom_bed_model_filename,
+        .texture_filename = custom_bed_texture_filename.empty() ? texture_filename : custom_bed_texture_filename
     };
 
-    Vec2d auxiliary_travel_anchor{-1, -1};
-    if (auto auxiliary_travel_anchor_x{
-        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_x")
-    }) {
-        auxiliary_travel_anchor.x() = *auxiliary_travel_anchor_x;
-    }
-    if (auto auxiliary_travel_anchor_y{
-        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_y")
-    }) {
-        auxiliary_travel_anchor.y() = *auxiliary_travel_anchor_y;
-    }
-    const std::optional<Vec2d> travel_anchor{
-        (auxiliary_travel_anchor.array() >= 0).all() ? std::optional{auxiliary_travel_anchor} :
-                                                       std::nullopt
-    };
-
-    auto bed = Bed::from(
-        bed_shape,
-        bed_max_print_height,
-        segments,
-        travel_anchor,
-        custom_bed_model_filename.empty() ? model_filename : custom_bed_model_filename,
-        custom_bed_texture_filename.empty() ? texture_filename : custom_bed_texture_filename
-    );
-
+    auto bed = Bed::create(data);
     auto it = std::ranges::find_if(m_beds, [&](const auto& present_bed) { return present_bed->matches(bed); });
     if (it != m_beds.end())
         return **it;

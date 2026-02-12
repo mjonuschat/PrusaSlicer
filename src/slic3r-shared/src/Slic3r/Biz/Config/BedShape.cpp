@@ -16,10 +16,12 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
-#include <Slic3r/Biz/Algorithms/Tesselate.hpp>
-#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+
+#include "Slic3r/Assert.hpp"
 
 #include <fmt/format.h>
+
+using namespace Slic3r::Biz::Algorithms;
 
 namespace Slic3r::Biz::Config {
 
@@ -40,18 +42,23 @@ static const std::map<BedShape::Parameter, BedShape::ParamAttributes> param_attr
       200}},
 };
 
-BedShape::BedShape(const std::vector<Domain::Vec2d>& points)
+BedShape::BedShape(const Domain::Vec2ds& points)
 {
-    m_bed = Domain::Bed::from(points, 0.f, std::nullopt, std::nullopt, "", "");
+    Domain::BedCreationData data{
+        .type = Bed::detect_bed_type_from_contour(points),
+        .contour = points,
+        .contour_mesh = Bed::bed_contour_as_its(points)
+    };
+    m_bed = Domain::Bed::create(data);
 }
 
 bool BedShape::is_custom() const
 {
-    Domain::BedType bed_type = Biz::Algorithms::Bed::detect_bed_type(m_bed);
+    Domain::BedType bed_type = m_bed.type();
     return bed_type == Domain::BedType::Convex || bed_type == Domain::BedType::Custom;
 }
 
-bool BedShape::is_equal_to(const std::vector<Domain::Vec2d>& points) const
+bool BedShape::is_equal_to(const Domain::Vec2ds& points) const
 {
     return m_bed.contour() == points;
 }
@@ -84,8 +91,7 @@ std::string BedShape::get_type_name(Type type)
 
 BedShape::Type BedShape::get_type() const
 {
-    Domain::BedType bed_type = Biz::Algorithms::Bed::detect_bed_type(m_bed);
-
+    Domain::BedType bed_type = m_bed.type();
     switch (bed_type) {
     case Domain::BedType::Rectangle:
     case Domain::BedType::Invalid:
@@ -101,18 +107,15 @@ BedShape::Type BedShape::get_type() const
     return Type::Rectangle;
 }
 
-std::vector<Domain::Vec2d> BedShape::triangles() const
+Domain::Vec2ds BedShape::triangles() const
 {
-    Domain::ExPolygon polygon(Slic3r::Biz::Algorithms::Polygon::scaled(m_bed.contour()));
-    return Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2d(polygon, false);
+    return Bed::bed_contour_as_triangles(m_bed);
 }
 
-const std::vector<Domain::Vec2d>& BedShape::contour() const
+const Domain::Vec2ds& BedShape::contour() const
 {
     return m_bed.contour();
 }
-
-using namespace Slic3r::Biz::Algorithms;
 
 Domain::Vec2d BedShape::get_size() const
 {
@@ -121,29 +124,18 @@ Domain::Vec2d BedShape::get_size() const
 
 Domain::Vec2d BedShape::get_origin() const
 {
-    const Domain::Vec2ds& contour = m_bed.contour();
-    ASSERT(contour.size() > 3);
-
-    // Calculate various metrics of the input polygon.
-    Domain::Polygon polygon      = Polygon::scaled(contour);
-    Domain::Polygon convex_hull  = Geometry::convex_hull(polygon);
-    Domain::BoundingBox2crd bbox = Polygon::get_extents(convex_hull);
-    return Scaling::unscaled<double>(bbox.min);
+    return m_bed.contour_aabb().min;
 }
 
 double BedShape::get_diameter() const
 {
-    ASSERT(Bed::detect_bed_type(m_bed) == Domain::BedType::Circle);
-
-    Geometry::Circled circle = Bed::as_circular_bed(m_bed);
-    return 2. * (circle.radius);
-    return 0.0;
+    ASSERT(m_bed.type() == Domain::BedType::Circle);
+    return m_bed.contour_aabb_extent().x();
 }
 
 std::string BedShape::get_full_name_with_params() const
 {
-    Domain::BedType bed_type = Bed::detect_bed_type(m_bed);
-
+    Domain::BedType bed_type = m_bed.type();
     std::string out = Biz::_u8L("Shape") + ": " + get_type_name(this->get_type());
     switch (bed_type) {
     case Domain::BedType::Circle: {

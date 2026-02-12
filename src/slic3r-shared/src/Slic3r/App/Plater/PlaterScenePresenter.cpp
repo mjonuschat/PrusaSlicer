@@ -468,11 +468,12 @@ void PlaterScenePresenter::update_volume_materials()
                     print_volume.type = bed->type();
                     print_volume.z_data = is_model_part ? Domain::Vec2f(float(Scene::BED_OFFSET_Z), bed->max_print_height()) : Domain::Vec2f(-FLT_MAX, FLT_MAX);
                     if (print_volume.type == Domain::BedType::Circle) {
-                        std::optional<Domain::Bed::Circle> circle = bed->circle();
+                        const Domain::Vec2d& center = bed->center();
+                        double radius = 0.5 * bed->contour_aabb_extent().x();
                         print_volume.xy_data = Domain::Vec4f(
-                            float(offset.x() + circle->first.x()),
-                            float(offset.y() + circle->first.y()),
-                            is_model_part ? float(circle->second) : FLT_MAX,
+                            float(offset.x() + center.x()),
+                            float(offset.y() + center.y()),
+                            is_model_part ? float(radius) : FLT_MAX,
                             FLT_MAX
                         );
                     }

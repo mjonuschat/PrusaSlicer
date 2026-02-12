@@ -7,6 +7,7 @@
 
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/BedRef.hpp>
+#include "Slic3r/Biz/Algorithms/Bed.hpp"
 
 namespace Slic3r::Biz {
 
@@ -102,15 +103,23 @@ private:
         Domain::ModelInstance& inst,
         BedTrackingChanges& changes
     );
-    Domain::BoundingBox3d
-    get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst);
+
+    const Biz::Algorithms::Bed::ObjectCollisionData& get_instance_collision_data(
+        const Domain::Project& project,
+        const Domain::ModelInstance& inst
+    );
+    std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
+    find_bed_instance_for_bounds(
+        Domain::Project& project,
+        const Biz::Algorithms::Bed::ObjectCollisionData& obj_collision_data
+    );
 
     // The cache for transformed bounding boxes to allow quick lookup based on
     // object_id and instance_id.
     struct CacheInstanceEntry
     {
         Domain::Transformation inst_trafo;
-        Domain::BoundingBox3d cached_bb;
+        Biz::Algorithms::Bed::ObjectCollisionData collision;
     };
 
     struct VolData
@@ -129,6 +138,9 @@ private:
     std::map<size_t, CacheObjectEntry> m_cache;
     std::chrono::steady_clock::time_point m_last_cache_clear_time =
         std::chrono::steady_clock::now();
+
+    // Cache containing bed contour's aabb mesh for beds with custom (non-convex) bed shape
+    std::map<size_t, AABBMesh> m_bed_mesh_cache;
 };
 
 } // namespace Slic3r::Biz

@@ -7,6 +7,8 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 
+#include <admesh/stl.h>
+
 namespace Slic3r::Domain {
 
 enum class BedType
@@ -23,50 +25,33 @@ enum class BedType
     Custom
 };
 
-inline std::string_view bed_type_name(BedType type)
+struct BedSegments
 {
-    using namespace std::literals;
-    switch (type) {
-    default:
-    case BedType::Invalid:
-        return "Invalid"sv;
-    case BedType::Rectangle:
-        return "Rectangle"sv;
-    case BedType::Circle:
-        return "Circle"sv;
-    case BedType::Convex:
-        return "Convex"sv;
-    case BedType::Custom:
-        return "Custom"sv;
-    }
-}
+    std::size_t x_count{1};
+    std::size_t y_count{1};
+};
+
+bool operator==(const BedSegments& a, const BedSegments& b);
+
+struct BedCreationData
+{
+    BedType type{ BedType ::Invalid };
+    Vec2ds contour;
+    indexed_triangle_set contour_mesh;
+    float max_print_height{ 0.0f };
+    std::optional<BedSegments> segments;
+    std::string model_filename;
+    std::string texture_filename;
+};
 
 class Bed : public ObjectBase
 {
 public:
-    struct Segments
-    {
-        std::size_t x_count{1};
-        std::size_t y_count{1};
-    };
-
-    [[nodiscard]] static Bed from(
-        const Vec2ds& contour,
-        float max_print_height,
-        const std::optional<Segments>& bed_segments,
-        const std::optional<Vec2d>& auxiliary_travel_anchor,
-        const std::string& model_filename,
-        const std::string& texture_filename
-    );
+    [[nodiscard]] static Bed create(const BedCreationData& data);
 
     [[nodiscard]] BedType type() const
     {
         return m_type;
-    }
-
-    void set_type(BedType type)
-    {
-        m_type = type;
     }
 
     [[nodiscard]] const Vec2d& center() const
@@ -94,38 +79,14 @@ public:
         return m_max_print_height;
     }
 
-    [[nodiscard]] std::optional<Segments> segments() const
+    [[nodiscard]] std::optional<BedSegments> segments() const
     {
         return m_segments;
     }
 
-    [[nodiscard]] std::optional<Vec2d> auxiliary_travel_anchor() const
+    [[nodiscard]] const indexed_triangle_set& contour_mesh() const
     {
-        return m_auxiliary_travel_anchor;
-    }
-
-    using TopBottomDecomposition = std::pair<Vec2ds, Vec2ds>;
-
-    [[nodiscard]] std::optional<TopBottomDecomposition> top_bottom_convex_hull_decomposition() const
-    {
-        return m_top_bottom_convex_hull_decomposition;
-    }
-
-    void set_top_bottom_convex_hull_decomposition(const TopBottomDecomposition& decomposition)
-    {
-        m_top_bottom_convex_hull_decomposition = decomposition;
-    }
-
-    using Circle = std::pair<Vec2d, double>;
-
-    [[nodiscard]] std::optional<Circle> circle() const
-    {
-        return m_circle;
-    }
-
-    void set_circle(const Circle& circle)
-    {
-        m_circle = circle;
+        return m_contour_mesh;
     }
 
     [[nodiscard]] const std::string& model_filename() const
@@ -141,23 +102,20 @@ public:
     // Compare the full content of this Bed with the given one 
     bool operator==(const Bed& rhs) const;
 
-    // Compare the content of this Bed with the given one, as they come from a call to Bed::from() 
+    // Compare the content of this Bed with the given one, as they come from a call to Bed::create()
     bool matches(const Bed& rhs) const;
 
 private:
     BedType m_type{BedType::Invalid};
-    Vec2d m_center{Vec2d::Zero()};
     Vec2ds m_contour;
-    BoundingBoxf m_contour_aabb;
+    indexed_triangle_set m_contour_mesh;
     float m_max_print_height{0.0f};
+    std::optional<BedSegments> m_segments;
     std::string m_model_filename;
     std::string m_texture_filename;
-    std::optional<Segments> m_segments;
-    std::optional<Vec2d> m_auxiliary_travel_anchor;
-    std::optional<TopBottomDecomposition> m_top_bottom_convex_hull_decomposition;
-    std::optional<Circle> m_circle;
-};
 
-bool operator==(const Bed::Segments& a, const Bed::Segments& b);
+    Vec2d m_center{ Vec2d::Zero() };
+    BoundingBoxf m_contour_aabb;
+};
 
 } // namespace Slic3r::Domain
