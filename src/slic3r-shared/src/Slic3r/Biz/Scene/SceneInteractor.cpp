@@ -1791,27 +1791,6 @@ void SceneInteractor::on_extruder_candidates_changed(
     );
 }
 
-const std::vector<unsigned> SceneInteractor::get_extruder_candidates(
-    Domain::SelectionId project_id,
-    Domain::SelectionId bed_instance_id
-) const
-{
-    auto it{m_projects.find(project_id)};
-    if (it == m_projects.end()) {
-        return {};
-    }
-    const SceneInteractorProjectContext& project{it->second};
-
-    const Domain::BedInstance* bed_instance{
-        project.project.find_bed_instance_by_id(bed_instance_id)
-    };
-    if (bed_instance == nullptr) {
-        return {};
-    }
-
-    return bed_instance->extruder_candidates;
-}
-
 BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)
 {
     BedTrackingChanges changes;

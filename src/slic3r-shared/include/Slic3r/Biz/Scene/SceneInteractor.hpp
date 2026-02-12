@@ -349,10 +349,6 @@ public:
     bool current_project_has_wipe_tower(std::size_t bed_instance_id) const;
 
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
-    const std::vector<unsigned> get_extruder_candidates(
-        Domain::SelectionId project_id,
-        Domain::SelectionId bed_instance_id
-    ) const;
 
 private:
     void layout_after_project_load(Domain::Project& added_project);
