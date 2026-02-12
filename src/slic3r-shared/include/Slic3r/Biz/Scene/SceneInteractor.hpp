@@ -29,6 +29,7 @@ namespace Slic3r::Domain { class Bed; class ObjectID;}
 namespace Slic3r::Biz {
 class ISelectedBedInstancesChangedListener;
 struct BedTrackingChanges;
+namespace Arrange {struct InstanceTransform2D; }
 } // namespace Slic3r::Biz
 
 namespace Slic3r::Biz::Scene {
@@ -325,14 +326,7 @@ public:
      */
     void transform_selection(const Transform& relative_transform);
 
-    struct InstanceTransform2D {
-        Domain::ElementRef instance_ref;
-        Domain::Vec2d absolute_offset;
-        double rotation_delta;
-    };
-
-    using InstanceTransforms = std::vector<InstanceTransform2D>;
-    void transform_instances(const InstanceTransforms& transformations);
+    void transform_instances(const std::vector<Arrange::InstanceTransform2D>& transformations);
 
     /**
      * @brief Finalize or cancel selection transform.

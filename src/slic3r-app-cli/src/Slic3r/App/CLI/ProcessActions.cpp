@@ -1,5 +1,7 @@
 #include "Slic3r/App/CLI/ProcessActions.hpp"
 
+#include "CLIUtils.hpp"
+
 #include "Slic3r/App/CLI/LoadPrintData.hpp"
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
@@ -7,6 +9,7 @@
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/PresetUpdaterCLI.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
@@ -699,9 +702,18 @@ bool process_actions(
             // is supplied); if any object has no instances, it will get a default one
             // and all instances will be rearranged (unless --dont-arrange is supplied).
             if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
-                // Arrange not yet implemented from CLI.
-                SPDLOG_ERROR("Arrange is not yet available from CLI.");
-                return true;
+                Biz::Arrange::arrange_model_in_place(
+                    model,
+                    get_bed_shape(config_pack),
+                    Biz::Arrange::Settings{
+                        .scaled_offset = double(scale_(min_object_distance(config_pack)) / 2.)
+                    }
+                );
+                if (transform.center.has_value()) {
+                    Algorithms::Model::center_instances_around_point(
+                        model, transform.center.value()
+                    );
+                }
             }
 
             const std::optional<std::string> slicing_errors = slice_single_model_project(

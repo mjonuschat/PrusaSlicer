@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/GravityKernel.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/IKernel.hpp"
@@ -8,8 +9,13 @@
 #include "Slic3r/Biz/Arrange/Kernels/TMArrangeKernel.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Arrange/Packer.hpp"
+#include "Slic3r/Domain/ModelInstance.hpp"
+#include "Slic3r/Domain/ModelObject.hpp"
 #include "libslic3r/Optimize/NLoptOptimizer.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
+
+#include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Biz::Arrange {
 
@@ -300,4 +306,87 @@ std::optional<ArrangeResult> arrange(
     }
     return result;
 }
+
+InstanceTransforms arrange_instances(
+    const std::vector<const Domain::ModelInstance*>& instances,
+    const Points& bed_contour_scaled,
+    const Settings& settings
+)
+{
+    std::vector<InputShape> input_shapes;
+    for (const Domain::ModelInstance* instance : instances) {
+        Domain::Transform3d instance_trafo{instance->get_matrix()};
+        instance_trafo.translation() = Vec3d::Zero();
+
+        ArbitraryShape outline;
+        for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
+            if (!volume->is_model_part()) {
+                continue;
+            }
+            const Domain::Polygons vol_outline{
+                project_mesh(volume->mesh_ptr()->its, instance_trafo * volume->get_matrix(), []() {})
+            };
+            outline = Algorithms::ClipperUtils::union_ex(outline, vol_outline);
+        }
+
+        const Domain::ElementRef instance_ref{
+            instance->get_object()->id().id,
+            instance->id().id
+        };
+
+        input_shapes.push_back({instance_ref, std::move(outline)});
+    }
+
+    std::vector<ArrangeItem> items{to_arrange_items(input_shapes, settings)};
+    const StopCondition never_stop{[]() { return false; }};
+
+    std::optional<ArrangeResult> result{
+        arrange(bed_contour_scaled, items, {}, settings, never_stop)
+    };
+
+    InstanceTransforms transforms;
+    if (!result) {
+        return transforms;
+    }
+
+    transforms.reserve(result->packed.size());
+    for (const ArrangeItem& item : result->packed) {
+        transforms.push_back({
+            .instance_ref    = item.get_element_ref(),
+            .absolute_offset = Algorithms::Scaling::unscaled<double>(item.get_translation()),
+            .rotation_delta  = item.get_rotation()
+        });
+    }
+
+    return transforms;
+}
+
+
+
+void arrange_model_in_place(Domain::Model& model, const Points& bed_contour_scaled, const Settings& arrange_settings)
+{
+    std::vector<const Domain::ModelInstance*> instances;
+    for (const Domain::ModelObject* object : model.objects) {
+        for (const Domain::ModelInstance* instance : object->instances) {
+            instances.push_back(instance);
+        }
+    }
+    const auto transforms = arrange_instances(instances, bed_contour_scaled, arrange_settings);
+    for (Domain::ModelObject* object : model.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            if (auto it = std::find_if(transforms.cbegin(), transforms.cend(), [instance](const auto& trafo) {
+                return instance->get_object()->id().id == trafo.instance_ref.object_id
+                    && instance->id().id == trafo.instance_ref.instance_id;
+            }); it != transforms.cend()) {
+                Domain::Transform3d m{instance->get_transformation().get_matrix()};
+                m.translation().x() = it->absolute_offset.x();
+                m.translation().y() = it->absolute_offset.y();
+                auto rot{Domain::Transform3d::Identity()};
+                rot.rotate(Eigen::AngleAxisd(it->rotation_delta, Eigen::Vector3d::UnitZ()));
+                instance->set_transformation(Domain::Transformation{m * rot});
+            }
+        }
+    }
+}
+
 } // namespace Slic3r::Biz::Arrange
