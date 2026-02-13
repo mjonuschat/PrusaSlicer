@@ -137,8 +137,7 @@ struct SlicingStatusChangeListener : Slicing::IStatusListener
         const Domain::SlicingId slicing_id
     ) override
     {
-        if ((status_update.code.has_value()
-             && status_update.code == Biz::Slicing::StatusCode::Finished)
+        if (status_update.code == Biz::Slicing::StatusCode::Finished
             || !status_update.errors_to_append.empty())
         {
             promise_slicing_finished.set_value(std::make_pair(slicing_id, status_update));
@@ -278,11 +277,23 @@ std::optional<std::string> slice_single_model_project(
     );
     const Project& project = project_interactor.selected_project();
 
+    // Make sure the events from the bed update are dispatched, before hooking in
+    // the slicing_status_change_listener.
+    dispatcher.dispatch_enqueued();
+
     Slicing::SlicingInteractor& slicing_interactor = project_interactor.slicing_interactor();
+    const Domain::SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
+    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
+
+    if (slicing_interactor.get_status(slicing_id) == Biz::Slicing::StatusCode::Empty) {
+        return "Nothing to print for "
+            + dest_path
+            + " . Either the print is empty or no object is fully inside the print volume.";
+    }
+
     SlicingStatusChangeListener slicing_status_change_listener;
     slicing_interactor.add_listener<Biz::Slicing::IStatusListener>(&slicing_status_change_listener);
 
-    const Domain::SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
     slicing_interactor.slice_bed(slicing_id);
 
     const Slicing::StatusUpdate& slicing_status_update = [&slicing_status_change_listener,
@@ -298,8 +309,6 @@ std::optional<std::string> slice_single_model_project(
 
         return future_slicing_status_update.get().second;
     }();
-
-    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
 
     if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
         Biz::Platform::PlatformServices& platform_services =
@@ -344,10 +353,6 @@ std::optional<std::string> slice_single_model_project(
         if (export_error.has_value()) {
             return export_error.value();
         }
-    } else if (slicing_status_update.code == Biz::Slicing::StatusCode::Empty) {
-        return "Nothing to print for "
-            + dest_path
-            + " . Either the print is empty or no object is fully inside the print volume.";
     } else {
         std::ostringstream oss;
         oss << slicing_status_update;
@@ -723,6 +728,7 @@ bool process_actions(
             );
             if (slicing_errors.has_value()) {
                 boost::nowide::cerr << slicing_errors.value() << std::endl;
+                dispatcher.close();
                 return true;
             }
         }
