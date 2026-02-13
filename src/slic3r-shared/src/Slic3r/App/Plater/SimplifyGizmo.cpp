@@ -638,11 +638,23 @@ void SimplifyGizmo::apply_simplify()
     // check that there is NO change of volume
     assert(proj_ctx.job_data.volume_ids == proj_ctx.volume_ids);
     const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::ElementRefs& elements = m_project_interactor.scene_interactor().object_selection().elements;
+    auto get_selected_instance_id = [&elements](const Domain::ModelVolume& volume) -> size_t{
+        size_t object_id = volume.get_object()->id().id;
+        size_t volume_id = volume.id().id;
+        for (const Domain::ElementRef& element : elements) {
+            if (element.object_id == object_id &&
+                element.volume_id == volume_id)
+                return element.instance_id; // keep selected instance still selected
+        }
+        // current selection do not contain simplified volume yet, just use first instance id
+        return volume.get_object()->instances.front()->id().id;
+    };
 
     Biz::Scene::SceneInteractor::RefMeshes meshes;
     SimplifyData& result = proj_ctx.job_data.data;
     meshes.reserve(result.size());
-    for (auto& item : result) {
+    for (const auto& item : result) {
         const Domain::ObjectID& volume_id = item.first;
         indexed_triangle_set& its = *item.second;
 
@@ -651,7 +663,8 @@ void SimplifyGizmo::apply_simplify()
             continue;
         
         size_t object_id = volume->get_object()->id().id;
-        Domain::ElementRef ref(object_id, 0, volume_id.id);
+        Domain::ElementRef ref(object_id, get_selected_instance_id(*volume), volume_id.id);
+
         using Biz::Algorithms::TriangleMesh::construct;
         meshes.emplace_back(ref, construct(std::move(its)));
     }

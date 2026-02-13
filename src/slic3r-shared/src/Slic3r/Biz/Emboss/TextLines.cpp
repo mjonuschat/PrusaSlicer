@@ -1,141 +1,170 @@
 #include "Slic3r/Biz/Emboss/TextLines.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
-#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
-#include "Slic3r/Biz/Algorithms/Scaling.hpp" // unscaled
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_make_sphere
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp" // to_linesf
+#include "Slic3r/Biz/Algorithms/Polygon.hpp" // count points
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
-#include "Slic3r/Domain/ExPolygonsIndex.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/KDTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp"
+#include "Slic3r/Domain/ExPolygonsIndex.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include <Slic3r/App/Scene/NodeBuilder.hpp>
+#include <algorithm>
 
 using namespace Slic3r;
 
 namespace {
+Domain::BoundingBoxes2crd get_extents(const Domain::Polygons& polygons) {
+    Domain::BoundingBoxes2crd bb;
+    bb.reserve(polygons.size());
+    for (const Domain::Polygon& polygon : polygons)
+        bb.emplace_back(Biz::Algorithms::BoundingBox::construct(polygon.points));
+    return bb;
+}
 
-struct TextLineNodeTag {};
+void add_triangles(std::vector<stl_triangle_vertex_indices>& result,
+        const Domain::Polygons& inner, int inner_vertex_offset,
+        const Domain::Polygons& outer, int outer_vertex_offset) {
+    int outer_count = Biz::Algorithms::Polygon::count_points(outer);
+    int inner_count = Biz::Algorithms::Polygon::count_points(inner);
+    Domain::BoundingBoxes2crd o_bbs = get_extents(outer);
+    Domain::BoundingBoxes2crd i_bbs = get_extents(inner);
+    Domain::Polygons inner_rev = inner; // copy
+    Biz::Algorithms::Polygon::reverse(inner_rev);
+    for (size_t o_i = 0; o_i < outer.size(); ++o_i){
+        const Domain::Polygon& o = outer[o_i];
+        Domain::ExPolygon expoly(o);
+        const Domain::BoundingBox2crd& o_bb = o_bbs[o_i];
+        std::vector<int> inner_offsets; // same size as holes
+        int inner_offset = inner_vertex_offset;
+        for (size_t i_i = 0; i_i < inner.size(); ++i_i) {
+            if (o_bb.contains(i_bbs[i_i])) {
+                expoly.holes.push_back(inner_rev[i_i]);
+                inner_offsets.push_back(inner_offset);
+            }
+            inner_offset += inner[i_i].points.size();
+        }
+        auto indices = Biz::CGAL::Algorithms::Triangulation::triangulate(expoly);
+        // triangulation hates duplicit and self intersections, but this is only visualization,
+        // so we can just skip invalid triangles
+        int max_index = static_cast<int>(Biz::Algorithms::ExPolygon::count_points(expoly));
+        std::erase_if(indices, [max_index](const Domain::Index3& t) {
+            return std::ranges::any_of(t.begin(), t.end(), [max_index](int i) {
+                    return i < 0 || i >= max_index; 
+                });
+        });
+        //indices.erase(std::remove_if(indices.begin(), indices.end(), 
+        //    [max_index](const Domain::Index3& t) {
+        //        for (int i : t) {
+        //            if (i < 0 || i >= max_index)
+        //                return true;
+        //        }
+        //        return false;
+        //    }), indices.end());
+        result.reserve(result.size() + 2 * indices.size());
 
-// Used to move slice (text line) on place where is approx vertical center of text
-// When copy value const double ASCENT_CENTER from Emboss.cpp and Vertical align is center than
-// text line will cross object center
-const double ascent_ratio_offset = 1 / 3.;
+        auto convert_index = [&expoly, outer_vertex_offset, &inner_offsets](int i)->int{
+            if (i < expoly.contour.points.size())
+                return outer_vertex_offset + i;
+            i -= expoly.contour.points.size();
+            for (const Domain::Polygon& hole : expoly.holes) {
+                if (i < hole.points.size()) {
+                    size_t hole_index = &hole - &expoly.holes.front();
+                    // offset of each hole is in inner_offsets
+                    // holes order is reverted
+                    return inner_offsets[hole_index] + (hole.points.size() - 1 - i);
+                }
+                i -= hole.points.size();
+            }
+            ASSERT(false);
+            return 0;
+        };        
+        auto convert_index2 = [&expoly, &convert_index, outer_count, inner_count](int i)->int {
+            return convert_index(i) +
+                ((i < expoly.contour.points.size()) ?
+                outer_count : inner_count);
+        };
+        auto add_offset = [&convert_index](const Domain::Index3& t) {
+            return Domain::Index3{
+                convert_index(t[0]),
+                convert_index(t[1]),
+                convert_index(t[2])};
+            };
+        auto add_offset_rev = [&convert_index2](const Domain::Index3& t) {
+            return Domain::Index3{
+                convert_index2(t[2]),
+                convert_index2(t[1]),
+                convert_index2(t[0])};
+            };
+        for (const Domain::Index3& t : indices)
+            result.emplace_back(add_offset(t));
+        for (const Domain::Index3& t : indices)
+            result.emplace_back(add_offset_rev(t));
+        // update offset for next iteration
+        outer_vertex_offset += o.points.size();
+    }
+}
 
-double calc_line_height_in_mm(
-    const Domain::FontFile& ff,
-    const Domain::FontProp& fp
-); // return lineheight in mm
+void add_vertices(std::vector<stl_vertex>& vertices, const Domain::Polygon& polygon, float z) {
+    for (const Domain::Point& p : polygon.points)
+        vertices.emplace_back(p.x() * Domain::SCALING_FACTOR, p.y() * Domain::SCALING_FACTOR, z);
+}
 
-// Be careful it is not water tide and contain self intersections
-// It is only for visualization purposes
+void add_vertices(std::vector<stl_vertex>& vertices, const Domain::Polygons& polys, float z) {
+    for (const Domain::Polygon& poly : polys)
+        add_vertices(vertices, poly, z);
+    for (const Domain::Polygon& poly : polys)
+        add_vertices(vertices, poly, -z);
+}
+
+// Note: When you want to speed it up use Z coordinate in ClipperLib for index
 indexed_triangle_set
 its_create_torus(const Domain::Polygon& polygon, float radius, size_t steps = 20)
 {
-    assert(!polygon.empty());
-    if (polygon.empty())
-        return {};
+    ASSERT(steps >= 4);
+    // quater step count
+    int step_q = (steps - 4) / 4;
+    double angle_step = M_PI_2 / step_q; // 0 - 90 DEG
+    // p_ prefix is used for previous
+    // _e suffix is used for expand
+    // _s suffix is used for shrink
+    Domain::Polygons p_polygons_e{ { polygon } };
+    Domain::Polygons p_polygons_s{ { polygon } }; // copy
+    
+    indexed_triangle_set result;
+    result.vertices.reserve(polygon.points.size() * 4 * step_q);
+    result.indices.reserve(polygon.points.size() * 2 * 4 * step_q);
+    add_vertices(result.vertices, p_polygons_e, radius);
+    int p_vert_e_offset = 0;
+    int p_vert_s_offset = 0;
+    for (int i = 1; i <= step_q; ++i) {
+        double angle = i * angle_step;
+        float delta = static_cast<float>(radius * std::sin(angle) / Domain::SCALING_FACTOR);
+        float offseted_z = static_cast<float>(radius * std::cos(angle));
+        Domain::Polygons polygons_e = Biz::Algorithms::ClipperUtils::expand(polygon, delta);
+        
+        Domain::Polygons polygons_s = Biz::Algorithms::ClipperUtils::offset(polygon, -delta); // shrink
 
-    size_t count = polygon.size();
-    if (count < 3)
-        return {};
+        int vert_e_offset = static_cast<int>(result.vertices.size());
+        add_vertices(result.vertices, polygons_e, offseted_z);
+        int vert_s_offset = static_cast<int>(result.vertices.size());
+        add_vertices(result.vertices, polygons_s, offseted_z);
 
-    // convert and scale to float
-    std::vector<Domain::Vec2f> points_d;
-    points_d.reserve(count);
-    for (const Domain::Point& point : polygon.points)
-        points_d.push_back(Biz::Algorithms::Scaling::unscaled<float>(point));
-
-    // pre calculate normalized line directions
-    auto calc_line_norm = [](const Domain::Vec2f& f, const Domain::Vec2f& s) -> Domain::Vec2f
-    { return (s - f).normalized(); };
-    std::vector<Domain::Vec2f> line_norm(points_d.size());
-    for (size_t i = 0; i < count - 1; ++i)
-        line_norm[i] = calc_line_norm(points_d[i], points_d[i + 1]);
-    line_norm.back() = calc_line_norm(points_d.back(), points_d.front());
-
-    // precalculate sinus and cosinus
-    double angle_step = 2 * M_PI / steps;
-    std::vector<std::pair<double, float>> sin_cos;
-    sin_cos.reserve(steps);
-    for (size_t s = 0; s < steps; ++s) {
-        double angle = s * angle_step;
-        sin_cos.emplace_back(
-            radius * std::sin(angle),
-            static_cast<float>(radius * std::cos(angle))
-        );
+        add_triangles(result.indices, polygons_s, vert_s_offset, p_polygons_s, p_vert_s_offset);
+        add_triangles(result.indices, p_polygons_e, p_vert_e_offset, polygons_e, vert_e_offset);
+        
+        p_vert_e_offset = vert_e_offset;
+        p_vert_s_offset = vert_s_offset;
+        p_polygons_e = std::move(polygons_e);
+        p_polygons_s = std::move(polygons_s);
     }
-
-    indexed_triangle_set sphere = Biz::Algorithms::TriangleMesh::its_make_sphere(radius, 2 * M_PI / steps);
-
-    // create torus model along polygon path
-    indexed_triangle_set model;
-    model.vertices.reserve(2 * steps * count + sphere.vertices.size() * count);
-    model.indices.reserve(2 * steps * count + sphere.indices.size() * count);
-
-    const Domain::Vec2f* prev_prev_point_d = &points_d[count - 2]; // one before back
-    const Domain::Vec2f* prev_point_d      = &points_d.back();
-
-    auto calc_angle = [](const Domain::Vec2f& d0, const Domain::Vec2f& d1)
-    {
-        double dot = d0.dot(d1);
-        double det = d0.x() * d1.y() - d0.y() * d1.x(); // Determinant
-        return std::atan2(det, dot); // atan2(y, x) or atan2(sin, cos)
-    };
-
-    // opposit previos direction of line - for calculate angle
-    Domain::Vec2f opposit_prev_dir = (*prev_prev_point_d) - (*prev_point_d);
-    for (size_t i = 0; i < count; ++i) {
-        const Domain::Vec2f& point_d = points_d[i];
-        // line segment direction
-        Domain::Vec2f dir = point_d - (*prev_point_d);
-
-        double angle               = calc_angle(opposit_prev_dir, dir);
-        double allowed_preccission = 1e-6;
-        if (angle >= (M_PI - allowed_preccission) || angle <= (-M_PI + allowed_preccission))
-            continue; // it is almost line
-
-        // perpendicular direction to line
-        Domain::Vec2d p_dir(dir.y(), -dir.x());
-        p_dir.normalize(); // Should done with double preccission
-        // p_dir is tube unit side vector
-        // tube unit top vector is z direction
-
-        // Tube
-        int prev_index = model.vertices.size() + 2 * sin_cos.size() - 2;
-        for (const auto& [s, c] : sin_cos) {
-            Domain::Vec2f side = (s * p_dir).cast<float>();
-            Domain::Vec2f xy0  = side + (*prev_point_d);
-            Domain::Vec2f xy1  = side + point_d;
-            model.vertices.emplace_back(xy0.x(), xy0.y(), c); // pointing of prev index
-            model.vertices.emplace_back(xy1.x(), xy1.y(), c);
-
-            // create triangle indices
-            int f0     = prev_index;
-            int s0     = f0 + 1;
-            int f1     = model.vertices.size() - 2;
-            int s1     = f1 + 1;
-            prev_index = f1;
-            model.indices.push_back(Domain::Index3{ s0, f0, s1 });
-            model.indices.push_back(Domain::Index3{ f1, s1, f0 });
-        }
-
-        prev_prev_point_d = prev_point_d;
-        prev_point_d      = &point_d;
-        opposit_prev_dir  = -dir;
-    }
-
-    // sphere on each point
-    for (Domain::Vec2f& p : points_d) {
-        indexed_triangle_set sphere_copy = sphere;
-        its_translate(sphere_copy, Domain::Vec3f(p.x(), p.y(), 0.f));
-        Domain::its_merge(model, sphere_copy);
-    }
-
-    return model;
+    return result;
 }
 
 // select closest contour for each line
@@ -202,6 +231,13 @@ indexed_triangle_set create_its(const Biz::Emboss::TextLines& lines, float radiu
     }
     return its;
 }
+
+struct TextLineNodeTag {};
+
+// Used to move slice (text line) on place where is approx vertical center of text
+// When copy value const double ASCENT_CENTER from Emboss.cpp and Vertical align is center than
+// text line will cross object center
+const double ascent_ratio_offset = 1 / 3.;
 
 double calc_line_height_in_mm(const Domain::FontFile& ff, const Domain::FontProp& fp)
 {

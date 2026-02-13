@@ -388,7 +388,7 @@ json to_json(const TextConfiguration &tc) {
     result[LINE_HEIGHT] = fp.size_in_mm;
     if (fp.boldness.has_value()) result[BOLDNESS] = *fp.boldness;
     if (fp.skew.has_value())     result[SKEW] = *fp.skew;
-    if (fp.per_glyph)            result[PER_GLYPH] = 1;
+    if (fp.per_glyph)            result[PER_GLYPH] = true;
     result[HORIZONTAL_ALIGN] = ::to_json(fp.align.horizontal, horizontal_align_to_name);
     result[VERTICAL_ALIGN] = ::to_json(fp.align.vertical, vertical_align_to_name);
     if (fp.collection_number.has_value()) result[COLLECTION_NUMBER] = *fp.collection_number;
