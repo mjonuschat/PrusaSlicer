@@ -1,6 +1,6 @@
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
+#include "Slic3r/Domain/ConfigContainer.hpp"
 
 namespace Slic3r::Domain {
 
@@ -14,63 +14,59 @@ std::vector<size_t> BedContainer::beds_indices() const
     return ret;
 }
 
-Bed& BedContainer::get_or_create_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path)
+Bed& BedContainer::get_or_create_bed(const ConfigContainer& config_container, const std::string& resources_dir_path,
+    SelectionId project_id, SelectionId config_container_id, std::function<Vec2ds(SelectionId, SelectionId)> system_preset_bed_shape_getter)
 {
-    const auto& printer_preset = preset.printer.config_box();
-    auto shape_item            = printer_preset.find("bed_shape");
-    std::vector<Vec2d> shape;
-    if (shape_item.item != nullptr)
-        shape = shape_item.item->value().get<std::vector<Vec2d>>();
+    const auto& preset = config_container.selected_preset();
+    const auto& config_box = preset.printer.config_box();
 
-    auto max_print_height_item = printer_preset.find("max_print_height");
-    double max_print_height    = 0.0;
-    if (max_print_height_item.item != nullptr)
-        max_print_height = max_print_height_item.item->value().get<double>();
+    auto item = config_box.find("bed_shape");
+    Vec2ds bed_shape = (item.item != nullptr) ? item.item->value().get<Vec2ds>() : Vec2ds();
 
-    std::string assets_path = resources_dir_path
-        + "/presets/"
-        + preset.hw_config.repo_id
-        + "/"
-        + preset.hw_config.vendor_id
-        + "/assets/";
-    std::string model_filename;
-    if (!preset.bed_model().empty())
-        model_filename = assets_path + preset.bed_model();
-    std::string texture_filename;
-    if (!preset.bed_texture().empty())
-        texture_filename = assets_path + preset.bed_texture();
-
-    auto custom_model_filename_item = printer_preset.find("bed_custom_model");
-    std::string custom_model_filename;
-    if (custom_model_filename_item.item != nullptr)
-        custom_model_filename = custom_model_filename_item.item->value().get<std::string>();
-
-    auto custom_texture_filename_item = printer_preset.find("bed_custom_texture");
-    std::string custom_texture_filename;
-    if (custom_texture_filename_item.item != nullptr)
-        custom_texture_filename = custom_texture_filename_item.item->value().get<std::string>();
-
-    const bool is_single_tool_XL{
-        preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1
-    };
-    const std::optional<Bed::Segments> segments{
-        is_single_tool_XL ? std::optional{Bed::Segments{4, 4}} : std::nullopt
-    };
-
-    auto bed{Bed::from(
-        shape,
-        static_cast<float>(max_print_height),
-        segments,
-        custom_model_filename.empty() ? model_filename : custom_model_filename,
-        custom_texture_filename.empty() ? texture_filename : custom_texture_filename
-    )};
-
-    const auto it{
-        std::ranges::find_if(m_beds, [&](const auto& present_bed) { return *present_bed == bed; })
-    };
-    if (it != m_beds.end()) {
-        return **it;
+    bool use_model_and_texture = system_preset_bed_shape_getter != nullptr &&
+                                 project_id != INVALID_ID &&
+                                 config_container_id != INVALID_ID;
+    if (use_model_and_texture) {
+        // if the bed shape is different between selected preset and system preset, we do not use the model/texture from assets
+        Vec2ds sys_bed_shape = system_preset_bed_shape_getter(project_id, config_container_id);
+        use_model_and_texture = bed_shape == sys_bed_shape;
     }
+
+    std::string model_filename;
+    std::string texture_filename;
+    if (use_model_and_texture) {
+        std::string bed_model_filename = preset.bed_model();
+        std::string bed_texture_filename = preset.bed_texture();
+        std::string assets_path = resources_dir_path + "/presets/" + preset.hw_config.repo_id + "/" + preset.hw_config.vendor_id + "/assets/";
+        if (!bed_model_filename.empty())
+            model_filename = assets_path + bed_model_filename;
+        if (!bed_texture_filename.empty())
+            texture_filename = assets_path + bed_texture_filename;
+    }
+
+    bool is_single_tool_XL = preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1;
+    std::optional<Bed::Segments> segments = is_single_tool_XL ? std::optional{Bed::Segments{4, 4}} : std::nullopt;
+
+    item = config_box.find("max_print_height");
+    float bed_max_print_height = (item.item != nullptr) ? float(item.item->value().get<double>()) : 0.0f;
+
+    item = config_box.find("bed_custom_model");
+    std::string custom_bed_model_filename = (item.item != nullptr) ? item.item->value().get<std::string>() : std::string();
+
+    item = config_box.find("bed_custom_texture");
+    std::string custom_bed_texture_filename = (item.item != nullptr) ? item.item->value().get<std::string>() : std::string();
+
+    auto bed = Bed::from(
+        bed_shape,
+        bed_max_print_height,
+        segments,
+        custom_bed_model_filename.empty() ? model_filename : custom_bed_model_filename,
+        custom_bed_texture_filename.empty() ? texture_filename : custom_bed_texture_filename
+    );
+
+    auto it = std::ranges::find_if(m_beds, [&](const auto& present_bed) { return present_bed->matches(bed); });
+    if (it != m_beds.end())
+        return **it;
 
     m_beds.push_back(std::make_unique<Bed>(std::move(bed)));
     return *m_beds.back();

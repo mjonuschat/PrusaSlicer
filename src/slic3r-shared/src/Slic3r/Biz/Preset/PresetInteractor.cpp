@@ -25,6 +25,7 @@
 #include <Slic3r/Log.hpp>
 
 using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec2ds;
 
 namespace Slic3r::Biz::Preset {
 namespace {
@@ -677,6 +678,25 @@ void PresetInteractor::set_unsaved_changes(
 {
     m_unsaved_changes = unsaved_changes;
     m_unsaved_changes_selected_ids = from_selected_preset(selected_printer_preset());
+}
+
+Vec2ds PresetInteractor::system_preset_bed_shape(Domain::SelectionId project_id, Domain::SelectionId config_container_id) const
+{
+    const auto& project = m_workbench.project(project_id);
+    const auto cc = project.find_config_container(config_container_id);
+    const auto& selected_preset = cc->selected_preset();
+
+    PrinterPresetProjectView view = get_printer_presets_view(project_id, selected_preset.hw_config.id);
+    for (const auto [printer_preset_ref, is_runtime] : view.items()) {
+        if (!is_runtime) {
+            auto shape_item = printer_preset_ref.get().config_box().find("bed_shape");
+            return (shape_item.item != nullptr) ? shape_item.item->value().get<Vec2ds>() : Vec2ds();
+        }
+    }
+
+    const auto& hw_printer_preset = get_printer_preset(selected_preset.hw_config.id, selected_preset.printer.id).first.get();
+    auto shape_item = hw_printer_preset.config_box().find("bed_shape");
+    return (shape_item.item != nullptr) ? shape_item.item->value().get<Vec2ds>() : Vec2ds();
 }
 
 PresetInteractorConfigContainerContext&

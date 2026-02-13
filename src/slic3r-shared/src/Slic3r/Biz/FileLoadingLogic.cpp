@@ -759,13 +759,7 @@ convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provid
             Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
 
         // Always add one bed instance.
-        cc.set_bed(
-            Scene::get_or_create_bed(
-                project.bed_container(),
-                mutable_selected_preset,
-                resources_dir()
-            )
-        );
+        cc.set_bed(Scene::get_or_create_bed(project.bed_container(), cc, resources_dir()));
         cc.add_bed_instance();
 
         for (size_t bed_idx = 0; bed_idx < cc_data.bed_offsets.size(); ++bed_idx) {

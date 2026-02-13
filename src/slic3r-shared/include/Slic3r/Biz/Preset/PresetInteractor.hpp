@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
+#include "Slic3r/Biz/Preset/IPresetVisualGetter.hpp"
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
@@ -91,7 +92,8 @@ class PresetInteractor final :
         IBedPresetSwitchedListener,
         ISlicingInputChangedListener>,
     public IPresetNameProvider,
-    public IConfigBoxSetter
+    public IConfigBoxSetter,
+    public IPresetVisualGetter
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench, Scene::SceneInteractor& scene_interactor);
@@ -692,6 +694,13 @@ public:
         const auto& cc = m_workbench.project(m_selected_project_id).find_config_container(selected_config_container_context().config_container_id);
         return p.invalid_hw_config.has_value() && p.invalid_hw_config->id == cc->selected_preset().hw_config.id;
     }
+
+    /**
+     * @name Implementation of Biz::Preset::IPresetVisualGetter public interface
+     * @{
+     */
+    Domain::Vec2ds system_preset_bed_shape(Domain::SelectionId project_id, Domain::SelectionId config_container_id) const override;
+    /**@}*/
 
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;

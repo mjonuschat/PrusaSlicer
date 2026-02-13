@@ -17,7 +17,7 @@
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
-#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Preset/IPresetVisualGetter.hpp"
 
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
@@ -158,6 +158,11 @@ public:
 
     explicit SceneInteractor(Domain::Workbench& workbench);
 
+    void set_preset_visual_getter(Preset::IPresetVisualGetter* preset_visual_getter)
+    {
+        m_preset_visual_getter = preset_visual_getter;
+    }
+
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
 
@@ -211,7 +216,7 @@ public:
      */
     bool delete_object(Domain::ModelObject* object);
 
-    void prepare_added_project(Domain::Project& project);
+    void prepare_added_project(Domain::SelectionId project_id);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
     void remove_bed_instance(const Domain::BedRef& instance, bool allow_to_remove_last_one = false);
@@ -344,10 +349,7 @@ private:
 
     BedTrackingChanges update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
-    void update_config_container_bed(
-        Domain::Project& project,
-        const Domain::SelectionId& config_container_id
-    );
+    void update_config_container_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
     void normalize_object_selection(ObjectSelection& object_selection) const;
 
 
@@ -358,6 +360,7 @@ private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 
     Domain::Workbench& m_workbench;
+    Preset::IPresetVisualGetter* m_preset_visual_getter{ nullptr };
 
     ProjectContexts m_projects;
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};

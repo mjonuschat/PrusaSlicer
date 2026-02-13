@@ -281,9 +281,7 @@ axes_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} axes main", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain})
-                .transform([&bed](Transform3d& xform)
-                           { xform.translate(Algorithms::Point::to_3d(bed.offset(), 0.0)); });
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain});
 
             bldr.child(
                 [&](NodeBuilder& in_bldr)

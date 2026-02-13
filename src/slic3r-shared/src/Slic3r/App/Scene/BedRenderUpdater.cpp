@@ -207,10 +207,20 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
     visit(scene.root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
-            // turn beds' plate and model visibility on/off in dependence of camera position/orientation
-            if (tag->type == BedElementType::PlateDefault ||
-                tag->type == BedElementType::Model)
+            if (tag->type == BedElementType::Model)
+                // turn beds' model visibility on/off in dependence of camera position/orientation
                 n.set_enabled(!cam_pointing_upward);
+            else if (tag->type == BedElementType::PlateDefault) {
+                // change material in dependence of camera position/orientation
+                if (cam_pointing_upward)
+                    n.set_material_override(BedMaterials::plate_default_transparent_material(n.render_component()->material()));
+                else if (m_bed_error.contains(Domain::SlicingId{ m_project_id, tag->instance_id }))
+                    n.set_material_override(BedMaterials::plate_default_error_material(n.render_component()->material()));
+                else if (!m_scene_interactor.bed_selection().is_selected(BedRef{ tag->config_container_id, tag->instance_id }))
+                    n.set_material_override(BedMaterials::plate_default_unselected_material(n.render_component()->material()));
+                else
+                    n.remove_material_override();
+            }
             else if (tag->type == BedElementType::PlateTextured) {
                 // change material in dependence of camera position/orientation
                 DEBUG_ASSERT(m_project != nullptr);

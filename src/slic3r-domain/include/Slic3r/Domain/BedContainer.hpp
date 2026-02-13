@@ -3,22 +3,22 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 #include "Slic3r/Domain/Bed.hpp"
-
-namespace Slic3r::Domain::Preset {
-struct SelectedPreset;
-} // namespace Slic3r::Domain::Preset
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Domain {
 
 class Bed;
-struct BedInstance;
+class ConfigContainer;
 
 class BedContainer
 {
 public:
-    [[nodiscard]] Bed& get_or_create_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path);
+    [[nodiscard]] Bed& get_or_create_bed(const ConfigContainer& config_container, const std::string& resources_dir_path,
+        SelectionId project_id = INVALID_ID, SelectionId config_container_id = INVALID_ID,
+        std::function<Vec2ds(SelectionId, SelectionId)> system_preset_bed_shape_getter = nullptr);
 
     void remove(const Bed* bed);
 

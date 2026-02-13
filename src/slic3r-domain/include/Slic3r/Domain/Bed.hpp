@@ -68,11 +68,6 @@ public:
         return m_center;
     }
 
-    [[nodiscard]] const Vec2d& offset() const
-    {
-        return m_offset;
-    }
-
     [[nodiscard]] const Vec2ds& contour() const
     {
         return m_contour;
@@ -132,12 +127,15 @@ public:
         return m_texture_filename;
     }
 
+    // Compare the full content of this Bed with the given one 
     bool operator==(const Bed& rhs) const;
+
+    // Compare the content of this Bed with the given one, as they come from a call to Bed::from() 
+    bool matches(const Bed& rhs) const;
 
 private:
     BedType m_type{BedType::Invalid};
     Vec2d m_center{Vec2d::Zero()};
-    Vec2d m_offset{Vec2d::Zero()};
     Vec2ds m_contour;
     BoundingBoxf m_contour_aabb;
     float m_max_print_height{0.0f};

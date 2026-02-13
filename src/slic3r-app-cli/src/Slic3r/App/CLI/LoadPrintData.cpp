@@ -291,6 +291,7 @@ static bool process_input_files(
                 Domain::Workbench workbench;
                 Scene::SceneInteractor scene_interactor{workbench};
                 Preset::PresetInteractor preset_interactor{workbench, scene_interactor};
+                scene_interactor.set_preset_visual_getter(&preset_interactor);
 
                 // Load new presets.
                 preset_interactor.load_preset_bundle(

@@ -67,12 +67,22 @@ Domain::Project& ProjectInteractor::project(size_t project_id)
     return m_workbench.project(project_id);
 }
 
-void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)
+void ProjectInteractor::initialize_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id,
+    Domain::BedContainer& bed_container)
 {
-    const auto& selected_printer_preset{config_container.selected_preset()};
-    Domain::Bed& bed{Scene::get_or_create_bed(bed_container, selected_printer_preset, resources_dir())};
-    config_container.set_bed(bed);
-    m_scene_interactor.add_bed_instance(config_container.id().id);
+    Domain::Project& project{ m_workbench.project(project_id) };
+    Domain::ConfigContainer* config_container = project.find_config_container(config_container_id);
+    DEBUG_ASSERT(config_container != nullptr);
+    Domain::Bed& bed{ 
+        Scene::get_or_create_bed(
+            bed_container, *config_container, resources_dir(), project_id, config_container_id,
+            [this](Domain::SelectionId project_id, Domain::SelectionId config_container_id) {
+                return m_preset_interactor.system_preset_bed_shape(project_id, config_container_id);
+            }
+        )
+    };
+    config_container->set_bed(bed);
+    m_scene_interactor.add_bed_instance(config_container_id);
 }
 
 Domain::SelectionId ProjectInteractor::new_project()
@@ -95,10 +105,10 @@ Domain::SelectionId ProjectInteractor::new_project_with_modification(
         m_preset_interactor.initialize_config_container_with_default(config_container);
 
         Domain::Project& added_project{m_workbench.project(project_id)};
-        initialize_bed(config_container, added_project.bed_container());
+        initialize_bed(project_id, config_container.id().id, added_project.bed_container());
 
         modifier(added_project);
-        m_scene_interactor.prepare_added_project(added_project);
+        m_scene_interactor.prepare_added_project(project_id);
     }
     invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
         l->on_project_loaded(project_id);
@@ -127,12 +137,13 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 
                 if (added_project.config_containers().empty()) {
                     added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-                    m_preset_interactor.initialize_config_container_with_default(*added_project.config_containers().back());
-                    initialize_bed(*added_project.config_containers().back(), added_project.bed_container());
+                    auto cc = added_project.config_containers().back().get();
+                    m_preset_interactor.initialize_config_container_with_default(*cc);
+                    initialize_bed(project_id, cc->id().id, added_project.bed_container());
                 }
                 do_select_config_container(added_project.config_containers().front()->id().id);
 
-                m_scene_interactor.prepare_added_project(added_project);
+                m_scene_interactor.prepare_added_project(project_id);
 
                 set_project_dir(project_id, file_path);
             }
@@ -552,9 +563,9 @@ Domain::SelectionId ProjectInteractor::add_config_container()
     auto& cc = *p.config_containers().back();
 
     m_preset_interactor.initialize_config_container_with_selected(cc);
-    initialize_bed(cc, p.bed_container());
-
     auto id = cc.id().id;
+    initialize_bed(m_selection.project_id, id, p.bed_container());
+
     select_config_container(id);
     return id;
 }

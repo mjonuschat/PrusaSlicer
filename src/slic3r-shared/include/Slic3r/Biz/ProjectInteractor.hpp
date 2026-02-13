@@ -73,6 +73,7 @@ public:
         m_file_downloader_interactor(dispatcher),
         m_project_list(*this)
     {
+        m_scene_interactor.set_preset_visual_getter(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
@@ -104,7 +105,7 @@ public:
         return m_workbench;
     }
 
-    void initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container);
+    void initialize_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id, Domain::BedContainer& bed_container);
 
     /**
      * @name Project manipulation

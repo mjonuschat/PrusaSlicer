@@ -14,6 +14,11 @@ using Slic3r::Domain::Vec2d;
 
 namespace Slic3r::Biz::Scene {
 
+Vec2d min(const Vec2d& v1, const Vec2d& v2)
+{
+    return { std::min(v1.x(), v2.x()), std::min(v1.y(), v2.y()) };
+}
+
 Vec2d max(const Vec2d& v1, const Vec2d& v2)
 {
     return { std::max(v1.x(), v2.x()), std::max(v1.y(), v2.y()) };
@@ -28,16 +33,23 @@ Domain::ElementRefs BedPlacement::layout(Domain::Project& project, const Vec2d& 
     for (size_t i = 0; i < ccs.size(); ++i) {
         auto& cc = ccs[i];
         const Domain::Bed& bed = cc->bed();
-        Vec2d size = bed.contour_aabb_extent();
-        Vec2d pos = offset_y * Vec2d::UnitY();
+        const BoundingBoxf& bed_contour_aabb = bed.contour_aabb();
+        Vec2d bed_pos = bed_contour_aabb.min;
+        Vec2d bed_size = bed.contour_aabb_extent();
         Domain::TriangleMesh model = BedGeometry::model(bed);
-        if (!model.empty())
-            size = max(size, Algorithms::Point::to_2d(sizes(model.bounding_box())));
+        if (!model.empty()) {
+            Domain::BoundingBox3d model_aabb = model.bounding_box();
+            bed_pos = min(bed_pos, Algorithms::Point::to_2d(model_aabb.min));
+            bed_size = max(bed_size, Algorithms::Point::to_2d(sizes(model_aabb)));
+        }
+
+        Vec2d pos = offset_y * Vec2d::UnitY() - bed_pos;
 
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
         for (size_t j = 0; j < instances.size(); ++j) {
             if (j > 0)
-                pos.x() += size.x() + gap.x();
+                pos.x() += bed_size.x() + gap.x();
+
             Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
             Transform3d old_bed_trafo = instances[j]->matrix();
             instances[j]->transformation = Domain::Transformation(xform);
@@ -51,7 +63,7 @@ Domain::ElementRefs BedPlacement::layout(Domain::Project& project, const Vec2d& 
             }
         }
 
-        offset_y += size.y() + gap.y();
+        offset_y += bed_size.y() + gap.y();
     }
     return ret;
 }

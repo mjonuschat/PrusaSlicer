@@ -55,8 +55,6 @@ Bed Bed::from(const Vec2ds& contour, float max_print_height, const std::optional
 
     ret.m_contour_aabb = BoundingBoxf{ min, max };
     ret.m_center       = 0.5 * (min + max);
-    // TODO: calculate offset as done in libslic3r BuildVolume
-    // ret.m_offset = /*TODO*/;
     return ret;
 }
 
@@ -71,9 +69,6 @@ bool Bed::operator==(const Bed& rhs) const
         return false;
     }
     if (!vec2d_equal(m_center, rhs.m_center)) {
-        return false;
-    }
-    if (!vec2d_equal(m_offset, rhs.m_offset)) {
         return false;
     }
     if (!Domain::fuzzy_compare(m_max_print_height, rhs.m_max_print_height)) {
@@ -102,6 +97,31 @@ bool Bed::operator==(const Bed& rhs) const
     if (m_circle != rhs.m_circle) {
         return false;
     }
+    return true;
+}
+
+bool Bed::matches(const Bed& rhs) const
+{
+    if (m_contour.size() != rhs.m_contour.size())
+        return false;
+
+    for (size_t i = 0; i < m_contour.size(); ++i) {
+        if (!vec2d_equal(m_contour[i], rhs.m_contour[i]))
+            return false;
+    }
+
+    if (!Domain::fuzzy_compare(m_max_print_height, rhs.m_max_print_height))
+        return false;
+
+    if (m_segments != rhs.m_segments)
+        return false;
+
+    if (m_model_filename != rhs.m_model_filename)
+        return false;
+
+    if (m_texture_filename != rhs.m_texture_filename)
+        return false;
+
     return true;
 }
 

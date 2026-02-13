@@ -157,6 +157,18 @@ Render::Material BedMaterials::label_material(const Render::Device& device, cons
     return ret;
 }
 
+Render::Material BedMaterials::plate_default_transparent_material(const Render::Material& primary_material)
+{
+    ColorRGBA color = PLATE_DEFAULT_DISABLED;
+    color.a(0.0f);
+
+    Render::Material ret = primary_material;
+    ret
+        .set_uniform("uniform_color", color)
+        .set_transparent(true);
+    return ret;
+}
+
 Render::Material BedMaterials::plate_default_unselected_material(const Render::Material& primary_material)
 {
     Render::Material ret = primary_material;

@@ -7,7 +7,6 @@
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
@@ -1038,10 +1037,12 @@ bool SceneInteractor::delete_object(Domain::ModelObject* object)
     return true;
 }
 
-void SceneInteractor::prepare_added_project(Domain::Project& project)
+void SceneInteractor::prepare_added_project(Domain::SelectionId project_id)
 {
+    Domain::Project& project = m_workbench.project(project_id);
     m_bed_tracking.update_instances_bed_placement(project);
     for (auto& cc : project.config_containers()) {
+        update_config_container_bed(project_id, cc->id().id);
         size_t index = 0;
         for (auto& bed_instance : cc->bed_instances()) {
             bed_instance->set_index(++index);
@@ -1050,7 +1051,6 @@ void SceneInteractor::prepare_added_project(Domain::Project& project)
 
     notify_listener_on_objects(project);
     layout_after_project_load(project);
-
 }
 
 Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
@@ -1252,14 +1252,22 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     );
 }
 
-void SceneInteractor::update_config_container_bed(Domain::Project& project, const Domain::SelectionId& config_container_id)
+void SceneInteractor::update_config_container_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
 {
+    Domain::Project& project = m_workbench.project(project_id);
     Domain::ConfigContainer* config_container{project.find_config_container(config_container_id)};
-    if (config_container == nullptr) {
+    if (config_container == nullptr)
         return;
-    }
-    const auto& selected_printer_preset{config_container->selected_preset()};
-    Domain::Bed& bed{get_or_create_bed(project.bed_container(), selected_printer_preset, Slic3r::resources_dir())};
+
+    Domain::Bed& bed{
+        get_or_create_bed(
+            project.bed_container(), *config_container, resources_dir(), project_id, config_container_id,
+            [this](Domain::SelectionId project_id, Domain::SelectionId config_container_id) {
+                return (m_preset_visual_getter != nullptr) ?
+                    m_preset_visual_getter->system_preset_bed_shape(project_id, config_container_id) : Domain::Vec2ds();
+            }
+        )
+    };
 
     const Domain::Bed* previous_bed{&config_container->bed()};
     if (previous_bed != &bed) {
@@ -1295,7 +1303,7 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
             [&](auto* l)
             {
                 l->on_instance_transformed(
-                    m_selected_project_id,
+                    project_id,
                     updated,
                     TransformState::Completed,
                     changes
@@ -1304,7 +1312,7 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
         );
 
         invoke_listeners<ISceneBedInstanceChangedListener>(
-            [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, bed_refs); }
+            [&](auto* l) { l->on_bed_instance_updated(project_id, bed_refs); }
         );
     }
 }
@@ -1315,8 +1323,7 @@ void SceneInteractor::on_preset_selection_changed(Domain::SelectionId project_id
         return;
     }
 
-    Domain::Project& project{m_workbench.project(project_id)};
-    update_config_container_bed(project, config_container_id);
+    update_config_container_bed(project_id, config_container_id);
 }
 
 void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id, const Domain::ConfigItem& item)
@@ -1328,8 +1335,7 @@ void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Do
         "bed_custom_texture",
     };
     if (std::ranges::find(bed_related_keys, item.def().name) != bed_related_keys.end()) {
-        Domain::Project& project{m_workbench.project(project_id)};
-        update_config_container_bed(project, config_container_id);
+        update_config_container_bed(project_id, config_container_id);
     }
 }
 

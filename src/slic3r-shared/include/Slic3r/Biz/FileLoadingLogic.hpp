@@ -2,7 +2,6 @@
 
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Model.hpp"
-#include "Slic3r/Domain/Preset/Bundle.hpp"
 
 #include <string>
 #include <boost/filesystem/path.hpp>
@@ -15,6 +14,10 @@ class IMessageDialogProvider;
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
 } // namespace Slic3r::Biz::Scene
+
+namespace Slic3r::Domain::Preset {
+struct Bundle;
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::Biz::FileLoadingLogic {
 
