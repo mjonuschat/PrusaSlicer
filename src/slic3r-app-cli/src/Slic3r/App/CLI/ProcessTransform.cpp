@@ -57,7 +57,7 @@ bool process_transform(
         }
 
         // Rearrange instances unless --dont-arrange is supplied
-        if (!transform.dont_arrange.has_value() && !transform.dont_arrange.value()) {
+        if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
             Biz::Arrange::arrange_model_in_place(
                 merged_model,
                 get_bed_shape(config_pack),
