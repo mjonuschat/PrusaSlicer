@@ -55,17 +55,19 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
         model_on_bed.bed_instance
     );
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
-        return events.size() > 4;
-    }));
-
     const StatusEvents expected_events{
         StatusEvent{StatusCode::Updating, id},
         StatusEvent{StatusCode::Modified, id},
         StatusEvent{StatusCode::Running, id},
         StatusEvent{StatusCode::Stopping, id},
         StatusEvent{StatusCode::Modified, id},
+        StatusEvent{StatusCode::Updating, id},
+        StatusEvent{StatusCode::Modified, id},
     };
+
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [&](const StatusEvents &events){
+        return events.size() == expected_events.size();
+    }));
 
     CHECK_THAT(status_listener.status_events, Equals(expected_events));
 }
