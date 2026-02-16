@@ -33,6 +33,7 @@ protected:
     virtual std::vector<BrowserLogicCommand> on_connect_action_webapp_ready(const std::string& message_data) = 0;
     virtual std::vector<BrowserLogicCommand> on_connect_action_close_dialog(const std::string& message_data) = 0;
     virtual std::vector<BrowserLogicCommand> on_webview_reload_event(const std::string& message_data) = 0;
+    virtual std::vector<BrowserLogicCommand> on_connect_action_log_in_in_browser(const std::string& message_data) = 0;
 
     std::map<std::string, std::function<std::vector<BrowserLogicCommand>(const std::string&)>> m_actions;
 };

@@ -39,7 +39,8 @@ protected:
     std::vector<BrowserLogicCommand> on_connect_action_close_dialog(const std::string& message_data) override;
     std::vector<BrowserLogicCommand> on_connect_action_request_login(const std::string &message_data) override;
     std::vector<BrowserLogicCommand> on_connect_action_error(const std::string &message_data) override;
-    
+    std::vector<BrowserLogicCommand> on_connect_action_log_in_in_browser(const std::string& message_data) override;
+
 private:
     bool m_styles_defined {false};
     bool m_reached_default_url {false};

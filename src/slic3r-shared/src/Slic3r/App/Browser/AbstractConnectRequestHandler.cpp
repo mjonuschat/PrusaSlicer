@@ -21,6 +21,7 @@ AbstractConnectRequestHandler::AbstractConnectRequestHandler(Biz::ProjectInterac
     m_actions["LOG"] = std::bind(&AbstractConnectRequestHandler::on_connect_action_log, this, std::placeholders::_1);
     m_actions["RELOAD_HOME_PAGE"] = std::bind(&AbstractConnectRequestHandler::on_webview_reload_event, this, std::placeholders::_1);
     m_actions["CLOSE_DIALOG"] = std::bind(&AbstractConnectRequestHandler::on_connect_action_close_dialog, this, std::placeholders::_1);
+    m_actions["LOG_IN_IN_BROWSER"] = std::bind(&AbstractConnectRequestHandler::on_connect_action_log_in_in_browser, this, std::placeholders::_1);
 }
 
 std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::handle_message(const std::string& message)
@@ -75,6 +76,11 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_actio
 }
 
 std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_action_request_login(const std::string &message_data)
+{
+    return {};
+}
+
+std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_action_log_in_in_browser(const std::string& message_data)
 {
     return {};
 }
