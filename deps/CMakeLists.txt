@@ -56,6 +56,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
 endif ()
 
 include(${PROJECT_SOURCE_DIR}/../cmake/modules/AddCMakeProject.cmake)
+include(${PROJECT_SOURCE_DIR}/../cmake/modules/OSXDeploymentTarget.cmake)
 
 macro(list_projects result curdir)
   file(GLOB children RELATIVE ${curdir} ${curdir}/*)

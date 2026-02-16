@@ -73,6 +73,7 @@ if (APPLE)
     endif ()
     add_compile_options(-Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new)
 endif ()
+include(${PROJECT_SOURCE_DIR}/cmake/modules/OSXDeploymentTarget.cmake)
 if(WIN32)
     include(WinSDK)
     add_compile_definitions(

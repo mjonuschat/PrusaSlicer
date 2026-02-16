@@ -34,7 +34,6 @@ else ()
         if (CMAKE_OSX_ARCHITECTURES)
             set(_cross_compile_arg --host=${_gmp_build_tgt}-apple-darwin21)
         endif ()
-
         set(_gmp_ccflags "${_gmp_ccflags} -mmacosx-version-min=${DEP_OSX_TARGET}")
         set(_gmp_build_tgt "--build=${_gmp_build_tgt}-apple-darwin")
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
