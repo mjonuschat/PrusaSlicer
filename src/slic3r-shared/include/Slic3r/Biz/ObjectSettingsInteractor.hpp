@@ -6,8 +6,13 @@
 
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ObjectSettingsObservableList.hpp"
+#include "Slic3r/Biz/Platform/ListenerScope.hpp"
 
 namespace Slic3r::Biz {
+
+namespace Preset {
+class PresetInteractor;
+} // namespace Preset
 
 namespace Scene {
 class SceneInteractor;
@@ -16,7 +21,8 @@ class SceneInteractor;
 class ObjectSettingsInteractor :
     public Scene::ISceneSelectionChangedListener,
     public ISelectedConfigContainerChangedListener,
-    public Preset::IPresetChangedListener
+    public Preset::IPresetChangedListener,
+    public Scene::ISceneChangedListener
 {
 public:
     class SetAccessor
@@ -36,6 +42,7 @@ public:
         Domain::Workbench& workbench,
         Scene::SceneInteractor& scene_interactor
     );
+    ~ObjectSettingsInteractor();
 
     std::weak_ptr<ObjectSettingsObservableList> object_observable_list() const;
 
@@ -55,12 +62,26 @@ public:
         Preset::PresetItemType type
     ) override;
 
+    void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) override;
+
 private:
     void update_sources();
 
 private:
     Domain::Workbench& m_workbench;
     Scene::SceneInteractor& m_scene_interactor;
+
+    ListenerScope<
+        Scene::ISceneSelectionChangedListener,
+        Biz::Scene::SceneInteractor,
+        ObjectSettingsInteractor>
+        m_scene_selection_listener_scope;
+
+    ListenerScope<
+        Scene::ISceneChangedListener,
+        Biz::Scene::SceneInteractor,
+        ObjectSettingsInteractor>
+        m_scene_changed_listener_scope;
 
     Domain::PrinterTechnology m_current_print_technology = Domain::PrinterTechnology::FFF;
     Scene::ObjectSelection m_current_selection;

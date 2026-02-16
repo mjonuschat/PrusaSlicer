@@ -93,9 +93,6 @@ public:
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
         m_file_downloader_interactor.add_listener<FileDownloader::IFileDownloaderListener>(this);
-        m_scene_interactor.add_listener<Scene::ISceneSelectionChangedListener>(
-            &m_preset_interactor.object_settings_interactor()
-        );
         add_listener<ISelectedConfigContainerChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );

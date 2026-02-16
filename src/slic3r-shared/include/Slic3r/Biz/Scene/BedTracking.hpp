@@ -3,7 +3,6 @@
 #include <chrono>
 #include <map>
 #include <set>
-#include <ranges>
 #include <iterator>
 
 #include <Slic3r/Domain/Project.hpp>
@@ -18,10 +17,17 @@ struct BedTrackingChanges
 {
     using BedRefSet = std::set<Domain::BedRef>;
 
+    using InstanceRefSet = std::set<Domain::ElementRef>;
+
     /**
      * @brief Set of changed bed instances
      */
     BedRefSet updated_beds;
+
+    /**
+     * @brief Set of ModelInstances which last bed property has changed
+     */
+    InstanceRefSet updated_instances;
 
     /**
      * @brief Indicates if Project::unplaced_instances gets updated too.
@@ -31,12 +37,14 @@ struct BedTrackingChanges
     /**
      * @brief Indicates if BedInstance::colliding_instances gets updated too.
      */
-    int colliding_instances_updated_count{ 0 };
+    int colliding_instances_updated_count{0};
 
     void append(const BedTrackingChanges& others)
     {
         std::ranges::copy(others.updated_beds, std::inserter(updated_beds, updated_beds.end()));
-        unplaced_instances_updated = unplaced_instances_updated || others.unplaced_instances_updated;
+        std::ranges::copy(others.updated_instances, std::inserter(updated_instances, updated_instances.end()));
+        unplaced_instances_updated =
+            unplaced_instances_updated || others.unplaced_instances_updated;
         colliding_instances_updated_count += others.colliding_instances_updated_count;
     }
 };
@@ -46,8 +54,11 @@ struct BedTrackingChanges
  * @param project Project to update
  * @param model_instance Model instance to be removed from bed instance
  */
-void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes);
-
+void remove_instance_from_bed(
+    Domain::Project& project,
+    Domain::ModelInstance* model_instance,
+    BedTrackingChanges& changes
+);
 
 class BedTracking
 {
@@ -56,7 +67,9 @@ public:
      * @brief Rebuild all model-instance to bed links.
      * @param project Project to update
      */
-    BedTrackingChanges update_instances_bed_placement(Domain::Project& project);
+    BedTrackingChanges update_instances_bed_placement(
+        Domain::Project& project
+    );
 
     /**
      * @brief Rebuild model-instance to bed links for given instances
@@ -66,7 +79,9 @@ public:
      * if false it is assumed that the instances are newly added and has no original links.
      */
     BedTrackingChanges update_instances_bed_placement(
-        Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links = true
+        Domain::Project& project,
+        const Domain::ElementRefs& instances,
+        bool remove_original_links = true
     );
 
     /**
@@ -77,32 +92,43 @@ public:
      */
     BedTrackingChanges update_instances_bed_placement(
         Domain::Project& project,
-        const Domain::ModelInstanceList& instances, bool remove_original_links = true
+        const Domain::ModelInstanceList& instances,
+        bool remove_original_links = true
     );
 
 private:
-    void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes);
-    Domain::BoundingBox3d get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst);
+    void update_instance_bed_placement(
+        Domain::Project& project,
+        Domain::ModelInstance& inst,
+        BedTrackingChanges& changes
+    );
+    Domain::BoundingBox3d
+    get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst);
 
     // The cache for transformed bounding boxes to allow quick lookup based on
     // object_id and instance_id.
-    struct CacheInstanceEntry {
+    struct CacheInstanceEntry
+    {
         Domain::Transformation inst_trafo;
         Domain::BoundingBox3d cached_bb;
     };
-    struct VolData {
+
+    struct VolData
+    {
         Domain::Transformation trafo;
         size_t id;
         Domain::ModelVolumeType type;
     };
-    struct CacheObjectEntry {
+
+    struct CacheObjectEntry
+    {
         std::vector<VolData> vol_data;
         std::map<size_t, CacheInstanceEntry> instances;
     };
+
     std::map<size_t, CacheObjectEntry> m_cache;
-    std::chrono::steady_clock::time_point m_last_cache_clear_time = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point m_last_cache_clear_time =
+        std::chrono::steady_clock::now();
 };
-
-
 
 } // namespace Slic3r::Biz

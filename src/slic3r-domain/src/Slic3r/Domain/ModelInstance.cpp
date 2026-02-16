@@ -1,12 +1,23 @@
 #include "Slic3r/Domain/ModelInstance.hpp"
 
 #include "Slic3r/Domain/ModelObject.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 namespace Slic3r::Domain {
 
 Domain::ModelObject* ModelInstance::get_object() const { return this->object; }
 
 void ModelInstance::set_model_object(ModelObject* model_object) { this->object = model_object; }
+
+const BedRef& ModelInstance::get_last_bed() const
+{
+    return m_last_bed;
+}
+
+void ModelInstance::set_last_bed(const BedRef& last_bed)
+{
+    m_last_bed = last_bed;
+}
 
 const Domain::Transformation& ModelInstance::get_transformation() const { return m_transformation; }
 

@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/ITransformable.hpp"
+#include "Slic3r/Domain/BedRef.hpp"
 
 namespace cereal {
 template<class Archive> void serialize(Archive&, Slic3r::Domain::ModelInstance&);
@@ -31,6 +32,8 @@ private:
     // Parent object, owning this instance.
     ModelObject*                   object;
 
+    BedRef                         m_last_bed;
+
 public:
     // Flag showing the position of this instance with respect to the print volume (set by Print::validate() using ModelObject::check_instances_print_volume_state())
     ModelInstanceEPrintVolumeState print_volume_state;
@@ -39,6 +42,9 @@ public:
 
     ModelObject*                  get_object() const;
     void                          set_model_object(ModelObject *model_object);
+
+    const BedRef&                 get_last_bed() const;
+    void                          set_last_bed(const BedRef& last_bed);
 
     const Transformation&         get_transformation() const override;
     void                          set_transformation(const Transformation& transformation) override;

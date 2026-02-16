@@ -19,24 +19,31 @@ bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance
 }
 } // anonymous namespace
 
-void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes)
+void remove_instance_from_bed(
+    Domain::Project& project,
+    Domain::ModelInstance* model_instance,
+    BedTrackingChanges& changes
+)
 {
     if (remove_instance(project.unplaced_model_instances(), model_instance)) {
         changes.unplaced_instances_updated = true;
         for (auto& cc : project.config_containers()) {
             for (auto& bi : cc->bed_instances()) {
-                if (remove_instance(bi->colliding_instances, model_instance))
+                if (remove_instance(bi->colliding_instances, model_instance)) {
                     --changes.colliding_instances_updated_count;
+                }
             }
         }
         return;
     }
-    for (auto& cc : project.config_containers())
-        for (auto& bi : cc->bed_instances())
+    for (auto& cc : project.config_containers()) {
+        for (auto& bi : cc->bed_instances()) {
             if (remove_instance(bi->model_instances, model_instance)) {
                 changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
                 return;
             }
+        }
+    }
 }
 
 std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
@@ -136,7 +143,11 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
     return cache_entry.cached_bb;
 }
 
-void BedTracking::update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes)
+void BedTracking::update_instance_bed_placement(
+    Domain::Project& project,
+    Domain::ModelInstance& inst,
+    BedTrackingChanges& changes
+)
 {
     const Domain::BoundingBox3d& bb = get_instance_bb(project, inst);
 
@@ -144,10 +155,14 @@ void BedTracking::update_instance_bed_placement(Domain::Project& project, Domain
     if (bi != nullptr) {
         if (state == Algorithms::Bed::BedContainmentState::Inside) {
             bi->model_instances.push_back(&inst);
-            changes.updated_beds.insert(Domain::BedRef{ cc->id().id, bi->id().id });
+            const Domain::BedRef bed_ref{Domain::BedRef{cc->id().id, bi->id().id}};
+            changes.updated_beds.insert(bed_ref);
+            inst.set_last_bed(bed_ref);
+            changes.updated_instances.insert(
+                Domain::ElementRef(inst.get_object()->id().id, inst.id().id)
+                );
             return;
-        }
-        else {
+        } else {
             bi->colliding_instances.push_back(&inst);
             ++changes.colliding_instances_updated_count;
         }
@@ -155,8 +170,6 @@ void BedTracking::update_instance_bed_placement(Domain::Project& project, Domain
     project.unplaced_model_instances().push_back(&inst);
     changes.unplaced_instances_updated = true;
 }
-
-
 
 BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project)
 {

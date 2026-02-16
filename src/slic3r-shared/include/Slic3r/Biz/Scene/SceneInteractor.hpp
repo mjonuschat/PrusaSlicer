@@ -128,6 +128,8 @@ public:
     virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Print::WipeTowerGeometry& wipe_tower) {}
     virtual void on_wipe_tower_moved(Domain::SlicingId slicing_id) {}
     virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
+
+    virtual void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) {}
 };
 
 class ISceneBedInstanceChangedListener

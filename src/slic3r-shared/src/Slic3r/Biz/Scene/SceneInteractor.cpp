@@ -580,6 +580,17 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
         l->on_instance_added(m_selected_project_id, updated);
     });
 
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
+
     // TODO: need to send project_id for set selection (for @JanBartipan)
     set_object_selection({ SelectionMode::Instance, updated });
 }
@@ -670,6 +681,17 @@ void SceneInteractor::add_instance(const Vec2d& offset)
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                    );
+            }
+            );
+    }
 
     set_object_selection({SelectionMode::Instance, updated});
 }
@@ -1030,6 +1052,17 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
         }
     );
 
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
+
     set_object_selection(new_selection);
 
     for (const auto& bed_ref : changes.updated_beds)
@@ -1118,6 +1151,17 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
         }
     );
 
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
+
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
@@ -1154,6 +1198,17 @@ void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
             );
         }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
 
     invoke_listeners<ISceneBedInstanceChangedListener>(
         [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, bed_refs); }
@@ -1237,6 +1292,17 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
         [&](auto* l) { l->on_bed_instance_removed(m_selected_project_id, {instance}); }
     );
 
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
+
     if (!allow_to_remove_last_one && cc->bed_instances().empty()) {
         add_bed_instance(cc->id().id);
     }
@@ -1282,6 +1348,17 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
             l->on_bed_instance_transformed(m_selected_project_id, {instance}, TransformState::Completed);
         }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
 }
 
 void SceneInteractor::update_config_container_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
@@ -1346,6 +1423,17 @@ void SceneInteractor::update_config_container_bed(Domain::SelectionId project_id
         invoke_listeners<ISceneBedInstanceChangedListener>(
             [&](auto* l) { l->on_bed_instance_updated(project_id, bed_refs); }
         );
+
+        if (!changes.updated_instances.empty()) {
+            invoke_listeners<ISceneChangedListener>(
+                [&](ISceneChangedListener* l)
+                {
+                    l->on_instances_last_bed_updated(
+                        {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                    );
+                }
+            );
+        }
     }
 }
 
@@ -1439,6 +1527,17 @@ void SceneInteractor::set_element_transforms(const SceneInteractor::ElementTrans
         [&](ISceneSelectionChangedListener* l)
         { l->on_scene_selection_transformed(m_selected_project_id, object_selection()); }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
 }
 
 void SceneInteractor::transform_selection(const Transform& relative_transform)
@@ -1490,6 +1589,17 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
         [&](ISceneSelectionChangedListener* l)
         { l->on_scene_selection_transformed(m_selected_project_id, selection); }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
 }
 
 void SceneInteractor::transform_instances(const InstanceTransforms& transformations)
@@ -1728,6 +1838,17 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
         );
     }
 
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
+
     memento.reset();
 }
 
@@ -1881,6 +2002,17 @@ void SceneInteractor::normalize_single_volume_object(Domain::ModelObject& object
             l->on_volume_transformed(m_selected_project_id, volume_refs, TransformState::Completed, changes);
         }
     );
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
+    }
 }
 
 void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_instance)

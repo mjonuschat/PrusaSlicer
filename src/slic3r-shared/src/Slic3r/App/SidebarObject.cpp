@@ -23,7 +23,14 @@ namespace Slic3r::App {
 SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     Window("SidebarObject"),
     m_project_interactor(project_interactor),
-    m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this)
+    m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this),
+    m_osi_observer_scope(
+        *project_interactor.preset_interactor()
+             .object_settings_interactor()
+             .object_observable_list()
+             .lock(),
+        *this
+    )
 {
     m_override_settings_dialog = emplace_back<OverrideSettingsDialog>(m_project_interactor);
 
@@ -79,6 +86,10 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     };
     m_add_settings_button->set_flex_shrink(0);
 
+    m_no_overrides_label =
+        scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));
+    m_no_overrides_label->set_wrap_mode(Text::WrapMode::Wrap);
+
     m_override_group_filter = std::make_shared<ObservableOverrideCategorizer>();
     m_override_group_filter->set_allow_disabled(false);
 
@@ -114,6 +125,11 @@ void SidebarObject::on_scene_selection_changed(
         m_selection.mode == Biz::Scene::SelectionMode::Instance ? _u8L("Add object settings") :
                                                                   _u8L("Add volume settings")
     );
+}
+
+void SidebarObject::on_reset()
+{
+    update_enable_modifiers();
 }
 
 void SidebarObject::visible_updated_internal()
@@ -182,15 +198,26 @@ void SidebarObject::update_enable_modifiers()
         [](const Domain::ElementRef& element) { return element.is_wipe_tower(); }
     )};
 
-    if (wipe_tower_selected) {
-        enable = false;
-    }
+    enable &= !wipe_tower_selected;
+
+    const bool osi_has_items = m_project_interactor.preset_interactor()
+                                   .object_settings_interactor()
+                                   .object_observable_list()
+                                   .lock()
+                                   ->size();
+
+    enable &= osi_has_items;
 
     m_wipe_tower_settings->set_visible(wipe_tower_selected && m_selection.elements.size() == 1);
     m_add_settings_button->set_visible(!wipe_tower_selected);
     m_add_settings_button->set_enabled(enable);
     m_config_item_list_view->set_visible(enable);
     m_override_group_list_view->set_visible(enable);
+    m_no_overrides_label->set_visible(!wipe_tower_selected && !enable);
+
+    if (!enable) {
+        m_override_settings_dialog->close();
+    }
 }
 
 } // namespace Slic3r::App

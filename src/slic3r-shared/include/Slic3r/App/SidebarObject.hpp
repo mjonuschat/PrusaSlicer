@@ -16,6 +16,7 @@
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
+class ObjectSettingsObservableList;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
@@ -28,7 +29,10 @@ namespace Slic3r::App {
 class OverrideSettingsDialog;
 class WipeTowerSettings;
 
-class SidebarObject : public Yoga::Window, public Biz::Scene::ISceneSelectionChangedListener
+class SidebarObject :
+    public Yoga::Window,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::IListObserver<Biz::OverrideItem>
 {
 public:
     explicit SidebarObject(Biz::ProjectInteractor& project_interactor);
@@ -38,6 +42,8 @@ public:
         const Biz::Scene::ObjectSelection& selection
     ) override;
 
+    void on_reset() override;
+
 protected:
     void visible_updated_internal() override;
 
@@ -46,24 +52,31 @@ private:
     void update_enable_modifiers();
 
 private:
-    using ConfigItemListViewFactory = Yoga::ViewFactory<
-        ObjectConfigItem,
-        Biz::OverrideItem,
-        Biz::Preset::PresetInteractor&>;
-    using ConfigItemListView = Yoga::ListView<ObjectConfigItem, Biz::OverrideItem, ConfigItemListViewFactory>;
+    using ConfigItemListViewFactory =
+        Yoga::ViewFactory<ObjectConfigItem, Biz::OverrideItem, Biz::Preset::PresetInteractor&>;
+    using ConfigItemListView =
+        Yoga::ListView<ObjectConfigItem, Biz::OverrideItem, ConfigItemListViewFactory>;
 
-    using OverrideGroupListViewFactory = Yoga::ViewFactory<
-        OverrideOptionGroup,
-        Biz::OverrideItem,
-        Biz::ProjectInteractor&>;
-    using OverrideGroupListView = Yoga::ListView<OverrideOptionGroup, Biz::OverrideItem, OverrideGroupListViewFactory>;
+    using OverrideGroupListViewFactory =
+        Yoga::ViewFactory<OverrideOptionGroup, Biz::OverrideItem, Biz::ProjectInteractor&>;
+    using OverrideGroupListView =
+        Yoga::ListView<OverrideOptionGroup, Biz::OverrideItem, OverrideGroupListViewFactory>;
 
     using ConfigItemFilter = Biz::ObservableListSortFilter<Biz::OverrideItem>;
 
     Biz::ProjectInteractor& m_project_interactor;
 
-    Biz::ListenerScope<Biz::Scene::ISceneSelectionChangedListener, Biz::Scene::SceneInteractor, SidebarObject>
+    Biz::ListenerScope<
+        Biz::Scene::ISceneSelectionChangedListener,
+        Biz::Scene::SceneInteractor,
+        SidebarObject>
         m_scene_selection_changed_listener_scope;
+
+    Biz::ListenerScope<
+        Biz::IListObserver<Biz::OverrideItem>,
+        Biz::ObjectSettingsObservableList,
+        SidebarObject>
+        m_osi_observer_scope;
 
     ConfigItemListView* m_config_item_list_view{nullptr};
     OverrideGroupListView* m_override_group_list_view{nullptr};
@@ -73,6 +86,8 @@ private:
 
     Yoga::Text* m_text_object_name{nullptr};
     Yoga::LayoutButton* m_add_settings_button{nullptr};
+    Yoga::Text* m_no_overrides_label{nullptr};
+
     Biz::Scene::ObjectSelection m_selection;
 
     OverrideSettingsDialog* m_override_settings_dialog{nullptr};
