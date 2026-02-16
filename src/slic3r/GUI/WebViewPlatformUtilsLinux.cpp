@@ -115,17 +115,6 @@ void delete_cookies_with_counter(wxWebView* web_view, const std::string& url, st
     counter++;
 }
 
-void add_request_authorization(wxWebView* web_view, const wxString& address, const std::string& token)
-{
-    // unused on Linux
-    assert(true);
-}
-void remove_request_authorization(wxWebView* web_view)
-{
-    // unused on Linux
-    assert(true);
-}
-
 void load_request(wxWebView* web_view, const std::string& address, const std::string& token)
 {
     WebKitWebView* native_backend = static_cast<WebKitWebView *>(web_view->GetNativeBackend());

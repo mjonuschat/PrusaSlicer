@@ -163,16 +163,6 @@ void delete_cookies_with_counter(wxWebView* web_view, const std::string& url, st
     counter++;
 }
 
-void add_request_authorization(wxWebView* web_view, const wxString& address, const std::string& token)
-{
-    // unused on MacOS
-    assert(true);
-}
-void remove_request_authorization(wxWebView* web_view)
-{
-    // unused on MacOS
-    assert(true);
-}
 void load_request(wxWebView* web_view, const std::string& address, const std::string& token)
 {
     WKWebView* backend = static_cast<WKWebView*>(web_view->GetNativeBackend());
