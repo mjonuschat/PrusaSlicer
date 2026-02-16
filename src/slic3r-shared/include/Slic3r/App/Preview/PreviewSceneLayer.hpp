@@ -14,9 +14,9 @@ enum class PreviewSceneLayer : Scene::RenderLayerId
 {
     Toolpaths = 0,
     Options,
-    ToolMarker,
     CogMarker,
     Bed,
+    ToolMarker,
     Shell,
 };
 
