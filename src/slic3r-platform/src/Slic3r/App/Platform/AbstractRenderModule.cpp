@@ -51,6 +51,10 @@ void AbstractRenderModule::ensure_initialized(Render::Device& device, Render::Im
     }
 }
 
+bool AbstractRenderModule::is_initialized() const {
+    return m_initialized;
+}
+
 void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
 {
     if (m_imgui_render != imgui_render) {

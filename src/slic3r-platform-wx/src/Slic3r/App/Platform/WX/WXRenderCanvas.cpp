@@ -713,6 +713,10 @@ KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
 
 void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 {
+    if (!m_render_module->is_initialized()) {
+        return;
+    }
+
     wxEventType type = evt.GetEventType();
     ImGuiIO& io      = ImGui::GetIO();
 
@@ -766,6 +770,10 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 
 void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
 {
+    if (!m_render_module->is_initialized()) {
+        return;
+    }
+
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
@@ -783,6 +791,10 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 {
+    if (!m_render_module->is_initialized()) {
+        return;
+    }
+
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
@@ -800,6 +812,10 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
+    if (!m_render_module->is_initialized()) {
+        return;
+    }
+
     // Dirty hack, which will shift focus onto ImGui and let it pass keyboard events
     SetFocus();
 
@@ -880,6 +896,10 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
+    if (!m_render_module->is_initialized()) {
+        return;
+    }
+
     m_main_thread_dispatcher.dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     // std::cout << "Idle: render requested: " << render_requested << "\n";

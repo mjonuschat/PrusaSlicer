@@ -46,6 +46,7 @@ public:
 
     void set_screen_size(const Render::ScreenInfo& screen_info);
     void ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager);
+    bool is_initialized() const;
 
     virtual const std::optional<CameraSynchData>& camera_synch_data() const = 0;
     virtual void set_camera_synch_data(const CameraSynchData& data) = 0;
@@ -84,8 +85,8 @@ protected:
     Platform::AnimationManager* m_animation_manager{nullptr};
 
     Render::ScreenInfo m_screen_info{0, 0, 1};
-    bool m_initialized{false};
 private:
+    bool m_initialized{false};
     Biz::Platform::IRenderRequestHandler* m_render_request_handler{nullptr};
 };
 
