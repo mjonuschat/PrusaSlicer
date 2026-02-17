@@ -328,7 +328,7 @@ static std::string join_with_comma(const std::vector<float>& input) {
     return boost::join(values, ", ");
 }
 
-static std::vector<std::string> format_statistics(
+static Domain::FullPrintStatistics get_full_statistics(
     const Domain::BasicPrintStatistics& basic_statistics,
     const Domain::ExtraPrintStatistics& extra_statistics,
     const std::vector<Extruder>& extruders,
@@ -339,49 +339,86 @@ static std::vector<std::string> format_statistics(
         get_filament_statistics(basic_statistics.volumes_per_extruder, extruders, extruders_count)
     };
 
+    Domain::FullPrintStatistics result;
+
+    result.used_filament_per_extruder_mm  = filament_statistics.used_mm;
+    result.used_filament_per_extruder_cm3 = filament_statistics.used_cm3;
+    result.used_filament_per_extruder_g   = filament_statistics.used_g;
+
+    result.used_filaments_per_role = basic_statistics.used_filaments_per_role;
+    result.used_filament_per_color_change_cm3 = basic_statistics.volumes_per_color_change;
+
+    result.filament_cost_per_extruder     = filament_statistics.used_cost;
+
+    result.total_used_filament_mm = sum(filament_statistics.used_mm);
+    result.total_used_filament_cm3 = sum(filament_statistics.used_cm3);
+    result.total_used_filament_g = sum(filament_statistics.used_g);
+    result.total_filament_cost   = sum(filament_statistics.used_cost);
+
+    result.total_wipe_tower_cost = extra_statistics.total_wipe_tower_cost;
+    result.total_used_filament_for_wipe_tower_g = extra_statistics.total_wipe_tower_filament_weight;
+
+    result.total_toolchanges = extra_statistics.total_toolchanges;
+    result.normal_mode_time = basic_statistics.normal_mode_time;
+    result.silent_mode_time = basic_statistics.silent_mode_time;
+
+    result.estimated_first_layer_printing_time_normal =
+        basic_statistics.normal_mode_time.first_layer_time;
+
+    if (basic_statistics.silent_mode_time) {
+        result.estimated_first_layer_printing_time_silent =
+            basic_statistics.silent_mode_time->first_layer_time;
+    }
+
+    result.initial_filament_type = extra_statistics.initial_filament_type;
+    result.printing_filament_types = extra_statistics.printing_filament_types;
+    result.initial_extruder_id = extra_statistics.initial_extruder_id;
+    result.printing_extruders = extra_statistics.printing_extruders;
+
+    return result;
+}
+
+static std::vector<std::string> format_statistics(const Domain::FullPrintStatistics& stats)
+{
     std::vector<std::string> result;
-    result.push_back("; filament used [mm] = " + join_with_comma(filament_statistics.used_mm));
-    result.push_back("; filament used [cm3] = " + join_with_comma(filament_statistics.used_cm3));
-    result.push_back("; filament used [g] = " + join_with_comma(filament_statistics.used_g));
-    result.push_back("; filament cost = " + join_with_comma(filament_statistics.used_cost));
+    result.push_back("; filament used [mm] = " + join_with_comma(stats.used_filament_per_extruder_mm));
+    result.push_back("; filament used [cm3] = " + join_with_comma(stats.used_filament_per_extruder_cm3));
+    result.push_back("; filament used [g] = " + join_with_comma(stats.used_filament_per_extruder_g));
+    result.push_back("; filament cost = " + join_with_comma(stats.filament_cost_per_extruder));
 
     result.push_back(
-        "; total filament used [g] = " + fmt::format("{:.2f}", sum(filament_statistics.used_g))
+        "; total filament used [g] = " + fmt::format("{:.2f}", stats.total_used_filament_g)
     );
-    result.push_back(
-        "; total filament cost = " + fmt::format("{:.2f}", sum(filament_statistics.used_cost))
-    );
+    result.push_back("; total filament cost = " + fmt::format("{:.2f}", stats.total_filament_cost));
 
     result.push_back(
         "; total filament used for wipe tower [g] = "
-        + fmt::format("{:.2f}", extra_statistics.total_wipe_tower_filament_weight)
+        + fmt::format("{:.2f}", stats.total_used_filament_for_wipe_tower_g)
     );
 
-    if (extra_statistics.total_toolchanges > 0) {
-        result.push_back(
-            "; total toolchanges = " + std::to_string(extra_statistics.total_toolchanges)
-        );
+    if (stats.total_toolchanges > 0) {
+        result.push_back("; total toolchanges = " + std::to_string(stats.total_toolchanges));
     }
 
     result.push_back(
         "; estimated printing time (normal mode) = "
-        + get_time_dhms(basic_statistics.normal_mode_time.time)
+        + get_time_dhms(stats.normal_mode_time.time)
     );
-    if (basic_statistics.silent_mode_time) {
+    if (stats.silent_mode_time) {
         result.push_back(
             "; estimated printing time (silent mode) = "
-            + get_time_dhms(basic_statistics.silent_mode_time->time)
+            + get_time_dhms(stats.silent_mode_time->time)
         );
     }
 
     result.push_back(
         "; estimated first layer printing time (normal mode) = "
-        + get_time_dhms(basic_statistics.normal_mode_time.first_layer_time)
+        + get_time_dhms(stats.estimated_first_layer_printing_time_normal)
     );
-    if (basic_statistics.silent_mode_time) {
+    if (stats.estimated_first_layer_printing_time_silent) {
         result.push_back(
             "; estimated first layer printing time (silent mode) = "
-            + get_time_dhms(basic_statistics.silent_mode_time->first_layer_time)
+            + get_time_dhms(*stats.estimated_first_layer_printing_time_silent)
         );
     }
 
@@ -406,6 +443,7 @@ public:
         const PostProcessorConfig& config,
         ProcessorResult& result,
         const std::vector<Extruder>& extruders,
+        const Domain::ExtraPrintStatistics& extra_print_statistics,
         WarningCallback warning_callback
     ) :
         m_config(config),
@@ -414,7 +452,7 @@ public:
     {
         apply_config();
         setup_filament_data();
-        process(extruders);
+        process(extruders, extra_print_statistics);
         finalize();
         synchronize_moves();
     }
@@ -462,7 +500,10 @@ private:
             0.0f
         };
 
-        for (const auto& [id, volume] : m_result.print_statistics.basic.volumes_per_extruder) {
+        const auto* basic_print_stats{
+            std::get_if<Domain::BasicPrintStatistics>(&m_result.print_statistics)
+        };
+        for (const auto& [id, volume] : ASSERT_VAL(basic_print_stats)->volumes_per_extruder) {
             m_filament_data.mm[id]   = volume / m_result.filament_geometry(id).area_cross_section;
             m_filament_data.cm3[id]  = volume * 0.001f;
             m_filament_data.g[id]    = m_filament_data.cm3[id] * m_result.filament_densities[id];
@@ -473,7 +514,10 @@ private:
     }
 
     // collect changes to apply to gcode
-    void process(const std::vector<Extruder>& extruders) {
+    void process(
+        const std::vector<Extruder>& extruders,
+        const Domain::ExtraPrintStatistics& extra_print_statistics
+    ) {
         m_gcode_times.resize(m_result.gcode().size(), {});
 
         size_t g1_lines_counter = 0;
@@ -493,7 +537,7 @@ private:
             }
 
             // replace placeholder lines
-            std::vector<std::string> new_lines = process_placeholders(line, extruders);
+            std::vector<std::string> new_lines = process_placeholders(line, extruders, extra_print_statistics);
             if (!new_lines.empty()) {
                 m_editing_items.push_back({ EditingType::Replacement, i, new_lines });
                 continue;
@@ -648,7 +692,12 @@ private:
 
     // replace placeholder lines with the proper final value
     // gcode_line is in/out parameter, to reduce expensive memory allocation
-    std::vector<std::string> process_placeholders(const std::string_view gcode_line, const std::vector<Extruder>& extruders) {
+    std::vector<std::string> process_placeholders(
+        const std::string_view gcode_line,
+        const std::vector<Extruder>& extruders,
+        const Domain::ExtraPrintStatistics& extra_print_statistics
+    )
+    {
         // remove trailing '\n'
         auto line = gcode_line.substr(0, gcode_line.length() - 1);
 
@@ -675,11 +724,17 @@ private:
                     }
                 }
             } else if (line == reserved_tag(Tags::Print_Statistics_Placeholder)) {
-                return format_statistics(
-                    m_result.print_statistics.basic,
-                    *ASSERT_VAL(m_result.print_statistics.extra),
+                const auto* basic_print_stats{
+                    std::get_if<Domain::BasicPrintStatistics>(&m_result.print_statistics)
+                };
+                m_result.print_statistics = get_full_statistics(
+                    *ASSERT_VAL(basic_print_stats),
+                    extra_print_statistics,
                     extruders,
                     m_result.extruders_count
+                );
+                return format_statistics(
+                    std::get<Domain::FullPrintStatistics>(m_result.print_statistics)
                 );
             }
         }
@@ -880,11 +935,12 @@ ProcessorResult post_process(
     const PostProcessorConfig& config,
     ProcessorResult&& result,
     const std::vector<Extruder>& extruders,
+    const Domain::ExtraPrintStatistics& extra_print_statistics,
     WarningCallback active_step_add_warning_callback
 )
 {
     ProcessorResult ret = std::move(result);
-    PostProcessor pp(config, ret, extruders, active_step_add_warning_callback);
+    PostProcessor pp(config, ret, extruders, extra_print_statistics, active_step_add_warning_callback);
     return ret;
 }
 

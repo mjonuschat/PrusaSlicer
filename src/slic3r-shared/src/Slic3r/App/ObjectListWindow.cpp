@@ -112,29 +112,25 @@ void ObjectListWindow::update_sliced_info()
 
     if (!is_finished) {
         return;
+
     }
 
     const std::optional<Biz::FDMResultRef> fdm_result{ m_project_interactor->fdm_result_cache().get_result(id) };
     if (fdm_result) {
-        const Domain::BasicPrintStatistics& print_statistics = fdm_result->get().print_statistics.basic;
+        const auto* print_statistics_ptr = std::get_if<Domain::FullPrintStatistics>(&fdm_result->get().print_statistics);
+        if (!print_statistics_ptr) {
+            return;
+        }
+        const Domain::FullPrintStatistics& print_statistics = *print_statistics_ptr;
 
-        float volume{ 0.f };
-        for (const auto& [_, vol] : print_statistics.volumes_per_extruder)
-            volume += vol;
+        const float volume{print_statistics.total_used_filament_cm3};
+        const float weight{print_statistics.total_used_filament_g};
+        const float length{print_statistics.total_used_filament_mm};
 
-        const double filament_density = 1.25e-3f; // g/mm^3  ; Common filaments are very lightweight, so precise number is not that important
-        float weight = volume * filament_density;
-
-        float length{ 0.f };
-        for (const auto& [_, len] : print_statistics.used_filaments_per_role)
-            length += len.first;
-
-        const std::string used_material = format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight, length, volume);
+        const std::string used_material = format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight, length / 1000.0, volume);
         m_used_material->set_text(used_material);
 
-        float cost{ 0.f };
-        for (const auto& [_, c] : print_statistics.cost_per_extruder)
-            cost += c;
+        const float cost{ print_statistics.total_filament_cost };
         m_material_cost->set_text(format("%1%", cost));
 
         const std::string first_layer_time = "? seconds";

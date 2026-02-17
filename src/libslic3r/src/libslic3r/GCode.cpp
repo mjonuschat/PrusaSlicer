@@ -767,12 +767,12 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
     ProcessorResult result{processor.finalize()};
-    result.print_statistics.extra = extra_print_statistics;
     PostProcessorConfig post_processor_config = processor.post_processor_config();
     result                                    = GCode::post_process(
         post_processor_config,
         std::move(result),
         m_writer.extruders(),
+        extra_print_statistics,
         [print](Biz::Slicing::Warning warning)
         { print->append_warning_callback(std::move(warning)); }
     );

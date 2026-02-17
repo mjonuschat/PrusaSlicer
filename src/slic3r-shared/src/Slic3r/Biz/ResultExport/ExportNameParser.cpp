@@ -42,61 +42,51 @@ ExportNameData parse_fdm_export_name(
     const Biz::FDMResultRef fdm_result = fdm_result_opt.value();
 
     parser.set("input_filename_base", project_name);
-    const Domain::PrintStatistics& print_statistics = fdm_result.get().print_statistics;
-    if (!print_statistics.extra) {
-        // We could also fill just basic. The filename will look bad though. 
+    const auto* print_statistics_ptr = std::get_if<Domain::FullPrintStatistics>(&fdm_result.get().print_statistics);
+    if (!print_statistics_ptr) {
+        // We could also fill just basic. The filename will look bad though.
         // Extra stats are present only after slicing.
         SPDLOG_ERROR("Failed to parse output filename: FDM Statistics are incomplete.");
         return result;
     }
+    const Domain::FullPrintStatistics& print_statistics{*print_statistics_ptr};
 
-    // basic statistics
-    double total_filament_length{0.};
-    double total_filament_weight{0.};
-    for (const auto& [_, len] : print_statistics.basic.used_filaments_per_role) {
-        total_filament_length += (double) len.first;
-        total_filament_weight += (double) len.second;
-    }
-
-    double total_volume{0.};
-    for (const auto& [id, volume] : print_statistics.basic.volumes_per_extruder) {
-        total_volume += (double) volume;
-    }
-
-    double total_cost{0.};
-    for (const auto& [id, cost] : print_statistics.basic.cost_per_extruder) {
-        total_cost += (double) cost;
-    }
-    
-    std::string printing_filament_types = print_statistics.extra.value().printing_filament_types.front();
-    for (size_t i = 1; i < print_statistics.extra.value().printing_filament_types.size(); ++ i) {
+    std::string printing_filament_types = print_statistics.printing_filament_types.front();
+    for (size_t i = 1; i < print_statistics.printing_filament_types.size(); ++i) {
         printing_filament_types += ",";
-        printing_filament_types += print_statistics.extra.value().printing_filament_types[i];
+        printing_filament_types += print_statistics.printing_filament_types[i];
     }
 
-    if (print_statistics.basic.silent_mode_time) {
-        parser.set("silent_print_time", remove_spaces(Biz::format_time_dhms_short(print_statistics.basic.silent_mode_time.value().time)));
+    if (print_statistics.silent_mode_time) {
+        parser.set(
+            "silent_print_time",
+            remove_spaces(
+                Biz::format_time_dhms_short(print_statistics.silent_mode_time->time)
+            )
+        );
     } else {
         parser.set("silent_print_time", std::string());
     }
-    parser.set("print_time", remove_spaces(Biz::format_time_dhms_short(print_statistics.basic.normal_mode_time.time)));
-    parser.set("normal_print_time", remove_spaces(Biz::format_time_dhms_short(print_statistics.basic.normal_mode_time.time)));
-    parser.set("used_filament", total_filament_length);
-    parser.set("total_weight", total_filament_weight);
-    parser.set("extruded_volume", total_volume);
-    parser.set("total_cost", total_cost);
-    parser.set("num_extruders", (int)print_statistics.basic.volumes_per_extruder.size());
+
+    const std::string normal_print_time = remove_spaces(Biz::format_time_dhms_short(print_statistics.normal_mode_time.time));
+    parser.set("print_time", normal_print_time);
+    parser.set("normal_print_time", normal_print_time);
+    parser.set("used_filament", (double)print_statistics.total_used_filament_mm);
+    parser.set("total_weight", (double)print_statistics.total_used_filament_g);
+    parser.set("extruded_volume", (double)print_statistics.total_used_filament_cm3);
+    parser.set("total_cost", (double)print_statistics.total_filament_cost);
+    parser.set("num_extruders", (int)print_statistics.used_filament_per_extruder_mm.size());
 
     // extra statistics
     parser.set("printing_filament_types", printing_filament_types);
-    parser.set("initial_tool", (int) print_statistics.extra.value().initial_extruder_id);
-    parser.set("initial_extruder", (int) print_statistics.extra.value().initial_extruder_id);
-    parser.set("num_printing_extruders", (int) print_statistics.extra.value().printing_extruders.size());
-    parser.set("total_wipe_tower_cost", print_statistics.extra.value().total_wipe_tower_cost);
-    parser.set("total_wipe_tower_filament", print_statistics.extra.value().total_wipe_tower_filament);
-    parser.set("initial_filament_type", print_statistics.extra.value().initial_filament_type);
-    parser.set("total_toolchanges", (int) print_statistics.extra.value().total_toolchanges);
-    
+    parser.set("initial_tool", (int) print_statistics.initial_extruder_id);
+    parser.set("initial_extruder", (int) print_statistics.initial_extruder_id);
+    parser.set("num_printing_extruders", (int) print_statistics.printing_extruders.size());
+    parser.set("total_wipe_tower_cost", (double)print_statistics.total_wipe_tower_cost);
+    parser.set("total_wipe_tower_filament", (double)print_statistics.total_used_filament_for_wipe_tower_g);
+    parser.set("initial_filament_type", print_statistics.initial_filament_type);
+    parser.set("total_toolchanges", print_statistics.total_toolchanges);
+
     // values from project interactor
     Domain::SelectionId project_id = project_interactor.selected_bed_slicing_id().project_id;
     const auto& project = project_interactor.workbench().project(project_id);

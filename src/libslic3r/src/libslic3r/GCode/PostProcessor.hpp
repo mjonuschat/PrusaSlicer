@@ -27,6 +27,7 @@ extern Slic3r::Biz::libpgcode::ProcessorResult post_process(
     const Slic3r::Biz::libpgcode::PostProcessorConfig& config,
     Slic3r::Biz::libpgcode::ProcessorResult&& result, 
     const std::vector<Extruder>& extruders,
+    const Domain::ExtraPrintStatistics& extra_print_statistics,
     WarningCallback active_step_add_warning_callback
 );
 
