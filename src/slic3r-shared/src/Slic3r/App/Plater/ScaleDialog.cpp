@@ -79,6 +79,7 @@ ScaleDialog::ScaleDialog(
                                 value.cwiseQuotient(*current_dimensions).eval()
         };
         apply_relative_scale(scale_by);
+        reload();
     };
 
     m_absolute_percent_input_item = content()->emplace_back<Yoga::Item>();
@@ -100,6 +101,7 @@ ScaleDialog::ScaleDialog(
                                 (value / 100.0).cwiseQuotient(*current_scale).eval()
         };
         apply_relative_scale(scale_by);
+        reload();
     };
 
     m_relative_input_item = content()->emplace_back<Yoga::Item>();
@@ -321,6 +323,10 @@ void ScaleDialog::reload(std::optional<Domain::SelectionId> project_id)
 
 void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
 {
+    if ((scale_by.array() <= 0).any()) {
+        return;
+    }
+
     const std::optional<Scene::OrientedBoundingBox>& bounding_box{
         m_scene_provider.selection_bounding_box()
     };
@@ -328,9 +334,26 @@ void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
         return;
     }
 
+    const double upper_bound{std::sqrt(3) * bounding_box->dimensions.maxCoeff()};
+    const double new_upper_bound{upper_bound * scale_by.maxCoeff()};
+    if (new_upper_bound > upper_bound && new_upper_bound > 1e6) {
+        return;
+    }
+
     Biz::Scene::TransformMemento memento;
     memento.forced_volume_mode = true;
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+
+    const Domain::SquareMatrix4d transormation{
+        get_scale_matrix(bounding_box->rotation, bounding_box->center, scale_by)
+    };
+
+    if (std::abs(transormation.determinant()) < 1e-6) {
+        return;
+    }
+
+    const bool was_on_bed{!m_place_on_bed_button->is_floating};
+
     scene_interactor.transform_selection(
         get_scale_matrix(
             bounding_box->rotation,
@@ -340,6 +363,10 @@ void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
         memento
     );
     scene_interactor.finalize_transform_selection(memento, false);
+
+    if (was_on_bed) {
+        m_place_on_bed_button->trigger();
+    };
 }
 
 Domain::SquareMatrix4d remove_scale(
