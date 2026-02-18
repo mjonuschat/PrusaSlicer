@@ -1,4 +1,3 @@
-#pragma once
 #include "Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"

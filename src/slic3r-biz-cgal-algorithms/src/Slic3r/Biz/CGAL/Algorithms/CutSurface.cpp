@@ -31,7 +31,6 @@
 
 using namespace Slic3r;
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
-#include <CGAL/Exact_integer.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/Polygon_mesh_processing/clip.h>
@@ -41,15 +40,11 @@ using namespace Slic3r;
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
-#include <map>
 #include <optional>
 #include <queue>
-#include <set>
-#include <tuple>
 #include <utility>
 #include <cassert>
 
@@ -2679,7 +2674,6 @@ struct Source
 };
 
 using Sources                            = std::vector<Source>;
-const std::string vertex_source_map_name = "v:SourceIntersecting";
 using VertexSourceMap                    = CutMesh::Property_map<VI, Source>;
 
 /// <summary>

@@ -48,16 +48,16 @@ const Domain::ModelVolume* get_volume_by_id(const Domain::ObjectID& volume_id, c
     return nullptr;
 }
 
-Domain::ModelVolume* get_volume_by_id(const Domain::ObjectID& volume_id, Domain::Project& project) {
-    for (const Domain::ModelObject* object : project.model().objects) {
-        for (Domain::ModelVolume* volume : object->volumes) {
-            if (volume->id() == volume_id) {
-                return volume;
-            }
-        }
-    }
-    return nullptr;
-}
+//Domain::ModelVolume* get_volume_by_id(const Domain::ObjectID& volume_id, Domain::Project& project) {
+//    for (const Domain::ModelObject* object : project.model().objects) {
+//        for (Domain::ModelVolume* volume : object->volumes) {
+//            if (volume->id() == volume_id) {
+//                return volume;
+//            }
+//        }
+//    }
+//    return nullptr;
+//}
 
 float detail_to_max_error(SimplifyLevelDetail detail)
 {

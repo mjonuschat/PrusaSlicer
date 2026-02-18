@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <Slic3r/Assert.hpp>
 
 namespace Slic3r::Domain {
 
@@ -33,8 +34,8 @@ struct FontFile
         data(std::move(data)),
         infos(std::move(infos))
     {
-        assert(this->data != nullptr);
-        assert(!this->data->empty());
+        ASSERT(this->data != nullptr);
+        ASSERT(!this->data->empty());
     }
 
     bool operator==(const FontFile& other) const

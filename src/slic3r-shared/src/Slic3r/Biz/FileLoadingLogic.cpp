@@ -542,7 +542,6 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
     const bool is_obj = boost::algorithm::iends_with(input_file_path.string(), ".obj");
     const bool is_step = boost::algorithm::iends_with(input_file_path.string(), ".step") || boost::algorithm::iends_with(input_file_path.string(), ".stp");
 
-    bool result = false;
     if (is_stl || is_obj) {
         auto loaded_mesh = is_stl ? Biz::load_stl(input_file_path.string()) : Biz::load_obj(input_file_path.string());
         if (loaded_mesh) {

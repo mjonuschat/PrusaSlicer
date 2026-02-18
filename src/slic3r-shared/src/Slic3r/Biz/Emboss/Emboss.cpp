@@ -7,8 +7,6 @@
 #include <boost/nowide/convert.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/log/trivial.hpp>
-#include <numeric>
-#include <cstdlib>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -21,21 +19,14 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
 #include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp"
-#include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
-#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/HealPolygon.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp" // CGAL project
 #include "admesh/stl.h" // indexed_triangle_set
-#include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
-#include "Slic3r/Domain/ExPolygonsIndex.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
-#include "Slic3r/Exception.hpp"
 #include "Slic3r/Utils.hpp" // append(ExPolygons)
-#include "libslic3r/Utils.hpp" // ScopeGuard
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <imgui/imstb_truetype.h>

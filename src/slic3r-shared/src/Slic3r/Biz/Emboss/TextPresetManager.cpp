@@ -3,24 +3,11 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp> // singleton for dialog
-
-#include <optional>
-#include <GL/glew.h> // Imgui texture
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
-// #include <imgui/imgui_internal.h> // ImTextCharFromUtf8
 #include <fast_float.h>
-
-#include <boost/assign.hpp>
-#include <boost/bimap.hpp>
 #include <boost/log/trivial.hpp>
-
-#include <libslic3r/Utils.hpp> // ScopeGuard
 
 using namespace Slic3r;
 
@@ -40,12 +27,10 @@ Presets create_default_styles(Biz::Emboss::IFontManager&);
 namespace Slic3r::Biz::Emboss {
 TextPresetManager::TextPresetManager(
     IFontManager& font_manager,
-    const ImWchar* language_glyph_range,
     const ::std::string& cache_path,
     Biz::ProjectInteractor& project_interactor
 ) :
     m_font_manager(font_manager),
-    m_imgui_init_glyph_range(language_glyph_range),
     m_cache_path(cache_path),
     m_proj_preset_cache(project_interactor)
 {}
@@ -89,7 +74,6 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
             // add new into stored list
             Domain::EmbossStyle& style = cache.preset.emboss_style;
             ::make_unique_name(m_data.presets, style.descriptor.name);
-            cache.truncated_name.clear();
             cache.preset_index = m_data.presets.size();
             m_data.presets.push_back({style});
         }
@@ -118,7 +102,6 @@ void TextPresetManager::save_preset_as() {
             style.descriptor.name = name;
             ::make_unique_name(m_data.presets, style.descriptor.name);
             cache.preset_index = m_data.presets.size();
-            cache.truncated_name.clear();
             m_data.presets.push_back({ style });
             store_presets();
         }
@@ -141,7 +124,6 @@ void TextPresetManager::rename_preset()
         } else {
             PresetCache& cache = m_proj_preset_cache.selected();
             cache.preset.emboss_style.descriptor.name = name;
-            cache.truncated_name.clear();
             if (!exist_stored_style())
                 return; 
             
@@ -153,7 +135,6 @@ void TextPresetManager::rename_preset()
                 if (cache_.preset_index != cache.preset_index)
                     continue;
                 cache_.preset.emboss_style.descriptor.name = name;
-                cache_.truncated_name.clear();
             }
             store_presets();
         }
@@ -297,38 +278,7 @@ bool TextPresetManager::load_preset(const Preset& style)
     cache.font_file = FontFileWithCache(std::move(font_ptr));
     cache.preset       = style; // copy
     cache.preset_index = std::numeric_limits<size_t>::max();
-    cache.truncated_name.clear();
     return true;
-}
-
-bool TextPresetManager::is_font_changed() const
-{
-    if (!exist_stored_style())
-        return false;
-    const Preset* stored_style = get_stored_preset();
-    if (stored_style == nullptr)
-        return false;
-
-    const Domain::FontProp& prop        = get_preset().emboss_style.prop;
-    const Domain::FontProp& prop_stored = stored_style->emboss_style.prop;
-
-    // Exist change in face name?
-    // if(wx_font_stored.GetFaceName() != wx_font.GetFaceName()) return true;
-
-    const std::optional<float>& skew = prop.skew;
-    bool is_italic                   = skew.has_value(); // || WxFontUtils::is_italic(wx_font);
-    const std::optional<float>& skew_stored = prop_stored.skew;
-    bool is_stored_italic = skew_stored.has_value(); // || WxFontUtils::is_italic(wx_font_stored);
-    // is italic changed
-    if (is_italic != is_stored_italic)
-        return true;
-
-    const std::optional<float>& boldness = prop.boldness;
-    bool is_bold = boldness.has_value(); // || WxFontUtils::is_bold(wx_font);
-    const std::optional<float>& boldness_stored = prop_stored.boldness;
-    bool is_stored_bold = boldness_stored.has_value(); // || WxFontUtils::is_bold(wx_font_stored);
-    // is bold changed
-    return is_bold != is_stored_bold;
 }
 
 bool TextPresetManager::is_unique_style_name(const std::string& name) const
@@ -347,19 +297,6 @@ const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
     return &m_data.presets[preset_index];
 }
 
-void TextPresetManager::clear_glyphs_cache()
-{
-    FontFileWithCache& ff = m_proj_preset_cache.selected().font_file;
-    if (!ff.has_value())
-        return;
-    ff.cache = std::make_shared<Glyphs>();
-}
-
-void TextPresetManager::clear_imgui_font()
-{
-    m_proj_preset_cache.selected().atlas.Clear();
-}
-
 void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
 {
     PresetCache& cache = m_proj_preset_cache.selected();
@@ -371,23 +308,6 @@ void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
     } else {
         cache_descriptor.path = font_descriptor.path;
     }
-}
-
-ImFont* TextPresetManager::get_imgui_font()
-{
-    ImVector<ImFont*>& fonts = m_proj_preset_cache.selected().atlas.Fonts;
-    if (fonts.empty())
-        return nullptr;
-
-    // check correct index
-    int f_size = fonts.size();
-    assert(f_size == 1);
-    if (f_size != 1)
-        return nullptr;
-    ImFont* font = fonts.front();
-    if (font == nullptr)
-        return nullptr;
-    return font;
 }
 
 const TextPresetManager::Presets& TextPresetManager::get_presets() const
@@ -403,187 +323,6 @@ std::vector<std::string> TextPresetManager::get_presets_names() const
         names.push_back(style.emboss_style.descriptor.name);
     return names;
 }
-
-void TextPresetManager::init_style_images(const Domain::Index2& max_size, const std::string& text)
-{
-    // check already initialized
-    if (m_exist_style_images)
-        return;
-
-    // check is initializing
-    if (m_temp_style_images != nullptr) {
-        // is initialization finished
-        if (!m_temp_style_images->presets.empty()) {
-            assert(m_temp_style_images->images.size() == m_temp_style_images->presets.size());
-            // copy images into styles
-            for (TextPresetManager::PresetImage& image : m_temp_style_images->images) {
-                size_t index                 = &image - &m_temp_style_images->images.front();
-                PresetImagesData::Item& style = m_temp_style_images->presets[index];
-
-                // find style in font list and copy to it
-                for (auto& it : m_data.presets) {
-                    if (it.emboss_style.descriptor.name != style.text
-                        || !(it.emboss_style.prop == style.prop))
-                        continue;
-                    it.image = image;
-                    break;
-                }
-            }
-            m_temp_style_images  = nullptr;
-            m_exist_style_images = true;
-            return;
-        }
-        // in process of initialization inside of job
-        return;
-    }
-
-    // create job for init images
-    m_temp_style_images = std::make_shared<PresetImagesData::PresetImages>();
-    PresetImagesData::Items presets;
-    presets.reserve(m_data.presets.size());
-    for (const Preset& style : m_data.presets) {
-        std::unique_ptr<const Domain::FontFile> font_file = m_font_manager.open(
-            style.emboss_style.descriptor
-        );
-        if (font_file == nullptr)
-            continue;
-        presets.push_back(
-            {FontFileWithCache(std::move(font_file)),
-             style.emboss_style.descriptor.name,
-             style.emboss_style.prop}
-        );
-    }
-
-    // TODO: Implement it
-    // auto mf = wxGetApp().mainframe;
-    //// dot per inch for monitor
-    // int dpi = get_dpi_for_window(mf);
-    //// pixel per milimeter
-    // double ppm = dpi / ObjectManipulation::in_to_mm;
-
-    // auto &worker = wxGetApp().plater()->get_ui_job_worker();
-    // StyleImagesData data{std::move(styles), max_size, text, m_temp_style_images, ppm};
-    // queue_job(worker, std::make_unique<CreateFontStyleImagesJob>(std::move(data)));
-}
-
-void TextPresetManager::free_style_images()
-{
-    if (!m_exist_style_images)
-        return;
-    GLuint tex_id = 0;
-    for (Preset& it : m_data.presets) {
-        if (tex_id == 0 && it.image.has_value())
-            tex_id = (GLuint) (intptr_t) it.image->texture_id;
-        it.image.reset();
-    }
-    // if (tex_id != 0)
-    // glsafe(::glDeleteTextures(1, &tex_id));
-    m_exist_style_images = false;
-}
-
-float TextPresetManager::min_imgui_font_size = 18.f;
-float TextPresetManager::max_imgui_font_size = 60.f;
-
-float TextPresetManager::get_imgui_font_size(
-    const Domain::FontProp& prop,
-    const Domain::FontFile& file,
-    double scale
-)
-{
-    const Domain::FontFile::Info& info = get_font_info(file, prop);
-    // coeficient for convert line height to font size
-    float c1 = (info.ascent - info.descent + info.linegap) / (float) info.unit_per_em;
-
-    // The point size is defined as 1/72 of the Anglo-Saxon inch (25.4 mm):
-    // It is approximately 0.0139 inch or 352.8 um.
-    return c1 * std::abs(prop.size_in_mm) / 0.3528f * scale;
-}
-
-ImFont* TextPresetManager::create_imgui_font(const std::string& text, double scale)
-{
-    // inspiration inside of ImGuiWrapper::init_font
-    PresetCache& cache = m_proj_preset_cache.selected();
-    auto& ff = cache.font_file;
-    if (!ff.has_value())
-        return nullptr;
-    const Domain::FontFile& font_file = *ff.font_file;
-
-    ImFontGlyphRangesBuilder builder;
-    builder.AddRanges(m_imgui_init_glyph_range);
-    if (!text.empty())
-        builder.AddText(text.c_str());
-
-    ImVector<ImWchar>& ranges = cache.ranges;
-    ranges.clear();
-    builder.BuildRanges(&ranges);
-
-    cache.atlas.Flags |= ImFontAtlasFlags_NoMouseCursors
-        | ImFontAtlasFlags_NoPowerOfTwoHeight;
-
-    const Domain::FontProp& font_prop = cache.preset.emboss_style.prop;
-    float font_size                   = get_imgui_font_size(font_prop, font_file, scale);
-    if (font_size < min_imgui_font_size)
-        font_size = min_imgui_font_size;
-    if (font_size > max_imgui_font_size)
-        font_size = max_imgui_font_size;
-
-    ImFontConfig font_config;
-    // TODO: start using merge mode
-    // font_config.MergeMode = true;
-    int unit_per_em = get_font_info(font_file, font_prop).unit_per_em;
-    float coef      = font_size / (double) unit_per_em;
-    if (font_prop.char_gap.has_value())
-        font_config.GlyphExtraSpacing.x = coef * (*font_prop.char_gap);
-    if (font_prop.line_gap.has_value())
-        font_config.GlyphExtraSpacing.y = coef * (*font_prop.line_gap);
-
-    font_config.FontDataOwnedByAtlas = false;
-
-    const std::vector<unsigned char>& buffer = *font_file.data;
-    ImFont* font                             = cache.atlas.AddFontFromMemoryTTF(
-        (void*) buffer.data(),
-        buffer.size(),
-        font_size,
-        &font_config,
-        cache.ranges.Data
-    );
-
-    unsigned char* pixels;
-    int width, height;
-    cache.atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
-
-    // Upload texture to graphics system
-    GLint last_texture;
-
-    ////////////////// TODO: solve storing texture
-    // glsafe(::glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture));
-    // ScopeGuard sg([last_texture]() {
-    // glsafe(::glBindTexture(GL_TEXTURE_2D, last_texture));
-    //});
-
-    GLuint font_texture;
-    // glsafe(::glGenTextures(1, &font_texture));
-    // glsafe(::glBindTexture(GL_TEXTURE_2D, font_texture));
-    // glsafe(::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    // glsafe(::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    // glsafe(::glPixelStorei(GL_UNPACK_ROW_LENGTH, 0));
-    // if (OpenGLManager::are_compressed_textures_supported())
-    // glsafe(::glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
-    // else
-    // glsafe(::glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
-
-    // Store our identifier
-    cache.atlas.TexID = (ImTextureID) (intptr_t) font_texture;
-    assert(!cache.atlas.Fonts.empty());
-    if (cache.atlas.Fonts.empty())
-        return nullptr;
-    assert(font == cache.atlas.Fonts.back());
-    if (!font->IsLoaded())
-        return nullptr;
-    assert(font->IsLoaded());
-    return font;
-}
-
 } // namespace Slic3r::Biz::Emboss
 
 #include <fstream>

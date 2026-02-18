@@ -6,20 +6,14 @@
 #define slic3r_Emboss_hpp_
 
 #include <admesh/stl.h> // indexed_triangle_set
-#include <assert.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <vector>
 #include <optional>
 #include <memory>
-#include <Eigen/Geometry>
 #include <functional>
 #include <map>
 #include <string>
 #include <utility>
-#include <cassert>
-#include <cinttypes>
-#include <cstddef>
 
 #include "Slic3r/Domain/FontFile.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp" // also Polygon and Points

@@ -6,8 +6,6 @@
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include <Slic3r/App/Scene/SceneNodeTag.hpp>
-#include <Slic3r/App/AppServices.hpp>
-#include <Slic3r/App/Render/ScreenInfo.hpp>
 #include <Slic3r/App/Scene/NodeVisitor.hpp> // visit_conditional_transform()
 
 #include "Slic3r/Domain/TextConfiguration.hpp"
@@ -15,20 +13,14 @@
 
 #include <boost/nowide/convert.hpp>
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h> // using std::string for inputs
-
 #include <Slic3r/Directories.hpp>
 #include <Slic3r/Domain/TriangleMesh.hpp>
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
-#include <Slic3r/Biz/I18N/I18N.hpp>
+#include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
 #include <Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp> // calc 2d convex hull for adding new text
-#include <Slic3r/Biz/Algorithms/Polygon.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
 #include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs
-#include <Slic3r/Biz/Platform/PlatformServices.hpp> // main_thread_dispatcher
-#include "libslic3r/Utils.hpp"
 
 
 using Slic3r::Biz::_u8L;
@@ -114,14 +106,12 @@ TextGizmo::TextGizmo(
     Biz::Emboss::IFontManager& font_manager,
     Scene::GizmoManager& gizmo_manager
 ) :
-    m_device(device),
     m_scene_presenter(scene_presenter),
     m_project_interactor(project_interactor),
     m_font_manager(font_manager),
     m_gizmo_manager(gizmo_manager),
     m_preset_manager(
         font_manager,
-        ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
         Slic3r::data_dir() + "/text_emboss_presets.cereal",
         project_interactor),
     m_surface_drag(scene_presenter, project_interactor),
@@ -212,8 +202,7 @@ TextGizmo::TextGizmo(
         update_volume();
     };
     auto set_optional = [this](std::optional<int>& val_opt, double new_value, double scale) {
-        if (set_opt(val_opt, new_value, scale)) {        
-            m_preset_manager.clear_glyphs_cache();
+        if (set_opt(val_opt, new_value, scale)) {
             update_volume();
         }
     };
@@ -224,8 +213,7 @@ TextGizmo::TextGizmo(
         set_optional(m_preset_manager.get_font_prop().line_gap, value, m_proj_ctxs->selected().volume_scale.line_gap);
     };
     auto set_optional_f = [this](std::optional<float>& val_opt, double new_value, double scale) {
-        if (set_opt(val_opt, new_value, scale)) {        
-            m_preset_manager.clear_glyphs_cache();
+        if (set_opt(val_opt, new_value, scale)) {
             update_volume();
         }
     };
@@ -384,10 +372,8 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
 
 bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) { 
     const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
-    const ProjectContext& proj_ctx = m_proj_ctxs->selected();
-    const auto& up_limit = proj_ctx.up_limit;
     std::optional<float> distance = preset.distance;
-    if (const std::optional<double> d_scale = proj_ctx.volume_scale.depth;
+    if (const std::optional<double>& d_scale = m_proj_ctxs->selected().volume_scale.depth;
         distance.has_value() && d_scale.has_value())
         distance = static_cast<float>((*distance) / (*d_scale));
     return m_surface_drag.on_drag_start(ctx, distance); 
@@ -627,15 +613,6 @@ void activate_preset(
     if (is_part) {
         dialog.set_operation(volume.type());
     }
-}
-
-void append_warning(TextDialog& dialog, std::string& tooltip, const std::string& message) {
-    if (tooltip.empty()) {
-        tooltip = message;
-    } else {
-        tooltip += "\n" + message;
-    }
-    dialog.set_warning(tooltip);
 }
 
 Domain::Transform3d world_tr(const Domain::Project& project, const Domain::ElementRef& ref) {

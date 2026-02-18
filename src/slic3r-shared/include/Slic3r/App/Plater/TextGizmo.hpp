@@ -92,7 +92,6 @@ private:
     bool init_create(Domain::ModelVolumeType volume_type);
     bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
 
-    Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Emboss::IFontManager& m_font_manager;

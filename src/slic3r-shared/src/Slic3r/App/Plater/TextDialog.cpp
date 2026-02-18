@@ -354,9 +354,8 @@ size_t to_operation_index(Domain::ModelVolumeType type) {
     case Domain::ModelVolumeType::MODEL_PART: return 0;
     case Domain::ModelVolumeType::NEGATIVE_VOLUME: return 1;
     case Domain::ModelVolumeType::PARAMETER_MODIFIER: return 2;
+    default: return 0; // should not appear
     }
-    // should not appear
-    return 0;
 }
 }
 
@@ -589,7 +588,6 @@ void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_defaul
 
     std::vector<std::string> style_names;
     style_names.reserve(end_style_it - start_style_it);
-    size_t name_size = name.size();
     for (auto style_it = start_style_it; style_it != end_style_it; ++style_it) {
         if (style_it->name.size() <= name.size()){
             style_names.push_back(_u8L("Regular"));

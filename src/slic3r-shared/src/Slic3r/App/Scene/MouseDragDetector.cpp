@@ -168,10 +168,10 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmo
                 return false;
             case DragState::StartWeWillSee:
                 m_state = DragState::NoDrag;
-                // case DragState::NoDrag: no action
-                // it can appear after external cancel dragging(e.g. ESC)
+            // case DragState::NoDrag: no action
+            // it can appear after external cancel dragging(e.g. ESC)
+            default: return false;
             }
-            return false;
         case Platform::MouseButton::Right:
             if (!m_right_down) {
                 log_weird_state("Right mouse button up before down.");

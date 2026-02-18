@@ -9,7 +9,6 @@
 #include <optional>
 #include <string>
 #include <functional>
-#include <imgui/imgui.h>
 
 #include "Slic3r/Domain/FontFile.hpp"
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
@@ -29,14 +28,12 @@ class TextPresetManager
 public:
     /**
     @param font_manager Accessor to font file data via Domain::FontDescriptor
-    @param language_glyph_range Character to load for imgui when initialize imgui font
     @param cache_path File path for store cache with current user Emboss presets.
         @note data_dir() + "/emboss_presets.cereal"
     @param project_interactor For initialize ProjectScoped data only
     */
     TextPresetManager(
         IFontManager& font_manager,
-        const ImWchar* language_glyph_range,
         const std::string& cache_path,
         Biz::ProjectInteractor& project_interactor
     );
@@ -80,12 +77,6 @@ public:
     // load font preset not stored in list
     struct Preset;
     bool load_preset(const Preset& preset);
-
-    // clear actual selected glyphs cache
-    void clear_glyphs_cache();
-
-    // remove cached imgui font for actual selected font
-    void clear_imgui_font();
 
     // setter for font
     void set_font(const Domain::FontDescriptor& font_descriptor);
@@ -144,44 +135,10 @@ public:
         return m_proj_preset_cache.selected().preset_index != std::numeric_limits<size_t>::max();
     }
 
-    /**
-    @brief check whether current style differ to selected
-    */
-    bool is_font_changed() const;
-
     bool is_unique_style_name(const std::string& name) const;
-
-    // Getter on acitve font pointer for imgui
-    // Initialize imgui font(generate texture) when doesn't exist yet.
-    // Extend font atlas when not in glyph range
-    ImFont* get_imgui_font();
-    // initialize font range by unique symbols in text
-    ImFont* create_imgui_font(const std::string& text, double scale);
-
-    /**
-    @brief Initialization texture with rendered font style
-    @param max_size Maximal width and height of one style texture
-    @param text Text to render by style
-    */
-    void init_style_images(const Domain::Index2& max_size, const std::string& text);
-    void free_style_images();
 
     // access to all managed font styles
     const std::vector<Preset>& get_presets() const;
-
-
-    /**
-    @brief Describe image in GPU to show settings of style
-    */
-    struct PresetImage
-    {
-        void* texture_id = nullptr; // GLuint
-        Domain::BoundingBox<int, 2> bounding_box;
-        ImVec2 tex_size;
-        ImVec2 uv0;
-        ImVec2 uv1;
-        Domain::Point offset = Domain::Point(0, 0);
-    };
 
     /**
     @brief All connected with one style
@@ -212,54 +169,26 @@ public:
                 && Domain::is_approx(distance, other.distance)
                 && Domain::is_approx(angle, other.angle);
         }
-
-        // visualization of style
-        std::optional<PresetImage> image;
     };
 
     using Presets = std::vector<Preset>;
-
-    struct PresetsObj
-    {
+    struct PresetsObj {
         Presets presets;
         size_t current_index;
     };
-
-    // Limits for imgui loaded font size
-    // Value out of limits is crop
-    static float min_imgui_font_size;
-    static float max_imgui_font_size;
-    static float get_imgui_font_size(
-        const Domain::FontProp& prop,
-        const Domain::FontFile& file,
-        double scale
-    );
-
 private:
     IFontManager& m_font_manager;
-    // keep language dependent glyph range
-    const ImWchar* m_imgui_init_glyph_range;
     std::string m_cache_path;
 
     /**
     @brief Cache data from style to reduce amount of:
     1) loading font from file
-    2) Create atlas of symbols for imgui
-    3) Keep loaded(and modified by style) glyphs from font
+    2) Keep loaded(and modified by style) glyphs from font
     */
     struct PresetCache
     {
         // share font file data with emboss job thread
         FontFileWithCache font_file = {};
-
-        // must live same as imgui_font inside of atlas
-        ImVector<ImWchar> ranges = {};
-
-        // Keep only actual style in atlas
-        ImFontAtlas atlas = {};
-
-        // cache for view font name with maximal width in imgui
-        std::string truncated_name;
 
         // actual used font item
         Preset preset = {};
@@ -272,48 +201,6 @@ private:
 
     // Privat member
     PresetsObj m_data;
-
-    /**
-    @brief Keep data needed to create Font Preset Images in Job
-    */
-    struct PresetImagesData
-    {
-        struct Item
-        {
-            FontFileWithCache font;
-            std::string text;
-            Domain::FontProp prop;
-        };
-
-        using Items = std::vector<Item>;
-
-        // Keep styles to render
-        Items styles;
-        // Maximal width and height in pixels of image
-        Domain::Index2 max_size;
-        // Text to render
-        std::string text;
-
-        /**
-        @brief Result of job
-        */
-        struct PresetImages
-        {
-            // vector of inputs
-            PresetImagesData::Items presets;
-            // job output
-            std::vector<PresetImage> images;
-        };
-
-        // place to store result in main thread in Finalize
-        std::shared_ptr<PresetImages> result;
-
-        // pixel per milimeter (scaled DPI)
-        double ppm;
-    };
-
-    std::shared_ptr<PresetImagesData::PresetImages> m_temp_style_images = nullptr;
-    bool m_exist_style_images                                         = false;
 };
 
 } // namespace Slic3r::Biz::Emboss
