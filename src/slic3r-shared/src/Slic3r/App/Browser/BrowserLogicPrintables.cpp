@@ -3,7 +3,7 @@
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicPrintablesToConnect.hpp"
-
+#include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -347,6 +347,17 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_required_login(const std::string& message_data)
 {
+    if (!m_project_interactor.user_account_interactor().is_logged_in()) {
+        AppServices::instance().dialog_manager().show_webview_dialog(
+            std::make_unique<Browser::BrowserLogicLogInRedirect>(
+                m_project_interactor.user_account_interactor()
+            ),
+            &m_project_interactor
+        );
+        if (m_project_interactor.raise_app_fn()) {
+            m_project_interactor.raise_app_fn()();
+        }
+    }
     return {};
 }
 
