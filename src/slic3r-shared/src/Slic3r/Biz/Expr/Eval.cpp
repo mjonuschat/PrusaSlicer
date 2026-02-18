@@ -169,11 +169,11 @@ Value Eval::eval(const Expr& expr, const ValueMap& extra_vars) const
     Evaluator evaluator(vars, m_functions);
     auto ret = boost::apply_visitor(evaluator, expr);
 
-    if (m_debug_output_enabled) {
-        SPDLOG_DEBUG("Evaluating expression: '{}'  with result {}", to_string(expr), to_string(ret));
-        SPDLOG_DEBUG("Variables:");
+    if (m_debug_output != nullptr) {
+        m_debug_output(fmt::format("Evaluating expression: '{}'  with result {}", to_string(expr), to_string(ret)));
+        m_debug_output(fmt::format("Variables:"));
         for (const auto& [k, v] : vars)
-            SPDLOG_DEBUG("\t{}: {}", k, to_string(v));
+            m_debug_output(fmt::format("\t{}: {}", k, to_string(v)));
     }
 
     return ret;

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <utility>
+#include "Slic3r/Log.hpp"
 
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Expr/Eval.hpp"
 
+#define DEBUG_CONDITION_EVAL 0
 
 namespace Slic3r::Biz::Preset {
 
@@ -21,9 +22,11 @@ public:
         const Domain::Preset::Presets& presets,
         const PresetEvaluator::IdentifiedPresets& named_presets,
         Expr::Eval eval,
-        const Expr::ValueMap& overrides
+        const Expr::ValueMap& overrides,
+        const std::string& debug_name
     );
 
+    ~PresetCollectionEvaluator();
     PresetEvaluator::EvalPresetContexts eval_preset(const ValueMaps& overrides, bool only_public = true, ExprCombine expr_combine = ExprCombine::Or) const;
 
 private:
@@ -46,6 +49,10 @@ private:
     const Domain::Preset::Presets& m_presets;
     const PresetEvaluator::IdentifiedPresets& m_named_presets;
     Expr::Eval m_eval;
+
+#if DEBUG_CONDITION_EVAL
+    std::shared_ptr<spdlog::logger> m_logger;
+#endif
 };
 
 }

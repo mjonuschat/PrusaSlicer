@@ -1,9 +1,11 @@
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include "libslic3r/CustomParametersHandling.hpp"
 
 // Xcode 15 has not finished ranges support we need here
 #include <version>
+#include <magic_enum/magic_enum.hpp>
 #if !defined(__cpp_lib_ranges) \
     || __cpp_lib_ranges < 201'911L \
     || (__clang_major__ < 16 && defined(__apple_build_version__))
@@ -13,11 +15,13 @@
 #include <ranges>
 #endif
 
+#ifdef WIN32
+#include <boost/nowide/convert.hpp>
+#endif
+
 #include <fmt/format.h>
 
 #include <Slic3r/Log.hpp>
-
-#define DEBUG_CONDITION_EVAL 0
 
 namespace Slic3r::Biz::Preset {
 
@@ -51,7 +55,8 @@ PresetCollectionEvaluator::PresetCollectionEvaluator(
     const Domain::Preset::Presets& presets,
     const PresetEvaluator::IdentifiedPresets& named_presets,
     Expr::Eval eval,
-    const Expr::ValueMap& overrides
+    const Expr::ValueMap& overrides,
+    const std::string& debug_name
 ) :
     m_presets(presets),
     m_named_presets(named_presets),
@@ -59,9 +64,43 @@ PresetCollectionEvaluator::PresetCollectionEvaluator(
 {
     m_eval.set_vars(overrides);
 #if DEBUG_CONDITION_EVAL
-    m_eval.set_debug_output_enabled(true);
+    std::string kind_name;
+    if (!presets.empty()) {
+        kind_name = magic_enum::enum_name(presets.front().kind);
+    }
+    auto log_path =
+#ifdef WIN32
+        boost::nowide::widen(
+#endif
+            fmt::format("preset-eval-{}-{}.log", kind_name, debug_name)
+#ifdef WIN32
+        )
+#endif
+    ;
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_st>(log_path, true);
+    std::vector<spdlog::sink_ptr> sinks{file_sink};
+    m_logger = std::make_shared<spdlog::logger>("eval", sinks.begin(), sinks.end());
+
+    m_eval.set_debug_output([&logger = this->m_logger](std::string_view message)
+                        { logger->info(message); });
 #endif
 }
+
+#if DEBUG_CONDITION_EVAL
+PresetCollectionEvaluator::~PresetCollectionEvaluator()
+{
+    m_eval.set_debug_output(nullptr);
+}
+#else
+PresetCollectionEvaluator::~PresetCollectionEvaluator() = default;
+#endif
+
+#if DEBUG_CONDITION_EVAL
+#define EVAL_LOG(...) m_logger->info(__VA_ARGS__);
+#else
+#define EVAL_LOG(...)
+#endif //DEBUG_CONDITION_EVAL
+
 
 PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     const ValueMaps& overrides,
@@ -90,6 +129,22 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         | std::views::transform(
             [&](const auto& preset)
             {
+                auto pred = [only_public
+#if DEBUG_CONDITION_EVAL
+                             ,
+                             this
+#endif
+                ](const auto& ep)
+                {
+                    const bool included = !only_public || Domain::Preset::is_public_name(ep.name);
+#if DEBUG_CONDITION_EVAL
+                    if (!included) {
+                        EVAL_LOG("{} ({}) removed as not being public", ep.id, ep.name);
+                    }
+#endif
+                    return included;
+                };
+
                 return eval_preset(
                            preset,
                            preset.id,
@@ -103,17 +158,16 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                            overrides.empty() ? ValueMaps{{}} : overrides,
                            expr_combine
                        )
-                    | std::views::filter(
-                           [only_public](const auto& ep)
-                           { return !only_public || Domain::Preset::is_public_name(ep.name); }
-                    );
+                    | std::views::filter(pred);
             }
         )
         | std::views::join;
 
+
     PresetEvaluator::EvalPresetContexts ret;
     for (auto&& ep : joined_view)
         ret.push_back(std::move(ep));
+    EVAL_LOG("Final presets returned: {}", ret.size());
     std::ranges::sort(
         ret,
         [](const auto& x, const auto& y)
@@ -165,13 +219,11 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             );
 
             if (ret.empty()) {
-#if DEBUG_CONDITION_EVAL
-                SPDLOG_DEBUG(
+                EVAL_LOG(
                     "Inherited node {} root condition fails => quitting evaluation of {}",
                     inh,
                     node.source_location.to_string()
                 );
-#endif
                 return {};
             };
         }
@@ -346,44 +398,34 @@ bool PresetCollectionEvaluator::eval_condition(
     const Domain::Preset::SourceLocatedExpr& expr
 ) const
 {
-#if DEBUG_CONDITION_EVAL
-    SPDLOG_DEBUG(
+    EVAL_LOG(
         "Evaluating expression defined in {}",
         expr.source_location.to_string(),
         Domain::Expr::to_string(expr.value)
     );
-#endif
 
     for (const auto& var : overrides) {
         const bool val = eval_condition(var, expr);
 
-#if DEBUG_CONDITION_EVAL
-        SPDLOG_DEBUG("expression result: {}", val);
-#endif
+        EVAL_LOG("expression result: {}", val);
 
         if (val && expr_combine == ExprCombine::Or) {
-#if DEBUG_CONDITION_EVAL
-            SPDLOG_DEBUG("Final result: True (or combination)");
-#endif
+            EVAL_LOG("Final result: True (or combination)");
 
             return true;
         }
         if (!val && expr_combine == ExprCombine::And) {
-#if DEBUG_CONDITION_EVAL
-            SPDLOG_DEBUG("Final result: False (and combination)");
-#endif
+            EVAL_LOG("Final result: False (and combination)");
 
             return false;
         }
     }
 
-#if DEBUG_CONDITION_EVAL
-    SPDLOG_DEBUG(
+    EVAL_LOG(
         "Final result: {} ({} combination)",
         expr_combine == ExprCombine::And,
         expr_combine == ExprCombine::Or ? "or" : "and"
     );
-#endif
 
     return expr_combine == ExprCombine::And;
 }

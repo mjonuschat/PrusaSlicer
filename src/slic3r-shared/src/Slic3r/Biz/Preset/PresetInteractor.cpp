@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/Preset/IO/PresetSaver.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
+#include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
@@ -114,7 +115,7 @@ void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bu
 void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
 {
     std::optional<Domain::Preset::Bundle> preset_bundle_opt;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL
     namespace fs = boost::filesystem;
     const std::string bundle_cache_filename = fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
     preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, bundle_paths, Slic3r::VERSION);
@@ -147,7 +148,7 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
         for (const auto& vendor_id : preset_bundle.vendor_bundles | std::views::keys) {
             update_vendor_presets(mut, preset_bundle, vendor_id);
         }
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL
         IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, bundle_paths, Slic3r::VERSION);
 #endif
     }

@@ -53,6 +53,7 @@ class Eval
 {
 public:
     using Expr = Domain::Expr::ExprAst;
+    using Logger = std::function<void(std::string_view message)>;
 
     void set_var(const char* name, Value value)
     {
@@ -80,18 +81,18 @@ public:
 
     bool debug_output_enabled() const
     {
-        return m_debug_output_enabled;
+        return m_debug_output != nullptr;
     }
 
-    void set_debug_output_enabled(bool enabled)
+    void set_debug_output(Logger logger)
     {
-        m_debug_output_enabled = enabled;
+        m_debug_output = std::move(logger);
     }
 
 private:
     FuncMap m_functions;
     ValueMap m_vars;
-    bool m_debug_output_enabled{false};
+    Logger m_debug_output{nullptr};
 };
 
 std::ostream& operator<<(std::ostream& os, const Value& v);

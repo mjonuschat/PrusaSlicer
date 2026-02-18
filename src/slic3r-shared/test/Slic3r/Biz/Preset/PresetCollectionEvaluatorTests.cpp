@@ -34,7 +34,7 @@ PresetCollectionEvaluator create_evaluator(const IO::PresetLoader& loader, Prese
     for (const auto& p : preset_nodes)
         collect_named_presets(named_presets, {&p});
 
-    return PresetCollectionEvaluator{preset_nodes, named_presets, {}, {}};
+    return PresetCollectionEvaluator{preset_nodes, named_presets, {}, {}, "test"};
 }
 
 

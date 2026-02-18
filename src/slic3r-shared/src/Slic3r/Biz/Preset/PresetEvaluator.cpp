@@ -485,7 +485,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
     auto printer_names_it   = m_preset_ids.find(printer_kind);
     ASSERT(printers_it != m_presets.end() && printer_names_it != m_preset_ids.end());
 
-    PresetCollectionEvaluator printer_eval(printers_it->second, printer_names_it->second, m_eval, {});
+    PresetCollectionEvaluator printer_eval(printers_it->second, printer_names_it->second, m_eval, {}, hw_config.name);
     auto printer_presets = printer_eval.eval_preset({printer_tools_values});
     if (printer_presets.empty())
         SPDLOG_ERROR(
@@ -511,7 +511,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
         auto print_names_it   = m_preset_ids.find(print_kind);
         ASSERT(prints_it != m_presets.end() && print_names_it != m_preset_ids.end());
 
-        PresetCollectionEvaluator print_eval(prints_it->second, print_names_it->second, m_eval, {});
+        PresetCollectionEvaluator
+            print_eval(prints_it->second, print_names_it->second, m_eval, {}, hw_config.name);
         auto print_presets = print_eval.eval_preset(printer_tools_values);
 
         // 3. Tool print presets
@@ -535,7 +536,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             }, evaluated_print_preset.values);
 
             if (hw_config.technology == Domain::PrinterTechnology::FFF) {
-                PresetCollectionEvaluator tool_eval(tool_it->second, tool_names_it->second, m_eval, {});
+                PresetCollectionEvaluator
+                    tool_eval(tool_it->second, tool_names_it->second, m_eval, {}, hw_config.name);
                 for (const auto& tool : hw_config.tools) {
                     Expr::ValueMap tool_values = print_values;
                     append_tool_values(tool_values, tool);
@@ -567,7 +569,13 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 append_tool_values(tool_values, tool);
                 Domain::Preset::SingleToolEvaluatedMaterialPresets variants;
 
-                PresetCollectionEvaluator material_eval(mats_it->second, mat_names_it->second, m_eval, {});
+                PresetCollectionEvaluator material_eval(
+                    mats_it->second,
+                    mat_names_it->second,
+                    m_eval,
+                    {},
+                    hw_config.name
+                );
                 auto mat_presets = material_eval.eval_preset({tool_values});
                 for (const auto& mat : mat_presets) {
                     variants.emplace_back(
@@ -582,7 +590,9 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             }
 
             // For FFF add only prints with tools filled
-            if (hw_config.technology != Domain::PrinterTechnology::FFF
+            const bool drop_prints_wo_tools =
+                hw_config.technology != Domain::PrinterTechnology::FFF || hw_config.tool_count > 1;
+            if (!drop_prints_wo_tools
                 || std::ranges::all_of(tools, [](const auto& t) { return !t.empty(); }))
             {
                 ep.prints.emplace_back(
@@ -590,7 +600,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                     std::move(tools),
                     std::move(materials)
                 );
-            } else if (hw_config.technology != Domain::PrinterTechnology::FFF) {
+            } else if (drop_prints_wo_tools) {
                 SPDLOG_WARN(
                     "Print preset {} for printer {} was removed as it has at least one tool without tool print presets",
                     evaluated_print_preset.name,
