@@ -262,30 +262,35 @@ libpgcode::MoveVertices convert_entity_to_vertices(
     const Slic3r::ExtrusionEntity& extrusion_entity,
     Args&&... args
 ) {
+    libpgcode::MoveVertices result;
+
     auto* extrusion_path{dynamic_cast<const Slic3r::ExtrusionPath*>(&extrusion_entity)};
     if (extrusion_path != nullptr) {
-        SPDLOG_ERROR("type=ExtrusionPath");
-       return path_to_vertices(*extrusion_path, std::forward<Args>(args)...);
+        result = path_to_vertices(*extrusion_path, std::forward<Args>(args)...);
+    } else {
+        auto* extrusion_loop = dynamic_cast<const Slic3r::ExtrusionLoop*>(&extrusion_entity);
+        if (extrusion_loop != nullptr) {
+            result = convert_to_vertices(*extrusion_loop, std::forward<Args>(args)...);
+        } else {
+            auto* extrusion_multi_path = dynamic_cast<const Slic3r::ExtrusionMultiPath*>(&extrusion_entity);
+            if (extrusion_multi_path != nullptr) {
+                result = convert_to_vertices(*extrusion_multi_path, std::forward<Args>(args)...);
+            } else {
+                auto* extrusion_entity_collection = dynamic_cast<const Slic3r::ExtrusionEntityCollection*>(&extrusion_entity);
+                if (extrusion_entity_collection != nullptr) {
+                    result = convert_to_vertices(*extrusion_entity_collection, std::forward<Args>(args)...);
+                } else {
+                    throw std::runtime_error{"Unknown entity type!"};
+                }
+            }
+        }
     }
 
-    auto* extrusion_loop = dynamic_cast<const Slic3r::ExtrusionLoop*>(&extrusion_entity);
-    if (extrusion_loop != nullptr) {
-        SPDLOG_ERROR("type=ExtrusionLoop");
-        return convert_to_vertices(*extrusion_loop, std::forward<Args>(args)...);
+    if (!result.empty()) {
+        result.push_back(result.back());
+        result.back().type = libpgcode::MoveType::Noop;
     }
-
-    auto* extrusion_multi_path = dynamic_cast<const Slic3r::ExtrusionMultiPath*>(&extrusion_entity);
-    if (extrusion_multi_path != nullptr) {
-        SPDLOG_ERROR("type=ExtrusionMultiPath");
-        return convert_to_vertices(*extrusion_multi_path, std::forward<Args>(args)...);
-    }
-
-    auto* extrusion_entity_collection = dynamic_cast<const Slic3r::ExtrusionEntityCollection*>(&extrusion_entity);
-    if (extrusion_entity_collection != nullptr) {
-        SPDLOG_ERROR("type=ExtrusionEntityCollection");
-        return convert_to_vertices(*extrusion_entity_collection, std::forward<Args>(args)...);
-    }
-    throw std::runtime_error{"Unknown entity type!"};
+    return result;
 }
 
 template <typename ...Args>
@@ -304,8 +309,6 @@ libpgcode::MoveVertices convert_to_vertices(
         };
         if (!vertices.empty()) {
             append(result, std::move(vertices));
-            result.push_back(result.back());
-            result.back().type = libpgcode::MoveType::Noop;
         }
     }
     return result;
