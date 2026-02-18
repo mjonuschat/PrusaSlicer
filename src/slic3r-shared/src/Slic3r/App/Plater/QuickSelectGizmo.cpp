@@ -471,7 +471,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
     bool already_selected = (tag == nullptr) ? false : selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id });
 
-    if (type == Platform::MouseEvent::Type::Move) {
+    if (type == Platform::MouseEvent::Type::Move || type == Platform::MouseEvent::Type::Wheel) {
         if (m_rectangle_selection.is_active() && !m_rectangle_selection.is_already_processed()) {
             m_rectangle_selection.update({ evt.x(), evt.y() });
             HoverData hover_data{ shift_down ? HoverType::Select : HoverType::Unselect, m_rectangle_selection.contained_nodes() };

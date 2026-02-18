@@ -313,7 +313,7 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         return only_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else if (type == Platform::MouseEvent::Type::Wheel) {
         update_zoom(event.wheel_delta_y());
-        return GizmoActivationState::Done;
+        return (m_state == State::Inactive) ? GizmoActivationState::Inactive : GizmoActivationState::Done;
     }
     if (m_state == State::Inactive)
         return GizmoActivationState::Inactive;
