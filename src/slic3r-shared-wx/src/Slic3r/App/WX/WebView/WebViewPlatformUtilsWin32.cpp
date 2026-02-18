@@ -234,41 +234,65 @@ void delete_cookies_with_counter(wxWebView* webview, const std::string& url, std
 
 void load_request(wxWebView* web_view, const std::string& address, const std::string& token)
 {
-    if (!web_view) return;
+    if (!web_view) {
+        SPDLOG_ERROR("{} Failed: web_view is null.", __FUNCTION__);
+        return;
+    }
 
     ICoreWebView2* native_backend = static_cast<ICoreWebView2*>(web_view->GetNativeBackend());
-    if (!native_backend) return;
+    if (!native_backend) {
+        SPDLOG_ERROR("{} Failed: Native WebView2 is null.", __FUNCTION__);
+        return;
+    }
 
-    // 1. Query ICoreWebView2_9 to get the WebView2 Environment
+    Microsoft::WRL::ComPtr<ICoreWebView2_2> webview2_2;
+    HRESULT hr = native_backend->QueryInterface(IID_PPV_ARGS(&webview2_2));
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: ICoreWebView2_2 interface not supported. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
+        return;
+    }
+
     Microsoft::WRL::ComPtr<ICoreWebView2_9> webview2_9;
-    if (FAILED(native_backend->QueryInterface(IID_PPV_ARGS(&webview2_9)))) return;
+    hr = native_backend->QueryInterface(IID_PPV_ARGS(&webview2_9));
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: ICoreWebView2_9 interface not supported. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
+        return;
+    }
 
     Microsoft::WRL::ComPtr<ICoreWebView2Environment> env;
-    if (FAILED(webview2_9->get_Environment(&env))) return;
+    hr = webview2_9->get_Environment(&env);
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: Could not retrieve WebView2 Environment. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
+        return;
+    }
 
-    // 2. Query Environment2 to create the request
     Microsoft::WRL::ComPtr<ICoreWebView2Environment2> env2;
-    if (FAILED(env.As(&env2))) return;
-
-    // 3. Query ICoreWebView2_2 to execute the custom navigation
-    Microsoft::WRL::ComPtr<ICoreWebView2_2> webview2_2;
-    if (FAILED(native_backend->QueryInterface(IID_PPV_ARGS(&webview2_2)))) return;
+    hr = env.As(&env2);
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: ICoreWebView2Environment2 interface not supported. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
+        return;
+    }
 
     std::wstring w_url = wxString::FromUTF8(address).ToStdWstring();
-    
     // WebView2 requires HTTP headers to be \r\n separated
     std::wstring headers = L"Authorization: External " + wxString::FromUTF8(token).ToStdWstring() + L"\r\n";
 
-    // 4. Create and execute the request
     Microsoft::WRL::ComPtr<ICoreWebView2WebResourceRequest> request;
-    if (SUCCEEDED(env2->CreateWebResourceRequest(
-            w_url.c_str(),
-            L"GET",
-            nullptr, // IStream* postData
-            headers.c_str(),
-            &request))) {
-        
-        webview2_2->NavigateWithWebResourceRequest(request.Get());
+    hr = env2->CreateWebResourceRequest(
+        w_url.c_str(),
+        L"GET",
+        nullptr, // IStream* postData
+        headers.c_str(),
+        &request);
+
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: CreateWebResourceRequest failed. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
+        return;
+    }
+
+    hr = webview2_2->NavigateWithWebResourceRequest(request.Get());
+    if (FAILED(hr)) {
+        SPDLOG_ERROR("{} Failed: NavigateWithWebResourceRequest failed. HRESULT: {:x}", __FUNCTION__, (unsigned int)hr);
     }
 }
 
