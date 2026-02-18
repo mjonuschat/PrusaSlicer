@@ -1,5 +1,6 @@
 #include <span>
 
+#include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "libslic3r/Print.hpp"
@@ -87,7 +88,11 @@ libpgcode::MoveVertices convert_lines_to_vertices(
         return {};
 
     libpgcode::MoveVertices result;
-    result.reserve(lines.size());
+    result.reserve(lines.size() + 1);
+
+    // Add the start point of the first line so the first segment is not lost.
+    result.push_back(create_move_vertex(
+        to_3d(unscaled(lines[0].a).cast<float>(), print_z), widths[0], heights[0], vertex_template));
 
     for (size_t i{0}; i < lines.size(); ++i) {
         const Slic3r::Vec3f position{to_3d(unscaled(lines[i].b).cast<float>(), print_z)};
@@ -188,13 +193,13 @@ MoveVerticesPerLayer get_wipe_tower_preview(const Slic3r::Print& print)
         const std::vector<Slic3r::WipeTower::ToolChangeResult>& tool_changes = wipe_tower_helper.tool_change(layer_id);
         for (const Slic3r::WipeTower::ToolChangeResult& tool_change : tool_changes) {
             for (const ExtrusionRange& range : get_extrusion_ranges(tool_change.extrusions)) {
-                result[scaled(tool_change.print_z)] = convert_to_move_vertices(
+                append(result[scaled(tool_change.print_z)], convert_to_move_vertices(
                     range,
                     [&](const Point& point) {
                         return scaled(Vec2d{Eigen::Rotation2Dd(angle) * unscaled(point) + position});
                     },
                     tool_change.layer_height, tool_change.print_z
-                );
+                ));
             }
         }
     }
@@ -259,24 +264,27 @@ libpgcode::MoveVertices convert_entity_to_vertices(
 ) {
     auto* extrusion_path{dynamic_cast<const Slic3r::ExtrusionPath*>(&extrusion_entity)};
     if (extrusion_path != nullptr) {
-        return path_to_vertices(*extrusion_path, std::forward<Args>(args)...);
+        SPDLOG_ERROR("type=ExtrusionPath");
+       return path_to_vertices(*extrusion_path, std::forward<Args>(args)...);
     }
 
     auto* extrusion_loop = dynamic_cast<const Slic3r::ExtrusionLoop*>(&extrusion_entity);
     if (extrusion_loop != nullptr) {
+        SPDLOG_ERROR("type=ExtrusionLoop");
         return convert_to_vertices(*extrusion_loop, std::forward<Args>(args)...);
     }
 
     auto* extrusion_multi_path = dynamic_cast<const Slic3r::ExtrusionMultiPath*>(&extrusion_entity);
     if (extrusion_multi_path != nullptr) {
+        SPDLOG_ERROR("type=ExtrusionMultiPath");
         return convert_to_vertices(*extrusion_multi_path, std::forward<Args>(args)...);
     }
 
     auto* extrusion_entity_collection = dynamic_cast<const Slic3r::ExtrusionEntityCollection*>(&extrusion_entity);
     if (extrusion_entity_collection != nullptr) {
+        SPDLOG_ERROR("type=ExtrusionEntityCollection");
         return convert_to_vertices(*extrusion_entity_collection, std::forward<Args>(args)...);
     }
-
     throw std::runtime_error{"Unknown entity type!"};
 }
 
@@ -354,7 +362,7 @@ MoveVerticesPerLayer get_brim_preview(const Slic3r::Print& print, const float he
     };
 }
 
-void for_each_region(
+void for_each_region_object_layer(
     const PrintObject& object,
     const std::function<bool(const PrintObject&)>& skip_object,
     const std::function<void(const Layer&, const PrintInstance&, const LayerRegion&)>& func
@@ -372,13 +380,29 @@ void for_each_region(
     }
 }
 
+void for_each_support_layer(
+    const PrintObject& object,
+    const std::function<bool(const PrintObject&)>& skip_object,
+    const std::function<void(const SupportLayer&, const PrintInstance&)>& func
+)
+{
+    if (skip_object(object)) {
+        return;
+    }
+    for (const SupportLayer* layer : object.support_layers()) {
+        for (const Slic3r::PrintInstance& instance : object.instances()) {
+            func(*layer, instance);
+        }
+    }
+}
+
 MoveVerticesPerLayer get_perimeters_preview(
     const PrintObject& object
 )
 {
     MoveVerticesPerLayer result;
 
-    for_each_region(
+    for_each_region_object_layer(
         object,
         [](const PrintObject& object) { return !object.is_step_done(Slic3r::posPerimeters); },
         [&](const Layer& layer, const PrintInstance& instance, const LayerRegion& region) {
@@ -393,9 +417,9 @@ MoveVerticesPerLayer get_perimeters_preview(
                 .extrusion_role = GCodeExtrusionRole::ExternalPerimeter,
                 .extruder_id = extruder_id};
 
-            result[scaled(layer.print_z)] = convert_to_vertices(
+            append(result[scaled(layer.print_z)], convert_to_vertices(
                 region.perimeters(), layer.print_z, vertex_template, instance.shift()
-            );
+            ));
         }
     );
     return result;
@@ -407,7 +431,7 @@ MoveVerticesPerLayer get_infill_preview(
 {
     MoveVerticesPerLayer result;
 
-    for_each_region(
+    for_each_region_object_layer(
         object,
         [](const PrintObject& object) { return !object.is_step_done(Slic3r::posInfill); },
         [&](const Layer& layer, const PrintInstance& instance, const LayerRegion& region) {
@@ -432,8 +456,8 @@ MoveVerticesPerLayer get_infill_preview(
                     .extruder_id = extruder_id
                 };
 
-                result[scaled(layer.print_z)] =
-                    convert_to_vertices(fill, layer.print_z, vertex_template, instance.shift());
+                append(result[scaled(layer.print_z)],
+                    convert_to_vertices(fill, layer.print_z, vertex_template, instance.shift()));
             }
         }
     );
@@ -447,18 +471,12 @@ MoveVerticesPerLayer get_supports_preview(
 {
     MoveVerticesPerLayer result;
 
-    for_each_region(
+    for_each_support_layer(
         object,
         [](const PrintObject& object) { return !object.is_step_done(Slic3r::posSupportMaterial); },
-        [&](const Layer& layer, const PrintInstance& instance, const LayerRegion& region) {
-            const Slic3r::SupportLayer* support_layer{
-                dynamic_cast<const Slic3r::SupportLayer*>(&layer)};
-            if (support_layer == nullptr) {
-                return;
-            }
-
-            const Slic3r::PrintObjectConfigView& config{support_layer->object()->config()};
-            for (const Slic3r::ExtrusionEntity* entity : support_layer->support_fills.entities) {
+        [&](const SupportLayer& support_layer, const PrintInstance& instance) {
+            const Slic3r::PrintObjectConfigView& config{support_layer.object()->config()};
+            for (const Slic3r::ExtrusionEntity* entity : support_layer.support_fills.entities) {
                 const bool is_support_material = entity->role() ==
                     Slic3r::ExtrusionRole::SupportMaterial;
                 const auto extruder_id{
@@ -477,9 +495,9 @@ MoveVerticesPerLayer get_supports_preview(
                         : GCodeExtrusionRole::SupportMaterialInterface,
                     .extruder_id = extruder_id};
 
-                result[scaled(layer.print_z)] = convert_to_vertices(
-                    region.perimeters(), layer.print_z, vertex_template, instance.shift()
-                );
+                append(result[scaled(support_layer.print_z)], convert_entity_to_vertices(
+                    *entity, support_layer.print_z, vertex_template, instance.shift()
+                ));
             }
         }
     );
