@@ -1,6 +1,5 @@
 #include <span>
 
-#include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "libslic3r/Print.hpp"
@@ -53,6 +52,7 @@ public:
     float get_angle() const { return m_angle; }
     const Slic3r::Vec2d& get_position() const { return m_position; }
     size_t get_layers_count() const { return m_layers_count; }
+    bool is_priming_layer(size_t idx) const { return !m_priming.empty() && idx == 0; }
 
 private:
     const WipeTowerData& m_wipe_tower_data;
@@ -124,7 +124,12 @@ ExtrusionRanges get_extrusion_ranges(const ExtrusionSpan extrusions) {
             }
         }
         if (!range_begin && extrusion.width > 0.0f) {
-            range_begin = i;
+            // Include the preceding zero-width (travel) extrusion as the range start
+            // so that the segment from the travel endpoint to the first extruded point
+            // is not lost. Width of that first segment is taken from the destination
+            // extrusion by convert_to_move_vertices, so the zero width of the travel
+            // entry does not affect rendering.
+            range_begin = (i > 0 && extrusions[i - 1].width <= 0.0f) ? i - 1 : i;
             current_tool = extrusion.tool;
         }
     }
@@ -173,6 +178,10 @@ libpgcode::MoveVertices convert_to_move_vertices(
         lines, widths, heights, print_z, vertex_template
     )};
 
+    if (!result.empty()) {
+        result.push_back(result.back());
+        result.back().type = libpgcode::MoveType::Noop;
+    }
     return result;
 }
 
@@ -190,15 +199,17 @@ MoveVerticesPerLayer get_wipe_tower_preview(const Slic3r::Print& print)
     const Slic3r::Vec2d& position = wipe_tower_helper.get_position();
 
     for (size_t layer_id = 0; layer_id < wipe_tower_helper.get_layers_count(); ++layer_id) {
+        const bool is_priming = wipe_tower_helper.is_priming_layer(layer_id);
         const std::vector<Slic3r::WipeTower::ToolChangeResult>& tool_changes = wipe_tower_helper.tool_change(layer_id);
         for (const Slic3r::WipeTower::ToolChangeResult& tool_change : tool_changes) {
             for (const ExtrusionRange& range : get_extrusion_ranges(tool_change.extrusions)) {
+                const auto transform = [&](const Point& point) {
+                    if (is_priming)
+                        return scaled(unscaled(point));
+                    return scaled(Vec2d{Eigen::Rotation2Dd(angle) * unscaled(point) + position});
+                };
                 append(result[scaled(tool_change.print_z)], convert_to_move_vertices(
-                    range,
-                    [&](const Point& point) {
-                        return scaled(Vec2d{Eigen::Rotation2Dd(angle) * unscaled(point) + position});
-                    },
-                    tool_change.layer_height, tool_change.print_z
+                    range, transform, tool_change.layer_height, tool_change.print_z
                 ));
             }
         }
