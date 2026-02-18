@@ -154,25 +154,27 @@ wxString MacOSNativeMenuBar::get_shortcut_string(const char* command_name)
     }
 
     const Platform::ICommand& cmd = m_command_binding_manager.command(command_name);
-    auto shortcut                 = cmd.keyboard_shortcut();
-    if (!shortcut.has_value()) {
+    if (!cmd.keyboard_shortcuts().has_value()) {
         return wxString();
     }
+
+    // We check just first shortcut from the list
+    auto shortcut = cmd.keyboard_shortcuts().value().front();
 
 #ifdef __APPLE__
     // Skip unmodified letter and numbers shortcuts — these must reach the canvas
     // as raw key events, not be intercepted by Cocoa key equivalents.
-    if (shortcut->modifiers == 0
-        && ((shortcut->key >= Platform::KeyCode::A && shortcut->key <= Platform::KeyCode::Z)
-            || (shortcut->key >= Platform::KeyCode::Num0
-                && shortcut->key <= Platform::KeyCode::Num9)))
+    if (shortcut.modifiers == 0
+        && ((shortcut.key >= Platform::KeyCode::A && shortcut.key <= Platform::KeyCode::Z)
+            || (shortcut.key >= Platform::KeyCode::Num0
+                && shortcut.key <= Platform::KeyCode::Num9)))
     {
         return wxString();
     }
 #endif
 
     // Use the platform-specific accelerator table string
-    std::string accel_str = shortcut->to_accel_table_string();
+    std::string accel_str = shortcut.to_accel_table_string();
     return from_u8(accel_str);
 }
 

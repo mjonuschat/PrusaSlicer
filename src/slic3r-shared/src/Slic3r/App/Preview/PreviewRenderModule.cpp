@@ -450,12 +450,11 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
                 "slider-layers-jump-to_value",
                 [this]() { m_viewer->slider_layers_jump_to_value(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::G
-                        },
-                    .enabled = [this]() { return m_viewer->has_data(); }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::G
+                    }},
+                    .enabled           = [this]() { return m_viewer->has_data(); }
                 }
             )
         );
@@ -521,7 +520,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-slow",
                 [this]() { m_viewer->slider_layers_move_current_thumb(1); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
+                        }
                 }
             )
         )
@@ -530,7 +532,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-slow",
                 [this]() { m_viewer->slider_layers_move_current_thumb(-1); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Down}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Down}
+                        }
                 }
             )
         )
@@ -539,11 +544,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-medium",
                 [this]() { m_viewer->slider_layers_move_current_thumb(5); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::Up
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::Up
+                    }}
                 }
             )
         )
@@ -552,11 +556,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-medium",
                 [this]() { m_viewer->slider_layers_move_current_thumb(-5); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::Down
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::Down
+                    }}
                 }
             )
         )
@@ -565,11 +568,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-fast",
                 [this]() { m_viewer->slider_layers_move_current_thumb(10); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Up
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Up
+                    }}
                 }
             )
         )
@@ -578,10 +580,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-fast",
                 [this]() { m_viewer->slider_layers_move_current_thumb(-10); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Down
-                    }
+                    }}
                 }
             )
         );
@@ -594,11 +596,13 @@ void PreviewRenderModule::register_commands()
                 [this]()
                 { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Num5
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Num5
+                    }, Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Kp5
+                    }}
                 }
             )
         )

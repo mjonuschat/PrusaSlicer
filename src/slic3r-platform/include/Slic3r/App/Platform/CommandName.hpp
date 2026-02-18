@@ -95,6 +95,6 @@ struct CommandName
     static constexpr const char* ReportAnIssue     = "report-issue";
     static constexpr const char* About             = "about";
     static constexpr const char* TipOfTheDay       = "tip-of-the-day";
-    static constexpr const char* KeyboardShortcuts = "keyboard-shortcuts";
+    static constexpr const char* KeyboardShortcutsDialog = "keyboard-shortcuts";
 };
 } // namespace Slic3r::App::Platform

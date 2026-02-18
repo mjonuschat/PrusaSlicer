@@ -369,18 +369,12 @@ void PlaterRenderModule::register_commands()
                 CommandName::AddInstance,
                 add_instance,
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
-                    .enabled           = is_instance_from_same_object_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::AddInstanceKp,
-                add_instance,
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus},
-                    .enabled           = is_instance_from_same_object_selected
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+                        },
+                    .enabled = is_instance_from_same_object_selected
                 }
             )
         )
@@ -392,10 +386,13 @@ void PlaterRenderModule::register_commands()
                     m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview);
                 },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Num6
-                    }
+                    }, Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Kp6
+                    }}
                 }
             )
         )
@@ -431,7 +428,10 @@ void PlaterRenderModule::register_commands()
                 tool_type_to_command_name(type),
                 [this, type]() { toggle_activate_tool(type); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, shortcuts.at(type)},
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, shortcuts.at(type)}
+                        },
                     .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); }
                 }
             )

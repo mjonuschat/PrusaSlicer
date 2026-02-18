@@ -280,27 +280,26 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
     m_menu_manager
         // Menu -> Edit -> Select All
         .register_menu_item(
-            { MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::SelectAll },
+            {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::SelectAll},
             std::make_unique<UIItemCommand>(
                 CommandName::SelectAll,
                 [this]()
                 {
-                    Biz::Scene::ObjectSelection selection{ Biz::Scene::SelectionMode::Instance, {} };
+                    Biz::Scene::ObjectSelection selection{Biz::Scene::SelectionMode::Instance, {}};
 
                     const Domain::Model& model = m_project_interactor.selected_project().model();
                     for (const auto object : model.objects) {
                         for (const auto instance : object->instances) {
-                            selection.elements.push_back({ object->id().id, instance->id().id });
+                            selection.elements.push_back({object->id().id, instance->id().id});
                         }
                     }
                     m_project_interactor.scene_interactor().set_object_selection(selection);
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::A
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::A
+                    }}
                 }
             )
         )
@@ -316,8 +315,11 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                         scene_interactor.clear_object_selection();
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Escape},
-                    .enabled           = [this]()
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                        },
+                    .enabled = [this]()
                     { return !m_project_interactor.scene_interactor().object_selection().empty(); }
                 }
             )
@@ -354,11 +356,17 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 },
                 UIItemCommandExtraOpts{
 #ifdef __APPLE__
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace},
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace}
+                        },
 #else
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Delete},
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
+                        },
 #endif
-                    .enabled           = [this]()
+                    .enabled = [this]()
                     { return !m_project_interactor.scene_interactor().object_selection().empty(); }
                 }
             )
@@ -376,11 +384,10 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     // TODO: Implement undo functionality
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Z
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Z
+                    }}
                 }
             )
         )
@@ -394,11 +401,10 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     // TODO: Implement redo functionality
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Y
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Y
+                    }}
                 }
             )
         )
@@ -414,11 +420,10 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     // TODO: Implement copy functionality
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::C
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::C
+                    }}
                 }
             )
         )
@@ -432,11 +437,10 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     // TODO: Implement paste functionality
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::V
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::V
+                    }}
                 }
             )
         )
@@ -461,10 +465,10 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 CommandName::Search,
                 [this]() { m_navigator.request_search(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::F
-                    }
+                    }}
                 }
             )
         );
@@ -484,7 +488,10 @@ void MenuCommandRegistrar::register_main_menu_view_commands()
                     // TODO: Implement show label functionality
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::E}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::E}
+                        }
                 }
             )
         )
@@ -527,8 +534,11 @@ void MenuCommandRegistrar::register_main_menu_view_commands()
                     CommandName::FullScreen,
                     [this]() { m_navigator.set_fullscreen(!m_navigator.is_fullscreen()); },
                     UIItemCommandExtraOpts{
-                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F11},
-                        .checked           = [this]() { return m_navigator.is_fullscreen(); }
+                        .keyboard_shortcuts =
+                            Platform::KeyboardShortcuts{
+                                Platform::KeyboardShortcut{0, Platform::KeyCode::F11}
+                            },
+                        .checked = [this]() { return m_navigator.is_fullscreen(); }
                     }
                 )
             );
@@ -746,9 +756,9 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
         .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Help})
         // Menu -> Help -> Keyboard Shortcuts
         .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::KeyboardShortcuts},
+            {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::KeyboardShortcutsDialog},
             std::make_unique<UIItemCommand>(
-                CommandName::KeyboardShortcuts,
+                CommandName::KeyboardShortcutsDialog,
                 [this]()
                 {
                     // TODO: Implement keyboard shortcuts functionality
@@ -774,14 +784,14 @@ void MenuCommandRegistrar::register_main_menu_commands()
                 CommandName::Preferences,
                 [this]() { m_navigator.set_opened_preferences(true); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
 #ifdef __APPLE__
                         Platform::KeyCode::Comma
 #else
                         Platform::KeyCode::P
 #endif
-                }
+                    }}
                 }
             )
         );
@@ -800,15 +810,12 @@ void MenuCommandRegistrar::register_main_menu_commands()
             {MenuItemName::MainMenu, MenuItemName::Exit},
             std::make_unique<UIItemCommand>(
                 CommandName::Exit,
-                [this]()
-                {
-                    m_navigator.close_application();
-                },
+                [this]() { m_navigator.close_application(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Q
-                    }
+                    }}
                 }
             )
         );
@@ -879,10 +886,10 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
                     );
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::I
-                    }
+                    }}
                 }
             )
         );
@@ -898,11 +905,10 @@ void MenuCommandRegistrar::register_file_menu_export_commands()
                 CommandName::ExportGcode,
                 ExportActions::export_gcode(m_project_interactor),
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::G
-                        },
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::G
+                    }},
                     .enabled = [this]() { return ExportActions::can_export(m_project_interactor); }
                 }
             )
@@ -914,12 +920,11 @@ void MenuCommandRegistrar::register_file_menu_export_commands()
                 CommandName::SendGcode,
                 ExportActions::send_gcode_to_connect(m_project_interactor),
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl)
-                                | Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::G
-                        },
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl)
+                            | Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::G
+                    }},
                     .enabled =
                         [this]()
                     {
@@ -936,12 +941,11 @@ void MenuCommandRegistrar::register_file_menu_export_commands()
                 CommandName::ExportGcodeToFlash,
                 ExportActions::export_gcode_to_flash(m_project_interactor),
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::U
-                        },
-                    .enabled = [this]()
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::U
+                    }},
+                    .enabled           = [this]()
                     {
                         return ExportActions::can_export(m_project_interactor)
                             && m_project_interactor.removable_drive_service()
@@ -962,11 +966,10 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 CommandName::NewProject,
                 [this]() { m_project_interactor.new_project(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::N
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::N
+                    }}
                 }
             )
         )
@@ -977,11 +980,10 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 CommandName::OpenProject,
                 [this]() { load_project(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::O
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::O
+                    }}
                 }
             )
         )
@@ -992,11 +994,10 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 CommandName::SaveProject,
                 [this]() { save_project(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::S
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::S
+                    }}
                 }
             )
         )
@@ -1007,21 +1008,20 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 CommandName::SaveProjectAs,
                 [this]() { save_project_as(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl)
-                                | Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::S
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl)
+                            | Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::S
+                    }}
                 }
             )
         )
 #ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Separator
-        .register_menu_separator_item({ MenuItemName::FileMenu })
+        .register_menu_separator_item({MenuItemName::FileMenu})
         // Menu -> Shape Gallery
         .register_menu_item(
-            { MenuItemName::FileMenu, MenuItemName::ShapeGallery },
+            {MenuItemName::FileMenu, MenuItemName::ShapeGallery},
             std::make_unique<UIItemCommand>(
                 CommandName::ShapeGallery,
                 [this]()

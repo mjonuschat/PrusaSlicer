@@ -54,7 +54,7 @@ enum class MenuItemName
     ReportAnIssue,
     About,
     TipOfTheDay,
-    KeyboardShortcuts,
+    KeyboardShortcutsDialog,
 
     Exit,
 

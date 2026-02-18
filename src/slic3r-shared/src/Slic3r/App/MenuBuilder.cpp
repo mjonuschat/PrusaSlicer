@@ -124,7 +124,7 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("About PrusaSlicer");
     case MenuItemName::TipOfTheDay:
         return Biz::_u8L("Show Tip of the Day");
-    case MenuItemName::KeyboardShortcuts:
+    case MenuItemName::KeyboardShortcutsDialog:
         return Biz::_u8L("Keyboard Shortcuts");
     case MenuItemName::RecentProjects:
         return Biz::_u8L("Recent Projects");

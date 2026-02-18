@@ -24,7 +24,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 CommandName::ZoomIn,
                 [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                        }
                 }
             )
         )
@@ -33,7 +36,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 CommandName::ZoomOut,
                 [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                        }
                 }
             )
         )
@@ -42,7 +48,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 CommandName::CameraProjectionSwitch,
                 [this]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                        }
                 }
             )
         )
@@ -51,7 +60,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 CommandName::LookAtActiveBed,
                 [this]() { center_camera_on_selected_bed(true); },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::B}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::B}
+                        }
                 }
             )
         )
@@ -67,7 +79,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                     );
                 },
                 UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num0}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num0},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp0}
+                        }
                 }
             )
         )
@@ -77,7 +93,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num1}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num1},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp1}
+                        }
                 }
             )
         )
@@ -87,7 +107,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num2}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num2},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp2}
+                        }
                 }
             )
         )
@@ -97,7 +121,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num3}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num3},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp3}
+                        }
                 }
             )
         )
@@ -107,7 +135,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num4}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num4},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp4}
+                        }
                 }
             )
         )
@@ -117,7 +149,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num5}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num5},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp5}
+                        }
                 }
             )
         )
@@ -127,7 +163,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num6}
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::Num6},
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::Kp6}
+                    }
                 }
             )
         );

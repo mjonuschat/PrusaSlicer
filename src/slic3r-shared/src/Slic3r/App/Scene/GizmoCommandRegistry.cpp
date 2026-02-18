@@ -27,9 +27,9 @@ public:
         m_wrapped_command->execute();
     }
 
-    const std::optional<Platform::KeyboardShortcut> keyboard_shortcut() const override
+    const std::optional<Platform::KeyboardShortcuts> keyboard_shortcuts() const override
     {
-        return m_wrapped_command->keyboard_shortcut();
+        return m_wrapped_command->keyboard_shortcuts();
     }
 
     bool enabled() const override

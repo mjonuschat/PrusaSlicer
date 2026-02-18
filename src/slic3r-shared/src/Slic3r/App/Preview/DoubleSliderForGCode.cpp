@@ -33,7 +33,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-increase-slow",
                 [this]() { move_current_thumb(1); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Right}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Right}
+                        }
                 }
             )
         )
@@ -42,7 +45,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-decrease-slow",
                 [this]() { move_current_thumb(-1); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Left}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Left}
+                        }
                 }
             )
         )
@@ -51,11 +57,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-increase-medium",
                 [this]() { move_current_thumb(5); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::Right
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::Right
+                    }}
                 }
             )
         )
@@ -64,11 +69,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-decrease-medium",
                 [this]() { move_current_thumb(-5); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                            Platform::KeyCode::Left
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::Left
+                    }}
                 }
             )
         )
@@ -77,11 +81,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-increase-fast",
                 [this]() { move_current_thumb(10); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Right
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Right
+                    }}
                 }
             )
         )
@@ -90,11 +93,10 @@ void DoubleSliderForGcode::register_commands(
                 "slider-gcode-decrease-fast",
                 [this]() { move_current_thumb(-10); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut =
-                        Platform::KeyboardShortcut{
-                            Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                            Platform::KeyCode::Left
-                        }
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Left
+                    }}
                 }
             )
         );

@@ -483,17 +483,11 @@ void DoubleSliderForLayers::register_commands(
                     "slider-layers-add-current-tick",
                     [this]() { add_current_tick(); },
                     FuncCommandExtraOpts{
-                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Plus}
-                    }
-                )
-            )
-            .register_command(
-                std::make_unique<Platform::FuncCommand>(
-                    "slider-layers-add-current-tick-kp",
-                    [this]() { add_current_tick(); },
-                    FuncCommandExtraOpts{
-                        .keyboard_shortcut =
-                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+                        .keyboard_shortcuts =
+                            Platform::KeyboardShortcuts{
+                                Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
+                                Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+                            }
                     }
                 )
             )
@@ -502,17 +496,10 @@ void DoubleSliderForLayers::register_commands(
                     "slider-layers-delete-current-tick",
                     [this]() { delete_current_tick(); },
                     FuncCommandExtraOpts{
-                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Minus}
-                    }
-                )
-            )
-            .register_command(
-                std::make_unique<Platform::FuncCommand>(
-                    "slider-layers-delete-current-tick-kp",
-                    [this]() { delete_current_tick(); },
-                    FuncCommandExtraOpts{
-                        .keyboard_shortcut =
+                        .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Minus},
                             Platform::KeyboardShortcut{0, Platform::KeyCode::KpMinus}
+                        }
                     }
                 )
             );

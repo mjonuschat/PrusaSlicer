@@ -18,13 +18,17 @@ bool CommandRegistry::process_keyboard_event(const KeyboardEvent& e)
         return false;
 
     for (const auto& cmd : std::as_const(m_commands_by_id)) {
-        const auto shortcut = cmd.second->keyboard_shortcut();
-        if (!shortcut.has_value() || !cmd.second->enabled()) {
+        const auto shortcuts = cmd.second->keyboard_shortcuts();
+        if (!shortcuts.has_value() || !cmd.second->enabled()) {
             continue;
         }
-        if (e.key_modifiers() == shortcut.value().modifiers && e.code() == shortcut.value().key) {
-            cmd.second->execute();
-            return true;
+
+        const std::vector<KeyboardShortcut>& kb_shortcuts = shortcuts.value();
+        for (const KeyboardShortcut& kbs : kb_shortcuts) {
+            if (e.key_modifiers() == kbs.modifiers && e.code() == kbs.key) {
+                cmd.second->execute();
+                return true;
+            }
         }
     }
 

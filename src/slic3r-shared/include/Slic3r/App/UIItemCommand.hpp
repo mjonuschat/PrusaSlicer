@@ -6,7 +6,7 @@ namespace Slic3r::App {
 
 struct UIItemCommandExtraOpts
 {
-    std::optional<Platform::KeyboardShortcut> keyboard_shortcut = std::nullopt;
+    std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts = std::nullopt;
     std::function<bool()> enabled                               = nullptr;
     std::function<bool()> visible                               = nullptr;
     std::function<bool()> checked                               = nullptr;
@@ -37,9 +37,9 @@ public:
         m_execute();
     }
 
-    const std::optional<Platform::KeyboardShortcut> keyboard_shortcut() const override
+    const std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts() const override
     {
-        return m_extra_opts.keyboard_shortcut;
+        return m_extra_opts.keyboard_shortcuts;
     }
 
     bool enabled() const override
