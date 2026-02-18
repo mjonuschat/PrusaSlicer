@@ -10,7 +10,7 @@
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp" // closest point to layer part
-#include "libslic3r/AABBMesh.hpp" // move_on_mesh_surface Should be in another file
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp" // move_on_mesh_surface Should be in another file
 // SupportIslands
 #include "libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"

@@ -3,6 +3,8 @@ project(slic3r-biz-algorithms)
 add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/BoundingBox.hpp
     src/Slic3r/Biz/Algorithms/BoundingBox.cpp
+    include/Slic3r/Biz/Algorithms/AABBMesh.hpp
+    src/Slic3r/Biz/Algorithms/AABBMesh.cpp
     include/Slic3r/Biz/Algorithms/DouglasPeucker.hpp
     src/Slic3r/Biz/Algorithms/DouglasPeucker.cpp
     include/Slic3r/Biz/Algorithms/ExPolygon.hpp

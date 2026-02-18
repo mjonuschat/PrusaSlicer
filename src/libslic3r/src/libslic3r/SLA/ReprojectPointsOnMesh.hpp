@@ -6,7 +6,7 @@
 #define REPROJECTPOINTSONMESH_HPP
 
 #include "libslic3r/Point.hpp"
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 #include "SupportPoint.hpp"
 #include "Hollowing.hpp"
 #include "libslic3r/Model.hpp"

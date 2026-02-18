@@ -5,7 +5,7 @@
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;

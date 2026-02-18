@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 
 namespace Slic3r::Biz::Algorithms::Bed {

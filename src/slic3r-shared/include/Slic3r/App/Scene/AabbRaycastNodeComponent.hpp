@@ -4,7 +4,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include <libslic3r/AABBMesh.hpp>
+#include <Slic3r/Biz/Algorithms/AABBMesh.hpp>
 
 namespace Slic3r::App::Scene {
 
