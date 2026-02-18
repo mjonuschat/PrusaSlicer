@@ -73,8 +73,6 @@ public:
 
     bool                          is_printable() const;
 
-    void                          invalidate_object_bounding_box();
-
     ModelInstance(const ModelInstance& rhs) = default;
 
     bool operator==(const ModelInstance& rhs) const;

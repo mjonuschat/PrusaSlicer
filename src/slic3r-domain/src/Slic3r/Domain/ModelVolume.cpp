@@ -92,9 +92,17 @@ const std::shared_ptr<const TriangleMesh>& ModelVolume::get_convex_hull_shared_p
 
 const Transformation& ModelVolume::get_transformation() const { return m_transformation; }
 
-void ModelVolume::set_transformation(const Transformation& transformation) { m_transformation = transformation; }
+void ModelVolume::set_transformation(const Transformation& transformation)
+{
+    m_transformation = transformation;
+    this->object->invalidate_bounding_box();
+}
 
-void ModelVolume::set_transformation(const Transform3d& trafo) { m_transformation.set_matrix(trafo); }
+void ModelVolume::set_transformation(const Transform3d& trafo)
+{
+    m_transformation.set_matrix(trafo);
+    this->object->invalidate_bounding_box();
+}
 
 Vec3d ModelVolume::get_offset() const { return m_transformation.get_offset(); }
 

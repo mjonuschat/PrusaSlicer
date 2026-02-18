@@ -10,7 +10,11 @@ void ModelInstance::set_model_object(ModelObject* model_object) { this->object =
 
 const Domain::Transformation& ModelInstance::get_transformation() const { return m_transformation; }
 
-void ModelInstance::set_transformation(const Domain::Transformation& transformation) { m_transformation = transformation; }
+void ModelInstance::set_transformation(const Domain::Transformation& transformation)
+{
+    m_transformation = transformation;
+    this->object->invalidate_bounding_box();
+}
 
 Vec3d ModelInstance::get_offset() const { return m_transformation.get_offset(); }
 
@@ -54,8 +58,6 @@ bool ModelInstance::is_printable() const
 {
     return this->object->printable && this->printable && (this->print_volume_state == ModelInstancePVS_Inside);
 }
-
-void ModelInstance::invalidate_object_bounding_box() { this->object->invalidate_bounding_box(); }
 
 bool ModelInstance::operator==(const ModelInstance& rhs) const
 {
