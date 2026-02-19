@@ -104,6 +104,21 @@ public:
         return m_tool_gizmos;
     }
 
+    const GizmoCommandRegistry& command_registry() const
+    {
+        return m_command_registry;
+    }
+
+    const Platform::CommandRegistry::CommandsMap& commands() const
+    {
+        return m_command_registry.commands();
+    }
+
+    const Platform::ICommand& command(const char* name) const
+    {
+        return m_command_registry.command(name);
+    }
+
 private:
     void on_selected_project_changed(size_t index) override;
 

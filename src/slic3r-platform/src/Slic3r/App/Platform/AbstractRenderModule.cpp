@@ -67,14 +67,19 @@ void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &
     m_animation_manager = &animation_manager;
 }
 
-ICommand& AbstractRenderModule::command(const char* name)
+const ICommand& AbstractRenderModule::command(const char* name) const
 {
     return m_command_registry.command(name);
 }
 
-const CommandRegistry::CommandsMap& AbstractRenderModule::commands()
+const CommandRegistry::CommandsMap& AbstractRenderModule::commands() const
 {
     return m_command_registry.commands();
+}
+
+bool AbstractRenderModule::is_gizmo_manager_completed() const
+{
+    return false;
 }
 
 } // namespace Slic3r::App::Platform

@@ -31,10 +31,15 @@ bool CommandRegistry::process_keyboard_event(const KeyboardEvent& e)
     return false;
 }
 
-ICommand& CommandRegistry::command(const char* name)
+const ICommand& CommandRegistry::command(const char* name) const
 {
     ASSERT(m_commands_by_id.contains(name), "Non-existed command");
-    return *m_commands_by_id[name].get();
+    return *m_commands_by_id.at(name).get();
+}
+
+bool CommandRegistry::has_command(const char* name) const
+{
+    return m_commands_by_id.contains(name);
 }
 
 } // namespace Slic3r::App::Platform

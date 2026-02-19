@@ -12,6 +12,10 @@ namespace Yoga {
 class AbstractButton;
 } // namespace Yoga
 
+namespace Scene {
+class GizmoCommandRegistry;
+} // namespace Scene
+
 class UIItemCommand;
 
 class CommandBindingManager :
@@ -25,9 +29,14 @@ public:
     using UIItemsPerCommandMap =
         std::unordered_map<std::string, std::vector<Yoga::AbstractButton*>>;
 
-    CommandBindingManager(Platform::CommandRegistry& command_registry) :
-        m_command_registry(command_registry)
+    CommandBindingManager(Platform::CommandRegistry& main_command_registry) :
+        m_main_command_registry(main_command_registry)
     {}
+
+    void set_gizmos_command_registry(const Scene::GizmoCommandRegistry* gizmos_command_registry)
+    {
+        m_gizmos_command_registry = gizmos_command_registry;
+    }
 
     void bind_menu_item(const UIItemCommand* command, Yoga::AbstractButton* ui_item);
 
@@ -37,7 +46,7 @@ public:
 
     Platform::CommandRegistry& command_registry()
     {
-        return m_command_registry;
+        return m_main_command_registry;
     }
 
     void on_user_account_id_success(bool, const std::string&) override;
@@ -62,7 +71,8 @@ public:
 private:
     void bind(const char* command_name, Yoga::AbstractButton* ui_item);
 
-    Platform::CommandRegistry& m_command_registry;
+    Platform::CommandRegistry& m_main_command_registry;
+    const Scene::GizmoCommandRegistry* m_gizmos_command_registry{nullptr};
 
     UIItemsPerCommandMap m_ui_items;
 };

@@ -64,8 +64,28 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Show Labels");
     case MenuItemName::FullScreen:
         return Biz::_u8L("Fullscreen");
-    case MenuItemName::ChangeCameraType:
-        return Biz::_u8L("Change Camera Type");
+    case MenuItemName::ZoomIn:
+        return Biz::_u8L("Zoom In");
+    case MenuItemName::ZoomOut:
+        return Biz::_u8L("Zoom Out");
+    case MenuItemName::CameraProjectionSwitch:
+        return Biz::_u8L("Switch Projection");
+    case MenuItemName::LookAtActiveBed:
+        return Biz::_u8L("Look at Active Bed");
+    case MenuItemName::CameraDefaultView:
+        return Biz::_u8L("Default View");
+    case MenuItemName::CameraTopView:
+        return Biz::_u8L("Top View");
+    case MenuItemName::CameraBottomView:
+        return Biz::_u8L("Bottom View");
+    case MenuItemName::CameraFrontView:
+        return Biz::_u8L("Front View");
+    case MenuItemName::CameraRearView:
+        return Biz::_u8L("Rear View");
+    case MenuItemName::CameraLeftView:
+        return Biz::_u8L("Left View");
+    case MenuItemName::CameraRightView:
+        return Biz::_u8L("Right View");
     case MenuItemName::Configuration:
         return Biz::_u8L("Configuration");
     case MenuItemName::ConfigurationWizard:

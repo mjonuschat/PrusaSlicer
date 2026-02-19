@@ -55,12 +55,23 @@ struct CommandName
     static constexpr const char* ShapeGallery     = "shape-gallery";
     static constexpr const char* ShowLabel        = "show-label";
     static constexpr const char* FullScreen       = "full-screen";
-    static constexpr const char* ChangeCameraType = "change-camera-type";
 
     static constexpr const char* Undo  = "undo";
     static constexpr const char* Redo  = "redo";
     static constexpr const char* Copy  = "copy";
     static constexpr const char* Paste = "paste";
+
+    static constexpr const char* ZoomIn                 = "zoom-in";
+    static constexpr const char* ZoomOut                = "zoom-out";
+    static constexpr const char* CameraProjectionSwitch = "camera-projection-switch";
+    static constexpr const char* LookAtActiveBed        = "look-at-active-bed";
+    static constexpr const char* CameraDefaultView      = "camera-default-view";
+    static constexpr const char* CameraTopView          = "camera-top-view";
+    static constexpr const char* CameraBottomView       = "camera-bottom-view";
+    static constexpr const char* CameraFrontView        = "camera-front-view";
+    static constexpr const char* CameraRearView         = "camera-rear-view";
+    static constexpr const char* CameraLeftView         = "camera-left-view";
+    static constexpr const char* CameraRightView        = "camera-right-view";
 
     static constexpr const char* ReloadFromDisk       = "reload-from-disk";
     static constexpr const char* ConfigurationWizard  = "configuration-wizard";

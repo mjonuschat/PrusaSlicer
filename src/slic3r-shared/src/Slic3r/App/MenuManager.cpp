@@ -16,19 +16,19 @@ MenuManager& MenuManager::register_menu_item(
     UIItemCommand* cmd = command.get();
     m_command_registry.register_command(std::move(command));
 
-    // Add new menu item
+    create_and_distribute_new_menu_item(path, cmd);
+    return *this;
+}
 
-    MenuItemName child_name = path.back();
-    ASSERT(!m_menus_by_id.contains(child_name) && child_name != MenuItemName::Separator);
+MenuManager& MenuManager::register_menu_item_from_command(
+    std::vector<MenuItemName> path,
+    const Platform::ICommand& command
+)
+{
+    const UIItemCommand* cmd = dynamic_cast<const UIItemCommand*>(&command);
+    ASSERT(cmd);
 
-    m_menus_by_id[child_name] = std::make_unique<MenuItem>(child_name, cmd);
-    path.pop_back();
-
-    if (path.empty())
-        return *this;
-
-    distribute_into_menu_hierarchy(child_name, path);
-
+    create_and_distribute_new_menu_item(path, cmd);
     return *this;
 }
 
@@ -59,6 +59,21 @@ MenuManager& MenuManager::register_menu_separator_item(std::vector<MenuItemName>
     distribute_into_menu_hierarchy(child_name, path);
 
     return *this;
+}
+
+void
+MenuManager::create_and_distribute_new_menu_item(std::vector<MenuItemName> path, const UIItemCommand* cmd)
+{
+    MenuItemName child_name = path.back();
+    ASSERT(!m_menus_by_id.contains(child_name) && child_name != MenuItemName::Separator);
+
+    m_menus_by_id[child_name] = std::make_unique<MenuItem>(child_name, cmd);
+    path.pop_back();
+
+    if (path.empty())
+        return;
+
+    distribute_into_menu_hierarchy(child_name, path);
 }
 
 void

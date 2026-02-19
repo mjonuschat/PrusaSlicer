@@ -3,6 +3,7 @@
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
+#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/ResultExport/ExportActions.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
@@ -20,24 +21,23 @@
 
 namespace Slic3r::App {
 
-#define SHOW_NOT_IMPLEMENTED_ITEMS 1
+// #define SHOW_NOT_IMPLEMENTED_ITEMS
 
 using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
 
 MenuCommandRegistrar::MenuCommandRegistrar(
-    MenuManager& menu_manager,
+    Platform::AbstractRenderModule& render_module,
     Biz::ProjectInteractor& project_interactor,
     Navigator& navigator,
     ThumbnailStore& thumbnail_store
 ) :
-    m_menu_manager(menu_manager),
+    m_render_module(render_module),
+    m_menu_manager(m_render_module.menu_manager()),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_thumbnail_store(thumbnail_store)
-{
-    register_all();
-}
+{}
 
 void MenuCommandRegistrar::register_all()
 {
@@ -280,17 +280,17 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
     m_menu_manager
         // Menu -> Edit -> Select All
         .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::SelectAll},
+            { MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::SelectAll },
             std::make_unique<UIItemCommand>(
                 CommandName::SelectAll,
                 [this]()
                 {
-                    Biz::Scene::ObjectSelection selection{Biz::Scene::SelectionMode::Instance, {}};
+                    Biz::Scene::ObjectSelection selection{ Biz::Scene::SelectionMode::Instance, {} };
 
                     const Domain::Model& model = m_project_interactor.selected_project().model();
                     for (const auto object : model.objects) {
                         for (const auto instance : object->instances) {
-                            selection.elements.push_back({object->id().id, instance->id().id});
+                            selection.elements.push_back({ object->id().id, instance->id().id });
                         }
                     }
                     m_project_interactor.scene_interactor().set_object_selection(selection);
@@ -485,37 +485,49 @@ void MenuCommandRegistrar::register_main_menu_view_commands()
             )
         )
 #endif
+        // Menu -> View -> ZoomIn
+        .register_menu_item_from_command(
+            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::ZoomIn},
+            m_render_module.command(CommandName::ZoomIn)
+        )
+        // Menu -> View -> ZoomOut
+        .register_menu_item_from_command(
+            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::ZoomOut},
+            m_render_module.command(CommandName::ZoomOut)
+        )
         // Menu -> View -> Change Camera Type
-        .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::ChangeCameraType},
-            std::make_unique<UIItemCommand>(
-                CommandName::ChangeCameraType,
-                [this]()
-                {
-                    // TODO: Implement change camera type functionality
-                }
-            )
+        .register_menu_item_from_command(
+            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::CameraProjectionSwitch},
+            m_render_module.command(CommandName::CameraProjectionSwitch)
+        )
+        // Menu -> View -> LookAtActiveBed
+        .register_menu_item_from_command(
+            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::LookAtActiveBed},
+            m_render_module.command(CommandName::LookAtActiveBed)
+        )
+        // Menu -> View -> CameraDefaultView
+        .register_menu_item_from_command(
+            {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::CameraDefaultView},
+            m_render_module.command(CommandName::CameraDefaultView)
         );
 #ifndef __APPLE__
     // OSX adds its own menu item to toggle fullscreen.
     if (m_navigator.has_fullscreen()) {
         // Menu -> View -> Separator
-        m_menu_manager.register_menu_separator_item({ MenuItemName::MainMenu, MenuItemName::View })
-        // Menu -> View -> Full Screen
-        .register_menu_item(
-            { MenuItemName::MainMenu, MenuItemName::View, MenuItemName::FullScreen },
-            std::make_unique<UIItemCommand>(
-                CommandName::FullScreen,
-                [this]()
-                {
-                    m_navigator.set_fullscreen(!m_navigator.is_fullscreen());
-                },
-                UIItemCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F11},
-                    .checked = [this]() {return m_navigator.is_fullscreen(); }
-                }
-            )
-        );
+        m_menu_manager
+            .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::View})
+            // Menu -> View -> Full Screen
+            .register_menu_item(
+                {MenuItemName::MainMenu, MenuItemName::View, MenuItemName::FullScreen},
+                std::make_unique<UIItemCommand>(
+                    CommandName::FullScreen,
+                    [this]() { m_navigator.set_fullscreen(!m_navigator.is_fullscreen()); },
+                    UIItemCommandExtraOpts{
+                        .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::F11},
+                        .checked           = [this]() { return m_navigator.is_fullscreen(); }
+                    }
+                )
+            );
     }
 #endif // __APPLE__
 }
@@ -738,8 +750,9 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                     // TODO: Implement keyboard shortcuts functionality
                 }
             )
-        );
+        )
 #endif
+        ;
 }
 
 void MenuCommandRegistrar::register_main_menu_commands()

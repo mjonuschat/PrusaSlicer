@@ -2,6 +2,10 @@
 
 #include <string>
 
+namespace Slic3r::App::Platform {
+class AbstractRenderModule;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
@@ -16,15 +20,15 @@ class MenuCommandRegistrar
 {
 public:
     MenuCommandRegistrar(
-        MenuManager& menu_manager,
+        Platform::AbstractRenderModule& render_module,
         Biz::ProjectInteractor& project_interactor,
         Navigator& navigator,
         ThumbnailStore& thumbnail_store
     );
 
-private:
     void register_all();
 
+private:
     void register_main_menu_commands();
     void register_main_menu_edit_commands();
     void register_main_menu_view_commands();
@@ -47,6 +51,7 @@ private:
     };
     void open_browser(OpenBrowserParams params);
 
+    Platform::AbstractRenderModule& m_render_module;
     MenuManager& m_menu_manager;
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;

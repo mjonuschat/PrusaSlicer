@@ -350,21 +350,20 @@ void MainFrame::update_accel_table()
     std::vector<wxAcceleratorEntry> entries;
     entries.reserve(100);
 
-    for (const auto& [cmd_id, cmd] : m_canvas->get_render_module()->commands()) {
-        if (!cmd->keyboard_shortcut().has_value()) {
+    auto add_entry = [&entries, this](const std::string& cmd_id, Platform::ICommand* cmd_ptr) {
+        if (!cmd_ptr->keyboard_shortcut().has_value()) {
             // menus without shortcut
-            continue;
+            return;
         }
-
         int entry_id = wxNewId();
         if (auto entry{ std::unique_ptr<wxAcceleratorEntry>{wxAcceleratorEntry::Create(
-                WX::from_u8("\t" + cmd->keyboard_shortcut_accel_string()))} })
+                WX::from_u8("\t" + cmd_ptr->keyboard_shortcut_accel_string()))} })
         {
             entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry_id);
 
             this->Bind(
                 wxEVT_MENU,
-                [cmd_ptr = cmd.get(), this](wxCommandEvent& event)
+                [cmd_ptr, this](wxCommandEvent& event)
                 {
                     if (!m_canvas->HasFocus()) {
                         m_canvas->SetFocus();
@@ -375,6 +374,16 @@ void MainFrame::update_accel_table()
                 },
                 entry_id
             );
+        }
+    };
+
+    for (const auto& [cmd_id, cmd] : m_canvas->get_render_module()->commands()) {
+        add_entry(cmd_id, cmd.get());
+    }
+
+    if (m_canvas->get_render_module()->is_gizmo_manager_completed()) {
+        for (const auto& [cmd_id, cmd] : m_canvas->get_render_module()->gizmo_commands()) {
+            add_entry(cmd_id, cmd.get());
         }
     }
 

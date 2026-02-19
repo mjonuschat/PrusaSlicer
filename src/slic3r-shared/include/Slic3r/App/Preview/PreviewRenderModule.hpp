@@ -130,6 +130,25 @@ public:
         return m_command_binding_manager;
     }
 
+    const Platform::CommandRegistry::CommandsMap& gizmo_commands() const override
+    {
+        ASSERT(m_gizmo_manager);
+        return m_gizmo_manager->commands();
+    }
+
+    const Platform::ICommand& command(const char* name) const override
+    {
+        if (gizmo_commands().contains(name)) {
+            return m_gizmo_manager->command(name);
+        }
+        return m_command_registry.command(name);
+    }
+
+    bool is_gizmo_manager_completed() const override
+    {
+        return m_gizmo_manager ? true : false;
+    }
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface

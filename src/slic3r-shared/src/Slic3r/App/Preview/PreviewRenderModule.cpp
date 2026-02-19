@@ -729,6 +729,7 @@ void PreviewRenderModule::init_gizmos()
         *m_scene_presenter,
         *m_animation_manager
     );
+    m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
 
 void PreviewRenderModule::init_viewers(Render::Device& device)

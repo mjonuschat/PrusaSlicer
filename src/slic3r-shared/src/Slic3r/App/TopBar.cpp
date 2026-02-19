@@ -37,12 +37,13 @@ TopBar::TopBar(
     m_render_module(render_module),
     m_navigator(navigator),
     m_menu_command_registrar(
-        render_module->menu_manager(),
+        *render_module,
         *project_interactor,
         navigator,
         thumbnail_store
     )
 {
+    m_menu_command_registrar.register_all();
     Paddings paddings = padding();
 
     set_padding(0);

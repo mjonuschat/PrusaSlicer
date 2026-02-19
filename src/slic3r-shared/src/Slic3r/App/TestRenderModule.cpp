@@ -67,6 +67,11 @@ TestRenderModule::TestRenderModule() :
     }
 }
 
+const Platform::CommandRegistry::CommandsMap& TestRenderModule::gizmo_commands() const
+{
+    return {};
+}
+
 void TestRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
 {
     AbstractRenderModule::on_init(device, imgui_render, animation_manager);

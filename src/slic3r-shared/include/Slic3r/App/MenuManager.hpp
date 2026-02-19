@@ -28,19 +28,30 @@ public:
      * @param path Path to menu item as a stack of MenuItemNames, where first is a root item name
      * @param command Pointer to command implementation
      */
-    virtual MenuManager&
+    MenuManager&
     register_menu_item(std::vector<MenuItemName> path, std::unique_ptr<UIItemCommand> command);
 
     /**
-     * @brief Register menu separator item
-     * @param path Path to parent menu as a stack of MenuItemNames, where first is a root item name
+     * @brief Register single menu item with related command
+     * @param path Path to menu item as a stack of MenuItemNames, where first is a root item name
+     * @param command Reference to command implementation
      */
-    virtual MenuManager&
-    register_menu_separator_item(std::vector<MenuItemName> path);
+    MenuManager& register_menu_item_from_command(
+        std::vector<MenuItemName> path,
+        const Platform::ICommand& command
+    );
+
+    /**
+     * @brief Registers a single menu item linked to an existing command.
+     * @param path Path to the menu item (e.g., MainMenu -> View -> ZoomIn).
+     */
+    MenuManager& register_menu_separator_item(std::vector<MenuItemName> path);
 
     MenuItem* menu_item(MenuItemName name);
 
 private:
+    void
+    create_and_distribute_new_menu_item(std::vector<MenuItemName> path, const UIItemCommand* cmd);
     void distribute_into_menu_hierarchy(MenuItemName child_name, std::vector<MenuItemName> path);
 
 private:

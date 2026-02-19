@@ -23,7 +23,17 @@ enum class MenuItemName
     View,
     ShowLabel,
     FullScreen,
-    ChangeCameraType,
+    ZoomIn,
+    ZoomOut,
+    CameraProjectionSwitch,
+    LookAtActiveBed,
+    CameraDefaultView,
+    CameraTopView,
+    CameraBottomView,
+    CameraFrontView,
+    CameraRearView,
+    CameraLeftView,
+    CameraRightView,
 
     Preferences,
 

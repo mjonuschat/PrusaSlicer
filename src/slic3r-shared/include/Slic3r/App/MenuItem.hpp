@@ -12,7 +12,7 @@ namespace Slic3r::App {
 class MenuItem
 {
 public:
-    MenuItem(MenuItemName name, UIItemCommand* command = nullptr) :
+    MenuItem(MenuItemName name, const UIItemCommand* command = nullptr) :
         m_name(name),
         m_command(command) {};
 
@@ -42,7 +42,7 @@ public:
 
 private:
     MenuItemName m_name;
-    UIItemCommand* m_command{nullptr};
+    const UIItemCommand* m_command{nullptr};
     std::vector<MenuItem*> m_children;
 };
 

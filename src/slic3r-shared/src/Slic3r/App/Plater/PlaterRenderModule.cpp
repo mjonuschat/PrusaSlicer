@@ -906,6 +906,8 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
+
+    m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
 
 void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
