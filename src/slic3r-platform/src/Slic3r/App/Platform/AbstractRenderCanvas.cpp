@@ -1,9 +1,9 @@
 #include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
 
-#include <iostream>
 #include <algorithm>
 
 #include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Render/Device.hpp>
@@ -71,14 +71,18 @@ void AbstractRenderCanvas::render()
     if (m_animation_manager.update())
         request_render();
 
-    if (m_pending_language.has_value()
-        || m_pending_font_size.has_value()
-        || m_pending_font_global_scale.has_value())
+    if (m_pending_font_size.has_value())
     {
-        m_imgui_render->set_font(m_pending_language, m_pending_font_size, m_pending_font_global_scale);
-        m_pending_language.reset();
+        ImGuiStyle& style  = ImGui::GetStyle();
+        style.FontSizeBase = m_pending_font_size.value();
         m_pending_font_size.reset();
-        m_pending_font_global_scale.reset();
+    }
+
+    if (m_pending_dpi_scale.has_value())
+    {
+        ImGuiStyle& style  = ImGui::GetStyle();
+        style.FontScaleDpi = m_pending_dpi_scale.value();
+        m_pending_dpi_scale.reset();
     }
 
     std::unique_ptr<Render::CommandBuffer> cmd_buffer = device().create_command_buffer();
@@ -118,12 +122,10 @@ AbstractRenderCanvas::AbstractRenderCanvas() :
     m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
 {}
 
-void AbstractRenderCanvas::set_font_size(float font_size)
+void AbstractRenderCanvas::set_default_font_size(float font_size, float dpi_scale)
 {
-    // Magic number 1.777777=16/9, where
-    // 16 is default size for ImGui::font for 100% scale
-    // 9 is a font size for Windows for 100% scale
-    m_pending_font_size = 1.777777 * font_size;
+    m_pending_font_size = font_size;
+    m_pending_dpi_scale = dpi_scale;
 }
 
 void AbstractRenderCanvas::begin_frame()
@@ -157,7 +159,6 @@ void AbstractRenderCanvas::begin_imgui_frame()
 {
     // Start the Dear ImGui frame
     m_imgui_render->new_frame();
-    IM_ASSERT(ImGui::GetIO().Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
     begin_imgui_frame_platform();
     ImGui::NewFrame();
 }

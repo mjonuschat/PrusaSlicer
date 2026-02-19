@@ -38,7 +38,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
 
     ImRect bb(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 
-    ImGui::RenderNavHighlight(bb, ImGui::GetItemID());
+    ImGui::RenderNavCursor(bb, ImGui::GetItemID());
 
     ImGui::PopID();
 

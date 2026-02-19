@@ -352,7 +352,6 @@ void MainFrame::on_language_changed()
     // Save language at application config.
     // app_config->set("translation_language", localization().active_language());
 
-    m_canvas->set_language(localization().active_language());
     this->Refresh();
 }
 
@@ -691,9 +690,9 @@ bool MainFrame::select_language()
 
 void MainFrame::update_canvas_ui_settings()
 {
-    m_canvas->set_language(localization().active_language());
-    m_canvas->set_font_size(float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
-    m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
+    // Ignored DPI scaling for now
+    // TODO: Revisit before 3.0
+    m_canvas->set_default_font_size(18, 1);
 }
 
 static Scene::ShadingType shading_type(App::GraphicsQuality graphics_quality)

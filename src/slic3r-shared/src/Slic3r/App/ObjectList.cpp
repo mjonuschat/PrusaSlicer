@@ -49,7 +49,7 @@ struct BoldFontGuard
 {
     BoldFontGuard(Render::ImguiRender* imgui_render)
     {
-        ImGui::PushFont(imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::PushFont(imgui_render->font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
     }
 
     ~BoldFontGuard()
@@ -1209,7 +1209,7 @@ void ObjectList::render_volume_node(
         if (selectable(
                 icon_str(volume).c_str(),
                 is_selected,
-                ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+                ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap,
                 has_config_overrides
             ))
         {

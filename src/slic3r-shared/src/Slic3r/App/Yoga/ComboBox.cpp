@@ -38,7 +38,7 @@ static bool YGBeginCombo(
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = ImGui::GetCurrentWindow();
 
-    ImGuiNextWindowDataFlags backup_next_window_data_flags = g.NextWindowData.Flags;
+    ImGuiNextWindowDataFlags backup_next_window_data_flags = g.NextWindowData.HasFlags;
     g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
     if (window->SkipItems)
         return false;
@@ -49,6 +49,9 @@ static bool YGBeginCombo(
     if (flags & ImGuiComboFlags_WidthFitPreview)
         IM_ASSERT((flags & (ImGuiComboFlags_NoPreview | (ImGuiComboFlags)ImGuiComboFlags_CustomPreview)) == 0);
 
+    if (editable) {
+        ImGui::SetNextItemAllowOverlap();
+    }
 
     const float arrow_size = (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : ImGui::GetFrameHeight();
     const float preview_width = ((flags & ImGuiComboFlags_WidthFitPreview) && (preview_value != NULL)) ? ImGui::CalcTextSize(preview_value, NULL, true).x : 0.0f;
@@ -99,7 +102,6 @@ static bool YGBeginCombo(
     }
 
     if (editable) {
-        ImGui::SetItemAllowOverlap();
         ImGui::SetCursorScreenPos(cursor_pos);
         const std::string lab = std::string(label) + "##inputtext";
         edited |= ImGui::InputTextEx(lab.c_str(), "", buffer, buf_size, ImVec2(value_x2 - bb.Min.x, bb.Max.y - bb.Min.y), ImGuiInputTextFlags_AutoSelectAll, nullptr);
@@ -119,7 +121,7 @@ static bool YGBeginCombo(
         // Render preview and label
         if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview))
         {
-            ImGui::PushFont(label_font);
+            ImGui::PushFont(label_font, GImGui->FontSizeBase);
             if (g.LogEnabled)
                 ImGui::LogSetNextTextDecoration("{", "}");
             ImGui::RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
@@ -130,7 +132,7 @@ static bool YGBeginCombo(
     if (!popup_open)
         return false;
 
-    g.NextWindowData.Flags = backup_next_window_data_flags;
+    g.NextWindowData.HasFlags = backup_next_window_data_flags;
     return ImGui::BeginComboPopup(popup_id, bb, flags);
     // clang-format on
 }

@@ -117,8 +117,7 @@ int main(int argc, char** argv)
     auto main_thread_dispatcher{std::make_unique<Slic3r::App::Platform::StdMainThreadDispatcher>()};
     Slic3r::Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(std::move(main_thread_dispatcher));
     canvas = std::make_unique<Slic3r::App::Platform::SDL::SDLRenderCanvas>();
-    canvas->set_language("en");
-    canvas->set_font_size(16.0f);
+    canvas->set_default_font_size(16.0f, 1.0f);
     Slic3r::App::Render::Context::instance().log_gl_info();
     Slic3r::Biz::Platform::PlatformServices::instance().set_render_request_handler(canvas.get());
     render_module = std::make_unique<Slic3r::App::TestRenderModule>();

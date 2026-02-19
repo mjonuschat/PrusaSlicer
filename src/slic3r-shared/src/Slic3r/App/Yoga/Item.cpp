@@ -1140,17 +1140,17 @@ void Item::render_image(
     const ImVec2& image_size,
     const ImVec2& uv0,
     const ImVec2& uv1,
-    const ImVec4& tint_col,
-    const ImVec4& border_col
+    const ImVec4& background_col,
+    const ImVec4& tint_col
 )
 {
-    ImGui::Image(
+    ImGui::ImageWithBg(
         (ImTextureID) (intptr_t) texture.get(),
         image_size,
         uv0,
         uv1,
-        tint_col,
-        border_col
+        background_col,
+        tint_col
     );
     m_imgui_render->use_texture(texture);
 }

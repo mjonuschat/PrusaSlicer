@@ -7,8 +7,8 @@
 
 #include <memory>
 #include <string>
-#include <optional>
 #include <list>
+#include <unordered_map>
 
 struct ImDrawData;
 
@@ -25,12 +25,6 @@ class ImguiRender
 public:
     explicit ImguiRender(Device& device);
     ~ImguiRender();
-
-    const std::string& language() const;
-    float font_size() const;
-
-    void set_font(const std::optional<std::string>& language = std::nullopt, const std::optional<float>& font_size = std::nullopt,
-        const std::optional<float>& font_global_scale = std::nullopt);
 
     ImFont* font(Render::ImguiFontType type);
     /**
@@ -51,16 +45,26 @@ public:
      * @note all textures rendered by Yoga::Item should be registered here
      */
     void use_texture(TexturePtr texture);
+
 private:
     void init();
     void setup_state(CommandBuffer& buffer, const ImDrawData* draw_data);
+    /**
+     * ImGui now creates/destroys texture dynamically
+     * we need to handle all updates in our backend
+     */
+    void update_texture(ImTextureData* tex);
+
 private:
+    using ImGuiTextureMap = std::unordered_map<ImTextureData*, TexturePtr>;
+
     Device& m_device;
     VertexAttribsDesc m_vertex_format;
     std::unique_ptr<Geometry> m_geom;
     std::unique_ptr<ImguiFontHelper> m_font_helper;
     Shader* m_shader{nullptr};
     std::list<TexturePtr> m_in_use_textures;
+    ImGuiTextureMap m_imgui_dynamic_textures;
 };
 
 } // namespace Slic3r::App::Render

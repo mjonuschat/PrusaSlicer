@@ -12,7 +12,6 @@
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 #include <Slic3r/App/Render/ImguiRender.hpp>
-#include <optional>
 
 #ifdef __APPLE__
 #define USE_NATIVE_MENU
@@ -39,11 +38,7 @@ public:
 
     ~AbstractRenderCanvas() override = default;
 
-    const std::string& language() const { return m_imgui_render->language(); }
-    void set_language(const std::string& language) { m_pending_language = language; }
-    float font_size() const { return m_imgui_render->font_size(); }
-    void set_font_size(float font_size);
-    void set_font_global_scale(float font_global_scale) { m_pending_font_global_scale = font_global_scale; }
+    void set_default_font_size(float font_size, float dpi_scale);
 
     virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
@@ -125,10 +120,9 @@ protected:
     Biz::Platform::IMainThreadDispatcher& m_main_thread_dispatcher;
 private:
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
-    std::optional<std::string> m_pending_language;
-    std::optional<float> m_pending_font_size;
-    std::optional<float> m_pending_font_global_scale;
     AnimationManager m_animation_manager;
+    std::optional<float> m_pending_font_size;
+    std::optional<float> m_pending_dpi_scale;
     double m_last_time{0};
     size_t m_render_request_count{0};
 };

@@ -65,6 +65,7 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
 
     m_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
 
+    ImGui::Dummy({});
     ImGui::EndChild();
 }
 

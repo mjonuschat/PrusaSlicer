@@ -195,7 +195,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                 }
 
                 ImGui::Separator();
-                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
                 ImGui::Text("Shadows");
                 ImGui::PopFont();
                 ImGui::Separator();
@@ -259,7 +259,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                     Scene::set_default_shadows_intensity();
 
                 ImGui::Separator();
-                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
                 ImGui::Text("Ambient occlusion");
                 ImGui::PopFont();
                 ImGui::Separator();
@@ -467,7 +467,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                 }
 
                 ImGui::Separator();
-                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+                ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
                 ImGui::Text("Physically based rendering");
                 ImGui::PopFont();
                 ImGui::Separator();

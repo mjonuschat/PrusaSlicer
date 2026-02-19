@@ -33,10 +33,8 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
         io.DisplaySize = ImVec2(1'280, 720); // Set a dummy display size
         io.DeltaTime   = 1.0f / 60.0f; // Set a dummy delta-time
 
-        // Explicitly build font atlas to avoid the assertion failure
-        unsigned char* tex_pixels = nullptr;
-        int tex_w, tex_h;
-        io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);
+        io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+        io.BackendRendererName = "UnitTest-NoRenderer";
 
         // Start frame
         ImGui::NewFrame();

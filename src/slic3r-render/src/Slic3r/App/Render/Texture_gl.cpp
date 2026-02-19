@@ -55,7 +55,16 @@ void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, cons
     }
 }
 
-void Texture::set_sub_data(Domain::PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
+void Texture::set_sub_data(
+    Domain::PixelFormat format,
+    int level,
+    int offset_x,
+    int offset_y,
+    int w,
+    int h,
+    const void* data,
+    bool unpack_row_length
+)
 {
     // TODO : add support for compressed textures
 
@@ -63,9 +72,17 @@ void Texture::set_sub_data(Domain::PixelFormat format, int level, int offset_x, 
     device.bind_texture(0, *this);
     GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
     GLenum gl_format = GL::texture_format(format);
-    GLenum gl_type = GL::texture_format_type(format);
+    GLenum gl_type   = GL::texture_format_type(format);
+    if (unpack_row_length) {
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, m_width);
+        glCheck();
+    }
     glTexSubImage2D(gl_target, 0, offset_x, offset_y, w, h, gl_format, gl_type, data);
     glCheck();
+    if (unpack_row_length) {
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glCheck();
+    }
 }
 
 void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter)

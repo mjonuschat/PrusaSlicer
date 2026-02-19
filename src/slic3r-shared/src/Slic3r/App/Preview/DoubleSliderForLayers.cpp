@@ -820,7 +820,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
     float tick_width  = float(int(1.0f * m_scale + 0.5f));
     float icon_offset = 0.5f * m_icon_screen_size;
 
-    ImU32 tick_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_TabActive) : ImGui::GetColorU32(ImGuiCol_Tab);
+    ImU32 tick_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_TabSelected) : ImGui::GetColorU32(ImGuiCol_Tab);
     ImU32 tick_hovered_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_Tab) : ImGui::GetColorU32(ImGuiCol_WindowBg);
 
     auto get_tick_pos = [this, slideable_region](int tick) {
@@ -1110,7 +1110,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         float line_pos = get_tick_pos(m_pos_on_move);
 
         ImRect move_line = ImRect(x_center + 0.75f * inner_x, line_pos - tick_width, x_center + 1.5f * long_outer_x, line_pos);
-        ImGui::RenderFrame(move_line.Min, move_line.Max, ImGui::GetColorU32(ImGuiCol_TabActive), false);
+        ImGui::RenderFrame(move_line.Min, move_line.Max, ImGui::GetColorU32(ImGuiCol_TabSelected), false);
         m_pos_on_move = -1;
     }
 }
@@ -1506,9 +1506,15 @@ bool DoubleSliderForLayers::render_color_picker_popup(const ImVec2& pos)
         ColorRGB ref_color;
         decode_color(m_color_picker_popup.cache, ref_color);
         float ref_col[4] = { ref_color.r(), ref_color.g(), ref_color.b(), 1.0f };
-        ImGui::ColorPicker4("##color", col, _u8L("Current").c_str(), _u8L("Original").c_str(),
-            ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoLabel |
-            ImGuiColorEditFlags_InputRGB, ref_col);
+        ImGui::ColorPicker4(
+            "##color",
+            col,
+            ImGuiColorEditFlags_DisplayRGB
+                | ImGuiColorEditFlags_NoAlpha
+                | ImGuiColorEditFlags_NoLabel
+                | ImGuiColorEditFlags_InputRGB,
+            ref_col
+        );
         color = ColorRGB(col[0], col[1], col[2]);
         m_color_picker_popup.data = encode_color(color);
 

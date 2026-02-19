@@ -32,6 +32,9 @@ public:
     Render::ImguiFontType font_type() const;
     void set_font_type(Render::ImguiFontType font_type);
 
+    float font_size() const;
+    void set_font_size(float font_size);
+
     WrapMode wrap_mode() const;
     void set_wrap_mode(WrapMode wrap_mode);
 

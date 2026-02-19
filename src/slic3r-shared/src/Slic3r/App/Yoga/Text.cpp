@@ -15,8 +15,8 @@ namespace Slic3r::App::Yoga {
 class TextInternal : public Yoga::Item
 {
 public:
-
-    TextInternal() {
+    TextInternal() : m_font_size(GImGui->FontSizeBase)
+    {
         set_object_name("TextInternal");
     }
 
@@ -26,7 +26,7 @@ public:
 
         ImGui::SetCursorScreenPos(to_im(pos));
 
-        ImGui::PushFont(m_imgui_render->font(m_font_type));
+        ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
         ImGui::PushStyleColor(
             ImGuiCol_Text,
             enabled() ? ImVec4(m_text_color) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled)
@@ -89,6 +89,19 @@ public:
         }
     }
 
+    float font_size() const
+    {
+        return m_font_size;
+    }
+
+    void set_font_size(float font_size)
+    {
+        if (!Domain::fuzzy_compare(m_font_size, font_size)) {
+            m_font_size = font_size;
+            invalidate_size();
+        }
+    }
+
     const std::string& source_text() const
     {
         return m_source_text;
@@ -124,7 +137,7 @@ protected:
     Vec2f get_item_size() override
     {
         Vec2f result;
-        ImGui::PushFont(m_imgui_render->font(m_font_type));
+        ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
         if (m_wrap_mode == Text::WrapMode::Wrap) {
             m_rendered_text = m_source_text;
 
@@ -151,7 +164,7 @@ protected:
                 && target_size.x > 0
                 && target_size.y > 0)
             {
-                target_size.y = std::max(GImGui->FontSize, target_size.y);
+                target_size.y = std::max(m_font_size, target_size.y);
 
                 std::string_view elided_text = m_source_text;
                 m_rendered_text              = elided_text;
@@ -197,6 +210,7 @@ private:
     Text::WrapMode m_wrap_mode        = Text::WrapMode::NoWrap;
     ImColor m_text_color              = IM_COL32_WHITE;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
+    float m_font_size                 = 0;
 };
 
 Text::Text(const std::string& text, Render::ImguiFontType font_type)
@@ -285,6 +299,16 @@ Render::ImguiFontType Text::font_type() const
 void Text::set_font_type(Render::ImguiFontType font_type)
 {
     m_content_item->set_font_type(font_type);
+}
+
+float Text::font_size() const
+{
+    return m_content_item->font_size();
+}
+
+void Text::set_font_size(float font_size)
+{
+    m_content_item->set_font_size(font_size);
 }
 
 } // namespace Slic3r::App::Yoga

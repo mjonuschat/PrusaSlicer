@@ -1216,7 +1216,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
-	test/Slic3r/Biz/Expr/SimplifyTests.cpp
+        test/Slic3r/Biz/Expr/SimplifyTests.cpp
 
         test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp

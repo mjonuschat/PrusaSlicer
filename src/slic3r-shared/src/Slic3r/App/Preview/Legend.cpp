@@ -280,7 +280,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Fd
         ImGui::TableSetupColumn(_u8L("Percentage").c_str());
         ImGui::TableSetupScrollFreeze(0, 1);
 
-        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
         ImGui::TableHeadersRow();
         ImGui::PopFont();
 
@@ -562,7 +562,7 @@ static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Fdm
         ImGui::TableSetupColumn(_u8L("Used Filament").c_str());
         ImGui::TableSetupScrollFreeze(0, 1);
 
-        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
         ImGui::TableHeadersRow();
         ImGui::PopFont();
 
@@ -727,7 +727,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                 ImGui::TableSetupColumn(_u8L("Used filament").c_str());
             ImGui::TableSetupScrollFreeze(0, 1);
 
-            ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
+            ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
             ImGui::TableHeadersRow();
             ImGui::PopFont();
 
