@@ -78,7 +78,15 @@ public:
         m_communication.cancel_ongoing_session_action();
     }
 
+    /**
+     * @brief Starts refresh sequence of access token
+     */
     void request_refresh();
+
+    /**
+     * @brief Starts refresh sequence of access token if needed. Returns true if refresh started.
+     */
+    bool validate_and_refresh();
 
     // IUserAccountSessionListener implementations
     void on_action_retry(const Network::IHttp::Retry& retry) override;

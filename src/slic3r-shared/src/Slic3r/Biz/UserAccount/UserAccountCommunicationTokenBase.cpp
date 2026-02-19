@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
+#include "Slic3r/Biz/Network/Jwt.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 
@@ -66,6 +67,7 @@ void UserAccountCommunicationTokenBase::set_refresh_time(int seconds)
     m_last_token_duration_seconds    = seconds;
     const auto prior_expiration_secs = std::max(seconds / 24, 10);
     int milliseconds                 = std::max((seconds - prior_expiration_secs) * 1'000, 1'000);
+    SPDLOG_INFO("Starting token timer. Next refresh in {} seconds.", milliseconds / 1'000);
     m_next_token_refresh_at          = std::time(nullptr) + milliseconds / 1'000;
     m_token_timer_id = timer_queue.set_timer(std::chrono::milliseconds(milliseconds), std::bind(&UserAccountCommunicationTokenBase::on_token_timer, this), false);
 }
@@ -435,6 +437,24 @@ void UserAccountCommunicationTokenBase::request_refresh()
     } else {
         enqueue_refresh_race(stored_data.refresh_token);
     }
+}
+
+bool UserAccountCommunicationTokenBase::validate_and_refresh()
+{
+    std::string current_access_token = m_session.get_access_token();
+    if (current_access_token.empty())
+    {
+        SPDLOG_WARN("Queried token was empty.");
+        return false;
+    }
+
+    if (Network::Jwt::verify_exp(current_access_token))
+    {
+        return false;
+    }
+
+    request_refresh();
+    return true;
 }
 
 } // namespace Slic3r::Biz::UserAccount

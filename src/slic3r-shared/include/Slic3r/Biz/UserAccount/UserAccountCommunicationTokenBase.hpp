@@ -53,6 +53,12 @@ public:
      */
     void request_refresh();
 
+    /**
+     * @brief Starts refresh sequence of access token if needed. Returns true if refresh started.
+     * Called from Connect webpage wrapper to prevent posting expired token.
+     */
+    bool validate_and_refresh();
+
     std::string username() const
     {
         return m_username;

@@ -62,6 +62,11 @@ void UserAccountInteractor::request_refresh()
     m_communication.request_refresh();
 }
 
+bool UserAccountInteractor::validate_and_refresh()
+{
+    return m_communication.validate_and_refresh();
+}
+
 std::string UserAccountInteractor::access_token() const
 {
     return m_communication.access_token();

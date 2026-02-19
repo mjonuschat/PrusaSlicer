@@ -165,16 +165,6 @@ void delete_cookies_with_counter(wxWebView* web_view, const std::string& url, st
     counter++;
 }
 
-void add_request_authorization(wxWebView* web_view, const wxString& address, const std::string& token)
-{
-    // unused on MacOS
-    DEBUG_ASSERT(false);
-}
-void remove_request_authorization(wxWebView* web_view)
-{
-    // unused on MacOS
-    DEBUG_ASSERT(false);
-}
 void register_prusaslicer_url()
 {
     // unused on MacOS

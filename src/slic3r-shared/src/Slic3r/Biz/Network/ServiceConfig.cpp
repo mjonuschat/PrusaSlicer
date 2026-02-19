@@ -8,6 +8,7 @@
 
 namespace Slic3r::Biz::Network {
 
+namespace {
 void update_from_env(std::string& dest, const char* env_name, bool remove_trailing_slash)
 {
     const char* env_val = std::getenv(env_name);
@@ -40,6 +41,7 @@ void update_url_from_env(std::string& dest, const char* env_name, const std::vec
         SPDLOG_WARN("Url was not set from env variable: {}. New adress is not whitelisted.", candidate);
     }
 }
+}
 
 ServiceConfig::ServiceConfig() :
     m_connect_url("https://connect.prusa3d.com"),
@@ -53,7 +55,7 @@ ServiceConfig::ServiceConfig() :
     m_preset_repo_url = SLIC3R_REPO_URL;
 #endif
 
-    std::vector<std::string> all_domains = {"prusa.com", "prusa3d.com", "prusa.cz", "prusa3d.cz", "printables.com", "testprusaverse.com"};
+    const std::vector<std::string> all_domains = {"prusa.com", "prusa3d.com", "prusa.cz", "prusa3d.cz", "printables.com", "testprusaverse.com"};
     update_url_from_env(m_connect_url, "PRUSA_CONNECT_URL", all_domains);
     update_url_from_env(m_account_url, "PRUSA_ACCOUNT_URL", all_domains);
     update_url_from_env(m_media_url, "PRUSA_MEDIA_URL", all_domains);

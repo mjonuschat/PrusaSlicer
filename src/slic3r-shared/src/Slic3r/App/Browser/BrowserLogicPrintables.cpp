@@ -69,6 +69,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_show_webview_event(b
     if (!m_next_show_url.empty()) {
         result.emplace_back(BrowserLogicCommandType::LoadURL, url_lang_theme(m_next_show_url));
         m_next_show_url.clear();
+    } else {
+        result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");   
     }
     return result;
 }
@@ -105,6 +107,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
     if (m_load_default_url) {
         return {};
     }
+    SPDLOG_INFO("{}", __FUNCTION__);
     std::vector<BrowserLogicCommand> result;
     if (!is_refresh) {
         // Do full reload of page with access token in header
@@ -112,7 +115,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
         emplace_load_default_url_commands(result, current_url);
         return result;
     }
-    //SPDLOG_INFO("{}", __FUNCTION__);
+
     result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
 

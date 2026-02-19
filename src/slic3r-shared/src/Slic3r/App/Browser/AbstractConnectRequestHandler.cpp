@@ -77,6 +77,7 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_actio
 
 std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_action_request_login(const std::string &message_data)
 {
+    m_project_interactor.user_account_interactor().validate_and_refresh();
     return {};
 }
 
@@ -95,7 +96,14 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_actio
     sessionId?: string;
     */
     
-    //const std::string sesh = wxGetApp().plater()->get_user_account()->get_shared_session_key();
+    if(m_project_interactor.user_account_interactor().validate_and_refresh()) {
+        // Here account just realised access token is not valid and it will be refreshed.
+        // We cannot send the config here as we do not have valid token. 
+        // Lets keep silence for now. So we do not spam more REQUEST_CONFIG due to expired token.
+        // TODO: Gray overlay would be nice.
+        return {};
+    }
+
     const std::string dark_mode = "DARK";//wxGetApp().dark_mode() ? "DARK" : "LIGHT";
     std::string language = "en";//GUI::wxGetApp().current_language_code();
     //language = language.SubString(0, 1);
