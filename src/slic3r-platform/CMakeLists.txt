@@ -18,6 +18,7 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/App/Platform/IFileExplorerHandler.hpp
     include/Slic3r/Biz/Platform/IMainThreadDispatcher.hpp
     include/Slic3r/Biz/Platform/IRenderRequestHandler.hpp
+    include/Slic3r/Biz/Platform/IMainWindowHandler.hpp
     src/Slic3r/App/Platform/StdMainThreadDispatcher.cpp
     include/Slic3r/App/Platform/StdMainThreadDispatcher.hpp
     include/Slic3r/App/Platform/CameraSynchData.hpp

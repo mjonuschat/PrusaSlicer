@@ -23,6 +23,9 @@ class ProjectInteractor;
 
 namespace Slic3r::App {
 class Navigator;
+namespace WX {
+class MacOSNativeMenuBar;
+}
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Desktop {
@@ -65,8 +68,6 @@ public:
 
     void switch_left_tab(LeftBarTabs id, const std::string& data);
 
-    void update_accel_table();
-
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
     void init_printer_page(Biz::ProjectInteractor& project_interactor);
@@ -92,6 +93,13 @@ private:
     void window_pos_sanitize(wxTopLevelWindow* window);
     void persist_window_geometry(wxTopLevelWindow* window, bool default_maximized = false);
 
+    void update_accel_table();
+    void set_accel_table();
+
+#ifdef USE_NATIVE_MENU
+    void setup_macos_native_menu_bar();
+#endif
+
 private:
     Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
@@ -103,6 +111,7 @@ private:
     LeftBar* m_left_bar{nullptr};
 
     wxAcceleratorTable m_accel_table;
+    wxWindow* m_accel_table_window{ nullptr };
 
 #ifdef WIN32
     void* m_hDeviceNotify{nullptr};
@@ -111,6 +120,10 @@ private:
 
     bool m_printables_page_added {false};
     bool m_printers_page_added {false};
+
+#ifdef USE_NATIVE_MENU
+    std::unique_ptr<WX::MacOSNativeMenuBar> m_native_menu_bar;
+#endif
 };
 
 } // namespace Slic3r::App::Desktop

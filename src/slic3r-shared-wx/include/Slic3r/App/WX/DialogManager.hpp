@@ -56,6 +56,8 @@ public:
         bool multiple
     ) override;
 
+    void open_in_browser(const std::string& link, int flag) override;
+
 private:
     boost::filesystem::path m_last_dir;
 };

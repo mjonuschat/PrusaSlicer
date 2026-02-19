@@ -44,6 +44,24 @@ wxBitmapBundle* get_bmp_bundle(const std::string& bmp_name_in, int width/* = 16*
     return bmp;
 }
 
+wxBitmapBundle* get_bmp_bundle_for_mac_menu(const std::string& bmp_name)
+{
+    int size = 16;
+#ifdef __WXGTK2__
+    size *= scale();
+#endif // __WXGTK2__
+
+    static BitmapCache cache;
+
+    // Try loading an SVG first, then PNG if SVG is not found:
+    wxBitmapBundle* bmp = cache.from_svg_for_mac_menu(bmp_name, size, size);
+    if (!bmp) {
+        // No SVG has been found, raise error
+        throw std::runtime_error("Could not load bitmap: " + bmp_name);
+    }
+    return bmp;
+}
+
 wxBitmapBundle* get_empty_bmp_bundle(int width, int height)
 {
     static BitmapCache cache;

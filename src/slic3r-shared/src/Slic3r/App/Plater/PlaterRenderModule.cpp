@@ -254,6 +254,17 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>(m_scene_presenter.get());
     m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
 
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(
+        &m_command_binding_manager
+    );
+    m_project_interactor.user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(&m_command_binding_manager);
+    m_project_interactor.scene_interactor().add_listener<ISelectedBedInstancesChangedListener>(
+        &m_command_binding_manager
+    );
+    m_project_interactor.removable_drive_service().add_status_listener(&m_command_binding_manager);
+    m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(&m_command_binding_manager);
+
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
     AbstractRenderLayout::set_our_style_colors();
@@ -359,18 +370,12 @@ void PlaterRenderModule::register_commands()
                 CommandName::AddInstance,
                 add_instance,
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
-                    .enabled           = is_instance_from_same_object_selected
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::AddInstanceKp,
-                add_instance,
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus},
-                    .enabled           = is_instance_from_same_object_selected
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Plus},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
+                        },
+                    .enabled = is_instance_from_same_object_selected
                 }
             )
         )
@@ -382,20 +387,16 @@ void PlaterRenderModule::register_commands()
                     m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview);
                 },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Num6
-                    }
+                    }, Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                        Platform::KeyCode::Kp6
+                    }}
                 }
             )
-        )
-        .register_command(std::make_unique<Platform::FuncCommand>(
-            CommandName::CreateText,
-            [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
-            Platform::FuncCommandExtraOpts{
-                .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T},
-                .enabled = [this]() { return !m_text_gizmo->enabled(); }
-            }));
+        );
 
     const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
         {Scene::ToolType::Translation, Platform::KeyCode::M},
@@ -421,7 +422,10 @@ void PlaterRenderModule::register_commands()
                 tool_type_to_command_name(type),
                 [this, type]() { toggle_activate_tool(type); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, shortcuts.at(type)},
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, shortcuts.at(type)}
+                        },
                     .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); }
                 }
             )
@@ -719,8 +723,6 @@ void PlaterRenderModule::update_object_selection()
     update_toolbar_visibility();
 
     update_current_right_sidebar();
-
-    m_command_binding_manager.update_ui_items();
 }
 
 void PlaterRenderModule::update_current_right_sidebar()
@@ -746,6 +748,13 @@ void PlaterRenderModule::update_toolbar_visibility()
 {
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
         get_toolbar_button(tool_gizmo->type())->set_visible(tool_gizmo->enabled());
+    }
+
+    m_toolbar_add->set_visible(m_command_binding_manager.command(CommandName::AddObject).enabled());
+    if (m_command_binding_manager.has_command(CommandName::AddVolume)) {
+        m_toolbar_add_volume->set_visible(m_command_binding_manager.command(CommandName::AddVolume).enabled());
+        m_toolbar_delete->set_visible(m_command_binding_manager.command(CommandName::DeleteSelected).enabled());
+        m_toolbar_add_instance->set_visible(m_command_binding_manager.command(CommandName::AddInstance).enabled());
     }
 }
 
@@ -898,6 +907,8 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
+
+    m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
 
 void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)

@@ -513,6 +513,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ProjectButtonBackground.hpp
         src/Slic3r/App/TopBar.cpp
         include/Slic3r/App/TopBar.hpp
+        src/Slic3r/App/MenuCommandRegistrar.cpp
+        include/Slic3r/App/MenuCommandRegistrar.hpp
         include/Slic3r/App/Yoga/ScrollArea.hpp
         src/Slic3r/App/Yoga/ScrollArea.cpp
         include/Slic3r/App/Yoga/InputText.hpp
@@ -629,6 +631,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/ResultExport/ExportPathSelect.hpp
         src/Slic3r/App/ResultExport/ExportPathSelect.cpp
+        include/Slic3r/App/ResultExport/ExportActions.hpp
+        src/Slic3r/App/ResultExport/ExportActions.cpp
         include/Slic3r/Biz/ResultExport/ExportNameParser.hpp
         src/Slic3r/Biz/ResultExport/ExportNameParser.cpp
         

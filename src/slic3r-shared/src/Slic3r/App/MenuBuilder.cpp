@@ -7,6 +7,8 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 
+#include "Slic3r/App/Render/ImguiIconHelper.hpp"
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App {
@@ -20,14 +22,30 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Menu");
     case MenuItemName::Edit:
         return Biz::_u8L("Edit");
+    case MenuItemName::SelectAll:
+        return Biz::_u8L("Select All");
     case MenuItemName::DeselectAll:
         return Biz::_u8L("Deselect All");
     case MenuItemName::DeleteSelected:
         return Biz::_u8L("Delete selected");
+    case MenuItemName::Undo:
+        return Biz::_u8L("Undo");
+    case MenuItemName::Redo:
+        return Biz::_u8L("Redo");
+    case MenuItemName::Copy:
+        return Biz::_u8L("Copy");
+    case MenuItemName::Paste:
+        return Biz::_u8L("Paste");
+    case MenuItemName::ReloadFromDisk:
+        return Biz::_u8L("Reload From Disk");
     case MenuItemName::Search:
         return Biz::_u8L("Search");
     case MenuItemName::Preferences:
+#ifdef __APPLE__
+        return Biz::_u8L("Settings");
+#else
         return Biz::_u8L("Preferences");
+#endif
     case MenuItemName::FileMenu:
         return Biz::_u8L("File");
     case MenuItemName::NewProject:
@@ -44,6 +62,82 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Import STL/3MF");
     case MenuItemName::JumpToValue:
         return Biz::_u8L("Jump to height");
+    case MenuItemName::ShapeGallery:
+        return Biz::_u8L("Shape Gallery");
+    case MenuItemName::View:
+        return Biz::_u8L("View");
+    case MenuItemName::ShowLabel:
+        return Biz::_u8L("Show Labels");
+    case MenuItemName::FullScreen:
+        return Biz::_u8L("Fullscreen");
+    case MenuItemName::ZoomIn:
+        return Biz::_u8L("Zoom In");
+    case MenuItemName::ZoomOut:
+        return Biz::_u8L("Zoom Out");
+    case MenuItemName::CameraProjectionSwitch:
+        return Biz::_u8L("Switch Projection");
+    case MenuItemName::LookAtActiveBed:
+        return Biz::_u8L("Look at Active Bed");
+    case MenuItemName::CameraDefaultView:
+        return Biz::_u8L("Default View");
+    case MenuItemName::CameraTopView:
+        return Biz::_u8L("Top View");
+    case MenuItemName::CameraBottomView:
+        return Biz::_u8L("Bottom View");
+    case MenuItemName::CameraFrontView:
+        return Biz::_u8L("Front View");
+    case MenuItemName::CameraRearView:
+        return Biz::_u8L("Rear View");
+    case MenuItemName::CameraLeftView:
+        return Biz::_u8L("Left View");
+    case MenuItemName::CameraRightView:
+        return Biz::_u8L("Right View");
+    case MenuItemName::Configuration:
+        return Biz::_u8L("Configuration");
+    case MenuItemName::ConfigurationWizard:
+        return Biz::_u8L("Configuration Wizard");
+    case MenuItemName::CheckConfigUpdates:
+        return Biz::_u8L("Check for Config Updates");
+    case MenuItemName::CheckAppUpdates:
+        return Biz::_u8L("Check for Application Updates");
+    case MenuItemName::FlashPrinterFirmware:
+        return Biz::_u8L("Flash Printer Firmware");
+    case MenuItemName::Help:
+        return Biz::_u8L("Help");
+    case MenuItemName::PSWebsite:
+        return Biz::_u8L("PrusaSlicer Website");
+    case MenuItemName::QuickStart:
+        return Biz::_u8L("Quick Start");
+    case MenuItemName::Samples:
+        return Biz::_u8L("Sample G-codes and Models");
+    case MenuItemName::Prusa3DDrivers:
+        return Biz::_u8L("Prusa 3D Drivers");
+    case MenuItemName::Releases:
+        return Biz::_u8L("Software Releases");
+    case MenuItemName::SystemInfo:
+        return Biz::_u8L("System Info");
+    case MenuItemName::ConfigFolder:
+        return Biz::_u8L("Show Configuration Folder");
+    case MenuItemName::ReportAnIssue:
+        return Biz::_u8L("Report an Issue");
+    case MenuItemName::About:
+        return Biz::_u8L("About PrusaSlicer");
+    case MenuItemName::TipOfTheDay:
+        return Biz::_u8L("Show Tip of the Day");
+    case MenuItemName::KeyboardShortcutsDialog:
+        return Biz::_u8L("Keyboard Shortcuts");
+    case MenuItemName::RecentProjects:
+        return Biz::_u8L("Recent Projects");
+    case MenuItemName::Exit:
+        return Biz::_u8L("Exit");
+    case MenuItemName::Export:
+        return Biz::_u8L("Export");
+    case MenuItemName::ExportGcode:
+        return Biz::_u8L("Export G-code");
+    case MenuItemName::SendGcode:
+        return Biz::_u8L("Send G-code");
+    case MenuItemName::ExportGcodeToFlash:
+        return Biz::_u8L("Export G-code to SD Card / Flash Drive");
     default:
         return std::string();
     }
@@ -64,12 +158,16 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::NewProject:
         return Render::Icon::NewBtnIcon;
     case MenuItemName::OpenProject:
-        return Render::Icon::TobBarLoad;
+        return Render::Icon::OpenFolder;
     case MenuItemName::SaveProject:
     case MenuItemName::SaveProjectAs:
         return Render::Icon::TobBarSave;
     case MenuItemName::ImportGeometry:
         return Render::Icon::CubeAdd;
+    case MenuItemName::ShapeGallery:
+        return Render::Icon::Shapes;
+    case MenuItemName::RecentProjects:
+        return Render::Icon::RecentProjects;
 
     case MenuItemName::Edit:
     case MenuItemName::Import:
@@ -80,9 +178,24 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     }
 }
 
+std::string MenuBuilder::icon_name(MenuItemName menu_item_name)
+{
+    if (Render::Icon icon = item_icon(menu_item_name); icon == Render::Icon::None) {
+        return std::string();
+    }
+    else {
+        return Render::ImguiIconHelper::icon_name(icon);
+    }
+    return std::string();
+}
+
 void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* menu_item)
 {
     for (App::MenuItem* sub_menu_item : menu_item->children()) {
+        if (sub_menu_item->is_separator()) {
+            yoga_menu_item->append_sub_menu_separator();
+            continue;
+        }
         Yoga::MenuItem* new_yoga_menu_item = yoga_menu_item->append_sub_menu_item(
             item_name_translated(sub_menu_item->name()),
             nullptr,
@@ -113,7 +226,9 @@ void MenuBuilder::add_menu_items(Yoga::Menu* menu, App::MenuItem* root_menu_item
     ASSERT(root_menu_item);
 
     for (App::MenuItem* menu_item : root_menu_item->children()) {
-        if (menu_item->children().empty()) {
+        if (menu_item->is_separator()) {
+            menu->append_separator();
+        } else if (menu_item->children().empty()) {
             Yoga::MenuItem* yoga_menu_item = add_menu_item(menu, menu_item);
         } else {
             Yoga::MenuItem* yoga_menu_item_with_submenu =

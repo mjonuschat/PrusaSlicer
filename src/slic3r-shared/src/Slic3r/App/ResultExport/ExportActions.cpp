@@ -1,0 +1,86 @@
+#include "Slic3r/App/ResultExport/ExportActions.hpp"
+#include "Slic3r/App/ResultExport/ExportPathSelect.hpp"
+#include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
+
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+
+namespace Slic3r::App::ExportActions {
+
+using Biz::Platform::IMainThreadDispatcher;
+using Biz::Platform::PlatformServices;
+
+bool can_export(Biz::ProjectInteractor& project_interactor)
+{
+    const Domain::SlicingId slicing_id{ project_interactor.selected_bed_slicing_id() };
+    const auto optional_status{ project_interactor.status_cache().get_status(slicing_id) };
+    if (!optional_status) {
+        return false;
+    }
+    const Biz::Slicing::Status status{ *optional_status };
+    return status.code == Biz::Slicing::StatusCode::Finished;
+}
+
+static std::function<void()>
+make_export(Biz::ProjectInteractor& project_interactor, bool to_flash)
+{
+    auto call_do_export{[pi_raw = &project_interactor, to_flash]()
+                        {
+                            ExportPathSelect::show_modal_dialog(
+                                *pi_raw,
+                                to_flash,
+                                [=](bool result,
+                                    const std::vector<boost::filesystem::path>& file_paths)
+                                {
+                                    if (result) {
+                                        pi_raw->do_result_export(
+                                            pi_raw->selected_bed_slicing_id(),
+                                            file_paths.front()
+                                        );
+                                    }
+                                }
+                            );
+                        }};
+
+    return [=]()
+    {
+        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
+        if (!dispatcher.dispatch_on_main_thread_after(call_do_export)) {
+            SPDLOG_INFO("Export request not dispatched!");
+        }
+    };
+}
+
+std::function<void()> export_gcode(Biz::ProjectInteractor& project_interactor)
+{
+    return make_export(project_interactor, false);
+}
+
+std::function<void()> export_gcode_to_flash(Biz::ProjectInteractor& project_interactor)
+{
+    return make_export(project_interactor, true);
+}
+
+std::function<void()> send_gcode_to_connect(Biz::ProjectInteractor& project_interactor)
+{
+    auto send_to_connect{
+        [pi_raw = &project_interactor]()
+        {
+            AppServices::instance().dialog_manager().show_webview_dialog(
+                std::make_unique<Browser::BrowserLogicConnectSelect>(*pi_raw),
+                pi_raw
+            );
+        }
+    };
+    return [=]()
+    {
+        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
+        if (!dispatcher.dispatch_on_main_thread_after(send_to_connect)) {
+            SPDLOG_INFO("Send to connect not dispatched!");
+        }
+    };
+}
+
+} // namespace Slic3r::App::ExportActions

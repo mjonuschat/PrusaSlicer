@@ -37,7 +37,7 @@ static const std::map<KeyCode, Key> key_code_mapping = {
     {KeyCode::RightParen, {")"}},
     {KeyCode::Asterisk, {"*", "Multiply"}},
     {KeyCode::Plus, {"+", "Add"}},
-    {KeyCode::Comma, {","}},
+    {KeyCode::Comma, {",", ","}},
     {KeyCode::Minus, {"-", "Subtract"}},
     {KeyCode::Period, {".", "Decimal"}},
     {KeyCode::Slash, {"/", "Divide"}},
@@ -122,16 +122,16 @@ static const std::map<KeyCode, Key> key_code_mapping = {
     {KeyCode::KpMinus, {("-"), "KP_Subtract"}},
     {KeyCode::KpPlus, {("+"), "KP_Add"}},
     {KeyCode::KpEnter, {L("Enter"), "KP_Enter"}},
-    {KeyCode::Kp0, {"0", "0"}},
-    {KeyCode::Kp1, {"1", "1"}},
-    {KeyCode::Kp2, {"2", "2"}},
-    {KeyCode::Kp3, {"3", "3"}},
-    {KeyCode::Kp4, {"4", "4"}},
-    {KeyCode::Kp5, {"5", "5"}},
-    {KeyCode::Kp6, {"6", "6"}},
-    {KeyCode::Kp7, {"7", "7"}},
-    {KeyCode::Kp8, {"8", "8"}},
-    {KeyCode::Kp9, {"9", "9"}},
+    {KeyCode::Kp0, {"0", "KP_0"}},
+    {KeyCode::Kp1, {"1", "KP_1"}},
+    {KeyCode::Kp2, {"2", "KP_2"}},
+    {KeyCode::Kp3, {"3", "KP_3"}},
+    {KeyCode::Kp4, {"4", "KP_4"}},
+    {KeyCode::Kp5, {"5", "KP_5"}},
+    {KeyCode::Kp6, {"6", "KP_6"}},
+    {KeyCode::Kp7, {"7", "KP_7"}},
+    {KeyCode::Kp8, {"8", "KP_8"}},
+    {KeyCode::Kp9, {"9", "KP_9"}},
     {KeyCode::KpPeriod, {".", "KP_Decimal"}},
     {KeyCode::Application, {}},
     {KeyCode::Power, {}},
@@ -292,7 +292,7 @@ std::string to_accel_table_string(KeyCode key_code)
     Key key = key_code_mapping.at(key_code);
     ASSERT(
         !key.accel_name.empty(),
-        fmt::format("KeyCode({}) with no accel string assigned", static_cast<int>(key_code))
+        fmt::format("KeyCode({}, \"{}\") with no accel string assigned", static_cast<int>(key_code), key.display_name)
     );
 
     return key.accel_name;

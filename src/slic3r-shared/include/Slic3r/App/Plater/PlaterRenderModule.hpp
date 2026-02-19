@@ -10,7 +10,6 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
 #include "Slic3r/App/MenuManager.hpp"
-#include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
@@ -119,6 +118,25 @@ public:
     CommandBindingManager& command_binding_manager() override
     {
         return m_command_binding_manager;
+    }
+
+    const Platform::CommandRegistry::CommandsMap& gizmo_commands() const override
+    {
+        ASSERT(m_gizmo_manager);
+        return m_gizmo_manager->commands();
+    }
+
+    const Platform::ICommand& command(const char* name) const override
+    {
+        if (gizmo_commands().contains(name)) {
+            return m_gizmo_manager->command(name);
+        }
+        return m_command_registry.command(name);
+    }
+
+    bool is_gizmo_manager_completed() const override
+    {
+        return m_gizmo_manager ? true : false;
     }
 
     /**

@@ -67,6 +67,11 @@ TestRenderModule::TestRenderModule() :
     }
 }
 
+const Platform::CommandRegistry::CommandsMap& TestRenderModule::gizmo_commands() const
+{
+    return {};
+}
+
 void TestRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
 {
     AbstractRenderModule::on_init(device, imgui_render, animation_manager);
@@ -449,7 +454,10 @@ void TestRenderModule::register_commands()
                 "zoom-in",
                 [&]() { m_scene->camera_trackball().update_zoom(1.); },
                 Platform::FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                        }
                 }
             )
         )
@@ -458,7 +466,10 @@ void TestRenderModule::register_commands()
                 "switch-camera-type",
                 [&]() { m_scene->camera_trackball().switch_projection_type(); },
                 Platform::FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                        }
                 }
             )
         )
@@ -467,7 +478,9 @@ void TestRenderModule::register_commands()
                 "zoom-out",
                 [&]() { m_scene->camera_trackball().update_zoom(-1.); },
                 Platform::FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                    }
                 }
             )
         );

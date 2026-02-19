@@ -5,18 +5,20 @@
 
 #include "Slic3r/App/MenuItemName.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include <Slic3r/Assert.hpp>
 
 namespace Slic3r::App {
 
 class MenuItem
 {
 public:
-    MenuItem(MenuItemName name, UIItemCommand* command = nullptr) :
+    MenuItem(MenuItemName name, const UIItemCommand* command = nullptr) :
         m_name(name),
         m_command(command) {};
 
     void append(MenuItem* child)
     {
+        ASSERT(!is_separator());
         m_children.emplace_back(child);
     }
 
@@ -34,10 +36,13 @@ public:
     {
         return m_children;
     }
+    bool is_separator() const {
+        return m_name == MenuItemName::Separator;
+    }
 
 private:
     MenuItemName m_name;
-    UIItemCommand* m_command{nullptr};
+    const UIItemCommand* m_command{nullptr};
     std::vector<MenuItem*> m_children;
 };
 

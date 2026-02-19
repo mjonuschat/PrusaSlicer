@@ -6,12 +6,26 @@ namespace Slic3r::App {
 
 struct UIItemCommandExtraOpts
 {
-    std::optional<Platform::KeyboardShortcut> keyboard_shortcut = std::nullopt;
+    std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts = std::nullopt;
     std::function<bool()> enabled                               = nullptr;
     std::function<bool()> visible                               = nullptr;
+    std::function<bool()> checked                               = nullptr;
     std::function<void(bool)> checked_changed                   = nullptr;
 };
 
+/**
+ * @brief Concrete implementation of ICommand for UI-bound commands.
+ *
+ * UIItemCommand represents an executable command that is directly associated
+ * with one or more UI elements (menu items, toolbar buttons, etc.).
+ *
+ * Instances of UIItemCommand are registered in CommandBindingManager, which
+ * binds them to corresponding UI items and keeps their state synchronized
+ * across the UI.
+ *
+ * @note This class is intended to be used exclusively through
+ *       CommandBindingManager for binding commands to related UI items.
+ */
 class UIItemCommand final : public Platform::ICommand
 {
 public:
@@ -36,9 +50,9 @@ public:
         m_execute();
     }
 
-    const std::optional<Platform::KeyboardShortcut> keyboard_shortcut() const override
+    const std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts() const override
     {
-        return m_extra_opts.keyboard_shortcut;
+        return m_extra_opts.keyboard_shortcuts;
     }
 
     bool enabled() const override
@@ -49,6 +63,11 @@ public:
     bool visible() const
     {
         return m_extra_opts.visible ? m_extra_opts.visible() : true;
+    }
+
+    bool checked() const
+    {
+        return m_extra_opts.checked ? m_extra_opts.checked() : false;
     }
 
     void checked_changed(bool checked) const

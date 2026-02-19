@@ -25,6 +25,11 @@ public:
 
     std::unique_ptr<wxGLContext> release_context();
 
+    bool has_fullscreen() const override;
+    bool is_fullscreen() const override;
+    void set_fullscreen(bool on) override;
+    void close_application() override;
+
 protected:
     void on_render_requested() override;
 

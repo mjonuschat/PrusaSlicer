@@ -31,8 +31,9 @@ public:
      */
     bool process_keyboard_event(const KeyboardEvent& e);
 
-    ICommand& command(const char* name);
-    const CommandsMap& commands() { return m_commands_by_id; }
+    const ICommand& command(const char* name) const;
+    bool has_command(const char* name) const;
+    const CommandsMap& commands() const { return m_commands_by_id; }
 
 private:
     CommandsMap m_commands_by_id;

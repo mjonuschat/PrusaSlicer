@@ -13,12 +13,14 @@ class MenuItem : public RectangleButton
 {
 public:
     MenuItem(
+        Menu* parent,
         const std::string& label,
         Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {},
         bool has_sub_menu           = false
     );
     MenuItem(
+        Menu* parent,
         const std::string& label,
         ImColor color_icon_rect,
         const std::string& shortcut = {},
@@ -31,7 +33,9 @@ public:
         Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {}
     );
+    void append_sub_menu_separator();
     void clear_submenu();
+    void close_submenu();
 
     void set_shortcut_internal(const std::string& shortcut) override;
 
@@ -44,7 +48,9 @@ private:
         bool has_sub_menu           = false
     );
     void action_internal() override;
+    void hovered_updated_internal() override;
 
+    Menu* m_parent_menu{nullptr};
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};
     Menu* m_sub_menu{nullptr};

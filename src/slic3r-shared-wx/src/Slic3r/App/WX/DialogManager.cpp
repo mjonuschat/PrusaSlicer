@@ -23,6 +23,7 @@
 #include <wx/textdlg.h>
 #include <wx/tokenzr.h>
 #include <wx/app.h>
+#include <wx/utils.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
@@ -118,7 +119,8 @@ void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBr
 
 void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)
 {
-    MessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxYES_NO);
+    MessageDialog dlg(wxTheApp->GetTopWindow(), from_u8(text), from_u8(title), wxYES_NO);
+    dlg.CenterOnParent();
     if (dlg.ShowModal() == wxID_YES)
         callback(true);
     else
@@ -127,7 +129,7 @@ void DialogManager::show_yesno_dialog(const std::string& title, const std::strin
 
 void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::string& text, const std::string& check_text, const YesNoCallback& callback, const CheckBoxCheckedCallback& cbc_callback)
 {
-    RichMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);
+    RichMessageDialog dlg(wxTheApp->GetTopWindow(), from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);
     dlg.ShowCheckBox(from_u8(check_text));
     if (dlg.ShowModal() == wxID_YES)
         callback(true);
@@ -220,7 +222,6 @@ std::string DialogManager::show_ramming_dialog(const std::string& ramming_parame
     return ramming_parameters;
 }
 
-
 std::optional<Biz::StepLoadDialogResult> DialogManager::show_load_step_dialog(
     const std::string& filename,
     double linear_precision,
@@ -238,4 +239,10 @@ std::optional<Biz::StepLoadDialogResult> DialogManager::show_load_step_dialog(
     }
     return std::nullopt;
 }
+
+void DialogManager::open_in_browser(const std::string& link, int flag)
+{
+    wxLaunchDefaultBrowser(from_u8(link), flag);
+}
+
 } // namespace Slic3r::App::WX

@@ -319,7 +319,8 @@ RichMessageDialogBase::RichMessageDialogBase(wxWindow* parent, const HtmlContent
 
     btn_sizer->Insert(0, m_checkBox, 1, wxALIGN_CENTER_VERTICAL);
 
-    finalize();    
+    finalize();
+    CenterOnParent();
 }
 
 

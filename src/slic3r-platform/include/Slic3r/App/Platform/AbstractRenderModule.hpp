@@ -53,8 +53,10 @@ public:
     void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};
 
-    ICommand& command(const char* name);
-    const CommandRegistry::CommandsMap& commands();
+    virtual const ICommand& command(const char* name) const;
+    const CommandRegistry::CommandsMap& commands() const;
+    virtual const CommandRegistry::CommandsMap& gizmo_commands() const = 0;
+    virtual bool is_gizmo_manager_completed() const;
     virtual CommandBindingManager& command_binding_manager() = 0;
     virtual MenuManager& menu_manager() = 0;
 

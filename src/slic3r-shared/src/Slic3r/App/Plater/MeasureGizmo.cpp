@@ -491,7 +491,10 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
                     update_measurement();
                 },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                        }
                 }
             )
         )
@@ -509,7 +512,9 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
                     update_measurement();
                 },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
+                    }
                 }
             )
         );

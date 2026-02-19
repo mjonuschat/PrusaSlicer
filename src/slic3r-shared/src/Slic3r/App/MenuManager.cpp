@@ -16,17 +16,70 @@ MenuManager& MenuManager::register_menu_item(
     UIItemCommand* cmd = command.get();
     m_command_registry.register_command(std::move(command));
 
-    // Add new menu item
+    create_and_distribute_new_menu_item(path, cmd);
+    return *this;
+}
 
+MenuManager& MenuManager::register_menu_item_from_command(
+    std::vector<MenuItemName> path,
+    const Platform::ICommand& command
+)
+{
+    const UIItemCommand* cmd = dynamic_cast<const UIItemCommand*>(&command);
+    ASSERT(cmd);
+
+    create_and_distribute_new_menu_item(path, cmd);
+    return *this;
+}
+
+// NOTE:
+// MenuItemName::Separator is intentionally implemented as a shared singleton MenuItem.
+// Separators are treated as a purely visual UI element and do not represent a logical
+// node in the menu hierarchy.
+//
+// The same separator instance may be appended to multiple parent menus.
+// This is safe because:
+// - separators never have children
+// - separators do not store state
+// - separators are rendered immediately and not mutated after insertion
+//
+// IMPORTANT:
+// Do NOT add state, children, or ownership semantics to separators.
+// If separators ever need to become stateful or hierarchical, this design
+// must be revisited and separators must become distinct instances.
+MenuManager& MenuManager::register_menu_separator_item(std::vector<MenuItemName> path)
+{
+    ASSERT(!path.empty());
+
+    MenuItemName child_name = MenuItemName::Separator;
+    if (!m_menus_by_id.contains(child_name)) {
+        m_menus_by_id[child_name] = std::make_unique<MenuItem>(child_name);
+    }
+
+    distribute_into_menu_hierarchy(child_name, path);
+
+    return *this;
+}
+
+void
+MenuManager::create_and_distribute_new_menu_item(std::vector<MenuItemName> path, const UIItemCommand* cmd)
+{
     MenuItemName child_name = path.back();
-    ASSERT(!m_menus_by_id.contains(child_name));
+    ASSERT(!m_menus_by_id.contains(child_name) && child_name != MenuItemName::Separator);
+
     m_menus_by_id[child_name] = std::make_unique<MenuItem>(child_name, cmd);
     path.pop_back();
 
     if (path.empty())
-        return *this;
+        return;
 
-    // Create parent if it isn't exist jet
+    distribute_into_menu_hierarchy(child_name, path);
+}
+
+void
+MenuManager::distribute_into_menu_hierarchy(MenuItemName child_name, std::vector<MenuItemName> path)
+{
+    // Create parent if it doesn't exist yet
 
     MenuItemName parent_name = path.back();
     if (!m_menus_by_id.contains(parent_name)) {
@@ -46,12 +99,16 @@ MenuManager& MenuManager::register_menu_item(
         parent_name = path.back();
         if (!m_menus_by_id.contains(parent_name)) {
             m_menus_by_id[parent_name] = std::make_unique<MenuItem>(parent_name);
+        }
+        const std::vector<MenuItem*>& children = m_menus_by_id[parent_name]->children();
+        if (std::find(children.begin(), children.end(), m_menus_by_id[child_name].get())
+            == children.end())
+        {
             m_menus_by_id[parent_name]->append(m_menus_by_id[child_name].get());
         }
+
         path.pop_back();
     }
-
-    return *this;
 }
 
 MenuItem* MenuManager::menu_item(MenuItemName name)
@@ -62,4 +119,4 @@ MenuItem* MenuManager::menu_item(MenuItemName name)
     ASSERT(m_menus_by_id.contains(name), "Non-existed command");
     return m_menus_by_id[name].get();
 }
-} // namespace Slic3r::App::MenuManager
+} // namespace Slic3r::App

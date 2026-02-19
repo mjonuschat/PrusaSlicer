@@ -4,18 +4,13 @@
 #include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/ResultExport/ExportPathSelect.hpp"
+#include "Slic3r/App/ResultExport/ExportActions.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
-#include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
-#include <Slic3r/Biz/Platform/PlatformServices.hpp>
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
-
-using Biz::Platform::IMainThreadDispatcher;
-using Biz::Platform::PlatformServices;
 
 namespace {
 
@@ -27,98 +22,18 @@ void style_secondary_button(LayoutButton* button)
     button->set_background_color(IM_COL32_BLACK_TRANS);
 }
 
-std::function<void()> get_export_action(Biz::ProjectInteractor* project_interactor)
-{
-    auto call_do_export{
-        [=]()
-        {
-            ExportPathSelect::show_modal_dialog(
-                *project_interactor,
-                false,
-                [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
-                {
-                    if (result) {
-                        project_interactor->do_result_export(
-                            project_interactor->selected_bed_slicing_id(),
-                            file_paths.front()
-                        );
-                    }
-                }
-            );
-        }
-    };
-
-    return [=]()
-    {
-        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
-        if (!dispatcher.dispatch_on_main_thread_after(call_do_export)) {
-            SPDLOG_INFO("Export request not dispatched!");
-        }
-    };
-}
-
-std::function<void()> get_export_flash_action(Biz::ProjectInteractor* project_interactor)
-{
-    auto call_do_export{
-        [=]()
-        {
-            ExportPathSelect::show_modal_dialog(
-                *project_interactor,
-                true,
-                [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
-                {
-                    if (result) {
-                        project_interactor->do_result_export(
-                            project_interactor->selected_bed_slicing_id(),
-                            file_paths.front()
-                        );
-                    }
-                }
-            );
-        }
-    };
-
-    return [=]()
-    {
-        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
-        if (!dispatcher.dispatch_on_main_thread_after(call_do_export)) {
-            SPDLOG_INFO("Export request not dispatched!");
-        }
-    };
-}
-
-std::function<void()> get_send_to_connect_action(Biz::ProjectInteractor* project_interactor)
-{
-    auto send_to_connect{
-        [=]()
-        {
-            AppServices::instance().dialog_manager().show_webview_dialog(
-                std::make_unique<Browser::BrowserLogicConnectSelect>(*project_interactor),
-                project_interactor
-            );
-        }
-    };
-    return [=]()
-    {
-        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
-        if (!dispatcher.dispatch_on_main_thread_after(send_to_connect)) {
-            SPDLOG_INFO("Send to connect not dispatched!");
-        };
-    };
-}
-
 const std::string export_tooltip{"Export gcode to a file"};
 
-std::unique_ptr<LayoutButton> get_export_button(Biz::ProjectInteractor* project_interactor)
+std::unique_ptr<LayoutButton> get_export_button(Biz::ProjectInteractor& project_interactor)
 {
     auto result{std::make_unique<LayoutButton>("", Render::Icon::SavePrint, export_tooltip)};
     style_secondary_button(result.get());
-    result->callbacks().action = get_export_action(project_interactor);
+    result->callbacks().action = ExportActions::export_gcode(project_interactor);
 
     return result;
 }
 
-std::unique_ptr<LayoutButton> get_export_flash_button(Biz::ProjectInteractor* project_interactor)
+std::unique_ptr<LayoutButton> get_export_flash_button(Biz::ProjectInteractor& project_interactor)
 {
     auto result{std::make_unique<LayoutButton>(
         "",
@@ -126,11 +41,11 @@ std::unique_ptr<LayoutButton> get_export_flash_button(Biz::ProjectInteractor* pr
         "Export to a flash drive"
     )};
     style_secondary_button(result.get());
-    result->callbacks().action = get_export_flash_action(project_interactor);
+    result->callbacks().action = ExportActions::export_gcode_to_flash(project_interactor);
     return result;
 }
 
-std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor* project_interactor)
+std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor& project_interactor)
 {
     auto result{std::make_unique<LayoutButton>(
         "",
@@ -237,8 +152,8 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
     m_layout_without_connect.primary_button = primary_button.get();
 
     std::vector<std::unique_ptr<LayoutButton>> secondary_buttons;
-    secondary_buttons.emplace_back(get_send_directly_button(m_project_interactor));
-    secondary_buttons.emplace_back(get_export_flash_button(m_project_interactor));
+    secondary_buttons.emplace_back(get_send_directly_button(*m_project_interactor));
+    secondary_buttons.emplace_back(get_export_flash_button(*m_project_interactor));
 
     std::unique_ptr<LayoutButton> navigation_button{get_navigation_button()};
     m_layout_without_connect.navigation_button = navigation_button.get();
@@ -259,9 +174,9 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
     m_layout_with_connect.primary_button = primary_button.get();
 
     secondary_buttons.clear();
-    secondary_buttons.emplace_back(get_export_button(m_project_interactor));
-    secondary_buttons.emplace_back(get_send_directly_button(m_project_interactor));
-    secondary_buttons.emplace_back(get_export_flash_button(m_project_interactor));
+    secondary_buttons.emplace_back(get_export_button(*m_project_interactor));
+    secondary_buttons.emplace_back(get_send_directly_button(*m_project_interactor));
+    secondary_buttons.emplace_back(get_export_flash_button(*m_project_interactor));
 
     navigation_button                       = get_navigation_button();
     m_layout_with_connect.navigation_button = navigation_button.get();
@@ -440,23 +355,23 @@ void SidebarPreviewActionButtons::update_buttons()
             primary_button->set_label("Export");
             primary_button->set_enabled(true);
             primary_button->set_tooltip(export_tooltip);
-            primary_button->callbacks().action = get_export_action(m_project_interactor);
+            primary_button->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
 
             if (m_project_interactor->removable_drive_service().has_removable_drives()) {
                 secondary_buttons.at(1)->set_enabled(true);
-                secondary_buttons.at(1)->callbacks().action = get_export_flash_action(m_project_interactor);
+                secondary_buttons.at(1)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
             }
 
         } else if (layout_type == ActionButtonsLayoutType::WithConnect) {
             primary_button->set_label("Send to Connect");
             primary_button->set_tooltip("Send to Connect");
-            primary_button->callbacks().action = get_send_to_connect_action(m_project_interactor);
+            primary_button->callbacks().action = ExportActions::send_gcode_to_connect(*m_project_interactor);
 
             secondary_buttons.at(0)->set_enabled(true);
-            secondary_buttons.at(0)->callbacks().action = get_export_action(m_project_interactor);
+            secondary_buttons.at(0)->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
             if (m_project_interactor->removable_drive_service().has_removable_drives()) {
                 secondary_buttons.at(2)->set_enabled(true);
-                secondary_buttons.at(2)->callbacks().action = get_export_flash_action(m_project_interactor);
+                secondary_buttons.at(2)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
             }
         } else {
             PANIC("Unreachable!");

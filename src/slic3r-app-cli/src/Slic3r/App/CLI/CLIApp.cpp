@@ -69,6 +69,11 @@ public:
         PANIC("Ramming dialog not implemented for CLI");
     }
 
+    void open_in_browser(const std::string& link, int flag) override
+    {
+        PANIC("Open browser not implemented for CLI");
+    }
+
     void show_info_dialog(const std::string& text, const std::string& title, bool is_marked = false) override
     {
         SPDLOG_INFO("{}: {}", title, text);

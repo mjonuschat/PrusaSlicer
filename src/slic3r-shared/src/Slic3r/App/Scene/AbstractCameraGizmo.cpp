@@ -1,6 +1,8 @@
 #include "Slic3r/App/Scene/AbstractCameraGizmo.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Platform/CommandName.hpp"
+#include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -11,50 +13,63 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
+using CommandName = Platform::CommandName;
 using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
 
 void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
 {
     registry
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "zoom-in",
+            std::make_unique<UIItemCommand>(
+                CommandName::ZoomIn,
                 [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+                        }
                 }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "zoom-out",
+            std::make_unique<UIItemCommand>(
+                CommandName::ZoomOut,
                 [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+                        }
                 }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "camera-projection-switch",
+            std::make_unique<UIItemCommand>(
+                CommandName::CameraProjectionSwitch,
                 [this]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+                        }
                 }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "look-at-active-bed",
+            std::make_unique<UIItemCommand>(
+                CommandName::LookAtActiveBed,
                 [this]() { center_camera_on_selected_bed(true); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::B}
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::B}
+                        }
                 }
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "camera-default-view",
+            std::make_unique<UIItemCommand>(
+                CommandName::CameraDefaultView,
                 [this]()
                 {
                     look_at(
@@ -63,68 +78,95 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
                         DEFAULT_ZENITH
                     );
                 },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num0}
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num0},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp0}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-top-view",
+                CommandName::CameraTopView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num1}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num1},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp1}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-bottom-view",
+                CommandName::CameraBottomView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num2}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num2},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp2}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-front-view",
+                CommandName::CameraFrontView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num3}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num3},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp3}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-rear-view",
+                CommandName::CameraRearView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num4}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num4},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp4}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-left-view",
+                CommandName::CameraLeftView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num5}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Num5},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Kp5}
+                        }
                 }
             )
         )
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                "camera-right-view",
+                CommandName::CameraRightView,
                 [this]()
                 { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::Num6}
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::Num6},
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::Kp6}
+                    }
                 }
             )
         );
