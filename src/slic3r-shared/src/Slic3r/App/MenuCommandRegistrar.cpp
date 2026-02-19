@@ -21,7 +21,7 @@
 
 namespace Slic3r::App {
 
-#define SHOW_NOT_IMPLEMENTED_ITEMS
+//#define SHOW_NOT_IMPLEMENTED_ITEMS
 
 using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
@@ -93,60 +93,40 @@ void MenuCommandRegistrar::save_project_as()
             Store3mfParam params{
                 .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
             };
-            if (true
-                || project_name
-                       .empty()) { // The 'true' is here for the development phase - effectively it always "Saves as".
+
+            // The 'true' is here for the development phase - effectively it always "Saves as":
+            if (true || project_name.empty()) { 
                 // Saving a new project - show file save dialog.
                 IDialogManager::FileCallback callback =
-                    [this,
-                     &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
+                    [this, &params](
+                        bool success,
+                        const std::vector<boost::filesystem::path>& file_paths
+                    )
                 {
-                    if (success) {
-                        boost::filesystem::path file_path = file_paths.front();
-                        std::string ext_str               = file_path.extension().string();
-                        // file path could have locale dependent characters, do not use tolower
-                        if (ext_str != ".3mf" && ext_str != ".3MF") {
-                            file_path.replace_extension(".3mf");
-                        }
-
-                        m_project_interactor.save_project(file_path, params);
-                    }
+                    if (success)
+                        m_project_interactor.save_project(file_paths.front(), params);
                 };
-                if (true
-                    || project_name
-                           .empty()) { // The 'true' is here for the development phase - effectively it always "Saves as".
-                    // Saving a new project - show file save dialog.
-                    IDialogManager::FileCallback callback =
-                        [this, &params](
-                            bool success,
-                            const std::vector<boost::filesystem::path>& file_paths
+                auto& dlg_manager = AppServices::instance().dialog_manager();
+                dlg_manager.show_file_dialog(
+                    FileDialogType::Save,
+                    _u8L("Save Project"),
+                    m_project_interactor.project_dir(
+                        m_project_interactor.selected_project_id(),
+                        AppServices::instance().app_config().get<std::string>(
+                            "last_used_directory"
                         )
-                    {
-                        if (success)
-                            m_project_interactor.save_project(file_paths.front(), params);
-                    };
-                    auto& dlg_manager = AppServices::instance().dialog_manager();
-                    dlg_manager.show_file_dialog(
-                        FileDialogType::Save,
-                        _u8L("Save Project"),
-                        m_project_interactor.project_dir(
-                            m_project_interactor.selected_project_id(),
-                            AppServices::instance().app_config().get<std::string>(
-                                "last_used_directory"
-                            )
-                        ),
-                        project_name,
-                        Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
-                        callback
-                    );
-                } else {
-                    // Saving an existing project - just save.
-                    // DK: How this could work with just project_name?
-                    m_project_interactor.save_project(
-                        boost::filesystem::path(project_name),
-                        params
-                    );
-                }
+                    ),
+                    project_name,
+                    Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
+                    callback
+                );
+            } else {
+                // Saving an existing project - just save.
+                // DK: How this could work with just project_name?
+                m_project_interactor.save_project(
+                    boost::filesystem::path(project_name),
+                    params
+                );
             }
         }
     );

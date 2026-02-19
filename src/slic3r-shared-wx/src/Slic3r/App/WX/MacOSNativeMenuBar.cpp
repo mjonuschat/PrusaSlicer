@@ -162,13 +162,7 @@ wxString MacOSNativeMenuBar::get_shortcut_string(const char* command_name)
     auto shortcut = cmd.keyboard_shortcuts().value().front();
 
 #ifdef __APPLE__
-    // Skip unmodified letter and numbers shortcuts — these must reach the canvas
-    // as raw key events, not be intercepted by Cocoa key equivalents.
-    if (shortcut.modifiers == 0
-        && ((shortcut.key >= Platform::KeyCode::A && shortcut.key <= Platform::KeyCode::Z)
-            || (shortcut.key >= Platform::KeyCode::Num0
-                && shortcut.key <= Platform::KeyCode::Num9)))
-    {
+    if (shortcut.modifiers == 0) {
         return wxString();
     }
 #endif
@@ -213,18 +207,19 @@ void MacOSNativeMenuBar::setup_apple_menu()
         return;
     }
 
-    // Add About item at the top
-    // Note: wxID_ABOUT is automatically placed in the Apple menu on macOS
-    add_menu_item_to_menu(apple_menu, m_menu_manager.menu_item(MenuItemName::About), wxID_ABOUT, 0);
+    int insert_pos = 0;
 
-    // Preferences is automatically handled by wxWidgets on macOS (Cmd+,)
-    // It uses wxID_PREFERENCES
-    add_menu_item_to_menu(
-        apple_menu,
-        m_menu_manager.menu_item(MenuItemName::Preferences),
-        wxID_PREFERENCES,
-        1
-    );
+    if (MenuItem* item = m_menu_manager.menu_item(MenuItemName::About)) {
+        // Add About item at the top
+        // Note: wxID_ABOUT is automatically placed in the Apple menu on macOS
+        add_menu_item_to_menu(apple_menu, item, wxID_ABOUT, insert_pos++);
+    }
+
+    if (MenuItem* item = m_menu_manager.menu_item(MenuItemName::Preferences)) {
+        // Preferences is automatically handled by wxWidgets on macOS (Cmd+,)
+        // It uses wxID_PREFERENCES
+        add_menu_item_to_menu(apple_menu, item, wxID_PREFERENCES, insert_pos++);
+    }
 
     // Quit handler (Cmd+Q)
     apple_menu->Bind(

@@ -60,14 +60,11 @@ bool CommandBindingManager::has_command(const char* command_name) const
 void CommandBindingManager::update_ui_items()
 {
     for (auto& [command_name, items] : m_ui_items) {
-        const Platform::ICommand& command = m_gizmos_command_registry && m_gizmos_command_registry->has_command(command_name.c_str()) ?
-            m_gizmos_command_registry->command(command_name.c_str()) :
-            m_main_command_registry.command(command_name.c_str());
-
-        const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(&command);
+        const Platform::ICommand& cmd = command(command_name.c_str());
+        const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(&cmd);
         const bool checked              = ui_command ? ui_command->checked() : false;
         for (Yoga::AbstractButton* ui_item : items) {
-            ui_item->set_enabled(command.enabled());
+            ui_item->set_enabled(cmd.enabled());
             ui_item->set_checked(checked);
         }
     }

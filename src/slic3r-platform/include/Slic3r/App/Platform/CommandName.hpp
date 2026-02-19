@@ -24,7 +24,6 @@ struct CommandName
     static constexpr const char* ArrangeGizmo               = "arrange-gizmo";
     static constexpr const char* SimplifyGizmo              = "simplify-gizmo";
     static constexpr const char* TextGizmo                  = "text-gizmo";
-    static constexpr const char* CreateText                 = "create-text";
     static constexpr const char* CutGizmo                   = "cut-gizmo";
     static constexpr const char* MeasureGizmo               = "measure-gizmo";
     static constexpr const char* PaintOnSupportsGizmo       = "paint-on-supports-gizmo";

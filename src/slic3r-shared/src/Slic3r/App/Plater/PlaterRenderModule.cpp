@@ -263,6 +263,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
         &m_command_binding_manager
     );
     m_project_interactor.removable_drive_service().add_status_listener(&m_command_binding_manager);
+    m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(&m_command_binding_manager);
 
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
@@ -395,14 +396,7 @@ void PlaterRenderModule::register_commands()
                     }}
                 }
             )
-        )
-        .register_command(std::make_unique<Platform::FuncCommand>(
-            CommandName::CreateText,
-            [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
-            Platform::FuncCommandExtraOpts{
-                .keyboard_shortcut = Platform::KeyboardShortcut{0, Platform::KeyCode::T},
-                .enabled = [this]() { return !m_text_gizmo->enabled(); }
-            }));
+        );
 
     const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
         {Scene::ToolType::Translation, Platform::KeyCode::M},

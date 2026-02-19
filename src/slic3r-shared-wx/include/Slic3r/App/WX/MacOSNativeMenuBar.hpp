@@ -128,6 +128,6 @@ private:
     std::unordered_map<int, std::string> m_id_to_command;
 };
 
-} // namespace Slic3r::App::Platform::WX
+} // namespace Slic3r::App::WX
 
 #endif // USE_NATIVE_MENU
