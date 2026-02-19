@@ -42,33 +42,37 @@
 #include <fstream>
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "Slic3r/Domain/LayerHeightProfile.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
 LayerPtrs new_layers(
-    PrintObject                 *print_object,
-    // Object layers (pairs of bottom/top Z coordinate), without the raft.
-    const std::vector<double> &object_layers)
+    PrintObject* print_object,
+    // Object layers as LayerZRange boundaries, without the raft.
+    const Domain::LayerZRanges& object_layers
+)
 {
     LayerPtrs out;
     out.reserve(object_layers.size());
     auto     id   = int(print_object->slicing_parameters().raft_layers());
     double zmin = print_object->slicing_parameters().object_print_z_min;
     Layer   *prev = nullptr;
-    for (size_t i_layer = 0; i_layer < object_layers.size(); i_layer += 2) {
-        double lo = object_layers[i_layer];
-        double hi = object_layers[i_layer + 1];
-        double slice_z = 0.5 * (lo + hi);
-        Layer *layer = new Layer(id ++, print_object, hi - lo, hi + zmin, slice_z);
+
+    for (const Domain::LayerZRange& layer_z_range : object_layers) {
+        const double top_z   = layer_z_range.top_z;
+        const double slice_z = layer_z_range.middle_z();
+        Layer* layer = new Layer(id++, print_object, layer_z_range.height(), top_z + zmin, slice_z);
         out.emplace_back(layer);
         if (prev != nullptr) {
             prev->upper_layer = layer;
             layer->lower_layer = prev;
         }
+
         prev = layer;
     }
+
     return out;
 }
 
@@ -535,7 +539,7 @@ void PrintObject::slice()
     if (! this->set_started(posSlice))
         return;
     m_print->set_status(Domain::Percentage{10}, Biz::Slicing::ProgressInfo::ProcessingTriangulatedMesh);
-    std::vector<double> layer_height_profile;
+    Domain::ZHeightPairs layer_height_profile;
     this->update_layer_height_profile(*this->model_object(), m_slicing_params, layer_height_profile);
     m_print->throw_if_canceled();
     m_typed_slices = false;

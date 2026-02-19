@@ -99,6 +99,7 @@ enum class Icon : wchar_t
     // icon for help
     MouseLeft,
     MouseRight,
+    MouseWheel,
     MouseDrag,
     KeyShift,
     KeyAlt,
@@ -145,6 +146,10 @@ enum class Icon : wchar_t
     Frustum,
     DividingLine,
     Dove,
+
+    // Gizmo Multimaterial painting
+    FillDrip,
+    LineHeight,
 
     // Gizmo Emboss
     NewBtnIcon,
@@ -208,7 +213,9 @@ enum class Icon : wchar_t
     ExclamationRed,
     Plus,
     Chain,
-    Unchain
+    Unchain,
+    UndoGizmo,
+    CloseGizmo,
 };
 
 } // namespace Slic3r::App::Render

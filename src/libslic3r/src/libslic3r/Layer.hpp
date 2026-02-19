@@ -11,6 +11,8 @@
 #ifndef slic3r_Layer_hpp_
 #define slic3r_Layer_hpp_
 
+#include "Slic3r/Domain/LayerHeightProfile.hpp"
+
 #include <boost/container/small_vector.hpp>
 #include <stddef.h>
 #include <stdint.h>
@@ -237,7 +239,7 @@ public:
 
 protected:
     friend class PrintObject;
-    friend std::vector<Layer*> new_layers(PrintObject*, const std::vector<double>&);
+    friend std::vector<Layer*> new_layers(PrintObject*, const Domain::LayerZRanges&);
     friend std::string fix_slicing_errors(LayerPtrs&, const std::function<void()>&);
 
     Layer(size_t id, PrintObject *object, double height, double print_z, double slice_z) :

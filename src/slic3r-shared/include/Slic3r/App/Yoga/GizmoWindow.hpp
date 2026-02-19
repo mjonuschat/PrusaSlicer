@@ -29,6 +29,8 @@ public:
     GizmoCallbacks& gizmo_callbacks();
 
 protected:
+    explicit GizmoWindow();
+
     /*
      * @brief Add the separator into the specified item rather than into Dialog::context()
      */

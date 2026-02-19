@@ -111,8 +111,6 @@ void transform_instance(Domain::ModelInstance &mi,
     trafo = physical_tr.inverse() * tr * Eigen::AngleAxisd(rot, Vec3d::UnitZ()) * physical_tr * trafo;
 
     mi.set_transformation(Domain::Transformation{trafo});
-
-    mi.invalidate_object_bounding_box();
 }
 
 Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi,

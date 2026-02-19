@@ -90,6 +90,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
 
     {Icon::MouseLeft, "mouse_left"},
     {Icon::MouseRight, "mouse_right"},
+    {Icon::MouseWheel, "mouse_wheel"},
     {Icon::MouseDrag, "mouse_drag"},
     {Icon::KeyShift, "key_shift"},
     {Icon::KeyAlt, "key_alt"},
@@ -122,11 +123,15 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Hexagon, "hexagon"},
     {Icon::Sphere, "sphere"},
     {Icon::PaintBrush, "paintbrush"},
-    {Icon::WandMagicSparkles, "wand-magic-sparkles"},
+    {Icon::WandMagicSparkles, "wand_magic_sparkles"},
     {Icon::Prism, "prism"},
     {Icon::Frustum, "frustum"},
     {Icon::DividingLine, "dividing_line"},
     {Icon::Dove, "dove"},
+
+    // Gizmo Multimaterial painting
+    {Icon::FillDrip, "fill_drip"},
+    {Icon::LineHeight, "line_height"},
 
     {Icon::Calculator, "calculator"},
     {Icon::CopyForGizmo, "copy_for_gizmo"},
@@ -179,9 +184,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Layout, "layout"},
     {Icon::LayersInspect, "layers_inspect"},
     {Icon::PaintSupports, "paint_supports"},
-    {Icon::PaintSeams, "paint_supports"},
-    {Icon::PaintFuzzySkin, "paint_supports"},
-    {Icon::PaintMultiMaterial, "paint_supports"},
+    {Icon::PaintSeams, "paint_seams"},
+    {Icon::PaintFuzzySkin, "paint_fuzzy_skin"},
+    {Icon::PaintMultiMaterial, "paint_multi_material"},
     {Icon::Ruler, "ruler"},
     {Icon::Text, "text"},
     {Icon::Palette, "palette"},
@@ -193,6 +198,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Plus, "plus"},
     {Icon::Chain, "chain"},
     {Icon::Unchain, "unchain"},
+    {Icon::CloseGizmo, "close_gizmo"},
+    {Icon::UndoGizmo, "undo_gizmo"},
+    {Icon::VariableLayerHeight, "variable_layer_height"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

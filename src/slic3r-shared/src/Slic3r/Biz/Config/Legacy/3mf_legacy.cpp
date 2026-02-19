@@ -552,7 +552,7 @@ namespace Slic3rLegacy {
         typedef std::vector<Instance> InstancesList;
         typedef std::map<int, ObjectMetadata> IdToMetadataMap;
         typedef std::map<PathId, Geometry> IdToGeometryMap;
-        typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
+        typedef std::map<int, Domain::ZHeightPairs> IdToLayerHeightsProfileMap;
         typedef std::map<int, Domain::LayerConfigRanges> IdToLayerConfigRangesMap;
         typedef std::map<int, CutObjectInfo> IdToCutObjectInfoMap;
         typedef std::map<int, std::vector<SupportPoint>> IdToSlaSupportPointsMap;
@@ -1413,11 +1413,14 @@ namespace Slic3rLegacy {
                     continue;
                 }
 
-                std::vector<double> profile;
-                profile.reserve(object_data_profile.size());
+                Domain::ZHeightPairs profile;
+                profile.reserve(object_data_profile.size() / 2);
 
-                for (const std::string& value : object_data_profile) {
-                    profile.push_back((double)std::atof(value.c_str()));
+                for (size_t i = 0; i < object_data_profile.size() - 1; i += 2) {
+                    profile.push_back(
+                        {std::atof(object_data_profile[i].c_str()),
+                         std::atof(object_data_profile[i + 1].c_str())}
+                    );
                 }
 
                 m_layer_heights_profiles.insert({ object_id, profile });
@@ -3634,17 +3637,23 @@ namespace Slic3rLegacy {
         unsigned int count = 0;
         for (const Domain::ModelObject* object : model.objects) {
             ++count;
-            const std::vector<double>& layer_height_profile = object->layer_height_profile.get();
-            if (layer_height_profile.size() >= 4 && layer_height_profile.size() % 2 == 0) {
+            const Domain::ZHeightPairs& layer_height_profile = object->layer_height_profile.get();
+            if (layer_height_profile.size() >= 2) {
                 sprintf(buffer, "object_id=%d|", count);
                 out += buffer;
 
-                // Store the layer height profile as a single semicolon separated list.
+                // Store the layer height profile as a single semicolon separated list (z;h;z;h;...).
                 for (size_t i = 0; i < layer_height_profile.size(); ++i) {
-                    sprintf(buffer, (i == 0) ? "%f" : ";%f", layer_height_profile[i]);
+                    const Domain::ZHeightPair& z_height_pair = layer_height_profile[i];
+                    sprintf(
+                        buffer,
+                        (i == 0) ? "%f;%f" : ";%f;%f",
+                        z_height_pair.z,
+                        z_height_pair.layer_height
+                    );
                     out += buffer;
                 }
-                
+
                 out += "\n";
             }
         }

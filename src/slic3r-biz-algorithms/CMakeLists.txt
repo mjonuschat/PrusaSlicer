@@ -82,6 +82,8 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/Bed.hpp
     src/Slic3r/Biz/Algorithms/Bed.cpp
     include/Slic3r/Biz/Algorithms/CerealUtils.hpp
+    include/Slic3r/Biz/Algorithms/LayerHeight.hpp
+    src/Slic3r/Biz/Algorithms/LayerHeight.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

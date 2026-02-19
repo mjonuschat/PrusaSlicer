@@ -1,5 +1,9 @@
 #include "libslic3r/ShrinkageCompensation.hpp"
 
+#include "Slic3r/Domain/Percentage.hpp"
+
+#include "libslic3r/ConfigViews.hpp"
+
 namespace Slic3r::Biz::Slicing {
 
 static bool has_same_shrinkage_compensations(

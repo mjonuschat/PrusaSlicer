@@ -390,16 +390,10 @@ void PaintOnGizmoBase::on_activated()
 
 void PaintOnGizmoBase::on_deactivated()
 {
-    Biz::Scene::SceneInteractor& scene_interactor       = m_project_interactor.scene_interactor();
-    const Biz::Scene::ObjectSelection& object_selection = scene_interactor.object_selection();
-    Scene::Scene& scene                                 = m_scene_presenter.scene();
+    Scene::Scene& scene = m_scene_presenter.scene();
 
-    if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
-        m_visible_volumes_nodes.clear();
-    } else {
-        // Restore the originally visible nodes.
-        this->restore_visible_volumes();
-    }
+    // Restore the originally visible nodes.
+    this->restore_visible_volumes();
 
     // Remove all the scene nodes created by this gizmo.
     if (m_main_node != nullptr) {

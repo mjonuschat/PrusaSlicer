@@ -339,8 +339,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/SlicesToTriangleMesh.cpp
     src/libslic3r/SlicesToTriangleMesh.hpp
     src/libslic3r/Slicing.cpp
-    src/libslic3r/SlicingAdaptive.cpp
-    src/libslic3r/SlicingAdaptive.hpp
     src/libslic3r/SlicingInput.cpp
     src/libslic3r/SlicingInput.hpp
     src/libslic3r/StepsInvalidation.cpp

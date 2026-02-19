@@ -361,19 +361,13 @@ public:
     
     // Initialize the layer_height_profile from the model_object's layer_height_profile, from model_object's layer height table, or from slicing parameters.
     // Returns true, if the layer_height_profile was changed.
-    static bool     update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile);
+    static bool     update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, Domain::ZHeightPairs &layer_height_profile);
 
     // Collect the slicing parameters, to be used by variable layer thickness algorithm,
     // by the interactive layer height editor and by the printing process itself.
     // The slicing parameters are dependent on various configuration values
     // (layer height, first layer height, raft settings, print nozzle diameter etc).
     const SlicingParameters&    slicing_parameters() const { return m_slicing_params; }
-    static SlicingParameters slicing_parameters(
-        const PrintObjectConfigView& full_config,
-        const Domain::ModelObject& model_object,
-        float object_max_z,
-        const Domain::Vec3d& object_shrinkage_compensation
-    );
 
     size_t                      num_printing_regions() const throw() { return m_shared_regions->all_regions.size(); }
     const PrintRegion&          printing_region(size_t idx) const throw() { return *m_shared_regions->all_regions[idx].get(); }

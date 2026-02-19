@@ -14,6 +14,8 @@ namespace Slic3r::App::Yoga {
 
 constexpr float dialog_padding = 10;
 
+GizmoWindow::GizmoWindow() : Window("GizmoWindow") {}
+
 GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon) : Window("GizmoWindow")
 {
     set_orientation(Orientation::Vertical);

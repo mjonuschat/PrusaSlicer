@@ -708,49 +708,53 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
 
 // copy _3MF_Exporter::_add_layer_height_profile_file_to_archive
 namespace LayerHeightProfileSerialization {
-json to_json(const std::vector<double> &layer_height_profile) {
+json to_json(const Domain::ZHeightPairs& layer_height_profile)
+{
     if (layer_height_profile.empty())
         return {}; // Not used for this object
 
-    assert(layer_height_profile.size() >= 4);
-    assert(layer_height_profile.size() %2 == 0);
-    if (layer_height_profile.size() < 4 ||
-        layer_height_profile.size() % 2 != 0)
+    assert(layer_height_profile.size() >= 2);
+    if (layer_height_profile.size() < 2) {
         return {}; // bad layer height
-            
-    // layer_height_profile is list of pair<lo, hi>
-    // Slic3r::Layer
-    //  .. height  .. hi - lo
-    //  .. print_z .. hi + object_print_z_min 
-    //  .. slice_z .. 0.5 * (lo + hi)
-    json lo_hi_pairs = json::array();
-    for (size_t i = 0; i < layer_height_profile.size(); i += 2) {
-        double lo = layer_height_profile[i];
-        double hi = layer_height_profile[i + 1];
-        lo_hi_pairs.push_back({lo, hi});
     }
-    return lo_hi_pairs;
+
+    // layer_height_profile is list of pair<z, layer_height>
+    json z_height_pairs = json::array();
+    for (const Domain::ZHeightPair& z_height_pair : layer_height_profile) {
+        z_height_pairs.push_back({z_height_pair.z, z_height_pair.layer_height});
+    }
+
+    return z_height_pairs;
 }
 
-std::vector<double> load(const json &layer_heights_json, Read3mfIssues& collected_issues) {
+Domain::ZHeightPairs load(const json& layer_heights_json, Read3mfIssues& collected_issues)
+{
     if (!layer_heights_json.is_array()) {
         collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array));
         return {};
     }
-    std::vector<double> layer_heights;
-    layer_heights.reserve(2 * layer_heights_json.size());
-    for (const json &lo_hi_pair : layer_heights_json){
-        if (!lo_hi_pair.is_array()) {
-           collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array_of_pairs, "no array"));
+
+    Domain::ZHeightPairs layer_heights;
+    layer_heights.reserve(layer_heights_json.size());
+    for (const json& z_height_pair : layer_heights_json) {
+        if (!z_height_pair.is_array()) {
+            collected_issues.add_issue(
+                Read3mfIssue(RT::layer_heights_must_be_array_of_pairs, "no array")
+            );
             return {};
         }
-        if (lo_hi_pair.size() != 2){
-            collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array_of_pairs, std::to_string(lo_hi_pair.size())));
+
+        if (z_height_pair.size() != 2) {
+            collected_issues.add_issue(Read3mfIssue(
+                RT::layer_heights_must_be_array_of_pairs,
+                std::to_string(z_height_pair.size())
+            ));
             return {};
         }
-        layer_heights.push_back(lo_hi_pair[0].get<double>());
-        layer_heights.push_back(lo_hi_pair[1].get<double>());
+
+        layer_heights.push_back({z_height_pair[0].get<double>(), z_height_pair[1].get<double>()});
     }
+
     return layer_heights;
 }
 } // namespace LayerHeightProfileSerialization
@@ -1198,7 +1202,7 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
     if (object.is_cut())
         add(object_json, CUT_OBJECT_ID, CutSerialization::cut_to_json(object.cut_id));
     add(object_json, OBJECT_SETTINGS, object.object_settings);
-    if (const std::vector<double> &layer_height_profile = object.layer_height_profile.get();
+    if (const Domain::ZHeightPairs &layer_height_profile = object.layer_height_profile.get();
         !layer_height_profile.empty())
         add(object_json, LAYER_HEIGHT_PROFILE, LayerHeightProfileSerialization::to_json(layer_height_profile));
     if (!object.sla_support_points.empty())
