@@ -32,7 +32,7 @@ values:
   filament_purge_multiplier: 100%
   filament_ramming_parameters: 250 100 40.1613 40.3548 40.4516 40.3548 40.2581| 0.05 40.1483 0.45 40.3419 0.95 40.3419 1.45 40.3419 1.95 40.3419 2.45 40.3419 2.95 40.3419 3.45 40.3419 3.95 40.3419 4.45 40.3419 4.95 40.3419
   filament_soluble: true
-  filament_spool_weight: 193
+  filament_spool_weight: 278
   filament_stamping_distance: 45
   filament_stamping_loading_speed: 29
   filament_toolchange_delay: 0

@@ -8,7 +8,7 @@ values:
   extrusion_multiplier: 1.04
   filament_cost: '54.99'
   filament_vendor: Prusa Polymers
-  filament_spool_weight: 193
+  filament_spool_weight: 278
   first_layer_temperature: 230
   temperature: 230
 ---

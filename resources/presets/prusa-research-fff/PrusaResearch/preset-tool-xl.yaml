@@ -1866,149 +1866,125 @@ variants:
             perimeter_extrusion_width: 1
             external_perimeter_extrusion_width: 1
 
-# multi-tool branch
-  - name: '*multi-tool branch*'
-    id: CLZXYflYTKeGLiXI9hXA5Q
-    variants:
-    - condition: printer.tool_count > 1
-      id: DlLMkBfxTzS15PQeu/lwZA
-      variants:
-      - condition: tool.nozzle_diameter == 0.4
-        id: tNH3h1xwS7e+MId0XWbDhQ
-        variants:
-# 0.4n/0.20mm/multitool SOLUBLE
-        - condition: print.layer_height == 0.20
-          id: JR6v6zLESligqIGEN2R3VA
-          values:
-            bottom_solid_layers: 4
-            top_solid_layers: 5
-            raft_contact_distance: 0.2
-            top_infill_extrusion_width: 0.42
-            overhangs: 1
-            support_material: 1
-            support_material_extruder: 2
-            support_material_extrusion_width: 0.4
-            support_material_interface_extruder: 2
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_threshold: 50
-            support_material_with_sheath: 1
-            wipe_tower_bridging: 6
-            support_material_bottom_interface_layers: 2
-            thick_bridges: 0
-            support_material_xy_spacing: 40%
-            raft_first_layer_density: 90%
-            support_material_interface_pattern: auto
-            perimeter_speed: 80
-            external_perimeter_speed: 45
-            small_perimeter_speed: 45
-            infill_speed: 120
-            gap_fill_speed: 65
-            top_solid_infill_speed: 75
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2500
-            solid_infill_acceleration: 1500
-            default_acceleration: 2500
-            overhang_speed_3: 90%
-            support_material_contact_distance: 0
-            solid_infill_speed: 70
-            support_material_speed: 100
-            support_material_interface_speed: 40
-          variants:
-          - name: 0.20mm SOLUBLE FULL @XL 0.4
-            id: w+UCPxiRQBmePSxOdXCAKw
-          - name: 0.20mm SOLUBLE INTERFACE @XL 0.4
-            id: HHdXOuRtQxiclDVIj47QeA
-            values:
-              support_material_extruder: 0
-              support_material_interface_layers: 3
-              support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY FULL @XL 0.4
-            id: n3paqPHWSJyk44iIXOhPKg
-            values:
-              support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY INTERFACE @XL 0.4
-            id: EmQCVbDgR0CGxYy9MT/DzA
-            values:
-              support_material_extruder: 0
-              support_material_interface_layers: 3
-              support_material_with_sheath: 0
-      - condition: tool.nozzle_diameter == 0.6
-        id: +X7VisKgS0aLzIvQPPbQtg
-        variants:
-# 0.6n/0.25mm/multitool SOLUBLE
-        - condition: print.layer_height == 0.25
-          id: 9pX3PimAR9OY6Wb9L+UqKQ
-          values:
-            bottom_solid_layers: 3
-            top_solid_layers: 4
-            raft_contact_distance: 0.25
-            bridge_speed: 40
-            over_bridge_speed: 0
-            top_solid_min_thickness: 0.9
-            bottom_solid_min_thickness: 0.6
-            top_infill_extrusion_width: 0.55
-            overhangs: 1
-            support_material: 1
-            support_material_extruder: 2
-            support_material_extrusion_width: 0.5
-            extrusion_width: 0.68
-            first_layer_extrusion_width: 0.68
-            perimeter_extrusion_width: 0.68
-            external_perimeter_extrusion_width: 0.68
-            infill_extrusion_width: 0.68
-            solid_infill_extrusion_width: 0.68
-            support_material_interface_extruder: 2
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_threshold: 50
-            support_material_with_sheath: 1
-            wipe_tower_bridging: 6
-            support_material_bottom_interface_layers: 2
-            thick_bridges: 0
-            support_material_xy_spacing: 40%
-            support_tree_tip_diameter: 1.2
-            support_tree_angle_slow: 25
-            raft_first_layer_density: 90%
-            support_material_interface_pattern: auto
-            perimeter_speed: 80
-            external_perimeter_speed: 45
-            small_perimeter_speed: 45
-            infill_speed: 100
-            gap_fill_speed: 70
-            top_solid_infill_speed: 70
-            top_solid_infill_acceleration: 1500
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2500
-            solid_infill_acceleration: 1500
-            default_acceleration: 2500
-            support_material_contact_distance: 0
-            solid_infill_speed: 70
-            support_material_speed: 75
-            support_material_interface_speed: 50%
-            overhang_speed_1: 20
-            overhang_speed_2: 25
-            overhang_speed_3: 90%
-            infill_anchor_max: 20
-            infill_anchor: 2.5
-            first_layer_infill_speed: 70
-            gcode_resolution: 0.0125
-          variants:
-          - name: 0.20mm SOLUBLE FULL @XL 0.6
-            id: QZocMCu7T4GrfSaEvbSGyQ
-          - name: 0.20mm SOLUBLE INTERFACE @XL 0.6
-            id: zYtn+9JuSEeYAokTEViyMw
-            values:
-              support_material_extruder: 0
-              support_material_interface_layers: 3
-              support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY FULL @XL 0.6
-            id: TYheHdiLTcCjGax7vcaaow
-            values:
-              support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY INTERFACE @XL 0.6
-            id: w5DTFucLRoOh6uS3rb4S5w
-            values:
-              support_material_extruder: 0
-              support_material_interface_layers: 3
-              support_material_with_sheath: 0
+# # multi-tool branch
+  # - name: '*multi-tool branch*'
+    # id: CLZXYflYTKeGLiXI9hXA5Q
+    # variants:
+    # - condition: printer.tool_count > 1
+      # id: DlLMkBfxTzS15PQeu/lwZA
+      # variants:
+      # - condition: tool.nozzle_diameter == 0.4
+        # id: tNH3h1xwS7e+MId0XWbDhQ
+        # variants:
+# # 0.4n/0.20mm/multitool SOLUBLE
+        # - condition: print.layer_height == 0.20
+          # id: JR6v6zLESligqIGEN2R3VA
+          # values:
+            # bottom_solid_layers: 4
+            # top_solid_layers: 5
+            # raft_contact_distance: 0.2
+            # top_infill_extrusion_width: 0.42
+            # overhangs: 1
+            # # support_material: 1
+            # # support_material_extruder: 2
+            # # support_material_interface_extruder: 2
+            # support_material_extrusion_width: 0.4
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_threshold: 50
+            # support_material_with_sheath: 1
+            # wipe_tower_bridging: 6
+            # support_material_bottom_interface_layers: 2
+            # thick_bridges: 0
+            # support_material_xy_spacing: 40%
+            # raft_first_layer_density: 90%
+            # support_material_interface_pattern: auto
+            # perimeter_speed: 80
+            # external_perimeter_speed: 45
+            # small_perimeter_speed: 45
+            # infill_speed: 120
+            # gap_fill_speed: 65
+            # top_solid_infill_speed: 75
+            # external_perimeter_acceleration: 1500
+            # perimeter_acceleration: 2500
+            # solid_infill_acceleration: 1500
+            # default_acceleration: 2500
+            # overhang_speed_3: 90%
+            # support_material_contact_distance: 0
+            # solid_infill_speed: 70
+            # support_material_speed: 100
+            # support_material_interface_speed: 40
+          # variants:
+          # - name: 0.20mm SOLUBLE @XL 0.4
+            # id: w+UCPxiRQBmePSxOdXCAKw
+          # - name: 0.20mm BREAKAWAY @XL 0.4
+            # id: n3paqPHWSJyk44iIXOhPKg
+            # values:
+              # support_material_with_sheath: 0
+      # - condition: tool.nozzle_diameter == 0.6
+        # id: +X7VisKgS0aLzIvQPPbQtg
+        # variants:
+# # 0.6n/0.25mm/multitool SOLUBLE
+        # - condition: print.layer_height == 0.25
+          # id: 9pX3PimAR9OY6Wb9L+UqKQ
+          # values:
+            # bottom_solid_layers: 3
+            # top_solid_layers: 4
+            # raft_contact_distance: 0.25
+            # bridge_speed: 40
+            # over_bridge_speed: 0
+            # top_solid_min_thickness: 0.9
+            # bottom_solid_min_thickness: 0.6
+            # top_infill_extrusion_width: 0.55
+            # overhangs: 1
+            # support_material: 1
+            # support_material_extruder: 2
+            # support_material_extrusion_width: 0.5
+            # extrusion_width: 0.68
+            # first_layer_extrusion_width: 0.68
+            # perimeter_extrusion_width: 0.68
+            # external_perimeter_extrusion_width: 0.68
+            # infill_extrusion_width: 0.68
+            # solid_infill_extrusion_width: 0.68
+            # support_material_interface_extruder: 2
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_threshold: 50
+            # support_material_with_sheath: 1
+            # wipe_tower_bridging: 6
+            # support_material_bottom_interface_layers: 2
+            # thick_bridges: 0
+            # support_material_xy_spacing: 40%
+            # support_tree_tip_diameter: 1.2
+            # support_tree_angle_slow: 25
+            # raft_first_layer_density: 90%
+            # support_material_interface_pattern: auto
+            # perimeter_speed: 80
+            # external_perimeter_speed: 45
+            # small_perimeter_speed: 45
+            # infill_speed: 100
+            # gap_fill_speed: 70
+            # top_solid_infill_speed: 70
+            # top_solid_infill_acceleration: 1500
+            # external_perimeter_acceleration: 1500
+            # perimeter_acceleration: 2500
+            # solid_infill_acceleration: 1500
+            # default_acceleration: 2500
+            # support_material_contact_distance: 0
+            # solid_infill_speed: 70
+            # support_material_speed: 75
+            # support_material_interface_speed: 50%
+            # overhang_speed_1: 20
+            # overhang_speed_2: 25
+            # overhang_speed_3: 90%
+            # infill_anchor_max: 20
+            # infill_anchor: 2.5
+            # first_layer_infill_speed: 70
+            # gcode_resolution: 0.0125
+          # variants:
+          # - name: 0.25mm SOLUBLE @XL 0.6
+            # id: QZocMCu7T4GrfSaEvbSGyQ
+          # - name: 0.25mm BREAKAWAY @XL 0.6
+            # id: TYheHdiLTcCjGax7vcaaow
+            # values:
+              # support_material_with_sheath: 0

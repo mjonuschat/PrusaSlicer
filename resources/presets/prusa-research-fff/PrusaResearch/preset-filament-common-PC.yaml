@@ -34,7 +34,7 @@ values:
   filament_purge_multiplier: 100%
   filament_ramming_parameters: 250 100 42.4194 42.4194 42.4194 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
   filament_soluble: 0
-  filament_spool_weight: 193
+  filament_spool_weight: 278
   filament_stamping_distance: 45
   filament_stamping_loading_speed: 26.5
   filament_toolchange_delay: 0
@@ -62,7 +62,7 @@ variants:
   id: 9OmPAzXHSJqlqjOUsQcYxg
   values:
     chamber_minimal_temperature: 40
-    chamber_temperature: 0
+    chamber_temperature: 55
     enable_dynamic_fan_speeds: 1
     idle_temperature: 130
     min_fan_speed: 15

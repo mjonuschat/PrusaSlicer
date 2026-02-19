@@ -70,7 +70,7 @@ variants:
   id: mqUAp3e8S/uTtoRapWE1dA
   values:
     chamber_minimal_temperature: 40
-    chamber_temperature: 0
+    chamber_temperature: 55
     enable_dynamic_fan_speeds: 1
     idle_temperature: 130
     min_print_speed: 15

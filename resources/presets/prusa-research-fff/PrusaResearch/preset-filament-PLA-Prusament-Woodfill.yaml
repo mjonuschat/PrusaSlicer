@@ -8,7 +8,7 @@ values:
   extrusion_multiplier: 1
   filament_cost: '39.9'
   filament_density: 1.2
-  filament_spool_weight: 193
+  filament_spool_weight: 278
   first_layer_temperature: 195
   temperature: 195
 variants:

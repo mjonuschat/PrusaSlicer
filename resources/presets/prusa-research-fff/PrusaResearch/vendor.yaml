@@ -52,6 +52,22 @@ visual:
 ---
 kind: printer
 technology: FFF
+name: CORE One L
+id: COREONEL
+model:
+  base_model: COREONE
+  model: COREONEL
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+visual:
+  bed_model: coreonel_bed.stl
+  bed_texture: coreonel.svg
+  thumbnail: COREONEL_thumbnail.svg
+---
+kind: printer
+technology: FFF
 name: CORE One
 id: COREONE
 model:
@@ -557,6 +573,15 @@ visual:
   thumbnail: XL5_thumbnail.svg
 ---
 kind: printer_config
+id: c1l
+name: CORE One L
+printer: COREONEL
+legacy_printer_model: [COREONEL]
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
 id: c1
 name: CORE One
 printer: COREONE
@@ -632,7 +657,7 @@ kind: printer_config
 id: mini
 name: MINI
 printer: MINI
-legacy_printer_model: [MINI,MINIIS]
+legacy_printer_model: [MINI, MINIIS]
 tools:
 - tool: '0.4'
 sheet: pei_smooth

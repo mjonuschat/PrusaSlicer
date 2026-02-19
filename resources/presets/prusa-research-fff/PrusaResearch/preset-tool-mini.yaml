@@ -228,7 +228,7 @@ variants:
           id: IU33uEg+R9qhZExx0kHpnA
           values:
             top_solid_infill_speed: 60
-            support_material_contact_distance: 0.1
+            support_material_contact_distance: 0.11
             perimeter_speed: 60
             small_perimeter_speed: 40
             external_perimeter_speed: 40
@@ -259,7 +259,7 @@ variants:
           id: CMP/YAy4S2ClQDFrd59H6Q
           values:
             top_solid_infill_speed: 60
-            support_material_contact_distance: 0.1
+            support_material_contact_distance: 0.11
             perimeter_speed: 60
             small_perimeter_speed: 40
             external_perimeter_speed: 40
@@ -285,8 +285,8 @@ variants:
         values:
           bottom_solid_layers: 6
           top_solid_layers: 9
-          support_material_contact_distance: 0.09
-          raft_contact_distance: 0.08
+          support_material_contact_distance: 0.11
+          raft_contact_distance: 0.1
           infill_acceleration: 2500
           solid_infill_acceleration: 2000
         variants:
@@ -315,8 +315,8 @@ variants:
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
-          support_material_contact_distance: 0.09
-          raft_contact_distance: 0.08
+          support_material_contact_distance: 0.12
+          raft_contact_distance: 0.1
           infill_acceleration: 2500
           solid_infill_acceleration: 2000
         variants:
