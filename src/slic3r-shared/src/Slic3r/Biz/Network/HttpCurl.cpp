@@ -369,6 +369,7 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
     long http_status                = 0;
     std::chrono::milliseconds delay = std::chrono::milliseconds(randomized_delay(generator));
     size_t num_retries              = 0;
+
     do {
         ASSERT(
             retryfn,
@@ -380,6 +381,7 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
             {num_retries + 1, num_retries < retry_opts.max_retries ? (unsigned) delay.count() : 0, true},
             retry_fn_cancel
         );
+
         if (retry_fn_cancel) {
             res      = CURLE_ABORTED_BY_CALLBACK;
             m_cancel = true;
@@ -393,15 +395,18 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
         m_upload_path.clear();
         m_mime_path.clear();
 
-        if (res == CURLE_OK)
+        if (res == CURLE_OK) {
             ::curl_easy_getinfo(m_curl.get(), CURLINFO_RESPONSE_CODE, &http_status);
+        }
+
         retry = retry_opts.initial_delay > 0ms && is_transient_error(res, http_status);
-        if (retry && retry_opts.max_retries > 0 && num_retries >= retry_opts.max_retries)
+        if (retry && retry_opts.max_retries > 0 && num_retries >= retry_opts.max_retries) {
             retry = false;
+        }
+
         if (retry) {
             num_retries++;
             SPDLOG_ERROR("HTTP Transient error (code={}, http_status={}), retrying in {}s", std::to_string(res), std::to_string(http_status), std::to_string(delay.count() / 1000.0f));
-            std::this_thread::sleep_for(delay);
 
             auto start_time = std::chrono::steady_clock::now();
             auto end_time   = start_time + delay;
@@ -422,6 +427,7 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
 
             delay = std::min(delay * 2, retry_opts.max_delay);
         }
+
     } while (retry);
 
     m_put_file.reset();

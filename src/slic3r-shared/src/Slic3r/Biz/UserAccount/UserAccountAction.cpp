@@ -18,9 +18,9 @@ void UserAccountActionPost::perform(
     std::string url = m_url;
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
 
-    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel)
+    auto retry_fn = [&global_cancel, &callbacks, &url = m_url](Network::IHttp::Retry retry, bool& cancel)
     {
-        SPDLOG_INFO("Retry attempt {}:{} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
+        SPDLOG_INFO("Action POST retry attempt {}: {} ms to next attempt. Url: {}", retry.attempt, retry.ms_to_next_attempt, url);
         if (retry.attempt > 1 && retry.just_tried) {
             callbacks->on_action_retry(retry);
         }
@@ -99,9 +99,9 @@ void UserAccountActionGetWithEvent::perform(
 
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
 
-    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel)
+    auto retry_fn = [&global_cancel, &callbacks,  &url = m_url](Network::IHttp::Retry retry, bool& cancel)
     {
-        SPDLOG_INFO("Retry attempt {}:{} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
+        SPDLOG_INFO("Action GET retry attempt {}: {} ms to next attempt. Url: {}", retry.attempt, retry.ms_to_next_attempt, url);
         if (retry.attempt > 1 && retry.just_tried) {
             callbacks->on_action_retry(retry);
         }

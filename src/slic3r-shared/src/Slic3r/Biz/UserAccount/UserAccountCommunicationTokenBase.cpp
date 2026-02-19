@@ -59,6 +59,8 @@ void UserAccountCommunicationTokenBase::init()
 UserAccountCommunicationTokenBase::~UserAccountCommunicationTokenBase()
 {
     stop_all_timers();
+    cancel_ongoing_session_action();
+
     // Since there is m_thread_stop_condition in m_thread,
     // we need to manually request_stop and wake up the condition for the thread to stop.
     m_thread.request_stop();
