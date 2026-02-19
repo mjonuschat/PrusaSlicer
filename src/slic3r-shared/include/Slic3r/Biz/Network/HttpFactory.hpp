@@ -20,6 +20,7 @@ public:
     using EscapeStringFn = std::string(const std::string&);
     using UnescapeStringFn = std::string(const std::string&);
     using IsSubdomainFn = bool(const std::string&, const std::string&);
+    using GetApexDomainFn = std::string(const std::string&);
     using CaFileSupportedFn = bool();
     using TlsGlobalInitFn = std::string();
     using TlsSystemCertStoreFn = std::string();
@@ -78,6 +79,14 @@ public:
         return m_is_subdomain_fn(url, domain);
     }
 
+    std::string get_apex_domain(const std::string& url) {
+        if (! m_get_apex_domain_fn) {
+            initialize();
+        }
+        return m_get_apex_domain_fn(url);
+    }
+
+
     bool ca_file_supported() {
         if(!m_ca_file_supported_fn) {
             initialize();
@@ -127,6 +136,10 @@ public:
         m_is_subdomain_fn = std::move(fn);
     }
 
+     void set_get_apex_domain_fn(std::function<GetApexDomainFn> fn) {
+        m_get_apex_domain_fn = std::move(fn);
+    }
+
     void set_ca_file_supported_fn(std::function<CaFileSupportedFn> fn) {
         m_ca_file_supported_fn = std::move(fn);
     }
@@ -160,6 +173,7 @@ private:
     std::function<EscapeStringFn> m_escape_string_fn;
     std::function<UnescapeStringFn> m_unescape_string_fn;
     std::function<IsSubdomainFn> m_is_subdomain_fn;
+    std::function<GetApexDomainFn> m_get_apex_domain_fn;
     std::function<CaFileSupportedFn> m_ca_file_supported_fn;
     std::function<TlsGlobalInitFn> m_tls_global_init_fn;
     std::function<TlsSystemCertStoreFn> m_tls_system_cert_store_fn;

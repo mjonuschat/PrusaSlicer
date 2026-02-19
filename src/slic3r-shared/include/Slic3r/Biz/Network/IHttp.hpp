@@ -240,6 +240,12 @@ public:
      */
     static bool is_subdomain(const std::string& url, const std::string& domain);
 
+
+    /*
+     * @brief Returns apex subdomain of url. 
+     */
+    static std::string get_apex_domain(const std::string& url);
+
     /**
      * @brief Tells whether current backend supports setting up a CA file using ca_file()
      */

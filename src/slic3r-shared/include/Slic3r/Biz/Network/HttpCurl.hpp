@@ -147,6 +147,16 @@ public:
      */
     static bool is_subdomain(const std::string& url, const std::string& domain);
 
+    /*
+     * @brief Returns apex domain of url.
+     * Note: libcurl extracts the full hostname.
+     * Accurately extracting the apex domain across all valid top-level domains 
+     * (e.g., distinguishing .com from .co.uk) requires parsing against the Public Suffix List (via libraries like libpsl). 
+     * This function uses a naive right-to-left delimiter split 
+     * which works for simple TLDs as requested, but is not robust for compound TLDs.
+     */
+    static std::string get_apex_domain(const std::string& url); 
+
     /**
      * @brief Tells whether current backend supports setting up a CA file using ca_file()
      */

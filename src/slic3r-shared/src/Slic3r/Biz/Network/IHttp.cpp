@@ -52,6 +52,12 @@ bool IHttp::is_subdomain(const std::string& url, const std::string& domain)
     return HttpFactory::instance().is_subdomain(url, domain);
 }
 
+std::string IHttp::get_apex_domain(const std::string& url)
+{
+    return HttpFactory::instance().get_apex_domain(url);
+}
+
+
 bool IHttp::ca_file_supported()
 {
     return HttpFactory::instance().ca_file_supported();

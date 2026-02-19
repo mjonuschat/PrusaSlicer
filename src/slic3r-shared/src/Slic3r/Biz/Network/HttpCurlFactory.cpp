@@ -42,6 +42,10 @@ void configure_http_factory_with_curl() {
         return HttpCurl::is_subdomain(url, domain);
     });
 
+    factory.set_get_apex_domain_fn([](const std::string& url) -> std::string {
+        return HttpCurl::get_apex_domain(url);
+    });
+
     factory.set_ca_file_supported_fn([]() -> bool {
         return HttpCurl::ca_file_supported();
     });
