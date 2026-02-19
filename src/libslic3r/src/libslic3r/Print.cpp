@@ -245,15 +245,16 @@ Biz::Print::ApplyStatus::Status Print::update(
         };
 
         const auto& config_fdm{std::get<ConfigPackFDM>(config)};
+        const std::vector<unsigned> extruder_candidates{
+            Biz::Slicing::get_extruder_candidates(model, config_fdm)
+        };
+        m_on_extruder_candidates(extruder_candidates);
+
         std::vector<Biz::Slicing::Error> errors{validate_input(model, config_fdm)};
         if (!errors.empty()) {
             result = ApplyStatus::InvalidData{std::move(errors)};
             return;
         }
-
-        const std::vector<unsigned> extruder_candidates{
-            Biz::Slicing::get_extruder_candidates(model, config_fdm)
-        };
 
         const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates)};
         if (!slicing_input.has_value()) {

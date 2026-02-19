@@ -1389,9 +1389,6 @@ Biz::Print::ApplyStatus::Status Print::apply(
         return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
     }
 
-    if (m_extruder_candidates != extruder_candidates) {
-        m_on_extruder_candidates(extruder_candidates);
-    }
     m_extruder_candidates = extruder_candidates;
     m_shrinkage_compensation = shrinkage_compensation;
     m_hw_config         = hw_config;

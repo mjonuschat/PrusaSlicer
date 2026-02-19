@@ -1929,18 +1929,20 @@ void SceneInteractor::on_extruder_candidates_changed(
     if (bed_instance == nullptr) {
         return;
     }
-    bed_instance->extruder_candidates = std::move(extruder_candidates);
 
-    invoke_listeners<ISceneBedInstanceChangedListener>(
-        [&](auto* l)
-        {
-            l->on_bed_instance_extruder_candidates_changed(
-                slicing_id.project_id,
-                Domain::BedRef{config_container->id().id, slicing_id.bed_instance_id},
-                bed_instance->extruder_candidates
-            );
-        }
-    );
+    if (bed_instance->extruder_candidates != extruder_candidates) {
+        bed_instance->extruder_candidates = std::move(extruder_candidates);
+        invoke_listeners<ISceneBedInstanceChangedListener>(
+            [&](auto* l)
+            {
+                l->on_bed_instance_extruder_candidates_changed(
+                    slicing_id.project_id,
+                    Domain::BedRef{config_container->id().id, slicing_id.bed_instance_id},
+                    bed_instance->extruder_candidates
+                );
+            }
+        );
+    }
 }
 
 BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)

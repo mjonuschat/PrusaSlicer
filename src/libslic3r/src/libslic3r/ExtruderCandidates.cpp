@@ -98,16 +98,14 @@ static std::set<unsigned> get_extruder_candidates(
         const std::optional<Domain::ConfigItem> volume_extruder{
             volume_settings.overrides.get(key)
         };
-        if (volume_extruder) {
-            ASSERT(volume_extruder->get<int>() > 0);
+        if (volume_extruder && volume_extruder->get<int>() > 0) {
             result.insert(static_cast<unsigned>(volume_extruder->get<int>() - 1));
             continue;
         }
         const std::optional<Domain::ConfigItem> object_extruder{
             object_settings.overrides.get(key)
         };
-        if (object_extruder) {
-            ASSERT(object_extruder->get<int>() > 0);
+        if (object_extruder && object_extruder->get<int>() > 0) {
             result.insert(static_cast<unsigned>(object_extruder->get<int>() - 1));
             continue;
         }
@@ -163,7 +161,12 @@ get_extruder_candidates(const Domain::Model& model, const Domain::ConfigPackFDM&
         extruders.merge(support_extruders);
     }
 
-    const std::vector<unsigned> result{extruders.begin(), extruders.end()};
+    std::vector<unsigned> result;
+    for (unsigned extruder : extruders) {
+        if (extruder < config.tool.size()) {
+            result.push_back(extruder);
+        }
+    }
     return result;
 }
 } // namespace Slic3r::Biz::Slicing
