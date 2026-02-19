@@ -1,85 +1,25 @@
 #version 330
 
-struct PrintVolumeDetection
-{
-    // 0 -> Invalid
-    // 1 -> Rectangle
-    // 2 -> Circle
-    // 3 -> Convex
-    // 4 -> Custom
-    int type;
-    // Invalid/Rectangle/Convex/Custom:
-    //   x = min x
-    //   y = min y
-    //   z = max x
-    //   w = max y
-    // Circle:
-    //   x = center x
-    //   y = center y
-    //   z = radius
-    //   w = not used
-    vec4 xy_data;
-    // x = min z
-    // y = max z
-    vec2 z_data;
-};
-
-const vec3 ZERO = vec3(0.0, 0.0, 0.0);
-const int TYPE_INVALID = 0;
-const int TYPE_RECTANGLE = 1;
-const int TYPE_CIRCLE = 2;
-
 uniform vec4 uniform_color;
-uniform int material_id;
-uniform PrintVolumeDetection print_volume;
+// normalized material id = id / 255
+uniform float material_id;
 
 in vec3 eye_normal;
 in vec3 world_position;
 
-layout (location = 0) out vec4 g_eye_normal;
+// eye normal encoded into two floats
+layout (location = 0) out vec2 g_eye_normal;
 layout (location = 1) out vec4 g_color;
 
-vec4 select_color()
+vec2 octahedral_normal_encoding(vec3 n)
 {
-    // if the fragment is outside the print volume -> use darker color
-    vec3 pv_check_min = ZERO;
-    vec3 pv_check_max = ZERO;
-    switch (print_volume.type)
-    {
-    case TYPE_INVALID:
-    {
-        // consider as inside
-        pv_check_min = vec3(1.0);
-        pv_check_max = vec3(-1.0);
-        break;
-    }
-    case TYPE_RECTANGLE:
-    {
-        pv_check_min = world_position.xyz - vec3(print_volume.xy_data.x, print_volume.xy_data.y, print_volume.z_data.x);
-        pv_check_max = world_position.xyz - vec3(print_volume.xy_data.z, print_volume.xy_data.w, print_volume.z_data.y);
-        break;
-    }
-    case TYPE_CIRCLE:
-    {
-        float delta_radius = print_volume.xy_data.z - distance(world_position.xy, print_volume.xy_data.xy);
-        pv_check_min = vec3(delta_radius, 0.0, world_position.z - print_volume.z_data.x);
-        pv_check_max = vec3(0.0, 0.0, world_position.z - print_volume.z_data.y);
-        break;
-    }
-    default:
-    {
-        // check only z
-        pv_check_min = vec3(0.0, 0.0, world_position.z - print_volume.z_data.x);
-        pv_check_max = vec3(0.0, 0.0, world_position.z - print_volume.z_data.y);
-        break;
-    }
-    }
-    return vec4((any(lessThan(pv_check_min, ZERO)) || any(greaterThan(pv_check_max, ZERO))) ? mix(uniform_color.rgb, ZERO, 0.3333) : uniform_color.rgb, uniform_color.a);
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);
 }
 
 void main()
 {
-    g_eye_normal.xyz = normalize(eye_normal);
-    g_eye_normal.w = material_id;
-    g_color = select_color();
+    g_eye_normal = octahedral_normal_encoding(eye_normal);
+    g_color.rgb = uniform_color.rgb;
+    g_color.a = material_id;
 }

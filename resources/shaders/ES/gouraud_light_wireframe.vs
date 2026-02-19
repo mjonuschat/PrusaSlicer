@@ -12,7 +12,6 @@ struct Light
     float shininess;
 };
 
-uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
@@ -24,8 +23,7 @@ attribute vec3 v_position;
 attribute vec3 v_normal;
 
 // x = tainted, y = specular;
-varying vec2 intensity;
-varying vec3 world_position;
+varying vec2 vertex_intensity;
 
 vec3 light_direction(Light light)
 {
@@ -38,15 +36,15 @@ void main()
     // First transform the normal into camera space and normalize the result.
     vec3 eye_normal = normalize(view_normal_matrix * v_normal);
     vec4 eye_position = view_model_matrix * vec4(v_position, 1.0);
-    intensity = vec2(0.0);
+    vertex_intensity = vec2(0.0);
     vec3 v = -normalize(eye_position.xyz);
     for (int i = 0; i < MAX_LIGHTS; ++i) {
         if (i >= num_lights)
             break;
         vec3 dir = light_direction(lights[i]);
-        intensity.x += lights[i].ambient + max(dot(eye_normal, dir), 0.0) * lights[i].diffuse;
-        intensity.y += lights[i].specular * pow(max(dot(v, reflect(-dir, eye_normal)), 0.0), lights[i].shininess);    
+        vertex_intensity.x += lights[i].ambient + max(dot(eye_normal, dir), 0.0) * lights[i].diffuse;
+        vertex_intensity.y += lights[i].specular * pow(max(dot(v, reflect(-dir, eye_normal)), 0.0), lights[i].shininess);    
     }
-    world_position = (model_matrix * vec4(v_position, 1.0)).xyz;
+
     gl_Position = projection_matrix * eye_position;
 }

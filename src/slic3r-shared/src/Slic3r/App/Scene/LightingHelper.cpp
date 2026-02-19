@@ -25,12 +25,19 @@ namespace Slic3r::App::Scene {
 
 void set_uniforms(const Lighting& lights, Render::Material& material)
 {
+    DEBUG_ASSERT(!lights.lights.empty());
     material.set_uniform("ambient_intensity", lights.ambient_intensity);
     material.set_uniform("num_lights", int(lights.lights.size()));
+    int light_shadows_id = 0;
     for (size_t i = 0; i < lights.lights.size(); ++i) {
-        const Light& light    = lights.lights[i];
+        const Light& light = lights.lights[i];
+        if (light.shadows) {
+            DEBUG_ASSERT(light_shadows_id == 0); // only one light should have shadows enabled
+            light_shadows_id = int(i);
+        }
         std::string light_str = format("lights[%zu]", i);
-        material.set_uniform(light_str + ".system", int(light.system))
+        material
+            .set_uniform(light_str + ".system", int(light.system))
             .set_uniform(light_str + ".direction", light.direction)
             .set_uniform(light_str + ".diffuse", light.diffuse)
             .set_uniform(light_str + ".shadows", light.shadows)
@@ -38,6 +45,7 @@ void set_uniforms(const Lighting& lights, Render::Material& material)
             .set_uniform(light_str + ".specular", light.specular)
             .set_uniform(light_str + ".shininess", light.shininess);
     }
+    material.set_uniform("light_shadows_id", light_shadows_id);
 }
 
 void set_uniforms(const PBRParamsList& pbr_params, Render::Material& material)
@@ -89,8 +97,59 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
 
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     ImGui::SetNextWindowPos({0.5f * ImGui::GetMainViewport()->Size.x, 50.0f}, ImGuiCond_Once, {0.5f, 0.0f});
-    if (ImGui::Begin("Graphics settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
-    {
+    if (ImGui::Begin("Graphics settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar)) {
+        if (ImGui::BeginTable("FPS", 2, ImGuiTableFlags_Borders)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("FPS");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.1f", ImGui::GetIO().Framerate);
+
+            ImGui::EndTable();
+        }
+
+        if (ImGui::BeginTable("GraphicsCard", 2, ImGuiTableFlags_Borders)) {
+            const Render::Context& ctx = Render::Context::instance();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Vendor");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", ctx.gl_vendor_string().c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Renderer");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", ctx.gl_renderer_string().c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("OpenGL version");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", ctx.gl_version_string().c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("OpenGL core profile");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", ctx.gl_core_profile_string().c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("GLSL version");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", ctx.glsl_version_string().c_str());
+
+            ImGui::EndTable();
+        }
+
         ImGui::BeginGroup();
         if (ImGui::BeginListBox("##listbox", {100.0f, -1.0f})) {
             for (int i = 0; i < IM_ARRAYSIZE(items); ++i) {

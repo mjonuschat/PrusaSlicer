@@ -8,7 +8,7 @@
 
 namespace Slic3r::Domain {
 class ColorRGB;
-}
+} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Render {
 class Device;
@@ -81,18 +81,11 @@ public:
     const Interval& view_visible_range() const { return m_view_range.visible(); }
     virtual void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
-    const Scene::Lighting& lights() const { return m_lights; }
-    void set_lights(const Scene::Lighting& lights);
-
 protected:
     virtual void update_view_full_range() = 0;
     float encoded_color(const Domain::ColorRGB& color);
 
 protected:
-    //
-    // Lights used in rendering
-    //
-    Scene::Lighting m_lights;
     //
     // Detected layers
     //

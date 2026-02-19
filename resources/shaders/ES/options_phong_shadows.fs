@@ -16,6 +16,7 @@ struct Light
 uniform float shadows_intensity;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
+uniform int light_shadows_id;
 uniform mat4 view_matrix;
 
 uniform sampler2D shadowsmap;
@@ -62,20 +63,23 @@ float shadow_pcf(vec4 position, float NdotL)
     return 1.0 - shadows_intensity * shadow;
 }
 
-vec4 lighting_phong()
+vec4 lighting_phong(float shadow)
 {
     vec3 normal = normalize(eye_normal);
 
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
-    for (int i = 0; i < num_lights; ++i) {
+    vec3 v = -normalize(eye_position);
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
         ambient += lights[i].ambient;
         vec3 dir = light_direction(lights[i]);
         float NdotL = max(dot(normal, dir), 0.0);
-        float shadow = lights[i].shadows ? shadow_pcf(light_position, NdotL) : 1.0;
-        diffuse += shadow * lights[i].diffuse * NdotL;
-        specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
+        float shadow_factor = (i == light_shadows_id) ? shadow : 1.0;
+        diffuse += shadow_factor * lights[i].diffuse * NdotL;
+        specular += shadow_factor * lights[i].specular * pow(max(dot(v, reflect(-dir, normal)), 0.0), lights[i].shininess);
     }
 
     return vec4(var_color.rgb * (ambient + diffuse + specular), var_color.a);
@@ -83,5 +87,7 @@ vec4 lighting_phong()
 
 void main()
 {
-    gl_FragColor = lighting_phong();
+    float shadow = lights[light_shadows_id].shadows ?
+        shadow_pcf(light_position, max(dot(eye_normal, light_direction(lights[light_shadows_id])), 0.0)) : 1.0;
+    gl_FragColor = lighting_phong(shadow);
 }

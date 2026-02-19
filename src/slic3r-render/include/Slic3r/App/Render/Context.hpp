@@ -47,6 +47,12 @@ public:
     bool is_core_profile() const { return m_core_profile; }
     void log_gl_info() const;
 
+    const std::string& gl_vendor_string() const { return m_gl_vendor_string; }
+    const std::string& gl_version_string() const { return m_gl_version_string; }
+    const std::string& gl_core_profile_string() const { return m_gl_core_profile_string; }
+    const std::string& glsl_version_string() const { return m_glsl_version_string; }
+    const std::string& gl_renderer_string() const { return m_gl_renderer_string; }
+
     [[nodiscard]] ShaderManager& shader_manager() const { return *m_shader_manager; }
     [[nodiscard]] TextureManager& texture_manager() const { return *m_texture_manager; }
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -64,6 +70,12 @@ private:
     bool m_vao_available;
     uint8_t m_max_texture_units{0};
     size_t m_max_texture_size{ 0 };
+
+    std::string m_gl_vendor_string;
+    std::string m_gl_version_string;
+    std::string m_gl_core_profile_string;
+    std::string m_glsl_version_string;
+    std::string m_gl_renderer_string;
 
     std::unique_ptr<Device> m_device;
     std::unique_ptr<ShaderManager> m_shader_manager;

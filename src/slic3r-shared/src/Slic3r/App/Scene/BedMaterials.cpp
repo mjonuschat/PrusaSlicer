@@ -72,8 +72,7 @@ Render::Material BedMaterials::plate_textured_material(const Render::Device& dev
         .set_shader(device.context().shader_manager().shader("printbed"))
         .set_texture(0, BedRenderHelper::texture(bed, device.context().texture_manager()))
         .set_uniform("back_color_dark", PLATE_TEXTURED_DARK_REGULAR)
-        .set_uniform("back_color_light", PLATE_TEXTURED_LIGHT_REGULAR)
-        .set_uniform("transparent_background", false);
+        .set_uniform("back_color_light", PLATE_TEXTURED_LIGHT_REGULAR);
     return ret;
 }
 
@@ -136,7 +135,8 @@ Render::Material BedMaterials::axis_material(const Render::Device& device, uint8
     }
     }
     Render::Material ret;
-    ret.set_shader(device.context().shader_manager().shader("gouraud_light"))
+    ret
+        .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
@@ -199,9 +199,7 @@ Render::Material BedMaterials::plate_default_unselected_error_material(const Ren
 Render::Material BedMaterials::plate_textured_transparent_material(const Render::Material& primary_material)
 {
     Render::Material ret = primary_material;
-    ret
-        .set_uniform("transparent_background", true)
-        .set_transparent(true);
+    ret.set_transparent(true);
     return ret;
 }
 

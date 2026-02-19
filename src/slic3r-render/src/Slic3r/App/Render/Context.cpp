@@ -73,11 +73,14 @@ Semver parse_version(const std::string& s)
 
 Context::Context()
 {
-    std::string gl_version = getGlString(GL_VERSION, VERSION_NA);
-    m_opengl_version = parse_version(gl_version);
-    std::string glsl_version = getGlString(GL_SHADING_LANGUAGE_VERSION, VERSION_NA);
-    m_glsl_version = parse_version(glsl_version);
+    m_gl_vendor_string = getGlString(GL_VENDOR);
+    m_gl_version_string = getGlString(GL_VERSION, VERSION_NA);
+    m_opengl_version = parse_version(m_gl_version_string);
     m_core_profile = !GLEW_ARB_compatibility;
+    m_gl_core_profile_string = m_core_profile ? "Yes" : "No";
+    m_glsl_version_string = getGlString(GL_SHADING_LANGUAGE_VERSION, VERSION_NA);
+    m_glsl_version = parse_version(m_glsl_version_string);
+    m_gl_renderer_string = getGlString(GL_RENDERER);
 
     GLint max_texture_units = 0;
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
@@ -93,7 +96,7 @@ Context::Context()
     m_vao_available = GLEW_OES_vertex_array_object;
 #else
     m_vao_available = true;
-#endif
+#endif // EMSCRIPTEN
     m_device.reset(new Device(*this));
     m_shader_manager.reset(new ShaderManager(*this));
     m_texture_manager.reset(new TextureManager(*m_device));
@@ -110,11 +113,11 @@ Context::~Context()
 
 void Context::log_gl_info() const
 {
-    SPDLOG_INFO("OpenGL Vendor: {}", getGlString(GL_VENDOR));
-    SPDLOG_INFO("OpenGL Version: {}", getGlString(GL_VERSION));
-    SPDLOG_INFO("Core profile: {}", is_core_profile() ? "Yes" : "No");
-    SPDLOG_INFO("GLSL Version: {}", getGlString(GL_SHADING_LANGUAGE_VERSION));
-    SPDLOG_INFO("OpenGL Renderer: {}", getGlString(GL_RENDERER));
+    SPDLOG_INFO("OpenGL Vendor: {}", m_gl_vendor_string);
+    SPDLOG_INFO("OpenGL Version: {}", m_gl_version_string);
+    SPDLOG_INFO("Core profile: {}", m_gl_core_profile_string);
+    SPDLOG_INFO("GLSL Version: {}", m_glsl_version_string);
+    SPDLOG_INFO("OpenGL Renderer: {}", m_gl_renderer_string);
 #ifdef EMSCRIPTEN
     SPDLOG_INFO("OpenGL Extensions: {}", getGlString(GL_EXTENSIONS));
 #else
@@ -131,7 +134,7 @@ void Context::log_gl_info() const
         SPDLOG_INFO("OpenGL Extensions: {}", oss.str());
     } else
         SPDLOG_INFO("OpenGL Extensions: {}", getGlString(GL_EXTENSIONS));
-#endif
+#endif // EMSCRIPTEN
 }
 
 void Context::release_resources()

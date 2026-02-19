@@ -19,7 +19,7 @@ class GeometryDataFactory;
 
 namespace Slic3r::App::libvgcode {
 class AbstractViewer;
-}
+} // namespace Slic3r::App::libvgcode
 
 namespace Slic3r::App::Preview {
 
@@ -81,9 +81,6 @@ public:
 
     virtual bool has_data() const;
     virtual void reset() = 0;
-
-    const Scene::Lighting& lights() const;
-    void set_lights(const Scene::Lighting& lights);
 
     std::unique_ptr<DoubleSliderForLayers> unload_double_slider_layers();
 

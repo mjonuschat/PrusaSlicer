@@ -38,11 +38,14 @@ float lighting(vec3 eye_position, vec3 eye_normal)
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
-    for (int i = 0; i < num_lights; ++i) {
+    vec3 v = -normalize(eye_position);
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
         vec3 dir = light_direction(lights[i]);
         ambient += lights[i].ambient;
         diffuse += lights[i].diffuse * max(dot(eye_normal, dir), 0.0);
-        specular += lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
+        specular += lights[i].specular * pow(max(dot(v, reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
     }
     return ambient + diffuse + specular;
 }

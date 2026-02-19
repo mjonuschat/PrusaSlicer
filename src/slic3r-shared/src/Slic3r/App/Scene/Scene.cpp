@@ -417,8 +417,8 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
         return n->has_render_component() && n->render_component()->cast_shadows() && !resolve_material(*n).transparent();
     });
 
-    Eigen::AlignedBox3d world_aabb;
     if (!nodes.empty()) {
+        Eigen::AlignedBox3d world_aabb;
         // extend the bounding box to contain all shadow casters
         for (const auto& [node, material] : nodes) {
             if (node->has_raycast_component())
@@ -671,7 +671,10 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera,
         data.width = viewport_size[0];
         data.height = viewport_size[1];
         data.color_attachments.resize(2);
-        data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
+        // eye norm attachement contains the normal compressed into two floats using octahedral normal encoding 
+        data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Domain::PixelFormat::RG16F;
+        // color attachement contains the rgb color in its red, green, blue channels 
+        // and the material id (normalized to belong to the range [0.0..1.0]) in its alpha channel
         data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Domain::PixelFormat::RGBA8;
         ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
     }
@@ -717,9 +720,9 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera,
             mat.set_shader(device.context().shader_manager().shader(shader_name));
 
             if (s_graphics_settings.pbr_enabled() && n->render_component()->has_pbr()) {
-                int id = -1;
+                float mat_id = -1.0f;
                 if (pbr_params_list.size() == MAX_NUM_PBR_MATERIALS)
-                    id = int(pbr_params_list.size() - 1);
+                    mat_id = float(pbr_params_list.size() - 1.0f) / float(MAX_NUM_PBR_MATERIALS);
                 else {
                     const PBRParams& params = *n->render_component()->pbr();
                     auto it = std::find(pbr_params_list.begin(), pbr_params_list.end(), params);
@@ -727,9 +730,12 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera,
                         pbr_params_list.push_back(params);
                         it = std::prev(pbr_params_list.end());
                     }
-                    id = int(std::distance(pbr_params_list.begin(), it));
+                    mat_id = float(std::distance(pbr_params_list.begin(), it)) / float(MAX_NUM_PBR_MATERIALS);
                 }
-                mat.set_uniform("material_id", id);
+                // Materials id are stored in the alpha channel of the color g-buffer which is of RGBA8 format.
+                // OpenGL clamps the values in the range [0.0, 1.0] so we need to provide a normalized value
+                // which is then converted back to integer in the ambient occlusion lighting shader
+                mat.set_uniform("material_id", mat_id);
             }
 
             set_uniforms(m_lighting, mat);

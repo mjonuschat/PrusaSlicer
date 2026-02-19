@@ -11,6 +11,7 @@ enum class PixelFormat
     R16F,
     R32F,
     R32UI,
+    RG16F,
     RGBA32F,
     RGBA16F,
     RGB32F,

@@ -1586,7 +1586,7 @@ void FdmViewer::render_segments(Scene::Node* node, const Vec3f& camera_position)
     Render::Material material{};
     material
         .set_shader(m_device->context().shader_manager().shader("segments"));
-    Scene::set_uniforms(m_lights, material);
+    Scene::set_uniforms(m_scene->lights(), material);
 
 #if USE_TEXTURE_BUFFER
     material
@@ -1642,7 +1642,7 @@ void FdmViewer::render_options(Scene::Node* node)
     Render::Material material;
     material
         .set_shader(m_device->context().shader_manager().shader("options"));
-    Scene::set_uniforms(m_lights, material);
+    Scene::set_uniforms(m_scene->lights(), material);
 
 #if USE_TEXTURE_BUFFER
     material
@@ -1689,7 +1689,7 @@ void FdmViewer::render_cog_marker(Scene::Node* node)
         .set_shader(m_device->context().shader_manager().shader("cog_marker"))
         .set_uniform("world_origin", m_cog_marker.position())
         .set_uniform("scale_factor", m_cog_marker.scale_factor());
-    Scene::set_uniforms(m_lights, material);
+    Scene::set_uniforms(m_scene->lights(), material);
 
     ASSERT(node != nullptr);
     node->set_material_override(material);
@@ -1705,7 +1705,7 @@ void FdmViewer::render_tool_marker(Scene::Node* node)
     material
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
-    Scene::set_uniforms(m_lights, material);
+    Scene::set_uniforms(m_scene->lights(), material);
     node->render_component()->replace_material(material);
 
     Scene::Transform xtrafo = Scene::Transform::Identity();

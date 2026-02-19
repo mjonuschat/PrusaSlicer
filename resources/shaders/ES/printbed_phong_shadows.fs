@@ -14,11 +14,11 @@ struct Light
 };
 
 uniform float shadows_intensity;
-uniform bool transparent_background;
 uniform vec3 back_color_dark;
 uniform vec3 back_color_light;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
+uniform int light_shadows_id;
 uniform mat4 view_matrix;
 
 uniform sampler2D in_texture;
@@ -44,7 +44,7 @@ vec4 gradient_color()
     vec3 back_color = vec3(mix(back_color_light, back_color_dark, smoothstep(0.0, 0.5, length(abs(tex_coord.xy) - vec2(0.5)))));
 
     // blends foreground with background
-    return vec4(mix(back_color, fore_color.rgb, fore_color.a), transparent_background ? fore_color.a : 1.0);
+    return vec4(mix(back_color, fore_color.rgb, fore_color.a), 0.5 * fore_color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)
@@ -78,31 +78,31 @@ float shadow_pcf(vec4 position, float NdotL)
     return 1.0 - shadows_intensity * shadow;
 }
 
-vec4 lighting_phong()
+vec4 lighting_phong(float shadow)
 {
     vec3 normal = normalize(eye_normal);
 
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
-    for (int i = 0; i < num_lights; ++i) {
+    vec3 v = -normalize(eye_position);
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
         ambient += lights[i].ambient;
         vec3 dir = light_direction(lights[i]);
         float NdotL = max(dot(normal, dir), 0.0);
-        float shadow = lights[i].shadows ? shadow_pcf(light_position, NdotL) : 1.0;
-        diffuse += shadow * lights[i].diffuse * NdotL;
-        specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
+        float shadow_factor = (i == light_shadows_id) ? shadow : 1.0;
+        diffuse += shadow_factor * lights[i].diffuse * NdotL;
+        specular += shadow_factor * lights[i].specular * pow(max(dot(v, reflect(-dir, normal)), 0.0), lights[i].shininess);
     }
     vec4 color = gradient_color();
-    color.a = transparent_background ? color.a * 0.5 : color.a;
     return vec4(color.rgb * (ambient + diffuse + specular), color.a);
 }
 
 void main()
 {
-    vec4 color = lighting_phong();
-    if (color.a == 0.0)
-        discard;
-
-    gl_FragColor = color;
+    float shadow = lights[light_shadows_id].shadows ?
+        shadow_pcf(light_position, max(dot(eye_normal, light_direction(lights[light_shadows_id])), 0.0)) : 1.0;
+    gl_FragColor = lighting_phong(shadow);
 }

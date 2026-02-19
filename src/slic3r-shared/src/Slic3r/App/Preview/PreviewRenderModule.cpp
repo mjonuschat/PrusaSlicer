@@ -744,10 +744,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     );
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
-        && m_sla_viewer.set_settings(base_settings))
-    {
-        m_sla_viewer.set_lights(Slic3r::App::global_lighting());
-
+        && m_sla_viewer.set_settings(base_settings)) {
         m_sla_slider_layers = Passthrough(m_sla_viewer.unload_double_slider_layers());
     } else {
         // log some error message
@@ -801,10 +798,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
         std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
 
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
-        && m_fdm_viewer.set_settings(settings))
-    {
-        m_fdm_viewer.set_lights(Slic3r::App::global_lighting());
-
+        && m_fdm_viewer.set_settings(settings)) {
         m_legend        = Passthrough(m_fdm_viewer.unload_legend());
         m_gcode_window  = Passthrough(m_fdm_viewer.unload_gcode_window());
         m_slider_gcode  = Passthrough(m_fdm_viewer.unload_double_slider_gcode());

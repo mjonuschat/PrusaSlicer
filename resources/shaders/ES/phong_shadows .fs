@@ -37,7 +37,6 @@ struct PrintVolumeDetection
     vec2 z_data;
 };
 
-const vec3 ZERO = vec3(0.0, 0.0, 0.0);
 const int TYPE_INVALID = 0;
 const int TYPE_RECTANGLE = 1;
 const int TYPE_CIRCLE = 2;
@@ -46,6 +45,7 @@ uniform float shadows_intensity;
 uniform vec4 uniform_color;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
+uniform int light_shadows_id;
 uniform mat4 view_matrix;
 uniform PrintVolumeDetection print_volume;
 
@@ -62,42 +62,33 @@ vec3 light_direction(Light light)
     return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
 }
 
-vec4 select_color()
+vec4 select_color(vec3 world_position, vec4 color)
 {
-    // if the fragment is outside the print volume -> use darker color
-    vec3 pv_check_min = ZERO;
-    vec3 pv_check_max = ZERO;
-    switch (print_volume.type)
-    {
-    case TYPE_INVALID:
-    {
-        // consider as inside
-        pv_check_min = vec3(1.0);
-        pv_check_max = vec3(-1.0);
-        break;
+    // Default to "inside" (1.0)
+    float inside = 1.0;
+
+    // 1. Handle Rectangle
+    if (print_volume.type == TYPE_RECTANGLE) {
+        // Returns 1.0 if inside the bounds, 0.0 if outside
+        // we check if world_pos is between min (xy_data.xy) and max (xy_data.zw)
+        vec3 s = step(vec3(print_volume.xy_data.x, print_volume.xy_data.y, print_volume.z_data.x), world_position) *
+                 step(world_position, vec3(print_volume.xy_data.z, print_volume.xy_data.w, print_volume.z_data.y));
+        inside = s.x * s.y * s.z;
     }
-    case TYPE_RECTANGLE:
-    {
-        pv_check_min = world_position.xyz - vec3(print_volume.xy_data.x, print_volume.xy_data.y, print_volume.z_data.x);
-        pv_check_max = world_position.xyz - vec3(print_volume.xy_data.z, print_volume.xy_data.w, print_volume.z_data.y);
-        break;
+    // 2. Handle Circle
+    else if (print_volume.type == TYPE_CIRCLE) {
+        float d = distance(world_position.xy, print_volume.xy_data.xy);
+        float in_circle = step(d, print_volume.xy_data.z);
+        float in_z = step(print_volume.z_data.x, world_position.z) * step(world_position.z, print_volume.z_data.y);
+        inside = in_circle * in_z;
     }
-    case TYPE_CIRCLE:
-    {
-        float delta_radius = print_volume.xy_data.z - distance(world_position.xy, print_volume.xy_data.xy);
-        pv_check_min = vec3(delta_radius, 0.0, world_position.z - print_volume.z_data.x);
-        pv_check_max = vec3(0.0, 0.0, world_position.z - print_volume.z_data.y);
-        break;
-    }
-    default:
-    {
-        // check only z
-        pv_check_min = vec3(0.0, 0.0, world_position.z - print_volume.z_data.x);
-        pv_check_max = vec3(0.0, 0.0, world_position.z - print_volume.z_data.y);
-        break;
-    }
-    }
-    return vec4((any(lessThan(pv_check_min, ZERO)) || any(greaterThan(pv_check_max, ZERO))) ? mix(uniform_color.rgb, ZERO, 0.3333) : uniform_color.rgb, uniform_color.a);
+    // 3. Handle Invalid / Default (Just Z-check)
+    else if (print_volume.type != TYPE_INVALID)
+        inside = step(print_volume.z_data.x, world_position.z) * step(world_position.z, print_volume.z_data.y);
+
+    // Apply darkening: mix original color with darkened version based on 'inside'
+    // if inside == 1.0, it returns color. If inside == 0.0, it returns color * 0.666
+    return vec4(mix(color.rgb * 0.6666, color.rgb, inside), color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)
@@ -131,27 +122,32 @@ float shadow_pcf(vec4 position, float NdotL)
     return 1.0 - shadows_intensity * shadow;
 }
 
-vec4 lighting_phong()
+vec4 lighting_phong(float shadow)
 {
     vec3 normal = normalize(eye_normal);
 
-     float ambient = 0.0;
-     float diffuse = 0.0;
-     float specular = 0.0;
-     for (int i = 0; i < num_lights; ++i) {
-         ambient += lights[i].ambient;
-         vec3 dir = light_direction(lights[i]);
-         float NdotL = max(dot(normal, dir), 0.0);
-         float shadow = lights[i].shadows ? shadow_pcf(light_position, NdotL) : 1.0;
-         diffuse += shadow * lights[i].diffuse * NdotL;
-         specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
-     }
+    float ambient = 0.0;
+    float diffuse = 0.0;
+    float specular = 0.0;
+    vec3 v = -normalize(eye_position);
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
+        ambient += lights[i].ambient;
+        vec3 dir = light_direction(lights[i]);
+        float NdotL = max(dot(normal, dir), 0.0);
+        float shadow_factor = (i == light_shadows_id) ? shadow : 1.0;
+        diffuse += shadow_factor * lights[i].diffuse * NdotL;
+        specular += shadow_factor * lights[i].specular * pow(max(dot(v, reflect(-dir, normal)), 0.0), lights[i].shininess);
+    }
 
-     vec4 color = select_color();
-     return vec4(color.rgb * (ambient + diffuse + specular), color.a);
+    vec4 color = select_color(world_position, uniform_color);
+    return vec4(color.rgb * (ambient + diffuse + specular), color.a);
 }
 
 void main()
 {
-    gl_FragColor = lighting_phong();
+    float shadow = lights[light_shadows_id].shadows ?
+        shadow_pcf(light_position, max(dot(eye_normal, light_direction(lights[light_shadows_id])), 0.0)) : 1.0;
+    gl_FragColor = lighting_phong(shadow);
 }

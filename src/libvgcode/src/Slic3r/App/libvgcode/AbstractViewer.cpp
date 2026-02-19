@@ -43,23 +43,4 @@ float AbstractViewer::encoded_color(const Domain::ColorRGB& color) {
     return float(i_color);
 }
 
-void AbstractViewer::set_lights(const Scene::Lighting& lights)
-{
-    m_lights.ambient_intensity = lights.ambient_intensity;
-    m_lights.lights.clear();
-    size_t num_lights = std::min(lights.lights.size(), Scene::MAX_NUM_LIGHTS);
-    m_lights.lights.reserve(num_lights);
-    for (size_t i = 0; i < num_lights; ++i) {
-        Scene::Light light = lights.lights[i];
-        light.direction = light.direction.normalized();
-        light.ambient = std::max(light.ambient, 0.0f);
-        light.diffuse = std::max(light.diffuse, 0.0f);
-        light.specular = std::max(light.specular, 0.0f);
-        // avoid shininess == 0.0, see: https://registry.khronos.org/OpenGL-Refpages/gl4/html/pow.xhtml
-        light.shininess = std::max(light.shininess, 0.001f);
-
-        m_lights.lights.emplace_back(light);
-    }
-}
-
 } // namespace Slic3r::App::libvgcode

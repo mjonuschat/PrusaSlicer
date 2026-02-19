@@ -1,7 +1,7 @@
 #version 100
 
 #define MAX_LIGHTS 4
-#define MAX_MATERIALS 16
+#define MAX_MATERIALS 255
 #define PI 3.1415926535897932384626433832795
 
 struct Light
@@ -22,13 +22,43 @@ struct Material
     float ior;
 };
 
+struct PrintVolumeDetection
+{
+    // 0 -> Invalid
+    // 1 -> Rectangle
+    // 2 -> Circle
+    // 3 -> Convex
+    // 4 -> Custom
+    int type;
+    // Invalid/Rectangle/Convex/Custom:
+    //   x = min x
+    //   y = min y
+    //   z = max x
+    //   w = max y
+    // Circle:
+    //   x = center x
+    //   y = center y
+    //   z = radius
+    //   w = not used
+    vec4 xy_data;
+    // x = min z
+    // y = max z
+    vec2 z_data;
+};
+
+const int TYPE_INVALID = 0;
+const int TYPE_RECTANGLE = 1;
+const int TYPE_CIRCLE = 2;
+
 uniform bool apply_pbr;
 uniform float pbr_intensity;
 uniform bool apply_shadows;
 uniform float shadows_intensity;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
+uniform int light_shadows_id;
 uniform Material materials[MAX_MATERIALS];
+uniform PrintVolumeDetection print_volume;
 uniform vec2 viewport_size;
 uniform mat4 view_matrix;
 uniform mat4 inverse_projection_matrix;
@@ -44,21 +74,47 @@ uniform sampler2D shadowsmap;
 
 varying vec2 tex_coord;
 
-vec3 eye_position_from_depth(vec2 uv, float depth)
-{
-    vec4 eye = inverse_projection_matrix * vec4(vec3(uv, depth) * 2.0 - vec3(1.0), 1.0);
-    return eye.xyz / eye.w;
-}
-
 vec3 world_position_from_depth(vec2 uv, float depth)
 {
     vec4 world = inverse_projection_view_matrix * vec4(vec3(uv, depth) * 2.0 - vec3(1.0), 1.0);
     return world.xyz / world.w;
 }
 
-vec4 light_position_from_depth(vec2 uv, float depth)
+vec3 octahedral_normal_decoding(vec2 f)
 {
-    return light_matrix * vec4(world_position_from_depth(uv, depth), 1.0);
+    vec3 n = vec3(f.xy, 1.0 - abs(f.x) - abs(f.y));
+    vec2 cond = step(n.z, vec2(0.0));
+    n.xy = mix(n.xy, (1.0 - abs(n.yx)) * sign(n.xy), cond.x);
+    return normalize(n);
+}
+
+vec4 select_color(vec3 world_position, vec4 color)
+{
+    // Default to "inside" (1.0)
+    float inside = 1.0;
+
+    // 1. Handle Rectangle
+    if (print_volume.type == TYPE_RECTANGLE) {
+        // Returns 1.0 if inside the bounds, 0.0 if outside
+        // we check if world_pos is between min (xy_data.xy) and max (xy_data.zw)
+        vec3 s = step(vec3(print_volume.xy_data.x, print_volume.xy_data.y, print_volume.z_data.x), world_position) *
+                 step(world_position, vec3(print_volume.xy_data.z, print_volume.xy_data.w, print_volume.z_data.y));
+        inside = s.x * s.y * s.z;
+    }
+    // 2. Handle Circle
+    else if (print_volume.type == TYPE_CIRCLE) {
+        float d = distance(world_position.xy, print_volume.xy_data.xy);
+        float in_circle = step(d, print_volume.xy_data.z);
+        float in_z = step(print_volume.z_data.x, world_position.z) * step(world_position.z, print_volume.z_data.y);
+        inside = in_circle * in_z;
+    }
+    // 3. Handle Invalid / Default (Just Z-check)
+    else if (print_volume.type != TYPE_INVALID)
+        inside = step(print_volume.z_data.x, world_position.z) * step(world_position.z, print_volume.z_data.y);
+
+    // Apply darkening: mix original color with darkened version based on 'inside'
+    // if inside == 1.0, it returns color. If inside == 0.0, it returns color * 0.666
+    return vec4(mix(color.rgb * 0.6666, color.rgb, inside), color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)
@@ -98,28 +154,24 @@ vec3 light_direction(Light light)
     return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
 }
 
-vec4 lighting_phong()
+vec3 lighting_phong(vec3 in_color, float depth, vec3 eye_position, vec3 eye_normal, float shadow, float ao)
 {
-    vec3 eye_normal = texture(g_eye_normal, tex_coord).xyz;
-    float depth = texture(g_depth, tex_coord).r;
-    vec3 eye_position = eye_position_from_depth(tex_coord, depth);
-    vec4 light_position = light_position_from_depth(tex_coord, depth);
-    float ao = texture(ssao, tex_coord).r;
-    vec4 color = texture(g_color, tex_coord);
-
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
-    for (int i = 0; i < num_lights; ++i) {
+    vec3 v = -normalize(eye_position);
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
         ambient += lights[i].ambient;
         vec3 dir = light_direction(lights[i]);
         float NdotL = max(dot(eye_normal, dir), 0.0);
-        float shadow = (apply_shadows && lights[i].shadows) ? shadow_pcf(light_position, NdotL) : 1.0;
-        diffuse += shadow * lights[i].diffuse * NdotL;
-        specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
+        float shadow_factor = (i == light_shadows_id) ? shadow : 1.0;
+        diffuse += shadow_factor * lights[i].diffuse * NdotL;
+        specular += shadow_factor * lights[i].specular * pow(max(dot(v, reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
     }
 
-    return vec4(color.rgb * (ambient * ao + diffuse + specular), color.a);
+    return vec3(in_color * (ambient * ao + diffuse + specular));
 }
 
 float ior_to_f0(float ior)
@@ -182,28 +234,22 @@ vec3 light_radiance(vec3 F0, vec3 v, vec3 n, vec3 l, float diffuse, Material mat
     return (kD * color / PI + specular) * radiance * NdotL;
 }
 
-vec4 lighting_pbr()
+vec3 lighting_pbr(vec3 in_color, float depth, vec3 eye_position, vec3 eye_normal, int material_id, float shadow, float ao)
 {
-    float depth = texture(g_depth, tex_coord).r;
-    vec4 light_position = light_position_from_depth(tex_coord, depth);
-    vec3 v = normalize(-eye_position_from_depth(tex_coord, depth));
-    vec4 n_m = texture(g_eye_normal, tex_coord);
-    vec3 n = n_m.xyz;
-    Material material = materials[int(n_m.w)];
-    float ao = texture(ssao, tex_coord).r;
-
-    vec4 color = texture(g_color, tex_coord);
-    color.xyz = pow(color.xyz, vec3(2.2));
-    vec3 F0 = mix(vec3(ior_to_f0(material.ior)), color.rgb, material.metal);
-
+    Material material = materials[material_id];
+    vec3 color = pow(in_color, vec3(2.2));
+    vec3 F0 = mix(vec3(ior_to_f0(material.ior)), color, material.metal);
+    vec3 v = -normalize(eye_position);
     vec3 lo = vec3(0.0);
-    for (int i = 0; i < num_lights; ++i) {
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= num_lights)
+            break;
         vec3 dir = light_direction(lights[i]);
-        float shadow = (apply_shadows && lights[i].shadows) ? shadow_pcf(light_position, max(dot(n, dir), 0.0)) : 1.0;
-        lo += shadow * light_radiance(F0, v, n, dir, pbr_intensity * lights[i].diffuse, material, color.rgb);
+        float shadow_factor = (i == light_shadows_id) ? shadow : 1.0;
+        lo += shadow_factor * light_radiance(F0, v, eye_normal, dir, pbr_intensity * lights[i].diffuse, material, color);
     }
 
-    vec3 ambient = vec3(ambient_intensity) * color.rgb;
+    vec3 ambient = vec3(ambient_intensity) * color;
     vec3 pbr_color = (ambient + lo) * ao;
 
     // HDR tonemapping
@@ -211,13 +257,29 @@ vec4 lighting_pbr()
 //    // gamma correct
 //    pbr_color = pow(pbr_color, vec3(1.0/2.2));
 
-    return vec4(pbr_color, color.a);
+    return pbr_color;
 }
 
 void main()
 {
-    vec4 color = apply_pbr ? lighting_pbr() : lighting_phong();
-    if (color.w == 0.0)
+    vec4 color = texture(g_color, tex_coord);
+    float depth = texture(g_depth, tex_coord).r;
+    if (depth >= 1.0)
         discard;
-    gl_FragColor = color;
+
+    vec3 eye_normal = octahedral_normal_decoding(texture(g_eye_normal, tex_coord).xy);
+    int material_id = int(color.w * MAX_MATERIALS + 0.5);
+
+    vec3 world_position = world_position_from_depth(tex_coord, depth);
+    vec3 eye_position = (view_matrix * vec4(world_position, 1.0)).xyz;
+    vec4 light_position = light_matrix * vec4(world_position, 1.0);
+
+    float shadow = (apply_shadows && lights[light_shadows_id].shadows) ?
+        shadow_pcf(light_position, max(dot(eye_normal, light_direction(lights[light_shadows_id])), 0.0)) : 1.0;
+
+    float ao = texture(ssao, tex_coord).r;
+
+    color.rgb = apply_pbr ? lighting_pbr(color.rgb, depth, eye_position, eye_normal, material_id, shadow, ao) :
+        lighting_phong(color.rgb, depth, eye_position, eye_normal, shadow, ao);
+    gl_FragColor = select_color(world_position, vec4(color.rgb, 1.0));
 }
