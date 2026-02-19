@@ -324,7 +324,7 @@ ZHeightPairs smooth_height_profile(const ZHeightPairs& profile, const SmoothPara
 
         unsigned int radius        = std::max(params.radius, 1u);
         std::vector<double> kernel = gauss_kernel(radius);
-        int two_radius             = 2 * static_cast<int>(radius);
+        int radius_int             = static_cast<int>(radius);
 
         ZHeightPairs ret;
         size_t size = profile.size();
@@ -346,8 +346,8 @@ ZHeightPairs smooth_height_profile(const ZHeightPairs& profile, const SmoothPara
             double hi = profile[i].layer_height;
             ret.push_back({zi, 0.});
             double& height = ret.back().layer_height;
-            int begin = std::max(static_cast<int>(i) - two_radius, static_cast<int>(skip_count));
-            int end   = std::min(static_cast<int>(i) + two_radius, static_cast<int>(size) - 1);
+            int begin = std::max(static_cast<int>(i) - radius_int, static_cast<int>(skip_count));
+            int end   = std::min(static_cast<int>(i) + radius_int, static_cast<int>(size) - 1);
             double weight_total = 0.;
             for (int j = begin; j <= end; ++j) {
                 int kernel_id = static_cast<int>(radius) + (j - static_cast<int>(i));
