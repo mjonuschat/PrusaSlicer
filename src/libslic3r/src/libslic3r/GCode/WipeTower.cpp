@@ -634,11 +634,8 @@ WipeTower::WipeTower(
         m_set_extruder_trimpot    = config.get<bool>("high_current_on_filament_swap");
     }
 
-    m_is_mk4mmu3 = boost::icontains(config.get<std::string>("printer_notes"), "RAMMING_EXTRA")
-                // Before 2.9.1, the condition was tied to different keywords. We need to keep that so we don't break existing projects:
-                || (boost::icontains(config.get<std::string>("printer_notes"), "PRINTER_MODEL_MK4") && boost::icontains(config.get<std::string>("printer_notes"), "MMU"));
-
-    m_switch_filament_monitoring = m_is_mk4mmu3 || is_XL_printer(config);
+    m_switch_filament_monitoring = config.get<bool>("stuck_filament_detection");
+    m_enable_pressure_advance_during_ramming = config.get<bool>("enable_pressure_advance_during_ramming");
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
     const std::vector<Vec2d>& bed_points = config.get<std::vector<Vec2d>>("bed_shape");
@@ -689,6 +686,8 @@ void WipeTower::set_extruder(size_t idx, const PrintConfigView& config)
         m_filpar[idx].cooling_final_speed     = float(config.get<std::vector<double>>("filament_cooling_final_speed").at(idx));
         m_filpar[idx].filament_stamping_loading_speed     = float(config.get<std::vector<double>>("filament_stamping_loading_speed").at(idx));
         m_filpar[idx].filament_stamping_distance          = float(config.get<std::vector<double>>("filament_stamping_distance").at(idx));
+        m_filpar[idx].ramming_temperature_delta = config.get<std::vector<int>>("filament_ramming_temperature_delta").at(idx);
+        m_filpar[idx].ramming_initial_delay = float(config.get<std::vector<double>>("filament_ramming_initial_delay").at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.get<std::vector<double>>("filament_diameter").at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -945,14 +944,14 @@ void WipeTower::toolchange_Unload(
 	float e_done = 0;									// measures E move done from each segment   
 
     const bool do_ramming = m_semm || m_filpar[m_current_tool].multitool_ramming;
-    const bool cold_ramming = m_is_mk4mmu3;
+    const int ramming_temperature_delta = m_filpar[m_current_tool].ramming_temperature_delta;
 
     if (do_ramming) {
         writer.travel(ramming_start_pos); // move to starting position
-        if (! m_is_mk4mmu3)
+        if (!m_enable_pressure_advance_during_ramming)
             writer.disable_linear_advance();
-        if (cold_ramming)
-            writer.set_extruder_temp(old_temperature - 20);
+        if (ramming_temperature_delta != 0)
+            writer.set_extruder_temp(old_temperature + ramming_temperature_delta);
     }
     else
         writer.set_position(ramming_start_pos);
@@ -989,9 +988,8 @@ void WipeTower::toolchange_Unload(
 
     if (m_switch_filament_monitoring)
         writer.switch_filament_monitoring(false);
-    if (m_is_mk4mmu3)
-        writer.wait(1.5f);
-    
+    if (m_filpar[m_current_tool].ramming_initial_delay > 0)
+        writer.wait(m_filpar[m_current_tool].ramming_initial_delay);
 
     // now the ramming itself:
     while (do_ramming && i < m_filpar[m_current_tool].ramming_speed.size())
@@ -1041,10 +1039,11 @@ void WipeTower::toolchange_Unload(
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
     if (m_semm) {
-        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || cold_ramming) ) { 	// Set the extruder temperature, but don't wait.
+        const bool ramming_temperature_modified = m_filpar[m_current_tool].ramming_temperature_delta != 0;
+        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || ramming_temperature_modified) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
-            if (cold_ramming && cooling_will_happen)
+            if (ramming_temperature_modified && cooling_will_happen)
                 change_temp_later = true;
             else
                 writer.set_extruder_temp(new_temperature, false);
@@ -1059,7 +1058,7 @@ void WipeTower::toolchange_Unload(
 
         float speed_inc = (final_speed - initial_speed) / (2.f * number_of_cooling_moves - 1.f);
 
-        if (m_is_mk4mmu3)
+        if (m_enable_pressure_advance_during_ramming)
             writer.disable_linear_advance();
 
         writer.suppress_preview()

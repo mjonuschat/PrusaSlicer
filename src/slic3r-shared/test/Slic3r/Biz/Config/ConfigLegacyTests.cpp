@@ -110,8 +110,36 @@ TEST_CASE("SLA INI roundtrip", "[config]")
 TEST_CASE("FDM INI roundtrip", "[config]")
 {
     std::vector<std::string> diff_lines = roundtrip_and_get_diff_lines(fs::path(TEST_DATA_DIR) / "test_fdm.ini");
-    remove_lines_which_start_with(diff_lines, {"# generated", "compatible_printers_condition_cummulative", "default_filament_profile",
-        "default_print_profile", "filament_settings_id", "print_host", "print_settings_id", "printhost_apikey", "printhost_cafile", "printer_settings_id"});
+    remove_lines_which_start_with(
+        diff_lines,
+        {
+            "# generated",
+            "compatible_printers_condition_cummulative",
+            "default_filament_profile",
+            "default_print_profile",
+            "filament_settings_id",
+            "print_host",
+            "print_settings_id",
+            "printhost_apikey",
+            "printhost_cafile",
+            "printer_settings_id",
+
+            // In slicer 3 filament_load_time and filament_unload_time became filament_change_time.
+            // Also, 4 new parameters were introduced:
+            // - enable_pressure_advance_during_ramming
+            // - stuck_filament_detection
+            // - filament_ramming_initial_delay
+            // - filament_ramming_temperature_delta
+            "enable_pressure_advance_during_ramming",
+            "filament_change_time",
+            "filament_load_time",
+            "filament_ramming_initial_delay",
+            "filament_ramming_temperature_delta",
+            "filament_unload_time",
+            "stuck_filament_detection",
+
+        }
+    );
     for (const std::string& line : diff_lines) {
         std::cout << line << "\n";
     }
@@ -214,7 +242,14 @@ const std::map<std::string, std::vector<std::string>> fdm_whitelist{
         "; print_settings_id",
         "; printhost_apikey",
         "; printhost_cafile",
-        "; printer_settings_id"
+        "; printer_settings_id",
+        "; enable_pressure_advance_during_ramming",
+        "; filament_change_time",
+        "; filament_load_time",
+        "; filament_ramming_initial_delay",
+        "; filament_ramming_temperature_delta",
+        "; filament_unload_time",
+        "; stuck_filament_detection",
     }},
     {model_config_file, {
         "<metadata type=\"volume\" key=\"matrix\"",

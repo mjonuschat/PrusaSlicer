@@ -1079,6 +1079,21 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max = 1000;
     def->init_fn = init_with(60);
 
+    def = defs.add("filament_change_time", typeid(double));
+    def->location = Printer;
+    def->label = L("Filament change time");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_General_CapabilitiesFeatures;
+    def->category = ConfigItemDef::Category::Printer_General;
+    def->order = 5;
+    def->tooltip = L("Time required for a single filament change. On a printer with"
+         " multiple tools this is the time required for a single toolchange to take place."
+         " On a printer with multi-material upgrade, this is the time required"
+         " to unload and load a new filament.");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->min = 0.0;
+    def->sidetext = L("s");
+    def->init_fn = init_with(0.0);
+
     def = defs.add("filament_colour", typeid(std::string));
     def->location = Filament;
     def->label = L("Color");
@@ -1297,18 +1312,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->init_fn = init_with(Percentage{100.});
 
-    def = defs.add("filament_load_time", typeid(double));
-    def->location = Filament;
-    def->label = L("Filament load time");
-    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_MovementTiming;
-    def->category = ConfigItemDef::Category::Filament_MultiMaterial;
-    def->order = 5;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to load a new filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
-    def->sidetext = L("s");
-    def->min = 0;
-    def->init_fn = init_with(0.);
-
     def = defs.add("filament_ramming_parameters", typeid(std::string));
     def->location = Filament;
     def->label = L("Ramming parameters");
@@ -1320,17 +1323,25 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with("120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0|"
        " 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6");
 
-    def = defs.add("filament_unload_time", typeid(double));
+    def = defs.add("filament_ramming_temperature_delta", typeid(int));
     def->location = Filament;
-    def->label = L("Filament unload time");
-    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_MovementTiming;
+    def->label = L("Ramming temperature variation");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_MultitoolRamming;
     def->category = ConfigItemDef::Category::Filament_MultiMaterial;
-    def->order = 2;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
+    def->tooltip = L("Temperature difference to be applied right before for ramming. The value can be negative.");
+    def->sidetext = "∆°C";
+    def->init_fn = init_with(0);
+
+    def = defs.add("filament_ramming_initial_delay", typeid(double));
+    def->location = Filament;
+    def->label = L("Pause before ramming");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_MultitoolRamming;;
+    def->category = ConfigItemDef::Category::Filament_MultiMaterial;
     def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to unload a filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
     def->sidetext = L("s");
-    def->min = 0;
-    def->init_fn = init_with(0.);
+    def->tooltip = L("Time in seconds that the printer will remain idle before ramming, allowing the melt zone temperature to equalize.");
+    def->init_fn = init_with(0.0);
 
     def = defs.add("filament_multitool_ramming", typeid(bool));
     def->location = Filament;
@@ -1895,6 +1906,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("It may be beneficial to increase the extruder motor current during the filament exchange"
                    " sequence to allow for rapid ramming feed rates and to overcome resistance when loading"
                    " a filament with an ugly shaped tip.");
+    def->init_fn = init_with(false);
+
+    def = defs.add("enable_pressure_advance_during_ramming", typeid(bool));
+    def->location = Printer;
+    def->label = L("Enable pressure advance during ramming");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_SingleExtruderMMSetup_SingleExtruderMultimaterialParameters;
+    def->category = ConfigItemDef::Category::Printer_SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
+    def->tooltip = L("Check to enable pressure advance during ramming.");
     def->init_fn = init_with(false);
 
     def = defs.add("infill_acceleration", typeid(double));
@@ -4423,12 +4443,22 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "handle the retraction. Note that this has to be supported by firmware.");
     def->init_fn = init_with(false);
 
+    def = defs.add("stuck_filament_detection", typeid(bool));
+    def->location = Printer;
+    def->label = L("Supports stuck filament monitoring configuration");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_General_FirmwareGCode;
+    def->category = ConfigItemDef::Category::Printer_General;
+    def->order = 3;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
+    def->tooltip = L("Enable, if the firmware supports configuring the stuck filament detection via the M591 gcode.");
+    def->init_fn = init_with(false);
+
     def = defs.add("use_relative_e_distances", typeid(bool));
     def->location = Printer;
     def->label = L("Use relative E distances");
     def->option_group = ConfigItemDef::OptionGroup::Printer_General_FirmwareGCode;
     def->category = ConfigItemDef::Category::Printer_General;
-    def->order = 3;
+    def->order = 4;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If your firmware requires relative E values, check this, "
                    "otherwise leave it unchecked. Most firmwares use absolute values.");
@@ -4439,7 +4469,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Use volumetric E");
     def->option_group = ConfigItemDef::OptionGroup::Printer_General_FirmwareGCode;
     def->category = ConfigItemDef::Category::Printer_General;
-    def->order = 4;
+    def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This experimental setting uses outputs the E values in cubic millimeters "
                    "instead of linear millimeters. If your firmware doesn't already know "

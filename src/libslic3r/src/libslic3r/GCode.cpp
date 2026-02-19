@@ -581,7 +581,10 @@ namespace DoExport {
         return ret;
     }
 
-    static ProcessorConfig populate_processor_config(const PrintConfigView& config)
+    static ProcessorConfig populate_processor_config(
+        const PrintConfigView& config,
+        const Domain::Preset::HwPrinterConfig& hw_printer_config
+    )
     {
         ProcessorConfig processor_config;
         processor_config.producer = GCodeProducer::PrusaSlicer;
@@ -589,7 +592,12 @@ namespace DoExport {
         processor_config.use_volumetric_e = config.get<bool>("use_volumetric_e");
         processor_config.export_remaining_time_enabled = config.get<bool>("remaining_times");
         processor_config.spiral_vase_enabled = config.get<bool>("spiral_vase");
-        processor_config.is_XL_printer = is_XL_printer(config);
+
+        const std::optional<bool> supports_tool_preheating{Domain::Preset::get_feature<bool>(
+            hw_printer_config.features,
+            "supports_tool_preheating"
+        )};
+        processor_config.do_M104_backtrace = supports_tool_preheating && *supports_tool_preheating;
         processor_config.extruders.count = uint8_t(config.get<std::vector<double>>("nozzle_diameter").size());
 
         std::vector<Vec2f> out_bed_shape;
@@ -651,8 +659,7 @@ namespace DoExport {
         // Filament load / unload times are not specific to a firmware flavor. Let anybody use it if they find it useful.
         // As of now the fields are shown at the UI dialog in the same combo box as the ramming values, so they
         // are considered to be active for the single extruder multi-material printers only.
-        processor_config.filaments.load_times = double_to_float(config.get<std::vector<double>>("filament_load_time"));
-        processor_config.filaments.unload_times = double_to_float(config.get<std::vector<double>>("filament_unload_time"));
+        processor_config.filament_change_time = (float) config.get<double>("filament_change_time");
 
         // takes colors from config
         processor_config.extruders.str_colors = config.get<std::vector<std::string>>("extruder_colour");
@@ -745,7 +752,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     BOOST_LOG_TRIVIAL(info) << "Exporting G-code..." << log_memory_info();
 
-    ProcessorConfig processor_config = DoExport::populate_processor_config(print->config());
+    ProcessorConfig processor_config = DoExport::populate_processor_config(print->config(), print->m_hw_config);
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
 

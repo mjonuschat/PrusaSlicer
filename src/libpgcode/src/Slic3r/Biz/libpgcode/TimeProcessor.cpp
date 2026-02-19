@@ -107,22 +107,6 @@ float TimeProcessor::axis_max_jerk(TimeMode mode, Axis axis) const
     }
 }
 
-float TimeProcessor::filament_load_time(uint8_t extruder_id, bool is_XL_printer) const
-{
-    if (is_XL_printer)
-        return 4.5f; // FIXME
-    return (filament_load_times.empty() || extruder_unloaded) ? 0.0f :
-        ((size_t(extruder_id) < filament_load_times.size()) ? filament_load_times[extruder_id] : filament_load_times.front());
-}
-
-float TimeProcessor::filament_unload_time(uint8_t extruder_id, bool is_XL_printer) const
-{
-    if (is_XL_printer)
-        return 0.0f; // FIXME
-    return (filament_unload_times.empty() || extruder_unloaded) ? 0.0f :
-        ((size_t(extruder_id) < filament_unload_times.size()) ? filament_unload_times[extruder_id] : filament_unload_times.front());
-}
-
 std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> TimeProcessor::custom_gcode_times(TimeMode mode, bool include_remaining) const
 {
     std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> ret;
@@ -150,8 +134,6 @@ void TimeProcessor::reset()
     machines[size_t(TimeMode::Normal)].line_m73_stop_mask = "M73 C%s\n";
     machines[size_t(TimeMode::Stealth)].line_m73_main_mask = "M73 Q%s S%s\n";
     machines[size_t(TimeMode::Stealth)].line_m73_stop_mask = "M73 D%s\n";
-    filament_load_times.clear();
-    filament_unload_times.clear();
     machine_limits.reset();
 }
 

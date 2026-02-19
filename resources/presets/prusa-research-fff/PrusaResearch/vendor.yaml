@@ -27,6 +27,8 @@ features:
       default: -1
     auxiliary_travel_anchor_y:
       default: -1
+    supports_tool_preheating:
+      default: false
   tool:
     nozzle_high_flow:
       default: false
@@ -57,6 +59,8 @@ features:
     default: 4
   bed_segments_y:
     default: 4
+  supports_tool_preheating:
+    default: true
 visual:
   bed_model: xl_bed.stl
   bed_texture: xl.svg

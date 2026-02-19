@@ -562,7 +562,7 @@ private:
             }
             else if (GCodeLine::cmd_is(line, "G28"))
                 ++g1_lines_counter;
-            else if (m_config.backtrace_enabled && GCodeLine::cmd_starts_with(line, "T")) {
+            else if (m_config.do_M104_backtrace && GCodeLine::cmd_starts_with(line, "T")) {
                 // add lines M104 where needed
                 const auto& [insertions, replacements] =
                     process_line_T(line, i, m_warning_callback);
@@ -856,14 +856,13 @@ private:
                     ret.first.push_back({ line_id, new_line });
                 },
                 // line replacer
-                [this, tool_number, &ret](size_t line_id, const std::string& gcode_line) {
+                [tool_number, &ret](size_t line_id, const std::string& gcode_line) {
                     if (GCodeLine::cmd_is(gcode_line, "M104")) {
                         GCodeLine gline;
                         GCodeReader reader;
                         reader.parse_line(gcode_line, [&gline](GCodeReader& reader, const GCodeLine& l) { gline = l; });
                         float val;
-                        if (gline.has_value('T', val) && gline.raw().find("cooldown") != std::string::npos &&
-                            m_config.is_XL_printer) {
+                        if (gline.has_value('T', val) && gline.raw().find("cooldown") != std::string::npos) {
                             if (int(val) == tool_number) {
                                 // avoid duplications
                                 const std::pair<size_t, std::string> new_item = { line_id, "; removed M104\n" };

@@ -162,8 +162,7 @@ PostProcessorConfig ProcessorImpl::post_processor_config()
 {
     PostProcessorConfig ret;
     ret.export_remaining_time_enabled = m_config.export_remaining_time_enabled;
-    ret.backtrace_enabled = m_config.is_XL_printer;
-    ret.is_XL_printer = m_config.is_XL_printer;
+    ret.do_M104_backtrace = m_config.do_M104_backtrace;
     ret.extruder_temps_config = m_config.extruders.temps_config;
     ret.extruder_temps_first_layer_config = m_config.extruders.temps_first_layer_config;
 
@@ -216,8 +215,7 @@ void ProcessorImpl::apply_config(ProcessorConfig&& config)
     m_result.print_settings = std::move(m_config.print_settings);
 
     m_time_processor.machine_limits = std::move(m_config.machine_limits);
-    m_time_processor.filament_load_times = std::move(m_config.filaments.load_times);
-    m_time_processor.filament_unload_times = std::move(m_config.filaments.unload_times);
+    m_time_processor.tool_change_time = m_config.filament_change_time;
     m_time_processor.machines[size_t(TimeMode::Stealth)].enabled = m_config.stealth_time_estimator_enabled;
 
     m_cb_log = m_config.callbacks.cb_log;
@@ -275,17 +273,6 @@ void ProcessorImpl::apply_config(ProcessorConfig&& config)
             m_result.extruder_str_colors[i] = DEFAULT_EXTRUDER_STR_COLOR;
     }
 
-    if (m_time_processor.filament_load_times.size() < size_t(m_result.extruders_count)) {
-        if (m_cb_log != nullptr)
-            m_cb_log("Set default value for filament load time. This may result in incorrect gcode visualization.");
-        m_time_processor.filament_load_times.resize(m_result.extruders_count, 0.0f);
-    }
-    if (m_time_processor.filament_unload_times.size() < size_t(m_result.extruders_count)) {
-        if (m_cb_log != nullptr)
-            m_cb_log("Set default value for filament unload time. This may result in incorrect gcode visualization.");
-        m_time_processor.filament_unload_times.resize(m_result.extruders_count, 0.0f);
-    }
- 
     const std::vector<std::string> missing = m_time_processor.machine_limits.validate();
     if (!missing.empty()) {
         if (m_cb_log != nullptr)
@@ -1667,7 +1654,9 @@ void ProcessorImpl::process_M702(const GCodeReader::GCodeLine& line)
         // // M702 C is expected to be sent by the custom end G-code when finalizing a print.
         // // The MK3 unit shall unload and park the active filament into the MMU2 unit.
         m_time_processor.extruder_unloaded = true;
-        simulate_st_synchronize(m_time_processor.filament_unload_time(m_extruder_id, m_config.is_XL_printer));
+
+        // Estimate the unload time as half of the toolchange time
+        simulate_st_synchronize(m_config.filament_change_time / 2.0);
     }
 }
 
@@ -1755,9 +1744,8 @@ void ProcessorImpl::process_T(const std::string_view command)
                     // Specific to the MK3 MMU2:
                     // The initial value of extruder_unloaded is set to true indicating
                     // that the filament is parked in the MMU2 unit and there is nothing to be unloaded yet.
-                    float extra_time = m_time_processor.filament_unload_time(size_t(old_extruder_id), m_config.is_XL_printer);
+                    float extra_time = m_time_processor.tool_change_time;
                     m_time_processor.extruder_unloaded = false;
-                    extra_time += m_time_processor.filament_load_time(size_t(m_extruder_id), m_config.is_XL_printer);
                     if (m_config.producer == GCodeProducer::KISSlicer && m_config.flavor == GCodeFlavor::gcfMarlinLegacy)
                         extra_time += m_config.kisslicer_toolchange_time_correction;
                     simulate_st_synchronize(extra_time);

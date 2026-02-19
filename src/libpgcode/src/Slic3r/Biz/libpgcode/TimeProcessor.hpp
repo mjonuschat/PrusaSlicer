@@ -32,8 +32,7 @@ struct TimeProcessor
     bool extruder_unloaded{ true };
     TimeMachines machines;
     // Additional load / unload times for a filament exchange sequence.
-    std::vector<float> filament_load_times;
-    std::vector<float> filament_unload_times;
+    float tool_change_time{};
     MachineLimitsConfig machine_limits;
 
     void update_machine_accelerations(Domain::GCodeFlavor flavor);
@@ -49,9 +48,6 @@ struct TimeProcessor
 
     float axis_max_acceleration(TimeMode mode, Domain::Axis axis) const;
     float axis_max_jerk(TimeMode mode, Domain::Axis axis) const;
-
-    float filament_load_time(uint8_t extruder_id, bool is_XL_printer) const;
-    float filament_unload_time(uint8_t extruder_id, bool is_XL_printer) const;
 
     std::vector<std::pair<Domain::CustomGCode::Type, std::pair<float, float>>>
         custom_gcode_times(TimeMode mode, bool include_remaining) const;

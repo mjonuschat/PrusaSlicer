@@ -356,12 +356,67 @@ bool is_valid_object_type(const std::string& type)
     return false;
 }
 
+static double sum_values(const std::vector<double>& values)
+{
+    double result{};
+    for (double value : values) {
+        result += value;
+    }
+    return result;
+}
+
+static double max_of_values(const std::vector<double>& values, double min)
+{
+    double result{min};
+    for (double value : values) {
+        result = std::max(result, value);
+    }
+    return result;
+}
 
 // Perform conversions based on the config values available.
 static void handle_legacy_project_loaded(
     Slic3rLegacy::DynamicPrintConfig& config,
     const boost::optional<Slic3r::Semver>& prusaslicer_generator_version
 ) {
+    auto *opt_filament_change_time = config.option<Slic3rLegacy::ConfigOptionFloat>("filament_change_time", true);
+    if (Slic3rLegacy::is_XL_printer(config)) {
+        opt_filament_change_time->value = 4.5;
+    } else {
+        const Slic3rLegacy::ConfigOption* load_time   = config.option("filament_load_time", true);
+        const Slic3rLegacy::ConfigOption* unload_time = config.option("filament_unload_time", true);
+        double filament_change_time{};
+        if (load_time && load_time->type() == Slic3rLegacy::coFloats) {
+            filament_change_time +=
+                max_of_values(static_cast<const Slic3rLegacy::ConfigOptionFloats*>(load_time)->values, 0.0);
+        }
+        if (unload_time && unload_time->type() == Slic3rLegacy::coFloats) {
+            filament_change_time +=
+                max_of_values(static_cast<const Slic3rLegacy::ConfigOptionFloats*>(unload_time)->values, 0.0);
+        }
+        opt_filament_change_time->value = filament_change_time;
+    }
+
+    const std::string printer_notes = static_cast<const Slic3rLegacy::ConfigOptionString*>(config.option("printer_notes", true))->value;
+    const bool ramming_extra_params = boost::icontains(printer_notes, "RAMMING_EXTRA")
+                // Before 2.9.1, the condition was tied to different keywords. We need to keep that so we don't break existing projects:
+                || (boost::icontains(printer_notes, "PRINTER_MODEL_MK4") && boost::icontains(printer_notes, "MMU"));
+
+    if (ramming_extra_params) {
+        auto *opt_ramming_temperature_delta = config.option<Slic3rLegacy::ConfigOptionInt>("filament_ramming_temperature_delta", true);
+        opt_ramming_temperature_delta->value = -20;
+
+        auto *opt_enable_pressure_advance_during_ramming = config.option<Slic3rLegacy::ConfigOptionBool>("enable_pressure_advance_during_ramming", true);
+        opt_enable_pressure_advance_during_ramming->value = true;
+
+        auto *opt_filament_ramming_initial_delay = config.option<Slic3rLegacy::ConfigOptionFloat>("filament_ramming_initial_delay", true);
+        opt_filament_ramming_initial_delay->value = 1.5;
+    }
+    if (ramming_extra_params || Slic3rLegacy::is_XL_printer(config)) {
+        auto *opt_stuck_filament_detection = config.option<Slic3rLegacy::ConfigOptionBool>("stuck_filament_detection", true);
+        opt_stuck_filament_detection->value = true;
+    }
+
     if (! config.has("brim_separation")) {
         if (auto *opt_elephant_foot   = config.option<Slic3rLegacy::ConfigOptionFloat>("elefant_foot_compensation", false); opt_elephant_foot) {
             // Conversion from older PrusaSlicer which applied brim separation equal to elephant foot compensation.

@@ -42,8 +42,7 @@ struct TimeMachineData
 struct PostProcessorConfig
 {
     bool export_remaining_time_enabled{ false };
-    bool backtrace_enabled{ false };
-    bool is_XL_printer{ false };
+    bool do_M104_backtrace{ false };
     std::array<TimeMachineData, TIME_MODES_COUNT> time_machines;
     std::vector<int> extruder_temps_config;
     std::vector<int> extruder_temps_first_layer_config;

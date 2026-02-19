@@ -58,8 +58,6 @@ struct FilamentsConfig
     std::vector<float> diameters;
     std::vector<float> densities;
     std::vector<float> costs;
-    std::vector<float> load_times;
-    std::vector<float> unload_times;
 
     void reset();
 };
@@ -91,7 +89,7 @@ struct ProcessorConfig
     bool stealth_time_estimator_enabled{ false };
     bool spiral_vase_enabled{ false };
     bool sequential_print{ false };
-    bool is_XL_printer{ false };
+    bool do_M104_backtrace{ false };
     bool single_extruder_multi_material{ false };
     float z_offset{ 0.0f };
     float max_print_height{ 0.0f };
@@ -99,6 +97,7 @@ struct ProcessorConfig
     float parking_pos_retraction{ 0.0f };
     float extra_loading_move{ 0.0f };
     float kisslicer_toolchange_time_correction{ 0.0f };
+    float filament_change_time{ 0.0f };
     std::string color_change_gcode;
     std::string pause_print_gcode;
     std::string template_custom_gcode;

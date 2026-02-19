@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include <LocalesUtils.hpp>
 
@@ -126,8 +127,6 @@ void FilamentsConfig::reset()
     diameters.clear();
     densities.clear();
     costs.clear();
-    load_times.clear();
-    unload_times.clear();
 }
 
 void ExtrudersConfig::reset()
@@ -148,7 +147,6 @@ void ProcessorConfig::reset()
     stealth_time_estimator_enabled = false;
     spiral_vase_enabled = false;
     sequential_print = false;
-    is_XL_printer = false;
     single_extruder_multi_material = false;
     z_offset = 0.0f;
     max_print_height = 0.0f;
@@ -383,6 +381,14 @@ static std::string replace_double_slash_n(const std::string& str)
     return ret;
 }
 
+float sum(const std::vector<float>& values) {
+    float total = 0.0f;
+    for (const float& val : values) {
+        total += val;
+    }
+    return total;
+}
+
 ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const std::string& gcode,
     const std::string& data_separators = "=", const std::vector<std::pair<std::string_view, std::string_view>>& dictionary = {})
 {
@@ -438,6 +444,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                         else if (key_it->first == "max_print_height"sv)       ret.max_print_height = value;
                         else if (key_it->first == "parking_pos_retraction"sv) parking_pos_retraction = value;
                         else if (key_it->first == "z_offset"sv)               ret.z_offset = value;
+                        else if (key_it->first == "filament_change_time"sv)   ret.filament_change_time = value;
                         break;
                     }
                     case KeyType::String:
@@ -464,8 +471,8 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                             if      (key_it->first == "filament_cost"sv)                       ret.filaments.costs = values;
                             else if (key_it->first == "filament_density"sv)                    ret.filaments.densities = values;
                             else if (key_it->first == "filament_diameter"sv)                   ret.filaments.diameters = values;
-                            else if (key_it->first == "filament_load_time"sv)                  ret.filaments.load_times = values;
-                            else if (key_it->first == "filament_unload_time"sv)                ret.filaments.unload_times = values;
+                            else if (key_it->first == "filament_load_time"sv)                  ret.filament_change_time += sum(values);
+                            else if (key_it->first == "filament_unload_time"sv)                ret.filament_change_time += sum(values);
                             else if (key_it->first == "nozzle_diameter"sv)                     ret.extruders.count = uint8_t(values.size());
                             else if (key_it->first == "machine_max_acceleration_x"sv)          machine_limits.max_acceleration_x = values;
                             else if (key_it->first == "machine_max_acceleration_y"sv)          machine_limits.max_acceleration_y = values;
@@ -566,7 +573,8 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
 
     if (boost::algorithm::contains(printer_notes, "PRINTER_VENDOR_PRUSA3D") &&
         boost::algorithm::contains(printer_notes, "PRINTER_MODEL_XL"))
-        ret.is_XL_printer = true;
+        ret.do_M104_backtrace = true;
+    PANIC("Must load hw config!");
 
     ret.producer = GCodeProducer::PrusaSlicer;
     ret.color_change_gcode = replace_double_slash_n(ret.color_change_gcode);

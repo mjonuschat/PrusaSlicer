@@ -57,7 +57,7 @@ namespace {
                 "cooling_tube_length", "cooling_tube_retraction", "custom_parameters_print", "custom_parameters_printer", "custom_parameters_filament", "default_acceleration",
                 "default_filament_profile", "default_print_profile", "deretract_speed", "disable_fan_first_layers",
                 "dont_support_bridges", "draft_shield", "duplicate_distance", "elefant_foot_compensation",
-                "enable_dynamic_fan_speeds", "enable_dynamic_overhang_speeds", "end_filament_gcode", "end_gcode",
+                "enable_dynamic_fan_speeds", "enable_dynamic_overhang_speeds", "enable_pressure_advance_during_ramming", "end_filament_gcode", "end_gcode",
                 "ensure_vertical_shell_thickness", "external_perimeter_acceleration", "external_perimeter_extrusion_width",
                 "external_perimeter_speed", "external_perimeters_first", "extra_loading_move", "extra_perimeters",
                 "extra_perimeters_on_overhangs", "extruder_clearance_height", "extruder_clearance_radius", "extruder_colour",
@@ -65,9 +65,10 @@ namespace {
                 "fan_below_layer_time", "filament_abrasive", "filament_colour", "filament_cooling_final_speed",
                 "filament_cooling_initial_speed", "filament_cooling_moves", "filament_cost", "filament_density",
                 "filament_deretract_speed", "filament_diameter", "filament_infill_max_crossing_speed", "filament_infill_max_speed",
-                "filament_load_time", "filament_loading_speed", "filament_loading_speed_start", "filament_max_volumetric_speed",
+                "filament_change_time", "filament_loading_speed", "filament_loading_speed_start", "filament_max_volumetric_speed",
                 "filament_minimal_purge_on_wipe_tower", "filament_multitool_ramming", "filament_multitool_ramming_flow",
                 "filament_multitool_ramming_volume", "filament_notes", "filament_purge_multiplier", "filament_ramming_parameters",
+                "filament_ramming_temperature_delta", "filament_ramming_initial_delay",
                 "filament_retract_before_travel", "filament_retract_before_wipe", "filament_retract_layer_change",
                 "filament_retract_length", "filament_retract_length_toolchange", "filament_retract_lift",
                 "filament_retract_lift_above", "filament_retract_lift_below", "filament_retract_restart_extra",
@@ -75,7 +76,7 @@ namespace {
                 "filament_settings_id", "filament_shrinkage_compensation_xy", "filament_shrinkage_compensation_z",
                 "filament_soluble", "filament_spool_weight", "filament_stamping_distance", "filament_stamping_loading_speed",
                 "filament_toolchange_delay", "filament_travel_lift_before_obstacle", "filament_travel_max_lift",
-                "filament_travel_ramping_lift", "filament_travel_slope", "filament_type", "filament_unload_time",
+                "filament_travel_ramping_lift", "filament_travel_slope", "filament_type",
                 "filament_unloading_speed", "filament_unloading_speed_start", "filament_vendor", "filament_wipe", "fill_angle",
                 "fill_density", "fill_pattern", "first_layer_acceleration", "first_layer_acceleration_over_raft",
                 "first_layer_bed_temperature", "first_layer_extrusion_width", "first_layer_height", "first_layer_infill_speed",
@@ -103,7 +104,7 @@ namespace {
                 "perimeter_generator", "perimeter_speed", "perimeters", "physical_printer_settings_id", "post_process",
                 "prefer_clockwise_movements", "print_settings_id", "printer_model", "printer_notes", "printer_settings_id",
                 "printer_technology", "printer_variant", "printer_vendor", "raft_contact_distance", "raft_expansion",
-                "raft_first_layer_density", "raft_first_layer_expansion", "raft_layers", "remaining_times", "resolution",
+                "raft_first_layer_density", "raft_first_layer_expansion", "raft_layers", "remaining_times", "stuck_filament_detection", "resolution",
                 "retract_before_travel", "retract_before_wipe", "retract_layer_change", "retract_length",
                 "retract_length_toolchange", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_restart_extra",
                 "retract_restart_extra_toolchange", "retract_speed", "scarf_seam_entire_loop", "scarf_seam_length",
@@ -463,12 +464,12 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
     return true;
 }
 
-
 static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
                                         Domain::ConfigBox& box,
                                         const LegacyKeysAndOverrides& legacy,
                                         int filament_id = -1)
 {
+
     for (const std::string& old_key : cfg.keys()) {
         bool has_override = std::ranges::find(legacy.overrides, legacy.override_prefix + old_key) != legacy.overrides.end();
         bool is_filament_override = std::ranges::find(legacy.overrides, old_key) != legacy.overrides.end();

@@ -1412,6 +1412,14 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionPercents { 100 });
 
+    def = this->add("filament_change_time", coFloat);
+    def->label = "Filament change time";
+    def->tooltip = "Filament change time introduced in slicer 3.0";
+    def->sidetext = "s";
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat { 0. });
+
     def = this->add("filament_load_time", coFloats);
     def->label = L("Filament load time");
     def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to load a new filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
@@ -1426,6 +1434,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionStrings { "120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0|"
        " 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6" });
+
+    def = this->add("filament_ramming_temperature_delta", coInt);
+    def->label = "Filament ramming temperature delta";
+    def->tooltip = "Filament ramming temperature variation introduced in slicer 3.0";
+    def->set_default_value(new ConfigOptionInt { 0 });
+
+    def = this->add("filament_ramming_initial_delay", coFloat);
+    def->label = "Pause before ramming ";
+    def->sidetext = "s";
+    def->tooltip = "Pause before ramming introduced in slicer 3.0";
+    def->set_default_value(new ConfigOptionFloat { 0.0 });
 
     def = this->add("filament_unload_time", coFloats);
     def->label = L("Filament unload time");
@@ -1843,6 +1862,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(0));
 
+    def = this->add("enable_pressure_advance_during_ramming", coBool);
+    def->label = "Enable pressure advance during ramming";
+    def->tooltip = "Enable pressure advance during ramming introduced in slicer 3.0";
+    def->set_default_value(new ConfigOptionBool(0));
+
     def = this->add("infill_acceleration", coFloat);
     def->label = L("Infill");
     def->tooltip = L("This is the acceleration your printer will use for infill. Set zero to disable "
@@ -2181,6 +2205,12 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Supports binary G-code");
     def->tooltip = L("Enable, if the firmware supports binary G-code format (bgcode). "
                      "To generate .bgcode files, make sure you have binary G-code enabled in Configuration->Preferences->Other.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("stuck_filament_detection", coBool);
+    def->label = "Supports stuck filament monitoring configuration";
+    def->tooltip = "Supports stuck filament detection introduced in slicer 3.0";
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
