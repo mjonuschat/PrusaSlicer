@@ -76,7 +76,7 @@ variants:
       M862.3 P "MK4" ; printer model check
       M862.5 P2 ; g-code level check
       M862.6 P"Input shaper" ; FW feature check
-      M115 U6.2.4+8909
+      M115 U6.4.0+11974
 
       M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -166,7 +166,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.4+8909
+          M115 U6.4.0+11974
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -278,7 +278,7 @@ variants:
         M862.3 P "MK4S" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
-        M115 U6.2.4+8909
+        M115 U6.4.0+11974
 
         M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -359,7 +359,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.4+8909
+          M115 U6.4.0+11974
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -466,7 +466,7 @@ variants:
         M862.3 P "MK3.9" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
-        M115 U6.2.4+8909
+        M115 U6.4.0+11974
 
         M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -547,7 +547,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.4+8909
+          M115 U6.4.0+11974
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -654,7 +654,7 @@ variants:
         M862.3 P "MK3.9S" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
-        M115 U6.2.4+8909
+        M115 U6.4.0+11974
 
         M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -735,7 +735,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.4+8909
+          M115 U6.4.0+11974
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance

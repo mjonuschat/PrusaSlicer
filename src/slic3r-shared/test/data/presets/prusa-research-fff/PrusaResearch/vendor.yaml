@@ -245,6 +245,7 @@ kind: printer_config
 printer: xl
 id: 'xl-5t'
 name: 'XL 5T'
+legacy_printer_model: [XL5IS, XL5]
 tool_count: 5
 tools:
   - tool: '0.4'

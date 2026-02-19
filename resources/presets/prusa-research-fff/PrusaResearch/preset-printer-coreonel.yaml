@@ -1,21 +1,21 @@
-id: 30Cuhu/1Tcyc37Ia6EsFBA
+id: x/ltzFcqQM+rSHRqy4DoZw
 kind: printer
 variants:
-- condition: printer.model == "COREONE"
-  name: Prusa CORE One & CORE One+
-  id: 2clJ4GxITzaQ1Vu4gqG2eQ
+- condition: printer.model == "COREONEL"
+  name: Prusa CORE One L
+  id: D8L/77yFQEmiidGo0w9gmg
   values:
     bed_shape:
     - '0x0'
-    - 250x0
-    - 250x220
-    - '0x220'
+    - 300x0
+    - 300x300
+    - '0x300'
     before_layer_gcode: |
       ;BEFORE_LAYER_CHANGE
       G92 E0.0
       ;[layer_z]
       {if layer_z > 150}
-      M201 X{interpolate_table(layer_z, (0,7000), (150,7000), (200,4000), (270,2000))} Y{interpolate_table(layer_z, (0,7000), (150,7000), (200,4000), (270,2000))}
+      M201 X{interpolate_table(layer_z, (0,6000), (150,6000), (200,4000), (331,2000))} Y{interpolate_table(layer_z, (0,6000), (150,6000), (200,4000), (331,2000))}
       {endif}
     binary_gcode: 1
     color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
@@ -25,6 +25,8 @@ variants:
       M140 S0 ; turn off heatbed
       M141 S0 ; disable chamber control
       M107 ; turn off fan
+      M107 P3
+      M107 P5
       G1 X242 Y211 F10200 ; park
       G4 ; wait
       M572 S0 ; reset PA
@@ -40,21 +42,22 @@ variants:
     machine_max_acceleration_e: [5000, 2500]
     machine_max_acceleration_extruding: [7000, 2500]
     machine_max_acceleration_retracting: [2500, 2500]
-    machine_max_acceleration_travel: [7000, 2500]
+    machine_max_acceleration_travel: [6000, 2500]
     machine_max_acceleration_x: [10000, 2500]
     machine_max_acceleration_y: [10000, 2500]
     machine_max_acceleration_z: [400, 200]
     machine_max_feedrate_e: [100, 100]
-    machine_max_feedrate_x: [350, 160]
-    machine_max_feedrate_y: [350, 160]
-    machine_max_feedrate_z: [12, 12]
+    machine_max_feedrate_x: [500, 160]
+    machine_max_feedrate_y: [500, 160]
+    machine_max_feedrate_z: [15, 15]
     machine_max_jerk_e: [10, 10]
     machine_max_jerk_x: [10, 8]
     machine_max_jerk_y: [10, 8]
     machine_max_jerk_z: [2, 2]
+    machine_max_junction_deviation: [0.01, 0.01]
     machine_min_extruding_rate: [0, 0]
     machine_min_travel_rate: [0, 0]
-    max_print_height: 270
+    max_print_height: 330
     printer_technology: FFF
     remaining_times: 1
     silent_mode: 1
@@ -75,49 +78,55 @@ variants:
     start_gcode: |-
       M17 ; enable steppers
       M862.1 P[nozzle_diameter] A{(filament_abrasive[0] ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)} ; nozzle check
-      M862.3 P "COREONE" ; printer model check
+      M862.3 P "COREONEL" ; printer model check
       M862.5 P2 ; g-code level check
       M862.6 P"Input shaper" ; FW feature check
-      M115 U6.4.0+11974
+      M115 U6.3.0+10073
 
       M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
       G90 ; use absolute coordinates
       M83 ; extruder relative mode
 
-      {if chamber_minimal_temperature[initial_tool]!=0}
-      M140 S115 ; set bed temp for chamber heating
-      {else}
       M140 S[first_layer_bed_temperature] ; set bed temp
+      {if chamber_minimal_temperature[initial_tool]!=0}
+      M106 P5 R A125 B10 C5 ;turn on bed fans with fade for chamber or bed
+      {else}
+      M106 P5 R A125 B10 ;turn on bed fans with fade for bed
       {endif}
 
       M109 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for temp
 
       M84 E ; turn off E motor
 
-      G28 ; home all without mesh bed level
+      G28 Q ;home all without mesh bed level
+
+      G1 Z20 F720 ;lift bed to optimal bed fan height
 
       {if chamber_minimal_temperature[initial_tool]!=0}
       ; Min chamber temp section
-      M104 S{idle_temperature[initial_tool]} ; set idle temp
-      G1 Z10 F720 ; set bed position
-      G1 X242 Y-9 F4800 ; set print head position
-      M191 S{chamber_minimal_temperature[initial_tool]} ; wait for minimal chamber temp
+      M104 S170 ; set idle temp
+      G1 X292 Y-5 F4800 ; set print head position
+      M191 S{((chamber_temperature[initial_tool]>chamber_minimal_temperature[initial_tool]) ? chamber_temperature[initial_tool] : chamber_minimal_temperature[initial_tool])}
       M141 S{chamber_temperature[initial_tool]} ; set nominal chamber temp
-      M107
-      M140 S[first_layer_bed_temperature] ; set bed temp
+      M104 S{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; set MBL temp
+      M106 P3 N25 G5
       {else}
       M141 S{chamber_temperature[initial_tool]} ; set nominal chamber temp
+      {if chamber_temperature[initial_tool]<30}
+      M106 P3 N76 G3
+      {else}
+      M106 P3 N51 G1
+      {endif}
       {endif}
 
       {if first_layer_bed_temperature[initial_tool]<=60}M106 S70{endif}
-      G0 Z40 F10000
-      M104 T{initial_tool} S{if is_nil(idle_temperature[initial_tool])}100{else}{idle_temperature[initial_tool]}{endif}
       M190 R[first_layer_bed_temperature] ; wait for bed temp
       M107
-
-      G29 G ; absorb heat
-
+      {if chamber_temperature[initial_tool]<50} 
+      ; turn off bed fans for chamber temps < 50C
+      M107 P5
+      {endif}
       M109 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for MBL temp
 
       M302 S155 ; lower cold extrusion limit to 155C
@@ -135,6 +144,7 @@ variants:
       ;
       ; MBL
       ;
+
       M84 E ; turn off E motor
       G29 P1 ; invalidate mbl & probe print area
       G29 P1 X150 Y0 W100 H20 C ; probe near purge place
@@ -170,17 +180,17 @@ variants:
       M221 S100 ; set flow to 100%
   variants:
   - condition: feeder.base_model == "MMU3" and ! feeder.single_mode
-    id: OTUkt1FfQZmO75o7Q6hcew
+    id: Rmu06ZheQOiwJkty1grr5g
     values:
       single_extruder_multi_material: 1
       start_gcode: |-
         M17 ; enable steppers
         M862.1 P[nozzle_diameter] A{((is_extruder_used[0] and filament_abrasive[0]) ? 1 : (is_extruder_used[1] and filament_abrasive[1]) ? 1 : (is_extruder_used[2] and filament_abrasive[2]) ? 1 : (is_extruder_used[3] and filament_abrasive[3]) ? 1 : (is_extruder_used[4] and filament_abrasive[4]) ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)} ; nozzle check
-        M862.3 P "COREONE" ; printer model check
+        M862.3 P "COREONEL" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P "Input shaper" ; FW feature check
         M862.6 P "MMU3" ; FW feature check
-        M115 U6.4.0+11974
+        M115 U6.3.0+10073
 
         ; setup MMU
         M708 A0x0b X5   ; extra load distance
@@ -194,46 +204,48 @@ variants:
         G90 ; use absolute coordinates
         M83 ; extruder relative mode
 
-        {if (is_extruder_used[0] and filament_type[0]=="PLA") or (is_extruder_used[1] and filament_type[1]=="PLA") or (is_extruder_used[2] and filament_type[2]=="PLA") or (is_extruder_used[3] and filament_type[3]=="PLA") or (is_extruder_used[4] and filament_type[4]=="PLA")}
         M140 S[first_layer_bed_temperature] ; set bed temp
-        {elsif chamber_minimal_temperature[initial_tool]!=0}
-        M140 S115 ; set bed temp for chamber heating
+        {if chamber_minimal_temperature[initial_tool]!=0}
+        M106 P5 R A125 B10 C5 ;turn on bed fans with fade for chamber or bed
         {else}
-        M140 S[first_layer_bed_temperature] ; set bed temp
+        M106 P5 R A125 B10 ;turn on bed fans with fade for bed
         {endif}
 
         M109 R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : 170)} ; wait for temp
 
         M84 E ; turn off E motor
 
-        G28 ; home all without mesh bed level
+        G28 Q ; home all without mesh bed level
+
+        G1 Z20 F720 ;lift bed to optimal bed fan height
 
         {if (is_extruder_used[0] and filament_type[0]=="PLA") or (is_extruder_used[1] and filament_type[1]=="PLA") or (is_extruder_used[2] and filament_type[2]=="PLA") or (is_extruder_used[3] and filament_type[3]=="PLA") or (is_extruder_used[4] and filament_type[4]=="PLA")}
         M141 S20 ; set nominal chamber temp
-
         {elsif chamber_minimal_temperature[initial_tool]!=0}
         ; Min chamber temp section
-        M104 S{idle_temperature[initial_tool]} ; set idle temp
-        G1 Z10 F720 ; set bed position
-        G1 X242 Y-9 F4800 ; set print head position
-        M191 S{chamber_minimal_temperature[initial_tool]} ; wait for minimal chamber temp
+        M104 S170 ; set idle temp
+        G1 X292 Y-5 F4800 ; set print head position
+        M191 S{((chamber_temperature[initial_tool]>chamber_minimal_temperature[initial_tool]) ? chamber_temperature[initial_tool] : chamber_minimal_temperature[initial_tool])}
         M141 S{chamber_temperature[initial_tool]} ; set nominal chamber temp
-        M107
-        M140 S[first_layer_bed_temperature] ; set bed temp
+        M104 S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : 170)} ; set MBL temp
+        M106 P3 N25 G5
         {else}
         M141 S{chamber_temperature[initial_tool]} ; set nominal chamber temp
+        {if chamber_temperature[initial_tool]<30}
+        M106 P3 N76 G3
+        {else}
+        M106 P3 N51 G1
+        {endif}
         {endif}
 
         {if first_layer_bed_temperature[initial_tool]<=60}M106 S70{endif}
 
-        G0 Z40 F10000
-
-        M104 T{initial_tool} S{if is_nil(idle_temperature[initial_tool])}100{else}{idle_temperature[initial_tool]}{endif}
         M190 S[first_layer_bed_temperature] ; wait for bed temp
         M107
-
-        G29 G ; absorb heat
-
+        {if chamber_temperature[initial_tool]<50} 
+        ; turn off bed fans for chamber temps < 50C
+        M107 P5
+        {endif}
         M109 T{initial_tool} R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : 170)} ; wait for MBL temp
 
         M302 S155 ; lower cold extrusion limit to 155C
@@ -302,7 +314,7 @@ variants:
         ; max_layer_z = [max_layer_z]
     variants:
     - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
-      id: 152LA/JPTNSdnOYOh/AwoA
+      id: bs2jrUftToWVRDnnAxnDwg
       values:
         machine_max_jerk_x: [8, 8]
         machine_max_jerk_y: [8, 8]

@@ -80,7 +80,7 @@ variants:
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
         M862.6 P "MMU3" ; FW feature check
-        M115 U6.2.6+8948
+        M115 U6.4.0+11974
         ; setup MMU
         M708 A0x1e X12  ; Pulley current to ~200mA
 

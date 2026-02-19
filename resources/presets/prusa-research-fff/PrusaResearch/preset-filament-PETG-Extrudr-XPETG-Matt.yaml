@@ -43,7 +43,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: yz17uK17R52mSvk5XfeRag
       values:
-        filament_max_volumetric_speed: 15
+        filament_max_volumetric_speed: 12
         first_layer_temperature: 230
         temperature: 230
   # C1 0.5
@@ -69,7 +69,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: 5TF9x/6MRBeqigBdXIYGPQ
       values:
-        filament_max_volumetric_speed: 18
+        filament_max_volumetric_speed: 17
         first_layer_temperature: 230
         temperature: 230
   # C1 0.8
@@ -114,7 +114,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: U4LYX8UoTrmKCNgFohMRqQ
       values:
-        filament_max_volumetric_speed: 15
+        filament_max_volumetric_speed: 12
         first_layer_temperature: 230
         temperature: 230
   # XL 0.5
@@ -140,9 +140,9 @@ variants:
     - condition: tool.nozzle_high_flow
       id: XBCeaz4cTiyd4hzUzK709g
       values:
-        filament_max_volumetric_speed: 18
-        first_layer_temperature: 235
-        temperature: 235
+        filament_max_volumetric_speed: 17
+        first_layer_temperature: 230
+        temperature: 230
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: lR/3CfdORpSMyWnceUVBDg
@@ -182,7 +182,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: 7JfZ8K/QSeeWIiDQfrw0Lg
       values:
-        filament_max_volumetric_speed: 15
+        filament_max_volumetric_speed: 12
         first_layer_temperature: 230
         temperature: 230
   # MK4 0.5
@@ -252,7 +252,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: le2JA3ADSsCYBiRIcfiSqw
       values:
-        filament_max_volumetric_speed: 15
+        filament_max_volumetric_speed: 12
         first_layer_temperature: 230
         temperature: 230
   # MK4S 0.5

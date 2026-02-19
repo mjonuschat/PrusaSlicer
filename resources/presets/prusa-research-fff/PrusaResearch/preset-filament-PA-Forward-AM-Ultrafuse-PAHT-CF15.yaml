@@ -34,8 +34,8 @@ variants:
     retract_speed: 40
     deretract_speed: 30
     retract_length: 1.2
-    retract_on_layer_change: false
-    retract_wipe: false
+    retract_layer_change: false
+    wipe: false
 ---
 kind: filament
 id: '*sheets_PACF_pahtcf15*'

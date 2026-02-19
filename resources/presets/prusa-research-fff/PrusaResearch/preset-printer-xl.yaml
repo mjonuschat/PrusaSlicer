@@ -34,8 +34,12 @@ variants:
     layer_gcode: ";AFTER_LAYER_CHANGE\n;[layer_z]"
     machine_limits_usage: emit_to_gcode
     machine_max_acceleration_e: [2500, 2500]
+    machine_max_acceleration_x: [7000, 2500]
+    machine_max_acceleration_y: [7000, 2500]
     machine_max_acceleration_retracting: [1200, 1200]
     machine_max_acceleration_z: [200, 200]
+    machine_max_acceleration_travel: [5000, 2500]
+    machine_max_acceleration_extruding: [4000, 2500]
     machine_max_feedrate_e: [100, 100]
     machine_max_feedrate_x: [400, 140]
     machine_max_feedrate_y: [400, 140]
@@ -71,7 +75,7 @@ variants:
         M862.3 P "XL" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
-        M115 U6.2.5+8912
+        M115 U6.4.0+11974
         G90 ; use absolute coordinates
         M83 ; extruder relative mode
         ; set print area
@@ -81,9 +85,9 @@ variants:
         ; set & wait for bed and extruder temp for MBL
         M140 S[first_layer_bed_temperature] ; set bed temp
         M104 T0 S{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
-        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
         ; home carriage, pick tool, home all
         G28 XY
+        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
         M84 E ; turn off E motor
         G28 Z
 
@@ -92,8 +96,7 @@ variants:
 
         G29 G ; absorb heat
 
-        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} 
-        ; wait for temp
+        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
         ; move to the nozzle cleanup area
         G1 X{(min(((((first_layer_print_min[0] + first_layer_print_max[0]) / 2) < ((print_bed_min[0] + print_bed_max[0]) / 2)) ? (((first_layer_print_min[1] - 7) < -2) ? 70 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)) : (((first_layer_print_min[1] - 7) < -2) ? 260 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))), first_layer_print_min[0])) + 32} Y{(min((first_layer_print_min[1] - 7), first_layer_print_min[1]))} Z{5} F4800
@@ -121,6 +124,9 @@ variants:
         G0 X30 Y-8 F6000 ; move next to the sheet
         ; wait for extruder temp
         M109 T0 S{first_layer_temperature[0]}
+
+        M591 S0 ; disable stuck detection
+
         ;
         ; purge
         ;
@@ -131,6 +137,8 @@ variants:
         G0 X70 E9 F800 ; purge
         G0 X73 Z0.05 F8000 ; wipe, move close to the bed
         G0 X76 Z0.2 F8000 ; wipe, move quickly away from the bed
+
+        M591 R ; restore stuck detection
         G92 E0 ; reset extruder position
   - condition: printer.tool_count > 1
     name: Original Prusa XL
@@ -141,7 +149,7 @@ variants:
         M862.3 P "XL" ; printer model check
         M862.5 P2 ; g-code level check
         M862.6 P"Input shaper" ; FW feature check
-        M115 U6.2.5+8912
+        M115 U6.4.0+11974
         G90 ; use absolute coordinates
         M83 ; extruder relative mode
         ; set print area
@@ -163,11 +171,11 @@ variants:
         M217 Z{max(zhop, 2.0)} ; set toolchange z hop to 2mm, or zhop variable from slicer if higher
         ; set bed and extruder temp for MBL
         M140 S[first_layer_bed_temperature] ; set bed temp
-        G0 Z5 ; add Z clearance
-        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+        M104 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set temp
 
         ; Home XY
         G28 XY
+
         ; try picking tools used in print
         G1 F{travel_speed * 60}
         {if (is_extruder_used[0]) and (initial_tool != 0)}T0 S1 L0 D0{endif}
@@ -177,6 +185,9 @@ variants:
         {if (is_extruder_used[4]) and (initial_tool != 4)}T4 S1 L0 D0{endif}
         ; select tool that will be used to home & MBL
         T{initial_tool} S1 L0 D0
+
+        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+
         ; home Z with MBL tool
         M84 E ; turn off E motor
         G28 Z
@@ -215,6 +226,9 @@ variants:
         {if first_layer_temperature[3] > 0 and (is_extruder_used[3])}M104 T3 S{first_layer_temperature[3]}{endif}
         {if first_layer_temperature[4] > 0 and (is_extruder_used[4])}M104 T4 S{first_layer_temperature[4]}{endif}
         {if (is_extruder_used[0]) and initial_tool != 0}
+
+        M591 S0 ; disable stuck detection
+
         ;
         ; purge first tool
         ;
@@ -335,6 +349,8 @@ variants:
         G0 X{(initial_tool == 0 ? 30 : (initial_tool == 1 ? 150 : (initial_tool == 2 ? 210 : 330))) + ((initial_tool == 0 or initial_tool == 2 ? 1 : -1) * 40) + ((initial_tool == 0 or initial_tool == 2 ? 1 : -1) * 3 * 2)} Z0.2 F{8000} ; wipe, move quickly away from the bed
         G1 E-{retract_length[initial_tool]} F2400 ; retract
         {e_retracted[initial_tool] = retract_length[initial_tool]}
+
+        M591 R ; restore stuck detection
         G92 E0 ; reset extruder position
       end_gcode: |-
         G4 ; wait
