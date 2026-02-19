@@ -752,6 +752,11 @@ bool VariableLayerHeightGizmo::process_gizmo_event(const GizmoEvent& event)
             return false;
         }
 
+        // On macOS with trackpad, wheel_delta can be 0.
+        if (event.wheel_delta == 0.f) {
+            return true;
+        }
+
         const double wheel_rotation = event.wheel_delta / std::abs(event.wheel_delta);
         m_band_width = std::clamp(m_band_width * (1. + 0.1 * wheel_rotation), 1.5, 10.);
 
