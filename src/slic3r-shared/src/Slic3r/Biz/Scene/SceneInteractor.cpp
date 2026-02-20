@@ -705,15 +705,14 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
     Domain::ElementRefs updated;
     for (const Domain::ModelObject* object : objects) {
         SPDLOG_DEBUG("Notify listener obj {}", object->id().id);
-
         for (const Domain::ModelInstance* inst : object->instances)
             updated.emplace_back(object->id().id, inst->id().id, 0);
-
-        auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
-        for (const auto& bed_ref : changes.updated_beds)
-            invoke_slicing_input_changed(bed_ref);
-
     }
+
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
+
     if (updated.size()) {
         SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
         invoke_listeners<ISceneChangedListener>(
