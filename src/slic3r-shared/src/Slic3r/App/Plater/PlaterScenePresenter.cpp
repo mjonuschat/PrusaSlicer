@@ -26,6 +26,8 @@
 #include "Slic3r/App/Scene/VolumeColor.hpp"
 #include "Slic3r/Math.hpp"
 
+#include <libslic3r/GCode/WipeTower.hpp>
+
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
 
@@ -408,7 +410,9 @@ void PlaterScenePresenter::update_volume_materials()
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
                 bool is_on_selected_bed = std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
                 bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
-                n.render_component()->set_shadows((is_model_part && is_on_selected_bed) ?
+                // TEMPORARY - wipe tower bed containment should be taken in account too
+                n.render_component()->set_shadows(((is_model_part && is_on_selected_bed) || is_wipe_tower) ?
+//                n.render_component()->set_shadows((is_model_part && is_on_selected_bed) ?
                     Render::Shadows{true, true} : Render::Shadows{false, false});
 
                 const Domain::BedInstance* bed_inst = nullptr;
@@ -623,6 +627,7 @@ static Scene::SceneNodeTag wipe_tower_tag(Domain::SlicingId id) {
 
 void build_wipe_tower_cube(
     Scene::NodeBuilder& builder,
+    const std::string& debug_name,
     Scene::GeometryDataFactory& data_factory,
     const Render::Material& material,
     double bottom_z,
@@ -636,21 +641,23 @@ void build_wipe_tower_cube(
             auto geom = data_factory.geometry(Scene::GeometryDataId::Cube);
             auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cube);
 
-            builder.set_debug_name("wipe_tower_cube")
+            builder.set_debug_name(debug_name)
                 .set_material_override(material)
                 .set_tag(wipe_tower_tag(slicing_id))
                 .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
+                .set_shadows(Render::Shadows{true, true})
+                .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS)
                 .set_aabb(mesh->aabb_mesh());
 
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
-            transform.translate(Vec3d{0, 0, bottom_z + scale.z() / 2.0});
+            transform.translate(Vec3d{ 0.0, 0.0, bottom_z + 0.5 * scale.z() });
             transform.scale(scale);
             builder.set_transform(transform);
         }
     );
 }
 
-static Domain::Vec3d wipe_tower_offset(
+static Vec3d wipe_tower_offset(
     double wipe_tower_width,
     double wipe_tower_depth
 )
@@ -663,7 +670,7 @@ void build_wipe_tower_cone(
     Scene::GeometryDataFactory& data_factory,
     const Render::Material& material,
     double apex_angle,
-    double height,
+    const Vec3d& sizes, // x = width, y = depth, z = height
     double brim_width,
     Domain::SlicingId slicing_id
 )
@@ -672,7 +679,21 @@ void build_wipe_tower_cone(
         return;
     }
 
-    const double base_size{2.0 * height * std::tan(Slic3r::deg2rad(apex_angle / 2.0))};
+    const auto [radius, scale_x]{
+        WipeTower::get_wipe_tower_cone_base(sizes.x(), sizes.z(), sizes.y(), apex_angle)
+    };
+    if (radius <= 0.0) {
+        return;
+    }
+
+    const double diameter{2.0 * radius};
+    const Vec3d cone_scale{ diameter / scale_x, diameter, sizes.z() };
+
+    if (diameter / scale_x <= sizes.y()) {
+        // cone contained into the main block
+        return;
+    }
+
     builder.child(
         [&](Scene::NodeBuilder& builder)
         {
@@ -687,13 +708,21 @@ void build_wipe_tower_cone(
                     material,
                     Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects)
                 )
+                .set_shadows(Render::Shadows{true, true})
+                .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS)
                 .set_aabb(mesh->aabb_mesh());
 
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
-            transform.scale(Vec3d{base_size, base_size, height});
+            transform.scale(cone_scale);
             builder.set_transform(transform);
         }
     );
+
+    const Vec3d brim_scale{
+        diameter / scale_x + 2.0 * brim_width,
+        diameter + 2.0 * brim_width,
+        wipe_tower_brim_height
+    };
 
     builder.child(
         [&](Scene::NodeBuilder& builder)
@@ -709,10 +738,11 @@ void build_wipe_tower_cone(
                     material,
                     Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects)
                 )
+                .set_shadows(Render::Shadows{true, true})
+                .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS)
                 .set_aabb(mesh->aabb_mesh());
-            const double base_size_brim{base_size + 2 * brim_width};
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
-            transform.scale(Vec3d{base_size_brim, base_size_brim, wipe_tower_brim_height});
+            transform.scale(brim_scale);
             builder.set_transform(transform);
         }
     );
@@ -724,7 +754,7 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
     Domain::SlicingId slicing_id
 )
 {
-    auto color{Domain::ColorRGBA::BLUEISH()};
+    auto color{Domain::ColorRGBA(0.9f, 0.6f, 0.0f, 1.0f)};
     const Render::Material material{
         Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
@@ -735,21 +765,23 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
     const double depth{wipe_tower.fallback_depth};
     const double width{wipe_tower.width};
 
-    const Domain::Vec3d offset{wipe_tower_offset(width, depth)};
+    const Vec3d offset{ wipe_tower_offset(width, depth) };
 
     builder.child(
         [&](Scene::NodeBuilder& builder)
         {
+            builder.set_debug_name("wipe_tower_main");
             Domain::Transform3d transform{Domain::Transform3d::Identity()};
             transform.translate(offset);
             builder.set_transform(transform).set_tag(wipe_tower_tag(slicing_id));
 
             build_wipe_tower_cube(
                 builder,
+                "wipe_tower_brim",
                 m_data_factory,
                 material,
                 0.0,
-                Domain::Vec3d{
+                Vec3d{
                     width + 2 * wipe_tower.brim_width,
                     depth + 2 * wipe_tower.brim_width,
                     wipe_tower_brim_height
@@ -759,10 +791,11 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
 
             build_wipe_tower_cube(
                 builder,
+                "wipe_tower_body",
                 m_data_factory,
                 material,
                 0.0,
-                Domain::Vec3d{width, depth, height},
+                Vec3d{width, depth, height},
                 slicing_id
             );
 
@@ -771,7 +804,7 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
                 m_data_factory,
                 material,
                 wipe_tower.cone_angle,
-                height,
+                Vec3d(width, depth, height),
                 wipe_tower.brim_width,
                 slicing_id
             );
@@ -790,14 +823,14 @@ void PlaterScenePresenter::build_wipe_tower_node(
     const Render::Material material{
         Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-            .set_uniform("uniform_color", Domain::ColorRGBA::ORANGE())
+            .set_uniform("uniform_color", Domain::ColorRGBA::DARK_YELLOW())
     };
 
     using Biz::Print::ZDepth;
 
     const double depth{wipe_tower.depths.front().depth};
 
-    const Domain::Vec3d offset{
+    const Vec3d offset{
         wipe_tower_offset(wipe_tower.width, depth)
     };
 
@@ -810,10 +843,11 @@ void PlaterScenePresenter::build_wipe_tower_node(
 
             build_wipe_tower_cube(
                 builder,
+                "wipe_tower_brim",
                 m_data_factory,
                 material,
                 0.0,
-                Domain::Vec3d{
+                Vec3d{
                     wipe_tower.width + 2 * wipe_tower.brim_width,
                     wipe_tower.depths.front().depth + 2 * wipe_tower.brim_width,
                     wipe_tower_brim_height
@@ -826,10 +860,11 @@ void PlaterScenePresenter::build_wipe_tower_node(
                 const auto [z, depth]{wipe_tower.depths[i - 1]};
                 build_wipe_tower_cube(
                     builder,
+                    "wipe_tower_body",
                     m_data_factory,
                     material,
                     z,
-                    Domain::Vec3d{wipe_tower.width, depth, next_z - z},
+                    Vec3d{wipe_tower.width, depth, next_z - z},
                     slicing_id
                 );
             }
@@ -839,7 +874,7 @@ void PlaterScenePresenter::build_wipe_tower_node(
                 m_data_factory,
                 material,
                 wipe_tower.cone_angle,
-                wipe_tower.depths.back().z,
+                Vec3d(wipe_tower.width, depth, wipe_tower.depths.back().z),
                 wipe_tower.brim_width,
                 slicing_id
             );
