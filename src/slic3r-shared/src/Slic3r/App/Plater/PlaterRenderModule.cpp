@@ -387,13 +387,31 @@ void PlaterRenderModule::register_commands()
                     m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview);
                 },
                 FuncCommandExtraOpts{
-                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
-                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                        Platform::KeyCode::Num6
-                    }, Platform::KeyboardShortcut{
-                        Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                        Platform::KeyCode::Kp6
-                    }}
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{
+                                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                                Platform::KeyCode::Num6
+                            },
+                            Platform::KeyboardShortcut{
+                                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                                Platform::KeyCode::Kp6
+                            }
+                        }
+                }
+            )
+        )
+        // Command for create separate text object and open Text-gizmo
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::CreateObjectAsText,
+                [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
+                Platform::FuncCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+                        },
+                    .enabled = [this]() { return !m_text_gizmo->enabled(); }
                 }
             )
         );
