@@ -3,16 +3,16 @@ kind: print
 inherits:
 - '*common*'
 match_mode: all_matches
-## C1; MK4; MK3.5
+# MK3.5
 variants:
-- condition: printer.base_model=~/(MK4|MK3.5)/
+- condition: printer.base_model == "MK3.5"
   id: hY3Gtm5nTIe2b6dxh9W5BQ
   variants:
-# MK4; MK3.5 High Flow
+# MK3.5 High Flow
   - condition: tool.nozzle_high_flow
     id: 8Qe5xDV4TVOUkqLArcxAtw
     variants:
-  # 0.4HF - MK4; MK3.5
+  # 0.4HF - MK3.5
     - condition: tool.nozzle_diameter == 0.4
       id: WK3/LOpYQ3OfTGHtxySumw
       variants:
@@ -36,7 +36,7 @@ variants:
         id: Hfm8tDwNSheMXziBSxmwHA
         values:
           layer_height: 0.28
-  # 0.5HF - MK4; MK3.5
+  # 0.5HF - MK3.5
     - condition: tool.nozzle_diameter == 0.5
       id: //Nw+Y6RS7OLTh+vI2mu8Q
       variants:
@@ -60,7 +60,7 @@ variants:
         id: rN9AhIpIQHO/rlCNDlCHQw
         values:
           layer_height: 0.32
-  # 0.6HF - MK4; MK3.5
+  # 0.6HF - MK3.5
     - condition: tool.nozzle_diameter == 0.6
       id: Yerd89P7QqCpKPzI18hnEg
       variants:
@@ -84,7 +84,7 @@ variants:
         id: jGZVEHPrTJS4lo3S+nWiSQ
         values:
           layer_height: 0.40
-  # 0.8HF - MK4; MK3.5      
+  # 0.8HF - MK3.5      
     - condition: tool.nozzle_diameter == 0.8
       id: GeosTpdhQUudAksWl46HrA
       variants:
@@ -100,11 +100,11 @@ variants:
         id: iZaTJTRiR0Gjankg3iFe7A
         values:
           layer_height: 0.55
-# non-HF nozzles - MK4; MK3.5
+# non-HF nozzles - MK3.5
   - condition: not tool.nozzle_high_flow
     id: A6Ml79kLRn+futJs7WTwIw
     variants:
-  # 0.25 non-HF - MK4; MK3.5
+  # 0.25 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.25
       id: orF8D+khRRycozJDku+29A
       variants:
@@ -124,7 +124,7 @@ variants:
         id: VwcdghzJQMGsPOTxIu5TXA
         values:
           layer_height: 0.15
-  # 0.3 non-HF - MK4; MK3.5
+  # 0.3 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.3
       id: qn3g6i+MQly4tG81TGB/zw
       variants:
@@ -140,7 +140,7 @@ variants:
         id: KJocu+sOTku+EdADabeGdQ
         values:
           layer_height: 0.20
-  # 0.4 non-HF - MK4; MK3.5
+  # 0.4 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.4
       id: LsnmUwRjQV+PDRNocvC9RA
       variants:
@@ -156,7 +156,7 @@ variants:
         id: lcKdovoZQISDbqs98C0jaA
         values:
           layer_height: 0.20
-  # 0.5 non-HF - MK4; MK3.5
+  # 0.5 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.5
       id: uxwGz2gJQi+MHreu6CCcRg
       variants:
@@ -176,7 +176,7 @@ variants:
         id: DWzU/z6pTmKOMrUTDFhh4Q
         values:
           layer_height: 0.25
-  # 0.6 non-HF - MK4; MK3.5
+  # 0.6 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.6
       id: NaNeZYuwRT2GSdRI4aHdcg
       variants:
@@ -196,7 +196,7 @@ variants:
         id: Mk7AaABtRXq/azfANPWyow
         values:
           layer_height: 0.32
-  # 0.8 non-HF - MK4; MK3.5
+  # 0.8 non-HF - MK3.5
     - condition: tool.nozzle_diameter == 0.8
       id: Ag78vzcUTROn7oNROCyI5Q
       variants:

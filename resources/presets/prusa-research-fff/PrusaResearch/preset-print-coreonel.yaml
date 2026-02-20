@@ -2075,7 +2075,7 @@ variants:
             solid_infill_acceleration: 3000
             default_acceleration: 2500
             overhang_speed_3: 90%
-            support_material_contact_distance: 0.2
+            support_material_contact_distance: 0
             solid_infill_speed: 60
             support_material_speed: 80
             support_material_interface_speed: 40
@@ -2113,7 +2113,7 @@ variants:
             solid_infill_acceleration: 3000
             default_acceleration: 2500
             overhang_speed_3: 90%
-            support_material_contact_distance: 0.2
+            support_material_contact_distance: 0
             solid_infill_speed: 60
             support_material_speed: 80
             support_material_interface_speed: 40
