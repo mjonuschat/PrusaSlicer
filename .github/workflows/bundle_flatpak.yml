@@ -5,7 +5,7 @@ on:
 
 jobs:
   bundle_flatpak:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/bundle_flatpak.yml@lm_step_actions
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/bundle_flatpak.yml@master
     secrets: inherit
     with:
-      actions_branch: lm_step_actions
+      actions_branch: master

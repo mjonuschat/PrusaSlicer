@@ -9,10 +9,10 @@ on:
 
 jobs:
   build_osx_sentry:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@lm_step_actions
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@master
     secrets: inherit
     with:
       with_asan: false
       enable_sentry:  true
       release_build: ${{ startsWith(github.ref, 'refs/tags/version_') }}
-      actions_branch: lm_step_actions
+      actions_branch: master
