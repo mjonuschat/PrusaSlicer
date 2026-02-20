@@ -179,19 +179,39 @@ using SupportLayerPtrs          = std::vector<SupportLayer*>;
 
 // Single instance of a PrintObject.
 // As multiple PrintObjects may be generated for a single ModelObject (their instances differ in rotation around Z),
-// ModelObject's instancess will be distributed among these multiple PrintObjects.
-struct PrintInstance
+// ModelObject's instances will be distributed among these multiple PrintObjects.
+class PrintInstance
 {
-    // Parent PrintObject
-    PrintObject 		*print_object;
+public:
+    PrintInstance() = delete;
+
+    PrintInstance(
+        const Domain::ModelInstance& model_instance,
+        std::size_t model_instance_index,
+        const Domain::Vec2big& shift
+    );
+
+    /**
+     * Returns the shift as Point (coord_t).
+     * @note The shift is stored internally as Vec2big (int64) to handle meshes with coordinates beyond coord_t range.
+     */
+    Domain::Point shift() const;
+
+    // Parent PrintObject.
+    PrintObject* print_object = nullptr;
     // Source ModelInstance of a ModelObject, for which this print_object was created.
-	Domain::ModelInstance model_instance;
-    std::size_t          model_instance_index;
-	// Shift of this instance's center into the world coordinates.
-    Domain::Point 		 shift;
+    Domain::ModelInstance model_instance;
+    std::size_t model_instance_index;
+
+private:
+    // Shift of this instance's center into the world coordinates (scaled, int64).
+    // Stored as Vec2big to handle meshes with coordinates beyond coord_t range.
+    Domain::Vec2big m_shift;
+
+    friend class PrintObject;
 };
 
-typedef std::vector<PrintInstance> PrintInstances;
+using PrintInstances = std::vector<PrintInstance>;
 
 class PrintObjectRegions
 {
@@ -310,7 +330,7 @@ public:
     const Domain::Transform3d&   trafo() const          { return m_trafo; }
     // Trafo with the center_offset() applied after the transformation, to center the object in XY before slicing.
     Domain::Transform3d          trafo_centered() const
-        { Domain::Transform3d t = this->trafo(); t.pretranslate(Domain::Vec3d(- Biz::Algorithms::Scaling::unscaled<double>(m_center_offset.x()), - Biz::Algorithms::Scaling::unscaled<double>(m_center_offset.y()), 0)); return t; }
+        { Domain::Transform3d t = this->trafo(); t.pretranslate(Domain::Vec3d(-m_center_offset_unscaled.x(), -m_center_offset_unscaled.y(), 0)); return t; }
     const PrintInstances&        instances() const      { return m_instances; }
 
     // Whoever will get a non-const pointer to PrintObject will be able to modify its layers.
@@ -323,8 +343,6 @@ public:
     // Height is used for slicing, for sorting the objects by height for sequential printing and for checking vertical clearence in sequential print mode.
     // The height is snug.
     Domain::coord_t 			 height() const         { return m_size.z(); }
-    // Centering offset of the sliced mesh from the scaled and rotated mesh of the model.
-    const Domain::Point& 		 center_offset() const  { return m_center_offset; }
 
     bool                         has_brim() const       {
         return this->config().get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim
@@ -457,7 +475,7 @@ private:
     std::vector<PrintInstance>              m_instances;
     // The mesh is being centered before thrown to Clipper, so that the Clipper's fixed coordinates require less bits.
     // This is the adjustment of the  the Object's coordinate system towards PrintObject's coordinate system.
-    Domain::Point                           m_center_offset;
+    Domain::Vec2d                           m_center_offset_unscaled;
 
     // Object split into layer ranges and regions with their associated configurations.
     // Shared among PrintObjects created for the same ModelObject.

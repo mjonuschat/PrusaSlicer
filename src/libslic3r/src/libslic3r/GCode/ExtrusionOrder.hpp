@@ -29,7 +29,7 @@ class PrintRegion;
 namespace GCode {
 class WipeTowerIntegration;
 }  // namespace GCode
-struct PrintInstance;
+class PrintInstance;
 }  // namespace Slic3r
 
 namespace Slic3r::GCode {

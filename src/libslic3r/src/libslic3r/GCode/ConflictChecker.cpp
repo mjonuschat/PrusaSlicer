@@ -470,7 +470,7 @@ ConflictResultOpt find_inter_of_lines_in_diff_objs(
 
         Points instances_shifts;
         for (const PrintInstance& inst : obj->instances())
-            instances_shifts.emplace_back(inst.shift);
+            instances_shifts.emplace_back(inst.shift());
 
         conflictQueue.emplace_back_bucket(std::move(layers.first), obj, instances_shifts);
         conflictQueue.emplace_back_bucket(std::move(layers.second), obj, instances_shifts);

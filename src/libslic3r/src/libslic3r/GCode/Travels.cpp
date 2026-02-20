@@ -58,7 +58,7 @@ AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> get_previous_layer_distanc
                 const size_t instance_idx = &instance - &object->instances().front();
                 for (const ExPolygon &expolygon : slices)
                     for (const Line &line : Algorithms::ExPolygon::to_lines(expolygon))
-                        lines.emplace_back(unscaled(Point{line.a + instance.shift}), unscaled(Point{line.b + instance.shift}), object_layer_idx, instance_idx);
+                        lines.emplace_back(unscaled(Point{line.a + instance.shift()}), unscaled(Point{line.b + instance.shift()}), object_layer_idx, instance_idx);
             }
         }
     }
@@ -84,7 +84,7 @@ std::pair<AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef>, size_t> get_cur
                             for (const ExtrusionEntity *ee : *eec) {
                                 if (ee->role().is_external_perimeter()) {
                                     for (const Line &line : extrusion_entity_to_lines(*ee))
-                                        lines.emplace_back(unscaled(Point{line.a + instance.shift}), unscaled(Point{line.b + instance.shift}), object_layer_idx, instance_idx, ee);
+                                        lines.emplace_back(unscaled(Point{line.a + instance.shift()}), unscaled(Point{line.b + instance.shift()}), object_layer_idx, instance_idx, ee);
                                 }
 
                                 ++extrusion_entity_cnt;
@@ -272,7 +272,7 @@ double get_first_crossed_line_distance(
 
         if (!objects_to_print.empty() && ignore_starting_object_intersection && first_intersection.object_layer_idx == -1) {
             const ObjectOrExtrusionLinef &intersection_line = distancer.get_line(intersections.front().second);
-            const Point shift = objects_to_print[intersection_line.object_layer_idx].layer()->object()->instances()[intersection_line.instance_idx].shift;
+            const Point shift = objects_to_print[intersection_line.object_layer_idx].layer()->object()->instances()[intersection_line.instance_idx].shift();
             const Point shifted_first_point = path_first_point - shift;
             const bool contain_first_point = Algorithms::ExPolygon::contains(objects_to_print[intersection_line.object_layer_idx].layer()->lslices, shifted_first_point);
 

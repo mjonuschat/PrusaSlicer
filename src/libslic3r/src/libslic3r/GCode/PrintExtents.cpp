@@ -139,7 +139,7 @@ BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object
                 bbox_this = BB::merge(bbox_this, extrusionentity_extents(extrusion_entity));
         for (const PrintInstance &instance : print_object.instances()) {
             BoundingBoxf bbox_translated(bbox_this);
-            bbox_translated = BB::translated(bbox_translated, unscale(instance.shift));
+            bbox_translated = BB::translated(bbox_translated, unscale(instance.shift()));
             bbox = BB::merge(bbox, bbox_translated);
         }
     }
