@@ -85,6 +85,16 @@ void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
         }
     }
 
+    // Update activation state
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        // Explicitly activated by mouse
+        m_is_activated = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+    }
+    else if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+        // Automatically activated if the window is focused (e.g., via Tab)
+        m_is_activated = true;
+    }
+
     if (callbacks().extra_render) {
         callbacks().extra_render();
     }
@@ -132,6 +142,12 @@ void Control::set_max_pos(const int max_pos)
 
 void Control::move_active_thumb(int delta)
 {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.NavActive && !m_is_activated) {
+        // Block input if Nav is active but this specific slider isn't the focus/active
+        return;
+    }
+
     if (m_selection == SelectedSlider::Undefined)
         m_selection = SelectedSlider::Higher;
 
@@ -547,15 +563,10 @@ bool Control::draw_slider(int* higher_pos, int* lower_pos, const std::string& hi
     // get active(draggable) region.
     ImRect draggable_region = m_draw_opts.draggable_region(groove, is_horizontal());
 
-    if (m_is_dragging && !io.MouseDown[0]) {
-        m_is_dragging = false;
-        ImGui::ClearActiveID();
-    }
-
     if (m_is_dragging || (ImGui::ItemHoverable(draggable_region, id, ImGuiItemFlags_AllowDuplicateId) && io.MouseDown[0])) {
         ImGui::SetActiveID(id, window);
-        //ImGui::SetFocusID(id, window);
-        //ImGui::FocusWindow(window);
+        ImGui::SetFocusID(id, window);
+        ImGui::FocusWindow(window);
         m_is_dragging = true;
     }
 

@@ -1196,6 +1196,7 @@ bool DoubleSliderForLayers::render_button(Render::Icon icon, Render::Icon icon_h
     int windows_flag =   ImGuiWindowFlags_NoTitleBar
                        | ImGuiWindowFlags_NoCollapse
                        | ImGuiWindowFlags_NoMove
+                       | ImGuiWindowFlags_NoNav
                        | ImGuiWindowFlags_NoResize
                        | ImGuiWindowFlags_NoScrollbar
                        | ImGuiWindowFlags_NoScrollWithMouse

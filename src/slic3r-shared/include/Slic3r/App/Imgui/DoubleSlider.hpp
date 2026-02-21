@@ -180,6 +180,8 @@ private:
     bool m_combine_thumbs{ false };
     bool m_show_move_label{ false };
 
+    bool m_is_activated{ false };
+
     DrawOptions m_draw_opts;
     Regions m_regions;
 
