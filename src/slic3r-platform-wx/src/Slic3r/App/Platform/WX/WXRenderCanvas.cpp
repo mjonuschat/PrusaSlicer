@@ -390,6 +390,19 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
     Bind(wxEVT_RIGHT_DCLICK, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_MIDDLE_DCLICK, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_LEAVE_WINDOW, &WXRenderCanvas::on_mouse_leave, this);
+
+    this->Bind(
+        wxEVT_KILL_FOCUS,
+        [this](wxFocusEvent& e)
+        {
+            // When the OS intercepts the key and shows a dialog / overlay, 
+            // the application never receives the WM_KEYUP / key - release event, 
+            // leaving ImGui thinking the key is still held.
+            // So, force input keys cleanup on kill focus
+            ImGuiIO& io = ImGui::GetIO();
+            io.ClearInputKeys();
+        }
+    );
 }
 
 WXRenderCanvas::~WXRenderCanvas()

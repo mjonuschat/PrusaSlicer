@@ -322,8 +322,9 @@ MainFrame::MainFrame(
     );
     m_canvas->Bind(
         wxEVT_KILL_FOCUS,
-        [this](wxFocusEvent&)
+        [this](wxFocusEvent& e)
         {
+            e.Skip();
             set_accel_table();
             // Events from acceleration table will be processed now
         }
