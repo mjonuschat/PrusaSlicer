@@ -951,8 +951,17 @@ void Item::set_orientation(Orientation orientation)
 {
     if (m_orientation != orientation) {
         m_orientation = orientation;
-        m_flex_direction =
-            orientation == Orientation::Horizontal ? YGFlexDirectionRow : YGFlexDirectionColumn;
+        switch (orientation) {
+        case Orientation::Horizontal:
+            m_flex_direction = YGFlexDirectionRow;
+            break;
+        case Orientation::Vertical:
+            m_flex_direction = YGFlexDirectionColumn;
+            break;
+        case Orientation::VerticalReverse:
+            m_flex_direction = YGFlexDirectionColumnReverse;
+            break;
+        }
         YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
         set_style_dirty();
     }
