@@ -40,6 +40,7 @@ static bool apply(T& val, const MinMax<T>& limit)
 namespace Slic3r::App::Yoga {
 class LayoutButton;
 class InputTextField;
+class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
@@ -111,7 +112,6 @@ public:
 
     void set_operation(Domain::ModelVolumeType type);
     void show_part_specific_panel(bool show);
-    void show_revert_buttons(bool show);
 
     void set_enable_all_except_font(bool enable);
 private:
@@ -127,6 +127,8 @@ private:
     );
 
 private:
+    Yoga::ScrollArea* m_scroll_area{ nullptr };
+
     Yoga::InputTextField* m_editor{nullptr};
     Yoga::LayoutButton* m_editor_warning{nullptr};
 
