@@ -287,7 +287,9 @@ Biz::Print::ApplyStatus::Status Print::update(
         }
     });
 
-    if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
+    if (std::holds_alternative<ApplyStatus::Changed>(result)) {
+        m_on_fdm_result(Biz::Print::get_result_preview(*this));
+    } else if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
         m_on_fdm_result({});
     }
 
