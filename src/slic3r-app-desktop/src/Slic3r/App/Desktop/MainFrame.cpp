@@ -262,6 +262,13 @@ MainFrame::MainFrame(
             event.Skip();
             m_left_bar->Rescale();
             update_canvas_ui_settings();
+
+            if (IsMaximized()) {
+                // When maximized, the OS does not send a real WM_SIZE on DPI change,
+                // so wxBookCtrlBase never re-distributes space between its control strip
+                // and pages. Sending a size event to m_left_bar triggers that re-layout.
+                m_left_bar->SendSizeEvent();
+            }
         }
     );
 #endif
