@@ -262,7 +262,7 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
         // In case of empty (no) tool settings, we can just expand those to all filaments.
         if (tool_load_result.settings.size() == 1
             && tool_load_result.settings.front().items.all_items().empty()
-            && tool_load_result.settings.front().overrides.overriden_items().empty())
+            && tool_load_result.settings.front().overrides.overridden_items().empty())
         {
             tool_load_result.settings.resize(filament_load_result.settings.size());
         } else {
