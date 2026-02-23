@@ -9,6 +9,7 @@ ConfigPackFDM::ConfigPackFDM(const int extruder_count) :
     tool{std::vector<Domain::ToolPrintSettings>(extruder_count)},
     filament{std::vector<Domain::FilamentSettings>(extruder_count)}
 {
+    // TODO: should we use require_tool_parity instead?
     printer.items.opt("extruder_offset").set(std::vector<Vec2d>(extruder_count, Vec2d::Zero()));
 }
 

@@ -276,7 +276,7 @@ void PrintSettingsDialog::update_extruder_candidates()
             last_selected_bed.instance_id
         );
 
-    for (unsigned candidate : std::as_const(bed_instance->extruder_candidates)) {
+    for (const auto& candidate : std::as_const(bed_instance->extruder_candidates)) {
         m_extruders.at(candidate) = true;
     }
 
@@ -288,7 +288,9 @@ void PrintSettingsDialog::update_extruder_size()
 {
     invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_will_be_reset(); });
 
-    m_extruders.resize(m_project_interactor.preset_interactor().tool_items().size());
+    m_extruders.resize(
+        m_project_interactor.preset_interactor().current_printer_config().material_slot_count()
+    );
     std::fill(m_extruders.begin(), m_extruders.end(), false);
 
     invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_reset(); });

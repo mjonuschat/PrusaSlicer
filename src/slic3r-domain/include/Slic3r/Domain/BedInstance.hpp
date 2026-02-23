@@ -15,6 +15,14 @@ using ConstModelInstanceList = std::vector<const ModelInstance*>;
 
 class Bed;
 
+struct ExtruderCandidate
+{
+    uint8_t tool_index;
+    uint8_t slot_index;
+};
+
+using ExtruderCandidates = std::vector<ExtruderCandidate>;
+
 struct BedInstance : public ObjectBase
 {
     explicit BedInstance(const Bed& bed);

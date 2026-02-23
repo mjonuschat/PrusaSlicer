@@ -538,7 +538,7 @@ features:
 ---
 # Legacy printer models to address
 # - [x] COREONE
-# - [ ] COREONEMMU3
+# - [x] COREONEMMU3
 # - [x] MINI
 # - [x] MINIIS
 # - [x] MK2.5
@@ -635,6 +635,18 @@ printer: COREONEOAK
 legacy_printer_model: [COREONEOAK]
 tools:
 - tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: c1mmu3
+name: CORE One MMU3
+printer: COREONE
+legacy_printer_model: [COREONEMMU3]
+tools:
+- tool: 0.4HF
+feeders:
+- feeder: mmu3_32b
+  address: [0]
 sheet: satin
 ---
 kind: printer_config

@@ -15,7 +15,7 @@ BoxRefs convert_to_box_refs(
 }
 
 BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
-    ASSERT(config_pack.filament.size() == config_pack.tool.size());
+    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
     BoxOrBoxesVector result;
     result.push_back(config_pack.print);
     result.push_back(convert_to_box_refs(config_pack.tool));
@@ -27,9 +27,11 @@ BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
 
 namespace {
 ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const std::size_t filaments_count) {
+    ASSERT(tools_count == filaments_count || tools_count == 1);
     return {
         {FDMConfigLocation::Print, std::nullopt},
-        {FDMConfigLocation::Tool, tools_count},
+        //{FDMConfigLocation::Tool, tools_count},
+        {FDMConfigLocation::Tool, filaments_count},
         {FDMConfigLocation::Printer, std::nullopt},
         {FDMConfigLocation::Filament, filaments_count},
         {FDMConfigLocation::Project, std::nullopt},

@@ -93,8 +93,13 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
     const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
     set_material_name(prefix + preset_item.name);
     set_color(ImColor(250, 104, 48));
-    const Biz::Preset::ToolConfigItemObservableList&
-        tool_config_item_ol = m_project_interactor.preset_interactor().tool_items().at(m_index);
+
+    const auto& hw_config =
+        m_project_interactor.preset_interactor().selected_printer_preset().hw_config;
+    auto mat_it           = Domain::Preset::MaterialIterator::from_slot_index(hw_config, m_index);
+    const auto tool_index = mat_it.tool_index();
+    const Biz::Preset::ToolConfigItemObservableList& tool_config_item_ol =
+        m_project_interactor.preset_interactor().tool_items().at(tool_index);
     set_nozzle(tool_config_item_ol.items().at(tool_config_item_ol.selected_index()).name);
 }
 
@@ -108,8 +113,12 @@ void MaterialSettingsButton::on_hw_item_selection_changed(
         && m_project_interactor.selected_config_container_id() == config_container_id
         && type == Biz::Preset::HwItemType::ToolItem)
     {
+        const auto& hw_config =
+            m_project_interactor.preset_interactor().selected_printer_preset().hw_config;
+        auto mat_it = Domain::Preset::MaterialIterator::from_slot_index(hw_config, m_index);
+        const auto tool_index = mat_it.tool_index();
         const Biz::Preset::ToolConfigItemObservableList&
-            tool_config_item_ol = m_project_interactor.preset_interactor().tool_items().at(m_index);
+            tool_config_item_ol = m_project_interactor.preset_interactor().tool_items().at(tool_index);
         set_nozzle(tool_config_item_ol.items().at(tool_config_item_ol.selected_index()).name);
     }
 }

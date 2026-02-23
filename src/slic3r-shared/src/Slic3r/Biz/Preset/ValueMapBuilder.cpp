@@ -29,6 +29,8 @@ void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrint
 
         const auto& feeder = printer.feeders.begin()->second;
         append_value(values, "feeder.", feeder.model);
+        // TODO: proper setting
+        append_value(values, "feeder.single_mode", false);
     }
 
     append_sheet_values(values, printer.sheet);

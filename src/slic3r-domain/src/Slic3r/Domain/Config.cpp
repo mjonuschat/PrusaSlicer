@@ -7,29 +7,41 @@
 
 namespace std {
 
-    template<> struct hash<Slic3r::Domain::Percentage> {
-        std::size_t operator()(const Slic3r::Domain::Percentage& v) const noexcept {
-            return std::hash<double>{}(v.value);
-        }
-    };
+template <>
+struct hash<Slic3r::Domain::Percentage>
+{
+    std::size_t operator()(const Slic3r::Domain::Percentage& v) const noexcept
+    {
+        return std::hash<double>{}(v.value);
+    }
+};
 
-    template<> struct hash<Slic3r::Domain::FloatOrPercentage> {
-        std::size_t operator()(const Slic3r::Domain::FloatOrPercentage& v) const noexcept {
-            const std::size_t seed{std::hash<double>{}(v.get_abs_value(1.0))};
-            return v.is_percentage() ? seed ^ 0x9e3779b9 : seed;
-        }
-    };
+template <>
+struct hash<Slic3r::Domain::FloatOrPercentage>
+{
+    std::size_t operator()(const Slic3r::Domain::FloatOrPercentage& v) const noexcept
+    {
+        const std::size_t seed{std::hash<double>{}(v.get_abs_value(1.0))};
+        return v.is_percentage() ? seed ^ 0x9e3779b9 : seed;
+    }
+};
 
-    template<> struct hash<Slic3r::Domain::Vec2d> {
-        std::size_t operator()(const Slic3r::Domain::Vec2d& v) const noexcept {
-            std::size_t seed{std::hash<double>{}(v.x())};
-            boost::hash_combine(seed, std::hash<double>{}(v.y()));
-            return seed;
-        }
-    };
+template <>
+struct hash<Slic3r::Domain::Vec2d>
+{
+    std::size_t operator()(const Slic3r::Domain::Vec2d& v) const noexcept
+    {
+        std::size_t seed{std::hash<double>{}(v.x())};
+        boost::hash_combine(seed, std::hash<double>{}(v.y()));
+        return seed;
+    }
+};
 
-    template<> struct hash<Slic3r::Domain::Vec3d> {
-        std::size_t operator()(const Slic3r::Domain::Vec3d& v) const noexcept {
+    template <>
+    struct hash<Slic3r::Domain::Vec3d>
+    {
+        std::size_t operator()(const Slic3r::Domain::Vec3d& v) const noexcept
+        {
             std::size_t seed{std::hash<double>{}(v.x())};
             boost::hash_combine(seed, std::hash<double>{}(v.y()));
             boost::hash_combine(seed, std::hash<double>{}(v.z()));
@@ -61,9 +73,11 @@ ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& lo
     }
 }
 
-const ConfigItem& ConfigItems::opt(const std::string_view key) const { return const_cast<ConfigItems*>(this)->opt(key); }
+const ConfigItem& ConfigItems::opt(const std::string_view key) const
+{ return const_cast<ConfigItems*>(this)->opt(key); }
 
-ConfigItem& ConfigItems::opt(const std::string_view key) {
+ConfigItem& ConfigItems::opt(const std::string_view key)
+{
     auto it = std::lower_bound(m_items.begin(), m_items.end(), key,
         [](const ConfigItem& i, const auto& val) { return i.def().name < val; });
     if (it != m_items.end() && it->def().name == key)
@@ -74,7 +88,8 @@ ConfigItem& ConfigItems::opt(const std::string_view key) {
 
 namespace {
 template<typename Range>
-std::optional<std::size_t> find_item_index(Range& items, const std::string& key) {
+std::optional<std::size_t> find_item_index(Range& items, const std::string& key)
+{
     const auto it{std::lower_bound(
         items.begin(), items.end(), key,
         [](const ConfigItem& i, const auto& val) { return i.def().name < val; }
@@ -86,7 +101,8 @@ std::optional<std::size_t> find_item_index(Range& items, const std::string& key)
 }
 
 template<typename Range>
-auto find_item(Range& items, const std::string& key) -> decltype(&(*items.begin())) {
+auto find_item(Range& items, const std::string& key) -> decltype(&(*items.begin()))
+{
     if (const auto index{find_item_index(items, key)}) {
         return &items[*index];
     }
@@ -139,11 +155,13 @@ std::vector<K> diff_keys(
 }
 }
 
-ConfigItem* ConfigItems::find(const std::string& key) {
+ConfigItem* ConfigItems::find(const std::string& key)
+{
     return find_item(m_items, key);
 }
 
-const ConfigItem* ConfigItems::find(const std::string& key) const {
+const ConfigItem* ConfigItems::find(const std::string& key) const
+{
     return find_item(m_items, key);
 }
 
@@ -157,7 +175,8 @@ std::vector<ConfigItem>& ConfigItems::all_items()
     return m_items;
 }
 
-std::vector<std::string> ConfigItems::diff_keys(const ConfigItems& other) const {
+std::vector<std::string> ConfigItems::diff_keys(const ConfigItems& other) const
+{
     ASSERT(m_location == other.m_location && m_items.size() == other.m_items.size());
 
     std::vector<std::string> result;
@@ -173,7 +192,8 @@ std::vector<std::string> ConfigItems::diff_keys(const ConfigItems& other) const 
     return result;
 }
 
-ConfigOverrides::ConfigOverrides(const ConfigDefinitions& defs, const ConfigLocation location) {
+ConfigOverrides::ConfigOverrides(const ConfigDefinitions& defs, const ConfigLocation location)
+{
     for (const ConfigItemDef& def : defs.defs()) {
         if (def.overrides_in.contains(location)) {
             m_items.emplace_back(ConfigItem(def, location));
@@ -181,11 +201,13 @@ ConfigOverrides::ConfigOverrides(const ConfigDefinitions& defs, const ConfigLoca
     }
 }
 
-void ConfigOverrides::disable(const std::string& key) {
+void ConfigOverrides::disable(const std::string& key)
+{
     m_used_overrides.erase(key);
 }
 
-void ConfigOverrides::enable(const std::string& key) {
+void ConfigOverrides::enable(const std::string& key)
+{
     const auto item_index{find_item_by_index(key)};
     m_used_overrides.insert({key, item_index});
 }
@@ -194,11 +216,13 @@ std::size_t ConfigOverrides::size() const {
     return m_used_overrides.size();
 }
 
-const bool ConfigOverrides::empty() const {
+const bool ConfigOverrides::empty() const
+{
     return m_used_overrides.empty();
 }
 
-std::optional<ConfigItem> ConfigOverrides::get(const std::string& key) const {
+std::optional<ConfigItem> ConfigOverrides::get(const std::string& key) const
+{
     const auto it{m_used_overrides.find(key)};
     if (it == m_used_overrides.end()) {
         return std::nullopt;
@@ -206,14 +230,17 @@ std::optional<ConfigItem> ConfigOverrides::get(const std::string& key) const {
     return m_items.at(it->second);
 }
 
-ConfigItem* ConfigOverrides::find(const std::string& key) {
+ConfigItem* ConfigOverrides::find(const std::string& key)
+{
     return find_item(m_items, key);
 }
-const ConfigItem* ConfigOverrides::find(const std::string& key) const {
+const ConfigItem* ConfigOverrides::find(const std::string& key) const
+{
     return find_item(m_items, key);
 }
 
-std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overridden_items() const {
+std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overridden_items() const
+{
     std::vector<std::reference_wrapper<const ConfigItem>> result;
 
     std::ranges::transform(m_used_overrides, std::back_inserter(result), [&](const auto& pair) {
@@ -223,15 +250,18 @@ std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overridde
     return result;
 }
 
-std::vector<ConfigItem>& ConfigOverrides::all_items() {
+std::vector<ConfigItem>& ConfigOverrides::all_items()
+{
     return m_items;
 }
 
-const std::vector<ConfigItem>& ConfigOverrides::all_items() const {
+const std::vector<ConfigItem>& ConfigOverrides::all_items() const
+{
     return m_items;
 }
 
-std::size_t ConfigOverrides::find_item_by_index(const std::string& key) const {
+std::size_t ConfigOverrides::find_item_by_index(const std::string& key) const
+{
     const auto index{find_item_index(m_items, key)};
     ASSERT(index, "The key does not belong to this!");
     return *index;
@@ -293,7 +323,8 @@ SquashedConfig::SquashedConfig(
     }
 }
 
-std::vector<std::string> SquashedConfig::diff_keys(const SquashedConfig& other) const {
+std::vector<std::string> SquashedConfig::diff_keys(const SquashedConfig& other) const
+{
     return ::Slic3r::Domain::diff_keys<std::string, ConfigValue>(
         m_values,
         other.m_values,
@@ -301,11 +332,13 @@ std::vector<std::string> SquashedConfig::diff_keys(const SquashedConfig& other) 
     );
 }
 
-bool SquashedConfig::operator==(const SquashedConfig& other) const {
+bool SquashedConfig::operator==(const SquashedConfig& other) const
+{
     return diff_keys(other).empty();
 }
 
-const std::map<std::string, ConfigValue>& SquashedConfig::values() const {
+const std::map<std::string, ConfigValue>& SquashedConfig::values() const
+{
     return m_values;
 }
 
@@ -334,7 +367,8 @@ LocationSize get_max_location_size(
 }
 
 using ConfigItemRef = std::reference_wrapper<const ConfigItem>;
-ConfigValue extract_values(const std::vector<ConfigItemRef>& items) {
+ConfigValue extract_values(const std::vector<ConfigItemRef>& items)
+{
     return items.front().get().visit([&](auto&& value) -> ConfigValue {
         using ValueType = std::remove_cvref_t<decltype(value)>;
         if constexpr (std::is_same_v<ValueType, EnumWrapper>) {
@@ -351,7 +385,7 @@ ConfigValue extract_values(const std::vector<ConfigItemRef>& items) {
             std::is_same_v<ValueType, EnumVectorWrapper>
             || is_std_vector_v<ValueType>
         ) {
-            // This can be implementd later simply by adding variants of ConfigValue.
+            // This can be implemented later simply by adding variants of ConfigValue.
             // The only special case is the EnumVectorWrapper.
             PANIC("Vectors of vectors are not supported!");
         } else {
@@ -364,22 +398,55 @@ ConfigValue extract_values(const std::vector<ConfigItemRef>& items) {
     });
 }
 
-ConfigValue extract_values(const std::vector<ConfigItem>& items) {
+ConfigValue extract_values(const std::vector<ConfigItem>& items)
+{
     std::vector<ConfigItemRef> refs;
     refs.insert(refs.end(), items.begin(), items.end());
     return extract_values(refs);
 }
 
-ConfigValue spread_values(const ConfigItem& item, const std::size_t size) {
+ConfigValue spread_values(const ConfigItem& item, const std::size_t size)
+{
+    ASSERT(!item.def().require_tool_parity, "Tool parity is not supported for speaded values");
     const std::vector<ConfigItem> items(size, item);
     return extract_values(items);
 }
 
+ConfigValue ensure_tool_parity(const ConfigItem& item, const std::size_t size)
+{
+    if (!item.def().require_tool_parity)
+        return item.value();
+
+    return item.visit(
+        overloaded{
+            [size]<typename T>(const std::vector<T>& v) -> ConfigValue {
+                if (v.size() == size)
+                    return ConfigValue{v};
+
+                ASSERT(v.size() == 1);
+                std::vector<T> normalized_v(size, v.front());
+                return ConfigValue{normalized_v};
+            },
+            []<typename T>(const T& v) -> ConfigValue {
+                PANIC("Only types of std::vector<T> can have require_tool_parity set to true");
+                return ConfigValue{v};
+            }
+        });
+}
+
+
 void SquashedConfig::add(const ConfigBox& box, const ConfigLocationSizes& location_sizes)
 {
+    const auto tool_size_it = location_sizes.find(FDMConfigLocation::Tool);
+    const size_t tool_size =
+        tool_size_it == location_sizes.end() ? 0 : tool_size_it->second.value();
     for (const ConfigItem& item : box.items.all_items()) {
         const LocationSize location_size{get_max_location_size(item.def(), location_sizes)};
-        m_values.insert({item.name(), location_size ? spread_values(item, *location_size) : item.value()});
+        m_values.insert(
+            {item.name(),
+             location_size ? spread_values(item, *location_size) :
+                             ensure_tool_parity(item, tool_size)}
+        );
     }
     for (const auto& item : box.overrides.overridden_items()) {
         const LocationSize location_size{get_max_location_size(item.get().def(), location_sizes)};
@@ -395,7 +462,8 @@ void iterate_together(
     const std::vector<It>& begins,
     const std::vector<It>& ends,
     Func&& func
-) {
+)
+{
     std::vector<It> its{begins};
     const auto end_reached{[&](){
         for (std::size_t i{}; i < its.size(); ++i) {
@@ -660,7 +728,8 @@ void SquashedConfig::add(
 
     const auto location_size_it{location_sizes.find(boxes.front().get().location)};
     ASSERT(location_size_it != location_sizes.end(), "Location size must be provided!");
-    ASSERT(location_size_it->second == boxes.size());
+    const auto desired_size{location_size_it->second};
+    ASSERT(desired_size == boxes.size() || boxes.size() == 1);
 
     iterate_together(
         begins,
@@ -694,7 +763,8 @@ void SquashedConfig::add(
     using ConfigItemPointers = std::vector<const ConfigItem*>;
     std::map<std::string, ConfigItemPointers> to_apply_compatibility_rule;
 
-    for (std::size_t i{}; i < boxes.size(); ++i) {
+    for (std::size_t idx{}, n{boxes.size()}; idx < desired_size; ++idx) {
+        const size_t i{idx % n};
         const ConfigOverrides& overrides{boxes[i].get().overrides};
         for (const auto& item : overrides.overridden_items()) {
             const std::string& key{item.get().def().name};
@@ -748,7 +818,8 @@ void SquashedConfig::add(
     }
 }
 
-const std::vector<std::string>& FullConfig::keys() const {
+const std::vector<std::string>& FullConfig::keys() const
+{
     return m_keys;
 }
 
@@ -766,7 +837,8 @@ FullConfig::FullConfig(
     );
 }
 
-const ConfigValue& FullConfig::get_value(const std::string& key) const {
+const ConfigValue& FullConfig::get_value(const std::string& key) const
+{
     const auto it{m_values.find(key)};
     ASSERT(it != m_values.end(), "The key '" + key + "' is not part of this config.");
     return it->second;
@@ -779,7 +851,8 @@ PartialConfig::PartialConfig(
     SquashedConfig{input, {}, location_sizes}
 {}
 
-std::optional<ConfigValue> PartialConfig::get_value(const std::string& key) const {
+std::optional<ConfigValue> PartialConfig::get_value(const std::string& key) const
+{
     const auto it{m_values.find(key)};
     if (it == m_values.end()) {
         return std::nullopt;
@@ -788,24 +861,28 @@ std::optional<ConfigValue> PartialConfig::get_value(const std::string& key) cons
 }
 
 namespace {
-    template<typename T>
-    std::size_t hash(const T& value) {
-        if constexpr(
-            !std::is_same_v<T, std::string>
-            && !std::is_same_v<T, std::vector<bool>>
-            && std::ranges::range<T>
-        ) {
-            std::size_t seed = 0;
-            for (const auto& v : value) {
-                boost::hash_combine(seed, hash(v));
-            }
-            return seed;
-        } else {
-            return std::hash<T>{}(value);
+template <typename T>
+std::size_t hash(const T& value)
+{
+    if constexpr (!std::is_same_v<T, std::string>
+                  && !std::is_same_v<T, std::vector<bool>>
+                  && std::ranges::range<T>)
+    {
+        std::size_t seed = 0;
+        for (const auto& v : value) {
+            boost::hash_combine(seed, hash(v));
         }
+        return seed;
+    } else {
+        return std::hash<T>{}(value);
     }
-    std::size_t hash(const ConfigValue& value) {
-        return value.visit([](auto&& value){
+}
+
+std::size_t hash(const ConfigValue& value)
+{
+    return value.visit(
+        [](auto&& value)
+        {
             using ValueType = std::remove_cvref_t<decltype(value)>;
             if constexpr (std::is_same_v<ValueType, EnumVectorWrapper>) {
                 const EnumVectorWrapper& wrapped_enums{value};
@@ -822,11 +899,13 @@ namespace {
             } else {
                 return hash(value);
             }
-        });
-    }
+        }
+    );
 }
+} // namespace
 
-std::size_t SquashedConfig::hash() const {
+std::size_t SquashedConfig::hash() const
+{
     std::size_t seed{0};
     for (const auto& [key, value] : m_values) {
         boost::hash_combine(seed, Domain::hash(key));
@@ -835,14 +914,18 @@ std::size_t SquashedConfig::hash() const {
     return seed;
 }
 
-ConfigView::ConfigView(FullConfigPtr full_config, const std::vector<PartialConfigPtr>& partial_configs)
-    : m_full_config{full_config}, m_partial_configs{partial_configs}
+ConfigView::ConfigView(
+    FullConfigPtr full_config,
+    const std::vector<PartialConfigPtr>& partial_configs
+) :
+    m_full_config{full_config},
+    m_partial_configs{partial_configs}
 {
     std::vector<std::string> partial_config_keys;
     ASSERT(m_full_config);
     for (const PartialConfigPtr& ptr : m_partial_configs) {
         ASSERT(ptr);
-        for (const auto&[key, _] : ptr->m_values) {
+        for (const auto& [key, _] : ptr->m_values) {
             partial_config_keys.push_back(key);
         }
     }
@@ -853,7 +936,8 @@ ConfigView::ConfigView(FullConfigPtr full_config, const std::vector<PartialConfi
     m_keys.erase(std::unique(m_keys.begin(), m_keys.end()), m_keys.end());
 }
 
-bool ConfigView::operator==(const ConfigView& other) const {
+bool ConfigView::operator==(const ConfigView& other) const
+{
     if (m_partial_configs.size() != other.m_partial_configs.size()) {
         return false;
     }
@@ -866,7 +950,8 @@ bool ConfigView::operator==(const ConfigView& other) const {
     return *m_full_config == *other.m_full_config;
 }
 
-std::size_t ConfigView::hash() const {
+std::size_t ConfigView::hash() const
+{
     std::size_t seed{m_full_config->hash()};
     for (const PartialConfigPtr& partial_config : m_partial_configs) {
         boost::hash_combine(seed, partial_config->hash());
@@ -886,7 +971,8 @@ std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
     return result;
 }
 
-ConfigValue ConfigView::get_value(const std::string& key) const {
+ConfigValue ConfigView::get_value(const std::string& key) const
+{
     for (auto rev_it = m_partial_configs.rbegin(); rev_it != m_partial_configs.rend(); ++rev_it) {
         const PartialConfigPtr& partial_config{*rev_it};
         if (auto result{partial_config->get_value(key)}) {

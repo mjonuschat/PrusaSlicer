@@ -388,7 +388,12 @@ bool PresetCollectionEvaluator::eval_condition(
         auto result = m_eval.eval(*expr, overrides);
         return boost::apply_visitor(BoolCaster{}, result);
     } catch (Expr::EvalError& e) {
-        throw Expr::EvalError(fmt::format("[{}] {}", expr.source_location.to_string(), e.what()));
+        auto msg = fmt::format("[{}] {}", expr.source_location.to_string(), e.what());
+#if DEBUG_CONDITION_EVAL
+        m_logger->error(msg);
+#endif
+        SPDLOG_ERROR("Condition eval failed: {}", msg);
+        throw Expr::EvalError(msg);
     }
 }
 

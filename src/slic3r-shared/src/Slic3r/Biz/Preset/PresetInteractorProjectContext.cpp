@@ -94,7 +94,7 @@ void RuntimePresets::add_material(const HwConfingPrinterPrintKey& parent, const 
 {
     auto& materials = material[parent];
     if (materials.empty())
-        materials.resize(hw_config.tool_count);
+        materials.resize(hw_config.material_slot_count());
     materials[slot_index].push_back(m);
 }
 

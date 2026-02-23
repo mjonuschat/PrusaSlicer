@@ -564,9 +564,18 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             ASSERT(mats_it != m_presets.end() && mat_names_it != m_preset_ids.end());
 
             Domain::Preset::AllToolsEvaluatedMaterialPresets materials;
-            for (const auto& tool : hw_config.tools) {
+            for (const auto& it : Domain::Preset::MaterialIterator{hw_config}) {
                 Expr::ValueMap tool_values = print_values;
+                const auto& tool = it.tool_config();
                 append_tool_values(tool_values, tool);
+
+                // TODO: feeder settings?
+                // const auto feeder_count = it.feeder_count();
+                // if (feeder_count > 0) {
+                //     const auto& feeder = it.feeder_config(feeder_count - 1);
+                //     append_feeder_values(feeder_values, feeder);
+                // }
+
                 Domain::Preset::SingleToolEvaluatedMaterialPresets variants;
 
                 PresetCollectionEvaluator material_eval(

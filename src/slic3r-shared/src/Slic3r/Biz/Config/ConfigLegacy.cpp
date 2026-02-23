@@ -751,11 +751,16 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
     if (std::holds_alternative<const ConfigPackFDM*>(cfgvar)) {
         legacy_data = legacy_fdm_data();
         const ConfigPackFDM& cfg = *std::get<const ConfigPackFDM*>(cfgvar);
-        ASSERT(cfg.filament.size() == cfg.tool.size());
         boxes.emplace_back(&cfg.printer, -1);
         boxes.emplace_back(&cfg.print, -1);
-        for (int i = 0; i < cfg.tool.size(); ++i)
-            boxes.emplace_back(&cfg.tool[i], i);
+        // TODO: At the moment only single-tool printers with MMU are supported,
+        ASSERT(cfg.tool.size() == cfg.filament.size() || cfg.tool.size() == 1);
+        const size_t slot_count = cfg.filament.size();
+        const size_t tool_count = cfg.tool.size();
+        for (int i = 0; i < slot_count; ++i) {
+            const int tool_idx = i % tool_count;
+            boxes.emplace_back(&cfg.tool[tool_idx], i);
+        }
         for (int i = 0; i < cfg.filament.size(); ++i)
             boxes.emplace_back(&cfg.filament[i], i);
         boxes.emplace_back(&cfg.project, -1);

@@ -104,9 +104,9 @@ bool MultiMaterialPaintingGizmo::enabled() const
         return false;
     }
 
-    const size_t tool_count = config_container->selected_preset().hw_config.tool_count;
+    const size_t slot_count = config_container->selected_preset().hw_config.material_slot_count();
     return whole_instance
-        && tool_count > 1
+        && slot_count > 1
         && config_container->print_technology() == Domain::PrinterTechnology::FFF;
 }
 
