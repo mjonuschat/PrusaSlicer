@@ -97,6 +97,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::KeyCtrl, "key_ctrl"},
     {Icon::KeyCtrlA, "key_ctrl_a"},
     {Icon::KeyA, "key_a"},
+    {Icon::KeyC, "key_c"},
+    {Icon::KeyH, "key_h"},
+    {Icon::KeyV, "key_v"},
     {Icon::KeyEsc, "key_esc"},
     {Icon::KeyDel, "key_del"},
 
@@ -144,6 +147,14 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ArrangeBottomLeft, "arrange_bottom_left"},
     {Icon::ArrangeBottomRight, "arrange_bottom_right"},
     {Icon::ArrangeCenter, "arrange_center"},
+
+    // Gizmo Layer Height
+    {Icon::ArrowUpToLine, "arrow_up_to_line"},
+    {Icon::ArrowUpFromLine, "arrow_up_from_line"},
+    {Icon::LayersIcon, "layers_icon"},
+    {Icon::MinusModifier, "minus_modifier"},
+    {Icon::PlusHeightRange, "plus_height_range"},
+    {Icon::PlusModifier, "plus_modifier"},
 
     {Icon::AlignHLeftBtn, "align_horizontal_left"},
     {Icon::AlignHCenterBtn, "align_horizontal_center"},
@@ -204,6 +215,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::CloseGizmo, "close_gizmo"},
     {Icon::UndoGizmo, "undo_gizmo"},
     {Icon::VariableLayerHeight, "variable_layer_height"},
+    {Icon::HeightRange, "variable_layer_height"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

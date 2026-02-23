@@ -280,6 +280,11 @@ void GizmoManager::deactivate_current_tool()
     p.object_selection_disabled = false;
 }
 
+void GizmoManager::activate_tool(ToolType tool, Domain::PrinterTechnology pt)
+{
+    this->toggle_activate_tool(tool, pt);
+}
+
 ToolType GizmoManager::current_tool_type() const
 {
     const auto& ctx = current_context();

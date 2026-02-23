@@ -1,10 +1,28 @@
 #pragma once
 
+#include "Slic3r/App/Plater/HeightRangeNodeTag.hpp"
+#include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Texture.hpp"
+#include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
 #include <vector>
+
+namespace Slic3r::App::Render {
+class Device;
+} // namespace Slic3r::App::Render
+
+namespace Slic3r::App::Scene {
+class Node;
+class NodeBuilder;
+class Scene;
+} // namespace Slic3r::App::Scene
+
+namespace Slic3r::App::Yoga {
+struct HeightRangeEntry;
+using HeightRangeEntries = std::vector<HeightRangeEntry>;
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::Biz::Scene {
 struct ObjectSelection;
@@ -12,6 +30,7 @@ struct ObjectSelection;
 
 namespace Slic3r::Domain {
 class ConfigContainer;
+class ModelObject;
 class Project;
 } // namespace Slic3r::Domain
 
@@ -68,6 +87,11 @@ LayerHeightParams compute_layer_height_params(
     const Biz::Scene::ObjectSelection& object_selection,
     const Domain::Project& project,
     const Domain::ConfigContainer& config_container
+);
+
+Yoga::HeightRangeEntries create_height_ranges_from_config(
+    const Domain::LayerConfigRanges& layer_config_ranges,
+    double default_layer_height
 );
 
 /**
@@ -132,6 +156,27 @@ LayerHeightTexture generate_layer_height_texture(
     double object_height
 );
 
+/**
+ * Compute a new height range to be inserted among existing ranges.
+ *
+ * Determines the Z boundaries of a new range based on the currently selected range.
+ * If a range is selected, the new range is placed after it — either in a gap, by splitting
+ * an adjacent range, or after the last range. If no range is selected, the new range is
+ * placed after all existing ranges, or at the origin if no ranges exist.
+ *
+ * @param selected Currently selected range, or nullopt if none.
+ * @param next_after_selected First range after the selected one, or nullopt if selected is last.
+ * @param max_existing_z Highest max_z across all existing ranges (0 if empty).
+ * @param min_layer_height Minimum allowed layer height, used when splitting adjacent ranges.
+ * @return The new height range, or nullopt if there is no space to insert one.
+ */
+std::optional<Domain::LayerHeightRange> compute_new_height_range(
+    const std::optional<Domain::LayerHeightRange>& selected,
+    const std::optional<Domain::LayerHeightRange>& next_after_selected,
+    double max_existing_z,
+    double min_layer_height
+);
+
 class LayerHeightMaterialWrapper
 {
 public:
@@ -179,6 +224,44 @@ public:
 private:
     Render::Material m_material;
     Render::TexturePtr m_texture;
+};
+
+class HeightRangePlanesWrapper
+{
+public:
+    HeightRangePlanesWrapper()  = default;
+    ~HeightRangePlanesWrapper() = default;
+
+    void init(Render::Device& device, Scene::Scene& scene, const Domain::ModelObject& model_object);
+    void release(Scene::Scene& scene);
+    void set_enabled(bool enabled);
+
+    void set_planes_visible(bool visible);
+    void set_positions(double min_z, double max_z, const Domain::ModelObject& model_object);
+    void set_plane_default_color(HeightRangePlaneNodeTag::PlaneType plane_type);
+    void set_plane_hover_color(HeightRangePlaneNodeTag::PlaneType plane_type);
+
+private:
+    using PlaneGeometryManager     = Render::GeometryManager<HeightRangePlaneNodeTag::PlaneType>;
+    using PlaneTriangleMeshManager = Scene::TriangleMeshManager<HeightRangePlaneNodeTag::PlaneType>;
+
+    PlaneGeometryManager m_geometry_manager;
+    PlaneTriangleMeshManager m_triangle_mesh_manager;
+
+    Scene::Node* m_main_node      = nullptr;
+    Scene::Node* m_min_plane_node = nullptr;
+    Scene::Node* m_max_plane_node = nullptr;
+
+    void build_plane_node(
+        Render::Device& device,
+        Scene::NodeBuilder& builder,
+        HeightRangePlaneNodeTag::PlaneType plane_type,
+        const Domain::ModelObject& model_object
+    );
+
+    Scene::Node* plane_node(HeightRangePlaneNodeTag::PlaneType plane_type) const;
+
+    void set_plane_color(Scene::Node* node, const Domain::ColorRGBA& color);
 };
 
 } // namespace Slic3r::App::Plater

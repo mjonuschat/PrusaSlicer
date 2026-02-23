@@ -30,6 +30,10 @@ namespace Slic3r::App::Render {
 class ImguiRender;
 } // namespace Slic3r::App::Render
 
+namespace Slic3r::App::Scene {
+class IGizmoController;
+} // namespace Slic3r::App::Scene
+
 namespace Slic3r::App::Plater {
 struct BedThumbnailTexture;
 using BedThumbnailTextures = std::vector<BedThumbnailTexture>;
@@ -58,6 +62,7 @@ public:
     void init(Biz::ProjectInteractor* project_interactor, Mode mode);
 
     void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
+    void set_gizmo_controller(Scene::IGizmoController* controller);
 
 private:
     void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
@@ -134,6 +139,7 @@ private:
 
     Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
+    Scene::IGizmoController*        m_gizmo_controller  { nullptr };
     Mode                            m_mode              { Mode::Plater };
     ProjectContextsPtr              m_project_contexts;
 

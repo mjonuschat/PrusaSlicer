@@ -80,6 +80,15 @@ set(SLIC3R_SHARED_FILES
 		src/Slic3r/App/Plater/VariableLayerHeightGizmo.cpp
         include/Slic3r/App/Plater/VariableLayerHeightDialog.hpp
         src/Slic3r/App/Plater/VariableLayerHeightDialog.cpp
+		include/Slic3r/App/Plater/HeightRangeNodeTag.hpp
+		include/Slic3r/App/Plater/HeightRangeGizmo.hpp
+        src/Slic3r/App/Plater/HeightRangeGizmo.cpp
+        include/Slic3r/App/Plater/HeightRangeDialog.hpp
+        src/Slic3r/App/Plater/HeightRangeDialog.cpp
+        include/Slic3r/App/Plater/HeightRangeRow.hpp
+        src/Slic3r/App/Plater/HeightRangeRow.cpp
+        include/Slic3r/App/Plater/LayerRangeSettingsDialog.hpp
+        src/Slic3r/App/Plater/LayerRangeSettingsDialog.cpp
         include/Slic3r/App/Plater/TextGizmo.hpp
         src/Slic3r/App/Plater/TextGizmo.cpp
         include/Slic3r/App/Plater/TextDialog.hpp
@@ -565,6 +574,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/LayerHeightProfileControl.cpp
         include/Slic3r/App/Yoga/VariableLayerHeightControl.hpp
         src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
+        include/Slic3r/App/Yoga/HeightRangeControl.hpp
+		src/Slic3r/App/Yoga/HeightRangeControl.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

@@ -1,13 +1,17 @@
 #include "Slic3r/App/Yoga/VariableLayerHeightControl.hpp"
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include <cmath>
+#include <fmt/format.h>
 #include <imgui/imgui.h>
 #include <numbers>
+
+namespace Slic3r::App::Yoga {
 
 const constexpr float LAYER_HEIGHT_PROFILE_PADDING = 5.f;
 const constexpr ImColor LAYER_HEIGHT_CURSOR_COLOR  = ImColor(255, 255, 0, 255);
 
-namespace Slic3r::App::Yoga {
 VariableLayerHeightControl::VariableLayerHeightControl() : LayerHeightProfileControl()
 {
     this->set_object_name("VariableLayerHeightControl");
@@ -33,7 +37,7 @@ void VariableLayerHeightControl::reset_cursor_position()
     m_cursor_normalized_position.reset();
 }
 
-void VariableLayerHeightControl::render(Vec2f pos, Vec2f size)
+void VariableLayerHeightControl::render(const Vec2f pos, const Vec2f size)
 {
     if (size.x() <= 0.f || size.y() <= 0.f) {
         return;
@@ -41,19 +45,21 @@ void VariableLayerHeightControl::render(Vec2f pos, Vec2f size)
 
     this->render_item_begin(pos, size);
 
-    this->process_input(pos, size);
-
     const Vec2f profile_area_position{pos.x() + LAYER_HEIGHT_PROFILE_PADDING, pos.y()};
     const Vec2f profile_area_size{size.x() - 2.f * LAYER_HEIGHT_PROFILE_PADDING, size.y()};
 
+    this->process_input(pos, size, profile_area_position, profile_area_size);
+
     this->render_baseline(profile_area_position, profile_area_size);
+    this->render_height_ranges(profile_area_position, profile_area_size);
     this->render_layer_height_profile(profile_area_position, profile_area_size);
     this->render_cursor(profile_area_position, profile_area_size);
+    this->render_height_range_tooltip();
 
     this->render_item_end(pos, size);
 }
 
-void VariableLayerHeightControl::render_cursor(const Vec2f& pos, const Vec2f& size)
+void VariableLayerHeightControl::render_cursor(const Vec2f& pos, const Vec2f& size) const
 {
     if (!m_cursor_normalized_position.has_value() || this->object_max_z() <= 0.f) {
         return;
@@ -140,7 +146,12 @@ void VariableLayerHeightControl::render_cursor(const Vec2f& pos, const Vec2f& si
     }
 }
 
-void VariableLayerHeightControl::process_input(const Vec2f& pos, const Vec2f& size)
+void VariableLayerHeightControl::process_input(
+    const Vec2f& pos,
+    const Vec2f& size,
+    const Vec2f& profile_area_position,
+    const Vec2f& profile_area_size
+)
 {
     ImGui::SetCursorScreenPos(ImVec2(pos.x(), pos.y()));
     ImGui::PushID(object_name().c_str());
@@ -160,9 +171,32 @@ void VariableLayerHeightControl::process_input(const Vec2f& pos, const Vec2f& si
     const bool active                  = ImGui::IsItemActive();
     const bool shift_down              = io.KeyShift;
     const bool ctrl_down               = io.KeyCtrl;
+    const bool alt_down                = io.KeyAlt;
 
     const float cursor_normalized_position =
         std::clamp(1.f - (io.MousePos.y - pos.y()) / size.y(), 0.f, 1.f);
+
+    if (hovered && !active) {
+        const std::optional<size_t> picked_range_index =
+            this->pick_height_range(io.MousePos.y, profile_area_position, profile_area_size);
+        if (picked_range_index.has_value()) {
+            this->set_hovered_height_range(picked_range_index.value());
+        } else {
+            this->reset_hovered_height_range();
+        }
+    } else if (!hovered) {
+        this->reset_hovered_height_range();
+    }
+
+    if (is_left_button_clicked && alt_down) {
+        const std::optional<size_t> picked_range_index =
+            this->pick_height_range(io.MousePos.y, profile_area_position, profile_area_size);
+        if (picked_range_index.has_value()) {
+            m_callbacks.on_height_range_click();
+            ImGui::PopID();
+            return;
+        }
+    }
 
     if (hovered && !active) {
         m_callbacks.on_mouse_move(cursor_normalized_position);
@@ -196,6 +230,25 @@ void VariableLayerHeightControl::process_input(const Vec2f& pos, const Vec2f& si
     m_was_hovered = hovered;
 
     ImGui::PopID();
+}
+
+void VariableLayerHeightControl::render_height_range_tooltip() const
+{
+    if (!this->hovered_range_index().has_value()) {
+        return;
+    }
+
+    const size_t hovered_range_index     = this->hovered_range_index().value();
+    const HeightRangeEntry& height_range = this->height_ranges()[hovered_range_index];
+    const std::string tooltip_text       = fmt::format(
+        fmt::runtime(Biz::_u8L("Layer height modifier: {:.2f} - {:.2f} mm")),
+        height_range.min_z,
+        height_range.max_z
+    );
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    ImGui::SetTooltip("%s", tooltip_text.c_str());
+    ImGui::PopStyleVar();
 }
 
 } // namespace Slic3r::App::Yoga

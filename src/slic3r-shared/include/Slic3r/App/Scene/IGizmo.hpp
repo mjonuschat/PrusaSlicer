@@ -150,6 +150,7 @@ enum class ToolType : uint8_t
     ArrangeGizmo,
     CutGizmo,
     VariableLayerHeightGizmo,
+    HeightRangeGizmo,
     // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
 };
 

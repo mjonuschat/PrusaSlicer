@@ -2,16 +2,23 @@
 
 #include <cmath>
 #include <imgui/imgui.h>
+#include <ranges>
 
+using Slic3r::Domain::Vec2f;
 using Slic3r::Domain::ZHeightPair;
 using Slic3r::Domain::ZHeightPairs;
+
+namespace Slic3r::App::Yoga {
 
 const constexpr float LAYER_HEIGHT_BASELINE_THICKNESS = 2.f;
 const constexpr float LAYER_HEIGHT_PROFILE_THICKNESS  = 2.f;
 const constexpr ImColor LAYER_HEIGHT_PROFILE_COLOR    = ImColor(175, 119, 255, 255);
 const constexpr ImColor LAYER_HEIGHT_BASELINE_COLOR   = ImColor(0, 0, 0, 255);
 
-namespace Slic3r::App::Yoga {
+const constexpr ImColor HEIGHT_RANGE_COLOR_EVEN     = ImColor(32, 41, 62, 255);
+const constexpr ImColor HEIGHT_RANGE_COLOR_ODD      = ImColor(39, 47, 65, 255);
+const constexpr ImColor HEIGHT_RANGE_COLOR_SELECTED = ImColor(54, 73, 118, 255);
+const constexpr ImColor HEIGHT_RANGE_COLOR_HOVERED  = ImColor(54, 73, 118, 255);
 
 LayerHeightProfileControl::LayerHeightProfileControl() : Item()
 {
@@ -44,6 +51,61 @@ void LayerHeightProfileControl::set_layer_height_profile(const ZHeightPairs& lay
     m_layer_height_profile = layer_height_profile;
 }
 
+void LayerHeightProfileControl::set_height_ranges(const HeightRangeEntries& height_ranges)
+{
+    m_height_ranges = height_ranges;
+    m_selected_range_index.reset();
+    m_hovered_range_index.reset();
+}
+
+void LayerHeightProfileControl::set_selected_height_range(const size_t range_index)
+{
+    m_selected_range_index = range_index;
+}
+
+void LayerHeightProfileControl::set_hovered_height_range(const size_t range_index)
+{
+    m_hovered_range_index = range_index;
+}
+
+void LayerHeightProfileControl::set_external_hovered_height_range(const size_t range_index)
+{
+    m_hovered_range_index = range_index;
+    m_external_hover      = true;
+}
+
+void LayerHeightProfileControl::reset_selected_height_range()
+{
+    m_selected_range_index.reset();
+}
+
+void LayerHeightProfileControl::reset_hovered_height_range()
+{
+    m_hovered_range_index.reset();
+}
+
+void LayerHeightProfileControl::reset_external_hovered_height_range()
+{
+    m_external_hover = false;
+    m_hovered_range_index.reset();
+}
+
+void LayerHeightProfileControl::update_height_range(
+    const size_t range_index,
+    const double min_z,
+    const double max_z,
+    const std::optional<double> layer_height
+)
+{
+    ASSERT(range_index < m_height_ranges.size());
+    m_height_ranges[range_index].min_z = min_z;
+    m_height_ranges[range_index].max_z = max_z;
+
+    if (layer_height.has_value()) {
+        m_height_ranges[range_index].layer_height = layer_height.value();
+    }
+}
+
 float LayerHeightProfileControl::object_max_z() const
 {
     return m_object_max_z;
@@ -57,6 +119,26 @@ float LayerHeightProfileControl::min_layer_height_value() const
 float LayerHeightProfileControl::max_layer_height_value() const
 {
     return m_max_layer_height;
+}
+
+const HeightRangeEntries& LayerHeightProfileControl::height_ranges() const
+{
+    return m_height_ranges;
+}
+
+std::optional<size_t> LayerHeightProfileControl::selected_range_index() const
+{
+    return m_selected_range_index;
+}
+
+std::optional<size_t> LayerHeightProfileControl::hovered_range_index() const
+{
+    return m_hovered_range_index;
+}
+
+bool LayerHeightProfileControl::is_external_hover() const
+{
+    return m_external_hover;
 }
 
 float LayerHeightProfileControl::project_layer_height(
@@ -85,6 +167,17 @@ float LayerHeightProfileControl::project_layer_z(
     return std::lerp(out_range_min, out_range_max, t);
 }
 
+float LayerHeightProfileControl::project_mouse_y_to_z(
+    const float mouse_y,
+    const Vec2f& pos,
+    const Vec2f& size,
+    const float object_max_z
+) const
+{
+    const float t = std::clamp((mouse_y - pos.y()) / size.y(), 0.f, 1.f);
+    return std::lerp(object_max_z, 0.f, t);
+}
+
 void LayerHeightProfileControl::render_baseline(const Vec2f& pos, const Vec2f& size) const
 {
     if (m_min_layer_height == m_max_layer_height) {
@@ -94,8 +187,8 @@ void LayerHeightProfileControl::render_baseline(const Vec2f& pos, const Vec2f& s
     const float baseline_pos_x =
         this->project_layer_height(m_default_layer_height, pos.x(), pos.x() + size.x());
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddLine(
+    ImDrawList& draw_list = *ImGui::GetWindowDrawList();
+    draw_list.AddLine(
         ImVec2(baseline_pos_x, pos.y()),
         ImVec2(baseline_pos_x, pos.y() + size.y()),
         LAYER_HEIGHT_BASELINE_COLOR,
@@ -131,14 +224,106 @@ LayerHeightProfileControl::render_layer_height_profile(const Vec2f& pos, const V
         profile_points.emplace_back(profile_pos_x, pos.y() + size.y());
     }
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddPolyline(
+    ImDrawList& draw_list = *ImGui::GetWindowDrawList();
+    draw_list.AddPolyline(
         profile_points.data(),
         static_cast<int>(profile_points.size()),
         LAYER_HEIGHT_PROFILE_COLOR,
         ImDrawFlags_None,
         LAYER_HEIGHT_PROFILE_THICKNESS
     );
+}
+
+void LayerHeightProfileControl::render_height_ranges(const Vec2f& pos, const Vec2f& size) const
+{
+    if (m_height_ranges.empty()
+        || m_min_layer_height == m_max_layer_height
+        || m_object_max_z <= 0.f)
+    {
+        return;
+    }
+
+    const bool has_hovered  = m_hovered_range_index.has_value();
+    const bool has_selected = m_selected_range_index.has_value();
+
+    ASSERT(!has_hovered || m_hovered_range_index.value() < m_height_ranges.size());
+    ASSERT(!has_selected || m_selected_range_index.value() < m_height_ranges.size());
+
+    ImDrawList& draw_list = *ImGui::GetWindowDrawList();
+    const auto draw_range = [&](const size_t range_idx, const ImColor range_color)
+    {
+        const HeightRangeEntry& height_range = m_height_ranges[range_idx];
+        const float top_y                    = this->project_layer_z(
+            static_cast<float>(height_range.max_z),
+            pos.y(),
+            pos.y() + size.y()
+        );
+        const float bottom_y = this->project_layer_z(
+            static_cast<float>(height_range.min_z),
+            pos.y(),
+            pos.y() + size.y()
+        );
+        draw_list.AddRectFilled(
+            ImVec2(pos.x(), top_y),
+            ImVec2(pos.x() + size.x(), bottom_y),
+            range_color
+        );
+    };
+
+    for (size_t i = 0; i < m_height_ranges.size(); ++i) {
+        if (has_selected && i == m_selected_range_index.value()) {
+            continue;
+        } else if (has_hovered && i == m_hovered_range_index.value()) {
+            continue;
+        }
+
+        draw_range(i, (i % 2 == 0) ? HEIGHT_RANGE_COLOR_EVEN : HEIGHT_RANGE_COLOR_ODD);
+    }
+
+    if (has_hovered
+        && (!has_selected || m_hovered_range_index.value() != m_selected_range_index.value()))
+    {
+        draw_range(m_hovered_range_index.value(), HEIGHT_RANGE_COLOR_HOVERED);
+    }
+
+    if (has_selected) {
+        draw_range(m_selected_range_index.value(), HEIGHT_RANGE_COLOR_SELECTED);
+    }
+}
+
+std::optional<size_t> LayerHeightProfileControl::pick_height_range(
+    const float mouse_y,
+    const Vec2f& pos,
+    const Vec2f& size
+) const
+{
+    if (m_height_ranges.empty() || m_object_max_z <= 0.f) {
+        return std::nullopt;
+    }
+
+    const float z = this->project_mouse_y_to_z(mouse_y, pos, size, m_object_max_z);
+    if (m_selected_range_index.has_value()) {
+        ASSERT(m_selected_range_index.value() < m_height_ranges.size());
+
+        const HeightRangeEntry& height_range = m_height_ranges[m_selected_range_index.value()];
+        if (height_range.min_z <= z && z <= height_range.max_z) {
+            return m_selected_range_index.value();
+        }
+    }
+
+    for (const HeightRangeEntry& height_range : m_height_ranges | std::views::reverse) {
+        const size_t range_idx = &height_range - m_height_ranges.data();
+        if (m_selected_range_index.has_value() && range_idx == m_selected_range_index.value()) {
+            continue;
+        }
+
+        const HeightRangeEntry& range = m_height_ranges[range_idx];
+        if (z >= range.min_z && z <= range.max_z) {
+            return range_idx;
+        }
+    }
+
+    return std::nullopt;
 }
 
 } // namespace Slic3r::App::Yoga

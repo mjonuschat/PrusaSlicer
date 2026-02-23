@@ -12,6 +12,8 @@
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
+#include "Slic3r/App/Scene/IGizmoController.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp"
 
 #include "Slic3r/Assert.hpp"
 
@@ -26,7 +28,10 @@
 // tmp include
 #include "libslic3r/format.hpp"
 
+using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::ElementRef;
+using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::Vec2f;
 
 using Slic3r::Biz::Algorithms::Color::can_decode_color;
@@ -500,6 +505,11 @@ void ObjectList::set_bed_instance_icons(const Plater::BedThumbnailTextures& icon
 {
     auto& ctx              = selected_project_context();
     ctx.bed_instance_icons = icons;
+}
+
+void ObjectList::set_gizmo_controller(Scene::IGizmoController* controller)
+{
+    m_gizmo_controller = controller;
 }
 
 void ObjectList::process_dragging_start()
@@ -1533,11 +1543,12 @@ void ObjectList::render_infos_selectable(
         NewRowWithSelectable row;
         std::string line = icon_str(info) + info_descriptions[info];
         if (selectable(line.c_str())) {
-            if (info == Render::Icon::Sinking || info == Render::Icon::HRModifier) {
+            if (info == Render::Icon::Sinking) {
                 force_select_whole_object(object);
                 clear_all_ms();
-            } else
+            } else {
                 show_gizmo({object->id().id}, info);
+            }
         }
     }
 }
@@ -1600,9 +1611,27 @@ void ObjectList::show_layer_ranges(const Domain::ElementRef& sel_element)
     // ToDo
 }
 
-void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, Render::Icon gizmo_id)
+void ObjectList::show_gizmo(const ElementRef& sel_element, const Render::Icon gizmo_id)
 {
-    // ToDo
+    if (!m_gizmo_controller) {
+        return;
+    }
+
+    const Scene::ToolType tool = [&gizmo_id]() -> Scene::ToolType
+    {
+        if (gizmo_id == Render::Icon::HRModifier) {
+            return Scene::ToolType::HeightRangeGizmo;
+        }
+
+        return Scene::ToolType::None;
+    }();
+
+    if (tool != Scene::ToolType::None) {
+        m_gizmo_controller->activate_tool(
+            tool,
+            m_project_interactor->selected_config_container().print_technology()
+        );
+    }
 }
 
 ObjectList::ProjectContext& ObjectList::selected_project_context()

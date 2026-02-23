@@ -1,38 +1,58 @@
 #include "Slic3r/App/Plater/LayerHeightGizmoHelper.hpp"
 
+#include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
+#include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
+#include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/ExtruderCandidates.hpp"
 #include "libslic3r/Slicing.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <numbers>
 
 using namespace Slic3r;
+using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
 using Slic3r::Biz::Algorithms::LayerHeight::ProfileFromRangesParams;
 using Slic3r::Biz::Scene::ObjectSelection;
+using Slic3r::Domain::BoundingBox3d;
+using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::ConfigItem;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
 using Slic3r::Domain::LayerConfigRanges;
+using Slic3r::Domain::LayerHeightRange;
 using Slic3r::Domain::LayerZRange;
 using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::Vec3crd;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::VolumeSettings;
 using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r::App::Plater {
@@ -41,6 +61,12 @@ const constexpr double LAYERS_HEIGHT_PROFILE_VALID_THRESHOLD = 0.001;
 const constexpr size_t LAYERS_TEXTURE_WIDTH                  = 1'024;
 const constexpr size_t LAYERS_TEXTURE_HEIGHT                 = 1'024;
 const constexpr size_t LAYERS_TEXTURE_LEVELS                 = 2;
+
+const constexpr double HEIGHT_RANGE_HEIGHT_EPSILON       = 0.0001;
+const constexpr double HEIGHT_RANGE_DEFAULT_HEIGHT       = 2.;
+const constexpr double HEIGHT_RANGE_PLANE_MIN_SEPARATION = Domain::EPSILON;
+const ColorRGBA HEIGHT_RANGE_PLANE_COLOR{0.75f, 0.75f, 0.75f, 0.5f};
+const ColorRGBA HEIGHT_RANGE_PLANE_HOVER_COLOR{0.95f, 0.95f, 0.95f, 0.5f};
 
 LayerHeightParams compute_layer_height_params(
     const ObjectSelection& object_selection,
@@ -98,6 +124,33 @@ LayerHeightParams compute_layer_height_params(
     }
 
     return params;
+}
+
+HeightRangeEntries create_height_ranges_from_config(
+    const LayerConfigRanges& layer_config_ranges,
+    const double default_layer_height
+)
+{
+    HeightRangeEntries height_ranges;
+    for (const std::pair<const LayerHeightRange, VolumeSettings>& entry : layer_config_ranges) {
+        const LayerHeightRange& range         = entry.first;
+        const VolumeSettings& volume_settings = entry.second;
+        const std::optional<ConfigItem> layer_height_override =
+            volume_settings.overrides.get("layer_height");
+        const double layer_height = layer_height_override.has_value() ?
+            layer_height_override->get<double>() :
+            default_layer_height;
+
+        height_ranges.push_back(
+            HeightRangeEntry{
+                .min_z        = range.first,
+                .max_z        = range.second,
+                .layer_height = layer_height
+            }
+        );
+    }
+
+    return height_ranges;
 }
 
 /**
@@ -282,6 +335,50 @@ LayerHeightTexture generate_layer_height_texture(
     return layer_height_texture;
 }
 
+std::optional<LayerHeightRange> compute_new_height_range(
+    const std::optional<LayerHeightRange>& selected,
+    const std::optional<LayerHeightRange>& next_after_selected,
+    const double max_existing_z,
+    const double min_layer_height
+)
+{
+    if (selected.has_value()) {
+        if (!next_after_selected.has_value()) {
+            return LayerHeightRange{
+                selected->second,
+                selected->second + HEIGHT_RANGE_DEFAULT_HEIGHT
+            };
+        }
+
+        const LayerHeightRange& next_range = *next_after_selected;
+        if (selected->second == next_range.first) {
+            const double z_delta = next_range.second - next_range.first;
+
+            if (z_delta < min_layer_height + min_layer_height - HEIGHT_RANGE_HEIGHT_EPSILON) {
+                return std::nullopt;
+            }
+
+            const double middle_z = (min_layer_height > 0.5 * z_delta) ?
+                next_range.second - min_layer_height :
+                next_range.first + std::max(min_layer_height, 0.5 * z_delta);
+
+            return LayerHeightRange{selected->second, middle_z};
+        }
+
+        if (next_range.first - selected->second >= min_layer_height - HEIGHT_RANGE_HEIGHT_EPSILON) {
+            return LayerHeightRange{selected->second, next_range.first};
+        }
+
+        return std::nullopt;
+    }
+
+    if (max_existing_z > 0.) {
+        return LayerHeightRange{max_existing_z, max_existing_z + HEIGHT_RANGE_DEFAULT_HEIGHT};
+    }
+
+    return LayerHeightRange{0., HEIGHT_RANGE_DEFAULT_HEIGHT};
+}
+
 void LayerHeightMaterialWrapper::init(Render::Device& device)
 {
     m_texture = device.context().texture_manager().get_or_create_dynamic(
@@ -386,6 +483,207 @@ void LayerHeightMaterialWrapper::set_cursor_z(const float cursor_z)
 void LayerHeightMaterialWrapper::set_cursor_band_width(const float band_width)
 {
     m_material.set_uniform("z_cursor_band_width", band_width);
+}
+
+void HeightRangePlanesWrapper::init(
+    Render::Device& device,
+    Scene::Scene& scene,
+    const ModelObject& model_object
+)
+{
+    ASSERT(m_main_node == nullptr);
+
+    Scene::NodeBuilder main_node_builder{scene};
+    main_node_builder.set_debug_name("HeightRangePlanes - Main node");
+    main_node_builder.set_tag(HeightRangeNodeTag());
+
+    main_node_builder.child(
+        [&](Scene::NodeBuilder& node_builder)
+        {
+            this->build_plane_node(
+                device,
+                node_builder,
+                HeightRangePlaneNodeTag::PlaneType::Min,
+                model_object
+            );
+        }
+    );
+    main_node_builder.child(
+        [&](Scene::NodeBuilder& node_builder)
+        {
+            this->build_plane_node(
+                device,
+                node_builder,
+                HeightRangePlaneNodeTag::PlaneType::Max,
+                model_object
+            );
+        }
+    );
+
+    std::unique_ptr<Scene::Node> main_node = main_node_builder.build();
+    m_main_node                            = main_node.get();
+    scene.add_child(main_node.release(), &scene.root());
+
+    m_min_plane_node = m_main_node->query_first(
+        [](const Scene::Node* n) -> bool
+        {
+            const HeightRangePlaneNodeTag* tag = n->tag_of_type<HeightRangePlaneNodeTag>();
+            return tag != nullptr && tag->plane_type == HeightRangePlaneNodeTag::PlaneType::Min;
+        },
+        true
+    );
+    m_max_plane_node = m_main_node->query_first(
+        [](const Scene::Node* n) -> bool
+        {
+            const HeightRangePlaneNodeTag* tag = n->tag_of_type<HeightRangePlaneNodeTag>();
+            return tag != nullptr && tag->plane_type == HeightRangePlaneNodeTag::PlaneType::Max;
+        },
+        true
+    );
+
+    Scene::TriangleMesh& triangle_mesh_min =
+        *m_triangle_mesh_manager.get_or_create(HeightRangePlaneNodeTag::PlaneType::Min, nullptr);
+    Scene::TriangleMesh& triangle_mesh_max =
+        *m_triangle_mesh_manager.get_or_create(HeightRangePlaneNodeTag::PlaneType::Max, nullptr);
+
+    m_min_plane_node->set_raycast_component(
+        new Scene::AabbRaycastNodeComponent(&triangle_mesh_min.aabb_mesh())
+    );
+    m_max_plane_node->set_raycast_component(
+        new Scene::AabbRaycastNodeComponent(&triangle_mesh_max.aabb_mesh())
+    );
+
+    this->set_enabled(true);
+    this->set_planes_visible(false);
+}
+
+void HeightRangePlanesWrapper::release(Scene::Scene& scene)
+{
+    if (!m_main_node) {
+        return;
+    }
+
+    scene.remove_children(
+        [](const Scene::Node* n) -> bool { return n->has_tag_of_type<HeightRangeNodeTag>(); },
+        &scene.root()
+    );
+
+    m_geometry_manager.release(HeightRangePlaneNodeTag::PlaneType::Min);
+    m_geometry_manager.release(HeightRangePlaneNodeTag::PlaneType::Max);
+    m_triangle_mesh_manager.release(HeightRangePlaneNodeTag::PlaneType::Min);
+    m_triangle_mesh_manager.release(HeightRangePlaneNodeTag::PlaneType::Max);
+
+    m_main_node      = nullptr;
+    m_min_plane_node = nullptr;
+    m_max_plane_node = nullptr;
+}
+
+void HeightRangePlanesWrapper::set_enabled(const bool enabled)
+{
+    ASSERT(m_main_node != nullptr);
+    m_main_node->set_enabled(enabled);
+}
+
+void HeightRangePlanesWrapper::set_planes_visible(const bool visible)
+{
+    ASSERT(m_min_plane_node != nullptr && m_max_plane_node != nullptr);
+    m_min_plane_node->set_enabled(visible);
+    m_max_plane_node->set_enabled(visible);
+}
+
+void HeightRangePlanesWrapper::set_positions(
+    const double min_z,
+    const double max_z,
+    const ModelObject& model_object
+)
+{
+    ASSERT(m_min_plane_node != nullptr && m_max_plane_node != nullptr);
+
+    double visual_max_z = max_z;
+    if (visual_max_z - min_z < HEIGHT_RANGE_PLANE_MIN_SEPARATION) {
+        visual_max_z = min_z + HEIGHT_RANGE_PLANE_MIN_SEPARATION;
+    }
+
+    const BoundingBox3d& model_bb = Algorithms::ModelObject::bounding_box_approx(model_object);
+    const Vec3d model_bb_center   = Algorithms::BoundingBox::center(model_bb);
+
+    m_min_plane_node->set_local_transform(
+        Domain::translation_transform(Vec3d(model_bb_center.x(), model_bb_center.y(), min_z))
+    );
+    m_max_plane_node->set_local_transform(
+        Domain::translation_transform(Vec3d(model_bb_center.x(), model_bb_center.y(), visual_max_z))
+    );
+}
+
+void HeightRangePlanesWrapper::set_plane_default_color(
+    HeightRangePlaneNodeTag::PlaneType plane_type
+)
+{
+    this->set_plane_color(this->plane_node(plane_type), HEIGHT_RANGE_PLANE_COLOR);
+}
+
+void HeightRangePlanesWrapper::set_plane_hover_color(HeightRangePlaneNodeTag::PlaneType plane_type)
+{
+    this->set_plane_color(this->plane_node(plane_type), HEIGHT_RANGE_PLANE_HOVER_COLOR);
+}
+
+void HeightRangePlanesWrapper::build_plane_node(
+    Render::Device& device,
+    Scene::NodeBuilder& builder,
+    HeightRangePlaneNodeTag::PlaneType plane_type,
+    const ModelObject& model_object
+)
+{
+    const BoundingBox3d& model_bb = Algorithms::ModelObject::bounding_box_approx(model_object);
+    const Vec3f model_bb_size     = Algorithms::BoundingBox::sizes(model_bb).cast<float>();
+    const float plane_diameter    = model_bb_size.norm() * std::numbers::sqrt2_v<float> / 4.f;
+
+    indexed_triangle_set plane_its;
+    plane_its.vertices = {
+        {plane_diameter, plane_diameter, 0.f},
+        {-plane_diameter, plane_diameter, 0.f},
+        {-plane_diameter, -plane_diameter, 0.f},
+        {plane_diameter, -plane_diameter, 0.f},
+    };
+    plane_its.indices = {
+        {0, 1, 2},
+        {2, 3, 0},
+    };
+
+    const Scene::TriangleMesh& plane_triangle_mesh = *m_triangle_mesh_manager.get_or_create(
+        plane_type,
+        [&]() -> std::unique_ptr<Scene::TriangleMesh>
+        { return std::make_unique<Scene::TriangleMesh>(std::move(plane_its)); }
+    );
+    const Render::Geometry& plane_geometry = *m_geometry_manager.get_or_create(
+        plane_type,
+        [&]()
+        { return Render::geometry_from_triangle_mesh(device, plane_triangle_mesh.triangles()); }
+    );
+    const Render::Material material =
+        Render::Material{}
+            .set_shader(device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("uniform_color", HEIGHT_RANGE_PLANE_COLOR)
+            .set_transparent(true);
+
+    builder.set_debug_name("HeightRangePlanes - Plane")
+        .set_tag(HeightRangePlaneNodeTag(plane_type))
+        .set_mesh(&plane_geometry, material, int(PlaterSceneLayer::DocumentObjects));
+}
+
+Scene::Node* HeightRangePlanesWrapper::plane_node(
+    HeightRangePlaneNodeTag::PlaneType plane_type
+) const
+{
+    return plane_type == HeightRangePlaneNodeTag::PlaneType::Min ? m_min_plane_node :
+                                                                   m_max_plane_node;
+}
+
+void HeightRangePlanesWrapper::set_plane_color(Scene::Node* node, const ColorRGBA& color)
+{
+    Render::Material material = node->render_component()->material();
+    material.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
+    node->set_material_override(material);
 }
 
 } // namespace Slic3r::App::Plater

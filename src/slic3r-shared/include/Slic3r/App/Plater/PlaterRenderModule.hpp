@@ -56,6 +56,7 @@ class MeasureGizmo;
 class PlaterCameraGizmo;
 class CutGizmo;
 class VariableLayerHeightGizmo;
+class HeightRangeGizmo;
 class ArrangeGizmo;
 class PlaterScenePresenter;
 class PlaterRenderLayout;
@@ -227,6 +228,7 @@ private:
     Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
     Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
     Yoga::ToolbarButton* m_toolbar_variable_layer_height   = nullptr;
+    Yoga::ToolbarButton* m_toolbar_height_range            = nullptr;
     Yoga::ToolbarSwitchButton* m_toolbar_preview_switch    = nullptr;
 
     std::unique_ptr<Biz::Emboss::IFontManager> m_font_manager = nullptr;
@@ -246,6 +248,7 @@ private:
     PlaterCameraGizmo* m_camera_gizmo                           = nullptr;
     CutGizmo* m_cut_gizmo                                       = nullptr;
     VariableLayerHeightGizmo* m_variable_layer_height_gizmo     = nullptr;
+    HeightRangeGizmo* m_height_range_gizmo                      = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

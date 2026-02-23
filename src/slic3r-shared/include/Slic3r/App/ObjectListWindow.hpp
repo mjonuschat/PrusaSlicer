@@ -6,7 +6,11 @@
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
-}
+} // namespace Slic3r::Biz
+
+namespace Slic3r::App::Scene {
+class IGizmoController;
+} // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::Plater {
 struct BedThumbnailTexture;
@@ -34,6 +38,7 @@ public:
     void update_sliced_info();
 
     void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
+    void set_gizmo_controller(Scene::IGizmoController* controller);
 
     std::function<void()> on_config_container_added;
 
