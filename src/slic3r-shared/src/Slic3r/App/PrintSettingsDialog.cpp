@@ -63,7 +63,7 @@ PrintSettingsDialog::PrintSettingsDialog(
            std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
         {
             DEBUG_ASSERT(
-                item.print_item->def().category != Domain::ConfigItemDef::Category::Unkown,
+                item.print_item->def().category != Domain::ConfigItemDef::Category::Unknown,
                 "ConfigItemDef cannot have unkown category, please fill it."
             );
 

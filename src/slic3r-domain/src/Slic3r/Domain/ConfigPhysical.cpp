@@ -19,10 +19,6 @@ const ConfigDefinitions& get_defs_physical() {
     return s_defs_physical;
 }
 
-// JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
-// Right now, let's just define the constants so the defs compile.
-enum { comSimple, comAdvanced, comExpert };
-
 // Now define the init function. This function will be called by ConfigDefinitions
 // constructor and will fill the definitions with all the necessary data.
 void physical_printer_init_fn(ConfigDefinitions& defs)
@@ -35,7 +31,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("Host Type");
     def->tooltip = L("Slic3r can upload G-code files to a printer host. This field must contain "
                    "the kind of the host.");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with(
         PrintHostType::PrusaLink,
@@ -60,7 +55,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
                    "the hostname, IP address or URL of the printer host instance. "
                    "Print host behind HAProxy with basic auth enabled can be accessed by putting the user name and password into the URL "
                    "in the following format: https://username:password@your-octopi-address/");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
@@ -69,7 +63,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("API Key / Password");
     def->tooltip = L("Slic3r can upload G-code files to a printer host. This field should contain "
                    "the API Key or the password required for authentication.");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
@@ -78,7 +71,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("Printer");
     def->tooltip = L("Name of the printer");
     def->gui_type = ConfigItemDef::GUIType::select_close;
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
@@ -87,14 +79,12 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("HTTPS CA File");
     def->tooltip = L("Custom CA certificate file can be specified for HTTPS OctoPrint connections, in crt/pem format. "
                    "If left blank, the default OS CA certificate repository is used.");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
     def = defs.add("printhost_user", typeid(std::string));
     def->location = Physical{};
     def->label = L("User");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
@@ -102,7 +92,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->location = Physical{};
     def->label = L("Password");
     def->gui_type = ConfigItemDef::GUIType::password;
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
 
@@ -112,7 +101,6 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("Ignore HTTPS certificate revocation checks");
     def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
                      "One may want to enable this option for self signed certificates if connection fails.");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with(false);
 
@@ -120,13 +108,11 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->location = Physical{};
     def->label = L("Printer preset names");
     def->tooltip = L("Names of presets related to the physical printer");
-    def->mode = comAdvanced;
     def->init_fn = init_with(std::vector<std::string>{});
 
     def = defs.add("printhost_authorization_type", typeid(EnumWrapper));
     def->location = Physical{};
     def->label = L("Authorization Type");
-    def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with(
         PrintHostAuthType::ApiKey,

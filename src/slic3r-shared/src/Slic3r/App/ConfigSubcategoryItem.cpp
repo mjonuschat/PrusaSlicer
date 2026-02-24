@@ -32,7 +32,10 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     set_gap(10);
     set_padding(10);
 
-    m_label = emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
+    m_label = emplace_back<Text>(
+        Domain::ConfigItemDef::translate_option_group(m_state->def().option_group),
+        Render::ImguiFontType::Bold
+    );
 
     m_rows_filter_list->set_filter_fn(
         [this](const Domain::ConfigItem& item) -> bool
@@ -55,11 +58,14 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
             }
         }
     );
+    m_rows_filter_list->set_sort_fn([](const Domain::ConfigItem& lhs, const Domain::ConfigItem& rhs)
+                                    { return lhs.def().order < rhs.def().order; });
 
     m_rows_filter_list->set_source_model(m_cbi.config_box_list());
 
-    m_rows_list_view =
-        emplace_back<ConfigRowListView>(ConfigRowListViewFactory{m_cbi_container, m_cbi, m_cbi_index});
+    m_rows_list_view = emplace_back<ConfigRowListView>(
+        ConfigRowListViewFactory{m_cbi_container, m_cbi, m_cbi_index}
+    );
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);
@@ -89,10 +95,10 @@ void ConfigSubcategoryItem::clear_navigation()
 
 void ConfigSubcategoryItem::on_data_update()
 {
-    m_label->set_text(m_state->def().option_group);
+    m_label->set_text(Domain::ConfigItemDef::translate_option_group(m_state->def().option_group));
 
-    const std::string option_group                 = m_state->def().option_group;
-    const Domain::ConfigItemDef::Category category = m_state->def().category;
+    const Domain::ConfigItemDef::OptionGroup option_group = m_state->def().option_group;
+    const Domain::ConfigItemDef::Category category        = m_state->def().category;
 
     if (option_group != m_option_group || m_category != category) {
         m_option_group = option_group;

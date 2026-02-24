@@ -3,10 +3,9 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
-#include "Slic3r/Assert.hpp"
-#include "Slic3r/Log.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/ConfigDefUtils.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "nlohmann/json.hpp"
 #include "boost/filesystem.hpp"
@@ -41,8 +40,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Show splashscreen");
     def->tooltip = L("Show splashscreen during application start.");
-    def->category = Category::PreferencesGeneral;
-    def->option_group = L("Application");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("restore_win_position", typeid(bool));
@@ -50,8 +49,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Restore window position on start");
     def->tooltip = L("Restore window position on start.");
-    def->category = Category::PreferencesGeneral;
-    def->option_group = L("Application");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("crash_reason", typeid(std::string));
@@ -67,8 +66,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
     def->location     = Domain::AppConfigLocation{};
     def->label        = L("Graphics quality");
-    def->option_group = L("Application");
-    def->category     = Category::PreferencesGeneral;
+    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->gui_type     = GUIType::combobox;
     def->tooltip      = L("Controls rendering quality and performance of the 3D scene");
     def->init_fn      = Domain::init_with(
@@ -87,8 +86,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Enable Prusa Account");
     def->tooltip = L("Enable logging to Prusa Account, Connect tab and uploading files to Connect.");
-    def->category = Category::Services;
-    def->option_group = L("Services setup");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("enable_printables", typeid(bool));
@@ -96,8 +95,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Enable Printables");
     def->tooltip = L("Enable Printables tab.");
-    def->category = Category::Services;
-    def->option_group = L("Services setup");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
     def->init_fn = []() { return Domain::ConfigValue(true); };
 #endif
 
@@ -122,8 +121,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::textfield;
     def->label = L("Downloads directory");
     def->tooltip = L("Sets directory for downloads such as objects from Printables service or app updates. Must be valid path.");
-    def->category = Category::Services;
-    def->option_group = L("Services setup");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
     def->init_fn = []() { return Domain::ConfigValue(system_downloads_dir().string()); };
 
     // Settings for LayersDoubleSlider
@@ -154,40 +153,38 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
 
     def = defs.add("show_step_import_parameters", typeid(bool));
     def->location = Domain::AppConfigLocation{};
-    def->category = Category::PreferencesGeneral;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_General;
+    def->category = Category::AppConfig_General;
     def->gui_type = GUIType::checkbox;
     def->label = L("Show STEP import parameters dialog");
-    def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("step_linear_precision", typeid(double));
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
-    def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(0.005); };
 
     def = defs.add("step_angle_precision", typeid(double));
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
-    def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(1.); };
 
     // Settings for open link in browser
 
     def = defs.add("show_open_browser_warning_dialog", typeid(bool));
     def->location = Domain::AppConfigLocation{};
-    def->category = Category::Services;
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_General;
     def->gui_type = GUIType::checkbox;
     def->label = L("Show warning dialog before opening a link in default browser");
-    def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("suppress_hyperlinks", typeid(bool));
     def->location = Domain::AppConfigLocation{};
-    def->category = Category::Services;
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_General;
     def->gui_type = GUIType::checkbox;
     def->label = L("Suppress opening hyperlinks in browser");
-    def->option_group = L("General");
     def->init_fn = []() { return Domain::ConfigValue(false); };
 }
  

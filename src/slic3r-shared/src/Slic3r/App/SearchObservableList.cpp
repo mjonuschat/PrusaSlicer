@@ -244,7 +244,9 @@ int SearchObservableList::score_item(const Domain::ConfigItem* item)
                         )
                     ),
                     string_to_lower(item->def().tooltip),
-                    string_to_lower(item->def().option_group)
+                    string_to_lower(
+                        Domain::ConfigItemDef::translate_option_group(item->def().option_group)
+                    )
                 }
             )
         );

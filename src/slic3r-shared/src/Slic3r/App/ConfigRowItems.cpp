@@ -49,9 +49,9 @@ void ConfigRowItems::clear_navigation()
 
 void ConfigRowItems::on_data_update()
 {
-    const std::string row_group                    = m_state->def().row_group;
-    const std::string option_group                 = m_state->def().option_group;
-    const Domain::ConfigItemDef::Category category = m_state->def().category;
+    const std::string row_group                           = m_state->def().row_group;
+    const Domain::ConfigItemDef::OptionGroup option_group = m_state->def().option_group;
+    const Domain::ConfigItemDef::Category category        = m_state->def().category;
     if (m_row_group != row_group || m_initialized_type == InitializedType::None) {
         m_row_group = row_group;
         if (row_group.empty()) {

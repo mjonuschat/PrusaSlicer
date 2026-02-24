@@ -15,7 +15,7 @@ ObservableCategorizer::ObservableCategorizer()
         [](const Domain::ConfigItem& item,
            std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool {
         DEBUG_ASSERT(
-            item.def().category != Domain::ConfigItemDef::Category::Unkown,
+            item.def().category != Domain::ConfigItemDef::Category::Unknown,
             "ConfigItemDef cannot have unkown category, please fill it."
         );
 

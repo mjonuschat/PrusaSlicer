@@ -70,9 +70,9 @@ private:
     ConfigRowItem* m_single_item{nullptr};
     Yoga::Text* m_label{nullptr};
 
-    std::string m_option_group;
+    Domain::ConfigItemDef::OptionGroup m_option_group{Domain::ConfigItemDef::OptionGroup::Unknown};
     std::string m_row_group;
-    Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unkown};
+    Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unknown};
 };
 
 } // namespace Slic3r::App

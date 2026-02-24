@@ -403,7 +403,9 @@ void UnsavedChangesDialog::append_diff_keys(
             kind,
             preset_name,
             Domain::ConfigItemDef::translate_category(def.category, m_printer_technology),
-            def.option_group.empty() ? def.label : def.option_group,
+            def.option_group == Domain::ConfigItemDef::OptionGroup::Unknown ?
+                def.label :
+                Domain::ConfigItemDef::translate_option_group(def.option_group),
             def.full_label.empty() ? def.label : def.full_label,
             Diff::get_display_value_or_na(config_left, key),
             Diff::get_display_value_or_na(config_mid, key),

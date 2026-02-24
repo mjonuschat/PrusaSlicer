@@ -33,8 +33,10 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
     set_gap(10);
     set_padding(10);
 
-    m_label =
-        emplace_back<Text>(m_state->print_item->def().option_group, Render::ImguiFontType::Bold);
+    m_label = emplace_back<Text>(
+        Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group),
+        Render::ImguiFontType::Bold
+    );
 
     m_rows_filter_list->set_filter_fn(
         [this](const Biz::PrintToolItem& item) -> bool
@@ -59,6 +61,10 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
                 }
             }
         }
+    );
+    m_rows_filter_list->set_sort_fn(
+        [](const Biz::PrintToolItem& lhs, const Biz::PrintToolItem& rhs)
+        { return lhs.print_item->def().order < rhs.print_item->def().order; }
     );
 
     m_rows_filter_list->set_source_model(m_cbi.observable_list());
@@ -96,10 +102,12 @@ void PrintToolSubcategoryItem::clear_navigation()
 
 void PrintToolSubcategoryItem::on_data_update()
 {
-    m_label->set_text(m_state->print_item->def().option_group);
+    m_label->set_text(
+        Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group)
+    );
 
-    const std::string option_group                 = m_state->print_item->def().option_group;
-    const Domain::ConfigItemDef::Category category = m_state->print_item->def().category;
+    const Domain::ConfigItemDef::OptionGroup option_group = m_state->print_item->def().option_group;
+    const Domain::ConfigItemDef::Category category        = m_state->print_item->def().category;
 
     if (option_group != m_option_group || m_category != category) {
         m_option_group = option_group;

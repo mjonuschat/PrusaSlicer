@@ -27,7 +27,10 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     m_cbi_container(cbi_container),
     m_cbi(cbi),
     m_cbi_index(cbi_index),
-    m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
+    m_category_filter(
+        std::make_shared<
+            Biz::ObservableListSortFilter<Domain::ConfigItem, Domain::ConfigItemDef::OptionGroup>>()
+    )
 {
     set_object_name("ConfigSubcategoryListView");
     set_orientation(Orientation::Vertical);
@@ -39,7 +42,8 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     m_category_filter->set_filter_fn([this](const Domain::ConfigItem& config_item)
                                      { return config_item.def().category == m_category; });
     m_category_filter->set_group_by_fn(
-        [](const Domain::ConfigItem& config_item, std::unordered_set<std::string>& seen_keys)
+        [](const Domain::ConfigItem& config_item,
+           std::unordered_set<Domain::ConfigItemDef::OptionGroup>& seen_keys)
         {
             if (seen_keys.contains(config_item.def().option_group)) {
                 return true;
@@ -50,6 +54,9 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
         }
     );
 
+    m_category_filter->set_sort_fn([](const Domain::ConfigItem& lhs, const Domain::ConfigItem& rhs)
+                                   { return lhs.def().option_group < rhs.def().option_group; });
+
     m_category_filter->set_source_model(m_cbi.config_box_list());
 
     set_source_list(m_category_filter.get());
@@ -59,7 +66,7 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
 
 void ConfigSubcategoryListView::navigate_to_item(const Domain::ConfigItem* config_item)
 {
-    const std::string& option_group = config_item->def().option_group;
+    const Domain::ConfigItemDef::OptionGroup option_group = config_item->def().option_group;
     for (size_t subcategory_index = 0; subcategory_index < m_category_filter->size();
          ++subcategory_index)
     {

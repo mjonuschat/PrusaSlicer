@@ -103,7 +103,7 @@ InsertBraces: false
 InsertNewlineAtEOF: true
 IntegerLiteralSeparator:
   Binary: 0
-  Decimal: 3
+  Decimal: 0
   Hex: 0
 KeepEmptyLines:
   AtEndOfFile: false

@@ -27,7 +27,10 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
     Biz::DataObserver<Biz::PrintToolItem>(index, data),
     m_cbi(cbi),
     m_cbi_setter(cbi_setter),
-    m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::PrintToolItem>>())
+    m_category_filter(
+        std::make_shared<
+            Biz::ObservableListSortFilter<Biz::PrintToolItem, Domain::ConfigItemDef::OptionGroup>>()
+    )
 {
     set_object_name("PrintToolSubcategoryListView");
     set_orientation(Orientation::Vertical);
@@ -41,7 +44,8 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
         { return tool_print_item.print_item->def().category == m_category; }
     );
     m_category_filter->set_group_by_fn(
-        [](const Biz::PrintToolItem& tool_print_item, std::unordered_set<std::string>& seen_keys)
+        [](const Biz::PrintToolItem& tool_print_item,
+           std::unordered_set<Domain::ConfigItemDef::OptionGroup>& seen_keys)
         {
             if (seen_keys.contains(tool_print_item.print_item->def().option_group)) {
                 return true;
@@ -50,6 +54,10 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
                 return false;
             }
         }
+    );
+    m_category_filter->set_sort_fn(
+        [](const Biz::PrintToolItem& lhs, const Biz::PrintToolItem& rhs)
+        { return lhs.print_item->def().option_group < rhs.print_item->def().option_group; }
     );
 
     m_category_filter->set_source_model(m_cbi.observable_list());
@@ -61,7 +69,7 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
 
 void PrintToolSubcategoryListView::navigate_to_item(const Domain::ConfigItem* config_item)
 {
-    const std::string& option_group = config_item->def().option_group;
+    const Domain::ConfigItemDef::OptionGroup option_group = config_item->def().option_group;
     for (size_t row_index = 0; row_index < m_category_filter->size(); ++row_index) {
         if (m_category_filter->at(row_index).print_item->def().option_group == option_group) {
             PrintToolSubcategoryItem* found_item = item_at(row_index);

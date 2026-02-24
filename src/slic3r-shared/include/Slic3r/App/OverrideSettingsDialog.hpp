@@ -62,7 +62,7 @@ private:
     Yoga::StackLayout* m_stack_layout{nullptr};
     Yoga::Text* m_options_category_text{nullptr};
     OverrideConfigListView* m_override_config_list_view{nullptr};
-    Domain::ConfigItemDef::Category m_current_category{Domain::ConfigItemDef::Category::Unkown};
+    Domain::ConfigItemDef::Category m_current_category{Domain::ConfigItemDef::Category::Unknown};
 
     SelectCategoryFn m_select_category{nullptr};
 };

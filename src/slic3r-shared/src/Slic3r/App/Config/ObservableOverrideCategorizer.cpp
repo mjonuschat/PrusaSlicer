@@ -23,34 +23,40 @@ void ObservableOverrideCategorizer::set_allow_disabled(bool allow_disabled)
 
 ObservableOverrideCategorizer::ObservableOverrideCategorizer()
 {
-    set_filter_fn([this](const Biz::OverrideItem& item) -> bool {
-        if (!item.is_override()) {
-            return false;
-        }
+    set_filter_fn(
+        [this](const Biz::OverrideItem& item) -> bool
+        {
+            if (!item.is_override()) {
+                return false;
+            }
 
-        if (!m_allow_disabled && !item.overriden.value()) {
-            return false;
-        }
+            if (!m_allow_disabled && !item.overriden.value()) {
+                return false;
+            }
 
-        return true;
-    });
+            return true;
+        }
+    );
     set_group_by_fn(
         [](const Biz::OverrideItem& item,
-           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool {
-        Domain::ConfigItemDef::Category category = item.config_item->def().category;
-        DEBUG_ASSERT(
-            category != Domain::ConfigItemDef::Category::Unkown,
-            "ConfigItemDef cannot have unkown category, please fill it."
-        );
+           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
+        {
+            Domain::ConfigItemDef::Category category = item.config_item->def().category;
+            DEBUG_ASSERT(
+                category != Domain::ConfigItemDef::Category::Unknown,
+                "ConfigItemDef cannot have unkown category, please fill it."
+            );
 
-        if (seen_keys.contains(category)) {
-            return true;
-        } else {
-            seen_keys.insert(category);
-            return false;
+            if (seen_keys.contains(category)) {
+                return true;
+            } else {
+                seen_keys.insert(category);
+                return false;
+            }
         }
-    }
     );
+    set_sort_fn([](const Biz::OverrideItem& lhs, const Biz::OverrideItem& rhs)
+                { return lhs.config_item->def().category < rhs.config_item->def().category; });
 }
 
 } // namespace Slic3r::App

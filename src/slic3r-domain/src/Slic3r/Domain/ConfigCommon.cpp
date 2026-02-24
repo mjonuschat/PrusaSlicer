@@ -1,14 +1,10 @@
 ﻿#include "Slic3r/Domain/ConfigCommon.hpp"
-#include "Slic3r/Domain/Config.hpp"
+
+#include "Slic3r/Domain/ConfigDef.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 namespace Slic3r::Domain {
-
-
-// JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
-// Right now, let's just define the constants so the defs compile.
-enum { comSimple, comAdvanced, comExpert };
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
 
@@ -61,53 +57,51 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def = defs.add("bed_shape", typeid(std::vector<Vec2d>));
     def->location = printer;
     def->label = L("Bed shape");
-    def->option_group = L("Size and coordinates");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_Bed_SizeAndCoordinates;
     def->full_width = true;
-    def->category = ConfigItemDef::Category::Bed;
+    def->category = ConfigItemDef::Category::Printer_Bed;
     def->gui_type = ConfigItemDef::GUIType::bed_shape;
-    def->mode = comAdvanced;
     def->init_fn = init_with((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
 
     def = defs.add("bed_custom_texture", typeid(std::string));
     def->location = printer;
     def->label = L("Bed custom texture");
-    def->option_group = L("Size and coordinates");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_Bed_SizeAndCoordinates;
     def->full_width = true;
-    def->category = ConfigItemDef::Category::Bed;
+    def->category = ConfigItemDef::Category::Printer_Bed;
     def->gui_type = ConfigItemDef::GUIType::file_picker;
-    def->mode = comAdvanced;
     def->init_fn = init_with("");
 
     def = defs.add("bed_custom_model", typeid(std::string));
     def->location = printer;
     def->label = L("Bed custom model");
-    def->option_group = L("Size and coordinates");
+    def->option_group = ConfigItemDef::OptionGroup::Printer_Bed_SizeAndCoordinates;
     def->full_width = true;
-    def->category = ConfigItemDef::Category::Bed;
+    def->category = ConfigItemDef::Category::Printer_Bed;
     def->gui_type = ConfigItemDef::GUIType::file_picker;
-    def->mode = comAdvanced;
     def->init_fn = init_with("");
 
     def = defs.add("elefant_foot_compensation", typeid(double));
     if (technology == SLA) {
         def->location = printer;
         def->overrides_in = Locations{ sla_material, sla_object};
-        def->option_group = L("Corrections");
+        def->option_group = ConfigItemDef::OptionGroup::Printer_General_Corrections;
     }
     if (technology == FFF) {
         def->location = FDMConfigLocation::Print;
         def->require_compatibility_rule = true;
         def->overrides_in = Locations{ fdm_tool, fdm_object, fdm_volume };
-        def->option_group = L("Slicing");
+        def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_DimensionalAccuracy;
     }
     def->label = L("Elephant foot compensation");
-    def->category = ConfigItemDef::Category::Advanced;
+    def->category = ConfigItemDef::Category::Print_PrecisionSlicing;
+    def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_DimensionalAccuracy;
+    def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
                      "to compensate for the 1st layer squish aka an Elephant Foot effect.");
     def->sidetext = L("mm");
     def->min = 0;
-    def->mode = comAdvanced;
     def->init_fn = init_with(0.);
 
     def = defs.add("thumbnails", typeid(std::string));
@@ -118,12 +112,12 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     else {
         def->label = L("Thumbnails");
     }
-    def->option_group = L("Firmware");
-    def->category = ConfigItemDef::Category::General;
+    def->option_group =  ConfigItemDef::OptionGroup::Printer_General_FirmwareGCode;
+    def->category = ConfigItemDef::Category::Printer_General;
+    def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Picture sizes to be stored into a .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
                      "Currently supported extensions are PNG, QOI and JPG.");
-    def->mode = comExpert;
     def->init_fn = init_with("");
 
     def = defs.add("thumbnails_format", typeid(EnumWrapper));
@@ -132,7 +126,6 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->category = ConfigItemDef::Category::Hidden;
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Format of G-code thumbnails: PNG for best quality, JPG for smallest size, QOI for low memory firmware");
-    def->mode = comExpert;
     def->init_fn = init_with(
         GCodeThumbnailsFormat::PNG,
         {{int(GCodeThumbnailsFormat::PNG), "PNG", "PNG"},
@@ -145,8 +138,8 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     if (technology == FFF)
         def->overrides_in = Locations{ fdm_object, fdm_volume };
     def->label = L("Layer height");
-    def->option_group = L("Layer height");
-    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_LayerHeight;
+    def->category = ConfigItemDef::Category::Print_LayersSurfaces;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This setting controls the height (and thus the total number) of the slices/layers. "
                    "Thinner layers give better accuracy but take more time to print.");
@@ -157,28 +150,27 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def = defs.add("max_print_height", typeid(double));
     def->location = printer;
     def->label = L("Max print height");
-    def->option_group = L("Size and coordinates");
-    def->category = ConfigItemDef::Category::General;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_General_SizeClearances;
+    def->category = ConfigItemDef::Category::Printer_General;
+    def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to the maximum height that can be reached by your extruder while printing.");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 1200;
-    def->mode = comAdvanced;
     def->init_fn = init_with(200.);
 
     def = defs.add("output_filename_format", typeid(std::string));
     def->location = print;
     def->label = L("Output filename format");
-    def->option_group = L("Output file");
-    def->category = ConfigItemDef::Category::OutputOptions;
+    def->option_group = ConfigItemDef::OptionGroup::Print_OutputOptions_OutputFile;
+    def->category = ConfigItemDef::Category::Print_OutputOptions;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can use all configuration options as variables inside this template. "
                    "For example: [layer_height], [fill_density] etc. You can also use [timestamp], "
                    "[year], [month], [day], [hour], [minute], [second], [version], "
                    "[input_filename_base], [default_output_extension].");
     def->full_width = true;
-    def->mode = comExpert;
     def->init_fn = init_with("[input_filename_base].gcode");
 
     def = defs.add("slice_closing_radius", typeid(double));
@@ -188,14 +180,14 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     else
         def->overrides_in = Locations{ sla_object };
     def->label = L("Slice gap closing radius");
-    def->option_group = L("Slicing");
-    def->category = ConfigItemDef::Category::Advanced;
+    def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_DimensionalAccuracy;
+    def->category = ConfigItemDef::Category::Print_PrecisionSlicing;
+    def->order = 2;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
                      "The gap closing operation may reduce the final print resolution, therefore it is advisable to keep the value reasonably low.");
     def->sidetext = L("mm");
     def->min = 0;
-    def->mode = comAdvanced;
     def->init_fn = init_with(0.049);
 
     def = defs.add("slicing_mode", typeid(EnumWrapper));
@@ -206,11 +198,11 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
         def->overrides_in = Locations{ sla_object };
     }
     def->label = L("Slicing Mode");
-    def->option_group = L("Slicing");
-    def->category = ConfigItemDef::Category::Advanced;
+    def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_SlicingStrategy;
+    def->category = ConfigItemDef::Category::Print_PrecisionSlicing;
+    def->order = 0;
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Use \"Even-odd\" for 3DLabPrint airplane models. Use \"Close holes\" to close all holes in the model.");
-    def->mode = comAdvanced;
     def->init_fn = init_with(
         SlicingMode::Regular,
         {{int(SlicingMode::Regular), "regular", L("Regular")},
@@ -235,13 +227,12 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def = defs.add("printer_notes", typeid(std::string));
     def->location = printer;
     def->label = L("Printer notes");
-    def->category = ConfigItemDef::Category::Notes;
+    def->category = ConfigItemDef::Category::Printer_Notes;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put your notes regarding the printer here.");
     def->multiline = true;
     def->full_width = true;
     def->height = 13;
-    def->mode = comAdvanced;
     def->init_fn = init_with("");
 
 }
