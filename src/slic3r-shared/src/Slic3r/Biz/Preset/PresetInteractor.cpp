@@ -1817,6 +1817,23 @@ void PresetInteractor::invoke_on_preset_value_changed(const Domain::ConfigItem& 
     );
 }
 
+PresetsSwitchStates::iterator PresetInteractor::find_unsaved_change(
+    PresetDiffOperation operation,
+    Domain::Preset::PresetKind kind,
+    std::optional<size_t> tool_id
+)
+{
+    return std::find_if(
+        m_unsaved_changes.begin(),
+        m_unsaved_changes.end(),
+        [&](const auto& item)
+        {
+            return item.first == Biz::Preset::PresetSwitchKindId(kind, tool_id)
+                && item.second.operation == operation;
+        }
+    );
+}
+
 void PresetInteractor::process_operation_from_unsaved_changes(
     Domain::Preset::SelectedPreset& selected_preset,
     PresetDiffOperation operation,
@@ -1911,37 +1928,58 @@ void PresetInteractor::process_operation_from_unsaved_changes(
     };
 
     if (kind) {
-        auto it = std::find_if(
-            m_unsaved_changes.begin(),
-            m_unsaved_changes.end(),
-            [&](const auto& item)
-            {
-                return item.first == Biz::Preset::PresetSwitchKindId(kind.value(), tool_id)
-                    && item.second.operation == operation;
-            }
-        );
+        PresetsSwitchStates::iterator it = find_unsaved_change(operation, kind.value(), tool_id);
         if (it != m_unsaved_changes.end()) {
             // Process current state
             process(selected_preset, it->first, it->second);
             // Remove it from the
-            m_unsaved_changes.erase(it);
+            if (operation == PresetDiffOperation::Transfer) {
+                bag.add(
+                    [kind_val = kind.value(), tool_id, operation, this]()
+                    {
+                        PresetsSwitchStates::iterator it =
+                            find_unsaved_change(operation, kind_val, tool_id);
+                        if (it != m_unsaved_changes.end()) {
+                            m_unsaved_changes.erase(it);
+                        }
+                    }
+                );
+            } else {
+                m_unsaved_changes.erase(it);
+            }
         }
         return;
     }
 
     // iterate the unsaved changes and remove them one by one just after completing the processing
-    auto it = m_unsaved_changes.begin();;
+    auto it = m_unsaved_changes.begin();
     while (it != m_unsaved_changes.end())
     {
         const auto& preset_id = it->first;
         const auto& state = it->second;
         if (state.operation == operation) {
             process(selected_preset, preset_id, state);
-            it = m_unsaved_changes.erase(it);
-        } else {
+        }
+        else {
             ++it;
         }
     }
+
+    bag.add(
+        [this, operation]()
+        {
+            auto it = m_unsaved_changes.begin();
+            while (it != m_unsaved_changes.end()) {
+                const auto& state = it->second;
+                if (state.operation == operation) {
+                    it = m_unsaved_changes.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
+    );
 }
 
 

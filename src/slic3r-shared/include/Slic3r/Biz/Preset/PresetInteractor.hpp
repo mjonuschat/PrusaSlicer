@@ -803,6 +803,10 @@ private:
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
+    PresetsSwitchStates::iterator find_unsaved_change(
+        PresetDiffOperation operation,
+        Domain::Preset::PresetKind kind,
+        std::optional<size_t> tool_id = std::nullopt);
     void process_operation_from_unsaved_changes(
         Domain::Preset::SelectedPreset& selected_preset,
         PresetDiffOperation operation,
