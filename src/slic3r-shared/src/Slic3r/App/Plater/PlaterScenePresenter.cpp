@@ -408,12 +408,14 @@ void PlaterScenePresenter::update_volume_materials()
                 bool is_wipe_tower = tag->is_wipe_tower();
                 bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
-                bool is_on_selected_bed = std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
+                // TODO: The following line should be modified when bed containment detection for wipe tower will be implemented
+                //       so that the wipe tower will be rendered in the same way a model part volumes
+                bool is_on_selected_bed = is_wipe_tower ||
+                    std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
                 bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
-                // TEMPORARY - wipe tower bed containment should be taken in account too
-                n.render_component()->set_shadows(((is_model_part && is_on_selected_bed) || is_wipe_tower) ?
-//                n.render_component()->set_shadows((is_model_part && is_on_selected_bed) ?
-                    Render::Shadows{true, true} : Render::Shadows{false, false});
+                n.render_component()->set_shadows(((is_model_part || is_wipe_tower) && is_on_selected_bed) ?
+                    Render::Shadows{true, true} : Render::Shadows{false, false}
+                );
 
                 const Domain::BedInstance* bed_inst = nullptr;
                 const Domain::Bed* bed = nullptr;
