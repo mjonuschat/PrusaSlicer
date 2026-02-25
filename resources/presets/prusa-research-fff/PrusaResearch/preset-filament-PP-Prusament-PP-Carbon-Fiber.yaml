@@ -17,8 +17,6 @@ variants:
     min_print_speed: 5
     fan_below_layer_time: 0
     filament_purge_multiplier: 100%
-    filament_load_time: 10.9
-    filament_unload_time: 8.9
     start_filament_gcode: M142 S36 ; set heatbreak target temp
   variants:
   # C1 0.4

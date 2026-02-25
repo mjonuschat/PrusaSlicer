@@ -16,6 +16,8 @@ variants:
       ;[layer_z]
       M201 X{interpolate_table(extruded_weight_total, (0,4000), (1000,1700), (20000,1700))} Y{interpolate_table(extruded_weight_total, (0,4000), (1000,1700), (20000,1700))}
     binary_gcode: 1
+    stuck_filament_detection: 0
+    enable_pressure_advance_during_ramming: false
     end_gcode: |-
       {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+2, max_print_height)} F720 ; Move print head up{endif}
       G1 X170 Y170 F4200 ; park print head
@@ -58,6 +60,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
+    filament_change_time: 0
     thumbnails: [16x16/QOI, ' 220x124/QOI', ' 200x240/QOI', ' 380x285/PNG']
     use_firmware_retraction: 0
     use_relative_e_distances: 1

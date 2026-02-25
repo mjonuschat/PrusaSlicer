@@ -15,6 +15,8 @@ variants:
       ;[layer_z]
 
     binary_gcode: 1
+    stuck_filament_detection: 1
+    enable_pressure_advance_during_ramming: false
     color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
     end_gcode: |-
       {if max_layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+2, max_print_height)} F720{endif} ; Move bed down
@@ -55,6 +57,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
+    filament_change_time: 19
     thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
@@ -144,6 +147,7 @@ variants:
     name: Original Prusa XL
     id: tMm/XedsThCqLydJ9dji3w
     values:
+      filament_change_time: 4.5
       start_gcode: |
         M17 ; enable steppers
         M862.3 P "XL" ; printer model check

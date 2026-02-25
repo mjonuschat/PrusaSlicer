@@ -25,7 +25,6 @@ values:
   filament_diameter: 1.75
   filament_infill_max_crossing_speed: 0
   filament_infill_max_speed: 0
-  filament_load_time: 10.5
   filament_loading_speed: 10
   filament_loading_speed_start: 50
   filament_max_volumetric_speed: 8
@@ -44,7 +43,6 @@ values:
   # travel_slope: 1
   # retract_length: 0.8
   filament_type: ABS
-  filament_unload_time: 8.5
   filament_unloading_speed: 100
   filament_unloading_speed_start: 100
   filament_vendor: Generic
@@ -70,8 +68,6 @@ variants:
     max_fan_speed: 20
     min_print_speed: 15
     bridge_fan_speed: 25
-    filament_load_time: 10.9
-    filament_unload_time: 8.9
     # overhang_fan_speed_0: 25
     # overhang_fan_speed_1: 0
     # overhang_fan_speed_2: 0
@@ -519,7 +515,6 @@ variants:
   id: APd/fCjVQca+8nbgnjEWnw
   values:
     filament_ramming_parameters: 120 110 5.32258 5.45161 5.67742 6 6.48387 7.12903 7.90323 8.70968 9.3871 9.83871 10.0968 10.2258| 0.05 5.30967 0.45 5.50967 0.95 6.1871 1.45 7.39677 1.95 9.05484 2.45 10 2.95 10.3098 3.45 13.0839 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 15
     filament_loading_speed: 14
     filament_loading_speed_start: 19
     filament_cooling_final_speed: 1
@@ -528,7 +523,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 120
     idle_temperature:
@@ -664,7 +658,6 @@ variants:
   id: vsvYkaGoS4uf7/2XymcWDQ
   values:
     filament_ramming_parameters: 120 110 5.32258 5.45161 5.67742 6 6.48387 7.12903 7.90323 8.70968 9.3871 9.83871 10.0968 10.2258| 0.05 5.30967 0.45 5.50967 0.95 6.1871 1.45 7.39677 1.95 9.05484 2.45 10 2.95 10.3098 3.45 13.0839 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 15
     filament_loading_speed: 14
     filament_loading_speed_start: 19
     filament_cooling_final_speed: 1
@@ -673,7 +666,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 100
     idle_temperature:
@@ -745,7 +737,6 @@ variants:
     filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
     first_layer_bed_temperature: 105
     bed_temperature: 110
-    filament_load_time: 0
     filament_loading_speed: 28
     filament_loading_speed_start: 3
     filament_cooling_final_speed: 3.4
@@ -754,7 +745,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
     idle_temperature:
@@ -790,7 +780,6 @@ variants:
   id: 2k+vuFSUSf+kXKY/yhnsZw
   values:
     filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 0
     filament_loading_speed: 28
     filament_loading_speed_start: 3
     filament_cooling_final_speed: 3.4
@@ -799,7 +788,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
     idle_temperature:

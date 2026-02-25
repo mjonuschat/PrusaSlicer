@@ -17,6 +17,8 @@ variants:
       M201 X{interpolate_table(extruded_weight_total, (0,4000), (1400,2500), (20000,2500))} Y{interpolate_table(extruded_weight_total, (0,4000), (1400,2500), (20000,2500))}
 
     binary_gcode: 0
+    stuck_filament_detection: 0
+    enable_pressure_advance_during_ramming: false
     end_gcode: |-
       {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}
       M104 S0 ; turn off temperature
@@ -58,6 +60,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
+    filament_change_time: 0
     thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
@@ -73,6 +76,7 @@ variants:
   - condition: feeder.base_model=~/(MMU2|MMU3)/ and ! feeder.single_mode
     id: gkDGQai3R3GuH7PTLuzxvA
     values:
+      filament_change_time: 27
       start_gcode: |-
         M17 ; enable steppers
         M862.1 P[nozzle_diameter] A{((is_extruder_used[0] and filament_abrasive[0]) ? 1 : (is_extruder_used[1] and filament_abrasive[1]) ? 1 : (is_extruder_used[2] and filament_abrasive[2]) ? 1 : (is_extruder_used[3] and filament_abrasive[3]) ? 1 : (is_extruder_used[4] and filament_abrasive[4]) ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)} ; nozzle check

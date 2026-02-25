@@ -427,7 +427,6 @@ variants:
   id: kQdOsNDnRkiXEX7faupO+w
   values:
     filament_ramming_parameters: 120 140 4.70968 4.74194 4.77419 4.80645 4.83871 4.87097 4.90323 5 5.25806 5.67742 6.29032 7.06452 7.83871 8.3871| 0.05 4.72901 0.45 4.73545 0.95 4.83226 1.45 4.88067 1.95 5.05483 2.45 5.93553 2.95 7.53556 3.45 8.6323 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 15
     filament_loading_speed: 14
     filament_loading_speed_start: 19
     filament_cooling_final_speed: 1
@@ -436,7 +435,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 120
     idle_temperature:
@@ -569,7 +567,6 @@ variants:
   id: w9+myaOzQ12uIwHNWmsPMA
   values:
     filament_ramming_parameters: 120 140 4.70968 4.74194 4.77419 4.80645 4.83871 4.87097 4.90323 5 5.25806 5.67742 6.29032 7.06452 7.83871 8.3871| 0.05 4.72901 0.45 4.73545 0.95 4.83226 1.45 4.88067 1.95 5.05483 2.45 5.93553 2.95 7.53556 3.45 8.6323 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 15
     filament_loading_speed: 14
     filament_loading_speed_start: 19
     filament_cooling_final_speed: 1
@@ -578,7 +575,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 100
     idle_temperature:
@@ -646,7 +642,6 @@ variants:
   id: QzNP8XJqQeyybU2Ndv16jQ
   values:
     filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 0
     filament_loading_speed: 28
     filament_loading_speed_start: 3
     filament_cooling_final_speed: 3.4
@@ -655,7 +650,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
     idle_temperature:
@@ -691,7 +685,6 @@ variants:
   id: u0qWM8hQTNe9EtemqXxBFg
   values:
     filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
-    filament_load_time: 0
     filament_loading_speed: 28
     filament_loading_speed_start: 3
     filament_cooling_final_speed: 3.4
@@ -700,7 +693,6 @@ variants:
     filament_stamping_distance: 0
     filament_stamping_loading_speed: 20
     filament_toolchange_delay: 0
-    filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
     idle_temperature:

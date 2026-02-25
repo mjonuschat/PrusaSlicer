@@ -27,7 +27,6 @@ values:
   filament_diameter: 1.75
   filament_infill_max_crossing_speed: 0
   filament_infill_max_speed: 0
-  filament_load_time: 0
   filament_loading_speed: 28
   filament_loading_speed_start: 3
   filament_max_volumetric_speed: 3
@@ -61,7 +60,6 @@ values:
   travel_ramping_lift:
   travel_slope:
   filament_type: FLEX
-  filament_unload_time: 0
   filament_unloading_speed: 90
   filament_unloading_speed_start: 100
   wipe: 0

@@ -32,8 +32,6 @@ variants:
     overhang_fan_speed_1: 0
     fan_below_layer_time: 20
     filament_infill_max_speed: 200
-    filament_load_time: 10.9
-    filament_unload_time: 8.9
     start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # C1 0.25
