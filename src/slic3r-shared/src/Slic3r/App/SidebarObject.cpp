@@ -129,6 +129,8 @@ void SidebarObject::on_scene_selection_changed(
 
 void SidebarObject::on_reset()
 {
+    // Some of the volumes may have been recreated
+    m_selection = m_project_interactor.scene_interactor().object_selection();
     update_enable_modifiers();
 }
 
