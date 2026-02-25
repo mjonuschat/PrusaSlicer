@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -1602,7 +1603,7 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
     }
 }
 
-void SceneInteractor::transform_instances(const Arrange::InstanceTransforms& transformations)
+void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTransform2D>& transformations)
 {
     Project& project{m_projects.find(m_selected_project_id)->second.project};
 
