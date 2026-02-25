@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Arrange/Settings.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Exception.hpp"
 
@@ -21,7 +22,7 @@ struct ArrangeFatalError : public Exception
 
 struct Pack
 {
-    Scene::SceneInteractor::InstanceTransforms trafos;
+    Arrange::InstanceTransforms trafos;
     Domain::BoundingBox2d bounding_box;
 };
 

@@ -1,9 +1,13 @@
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 
+#include "CLIUtils.hpp"
+
 #include "Slic3r/App/Init.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
@@ -14,12 +18,9 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Math.hpp"
 
-#include "arrange-wrapper/ModelArrange.hpp"
-
 #include <spdlog/spdlog.h>
 
 #include "libslic3r/ModelProcessing.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 
 using Slic3r::App::InitParams;
 using Slic3r::Domain::Model;
@@ -37,61 +38,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::CLI {
 
-static Domain::Points get_bed_shape(const Domain::ConfigPackFDM& config_pack)
-{
-    const std::vector<Vec2d> bed_shape =
-        config_pack.printer.items.opt("bed_shape").get<std::vector<Vec2d>>();
-    return Algorithms::Point::scaled(bed_shape);
-}
-
-static Domain::Points get_bed_shape(const Domain::ConfigPackSLA& config_pack)
-{
-    const std::vector<Vec2d> bed_shape =
-        config_pack.sla_printer_settings.items.opt("bed_shape").get<std::vector<Vec2d>>();
-    return Algorithms::Point::scaled(bed_shape);
-}
-
-Domain::Points get_bed_shape(const Domain::ConfigPack& config_pack)
-{
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-        return get_bed_shape(std::get<Domain::ConfigPackFDM>(config_pack));
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-        return get_bed_shape(std::get<Domain::ConfigPackSLA>(config_pack));
-    } else {
-        PANIC("Unexpected config type!");
-    }
-}
-
-static double min_object_distance([[maybe_unused]] const Domain::ConfigPackSLA& config_pack)
-{
-    return 6.;
-}
-
-static double min_object_distance(const Domain::ConfigPackFDM& config_pack)
-{
-    const double extruder_clearance_radius =
-        config_pack.printer.items.opt("extruder_clearance_radius").get<double>();
-    const double duplicate_distance =
-        6.; // TODO: duplicate_distance was removed in the new configs.
-    const bool complete_objects = config_pack.print.items.opt("complete_objects").get<bool>();
-
-    // min object distance is max(duplicate_distance, clearance_radius)
-    return (complete_objects && extruder_clearance_radius > duplicate_distance) ?
-        extruder_clearance_radius :
-        duplicate_distance;
-}
-
-double min_object_distance(const Domain::ConfigPack& config_pack)
-{
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-        return min_object_distance(std::get<Domain::ConfigPackFDM>(config_pack));
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-        return min_object_distance(std::get<Domain::ConfigPackSLA>(config_pack));
-    } else {
-        PANIC("Unexpected config type!");
-    }
-}
-
 bool process_transform(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
@@ -100,14 +46,6 @@ bool process_transform(
 
 {
     const App::TransformParams& transform = init_params.transform;
-
-    const Vec2crd gap{s_multiple_beds.get_bed_gap()};
-    arr2::ArrangeBed bed = arr2::to_arrange_bed(get_bed_shape(config_pack), gap);
-    arr2::ArrangeSettings arrange_cfg;
-    if ((transform.merge.has_value() && transform.merge.value()) || transform.duplicate.has_value())
-    {
-        arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
-    }
 
     if (transform.merge.has_value() && transform.merge.value() && !projects.empty()) {
         Project& merged_project = projects.front();
@@ -119,13 +57,14 @@ bool process_transform(
         }
 
         // Rearrange instances unless --dont-arrange is supplied
-        if (!transform.dont_arrange.has_value() && !transform.dont_arrange.value()) {
-            merged_model.add_default_instances();
-            if (init_params.action.slice) {
-                arrange_objects(merged_model, bed, arrange_cfg);
-            } else {
-                arrange_objects(merged_model, arr2::InfiniteBed{}, arrange_cfg); //??????
-            }
+        if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
+            Biz::Arrange::arrange_model_in_place(
+                merged_model,
+                get_bed_shape(config_pack),
+                Biz::Arrange::Settings{
+                    .scaled_offset = double(scale_(min_object_distance(config_pack) / 2.))
+                }
+            );
         }
 
         projects.resize(1);
@@ -145,17 +84,21 @@ bool process_transform(
                 model.add_default_instances();
             }
 
-            try {
-                if (dups > 1) {
-                    // if all input objects have defined position(s) apply duplication to the whole model
-                    duplicate(model, size_t(dups), bed, arrange_cfg);
-                } else {
-                    arrange_objects(model, bed, arrange_cfg);
+            if (dups > 1) {
+                for (ModelObject* object : model.objects) {
+                    for (uint32_t i = 1; i < dups; ++i) {
+                        object->add_instance(*object->instances.front());
+                    }
                 }
-            } catch (std::exception& ex) {
-                SPDLOG_ERROR("error: {}", ex.what());
-                return false;
             }
+
+            Biz::Arrange::arrange_model_in_place(
+                model,
+                get_bed_shape(config_pack),
+                Biz::Arrange::Settings{
+                    .scaled_offset = double(scale_(min_object_distance(config_pack) / 2.))
+                }
+            );
         }
     }
 

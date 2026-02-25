@@ -47,8 +47,6 @@ namespace Slic3r {
 class BuildVolume;
 class Print;
 
-// Set the print_volume_state of PrintObject::instances, return the total number of printable objects.
-unsigned int update_print_volume_state(Domain::Model& model, const BuildVolume& build_volume);
 
 inline void model_volumes_sort_by_id(Domain::ModelVolumePtrs &model_volumes)
 {

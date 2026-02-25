@@ -1602,12 +1602,12 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
     }
 }
 
-void SceneInteractor::transform_instances(const InstanceTransforms& transformations)
+void SceneInteractor::transform_instances(const Arrange::InstanceTransforms& transformations)
 {
     Project& project{m_projects.find(m_selected_project_id)->second.project};
 
     std::vector<Domain::ElementRef> elements;
-    for (const InstanceTransform2D& trafo : transformations) {
+    for (const Arrange::InstanceTransform2D& trafo : transformations) {
         ModelInstance* instance{
             project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
         };

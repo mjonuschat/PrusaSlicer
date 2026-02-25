@@ -1,5 +1,7 @@
 #include "Slic3r/App/CLI/ProcessActions.hpp"
 
+#include "CLIUtils.hpp"
+
 #include "Slic3r/App/CLI/LoadPrintData.hpp"
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
@@ -7,6 +9,7 @@
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/PresetUpdaterCLI.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
@@ -40,11 +43,8 @@
 
 #include <spdlog/spdlog.h>
 
-#include <arrange-wrapper/ModelArrange.hpp>
-
 #include "Slic3r/Biz/Format/OBJ.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
-#include "libslic3r/MultipleBeds.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -137,8 +137,7 @@ struct SlicingStatusChangeListener : Slicing::IStatusListener
         const Domain::SlicingId slicing_id
     ) override
     {
-        if ((status_update.code.has_value()
-             && status_update.code == Biz::Slicing::StatusCode::Finished)
+        if (status_update.code == Biz::Slicing::StatusCode::Finished
             || !status_update.errors_to_append.empty())
         {
             promise_slicing_finished.set_value(std::make_pair(slicing_id, status_update));
@@ -278,11 +277,23 @@ std::optional<std::string> slice_single_model_project(
     );
     const Project& project = project_interactor.selected_project();
 
+    // Make sure the events from the bed update are dispatched, before hooking in
+    // the slicing_status_change_listener.
+    dispatcher.dispatch_enqueued();
+
     Slicing::SlicingInteractor& slicing_interactor = project_interactor.slicing_interactor();
+    const Domain::SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
+    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
+
+    if (slicing_interactor.get_status(slicing_id) == Biz::Slicing::StatusCode::Empty) {
+        return "Nothing to print for "
+            + dest_path
+            + " . Either the print is empty or no object is fully inside the print volume.";
+    }
+
     SlicingStatusChangeListener slicing_status_change_listener;
     slicing_interactor.add_listener<Biz::Slicing::IStatusListener>(&slicing_status_change_listener);
 
-    const Domain::SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
     slicing_interactor.slice_bed(slicing_id);
 
     const Slicing::StatusUpdate& slicing_status_update = [&slicing_status_change_listener,
@@ -298,8 +309,6 @@ std::optional<std::string> slice_single_model_project(
 
         return future_slicing_status_update.get().second;
     }();
-
-    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
 
     if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
         Biz::Platform::PlatformServices& platform_services =
@@ -344,10 +353,6 @@ std::optional<std::string> slice_single_model_project(
         if (export_error.has_value()) {
             return export_error.value();
         }
-    } else if (slicing_status_update.code == Biz::Slicing::StatusCode::Empty) {
-        return "Nothing to print for "
-            + dest_path
-            + " . Either the print is empty or no object is fully inside the print volume.";
     } else {
         std::ostringstream oss;
         oss << slicing_status_update;
@@ -671,11 +676,6 @@ bool process_actions(
             return true;
         }
 
-        const Vec2crd gap{s_multiple_beds.get_bed_gap()};
-        arr2::ArrangeBed bed = arr2::to_arrange_bed(get_bed_shape(config_pack), gap);
-        arr2::ArrangeSettings arrange_cfg;
-        arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
-
         Biz::Platform::PlatformServices& platform_services =
             Biz::Platform::PlatformServices::instance();
         platform_services.set_secret_store(std::make_unique<Biz::SecretStoreDummy>());
@@ -706,15 +706,17 @@ bool process_actions(
             // is supplied); if any object has no instances, it will get a default one
             // and all instances will be rearranged (unless --dont-arrange is supplied).
             if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
+                Biz::Arrange::arrange_model_in_place(
+                    model,
+                    get_bed_shape(config_pack),
+                    Biz::Arrange::Settings{
+                        .scaled_offset = double(scale_(min_object_distance(config_pack)) / 2.)
+                    }
+                );
                 if (transform.center.has_value()) {
-                    const Vec2d c = transform.center.value();
-                    arrange_objects(
-                        model,
-                        arr2::InfiniteBed{Algorithms::Scaling::scaled(c)},
-                        arrange_cfg
+                    Algorithms::Model::center_instances_around_point(
+                        model, transform.center.value()
                     );
-                } else {
-                    arrange_objects(model, bed, arrange_cfg);
                 }
             }
 
@@ -726,6 +728,7 @@ bool process_actions(
             );
             if (slicing_errors.has_value()) {
                 boost::nowide::cerr << slicing_errors.value() << std::endl;
+                dispatcher.close();
                 return true;
             }
         }

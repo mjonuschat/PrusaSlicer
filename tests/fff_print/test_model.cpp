@@ -4,7 +4,6 @@
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Model.hpp"
-#include <arrange-wrapper/ModelArrange.hpp>
 
 #include <boost/nowide/cstdio.hpp>
 #include <boost/filesystem.hpp>
@@ -53,12 +52,10 @@ SCENARIO("Model construction", "[Model]") {
             auto pts = config.get_view().get<std::vector<Vec2d>>("bed_shape");
             Points pts_scaled(pts.size());
             std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Slic3r::scaled(pt); });
+            Vec2d centroid = unscale(Polygon(pts_scaled).centroid());
 
             model_object->add_instance();
-            arrange_objects(model,
-                            arr2::to_arrange_bed(pts_scaled, scaled(Vec2d(10, 10))),
-                            arr2::ArrangeSettings{}.set_distance_from_objects(
-                                arrange_min_distance(config)));
+            model_object->instances.front()->set_offset(Vec3d(centroid.x(), centroid.y(), 0.));
 
             ensure_on_bed(*model_object);
 			THEN("Print works?") {

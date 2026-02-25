@@ -9,9 +9,8 @@
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/Print.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
-
-#include <arrange-wrapper/ModelArrange.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -270,20 +269,26 @@ void init_print(
 		object->add_instance();
 	}
 
-    double distance = arrange_min_distance(config);
-    arr2::ArrangeSettings arrange_settings{};
-    arrange_settings.set_distance_from_objects(distance);
-
     auto pts = config.get_view().get<std::vector<Vec2d>>("bed_shape");
     Points pts_scaled(pts.size());
     std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return scaled(pt); });
 
-    arr2::ArrangeBed bed{arr2::to_arrange_bed(pts_scaled, Vec2crd{0, 0})};
     if (duplicate_count > 1) {
-        duplicate(model, duplicate_count, bed, arrange_settings);
+        for (Domain::ModelObject* object : model.objects) {
+            for (unsigned i = 1; i < duplicate_count; ++i) {
+                object->add_instance(*object->instances.front());
+            }
+        }
     }
 
-    arrange_objects(model, bed, arrange_settings);
+    Biz::Arrange::arrange_model_in_place(
+        model,
+        pts_scaled,
+        Biz::Arrange::Settings{
+            .scaled_offset = double(scaled(arrange_min_distance(config) / 2.))
+        }
+    );
+
     Algorithms::Model::center_instances_around_point(model, {100, 100});
     if (ensure_on_bed) {
         for (Domain::ModelObject* mo : model.objects) {
