@@ -103,6 +103,11 @@ public:
         return project_context().selection_bounding_box;
     }
 
+    void set_selection_bounding_box_visible(bool visible)
+    {
+        project_context().set_selection_obb_visible(visible);
+    }
+
     void clear_selection_root_children();
 
     void render_scene(Render::CommandBuffer& command_buffer);

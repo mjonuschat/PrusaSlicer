@@ -19,13 +19,16 @@ public:
 
     void set_selection_obb_node_as_dirty() { m_selection_obb_node.dirty = true; }
     void update_selection_obb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);
+    void set_selection_obb_visible(bool visible);
 
 private:
     SinkingContours m_sinking_contours;
     struct SelectionOBBNode
     {
-        Scene::Node* top_level_node{ nullptr };
+        Scene::Node* main_node{ nullptr };
+        Scene::Node* selection_node{ nullptr };
         bool dirty{ true };
+        bool visible{ true };
         Scene::Node* volume_nodes_parent{ nullptr };
     };
     SelectionOBBNode m_selection_obb_node;

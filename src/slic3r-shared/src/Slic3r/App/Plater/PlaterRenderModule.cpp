@@ -1053,6 +1053,7 @@ Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
     update_tool_selection(active_tool ? active_tool->type() : Scene::ToolType::None);
+    m_scene_presenter->set_selection_bounding_box_visible(active_tool == nullptr);
 }
 
 void PlaterRenderModule::set_navigator(Navigator* navigator)

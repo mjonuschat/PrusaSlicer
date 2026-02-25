@@ -13,17 +13,15 @@ void PlaterScenePresenterProjectContext::update_selection_obb_node(Render::Devic
         return;
 
     if (!selection_bounding_box.has_value()) {
-        if (m_selection_obb_node.top_level_node != nullptr)
-            m_selection_obb_node.top_level_node->set_enabled(false);
-        if (m_selection_obb_node.volume_nodes_parent != nullptr)
-            m_selection_obb_node.volume_nodes_parent->set_enabled(false);
+        if (m_selection_obb_node.main_node != nullptr)
+            m_selection_obb_node.main_node->set_enabled(false);
         return;
     }
-    else if (m_selection_obb_node.top_level_node != nullptr)
-        m_selection_obb_node.top_level_node->set_enabled(true);
+    else if (m_selection_obb_node.main_node != nullptr)
+        m_selection_obb_node.main_node->set_enabled(m_selection_obb_node.visible);
 
     Scene::Scene& scn = scene();
-    if (m_selection_obb_node.top_level_node == nullptr) {
+    if (m_selection_obb_node.main_node == nullptr) {
         // 
         // create the following hierarchy of nodes:
         // 
@@ -42,16 +40,17 @@ void PlaterScenePresenterProjectContext::update_selection_obb_node(Render::Devic
             bldr.set_debug_name("selection_children_aabbs");
             bldr.set_enabled(false);
         });
-        auto selection_obbs_node = builder.build().release();
-        scn.add_child(selection_obbs_node);
-        m_selection_obb_node.top_level_node = selection_obbs_node->children().front().get();
-        m_selection_obb_node.volume_nodes_parent = selection_obbs_node->children().back().get();
+        m_selection_obb_node.main_node = builder.build().release();
+        scn.add_child(m_selection_obb_node.main_node);
+        m_selection_obb_node.selection_node = m_selection_obb_node.main_node->children().front().get();
+        m_selection_obb_node.volume_nodes_parent = m_selection_obb_node.main_node->children().back().get();
     }
 
-    DEBUG_ASSERT(m_selection_obb_node.top_level_node != nullptr);
+    DEBUG_ASSERT(m_selection_obb_node.main_node != nullptr);
+    DEBUG_ASSERT(m_selection_obb_node.selection_node != nullptr);
     DEBUG_ASSERT(m_selection_obb_node.volume_nodes_parent != nullptr);
     // updates the selection aabb node
-    Scene::update_obb_node(*m_selection_obb_node.top_level_node, *selection_bounding_box, 0.25);
+    Scene::update_obb_node(*m_selection_obb_node.selection_node, *selection_bounding_box, 0.25);
 
     const Biz::Scene::ObjectSelection& object_selection = project_interactor.scene_interactor().object_selection();
     if (object_selection.mode == Biz::Scene::SelectionMode::Volume) {
@@ -101,6 +100,13 @@ void PlaterScenePresenterProjectContext::update_selection_obb_node(Render::Devic
         m_selection_obb_node.volume_nodes_parent->set_enabled(false);
 
     m_selection_obb_node.dirty = false;
+}
+
+void PlaterScenePresenterProjectContext::set_selection_obb_visible(bool visible)
+{
+    m_selection_obb_node.visible = visible;
+    if (m_selection_obb_node.main_node != nullptr)
+        m_selection_obb_node.main_node->set_enabled(visible);
 }
 
 } // namespace Slic3r::App::Plater
