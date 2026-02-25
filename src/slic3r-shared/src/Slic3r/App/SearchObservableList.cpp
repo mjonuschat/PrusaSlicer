@@ -136,14 +136,7 @@ void SearchObservableList::invalidate_source_items()
             }
 
             m_source_items.push_back(item.print_item);
-
-            std::transform(
-                item.tool_overrides.cbegin(),
-                item.tool_overrides.cend(),
-                std::back_inserter(m_source_items),
-                [](const Biz::PrintToolItem::ToolOverride& tool_override)
-                    -> const Domain::ConfigItem* { return tool_override.first; }
-            );
+            // Ignore Tool overrides
         }
     };
 
