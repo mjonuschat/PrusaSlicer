@@ -612,7 +612,7 @@ TEST_CASE("Preset updater")
 
         bool allowed_warnings = server_version.empty(); // empty server would trigger warnings
         presetUpdater.start({result_type, result_version, allowed_warnings});
-        printf("Case: %s; %s; %s; %s\n",resources_version.c_str() ,server_version.c_str() ,staged_version.c_str() , installed_version.c_str() );
+        //printf("Case: %s; %s; %s; %s\n",resources_version.c_str() ,server_version.c_str() ,staged_version.c_str() , installed_version.c_str() );
         REQUIRE(wait_for_updater(
             presetUpdater,
             20s,

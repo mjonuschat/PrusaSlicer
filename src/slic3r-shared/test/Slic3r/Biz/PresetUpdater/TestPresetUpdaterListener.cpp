@@ -56,9 +56,11 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
 {
     
     if (!warnings.empty()) {
-        nlohmann::json j = warnings;
-        printf(j.dump(4).c_str());
-        printf("\n");
+        // This is being commented out due to too much noise in the channel.
+        // It may potentinally hide some problems, but it should be generally ok to hide.
+        //nlohmann::json j = warnings;
+        //printf(j.dump(4).c_str());
+        //printf("\n");
     }
     if (!m_expected.allow_warnings)
     {
