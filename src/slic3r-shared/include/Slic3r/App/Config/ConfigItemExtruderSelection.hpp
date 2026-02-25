@@ -21,7 +21,7 @@ namespace Slic3r::App {
 class ConfigItemExtruderSelection :
     public ConfigItemControl,
     public Yoga::ComboBox,
-    public Biz::IListObserver<Biz::Preset::ToolConfigItemObservableList>
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     ConfigItemExtruderSelection(
@@ -31,10 +31,13 @@ public:
         size_t cbi_index
     );
 
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
+
 protected:
-    void on_inserted(const Biz::Preset::ToolConfigItemObservableList& data, size_t index) override;
-    void on_removed(const Biz::IndexRange& index_range) override;
-    void on_reset() override;
     void update_size();
 
     void on_data_update() override;
@@ -42,10 +45,10 @@ protected:
 
 private:
     Biz::ListenerScope<
-        Biz::IListObserver<Biz::Preset::ToolConfigItemObservableList>,
-        Biz::Preset::ToolConfigItemCompoundObservableList,
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
         ConfigItemExtruderSelection>
-        m_tool_items_list_observer_scope;
+        m_preset_changed_scope;
 
     Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index = 0;

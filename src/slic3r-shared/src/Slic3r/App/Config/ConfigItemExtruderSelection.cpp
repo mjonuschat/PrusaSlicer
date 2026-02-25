@@ -20,7 +20,7 @@ ConfigItemExtruderSelection::ConfigItemExtruderSelection(
 ) :
     ConfigItemControl(index, config_item),
     ComboBox("ConfigItemCombo"),
-    m_tool_items_list_observer_scope(project_interactor()->preset_interactor().tool_items(), *this),
+    m_preset_changed_scope(project_interactor()->preset_interactor(), *this),
     m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
@@ -43,22 +43,18 @@ ConfigItemExtruderSelection::ConfigItemExtruderSelection(
     };
 }
 
-void ConfigItemExtruderSelection::on_inserted(
-    const Biz::Preset::ToolConfigItemObservableList& data,
-    size_t index
+void ConfigItemExtruderSelection::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
 )
 {
-    update_size();
-}
-
-void ConfigItemExtruderSelection::on_removed(const Biz::IndexRange& index_range)
-{
-    update_size();
-}
-
-void ConfigItemExtruderSelection::on_reset()
-{
-    update_size();
+    if (project_interactor()->selected_project_id() == project_id
+        && project_interactor()->selected_config_container_id() == config_container_id
+        && type == Biz::Preset::PresetItemType::PrinterPreset)
+    {
+        update_size();
+    }
 }
 
 void ConfigItemExtruderSelection::update_size()
