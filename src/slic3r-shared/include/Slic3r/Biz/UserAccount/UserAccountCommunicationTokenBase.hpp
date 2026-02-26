@@ -85,7 +85,6 @@ protected:
 private:
     void on_token_timer();
     void on_slave_read_timer();
-    void on_polling_timer();
     void on_after_race_lost_timer();
 
     void set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, const std::string& next_token_timeout);
@@ -103,7 +102,6 @@ private:
 
     std::string m_username;
 
-    Platform::TimerQueue::TimerID m_polling_timer_id;
     Platform::TimerQueue::TimerID m_token_timer_id;
     Platform::TimerQueue::TimerID m_slave_read_timer_id;
     Platform::TimerQueue::TimerID m_after_race_lost_timer_id;

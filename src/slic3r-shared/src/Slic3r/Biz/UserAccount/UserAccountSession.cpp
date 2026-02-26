@@ -64,14 +64,10 @@ void UserAccountSession::process_action_queue()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
-        if (!m_processing_enabled)
+        if (!m_processing_enabled) {
             return;
-        // SPDLOG_INFO("action queue: {} {}", m_priority_action_queue.size(), m_action_queue.size());
-        if (m_priority_action_queue.empty() && m_action_queue.empty()) {
-            // Update printers periodically.
-            // ConnectStatus needs ConnectPrinterModels to be called once to has effect.
-            enqueue_action_inner({UserAccountActionID::ConnectStatus, nullptr, nullptr, {}});
         }
+        // SPDLOG_INFO("action queue: {} {}", m_priority_action_queue.size(), m_action_queue.size());
     }
     process_action_queue_inner();
 }

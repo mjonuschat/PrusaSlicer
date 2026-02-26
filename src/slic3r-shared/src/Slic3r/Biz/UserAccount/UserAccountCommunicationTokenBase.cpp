@@ -193,15 +193,10 @@ void UserAccountCommunicationTokenBase::stop_all_timers()
     if (timer_queue.is_timer_running(m_after_race_lost_timer_id)) {
         timer_queue.cancel_timer(m_after_race_lost_timer_id);
     }
-    if (timer_queue.is_timer_running(m_polling_timer_id)) {
-        timer_queue.cancel_timer(m_polling_timer_id);
-    }
 }
 
 void UserAccountCommunicationTokenBase::init_session_thread()
 {
-    m_polling_timer_id = Platform::PlatformServices::instance().timer_queue().set_timer(std::chrono::milliseconds(10'000), std::bind(&UserAccountCommunicationTokenBase::on_polling_timer, this), false);
-
     m_thread = JThread::JThread(
         [&](JThread::StopToken stop_token)
         {
@@ -299,14 +294,6 @@ void UserAccountCommunicationTokenBase::enqueue_refresh_race(const std::string& 
     }
     // At this point, last master did not renew the tokens, behave like master
     m_session.enqueue_refresh_race(refresh_token);
-    wakeup_session_thread();
-}
-
-void UserAccountCommunicationTokenBase::on_polling_timer()
-{
-    if (!m_window_is_active) {
-        return;
-    }
     wakeup_session_thread();
 }
 
