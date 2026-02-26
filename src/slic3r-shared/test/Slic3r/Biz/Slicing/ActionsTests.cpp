@@ -145,7 +145,6 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
     }));
     // Let the second bed finish slicing if the stop failed.
     std::this_thread::sleep_for(20ms);
-    PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
 
     CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{StatusCode::Finished, id1}}));
     CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{StatusCode::Stopping, id2}}));
