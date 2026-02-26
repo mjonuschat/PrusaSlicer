@@ -505,6 +505,69 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 
         if (!this->has_same_shrinkage_compensations())
             warnings->emplace_back("_FILAMENT_SHRINKAGE_DIFFER");
+
+        // This warns at slice time if extrusion widths were changed such that existing mm overlap values
+        // are now outside the valid range (-100% to 80%/100% of reference width)
+        {
+            auto check_overlap_bounds = [&](const std::string &opt_key, double ref_width, double min_pct,
+                                            double max_pct) -> bool
+            {
+                for (const PrintObject *obj : m_objects)
+                {
+                    for (const PrintRegion &region : obj->all_regions())
+                    {
+                        const auto *opt = region.config().option<ConfigOptionFloatOrPercent>(opt_key);
+                        if (opt && !opt->percent && ref_width > 0.01)
+                        {
+                            double min_mm = ref_width * min_pct / 100.0;
+                            double max_mm = ref_width * max_pct / 100.0;
+                            if (opt->value < min_mm - 0.001 || opt->value > max_mm + 0.001)
+                                return true; // Out of bounds
+                        }
+                    }
+                }
+                return false;
+            };
+
+            // Helper to resolve extrusion width (handles %, absolute, and auto/0)
+            auto resolve_width = [&](const std::string &width_key, double nozzle_diam) -> double
+            {
+                if (!m_objects.empty() && !m_objects.front()->all_regions().empty())
+                {
+                    const PrintRegion &region = m_objects.front()->all_regions().front();
+                    const auto *width_opt = region.config().option<ConfigOptionFloatOrPercent>(width_key);
+                    if (width_opt)
+                    {
+                        if (width_opt->percent)
+                            return nozzle_diam * width_opt->value / 100.0;
+                        else if (width_opt->value > 0)
+                            return width_opt->value;
+                    }
+                }
+                // Auto width (0) - estimate based on nozzle
+                return nozzle_diam * 1.125;
+            };
+
+            // Get nozzle diameter
+            double nozzle_diameter = m_config.nozzle_diameter.get_at(0);
+            if (nozzle_diameter < 0.1)
+                nozzle_diameter = 0.4; // fallback
+
+            // Resolve reference widths
+            double perimeter_width = resolve_width("perimeter_extrusion_width", nozzle_diameter);
+            double bridge_width = resolve_width("bridge_extrusion_width", nozzle_diameter);
+
+            bool overlap_out_of_bounds = false;
+            overlap_out_of_bounds |= check_overlap_bounds("external_perimeter_overlap", perimeter_width, -100.0, 100.0);
+            overlap_out_of_bounds |= check_overlap_bounds("perimeter_perimeter_overlap", perimeter_width, -100.0, 80.0);
+            overlap_out_of_bounds |= check_overlap_bounds("infill_overlap", perimeter_width, -100.0, 100.0);
+            overlap_out_of_bounds |= check_overlap_bounds("bridge_infill_perimeter_overlap", perimeter_width, -100.0,
+                                                          100.0);
+            overlap_out_of_bounds |= check_overlap_bounds("bridge_infill_overlap", bridge_width, -100.0, 80.0);
+
+            if (overlap_out_of_bounds)
+                warnings->emplace_back("_OVERLAP_OUT_OF_BOUNDS");
+        }
     }
 
     if (m_objects.empty())

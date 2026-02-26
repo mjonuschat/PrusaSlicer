@@ -59,8 +59,12 @@ public:
     void    toggle_field(const std::string& field_key, const bool toggle, int opt_index = -1);
 
     // FFF print
-    void    update_print_fff_config(DynamicPrintConfig* config, const bool is_global_config = false);
-    void    toggle_print_fff_options(DynamicPrintConfig* config);
+    void update_print_fff_config(
+        DynamicPrintConfig *config,
+        const bool is_global_config = false,
+        const std::string &changed_opt_key = ""
+    );
+    void toggle_print_fff_options(DynamicPrintConfig *config);
 
     // SLA
     void    toggle_print_sla_options(DynamicPrintConfig* config);
@@ -71,6 +75,13 @@ public:
         m_is_initialized_support_material_overhangs_queried = true;
         m_support_material_overhangs_queried = queried;
     }
+
+    static void approve_extrusion_width(const std::string &width_key, double width_mm);
+    static void clear_approved_widths();
+
+    // Suppress extrusion width validation during initial app load
+    // (user hasn't configured anything yet - don't warn about defaults)
+    static void set_suppress_extrusion_width_warnings(bool suppress);
 };
 
 } // GUI
