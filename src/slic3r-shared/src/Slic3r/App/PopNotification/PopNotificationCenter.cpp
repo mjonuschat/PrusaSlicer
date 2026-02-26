@@ -803,7 +803,9 @@ void PopNotificationCenter::on_print_host_info(
         payload.target = msg;
         if (m_removable_drive_service.is_path_on_removable_drive(boost::filesystem::path(msg))) {
             payload.eject_fn = [this](const boost::filesystem::path& path)
-            { m_removable_drive_service.eject_drive(path); };
+                { 
+                    m_removable_drive_service.eject_drive(path); 
+                };
         }
     }
     if (tag == PrintHostJobInfoTag::OperationType && msg == "export") { // todo: also msg "storage"
