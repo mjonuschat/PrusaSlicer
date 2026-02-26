@@ -460,7 +460,7 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     m_left_bar = LeftBar::Create(this, &m_tabs_bar_menus);
 
     init_printer_page(project_interactor);
-    init_projects_page();
+    //init_projects_page();
     init_slicing_page();
     init_printables_page(project_interactor);
     init_preferences_button();
@@ -535,8 +535,9 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 
 void MainFrame::init_projects_page()
 {
-    wxPanel* projects_page = tmp_panel(m_left_bar, static_cast<int>(LeftBarTabs::Projects), from_u8("Here will be shown all projects"));
-    m_left_bar->AddNewPage(projects_page, WX::_L("Projects"), "lb_projects");
+    PANIC();
+    //wxPanel* projects_page = tmp_panel(m_left_bar, static_cast<int>(LeftBarTabs::Projects), from_u8("Here will be shown all projects"));
+    //m_left_bar->AddNewPage(projects_page, WX::_L("Projects"), "lb_projects");
 }
 
 void MainFrame::init_slicing_page()
