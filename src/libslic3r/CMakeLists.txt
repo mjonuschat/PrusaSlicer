@@ -334,6 +334,8 @@ set(SLIC3R_SOURCES
     PrintObjectSlice.cpp
     PrintRegion.cpp
     PointGrid.hpp
+    PreciseWalls.cpp
+    PreciseWalls.hpp
     PNGReadWrite.hpp
     PNGReadWrite.cpp
     QuadricEdgeCollapse.cpp

@@ -594,6 +594,9 @@ static std::vector<std::string> s_Preset_print_options {
     "wipe_tower_max_purge_speed",
 
     "detect_narrow_internal_solid_infill",
+
+    "external_perimeter_overlap",
+    "perimeter_perimeter_overlap",    
 };
 
 static std::vector<std::string> s_Preset_filament_options {

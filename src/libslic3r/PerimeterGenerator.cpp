@@ -31,6 +31,7 @@
 #include "Point.hpp"
 #include "Polygon.hpp"
 #include "Polyline.hpp"
+#include "PreciseWalls.hpp"
 #include "PrintConfig.hpp"
 #include "ShortestPath.hpp"
 #include "Surface.hpp"
@@ -1238,11 +1239,23 @@ void PerimeterGenerator::process_classic(
 {
     // other perimeters
     coord_t perimeter_width         = params.perimeter_flow.scaled_width();
-    coord_t perimeter_spacing       = params.perimeter_flow.scaled_spacing();
+    // perimeter/perimeter overlap only applies with 3+ perimeters
+    coord_t perimeter_spacing = PreciseWalls::calculate_perimeter_spacing(
+        params.perimeter_flow,
+        PreciseWalls::get_effective_perimeter_overlap(
+            params.config.perimeter_perimeter_overlap, params.config.perimeters
+        )
+    );
     // external perimeters
     coord_t ext_perimeter_width     = params.ext_perimeter_flow.scaled_width();
     coord_t ext_perimeter_spacing   = params.ext_perimeter_flow.scaled_spacing();
-    coord_t ext_perimeter_spacing2  = scaled<coord_t>(0.5f * (params.ext_perimeter_flow.spacing() + params.perimeter_flow.spacing()));
+    // external/perimeter overlap only applies with 2+ perimeters
+    coord_t ext_perimeter_spacing2 = PreciseWalls::calculate_external_spacing(
+        params.ext_perimeter_flow, params.perimeter_flow,
+        PreciseWalls::get_effective_external_overlap(
+            params.config.external_perimeter_overlap, params.config.perimeters
+        )
+    );
     // solid infill
     coord_t solid_infill_spacing    = params.solid_infill_flow.scaled_spacing();
     

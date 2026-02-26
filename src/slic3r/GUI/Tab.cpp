@@ -1132,7 +1132,10 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         return;
     }
 
+    // Track which key changed for selective validation in update()
+    m_last_changed_opt_key = opt_key;
     update();
+    m_last_changed_opt_key.clear();
 }
 
 // Show/hide the 'purging volumes' button
@@ -1836,6 +1839,8 @@ void TabPrint::build()
         optgroup->append_single_option_line("automatic_extrusion_widths");
 
         optgroup = page->new_optgroup(L("Overlap"));
+        optgroup->append_single_option_line("external_perimeter_overlap");
+        optgroup->append_single_option_line("perimeter_perimeter_overlap");        
         optgroup->append_single_option_line("infill_overlap");
         optgroup->append_single_option_line("bridge_density");
 
@@ -2003,7 +2008,7 @@ void TabPrint::update()
         m_config_manipulation.initialize_support_material_overhangs_queried(is_user_and_saved_preset && support_material_overhangs_queried);
     }
 
-    m_config_manipulation.update_print_fff_config(m_config, true);
+    m_config_manipulation.update_print_fff_config(m_config, true, m_last_changed_opt_key);
 
     update_description_lines();
     Layout();

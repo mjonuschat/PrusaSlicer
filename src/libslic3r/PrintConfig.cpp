@@ -2316,6 +2316,34 @@ void PrintConfigDef::init_fff_params()
     // def->mode = comAdvanced;
     // def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("external_perimeter_overlap", coFloatOrPercent);
+    def->label = L("Ext. perimeter/perimeter overlap");
+    def->category = L("Advanced");
+    def->tooltip = L("Controls overlap between external perimeter and first inner perimeter. "
+                     "Extruded beads have rounded edges that must overlap for proper bonding. "
+                     "The default 10.73% is derived from the geometric constant (1 - π/4) / 2, "
+                     "which accounts for the semicircular bead cross-section. The overlap amount "
+                     "is calculated from layer height: at 10.73%, beads bond optimally; at 100%, "
+                     "beads completely overlap. Requires at least 2 perimeters.");
+    def->sidetext = L("mm or %");
+    def->ratio_over = "layer_height";
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloatOrPercent(10.73, true));
+
+    def = this->add("perimeter_perimeter_overlap", coFloatOrPercent);
+    def->label = L("Perimeter/perimeter overlap");
+    def->category = L("Advanced");
+    def->tooltip = L("Controls overlap between all internal perimeters. "
+                     "Extruded beads have rounded edges that must overlap for proper bonding. "
+                     "The default 10.73% is derived from the geometric constant (1 - π/4) / 2, "
+                     "which accounts for the semicircular bead cross-section. The overlap amount "
+                     "is calculated from layer height: at 10.73%, beads bond optimally; at 100%, "
+                     "beads completely overlap. Requires at least 3 perimeters. Maximum 80%.");
+    def->sidetext = L("mm or %");
+    def->ratio_over = "layer_height";
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloatOrPercent(10.73, true));
+
     def = this->add("infill_overlap", coFloatOrPercent);
     def->label = L("Infill/perimeters overlap");
     def->category = L("Advanced");
