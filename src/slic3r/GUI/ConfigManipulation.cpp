@@ -20,6 +20,31 @@
 namespace Slic3r {
 namespace GUI {
 
+// These track widths that have been explicitly approved by the user to suppress validation warnings
+static std::map<std::string, double> s_approved_narrow_widths; // below 60% of nozzle
+static std::map<std::string, double> s_approved_wide_widths;   // above 150% of nozzle
+
+// Flag to suppress extrusion width warnings during initial app load
+static bool s_suppress_extrusion_width_warnings = false;
+
+void ConfigManipulation::set_suppress_extrusion_width_warnings(bool suppress)
+{
+    s_suppress_extrusion_width_warnings = suppress;
+}
+
+void ConfigManipulation::approve_extrusion_width(const std::string &width_key, double width_mm)
+{
+    // Pre-approve both narrow and wide for this key at this value
+    s_approved_narrow_widths[width_key] = width_mm;
+    s_approved_wide_widths[width_key] = width_mm;
+}
+
+void ConfigManipulation::clear_approved_widths()
+{
+    s_approved_narrow_widths.clear();
+    s_approved_wide_widths.clear();
+}
+
 void ConfigManipulation::apply(DynamicPrintConfig* config, DynamicPrintConfig* new_config)
 {
     bool modified = false;
@@ -99,7 +124,8 @@ std::optional<DynamicPrintConfig> handle_automatic_extrusion_widths(const Dynami
     return std::nullopt;
 }
 
-void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, const bool is_global_config)
+void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, const bool is_global_config,
+                                 const std::string &changed_opt_key)
 {
     // #ys_FIXME_to_delete
     //! Temporary workaround for the correct updates of the TextCtrl (like "layer_height"):
@@ -108,6 +134,21 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
     // let check if this process is already started.
     if (is_msg_dlg_already_exist)
         return;
+
+    // Determine if we should validate extrusion widths
+    // Only validate when the changed key is an extrusion width or nozzle_diameter
+    static const std::set<std::string> extrusion_width_keys = {"extrusion_width",
+                                                               "first_layer_extrusion_width",
+                                                               "perimeter_extrusion_width",
+                                                               "external_perimeter_extrusion_width",
+                                                               "infill_extrusion_width",
+                                                               "solid_infill_extrusion_width",
+                                                               "top_infill_extrusion_width",
+                                                               "support_material_extrusion_width",
+                                                               "support_material_interface_extrusion_width",
+                                                               "bridge_extrusion_width",
+                                                               "nozzle_diameter"};
+    bool should_validate_extrusion_widths = changed_opt_key.empty() || extrusion_width_keys.count(changed_opt_key) > 0;
 
     // layer_height shouldn't be equal to zero
     if (config->opt_float("layer_height") < EPSILON)
@@ -133,6 +174,376 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
         apply(config, &new_conf);
         is_msg_dlg_already_exist = false;
     }
+
+    // Helper lambda to clamp overlap values and warn user (uses WarningDialog style)
+    auto clamp_overlap = [&](const std::string &opt_key, const std::string &ref_width_key, double min_percent,
+                             double max_percent, const std::string &label, const std::string &ref_width_label)
+    {
+        auto *overlap_opt = config->option<ConfigOptionFloatOrPercent>(opt_key);
+        if (!overlap_opt)
+            return;
+
+        // Get reference width for mm clamping
+        // Note: nozzle_diameter is in printer config, not print config
+        const DynamicPrintConfig &printer_config = wxGetApp().preset_bundle->printers.get_selected_preset().config;
+        auto *nozzle_opt = printer_config.option<ConfigOptionFloats>("nozzle_diameter");
+        double nozzle_diam = (nozzle_opt && !nozzle_opt->values.empty()) ? nozzle_opt->values[0] : 0.4;
+
+        double ref_width = 0.0;
+        auto *width_opt = config->option<ConfigOptionFloatOrPercent>(ref_width_key);
+        if (width_opt)
+        {
+            if (width_opt->percent)
+            {
+                // Width is percentage of nozzle - resolve it
+                ref_width = nozzle_diam * width_opt->value / 100.0;
+            }
+            else if (width_opt->value > 0)
+            {
+                ref_width = width_opt->value;
+            }
+        }
+        // If width is 0 (auto) or very small, use nozzle diameter as reference
+        if (ref_width < 0.1)
+        {
+            ref_width = nozzle_diam;
+        }
+
+        double min_mm = ref_width * min_percent / 100.0;
+        double max_mm = ref_width * max_percent / 100.0;
+
+        bool needs_clamp = false;
+        bool exceeded_max = false;
+        double new_value = overlap_opt->value;
+        bool new_percent = overlap_opt->percent;
+
+        if (overlap_opt->percent)
+        {
+            // Percentage mode
+            if (overlap_opt->value > max_percent)
+            {
+                new_value = max_percent;
+                needs_clamp = true;
+                exceeded_max = true;
+            }
+            else if (overlap_opt->value < min_percent)
+            {
+                new_value = min_percent;
+                needs_clamp = true;
+                exceeded_max = false;
+            }
+        }
+        else
+        {
+            // Absolute mm mode
+            if (overlap_opt->value > max_mm + 0.001)
+            {
+                new_value = max_mm;
+                needs_clamp = true;
+                exceeded_max = true;
+            }
+            else if (overlap_opt->value < min_mm - 0.001)
+            {
+                new_value = min_mm;
+                needs_clamp = true;
+                exceeded_max = false;
+            }
+        }
+
+        if (needs_clamp)
+        {
+            // Build descriptive message
+            wxString limit_desc;
+            if (exceeded_max)
+            {
+                if (max_percent == 100.0)
+                    limit_desc = wxString::Format(_L("cannot be greater than %s"), ref_width_label);
+                else
+                    limit_desc = wxString::Format(_L("cannot be greater than %d%% of %s"), (int) max_percent,
+                                                  ref_width_label);
+            }
+            else
+            {
+                if (min_percent == -100.0)
+                    limit_desc = wxString::Format(_L("cannot be less than -%s (negative %s)"), ref_width_label,
+                                                  ref_width_label);
+                else
+                    limit_desc = wxString::Format(_L("cannot be less than %d%% of %s"), (int) min_percent,
+                                                  ref_width_label);
+            }
+
+            wxString new_value_str;
+            if (new_percent)
+                new_value_str = wxString::Format("%.2f%%", new_value);
+            else
+                new_value_str = wxString::Format("%.3f mm", new_value);
+
+            wxString msg_text = wxString::Format(_L("%s %s.\n\nThe value has been set to %s."), label, limit_desc,
+                                                 new_value_str);
+
+            WarningDialog dialog(m_msg_dlg_parent, msg_text, _L("Parameter validation") + ": " + opt_key, wxOK);
+            DynamicPrintConfig new_conf = *config;
+            new_conf.set_key_value(opt_key, new ConfigOptionFloatOrPercent(new_value, new_percent));
+            is_msg_dlg_already_exist = true;
+            dialog.ShowModal();
+            apply(config, &new_conf);
+            is_msg_dlg_already_exist = false;
+        }
+    };
+
+    // Clamp external perimeter overlap: -100% to 100%
+    clamp_overlap("external_perimeter_overlap", "perimeter_extrusion_width", -100.0, 100.0,
+                  _L("External perimeter/perimeter overlap").ToStdString(),
+                  _L("Perimeter extrusion width").ToStdString());
+
+    // Clamp perimeter/perimeter overlap: -100% to 80%
+    clamp_overlap("perimeter_perimeter_overlap", "perimeter_extrusion_width", -100.0, 80.0,
+                  _L("Perimeter/perimeter overlap").ToStdString(), _L("Perimeter extrusion width").ToStdString());
+
+    // Clamp infill/perimeters overlap: -100% to 100%
+    clamp_overlap("infill_overlap", "perimeter_extrusion_width", -100.0, 100.0,
+                  _L("Infill/perimeters overlap").ToStdString(), _L("Perimeter extrusion width").ToStdString());
+
+    // Clamp bridge infill/perimeters overlap: -100% to 100%
+    clamp_overlap("bridge_infill_perimeter_overlap", "perimeter_extrusion_width", -100.0, 100.0,
+                  _L("Bridge infill/perimeters overlap").ToStdString(), _L("Perimeter extrusion width").ToStdString());
+
+    // Clamp bridge infill overlap: -100% to 80%
+    clamp_overlap("bridge_infill_overlap", "bridge_extrusion_width", -100.0, 80.0,
+                  _L("Bridge infill overlap").ToStdString(), _L("Bridge extrusion width").ToStdString());
+
+    // Note: s_approved_narrow_widths and s_approved_wide_widths are now file-scope statics (s_approved_*)
+    // to allow pre-approval via ConfigManipulation::approve_extrusion_width()
+
+    // BOSS: State for "Yes to All" / "No to All" across all extrusion width validations
+    bool approve_all_widths = false;
+    bool reset_all_widths = false;
+
+    // Helper lambda to validate extrusion width against its corresponding nozzle
+    auto validate_extrusion_width =
+        [&](const std::string &width_key, const std::string &extruder_key, const std::string &label)
+    {
+        if (is_msg_dlg_already_exist)
+            return;
+
+        // Skip validation during initial app load (user hasn't configured anything yet)
+        if (s_suppress_extrusion_width_warnings)
+            return;
+
+        // Skip validation if the changed key is not related to extrusion widths
+        // This prevents warnings when user changes unrelated settings like "perimeters"
+        if (!should_validate_extrusion_widths)
+            return;
+
+        auto *width_opt = config->option<ConfigOptionFloatOrPercent>(width_key);
+        if (!width_opt)
+            return;
+
+        // Get the extruder index (1-based in config, convert to 0-based for nozzle array)
+        int extruder_idx = 0;
+        if (!extruder_key.empty())
+        {
+            auto *extruder_opt = config->option<ConfigOptionInt>(extruder_key);
+            if (extruder_opt && extruder_opt->value > 0)
+                extruder_idx = extruder_opt->value - 1;
+        }
+
+        // Get nozzle diameter from printer config (not print config)
+        // Must use get_edited_preset() not get_selected_preset() because changes are in
+        // the edited preset until saved. Selected preset has the old/saved values.
+        const DynamicPrintConfig &printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+        auto *nozzle_opt = printer_config.option<ConfigOptionFloats>("nozzle_diameter");
+        if (!nozzle_opt || nozzle_opt->values.empty())
+            return;
+
+        double nozzle_diam = nozzle_opt->values[std::min(extruder_idx, (int) nozzle_opt->values.size() - 1)];
+        if (nozzle_diam < 0.1)
+            return; // Invalid nozzle
+
+        // Calculate the actual width in mm
+        double width_mm = 0.0;
+        if (width_opt->percent)
+        {
+            width_mm = nozzle_diam * width_opt->value / 100.0;
+        }
+        else
+        {
+            width_mm = width_opt->value;
+        }
+
+        // If width is effectively 0 (< 0.001), normalize to 0 (auto)
+        if (width_mm < 0.001)
+        {
+            if (width_opt->value != 0.0)
+            {
+                // Update UI to show 0
+                DynamicPrintConfig new_conf = *config;
+                new_conf.set_key_value(width_key, new ConfigOptionFloatOrPercent(0.0, false));
+                apply(config, &new_conf);
+            }
+            return;
+        }
+
+        double min_width = nozzle_diam * 0.6; // 60% of nozzle
+        double max_width = nozzle_diam * 1.5; // 150% of nozzle
+
+        // Check if width is within valid range (60% - 150%)
+        bool is_too_narrow = width_mm < min_width - 0.001;
+        bool is_too_wide = width_mm > max_width + 0.001;
+
+        if (!is_too_narrow && !is_too_wide)
+        {
+            // Width is valid - remove from approved lists if it was there
+            s_approved_narrow_widths.erase(width_key);
+            s_approved_wide_widths.erase(width_key);
+            return;
+        }
+
+        // Check if this exact value was already approved
+        if (is_too_narrow)
+        {
+            auto it = s_approved_narrow_widths.find(width_key);
+            if (it != s_approved_narrow_widths.end() && std::abs(it->second - width_mm) < 0.0001)
+            {
+                return; // Already approved
+            }
+        }
+        if (is_too_wide)
+        {
+            auto it = s_approved_wide_widths.find(width_key);
+            if (it != s_approved_wide_widths.end() && std::abs(it->second - width_mm) < 0.0001)
+            {
+                return; // Already approved
+            }
+        }
+
+        // Build warning message
+        wxString width_str;
+        if (width_opt->percent)
+            width_str = wxString::Format("%.0f%%", width_opt->value);
+        else
+            width_str = wxString::Format("%.3f mm", width_opt->value);
+
+        wxString msg_text;
+        if (is_too_narrow)
+        {
+            msg_text = wxString::Format(_L("%s is set to %s, which is below 60%% of the nozzle diameter (%.2f mm).\n\n"
+                                           "Extrusion widths below 60%% of nozzle size may cause printing issues.\n\n"
+                                           "Do you want to keep this value?\n"
+                                           "Select YES to keep %s,\n"
+                                           "or NO to reset to %.2f mm (nozzle diameter)."),
+                                        label, width_str, nozzle_diam, width_str, nozzle_diam);
+        }
+        else
+        {
+            msg_text = wxString::Format(_L("%s is set to %s, which exceeds 150%% of the nozzle diameter (%.2f mm).\n\n"
+                                           "Extrusion widths above 150%% of nozzle size may cause printing issues.\n\n"
+                                           "Do you want to keep this value?\n"
+                                           "Select YES to keep %s,\n"
+                                           "or NO to reset to %.2f mm (nozzle diameter)."),
+                                        label, width_str, nozzle_diam, width_str, nozzle_diam);
+        }
+
+        // BOSS: Handle "to All" state from a previous iteration
+        bool keep = false;
+        if (approve_all_widths)
+            keep = true;
+        else if (reset_all_widths)
+            keep = false;
+        else
+        {
+            // Show 4-button dialog: Yes / Yes to All / No / No to All
+            enum
+            {
+                ID_YES_TO_ALL = wxID_HIGHEST + 1,
+                ID_NO_TO_ALL
+            };
+
+            wxDialog dialog(m_msg_dlg_parent, wxID_ANY, _L("Parameter validation") + ": " + width_key,
+                            wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
+            wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
+            wxBoxSizer *btn_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+            sizer->Add(new wxStaticText(&dialog, wxID_ANY, msg_text), 0, wxALL, 15);
+
+            btn_sizer->AddStretchSpacer();
+            auto add_btn = [&](wxWindowID id, const wxString &lbl, bool focus)
+            {
+                wxButton *btn = new wxButton(&dialog, id, lbl);
+                if (focus)
+                {
+                    btn->SetFocus();
+                    btn->SetDefault();
+                }
+                btn_sizer->Add(btn, 0, wxLEFT, 5);
+                btn->Bind(wxEVT_BUTTON, [&dialog, id](wxCommandEvent &) { dialog.EndModal(id); });
+            };
+            add_btn(wxID_YES, _L("Yes"), true);
+            add_btn(ID_YES_TO_ALL, _L("Yes to All"), false);
+            add_btn(wxID_NO, _L("No"), false);
+            add_btn(ID_NO_TO_ALL, _L("No to All"), false);
+
+            sizer->Add(btn_sizer, 0, wxEXPAND | wxALL, 10);
+            dialog.SetSizerAndFit(sizer);
+            wxGetApp().UpdateDlgDarkUI(&dialog);
+            dialog.CenterOnParent();
+
+            is_msg_dlg_already_exist = true;
+            int result = dialog.ShowModal();
+            is_msg_dlg_already_exist = false;
+
+            if (result == ID_YES_TO_ALL)
+            {
+                approve_all_widths = true;
+                keep = true;
+            }
+            else if (result == ID_NO_TO_ALL)
+            {
+                reset_all_widths = true;
+                keep = false;
+            }
+            else
+                keep = (result == wxID_YES);
+        }
+
+        if (keep)
+        {
+            // User approved this out-of-range width - remember it
+            if (is_too_narrow)
+                s_approved_narrow_widths[width_key] = width_mm;
+            else
+                s_approved_wide_widths[width_key] = width_mm;
+        }
+        else
+        {
+            // User rejected - reset to nozzle diameter
+            s_approved_narrow_widths.erase(width_key);
+            s_approved_wide_widths.erase(width_key);
+            DynamicPrintConfig new_conf = *config;
+            new_conf.set_key_value(width_key, new ConfigOptionFloatOrPercent(nozzle_diam, false));
+            apply(config, &new_conf);
+        }
+    };
+
+    // Validate all extrusion widths against their corresponding nozzles
+    validate_extrusion_width("extrusion_width", "", _L("Default extrusion width").ToStdString());
+    validate_extrusion_width("first_layer_extrusion_width", "", _L("First layer extrusion width").ToStdString());
+    validate_extrusion_width("perimeter_extrusion_width", "perimeter_extruder",
+                             _L("Perimeter extrusion width").ToStdString());
+    validate_extrusion_width("external_perimeter_extrusion_width", "perimeter_extruder",
+                             _L("External perimeter extrusion width").ToStdString());
+    validate_extrusion_width("infill_extrusion_width", "infill_extruder", _L("Infill extrusion width").ToStdString());
+    validate_extrusion_width("solid_infill_extrusion_width", "solid_infill_extruder",
+                             _L("Solid infill extrusion width").ToStdString());
+    validate_extrusion_width("top_infill_extrusion_width", "solid_infill_extruder",
+                             _L("Top infill extrusion width").ToStdString());
+    validate_extrusion_width("support_material_extrusion_width", "support_material_extruder",
+                             _L("Support material extrusion width").ToStdString());
+    validate_extrusion_width("support_material_interface_extrusion_width", "support_material_interface_extruder",
+                             _L("Support material interface extrusion width").ToStdString());
+    validate_extrusion_width("bridge_extrusion_width", "perimeter_extruder",
+                             _L("Bridge extrusion width").ToStdString());
+
 
     double fill_density = config->option<ConfigOptionPercent>("fill_density")->value;
 

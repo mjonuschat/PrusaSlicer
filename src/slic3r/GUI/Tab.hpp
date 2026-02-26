@@ -279,6 +279,9 @@ protected:
 	bool				m_is_nonsys_values{ true };
 	bool				m_postpone_update_ui {false};
 
+	// Track which option key triggered update() for selective validation
+    std::string m_last_changed_opt_key;
+
     void                set_type();
 
     int                 m_em_unit;

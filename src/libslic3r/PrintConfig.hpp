@@ -835,6 +835,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 external_perimeters_first_holes))
     ((ConfigOptionFloat,                external_perimeters_first_holes_min_size))
     ((ConfigOptionInt,                  external_perimeters_first_disabled_first_layers))
+
+    // Precise walls
+    ((ConfigOptionFloatOrPercent,       external_perimeter_overlap))
+    ((ConfigOptionFloatOrPercent,       perimeter_perimeter_overlap))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
