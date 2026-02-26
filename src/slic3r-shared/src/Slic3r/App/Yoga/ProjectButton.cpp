@@ -49,6 +49,11 @@ ProjectButton::ProjectButton(
     on_data_update();
 }
 
+Domain::SelectionId ProjectButton::project_id() const
+{
+    return *m_state;
+}
+
 bool ProjectButton::is_cross_hovered() const
 {
     return m_cross->hovered();

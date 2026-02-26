@@ -116,7 +116,13 @@ TopBar::TopBar(
 
 void TopBar::on_selected_project_changed(size_t index)
 {
-    m_list_view->scroll_at_item(m_list_view->get_item(index));
+    for (size_t button_index = 0; button_index < m_list_view->list_item_count(); ++button_index) {
+        ProjectButton* button = m_list_view->item_at(button_index);
+        if (button->project_id() == index) {
+            m_list_view->scroll_at_item(m_list_view->get_item(button_index));
+            break;
+        }
+    }
 }
 
 void TopBar::focus_search()

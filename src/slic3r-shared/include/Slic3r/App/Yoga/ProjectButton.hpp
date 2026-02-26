@@ -28,7 +28,7 @@ public:
         size_t index, const Domain::SelectionId& data, Biz::ProjectInteractor& project_interactor
     );
 
-    size_t project_id() const;
+    Domain::SelectionId project_id() const;
     bool is_cross_hovered() const;
 
     bool is_selected();
