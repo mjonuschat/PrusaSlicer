@@ -108,6 +108,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     {
         if (m_material_selection_dialog->opened()) {
             dynamic_cast<AbstractButton*>(m_list_view->get_item(current_index))->set_checked(true);
+            m_material_selection_dialog->set_material_index(current_index);
         }
     };
 
