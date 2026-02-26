@@ -15,6 +15,7 @@ public:
 
     SinkingContours& sinking_contours() { return m_sinking_contours; }
     const SinkingContours& sinking_contours() const { return m_sinking_contours; }
+    void enable_sinking_contours_highlight(bool enable) { m_sinking_contours.enable_highlight(enable); }
 
     void set_selection_obb_node_as_dirty() { m_selection_obb_node.dirty = true; }
     void update_selection_obb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);

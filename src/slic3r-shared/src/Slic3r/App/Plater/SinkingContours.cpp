@@ -324,16 +324,18 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
                 }
             }
 
-            for (auto& [n, t] : pick_results) {
-                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-                if (tag != nullptr) {
-                    Scene::Node* child = n->query_first([](const Scene::Node* c) {
-                        const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
-                        return tag != nullptr;
-                    }, true);
-                    if (child != nullptr)
-                        highlight_nodes.push_back(child);
-                    break;
+            if (m_highlight_enabled) {
+                for (auto& [n, t] : pick_results) {
+                    const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                    if (tag != nullptr) {
+                        Scene::Node* child = n->query_first([](const Scene::Node* c) {
+                            const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
+                            return tag != nullptr;
+                        }, true);
+                        if (child != nullptr)
+                            highlight_nodes.push_back(child);
+                        break;
+                    }
                 }
             }
         }
@@ -341,17 +343,19 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
             /*              */
             /* transforming */
             /*              */
-            Domain::ElementRefs selected_volumes_refs = collect_selected_volumes_refs(project, m_selection);
-            Scene::Node::NodeList selected_nodes = collect_selected_nodes(scene, selected_volumes_refs);
-            DEBUG_ASSERT(selected_volumes_refs.size() == selected_nodes.size());
+            if (m_highlight_enabled) {
+                Domain::ElementRefs selected_volumes_refs = collect_selected_volumes_refs(project, m_selection);
+                Scene::Node::NodeList selected_nodes = collect_selected_nodes(scene, selected_volumes_refs);
+                DEBUG_ASSERT(selected_volumes_refs.size() == selected_nodes.size());
 
-            for (Scene::Node* n : selected_nodes) {
-                Scene::Node* child = n->query_first([](const Scene::Node* c) {
-                    const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
-                    return tag != nullptr;
-                }, true);
-                if (child != nullptr)
-                    highlight_nodes.push_back(child);
+                for (Scene::Node* n : selected_nodes) {
+                    Scene::Node* child = n->query_first([](const Scene::Node* c) {
+                        const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
+                        return tag != nullptr;
+                    }, true);
+                    if (child != nullptr)
+                        highlight_nodes.push_back(child);
+                }
             }
 
             m_selection.clear();

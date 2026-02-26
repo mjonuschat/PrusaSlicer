@@ -32,12 +32,14 @@ public:
     void update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, const Domain::Project& project, Scene::Scene& scene);
 
     void set_selection(const Domain::ElementRefs& selection) { m_selection = selection; }
+    void enable_highlight(bool enable) { m_highlight_enabled = enable; }
 
     bool is_empty() const { return m_model_geometry_manager.is_empty(); }
 
 private:
     ModelGeometryManager m_model_geometry_manager;
     Domain::ElementRefs m_selection;
+    bool m_highlight_enabled{ true };
 };
 
 } // namespace Slic3r::App::Plater

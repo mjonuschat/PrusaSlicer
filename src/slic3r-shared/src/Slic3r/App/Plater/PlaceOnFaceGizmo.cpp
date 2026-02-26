@@ -202,6 +202,34 @@ void PlaceOnFaceGizmo::recreate_planes_and_nodes()
     }
 }
 
+std::array<Domain::Vec3d, 2> PlaceOnFaceGizmo::plane_to_world_coordinates(size_t plane_id) const
+{
+    ASSERT(plane_id < m_normals_and_points.size());
+    return plane_to_world_coordinates(m_normals_and_points[plane_id][0], m_normals_and_points[plane_id][1]);
+}
+
+std::array<Domain::Vec3d, 2>
+PlaceOnFaceGizmo::plane_to_world_coordinates(const Domain::Vec3d& direction, const Domain::Vec3d& point) const
+{
+    const Domain::ElementRef& element = m_scene_interactor.object_selection().elements.front();
+    ASSERT(element.volume_id == 0); // Whole object is selected
+
+    const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::ModelInstance* instance = project.find_instance_by_id(element.object_id, element.instance_id);
+    const Domain::ModelObject* object = project.find_object_by_id(element.object_id);
+    const Domain::ModelVolume* volume = object->volumes.front();
+
+    Domain::Transform3d inst_trafo = instance->get_transformation().get_matrix_no_offset();
+    Domain::Transform3d vol_trafo = volume->get_transformation().get_matrix_no_offset();
+
+    Domain::Vec3d world_normal = inst_trafo.matrix().block(0, 0, 3, 3).inverse().transpose() *
+        vol_trafo.matrix().block(0, 0, 3, 3).inverse().transpose() * direction;
+    Domain::Vec3d world_point = instance->get_transformation().get_matrix() *
+        volume->get_transformation().get_matrix() * point;
+
+    return { world_normal, world_point };
+}
+
 Scene::GizmoActivationState
 PlaceOnFaceGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
@@ -209,13 +237,18 @@ PlaceOnFaceGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
     const auto event_button = ctx.mouse_event().button();
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        if (Scene::Node* plane_node = ctx.pick_result_node_with_tag_of_type<POFNodeTag>();
-            plane_node && event_button == Platform::MouseButton::Left)
-        {
-            POFNodeTag* tag = plane_node->tag_of_type<POFNodeTag>();
-            ASSERT(tag->id < m_normals_and_points.size());
-            rotate_selection(m_normals_and_points[tag->id][0], m_normals_and_points[tag->id][1]);
-            return Scene::GizmoActivationState::Active;
+        if (event_button == Platform::MouseButton::Left) {
+            Scene::Node* plane_node = ctx.pick_result_node_with_tag_of_type<POFNodeTag>();
+            if (plane_node != nullptr) {
+                POFNodeTag* tag = plane_node->tag_of_type<POFNodeTag>();
+                ASSERT(tag != nullptr && tag->id < m_normals_and_points.size());
+                // Rotates only if the plane is facing the camera.
+                // This prevents from rotating when the user clicks on a plane which is invisible.
+                if (plane_to_world_coordinates(tag->id)[0].dot(ctx.pick_ray().direction) < 0.0) {
+                    rotate_selection(m_normals_and_points[tag->id][0], m_normals_and_points[tag->id][1]);
+                    return Scene::GizmoActivationState::Active;
+                }
+            }
         }
     }
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
@@ -246,26 +279,14 @@ void PlaceOnFaceGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
         material.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
         node.get()->set_material_override(material);
     }
+
+    m_scene_presenter.enable_sinking_contours_highlight(
+        !hovered_plane_id.has_value() || plane_to_world_coordinates(*hovered_plane_id)[0].dot(ctx.pick_ray().direction) > 0.0
+    );
 }
 
 void PlaceOnFaceGizmo::rotate_selection(const Domain::Vec3d& direction, const Domain::Vec3d& point) const
 {
-    using Domain::Vec3d;
-    using Domain::Transform3d;
-
-    const Biz::Scene::ObjectSelection& selection = m_scene_interactor.object_selection();
-    if (selection.elements.size() != 1
-        || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance) {
-        return;
-    }
-    Domain::Project& project          = m_project_interactor.selected_project();
-    const Domain::ElementRef& element = selection.elements.front();
-    ASSERT(element.volume_id == 0); // Whole object is selected
-
-    Domain::ModelObject* object = project.find_object_by_id(element.object_id);
-    Domain::ModelInstance* instance = project.find_instance_by_id(element.object_id, element.instance_id);
-    Domain::ModelVolume* volume = object->volumes.front();
-
     const std::optional<Scene::OrientedBoundingBox> selection_bounding_box{
         m_scene_presenter.selection_bounding_box()
     };
@@ -275,27 +296,16 @@ void PlaceOnFaceGizmo::rotate_selection(const Domain::Vec3d& direction, const Do
 
     // direction and point are both in the coordinate system of the first
     // volume. Both need to be transformed into world before we can continue.
+    std::array<Domain::Vec3d, 2> world_plane = plane_to_world_coordinates(direction, point);
 
-    Transform3d vol_trafo = volume->get_transformation().get_matrix_no_offset();
-    Transform3d inst_trafo = instance->get_transformation().get_matrix_no_offset();
-
-    Vec3d direction_world =
-         inst_trafo.matrix().block(0, 0, 3, 3).inverse().transpose()
-       * vol_trafo.matrix().block(0, 0, 3, 3).inverse().transpose()
-       * direction;
-
-    Vec3d point_world =
-                 instance->get_transformation().get_matrix()
-               * volume->get_transformation().get_matrix() * point;
-
-    auto quatern = Eigen::Quaterniond{}.setFromTwoVectors(direction_world, -Vec3d::UnitZ());
+    auto quatern = Eigen::Quaterniond{}.setFromTwoVectors(world_plane[0], -Domain::Vec3d::UnitZ());
     Eigen::Matrix3d rotation_3x3 = quatern.toRotationMatrix();
-    auto tr = Transform3d::Identity();
+    auto tr = Domain::Transform3d::Identity();
     tr.matrix().block<3,3>(0,0) = rotation_3x3;
     tr.matrix().block<3,1>(0,3) = center - rotation_3x3 * center;
 
     // Move the object in z so it touches the bed.
-    tr.matrix().block<3,1>(0,3) -= Vec3d(0., 0., (tr * point_world).z());
+    tr.matrix().block<3, 1>(0, 3) -= Domain::Vec3d(0., 0., (tr * world_plane[1]).z());
 
     // Finally tell scene interactor to rotate the object.
     m_scene_interactor.transform_selection(tr.matrix());
