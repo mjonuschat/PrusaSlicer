@@ -1698,7 +1698,7 @@ bool Print::can_have_wipe_tower() const
 {
     return !m_config.get<bool>("spiral_vase")
         && m_config.get<bool>("wipe_tower")
-        && m_config.full_config().tools_count() > 1
+        && m_config.full_config().filaments_count() > 1
         && m_extruder_candidates.size() > 1;
 }
 

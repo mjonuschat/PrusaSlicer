@@ -1547,7 +1547,7 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
 
     // Extract purging volumes for each extruder pair:
     std::vector<std::vector<float>> wipe_volumes;
-    const unsigned int number_of_extruders = config.full_config().tools_count();
+    const unsigned int number_of_extruders = config.full_config().filaments_count();
     for (size_t i = 0; i<number_of_extruders; ++i)
         wipe_volumes.push_back(std::vector<float>(wiping_matrix.begin()+i*number_of_extruders, wiping_matrix.begin()+(i+1)*number_of_extruders));
 
