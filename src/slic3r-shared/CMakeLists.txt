@@ -381,7 +381,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/IGizmo.hpp
         src/Slic3r/App/Scene/IGizmo.cpp
         include/Slic3r/App/Scene/GizmoEventContext.hpp
-        src/Slic3r/App/Scene/GizmoEventContext.cpp
         include/Slic3r/App/Scene/GizmoKeyEventContext.hpp
         include/Slic3r/App/Scene/AbstractCameraGizmo.hpp
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp

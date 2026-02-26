@@ -22,7 +22,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::ZoomIn,
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
+                [this]() { update_zoom(1.); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -34,7 +34,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::ZoomOut,
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
+                [this]() { update_zoom(-1.); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
