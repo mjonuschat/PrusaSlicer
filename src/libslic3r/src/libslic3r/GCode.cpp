@@ -3477,7 +3477,7 @@ std::string GCodeGenerator::_extrude(
         } else if (path_attr.role == ExtrusionRole::Ironing) {
             speed = config.get<double>("ironing_speed");
         } else if (path_attr.role == ExtrusionRole::GapFill) {
-            speed = config.get<double>("gap_fill_speed");
+            speed = config.get<std::vector<double>>("gap_fill_speed").at(extruder_id);
         } else {
             throw Slic3r::InvalidArgument("Invalid speed");
         }
