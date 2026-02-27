@@ -72,6 +72,8 @@ public:
         PlaterScenePresenter& scene_presenter
     );
 
+    bool disable_object_selection() const override;
+
     void on_activated() override;
     void on_deactivated() override;
 

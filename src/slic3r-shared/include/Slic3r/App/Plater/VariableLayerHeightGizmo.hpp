@@ -59,6 +59,7 @@ public:
     ~VariableLayerHeightGizmo() override;
 
     Scene::ToolType type() const override;
+    bool disable_object_selection() const override;
     bool enabled() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
     void provide_gizmo_controller(Scene::IGizmoController& gizmo_controller) override;

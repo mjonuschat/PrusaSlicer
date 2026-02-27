@@ -255,6 +255,11 @@ ToolType VariableLayerHeightGizmo::type() const
     return ToolType::VariableLayerHeightGizmo;
 }
 
+bool VariableLayerHeightGizmo::disable_object_selection() const
+{
+    return true;
+}
+
 bool VariableLayerHeightGizmo::enabled() const
 {
     const ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
@@ -267,7 +272,7 @@ bool VariableLayerHeightGizmo::enabled() const
         return false;
     }
 
-    const bool is_fdm = config_container->print_technology() == Domain::PrinterTechnology::FFF;
+    const bool is_fdm = config_container->print_technology() == PrinterTechnology::FFF;
     return whole_instance && is_fdm;
 }
 
