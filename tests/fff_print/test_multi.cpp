@@ -195,7 +195,13 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
         }
     }
     Print print;
-    auto status{print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{})};
+    auto status{print.update(
+        model,
+        config,
+        bed_instance,
+        SerializedConfig{},
+        Test::create_dummy_hw_config(config.tool.size())
+    )};
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(status));
     print.validate();
     return Test::gcode(print);

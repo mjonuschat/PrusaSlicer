@@ -82,7 +82,13 @@ void update(Print& print, Domain::Model& model, const TestConfig& config)
             bed_instance.model_instances.push_back(instance);
         }
     }
-    print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+    print.update(
+        model,
+        config,
+        bed_instance,
+        SerializedConfig{},
+        create_dummy_hw_config(config.tool.size())
+    );
 }
 } // namespace
 
@@ -459,7 +465,7 @@ void apply_and_check(
 {
     ThumbnailGenerator thumbnail_generator{};
     Biz::Print::SerializedConfig serialized_config{};
-    HwPrinterConfig hw_config{};
+    HwPrinterConfig hw_config{create_dummy_hw_config()};
 
     context.print.slice(SlicingId{0, 0}, thumbnail_generator);
     REQUIRE(is_exclusively_undone(context.print, {}));
@@ -578,7 +584,7 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     Domain::BedInstance bed_instance{bed};
     bed_instance.model_instances = {model.objects.front()->instances.front()};
     Biz::Print::SerializedConfig serialized_config{};
-    HwPrinterConfig hw_config{};
+    HwPrinterConfig hw_config{create_dummy_hw_config(config.tool.size())};
 
     // Can be <1, 3> on print, object and volume.
     config.print.items.opt("infill_extruder").set(4);
@@ -685,7 +691,7 @@ struct SLAApplyTestFixture
                 bed_instance.model_instances.push_back(instance);
             }
         }
-        print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+        print.update(model, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
     }
 };
 
@@ -697,7 +703,7 @@ void apply_and_check(
 {
     ThumbnailGenerator thumbnail_generator{};
     Biz::Print::SerializedConfig serialized_config{};
-    HwPrinterConfig hw_config{};
+    HwPrinterConfig hw_config{create_dummy_hw_config()};
 
     context.print.slice(SlicingId{0, 0}, thumbnail_generator);
     REQUIRE(is_exclusively_undone(context.print, {}));

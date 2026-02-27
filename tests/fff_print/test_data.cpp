@@ -249,6 +249,16 @@ static bool verbose_gcode()
     return s == "1" || s == "on" || s == "yes";
 }
 
+HwPrinterConfig create_dummy_hw_config(uint8_t tool_count)
+{
+    using Domain::Preset::HwToolConfig, Domain::Preset::HwToolConfigs;
+    return HwPrinterConfig{
+        .technology = Domain::PrinterTechnology::FFF,
+        .tool_count = tool_count,
+        .tools      = HwToolConfigs(tool_count, HwToolConfig{})
+    };
+}
+
 void init_print(
     std::vector<TriangleMesh>&& meshes,
     Slic3r::Print& print,
@@ -307,7 +317,13 @@ void init_print(
             bed_instance.model_instances.push_back(instance);
         }
     }
-    print.update(model, config, bed_instance, serialized_config, HwPrinterConfig{});
+    print.update(
+        model,
+        config,
+        bed_instance,
+        serialized_config,
+        create_dummy_hw_config(config.tool.size())
+    );
     print.validate();
     print.set_status_silent();
 }

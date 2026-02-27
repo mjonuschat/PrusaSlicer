@@ -176,7 +176,7 @@ std::vector<unsigned> get_extruder_candidates(
 
     std::vector<unsigned> result;
     for (unsigned extruder : extruders) {
-        if (extruder < config.tool.size()) {
+        if (extruder < config.filament.size()) {
             result.push_back(extruder);
         }
     }
