@@ -52,6 +52,9 @@ void Tooltip::set_text(const std::string& text)
 {
     m_text->set_text(text);
     m_text->set_visible(!text.empty());
+    if (text.empty()) {
+        close();
+    }
 }
 
 void Tooltip::set_text_wrap(bool wrap)
