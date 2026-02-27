@@ -1,16 +1,47 @@
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/FullConfigFDM.hpp"
 
 namespace Slic3r::Domain {
 
 using ConfigBoxRefs      = std::vector<std::reference_wrapper<ConfigBox>>;
 using ConstConfigBoxRefs = std::vector<std::reference_wrapper<const ConfigBox>>;
 
+static void ensure_tool_parity(Domain::MutBoxRef& box, int extruder_count)
+{
+    for (ConfigItem& item : box.get().items.all_items()) {
+        item.visit(
+            [&](auto& value)
+            {
+                if (!item.def().require_tool_parity) {
+                    return;
+                }
+                using Type = std::remove_cvref_t<decltype(value)>;
+                if constexpr (Domain::is_std_vector_v<Type>) {
+                    value.resize(extruder_count);
+                }
+            }
+        );
+    }
+}
+
 ConfigPackFDM::ConfigPackFDM(const int extruder_count) :
     tool{std::vector<Domain::ToolPrintSettings>(extruder_count)},
     filament{std::vector<Domain::FilamentSettings>(extruder_count)}
 {
-    // TODO: should we use require_tool_parity instead?
-    printer.items.opt("extruder_offset").set(std::vector<Vec2d>(extruder_count, Vec2d::Zero()));
+    for (auto& box_or_boxes : as_mut_boxes(*this)) {
+        std::visit(
+            Domain::overloaded{
+                [&](Domain::MutBoxRef& box) { ensure_tool_parity(box, extruder_count); },
+                [&](Domain::MutBoxRefs& boxes)
+                {
+                    for (Domain::MutBoxRef& box : boxes) {
+                        ensure_tool_parity(box, extruder_count);
+                    }
+                }
+            },
+            box_or_boxes
+        );
+    }
 }
 
 ConfigPackFDM::ConfigPackFDM() : ConfigPackFDM{1} {}

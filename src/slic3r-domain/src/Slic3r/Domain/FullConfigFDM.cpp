@@ -12,6 +12,16 @@ BoxRefs convert_to_box_refs(
     result.insert(result.end(), settings.cbegin(), settings.cend());
     return result;
 }
+
+template<typename T>
+MutBoxRefs convert_to_mut_box_refs(
+    std::vector<T>& settings
+)
+{
+    MutBoxRefs result;
+    result.insert(result.end(), settings.begin(), settings.end());
+    return result;
+}
 }
 
 BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
@@ -21,6 +31,17 @@ BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
     result.push_back(convert_to_box_refs(config_pack.tool));
     result.push_back(config_pack.printer);
     result.push_back(convert_to_box_refs(config_pack.filament));
+    result.push_back(config_pack.project);
+    return result;
+}
+
+MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
+    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
+    MutBoxOrBoxesVector result;
+    result.push_back(config_pack.print);
+    result.push_back(convert_to_mut_box_refs(config_pack.tool));
+    result.push_back(config_pack.printer);
+    result.push_back(convert_to_mut_box_refs(config_pack.filament));
     result.push_back(config_pack.project);
     return result;
 }
