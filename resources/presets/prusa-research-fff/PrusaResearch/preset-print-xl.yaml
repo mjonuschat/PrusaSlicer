@@ -2,259 +2,17 @@ id: 9XBedIhZSsabd2+hKKUPDw
 kind: print
 inherits:
 - '*common*'
+- '*XL_common_retract*'
+- '*XL_common_toolchange_retract*'
 match_mode: all_matches
 variants:
 ## XL
 - condition: printer.base_model == "XL"
   id: vsqSBMFOTK6R5f3DKv9q+A
-  variants:
-  - condition: tool.nozzle_high_flow
-    id: 3xo8VoW0QseL8ACofalHLQ
-    variants:
-  # XL 0.4HF
-    - condition: tool.nozzle_diameter == 0.4
-      id: RLKKN/nAQq+ZPBFhhie5jA
-      variants:
-      - name: 0.10mm
-        id: 3f39I45TQ56qVEPHK5sooQ
-        values:
-          layer_height: 0.10
-      - name: 0.15mm
-        id: aZtrzDwISTGYMAIaBqOj2A
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: eTsF4KAxTK+pwwYClba2Jw
-        values:
-          layer_height: 0.20
-      - name: 0.25mm
-        id: Uo/jX5MHQjOEtwpPnwZ4YQ
-        values:
-          layer_height: 0.25
-      - name: 0.28mm
-        id: 0I+TM+sqRbOLzu2N6sphJg
-        values:
-          layer_height: 0.28
-  # XL 0.5HF
-    - condition: tool.nozzle_diameter == 0.5
-      id: T5r1AgtcQ+GNVfvlu/htOA
-      variants:
-      - name: 0.10mm
-        id: HMcPihyVQCaAAbva9X1BVw
-        values:
-          layer_height: 0.10
-      - name: 0.15mm
-        id: tr+bPVPmQbq7fm791FTi8g
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: x4lgZDcqSSOOOjkS63E/+Q
-        values:
-          layer_height: 0.20
-      - name: 0.25mm
-        id: 8Cv4wh/nRhOzur+W6Yc2Sg
-        values:
-          layer_height: 0.25
-      - name: 0.32mm
-        id: gtN2u/NvRGCAYwn8KgP7TA
-        values:
-          layer_height: 0.32
-  # XL 0.6HF
-    - condition: tool.nozzle_diameter == 0.6
-      id: Ff9rIq3YQFW7OgEhiBk1CA
-      variants:
-      - name: 0.15mm
-        id: dykPdfOLRQCc4npqxkchdg
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: TZobHRBiS/6EjbejkvZ+Cg
-        values:
-          layer_height: 0.20
-      - name: 0.25mm
-        id: EYR7yHRUSuaXN0rmyAKXVQ
-        values:
-          layer_height: 0.25
-      - name: 0.32mm
-        id: eM4RmBRtQLKa2cYQwT+87A
-        values:
-          layer_height: 0.32
-      - name: 0.40mm
-        id: 3bcj0+/zTF2B6Z+dfPBZ8g
-        values:
-          layer_height: 0.40
-  # XL 0.8HF
-    - condition: tool.nozzle_diameter == 0.8
-      id: svhIkkdWS6+qvzOHKLfhMg
-      variants:
-      - name: 0.30mm
-        id: QBG8W/AKT1WOhTDhvj8FTA
-        values:
-          layer_height: 0.30
-      - name: 0.40mm
-        id: EIL2knXQRk6/k0iuWvEUEA
-        values:
-          layer_height: 0.40
-      - name: 0.55mm
-        id: oIGEPdLPTwG5GhaDh9PYdQ
-        values:
-          layer_height: 0.55
-# XL non-HF
-  - condition: not tool.nozzle_high_flow
-    id: 1MHuLeQ2RduP/Ygt4hK1iQ
-    variants:
-  # XL 0.25
-    - condition: tool.nozzle_diameter == 0.25
-      id: Ga9I5xYDQuWVXWyS0b5JFg
-      variants:
-      - name: 0.05mm
-        id: ihxkaCDqRLOQhIt3OztQww
-        values:
-          layer_height: 0.05
-      - name: 0.07mm
-        id: ViTfxT5HTVqE3W7M/87fTA
-        values:
-          layer_height: 0.07
-      - name: 0.12mm
-        id: PqyK1xN5RLanMIFY4IVg9w
-        values:
-          layer_height: 0.12
-      - name: 0.15mm
-        id: UnXeZjzCQCOWKoJb7CoTyA
-        values:
-          layer_height: 0.15
-  # XL 0.3
-    - condition: tool.nozzle_diameter == 0.3
-      id: Mm27gcL1SnaY9LdEwtb6yw
-      variants:
-      - name: 0.12mm
-        id: IgEcU963TbWrkwitIvwOGA
-        values:
-          layer_height: 0.12
-      - name: 0.16mm
-        id: 9iBNiqS5Rd6VRrd6mZbnhA
-        values:
-          layer_height: 0.16
-      - name: 0.20mm
-        id: pPCz0pYHRKu65nnHxPwe2g
-        values:
-          layer_height: 0.20
-  # XL 0.4
-    - condition: tool.nozzle_diameter == 0.4
-      id: x0+oWbzFSOa4OhAJWxqcEQ
-      variants:
-      - name: 0.10mm
-        id: 8qhYL+N9QjCR7j9rw40IXg
-        values:
-          layer_height: 0.10
-      - name: 0.15mm
-        id: AYYzMQZrQjipOc1V3k0Ykg
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: NaHmyj5mTtC6Yb4eeZPQyQ
-        values:
-          layer_height: 0.20
-  # XL 0.5
-    - condition: tool.nozzle_diameter == 0.5
-      id: /vY3wQ+OT7abIAG7XNDhuw
-      variants:
-      - name: 0.10mm
-        id: kJPXe7dbTRi/YGRq3P4Siw
-        values:
-          layer_height: 0.10
-      - name: 0.15mm
-        id: tPXfxD7XRC2C+BzM22B4sA
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: A62ylf7vTyuJfiGC/daB5Q
-        values:
-          layer_height: 0.20
-      - name: 0.25mm
-        id: 1CDkKEeiTharI2x7pMresg
-        values:
-          layer_height: 0.25
-  # XL 0.6
-    - condition: tool.nozzle_diameter == 0.6
-      id: NyTYcHBCSseaX6D2P4BsPQ
-      variants:
-      - name: 0.15mm
-        id: s2V6HRbTSumle8Uf1/4T/w
-        values:
-          layer_height: 0.15
-      - name: 0.20mm
-        id: pTO9iQGcT1OXyPHuIM1wMw
-        values:
-          layer_height: 0.20
-      - name: 0.25mm
-        id: zemJRuGuR7uY+/rmBtr2iQ
-        values:
-          layer_height: 0.25
-      - name: 0.32mm
-        id: WZewbfWaTuSe8Kt1ceDkaQ
-        values:
-          layer_height: 0.32
-  # XL 0.8
-    - condition: tool.nozzle_diameter == 0.8
-      id: qPXt7X//SfKmpwP8Rlz3Ig
-      variants:
-      - name: 0.30mm
-        id: y2WvDx57Q+a1dM+mVZLb1g
-        values:
-          layer_height: 0.30
-      - name: 0.40mm
-        id: JPJ3iAJaTDyChwOORIWoYQ
-        values:
-          layer_height: 0.40
-      - name: 0.55mm
-        id: Bui1kUmBSAulAEnpbp9tkg
-        values:
-          layer_height: 0.55
----
-id: IGEnb4GuSsyXF8e+VmUjKw
-kind: print
-variants:
-- condition: printer.base_model == "XL"
-  id: I2s/aT3cStWWxqjIf+i3VQ
   values:
-    retract_layer_change: 1
-    retract_length_toolchange: 0
-    retract_lift_above: 0
-    retract_lift_below: 359
-    retract_restart_extra: 0
-    retract_restart_extra_toolchange: 0
-    travel_ramping_lift: 1
-    travel_slope: 1
-    travel_max_lift: 1.5
-    wipe: 1
-    deretract_speed: 25
-    max_layer_height: 0.30
-    min_layer_height: 0.07
-    nozzle_diameter: 0.4
-    retract_before_wipe: 80%
-    retract_length: 0.8
-    retract_lift: 0.3
-    retract_speed: 35
----
-id: w4HhXztDTwa3N0HK8rcPEw
-kind: print
-variants:
-- condition: printer.tool_count == 1
-  id: RsH/XSv/St21KT1Gp5RKyg
-  values:
-    retract_length_toolchange: 0
-- condition: printer.tool_count > 1
-  id: vlSJxUrMQU+oMm5PjPHGiA
-  values:
-    retract_length_toolchange: 1.2
----
-id: h6a6+I+zTxei8Xlg892y6A
-kind: print
-variants:
-- condition: printer.base_model == "XL"
-  id: PJOvbHrsSGORr9bp0/Y5gA
-  values:
+    standby_temperature_delta: -110
+    ooze_prevention: true
+    wipe_tower_brim_width: 3
     bottom_solid_layers: 4
     bridge_acceleration: 1500
     bridge_flow_ratio: 1
@@ -354,11 +112,262 @@ variants:
     thick_bridges: 0
     top_solid_min_thickness: 0.7
     bottom_solid_min_thickness: 0.5
-    # standby_temperature_delta: -110
-    #wipe_tower_brim_width: 3
     wipe_tower_bridging: 8
     wipe_tower_extra_spacing: 150
     travel_short_distance_acceleration: 250
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: 3xo8VoW0QseL8ACofalHLQ
+    variants:
+  # XL 0.4HF
+    - condition: tool.nozzle_diameter == 0.4
+      id: RLKKN/nAQq+ZPBFhhie5jA
+      variants:
+      - name: 0.10mm
+        id: 3f39I45TQ56qVEPHK5sooQ
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        id: aZtrzDwISTGYMAIaBqOj2A
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: eTsF4KAxTK+pwwYClba2Jw
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        id: Uo/jX5MHQjOEtwpPnwZ4YQ
+        values:
+          layer_height: 0.25
+      - name: 0.28mm
+        id: 0I+TM+sqRbOLzu2N6sphJg
+        values:
+          layer_height: 0.28
+  # XL 0.5HF
+    - condition: tool.nozzle_diameter == 0.5
+      id: T5r1AgtcQ+GNVfvlu/htOA
+      variants:
+      - name: 0.10mm
+        id: HMcPihyVQCaAAbva9X1BVw
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        id: tr+bPVPmQbq7fm791FTi8g
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: x4lgZDcqSSOOOjkS63E/+Q
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        id: 8Cv4wh/nRhOzur+W6Yc2Sg
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        id: gtN2u/NvRGCAYwn8KgP7TA
+        values:
+          layer_height: 0.32
+  # XL 0.6HF
+    - condition: tool.nozzle_diameter == 0.6
+      id: Ff9rIq3YQFW7OgEhiBk1CA
+      variants:
+      - name: 0.15mm
+        id: dykPdfOLRQCc4npqxkchdg
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: TZobHRBiS/6EjbejkvZ+Cg
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        id: EYR7yHRUSuaXN0rmyAKXVQ
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        id: eM4RmBRtQLKa2cYQwT+87A
+        values:
+          layer_height: 0.32
+      - name: 0.40mm
+        id: 3bcj0+/zTF2B6Z+dfPBZ8g
+        values:
+          layer_height: 0.40
+  # XL 0.8HF
+    - condition: tool.nozzle_diameter == 0.8
+      id: svhIkkdWS6+qvzOHKLfhMg
+      variants:
+      - name: 0.25mm
+        id: UaHYPcbmTMK7XPthtA+Tyg
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        id: QBG8W/AKT1WOhTDhvj8FTA
+        values:
+          layer_height: 0.32
+      - name: 0.40mm
+        id: EIL2knXQRk6/k0iuWvEUEA
+        values:
+          layer_height: 0.40
+      - name: 0.55mm
+        id: oIGEPdLPTwG5GhaDh9PYdQ
+        values:
+          layer_height: 0.55
+# XL non-HF
+  - condition: not tool.nozzle_high_flow
+    id: 1MHuLeQ2RduP/Ygt4hK1iQ
+    variants:
+  # XL 0.25
+    - condition: tool.nozzle_diameter == 0.25
+      id: Ga9I5xYDQuWVXWyS0b5JFg
+      variants:
+      - name: 0.05mm
+        id: ihxkaCDqRLOQhIt3OztQww
+        values:
+          layer_height: 0.05
+      - name: 0.07mm
+        id: ViTfxT5HTVqE3W7M/87fTA
+        values:
+          layer_height: 0.07
+      - name: 0.10mm
+        id: Ol2vA9t5SLinzWeYhL5Wgg
+        values:
+          layer_height: 0.1
+      - name: 0.12mm
+        id: PqyK1xN5RLanMIFY4IVg9w
+        values:
+          layer_height: 0.12
+      - name: 0.15mm
+        id: UnXeZjzCQCOWKoJb7CoTyA
+        values:
+          layer_height: 0.15
+  # XL 0.3
+    - condition: tool.nozzle_diameter == 0.3
+      id: Mm27gcL1SnaY9LdEwtb6yw
+      variants:
+      - name: 0.10mm
+        id: IgEcU963TbWrkwitIvwOGA
+        values:
+          layer_height: 0.1
+      - name: 0.15mm
+        id: 9iBNiqS5Rd6VRrd6mZbnhA
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: pPCz0pYHRKu65nnHxPwe2g
+        values:
+          layer_height: 0.20
+  # XL 0.4
+    - condition: tool.nozzle_diameter == 0.4
+      id: x0+oWbzFSOa4OhAJWxqcEQ
+      variants:
+      - name: 0.10mm
+        id: 8qhYL+N9QjCR7j9rw40IXg
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        id: AYYzMQZrQjipOc1V3k0Ykg
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: NaHmyj5mTtC6Yb4eeZPQyQ
+        values:
+          layer_height: 0.20
+  # XL 0.5
+    - condition: tool.nozzle_diameter == 0.5
+      id: /vY3wQ+OT7abIAG7XNDhuw
+      variants:
+      - name: 0.10mm
+        id: kJPXe7dbTRi/YGRq3P4Siw
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        id: tPXfxD7XRC2C+BzM22B4sA
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: A62ylf7vTyuJfiGC/daB5Q
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        id: 1CDkKEeiTharI2x7pMresg
+        values:
+          layer_height: 0.25
+  # XL 0.6
+    - condition: tool.nozzle_diameter == 0.6
+      id: NyTYcHBCSseaX6D2P4BsPQ
+      variants:
+      - name: 0.15mm
+        id: s2V6HRbTSumle8Uf1/4T/w
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        id: pTO9iQGcT1OXyPHuIM1wMw
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        id: zemJRuGuR7uY+/rmBtr2iQ
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        id: WZewbfWaTuSe8Kt1ceDkaQ
+        values:
+          layer_height: 0.32
+  # XL 0.8
+    - condition: tool.nozzle_diameter == 0.8
+      id: qPXt7X//SfKmpwP8Rlz3Ig
+      variants:
+      - name: 0.25mm
+        id: 74YE1364SWyKXcMq22ErXQ
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        id: y2WvDx57Q+a1dM+mVZLb1g
+        values:
+          layer_height: 0.32
+      - name: 0.40mm
+        id: JPJ3iAJaTDyChwOORIWoYQ
+        values:
+          layer_height: 0.40
+      - name: 0.55mm
+        id: Bui1kUmBSAulAEnpbp9tkg
+        values:
+          layer_height: 0.55
+---
+id: '*XL_common_retract*'
+kind: print
+variants:
+- condition: printer.base_model == "XL"
+  id: I2s/aT3cStWWxqjIf+i3VQ
+  values:
+    retract_layer_change: 1
+    retract_length_toolchange: 0
+    retract_lift_above: 0
+    retract_lift_below: 359
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    travel_ramping_lift: 1
+    travel_slope: 1
+    travel_max_lift: 1.5
+    wipe: 1
+    deretract_speed: 25
+    max_layer_height: 0.30
+    min_layer_height: 0.07
+    nozzle_diameter: 0.4
+    retract_before_wipe: 80%
+    retract_length: 0.8
+    retract_lift: 0.3
+    retract_speed: 35
+---
+id: '*XL_common_toolchange_retract*'
+kind: print
+variants:
+- condition: printer.tool_count == 1
+  id: RsH/XSv/St21KT1Gp5RKyg
+  values:
+    retract_length_toolchange: 0
+- condition: printer.tool_count > 1
+  id: vlSJxUrMQU+oMm5PjPHGiA
+  values:
+    retract_length_toolchange: 1.2
 # ---
 # # SOLUBLE and BREAKAWAY
 # id: guDEBXa+Sd6qYNjYOHM6EA

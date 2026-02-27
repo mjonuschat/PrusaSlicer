@@ -73,7 +73,7 @@ variants:
     multimaterial_purging: '140'
   variants:
   - condition: printer.model == "MK3S"
-    name: Original Prusa i3 MK3S & MK3S+
+    name: 'Original Prusa i3 MK3S & MK3S+'
     id: HyXD2z5/T6yMV4ae1jqjOQ
     variants:
     #MMU2S

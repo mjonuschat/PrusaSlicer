@@ -1,10 +1,10 @@
 kind: filament
 inherits:
 - '*PLAFILL*'
-name: ColorFabb Steelfill
-id: ColorFabb Steelfill
+name: colorFabb steelFill
+id: colorFabb steelFill
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   extrusion_multiplier: 1.08
   filament_cost: '69.2'
   filament_density: 3.13

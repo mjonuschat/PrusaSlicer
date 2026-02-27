@@ -1,11 +1,11 @@
 kind: filament
 inherits:
 - '*FLEX*'
-name: ColorFabb nGen flex
+name: colorFabb nGen flex
 condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
-id: ColorFabb nGen flex
+id: colorFabb nGen flex
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   filament_cost: 58.3
   min_fan_speed: 20
   max_fan_speed: 35

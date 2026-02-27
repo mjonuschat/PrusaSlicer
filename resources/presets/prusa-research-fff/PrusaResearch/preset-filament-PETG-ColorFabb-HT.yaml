@@ -1,11 +1,11 @@
 kind: filament
 inherits:
 - '*PET*'
-- '*sheets_PET_ColorFabbHT*'
-name: ColorFabb HT
-id: ColorFabb HT
+- '*sheets_PET_colorFabbHT*'
+name: colorFabb HT
+id: colorFabb HT
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   filament_density: 1.18
   filament_cost: 65.66
   filament_spool_weight: 236
@@ -26,7 +26,7 @@ variants:
     overhang_fan_speed_0: 25
 ---
 kind: filament
-id: '*sheets_PET_ColorFabbHT*'
+id: '*sheets_PET_colorFabbHT*'
 variants:
 # STANDARD sheet
 - condition: sheet.type != "cold"

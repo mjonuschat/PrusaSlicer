@@ -30,7 +30,7 @@ variants:
     max_fan_speed: 35
     filament_shrinkage_compensation_xy: 0%
     filament_shrinkage_compensation_z: 0.24%
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   id: 4cbmM1v3SnOlhzSUOifdRA
   values:
     bridge_fan_speed: 70

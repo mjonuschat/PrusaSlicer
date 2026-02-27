@@ -21,7 +21,7 @@ variants:
     first_layer_bed_temperature: 115
     bed_temperature: 115
     fan_below_layer_time: 10
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   id: y3IhJZ2aRZaY+gDp/deymg
   values:
     fan_below_layer_time: 10

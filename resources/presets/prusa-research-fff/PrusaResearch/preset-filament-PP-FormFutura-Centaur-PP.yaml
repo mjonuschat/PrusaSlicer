@@ -16,7 +16,7 @@ variants:
     bridge_fan_speed: 85
     min_fan_speed: 60
     max_fan_speed: 60
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   id: TJB1tyTMRPSzjkgQ87dySw
   values:
     bridge_fan_speed: 70

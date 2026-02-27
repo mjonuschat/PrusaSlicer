@@ -1,10 +1,10 @@
 kind: filament
 inherits:
 - '*PLAFILL*'
-name: ColorFabb Bronzefill
-id: ColorFabb Bronzefill
+name: colorFabb bronzeFill
+id: colorFabb bronzeFill
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   extrusion_multiplier: 1.1
   filament_cost: '77.28'
   filament_density: 3.9

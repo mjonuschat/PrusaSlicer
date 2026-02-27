@@ -1,10 +1,10 @@
 kind: filament
 inherits:
 - '*PLAFILL*'
-name: ColorFabb Corkfill
-id: ColorFabb Corkfill
+name: colorFabb corkFill
+id: colorFabb corkFill
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   extrusion_multiplier: 1.1
   filament_cost: '53.17'
   filament_density: 1.18

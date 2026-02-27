@@ -2,10 +2,10 @@ kind: filament
 inherits:
 - '*PETCF*'
 - '*XTCF20_MAXVOLSPEED*'
-name: ColorFabb XT-CF20
-id: ColorFabb XT-CF20
+name: colorFabb XT-CF20
+id: colorFabb XT-CF20
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   extrusion_multiplier: 1.05
   filament_cost: 80.65
   filament_density: 1.35

@@ -1,8 +1,8 @@
 id: zGbKiYiTSXWPe28oGuRD+A
 kind: print
 inherits:
+- '*common*'
 - '*common MK4*'
-
 variants:
 - condition: printer.model=~/(MK4S|MK3.9S)/
   id: mgPwp9irRKGe+pUJ5VUylA
@@ -1967,37 +1967,30 @@ variants:
           top_infill_extrusion_width: 0.75
           overhang_speed_2: 35
 # 0.8n/0.55mm layer
-      - condition: print.layer_height == 0.55
-        id: 9hlDwiZ7Rz++5+vSY9MRaw
+      - name: 0.55mm DRAFT @MK4S 0.8
+        id: VHtZe3QrRumv+1Mc23Okhw
         values:
           layer_height: 0.55
           bottom_solid_layers: 3
           top_solid_layers: 4
-        variants:
-        - name: 0.55mm DRAFT @MK4S 0.8
-          id: VHtZe3QrRumv+1Mc23Okhw
-          values:
-            layer_height: 0.55
-            bottom_solid_layers: 3
-            top_solid_layers: 4
-            perimeter_speed: 40
-            external_perimeter_speed: 35
-            small_perimeter_speed: 35
-            infill_speed: 60
-            solid_infill_speed: 35
-            top_solid_infill_speed: 30
-            support_material_speed: 35
-            gap_fill_speed: 30
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2000
-            top_solid_infill_acceleration: 1000
-            solid_infill_acceleration: 3000
-            infill_acceleration: 4000
-            bridge_acceleration: 1000
-            default_acceleration: 2000
-            top_infill_extrusion_width: 0.75
-            perimeter_extrusion_width: 1
-            external_perimeter_extrusion_width: 1
+          perimeter_speed: 40
+          external_perimeter_speed: 35
+          small_perimeter_speed: 35
+          infill_speed: 60
+          solid_infill_speed: 35
+          top_solid_infill_speed: 30
+          support_material_speed: 35
+          gap_fill_speed: 30
+          external_perimeter_acceleration: 1500
+          perimeter_acceleration: 2000
+          top_solid_infill_acceleration: 1000
+          solid_infill_acceleration: 3000
+          infill_acceleration: 4000
+          bridge_acceleration: 1000
+          default_acceleration: 2000
+          top_infill_extrusion_width: 0.75
+          perimeter_extrusion_width: 1
+          external_perimeter_extrusion_width: 1
 
 # MMU branch
   - name: '*MMU branch*'

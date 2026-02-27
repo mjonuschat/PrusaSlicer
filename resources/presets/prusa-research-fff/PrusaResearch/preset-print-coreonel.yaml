@@ -107,6 +107,7 @@ variants:
 id: 2OhcfTU0Q++/MNF3+Sd4Qw
 kind: print
 inherits:
+- '*common*'
 - '*common COREONEL*'
 variants:
 - condition: printer.model == "COREONEL"

@@ -1,12 +1,12 @@
 kind: filament
 inherits:
 - '*common*'
+- '*sheets_PET_common*'
 features:
   $.type: PETG
 condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and feeder.model!~/(MMU2S|MMU3_8bit)/
 id: '*PET*'
 values:
-  bed_temperature: 90
   bridge_fan_speed: 50
   cooling: 1
   disable_fan_first_layers: 3
@@ -46,7 +46,6 @@ values:
   filament_unloading_speed: 100
   filament_unloading_speed_start: 100
   filament_vendor: Generic
-  first_layer_bed_temperature: 85
   first_layer_temperature: 240
   full_fan_speed_layer: 5
   max_fan_speed: 50
@@ -67,7 +66,6 @@ variants:
     enable_dynamic_fan_speeds: 1
     first_layer_temperature: 245
     temperature: 245
-    bed_temperature: 85
     idle_temperature: 130
     min_fan_speed: 30
     max_fan_speed: 60
@@ -189,8 +187,6 @@ variants:
 - condition: printer.base_model == "XL"
   id: 9ks+0eCDTKu9f2seD8g/0Q
   values:
-    first_layer_bed_temperature: 80
-    bed_temperature: 80
     fan_below_layer_time: 20
     filament_max_volumetric_speed: 12
     filament_multitool_ramming: 1
@@ -652,7 +648,6 @@ variants:
   values:
     first_layer_temperature: 245
     temperature: 245
-    bed_temperature: 85
     idle_temperature:
     retract_lift:
     travel_max_lift: 1.5

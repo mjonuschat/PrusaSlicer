@@ -100,6 +100,22 @@ visual:
 ---
 kind: printer
 technology: FFF
+name: Prusa Signature Oak
+id: COREONEOAK
+model:
+  base_model: COREONE
+  model: COREONEOAK
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+visual:
+  bed_model: coreone_bed.stl
+  bed_texture: coreoneoak.svg
+  thumbnail: COREONEOAK_thumbnail.svg
+---
+kind: printer
+technology: FFF
 name: Prusa MK4
 id: MK4
 model:
@@ -469,17 +485,17 @@ model:
   base_model: MMU2
   model: MMU2S
 slot_count: 5
----
-kind: feeder
-technology: FFF
-id: mmu1
-name: MMU1
-condition: printer.model == "MK2S"
-feeder_type: mmu
-model:
-  base_model: MMU1
-  model: MMU1
-slot_count: 4
+# ---
+# kind: feeder
+# technology: FFF
+# id: mmu1
+# name: MMU1
+# condition: printer.model == "MK2S"
+# feeder_type: mmu
+# model:
+  # base_model: MMU1
+  # model: MMU1
+# slot_count: 4
 ---
 #sheet.type == "pei_smooth"
 #sheet.type == "pei_textured"
@@ -608,6 +624,15 @@ id: c1
 name: CORE One
 printer: COREONE
 legacy_printer_model: [COREONE]
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: c1oak
+name: Signature Oak
+printer: COREONEOAK
+legacy_printer_model: [COREONEOAK]
 tools:
 - tool: 0.4HF
 sheet: satin

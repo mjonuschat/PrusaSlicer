@@ -106,6 +106,7 @@ variants:
 id: FtqiW9vJSfG5ybwP/h4oeg
 kind: print
 inherits:
+- '*common*'
 - '*common MK4*'
 # This is derived from print profile
 variants:

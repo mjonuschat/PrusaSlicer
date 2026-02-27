@@ -1,10 +1,10 @@
 kind: filament
 inherits:
 - '*PLAFILL*'
-name: ColorFabb Woodfill
-id: ColorFabb Woodfill
+name: colorFabb woodFill
+id: colorFabb woodFill
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   extrusion_multiplier: 1.1
   filament_cost: '64.98'
   filament_density: 1.15

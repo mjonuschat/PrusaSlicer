@@ -1,7 +1,7 @@
 kind: print
 id: '*common COREONE*'
 variants:
-- condition: printer.model == "COREONE"
+- condition: printer.model=~/(COREONE|COREONEOAK)/
   id: N+crXA1SSmC9VuVxwSiJxQ
   values:
     retract_before_travel: 1.5
@@ -110,7 +110,7 @@ inherits:
 - '*common*'
 - '*common COREONE*'
 variants:
-- condition: printer.model == "COREONE"
+- condition: printer.model=~/(COREONE|COREONEOAK)/
   id: 7g4qzeV7S6ydZxFJfYKjmw
   values:
     bottom_solid_layers: 4

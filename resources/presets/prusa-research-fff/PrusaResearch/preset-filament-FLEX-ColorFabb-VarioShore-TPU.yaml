@@ -1,13 +1,13 @@
 kind: filament
 inherits:
 - '*FLEX*'
-name: ColorFabb VarioShore TPU
+name: colorFabb VarioShore TPU
 features:
   $.type: TPU
 condition: tool.nozzle_diameter == 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
-id: ColorFabb VarioShore TPU
+id: colorFabb VarioShore TPU
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   filament_cost: 77
   disable_fan_first_layers: 4
   full_fan_speed_layer: 6

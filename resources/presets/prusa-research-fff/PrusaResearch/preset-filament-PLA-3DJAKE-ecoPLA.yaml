@@ -19,7 +19,7 @@ variants:
     id: alQ3iIMaSR+5VPip948S+w
     values:
       slowdown_below_layer_time: 7
-- condition: printer.model == "COREONE"
+- condition: printer.base_model == "COREONE"
   id: dJtAaB7HQZ+xtnXJzdWU8Q
   variants:
   - condition: tool.nozzle_diameter == 0.4

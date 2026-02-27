@@ -1,10 +1,10 @@
 kind: filament
 inherits:
 - '*PET*'
-name: ColorFabb nGen
-id: ColorFabb nGen
+name: colorFabb nGen
+id: colorFabb nGen
 values:
-  filament_vendor: ColorFabb
+  filament_vendor: colorFabb
   filament_cost: 52.46
   full_fan_speed_layer: 3
   filament_density: 1.2
