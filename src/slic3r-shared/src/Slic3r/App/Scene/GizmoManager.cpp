@@ -209,10 +209,6 @@ void GizmoManager::on_scene_selection_changed(
     Domain::SelectionId project_id,
     const Biz::Scene::ObjectSelection& selection
 ) {
-    if (selection.empty() && current_tool_type() != ToolType::None) {
-        deactivate_current_tool();
-    }
-
     for (const IToolGizmoPtr& tool_gizmo : m_tool_gizmos) {
         if (current_tool_type() == tool_gizmo->type()
             && !tool_gizmo->enabled())
