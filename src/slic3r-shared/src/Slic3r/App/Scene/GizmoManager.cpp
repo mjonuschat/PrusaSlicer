@@ -97,6 +97,21 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         }
     }
 
+    // When a tool gizmo disables object selection, filter out scene object
+    // nodes from pick results. This prevents QuickDragGizmo from starting
+    // object drag and lets PlaterCameraGizmo orbit the camera instead.
+    if (p.object_selection_disabled) {
+        pick_results.erase(
+            std::remove_if(
+                pick_results.begin(),
+                pick_results.end(),
+                [](const NodePickResult& r)
+                { return r.node->tag_of_type<SceneNodeTag>() != nullptr; }
+            ),
+            pick_results.end()
+        );
+    }
+
     GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector && 
         m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
