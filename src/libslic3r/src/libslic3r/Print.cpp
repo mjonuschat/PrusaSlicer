@@ -245,10 +245,15 @@ Biz::Print::ApplyStatus::Status Print::update(
         };
 
         const auto& config_fdm{std::get<ConfigPackFDM>(config)};
+
+        // Extruder candidates need to be checked before validation, to update the UI
+        // even in case of InvalidData.
         const std::vector<unsigned> extruder_candidates{
             Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
         };
-        m_on_extruder_candidates(extruder_candidates);
+        if (m_extruder_candidates != extruder_candidates) {
+            m_on_extruder_candidates(extruder_candidates);
+        }
 
         std::vector<Biz::Slicing::Error> errors{validate_input(model, config_fdm)};
         if (!errors.empty()) {
