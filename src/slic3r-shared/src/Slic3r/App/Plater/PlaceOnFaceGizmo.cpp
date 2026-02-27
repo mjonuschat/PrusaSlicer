@@ -280,7 +280,7 @@ void PlaceOnFaceGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
         node.get()->set_material_override(material);
     }
 
-    m_scene_presenter.enable_sinking_contours_highlight(
+    m_scene_presenter.set_sinking_contours_highlight_enabled(
         !hovered_plane_id.has_value() || plane_to_world_coordinates(*hovered_plane_id)[0].dot(ctx.pick_ray().direction) > 0.0
     );
 }

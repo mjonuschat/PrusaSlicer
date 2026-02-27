@@ -184,7 +184,7 @@ public:
     bool update_bed_instance_error_state(const Domain::SlicingId& id, bool error);
 
     void update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
-    void enable_sinking_contours_highlight(bool enable) { project_context().enable_sinking_contours_highlight(enable); }
+    void set_sinking_contours_highlight_enabled(bool enable) { project_context().set_sinking_contours_highlight_enabled(enable); }
 
     std::shared_ptr<Scene::ModelGeometryProvider> model_geometry_provider() { return project_context().model_geometry_provider(); }
 
