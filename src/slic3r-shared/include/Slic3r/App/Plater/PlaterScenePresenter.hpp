@@ -75,7 +75,7 @@ public:
     }
 
     using MeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
-    const MeshManager& model_trinagle_mesh_manager(Domain::SelectionId project_id = Domain::INVALID_ID) const {
+    const MeshManager& model_triangle_mesh_manager(Domain::SelectionId project_id = Domain::INVALID_ID) const {
         if (project_id == Domain::INVALID_ID)
             project_id = m_selected_project_id;
         auto it = m_projects.find(project_id);

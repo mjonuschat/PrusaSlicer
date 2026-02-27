@@ -335,7 +335,7 @@ void PaintOnGizmoBase::on_activated()
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     const ObjectSelection& object_selection = scene_interactor.object_selection();
     const Project& project                  = m_project_interactor.selected_project();
-    const MeshManager& mesh_manager         = m_scene_presenter.model_trinagle_mesh_manager();
+    const MeshManager& mesh_manager         = m_scene_presenter.model_triangle_mesh_manager();
     Scene::Scene& scene                     = m_scene_presenter.scene();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {

@@ -293,7 +293,7 @@ void VariableLayerHeightGizmo::on_activated()
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     const ObjectSelection& object_selection = scene_interactor.object_selection();
     const ConfigContainer& config_container = m_project_interactor.selected_config_container();
-    const MeshManager& mesh_manager         = m_scene_presenter.model_trinagle_mesh_manager();
+    const MeshManager& mesh_manager         = m_scene_presenter.model_triangle_mesh_manager();
     Project& project                        = m_project_interactor.selected_project();
     Scene::Scene& scene                     = m_scene_presenter.scene();
 

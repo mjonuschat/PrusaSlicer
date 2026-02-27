@@ -467,7 +467,7 @@ void SimplifyGizmo::on_selection_change(Domain::SelectionId project_id, const Bi
     proj_ctx.job_data = {}; // clear previous job data when exists
     NodeInputs node_inputs = create_node_inputs(act_volume_ids, project);
     const PlaterScenePresenter::MeshManager& mesh_manager = 
-        m_scene_presenter.model_trinagle_mesh_manager(project_id);
+        m_scene_presenter.model_triangle_mesh_manager(project_id);
     set_nodes(node_inputs, proj_ctx, m_device, scene, mesh_manager, project);
 
     // sum up triangle count
@@ -588,7 +588,7 @@ void recreate_simplify_nodes(Domain::SelectionId project_id,
         create_node_inputs(proj_ctx.volume_ids, project) :
         into_node_inputs(proj_ctx.job_data.data);
     const PlaterScenePresenter::MeshManager& mesh_manager =
-        scene_presenter.model_trinagle_mesh_manager(project_id);
+        scene_presenter.model_triangle_mesh_manager(project_id);
     set_nodes(node_inputs, proj_ctx, device, scene, mesh_manager, project);
 }
 
