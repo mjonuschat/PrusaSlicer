@@ -1,4 +1,5 @@
 #include "MainFrame.hpp"
+#include "MainFrameDropTarget.hpp"
 
 #include "Slic3r/Version.hpp"
 #include "Slic3r/Directories.hpp"
@@ -347,6 +348,11 @@ MainFrame::MainFrame(
 #endif
         });
     };
+
+    SetDropTarget(new MainFrameDropTarget(project_interactor, m_navigator, [this]() {
+        wxWindow* page = m_left_bar->GetCurrentPage();
+        return page && page->GetId() == static_cast<wxWindowID>(LeftBarTabs::Slicing);
+    }));
 }
 
 MainFrame::~MainFrame()

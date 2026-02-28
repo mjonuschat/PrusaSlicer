@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/Model.hpp"
 
 #include <string>
+#include <vector>
 #include <boost/filesystem/path.hpp>
 #include <tl/expected.hpp>
 
@@ -72,14 +73,34 @@ tl::expected<Domain::Model, std::string>
 read_model_from_file(const std::string& input_file, IMessageDialogProvider* dialog_provider);
 
 /**
+ * Returns all file extensions that the slicer can import (projects and models).
+ *
+ * Extensions are lowercase and dot-prefixed (e.g. ".stl", ".3mf").
+ * This is the single source of truth for importable formats; both
+ * is_supported_file() and the Wildcards file-dialog strings are derived from it.
+ */
+const std::vector<std::string>& get_import_extensions();
+
+/**
  * Checks if the given file is a project file.
  *
- * A project file is defined as a file with a ".3mf" or ".zip" extension.
+ * A project file is defined as a file with a ".3mf" extension.
  * The check is case-insensitive.
  *
  * @param input_file The name of the file to check.
- * @return True if the input_file has a ".3mf" or ".zip" extension, false otherwise.
+ * @return True if the input_file has a ".3mf" extension, false otherwise.
  */
 bool is_project_file(const std::string& input_file);
+
+/**
+ * Checks if the given file is a supported input file (project or model).
+ *
+ * Delegates to get_import_extensions() — no separate extension list to maintain.
+ * The check is case-insensitive.
+ *
+ * @param input_file The name of the file to check.
+ * @return True if the file can be loaded by the slicer, false otherwise.
+ */
+bool is_supported_file(const std::string& input_file);
 
 } // namespace Slic3r::Biz::FileLoadingLogic

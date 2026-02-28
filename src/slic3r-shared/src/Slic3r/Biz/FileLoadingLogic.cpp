@@ -958,10 +958,29 @@ read_model_from_file(const std::string& input_file, IMessageDialogProvider* dial
     return model;
 }
 
+const std::vector<std::string>& get_import_extensions()
+{
+    static const std::vector<std::string> extensions = {
+        ".3mf",
+        ".stl",
+        ".obj",
+        ".step", ".stp"
+    };
+    return extensions;
+}
+
 bool is_project_file(const std::string& input_file)
 {
-    return boost::algorithm::iends_with(input_file, ".3mf")
-        || boost::algorithm::iends_with(input_file, ".zip");
+    return boost::algorithm::iends_with(input_file, ".3mf");
+}
+
+bool is_supported_file(const std::string& input_file)
+{
+    for (const std::string& ext : get_import_extensions()) {
+        if (boost::algorithm::iends_with(input_file, ext))
+            return true;
+    }
+    return false;
 }
 
 } // namespace Slic3r::Biz::FileLoadingLogic

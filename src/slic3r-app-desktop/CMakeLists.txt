@@ -7,6 +7,8 @@ set(SLIC3R_APP_DESKTOP_FILES
     src/Slic3r/App/Desktop/SplashScreen.hpp
     src/Slic3r/App/Desktop/MainFrame.cpp
     src/Slic3r/App/Desktop/MainFrame.hpp
+    src/Slic3r/App/Desktop/MainFrameDropTarget.cpp
+    src/Slic3r/App/Desktop/MainFrameDropTarget.hpp
     include/Slic3r/App/Desktop/TabsBar.hpp
     src/Slic3r/App/Desktop/TabsBarCtrl.cpp
     include/Slic3r/App/Desktop/TabsBarCtrl.hpp
