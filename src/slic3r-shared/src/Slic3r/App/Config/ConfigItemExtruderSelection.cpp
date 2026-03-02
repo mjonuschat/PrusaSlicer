@@ -35,7 +35,11 @@ ConfigItemExtruderSelection::ConfigItemExtruderSelection(
 
     callbacks().selection_changed = [this](int selected)
     {
-        if (current_index() <= project_interactor()->preset_interactor().tool_items().size()) {
+        const size_t n = project_interactor()
+                             ->preset_interactor()
+                             .current_printer_config()
+                             .material_slot_count();
+        if (current_index() <= n) {
             m_cbi_container
                 .set_item_value(*m_state, Domain::ConfigValue{current_index()}, m_cbi_index);
             update_size();
