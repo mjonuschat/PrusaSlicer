@@ -380,8 +380,7 @@ SupportGeneratorLayersPtr generate_raft_base(
     }
 
     // How much to inflate the support columns to be stable. This also applies to the 1st layer, if no raft layers are to be printed.
-    const float inflate_factor_fine      = float(scale_((slicing_params.raft_layers() > 1) ? 0.5 : EPSILON));
-    const float inflate_factor_1st_layer = std::max(0.f, float(scale_(object.config().get<double>("raft_first_layer_expansion"))) - inflate_factor_fine);
+    const float inflate_factor_fine = float(scale_((slicing_params.raft_layers() > 1) ? 0.5 : EPSILON));
     SupportGeneratorLayer       *contacts         = top_contacts         .empty() ? nullptr : top_contacts         .front();
     SupportGeneratorLayer       *interfaces       = interface_layers     .empty() ? nullptr : interface_layers     .front();
     SupportGeneratorLayer       *base_interfaces  = base_interface_layers.empty() ? nullptr : base_interface_layers.front();
@@ -413,7 +412,6 @@ SupportGeneratorLayersPtr generate_raft_base(
     if (slicing_params.raft_layers() > 1) {
         Polygons base;
         Polygons columns;
-        Polygons first_layer;
         if (columns_base != nullptr) {
             if (columns_base->bottom_print_z() > slicing_params.raft_interface_top_z - EPSILON) {
                 // Classic supports with colums above the raft interface.
@@ -425,23 +423,51 @@ SupportGeneratorLayersPtr generate_raft_base(
             } else {
                 // Organic supports with raft on print bed.
                 assert(is_approx(columns_base->print_z, slicing_params.first_print_layer_height));
-                first_layer = columns_base->polygons;
             }
         }
         if (! interface_polygons.empty()) {
             // Merge the untrimmed columns base with the expanded raft interface, to be used for the support base and interface.
-            base = union_(base, interface_polygons); 
+            base = union_(base, interface_polygons);
         }
         // Do not add the raft contact layer, only add the raft layers below the contact layer.
         // Insert the 1st layer.
         {
+            const float inflate_factor_1st_layer_raft = std::max(
+                0.f,
+                static_cast<float>(
+                    scale_(object.config().get<double>("raft_first_layer_expansion"))
+                ) - inflate_factor_fine
+            );
+            const float inflate_factor_1st_layer_support = std::max(
+                0.f,
+                static_cast<float>(
+                    scale_(object.config().get<double>("support_material_first_layer_expansion"))
+                ) - inflate_factor_fine
+            );
+
             SupportGeneratorLayer &new_layer = layer_storage.allocate_unguarded(slicing_params.base_raft_layers > 0 ? SupporLayerType::RaftBase : SupporLayerType::RaftInterface);
             raft_layers.push_back(&new_layer);
             new_layer.print_z = slicing_params.first_print_layer_height;
             new_layer.height  = slicing_params.first_print_layer_height;
             new_layer.bottom_z = 0.;
-            first_layer = union_(std::move(first_layer), base);
-            new_layer.polygons = inflate_factor_1st_layer > 0 ? expand(first_layer, inflate_factor_1st_layer) : first_layer;
+
+            // Expand raft and support areas separately. Each has its own first-layer expansion parameter.
+            const Polygons raft_expanded    = inflate_factor_1st_layer_raft > 0.f ?
+                   expand(interface_polygons, inflate_factor_1st_layer_raft) :
+                   interface_polygons;
+            const Polygons support_expanded = columns_base != nullptr ?
+                (inflate_factor_1st_layer_support > 0 ?
+                     expand(columns_base->polygons, inflate_factor_1st_layer_support) :
+                     columns_base->polygons) :
+                Polygons();
+
+            new_layer.polygons = union_(raft_expanded, support_expanded);
+
+            // Store support area for separate first-layer density fill.
+            if (!support_expanded.empty()) {
+                new_layer.first_layer_support_polygons =
+                    std::make_unique<Polygons>(std::move(support_expanded));
+            }
         }
         // Insert the base layers.
         for (size_t i = 1; i < slicing_params.base_raft_layers; ++ i) {
@@ -467,19 +493,30 @@ SupportGeneratorLayersPtr generate_raft_base(
         }
     } else {
         if (columns_base != nullptr) {
+            // Without raft the first layer is just support.
+            const float inflate_factor_1st_layer = std::max(
+                0.f,
+                float(scale_(object.config().get<double>("support_material_first_layer_expansion")))
+                    - inflate_factor_fine
+            );
+
             // Expand the bases of the support columns in the 1st layer.
-            Polygons &raft     = columns_base->polygons;
+            Polygons &support_columns = columns_base->polygons;
             Polygons  trimming = offset(object.layers().front()->lslices, (float)scale_(support_params.gap_xy), SUPPORT_SURFACES_OFFSET_PARAMETERS);
             if (inflate_factor_1st_layer > SCALED_EPSILON) {
                 // Inflate in multiple steps to avoid leaking of the support 1st layer through object walls.
                 auto  nsteps = std::max(5, int(ceil(inflate_factor_1st_layer / support_params.first_layer_flow.scaled_width())));
                 float step   = inflate_factor_1st_layer / nsteps;
-                for (int i = 0; i < nsteps; ++ i)
-                    raft = diff(expand(raft, step), trimming);
-            } else
-                raft = diff(raft, trimming);
-            if (! interface_polygons.empty())
+                for (int i = 0; i < nsteps; ++i) {
+                    support_columns = diff(expand(support_columns, step), trimming);
+                }
+            } else {
+                support_columns = diff(support_columns, trimming);
+            }
+
+            if (!interface_polygons.empty()) {
                 columns_base->polygons = diff(columns_base->polygons, interface_polygons);
+            }
         }
         if (!brim.empty()) {
             if (columns_base) {
@@ -1582,34 +1619,86 @@ void generate_support_toolpaths(
 
             Fill *filler = filler_interface.get();
             Flow  flow = support_params.first_layer_flow;
-            float density = 0.f;
+            float raft_fill_density = 0.f;
             if (support_layer_id == 0) {
                 // Base flange.
-                filler->angle = support_params.raft_angle_1st_layer;
-                filler->spacing = support_params.first_layer_flow.spacing();
-                density       = float(config.get<Domain::Percentage>("raft_first_layer_density").get_abs_value(1.0));
+                filler->angle     = support_params.raft_angle_1st_layer;
+                filler->spacing   = support_params.first_layer_flow.spacing();
+                raft_fill_density = float(
+                    config.get<Domain::Percentage>("raft_first_layer_density").get_abs_value(1.0)
+                );
             } else if (support_layer_id >= slicing_params.base_raft_layers) {
                 filler->angle = support_params.raft_interface_angle(support_layer.interface_id());
                 // We don't use $base_flow->spacing because we need a constant spacing
                 // value that guarantees that all layers are correctly aligned.
                 filler->spacing = support_params.support_material_flow.spacing();
-                assert(! raft_layer.bridging);
-                flow          = Flow(float(support_params.raft_interface_flow.width()), float(raft_layer.height), support_params.raft_interface_flow.nozzle_diameter());
-                density       = float(support_params.raft_interface_density);
-            } else
+                assert(!raft_layer.bridging);
+                raft_fill_density = float(support_params.raft_interface_density);
+                flow              = Flow(
+                    float(support_params.raft_interface_flow.width()),
+                    float(raft_layer.height),
+                    support_params.raft_interface_flow.nozzle_diameter()
+                );
+            } else {
                 continue;
-            filler->link_max_length = coord_t(scale_(filler->spacing * link_max_length_factor / density));
-            fill_expolygons_with_sheath_generate_paths(
-                // Destination
-                support_layer.support_fills.entities, 
-                // Regions to fill
-                tree_polygons.empty() ? raft_layer.polygons : diff(raft_layer.polygons, tree_polygons),
-                // Filler and its parameters
-                filler, density,
-                // Extrusion parameters
-                (support_layer_id < slicing_params.base_raft_layers) ? ExtrusionRole::SupportMaterial : ExtrusionRole::SupportMaterialInterface, flow, 
-                // sheath at first layer
-                support_layer_id == 0, support_layer_id == 0, support_params.prefer_clockwise_movements);
+            }
+
+            const auto fill_first_layer_region = [&](const Polygons& fill_polygons,
+                                                     float fill_density,
+                                                     ExtrusionRole extrusion_role) -> void
+            {
+                filler->link_max_length =
+                    coord_t(scale_(filler->spacing * link_max_length_factor / fill_density));
+                fill_expolygons_with_sheath_generate_paths(
+                    // Destination
+                    support_layer.support_fills.entities,
+                    // Regions to fill
+                    tree_polygons.empty() ? fill_polygons : diff(fill_polygons, tree_polygons),
+                    // Filler and its parameters
+                    filler,
+                    fill_density,
+                    // Extrusion parameters
+                    extrusion_role,
+                    flow,
+                    // Sheath at first layer
+                    support_layer_id == 0,
+                    support_layer_id == 0,
+                    support_params.prefer_clockwise_movements
+                );
+            };
+
+            // On the first raft layer, raft and support areas are filled separately when they have different densities.
+            const bool has_support_polygons = support_layer_id == 0
+                && raft_layer.first_layer_support_polygons != nullptr
+                && !raft_layer.first_layer_support_polygons->empty();
+            const float support_fill_density = has_support_polygons ?
+                static_cast<float>(
+                    config.get<Domain::Percentage>("support_material_first_layer_density")
+                        .get_abs_value(1.)
+                ) :
+                raft_fill_density;
+            const bool has_separate_support =
+                has_support_polygons && support_fill_density != raft_fill_density;
+
+            // Fill the raft area (or the entire layer if densities match).
+            const Polygons& raft_fill_polygons = has_separate_support ?
+                diff(raft_layer.polygons, *raft_layer.first_layer_support_polygons) :
+                raft_layer.polygons;
+
+            const ExtrusionRole raft_extrusion_role =
+                (support_layer_id < slicing_params.base_raft_layers) ?
+                ExtrusionRole::SupportMaterial :
+                ExtrusionRole::SupportMaterialInterface;
+            fill_first_layer_region(raft_fill_polygons, raft_fill_density, raft_extrusion_role);
+
+            // Fill the support area on the first layer with support_material_first_layer_density.
+            if (has_separate_support) {
+                fill_first_layer_region(
+                    *raft_layer.first_layer_support_polygons,
+                    support_fill_density,
+                    ExtrusionRole::SupportMaterial
+                );
+            }
         }
     });
 
@@ -1827,7 +1916,8 @@ void generate_support_toolpaths(
                     // Base flange (the 1st layer).
                     filler = filler_first_layer;
                     filler->angle = deg2rad(float(config.get<double>("support_material_angle") + 90.));
-                    density = float(config.get<Domain::Percentage>("raft_first_layer_density").get_abs_value(1.0));
+                    // Without raft the first layer is just support.
+                    density = float(config.get<Domain::Percentage>("support_material_first_layer_density").get_abs_value(1.));
                     flow = support_params.first_layer_flow;
                     // use the proper spacing for first layer as we don't need to align
                     // its pattern to the other layers

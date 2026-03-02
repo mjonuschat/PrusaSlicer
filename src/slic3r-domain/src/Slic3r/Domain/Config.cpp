@@ -504,6 +504,8 @@ const CompatibilityRules& get_compatibility_rules()
         {"support_material_bottom_contact_distance", CompatibilityRule::Average},
         {"support_material_enforce_layers", CompatibilityRule::Max},
         {"support_material_extrusion_width", CompatibilityRule::IgnoreOverrides},
+        {"support_material_first_layer_density", CompatibilityRule::Average},
+        {"support_material_first_layer_expansion", CompatibilityRule::Max},
         {"support_material_interface_contact_loops", CompatibilityRule::IgnoreOverrides},
         {"support_material_interface_layers", CompatibilityRule::Max},
         {"support_material_bottom_interface_layers", CompatibilityRule::Max},

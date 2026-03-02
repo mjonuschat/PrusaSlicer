@@ -80,6 +80,7 @@ public:
         merge(this->contact_polygons,  rhs.contact_polygons);
         merge(this->overhang_polygons, rhs.overhang_polygons);
         merge(this->enforcer_polygons, rhs.enforcer_polygons);
+        merge(this->first_layer_support_polygons, rhs.first_layer_support_polygons);
         rhs.reset();
     }
 
@@ -114,6 +115,9 @@ public:
 	std::unique_ptr<Polygons> overhang_polygons;
 	// Enforcers need to be propagated independently in case the "support on build plate only" option is enabled.
 	std::unique_ptr<Polygons> enforcer_polygons;
+    // Support column polygons on the first raft layer, filled with support_material_first_layer_density
+    // (separate from the raft area filled with raft_first_layer_density).
+    std::unique_ptr<Polygons> first_layer_support_polygons;
 };
 
 // Layers are allocated and owned by a deque. Once a layer is allocated, it is maintained

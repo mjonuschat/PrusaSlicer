@@ -601,11 +601,44 @@ static int get_extruder_num(const Slic3rLegacy::DynamicPrintConfig& cfg)
     return cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
 }
 
-ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
+static void split_raft_first_layer_params(Slic3rLegacy::DynamicPrintConfig& cfg)
 {
+    if (cfg.has("raft_first_layer_density") && !cfg.has("support_material_first_layer_density")) {
+        cfg.set_key_value(
+            "support_material_first_layer_density",
+            cfg.option("raft_first_layer_density")->clone()
+        );
+    }
+
+    if (cfg.has("raft_first_layer_expansion") && !cfg.has("support_material_first_layer_expansion"))
+    {
+        cfg.set_key_value(
+            "support_material_first_layer_expansion",
+            cfg.option("raft_first_layer_expansion")->clone()
+        );
+    }
+}
+
+static void convert_legacy_fdm_options(Slic3rLegacy::DynamicPrintConfig& cfg)
+{
+    if (!cfg.has("printer_technology")
+        || cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology")
+            != Slic3rLegacy::ptFFF)
+    {
+        return;
+    }
+
     // Since PrusaSlicer 3.0.0, all extrusion width options are related to nozzle diameter instead of layer height,
     // so we need to convert them into absolute values to preserve backward compatibility.
     convert_legacy_extrusion_width_options(cfg);
+
+    // Since PrusaSlicer 3.0.0, raft_first_layer_density/expansion are split into separate raft and support parameters.
+    split_raft_first_layer_params(cfg);
+}
+
+ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
+{
+    convert_legacy_fdm_options(cfg);
 
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology"); pt == Slic3rLegacy::ptFFF) {
