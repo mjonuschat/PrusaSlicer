@@ -149,6 +149,7 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
 ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     ToolbarID id,
     Render::Icon icon,
+    const std::string& label,
     const std::string& tooltip,
     ToolbarSwitchButton::SwitchPosition switch_position
 )
@@ -159,7 +160,7 @@ ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     toolbar->set_visible(true);
 
     ToolbarSwitchButton* switch_button =
-        toolbar->emplace_back<ToolbarSwitchButton>(switch_position, icon, tooltip);
+        toolbar->emplace_back<ToolbarSwitchButton>(switch_position, icon, label, tooltip);
 
     return switch_button;
 }
@@ -322,8 +323,7 @@ void AbstractRenderLayout::init_right_column()
 
 void AbstractRenderLayout::init_toolbar_row()
 {
-    constexpr float min_tt_size = 40.f;
-    constexpr float max_tt_size = 40.f;
+    constexpr float button_size = 40.f;
 
     m_layout_middle_toolbar_row = m_layout_middle_column->emplace_back<Item>();
     m_layout_middle_toolbar_row->set_orientation(Orientation::Horizontal);
@@ -332,22 +332,22 @@ void AbstractRenderLayout::init_toolbar_row()
     m_layout_middle_toolbar_row->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
     m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("TopToolbar");
-    m_left_toolbar->set_button_min_size({min_tt_size, min_tt_size});
-    m_left_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_left_toolbar->set_button_width(button_size);
+    m_left_toolbar->set_button_height(button_size);
     m_left_toolbar->set_orientation(Orientation::Horizontal);
     m_left_toolbar->set_flex_shrink(0);
     m_left_toolbar->set_visible(false);
 
     m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("MiddleToolbar");
-    m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
-    m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_middle_toolbar->set_button_width(button_size);
+    m_middle_toolbar->set_button_height(button_size);
     m_middle_toolbar->set_orientation(Orientation::Horizontal);
     m_middle_toolbar->set_collapsible(true);
     m_middle_toolbar->set_visible(false);
 
     m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("BottomToolbar");
-    m_right_toolbar->set_button_min_size({min_tt_size, min_tt_size});
-    m_right_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_right_toolbar->set_button_width(button_size);
+    m_right_toolbar->set_button_height(button_size);
     m_right_toolbar->set_orientation(Orientation::Horizontal);
     m_right_toolbar->set_flex_shrink(0);
     m_right_toolbar->set_visible(false);

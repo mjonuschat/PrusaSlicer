@@ -9,11 +9,13 @@ namespace Slic3r::App::Yoga {
 ToolbarSwitchButton::ToolbarSwitchButton(
     SwitchPosition switch_position,
     Render::Icon icon,
+    const std::string& label,
     const std::string& tooltip
 ) :
     ToolbarButton(icon, tooltip),
     m_switch_position(switch_position)
 {
+    set_label(label);
     set_background_color(ImColor(41, 41, 41));
     set_background_color_checked(ImColor(39, 47, 64));
 

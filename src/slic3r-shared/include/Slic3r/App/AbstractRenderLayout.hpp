@@ -80,6 +80,7 @@ public:
     Yoga::ToolbarSwitchButton* add_toolbar_item_switch(
         ToolbarID id,
         Render::Icon icon,
+        const std::string& label,
         const std::string& tooltip,
         Yoga::ToolbarSwitchButton::SwitchPosition switch_position
     );

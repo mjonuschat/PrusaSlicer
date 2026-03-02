@@ -34,14 +34,11 @@ public:
     std::optional<size_t> index_of(ToolbarButton* button) const;
     bool contains(ToolbarButton* button) const;
 
-    const Vec2f& button_min_size() const;
-    void set_button_min_size(const Vec2f& button_min_size);
+    float button_width() const;
+    void set_button_width(float button_width);
 
-    const Vec2f& button_max_size() const;
-    void set_button_max_size(const Vec2f& button_max_size);
-
-    float button_aspect_ratio() const;
-    void set_button_aspect_ratio(float button_aspect_ratio);
+    float button_height() const;
+    void set_button_height(float button_height);
 
     float available_size() const;
     void set_available_size(float available_size);
@@ -64,12 +61,11 @@ private:
 
     std::vector<ToolbarButton*> m_buttons;
     ToolbarButton* m_button_more = nullptr;
-    Vec2f m_button_min_size;
-    Vec2f m_button_max_size     = {YGUndefined, YGUndefined};
-    float m_button_aspect_ratio = 1.f;
-    float m_available_size      = YGUndefined;
-    bool m_collapsible          = false;
-    bool m_hovered              = false;
+    float m_button_width         = 0;
+    float m_button_height        = 0;
+    float m_available_size       = YGUndefined;
+    bool m_collapsible           = false;
+    bool m_hovered               = false;
 };
 
 } // namespace Slic3r::App::Yoga

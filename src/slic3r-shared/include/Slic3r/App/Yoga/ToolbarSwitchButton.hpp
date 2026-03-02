@@ -22,6 +22,7 @@ public:
     ToolbarSwitchButton(
         SwitchPosition switch_position,
         Render::Icon icon,
+        const std::string& label   = {},
         const std::string& tooltip = {}
     );
 

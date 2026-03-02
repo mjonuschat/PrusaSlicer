@@ -88,9 +88,8 @@ Toolbar* ToolbarButton::get_or_create_subtoolbar()
         m_subtoolbar = emplace_back<Toolbar>("subtoolbar");
         m_subtoolbar->set_orientation(Orientation::Horizontal);
         m_subtoolbar->set_position_type(YGPositionType::YGPositionTypeAbsolute);
-        m_subtoolbar->set_button_aspect_ratio(m_aspect_ratio);
-        m_subtoolbar->set_button_min_size(m_min_size);
-        m_subtoolbar->set_button_max_size(m_max_size);
+        m_subtoolbar->set_button_width(width());
+        m_subtoolbar->set_button_height(height());
         m_subtoolbar->set_visible(false);
 
         callbacks().action = [this]

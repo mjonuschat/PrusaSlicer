@@ -67,51 +67,41 @@ bool Toolbar::contains(ToolbarButton* button) const
     return index_of(button).has_value();
 }
 
-const Vec2f& Toolbar::button_min_size() const
+float Toolbar::button_width() const
 {
-    return m_button_min_size;
+    return m_button_width;
 }
 
-void Toolbar::set_button_min_size(const Vec2f& button_min_size)
+void Toolbar::set_button_width(const float button_width)
 {
-    if (m_button_min_size != button_min_size) {
-        m_button_min_size = button_min_size;
+    if (!Domain::fuzzy_compare(m_button_width, button_width)) {
+        m_button_width = button_width;
         for (ToolbarButton* button : std::as_const(m_buttons)) {
-            button->set_min_size(button_min_size);
+            if (m_orientation == Orientation::Horizontal && !button->label().empty()) {
+                continue;
+            }
+            button->set_width(button_width);
         }
-        m_button_more->set_min_size(button_min_size);
+        m_button_more->set_width(button_width);
     }
 }
 
-const Vec2f& Toolbar::button_max_size() const
+float Toolbar::button_height() const
 {
-    return m_button_max_size;
+    return m_button_height;
 }
 
-void Toolbar::set_button_max_size(const Vec2f& button_max_size)
+void Toolbar::set_button_height(float button_height)
 {
-    if (m_button_max_size != button_max_size) {
-        m_button_max_size = button_max_size;
+    if (!Domain::fuzzy_compare(m_button_height, button_height)) {
+        m_button_height = button_height;
         for (ToolbarButton* button : std::as_const(m_buttons)) {
-            button->set_max_size(button_max_size);
+            if (m_orientation == Orientation::Vertical && !button->label().empty()) {
+                continue;
+            }
+            button->set_height(button_height);
         }
-        m_button_more->set_max_size(button_max_size);
-    }
-}
-
-float Toolbar::button_aspect_ratio() const
-{
-    return m_button_aspect_ratio;
-}
-
-void Toolbar::set_button_aspect_ratio(float button_aspect_ratio)
-{
-    if (m_button_aspect_ratio != button_aspect_ratio) {
-        m_button_aspect_ratio = button_aspect_ratio;
-        for (ToolbarButton* button : std::as_const(m_buttons)) {
-            button->set_aspect_ratio(button_aspect_ratio);
-        }
-        m_button_more->set_aspect_ratio(button_aspect_ratio);
+        m_button_more->set_height(button_height);
     }
 }
 
@@ -125,9 +115,15 @@ void Toolbar::insert(ObjectPtr child, size_t index)
     ToolbarButton* button = dynamic_cast<ToolbarButton*>(child.get());
     ASSERT(button);
 
-    button->set_min_size(m_button_min_size);
-    button->set_max_size(m_button_max_size);
-    button->set_aspect_ratio(m_button_aspect_ratio);
+    if (m_button_width > 0 && (m_orientation != Orientation::Horizontal || button->label().empty()))
+    {
+        button->set_width(m_button_width);
+    }
+    if (m_button_height > 0 && (m_orientation != Orientation::Vertical || button->label().empty()))
+    {
+        button->set_height(m_button_height);
+    }
+
     m_buttons.push_back(button);
     Item::insert(std::move(child), object_count() ? index - 1 : index);
 }
@@ -168,14 +164,15 @@ void Toolbar::style_node()
     // I will someday clean this up, but today is not the day
     if (m_collapsible
         && parent_item()
-        && !m_button_min_size.isZero()
+        && m_button_width > 0
+        && m_button_height > 0
         && is_visible()
         && width() > 0
         && height() > 0)
     {
         // Compute available size
-        float available_size =
-            m_orientation == Orientation::Horizontal ? parent_item()->width() : parent_item()->height();
+        float available_size = m_orientation == Orientation::Horizontal ? parent_item()->width() :
+                                                                          parent_item()->height();
         for (Item* node : parent_item()->items()) {
             if (node != this) {
                 available_size -=
@@ -195,7 +192,8 @@ void Toolbar::style_node()
         // Decide which buttons will be included
 
         // Assume button size
-        const float button_size = m_button_min_size.x();
+        const float button_size =
+            m_orientation == Orientation::Horizontal ? m_button_width : m_button_height;
         // Take away size from collapsed button
         available_size -= button_size;
 

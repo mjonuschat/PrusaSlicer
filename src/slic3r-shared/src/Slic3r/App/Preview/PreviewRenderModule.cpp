@@ -970,17 +970,18 @@ void PreviewRenderModule::init_scene_layout()
 
     // init toolbars
 
-
     m_button_plater_switch = m_layout->add_toolbar_item_switch(
-            ToolbarID::Right,
-            Render::Icon::ObjectIcon,
-            _u8L("Plater view"),
-            Yoga::ToolbarSwitchButton::SwitchPosition::Left
-        );
+        ToolbarID::Right,
+        Render::Icon::ObjectIcon,
+        _u8L("Prepare"),
+        _u8L("Prepare view"),
+        Yoga::ToolbarSwitchButton::SwitchPosition::Left
+    );
 
     ToolbarButton* preview_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
+        _u8L("Preview"),
         _u8L("Preview view"),
         Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );

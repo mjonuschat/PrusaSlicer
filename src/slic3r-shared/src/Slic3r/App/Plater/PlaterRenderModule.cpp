@@ -662,19 +662,19 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Height Range"),
         m_height_range_gizmo
     );
-
-    m_layout
-        ->add_toolbar_item_switch(
-            ToolbarID::Right,
-            Render::Icon::ObjectIcon,
-            _u8L("Plater view"),
-            Yoga::ToolbarSwitchButton::SwitchPosition::Left
-        )
-        ->set_checked(true);
+    ToolbarButton* plater_button = m_layout->add_toolbar_item_switch(
+        ToolbarID::Right,
+        Render::Icon::ObjectIcon,
+        _u8L("Prepare"),
+        _u8L("Prepare view"),
+        Yoga::ToolbarSwitchButton::SwitchPosition::Left
+    );
+    plater_button->set_checked(true);
 
     m_toolbar_preview_switch = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
+        _u8L("Preview"),
         _u8L("Preview view"),
         Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
@@ -751,7 +751,7 @@ void PlaterRenderModule::update_object_selection()
     const bool empty_selection = selection.empty();
     m_layout->middle_toolbar()->set_visible(!empty_selection);
 
-    
+
     update_toolbar_visibility();
 
     update_current_right_sidebar();
