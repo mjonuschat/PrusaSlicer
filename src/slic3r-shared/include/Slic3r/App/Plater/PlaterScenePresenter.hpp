@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp"
+#include "Slic3r/App/Plater/ColorsDebugDialog.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
@@ -282,6 +283,8 @@ private:
 
     bool m_freeze_selection_center{ false };
     bool m_volume_materials_dirty{ true };
+
+    ColorsDebugDialog m_colors_debug_dialog;
 };
 
 } // namespace Slic3r::App::Plater

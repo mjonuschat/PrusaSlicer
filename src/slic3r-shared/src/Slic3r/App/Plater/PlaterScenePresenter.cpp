@@ -1,5 +1,7 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
+
 #include <ranges>
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
@@ -93,6 +95,9 @@ PlaterScenePresenter::PlaterScenePresenter(
     m_project_interactor.add_listener<ISelectedProjectChangedListener>(&m_bed_render_updater);
     m_project_interactor.add_listener<ISelectedProjectChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
+
+    m_project_interactor.project_settings_interactor()
+        .add_listener<Biz::IColorsChangedListener>(&m_colors_debug_dialog);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -235,6 +240,10 @@ void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
         render_imgui_debug_bed_error(project_context().bed_error());
 #endif // ENABLE_DEBUG_BED_ERROR
         scene().render_imgui(screen_info);
+        m_colors_debug_dialog.render_imgui(
+            m_project_interactor.project_settings_interactor(),
+            m_project_interactor.selected_config_container_id()
+        );
     }
 }
 

@@ -4511,6 +4511,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "Extrude the excess material into the wipe tower.");
     def->init_fn = init_with(false);
 
+    def = defs.add("extruder_slot_colours", typeid(std::vector<std::string>));
+    def->location = Project;
+    def->category = ConfigItemDef::Category::Hidden;
+    def->label = L("Extruder slot colors");
+    def->tooltip = L("Per-slot color map for the config container. "
+                     "Each entry is a hex color string (e.g. \"#FF8000\"). "
+                     "Never empty strings; the priority chain guarantees a non-empty fallback.");
+    def->init_fn = init_with(std::vector<std::string>{});
+
     def = defs.add("wiping_volumes_matrix", typeid(std::vector<double>));
     def->location = Project;
     def->category = ConfigItemDef::Category::Hidden;

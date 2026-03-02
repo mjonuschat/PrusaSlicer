@@ -440,6 +440,28 @@ void ProjectInteractor::on_slicing_input_removed(const Domain::BedRef& bed_insta
     m_slicing_interactor.remove_bed(bed_instance.instance_id);
 }
 
+void ProjectInteractor::on_colors_changed(
+    Domain::SelectionId config_container_id,
+    const std::vector<std::string>& /*colors*/
+)
+{
+    auto& project = selected_project();
+    const auto* config_container = project.find_config_container(config_container_id);
+    if (!config_container)
+        return;
+
+    const auto& selected_preset = config_container->selected_preset();
+    for (const auto& bed_instance : config_container->bed_instances()) {
+        m_slicing_interactor.update_process(
+            project.model(),
+            project.metadata(),
+            selected_preset.metadata(),
+            config_container->print_config(),
+            *bed_instance
+        );
+    }
+}
+
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag)
 {
     m_selection.project_id = project_id;

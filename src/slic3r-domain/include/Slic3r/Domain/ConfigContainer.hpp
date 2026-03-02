@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/FindById.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
@@ -31,9 +32,16 @@ public:
         return m_preset;
     }
 
-    ConfigPack print_config() const
+    ConfigPack print_config() const;
+
+    Domain::ProjectSettings& project_settings()
     {
-        return m_preset.config();
+        return m_project_settings;
+    }
+
+    const Domain::ProjectSettings& project_settings() const
+    {
+        return m_project_settings;
     }
 
     void set_bed(const Bed& bed)
@@ -77,6 +85,7 @@ public:
 
 private:
     Preset::SelectedPreset m_preset{};
+    Domain::ProjectSettings m_project_settings;
 
     const Bed* m_bed{nullptr};
     BedInstanceList m_bed_instances;

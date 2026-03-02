@@ -212,6 +212,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"extruder_clearance_radius", steps({propagate(psGCodeExport)})},
     {"extruder_colour", steps({propagate(psGCodeExport)})},
     {"extruder_offset", steps({propagate(psGCodeExport)})},
+    {"extruder_slot_colours", steps({propagate(psGCodeExport)})},
     {"extrusion_axis", steps({propagate(psGCodeExport)})},
     {"extrusion_multiplier", steps({propagate(psGCodeExport)})},
     {"extrusion_width", all_steps()},
