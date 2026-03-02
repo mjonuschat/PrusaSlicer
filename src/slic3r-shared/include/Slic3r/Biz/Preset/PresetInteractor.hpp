@@ -790,8 +790,8 @@ private:
     bool material_has_unsaved_changes(size_t tool_index) const;
 
     void fill_printer_presets(ListenerInvokeLaterBag& bag);
-    void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
-    void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_print_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_tools_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);

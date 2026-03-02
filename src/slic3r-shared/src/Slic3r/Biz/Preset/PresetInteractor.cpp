@@ -390,7 +390,7 @@ void PresetInteractor::save_user_preset_internal(
             preset_bundle,
             selected_preset.tools[slot_index],
             get_tool_print_system_preset(
-            m_selected_project_id,
+                m_selected_project_id,
                 ids.hw_config_id,
                 ids.printer_id,
                 ids.print_id,
@@ -993,8 +993,10 @@ bool PresetInteractor::material_has_unsaved_changes(size_t slot_index) const
         );
 }
 
-
-void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
+void PresetInteractor::fill_print_presets(
+    const Domain::Preset::SelectedPreset& selected_preset,
+    ListenerInvokeLaterBag& bag
+)
 {
     const auto& p                      = get_or_fail_project_context(m_selected_project_id);
     const auto& hw_config              = selected_preset.hw_config;
@@ -1017,7 +1019,7 @@ void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& select
     select_print_preset_internal(item.id, bag);
 }
 
-void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
+void PresetInteractor::fill_tools_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
 {
     const Domain::Preset::HwPrinterConfig& hw_config = selected_preset.hw_config;
     std::vector<PresetItemObservableList> tools;
