@@ -562,18 +562,27 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
         }
         return tl::make_unexpected(FileLoadError::error(loaded_mesh.error()));
     } else if (is_3mf) {
-        Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
-        if (loaded_3mf.model.objects.empty()) {
+        try {
+            Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
+            if (loaded_3mf.model.objects.empty()) {
+                return tl::make_unexpected(FileLoadError::error(
+                    fmt::vformat(
+                        _u8L("Model from {} couldn't be read because it's empty"),
+                        fmt::make_format_args(ret.file_name)
+                    )
+                ));
+            }
+
+            ret.model = loaded_3mf.model;
+            return ret;
+        } catch (const Loaded3MFException& e) {
             return tl::make_unexpected(FileLoadError::error(
                 fmt::vformat(
-                    _u8L("Model from {} couldn't be read because it's empty"),
-                    fmt::make_format_args(ret.file_name)
+                    _u8L("Failed to load model from 3MF file {}. {}"),
+                    fmt::make_format_args(ret.file_name, e.issue.msg)
                 )
             ));
         }
-
-        ret.model = loaded_3mf.model;
-        return ret;
     } else if (is_step) {
         Biz::Platform::IAppConfigProvider& app_config = Platform::PlatformServices::instance().app_config_provider();
         double linear_precision = app_config.get_step_linear_precision();

@@ -22,6 +22,7 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Utils.hpp" // ScopeGuard
 
@@ -32,6 +33,7 @@
 
 using Slic3r::Domain::SquareMatrix3d;
 
+using Slic3r::Biz::_u8L;
 using Slic3r::Domain::is_approx;
 
 using ModelObject       = Slic3r::Domain::ModelObject;
@@ -641,7 +643,7 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
     if (!open_zip_reader(&archive, filepath_str))
         throw Loaded3MFException(Read3mfIssue(
             Read3mfIssueType::zip_error,
-            std::string("Unable to open archive.") + MZ_Archive::get_errorstr(archive.m_last_error)
+            _u8L("Unable to open archive: ") + MZ_Archive::get_errorstr(archive.m_last_error)
         ));
 
     ScopeGuard sg_archive([&archive]() { close_zip_reader(&archive); });
