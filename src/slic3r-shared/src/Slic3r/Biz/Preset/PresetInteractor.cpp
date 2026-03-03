@@ -127,7 +127,7 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
         // TODO: remove this when config wizard is ready
         if (preset_bundle.printer_configs.empty()) {
             HwConfigEvaluator config_eval;
-            for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
+            for (const auto& vendor : {"PrusaResearch", /*"PrusaResearchSLA"*/}) {
                 auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
                 ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
                 auto& vendor_bundle = vendor_bundle_it->second;
