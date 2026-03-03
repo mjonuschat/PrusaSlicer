@@ -30,8 +30,15 @@ void Wipe::init(const PrintConfigView &config, const std::vector<unsigned int> &
     for (auto id : extruders)
         if (config.get<std::vector<bool>>("wipe").at(id)) {
             // Wipe length to extrusion ratio.
-            const double xy_to_e = this->calc_xy_to_e_ratio(config, id);
-            wipe_xy = std::max(wipe_xy, config.get<std::vector<double>>("retract_length").at(id) / xy_to_e);
+            const double xy_to_e = this->calc_xy_to_e_ratio(
+                config.get<std::vector<double>>("retract_speed"),
+                config.get<double>("travel_speed"),
+                id
+            );
+            wipe_xy = std::max(
+                wipe_xy,
+                config.get<std::vector<double>>("retract_length").at(id) / xy_to_e
+            );
             if (multimaterial)
                 wipe_xy = std::max(wipe_xy, config.get<std::vector<double>>("retract_length_toolchange").at(id) / xy_to_e);
         }
@@ -65,18 +72,23 @@ void Wipe::set_path(SmoothPath &&path) {
     assert(m_path.empty() || m_path.size() > 1);
 }
 
-std::string Wipe::wipe(GCodeGenerator &gcodegen, const Domain::ConfigView& config, bool toolchange)
+std::string Wipe::wipe(
+    GCodeGenerator& gcodegen,
+    const std::vector<double>& retract_speed,
+    double travel_speed,
+    bool toolchange
+)
 {
-    std::string     gcode;
+    std::string gcode;
     const Extruder &extruder = *gcodegen.writer().extruder();
     static constexpr const std::string_view wipe_retract_comment = "wipe and retract"sv;
 
     // Remaining quantized retraction length.
-    if (double retract_length = extruder.retract_to_go(toolchange ? extruder.retract_length_toolchange() : extruder.retract_length()); 
+    if (double retract_length = extruder.retract_to_go(toolchange ? extruder.retract_length_toolchange() : extruder.retract_length());
         retract_length > 0 && this->has_path()) {
         // Delayed emitting of a wipe start tag.
         bool wiped = false;
-        const double wipe_speed = this->calc_wipe_speed(config);
+        const double wipe_speed = this->calc_wipe_speed(travel_speed);
         auto start_wipe = [&wiped, &gcode, &gcodegen, wipe_speed](){
             if (! wiped) {
                 wiped = true;
@@ -84,7 +96,7 @@ std::string Wipe::wipe(GCodeGenerator &gcodegen, const Domain::ConfigView& confi
                 gcode += gcodegen.writer().set_speed(wipe_speed * 60, {}, gcodegen.enable_cooling_markers() ? ";_WIPE"sv : ""sv);
             }
         };
-        const double xy_to_e    = this->calc_xy_to_e_ratio(config, extruder.id());
+        const double xy_to_e    = this->calc_xy_to_e_ratio(retract_speed, travel_speed, extruder.id());
         auto         wipe_linear = [&gcode, &gcodegen, &retract_length, xy_to_e](const Vec2d &prev_quantized, Vec2d &p) {
             Vec2d  p_quantized = GCodeFormatter::quantize(p);
             if (p_quantized == prev_quantized) {

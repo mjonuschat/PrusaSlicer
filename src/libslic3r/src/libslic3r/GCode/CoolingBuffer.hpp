@@ -20,6 +20,7 @@
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/GCode/CoolingBufferConfig.hpp"
 
 namespace Slic3r {
 
@@ -39,7 +40,7 @@ class PrintConfigView;
 //
 class CoolingBuffer {
 public:
-    CoolingBuffer(GCodeGenerator &gcodegen, const PrintConfigView& config);
+    CoolingBuffer(GCodeGenerator& gcodegen, const Biz::Slicing::CoolingBufferConfig& config);
     void        reset(const Vec3d &position);
     void        set_current_extruder(unsigned int extruder_id) { m_current_extruder = extruder_id; }
     std::string process_layer(std::string &&gcode, size_t layer_id, bool flush);
@@ -72,7 +73,7 @@ private:
     const std::string           m_toolchange_prefix;
     // Referencs GCodeGenerator::m_config, which is Domain::FullConfigFDM. While the PrintObjectConfig slice of Domain::FullConfigFDM is being modified,
     // the PrintConfig slice of Domain::FullConfigFDM is constant, thus no thread synchronization is required.
-    const PrintConfigView &m_config;
+    Biz::Slicing::CoolingBufferConfig m_config;
     unsigned int                m_current_extruder;
 };
 

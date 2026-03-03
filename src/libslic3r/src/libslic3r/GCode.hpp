@@ -41,6 +41,7 @@
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/ExtrudeConfig.hpp"
 
 #include <memory>
 #include <map>
@@ -217,10 +218,10 @@ private:
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
     static std::vector<std::pair<double, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
 
-    Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to, const Domain::ConfigView& object_config);
+    Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to, const Biz::Slicing::ExtrudeConfig& object_config);
 
     std::string get_ramping_layer_change_gcode(
-        const Vec3d& from, const Vec3d& to, const unsigned extruder_id, const Domain::ConfigView& config
+        const Vec3d& from, const Vec3d& to, const unsigned extruder_id, const Biz::Slicing::ExtrudeConfig& config
     );
 
     /** @brief Generates ramping travel gcode for layer change. */
@@ -281,20 +282,20 @@ private:
         bool vase_mode,
         const Point &first_point,
         const bool first_layer,
-        const PrintObjectConfigView& object_config
+        const Biz::Slicing::ExtrudeConfig& config
     );
     std::string extrude_smooth_path(
         const GCode::SmoothPath &smooth_path,
         const bool is_loop,
         const std::string_view description,
         const double speed,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         const std::size_t wipe_offset = 0
     );
     std::string extrude_skirt(
         GCode::SmoothPath smooth_path,
         const ExtrusionFlow& extrusion_flow_override,
-        const Domain::ConfigView& config
+        const Biz::Slicing::ExtrudeConfig& config
     );
 
     std::vector<InstanceToPrint> sort_print_object_instances(
@@ -330,7 +331,7 @@ private:
 
     std::string extrude_support(
         const std::vector<GCode::ExtrusionOrder::SupportPath>& support_extrusions,
-        const Domain::ConfigView& config
+        const Biz::Slicing::ExtrudeConfig& config
     );
 
     enum class EnforceFirstZ {
@@ -342,7 +343,7 @@ private:
         const Points3& travel,
         const std::string& comment,
         const std::function<std::string()>& insert_gcode,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         const EnforceFirstZ enforce_first_z = EnforceFirstZ::False,
         const std::function<bool()>& use_short_distance_acceleration = []() { return false; }
     );
@@ -350,7 +351,7 @@ private:
         const Point& start,
         const Point& end,
         const bool needs_retraction,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         bool& could_be_wipe_disabled
     );
 
@@ -360,7 +361,7 @@ private:
         ExtrusionRole role,
         const std::string &comment,
         const std::function<std::string()>& insert_gcode,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         const EnforceFirstZ enforce_first_z = EnforceFirstZ::False
     );
 
@@ -369,16 +370,21 @@ private:
         const double from_z,
         const ExtrusionRole role,
         const std::function<std::string()>& insert_gcode,
-        const Domain::ConfigView& config
+        const Biz::Slicing::ExtrudeConfig& config
     );
 
     bool needs_retraction(
         const Polyline& travel,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         ExtrusionRole role = ExtrusionRole::None
     );
 
-    std::string     retract_and_wipe(const Domain::ConfigView& config, bool toolchange = false, bool reset_e = true);
+    std::string retract_and_wipe(
+        const std::vector<double>& retract_speed,
+        double travel_speed,
+        bool toolchange = false,
+        bool reset_e    = true
+    );
     std::string     unretract() { return m_writer.unretract(); }
     std::string set_extruder(unsigned int extruder_id, double print_z, const Domain::ConfigView& config);
     bool line_distancer_is_required(
@@ -504,7 +510,7 @@ private:
         const Geometry::ArcWelder::Path& path,
         std::string_view description,
         double speed,
-        const Domain::ConfigView& config,
+        const Biz::Slicing::ExtrudeConfig& config,
         const EmitModifiers& emit_modifiers = EmitModifiers()
     );
 

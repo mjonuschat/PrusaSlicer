@@ -33,13 +33,24 @@ public:
 
     void        init_layer(const Layer &layer);
 
-    Polyline    travel_to(const GCodeGenerator &gcodegen, const Domain::ConfigView& config, const Point& point)
+    Polyline travel_to(
+        const GCodeGenerator& gcodegen,
+        const Point& point,
+        const Domain::FloatOrPercentage &max_detour,
+        const std::vector<double>& travel_max_lift
+    )
     {
         bool could_be_wipe_disabled;
-        return this->travel_to(gcodegen, config, point, &could_be_wipe_disabled);
+        return this->travel_to(gcodegen, point, max_detour, travel_max_lift, &could_be_wipe_disabled);
     }
 
-    Polyline    travel_to(const GCodeGenerator &gcodegen, const Domain::ConfigView& config, const Point& point, bool* could_be_wipe_disabled);
+    Polyline travel_to(
+        const GCodeGenerator& gcodegen,
+        const Point& point,
+        const Domain::FloatOrPercentage &max_detour,
+        const std::vector<double>& travel_max_lift,
+        bool* could_be_wipe_disabled
+    );
 
     struct Boundary {
         // Collection of boundaries used for detection of crossing perimeters for travels

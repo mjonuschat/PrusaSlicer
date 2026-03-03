@@ -22,6 +22,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "libslic3r/GCode/GCodeWriterConfig.hpp"
 
 #include "libslic3r/Extruder.hpp"
 
@@ -29,26 +30,16 @@ namespace Slic3r {
 
 class GCodeWriter {
 public:
-    PrintConfigView config;
+    Biz::Slicing::GCodeWriterConfig config;
     bool multiple_extruders;
 
-    GCodeWriter(const PrintConfigView& config)
-        : config(config)
-        , multiple_extruders(false)
-        , m_extrusion_axis("E")
-        , m_single_extruder_multi_material(false)
-        , m_extruder(nullptr)
-        , m_last_acceleration(0)
-        , m_max_acceleration(0)
-        , m_last_bed_temperature(0)
-        , m_last_bed_temperature_reached(true)
-    { }
+    explicit GCodeWriter(const Biz::Slicing::GCodeWriterConfig& config);
+
     Extruder* extruder() { return m_extruder; }
     const Extruder*      extruder()     const   { return m_extruder; }
 
     // Returns empty string for gcfNoExtrusion.
-    std::string          extrusion_axis() const { return m_extrusion_axis; }
-    void                 apply_print_config(const PrintConfigView &print_config);
+    std::string          extrusion_axis() const { return config.extrusion_axis; }
     // Extruders are expected to be sorted in an increasing order.
     void                 set_extruders(std::vector<unsigned int> extruder_ids);
     const std::vector<Extruder>& extruders() const { return m_extruders; }
@@ -137,7 +128,7 @@ public:
     void        update_position(const Domain::Vec3d &new_pos);
 
     // Returns whether this flavor supports separate print and travel acceleration.
-    static bool supports_separate_travel_acceleration(Domain::GCodeFlavor flavor);
+    bool supports_separate_travel_acceleration() const;
 
     // To be called by the CoolingBuffer from another thread.
     static std::string set_fan(const Domain::GCodeFlavor gcode_flavor, bool gcode_comments, unsigned int speed);
@@ -150,16 +141,11 @@ public:
 private:
 	// Extruders are sorted by their ID, so that binary search is possible.
     std::vector<Extruder> m_extruders;
-    std::string     m_extrusion_axis;
-    bool            m_single_extruder_multi_material;
     Extruder*       m_extruder;
     unsigned int    m_last_acceleration = (unsigned int)(-1);
     unsigned int    m_last_travel_acceleration = (unsigned int)(-1); // only used for flavors supporting separate print/travel acc
     // Limit for setting the acceleration, to respect the machine limits set for the Marlin firmware.
     // If set to zero, the limit is not in action.
-    unsigned int    m_max_acceleration;
-    unsigned int    m_max_travel_acceleration;
-    double          m_max_junction_deviation;
 
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;

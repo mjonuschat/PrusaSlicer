@@ -761,7 +761,7 @@ static bool any_expolygon_contains(const ExPolygons &ex_polygons, const std::vec
 
 static bool need_wipe(
     const GCodeGenerator& gcodegen,
-    const Domain::ConfigView& config,
+    const std::vector<double>& travel_max_lift,
     const ExPolygons& lslices_offset,
     const std::vector<BoundingBox>& lslices_offset_bboxes,
     const EdgeGrid::Grid& grid_lslices_offset,
@@ -770,7 +770,7 @@ static bool need_wipe(
     const size_t intersection_count
 )
 {
-    bool z_lift_enabled = config.get<std::vector<double>>("travel_max_lift").at(gcodegen.writer().extruder()->id()) > 0.;
+    bool z_lift_enabled = travel_max_lift.at(gcodegen.writer().extruder()->id()) > 0.;
     bool wipe_needed    = false;
 
     // If the original unmodified path doesn't have any intersection with boundary, then it is entirely inside the object otherwise is entirely
@@ -1201,8 +1201,9 @@ static void init_boundary(AvoidCrossingPerimeters::Boundary *boundary, Polygons 
 // Plan travel, which avoids perimeter crossings by following the boundaries of the layer.
 Polyline AvoidCrossingPerimeters::travel_to(
     const GCodeGenerator& gcodegen,
-    const Domain::ConfigView& config,
     const Point& point,
+    const Domain::FloatOrPercentage& max_detour,
+    const std::vector<double>& travel_max_lift,
     bool* could_be_wipe_disabled
 )
 {
@@ -1250,14 +1251,13 @@ Polyline AvoidCrossingPerimeters::travel_to(
         travel_intersection_count = 0;
     }
 
-    const Domain::FloatOrPercentage &opt_max_detour = config.get<Domain::FloatOrPercentage>("avoid_crossing_perimeters_max_detour");
     bool                              max_detour_length_exceeded = false;
-    if (!opt_max_detour.is_zero()) {
+    if (!max_detour.is_zero()) {
         double direct_length     = travel.length();
         double detour            = result_pl.length() - direct_length;
-        double max_detour_length = opt_max_detour.is_percentage() ?
-            opt_max_detour.get_abs_value(direct_length) :
-            scale_(opt_max_detour.float_value());
+        double max_detour_length = max_detour.is_percentage() ?
+            max_detour.get_abs_value(direct_length) :
+            scale_(max_detour.float_value());
         if (detour > max_detour_length) {
             result_pl = {start, end};
             max_detour_length_exceeded = true;
@@ -1270,7 +1270,16 @@ Polyline AvoidCrossingPerimeters::travel_to(
     } else if (max_detour_length_exceeded) {
         *could_be_wipe_disabled = false;
     } else
-        *could_be_wipe_disabled = !need_wipe(gcodegen, config, m_lslices_offset, m_lslices_offset_bboxes, m_grid_lslices_offset, travel, result_pl, travel_intersection_count);
+        *could_be_wipe_disabled = !need_wipe(
+            gcodegen,
+            travel_max_lift,
+            m_lslices_offset,
+            m_lslices_offset_bboxes,
+            m_grid_lslices_offset,
+            travel,
+            result_pl,
+            travel_intersection_count
+        );
 
     return result_pl;
 }

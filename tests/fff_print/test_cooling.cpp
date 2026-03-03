@@ -12,11 +12,6 @@
 
 using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
-using Domain::PrintSettings;
-using Domain::PrinterSettings;
-using Domain::FilamentSettings;
-using Domain::ToolPrintSettings;
-using Domain::ProjectSettings;
 using Domain::FullConfigFDM;
 using Domain::FullConfigFDM;
 using Domain::FloatOrPercentage;
@@ -31,7 +26,7 @@ std::unique_ptr<CoolingBuffer> make_cooling_buffer(
     gcode.set_layer_count(10);
     gcode.writer().set_extruders(extruder_ids);
     gcode.writer().set_extruder(0);
-    return std::make_unique<CoolingBuffer>(gcode, config);
+    return std::make_unique<CoolingBuffer>(gcode, Biz::Slicing::CoolingBufferConfig{config});
 }
 
 SCENARIO("Cooling unit tests", "[Cooling]") {

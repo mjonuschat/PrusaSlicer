@@ -22,6 +22,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
+#include "libslic3r/ExtrudeConfig.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ExtrusionEntity.hpp"
@@ -280,7 +281,7 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(
 
 OverhangSpeeds calculate_overhang_speed(
     const ExtrusionAttributes& attributes,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     size_t extruder_id,
     float external_perimeter_reference_speed,
     float default_speed,

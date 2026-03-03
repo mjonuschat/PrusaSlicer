@@ -1396,7 +1396,10 @@ void Print::_make_skirt()
         extruders_e_per_mm.reserve(set_extruders.size());
         for (auto &extruder_id : set_extruders) {
             extruders.push_back(extruder_id);
-            extruders_e_per_mm.push_back(Extruder((unsigned int)extruder_id, &m_config).e_per_mm(mm3_per_mm));
+            Slicing::GCodeWriterConfig temp_config{m_config};
+
+            // TODO: It is absolutely ridiculous to create temp_config just to get e_per_mm.
+            extruders_e_per_mm.push_back(Extruder((unsigned int)extruder_id, &temp_config).e_per_mm(mm3_per_mm));
         }
     }
 

@@ -46,46 +46,25 @@ using Slic3r::Domain::GCodeFlavor::gcfMachinekit;
 using Slic3r::Domain::GCodeFlavor::gcfSmoothie;
 using Slic3r::Domain::MachineLimitsUsage;
 
-#define FLAVOR_IS(val) this->config.get<GCodeFlavor>("gcode_flavor") == val
-#define FLAVOR_IS_NOT(val) this->config.get<GCodeFlavor>("gcode_flavor") != val
+#define FLAVOR_IS(val) this->config.gcode_flavor == val
+#define FLAVOR_IS_NOT(val) this->config.gcode_flavor != val
 
 using namespace std::string_view_literals;
 
 namespace Slic3r {
 
-// static
-bool GCodeWriter::supports_separate_travel_acceleration(GCodeFlavor flavor)
+GCodeWriter::GCodeWriter(const Biz::Slicing::GCodeWriterConfig& config) :
+    config(config),
+    multiple_extruders(false),
+    m_extruder(nullptr),
+    m_last_acceleration(0),
+    m_last_bed_temperature(0),
+    m_last_bed_temperature_reached(true)
+{}
+
+bool GCodeWriter::supports_separate_travel_acceleration() const
 {
-    return (flavor == gcfRepetier || flavor == gcfMarlinFirmware ||  flavor == gcfRepRapFirmware);
-}
-
-void GCodeWriter::apply_print_config(const PrintConfigView& print_config)
-{
-    this->config                     = print_config;
-    m_extrusion_axis                 = get_extrusion_axis(this->config);
-    m_single_extruder_multi_material = print_config.get<bool>("single_extruder_multi_material");
-
-    const GCodeFlavor gcode_flavor = print_config.get<GCodeFlavor>("gcode_flavor");
-    const bool use_mach_limits     = gcode_flavor == gcfMarlinLegacy
-        || gcode_flavor == gcfMarlinFirmware
-        || gcode_flavor == gcfRepRapFirmware;
-    const bool emit_limits = use_mach_limits
-        && print_config.get<MachineLimitsUsage>("machine_limits_usage")
-            == MachineLimitsUsage::EmitToGCode;
-
-    m_max_acceleration        = static_cast<unsigned int>(std::round(
-        emit_limits ?
-            print_config.get<std::vector<double>>("machine_max_acceleration_extruding").front() :
-            0
-    ));
-    m_max_travel_acceleration = static_cast<unsigned int>(std::round(
-        (emit_limits && supports_separate_travel_acceleration(gcode_flavor)) ?
-            print_config.get<std::vector<double>>("machine_max_acceleration_travel").front() :
-            0
-    ));
-    m_max_junction_deviation  = emit_limits ?
-         print_config.get<std::vector<double>>("machine_max_junction_deviation").front() :
-         0.;
+    return config.supports_separate_travel_acceleration;
 }
 
 void GCodeWriter::set_extruders(std::vector<unsigned int> extruder_ids)
@@ -119,7 +98,7 @@ std::string GCodeWriter::preamble()
         FLAVOR_IS(gcfRepetier) ||
         FLAVOR_IS(gcfSmoothie))
     {
-        if (this->config.get<bool>("use_relative_e_distances")) {
+        if (this->config.use_relative_e_distances) {
             gcode << "M83 ; use relative distances for extrusion\n";
         } else {
             gcode << "M82 ; use absolute distances for extrusion\n";
@@ -164,7 +143,7 @@ std::string GCodeWriter::set_temperature(unsigned int temperature, bool wait, in
         gcode << "S";
     }
     gcode << temperature;
-    bool multiple_tools = this->multiple_extruders && ! m_single_extruder_multi_material;
+    bool multiple_tools = this->multiple_extruders && ! config.single_extruder_multi_material;
     if (tool != -1 && (multiple_tools || FLAVOR_IS(gcfMakerWare) || FLAVOR_IS(gcfSailfish) || FLAVOR_IS(gcfRepRapFirmware)) ) {
         if (FLAVOR_IS(gcfRepRapFirmware)) {
             gcode << " P" << tool;
@@ -240,13 +219,13 @@ std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool 
 std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration)
 {
     // Clamp the acceleration to the allowed maximum.
-    if (type == Acceleration::Print && m_max_acceleration > 0 && acceleration > m_max_acceleration)
-        acceleration = m_max_acceleration;
-    if (type == Acceleration::Travel && m_max_travel_acceleration > 0 && acceleration > m_max_travel_acceleration)
-        acceleration = m_max_travel_acceleration;
+    if (type == Acceleration::Print && config.max_acceleration > 0 && acceleration > config.max_acceleration)
+        acceleration = config.max_acceleration;
+    if (type == Acceleration::Travel && config.max_travel_acceleration > 0 && acceleration > config.max_travel_acceleration)
+        acceleration = config.max_travel_acceleration;
 
     // Are we setting travel acceleration for a flavour that supports separate travel and print acc?
-    bool separate_travel = (type == Acceleration::Travel && supports_separate_travel_acceleration(this->config.get<GCodeFlavor>("gcode_flavor")));
+    bool separate_travel = (type == Acceleration::Travel && supports_separate_travel_acceleration());
 
     auto& last_value = separate_travel ? m_last_travel_acceleration : m_last_acceleration ;
     if (acceleration == 0 || acceleration == last_value)
@@ -262,7 +241,7 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     else
         gcode << "M204 S" << acceleration;
 
-    if (this->config.get<bool>("gcode_comments")) gcode << " ; adjust acceleration";
+    if (this->config.gcode_comments) gcode << " ; adjust acceleration";
     gcode << "\n";
     
     return gcode.str();
@@ -271,13 +250,13 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
 std::string GCodeWriter::set_junction_deviation(const double junction_deviation)
 {
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfMarlinFirmware) && junction_deviation > 0. && m_max_junction_deviation > 0.) {
+    if (FLAVOR_IS(gcfMarlinFirmware) && junction_deviation > 0. && config.max_junction_deviation > 0.) {
         // Clamp the junction deviation to the allowed maximum.
         gcode << "M205 J";
-        if (junction_deviation <= m_max_junction_deviation) {
+        if (junction_deviation <= config.max_junction_deviation) {
             gcode << std::fixed << std::setprecision(3) << junction_deviation;
         } else {
-            gcode << std::fixed << std::setprecision(3) << m_max_junction_deviation;
+            gcode << std::fixed << std::setprecision(3) << config.max_junction_deviation;
         }
 
         gcode << " ; sets the junction deviation, mm\n";
@@ -289,11 +268,11 @@ std::string GCodeWriter::set_junction_deviation(const double junction_deviation)
 std::string GCodeWriter::reset_e(bool force)
 {
     return
-        FLAVOR_IS(gcfMach3) || FLAVOR_IS(gcfMakerWare) || FLAVOR_IS(gcfSailfish) || this->config.get<bool>("use_relative_e_distances") ||
+        FLAVOR_IS(gcfMach3) || FLAVOR_IS(gcfMakerWare) || FLAVOR_IS(gcfSailfish) || this->config.use_relative_e_distances ||
         (m_extruder != nullptr && ! m_extruder->reset_E() && ! force) || 
-        m_extrusion_axis.empty() ?
+        config.extrusion_axis.empty() ?
         std::string{} :
-        std::string("G92 ") + m_extrusion_axis + (this->config.get<bool>("gcode_comments") ? "0 ; reset extrusion distance\n" : "0\n");
+        std::string("G92 ") + config.extrusion_axis + (this->config.gcode_comments ? "0 ; reset extrusion distance\n" : "0\n");
 }
 
 std::string GCodeWriter::update_progress(unsigned int num, unsigned int tot, bool allow_100) const
@@ -306,7 +285,7 @@ std::string GCodeWriter::update_progress(unsigned int num, unsigned int tot, boo
     
     std::ostringstream gcode;
     gcode << "M73 P" << percent;
-    if (this->config.get<bool>("gcode_comments")) gcode << " ; update progress";
+    if (this->config.gcode_comments) gcode << " ; update progress";
     gcode << "\n";
     return gcode.str();
 }
@@ -329,7 +308,7 @@ std::string GCodeWriter::toolchange(unsigned int extruder_id)
     std::ostringstream gcode;
     if (this->multiple_extruders) {
         gcode << this->toolchange_prefix() << extruder_id;
-        if (this->config.get<bool>("gcode_comments"))
+        if (this->config.gcode_comments)
             gcode << " ; change extruder";
         gcode << "\n";
         gcode << this->reset_e(true);
@@ -344,7 +323,7 @@ std::string GCodeWriter::set_speed(double F, const std::string_view comment, con
 
     GCodeG1Formatter w;
     w.emit_f(F);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_comment(this->config.gcode_comments, comment);
     w.emit_string(cooling_marker);
     return w.string();
 }
@@ -353,8 +332,8 @@ std::string GCodeWriter::travel_to_xy_force(const Domain::Vec2d &point, const st
 {
     GCodeG1Formatter w;
     w.emit_xy(point);
-    w.emit_f(this->config.get<double>("travel_speed") * 60.0);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_f(this->config.travel_speed * 60.0);
+    w.emit_comment(this->config.gcode_comments, comment);
     m_pos.head<2>() = point.head<2>();
     return w.string();
 }
@@ -383,7 +362,7 @@ std::string GCodeWriter::travel_to_xy_G2G3IJ(const Domain::Vec2d &point, const D
     GCodeG2G3Formatter w(ccw);
     w.emit_xy(point);
     w.emit_ij(ij);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_comment(this->config.gcode_comments, comment);
     return w.string();
 }
 
@@ -412,8 +391,8 @@ std::string GCodeWriter::travel_to_xyz_force(const Domain::Vec3d &to, const std:
     GCodeG1Formatter w;
     w.emit_xyz(to);
 
-    double speed = this->config.get<double>("travel_speed");
-    const double speed_z = this->config.get<double>("travel_speed_z");
+    double speed = this->config.travel_speed;
+    const double speed_z = this->config.travel_speed_z;
 
     if (speed_z) {
         const Domain::Vec3d move{to - m_pos};
@@ -428,7 +407,7 @@ std::string GCodeWriter::travel_to_xyz_force(const Domain::Vec3d &to, const std:
     }
     w.emit_f(speed * 60.0);
 
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_comment(this->config.gcode_comments, comment);
     m_pos = to;
     return w.string();
 }
@@ -444,14 +423,14 @@ std::string GCodeWriter::travel_to_z(double z, const std::string_view comment)
 
 std::string GCodeWriter::travel_to_z_force(double z, const std::string_view comment)
 {
-    double speed = this->config.get<double>("travel_speed_z");
+    double speed = this->config.travel_speed_z;
     if (speed == 0.)
-        speed = this->config.get<double>("travel_speed");
+        speed = this->config.travel_speed;
 
     GCodeG1Formatter w;
     w.emit_z(z);
     w.emit_f(speed * 60.0);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_comment(this->config.gcode_comments, comment);
     m_pos.z() = z;
     return w.string();
 }
@@ -465,8 +444,8 @@ std::string GCodeWriter::extrude_to_xy(const Domain::Vec2d &point, double dE, co
 
     GCodeG1Formatter w;
     w.emit_xy(point);
-    w.emit_e(m_extrusion_axis, m_extruder->extrude(dE).second);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_e(config.extrusion_axis, m_extruder->extrude(dE).second);
+    w.emit_comment(this->config.gcode_comments, comment);
     return w.string();
 }
 
@@ -476,8 +455,8 @@ std::string GCodeWriter::extrude_to_xyz(const Domain::Vec3d &point, double dE, c
 
     GCodeG1Formatter w;
     w.emit_xyz(point);
-    w.emit_e(m_extrusion_axis, m_extruder->extrude(dE).second);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_e(config.extrusion_axis, m_extruder->extrude(dE).second);
+    w.emit_comment(this->config.gcode_comments, comment);
     return w.string();
 }
 
@@ -496,8 +475,8 @@ std::string GCodeWriter::extrude_to_xy_G2G3IJ(const Domain::Vec2d &point, const 
     GCodeG2G3Formatter w(ccw);
     w.emit_xy(point);
     w.emit_ij(ij);
-    w.emit_e(m_extrusion_axis, m_extruder->extrude(dE).second);
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_e(config.extrusion_axis, m_extruder->extrude(dE).second);
+    w.emit_comment(this->config.gcode_comments, comment);
     return w.string();
 }
 
@@ -511,7 +490,7 @@ std::string GCodeWriter::extrude_to_xyz(const Vec3d &point, double dE, const std
     GCodeG1Formatter w;
     w.emit_xyz(point);
     w.emit_e(m_extrusion_axis, m_extruder->E());
-    w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+    w.emit_comment(this->config.gcode_comments, comment);
     return w.string();
 }
 #endif
@@ -546,11 +525,11 @@ std::string GCodeWriter::_retract(double length, double restart_extra, const std
     /*  If firmware retraction is enabled, we use a fake value of 1
         since we ignore the actual configured retract_length which 
         might be 0, in which case the retraction logic gets skipped. */
-    if (this->config.get<bool>("use_firmware_retraction"))
+    if (this->config.use_firmware_retraction)
         length = 1;
     
     // If we use volumetric E values we turn lengths into volumes */
-    if (this->config.get<bool>("use_volumetric_e")) {
+    if (this->config.use_volumetric_e) {
         double d = m_extruder->filament_diameter();
         double area = d * d * PI/4;
         length = length * area;
@@ -559,13 +538,13 @@ std::string GCodeWriter::_retract(double length, double restart_extra, const std
     
     std::string gcode;
     if (auto [dE, emitE] = m_extruder->retract(length, restart_extra);  dE != 0) {
-        if (this->config.get<bool>("use_firmware_retraction")) {
+        if (this->config.use_firmware_retraction) {
             gcode = FLAVOR_IS(gcfMachinekit) ? "G22 ; retract\n" : "G10 ; retract\n";
-        } else if (! m_extrusion_axis.empty()) {
+        } else if (! config.extrusion_axis.empty()) {
             GCodeG1Formatter w;
-            w.emit_e(m_extrusion_axis, emitE);
+            w.emit_e(config.extrusion_axis, emitE);
             w.emit_f(m_extruder->retract_speed() * 60.);
-            w.emit_comment(this->config.get<bool>("gcode_comments"), comment);
+            w.emit_comment(this->config.gcode_comments, comment);
             gcode = w.string();
         }
     }
@@ -584,15 +563,15 @@ std::string GCodeWriter::unretract()
         gcode = "M101 ; extruder on\n";
     
     if (auto [dE, emitE] = m_extruder->unretract(); dE != 0) {
-        if (this->config.get<bool>("use_firmware_retraction")) {
+        if (this->config.use_firmware_retraction) {
             gcode += FLAVOR_IS(gcfMachinekit) ? "G23 ; unretract\n" : "G11 ; unretract\n";
             gcode += this->reset_e();
-        } else if (! m_extrusion_axis.empty()) {
+        } else if (! config.extrusion_axis.empty()) {
             // use G1 instead of G0 because G0 will blend the restart with the previous travel move
             GCodeG1Formatter w;
-            w.emit_e(m_extrusion_axis, emitE);
+            w.emit_e(config.extrusion_axis, emitE);
             w.emit_f(m_extruder->deretract_speed() * 60.);
-            w.emit_comment(this->config.get<bool>("gcode_comments"), " ; unretract");
+            w.emit_comment(this->config.gcode_comments, " ; unretract");
             gcode += w.string();
         }
     }
@@ -641,7 +620,7 @@ std::string GCodeWriter::set_fan(const GCodeFlavor gcode_flavor, bool gcode_comm
 
 std::string GCodeWriter::set_fan(unsigned int speed) const
 {
-    return GCodeWriter::set_fan(this->config.get<GCodeFlavor>("gcode_flavor"), this->config.get<bool>("gcode_comments"), speed);
+    return GCodeWriter::set_fan(this->config.gcode_flavor, this->config.gcode_comments, speed);
 }
 
 std::string GCodeWriter::set_pressure_advance(const double pressure_advance, const std::string& vendor_id) const
@@ -650,7 +629,7 @@ std::string GCodeWriter::set_pressure_advance(const double pressure_advance, con
         return "";
     }
 
-    const GCodeFlavor gcode_flavor = this->config.get<GCodeFlavor>("gcode_flavor");
+    const GCodeFlavor gcode_flavor = this->config.gcode_flavor;
 
     std::ostringstream gcode;
     switch (gcode_flavor) {

@@ -125,6 +125,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/ExtrusionRole.cpp
     src/libslic3r/ExtrusionSimulator.cpp
     src/libslic3r/ExtrusionSimulator.hpp
+    src/libslic3r/ExtrudeConfig.hpp
+    src/libslic3r/ExtrudeConfig.cpp
     src/libslic3r/Feature/FuzzySkin/FuzzySkin.cpp
     src/libslic3r/Feature/FuzzySkin/FuzzySkin.hpp
     src/libslic3r/Feature/Interlocking/InterlockingGenerator.cpp
@@ -177,6 +179,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/GCode/ConflictChecker.hpp
     src/libslic3r/GCode/CoolingBuffer.cpp
     src/libslic3r/GCode/CoolingBuffer.hpp
+    src/libslic3r/GCode/CoolingBufferConfig.cpp
+    src/libslic3r/GCode/CoolingBufferConfig.hpp
     src/libslic3r/GCode/ExtrusionOrder.cpp
     src/libslic3r/GCode/ExtrusionOrder.hpp
     src/libslic3r/GCode/ExtrusionProcessor.cpp
@@ -185,6 +189,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/GCode/FindReplace.hpp
     src/libslic3r/GCode/GCodeWriter.cpp
     src/libslic3r/GCode/GCodeWriter.hpp
+    src/libslic3r/GCode/GCodeWriterConfig.cpp
+    src/libslic3r/GCode/GCodeWriterConfig.hpp
     src/libslic3r/GCode/LabelObjects.cpp
     src/libslic3r/GCode/LabelObjects.hpp
     src/libslic3r/GCode/ModelVisibility.cpp

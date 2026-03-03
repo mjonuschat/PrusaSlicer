@@ -19,13 +19,13 @@
 
 namespace Slic3r {
 
-Extruder::Extruder(unsigned int id, const PrintConfigView* config) :
+Extruder::Extruder(unsigned int id, const Biz::Slicing::GCodeWriterConfig* config) :
     m_config(config),
     m_id(id)
 {
     // cache values that are going to be called often
     m_e_per_mm3 = this->extrusion_multiplier();
-    if (! m_config->get<bool>("use_volumetric_e"))
+    if (! m_config->use_volumetric_e)
         m_e_per_mm3 /= this->filament_crossection();
 }
 
@@ -33,7 +33,7 @@ std::pair<double, double> Extruder::extrude(double dE)
 {
     assert(! std::isnan(dE));
     // in case of relative E distances we always reset to 0 before any output
-    if (m_config->get<bool>("use_relative_e_distances"))
+    if (m_config->use_relative_e_distances)
         m_E = 0.;
     // Quantize extruder delta to G-code resolution.
     dE = GCodeFormatter::quantize_e(dE);
@@ -56,7 +56,7 @@ std::pair<double, double> Extruder::retract(double retract_length, double restar
     assert(! std::isnan(retract_length));
     assert(! std::isnan(restart_extra) && restart_extra >= 0);
     // in case of relative E distances we always reset to 0 before any output
-    if (m_config->get<bool>("use_relative_e_distances"))
+    if (m_config->use_relative_e_distances)
         m_E = 0.;
     // Quantize extruder delta to G-code resolution.
     double to_retract = this->retract_to_go(retract_length);
@@ -103,7 +103,7 @@ void Extruder::set_retracted(double retracted, double restart_extra)
 // Used filament volume in mm^3.
 double Extruder::extruded_volume() const
 {
-    return m_config->get<bool>("use_volumetric_e") ? 
+    return m_config->use_volumetric_e ? 
         m_absolute_E + m_retracted :
         this->used_filament() * this->filament_crossection();
 }
@@ -111,66 +111,66 @@ double Extruder::extruded_volume() const
 // Used filament length in mm.
 double Extruder::used_filament() const
 {
-    return m_config->get<bool>("use_volumetric_e") ?
+    return m_config->use_volumetric_e ?
         this->extruded_volume() / this->filament_crossection() :
         m_absolute_E + m_retracted;
 }
 
 double Extruder::filament_diameter() const
 {
-    return m_config->get<std::vector<double>>("filament_diameter").at(m_id);
+    return m_config->filament_diameter.at(m_id);
 }
 
 double Extruder::filament_density() const
 {
-    return m_config->get<std::vector<double>>("filament_density").at(m_id);
+    return m_config->filament_density.at(m_id);
 }
 
 double Extruder::filament_cost() const
 {
-    return m_config->get<std::vector<double>>("filament_cost").at(m_id);
+    return m_config->filament_cost.at(m_id);
 }
 
 double Extruder::extrusion_multiplier() const
 {
-    return m_config->get<std::vector<double>>("extrusion_multiplier").at(m_id);
+    return m_config->extrusion_multiplier.at(m_id);
 }
 
 // Return a "retract_before_wipe" percentage as a factor clamped to <0, 1>
 double Extruder::retract_before_wipe() const
 {
-    return std::min(1., std::max(0., m_config->get<std::vector<Domain::Percentage>>("retract_before_wipe").at(m_id).get_abs_value(1.0)));
+    return std::min(1., std::max(0., m_config->retract_before_wipe.at(m_id).get_abs_value(1.0)));
 }
 
 double Extruder::retract_length() const
 {
-    return m_config->get<std::vector<double>>("retract_length").at(m_id);
+    return m_config->retract_length.at(m_id);
 }
 
 int Extruder::retract_speed() const
 {
-    return int(floor(m_config->get<std::vector<double>>("retract_speed").at(m_id)+0.5));
+    return int(floor(m_config->retract_speed.at(m_id)+0.5));
 }
 
 int Extruder::deretract_speed() const
 {
-    int speed = int(floor(m_config->get<std::vector<double>>("deretract_speed").at(m_id)+0.5));
+    int speed = int(floor(m_config->deretract_speed.at(m_id)+0.5));
     return (speed > 0) ? speed : this->retract_speed();
 }
 
 double Extruder::retract_restart_extra() const
 {
-    return m_config->get<std::vector<double>>("retract_restart_extra").at(m_id);
+    return m_config->retract_restart_extra.at(m_id);
 }
 
 double Extruder::retract_length_toolchange() const
 {
-    return m_config->get<std::vector<double>>("retract_length_toolchange").at(m_id);
+    return m_config->retract_length_toolchange.at(m_id);
 }
 
 double Extruder::retract_restart_extra_toolchange() const
 {
-    return m_config->get<std::vector<double>>("retract_restart_extra_toolchange").at(m_id);
+    return m_config->retract_restart_extra_toolchange.at(m_id);
 }
 
 }

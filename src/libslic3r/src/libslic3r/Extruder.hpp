@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/GCode/GCodeWriterConfig.hpp"
 
 namespace Slic3r {
 
@@ -22,7 +23,7 @@ class GCodeConfig;
 class Extruder
 {
 public:
-    Extruder(unsigned int id, const PrintConfigView *config);
+    Extruder(unsigned int id, const Biz::Slicing::GCodeWriterConfig* config);
     ~Extruder() = default;
 
     unsigned int id() const { return m_id; }
@@ -60,7 +61,7 @@ public:
     void   set_position(double e) { m_E = e; }
     // Sets current retraction value & restart extra filament amount if retracted > 0.
     void   set_retracted(double retracted, double restart_extra);
-    
+
     double filament_diameter() const;
     double filament_crossection() const { return this->filament_diameter() * this->filament_diameter() * 0.25 * std::numbers::pi; }
     double filament_density() const;
@@ -80,7 +81,7 @@ private:
     Extruder(unsigned int id) : m_id(id) {}
 
     // Reference to GCodeWriter instance owned by GCodeWriter.
-    const PrintConfigView *m_config;
+    const Biz::Slicing::GCodeWriterConfig* m_config;
     // Print-wide global ID of this extruder.
     unsigned int m_id;
     // Current state of the extruder axis.

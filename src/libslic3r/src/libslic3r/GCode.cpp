@@ -219,7 +219,7 @@ void GCodeGenerator::PlaceholderParserIntegration::init(const GCodeWriter &write
         this->e_restart_extra.assign(num_extruders, 0);
         this->output_config.set("e_retracted", this->e_retracted);
         this->output_config.set("e_restart_extra", this->e_restart_extra);
-        if (! writer.config.get<bool>("use_relative_e_distances")) {
+        if (! writer.config.use_relative_e_distances) {
             e_position.assign(num_extruders, 0);
             this->output_config.set("e_position", e_position);
         }
@@ -286,7 +286,7 @@ void GCodeGenerator::PlaceholderParserIntegration::update_from_gcodewriter(
 
         this->output_config.set("e_retracted", this->e_retracted);
         this->output_config.set("e_restart_extra", this->e_restart_extra);
-        if (! writer.config.get<bool>("use_relative_e_distances")) {
+        if (! writer.config.use_relative_e_distances) {
             this->e_position.assign(num_extruders, 0);
             for (const Extruder &e : extruders)
                 this->e_position[e.id()] = e.position();
@@ -706,7 +706,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
     m_extruder_offset(print->config().get<std::vector<Vec2d>>("extruder_offset")),
     m_wipe_enabled(print->config().get<std::vector<bool>>("wipe")),
     m_scaled_resolution(scaled<double>(print->config().get<double>("gcode_resolution"))),
-    m_writer(print->config()),
+    m_writer(Slicing::GCodeWriterConfig{print->config()}),
     m_enable_loop_clipping(true),
     m_enable_cooling_markers(false),
     m_enable_extrusion_role_markers(false),
@@ -1051,7 +1051,6 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     print.throw_if_canceled();
 
     m_enable_cooling_markers = true;
-    m_writer.apply_print_config(print.config());
 
     m_volumetric_speed = DoExport::autospeed_volumetric_limit(print);
     print.throw_if_canceled();
@@ -1204,7 +1203,8 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     }
     print.throw_if_canceled();
 
-    m_cooling_buffer = std::make_unique<CoolingBuffer>(*this, print.config());
+    m_cooling_buffer =
+        std::make_unique<CoolingBuffer>(*this, Biz::Slicing::CoolingBufferConfig{print.config()});
     m_cooling_buffer->set_current_extruder(initial_extruder_id);
 
     // Emit machine envelope limits for the Marlin firmware.
@@ -1311,6 +1311,9 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
 
     GCode::SmoothPathCache smooth_path_cache_global = smooth_path_interpolate_global(print);
 
+    const std::vector<double> retract_speed{print.config().get<std::vector<double>>("retract_speed")};
+    const double travel_speed{print.config().get<double>("travel_speed")};
+
     // Do all objects for each layer.
     if (print.config().get<bool>("complete_objects")) {
         size_t finished_objects = 0;
@@ -1329,12 +1332,13 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
             }
             print.throw_if_canceled();
             this->set_origin(unscale((*print_object_instance_sequential_active)->shift()));
+
             if (finished_objects > 0) {
                 // Move to the origin position for the copy we're going to print.
                 // This happens before Z goes down to layer 0 again, so that no collision happens hopefully.
                 m_enable_cooling_markers = false; // we're not filtering these moves through CoolingBuffer
                 m_avoid_crossing_perimeters.use_external_mp_once = true;
-                file.write(this->retract_and_wipe(print.config()));
+                file.write(this->retract_and_wipe(retract_speed, travel_speed));
                 file.write(m_label_objects.maybe_stop_instance());
                 const double last_z{this->writer().get_position().z()};
                 file.write(this->writer().travel_to_z_force(last_z, "ensure z position"));
@@ -1342,8 +1346,8 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
                 file.write(this->writer().travel_to_z_force(travel_z, "ensure z position to clear all already printed objects"));
                 const Vec3crd from{to_3d(*this->last_position, scaled(travel_z))};
                 const Vec3crd to{0, 0, scaled(travel_z)};
-                const PrintObjectConfigView& object_config{object.config()};
-                file.write(this->travel_to(from, to, ExtrusionRole::None, "move to origin position for next object", [](){return "";}, object_config));
+                const Slicing::ExtrudeConfig extrude_config{object.config()};
+                file.write(this->travel_to(from, to, ExtrusionRole::None, "move to origin position for next object", [](){return "";}, extrude_config));
                 m_enable_cooling_markers = true;
                 // Disable motion planner when traveling to first object point.
                 m_avoid_crossing_perimeters.disable_once();
@@ -1407,7 +1411,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
                 bool overlap = bbox_prime.overlap(bbox_print);
 
                 if (print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) {
-                    file.write(this->retract_and_wipe(print.config()));
+                    file.write(this->retract_and_wipe(retract_speed, travel_speed));
                     file.write("M300 S800 P500\n"); // Beep for 500ms, tone 800Hz.
                     if (overlap) {
                         // Wait for the user to remove the priming extrusions.
@@ -1453,7 +1457,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     }
 
     // Write end commands to file.
-    file.write(this->retract_and_wipe(print.config()));
+    file.write(this->retract_and_wipe(retract_speed, travel_speed));
     file.write(m_writer.set_fan(0));
 
     // adds tag for processor
@@ -1758,7 +1762,7 @@ std::string GCodeGenerator::placeholder_parser_process(
             this->last_position = this->gcode_to_point({ pos[0], pos[1] });
         }
 
-        const bool user_relative_e{m_writer.config.get<bool>("use_relative_e_distances")};
+        const bool user_relative_e{m_writer.config.use_relative_e_distances};
         const auto output_e_position{
             !user_relative_e
                 ? std::optional{get_vector<double>(ppi.output_config, "e_position")}
@@ -2273,7 +2277,7 @@ bool GCodeGenerator::line_distancer_is_required(
     return false;
 }
 
-Polyline GCodeGenerator::get_layer_change_xy_path(const Vec3d &from, const Vec3d &to, const Domain::ConfigView& object_config) {
+Polyline GCodeGenerator::get_layer_change_xy_path(const Vec3d &from, const Vec3d &to, const Biz::Slicing::ExtrudeConfig& extrude_config) {
     bool could_be_wipe_disabled{false};
     const bool needs_retraction{true};
 
@@ -2281,7 +2285,7 @@ Polyline GCodeGenerator::get_layer_change_xy_path(const Vec3d &from, const Vec3d
     const Point end_point{this->gcode_to_point(to.head<2>())};
 
     Polyline xy_path{
-        this->generate_travel_xy_path(start_point, end_point, needs_retraction, object_config, could_be_wipe_disabled)};
+        this->generate_travel_xy_path(start_point, end_point, needs_retraction, extrude_config, could_be_wipe_disabled)};
     std::vector<Vec2d> gcode_xy_path;
     gcode_xy_path.reserve(xy_path.size());
     for (const Point &point : xy_path.points) {
@@ -2300,7 +2304,7 @@ GCode::Impl::Travels::ElevatedTravelParams get_ramping_layer_change_params(
     const Vec3d &from,
     const Vec3d &to,
     const Polyline &xy_path,
-    const Domain::ConfigView &config,
+    const Biz::Slicing::ExtrudeConfig &config,
     const unsigned extruder_id,
     const GCode::TravelObstacleTracker &obstacle_tracker
 ) {
@@ -2326,7 +2330,7 @@ GCode::Impl::Travels::ElevatedTravelParams get_ramping_layer_change_params(
 }
 
 std::string GCodeGenerator::get_ramping_layer_change_gcode(
-    const Vec3d& from, const Vec3d& to, const unsigned extruder_id, const Domain::ConfigView& config
+    const Vec3d& from, const Vec3d& to, const unsigned extruder_id, const Biz::Slicing::ExtrudeConfig& config
 )
 {
     const Polyline xy_path{this->get_layer_change_xy_path(from, to, config)};
@@ -2704,9 +2708,16 @@ LayerResult GCodeGenerator::process_layer(
         }
     }
 
+    const PrintObjectConfigView& first_object_config{layer.object()->config()};
+    const Biz::Slicing::ExtrudeConfig first_object_extrude_config{first_object_config};
+
     gcode += this->change_layer(
-        previous_layer_z, print_z, result.spiral_vase_enable, first_point.head<2>(), first_layer,
-        layer.object()->config()
+        previous_layer_z,
+        print_z,
+        result.spiral_vase_enable,
+        first_point.head<2>(),
+        first_layer,
+        first_object_extrude_config
     ); // this will increase m_layer_index
     m_layer = &layer;
 
@@ -2783,10 +2794,10 @@ LayerResult GCodeGenerator::process_layer(
     this->set_origin({0, 0});
     this->m_moved_to_first_layer_point = false;
 
+
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
     {
-        const PrintObjectConfigView& first_object_config{layer.object()->config()};
         gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
             m_wipe_tower->tool_change(*this, first_object_config, extruder_extrusions.extruder_id, extruder_extrusions.extruder_id == layer_tools.extruders.back()) :
             this->set_extruder(extruder_extrusions.extruder_id, print_z, first_object_config);
@@ -2827,7 +2838,7 @@ LayerResult GCodeGenerator::process_layer(
                     return std::string{""};
                 }
                 return m_label_objects.maybe_change_instance(m_writer);
-            }, first_object_config);
+            }, first_object_extrude_config);
             this->set_origin({0, 0});
         }
 
@@ -2843,7 +2854,7 @@ LayerResult GCodeGenerator::process_layer(
                 gcode += this->extrude_skirt(smooth_path,
                     // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
                     ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
-                    first_object_config
+                    first_object_extrude_config
                 );
             }
             m_avoid_crossing_perimeters.use_external_mp(false);
@@ -2856,7 +2867,13 @@ LayerResult GCodeGenerator::process_layer(
             m_avoid_crossing_perimeters.use_external_mp();
 
             for (const GCode::ExtrusionOrder::BrimPath &brim_path : extruder_extrusions.brim) {
-                gcode += this->extrude_smooth_path(brim_path.path, brim_path.is_loop, "brim", first_object_config.get<double>("support_material_speed"), first_object_config);
+                gcode += this->extrude_smooth_path(
+                    brim_path.path,
+                    brim_path.is_loop,
+                    "brim",
+                    first_object_config.get<double>("support_material_speed"),
+                    first_object_extrude_config
+                );
             }
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point.
@@ -2902,7 +2919,8 @@ LayerResult GCodeGenerator::process_layer(
             if (!support_extrusions.empty()) {
                 m_layer = layer_to_print.support_layer;
                 m_object_layer_over_raft = false;
-                gcode += this->extrude_support(support_extrusions, instance.print_object.config());
+                const Biz::Slicing::ExtrudeConfig print_object_config{instance.print_object.config()};
+                gcode += this->extrude_support(support_extrusions, print_object_config);
             }
 
             gcode += this->extrude_slices(
@@ -3017,7 +3035,7 @@ std::string GCodeGenerator::change_layer(
     bool vase_mode,
     const Point &first_point,
     const bool first_layer,
-    const PrintObjectConfigView& object_config
+    const Slicing::ExtrudeConfig& config
 ) {
     std::string gcode;
     if (m_layer_count > 0)
@@ -3033,28 +3051,31 @@ std::string GCodeGenerator::change_layer(
         this->last_position
         && !vase_mode
         && print_z > previous_layer_z
-        && object_config.get<std::vector<bool>>("travel_ramping_lift").at(extruder_id)
-        && object_config.get<std::vector<double>>("travel_slope").at(extruder_id) > 0
-        && object_config.get<std::vector<double>>("travel_slope").at(extruder_id) < 90
+        && config.travel_ramping_lift.at(extruder_id)
+        && config.travel_slope.at(extruder_id) > 0
+        && config.travel_slope.at(extruder_id) < 90
     );
 
-    const Vec3d to{to_3d(unscaled(first_point), print_z)};
-    if (this->last_position && print_z > previous_layer_z && !object_config.get<std::vector<bool>>("retract_layer_change").at(m_writer.extruder()->id())) {
-        const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
-        const Polyline xy_path{this->get_layer_change_xy_path(from, to, object_config)};
+    const std::vector<double> retract_speed{config.retract_speed};
+    const double travel_speed{config.travel_speed};
 
-        if (this->needs_retraction(xy_path, object_config, ExtrusionRole::Mixed)) {
-            gcode += this->retract_and_wipe(object_config);
+    const Vec3d to{to_3d(unscaled(first_point), print_z)};
+    if (this->last_position && print_z > previous_layer_z && !config.retract_layer_change.at(m_writer.extruder()->id())) {
+        const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
+        const Polyline xy_path{this->get_layer_change_xy_path(from, to, config)};
+
+        if (this->needs_retraction(xy_path, config, ExtrusionRole::Mixed)) {
+            gcode += this->retract_and_wipe(retract_speed, travel_speed);
         }
     } else {
-        gcode += this->retract_and_wipe(object_config);
+        gcode += this->retract_and_wipe(retract_speed, travel_speed);
     }
 
     if (do_ramping_layer_change) {
         // Must be determined again after possible wipe.
         const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
 
-        gcode += this->get_ramping_layer_change_gcode(from, to, extruder_id, object_config);
+        gcode += this->get_ramping_layer_change_gcode(from, to, extruder_id, config);
 
         this->writer().update_position(to);
         this->last_position = this->gcode_to_point(unscaled(first_point));
@@ -3063,7 +3084,7 @@ std::string GCodeGenerator::change_layer(
             gcode += this->writer().travel_to_z_force(print_z, "simple layer change");
         } else {
             Vec3d position{this->writer().get_position()};
-            position.z() = position.z() + object_config.get<double>("z_offset");
+            position.z() = position.z() + config.z_offset;
             this->writer().update_position(position);
         }
     }
@@ -3079,7 +3100,7 @@ std::string GCodeGenerator::extrude_smooth_path(
     const bool is_loop,
     const std::string_view description,
     const double speed,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const std::size_t wipe_offset
 ) {
     std::string gcode;
@@ -3117,7 +3138,7 @@ std::string GCodeGenerator::extrude_smooth_path(
     // reset acceleration
     gcode += m_writer.set_print_acceleration(
         fast_round_up<unsigned int>(
-            config.get<std::vector<double>>("default_acceleration").at(m_writer.extruder()->id())
+            config.default_acceleration.at(m_writer.extruder()->id())
         )
     );
 
@@ -3140,7 +3161,7 @@ std::string GCodeGenerator::extrude_smooth_path(
 std::string GCodeGenerator::extrude_skirt(
     GCode::SmoothPath smooth_path,
     const ExtrusionFlow& extrusion_flow_override,
-    const Domain::ConfigView& config
+    const Biz::Slicing::ExtrudeConfig& config
 )
 {
     // Extrude along the smooth path.
@@ -3151,7 +3172,7 @@ std::string GCodeGenerator::extrude_skirt(
         el.path_attributes.height = extrusion_flow_override.height;
     }
 
-    gcode += this->extrude_smooth_path(smooth_path, true, "skirt"sv, config.get<double>("support_material_speed"), config);
+    gcode += this->extrude_smooth_path(smooth_path, true, "skirt"sv, config.support_material_speed, config);
 
     return gcode;
 }
@@ -3163,8 +3184,9 @@ std::string GCodeGenerator::extrude_infill_ranges(
     std::string gcode{};
     for (const InfillRange &infill_range : infill_ranges) {
         if (!infill_range.items.empty()) {
+            const Biz::Slicing::ExtrudeConfig config{infill_range.region->config()};
             for (const GCode::SmoothPath &path : infill_range.items) {
-                gcode += this->extrude_smooth_path(path, false, comment, -1.0, infill_range.region->config());
+                gcode += this->extrude_smooth_path(path, false, comment, -1.0, config);
             }
         }
     }
@@ -3177,6 +3199,8 @@ std::string GCodeGenerator::extrude_perimeters(
     const InstanceToPrint &print_instance
 ) {
     std::string gcode{};
+
+    const Biz::Slicing::ExtrudeConfig config{region.config()};
 
     for (const GCode::ExtrusionOrder::Perimeter &perimeter : perimeters) {
         double speed{-1};
@@ -3196,7 +3220,7 @@ std::string GCodeGenerator::extrude_perimeters(
             perimeter.extrusion_entity->is_loop(),
             comment_perimeter,
             speed,
-            region.config(),
+            config,
             perimeter.wipe_offset
         );
         this->m_travel_obstacle_tracker.mark_extruded(
@@ -3230,7 +3254,7 @@ std::string GCodeGenerator::extrude_perimeters(
 
 std::string GCodeGenerator::extrude_support(
     const std::vector<GCode::ExtrusionOrder::SupportPath>& support_extrusions,
-    const Domain::ConfigView& config
+    const Biz::Slicing::ExtrudeConfig& config
 )
 {
     static constexpr const auto support_label            = "support material"sv;
@@ -3238,8 +3262,8 @@ std::string GCodeGenerator::extrude_support(
 
     std::string gcode;
     if (! support_extrusions.empty()) {
-        const double  support_speed            = config.get<double>("support_material_speed");
-        const double  support_interface_speed  = config.get<Domain::FloatOrPercentage>("support_material_interface_speed").get_abs_value(support_speed);
+        const double  support_speed            = config.support_material_speed;
+        const double  support_interface_speed  = config.support_material_interface_speed.get_abs_value(support_speed);
         for (const GCode::ExtrusionOrder::SupportPath &path : support_extrusions) {
             const auto   label = path.is_interface ?  support_interface_label : support_label;
             const double speed = path.is_interface ? support_interface_speed : support_speed;
@@ -3301,31 +3325,33 @@ std::string GCodeGenerator::travel_to_first_position(
     const double from_z,
     const ExtrusionRole role,
     const std::function<std::string()>& insert_gcode,
-    const Domain::ConfigView& config
+    const Biz::Slicing::ExtrudeConfig& config
 )
 {
     std::string gcode;
 
     const Vec3d gcode_point = to_3d(this->point_to_gcode(point.head<2>()), unscaled(point.z()));
 
-    if (!config.get<std::vector<bool>>("travel_ramping_lift").at(m_writer.extruder()->id()) && this->last_position) {
+    if (!config.travel_ramping_lift.at(m_writer.extruder()->id()) && this->last_position) {
         const Vec3crd from{to_3d(*this->last_position, scaled(from_z))};
         gcode = this->travel_to(
             from, point, role, "travel to first layer point", insert_gcode, config, EnforceFirstZ::True
         );
     } else {
         double lift{
-            config.get<std::vector<bool>>("travel_ramping_lift").at(m_writer.extruder()->id()) ? config.get<std::vector<double>>("travel_max_lift").at(m_writer.extruder()->id()) :
-                                                   config.get<std::vector<double>>("retract_lift").at(m_writer.extruder()->id())};
-        const double upper_limit = config.get<std::vector<double>>("retract_lift_below").at(m_writer.extruder()->id());
-        const double lower_limit = config.get<std::vector<double>>("retract_lift_above").at(m_writer.extruder()->id());
+            config.travel_ramping_lift.at(m_writer.extruder()->id()) ?
+                config.travel_max_lift.at(m_writer.extruder()->id()) :
+                config.retract_lift.at(m_writer.extruder()->id())
+        };
+        const double upper_limit = config.retract_lift_below.at(m_writer.extruder()->id());
+        const double lower_limit = config.retract_lift_above.at(m_writer.extruder()->id());
         if ((lower_limit > 0 && gcode_point.z() < lower_limit) ||
             (upper_limit > 0 && gcode_point.z() > upper_limit)) {
             lift = 0.0;
         }
 
-        if (config.get<std::vector<double>>("retract_length").at(m_writer.extruder()->id()) > 0 && !this->last_position) {
-            if (!this->last_position || config.get<std::vector<double>>("retract_before_travel").at(m_writer.extruder()->id()) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
+        if (config.retract_length.at(m_writer.extruder()->id()) > 0 && !this->last_position) {
+            if (!this->last_position || config.retract_before_travel.at(m_writer.extruder()->id()) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
                 gcode += this->writer().retract();
                 gcode += this->writer().travel_to_z_force(from_z + lift, "lift");
             }
@@ -3347,21 +3373,21 @@ std::string GCodeGenerator::travel_to_first_position(
 }
 
 double cap_speed(
-    double speed, const Domain::ConfigView &config, int extruder_id, const ExtrusionAttributes &path_attr
+    double speed, const Biz::Slicing::ExtrudeConfig &config, int extruder_id, const ExtrusionAttributes &path_attr
 ) {
-    const double general_volumetric_cap{config.get<std::vector<double>>("max_volumetric_speed").at(extruder_id)};
+    const double general_volumetric_cap{config.max_volumetric_speed.at(extruder_id)};
     if (general_volumetric_cap > 0) {
         speed = std::min(speed, general_volumetric_cap / path_attr.mm3_per_mm);
     }
-    const double filament_volumetric_cap{config.get<std::vector<double>>("filament_max_volumetric_speed").at(extruder_id)};
+    const double filament_volumetric_cap{config.filament_max_volumetric_speed.at(extruder_id)};
     if (filament_volumetric_cap > 0) {
         speed = std::min(speed, filament_volumetric_cap / path_attr.mm3_per_mm);
     }
     if (path_attr.role == ExtrusionRole::InternalInfill) {
         const double infill_cap{
             path_attr.maybe_self_crossing ?
-                config.get<std::vector<double>>("filament_infill_max_crossing_speed").at(extruder_id) :
-                config.get<std::vector<double>>("filament_infill_max_speed").at(extruder_id)};
+                config.filament_infill_max_crossing_speed.at(extruder_id) :
+                config.filament_infill_max_speed.at(extruder_id)};
         if (infill_cap > 0) {
             speed = std::min(speed, infill_cap);
         }
@@ -3375,7 +3401,7 @@ std::string GCodeGenerator::_extrude(
     const Geometry::ArcWelder::Path& path,
     const std::string_view description,
     double speed,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const EmitModifiers& emit_modifiers
 )
 {
@@ -3393,7 +3419,7 @@ std::string GCodeGenerator::_extrude(
     if (!this->last_position) {
         const double z = this->m_last_layer_z;
         const std::string comment{"move to print after unknown position"};
-        gcode += this->retract_and_wipe(config);
+        gcode += this->retract_and_wipe(config.retract_speed, config.travel_speed);
         gcode += m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
         gcode += this->m_writer.travel_to_xy(this->point_to_gcode(path.front().point), comment);
         gcode += this->m_writer.travel_to_z_force(z, comment);
@@ -3426,26 +3452,26 @@ std::string GCodeGenerator::_extrude(
     const unsigned extruder_id{m_writer.extruder()->id()};
 
     // adjust acceleration
-    if (config.get<std::vector<double>>("default_acceleration").at(extruder_id) > 0) {
+    if (config.default_acceleration.at(extruder_id) > 0) {
         double acceleration;
-        if (this->on_first_layer() && config.get<std::vector<double>>("first_layer_acceleration").at(extruder_id) > 0) {
-            acceleration = config.get<std::vector<double>>("first_layer_acceleration").at(extruder_id);
-        } else if (this->object_layer_over_raft() && config.get<std::vector<double>>("first_layer_acceleration_over_raft").at(extruder_id) > 0) {
-            acceleration = config.get<std::vector<double>>("first_layer_acceleration_over_raft").at(extruder_id);
-        } else if (config.get<std::vector<double>>("bridge_acceleration").at(extruder_id) > 0 && path_attr.role.is_bridge()) {
-            acceleration = config.get<std::vector<double>>("bridge_acceleration").at(extruder_id);
-        } else if (config.get<std::vector<double>>("top_solid_infill_acceleration").at(extruder_id) > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
-            acceleration = config.get<std::vector<double>>("top_solid_infill_acceleration").at(extruder_id);
-        } else if (config.get<std::vector<double>>("solid_infill_acceleration").at(extruder_id) > 0 && path_attr.role.is_solid_infill()) {
-            acceleration = config.get<std::vector<double>>("solid_infill_acceleration").at(extruder_id);
-        } else if (config.get<std::vector<double>>("infill_acceleration").at(extruder_id) > 0 && path_attr.role.is_infill()) {
-            acceleration = config.get<std::vector<double>>("infill_acceleration").at(extruder_id);
-        } else if (config.get<std::vector<double>>("external_perimeter_acceleration").at(extruder_id) > 0 && path_attr.role.is_external_perimeter()) {
-            acceleration = config.get<std::vector<double>>("external_perimeter_acceleration").at(extruder_id);
-        } else if (config.get<std::vector<double>>("perimeter_acceleration").at(extruder_id) > 0 && path_attr.role.is_perimeter()) {
-            acceleration = config.get<std::vector<double>>("perimeter_acceleration").at(extruder_id);
+        if (this->on_first_layer() && config.first_layer_acceleration.at(extruder_id) > 0) {
+            acceleration = config.first_layer_acceleration.at(extruder_id);
+        } else if (this->object_layer_over_raft() && config.first_layer_acceleration_over_raft.at(extruder_id) > 0) {
+            acceleration = config.first_layer_acceleration_over_raft.at(extruder_id);
+        } else if (config.bridge_acceleration.at(extruder_id) > 0 && path_attr.role.is_bridge()) {
+            acceleration = config.bridge_acceleration.at(extruder_id);
+        } else if (config.top_solid_infill_acceleration.at(extruder_id) > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
+            acceleration = config.top_solid_infill_acceleration.at(extruder_id);
+        } else if (config.solid_infill_acceleration.at(extruder_id) > 0 && path_attr.role.is_solid_infill()) {
+            acceleration = config.solid_infill_acceleration.at(extruder_id);
+        } else if (config.infill_acceleration.at(extruder_id) > 0 && path_attr.role.is_infill()) {
+            acceleration = config.infill_acceleration.at(extruder_id);
+        } else if (config.external_perimeter_acceleration.at(extruder_id) > 0 && path_attr.role.is_external_perimeter()) {
+            acceleration = config.external_perimeter_acceleration.at(extruder_id);
+        } else if (config.perimeter_acceleration.at(extruder_id) > 0 && path_attr.role.is_perimeter()) {
+            acceleration = config.perimeter_acceleration.at(extruder_id);
         } else {
-            acceleration = config.get<std::vector<double>>("default_acceleration").at(extruder_id);
+            acceleration = config.default_acceleration.at(extruder_id);
         }
         gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
     }
@@ -3457,9 +3483,9 @@ std::string GCodeGenerator::_extrude(
         e_per_mm = 0;
 
     using Domain::FloatOrPercentage;
-    const auto perimeter_speed = config.get<std::vector<double>>("perimeter_speed").at(extruder_id);
-    const auto infill_speed = config.get<std::vector<double>>("infill_speed").at(extruder_id);
-    const auto solid_infill_speed = config.get<std::vector<FloatOrPercentage>>("solid_infill_speed")
+    const auto perimeter_speed = config.perimeter_speed.at(extruder_id);
+    const auto infill_speed = config.infill_speed.at(extruder_id);
+    const auto solid_infill_speed = config.solid_infill_speed
                                         .at(extruder_id)
                                         .get_abs_value(infill_speed);
     // set speed
@@ -3467,27 +3493,27 @@ std::string GCodeGenerator::_extrude(
         if (path_attr.role == ExtrusionRole::Perimeter) {
             speed = perimeter_speed;
         } else if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
-            speed = config.get<std::vector<FloatOrPercentage>>("external_perimeter_speed").at(extruder_id).get_abs_value(perimeter_speed);
+            speed = config.external_perimeter_speed.at(extruder_id).get_abs_value(perimeter_speed);
         } else if (path_attr.role.is_bridge()) {
             assert(path_attr.role.is_perimeter() || path_attr.role == ExtrusionRole::BridgeInfill);
-            speed = config.get<std::vector<double>>("bridge_speed").at(extruder_id);
+            speed = config.bridge_speed.at(extruder_id);
         } else if (path_attr.role == ExtrusionRole::InternalInfill) {
             speed = infill_speed;
         } else if (path_attr.role == ExtrusionRole::SolidInfill) {
             speed = solid_infill_speed;
         } else if (path_attr.role == ExtrusionRole::InfillOverBridge) {
-            const double over_bridge_speed{config.get<std::vector<FloatOrPercentage>>("over_bridge_speed").at(extruder_id).get_abs_value(solid_infill_speed)};
+            const double over_bridge_speed{config.over_bridge_speed.at(extruder_id).get_abs_value(solid_infill_speed)};
             if (over_bridge_speed > 0) {
                 speed = over_bridge_speed;
             } else {
                 speed = solid_infill_speed;
             }
         } else if (path_attr.role == ExtrusionRole::TopSolidInfill) {
-            speed = config.get<std::vector<FloatOrPercentage>>("top_solid_infill_speed").at(extruder_id).get_abs_value(solid_infill_speed);
+            speed = config.top_solid_infill_speed.at(extruder_id).get_abs_value(solid_infill_speed);
         } else if (path_attr.role == ExtrusionRole::Ironing) {
-            speed = config.get<double>("ironing_speed");
+            speed = config.ironing_speed;
         } else if (path_attr.role == ExtrusionRole::GapFill) {
-            speed = config.get<std::vector<double>>("gap_fill_speed").at(extruder_id);
+            speed = config.gap_fill_speed.at(extruder_id);
         } else {
             throw Slic3r::InvalidArgument("Invalid speed");
         }
@@ -3495,20 +3521,20 @@ std::string GCodeGenerator::_extrude(
     if (m_volumetric_speed.at(extruder_id) != 0. && speed == 0)
         speed = m_volumetric_speed.at(extruder_id) / path_attr.mm3_per_mm;
     if (this->on_first_layer()) {
-        const double first_layer_infill_speed{config.get<std::vector<FloatOrPercentage>>("first_layer_infill_speed").at(extruder_id).get_abs_value(speed)};
+        const double first_layer_infill_speed{config.first_layer_infill_speed.at(extruder_id).get_abs_value(speed)};
         if (path_attr.role == ExtrusionRole::SolidInfill && first_layer_infill_speed > 0) {
             speed = first_layer_infill_speed;
         } else {
-            speed = config.get<std::vector<FloatOrPercentage>>("first_layer_speed").at(extruder_id).get_abs_value(speed);
+            speed = config.first_layer_speed.at(extruder_id).get_abs_value(speed);
         }
     }
     else if (this->object_layer_over_raft())
-        speed = config.get<std::vector<FloatOrPercentage>>("first_layer_speed_over_raft").at(extruder_id).get_abs_value(speed);
+        speed = config.first_layer_speed_over_raft.at(extruder_id).get_abs_value(speed);
 
     ExtrusionProcessor::OverhangSpeeds dynamic_print_and_fan_speeds = {-1.f, -1.f};
     if (path_attr.overhang_attributes.has_value()) {
         double external_perimeter_reference_speed =
-            config.get<std::vector<FloatOrPercentage>>("external_perimeter_speed")
+            config.external_perimeter_speed
                 .at(extruder_id)
                 .get_abs_value(perimeter_speed);
         if (external_perimeter_reference_speed == 0) {
@@ -3600,7 +3626,7 @@ std::string GCodeGenerator::_extrude(
     }
 
     std::string comment;
-    if (config.get<bool>("gcode_comments")) {
+    if (config.gcode_comments) {
         comment = description;
         comment += description_bridge;
     }
@@ -3618,7 +3644,7 @@ std::string GCodeGenerator::_extrude(
             Vec2d  ij;
             if (it->radius != 0) {
                 // Extrude an arc.
-                assert(config.get<Domain::ArcFittingType>("arc_fitting") == Domain::ArcFittingType::EmitCenter);
+                assert(config.arc_fitting == Domain::ArcFittingType::EmitCenter);
                 radius = unscaled<double>(it->radius);
                 {
                     // Calculate quantized IJ circle center offset.
@@ -3675,7 +3701,7 @@ std::string GCodeGenerator::generate_travel_gcode(
     const Points3& travel,
     const std::string& comment,
     const std::function<std::string()>& insert_gcode,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const EnforceFirstZ enforce_first_z,
     const std::function<bool()>& use_short_distance_acceleration
 ) {
@@ -3683,8 +3709,8 @@ std::string GCodeGenerator::generate_travel_gcode(
         return "";
     }
 
-    const unsigned travel_acceleration                = static_cast<unsigned>(config.get<double>("travel_acceleration") + 0.5);
-    const unsigned travel_short_distance_acceleration = static_cast<unsigned>(config.get<double>("travel_short_distance_acceleration") + 0.5);
+    const unsigned travel_acceleration                = static_cast<unsigned>(config.travel_acceleration + 0.5);
+    const unsigned travel_short_distance_acceleration = static_cast<unsigned>(config.travel_short_distance_acceleration + 0.5);
 
     std::string gcode;
     // Generate G-code for the travel move.
@@ -3723,7 +3749,7 @@ std::string GCodeGenerator::generate_travel_gcode(
         gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
     }
 
-    if (!GCodeWriter::supports_separate_travel_acceleration(config.get<GCodeFlavor>("gcode_flavor"))) {
+    if (!this->m_writer.supports_separate_travel_acceleration()) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
         // TODO: This doesn't seem to perform what the comment describes.
@@ -3734,12 +3760,12 @@ std::string GCodeGenerator::generate_travel_gcode(
 }
 
 bool GCodeGenerator::needs_retraction(
-    const Polyline& travel, const Domain::ConfigView& config, ExtrusionRole role
+    const Polyline& travel, const Biz::Slicing::ExtrudeConfig& config, ExtrusionRole role
 )
 {
     const unsigned extruder_id{m_writer.extruder()->id()};
 
-    if (! m_writer.extruder() || travel.length() < scale_(config.get<std::vector<double>>("retract_before_travel").at(m_writer.extruder()->id()))) {
+    if (! m_writer.extruder() || travel.length() < scale_(config.retract_before_travel.at(m_writer.extruder()->id()))) {
         // skip retraction if the move is shorter than the configured threshold
         return false;
     }
@@ -3765,9 +3791,9 @@ bool GCodeGenerator::needs_retraction(
                 }
         }
 
-    if (config.get<bool>("only_retract_when_crossing_perimeters")
+    if (config.only_retract_when_crossing_perimeters
         && m_layer != nullptr
-        && config.get<std::vector<Domain::Percentage>>("fill_density").at(extruder_id)
+        && config.fill_density.at(extruder_id)
             > Domain::Percentage{0}
         && m_retract_when_crossing_perimeters.travel_inside_internal_regions(*m_layer, travel))
         // Skip retraction if travel is contained in an internal slice *and*
@@ -3783,18 +3809,18 @@ Polyline GCodeGenerator::generate_travel_xy_path(
     const Point& start_point,
     const Point& end_point,
     const bool needs_retraction,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     bool& could_be_wipe_disabled
 ) {
 
     const Point scaled_origin{scaled(this->origin())};
     const bool avoid_crossing_perimeters = (
-        config.get<bool>("avoid_crossing_perimeters")
+        config.avoid_crossing_perimeters
         && !this->m_avoid_crossing_perimeters.disabled_once()
     );
 
     Polyline xy_path{start_point, end_point};
-    if (config.get<bool>("avoid_crossing_curled_overhangs")) {
+    if (config.avoid_crossing_curled_overhangs) {
         if (avoid_crossing_perimeters) {
             BOOST_LOG_TRIVIAL(warning)
                 << "Option >avoid crossing curled overhangs< is not compatible with avoid crossing perimeters and it will be ignored!";
@@ -3814,7 +3840,13 @@ Polyline GCodeGenerator::generate_travel_xy_path(
         needs_retraction
         && avoid_crossing_perimeters
     ) {
-        xy_path = this->m_avoid_crossing_perimeters.travel_to(*this, config, end_point, &could_be_wipe_disabled);
+        xy_path = this->m_avoid_crossing_perimeters.travel_to(
+            *this,
+            end_point,
+            config.avoid_crossing_perimeters_max_detour,
+            config.travel_max_lift,
+            &could_be_wipe_disabled
+        );
         Algorithms::Polyline::simplify(xy_path, this->m_scaled_resolution);
     }
 
@@ -3828,7 +3860,7 @@ std::string GCodeGenerator::travel_to(
     ExtrusionRole role,
     const std::string &comment,
     const std::function<std::string()>& insert_gcode,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const GCodeGenerator::EnforceFirstZ enforce_first_z
 ) {
     const double initial_elevation{unscaled(start_point.z())};
@@ -3851,7 +3883,7 @@ std::string GCodeGenerator::travel_to(
         }
 
         Point position_before_wipe{*this->last_position};
-        wipe_retract_gcode = this->retract_and_wipe(config);
+        wipe_retract_gcode = this->retract_and_wipe(config.retract_speed, config.travel_speed);
 
         if (*this->last_position != position_before_wipe) {
             xy_path = generate_travel_xy_path(
@@ -3865,11 +3897,11 @@ std::string GCodeGenerator::travel_to(
     this->m_avoid_crossing_perimeters.reset_once_modifiers();
 
     const unsigned extruder_id = this->m_writer.extruder()->id();
-    const double retract_length = config.get<std::vector<double>>("retract_length").at(extruder_id);
+    const double retract_length = config.retract_length.at(extruder_id);
     bool can_be_flat{!needs_retraction || retract_length == 0};
 
-    const double upper_limit = config.get<std::vector<double>>("retract_lift_below").at(extruder_id);
-    const double lower_limit = config.get<std::vector<double>>("retract_lift_above").at(extruder_id);
+    const double upper_limit = config.retract_lift_below.at(extruder_id);
+    const double lower_limit = config.retract_lift_above.at(extruder_id);
     if ((lower_limit > 0 && initial_elevation < lower_limit) ||
         (upper_limit > 0 && initial_elevation > upper_limit)) {
         can_be_flat = true;
@@ -3887,7 +3919,7 @@ std::string GCodeGenerator::travel_to(
             scaled(m_origin)
         )
     );
-    if (config.get<Domain::ScarfSeamPlacement>("scarf_seam_placement") != Domain::ScarfSeamPlacement::nowhere &&
+    if (config.scarf_seam_placement != Domain::ScarfSeamPlacement::nowhere &&
         role == ExtrusionRole::ExternalPerimeter && can_be_flat && travel.size() == 2 &&
         scaled(2.0) > xy_path.length()) {
 
@@ -3896,16 +3928,21 @@ std::string GCodeGenerator::travel_to(
     }
     travel.emplace_back(end_point);
 
-    if (config.get<double>("travel_short_distance_acceleration") > 0.) {
+    if (config.travel_short_distance_acceleration > 0.) {
         return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, config, enforce_first_z, [&]() {
-                   return role.is_external_perimeter() && xy_path.length() < scaled<double>(config.get<std::vector<double>>("retract_before_travel").at(m_writer.extruder()->id()));
+                   return role.is_external_perimeter() && xy_path.length() < scaled<double>(config.retract_before_travel.at(m_writer.extruder()->id()));
                });
     }
 
     return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, config, enforce_first_z);
 }
 
-std::string GCodeGenerator::retract_and_wipe(const Domain::ConfigView& config, bool toolchange, bool reset_e)
+std::string GCodeGenerator::retract_and_wipe(
+    const std::vector<double>& retract_speed,
+    double travel_speed,
+    bool toolchange,
+    bool reset_e
+)
 {
     std::string gcode;
 
@@ -3915,7 +3952,7 @@ std::string GCodeGenerator::retract_and_wipe(const Domain::ConfigView& config, b
     // wipe (if it's enabled for this extruder and we have a stored wipe path)
     if (m_wipe_enabled.at(m_writer.extruder()->id()) && m_wipe.has_path()) {
         gcode += toolchange ? m_writer.retract_for_toolchange(true) : m_writer.retract(true);
-        gcode += m_wipe.wipe(*this, config, toolchange);
+        gcode += m_wipe.wipe(*this, retract_speed, travel_speed, toolchange);
     }
 
     /*  The parent class will decide whether we need to perform an actual retraction
@@ -3970,8 +4007,10 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         gcode += this->m_label_objects.maybe_stop_instance();
     }
 
+    const std::vector<double> retract_speed{config.get<std::vector<double>>("retract_speed")};
+    const double travel_speed{config.get<double>("travel_speed")};
     // prepend retraction on the current extruder
-    gcode += this->retract_and_wipe(config, true);
+    gcode += this->retract_and_wipe(retract_speed, travel_speed, true);
 
     // Always reset the extrusion path, even if the tool change retract is set to zero.
     m_wipe.reset_path();

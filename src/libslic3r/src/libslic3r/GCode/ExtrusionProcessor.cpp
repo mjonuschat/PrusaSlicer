@@ -8,6 +8,7 @@
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Exception.hpp"
+#include "libslic3r/ExtrudeConfig.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ConfigViews.hpp"
@@ -174,7 +175,7 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(const Extru
 
 static std::map<float, float> calc_print_speed_sections(
     const ExtrusionAttributes& attributes,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const float external_perimeter_reference_speed,
     const float default_speed,
     const std::size_t extruder_id
@@ -187,11 +188,11 @@ static std::map<float, float> calc_print_speed_sections(
     };
 
     std::vector<OverhangWithSpeed> overhangs_with_speeds = {{100, Domain::FloatOrPercentage{default_speed}}};
-    if (config.get<std::vector<bool>>("enable_dynamic_overhang_speeds").at(extruder_id)) {
-        overhangs_with_speeds = {{  0, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_0").at(extruder_id)},
-                                 { 25, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_1").at(extruder_id)},
-                                 { 50, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_2").at(extruder_id)},
-                                 { 75, config.get<std::vector<Domain::FloatOrPercentage>>("overhang_speed_3").at(extruder_id)},
+    if (config.enable_dynamic_overhang_speeds.at(extruder_id)) {
+        overhangs_with_speeds = {{  0, config.overhang_speed_0.at(extruder_id)},
+                                 { 25, config.overhang_speed_1.at(extruder_id)},
+                                 { 50, config.overhang_speed_2.at(extruder_id)},
+                                 { 75, config.overhang_speed_3.at(extruder_id)},
                                  {100, Domain::FloatOrPercentage{default_speed}}};
     }
 
@@ -211,9 +212,11 @@ static std::map<float, float> calc_print_speed_sections(
     return speed_sections;
 }
 
-static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes &attributes,
-                                                      const Domain::ConfigView  &config,
-                                                      const size_t               extruder_id)
+static std::map<float, float> calc_fan_speed_sections(
+    const ExtrusionAttributes& attributes,
+    const Biz::Slicing::ExtrudeConfig& config,
+    const size_t extruder_id
+)
 {
     struct OverhangWithFanSpeed
     {
@@ -221,13 +224,13 @@ static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes 
         std::vector<int> fan_speed;
     };
 
-    const size_t                      num_extruders            = config.get<std::vector<double>>("nozzle_diameter").size();
+    const size_t                      num_extruders            = config.enable_dynamic_fan_speeds.size();
     std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, std::vector<int>(num_extruders, 0)}};
-    if (config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
-        overhang_with_fan_speeds = {{  0, config.get<std::vector<int>>("overhang_fan_speed_0")},
-                                    { 25, config.get<std::vector<int>>("overhang_fan_speed_1")},
-                                    { 50, config.get<std::vector<int>>("overhang_fan_speed_2")},
-                                    { 75, config.get<std::vector<int>>("overhang_fan_speed_3")},
+    if (config.enable_dynamic_fan_speeds.at(extruder_id)) {
+        overhang_with_fan_speeds = {{  0, config.overhang_fan_speed_0},
+                                    { 25, config.overhang_fan_speed_1},
+                                    { 50, config.overhang_fan_speed_2},
+                                    { 75, config.overhang_fan_speed_3},
                                     {100, std::vector<int>(num_extruders, 0)}};
     }
 
@@ -243,7 +246,7 @@ static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes 
 
 OverhangSpeeds calculate_overhang_speed(
     const ExtrusionAttributes& attributes,
-    const Domain::ConfigView& config,
+    const Biz::Slicing::ExtrudeConfig& config,
     const size_t extruder_id,
     const float external_perimeter_reference_speed,
     const float default_speed,
@@ -282,11 +285,11 @@ OverhangSpeeds calculate_overhang_speed(
                                              interpolate_speed(fan_speed_sections, attributes.overhang_attributes->end_distance_from_prev_layer));
 
     OverhangSpeeds overhang_speeds = {std::min(curled_base_speed, extrusion_speed), fan_speed};
-    if (!config.get<std::vector<bool>>("enable_dynamic_overhang_speeds").at(extruder_id)) {
+    if (!config.enable_dynamic_overhang_speeds.at(extruder_id)) {
         overhang_speeds.print_speed = -1;
     }
 
-    if (!config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
+    if (!config.enable_dynamic_fan_speeds.at(extruder_id)) {
         overhang_speeds.fan_speed = -1;
     } else if (current_fan_speed.has_value() && (fan_speed < *current_fan_speed) && (*current_fan_speed - fan_speed) <= MIN_FAN_SPEED_NEGATIVE_CHANGE_TO_EMIT) {
         // Always allow the fan speed to be increased without any hysteresis, but the speed will be decreased only when it exceeds a limit for minimum change.

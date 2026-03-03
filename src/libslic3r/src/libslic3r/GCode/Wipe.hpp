@@ -49,15 +49,20 @@ public:
     void            set_path(SmoothPath &&path);
     void            offset_path(const Point &v) { m_offset += v; }
 
-    std::string     wipe(GCodeGenerator &gcodegen, const Domain::ConfigView& config, bool toolchange);
+    std::string wipe(
+        GCodeGenerator& gcodegen,
+        const std::vector<double>& retract_speed,
+        double travel_speed,
+        bool toolchange
+    );
 
     // Reduce feedrate a bit; travel speed is often too high to move on existing material.
     // Too fast = ripping of existing material; too slow = short wipe path, thus more blob.
-    static double   calc_wipe_speed(const Domain::ConfigView &config) { return config.get<double>("travel_speed") * 0.8; }
+    static double   calc_wipe_speed(double travel_speed) { return travel_speed * 0.8; }
     // Reduce retraction length a bit to avoid effective retraction speed to be greater than the configured one
     // due to rounding (TODO: test and/or better math for this).
-    static double   calc_xy_to_e_ratio(const Domain::ConfigView &config, unsigned int extruder_id) 
-        { return 0.95 * floor(config.get<std::vector<double>>("retract_speed").at(extruder_id) + 0.5) / calc_wipe_speed(config); }
+    static double   calc_xy_to_e_ratio(const std::vector<double>& retract_speed, double travel_speed, unsigned int extruder_id)
+        { return 0.95 * floor(retract_speed.at(extruder_id) + 0.5) / calc_wipe_speed(travel_speed); }
 
 private:
     bool    m_enabled{ false };

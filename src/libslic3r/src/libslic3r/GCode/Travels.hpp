@@ -17,6 +17,7 @@
 #include <unordered_set>
 
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
+#include "libslic3r/ExtrudeConfig.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/GCode/ExtrusionOrder.hpp"
@@ -178,7 +179,7 @@ std::vector<double> linspace(const double from, const double to, const unsigned 
 
 ElevatedTravelParams get_elevated_traval_params(
     const Polyline& xy_path,
-    const Domain::ConfigView &config,
+    const Biz::Slicing::ExtrudeConfig &config,
     const unsigned extruder_id,
     const GCode::TravelObstacleTracker &obstacle_tracker
 );
@@ -231,7 +232,7 @@ double get_first_crossed_line_distance(
  */
 Points3 generate_travel_to_extrusion(
     const Polyline &xy_path,
-    const Domain::ConfigView &config,
+    const Biz::Slicing::ExtrudeConfig &config,
     const unsigned extruder_id,
     const double initial_elevation,
     const GCode::TravelObstacleTracker &obstacle_tracker,

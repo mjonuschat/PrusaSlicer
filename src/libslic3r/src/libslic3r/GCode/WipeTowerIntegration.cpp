@@ -72,16 +72,21 @@ std::string WipeTowerIntegration::append_tcr(
         const Point xy_point = wipe_tower_point_to_object_point(gcodegen, start_pos);
         const Vec3crd to{to_3d(xy_point, scaled(z))};
         gcode += gcodegen.m_label_objects.maybe_stop_instance();
-        gcode += gcodegen.retract_and_wipe(config);
+
+        const std::vector<double> retract_speed{config.get<std::vector<double>>("retract_speed")};
+        const double travel_speed{config.get<double>("travel_speed")};
+        const Biz::Slicing::ExtrudeConfig extrude_config{config};
+
+        gcode += gcodegen.retract_and_wipe(retract_speed, travel_speed);
         gcodegen.m_avoid_crossing_perimeters.use_external_mp_once = true;
         const std::string comment{"Travel to a Wipe Tower"};
         if (!gcodegen.m_moved_to_first_layer_point) {
-            gcode += gcodegen.travel_to_first_position(to, current_z, ExtrusionRole::Mixed, [](){return "";}, config);
+            gcode += gcodegen.travel_to_first_position(to, current_z, ExtrusionRole::Mixed, [](){return "";}, extrude_config);
         } else {
             if (gcodegen.last_position) {
                 const Vec3crd from{to_3d(*gcodegen.last_position, scaled(current_z))};
                 gcode += gcodegen.travel_to(
-                    from, to, ExtrusionRole::Mixed, comment, [](){return "";}, config
+                    from, to, ExtrusionRole::Mixed, comment, [](){return "";}, extrude_config
                 );
             } else {
                 gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
@@ -283,7 +288,7 @@ std::string WipeTowerIntegration::finalize(GCodeGenerator &gcodegen, const Domai
     if (std::abs(gcodegen.writer().get_position().z() - purge_z) > EPSILON)
         gcode += gcodegen.generate_travel_gcode(
             {{gcodegen.last_position->x(), gcodegen.last_position->y(), scaled(purge_z)}},
-            "move to safe place for purging", [](){return "";}, config
+            "move to safe place for purging", [](){return "";}, Biz::Slicing::ExtrudeConfig{config}
         );
     gcode += append_tcr(gcodegen, config, m_final_purge, -1);
     return gcode;

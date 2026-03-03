@@ -42,18 +42,18 @@ SCENARIO("set_speed emits values with fixed-point output.", "[GCodeWriter]") {
     }
 }
 
-void check_gcode_feedrate(const std::string& gcode, const Domain::ConfigView& config, double expected_speed) {
+void check_gcode_feedrate(const std::string& gcode, const Biz::Slicing::GCodeWriterConfig& config, double expected_speed) {
 	GCodeReader parser;
     parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
 
-        const double travel_speed = config.get<double>("travel_speed");
+        const double travel_speed = config.travel_speed;
 
         const double feedrate = line.has_f() ? line.f() : self.f();
         CHECK(feedrate == Approx(expected_speed * 60).epsilon(GCodeFormatter::XYZ_EPSILON));
 
         if (line.dist_Z(self) != 0) {
             // lift move or lift + change layer
-            const double travel_speed_z = config.get<double>("travel_speed_z");
+            const double travel_speed_z = config.travel_speed_z;
             if (travel_speed_z) {
                 Vec3d move{line.dist_X(self), line.dist_Y(self), line.dist_Z(self)};
                 double move_u_z = move.z() / move.norm();
@@ -90,7 +90,7 @@ SCENARIO("travel_speed_z is zero should use travel_speed.", "[GCodeWriter]") {
             GCodeWriter writer{config.get_view()};
             THEN("XYZ move feed rate should be equal to travel_speed") {
                 const Vec3d move{10, 10, 10};
-                const double speed = writer.config.get<double>("travel_speed");
+                const double speed = writer.config.travel_speed;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -109,7 +109,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             GCodeWriter writer{config.get_view()};
             THEN("Z move feed rate should be equal to travel_speed_z") {
                 const Vec3d move{0, 0, 10};
-                const double speed = writer.config.get<double>("travel_speed_z");
+                const double speed = writer.config.travel_speed_z;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -117,7 +117,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             }
             THEN("-Z move feed rate should be equal to travel_speed_z") {
                 const Vec3d move{0, 0, -10};
-                const double speed = writer.config.get<double>("travel_speed_z");
+                const double speed = writer.config.travel_speed_z;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -125,7 +125,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             }
             THEN("XY move feed rate should be equal to travel_speed") {
                 const Vec3d move{10, 10, 0};
-                const double speed = writer.config.get<double>("travel_speed");
+                const double speed = writer.config.travel_speed;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -133,7 +133,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             }
             THEN("-XY move feed rate should be equal to travel_speed") {
                 const Vec3d move{-10, 10, 0};
-                const double speed = writer.config.get<double>("travel_speed");
+                const double speed = writer.config.travel_speed;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -141,7 +141,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             }
             THEN("X-Y move feed rate should be equal to travel_speed") {
                 const Vec3d move{10, -10, 0};
-                const double speed = writer.config.get<double>("travel_speed");
+                const double speed = writer.config.travel_speed;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -149,7 +149,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             }
             THEN("-X-Y move feed rate should be equal to travel_speed") {
                 const Vec3d move{-10, -10, 0};
-                const double speed = writer.config.get<double>("travel_speed");
+                const double speed = writer.config.travel_speed;
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -158,7 +158,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("XZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, 0, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 Vec3d p1 = writer.get_position();
                 Vec3d p2 = p1 + move;
                 std::string result = writer.travel_to_xyz(p2);
@@ -167,7 +167,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-XZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, 0, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -176,7 +176,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("X-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, 0, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -185,7 +185,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-X-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, 0, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -194,7 +194,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("YZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{0, 10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -203,7 +203,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-YZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{0, -10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -212,7 +212,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("Y-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{0, 10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -221,7 +221,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-Y-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{0, -10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -230,7 +230,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("XYZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, 10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -239,7 +239,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-XYZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, 10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -248,7 +248,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("X-YZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, -10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -257,7 +257,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-X-YZ move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, -10, 10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -266,7 +266,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("XY-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, 10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -275,7 +275,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-XY-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, 10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -284,7 +284,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("X-Y-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{10, -10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
@@ -293,7 +293,7 @@ SCENARIO("travel_speed_z is respected in Z speed component.", "[GCodeWriter]") {
             THEN("-X-Y-Z move feed rate Z component should be equal to travel_speed_z") {
                 const Vec3d move{-10, -10, -10};
                 const Vec3d move_u = move / move.norm();
-                const double speed = std::abs(writer.config.get<double>("travel_speed_z") / move_u.z());
+                const double speed = std::abs(writer.config.travel_speed_z / move_u.z());
                 const Vec3d p1 = writer.get_position();
                 const Vec3d p2 = p1 + move;
                 const std::string result = writer.travel_to_xyz(p2);
