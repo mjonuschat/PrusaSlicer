@@ -4,6 +4,7 @@
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
 
 namespace Slic3r::App::Scene {
 class Clipper;
@@ -21,7 +22,7 @@ namespace Slic3r::App::Plater {
 class MultiMaterialPaintingDialog;
 class PlaterScenePresenter;
 
-class MultiMaterialPaintingGizmo : public PaintOnGizmoBase
+class MultiMaterialPaintingGizmo : public PaintOnGizmoBase, public Biz::IColorsChangedListener
 {
 public:
     MultiMaterialPaintingGizmo() = delete;
@@ -59,6 +60,11 @@ protected:
     Domain::ColorRGBA get_cursor_sphere_right_button_color() const override;
 
     std::vector<Domain::ColorRGBA> create_painting_colors() const override;
+
+    void on_colors_changed(
+        Domain::SelectionId config_container_id,
+        const std::vector<std::string>& colors
+    ) override;
 
 private:
     Yoga::Passthrough<MultiMaterialPaintingDialog> m_dialog;
