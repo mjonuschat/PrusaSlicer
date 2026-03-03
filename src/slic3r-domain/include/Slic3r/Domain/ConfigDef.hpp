@@ -300,10 +300,6 @@ struct ConfigItemDef
     std::string sidetext; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.
 
-    // Set for type == FloatOrPercent. It provides a link to a configuration value, of which this option
-    // provides a ratio. E.g. external_perimeter_speed may be defined as a fraction of perimeter_speed.
-    std::string ratio_over;
-
     // For text only:
     bool multiline = false; // True for multiline strings.
     bool full_width =

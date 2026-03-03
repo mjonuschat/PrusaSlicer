@@ -731,8 +731,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/IPresetDialogManager.hpp
         include/Slic3r/Biz/Preset/NameValidator.hpp
         src/Slic3r/Biz/Preset/NameValidator.cpp
-        include/Slic3r/Biz/Preset/PresetHints.hpp
-        src/Slic3r/Biz/Preset/PresetHints.cpp
         include/Slic3r/Biz/Preset/ProjectPresetView.hpp
         src/Slic3r/Biz/Preset/ProjectPresetView.cpp
 #include / Slic3r / Biz / Preset / AbstractConfigManipulation.hpp

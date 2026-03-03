@@ -891,7 +891,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("external_perimeter_speed", typeid(FloatOrPercentage));
@@ -906,7 +905,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "If expressed as percentage (for example: 80%) it will be calculated "
                    "on the perimeters speed setting above. Set to zero for auto.");
     def->sidetext = L("mm/s or %");
-    def->ratio_over = "perimeter_speed";
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage(Percentage{50.}));
 
@@ -1051,7 +1049,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max = 1000;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("fan_always_on", typeid(bool));
@@ -1664,7 +1661,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage(Percentage{150.}));
 
     def = defs.add("first_layer_height", typeid(FloatOrPercentage));
@@ -1678,7 +1674,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "bottom layer to improve adhesion and tolerance for non perfect build plates.");
     def->sidetext = L("mm");
     def->min = 0;
-    def->ratio_over = "layer_height";
     def->init_fn = init_with(FloatOrPercentage{0.35});
 
     def = defs.add("first_layer_speed", typeid(FloatOrPercentage));
@@ -2032,7 +2027,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "and the length of the perimeter segment taken is limited to this parameter, but no longer than anchor_length_max. "
                      "Set this parameter to zero to disable anchoring perimeters connected to a single infill line.");
     def->sidetext = L("mm or %");
-    def->ratio_over = "infill_extrusion_width";
     def->max_literal = 1000;
     def->choices = {
         { 0.,      L("0 (no open anchors)") },
@@ -2060,7 +2054,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "and the length of the perimeter segment taken is limited to infill_anchor, but no longer than this parameter. "
                      "Set this parameter to zero to disable anchoring.");
     def->sidetext    = def_infill_anchor_min->sidetext;
-    def->ratio_over  = def_infill_anchor_min->ratio_over;
     def->max_literal = def_infill_anchor_min->max_literal;
     def->choices = {
         { 0.,      L("0 (not anchored)") },
@@ -2099,7 +2092,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("infill_first", typeid(bool));
@@ -2123,7 +2115,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "Theoretically this shouldn't be needed, but backlash might cause gaps. If expressed "
                    "as percentage (example: 15%) it is calculated over perimeter extrusion width.");
     def->sidetext = L("mm or %");
-    def->ratio_over = "perimeter_extrusion_width";
     def->init_fn = init_with(FloatOrPercentage(Percentage{25.}));
 
     def = defs.add("infill_speed", typeid(double));
@@ -2307,7 +2298,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->order = 2;
     def->tooltip = L("Percent of a flow rate relative to object's normal layer height.");
     def->sidetext = L("%");
-    def->ratio_over = "layer_height";
     def->min = 0;
     def->init_fn = init_with(Percentage{15.});
 
@@ -2854,7 +2844,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->aliases = { "perimeters_extrusion_width" };
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("perimeter_speed", typeid(double));
@@ -3503,7 +3492,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "(usually holes). If expressed as percentage (for example: 80%) it will be calculated "
                    "on the perimeters speed setting above. Set to zero for auto.");
     def->sidetext = L("mm/s or %");
-    def->ratio_over = "perimeter_speed";
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage{15.});
 
@@ -3562,7 +3550,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("solid_infill_speed", typeid(FloatOrPercentage));
@@ -3577,7 +3564,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "This can be expressed as a percentage (for example: 80%) over the default "
                    "infill speed above. Set to zero for auto.");
     def->sidetext = L("mm/s or %");
-    def->ratio_over = "infill_speed";
     def->aliases = { "solid_infill_feed_rate" };
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage{20.});
@@ -3776,7 +3762,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("XY separation between an object and its support. If expressed as percentage "
                    "(for example 50%), it will be calculated over external perimeter width.");
     def->sidetext = L("mm or %");
-    def->ratio_over = "external_perimeter_extrusion_width";
     def->min = 0;
     def->max_literal = 10;
     // Default is half the external perimeter width.
@@ -3894,7 +3879,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def           = defs.add("support_material_first_layer_density", typeid(Percentage));
@@ -4035,7 +4019,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Speed for printing support material interface layers. If expressed as percentage "
                    "(for example 50%) it will be calculated over support material speed.");
     def->sidetext = L("mm/s or %");
-    def->ratio_over = "support_material_speed";
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage(Percentage{100.}));
 
@@ -4378,7 +4361,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
-    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("top_solid_infill_speed", typeid(FloatOrPercentage));
@@ -4395,7 +4377,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "as a percentage (for example: 80%) over the solid infill speed above. "
                    "Set to zero for auto.");
     def->sidetext = L("mm/s or %");
-    def->ratio_over = "solid_infill_speed";
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage{15.});
 
