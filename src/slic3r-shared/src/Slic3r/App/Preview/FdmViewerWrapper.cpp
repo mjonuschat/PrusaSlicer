@@ -259,12 +259,23 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
             }
         }
 
-        if (item.type == CustomGCode::Type::ColorChange) {
-            float volume = 0.001f * print_statistics.volumes_per_color_change[color_changes_count++];
-            used_filament = { volume / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
-                              volume * result.filament_densities[item.extruder - 1] };
+        auto* basic_print_stats{
+            std::get_if<Domain::BasicPrintStatistics>(&result.print_statistics)
+        };
+        if (basic_print_stats && item.type == CustomGCode::Type::ColorChange) {
+            const std::vector<float>& volumes_per_color_change{
+                basic_print_stats->volumes_per_color_change
+            };
+            if (!volumes_per_color_change.empty()) {
+                float volume  = 0.001f * volumes_per_color_change[color_changes_count++];
+                used_filament = {
+                    volume
+                        / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
+                    volume * result.filament_densities[item.extruder - 1]
+                };
+            }
         }
-        ret.gcode_events.push_back({ item.type, uint8_t(item.extruder - 1), times, used_filament });
+        ret.gcode_events.push_back({item.type, uint8_t(item.extruder - 1), times, used_filament});
     }
 
     ret.extruders_count = result.extruders_count;
@@ -279,7 +290,7 @@ static FdmViewerWrapperInputData extract_wrapper_input_data_from_result(const Pr
     FdmViewerWrapperInputData ret;
 
     CustomGCode::Info ticks_info_from_model;
-    ticks_info_from_model.mode = CustomGCode::Mode::SingleExtruder;
+    ticks_info_from_model.mode = CustomGCode::Mode::SingleExtruder;// should be  Undef; -> ysFIXME-spe3494.
     ticks_info_from_model.gcodes = result.custom_gcode_per_print_z;
     ret.producer = result.producer;
     ret.custom_gcode_info = ticks_info_from_model;
@@ -505,15 +516,15 @@ void FdmViewerWrapper::update_slider_layers()
     }
 
     m_slider_layers->set_extruder_colors(convert(m_viewer.tool_colors()));
-    bool one_extruder_printed_model = m_viewer.extruders_count() == 1; // ysFIXME: used_extruders_count() == 1;
+    bool one_extruder_printed_model = used_extruders_count() == 1;
     int8_t only_extruder = (one_extruder_printed_model && m_viewer.extruders_count() > 1) ? m_viewer.used_extruders_ids().front() : -1;
+    m_slider_layers->set_ticks_values(m_data.custom_gcode_info);
     m_slider_layers->set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
     m_slider_layers->set_slider_values(std::move(layers_zs));
     m_slider_layers->force_ruler_update();
     assert(m_slider_layers->min_pos() == 0);
     m_slider_layers->freeze();
     m_slider_layers->set_max_pos(max_pos);
-    m_slider_layers->set_ticks_values(m_data.custom_gcode_info);
     m_slider_layers->set_selection_span(idx_low, idx_high);
     m_slider_layers->set_draw_mode(false, m_data.sequential_print);
 
@@ -613,10 +624,7 @@ void FdmViewerWrapper::on_slider_layers_ticks_changed()
     if (!m_loading) {
         m_legend_params.enabled = false;
         ViewType view_type = ViewType::FeatureType;
-        auto gcodes = slider_layers_ticks_values().gcodes;
-        if (std::any_of(gcodes.begin(), gcodes.end(), [](const CustomGCode::Item& item) {
-            return item.type == CustomGCode::Type::ColorChange;
-        })) {
+        if (!slider_layers_ticks_values().gcodes.empty()) {
             view_type = ViewType::ColorPrint;
         }
         set_view_type(view_type);

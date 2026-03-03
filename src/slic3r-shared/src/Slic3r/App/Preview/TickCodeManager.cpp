@@ -191,14 +191,16 @@ bool TickCodeManager::switch_code_for_tick(std::set<TickCode>::iterator it, Cust
     return true;
 }
 
-void TickCodeManager::erase_all_ticks_with_code(CustomGCode::Type type)
+bool TickCodeManager::erase_all_ticks_with_code(CustomGCode::Type type)
 {
+    const size_t ticks_cnt = ticks.size();
     for (auto it{ ticks.begin() }, end{ ticks.end() }; it != end; ) {
         if (it->type == type)
             it = ticks.erase(it);
         else
             ++it;
     }
+    return ticks_cnt != ticks.size();
 }
 
 ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, CustomGCode::Mode main_mode, float print_z) const

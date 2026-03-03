@@ -246,7 +246,7 @@ Biz::Print::ApplyStatus::Status Print::update(
 
         const auto& config_fdm{std::get<ConfigPackFDM>(config)};
         const std::vector<unsigned> extruder_candidates{
-            Biz::Slicing::get_extruder_candidates(model, config_fdm)
+            Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
         };
         m_on_extruder_candidates(extruder_candidates);
 
@@ -287,7 +287,9 @@ Biz::Print::ApplyStatus::Status Print::update(
         }
     });
 
-    if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
+    if (std::holds_alternative<ApplyStatus::Changed>(result)) {
+        m_on_fdm_result(Biz::Print::get_result_preview(*this));
+    } else if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
         m_on_fdm_result({});
     }
 
@@ -1299,6 +1301,7 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
         "An earlier return should happen, if the whole thing is already finnished!"
     );
     this->process();
+    m_on_fdm_result(Biz::Print::get_result_preview(*this));
     Biz::libpgcode::ProcessorResult result{this->process_gcode()};
     result.contained_in_bed = check_result(result, config(), append_warning_callback);
 

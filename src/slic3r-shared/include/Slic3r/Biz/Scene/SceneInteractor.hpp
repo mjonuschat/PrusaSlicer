@@ -361,6 +361,11 @@ public:
 
     const Print::WipeTowerGeometry* wipe_tower_geometry(std::size_t bed_instance_id) const;
 
+    void update_custom_gcode(
+        const Domain::SlicingId slicing_id,
+        const Domain::CustomGCode::Info& custom_gcode
+    );
+
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
 
 private:

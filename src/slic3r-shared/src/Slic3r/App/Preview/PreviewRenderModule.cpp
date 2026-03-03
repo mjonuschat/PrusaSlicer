@@ -1097,9 +1097,9 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
     const GCodeEvents& gcode_events = m_fdm_viewer.gcode_events();
     m_fdm_viewer.set_view_type(
-        m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
-            gcode_events.empty()                ? ViewType::FeatureType :
-                                                  ViewType::ColorPrint
+        !gcode_events.empty()                       ? ViewType::ColorPrint :
+            m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
+                                                      ViewType::FeatureType
     );
 
     update_scene_aabb();
@@ -1217,7 +1217,11 @@ void PreviewRenderModule::on_slider_layers_on_thumb_move()
 
 void PreviewRenderModule::on_slider_layers_ticks_changed()
 {
-    // TODO
+    const Domain::SlicingId slicing_id = m_project_interactor.selected_bed_slicing_id();
+    m_project_interactor.scene_interactor().update_custom_gcode(
+        slicing_id,
+        m_slider_layers->ticks_values()
+    );
 }
 
 bool PreviewRenderModule::on_slider_layers_auto_color_change()

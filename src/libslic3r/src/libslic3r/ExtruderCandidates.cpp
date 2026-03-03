@@ -122,12 +122,25 @@ static std::set<unsigned> get_extruder_candidates(
     return result;
 }
 
-std::vector<unsigned>
-get_extruder_candidates(const Domain::Model& model, const Domain::ConfigPackFDM& config)
+std::vector<unsigned> get_extruder_candidates(
+    const Domain::Model& model,
+    const Domain::ConfigPackFDM& config,
+    const Domain::BedInstance& bed
+)
 {
     ASSERT(config.tool.size() > 0);
     const Domain::PrintSettings& print_settings{config.print};
     std::set<unsigned> extruders;
+
+    if (bed.custom_gcode) {
+        for (const Domain::CustomGCode::Item& custom_gcode : bed.custom_gcode->gcodes) {
+            if (custom_gcode.type == Domain::CustomGCode::Type::ToolChange) {
+                ASSERT(custom_gcode.extruder > 0);
+                extruders.insert(custom_gcode.extruder - 1);
+            }
+        }
+    }
+
     for (const Domain::ModelObject* object : model.objects) {
         const Domain::ObjectSettings& object_settings{object->object_settings};
 

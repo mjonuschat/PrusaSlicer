@@ -1956,6 +1956,34 @@ void SceneInteractor::change_wipe_tower(
     );
 }
 
+void SceneInteractor::update_custom_gcode(
+    const Domain::SlicingId slicing_id,
+    const Domain::CustomGCode::Info& custom_gcode
+)
+{
+    auto it{m_projects.find(slicing_id.project_id)};
+    if (it == m_projects.end()) {
+        return;
+    }
+    SceneInteractorProjectContext& project{it->second};
+
+    Domain::BedInstance* bed_instance{
+        project.project.find_bed_instance_by_id(slicing_id.bed_instance_id)
+    };
+    if (bed_instance == nullptr) {
+        return;
+    }
+    bed_instance->custom_gcode = custom_gcode;
+
+    const Domain::ConfigContainer* config_container{
+        project.project.find_config_container_by_bed_instance_id(slicing_id.bed_instance_id)
+    };
+    if (config_container == nullptr) {
+        return;
+    }
+    invoke_slicing_input_changed(Domain::BedRef{config_container->id().id, bed_instance->id().id});
+}
+
 const Print::WipeTowerGeometry* SceneInteractor::wipe_tower_geometry(
     std::size_t bed_instance_id
 ) const

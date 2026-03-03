@@ -4,6 +4,7 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Texture.hpp"
+#include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
@@ -86,7 +87,8 @@ struct LayerHeightParams
 LayerHeightParams compute_layer_height_params(
     const Biz::Scene::ObjectSelection& object_selection,
     const Domain::Project& project,
-    const Domain::ConfigContainer& config_container
+    const Domain::ConfigContainer& config_container,
+    const Domain::BedRef& bed_ref
 );
 
 Yoga::HeightRangeEntries create_height_ranges_from_config(
@@ -160,7 +162,7 @@ LayerHeightTexture generate_layer_height_texture(
  * Compute a new height range to be inserted among existing ranges.
  *
  * Determines the Z boundaries of a new range based on the currently selected range.
- * If a range is selected, the new range is placed after it â€” either in a gap, by splitting
+ * If a range is selected, the new range is placed after it — either in a gap, by splitting
  * an adjacent range, or after the last range. If no range is selected, the new range is
  * placed after all existing ranges, or at the origin if no ranges exist.
  *

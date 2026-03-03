@@ -1272,16 +1272,9 @@ ColorRGB FdmViewer::vertex_color(const MoveVertex& v) const
     return DUMMY_COLOR;
 }
 
-void FdmViewer::set_tool_colors(const Palette& colors)
+const Palette& FdmViewer::tool_colors() const
 {
-    m_tool_colors = colors;
-    m_settings.update_colors = true;
-}
-
-void FdmViewer::set_color_print_colors(const Palette& colors)
-{
-    m_color_print_colors = colors;
-    m_settings.update_colors = true;
+    return m_tool_colors;
 }
 
 const ColorRGB& FdmViewer::extrusion_role_color(GCodeExtrusionRole role) const

@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 class LayoutButton;
 class Menu;
 class MenuItem;
-}
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Preview {
 
@@ -63,12 +63,17 @@ public:
 
     // just for editor
 
-    void set_extruder_colors(const std::vector<std::string>& extruder_colors) { m_ticks.colors = extruder_colors; }
-    void set_use_default_colors(bool use) { m_ticks.set_use_default_colors(use); }
+    void set_extruder_colors(const std::vector<std::string>& extruder_colors);
+    void set_use_default_colors(bool use);
     bool is_new_print(const std::string& print_obj_idxs);
     void show_estimated_times(bool show);
-    void show_ruler(bool show, bool show_bg);
-    void seq_top_layer_only(bool show) { m_seq_top_layer_only = show; }
+    void show_ruler(bool show);
+    void show_ruler_background(bool show_bg);
+
+    void seq_top_layer_only(bool show)
+    {
+        m_seq_top_layer_only = show;
+    }
 
     // manipulation with slider from keyboard
 
@@ -116,6 +121,8 @@ private:
 
     std::string tooltip(int tick = -1) const;
 
+    void update_thumbs_border_color();
+
     void update_draw_scroll_line_cb();
 
     // functions for extend rendering of m_ctrl
@@ -131,7 +138,14 @@ private:
     void draw_ruler(const ImRect& slideable_region);
     void render_active_ctrl_menu();
     void render_edit_menu();
-    bool render_button(Render::Icon icon, Render::Icon icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
+    bool render_button(
+        Render::Icon icon,
+        Render::Icon icon_hovered,
+        const std::string& label_id,
+        const ImVec2& pos,
+        FocusedItem focus,
+        int tick = -1
+    );
     void render_add_tick_menu();
     bool render_multi_extruders_menu(bool switch_current_code = false);
 
@@ -164,6 +178,7 @@ private:
     /**@}*/
 
     void process_ticks_changed();
+    void toggle_show_ruler(bool show);
 
 private:
     Biz::libpgcode::UnitsSystem m_units{ Biz::libpgcode::UnitsSystem::SI };
@@ -183,7 +198,7 @@ private:
 
     Imgui::DoubleSlider::Ruler m_ruler;
     TickCodeManager m_ticks;
-    float m_icon_screen_size{ 20.0f };
+    float m_icon_screen_size{ 18.0f };
     ImVec2 m_size{ 0.0f, 0.0f };
 
     std::vector<float> m_layers_times;
@@ -210,10 +225,11 @@ private:
     {
         std::string data;
         std::string cache;
-        int tick{ -1 };
-        float z{ 0.0f };
-        bool editing{ false };
-        bool show{ false };
+        int extruder_id{0};
+        int tick{-1};
+        float z{0.0f};
+        bool editing{false};
+        bool show{false};
     };
 
     TickPopup m_pause_print_popup;
