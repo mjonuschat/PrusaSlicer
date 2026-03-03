@@ -649,19 +649,7 @@ libpgcode::ProcessorResult PrePreview::generate_result() const {
         result.filament_densities.push_back(0.0);
     }
 
-    // TODO: TEMPORARY HACK: show some colors in the preview
-    // Hack works till we don't detect colors from extruders/filaments
-    result.extruder_str_colors = {
-        "#FF0000", // RED
-        "#00FF00", // GREEN
-        "#0000FF", // BLUE
-        "#FFFF00", // YELLOW
-        "#FF00FF", // MAGENTA
-        "#00FFFF", // CYAN
-        "#808080", // GRAY (0.5 * 255 = 127.5 → 128)
-        "#000000"  // BLACK
-    };
-    ASSERT(result.extruder_str_colors.size() >= result.extruders_count);
+    result.extruder_str_colors = print.config().get<std::vector<std::string>>("extruder_slot_colours");
     result.extruder_str_colors.resize(result.extruders_count);
 
     std::vector<Domain::CustomGCode::Item> custom_color_gcodes;
