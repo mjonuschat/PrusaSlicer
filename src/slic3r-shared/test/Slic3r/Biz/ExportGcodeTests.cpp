@@ -206,17 +206,14 @@ TEST_CASE("Export gcode")
 {
     boost::nowide::nowide_filesystem();
 
-    // coefficient of desperation
-    static constexpr size_t god_damn_fuck_it_factor = 4;
-
     auto [project_count, export_count, extension, seconds] =
         GENERATE(
             table<size_t, size_t, std::string, std::chrono::seconds>({
-                {1, 1, ".gcode",  god_damn_fuck_it_factor*60s}, // Export single gcode file.
-                {1, 1, ".bgcode", god_damn_fuck_it_factor*60s}, // Export single bgcode file.
-                {3, 1, ".gcode", god_damn_fuck_it_factor*100s}, // Export gcode files of multiple projects.
-                {1, 3, ".gcode", god_damn_fuck_it_factor*100s}, // Export multiple gcode files of 1 project.
-                {3, 3, ".gcode", god_damn_fuck_it_factor*200s}  // Export a lot.
+                {1, 1, ".gcode",  60s}, // Export single gcode file.
+                {1, 1, ".bgcode", 60s}, // Export single bgcode file.
+                {3, 1, ".gcode", 100s}, // Export gcode files of multiple projects.
+                {1, 3, ".gcode", 100s}, // Export multiple gcode files of 1 project.
+                {3, 3, ".gcode", 200s}  // Export a lot.
             })
         );
 
