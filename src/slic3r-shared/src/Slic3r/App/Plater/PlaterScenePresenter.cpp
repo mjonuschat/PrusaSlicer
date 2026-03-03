@@ -98,6 +98,8 @@ PlaterScenePresenter::PlaterScenePresenter(
 
     m_project_interactor.project_settings_interactor()
         .add_listener<Biz::IColorsChangedListener>(&m_colors_debug_dialog);
+    m_project_interactor.project_settings_interactor()
+        .add_listener<Biz::IColorsChangedListener>(this);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -300,6 +302,14 @@ void PlaterScenePresenter::on_sla_result_cache_changed(const Domain::SlicingId& 
     update_bed_instance_error_state(id, sla_result.has_value() && !sla_result->get().contained_in_bed);
 }
 
+void PlaterScenePresenter::on_colors_changed(
+    Domain::SelectionId /*config_container_id*/,
+    const std::vector<std::string>& /*colors*/
+)
+{
+    m_volume_materials_dirty = true;
+}
+
 void PlaterScenePresenter::force_bed_thumbnails_generation()
 {
     invoke_bed_visually_changed(m_selected_project_id);
@@ -361,6 +371,19 @@ static const Domain::BedInstance* find_bed_instance_by_model_instance_id(const s
     return (it != lookup_map.end()) ? it->second : nullptr;
 }
 
+static std::unordered_map<Domain::SelectionId, Domain::SelectionId> model_instance_to_config_container_map(const Domain::Project& project)
+{
+    std::unordered_map<Domain::SelectionId, Domain::SelectionId> ret;
+    for (const auto& cc : project.config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            for (const auto* mi : bi->model_instances) {
+                ret[mi->id().id] = cc->id().id;
+            }
+        }
+    }
+    return ret;
+}
+
 static std::optional<ColorRGBA> select_color(bool is_model_part, bool is_selected, bool is_outside, bool is_disabled,
     HoverType hover_type)
 {
@@ -413,6 +436,7 @@ void PlaterScenePresenter::update_volume_materials()
 
     std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> mi_to_bi_map = model_instance_to_bed_instance_lookup_map(proj);
     std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> ci_to_bi_map = collision_instance_to_bed_instance_lookup_map(proj);
+    std::unordered_map<Domain::SelectionId, Domain::SelectionId> mi_to_cc_map = model_instance_to_config_container_map(proj);
 
     Scene::visit(
         scene().root(),
@@ -472,6 +496,27 @@ void PlaterScenePresenter::update_volume_materials()
                     );
                 } else {
                     color = select_color(is_model_part, is_selected, true, is_disabled, hover_type);
+                }
+
+                if (!color.has_value() && is_model_part && !is_wipe_tower && inst != nullptr) {
+                    auto cc_it = mi_to_cc_map.find(tag->instance_id);
+                    if (cc_it != mi_to_cc_map.end()) {
+                        const auto& slot_colors = m_project_interactor
+                            .project_settings_interactor().get_colors(cc_it->second);
+                        const auto* obj = proj.find_object_by_id(tag->object_id);
+                        const auto* vol = obj
+                            ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
+                            : nullptr;
+                        if (vol) {
+                            const int raw_id = vol->extruder_id();
+                            const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
+                            ColorRGBA parsed;
+                            if (slot < static_cast<int>(slot_colors.size()) &&
+                                Biz::Algorithms::Color::decode_color(slot_colors[slot], parsed)) {
+                                color = parsed;
+                            }
+                        }
+                    }
                 }
 
                 if (!color.has_value())

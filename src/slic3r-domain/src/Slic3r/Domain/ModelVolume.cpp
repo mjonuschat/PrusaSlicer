@@ -68,8 +68,7 @@ int ModelVolume::extruder_id() const
             return volume_extruder_item->get<int>();
         }
 
-        const std::optional<Domain::ConfigItem> object_extruder_item = this->object->object_settings.overrides.get("extruder");
-        return object_extruder_item.has_value() ? object_extruder_item->get<int>() : 0;
+        return this->object->object_settings.items.opt("extruder").get<int>();
     }
 
     return -1;

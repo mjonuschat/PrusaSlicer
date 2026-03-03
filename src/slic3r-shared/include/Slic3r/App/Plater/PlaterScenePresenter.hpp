@@ -24,6 +24,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 
@@ -56,7 +57,8 @@ class PlaterScenePresenter :
     public Scene::ICameraUpdateListener,
     public Biz::IFDMResultCacheChangedListener,
     public Biz::ISLAResultCacheChangedListener,
-    public Biz::IProjectsChangedListener
+    public Biz::IProjectsChangedListener,
+    public Biz::IColorsChangedListener
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PlaterScenePresenterProjectContext>;
@@ -170,6 +172,11 @@ public:
      */
     void on_sla_result_cache_changed(const Domain::SlicingId& id) override;
     /**@}*/
+
+    void on_colors_changed(
+        Domain::SelectionId config_container_id,
+        const std::vector<std::string>& colors
+    ) override;
 
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
