@@ -3,9 +3,19 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace Slic3r::App::Yoga {
+
+struct HeightRangeEntry
+{
+    double min_z{0.};
+    double max_z{0.};
+    double layer_height{0.};
+};
+
+using HeightRangeEntries = std::vector<HeightRangeEntry>;
 
 class LayerHeightProfileControl : public Item
 {
@@ -18,17 +28,53 @@ public:
     void set_default_layer_height(float default_layer_height);
 
     void set_layer_height_profile(const Domain::ZHeightPairs& layer_height_profile);
+    void set_height_ranges(const HeightRangeEntries& height_ranges);
+    void set_selected_height_range(size_t range_index);
+    void set_hovered_height_range(size_t range_index);
+    void set_external_hovered_height_range(size_t range_index);
+
+    void reset_selected_height_range();
+    void reset_hovered_height_range();
+    void reset_external_hovered_height_range();
+
+    void update_height_range(
+        size_t range_index,
+        double min_z,
+        double max_z,
+        std::optional<double> layer_height = std::nullopt
+    );
 
 protected:
     float object_max_z() const;
     float min_layer_height_value() const;
     float max_layer_height_value() const;
+    const HeightRangeEntries& height_ranges() const;
+    std::optional<size_t> selected_range_index() const;
+    std::optional<size_t> hovered_range_index() const;
+    bool is_external_hover() const;
 
     float project_layer_height(float layer_height, float out_range_min, float out_range_max) const;
     float project_layer_z(float layer_z, float out_range_min, float out_range_max) const;
+    float project_mouse_y_to_z(
+        float mouse_y,
+        const Vec2f& pos,
+        const Vec2f& size,
+        float object_max_z
+    ) const;
 
     void render_baseline(const Vec2f& pos, const Vec2f& size) const;
     void render_layer_height_profile(const Vec2f& pos, const Vec2f& size) const;
+    void render_height_ranges(const Vec2f& pos, const Vec2f& size) const;
+
+    /**
+     * @brief Returns the index of the height range under the given screen Y coordinate, if any.
+     *
+     * @param mouse_y Screen-space Y coordinate (e.g. ImGui mouse position).
+     * @param pos Top-left corner of the profile control area in screen space.
+     * @param size Width and height of the profile control area.
+     */
+    std::optional<size_t>
+    pick_height_range(float mouse_y, const Vec2f& pos, const Vec2f& size) const;
 
 private:
     float m_object_max_z         = 0.f;
@@ -37,6 +83,11 @@ private:
     float m_default_layer_height = 0.f;
 
     Domain::ZHeightPairs m_layer_height_profile;
+
+    HeightRangeEntries m_height_ranges;
+    std::optional<size_t> m_selected_range_index;
+    std::optional<size_t> m_hovered_range_index;
+    bool m_external_hover = false;
 };
 
 } // namespace Slic3r::App::Yoga

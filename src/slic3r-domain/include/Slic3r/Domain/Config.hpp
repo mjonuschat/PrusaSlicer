@@ -132,7 +132,7 @@ public:
     ConfigItem* find(const std::string& key);
     const ConfigItem* find(const std::string& key) const;
 
-    std::vector<std::reference_wrapper<const ConfigItem>> overriden_items() const;
+    std::vector<std::reference_wrapper<const ConfigItem>> overridden_items() const;
 
     std::vector<ConfigItem>& all_items();
 

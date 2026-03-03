@@ -213,7 +213,7 @@ const ConfigItem* ConfigOverrides::find(const std::string& key) const {
     return find_item(m_items, key);
 }
 
-std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overriden_items() const {
+std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overridden_items() const {
     std::vector<std::reference_wrapper<const ConfigItem>> result;
 
     std::ranges::transform(m_used_overrides, std::back_inserter(result), [&](const auto& pair) {
@@ -381,7 +381,7 @@ void SquashedConfig::add(const ConfigBox& box, const ConfigLocationSizes& locati
         const LocationSize location_size{get_max_location_size(item.def(), location_sizes)};
         m_values.insert({item.name(), location_size ? spread_values(item, *location_size) : item.value()});
     }
-    for (const auto& item : box.overrides.overriden_items()) {
+    for (const auto& item : box.overrides.overridden_items()) {
         const LocationSize location_size{get_max_location_size(item.get().def(), location_sizes)};
         m_values.insert_or_assign(
             item.get().name(),
@@ -694,7 +694,7 @@ void SquashedConfig::add(
 
     for (std::size_t i{}; i < boxes.size(); ++i) {
         const ConfigOverrides& overrides{boxes[i].get().overrides};
-        for (const auto& item : overrides.overriden_items()) {
+        for (const auto& item : overrides.overridden_items()) {
             const std::string& key{item.get().def().name};
 
             const bool is_vector{m_values.at(key).visit([](const auto& value) {

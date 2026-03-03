@@ -59,8 +59,10 @@ public:
     ~VariableLayerHeightGizmo() override;
 
     Scene::ToolType type() const override;
+    bool disable_object_selection() const override;
     bool enabled() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    void provide_gizmo_controller(Scene::IGizmoController& gizmo_controller) override;
 
     void on_activated() override;
     void on_deactivated() override;
@@ -119,6 +121,7 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     PlaterScenePresenter& m_scene_presenter;
+    Scene::IGizmoController* m_gizmo_controller = nullptr;
 
     Yoga::Passthrough<VariableLayerHeightDialog> m_dialog;
 
@@ -165,6 +168,7 @@ private:
     void apply_layer_height_profile_to_model() const;
 
     void update_side_panel_layer_height_profile();
+    void update_side_panel_height_ranges();
     void set_cursor_z(std::optional<float> cursor_z);
 
     float get_layer_height_at_z(float z) const;

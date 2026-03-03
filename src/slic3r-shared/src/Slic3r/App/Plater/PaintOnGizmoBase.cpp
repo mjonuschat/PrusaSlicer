@@ -48,7 +48,7 @@ namespace Slic3r::App::Plater {
 PaintOnGizmoBase::PaintOnGizmoBase(
     Render::Device& device,
     Scene::GeometryDataFactory& data_factory,
-    Biz::ProjectInteractor& project_interactor,
+    ProjectInteractor& project_interactor,
     PlaterScenePresenter& scene_presenter
 ) :
     m_device(device),
@@ -59,6 +59,11 @@ PaintOnGizmoBase::PaintOnGizmoBase(
 {
     m_clipping_plane_presenter = Scene::ClipperPresenter(&m_clipping_plane_clipper, &m_device);
     m_sinking_plane_presenter  = Scene::ClipperPresenter(&m_sinking_plane_clipper, &m_device);
+}
+
+bool PaintOnGizmoBase::disable_object_selection() const
+{
+    return true;
 }
 
 static Scene::Node::NodeList

@@ -3,7 +3,6 @@
 #include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
 
 #include <functional>
-#include <imgui/imgui.h>
 
 namespace Slic3r::App::Yoga {
 
@@ -38,6 +37,7 @@ public:
         std::function<void(Button mouse_button)> on_mouse_up = [](Button) {};
         std::function<void(float mouse_wheel_delta, bool ctrl_down)> on_mouse_wheel = [](float,
                                                                                          bool) {};
+        std::function<void()> on_height_range_click                                 = []() {};
     };
 
     VariableLayerHeightControl();
@@ -51,8 +51,15 @@ public:
     void render(Vec2f pos, Vec2f size) override;
 
 private:
-    void render_cursor(const Vec2f& pos, const Vec2f& size);
-    void process_input(const Vec2f& pos, const Vec2f& size);
+    void render_cursor(const Vec2f& pos, const Vec2f& size) const;
+    void render_height_range_tooltip() const;
+
+    void process_input(
+        const Vec2f& pos,
+        const Vec2f& size,
+        const Vec2f& profile_area_position,
+        const Vec2f& profile_area_size
+    );
 
     float m_cursor_band_width = 0.f;
 

@@ -46,6 +46,7 @@ public:
             layer_profile_mouse_up = [](Yoga::VariableLayerHeightControl::Button) {};
         std::function<void(float mouse_wheel_delta, bool ctrl_down)> layer_profile_mouse_wheel =
             [](float, bool) {};
+        std::function<void()> on_height_range_click = []() {};
     };
 
     VariableLayerHeightDialog();
@@ -66,6 +67,7 @@ public:
     void reset_cursor_position();
 
     void set_layer_height_profile(const Domain::ZHeightPairs& layer_height_profile);
+    void set_height_ranges(const Yoga::HeightRangeEntries& height_ranges);
 
 private:
     Yoga::Passthrough<Yoga::Slider> m_blend_distance_slider;

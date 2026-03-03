@@ -12,6 +12,7 @@
 #include <cfloat>
 #include <cmath>
 
+using Slic3r::Domain::ConfigItem;
 using Slic3r::Domain::LayerHeightRange;
 using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::VolumeSettings;
@@ -457,13 +458,22 @@ ZHeightPairs layer_height_profile_from_ranges(
         );
     }
 
+    const auto get_range_layer_height = [&params](const VolumeSettings& settings) -> double
+    {
+        const std::optional<ConfigItem> layer_height_override =
+            settings.overrides.get("layer_height");
+        return layer_height_override.has_value() ? layer_height_override->get<double>() :
+                                                   params.layer_height;
+    };
+
     // The height ranges are sorted lexicographically by low / high layer boundaries.
     for (const std::pair<const LayerHeightRange, VolumeSettings>& layer_config_range :
          layer_config_ranges)
     {
-        double lo     = layer_config_range.first.first;
-        double hi     = std::min(layer_config_range.first.second, params.object_print_z_height);
-        double height = layer_config_range.second.find("layer_height").item->get<double>();
+        double lo = layer_config_range.first.first;
+        double hi = std::min(layer_config_range.first.second, params.object_print_z_height);
+        const double height = get_range_layer_height(layer_config_range.second);
+
         if (!ranges_non_overlapping.empty()) {
             // Trim current low with the last high.
             lo = std::max(lo, ranges_non_overlapping.back().first.second);

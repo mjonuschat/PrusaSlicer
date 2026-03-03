@@ -16,7 +16,8 @@ using RenderFn = std::function<void(Vec2f)>;
 enum class Orientation
 {
     Horizontal,
-    Vertical
+    Vertical,
+    VerticalReverse,
 };
 
 enum class Direction

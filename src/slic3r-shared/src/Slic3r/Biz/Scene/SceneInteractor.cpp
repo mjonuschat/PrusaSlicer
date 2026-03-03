@@ -833,6 +833,29 @@ void SceneInteractor::modify_layer_height_profile(
     }
 }
 
+void SceneInteractor::modify_layer_config_ranges(
+    const Domain::ElementRef& object_ref,
+    const std::function<void(ModelObject&)>& modifier
+)
+{
+    Project& project          = m_workbench.project(m_selected_project_id);
+    ModelObject* model_object = project.find_object_by_id(object_ref.object_id);
+    ASSERT(model_object != nullptr);
+
+    modifier(*model_object);
+
+    Domain::ElementRefs instance_refs;
+    for (const ModelInstance* model_instance : model_object->instances) {
+        instance_refs.emplace_back(object_ref.object_id, model_instance->id().id);
+    }
+
+    BedTrackingChanges changes =
+        m_bed_tracking.update_instances_bed_placement(project, instance_refs);
+    for (const Domain::BedRef& bed_ref : changes.updated_beds) {
+        this->invoke_slicing_input_changed(bed_ref);
+    }
+}
+
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
 {
     Domain::Project& project = m_workbench.project(m_selected_project_id);

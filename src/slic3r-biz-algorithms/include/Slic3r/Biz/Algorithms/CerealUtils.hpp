@@ -61,7 +61,7 @@ namespace cereal {
             // Now load/save the active overrides.
             std::vector<std::string> overridden_names;
             if (Archive::is_saving::value) {
-                const auto& overridden_items = box.overrides.overriden_items();
+                const auto& overridden_items = box.overrides.overridden_items();
                 for (const ConfigItem& item : overridden_items)
                     overridden_names.emplace_back(item.name());
             }

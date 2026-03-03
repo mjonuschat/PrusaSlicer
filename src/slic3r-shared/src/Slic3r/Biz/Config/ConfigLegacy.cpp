@@ -809,7 +809,7 @@ Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domai
 
     std::vector<std::string> override_keys_to_convert;
 
-    for (const auto& item_ref : box.overrides.overriden_items()) {
+    for (const auto& item_ref : box.overrides.overridden_items()) {
         const Domain::ConfigItem& item{item_ref.get()};
         const std::string& name{item.def().name};
         if (std::ranges::find(acceptable_keys, name) == acceptable_keys.end())

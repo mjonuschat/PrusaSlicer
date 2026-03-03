@@ -21,6 +21,7 @@ static const Margins BUTTON_TEXT_MARGIN         = {10.f, 2.f, 10.f, 2.f};
 static const Vec2f MOUSE_HELP_SIZE              = {20.f, 20.f};
 static const Vec2f SHIFT_HELP_SIZE              = {40.f, 20.f};
 static const Vec2f CTRL_HELP_SIZE               = {40.f, 20.f};
+static const Vec2f ALT_HELP_SIZE                = {40.f, 16.f};
 
 VariableLayerHeightDialog::VariableLayerHeightDialog() :
     GizmoWindowWithLeftSidePanel(_u8L("Variable layer height"), Render::Icon::VariableLayerHeight)
@@ -148,6 +149,10 @@ void VariableLayerHeightDialog::add_help_section(Item* item)
         {{Render::Icon::KeyCtrl, CTRL_HELP_SIZE}, {Render::Icon::MouseWheel, MOUSE_HELP_SIZE}},
         _u8L("Adjust brush size")
     );
+    help.add_item(
+        {{Render::Icon::KeyAlt, ALT_HELP_SIZE}, {Render::Icon::MouseLeft, MOUSE_HELP_SIZE}},
+        _u8L("Edit height range")
+    );
 }
 
 void VariableLayerHeightDialog::init_layer_height_profile_control()
@@ -198,6 +203,9 @@ void VariableLayerHeightDialog::init_layer_height_profile_control()
     m_layer_height_profile_control->callbacks().on_mouse_wheel =
         [this](float mouse_wheel_delta, bool ctrl_down)
     { m_callbacks.layer_profile_mouse_wheel(mouse_wheel_delta, ctrl_down); };
+
+    m_layer_height_profile_control->callbacks().on_height_range_click = [this]()
+    { m_callbacks.on_height_range_click(); };
 }
 
 void VariableLayerHeightDialog::set_smart_resolution(const double smart_resolution)
@@ -225,6 +233,11 @@ void VariableLayerHeightDialog::set_layer_height_title(const double layer_height
 void VariableLayerHeightDialog::set_layer_height_profile(const ZHeightPairs& layer_height_profile)
 {
     m_layer_height_profile_control->set_layer_height_profile(layer_height_profile);
+}
+
+void VariableLayerHeightDialog::set_height_ranges(const HeightRangeEntries& height_ranges)
+{
+    m_layer_height_profile_control->set_height_ranges(height_ranges);
 }
 
 void VariableLayerHeightDialog::set_object_max_z(const float object_max_z)

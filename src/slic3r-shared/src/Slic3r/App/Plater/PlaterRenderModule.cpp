@@ -53,6 +53,8 @@
 #include "Slic3r/App/Plater/CutDialog.hpp"
 #include "Slic3r/App/Plater/VariableLayerHeightGizmo.hpp"
 #include "Slic3r/App/Plater/VariableLayerHeightDialog.hpp"
+#include "Slic3r/App/Plater/HeightRangeGizmo.hpp"
+#include "Slic3r/App/Plater/HeightRangeDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 #include "Slic3r/App/Platform/AnimationManager.hpp"
@@ -320,6 +322,8 @@ static const char* tool_type_to_command_name(Scene::ToolType tool_type)
         return CommandName::CutGizmo;
     case Scene::ToolType::VariableLayerHeightGizmo:
         return CommandName::VariableLayerHeightGizmo;
+    case Scene::ToolType::HeightRangeGizmo:
+        return CommandName::HeightRangeGizmo;
     case Scene::ToolType::None:
         return nullptr;
     default:
@@ -431,6 +435,7 @@ void PlaterRenderModule::register_commands()
         {Scene::ToolType::CutGizmo, Platform::KeyCode::C},
         {Scene::ToolType::MeasureGizmo, Platform::KeyCode::U},
         {Scene::ToolType::VariableLayerHeightGizmo, Platform::KeyCode::V},
+        {Scene::ToolType::HeightRangeGizmo, Platform::KeyCode::W},
     };
 
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
@@ -486,6 +491,7 @@ void PlaterRenderModule::init_scene_layout()
     );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
+    m_object_list->set_gizmo_controller(m_gizmo_manager.get());
     m_object_list->on_config_container_added = [this]()
     {
         m_render_module_navigator->set_opened_dialog(
@@ -650,6 +656,13 @@ void PlaterRenderModule::init_scene_layout()
         m_variable_layer_height_gizmo
     );
 
+    m_toolbar_height_range = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::HeightRange,
+        _u8L("Height Range"),
+        m_height_range_gizmo
+    );
+
     m_layout
         ->add_toolbar_item_switch(
             ToolbarID::Right,
@@ -727,6 +740,7 @@ void PlaterRenderModule::init_dialog_navigation()
         Scene::ToolType::VariableLayerHeightGizmo,
         m_variable_layer_height_gizmo->release_ui_window()
     );
+    init_gizmo_dialog(Scene::ToolType::HeightRangeGizmo, m_height_range_gizmo->release_ui_window());
 }
 
 void PlaterRenderModule::update_object_selection()
@@ -925,6 +939,14 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
+    m_height_range_gizmo = &m_gizmo_manager->add_tool_gizmo<HeightRangeGizmo>(
+        *m_device,
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(
+        m_height_range_gizmo
+    );
 
     m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
@@ -1019,6 +1041,8 @@ Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool
         return m_toolbar_cut;
     case Scene::ToolType::VariableLayerHeightGizmo:
         return m_toolbar_variable_layer_height;
+    case Scene::ToolType::HeightRangeGizmo:
+        return m_toolbar_height_range;
     case Scene::ToolType::None:
         return nullptr;
     default:

@@ -38,6 +38,7 @@ using Slic3r::Biz::Scene::SceneInteractor;
 using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ConstFindResult;
 using Slic3r::Domain::FullConfigFDM;
 using Slic3r::Domain::FullConfigFDMPtr;
 using Slic3r::Domain::LayerConfigRanges;
@@ -46,6 +47,7 @@ using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::SquareMatrix3f;
@@ -238,6 +240,12 @@ VariableLayerHeightGizmo::VariableLayerHeightGizmo(
         };
         this->process_gizmo_event(gizmo_event);
     };
+
+    m_dialog->callbacks().on_height_range_click = [this]()
+    {
+        ASSERT(m_gizmo_controller != nullptr);
+        m_gizmo_controller->activate_tool(ToolType::HeightRangeGizmo, PrinterTechnology::FFF);
+    };
 }
 
 VariableLayerHeightGizmo::~VariableLayerHeightGizmo() = default;
@@ -245,6 +253,11 @@ VariableLayerHeightGizmo::~VariableLayerHeightGizmo() = default;
 ToolType VariableLayerHeightGizmo::type() const
 {
     return ToolType::VariableLayerHeightGizmo;
+}
+
+bool VariableLayerHeightGizmo::disable_object_selection() const
+{
+    return true;
 }
 
 bool VariableLayerHeightGizmo::enabled() const
@@ -259,13 +272,18 @@ bool VariableLayerHeightGizmo::enabled() const
         return false;
     }
 
-    const bool is_fdm = config_container->print_technology() == Domain::PrinterTechnology::FFF;
+    const bool is_fdm = config_container->print_technology() == PrinterTechnology::FFF;
     return whole_instance && is_fdm;
 }
 
 std::unique_ptr<GizmoWindow> VariableLayerHeightGizmo::release_ui_window()
 {
     return m_dialog.release();
+}
+
+void VariableLayerHeightGizmo::provide_gizmo_controller(Scene::IGizmoController& gizmo_controller)
+{
+    m_gizmo_controller = &gizmo_controller;
 }
 
 void VariableLayerHeightGizmo::on_activated()
@@ -293,6 +311,7 @@ void VariableLayerHeightGizmo::on_activated()
 
     this->set_dialog_layer_heights_profile_parameters();
     this->update_side_panel_layer_height_profile();
+    this->update_side_panel_height_ranges();
     this->hide_visible_volumes();
     this->init_main_nodes();
     this->init_mesh_nodes();
@@ -693,6 +712,17 @@ void VariableLayerHeightGizmo::apply_layer_height_profile_to_model() const
 void VariableLayerHeightGizmo::update_side_panel_layer_height_profile()
 {
     m_dialog->set_layer_height_profile(m_layer_height_params.layer_height_profile);
+}
+
+void VariableLayerHeightGizmo::update_side_panel_height_ranges()
+{
+    const double default_layer_height = m_layer_height_params.layer_height;
+    const LayerConfigRanges& layer_config_ranges =
+        m_selected_object_data.model_object->layer_config_ranges;
+
+    const HeightRangeEntries height_ranges =
+        create_height_ranges_from_config(layer_config_ranges, default_layer_height);
+    m_dialog->set_height_ranges(height_ranges);
 }
 
 void VariableLayerHeightGizmo::set_cursor_z(const std::optional<float> cursor_z)

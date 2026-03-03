@@ -118,8 +118,8 @@ TEST_CASE("Config override can be set, obtained, disabled and enabled", "[Config
 TEST_CASE("All overriden items can be obtained", "[Config]") {
     TestFilamentSettings box;
     box.overrides.set("print_config_item_with_filament_override", 100);
-    REQUIRE(box.overrides.overriden_items().size() == 1);
-    CHECK(box.overrides.overriden_items().at(0).get().get<int>() == 100);
+    REQUIRE(box.overrides.overridden_items().size() == 1);
+    CHECK(box.overrides.overridden_items().at(0).get().get<int>() == 100);
 }
 
 TEST_CASE("Diff keys returns different overriden keys") {

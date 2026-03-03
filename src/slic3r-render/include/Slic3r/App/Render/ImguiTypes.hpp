@@ -47,6 +47,7 @@ enum class Icon : wchar_t
 
     // icon for object list
     VariableLayerHeight,
+    HeightRange,
     Details,
     SceneMap,
     // icon for help
@@ -59,6 +60,9 @@ enum class Icon : wchar_t
     KeyCtrl,
     KeyCtrlA,
     KeyA,
+    KeyC,
+    KeyH,
+    KeyV,
     KeyEsc,
     KeyDel,
     Calculator,
@@ -120,6 +124,14 @@ enum class Icon : wchar_t
     ArrangeBottomLeft,
     ArrangeBottomRight,
     ArrangeCenter,
+
+    // Gizmo Layer Height
+    ArrowUpToLine,
+    ArrowUpFromLine,
+    LayersIcon,
+    MinusModifier,
+    PlusHeightRange,
+    PlusModifier,
 
     Layers,
     Infill,

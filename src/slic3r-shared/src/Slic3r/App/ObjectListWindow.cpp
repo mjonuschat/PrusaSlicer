@@ -166,6 +166,11 @@ void ObjectListWindow::set_bed_instance_icons(const Plater::BedThumbnailTextures
     m_object_list->set_bed_instance_icons(icons);
 }
 
+void ObjectListWindow::set_gizmo_controller(Scene::IGizmoController* controller)
+{
+    m_object_list->set_gizmo_controller(controller);
+}
+
 void ObjectListWindow::init_cc_context_menu()
 {
     // Create context menu
