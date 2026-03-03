@@ -23,6 +23,7 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 #include "libslic3r/ExtruderCandidates.hpp"
 #include "libslic3r/Slicing.hpp"
@@ -71,7 +72,8 @@ const ColorRGBA HEIGHT_RANGE_PLANE_HOVER_COLOR{0.95f, 0.95f, 0.95f, 0.5f};
 LayerHeightParams compute_layer_height_params(
     const ObjectSelection& object_selection,
     const Project& project,
-    const ConfigContainer& config_container
+    const ConfigContainer& config_container,
+    const Domain::BedRef& bed_ref
 )
 {
     const ModelObject& model_object =
@@ -79,8 +81,11 @@ LayerHeightParams compute_layer_height_params(
     const ConfigPack config_pack    = config_container.print_config();
     const ConfigPackFDM& fdm_config = std::get<ConfigPackFDM>(config_pack);
 
+    ASSERT(bed_ref.config_container_id == config_container.id().id);
+    const Domain::BedInstance& bed_instance{config_container.find_bed_instance(bed_ref.instance_id)};
+
     const std::vector<unsigned> extruder_candidates =
-        Slicing::get_extruder_candidates(project.model(), fdm_config);
+        Slicing::get_extruder_candidates(project.model(), fdm_config, bed_instance);
 
     const SlicingParameters slicing_parameters = SlicingParameters::create_from_config(
         fdm_config,

@@ -536,22 +536,86 @@ void Preview::update(MoveVerticesPerLayer&& moves) {
 libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) const {
     std::scoped_lock lock{m_mutex};
     libpgcode::ProcessorResult result;
-
-    std::size_t layer_id{0};
-    for (const auto& [_, moves] : m_moves_per_layer) {
-        for (const libpgcode::MoveVertex& move : moves) {
-            result.moves().push_back(move);
-            result.moves().back().layer_id = layer_id;
-        }
-        layer_id++;
-    }
-
     result.producer = libpgcode::GCodeProducer::PrusaSlicer;
-    result.extruders_count = static_cast<uint8_t>(print.config().get<std::vector<double>>("nozzle_diameter").size());
     result.spiral_vase_enabled = print.config().get<bool>("spiral_vase");
     result.z_offset = print.config().get<double>("z_offset");
     result.max_print_height = print.config().get<double>("max_print_height");
     result.bed_shape = double_to_float(print.config().get<std::vector<Vec2d>>("bed_shape"));
+    if (print.custom_gcode()) {
+        result.custom_gcode_per_print_z = print.custom_gcode()->get().gcodes;
+    }
+    result.extruders_count = print.config().full_config().tools_count();
+
+    auto* basic_print_stats{
+        std::get_if<Domain::BasicPrintStatistics>(&result.print_statistics)
+    };
+    ASSERT(basic_print_stats);
+
+    for (uint8_t extruder_id{}; extruder_id < result.extruders_count; ++extruder_id) {
+        basic_print_stats->volumes_per_extruder.insert({extruder_id, 0.0});
+        result.filament_diameters.push_back(0.0);
+        result.filament_densities.push_back(0.0);
+    }
+
+    // TODO: TEMPORARY HACK: show some colors in the preview
+    result.extruder_str_colors = {
+        "#FF0000", // RED
+        "#00FF00", // GREEN
+        "#0000FF", // BLUE
+        "#FFFF00", // YELLOW
+        "#FF00FF", // MAGENTA
+        "#00FFFF", // CYAN
+        "#808080", // GRAY (0.5 * 255 = 127.5 → 128)
+        "#000000"  // BLACK
+    };
+    ASSERT(result.extruder_str_colors.size() >= result.extruders_count);
+
+    std::vector<Domain::CustomGCode::Item> custom_color_gcodes;
+    if (print.custom_gcode()) {
+        for (const Domain::CustomGCode::Item& code : print.custom_gcode()->get().gcodes) {
+            if (code.type == Domain::CustomGCode::Type::ColorChange) {
+                custom_color_gcodes.emplace_back(code);
+            }
+        }
+        const bool sorted{std::is_sorted(custom_color_gcodes.begin(), custom_color_gcodes.end())};
+        DEBUG_ASSERT(sorted);
+    }
+
+    std::size_t layer_id{0};
+    for (const auto& [z, moves] : m_moves_per_layer) {
+        const auto it{std::upper_bound(
+            custom_color_gcodes.begin(),
+            custom_color_gcodes.end(),
+            unscaled(z),
+            [](double z, const Domain::CustomGCode::Item& custom_gcode)
+            { return z < custom_gcode.print_z; }
+        )};
+
+        for (const libpgcode::MoveVertex& move : moves) {
+            const uint8_t extruder_id{move.extruder_id};
+
+            result.moves().push_back(move);
+            result.moves().back().layer_id = layer_id;
+            result.moves().back().cp_color_id = extruder_id;
+
+            // custom_color_gcode.empty => begin() == end()
+            if (it != custom_color_gcodes.begin()) {
+                const auto custom_gcode_it{std::prev(it)};
+                const std::ptrdiff_t custom_gcode_index{
+                    std::distance(custom_color_gcodes.begin(), custom_gcode_it)
+                };
+                ASSERT(custom_gcode_it->extruder > 0);
+                if (custom_gcode_it->extruder - 1 == extruder_id) {
+                    ASSERT(
+                        custom_gcode_index >= 0 && custom_gcode_index < custom_color_gcodes.size()
+                    );
+                    result.moves().back().cp_color_id =
+                        result.extruder_str_colors.size() + custom_gcode_index;
+                }
+            }
+        }
+        layer_id++;
+    }
 
     for (std::size_t gcode_id{}; gcode_id < result.moves().size(); ++gcode_id) {
         result.moves()[gcode_id].gcode_id = gcode_id;

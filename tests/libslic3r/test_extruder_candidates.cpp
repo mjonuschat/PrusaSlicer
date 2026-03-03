@@ -17,6 +17,14 @@ using Slic3r::Test::TestConfig;
 using Slic3r::Biz::Slicing::get_extruder_candidates;
 using Slic3r::Biz::Algorithms::TriangleSelector;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
+using Slic3r::Domain::BedInstance;
+using CustomGCodeItem = Slic3r::Domain::CustomGCode::Item;
+using CustomGCodeType = Slic3r::Domain::CustomGCode::Type;
+using CustomGCodeInfo = Slic3r::Domain::CustomGCode::Info;
+using CustomGCodeMode = Slic3r::Domain::CustomGCode::Mode;
+
+const Slic3r::Domain::Bed bed;
+const BedInstance bed_instance{bed};
 
 TEST_CASE("Extruder candidates return expected extruders for extruders set in print settings", "[ExtruderCandidates]") {
     Model model;
@@ -25,12 +33,12 @@ TEST_CASE("Extruder candidates return expected extruders for extruders set in pr
     TestConfig config{5};
     config.print.items.opt("perimeter_extruder").set(2);
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config)};
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0, 1});
 
     config.print.items.opt("infill_extruder").set(3);
     config.print.items.opt("solid_infill_extruder").set(4);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{1, 2, 3});
 }
 
@@ -42,35 +50,35 @@ TEST_CASE("Extruder candidates return expected extruders for various object and 
     ModelObject* object{model.add_object()};
     ModelVolume* volume{add_volume(object, make_cube(10, 10, 10))};
     TestConfig config{5};
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config)};
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0});
 
     object->object_settings.items.opt("extruder").set(2);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{1});
 
     volume->volume_settings.overrides.set("extruder", 3);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{2});
 
     ModelObject* another_object{model.add_object()};
     ModelVolume* another_volume{add_volume(another_object, make_cube(10, 10, 10))};
 
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{0, 2});
 
     another_volume->volume_settings.overrides.set("extruder", 4);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{2, 3});
 
     another_volume->volume_settings.overrides.set("infill_extruder", 5);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{2, 3, 4});
 
     // Overriding all sub-extruders should override the usage of extruder 4 (index 3).
     another_volume->volume_settings.overrides.set("solid_infill_extruder", 5);
     another_volume->volume_settings.overrides.set("perimeter_extruder", 5);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{2, 4});
 }
 
@@ -84,12 +92,12 @@ TEST_CASE("Extruder candidates return expected extruders with layer config range
     VolumeSettings range_settings;
     object->layer_config_ranges.insert({range, std::move(range_settings)});
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config)};
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0});
 
     object->layer_config_ranges.at(range).overrides.set("extruder", 3);
 
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{0, 2});
 }
 
@@ -102,15 +110,15 @@ TEST_CASE("Extruder candidates return expected extruders with supports enabled",
     object->object_settings.items.opt("extruder").set(3);
     object->object_settings.overrides.set("support_material", true);
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config)};
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0, 2});
 
     object->object_settings.overrides.set("support_material_extruder", 4);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{0, 2, 3});
 
     object->object_settings.overrides.set("support_material_interface_extruder", 5);
-    extruders = get_extruder_candidates(model, config);
+    extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{2, 3, 4});
 }
 
@@ -125,6 +133,26 @@ TEST_CASE("Extruder candidates return expected extruders with multi material pai
     selector.set_facet(1, Slic3r::Domain::TriangleSelector::TriangleStateType::Extruder3);
     volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config)};
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0, 1, 2});
+}
+
+TEST_CASE(
+    "Extruder candidates return expected extruders with custom gcodes",
+    "[ExtruderCandidates]"
+)
+{
+    Model model;
+    ModelObject* object{model.add_object()};
+    add_volume(object, make_cube(10, 10, 10));
+    TestConfig config{5};
+
+    object->object_settings.items.opt("extruder").set(3);
+    BedInstance instance{bed};
+    instance.custom_gcode = CustomGCodeInfo{
+        CustomGCodeMode::MultiExtruder,
+        {CustomGCodeItem{.print_z = 5.0, .type = CustomGCodeType::ToolChange, .extruder = 2}}
+    };
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, instance)};
+    CHECK(extruders == std::vector<unsigned>{1, 2});
 }

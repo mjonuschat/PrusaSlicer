@@ -259,12 +259,23 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
             }
         }
 
-        if (item.type == CustomGCode::Type::ColorChange) {
-            float volume = 0.001f * print_statistics.volumes_per_color_change[color_changes_count++];
-            used_filament = { volume / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
-                              volume * result.filament_densities[item.extruder - 1] };
+        auto* basic_print_stats{
+            std::get_if<Domain::BasicPrintStatistics>(&result.print_statistics)
+        };
+        if (basic_print_stats && item.type == CustomGCode::Type::ColorChange) {
+            const std::vector<float>& volumes_per_color_change{
+                basic_print_stats->volumes_per_color_change
+            };
+            if (!volumes_per_color_change.empty()) {
+                float volume  = 0.001f * volumes_per_color_change[color_changes_count++];
+                used_filament = {
+                    volume
+                        / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
+                    volume * result.filament_densities[item.extruder - 1]
+                };
+            }
         }
-        ret.gcode_events.push_back({ item.type, uint8_t(item.extruder - 1), times, used_filament });
+        ret.gcode_events.push_back({item.type, uint8_t(item.extruder - 1), times, used_filament});
     }
 
     ret.extruders_count = result.extruders_count;

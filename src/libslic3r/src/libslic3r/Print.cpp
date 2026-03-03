@@ -246,7 +246,7 @@ Biz::Print::ApplyStatus::Status Print::update(
 
         const auto& config_fdm{std::get<ConfigPackFDM>(config)};
         const std::vector<unsigned> extruder_candidates{
-            Biz::Slicing::get_extruder_candidates(model, config_fdm)
+            Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
         };
         m_on_extruder_candidates(extruder_candidates);
 

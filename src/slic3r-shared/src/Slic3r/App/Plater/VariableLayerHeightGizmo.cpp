@@ -304,8 +304,12 @@ void VariableLayerHeightGizmo::on_activated()
 
     m_visible_volumes_nodes = collect_visible_volumes_nodes(project, scene);
     m_selected_object_data  = collect_selected_object_data(object_selection, project, mesh_manager);
-    m_layer_height_params =
-        compute_layer_height_params(object_selection, project, config_container);
+    m_layer_height_params   = compute_layer_height_params(
+        object_selection,
+        project,
+        config_container,
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+    );
     m_mouse_button_down = Button::None;
     m_mouse_dragging    = false;
 

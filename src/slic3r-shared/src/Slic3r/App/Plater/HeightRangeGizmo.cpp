@@ -262,8 +262,12 @@ void HeightRangeGizmo::on_activated()
 
     m_non_selected_volumes_nodes = collect_non_selected_volumes_nodes(scene, object_selection);
     m_selected_object_data       = collect_selected_object_data(object_selection, project);
-    m_layer_height_params =
-        compute_layer_height_params(object_selection, project, config_container);
+    m_layer_height_params        = compute_layer_height_params(
+        object_selection,
+        project,
+        config_container,
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+    );
     m_layer_config_ranges = m_selected_object_data.model_object->layer_config_ranges;
 
     this->set_dialog_layer_heights_profile_parameters();
