@@ -185,13 +185,10 @@ public:
     size_t gcode_events_count() const { return m_gcode_events.size(); }
     const GCodeEvents& gcode_events() const { return m_gcode_events; }
 
-    size_t tool_colors_count() const { return m_tool_colors.size(); }
-    const Palette& tool_colors() const { return m_tool_colors; }
-    void set_tool_colors(const Palette& colors);
+    const Palette& tool_colors() const;
 
     size_t color_print_colors_count() const { return m_color_print_colors.size(); }
     const Palette& color_print_colors() const { return m_color_print_colors; }
-    void set_color_print_colors(const Palette& colors);
 
     const Domain::ColorRGB& extrusion_role_color(Domain::GCodeExtrusionRole role) const;
     void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const Domain::ColorRGB& color);

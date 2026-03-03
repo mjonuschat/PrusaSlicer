@@ -558,6 +558,7 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     }
 
     // TODO: TEMPORARY HACK: show some colors in the preview
+    // Hack works till we don't detect colors from extruders/filaments
     result.extruder_str_colors = {
         "#FF0000", // RED
         "#00FF00", // GREEN
@@ -569,6 +570,7 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
         "#000000"  // BLACK
     };
     ASSERT(result.extruder_str_colors.size() >= result.extruders_count);
+    result.extruder_str_colors.resize(result.extruders_count);
 
     std::vector<Domain::CustomGCode::Item> custom_color_gcodes;
     if (print.custom_gcode()) {

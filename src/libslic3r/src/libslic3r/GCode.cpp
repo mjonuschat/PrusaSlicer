@@ -623,6 +623,9 @@ namespace DoExport {
         const auto layer_height{config.get<double>("layer_height")};
         processor_config.first_layer_height = config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
         processor_config.max_print_height = config.get<double>("max_print_height");
+        processor_config.color_change_gcode = config.get<std::string>("color_change_gcode");
+        processor_config.pause_print_gcode = config.get<std::string>("pause_print_gcode");
+        processor_config.template_custom_gcode = config.get<std::string>("template_custom_gcode");
         processor_config.single_extruder_multi_material = config.get<bool>("single_extruder_multi_material");
         if (processor_config.single_extruder_multi_material && processor_config.extruders.count > 1 && config.get<bool>("wipe_tower")) {
             processor_config.parking_pos_retraction = float(config.get<double>("parking_pos_retraction"));

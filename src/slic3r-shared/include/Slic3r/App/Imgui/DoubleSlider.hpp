@@ -69,10 +69,10 @@ public:
     ImVec2 ctrl_size() const { return m_size; }
     ImVec2 ctrl_pos() const { return m_pos; }
 
-    void update_draw_options(float scale, bool has_ruler = false) {
-        m_draw_opts.scale = scale;
-        m_draw_opts.has_ruler = has_ruler;
-    }
+    void set_border_color(ImU32 color) { m_border_color = color; }
+    ImU32 border_color() { return m_border_color; }
+
+    void update_draw_options(float scale, bool has_ruler = false);
 
     bool is_combine_thumbs() const { return m_combine_thumbs; }
     bool is_active_higher_thumb() const { return m_selection == SelectedSlider::Higher; }
@@ -85,7 +85,7 @@ public:
     float position_in_rect(int pos, const ImRect& rect) const;
     ImRect active_thumb_rect() const;
 
-    bool is_rclick_on_thumb() const { return m_rclick_on_selected_thumb; }
+    bool is_rclick_on_thumb();
     bool is_lclick_on_thumb();
     bool is_lclick_on_hovered_pos();
 
@@ -122,19 +122,20 @@ private:
     struct DrawOptions
     {
         float scale{ 1.0f }; // used for Retina on osx
+        float font_size{ 16.0f };
         ImVec2 text_size{ 0.0f, 0.0f };
         bool has_ruler{ false };
 
-        ImVec2 dummy_sz() const { return ImVec2(has_ruler ? 54.0f : 40.0f, 16.0f) * scale; }
-        ImVec2 groove_sz() const { return ImVec2(4.0f, 4.0f) * scale; }
-        ImVec2 draggable_region_sz() const { return ImVec2(20.0f, 19.0f) * scale; }
-        ImVec2 text_dummy_sz() const { return ImVec2(40.0f, 34.0f) * scale; }
-        ImVec2 text_padding() const { return ImVec2(5.0f, 2.0f) * scale; }
-        ImVec2 triangle_offset() const { return ImVec2(9.0f, 8.0f) * scale; }
+        ImVec2 dummy_sz() const;
+        ImVec2 groove_sz() const;
+        ImVec2 draggable_region_sz() const;
+        ImVec2 text_dummy_sz() const;
+        ImVec2 text_padding() const;
+        ImVec2 triangle_offset() const;
 
-        float thumb_radius() const { return 10.0f * scale; }
-        float thumb_border() const { return 2.0f * scale; }
-        float rounding() const { return 2.0f * scale; }
+        float thumb_radius() const;
+        float thumb_border() const;
+        float rounding() const;
 
         ImRect groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal) const;
         ImRect draggable_region(const ImRect& groove, bool is_horizontal) const;
@@ -157,6 +158,7 @@ private:
     SelectedSlider m_selection{ SelectedSlider::Undefined };
     ImVec2 m_pos{ 0.0f, 0.0f };
     ImVec2 m_size{ 0.0f, 0.0f };
+    ImU32 m_border_color;
     std::string m_name;
     ImGuiSliderFlags m_flags{ ImGuiSliderFlags_None };
     bool m_is_shown{ true };
@@ -200,6 +202,7 @@ class Manager : public Slic3r::App::Yoga::Window
 public:
     Manager(const std::string& name, const std::string& header_text, Yoga::Orientation orientation) : Slic3r::App::Yoga::Window(name) {
         set_orientation(orientation);
+        set_alpha(0.f);
 
         Yoga::Text* text = emplace_back<Yoga::Text>(header_text);
         text->set_font_type(Render::ImguiFontType::Bold);
@@ -208,7 +211,7 @@ public:
         const bool is_horizontal = orientation == Yoga::Orientation::Horizontal;
 
         m_ctrl = emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
-        m_ctrl->set_min_size({ is_horizontal ? 0 : 95, is_horizontal ? 50 : 0});
+        m_ctrl->set_min_size({ is_horizontal ? 0 : 105, is_horizontal ? 50 : 0});
         m_ctrl->set_get_label_cb([this](int pos) { return label(pos); });
         m_ctrl->set_flex_grow(1.);
     }

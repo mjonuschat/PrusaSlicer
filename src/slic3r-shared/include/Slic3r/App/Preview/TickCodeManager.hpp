@@ -57,7 +57,7 @@ public:
     void add_auto_color_change(Domain::CustomGCode::Mode main_mode, const int extruders_cnt, float print_z);
     void switch_code(Domain::CustomGCode::Type type_from, Domain::CustomGCode::Type type_to);
     bool switch_code_for_tick(std::set<TickCode>::iterator it, Domain::CustomGCode::Type type_to, const int extruder);
-    void erase_all_ticks_with_code(Domain::CustomGCode::Type type);
+    bool erase_all_ticks_with_code(Domain::CustomGCode::Type type);
 
     ConflictType is_conflict_tick(const TickCode& tick, Domain::CustomGCode::Mode main_mode, float print_z) const;
 

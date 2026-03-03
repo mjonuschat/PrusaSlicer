@@ -6,8 +6,53 @@ namespace Slic3r::App::Imgui::DoubleSlider {
 
 static ImU32 fg_color()         { return ImGui::GetColorU32({ 0.99f, 0.41f, 0.2f, 1.0f }); } // color from SidebarAfterSlice::render()
 static ImU32 bg_color()         { return ImGui::GetColorU32({ 0.5f, 0.5f, 0.5f, 1.0f }); }
-static ImU32 border_color()     { return ImGui::GetColorU32({ 0.168f, 0.168f, 0.168f, 1.0f }); } // color from set_our_style_colors() - ImGuiCol_WindowBg
 static ImU32 tooltip_bg_color() { return ImColor({ 40, 40, 40 }); }
+
+ImVec2 Control::DrawOptions::dummy_sz() const
+{
+    float x_ratio = has_ruler ? 3.375f : 2.0f;
+    return ImVec2(x_ratio* font_size, font_size) * scale;
+}
+
+ImVec2 Control::DrawOptions::groove_sz() const
+{
+    return ImVec2(0.25f * font_size, 0.25f * font_size) * scale;
+}
+
+ImVec2 Control::DrawOptions::draggable_region_sz() const
+{
+    return ImVec2(1.25f * font_size, 1.25f * font_size) * scale;
+}
+
+ImVec2 Control::DrawOptions::text_dummy_sz() const
+{
+    return ImVec2(2.5f * font_size, 2.125f * font_size) * scale;//ImVec2(40.0f, 34.0f) * scale;
+}
+
+ImVec2 Control::DrawOptions::text_padding() const
+{
+    return ImVec2(5.0f, 2.0f) * scale;
+}
+
+ImVec2 Control::DrawOptions::triangle_offset() const
+{
+    return ImVec2(0.6f * font_size, 0.5f * font_size) * scale;//ImVec2(9.0f, 8.0f) * scale;
+}
+
+float Control::DrawOptions::thumb_radius() const
+{
+    return 0.5f * font_size * scale;// 8.0f * scale;
+}
+
+float Control::DrawOptions::thumb_border() const
+{
+    return 0.125f * font_size * scale;// 2.0f * scale;
+}
+
+float Control::DrawOptions::rounding() const
+{
+    return 0.125f * font_size * scale;// 2.0f * scale;
+}
 
 ImRect Control::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal) const
 {
@@ -50,6 +95,7 @@ Control::Control(
     , m_flags(flags)
     , m_draw_lower_thumb(use_lower_thumb)
 {
+    m_border_color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
 }
 
 void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
@@ -138,6 +184,13 @@ void Control::set_max_pos(const int max_pos)
 {
     m_max_pos = max_pos;
     correct_higher_pos();
+}
+
+void Control::update_draw_options(float scale, bool has_ruler)
+{
+    m_draw_opts.scale = scale;
+    m_draw_opts.font_size = ImGui::GetStyle().FontSizeBase;
+    m_draw_opts.has_ruler = has_ruler;
 }
 
 void Control::move_active_thumb(int delta)
@@ -231,6 +284,17 @@ float Control::position_in_rect(int pos, const ImRect& rect) const
 ImRect Control::active_thumb_rect() const
 {
     return (m_selection == SelectedSlider::Lower) ? m_regions.lower_thumb : m_regions.higher_thumb;
+}
+
+bool Control::is_rclick_on_thumb()
+{
+    if (m_rclick_on_selected_thumb) {
+        // discard right mouse click at list its value is checked to avoud reuse it on next frame
+        m_rclick_on_selected_thumb = false;
+        m_suppress_process_behavior = false;
+        return true;
+    }
+    return false;
 }
 
 bool Control::is_lclick_on_thumb()
@@ -358,10 +422,10 @@ void Control::draw_thumb(const ImVec2& center, bool mark/* = false*/)
     float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
 
     ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, border_color(), 16);
-    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.5f * radius, fg_color(), 16);
+    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.65f * radius, fg_color(), 16);
 
     if (mark)
-      ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.25f * radius, border_color(), 16);
+      ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.4f * radius, border_color(), 16);
 }
 
 void Control::apply_regions(int higher_pos, int lower_pos, const ImRect& draggable_region)
