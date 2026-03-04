@@ -302,6 +302,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/PrintToolRowItem.cpp
         include/Slic3r/App/Config/ConfigItemPreview.hpp
         src/Slic3r/App/Config/ConfigItemPreview.cpp
+        include/Slic3r/App/Config/OverridableSubcategoryListView.hpp
+        src/Slic3r/App/Config/OverridableSubcategoryListView.cpp
+        include/Slic3r/App/Config/OverridableSubcategoryItem.hpp
+        src/Slic3r/App/Config/OverridableSubcategoryItem.cpp
+        src/Slic3r/App/Config/OverridableConfigRowItem.cpp
+        include/Slic3r/App/Config/OverridableConfigRowItem.hpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -660,8 +666,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/IListObserver.hpp
         include/Slic3r/Biz/DataObserver.hpp
         include/Slic3r/Biz/ConfigBoxObservableList.hpp
-        include/Slic3r/Biz/CBIObservableList.hpp
-        src/Slic3r/Biz/CBIObservableList.cpp
+        include/Slic3r/Biz/OverridableCBIObservableList.hpp
+        src/Slic3r/Biz/OverridableCBIObservableList.cpp
         src/Slic3r/Biz/ConfigBoxObservableList.cpp
         include/Slic3r/Biz/ConfigBoxInteractor.hpp
         src/Slic3r/Biz/ConfigBoxInteractor.cpp
@@ -675,6 +681,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ObjectSettingsInteractor.cpp
         include/Slic3r/Biz/ObjectSettingsObservableList.hpp
         src/Slic3r/Biz/ObjectSettingsObservableList.cpp
+        include/Slic3r/Biz/OverridableConfigBoxObservableList.hpp
+        src/Slic3r/Biz/OverridableConfigBoxObservableList.cpp
+        include/Slic3r/Biz/OverridableConfigBoxInteractor.hpp
+        src/Slic3r/Biz/OverridableConfigBoxInteractor.cpp
 
         include/Slic3r/Biz/OverrideItem.hpp
         src/Slic3r/Biz/Utils/MeshClipper.cpp
@@ -718,11 +728,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetHints.cpp
         include/Slic3r/Biz/Preset/ProjectPresetView.hpp
         src/Slic3r/Biz/Preset/ProjectPresetView.cpp
-        #include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
-        #src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
+#include / Slic3r / Biz / Preset / AbstractConfigManipulation.hpp
+#src / Slic3r / Biz / Preset / AbstractConfigManipulation.cpp
 
-        #include/Slic3r/Biz/Preset/Bundle.hpp
-        #src/Slic3r/Biz/Preset/Bundle.cpp
+#include / Slic3r / Biz / Preset / Bundle.hpp
+#src / Slic3r / Biz / Preset / Bundle.cpp
 
 	include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
         src/Slic3r/Biz/Preset/IO/BundlePaths.cpp
@@ -943,8 +953,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Format/Metadata.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
         src/Slic3r/Biz/Format/3mf.cpp
-        #src/Slic3r/Biz/Format/3mf/BuildTicket.cpp
-        #src/Slic3r/Biz/Format/3mf/BuildTicket.hpp
+#src / Slic3r / Biz / Format / 3mf / BuildTicket.cpp
+#src / Slic3r / Biz / Format / 3mf / BuildTicket.hpp
         src/Slic3r/Biz/Format/3mf/Metadata.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.hpp
@@ -1134,16 +1144,16 @@ target_link_libraries(slic3r-shared PUBLIC
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
-#    target_link_libraries(slic3r-shared PUBLIC png-mt )
+#target_link_libraries(slic3r - shared PUBLIC png - mt)
 else()
     find_package(CURL REQUIRED)
 
     add_library(libcurl INTERFACE)
     target_link_libraries(libcurl INTERFACE CURL::libcurl)
 
-    # Fixing curl's cmake config script bugs
+#Fixing curl's cmake config script bugs
     if (NOT WIN32)
-        # Required by libcurl
+#Required by libcurl
         find_package(ZLIB REQUIRED)
         target_link_libraries(libcurl INTERFACE ZLIB::ZLIB)
     else()
@@ -1169,7 +1179,7 @@ endif()
 
 if (NOT WIN32)
     if (SLIC3R_FHS)
-        # CMAKE_INSTALL_FULL_DATAROOTDIR: read-only architecture-independent data root (share)
+#CMAKE_INSTALL_FULL_DATAROOTDIR : read - only architecture - independent data root(share)
         set(SLIC3R_FHS_RESOURCES "${CMAKE_INSTALL_FULL_DATAROOTDIR}/PrusaSlicer")
         install(DIRECTORY ${SLIC3R_RESOURCES_DIR}/ DESTINATION ${SLIC3R_FHS_RESOURCES})
         target_compile_definitions(slic3r-shared PUBLIC SLIC3R_FHS SLIC3R_FHS_RESOURCES="${SLIC3R_FHS_RESOURCES}")
@@ -1191,7 +1201,7 @@ if (SLIC3R_ENABLE_FORMAT_STEP)
     get_target_property(OCCT_TYPE OCCTWrapper TYPE)
     if (OCCT_TYPE STREQUAL "MODULE_LIBRARY")
         add_dependencies(slic3r-shared OCCTWrapper)
-        # We cannot link against a MODULE library, so we add the include directory manually.
+#We cannot link against a MODULE library, so we add the include directory manually.
         target_include_directories(slic3r-shared PRIVATE ${CMAKE_SOURCE_DIR}/src/occt_wrapper)
     else ()
         target_link_libraries(slic3r-shared PRIVATE OCCTWrapper)
@@ -1271,7 +1281,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         add_dependencies(slic3r-shared-tests OCCTWrapper)
         target_compile_definitions(slic3r-shared-tests PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
 
-        # Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
+#Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
         add_custom_command(TARGET slic3r-shared-tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_FILE:OCCTWrapper>

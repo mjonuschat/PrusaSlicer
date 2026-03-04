@@ -77,7 +77,12 @@ void SearchResultRow::on_data_update()
 
     m_icon->set_icon(CategoryUtils::category_render_icon(def.category, technology));
 
-    m_text_category->set_text(Domain::ConfigItemDef::translate_category(def.category, technology));
+    const bool is_override = def.location != m_state->location();
+    // Ugly hack, blame product
+    Domain::ConfigItemDef::Category category =
+        is_override ? Domain::ConfigItemDef::Category::Filament_Overrides : def.category;
+
+    m_text_category->set_text(Domain::ConfigItemDef::translate_category(category, technology));
 
     m_text_label->set_text(def.label);
 

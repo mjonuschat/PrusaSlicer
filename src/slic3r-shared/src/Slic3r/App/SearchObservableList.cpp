@@ -9,6 +9,7 @@
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
+#include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 
 namespace {
 inline std::string string_to_lower(std::string_view input)
@@ -140,16 +141,32 @@ void SearchObservableList::invalidate_source_items()
         }
     };
 
+    auto extract_overridable_cbol =
+        [this](std::shared_ptr<const Biz::OverridableConfigBoxObservableList> cbol)
+    {
+        const size_t cbol_size = cbol->size();
+        m_source_items.reserve(m_source_items.size() + cbol_size);
+
+        for (size_t index = 0; index < cbol_size; ++index) {
+            const Biz::OverrideItem* item = &cbol->at(index);
+
+            if (item->config_item->def().category == Domain::ConfigItemDef::Category::Hidden) {
+                continue;
+            }
+            m_source_items.push_back(item->config_item);
+        }
+    };
+
     extract_cbol(m_preset_interactor.printer_cbi().config_box_list().lock());
 
     extract_printtool_cbol(m_preset_interactor.print_tool_cbi().observable_list().lock());
 
     // Only extract first cbol encountered in tools and materials
     if (m_preset_interactor.material_cbi_list().size()) {
-        std::shared_ptr<const Biz::ConfigBoxObservableList> material_cbi_list =
-            m_preset_interactor.material_cbi_list().at(0).config_box_list().lock();
+        std::shared_ptr<const Biz::OverridableConfigBoxObservableList> material_cbi_list =
+            m_preset_interactor.material_cbi_list().at(0).config_box_overridable_list().lock();
         if (material_cbi_list) {
-            extract_cbol(material_cbi_list);
+            extract_overridable_cbol(material_cbi_list);
         }
     }
 

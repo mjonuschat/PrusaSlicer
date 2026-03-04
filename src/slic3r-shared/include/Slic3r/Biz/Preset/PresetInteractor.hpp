@@ -17,7 +17,7 @@
 #include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
-#include "Slic3r/Biz/CBIObservableList.hpp"
+#include "Slic3r/Biz/OverridableCBIObservableList.hpp"
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetVisualGetter.hpp"
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
@@ -247,7 +247,7 @@ public:
 
     ConfigBoxInteractor& printer_cbi();
     PrintToolConfigBoxInteractor& print_tool_cbi();
-    CBIObservableList& material_cbi_list();
+    OverridableCBIObservableList& material_cbi_list();
 
     const Domain::ConfigValue* get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
@@ -820,7 +820,7 @@ private:
     void delete_preset(Domain::Preset::PresetKind kind, const std::string& preset_ids);
 
 private:
-    using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
+    using SetAccessorMap = std::map<const OverridableConfigBoxInteractor*, OverridableConfigBoxInteractor::SetAccessor>;
 
     Domain::Workbench& m_workbench;
     IO::BundlePaths m_bundle_paths;
@@ -840,11 +840,12 @@ private:
 
     ProjectContexts m_project_contexts;
 
+    ConfigBoxInteractor::SetAccessor m_printer_cbi_accessor;
     ConfigBoxInteractor m_printer_cbi;
     PrintToolConfigBoxInteractor::SetAccessor m_print_tool_cbi_accessor;
     PrintToolConfigBoxInteractor m_print_tool_cbi;
-    CBIObservableList m_material_cbi_list;
-    SetAccessorMap m_cbi_accessors; ///< Contains All SetAccessors currently in use
+    OverridableCBIObservableList m_material_cbi_list;
+    SetAccessorMap m_material_accessors; ///< Contains All SetAccessors currently in use
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
 

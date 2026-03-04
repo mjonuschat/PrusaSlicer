@@ -48,8 +48,6 @@ public:
     std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list();
 
 private:
-    // These shared_ptrs should not be shared to anywhere, only pass weak_ptrs
-    // TODO: Implement a suitable container class for it.
     UnsharedPointer<ConfigBoxObservableList> m_config_box_list;
     UnsharedPointer<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
 };

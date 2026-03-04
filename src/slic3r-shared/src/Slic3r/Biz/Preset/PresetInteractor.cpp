@@ -80,9 +80,7 @@ PresetInteractor::PresetInteractor(
     ),
     m_print_tool_cbi(m_workbench, scene_interactor, m_print_tool_cbi_accessor)
 {
-    ConfigBoxInteractor::SetAccessor printer_accessor;
-    m_printer_cbi                   = ConfigBoxInteractor(printer_accessor, nullptr);
-    m_cbi_accessors[&m_printer_cbi] = std::move(printer_accessor);
+    m_printer_cbi = ConfigBoxInteractor(m_printer_cbi_accessor, nullptr);
 
     add_listener<IPresetChangedListener>(&m_object_settings_interactor);
 }
@@ -572,7 +570,7 @@ void PresetInteractor::on_selected_config_container_changed(
     fill_tools_presets(selected_preset, bag);
     fill_materials_presets(selected_preset, bag);
 
-    m_cbi_accessors.at(&m_printer_cbi).set_config_box(&selected_preset.printer.config_box());
+    m_printer_cbi_accessor.set_config_box(&selected_preset.printer.config_box());
 
     update_print_tool_cbi(selected_preset);
 
@@ -1179,9 +1177,7 @@ void PresetInteractor::fill_sheet_items(const Domain::Preset::HwPrinterConfig& h
 void PresetInteractor::fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset)
 {
     // Remove previous material accessors
-    for (size_t material_index = 0; material_index < m_material_cbi_list.size(); ++material_index) {
-        m_cbi_accessors.erase(&m_material_cbi_list.at(material_index));
-    }
+    m_material_accessors.clear();
 
     std::vector<Domain::ConfigBox*> material_cbs;
     material_cbs.reserve(selected_preset.materials.size());
@@ -1193,7 +1189,7 @@ void PresetInteractor::fill_selected_material_cbis(Domain::Preset::SelectedPrese
     );
 
     SetAccessorMap accessors = m_material_cbi_list.set_items(material_cbs);
-    m_cbi_accessors.insert(accessors.begin(), accessors.end());
+    m_material_accessors.insert(accessors.begin(), accessors.end());
 }
 
 void PresetInteractor::select_printer_preset_internal(
@@ -1223,7 +1219,7 @@ void PresetInteractor::select_printer_preset_internal(
                 && item.hw_printer_config_id == printer_hw_config_id;
         }
     );
-    m_cbi_accessors.at(&m_printer_cbi).set_config_box(&selected_preset.printer.config_box());
+    m_printer_cbi_accessor.set_config_box(&selected_preset.printer.config_box());
 
     fill_tools_presets(selected_preset, bag);
     fill_materials_presets(selected_preset, bag);
@@ -1379,7 +1375,7 @@ void PresetInteractor::select_material_preset_internal(
         { item.set_selected([&id](const PresetItem& item) { return item.id == id; }); }
     );
 
-    m_cbi_accessors.at(&m_material_cbi_list.at(material_index))
+    m_material_accessors.at(&m_material_cbi_list.at(material_index))
         .set_config_box(&selected_preset.materials.at(material_index).config_box());
 
     const auto& ccc = selected_config_container_context();
@@ -1621,7 +1617,7 @@ ConfigBoxInteractor& PresetInteractor::printer_cbi()
     return m_printer_cbi;
 }
 
-CBIObservableList& PresetInteractor::material_cbi_list()
+OverridableCBIObservableList& PresetInteractor::material_cbi_list()
 {
     return m_material_cbi_list;
 }
@@ -1692,13 +1688,13 @@ void PresetInteractor::set_item_value(
             if constexpr (std::is_same_v<T, Domain::FDMConfigLocation>) {
                 switch (location) {
                 case Domain::FDMConfigLocation::Printer:
-                    m_cbi_accessors.at(&m_printer_cbi).set_value(name, value);
+                    m_printer_cbi_accessor.set_value(name, value);
                     break;
                 case Domain::FDMConfigLocation::Print:
                     m_print_tool_cbi_accessor.set_print_value(name, value);
                     break;
                 case Domain::FDMConfigLocation::Filament: {
-                    m_cbi_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
+                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
                 } break;
                 case Domain::FDMConfigLocation::Tool: {
                     m_print_tool_cbi_accessor.set_tool_value(name, index, value);;
@@ -1713,13 +1709,13 @@ void PresetInteractor::set_item_value(
             } else if constexpr (std::is_same_v<T, Domain::SLAConfigLocation>) {
                 switch (location) {
                 case Domain::SLAConfigLocation::Printer:
-                    m_cbi_accessors.at(&m_printer_cbi).set_value(name, value);
+                    m_printer_cbi_accessor.set_value(name, value);
                     break;
                 case Domain::SLAConfigLocation::Print:
                     m_print_tool_cbi_accessor.set_print_value(name, value );
                     break;
                 case Domain::SLAConfigLocation::Material: {
-                    m_cbi_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
+                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
                 } break;
                 case Domain::SLAConfigLocation::Object: {
                     m_object_settings_interactor_accessor.set_value(name, value);
@@ -1750,12 +1746,12 @@ void PresetInteractor::set_item_override(const Domain::ConfigItem& item, bool en
             if constexpr (std::is_same_v<T, Domain::FDMConfigLocation>) {
                 switch (location) {
                 case Domain::FDMConfigLocation::Printer:
-                    m_cbi_accessors.at(&m_printer_cbi).set_override(name, enable);
+                    m_printer_cbi_accessor.set_override(name, enable);
                     break;
                 case Domain::FDMConfigLocation::Print:
                     break;
                 case Domain::FDMConfigLocation::Filament: {
-                    m_cbi_accessors.at(&m_material_cbi_list.at(index)).set_override(name, enable);
+                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_override(name, enable);
                 } break;
                 case Domain::FDMConfigLocation::Tool: {
                     m_print_tool_cbi_accessor.set_tool_override(name, index, enable);
@@ -1770,12 +1766,12 @@ void PresetInteractor::set_item_override(const Domain::ConfigItem& item, bool en
             } else if constexpr (std::is_same_v<T, Domain::SLAConfigLocation>) {
                 switch (location) {
                 case Domain::SLAConfigLocation::Printer:
-                    m_cbi_accessors.at(&m_printer_cbi).set_override(name, enable);
+                    m_printer_cbi_accessor.set_override(name, enable);
                     break;
                 case Domain::SLAConfigLocation::Print:
                     break;
                 case Domain::SLAConfigLocation::Material: {
-                    m_cbi_accessors.at(&m_material_cbi_list.at(index)).set_override(name, enable);
+                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_override(name, enable);
                 } break;
                 case Domain::SLAConfigLocation::Object: {
                     m_object_settings_interactor_accessor.set_override(name, enable);
