@@ -607,7 +607,8 @@ constexpr std::string_view ID = "id";
 constexpr std::string_view MM_SEGMENTATION_FACETS = "mmSegmentationFacets";
 constexpr std::string_view SUPPORT_FACETS = "supportedFacets";
 constexpr std::string_view SEAM_FACETS = "seamFacets";
-NamesType FACETS_NAMES{{ID, MM_SEGMENTATION_FACETS, SUPPORT_FACETS, SEAM_FACETS}};
+constexpr std::string_view FUZZY_SKIN_FACETS = "fuzzySkinFacets";
+NamesType FACETS_NAMES{{ID, MM_SEGMENTATION_FACETS, SUPPORT_FACETS, SEAM_FACETS, FUZZY_SKIN_FACETS}};
 constexpr std::string_view TRIANGLE = "triangle"; // index into mesh(specifiead by ID) triangles
 constexpr std::string_view DIVIDING = "dividing";
 NamesType FACET_NAMES{{TRIANGLE, DIVIDING}};
@@ -642,6 +643,7 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
             add(facet_json, MM_SEGMENTATION_FACETS, facets_to_json(mv->mm_segmentation_facets, triangle_count));
             add(facet_json, SUPPORT_FACETS, facets_to_json(mv->supported_facets, triangle_count));
             add(facet_json, SEAM_FACETS, facets_to_json(mv->seam_facets, triangle_count));
+            add(facet_json, FUZZY_SKIN_FACETS, facets_to_json(mv->fuzzy_skin_facets, triangle_count));
             if (facet_json.empty())
                 continue;
             facet_json[ID] = id;
@@ -702,6 +704,9 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
         if (volume_facets.contains(SEAM_FACETS))
             for (ModelVolume *mv : volumes)
                 json_to_facets(volume_facets[SEAM_FACETS], mv->seam_facets);
+        if (volume_facets.contains(FUZZY_SKIN_FACETS))
+            for (ModelVolume *mv : volumes)
+                json_to_facets(volume_facets[FUZZY_SKIN_FACETS], mv->fuzzy_skin_facets);
     }
 }
 } // namespace FacetsAnnotationSerialization
