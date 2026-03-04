@@ -28,19 +28,11 @@ variants:
       M109 S[first_layer_temperature] ; wait for extruder temp
       G28 W ; home all without mesh bed level
       G80 X{first_layer_print_min[0]} Y{first_layer_print_min[1]} W{(first_layer_print_max[0]) - (first_layer_print_min[0])} H{(first_layer_print_max[1]) - (first_layer_print_min[1])} ; mesh bed levelling
-      {if filament_settings_id[initial_tool]=~/.*Prusament PA11.*/}
-      G1 Z0.3 F720
-      G1 Y-3 F1000 ; go outside print area
-      G92 E0
-      G1 X60 E9 F1000 ; intro line
-      G1 X100 E9 F1000 ; intro line
-      {else}
       G1 Z0.2 F720
       G1 Y-3 F1000 ; go outside print area
       G92 E0
       G1 X60 E9 F1000 ; intro line
       G1 X100 E12.5 F1000 ; intro line
-      {endif}
       G92 E0
     end_gcode: |-
       {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}

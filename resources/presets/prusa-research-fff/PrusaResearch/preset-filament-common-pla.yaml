@@ -126,7 +126,7 @@ variants:
       id: GkWk4PMdR8KUzFetxkPpHA
       values:
         filament_max_volumetric_speed: 27
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.026
         temperature: 225
   # C1 0.6
@@ -138,6 +138,7 @@ variants:
       slowdown_below_layer_time: 15
       min_print_speed: 15
       pressure_advance_value: 0.022
+      filament_cooling_final_speed: 1.5
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
@@ -145,7 +146,7 @@ variants:
       id: pZKgHJVAR5Co2SMG3yNCeQ
       values:
         filament_max_volumetric_speed: 30
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.022
         temperature: 225
   # C1 0.8
@@ -338,7 +339,7 @@ variants:
       id: C9qS+/XdQ/OnJZ7OUxmrug
       values:
         filament_max_volumetric_speed: 27
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.026
         temperature: 225
   # MK4 0.6
@@ -350,6 +351,7 @@ variants:
       slowdown_below_layer_time: 15
       min_print_speed: 15
       pressure_advance_value: 0.022
+      filament_cooling_final_speed: 1.5
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
@@ -357,7 +359,7 @@ variants:
       id: 5JEK0CVnTBWodl3KDWkKuw
       values:
         filament_max_volumetric_speed: 30
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.022
         temperature: 225
   # MK4 0.8
@@ -449,7 +451,7 @@ variants:
       id: zhh2VSK8S/mET0WDIts1+g
       values:
         filament_max_volumetric_speed: 27
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.026
         temperature: 225
   # MK4S 0.6
@@ -462,6 +464,7 @@ variants:
       slowdown_below_layer_time: 10
       min_print_speed: 15
       pressure_advance_value: 0.022
+      filament_cooling_final_speed: 1.5
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
@@ -469,7 +472,7 @@ variants:
       id: abHXx27qRO+BPmEKy2syNQ
       values:
         filament_max_volumetric_speed: 30
-        # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
+        filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         pressure_advance_value: 0.022
         temperature: 225
   # MK4S 0.8

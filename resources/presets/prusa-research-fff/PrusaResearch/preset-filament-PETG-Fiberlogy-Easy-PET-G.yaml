@@ -15,7 +15,7 @@ values:
   max_fan_speed: 30
 ## C1 and MK4S
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: wUtRqZTrQymcyHPN8sor9A
   values:
     bridge_fan_speed: 60

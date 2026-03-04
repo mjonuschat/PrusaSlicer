@@ -23,7 +23,7 @@ values:
   fan_below_layer_time: 30
   slowdown_below_layer_time: 15
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: t7D+PydqTty6YFU/g9R4Eg
   values:
     bridge_fan_speed: 70

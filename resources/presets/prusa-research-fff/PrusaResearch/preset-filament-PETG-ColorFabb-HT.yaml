@@ -17,7 +17,7 @@ values:
   fan_always_on: false
   fan_below_layer_time: 10
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: 0xsqHjo0R3uwbaXyS3iArg
   values:
     min_fan_speed: 10

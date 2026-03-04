@@ -15,7 +15,7 @@ values:
   first_layer_temperature: 270
   temperature: 270
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: qbDr1gM1TJ6BxZzg6zwKPQ
   values:
     max_fan_speed: 20

@@ -117,6 +117,8 @@ variants:
     raft_expansion: 1.5
     raft_first_layer_density: 80%
     raft_first_layer_expansion: 3
+    support_material_first_layer_density: 80%
+    support_material_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 25
     solid_infill_acceleration: 1000
@@ -214,6 +216,7 @@ variants:
         support_tree_tip_diameter: 0.5
         raft_contact_distance: 0.07
         raft_first_layer_density: 95%
+        support_material_first_layer_density: 95%
         gap_fill_speed: 40
         support_material_interface_layers: 0
         support_material_interface_spacing: 0.15

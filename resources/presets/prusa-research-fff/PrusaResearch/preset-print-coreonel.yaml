@@ -164,6 +164,8 @@ variants:
     raft_expansion: 1.5
     raft_first_layer_density: 80%
     raft_first_layer_expansion: 3
+    support_material_first_layer_density: 80%
+    support_material_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 170
     solid_infill_acceleration: 5000
@@ -338,7 +340,7 @@ variants:
             support_material_threshold: 35
 # 0.4HF/0.20mm layer
         - name: 0.20mm STRUCTURAL @COREONEL 0.4HF
-          id: 7FRfloIRR06DYuyQ8R9U3Q
+          id: 0.20mm STRUCTURAL @COREONEL 0.4HF
           unconditional_inherits:
           - 0.15mm STRUCTURAL @COREONEL 0.4HF
           values:
@@ -391,7 +393,7 @@ variants:
             support_material_threshold: 35
 # 0.4HF/0.25mm layer
         - name: 0.25mm STRUCTURAL @COREONEL 0.4HF
-          id: 5NM0XRqhS7iO8FxjPdp9XA
+          id: 0.25mm STRUCTURAL @COREONEL 0.4HF
           values:
             layer_height: 0.25
             bottom_solid_layers: 3
@@ -523,7 +525,7 @@ variants:
 # 0.5HF/0.10mm layer
         variants:
         - name: 0.10mm STRUCTURAL @COREONEL 0.5HF
-          id: biEtqDgTT4acxNiYKmpe3A
+          id: 0.10mm STRUCTURAL @COREONEL 0.5HF
           values:
             layer_height: 0.1
             bottom_solid_layers: 7
@@ -555,7 +557,7 @@ variants:
             overhang_speed_2: 30
 # 0.5HF/0.15mm layer
         - name: 0.15mm STRUCTURAL @COREONEL 0.5HF
-          id: iQ7EWaDgTXyWU+RTwPg7fQ
+          id: 0.15mm STRUCTURAL @COREONEL 0.5HF
           values:
             layer_height: 0.15
             bottom_solid_layers: 4
@@ -579,7 +581,7 @@ variants:
             overhang_speed_2: 45
 # 0.5HF/0.20mm layer
         - name: 0.20mm STRUCTURAL @COREONEL 0.5HF
-          id: AM5Ls5HvQvm5/K4hyZM7xw
+          id: 0.20mm STRUCTURAL @COREONEL 0.5HF
           values:
             layer_height: 0.2
             bottom_solid_layers: 3
@@ -623,7 +625,7 @@ variants:
             overhang_speed_2: 50
 # 0.5HF/0.25mm layer
         - name: 0.25mm STRUCTURAL @COREONEL 0.5HF
-          id: v5DpLhTISteDr8+mXDKc2Q
+          id: 0.25mm STRUCTURAL @COREONEL 0.5HF
           values:
             layer_height: 0.25
             bottom_solid_layers: 3
@@ -691,7 +693,7 @@ variants:
             overhang_speed_2: 50
 # 0.5HF/0.32mm layer
         - name: 0.32mm STRUCTURAL @COREONEL 0.5HF
-          id: Vd+nqgHZQs6Bjq0DB6+9kg
+          id: 0.32mm STRUCTURAL @COREONEL 0.5HF
           values:
             layer_height: 0.32
             bottom_solid_layers: 3
@@ -794,7 +796,7 @@ variants:
         variants:
 # 0.6HF/0.15mm layer
         - name: 0.15mm STRUCTURAL @COREONEL 0.6HF
-          id: Q0O0mS7hRMCYATblzQIHGg
+          id: 0.15mm STRUCTURAL @COREONEL 0.6HF
           values:
             layer_height: 0.15
             bottom_solid_layers: 4
@@ -823,7 +825,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6HF/0.20mm layer
         - name: 0.20mm STRUCTURAL @COREONEL 0.6HF
-          id: gEBimZNqS3Wy9AimtRrrwg
+          id: 0.20mm STRUCTURAL @COREONEL 0.6HF
           values:
             layer_height: 0.20
             bottom_solid_layers: 3
@@ -908,7 +910,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6HF/0.25mm layer
         - name: 0.25mm STRUCTURAL @COREONEL 0.6HF
-          id: vANEJQS0Sz+MLSaE2RkNsg
+          id: 0.25mm STRUCTURAL @COREONEL 0.6HF
           values:
             layer_height: 0.25
             bottom_solid_layers: 3
@@ -977,7 +979,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6HF/0.32mm layer
         - name: 0.32mm STRUCTURAL @COREONEL 0.6HF
-          id: EdVjDY3wTi6YUHUzKzgRuA
+          id: 0.32mm STRUCTURAL @COREONEL 0.6HF
           values:
             layer_height: 0.32
             bottom_solid_layers: 3
@@ -1048,7 +1050,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6HF/0.40mm layer
         - name: 0.40mm STRUCTURAL @COREONEL 0.6HF
-          id: McyrANb/QYe20WRp1K1T+w
+          id: 0.40mm STRUCTURAL @COREONEL 0.6HF
           values:
             layer_height: 0.4
             bottom_solid_layers: 3
@@ -1133,7 +1135,7 @@ variants:
         variants:
 # 0.8HF/0.30mm layer
         - name: 0.30mm STRUCTURAL @COREONEL 0.8HF
-          id: CN94qeYYRhqXBulf/d/3Fg
+          id: 0.30mm STRUCTURAL @COREONEL 0.8HF
           values:
             layer_height: 0.3
             bottom_solid_layers: 3
@@ -1178,7 +1180,7 @@ variants:
             over_bridge_speed: 60%
 # 0.8HF/0.40mm layer
         - name: 0.40mm STRUCTURAL @COREONEL 0.8HF
-          id: n7jpm+PER7iXrnNJAIGSVw
+          id: 0.40mm STRUCTURAL @COREONEL 0.8HF
           values:
             layer_height: 0.4
             bottom_solid_layers: 3
@@ -1221,7 +1223,7 @@ variants:
             over_bridge_speed: 70%
 # 0.8HF/0.55mm layer
         - name: 0.55mm STRUCTURAL @COREONEL 0.8HF
-          id: o8kd5LPkSbO0qvE6N2X3uQ
+          id: 0.55mm STRUCTURAL @COREONEL 0.8HF
           values:
             layer_height: 0.55
             bottom_solid_layers: 3
@@ -1305,6 +1307,7 @@ variants:
         support_tree_tip_diameter: 0.5
         raft_contact_distance: 0.15
         raft_first_layer_density: 95%
+        support_material_first_layer_density: 95%
         gap_fill_speed: 50
 # 0.25n/0.05mm layer
       variants:
@@ -1462,6 +1465,7 @@ variants:
         support_tree_tip_diameter: 0.6
         raft_contact_distance: 0.15
         raft_first_layer_density: 90%
+        support_material_first_layer_density: 90%
         gap_fill_speed: 50
         top_solid_min_thickness: 0.7
         bottom_solid_min_thickness: 0.5
@@ -2064,6 +2068,7 @@ variants:
             thick_bridges: 0
             support_material_xy_spacing: 40%
             raft_first_layer_density: 90%
+            support_material_first_layer_density: 90%
             support_material_interface_pattern: auto
             perimeter_speed: 80
             external_perimeter_speed: 45
@@ -2102,6 +2107,7 @@ variants:
             thick_bridges: 0
             support_material_xy_spacing: 40%
             raft_first_layer_density: 90%
+            support_material_first_layer_density: 90%
             support_material_interface_pattern: auto
             perimeter_speed: 80
             external_perimeter_speed: 45

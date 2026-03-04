@@ -18,7 +18,7 @@ values:
   filament_type: IGLIDUR
   max_fan_speed: 80
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: NJuJ3DAuRRmWuMzQ5UpPng
   values:
     min_fan_speed: 25

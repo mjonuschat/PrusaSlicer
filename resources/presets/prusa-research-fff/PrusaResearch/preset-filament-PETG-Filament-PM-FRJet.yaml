@@ -15,7 +15,7 @@ values:
   cooling: false
   fan_always_on: false
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: YgXzStC9SwaaFw3vBdTILA
   values:
     bridge_fan_speed: 12

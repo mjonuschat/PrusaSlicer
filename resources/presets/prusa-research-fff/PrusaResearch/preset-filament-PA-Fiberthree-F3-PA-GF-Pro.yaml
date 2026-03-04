@@ -22,7 +22,7 @@ values:
   bed_temperature: 90
   fan_always_on: true
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: osUw0wUNR9WlIfK+chs/Pg
   values:
     min_fan_speed: 12

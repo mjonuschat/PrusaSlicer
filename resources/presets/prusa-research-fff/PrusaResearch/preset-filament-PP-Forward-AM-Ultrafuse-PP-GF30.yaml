@@ -27,7 +27,7 @@ values:
   min_print_speed: 10
   pressure_advance_value: 0
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: IF7OF6cKSvy3QZGqhb/V1w
   values:
     min_fan_speed: 70

@@ -115,7 +115,7 @@ variants:
       id: 0oYfOgLFT263EqY9kHmInQ
       values:
         filament_max_volumetric_speed: 4
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
         pressure_advance_value: 0.018
         filament_infill_max_crossing_speed: 200
   # C1 0.6
@@ -135,7 +135,7 @@ variants:
       id: nJODFhStTUerGJiIhBYFoQ
       values:
         filament_max_volumetric_speed: 5
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
     name: '*BVOH* @COREONE 0.8'
@@ -321,7 +321,7 @@ variants:
       id: AFUtI569QAGJvhJeQdUnNQ
       values:
         filament_max_volumetric_speed: 4
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
         filament_infill_max_crossing_speed: 200
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
@@ -340,7 +340,7 @@ variants:
       id: C4CbMAmFTHaqiS4ulItqZw
       values:
         filament_max_volumetric_speed: 5
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 130
   # MK4 0.8
@@ -424,7 +424,7 @@ variants:
       id: WH1IKyF0TjOr7Uqyqd4hmA
       values:
         filament_max_volumetric_speed: 4
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
         pressure_advance_value: 0.018
         filament_infill_max_crossing_speed: 200
   # MK4S 0.6
@@ -444,7 +444,7 @@ variants:
       id: B8emu4mDR0ymZqk+GOoYZQ
       values:
         filament_max_volumetric_speed: 5
-        # filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
+        filament_ramming_parameters: 250 100 39.9194 40| 0.05 39.9548 0.45 40.1484 0.95 40.1484 1.45 40.1484 1.95 40.1484 2.45 40.1484 2.95 40.1484 3.45 40.1484 3.95 40.1484 4.45 40.1484 4.95 40.1484
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 0
   # MK4S 0.8

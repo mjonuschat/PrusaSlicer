@@ -17,7 +17,7 @@ values:
   max_fan_speed: 60
   min_print_speed: 20
 variants:
-- condition: printer.model=~/(COREONE|MK4S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
   id: 5ymJUIPtSJq0bY8zB1ho/A
   values:
     min_fan_speed: 14

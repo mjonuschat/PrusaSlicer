@@ -141,6 +141,8 @@ variants:
     raft_expansion: 1.5
     raft_first_layer_density: 80%
     raft_first_layer_expansion: 3
+    support_material_first_layer_density: 80%
+    support_material_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 150
     solid_infill_acceleration: 3000
@@ -237,6 +239,7 @@ variants:
         support_tree_tip_diameter: 0.5
         raft_contact_distance: 0.15
         raft_first_layer_density: 95%
+        support_material_first_layer_density: 95%
         gap_fill_speed: 50
         wipe_tower_bridging: 6
 # 0.25n/0.05mm layer
@@ -387,6 +390,7 @@ variants:
         support_tree_tip_diameter: 0.6
         raft_contact_distance: 0.15
         raft_first_layer_density: 90%
+        support_material_first_layer_density: 90%
         gap_fill_speed: 50
         top_solid_min_thickness: 0.7
         bottom_solid_min_thickness: 0.5
@@ -1208,6 +1212,7 @@ variants:
             thick_bridges: 0
             support_material_xy_spacing: 40%
             raft_first_layer_density: 90%
+            support_material_first_layer_density: 90%
             support_material_interface_pattern: auto
             perimeter_speed: 80
             external_perimeter_speed: 45
@@ -1244,6 +1249,7 @@ variants:
             thick_bridges: 0
             support_material_xy_spacing: 40%
             raft_first_layer_density: 90%
+            support_material_first_layer_density: 90%
             support_material_interface_pattern: auto
             perimeter_speed: 80
             external_perimeter_speed: 45
