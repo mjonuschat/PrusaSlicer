@@ -304,7 +304,7 @@ void PlaterScenePresenter::on_sla_result_cache_changed(const Domain::SlicingId& 
 
 void PlaterScenePresenter::on_colors_changed(
     Domain::SelectionId /*config_container_id*/,
-    const std::vector<std::string>& /*colors*/
+    const std::vector<Domain::ColorRGB>& /*colors*/
 )
 {
     m_volume_materials_dirty = true;
@@ -510,10 +510,9 @@ void PlaterScenePresenter::update_volume_materials()
                         if (vol) {
                             const int raw_id = vol->extruder_id();
                             const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
-                            ColorRGBA parsed;
-                            if (slot < static_cast<int>(slot_colors.size()) &&
-                                Biz::Algorithms::Color::decode_color(slot_colors[slot], parsed)) {
-                                color = parsed;
+                            if (slot < static_cast<int>(slot_colors.size())) {
+                                const auto& c = slot_colors[slot];
+                                color = ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
                             }
                         }
                     }

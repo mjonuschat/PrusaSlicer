@@ -175,7 +175,7 @@ public:
 
     void on_colors_changed(
         Domain::SelectionId config_container_id,
-        const std::vector<std::string>& colors
+        const std::vector<Domain::ColorRGB>& colors
     ) override;
 
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }

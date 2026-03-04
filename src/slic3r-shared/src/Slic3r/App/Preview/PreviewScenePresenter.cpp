@@ -6,7 +6,6 @@
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Scene/VolumeColor.hpp"
-#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include <Slic3r/App/libvgcode/SlaObjectNodeTag.hpp>
@@ -250,10 +249,10 @@ void PreviewScenePresenter::add_shells()
                                     .project_settings_interactor().get_colors(cc_it->second);
                                 const int raw_id = vol->extruder_id();
                                 const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
-                                Domain::ColorRGBA parsed;
-                                if (slot < static_cast<int>(slot_colors.size()) &&
-                                    Biz::Algorithms::Color::decode_color(slot_colors[slot], parsed))
-                                    clr = parsed;
+                                if (slot < static_cast<int>(slot_colors.size())) {
+                                    const auto& c = slot_colors[slot];
+                                    clr = Domain::ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
+                                }
                             }
                         } else {
                             auto color_it = Scene::VOLUME_COLORS.find(vol->type());

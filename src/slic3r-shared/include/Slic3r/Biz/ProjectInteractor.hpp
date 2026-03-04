@@ -536,7 +536,7 @@ private:
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
     void on_colors_changed(
         Domain::SelectionId config_container_id,
-        const std::vector<std::string>& colors
+        const std::vector<Domain::ColorRGB>& colors
     ) override;
 
     Domain::SelectionId add_project(Domain::Project&& p, InvokeLaterBag& bag);

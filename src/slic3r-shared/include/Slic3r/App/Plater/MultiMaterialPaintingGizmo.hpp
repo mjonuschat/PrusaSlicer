@@ -63,7 +63,7 @@ protected:
 
     void on_colors_changed(
         Domain::SelectionId config_container_id,
-        const std::vector<std::string>& colors
+        const std::vector<Domain::ColorRGB>& colors
     ) override;
 
 private:

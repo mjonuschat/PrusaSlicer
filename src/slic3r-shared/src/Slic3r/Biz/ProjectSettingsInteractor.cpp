@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
 
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
@@ -46,7 +47,7 @@ ProjectSettingsInteractor::ProjectSettingsInteractor(
 // Public API
 // ---------------------------------------------------------------------------
 
-std::vector<std::string> ProjectSettingsInteractor::get_colors(
+std::vector<Domain::ColorRGB> ProjectSettingsInteractor::get_colors(
     Domain::SelectionId config_container_id
 ) const
 {
@@ -58,8 +59,19 @@ std::vector<std::string> ProjectSettingsInteractor::get_colors(
         const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
         if (!fdm)
             return {};
-        return fdm->project.items.opt("extruder_slot_colours")
+        const auto hex_colors = fdm->project.items.opt("extruder_slot_colours")
             .get<std::vector<std::string>>();
+        std::vector<Domain::ColorRGB> result;
+        result.reserve(hex_colors.size());
+        for (const auto& hex : hex_colors) {
+            Domain::ColorRGB clr;
+            if (!Biz::Algorithms::Color::decode_color(hex, clr)) {
+                // Invalid color string, use black as a fallback.
+                clr = {0.f, 0.f, 0.f};
+            }
+            result.push_back(clr);
+        }
+        return result;
     }
     return {};
 }
@@ -283,9 +295,18 @@ void ProjectSettingsInteractor::store_and_notify(
         cc->project_settings().items.opt("extruder_slot_colours")
             .set(colors);
 
+        std::vector<Domain::ColorRGB> rgb_colors;
+        rgb_colors.reserve(colors.size());
+        for (const auto& hex : colors) {
+            Domain::ColorRGB clr;
+            if (!Biz::Algorithms::Color::decode_color(hex, clr))
+                clr = {0.f, 0.f, 0.f};
+            rgb_colors.push_back(clr);
+        }
+
         invoke_listeners<IColorsChangedListener>(
             [&](auto* listener) {
-                listener->on_colors_changed(config_container_id, colors);
+                listener->on_colors_changed(config_container_id, rgb_colors);
             }
         );
         return;

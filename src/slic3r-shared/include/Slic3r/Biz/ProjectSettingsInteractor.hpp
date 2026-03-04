@@ -2,12 +2,11 @@
 
 #include <cstdint>
 #include <string>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "Slic3r/Biz/IColorsChangedListener.hpp"
 #include "Slic3r/Biz/IMdb.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
@@ -36,7 +35,7 @@ public:
      * @brief Returns current colors for the given container (for initial UI population).
      * @return Empty vector if the container is not found or is not FDM.
      */
-    std::vector<std::string> get_colors(Domain::SelectionId config_container_id) const;
+    std::vector<Domain::ColorRGB> get_colors(Domain::SelectionId config_container_id) const;
 
     /**
      * @brief User explicitly picked a color for a slot.

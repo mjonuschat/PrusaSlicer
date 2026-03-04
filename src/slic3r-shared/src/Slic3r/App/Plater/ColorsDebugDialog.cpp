@@ -9,7 +9,7 @@ namespace Slic3r::App::Plater {
 
 void ColorsDebugDialog::on_colors_changed(
     Domain::SelectionId config_container_id,
-    const std::vector<std::string>& colors
+    const std::vector<Domain::ColorRGB>& colors
 )
 {
     m_container_id = config_container_id;
@@ -37,9 +37,7 @@ void ColorsDebugDialog::render_imgui(
         ImGui::Text("No slots");
     } else {
         for (int slot = 0; slot < static_cast<int>(m_colors.size()); ++slot) {
-            Domain::ColorRGB clr;
-            Biz::Algorithms::Color::decode_color(m_colors[slot], clr);
-            float col[3] = {clr.r(), clr.g(), clr.b()};
+            float col[3] = {m_colors[slot].r(), m_colors[slot].g(), m_colors[slot].b()};
 
             ImGui::PushID(slot);
 

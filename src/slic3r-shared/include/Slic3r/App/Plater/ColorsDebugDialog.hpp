@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
 #include "Slic3r/Biz/IColorsChangedListener.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Biz {
@@ -42,13 +42,13 @@ public:
      */
     void on_colors_changed(
         Domain::SelectionId config_container_id,
-        const std::vector<std::string>& colors
+        const std::vector<Domain::ColorRGB>& colors
     ) override;
     /** @} */
 
 private:
     Domain::SelectionId m_container_id{Domain::INVALID_ID};
-    std::vector<std::string> m_colors;
+    std::vector<Domain::ColorRGB> m_colors;
 };
 
 } // namespace Slic3r::App::Plater

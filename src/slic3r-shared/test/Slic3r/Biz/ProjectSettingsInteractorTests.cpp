@@ -3,6 +3,7 @@
 
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/IColorsChangedListener.hpp"
 #include "Slic3r/Biz/IMdb.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
@@ -20,7 +21,7 @@ struct ColorsChangedListener : public IColorsChangedListener
 {
     MAKE_MOCK2(
         on_colors_changed,
-        void(Domain::SelectionId, const std::vector<std::string>&)
+        void(Domain::SelectionId, const std::vector<Domain::ColorRGB>&)
     );
 };
 
@@ -102,7 +103,7 @@ TEST_CASE_METHOD(
     project_interactor.project_settings_interactor()
         .add_listener<IColorsChangedListener>(&listener);
 
-    std::vector<std::string> received_colors;
+    std::vector<Domain::ColorRGB> received_colors;
     ALLOW_CALL(listener, on_colors_changed(_, _))
         .LR_SIDE_EFFECT(received_colors = _2);
 
@@ -112,10 +113,6 @@ TEST_CASE_METHOD(
     // After creating a new project, at least one notification should have been
     // sent with non-empty colors.
     REQUIRE(!received_colors.empty());
-    for (const std::string& color : received_colors) {
-        CHECK(!color.empty());
-        CHECK(color.front() == '#');
-    }
 }
 
 TEST_CASE_METHOD(
@@ -136,24 +133,24 @@ TEST_CASE_METHOD(
     auto& psi = project_interactor.project_settings_interactor();
 
     // Get initial colors.
-    std::vector<std::string> initial_colors = psi.get_colors(cc_id);
+    std::vector<Domain::ColorRGB> initial_colors = psi.get_colors(cc_id);
     REQUIRE(!initial_colors.empty());
 
     // Lock slot 0 with a custom color.
-    const std::string custom_color = "#ABCDEF";
-    psi.set_color_from_user(cc_id, 0, custom_color);
+    const std::string custom_hex = "#ABCDEF";
+    Domain::ColorRGB custom_color;
+    Biz::Algorithms::Color::decode_color(custom_hex, custom_color);
+    psi.set_color_from_user(cc_id, 0, custom_hex);
 
-    const std::vector<std::string> after_lock = psi.get_colors(cc_id);
+    const std::vector<Domain::ColorRGB> after_lock = psi.get_colors(cc_id);
     REQUIRE(!after_lock.empty());
     REQUIRE(after_lock[0] == custom_color);
 
     // Unlock slot 0 by passing empty string -> should restore auto color.
     psi.set_color_from_user(cc_id, 0, "");
 
-    const std::vector<std::string> after_unlock = psi.get_colors(cc_id);
+    const std::vector<Domain::ColorRGB> after_unlock = psi.get_colors(cc_id);
     REQUIRE(!after_unlock.empty());
-    REQUIRE(!after_unlock[0].empty());
-    REQUIRE(after_unlock[0].front() == '#');
     // The color must differ from the user-chosen value (it's auto-resolved).
     REQUIRE(after_unlock[0] != custom_color);
 }

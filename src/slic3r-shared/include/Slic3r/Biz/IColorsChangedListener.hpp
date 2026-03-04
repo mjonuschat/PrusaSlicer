@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Biz {
@@ -22,11 +22,10 @@ public:
     /**
      * @param config_container_id ID of the config container whose colors changed.
      * @param colors              New color vector. One entry per extruder slot.
-     *                            No entry is ever an empty string.
      */
     virtual void on_colors_changed(
         Domain::SelectionId config_container_id,
-        const std::vector<std::string>& colors
+        const std::vector<Domain::ColorRGB>& colors
     ) = 0;
 };
 

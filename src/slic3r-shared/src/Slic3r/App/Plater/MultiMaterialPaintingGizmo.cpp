@@ -6,7 +6,6 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
-#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
@@ -177,21 +176,16 @@ void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(double value)
 
 std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_colors() const
 {
-    using Biz::Algorithms::Color::decode_color;
-
     const auto& psi = m_project_interactor.project_settings_interactor();
-    const auto hex_colors = psi.get_colors(m_project_interactor.selected_config_container_id());
+    const auto rgb_colors = psi.get_colors(m_project_interactor.selected_config_container_id());
 
     constexpr int TOTAL = 16;
     std::vector<ColorRGBA> result;
     result.reserve(TOTAL);
     for (int i = 0; i < TOTAL; ++i) {
-        if (i < static_cast<int>(hex_colors.size())) {
-            ColorRGBA clr;
-            if (decode_color(hex_colors[i], clr))
-                result.push_back(clr);
-            else
-                PANIC("ProjectSettingsInteractor returned invalid color string: " + hex_colors[i]);
+        if (i < static_cast<int>(rgb_colors.size())) {
+            const auto& c = rgb_colors[i];
+            result.emplace_back(c.r(), c.g(), c.b(), 1.0f);
         } else {
             // Padding slots beyond the actual extruder count — not visible to the user.
             const float shade = 0.3f + 0.7f * (float(i) / (TOTAL - 1));
@@ -203,7 +197,7 @@ std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_color
 
 void MultiMaterialPaintingGizmo::on_colors_changed(
     Domain::SelectionId /*config_container_id*/,
-    const std::vector<std::string>& /*colors*/
+    const std::vector<Domain::ColorRGB>& /*colors*/
 )
 {
     m_painting_colors = this->create_painting_colors();
