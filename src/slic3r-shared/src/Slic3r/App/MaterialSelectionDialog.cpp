@@ -81,7 +81,10 @@ MaterialSelectionDialog::MaterialSelectionDialog(
 
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
-    m_advanced_button = content()->emplace_back<LayoutButton>(_u8L("Advanced settings"));
+    m_advanced_button = content()->emplace_back<LayoutButton>(_u8L("Advanced settings"), Render::Icon::Cog);
+    m_advanced_button->set_content_padding({ 0.f, 7.f });
+    m_advanced_button->set_height({ 30.f });
+    m_advanced_button->set_background_color(ImColor(43, 43, 43));
     m_advanced_button->set_checkable(true);
     m_advanced_button->callbacks().action = [this]
     {

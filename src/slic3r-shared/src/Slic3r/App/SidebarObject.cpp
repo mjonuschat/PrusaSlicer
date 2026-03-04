@@ -37,16 +37,17 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     set_orientation(Orientation::Vertical);
     set_min_size({YGUndefined, 60});
     set_flex_grow(1);
-    set_padding(0);
+    set_gap(10);
+
+    m_text_object_name = emplace_back<Text>("Unkown");
+    m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
+    m_text_object_name->set_flex_shrink(0);
 
     ScrollArea* scroll_area = emplace_back<ScrollArea>();
     scroll_area->set_orientation(Orientation::Vertical);
-    scroll_area->set_gap(5);
-    scroll_area->set_padding(Paddings(5, 5, 11, 5));
-
-    m_text_object_name = scroll_area->emplace_back<Text>("Unkown");
-    m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
-    m_text_object_name->set_flex_shrink(0);
+    scroll_area->set_gap(10);
+    scroll_area->set_margin(Margins(0, 0, -11, 0));
+    scroll_area->set_padding(Paddings(0, 0, 11, 0));
 
     m_wipe_tower_settings = scroll_area->emplace_back<WipeTowerSettings>(m_project_interactor);
 
@@ -88,6 +89,8 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         }
     };
     m_add_settings_button->set_flex_shrink(0);
+    m_add_settings_button->set_content_padding({20.f, 5.f});
+    m_add_settings_button->set_background_color(ImColor(43, 43, 43));
 
     m_no_overrides_label =
         scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));

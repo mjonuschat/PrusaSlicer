@@ -105,6 +105,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_settings_set_btn =
         layer_height_row->emplace_back<LayoutButton>(std::string{}, Render::Icon::Cog);
     m_settings_set_btn->set_checkable(true);
+    m_settings_set_btn->set_height(24.f);
+    m_settings_set_btn->set_self_align(YGAlignCenter);
     m_settings_set_btn->callbacks().action = [this]()
     {
         m_navigator.set_opened_dialog(

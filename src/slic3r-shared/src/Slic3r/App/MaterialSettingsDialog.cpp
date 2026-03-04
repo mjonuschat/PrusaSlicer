@@ -40,19 +40,16 @@ MaterialSettingsDialog::MaterialSettingsDialog(
 {
     m_material_cbi_list.add_listener<Biz::IListObserver<Biz::OverridableConfigBoxInteractor>>(this);
 
-    Item* footer_items = m_footer->emplace_back<Item>();
-    footer_items->set_gap(5.f);
+    m_footer->set_gap(5.f);
 
-    m_current_preset_label = footer_items->emplace_back<CurrentPresetLabel>(
+    m_current_preset_label = m_footer->emplace_back<CurrentPresetLabel>(
         m_project_interactor.preset_interactor().material_presets()
     );
     m_current_preset_label->set_align(Align{AlignH::Center, AlignV::Center});
 
-    footer_items->emplace_back<Separator>(Orientation::Vertical);
+    m_footer->emplace_back<Separator>(Orientation::Vertical);
 
-    footer_items->emplace_back<LayoutButton>(_u8("Compare"), Render::Icon::Compare)
-        ->callbacks()
-        .action = [this]
+    add_footer_button(_u8("Compare"), Render::Icon::Compare)->callbacks().action = [this]
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_diff_dialog(
@@ -60,7 +57,8 @@ MaterialSettingsDialog::MaterialSettingsDialog(
             Domain::Preset::PresetKind::FdmMaterial
         );
     };
-    footer_items->emplace_back<LayoutButton>(_u8("Save preset"))->callbacks().action = [&]
+
+    add_footer_button(_u8("Save preset"))->callbacks().action = [&]
     {
         m_project_interactor.preset_interactor().save_user_preset(
             Domain::Preset::PresetKind::FdmMaterial,

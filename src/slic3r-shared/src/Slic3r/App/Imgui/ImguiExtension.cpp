@@ -557,11 +557,12 @@ bool colored_circle_button_aligned(
     if (window->SkipItems)
         return false;
 
-    float avail_x     = GetContentRegionAvail().x;
-    const char* label = label_str.c_str();
-
     ImGuiContext& g         = *GImGui;
     const ImGuiStyle& style = g.Style;
+
+    float avail_x     = GetContentRegionAvail().x - style.FramePadding.x * 2.0f;
+    const char* label = label_str.c_str();
+
     const ImGuiID id        = window->GetID(label);
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
 

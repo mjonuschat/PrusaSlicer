@@ -49,15 +49,14 @@ void MenuItem::create(
     }
     set_background_color(IM_COL32_BLACK_TRANS);
 
+    float icon_size = 16;
+
     m_icon = emplace_back<Icon>(icon);
     m_icon->set_aspect_ratio(1);
-    // if (icon == Render::Icon::None)
-    // render_filled_icon(color_icon_rect);
+    m_icon->set_width(icon_size);
 
     m_label = emplace_back<Text>(label);
     m_label->set_flex_grow(1.f);
-
-    float icon_size = 16; // ! for check
 
     m_shortcut_text = emplace_back<Text>(shortcut);
     m_shortcut_text->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);

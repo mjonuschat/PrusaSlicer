@@ -21,6 +21,25 @@ using namespace Slic3r::Domain;
 
 namespace Slic3r::App::Preview {
 
+static void draw_wrapped_text(const char* text, float text_width)
+{
+    // When text wrapping is applied, the text gets truncated on the right due to its offset from the parent window.
+    // To fix this, we need to increase wrapping_size by ImGui::GetCursorPos().x.
+    // Note: This feels like a hack, but a similar use of PushTextWrapPos can be found in imgui_demo.cpp (line 1281).
+    ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + text_width);
+    ImGui::TextUnformatted(text);
+    ImGui::PopTextWrapPos();
+}
+
+static void table_setup_dummy_column(const std::string& table_name)
+{
+    ImGui::TableSetupColumn(
+        ("##dummy_cell_as_padding" + table_name).c_str(),
+        ImGuiTableColumnFlags_WidthFixed,
+        15.f
+    );
+}
+
 struct CoarseItem
 {
     ColorRGB color;
@@ -216,13 +235,20 @@ static CoarseItems collect_coarse_items(FdmViewer& viewer, FdmViewerWrapper& wra
     return CoarseItems();
 }
 
-static void draw_item_coarse(CoarseItem& item, const ImVec2& icon_size, float cell_height)
+static void
+draw_item_coarse(CoarseItem& item, const ImVec2& icon_size, float cell_height, float cell_width)
 {
     ImVec2 pos = ImGui::GetCursorScreenPos();
-    ImGui::RenderFrame(pos + ImVec2(1.0f, 1.0f), pos + icon_size, Imgui::to_ImU32(item.color), false, 3.0f);
+    ImGui::RenderFrame(
+        pos + ImVec2(1.0f, 1.0f),
+        pos + icon_size,
+        Imgui::to_ImU32(item.color),
+        false,
+        3.0f
+    );
     ImGui::Dummy(icon_size);
     ImGui::SameLine();
-    ImGui::Text("%s", item.text.c_str());
+    draw_wrapped_text(item.text.c_str(), cell_width - 1.25f * icon_size.x);
 }
 
 static void draw_items_coarse(FdmViewer& viewer, FdmViewerWrapper& wrapper)
@@ -232,16 +258,30 @@ static void draw_items_coarse(FdmViewer& viewer, FdmViewerWrapper& wrapper)
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 2.0f * line_height;
 
-    if (ImGui::BeginTable("LegendItems", 2)) {
-        ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.5f * (cell_height - line_height));
+    if (ImGui::BeginTable("LegendItems", 3)) {
+        ImGui::TableSetupColumn("##Column1_LegendItems", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("##Column2_LegendItems", ImGuiTableColumnFlags_WidthStretch);
+        table_setup_dummy_column("LegendItems");
+
+        ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.25f * (cell_height - line_height));
 
         for (size_t i = 0; i < items.size(); i += 2) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            draw_item_coarse(items[i], icon_size, cell_height);
+            draw_item_coarse(
+                items[i],
+                icon_size,
+                cell_height,
+                GImGui->CurrentTable->Columns[0].WidthRequest
+            );
             if (i + 1 < items.size()) {
                 ImGui::TableSetColumnIndex(1);
-                draw_item_coarse(items[i + 1], icon_size, cell_height);
+                draw_item_coarse(
+                    items[i + 1],
+                    icon_size,
+                    cell_height,
+                    GImGui->CurrentTable->Columns[1].WidthRequest
+                );
             }
         }
 
@@ -255,7 +295,13 @@ static void legend_coarse(FdmViewer& viewer, FdmViewerWrapper& wrapper)
     draw_items_coarse(viewer, wrapper);
 }
 
-static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs, bool show_time_estimate)
+static void draw_feature_type_items_detail(
+    Render::ImguiRender& imgui_render,
+    FdmViewer& viewer,
+    FdmViewerWrapper& wrapper,
+    const LegendCallbacks& cbs,
+    bool show_time_estimate
+)
 {
     static const ColorRGB PERCENTAGE_COLOR{ 0.56f, 0.56f, 0.56f };
     static constexpr float max_percentage_rect_width = 30.0f;
@@ -266,7 +312,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Fd
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 1.5f * line_height;
 
-    if (ImGui::BeginTable("FeatureTypeItems", 3, ImGuiTableFlags_SizingFixedFit)) {
+    if (ImGui::BeginTable("FeatureTypeItems", 4, ImGuiTableFlags_SizingFixedFit)) {
         // hide header background
         ImVec4 bg = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
         bg.w = 0.0f;
@@ -275,10 +321,17 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Fd
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, bg);
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, bg);
 
-        ImGui::TableSetupColumn(_u8L("Name").c_str());
-        ImGui::TableSetupColumn(show_time_estimate ? _u8L("Time").c_str() : _u8L("Used filament").c_str());
+        ImGui::TableSetupColumn(_u8L("Name").c_str(), ImGuiTableColumnFlags_WidthStretch);
+        if (show_time_estimate) {
+            ImGui::TableSetupColumn(_u8L("Time").c_str());
+        } else {
+            ImGui::TableSetupColumn(
+                _u8L("Used filament").c_str(),
+                ImGuiTableColumnFlags_WidthStretch
+            );
+        }
         ImGui::TableSetupColumn(_u8L("Percentage").c_str());
-        ImGui::TableSetupScrollFreeze(0, 1);
+        table_setup_dummy_column("FeatureTypeItems");
 
         ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
         ImGui::TableHeadersRow();
@@ -327,7 +380,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Fd
             }
         }
 
-        ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.5f * (cell_height - line_height));
+        ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.25f * (cell_height - line_height));
 
         for (size_t i = 0; i < roles.size(); ++i) {
             const GCodeExtrusionRole& role = roles[i];
@@ -346,7 +399,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Fd
             ImGui::RenderFrame(row_pos + ImVec2(1.0f, 1.0f), row_pos + icon_size, Imgui::to_ImU32(color, alpha), false, 3.0f);
             ImGui::Dummy(icon_size);
             ImGui::SameLine();
-            ImGui::Text("%s", role_name.c_str());
+            draw_wrapped_text(role_name.c_str(), GImGui->CurrentTable->Columns[0].ItemWidth);
 
             // highlight row when hovering and process click on row
             ImGui::SetCursorScreenPos(row_pos);
@@ -471,7 +524,7 @@ static void draw_color_range_items_detail(const FdmViewer& viewer, const FdmView
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 1.5f * line_height;
 
-    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.5f * (cell_height - line_height));
+    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.25f * (cell_height - line_height));
     if (ImGui::BeginTable("ColorRangeItems", 2, ImGuiTableFlags_SizingFixedFit)) {
 
         for (auto it = values.rbegin(); it != values.rend(); ++it) {
@@ -546,7 +599,7 @@ static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Fdm
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 1.5f * line_height;
 
-    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.5f * (cell_height - line_height));
+    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.25f * (cell_height - line_height));
 
     if (ImGui::BeginTable("ToolItems", 2, ImGuiTableFlags_SizingFixedFit)) {
 
@@ -605,7 +658,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 1.5f * line_height;
 
-    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.5f * (cell_height - line_height));
+    ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 0.25f * (cell_height - line_height));
 
     if (ImGui::BeginTable("ColorPrintItems", 2, ImGuiTableFlags_SizingFixedFit)) {
 
@@ -701,15 +754,16 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
 
         ImGui::EndTable();
     }
-    ImGui::PopStyleVar();
 
     if (viewer.has_gcode_events_to_show()) {
         ImGui::Dummy({ line_height , line_height });
-        ImGui::Separator();
-        ImGui::Dummy({ line_height , line_height });
 
-        if (ImGui::BeginTable("CustomGCodeEvents", show_time_estimate ? 3 : 2, ImGuiTableFlags_SizingFixedFit)) {
-
+        if (ImGui::BeginTable(
+                "CustomGCodeEvents",
+                show_time_estimate ? 5 : 4,
+                ImGuiTableFlags_SizingFixedFit
+            ))
+        {
             // hide header background
             ImVec4 bg = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
             bg.w = 0.0f;
@@ -718,6 +772,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
             ImGui::PushStyleColor(ImGuiCol_HeaderHovered, bg);
             ImGui::PushStyleColor(ImGuiCol_HeaderActive, bg);
 
+            table_setup_dummy_column("CustomGCodeEvents_before");
             ImGui::TableSetupColumn(_u8L("Event").c_str());
             if (show_time_estimate) {
                 ImGui::TableSetupColumn(_u8L("Duration").c_str());
@@ -725,6 +780,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
             }
             else
                 ImGui::TableSetupColumn(_u8L("Used filament").c_str());
+            table_setup_dummy_column("CustomGCodeEvents_after");
             ImGui::TableSetupScrollFreeze(0, 1);
 
             ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold), GImGui->FontSizeBase);
@@ -839,16 +895,22 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                     continue;
 
                 ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
+
+                int column_n = 1;// 0 column is dummy
+                ImGui::TableSetColumnIndex(column_n++);
                 std::string label = item.get_label();
                 ImGui::Text("%s", label.c_str());
                 if (item.color_1.has_value()) {
                     const ImGuiStyle& style = ImGui::GetStyle();
-                    ImVec2 pos = ImGui::GetCursorScreenPos();
-                    pos.x += style.FramePadding.x + ImGui::CalcTextSize(label.c_str()).x + style.ItemInnerSpacing.x;
-                    pos.y -= style.FramePadding.y + style.ItemInnerSpacing.y + line_height;
-                    ImGui::RenderFrame(pos + ImVec2(1.0f, 1.0f), pos + icon_size, Imgui::to_ImU32(*item.color_1), false, 3.0f);
+                    ImGui::SameLine();
+                    ImVec2 pos              = ImGui::GetCursorScreenPos();
+                    ImGui::RenderFrame(
+                        pos + ImVec2(1.0f, 1.0f),
+                        pos + icon_size,
+                        Imgui::to_ImU32(*item.color_1),
+                        false,
+                        3.0f
+                    );
                     ImGui::SameLine();
                     ImGui::Dummy(icon_size);
                     if (item.color_2.has_value()) {
@@ -861,17 +923,17 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
 
                 if (show_time_estimate) {
                     if (item.times[0] > 0.0f) {
-                        ImGui::TableSetColumnIndex(1);
+                        ImGui::TableSetColumnIndex(column_n++);
                         ImGui::Text("%s", format_time_dhms_short(item.times[0]).c_str());
                     }
                     if (item.times[1] > 0.0f) {
-                        ImGui::TableSetColumnIndex(2);
+                        ImGui::TableSetColumnIndex(column_n++);
                         ImGui::Text("%s", format_time_dhms_short(item.times[1]).c_str());
                     }
                 }
                 else {
                     if (item.used_filament[0] > 0.0f) {
-                        ImGui::TableSetColumnIndex(1);
+                        ImGui::TableSetColumnIndex(column_n++);
                         std::string txt_length = convert_and_format_units(item.used_filament[0],
                             UnitsType::Meters, (wrapper.units() == UnitsSystem::SI) ? UnitsType::Meters : UnitsType::Feet,
                             2);
@@ -886,6 +948,8 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
             ImGui::EndTable();
         }
     }
+
+    ImGui::PopStyleVar();
 }
 
 static void draw_items_detail(Render::ImguiRender& imgui_render, FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs, bool show_time_estimate)

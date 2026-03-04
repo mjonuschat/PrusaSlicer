@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -29,10 +30,13 @@ ProjectButton::ProjectButton(
 
     m_background = emplace_back<ProjectButtonBackground>();
     m_background->set_margin(Margins(0, -1));
-    m_background->set_padding({20.f, 5.f});
+    m_background->set_padding(Paddings(30.f, 8.f, 20.f, 5.f));
     m_background->set_rounding(0.f);
     m_background->set_gap(7.f);
     m_background->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
+    m_background->set_inner_rounding(3.f);
+    m_background->set_inner_fill(ImColor(88, 88, 88));
+    m_background->set_thichness({0.f, 7.f});
 
     set_tooltip_position(Position::Bottom);
 
@@ -40,11 +44,15 @@ ProjectButton::ProjectButton(
     m_label->set_self_align(YGAlignCenter);
 
     m_cross = m_background->emplace_back<LayoutButton>("", Render::Icon::TopBarCross);
-    m_cross->set_width(20);
-    m_cross->set_height(20);
+    m_cross->set_width(22);
+    m_cross->set_height(22);
     m_cross->set_self_align(YGAlignCenter);
     m_cross->set_flex_shrink(0);
     m_cross->set_background_color(IM_COL32_BLACK_TRANS);
+
+    Item* separator_wrap = emplace_back<Item>();
+    separator_wrap->set_padding({0.f, 10.f});
+    separator_wrap->emplace_back<Separator>(Orientation::Vertical)->set_fill(ImColor(58, 58, 58));
 
     on_data_update();
 }
@@ -71,8 +79,12 @@ void ProjectButton::set_selected(bool selected)
         m_background->set_mode(
             selected ? ProjectButtonBackground::Border : ProjectButtonBackground::FilledRect
         );
-        m_label->set_text_color(GImGui->Style.Colors[selected ? ImGuiCol_Text : ImGuiCol_TextDisabled]);
-        m_label->set_font_type(selected ? Render::ImguiFontType::Bold : Render::ImguiFontType::Regular);
+        m_label->set_text_color(
+            GImGui->Style.Colors[selected ? ImGuiCol_Text : ImGuiCol_TextDisabled]
+        );
+        m_label->set_font_type(
+            selected ? Render::ImguiFontType::Bold : Render::ImguiFontType::Regular
+        );
     }
 }
 
@@ -83,6 +95,7 @@ void ProjectButton::on_selected_project_changed(size_t index)
 
 void ProjectButton::hovered_updated_internal()
 {
+    m_background->set_inner_fill(m_selected ? ImColor(88, 88, 88) : ImColor(48, 48, 48));
     if (m_selected) {
         return;
     }
@@ -112,11 +125,10 @@ void ProjectButton::on_data_update()
     set_tooltip(btn_tooltip);
     m_label->set_text(btn_label);
 
-    m_cross->callbacks().action = [this]() {
-        m_project_interactor.remove_project(*m_state);
-    };
+    m_cross->callbacks().action = [this]() { m_project_interactor.remove_project(*m_state); };
 
-    callbacks().action = [this]() {
+    callbacks().action = [this]()
+    {
         // Ignore action, if cross button was clicked or if button is already selected
         if (m_cross->hovered() || m_selected) {
             return;

@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/PrintSettingsDialog.hpp"
+#include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
 
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
@@ -197,11 +198,11 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_tool_label_list_view->set_source_list(this);
     m_tool_label_list_view->set_flex_shrink(0);
 
+    m_footer->set_gap(5.f);
     Item* spacer = m_footer->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
-    LayoutButton* compare_button =
-        m_footer->emplace_back<LayoutButton>(_u8("Compare"), Render::Icon::Compare);
+    LayoutButton* compare_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8("Compare"), Render::Icon::Compare);
     compare_button->callbacks().action = [this]
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
@@ -211,9 +212,8 @@ PrintSettingsDialog::PrintSettingsDialog(
         );
     };
     compare_button->set_flex_shrink(0);
-    compare_button->set_margin(Margins(0, 0, 10, 0));
 
-    m_save_button = m_footer->emplace_back<LayoutButton>(_u8("Save preset"));
+    m_save_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8("Save preset"));
 
     m_save_preset_menu = m_save_button->emplace_back<Menu>("SavePresetMenu", Position::Top);
     MenuItem* save_print_preset_button = m_save_preset_menu->append_item(

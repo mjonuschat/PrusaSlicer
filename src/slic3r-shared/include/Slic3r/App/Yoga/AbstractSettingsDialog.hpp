@@ -14,6 +14,7 @@ class ConfigItem;
 
 namespace Slic3r::App::Yoga {
 class StackLayout;
+class LayoutButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Yoga {
@@ -26,6 +27,12 @@ public:
         const std::string& name = {}
     );
     ~AbstractSettingsDialog();
+
+    static LayoutButton* add_footer_button(
+        Item* footer,
+        const std::string& label,
+        Render::Icon icon = Render::Icon::None
+    );
 
 protected:
     using PageListView = Yoga::ListView<
@@ -53,6 +60,9 @@ protected:
 
     Tab* append_tab(const std::string& tab);
     virtual void remove_tab(size_t index);
+
+    LayoutButton*
+    add_footer_button(const std::string& label, Render::Icon icon = Render::Icon::None);
 
 protected:
     using TabPtr = std::unique_ptr<Tab>;

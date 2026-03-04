@@ -16,9 +16,11 @@ CollapsibleWindow::CollapsibleWindow(const std::string& label, const std::string
     Window(window_name)
 {
     set_orientation(Orientation::Vertical);
-    set_padding(5);
+    set_padding(0.f);
     m_header_row = emplace_back<Item>();
+    m_header_row->set_padding({ 20.f, 10.f });
     m_header_row->set_gap(5);
+    m_header_row->set_flex_shrink(0.f);
 
     m_label = m_header_row->emplace_back<Text>(label);
     m_label->set_font_type(Render::ImguiFontType::Bold);
@@ -32,10 +34,10 @@ CollapsibleWindow::CollapsibleWindow(const std::string& label, const std::string
     m_collapse_button->set_content_padding({});
 
     m_separator = emplace_back<Separator>(Orientation::Horizontal);
-    m_separator->set_margin(Margins(-5, 0));
     m_separator->set_fill(ImColor(41, 41, 41));
 
     m_content = emplace_back<Item>();
+    m_content->set_padding(Paddings(20.f, 10.f, 20.f, 20.f));
     m_content->set_orientation(Orientation::Vertical);
 }
 

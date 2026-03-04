@@ -113,6 +113,8 @@ private:
     void add_bed(size_t config_container_id);
     void remove_bed(size_t config_container_id, size_t bed_id);
 
+    void set_horizontal_padding(float horizontal_padding);
+
     struct ProjectContext;
     ProjectContext& selected_project_context();
     const ProjectContext& selected_project_context() const;
@@ -144,6 +146,7 @@ private:
     ProjectContextsPtr              m_project_contexts;
 
     bool                            m_is_edit_name_input_hovered  { false };
+    float                           m_horizontal_padding{ 10.f };
 
     Domain::Vec2f                   m_inner_padding;
     ImGuiMultiSelectFlags           m_multi_selection_flags;

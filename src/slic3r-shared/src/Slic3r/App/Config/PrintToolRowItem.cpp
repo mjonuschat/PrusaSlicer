@@ -45,7 +45,6 @@ PrintToolRowItem::PrintToolRowItem(
     set_orientation(Orientation::Vertical);
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_width(2);
-    set_padding(2);
     set_border_color(IM_COL32_BLACK_TRANS);
 
     m_header = emplace_back<Item>();

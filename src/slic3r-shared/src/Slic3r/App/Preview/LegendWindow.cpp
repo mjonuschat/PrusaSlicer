@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include <Slic3r/App/libvgcode/Types.hpp>
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
@@ -19,9 +20,15 @@ using namespace Slic3r::Biz;
 LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper)
     : CollapsibleWindow(_u8L("Legend"), "LegendWindow")
 {
-    m_legend = content()->emplace_back<Legend>(viewer, wrapper);
+    content()->set_padding(0.f);
+    Item* scroll_area = content()->emplace_back<ScrollArea>();
+    scroll_area->set_orientation(Orientation::Vertical);
+    scroll_area->set_padding(Paddings(20.f, 10.f, 20.f, 0.f));
+    m_legend = scroll_area->emplace_back<Legend>(viewer, wrapper);
+    m_legend->set_flex_shrink(0.f);
 
     m_show_time_estimate = content()->emplace_back<ToggleButton>(_u8L("Used filament"));
+    m_show_time_estimate->set_padding(Paddings(20.f, 5.f));
     m_show_time_estimate->set_visible(false);
     m_show_time_estimate->set_checked(true);
     m_show_time_estimate->callbacks().checked_changed = [this](bool checked) { 
@@ -31,9 +38,10 @@ LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapp
     };
 
     m_settings = content()->emplace_back<Rectangle>();
+    m_settings->set_flex_shrink(0.f);
     m_settings->set_fill(ImColor(32, 32, 32));
     m_settings->set_flags(ImDrawFlags_RoundCornersBottom);
-    m_settings->set_padding(15.f);
+    m_settings->set_padding(Paddings(20.f, 15.f));
     m_settings->set_gap(10.f);
 
     // change to combobox later

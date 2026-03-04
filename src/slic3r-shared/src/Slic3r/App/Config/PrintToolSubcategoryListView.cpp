@@ -35,7 +35,7 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
     set_object_name("PrintToolSubcategoryListView");
     set_orientation(Orientation::Vertical);
     set_flex_grow(1);
-    set_gap(5);
+    set_gap(0);
     set_flex_grow(1);
     set_min_size({0, 100});
 

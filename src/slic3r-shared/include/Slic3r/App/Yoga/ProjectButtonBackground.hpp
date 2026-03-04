@@ -21,6 +21,9 @@ public:
     float inner_rounding() const;
     void set_inner_rounding(float rounding);
 
+    ImColor inner_fill() const;
+    void set_inner_fill(ImColor inner_fill);
+
     Vec2f thickness() const;
     void set_thichness(Vec2f thickness);
 
@@ -28,6 +31,7 @@ private:
     Mode m_mode{ FilledRect };
     float m_inner_rounding{5.f};
     Vec2f m_thickness{ 7.f, 5.f };
+    ImColor m_inner_fill{ IM_COL32_WHITE };
 };
 
 } // namespace Slic3r::App::Yoga

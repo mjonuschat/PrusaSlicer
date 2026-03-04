@@ -41,21 +41,25 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
 
     set_min_size({YGUndefined, 60});
     set_orientation(Orientation::Vertical);
-    set_gap(10);
-    set_flex_shrink(0);
+    set_gap(15.f);
+    set_min_size({ 220, 0 });
+    set_flex_shrink(0.f);
 
     m_material_button_group = std::make_shared<ButtonGroup>();
     m_material_button_group->set_always_checked(false);
 
     m_bed_name = emplace_back<Text>("Unkown");
+    m_bed_name->set_margin(Paddings(0.f, -5.f, 0.f, 0.f));
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
     m_physical_printer_button = emplace_back<PrinterSettingsButton>("Physical printer");
     m_physical_printer_button->set_printer_name("NEXT/Elsa");
     m_physical_printer_button->set_preset_name("Prusa NEXT 1T");
     m_physical_printer_button->set_visible(false); // Hide Physical printers for now
+    m_physical_printer_button->set_flex_grow(1.f);
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
+    m_logical_printer_button->set_flex_grow(1.f);
 
     m_logical_printer_settings_dialog->attach_to_item(this, Position::Left);
     m_logical_printer_settings_dialog->callbacks().opened = [this]()

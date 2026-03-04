@@ -25,11 +25,12 @@ void ProjectButtonBackground::render(Vec2f pos, Vec2f size)
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ASSERT(draw_list);
 
+    draw_list->AddRectFilled(rect.Min, rect.Max, inner_fill());
+
     ImColor fill_color;
     if (enabled()) {
         fill_color = fill();
-    }
-    else {
+    } else {
         fill_color = IM_COL32_DISABLE;
     }
 
@@ -43,15 +44,25 @@ void ProjectButtonBackground::render(Vec2f pos, Vec2f size)
     // Outer right vertical bar
     draw_list->AddRectFilled(ImVec2(tr.x - m_thickness.x(), tr.y), br, fill_color);
     // Top bar
-    draw_list->AddRectFilled(ImVec2(tl.x + m_thickness.x(), tl.y), ImVec2(tr.x - m_thickness.x(), tl.y + m_thickness.y()), fill_color);
+    draw_list->AddRectFilled(
+        ImVec2(tl.x + m_thickness.x(), tl.y),
+        ImVec2(tr.x - m_thickness.x(), tl.y + m_thickness.y()),
+        fill_color
+    );
 
     // Rounded corners (top inner left and right)
-    ImVec2 left_corner_center = ImVec2(tl.x + m_thickness.x() + m_inner_rounding, tl.y + m_thickness.y() + m_inner_rounding);
-    ImVec2 right_corner_center = ImVec2(tr.x - m_thickness.x() - m_inner_rounding, tl.y + m_thickness.y() + m_inner_rounding);
+    ImVec2 left_corner_center = ImVec2(
+        tl.x + m_thickness.x() + m_inner_rounding,
+        tl.y + m_thickness.y() + m_inner_rounding
+    );
+    ImVec2 right_corner_center = ImVec2(
+        tr.x - m_thickness.x() - m_inner_rounding,
+        tl.y + m_thickness.y() + m_inner_rounding
+    );
 
     draw_list->PathLineTo(rect.Min);
     draw_list->PathArcTo(left_corner_center, m_inner_rounding, IM_PI, IM_PI * 1.5f, 8);
-    draw_list->PathLineTo({ rect.Max.x, rect.Min.y });
+    draw_list->PathLineTo({rect.Max.x, rect.Min.y});
     draw_list->PathFillConvex(fill_color);
 
     draw_list->PathLineTo(tr);
@@ -62,16 +73,44 @@ void ProjectButtonBackground::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
-ProjectButtonBackground::Mode ProjectButtonBackground::mode() const { return m_mode; }
+ProjectButtonBackground::Mode ProjectButtonBackground::mode() const
+{
+    return m_mode;
+}
 
-void ProjectButtonBackground::set_mode(Mode mode) { m_mode = mode; }
+void ProjectButtonBackground::set_mode(Mode mode)
+{
+    m_mode = mode;
+}
 
-float ProjectButtonBackground::inner_rounding() const { return m_inner_rounding; }
+float ProjectButtonBackground::inner_rounding() const
+{
+    return m_inner_rounding;
+}
 
-void ProjectButtonBackground::set_inner_rounding(float rounding) { m_inner_rounding = rounding; }
+void ProjectButtonBackground::set_inner_rounding(float rounding)
+{
+    m_inner_rounding = rounding;
+}
 
-Vec2f ProjectButtonBackground::thickness() const { return m_thickness; }
+ImColor ProjectButtonBackground::inner_fill() const
+{
+    return m_inner_fill;
+}
 
-void ProjectButtonBackground::set_thichness(Vec2f thickness) { m_thickness = thickness; }
+void ProjectButtonBackground::set_inner_fill(ImColor inner_fill)
+{
+    m_inner_fill = inner_fill;
+}
+
+Vec2f ProjectButtonBackground::thickness() const
+{
+    return m_thickness;
+}
+
+void ProjectButtonBackground::set_thichness(Vec2f thickness)
+{
+    m_thickness = thickness;
+}
 
 } // namespace Slic3r::App::Yoga

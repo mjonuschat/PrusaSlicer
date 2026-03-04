@@ -32,8 +32,8 @@ OverridableSubcategoryItem::OverridableSubcategoryItem(
     set_flex_shrink(0);
     set_flags(ImDrawFlags_None);
     set_rounding(0);
-    set_gap(10);
-    set_padding(10);
+    set_gap(0);
+    set_padding(20);
 
     m_label = emplace_back<Text>(
         Domain::ConfigItemDef::translate_option_group(m_state->config_item->def().option_group),
@@ -78,8 +78,8 @@ OverridableSubcategoryItem::OverridableSubcategoryItem(
     );
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
-    m_rows_list_view->set_gap(5);
-    m_rows_list_view->set_padding(10);
+    m_rows_list_view->set_gap(0);
+    m_rows_list_view->set_padding(Paddings(20.f, 20.f, 20.f, 0.f));
 
     on_index_update();
     on_data_update();

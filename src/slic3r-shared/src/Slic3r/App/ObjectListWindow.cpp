@@ -39,8 +39,9 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
             _u8L("Add Printer Container"),
             Render::Icon::ConfigContainer
         );
+        m_add_container_button->set_flex_shrink(0.f);
         m_add_container_button->set_background_color(ImColor(41, 41, 41));
-        m_add_container_button->set_padding(5);
+        m_add_container_button->set_padding({20.f, 5.f});
         m_add_container_button->callbacks().action = [this]()
         {
             m_project_interactor->add_config_container();
@@ -51,13 +52,18 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
 
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1.);
-    set_flex_grow(1.);
+    set_flex_grow(1.f);
+    content()->set_padding(0.f);
+
     m_object_list = content()->emplace_back<ObjectList>(project_interactor, mode);
     m_object_list->set_flex_grow(1.f);
+    m_object_list->set_flex_shrink(0.f);
+    m_object_list->set_horizontal_padding(15.f);
 
     init_cc_context_menu();
 
     if (mode == ObjectList::Mode::Plater) {
+        return; // temporary hide unused button
         LayoutButton* show_details_button = emplace_into_header<LayoutButton>("", Render::Icon::Details, _u8L("Show item details"));
         show_details_button->set_checkable(true);
         show_details_button->callbacks().checked_changed = [this](bool checked) {
@@ -71,12 +77,15 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
         m_sliced_info->set_padding(15.f);
         m_sliced_info->set_gap(10.f);
         m_sliced_info->set_visible(false);
+        m_sliced_info->set_flex_shrink(0.f);
 
         Item* si_header = m_sliced_info->emplace_back<Item>();
         Text* si_label = si_header->emplace_back<Text>(_u8L("Sliced Info"));
         si_label->set_font_type(Render::ImguiFontType::Bold);
         si_label->set_flex_grow(1.f);
+        /*// temporary hide unused button
         LayoutButton* calc_btn = si_header->emplace_back<LayoutButton>("", Render::Icon::Calculator);
+        */
 
         auto add_row = [this](const std::string& label, Text** value_item) {
             Item* row = m_sliced_info->emplace_back<Item>();

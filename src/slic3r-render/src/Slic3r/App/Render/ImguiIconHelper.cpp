@@ -180,6 +180,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::CaretDown, "caret_down"},
     {Icon::Search, "search_gray"},
     {Icon::Fan, "cooling"},
+    {Icon::AddObject, "add_object"},
     {Icon::AddVolume, "add_volume"},
     {Icon::Minus, "minus"},
     {Icon::ChevronRight, "chevron_right"},
@@ -204,6 +205,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Text, "text"},
     {Icon::Palette, "palette"},
     {Icon::Scissors, "scissors"},
+    {Icon::Cut, "cut"},
     {Icon::OpenFolder, "open_folder"},
     {Icon::Shapes, "shapes"},
     {Icon::RecentProjects, "recent_projects"},
@@ -217,7 +219,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::CloseGizmo, "close_gizmo"},
     {Icon::UndoGizmo, "undo_gizmo"},
     {Icon::VariableLayerHeight, "variable_layer_height"},
-    {Icon::HeightRange, "variable_layer_height"},
+    {Icon::HeightRange, "height_range"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

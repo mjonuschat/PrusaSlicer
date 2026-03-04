@@ -47,6 +47,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_material_name = emplace_back<Text>("");
     m_material_name->set_flex_grow(1.f);
     m_material_name->set_self_align(YGAlignCenter);
+    m_material_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
     emplace_back<Separator>(Orientation::Vertical)
         ->set_fill(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));

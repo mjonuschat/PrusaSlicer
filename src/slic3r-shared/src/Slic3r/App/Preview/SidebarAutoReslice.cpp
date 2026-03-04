@@ -31,6 +31,7 @@ SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
             slicing_interactor.disable_auto_slicing();
         }
     };
+    m_auto_reslice_chb->set_margin({ 0.f, -5.f });
 }
 
 bool SidebarAutoReslice::is_enabled() const

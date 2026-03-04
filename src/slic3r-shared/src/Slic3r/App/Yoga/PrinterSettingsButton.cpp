@@ -8,6 +8,7 @@ namespace Slic3r::App::Yoga {
 
 PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : RectangleButton(tooltip)
 {
+    set_flex_shrink(0);
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
@@ -15,12 +16,15 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
     Item* texts_wrapper = emplace_back<Item>();
     texts_wrapper->set_orientation(Orientation::Vertical);
     texts_wrapper->set_flex_grow(1.f);
-    texts_wrapper->set_height_percent(80);
-    texts_wrapper->set_justify_content(YGJustifySpaceBetween);
 
     m_printer_name = texts_wrapper->emplace_back<Text>("");
     m_printer_name->set_font_type(Render::ImguiFontType::Bold);
+    m_printer_name->set_flex_grow(1.f);
+    m_printer_name->set_wrap_mode(Text::WrapMode::WrapElide);
+
     m_preset_name = texts_wrapper->emplace_back<Text>("");
+    m_preset_name->set_flex_grow(1.f);
+    m_preset_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
     Vec2f btn_sz{20.f, 20.f};
 

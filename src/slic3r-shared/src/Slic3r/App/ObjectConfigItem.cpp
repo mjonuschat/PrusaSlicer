@@ -20,8 +20,12 @@ ObjectConfigItem::ObjectConfigItem(
     m_cbi_container(cbi_container)
 {
     set_gap(5);
+    set_align_items(YGAlignCenter);
 
     m_label = emplace_back<Text>(std::string());
+    m_label->set_flex_grow(1.);
+    m_label->set_width(100.f);
+    m_label->set_wrap_mode(Text::WrapMode::WrapElide);
 
     on_data_update();
 }

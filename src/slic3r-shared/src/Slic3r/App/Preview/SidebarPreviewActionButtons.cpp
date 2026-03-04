@@ -14,7 +14,7 @@ namespace Slic3r::App::Preview {
 
 namespace {
 
-constexpr float secondary_button_size = 35.f;
+constexpr float secondary_button_size = 24.f;
 
 void style_secondary_button(LayoutButton* button)
 {
@@ -59,7 +59,7 @@ std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor& p
 
 void style_layout(Item& layout, float gap)
 {
-    layout.set_min_size({220, 0});
+    layout.set_min_size({200, 0});
     layout.set_orientation(Orientation::Vertical);
     layout.set_gap(gap);
     layout.set_flex_grow(1);
@@ -146,7 +146,7 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
     );
     m_project_interactor->removable_drive_service().add_status_listener(this);
 
-    const float gap{5};
+    const float gap{15.0f};
 
     std::unique_ptr<LayoutButton> primary_button{get_primary_button()};
     m_layout_without_connect.primary_button = primary_button.get();

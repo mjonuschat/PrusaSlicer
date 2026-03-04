@@ -17,6 +17,7 @@ ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip) :
 {
     set_background_color(ImGui::GetColorU32(ImGuiCol_WindowBg));
     set_background_color_checked(ImColor(60, 60, 60));
+    set_content_padding(10.f);
     m_tooltip->set_preferred_position(Position::Bottom);
 }
 

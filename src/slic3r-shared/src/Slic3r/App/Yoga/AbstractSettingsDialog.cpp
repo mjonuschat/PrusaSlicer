@@ -46,6 +46,15 @@ AbstractSettingsDialog::AbstractSettingsDialog(
 
 AbstractSettingsDialog::~AbstractSettingsDialog() {}
 
+LayoutButton* AbstractSettingsDialog::add_footer_button(Item* footer, const std::string& label, Render::Icon icon)
+{
+    LayoutButton* button = footer->emplace_back<LayoutButton>(label, icon);
+    button->set_content_padding({7.f});
+    button->set_height({30.f});
+    button->set_background_color(ImColor(43, 43, 43));
+    return button;
+}
+
 void AbstractSettingsDialog::on_tab_selected(int current_index)
 {
     if (m_remove_in_progress) {
@@ -73,6 +82,11 @@ void AbstractSettingsDialog::remove_tab(size_t index)
     if (m_current_tab == tab_to_delete && !m_tabs.empty()) {
         set_current_tab(0);
     }
+}
+
+LayoutButton* AbstractSettingsDialog::add_footer_button(const std::string& label, Render::Icon icon)
+{
+    return add_footer_button(m_footer, label, icon);
 }
 
 AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::string& tab)

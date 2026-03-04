@@ -40,16 +40,15 @@ TopBar::TopBar(
     m_menu_command_registrar(*render_module, *project_interactor, navigator, thumbnail_store)
 {
     m_menu_command_registrar.register_all();
-    Paddings paddings = padding();
 
     set_padding(0);
-    set_alpha(0.f);
     set_rounding(0.f);
     set_gap(0.f);
     set_flex_shrink(0);
 
     Rectangle* left_wrapper = emplace_back<Rectangle>();
     left_wrapper->set_flex_shrink(0);
+    left_wrapper->set_align_items(YGAlignCenter);
 
 #ifndef USE_NATIVE_MENU
     add_menu_btns(left_wrapper);
@@ -102,6 +101,7 @@ TopBar::TopBar(
             continue;
         btn->set_background_color(IM_COL32_BLACK_TRANS);
         btn->set_tooltip_position(Position::Bottom);
+        btn->set_height(btn == m_main_menu_btn ? 30.f : 24.f);
     }
 
     for (Rectangle* wrapper :
@@ -110,7 +110,7 @@ TopBar::TopBar(
         wrapper->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
         wrapper->set_rounding(0.f);
         wrapper->set_gap(15.f);
-        wrapper->set_padding(paddings);
+        wrapper->set_padding({15.f, 5.f});
     }
 }
 

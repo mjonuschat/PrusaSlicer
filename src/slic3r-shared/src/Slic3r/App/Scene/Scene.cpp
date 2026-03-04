@@ -367,8 +367,8 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
 
 void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd_buffer) const
 {
-    static const ColorRGBA DEFAULT_BG_DARK_COLOR  = {0.45f, 0.45f, 0.45f, 1.0f};
-    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.75f, 0.75f, 0.75f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_DARK_COLOR  = {0.23f, 0.23f, 0.23f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.35f, 0.35f, 0.35f, 1.0f};
     static const ColorRGBA ERROR_BG_DARK_COLOR    = {0.60f, 0.20f, 0.20f, 1.0f};
     static const ColorRGBA ERROR_BG_LIGHT_COLOR   = {1.00f, 0.20f, 0.20f, 1.0f};
 

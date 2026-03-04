@@ -32,6 +32,7 @@ ConfigRowItem::ConfigRowItem(
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_width(2);
     set_border_color(IM_COL32_BLACK_TRANS);
+    set_gap(5.f);
 
     m_left_side = emplace_back<Item>();
 

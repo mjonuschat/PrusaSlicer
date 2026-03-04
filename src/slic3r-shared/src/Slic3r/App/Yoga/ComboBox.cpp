@@ -191,6 +191,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
             const ImVec2 im_size = to_im(size);
             for (size_t index = 0; index < m_items.size(); ++index) {
                 ImGui::PushID(index);
+                ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.f, 0.5f));
                 if (ImGui::Selectable(
                         m_items.at(index).c_str(),
                         m_override_label.empty() ? index == m_current_index : false,
@@ -203,6 +204,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
                         m_callbacks.selection_changed(index);
                     }
                 }
+                ImGui::PopStyleVar();
                 ImGui::PopID();
             }
 

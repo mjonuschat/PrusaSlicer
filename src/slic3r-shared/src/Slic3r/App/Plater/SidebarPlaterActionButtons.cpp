@@ -22,7 +22,7 @@ using Domain::SlicingId;
 SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
     SidebarActionButtons("SidebarPlaterActionButtons", Render::ModuleType::Plater, render_module_navigator)
 {
-    set_gap(5);
+    set_gap(15.f);
     auto navigation_button{get_navigation_button()};
     m_navigation_button = navigation_button.get();
     append(std::move(navigation_button));

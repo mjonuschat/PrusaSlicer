@@ -90,21 +90,29 @@ struct BedsTable
             ImGui::EndTable();
     }
 
-    bool begin(size_t cc_id, ImGuiTableFlags m_table_flags)
+    bool begin(size_t cc_id, ImGuiTableFlags table_flags, float state_column_width, float right_padding)
     {
         const std::string cc_id_str = std::to_string(cc_id);
-        m_was_begin = ImGui::BeginTable(("##BedsTable" + cc_id_str).c_str(), 3, m_table_flags);
+        m_was_begin = ImGui::BeginTable(("##BedsTable" + cc_id_str).c_str(), 4, table_flags);
         if (m_was_begin) {
-            ImGui::TableSetupColumn(("##tree" + cc_id_str).c_str(), ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn(
+                ("##tree" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthStretch
+            );
             ImGui::TableSetupColumn(
                 ("##state" + cc_id_str).c_str(),
-                ImGuiTableColumnFlags_WidthStretch,
-                0.2f
+                ImGuiTableColumnFlags_WidthFixed,
+                state_column_width
             );
             ImGui::TableSetupColumn(
                 ("##extruder" + cc_id_str).c_str(),
-                ImGuiTableColumnFlags_WidthStretch,
-                0.15f
+                ImGuiTableColumnFlags_WidthFixed,
+                2.f * GImGui->FontSize
+            );
+            ImGui::TableSetupColumn(
+                ("##dummy_cell_as_padding" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthFixed,
+                right_padding
             );
         }
         return m_was_begin;
@@ -334,6 +342,8 @@ static size_t visible_volumes_count(const Domain::ModelObject* object)
 static std::set<Render::Icon> get_infos(const Domain::ModelObject* object, bool is_sla_config)
 {
     std::set<Render::Icon> infos;
+    return infos;// temporary hide infos
+
     if (!is_sla_config) {
         for (const Domain::ModelVolume* mv : object->volumes) {
             if (!mv->supported_facets.empty())
@@ -417,7 +427,7 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
 
     selected_project_context().is_dragging = false;
 
-    m_inner_padding = Vec2f(GImGui->FontSize, 1.25f * GImGui->FontSize);
+    m_inner_padding = Vec2f(m_horizontal_padding, 1.25f * GImGui->FontSize);
 
     if (render_list(size)) {
         // update selection on the scene
@@ -606,8 +616,10 @@ bool ObjectList::tree_node(
     // render node as it is
     bool is_open = ImGui::TreeNodeEx(str_id, flags, "%s", label.c_str());
 
+    const bool is_leaf = (flags & ImGuiTreeNodeFlags_Leaf) != 0;
+
     // for leaf node no need to redrow of arrows
-    if ((flags & ImGuiTreeNodeFlags_Leaf) != 0)
+    if (is_leaf && tex_id == 0)
         return is_open;
 
     // get cursor position for the end of tree node rendering
@@ -656,12 +668,14 @@ bool ObjectList::tree_node(
     else if (is_selected)
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_Header));
 
-    // render open-close new arrow
-    draw_list->AddText(
-        pos,
-        ImGui::GetColorU32(ImGuiCol_Text),
-        icon_str(is_open ? Render::Icon::OpenArrow : Render::Icon::CloseArrow).c_str()
-    );
+    if (!is_leaf) {
+        // render open-close new arrow
+        draw_list->AddText(
+            pos,
+            ImGui::GetColorU32(ImGuiCol_Text),
+            icon_str(is_open ? Render::Icon::OpenArrow : Render::Icon::CloseArrow).c_str()
+        );
+    }
 
     if (add_overrides_marker)
         draw_list->AddText(
@@ -743,6 +757,16 @@ bool ObjectList::render_config_containers()
     auto& ctx                 = selected_project_context();
     bool is_changed_selection = false;
 
+    float state_column_width = 2.f * m_horizontal_padding;
+    for (const std::string& state : std::initializer_list<std::string>{
+             _u8L("SLICED"),
+             _u8L("UPDATING"),
+             _u8L("STOPPING"),
+             _u8L("SLICING"),
+             _u8L("INVALID")
+         })
+        state_column_width = std::max(state_column_width, ImGui::CalcTextSize(state.c_str()).x);
+
     size_t beds_cnt{0};
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
         RowHitBox hit_row;
@@ -752,6 +776,7 @@ bool ObjectList::render_config_containers()
         ImGui::SameLine();
         std::string add_button_id = fmt::format("btn_add_bed_{}", cc->id().id);
         ImGui::PushID(add_button_id.c_str());
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(m_horizontal_padding, 1.f));
         if (button_aligned(
                 1.f,
                 icon_str(Render::Icon::AddBedIcon),
@@ -761,6 +786,8 @@ bool ObjectList::render_config_containers()
         {
             add_bed(cc->id().id);
         }
+        ImGui::PopStyleVar();
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f*GImGui->Style.FramePadding.y));
         ImGui::PopID();
         hit_row.add_item();
 
@@ -773,7 +800,7 @@ bool ObjectList::render_config_containers()
         hit_row.highlight_on_hover();
 
         BedsTable table;
-        if (table.begin(cc->id().id, m_table_flags)) {
+        if (table.begin(cc->id().id, m_table_flags, state_column_width, m_horizontal_padding)) {
             IndentGuard ig(m_inner_padding.x());
 
             const bool can_delete_a_bed = cc->bed_instances().size() > 1;
@@ -797,12 +824,10 @@ void ObjectList::render_group_name(const std::string& name)
     IndentGuard ig(m_inner_padding.x());
     BoldFontGuard bfg(m_imgui_render);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, m_inner_padding.y() * 0.25f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
-    ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * m_inner_padding.y()));
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", name.c_str());
     ImGui::PopStyleColor();
-    ImGui::PopStyleVar();
 }
 
 void ObjectList::render_all_beds_node()
@@ -825,9 +850,14 @@ void ObjectList::render_all_beds_node()
     DEBUG_ASSERT(total_beds_cnt != 0);
 
     ImVec2 progress_bar_sz(75.f, ImGui::GetFontSize() + 4.f);
-    if (ImGui::BeginTable("##AllBeds", 2, m_table_flags)) {
+    if (ImGui::BeginTable("##AllBeds", 3, m_table_flags)) {
         ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##progress", ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableSetupColumn("##progress", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+        ImGui::TableSetupColumn(
+            "##dummy_cell_as_padding_AllBeds",
+            ImGuiTableColumnFlags_WidthFixed,
+            m_horizontal_padding
+        );
 
         ImGui::TableNextColumn();
         render_group_name(icon_str(Render::Icon::AllBeds) + " All");
@@ -863,7 +893,7 @@ bool ObjectList::render_out_of_beds()
     render_group_name(L("Out of bed"));
 
     BedsTable table;
-    if (table.begin(size_t(-1), m_table_flags)) {
+    if (table.begin(size_t(-1), m_table_flags, 2.f*m_horizontal_padding, m_horizontal_padding)) {
         IndentGuard ig(m_inner_padding.x());
         for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
@@ -933,9 +963,22 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
         ImGuiStyleVar_FramePadding,
         ImVec2(0.5f * icon_size.x + padding.x, 0.5f * (icon_size.y - text_size.y) + padding.y)
     );
+
+    bool is_empty{ true };
+    for (const Domain::ModelObject* object : ctx.model->objects) {
+        if (bed_has_object(bed->model_instances, object)) {
+            is_empty = false;
+            break;
+        }
+    }
+    ImGuiTreeNodeFlags flags =
+        m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap;
+    if (is_empty) {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
     bool is_open = tree_node(
         name_id.c_str(),
-        m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap,
+        flags,
         bed->name(),
         false,
         tex_id,
@@ -1662,5 +1705,9 @@ void ObjectList::remove_bed(size_t config_container_id, size_t bed_id)
     );
 }
 
+void ObjectList::set_horizontal_padding(float horizontal_padding)
+{
+    m_horizontal_padding = horizontal_padding;
+}
 
 } // namespace Slic3r::App

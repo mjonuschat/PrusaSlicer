@@ -40,7 +40,6 @@ ToolRowControl::ToolRowControl(
     m_switch_override = emplace_back<LayoutButton>(std::string{}, Render::Icon::Chain);
     m_switch_override->set_width(22);
     m_switch_override->set_height(22);
-    m_switch_override->set_content_padding(2);
     m_switch_override->callbacks().action = [this]
     { m_cb_setter.set_item_override(*m_state->override_item, !m_state->overriden, m_index); };
 

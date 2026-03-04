@@ -163,7 +163,7 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::SaveProjectAs:
         return Render::Icon::TobBarSave;
     case MenuItemName::ImportGeometry:
-        return Render::Icon::CubeAdd;
+        return Render::Icon::AddObject;
     case MenuItemName::ShapeGallery:
         return Render::Icon::Shapes;
     case MenuItemName::RecentProjects:

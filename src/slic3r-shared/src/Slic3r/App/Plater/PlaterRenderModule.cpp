@@ -545,7 +545,7 @@ void PlaterRenderModule::init_scene_layout()
     // m_history.get()
     // );
 
-    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::CubeAdd, _u8L("Add..."));
+    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
 
     m_toolbar_add_volume =
         m_layout->add_toolbar_item(ToolbarID::Middle, Render::Icon::AddVolume, _u8L("Add Volume"));
@@ -642,7 +642,7 @@ void PlaterRenderModule::init_scene_layout()
 
     m_toolbar_cut =
         m_layout
-            ->add_toolbar_item_gizmo(ToolbarID::Middle, Render::Icon::Scissors, "Cut", m_cut_gizmo);
+            ->add_toolbar_item_gizmo(ToolbarID::Middle, Render::Icon::Cut, "Cut", m_cut_gizmo);
 
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
