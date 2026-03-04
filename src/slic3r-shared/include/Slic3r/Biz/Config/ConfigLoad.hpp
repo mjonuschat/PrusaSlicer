@@ -1,5 +1,6 @@
 #pragma once
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include <nlohmann/json_fwd.hpp>
 #include <tl/expected.hpp>
 
@@ -40,7 +41,8 @@ struct LoadResult {
     IssuesPerLocation issues;
 };
 
-tl::expected<LoadResult, GlobalParsingIssue> load(const nlohmann::ordered_json&);
+tl::expected<LoadResult, GlobalParsingIssue>
+load(const nlohmann::ordered_json&, const Domain::Preset::HwPrinterConfig& hw_config);
 
 BoxIssues load_box(const nlohmann::ordered_json& json, Domain::ConfigBox& box);
 

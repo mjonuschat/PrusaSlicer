@@ -122,7 +122,8 @@ load_legacy_preset_metadata(const LegacyPresetMetadata& legacy_preset, const Dom
                                           std::get<0>(printer_def.value()))
                 .get();
         bool needs_name_update = false;
-        while (legacy_preset.tools.size() > hw_config.tools.size())
+
+        while (hw_config.tool_count > hw_config.tools.size())
             hw_config.tools.emplace_back(hw_config.tools.front());
         for (size_t i = 0; i < hw_config.tools.size(); ++i) {
             auto& tool = hw_config.tools.at(i);

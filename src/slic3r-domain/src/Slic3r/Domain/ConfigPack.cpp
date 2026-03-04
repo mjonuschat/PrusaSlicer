@@ -6,7 +6,8 @@ namespace Slic3r::Domain {
 using ConfigBoxRefs      = std::vector<std::reference_wrapper<ConfigBox>>;
 using ConstConfigBoxRefs = std::vector<std::reference_wrapper<const ConfigBox>>;
 
-static void ensure_tool_parity(Domain::MutBoxRef& box, int extruder_count)
+static void
+ensure_tool_parity(Domain::MutBoxRef& box, int extruder_count, bool ensure_down_size_only)
 {
     for (ConfigItem& item : box.get().items.all_items()) {
         item.visit(
@@ -17,6 +18,9 @@ static void ensure_tool_parity(Domain::MutBoxRef& box, int extruder_count)
                 }
                 using Type = std::remove_cvref_t<decltype(value)>;
                 if constexpr (Domain::is_std_vector_v<Type>) {
+                    if (ensure_down_size_only) {
+                        ASSERT(extruder_count <= value.size());
+                    }
                     value.resize(extruder_count);
                 }
             }
@@ -28,14 +32,20 @@ ConfigPackFDM::ConfigPackFDM(const int extruder_count) :
     tool{std::vector<Domain::ToolPrintSettings>(extruder_count)},
     filament{std::vector<Domain::FilamentSettings>(extruder_count)}
 {
+    resize_tool_parity_items(extruder_count, false);
+}
+
+void ConfigPackFDM::resize_tool_parity_items(int extruder_count, bool ensure_down_size_only)
+{
     for (auto& box_or_boxes : as_mut_boxes(*this)) {
         std::visit(
             Domain::overloaded{
-                [&](Domain::MutBoxRef& box) { ensure_tool_parity(box, extruder_count); },
+                [&](Domain::MutBoxRef& box)
+                { ensure_tool_parity(box, extruder_count, ensure_down_size_only); },
                 [&](Domain::MutBoxRefs& boxes)
                 {
                     for (Domain::MutBoxRef& box : boxes) {
-                        ensure_tool_parity(box, extruder_count);
+                        ensure_tool_parity(box, extruder_count, ensure_down_size_only);
                     }
                 }
             },

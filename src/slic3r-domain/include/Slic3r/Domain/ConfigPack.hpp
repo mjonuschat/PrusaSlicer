@@ -20,6 +20,7 @@ struct ConfigPackFDM
 
     FindResult contains(const std::string& key, size_t slot);
     ConstFindResult contains(const std::string& key, size_t slot) const;
+    void resize_tool_parity_items(int extruder_count, bool ensure_down_size_only);
 };
 
 struct ConfigPackSLA

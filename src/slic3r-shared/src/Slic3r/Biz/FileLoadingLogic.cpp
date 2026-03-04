@@ -490,10 +490,21 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
             // FIXME: get relevant metadata from DynamicPrintConfig
             // preset_metadata.printer.name = config_pack;
             preset_metadata = result.value();
-            ASSERT(preset_metadata.tools.size() == preset_metadata.hw_config.tool_count);
+            const size_t n_tools = preset_metadata.hw_config.tool_count;
+            ASSERT(preset_metadata.tools.size() == n_tools);
+            if (std::holds_alternative<ConfigPackFDM>(config_pack)) {
+                auto& fdm_config = std::get<ConfigPackFDM>(config_pack);
+                if (fdm_config.tool.size() > n_tools) {
+                    fdm_config.tool.resize(n_tools);
+                    hw_printer.tools.resize(n_tools);
+                    fdm_config.resize_tool_parity_items(n_tools, true);
+                }
+                ASSERT(fdm_config.tool.size() == preset_metadata.tools.size());
+                ASSERT(hw_printer.tools.size() == preset_metadata.tools.size());
+            }
             // while (preset_metadata.tools.size() < preset_metadata.hw_config.tool_count)
             // preset_metadata.tools.emplace_back();
-            ASSERT(preset_metadata.materials.size() == preset_metadata.hw_config.tool_count);
+            ASSERT(preset_metadata.materials.size() == preset_metadata.hw_config.material_slot_count());
             // while (preset_metadata.materials.size() < preset_metadata.hw_config.tool_count)
             // preset_metadata.materials.emplace_back();
         } else

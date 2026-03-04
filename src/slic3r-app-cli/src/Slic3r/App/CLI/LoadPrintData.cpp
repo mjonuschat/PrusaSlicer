@@ -158,7 +158,9 @@ static std::optional<Domain::ConfigPack> load_config_from_file(const std::string
             nlohmann::ordered_json json_config;
             file >> json_config;
 
-            if (auto result = Config::load(json_config); result) {
+            // TODO: where to get propper hw config?
+            const Domain::Preset::HwPrinterConfig hw_config{.tool_count = 1};
+            if (auto result = Config::load(json_config, hw_config); result) {
                 return result.value().config;
             } else {
                 boost::nowide::cerr
