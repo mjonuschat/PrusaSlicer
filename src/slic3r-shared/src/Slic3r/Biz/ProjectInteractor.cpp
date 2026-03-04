@@ -552,10 +552,10 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
     const Domain::ConfigContainer* cc =
         proj.find_config_container(selected_bed.config_container_id);
     const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
-    int nozzle_dmrs_cnt             = cc->selected_preset().hw_config.tool_count;
+    int slot_count             = cc->selected_preset().hw_config.material_slot_count();
     FileLoadingLogic::import_files_and_add_to_scene(
         paths,
-        nozzle_dmrs_cnt,
+        slot_count,
         scene_interactor(),
         cc->bed().center() + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
         m_dialog_provider

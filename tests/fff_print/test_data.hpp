@@ -85,6 +85,8 @@ template<typename T> bool _equiv(const T &a, const T &b, double epsilon) {
     return abs(a - b) < epsilon;
 }
 
+Domain::Preset::HwPrinterConfig create_dummy_hw_config(uint8_t tool_count = 1);
+
 Domain::Model model(const std::string& model_name, Domain::TriangleMesh&& _mesh);
 void init_print(
     std::vector<Domain::TriangleMesh>&& meshes,

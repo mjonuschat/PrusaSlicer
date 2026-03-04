@@ -79,11 +79,20 @@ struct ConfigLoadSLAFixture
     };
 };
 
+const Slic3r::Domain::Preset::HwPrinterConfig fdm_hw_config{
+    .technology = Slic3r::Domain::PrinterTechnology::FFF,
+    .tool_count = 1
+};
+const Slic3r::Domain::Preset::HwPrinterConfig sla_hw_config{
+    .technology = Slic3r::Domain::PrinterTechnology::SLA,
+    .tool_count = 0
+};
+
 TEST_CASE("Loading fails if provided json is not an object", "[ConfigLoad]")
 {
     const ordered_json json = nlohmann::json::array();
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(!result.has_value());
     CHECK(result.error() == GlobalParsingIssue::NotAJsonObject);
 }
@@ -92,7 +101,7 @@ TEST_CASE("Loading fails if the printer technology is not present", "[ConfigLoad
 {
     const ordered_json json = nlohmann::json::object();
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(!result.has_value());
     CHECK(result.error() == GlobalParsingIssue::UnableToDeducePrinterTechnology);
 }
@@ -100,7 +109,7 @@ TEST_CASE("Loading fails if the printer technology is not present", "[ConfigLoad
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading fails if printer_settings is not an object", "[ConfigLoad]")
 {
     json["print_settings"] = 10;
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(!result.has_value());
     CHECK(result.error() == GlobalParsingIssue::InvalidFDMPrintSettings);
 }
@@ -114,7 +123,7 @@ TEST_CASE_METHOD(
     json["toolprint_settings"] = {{"extruder_colour", ordered_json::array({"red", "blue", "green"})}};
 
     json["filament_settings"] = {{"filament_colour", ordered_json::array({"red", "blue"})}};
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(!result.has_value());
     CHECK(result.error() == GlobalParsingIssue::FilamentsAndToolsCountIsNotEqual);
 }
@@ -123,7 +132,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Extra not-loaded values are reported", "
 {
     json["print_settings"]["invalid_key"] = 10;
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Print, "invalid_key") == ItemParsingIssueType::ExtraKey
@@ -132,7 +141,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Extra not-loaded values are reported", "
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing values are reported", "[ConfigLoad]")
 {
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Print, "raft_layers") == ItemParsingIssueType::NotFound
@@ -146,7 +155,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int works", "[ConfigLoad]")
 {
     json["print_settings"]["raft_layers"] = 10;
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.print.items.opt("raft_layers").get<int>() == 10);
@@ -157,7 +166,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double works", "[ConfigLoad]")
 {
     json["print_settings"]["brim_width"] = 5;
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.print.items.opt("brim_width").get<double>() == 5);
@@ -168,7 +177,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading bool works", "[ConfigLoad]")
 {
     json["print_settings"]["extra_perimeters"] = true;
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.print.items.opt("extra_perimeters").get<bool>() == true);
@@ -179,7 +188,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Vec2d works", "[ConfigLoad]")
 {
     json["printer_settings"]["extruder_offset"] = ordered_json::array({ordered_json::array({2, 5.1})});
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.printer.items.opt("extruder_offset").get<std::vector<Vec2d>>() == std::vector{Vec2d{2, 5.1}});
@@ -192,7 +201,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::vector<Vec2d> works", "[Con
         {ordered_json::array({2, 5.1}), ordered_json::array({3.2, 4})}
     );
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(
@@ -209,7 +218,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage works", "[ConfigLoad]
         {"is_percent", true},
     };
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.print.items.opt("ironing_flowrate").get<Percentage>() == Percentage{10.2});
@@ -223,7 +232,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage fails if is_percent i
         {"is_percent", false},
     };
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(
@@ -244,7 +253,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading FloatOrPercentage works", "[Conf
         {"is_percent", true},
     };
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     const auto first_layer_height{
@@ -265,7 +274,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::optional<int> works", "[Con
 {
     json["filament_settings"]["idle_temperature"] = ordered_json::array({32});
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(result_config.filament.at(0).items.opt("idle_temperature").get<std::optional<int>>() == 32);
@@ -276,7 +285,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::optional<int> from null wor
 {
     json["filament_settings"]["idle_temperature"] = ordered_json::array({nullptr});
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(!result_config.filament.at(0).items.opt("idle_temperature").get<std::optional<int>>());
@@ -287,7 +296,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int from other type reports an i
 {
     json["print_settings"]["raft_layers"] = "invalid";
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
 
@@ -304,7 +313,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading enum from string works", "[Confi
 {
     json["print_settings"]["arc_fitting"] = "emit_center";
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
 
@@ -324,7 +333,7 @@ TEST_CASE_METHOD(
     const ConfigPackFDM default_config;
     json["print_settings"]["arc_fitting"] = "invalid";
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
 
@@ -343,7 +352,7 @@ TEST_CASE_METHOD(ConfigLoadSLAFixture, "Loading enum vector from vector of strin
 {
     json["sla_material_settings"]["tower_speed"] = ordered_json::array({"layer1", "layer2"});
 
-    const auto result{load(json)};
+    const auto result{load(json, sla_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackSLA>(result->config)};
 
@@ -365,7 +374,7 @@ TEST_CASE_METHOD(
     const ConfigPackSLA default_config;
     json["sla_material_settings"]["tower_speed"] = ordered_json::array({"layer1", "typo"});
 
-    const auto result{load(json)};
+    const auto result{load(json, sla_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackSLA>(result->config)};
 
@@ -384,7 +393,7 @@ TEST_CASE_METHOD(
 
 TEST_CASE_METHOD(
     ConfigLoadFDMFixture,
-    "Tool count is determined based on the most common array size",
+    "Tool count is determined based on the hw config",
     "[ConfigLoad]"
 )
 {
@@ -394,21 +403,25 @@ TEST_CASE_METHOD(
         {"extrusion_multiplier", ordered_json::array({1.1, 1.2, 1.3})},
     };
 
-    const auto result{load(json)};
-    REQUIRE(result.has_value());
-    const auto result_config{std::get<ConfigPackFDM>(result->config)};
-    REQUIRE(result_config.tool.size() == 3);
-    CHECK(result_config.filament.size() == 3);
-    CHECK(
-        get_issue(result->issues, FDMConfigLocation::Filament, "temperature", 2)
-        == ItemParsingIssueType::NotFound
-    );
+    for (uint8_t tool_count : {1, 3}) {
+        auto hw_config = fdm_hw_config;
+        hw_config.tool_count = tool_count;
+        const auto result{load(json, hw_config)};
+        REQUIRE(result.has_value());
+        const auto result_config{std::get<ConfigPackFDM>(result->config)};
+        REQUIRE(result_config.tool.size() == tool_count);
+        CHECK(result_config.filament.size() == 3);
+        CHECK(
+            get_issue(result->issues, FDMConfigLocation::Filament, "temperature", 2)
+            == ItemParsingIssueType::NotFound
+        );
 
-    const ConfigPackFDM default_config;
-    CHECK(
-        result_config.filament[2].items.opt("temperature").get<int>()
-        == default_config.filament.front().items.opt("temperature").get<int>()
-    );
+        const ConfigPackFDM default_config;
+        CHECK(
+            result_config.filament[2].items.opt("temperature").get<int>()
+            == default_config.filament.front().items.opt("temperature").get<int>()
+        );
+    }
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are reported per filament", "[ConfigLoad]")
@@ -418,7 +431,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are repor
     };
     json["filament_settings"] = {{"invalid_key", ordered_json::array({"invalid"})}};
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Filament, "invalid_key", 0)
@@ -433,7 +446,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[Config
     };
     json["filament_settings"] = {{"filament_colour", ordered_json::array({"red", "blue", "green"})}};
 
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     REQUIRE(result_config.tool.size() == 3);
@@ -445,14 +458,14 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[Config
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing overrides are not reported in issues", "[ConfigLoad]")
 {
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(!get_issue(result->issues, FDMConfigLocation::Filament, "retract_layer_change", 0));
     CHECK(!result_config.filament.at(0).overrides.get("retract_layer_change"));
 
     json["filament_settings"] = {{"retract_layer_change", ordered_json::array({true})}};
-    const auto new_result{load(json)};
+    const auto new_result{load(json, fdm_hw_config)};
 
     const auto new_result_config{std::get<ConfigPackFDM>(new_result->config)};
     CHECK(!get_issue(new_result->issues, FDMConfigLocation::Filament, "retract_layer_change", 0));
@@ -467,7 +480,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Overrides can be set only partially", "[
         {"nozzle_diameter", ordered_json::array({1.4, 1.5})},
     };
     json["filament_settings"] = {{"retract_layer_change", ordered_json::array({nullptr, true})}};
-    const auto result{load(json)};
+    const auto result{load(json, fdm_hw_config)};
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(!get_issue(result->issues, FDMConfigLocation::Filament, "retract_layer_change", 0));
     CHECK(!get_issue(result->issues, FDMConfigLocation::Filament, "retract_layer_change", 1));

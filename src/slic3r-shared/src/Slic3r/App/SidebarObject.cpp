@@ -55,7 +55,10 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         [this](const Biz::OverrideItem& item) -> bool
         {
             return !item.is_override()
-                && (m_project_interactor.preset_interactor().tool_items().size() > 1
+                && (m_project_interactor.preset_interactor()
+                            .current_printer_config()
+                            .material_slot_count()
+                        > 1
                     || item.config_item->def().gui_type
                         == Domain::ConfigItemDef::GUIType::extruder_selection);
         }

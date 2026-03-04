@@ -1458,19 +1458,23 @@ void load(
     // TODO: handle multiple config containers, add check that the keys exist in the JSON.
     for (const nlohmann::ordered_json& config_container : project_json["config_containers"]) {
         config_containers_data.emplace_back();
-        if (config_container.contains(CONFIGURATION)) {
-            tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res = Biz::Config::load(config_container[CONFIGURATION]);
-            if (! res)
-                collected_issues.add_issue(RT::project_config_issue);
-            else
-                config_containers_data.back().config_pack = res.value().config;
-        }
         if (config_container.contains(PRESET_METADATA)) {
             auto res = Biz::Config::load_preset_metadata(config_container[PRESET_METADATA]);
             if (! res)
                 collected_issues.add_issue(RT::project_config_issue);
             else
                 config_containers_data.back().preset = res.value();
+        }
+        if (config_container.contains(CONFIGURATION)) {
+            tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res =
+                Biz::Config::load(
+                    config_container[CONFIGURATION],
+                    config_containers_data.back().preset.hw_config
+                );
+            if (! res)
+                collected_issues.add_issue(RT::project_config_issue);
+            else
+                config_containers_data.back().config_pack = res.value().config;
         }
         if (config_container.contains("beds")) {
             for (const nlohmann::ordered_json& bed : config_container["beds"]) {

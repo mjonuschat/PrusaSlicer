@@ -225,7 +225,8 @@ BoxIssues load_box(const ordered_json& json, Domain::ConfigBox& result)
     return issues;
 }
 
-tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
+tl::expected<LoadResult, GlobalParsingIssue>
+load_fdm(const ordered_json& json, const Domain::Preset::HwPrinterConfig& hw_config)
 {
     const std::string printer_location_name{get_location_name(FDMConfigLocation::Printer)};
     if (!is_object(printer_location_name, json)) {
@@ -259,12 +260,12 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
         return tl::unexpected{GlobalParsingIssue::InvalidFDMFilamentSettings};
     }
     if (filament_load_result.settings.size() != tool_load_result.settings.size()) {
-        // In case of empty (no) tool settings, we can just expand those to all filaments.
+        // In case of empty (no) tool settings, we can just expand those to hw_config.tool_count
         if (tool_load_result.settings.size() == 1
             && tool_load_result.settings.front().items.all_items().empty()
             && tool_load_result.settings.front().overrides.overridden_items().empty())
         {
-            tool_load_result.settings.resize(filament_load_result.settings.size());
+            tool_load_result.settings.resize(hw_config.tool_count);
         } else {
             return tl::unexpected{GlobalParsingIssue::FilamentsAndToolsCountIsNotEqual};
         }
@@ -382,15 +383,15 @@ std::optional<std::string> parse_technology(const ordered_json& json) {
     return std::nullopt;
 }
 
-
-tl::expected<LoadResult, GlobalParsingIssue> load(const ordered_json& json)
+tl::expected<LoadResult, GlobalParsingIssue>
+load(const ordered_json& json, const Domain::Preset::HwPrinterConfig& hw_config)
 {
     if (!json.is_object()) {
         return tl::unexpected{GlobalParsingIssue::NotAJsonObject};
     }
 
     if (parse_technology(json) == "FFF") {
-        return load_fdm(json);
+        return load_fdm(json, hw_config);
     } else if (parse_technology(json) == "SLA") {
         return load_sla(json);
     } else {

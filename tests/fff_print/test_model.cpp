@@ -70,7 +70,13 @@ SCENARIO("Model construction", "[Model]") {
                     }
                 }
 
-                print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+                print.update(
+                    model,
+                    config,
+                    bed_instance,
+                    SerializedConfig{},
+                    create_dummy_hw_config()
+                );
                 print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
                 CHECK(result.const_gcode()->str().size() > 0);

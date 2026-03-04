@@ -1,5 +1,6 @@
 #include "TestUtils.hpp"
 
+#include "Slic3r/Uuid.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 
 #include <boost/filesystem.hpp>
@@ -64,8 +65,22 @@ Domain::ConfigPack get_config(Domain::PrinterTechnology technology)
     }
 }
 
-ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& config)
-    : model{std::move(model)}, config{std::move(config)}, bed_instance{ModelOnBed::bed}
+using Domain::Preset::HwPrinterConfig;
+
+static HwPrinterConfig create_dummy_hw_config(Domain::PrinterTechnology tech, uint8_t tool_count)
+{
+    using Domain::Preset::HwToolConfig, Domain::Preset::HwToolConfigs;
+    return HwPrinterConfig{
+        .id         = generate_uuid(),
+        .technology = tech,
+        .tool_count = tool_count,
+        .tools      = HwToolConfigs(tool_count, HwToolConfig{})
+    };
+}
+
+
+ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& input_config)
+    : model{std::move(model)}, config{std::move(input_config)}, bed_instance{ModelOnBed::bed}
 {
     for (Domain::ModelObject* object : this->model.objects) {
         for (Domain::ModelInstance* instance : object->instances) {
@@ -73,13 +88,12 @@ ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& config)
         }
     }
 
-    static unsigned hw_config_id_counter{};
-    preset_metadata.hw_config.id = std::to_string(hw_config_id_counter++);
-
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config)) {
-        preset_metadata.hw_config.technology = Domain::PrinterTechnology::FFF;
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config)) {
-        preset_metadata.hw_config.technology = Domain::PrinterTechnology::SLA;
+    if (std::holds_alternative<Domain::ConfigPackFDM>(this->config)) {
+        auto config_fdm{std::get<Domain::ConfigPackFDM>(this->config)};
+        preset_metadata.hw_config =
+            create_dummy_hw_config(Domain::PrinterTechnology::FFF, config_fdm.tool.size());
+    } else if (std::holds_alternative<Domain::ConfigPackSLA>(this->config)) {
+        preset_metadata.hw_config =create_dummy_hw_config(Domain::PrinterTechnology::SLA, 0);
     } else {
         PANIC("Invalid config pack!");
     }

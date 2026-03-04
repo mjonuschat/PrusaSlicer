@@ -243,6 +243,8 @@ struct HwPrinterConfig
             model, tool_count, features, visual, tools, feeders, materials, sheet);
     }
 
+    size_t material_slot_count() const;
+
     std::string relative_path_to_assets() const;
 
     bool has_same_values(const HwPrinterConfig& other) const;
@@ -496,6 +498,9 @@ public:
         return m_current_address;
     }
 
+    uint8_t tool_index() const
+    { return m_current_address.at(0); }
+
     const HwToolConfig& tool_config() const
     {
         ASSERT(is_valid());
@@ -521,13 +526,15 @@ public:
         return it->second;
     }
 
+    static MaterialIterator from_slot_index(const HwPrinterConfig& hw_config, size_t slot_index);
+
 private:
     friend MaterialIterator begin(const MaterialIterator& it);
     friend MaterialIterator end(const MaterialIterator& it);
 
-    MaterialIterator(const HwPrinterConfig& config, const Address& addr) :
+    MaterialIterator(const HwPrinterConfig& config, Address  addr) :
         m_config(config),
-        m_current_address(addr)
+        m_current_address(std::move(addr))
     {}
 
     MaterialIterator invalid() const

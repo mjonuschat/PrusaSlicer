@@ -127,7 +127,7 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
         // TODO: remove this when config wizard is ready
         if (preset_bundle.printer_configs.empty()) {
             HwConfigEvaluator config_eval;
-            for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
+            for (const auto& vendor : {"PrusaResearch", /*"PrusaResearchSLA"*/}) {
                 auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
                 ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
                 auto& vendor_bundle = vendor_bundle_it->second;
@@ -777,10 +777,10 @@ void resize_tool_dependant_presets(
 {
     constexpr bool is_tool = std::is_same_v<T, Domain::Preset::EvaluatedToolPrintPreset::Preset>;
 
+    const bool is_sla = hw_config.technology == Domain::PrinterTechnology::SLA;
     // tool print presets for SLA are always empty
-    const size_t slot_count = hw_config.technology == Domain::PrinterTechnology::SLA && is_tool ?
-        0 :
-        hw_config.tool_count;
+    const size_t slot_count =
+        is_tool ? (is_sla ? 0 : hw_config.tool_count) : hw_config.material_slot_count();
 
     if (presets.size() > slot_count)
         presets.resize(slot_count);
@@ -846,7 +846,7 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     }
 
     std::vector<Domain::Preset::EvaluatedMaterialPreset::Preset> materials;
-    for (size_t n = hw_config.tool_count, slot_idx = 0; slot_idx < n; ++slot_idx) {
+    for (size_t n = hw_config.material_slot_count(), slot_idx = 0; slot_idx < n; ++slot_idx) {
         // TODO: better choose tool-print preset + ask for config values transfer
         MaterialPresetProjectView material_view(
             preset_bundle,
@@ -1078,7 +1078,7 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
     std::vector<std::optional<size_t>> changed_selected_indices;
     const auto& p         = get_or_fail_project_context(m_selected_project_id);
     const auto& hw_config = selected_preset.hw_config;
-    for (size_t n = hw_config.tool_count, slot_index = 0; slot_index < n; ++slot_index) {
+    for (size_t n = hw_config.material_slot_count(), slot_index = 0; slot_index < n; ++slot_index) {
         PresetItemObservableList items;
         MaterialPresetProjectView view(
             m_workbench.preset_bundle(),
@@ -1097,7 +1097,7 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
 
     fill_selected_material_cbis(selected_preset);
 
-    for (size_t n = hw_config.tool_count, slot_index = 0; slot_index < n; ++slot_index) {
+    for (size_t n = hw_config.material_slot_count(), slot_index = 0; slot_index < n; ++slot_index) {
         const auto changed_selected_index = changed_selected_indices.at(slot_index);
         const auto& material_presets = m_material_presets.at(slot_index);
         const auto& item             = material_presets.items().at(
@@ -2422,7 +2422,9 @@ void PresetInteractor::load_selected_preset_from_3mf(
     }
 
     // 5. Reconcile ToolPrintPreset
-    for (size_t slot_index = 0; slot_index < selected_preset.hw_config.tool_count; ++slot_index) {
+    for (size_t n = selected_preset.hw_config.material_slot_count(), slot_index = 0; slot_index < n;
+         ++slot_index)
+    {
         auto& selected_material = selected_preset.materials.at(slot_index);
 
         // deduplicate existing tool_print preset (check for config box differences)

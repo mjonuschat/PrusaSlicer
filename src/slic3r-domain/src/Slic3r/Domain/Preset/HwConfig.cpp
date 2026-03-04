@@ -282,8 +282,10 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
         if (cfg.tool_count > 1)
             ss << " " << int(cfg.tool_count) << "T";
         bool first = true;
-        for (const auto& t : cfg.tools) {
+        for (size_t i = 0; i < cfg.tools.size(); ++i) {
+            const auto& t = cfg.tools[i];
             auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
+            auto feeder_it = cfg.feeders.find(Address{static_cast<uint8_t>(i)});
             ASSERT(tool != nullptr, t.id);
             if (first) {
                 first = false;
@@ -291,12 +293,32 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
             } else {
                 ss << ", ";
             }
+
+            if (feeder_it != cfg.feeders.end()) {
+                auto* feeder = vendor_data.find_feeder_config_def_by_id(feeder_it->second.id);
+                ASSERT(feeder != nullptr, feeder_it->second.id);
+                ss << feeder->name;
+                ss << " ";
+            }
+
             ss << tool->name;
         }
     }
 
     return ss.str();
 }
+
+size_t HwPrinterConfig::material_slot_count() const
+{
+    size_t count = tool_count;
+    for (const auto& feeder : feeders | std::views::values) {
+        ASSERT(feeder.slot_count >= 1);
+        count += feeder.slot_count - 1;
+    }
+    return count;
+}
+
+
 
 std::string HwPrinterConfig::relative_path_to_assets() const
 {
@@ -375,5 +397,15 @@ bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
         && sheet == other.sheet;
 }
 
+MaterialIterator
+MaterialIterator::from_slot_index(const HwPrinterConfig& hw_config, size_t slot_index)
+{
+    MaterialIterator it{hw_config};
+    for (size_t current_slot_idx = 0; current_slot_idx < slot_index; ++current_slot_idx) {
+        ++it;
+        ASSERT(it.is_valid());
+    }
+    return it;
+}
 
 } // namespace Slic3r::Domain::Preset

@@ -162,7 +162,7 @@ std::vector<unsigned> get_extruder_candidates(
             );
         }
         const std::vector<unsigned> painting_extruders{
-            get_painting_extruders(*object, config.tool.size())
+            get_painting_extruders(*object, config.filament.size())
         };
         for (unsigned extruder : painting_extruders) {
             extruders.insert(extruder - 1);
@@ -176,7 +176,7 @@ std::vector<unsigned> get_extruder_candidates(
 
     std::vector<unsigned> result;
     for (unsigned extruder : extruders) {
-        if (extruder < config.tool.size()) {
+        if (extruder < config.filament.size()) {
             result.push_back(extruder);
         }
     }

@@ -12,10 +12,20 @@ BoxRefs convert_to_box_refs(
     result.insert(result.end(), settings.cbegin(), settings.cend());
     return result;
 }
+
+template<typename T>
+MutBoxRefs convert_to_mut_box_refs(
+    std::vector<T>& settings
+)
+{
+    MutBoxRefs result;
+    result.insert(result.end(), settings.begin(), settings.end());
+    return result;
+}
 }
 
 BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
-    ASSERT(config_pack.filament.size() == config_pack.tool.size());
+    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
     BoxOrBoxesVector result;
     result.push_back(config_pack.print);
     result.push_back(convert_to_box_refs(config_pack.tool));
@@ -25,11 +35,24 @@ BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
     return result;
 }
 
+MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
+    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
+    MutBoxOrBoxesVector result;
+    result.push_back(config_pack.print);
+    result.push_back(convert_to_mut_box_refs(config_pack.tool));
+    result.push_back(config_pack.printer);
+    result.push_back(convert_to_mut_box_refs(config_pack.filament));
+    result.push_back(config_pack.project);
+    return result;
+}
+
 namespace {
 ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const std::size_t filaments_count) {
+    ASSERT(tools_count == filaments_count || tools_count == 1);
     return {
         {FDMConfigLocation::Print, std::nullopt},
-        {FDMConfigLocation::Tool, tools_count},
+        //{FDMConfigLocation::Tool, tools_count},
+        {FDMConfigLocation::Tool, filaments_count},
         {FDMConfigLocation::Printer, std::nullopt},
         {FDMConfigLocation::Filament, filaments_count},
         {FDMConfigLocation::Project, std::nullopt},

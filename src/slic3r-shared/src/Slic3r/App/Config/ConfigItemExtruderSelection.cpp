@@ -35,7 +35,11 @@ ConfigItemExtruderSelection::ConfigItemExtruderSelection(
 
     callbacks().selection_changed = [this](int selected)
     {
-        if (current_index() <= project_interactor()->preset_interactor().tool_items().size()) {
+        const size_t n = project_interactor()
+                             ->preset_interactor()
+                             .current_printer_config()
+                             .material_slot_count();
+        if (current_index() <= n) {
             m_cbi_container
                 .set_item_value(*m_state, Domain::ConfigValue{current_index()}, m_cbi_index);
             update_size();
@@ -59,11 +63,14 @@ void ConfigItemExtruderSelection::on_preset_selection_changed(
 
 void ConfigItemExtruderSelection::update_size()
 {
-    const size_t tool_count = project_interactor()->preset_interactor().tool_items().size();
-    if (tool_count != m_items.size()) {
+    const size_t slot_count = project_interactor()
+                                  ->preset_interactor()
+                                  .selected_printer_preset()
+                                  .hw_config.material_slot_count();
+    if (slot_count != m_items.size()) {
         std::vector<std::string> new_items;
-        new_items.reserve(tool_count + 1);
-        for (size_t i = 0; i <= tool_count; ++i) {
+        new_items.reserve(slot_count + 1);
+        for (size_t i = 0; i <= slot_count; ++i) {
             if (i == 0) {
                 new_items.push_back(Biz::_u8L("Default"));
             } else {
@@ -71,10 +78,10 @@ void ConfigItemExtruderSelection::update_size()
             }
         }
 
-        if (!mixed() && m_state->value().get<int>() > tool_count) {
+        if (!mixed() && m_state->value().get<int>() > slot_count) {
             new_items.push_back(std::to_string(m_state->value().get<int>()));
             set_items(new_items);
-            set_current_index(tool_count + 1);
+            set_current_index(slot_count + 1);
         } else {
             set_items(new_items);
         }

@@ -157,7 +157,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
     }
 
     Print print;
-    print.update(two_cubes, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+    print.update(two_cubes, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
@@ -195,7 +195,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     }
 
     Print print;
-    print.update(two_cubes, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+    print.update(two_cubes, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
     print.validate();
     const std::string gcode{Test::gcode(print)};
 

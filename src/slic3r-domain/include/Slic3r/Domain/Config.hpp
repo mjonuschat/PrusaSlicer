@@ -183,6 +183,10 @@ using BoxRef = std::reference_wrapper<const ConfigBox>;
 using BoxRefs = std::vector<BoxRef>;
 using BoxOrBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
 
+using MutBoxRef = std::reference_wrapper<ConfigBox>;
+using MutBoxRefs = std::vector<MutBoxRef>;
+using MutBoxOrBoxesVector = std::vector<std::variant<MutBoxRef, MutBoxRefs>>;
+
 using LocationSize = std::optional<std::size_t>;
 using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
 
