@@ -3,6 +3,8 @@
 #include <list>
 #include <ranges>
 #include <map>
+#include <string>
+#include <optional>
 
 namespace Slic3r {
 
@@ -23,14 +25,21 @@ namespace Slic3r {
 struct InvokeLaterBag final
 {
     using Func = std::function<void()>;
+    using Tag = std::optional<std::string>;
 
     ~InvokeLaterBag();
 
-    void add(Func&& func);
+    void add(Func&& func, const Tag& dedup_tag = std::nullopt);
     void invoke_now();
 
 private:
-    using FuncList = std::list<Func>;
+    struct FuncRecord
+    {
+        Func func;
+        Tag dedup_tag;
+    };
+
+    using FuncList = std::list<FuncRecord>;
     FuncList m_to_invoke;
 };
 

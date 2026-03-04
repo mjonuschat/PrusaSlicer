@@ -807,6 +807,8 @@ private:
         PresetDiffOperation operation,
         Domain::Preset::PresetKind kind,
         std::optional<size_t> tool_id = std::nullopt);
+    void
+    process_all_save_changes(Domain::Preset::SelectedPreset& selected_preset, InvokeLaterBag& bag);
     void process_operation_from_unsaved_changes(
         Domain::Preset::SelectedPreset& selected_preset,
         PresetDiffOperation operation,

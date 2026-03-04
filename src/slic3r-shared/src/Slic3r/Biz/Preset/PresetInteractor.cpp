@@ -430,11 +430,12 @@ void PresetInteractor::save_user_preset_internal(
         delete_preset(kind, id_to_delete);
     }
 
-    reload_vendor_presets(ids.vendor_id);
 
     bag.add(
-        [=, this, &selected_preset]
+        [=, this, &selected_preset, vendor_id = ids.vendor_id]
         {
+            reload_vendor_presets(vendor_id);
+
             InvokeLaterBag inner_bag;
             switch (kind) {
             case Domain::Preset::PresetKind::FdmPrinter:
@@ -457,7 +458,7 @@ void PresetInteractor::save_user_preset_internal(
                 fill_materials_presets(selected_preset, inner_bag);
                 break;
             }
-        }
+        }, "save_user_preset_internal"
     );
 }
 
@@ -805,7 +806,7 @@ void PresetInteractor::fill_config_container_with_selected_preset(
 
         const Domain::Preset::PresetKind kind = Domain::Preset::printer_kind(selected_preset.technology());
         // process unsaved changes, if any exist before update selected preset
-        process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, bag, kind);
+        process_all_save_changes(selected_preset, bag);
 
         const auto& printer_preset =
             get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
@@ -865,7 +866,7 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     std::string print_id = print.get().id;
 
     // process unsaved changes, if any exist before update selected preset
-    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, bag);
+    process_all_save_changes(selected_preset, bag);
     const auto& printer_preset =
         get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
     // we need to get fresh print preset reference, as the eventual save may invalidate `print`
@@ -1258,7 +1259,7 @@ PresetInteractor::select_print_preset_internal(
     const auto& hw_config                           = selected_preset.hw_config;
 
     const Domain::Preset::PresetKind kind = Domain::Preset::print_kind(selected_preset.technology());
-    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, bag, kind);
+    process_all_save_changes(selected_preset, bag);
 
     // Fetch the presets after (!) the save operation perform
     // (which may modify the stored presets in vector, which will turn the `p` invalid).
@@ -1307,7 +1308,7 @@ void PresetInteractor::select_tool_print_preset_internal(
     auto& selected_preset = mutable_selected_printer_preset();
 
     const Domain::Preset::PresetKind kind = Domain::Preset::tool_print_kind(selected_preset.technology());
-    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, bag, kind, tool_index);
+    process_all_save_changes(selected_preset, bag);
     const auto& t         = get_tool_print_preset(
         selected_preset.hw_config.id,
         selected_preset.printer.id,
@@ -1359,7 +1360,7 @@ void PresetInteractor::select_material_preset_internal(
     auto& selected_preset = mutable_selected_printer_preset();
 
     const Domain::Preset::PresetKind kind = Domain::Preset::material_kind(selected_preset.technology());
-    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, bag, kind, material_index);
+    process_all_save_changes(selected_preset, bag);
     const auto& m         = get_material_preset(
         selected_preset.hw_config.id,
         selected_preset.printer.id,
@@ -1834,6 +1835,49 @@ PresetsSwitchStates::iterator PresetInteractor::find_unsaved_change(
                 && item.second.operation == operation;
         }
     );
+}
+
+void PresetInteractor::process_all_save_changes(
+    Domain::Preset::SelectedPreset& selected_preset,
+    InvokeLaterBag& bag
+)
+{
+
+    const auto& hw_config = selected_preset.hw_config;
+    auto technology = hw_config.technology;
+    process_operation_from_unsaved_changes(
+        selected_preset,
+        PresetDiffOperation::Save,
+        bag,
+        Domain::Preset::printer_kind(technology)
+    );
+    process_operation_from_unsaved_changes(
+        selected_preset,
+        PresetDiffOperation::Save,
+        bag,
+        Domain::Preset::print_kind(technology)
+    );
+    if (technology == Domain::PrinterTechnology::FFF) {
+        for (size_t i = 0, n = hw_config.tool_count; i < n; i++) {
+            process_operation_from_unsaved_changes(
+                selected_preset,
+                PresetDiffOperation::Save,
+                bag,
+                Domain::Preset::tool_print_kind(hw_config.technology),
+                i
+            );
+
+        }
+    }
+    for (size_t i = 0, n = hw_config.materials.size(); i < n; i++) {
+        process_operation_from_unsaved_changes(
+            selected_preset,
+            PresetDiffOperation::Save,
+            bag,
+            Domain::Preset::material_kind(hw_config.technology),
+            i
+        );
+    }
 }
 
 void PresetInteractor::process_operation_from_unsaved_changes(
