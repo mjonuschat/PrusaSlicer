@@ -16,10 +16,15 @@ ContextPopup::ContextPopup(const std::string& name)
     set_position_type(YGPositionType::YGPositionTypeAbsolute);
 }
 
+ContextPopup::Callbacks& ContextPopup::callbacks()
+{
+    return m_callbacks;
+}
+
 void ContextPopup::style_node()
 {
     if (is_visible()) {
-        if (m_open_pos) {
+        if (m_open_pos.has_value()) {
             set_left((*m_open_pos).x());
             set_top((*m_open_pos).y());
         } else {
@@ -71,7 +76,9 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
+    ImGui::OpenPopupOnItemClick(object_name().c_str());
     if (ImGui::BeginPopup(object_name().c_str(), m_flags)) {
+        m_opened = true;
         if (m_request_close) {
             ImGui::CloseCurrentPopup();
             m_request_close = false;
@@ -82,21 +89,10 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
         }
 
         ImGui::EndPopup();
-    } else if (!m_id_on_right_click.empty()) {
-        // Force an OpenPopup on right-click using the given PopupID.
-        // Note: (otherwise the last item ID will be used).
-        const char* popup_id = m_id_on_right_click.c_str();
-        ImGui::OpenPopupOnItemClick(popup_id);
-
-        if (ImGui::BeginPopup(popup_id, m_flags)) {
-            for (Item* child : std::as_const(m_children_render_order)) {
-                render_node(pos, child);
-            }
-            ImGui::EndPopup();
-
-            // This action is needed only once,
-            // so clear m_id_on_right_click after the first rendering.
-            m_id_on_right_click.clear();
+    } else if (m_opened) {
+        m_opened = false;
+        if (m_callbacks.closed) {
+            m_callbacks.closed();
         }
     }
 
@@ -160,11 +156,13 @@ void ContextPopup::set_rounding(float rounding)
 void ContextPopup::open()
 {
     m_request_close     = false;
-    m_id_on_right_click = object_name();
     if (!m_force_open_popup_in_render) {
         ImGui::OpenPopup(object_name().c_str());
     }
     set_style_dirty();
+    if (m_callbacks.opened) {
+        m_callbacks.opened();
+    }
 }
 
 void ContextPopup::close()

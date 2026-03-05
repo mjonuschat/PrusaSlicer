@@ -6,6 +6,8 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
+#include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -18,14 +20,15 @@ class MaterialSettingsDialog;
 namespace Slic3r::App::Yoga {
 
 class Text;
-class Circle;
+class ColorPickerButton;
 class ButtonGroup;
 
 class MaterialSettingsButton :
     public RectangleButton,
     public Biz::DataObserver<Biz::Preset::PresetItemObservableList>,
     public Biz::IListSelectionChangedListener,
-    public Biz::Preset::IPresetChangedListener
+    public Biz::Preset::IPresetChangedListener,
+    public Biz::IColorsChangedListener
 {
 public:
     MaterialSettingsButton(
@@ -36,12 +39,6 @@ public:
     );
     ~MaterialSettingsButton();
 
-    void set_color(const ImColor& color);
-    void set_material_name(const std::string& name);
-    void set_nozzle(const std::string& nozzle);
-
-    void on_data_update() override;
-
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
 
     void on_hw_item_selection_changed(
@@ -50,11 +47,32 @@ public:
         Biz::Preset::HwItemType type
     ) override;
 
+    void on_colors_changed(
+        Domain::SelectionId config_container_id,
+        const std::vector<Domain::ColorRGB>& colors
+    ) override;
+
+protected:
+    void on_data_update() override;
+
+    void set_color(const ImColor& color);
+    void set_nozzle(const std::string& nozzle);
+    void set_material_name(const std::string& name);
+
 private:
-    Biz::ListenerScope<Biz::Preset::IPresetChangedListener, Biz::Preset::PresetInteractor, MaterialSettingsButton>
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        MaterialSettingsButton>
         m_preset_changed_listener_scope;
 
-    Circle* m_color_marker{nullptr};
+    Biz::ListenerScope<
+        Biz::IColorsChangedListener,
+        Biz::ProjectSettingsInteractor,
+        MaterialSettingsButton>
+        m_colors_changed_listener_scope;
+
+    ColorPickerButton* m_color_marker{nullptr};
     Text* m_material_name{nullptr};
     Text* m_nozzle{nullptr};
     std::weak_ptr<ButtonGroup> m_button_group;

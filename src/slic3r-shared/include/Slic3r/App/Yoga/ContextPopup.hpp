@@ -11,7 +11,15 @@ namespace Slic3r::App::Yoga {
 class ContextPopup : public Item
 {
 public:
+    struct Callbacks
+    {
+        std::function<void()> opened{nullptr};
+        std::function<void()> closed{nullptr};
+    };
+
     explicit ContextPopup(const std::string& name = {});
+
+    Callbacks& callbacks();
 
     void style_node() override;
 
@@ -40,13 +48,15 @@ private:
     void invalidate_style();
 
 private:
+    Callbacks m_callbacks;
+
     float m_offset           = 10;
     Position m_position      = Position::Right;
     float m_rounding         = 5;
-    ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
-    bool m_request_close     = false;
 
-    std::string m_id_on_right_click;
+    ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
+    bool m_request_close = false;
+    bool m_opened        = false;
 
     std::optional<Vec2f> m_open_pos   = std::nullopt;
     bool m_force_open_popup_in_render = false;
