@@ -96,9 +96,11 @@ public:
     
     // For fill select box in dialog, used together with get_preset_index() 
     std::vector<std::string> get_presets_names() const;
-    size_t get_preset_index() const
+    int get_preset_index() const
     {
-        return m_proj_preset_cache.selected().preset_index;
+        size_t res = m_proj_preset_cache.selected().preset_index
+            .value_or(m_data.presets.size()); // index or out of range
+        return static_cast<int>(res);
     }
 
     const Domain::FontProp& get_font_prop() const
@@ -132,7 +134,7 @@ public:
     // True when activ style has same name as some of stored style
     bool exist_stored_style() const
     {
-        return m_proj_preset_cache.selected().preset_index != std::numeric_limits<size_t>::max();
+        return m_proj_preset_cache.selected().preset_index.has_value();
     }
 
     bool is_unique_style_name(const std::string& name) const;
@@ -194,7 +196,7 @@ private:
         Preset preset = {};
 
         // index into m_presets
-        size_t preset_index = std::numeric_limits<size_t>::max();
+        std::optional<size_t> preset_index;
     };
 
     Biz::ProjectScoped<PresetCache> m_proj_preset_cache;

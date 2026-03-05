@@ -223,8 +223,7 @@ TextGizmo::TextGizmo(
     m_dialog->callbacks().skew_ratio_changed = [this, set_optional_f](double value) {
         set_optional_f(m_preset_manager.get_font_prop().skew, value, 1.); // no scale
     };
-    m_dialog->callbacks().surface_distance_changed = [this](double distance_in_mm) { 
-        
+    m_dialog->callbacks().surface_distance_changed = [this](double distance_in_mm) {        
         std::optional<float>& distance = m_preset_manager.get_preset().distance;
         double diff = distance_in_mm - distance.value_or(0.f);
         if (Domain::is_approx(diff, 0., 1e-3))
@@ -309,25 +308,24 @@ TextGizmo::TextGizmo(
         update_volume();
     };
 
-    // ReSet default values for input to remove revert buttons
-    auto set_preset_defaults = [this]() {
+    m_dialog->callbacks().save_preset_as = [this]() {
+        m_preset_manager.save_preset_as();
+        update_volume(); // write preset name into volume
+        // resert revert buttons + add new preset into selection
+    };
+    m_dialog->callbacks().save_preset = [this]() {
+        m_preset_manager.store_presets();
+        // ReSet default values for input to remove revert buttons
         m_proj_ctxs->selected().last_loaded_volume_id = Domain::ObjectID{}; // to force reload default values
         Domain::SelectionId project_id = m_project_interactor.selected_project_id();
-        Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+        const Biz::Scene::SceneInteractor& scene_interactor =
+            m_project_interactor.scene_interactor();
         on_scene_selection_changed(project_id, scene_interactor.object_selection());
-    };
-    m_dialog->callbacks().save_preset_as = [this, set_preset_defaults]() {
-        m_preset_manager.save_preset_as(); 
-        m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); 
-        set_preset_defaults();
-    };
-    m_dialog->callbacks().save_preset = [this, set_preset_defaults]() {
-        m_preset_manager.store_presets();
-        set_preset_defaults();
     };
     m_dialog->callbacks().rename_preset = [this]() {
         m_preset_manager.rename_preset(); 
-        m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); };
+        update_volume(); // write new preset name into volume
+    };
     m_dialog->callbacks().delete_preset = [this]() { 
         if (m_preset_manager.delete_preset()) {
             m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());

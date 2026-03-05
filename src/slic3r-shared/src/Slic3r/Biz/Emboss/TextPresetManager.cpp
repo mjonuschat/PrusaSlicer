@@ -69,17 +69,17 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
     if (use_modification) {
         if (exist_stored_style()) {
             // update stored item
-            m_data.presets[cache.preset_index] = cache.preset;
+            m_data.presets[*cache.preset_index] = cache.preset;
         } else {
             // add new into stored list
             Domain::EmbossStyle& style = cache.preset.emboss_style;
             ::make_unique_name(m_data.presets, style.descriptor.name);
             cache.preset_index = m_data.presets.size();
-            m_data.presets.push_back({style});
+            m_data.presets.emplace_back(Preset{.emboss_style=style});
         }
     }
     if (store_active_index && exist_stored_style()) {
-        m_data.current_index = cache.preset_index;
+        m_data.current_index = *cache.preset_index;
     }
     store_styles_obj(m_cache_path, m_data);
     return true;
@@ -102,7 +102,8 @@ void TextPresetManager::save_preset_as() {
             style.descriptor.name = name;
             ::make_unique_name(m_data.presets, style.descriptor.name);
             cache.preset_index = m_data.presets.size();
-            m_data.presets.push_back({ style });
+            m_data.presets.emplace_back(Preset{.emboss_style=style});
+            m_data.current_index = *cache.preset_index;
             store_presets();
         }
     };
@@ -127,7 +128,7 @@ void TextPresetManager::rename_preset()
             if (!exist_stored_style())
                 return; 
             
-            m_data.presets[cache.preset_index].emboss_style.descriptor.name = name;
+            m_data.presets[*cache.preset_index].emboss_style.descriptor.name = name;
 
             // rename in all projects
             for (Domain::SelectionId project_id : m_proj_preset_cache.get_project_ids()) {
@@ -157,14 +158,15 @@ bool TextPresetManager::delete_preset()
         // fix selected index in all projects data        
         for (Domain::SelectionId project_id: m_proj_preset_cache.get_project_ids()) {
             PresetCache &cache = m_proj_preset_cache.project(project_id);
-            size_t& i = cache.preset_index;
-            if (i == std::numeric_limits<size_t>::max())
+            if (!cache.preset_index.has_value())
                 continue; // not selected
 
-            if (index < i)
+            size_t& i = *cache.preset_index;
+            if (index < i) {
                 --i;
-            else if (index == i)
-                i = std::numeric_limits<size_t>::max();
+            } else if (index == i) {
+                cache.preset_index.reset();
+            }
         }
         m_data.presets.erase(m_data.presets.begin() + index);
     };
@@ -216,7 +218,7 @@ bool TextPresetManager::delete_preset()
 void TextPresetManager::discard_preset_changes()
 {
     if (exist_stored_style()) {
-        if (load_preset(m_proj_preset_cache.selected().preset_index))
+        if (load_preset(*m_proj_preset_cache.selected().preset_index))
             return; // correct reload style
     } else {
         if (load_preset(m_data.current_index))
@@ -291,10 +293,10 @@ bool TextPresetManager::is_unique_style_name(const std::string& name) const
 
 const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
 {
-    size_t preset_index = m_proj_preset_cache.selected().preset_index;
-    if (preset_index >= m_data.presets.size())
+    const std::optional<size_t> preset_index = m_proj_preset_cache.selected().preset_index;
+    if (!preset_index.has_value() || *preset_index >= m_data.presets.size())
         return nullptr;
-    return &m_data.presets[preset_index];
+    return &m_data.presets[*preset_index];
 }
 
 void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
