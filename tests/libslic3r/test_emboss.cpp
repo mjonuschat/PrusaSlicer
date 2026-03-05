@@ -400,7 +400,7 @@ nor why it should choose to collapse on Betelgeuse Seven\".";
     auto font = Emboss::create_font_file(font_path.c_str());
     REQUIRE(font != nullptr);
 
-    Emboss::FontFileWithCache ffwc(std::move(font));
+    Emboss::FontFileWithCache ffwc(Domain::FontDescriptor{}, std::move(font));
     FontProp fp{line_height};
 
     auto was_canceled = []() {

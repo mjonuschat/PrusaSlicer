@@ -37,6 +37,9 @@ TextPresetManager::TextPresetManager(
 
 void TextPresetManager::init()
 {
+    if (!m_data.presets.empty())
+        return; // already initialized
+
     if (!load_styles_obj(m_cache_path, m_data)) {
         // No styles loaded from ini file so use default
         m_data.presets        = create_default_styles(m_font_manager);
@@ -271,13 +274,14 @@ bool TextPresetManager::load_preset(size_t style_index)
 
 bool TextPresetManager::load_preset(const Preset& style)
 {
+    const Domain::FontDescriptor descriptor = style.emboss_style.descriptor;
     std::unique_ptr<const Domain::FontFile> font_ptr = 
-        m_font_manager.open(style.emboss_style.descriptor);
+        m_font_manager.open(descriptor);
     if (font_ptr == nullptr)
         return false;
 
     PresetCache& cache = m_proj_preset_cache.selected();
-    cache.font_file = FontFileWithCache(std::move(font_ptr));
+    //cache.font_file = FontFileWithCache(descriptor, std::move(font_ptr));
     cache.preset       = style; // copy
     cache.preset_index = std::numeric_limits<size_t>::max();
     return true;
@@ -297,6 +301,19 @@ const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
     if (!preset_index.has_value() || *preset_index >= m_data.presets.size())
         return nullptr;
     return &m_data.presets[*preset_index];
+}
+
+FontFileWithCache& TextPresetManager::get_font_file_with_cache()
+{
+    PresetCache& cache = m_proj_preset_cache.selected();
+    FontFileWithCache& ff = cache.font_file;
+    const Domain::FontDescriptor& fd = cache.preset.emboss_style.descriptor;
+    if (ff.has_value() && (ff.descriptor.path == fd.path)) {
+        return ff; // use cache
+    }
+    // create new cache
+    ff = FontFileWithCache(fd, m_font_manager.open(fd));
+    return ff;
 }
 
 void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)

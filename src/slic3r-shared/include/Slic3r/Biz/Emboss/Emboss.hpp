@@ -70,6 +70,8 @@ using Glyphs = std::map<int, Glyph>;
 */
 struct FontFileWithCache
 {
+    Domain::FontDescriptor descriptor;
+
     // Pointer on data of the font file
     std::shared_ptr<const Domain::FontFile> font_file;
 
@@ -80,7 +82,10 @@ struct FontFileWithCache
 
     FontFileWithCache() : font_file(nullptr), cache(nullptr) {}
 
-    explicit FontFileWithCache(std::unique_ptr<const Domain::FontFile> font_file) :
+    explicit FontFileWithCache(
+        const Domain::FontDescriptor& descriptor,
+        std::unique_ptr<const Domain::FontFile> font_file) :
+        descriptor(descriptor),
         font_file(std::move(font_file)),
         cache(std::make_shared<Emboss::Glyphs>())
     {}

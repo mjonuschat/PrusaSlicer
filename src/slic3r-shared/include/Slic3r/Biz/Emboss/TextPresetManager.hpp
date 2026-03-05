@@ -113,16 +113,7 @@ public:
         return get_preset().emboss_style.prop;
     }
 
-    FontFileWithCache& get_font_file_with_cache()
-    {
-        PresetCache& cache = m_proj_preset_cache.selected();
-        FontFileWithCache& ff = cache.font_file;
-        if (ff.has_value())
-            return ff; // use cache
-        // create new cache
-        ff = FontFileWithCache(m_font_manager.open(cache.preset.emboss_style.descriptor));
-        return ff; 
-    }
+    FontFileWithCache& get_font_file_with_cache();
 
     bool has_collections() const
     {

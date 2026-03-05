@@ -418,8 +418,7 @@ void TextGizmo::render_imgui(){
 
 void TextGizmo::on_activated()
 {
-    if (m_preset_manager.get_presets().empty())
-        m_preset_manager.init();
+    m_preset_manager.init();
     ProjectContext& proj_ctx = m_proj_ctxs->selected();
 
     // use_inch = wxGetApp().app_config->get_bool("use_inches");
@@ -821,10 +820,6 @@ Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain:
 
 bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
 {
-    if (m_preset_manager.get_presets().empty())
-        m_preset_manager.init();    
-    m_preset_manager.discard_preset_changes(); // create volume with stored settings
-
     if (!init_create(volume_type))
         return false;    
 
@@ -1086,6 +1081,9 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 
 bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
 {
+    m_preset_manager.init();
+    m_preset_manager.discard_preset_changes(); // create volume with stored settings
+
     Biz::Emboss::TextLines text_lines;
     const std::string& text = _u8L("Embossed text");
     auto issue_fn = create_issue_fn(dialog(), m_proj_ctxs->selected().warning_tooltip, m_project_interactor);
