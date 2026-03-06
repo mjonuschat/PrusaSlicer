@@ -1,8 +1,6 @@
 set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/PlaterScenePresenter.hpp
         src/Slic3r/App/Plater/PlaterScenePresenter.cpp
-        include/Slic3r/App/Plater/ColorsDebugDialog.hpp
-        src/Slic3r/App/Plater/ColorsDebugDialog.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
