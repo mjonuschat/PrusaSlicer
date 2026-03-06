@@ -122,7 +122,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
     auto on_result{
         [this, file_path](Domain::Project&& project)
         {
-            if (project.config_containers().empty())
+            if (project.config_containers().empty() && project.model().objects.empty())
                 return;
 
             Domain::SelectionId project_id;
