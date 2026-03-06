@@ -162,7 +162,7 @@ LayerHeightTexture generate_layer_height_texture(
  * Compute a new height range to be inserted among existing ranges.
  *
  * Determines the Z boundaries of a new range based on the currently selected range.
- * If a range is selected, the new range is placed after it — either in a gap, by splitting
+ * If a range is selected, the new range is placed after it - either in a gap, by splitting
  * an adjacent range, or after the last range. If no range is selected, the new range is
  * placed after all existing ranges, or at the origin if no ranges exist.
  *

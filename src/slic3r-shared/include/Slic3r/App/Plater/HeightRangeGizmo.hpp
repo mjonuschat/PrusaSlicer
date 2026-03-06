@@ -3,6 +3,7 @@
 #include "Slic3r/App/Plater/HeightRangeNodeTag.hpp"
 #include "Slic3r/App/Plater/LayerHeightGizmoHelper.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 #include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/Ray.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
@@ -34,6 +35,7 @@ class PlaterScenePresenter;
 
 class HeightRangeGizmo :
     public Scene::IToolGizmo,
+    public Scene::ISceneChangedListener,
     public Scene::IThumbnailRenderListener,
     public Biz::Scene::ISceneSelectionChangedListener
 {
@@ -70,6 +72,9 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection
     ) override;
+
+    void on_node_added(Scene::Node* node) override;
+    void on_node_removed(Scene::Node* node) override;
 
     void on_thumbnail_render_begin() override;
     void on_thumbnail_render_end() override;

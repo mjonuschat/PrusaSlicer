@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Plater/LayerHeightGizmoHelper.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 #include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
@@ -28,7 +29,10 @@ namespace Slic3r::App::Plater {
 class VariableLayerHeightDialog;
 class PlaterScenePresenter;
 
-class VariableLayerHeightGizmo : public Scene::IToolGizmo, public Scene::IThumbnailRenderListener
+class VariableLayerHeightGizmo :
+    public Scene::IToolGizmo,
+    public Scene::ISceneChangedListener,
+    public Scene::IThumbnailRenderListener
 {
 public:
     struct SelectedObjectData
@@ -69,6 +73,9 @@ public:
 
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    void on_node_added(Scene::Node* node) override;
+    void on_node_removed(Scene::Node* node) override;
 
     void on_thumbnail_render_begin() override;
     void on_thumbnail_render_end() override;

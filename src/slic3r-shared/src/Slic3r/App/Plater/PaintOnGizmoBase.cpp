@@ -14,6 +14,7 @@
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Math.hpp"
 
+#include <algorithm>
 #include <imgui/imgui.h>
 #include <magic_enum/magic_enum_flags.hpp>
 #include <numeric>
@@ -81,6 +82,17 @@ collect_visible_volumes_nodes(const Project& project, Scene::Scene& scene)
             false
         );
     }
+
+    // Also, collect wipe tower nodes so they get hidden during the gizmo.
+    scene.root().query(
+        [](const Scene::Node* n) -> bool
+        {
+            const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+            return tag != nullptr && tag->is_wipe_tower();
+        },
+        visible_volumes_nodes,
+        false
+    );
 
     return visible_volumes_nodes;
 }
@@ -178,6 +190,22 @@ void PaintOnGizmoBase::hide_visible_volumes()
     for (Scene::Node* node : m_visible_volumes_nodes) {
         node->set_enabled(false);
     }
+}
+
+void PaintOnGizmoBase::on_node_added(Scene::Node* node)
+{
+    const SceneNodeTag* tag = node->tag_of_type<SceneNodeTag>();
+    if (tag == nullptr) {
+        return;
+    }
+
+    m_visible_volumes_nodes.push_back(node);
+    node->set_enabled(false);
+}
+
+void PaintOnGizmoBase::on_node_removed(Scene::Node* node)
+{
+    std::erase(m_visible_volumes_nodes, node);
 }
 
 void PaintOnGizmoBase::on_thumbnail_render_begin()
@@ -390,7 +418,8 @@ void PaintOnGizmoBase::on_activated()
     this->update_clipping_plane();
     this->update_overhang_detection();
 
-    scene.add_listener<Scene::IThumbnailRenderListener>(this);
+    scene.add_listener<ISceneChangedListener>(this);
+    scene.add_listener<IThumbnailRenderListener>(this);
 }
 
 void PaintOnGizmoBase::on_deactivated()
@@ -414,7 +443,8 @@ void PaintOnGizmoBase::on_deactivated()
     m_clipping_plane_presenter.deactivate();
     m_sinking_plane_presenter.deactivate();
 
-    scene.remove_listener<Scene::IThumbnailRenderListener>(this);
+    scene.remove_listener<ISceneChangedListener>(this);
+    scene.remove_listener<IThumbnailRenderListener>(this);
 }
 
 void PaintOnGizmoBase::on_project_activated(size_t new_project_id)

@@ -277,6 +277,7 @@ void HeightRangeGizmo::on_activated()
     this->init_main_nodes();
     this->hide_non_selected_volumes();
 
+    scene.add_listener<ISceneChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
 }
 
@@ -298,6 +299,7 @@ void HeightRangeGizmo::on_deactivated()
     m_selected_object_data = {};
     m_non_selected_volumes_nodes.clear();
 
+    scene.remove_listener<ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
 }
 
@@ -336,6 +338,22 @@ void HeightRangeGizmo::on_thumbnail_render_end()
     // After rendering a thumbnail, restore planes.
     m_planes_wrapper.set_enabled(true);
     this->hide_non_selected_volumes();
+}
+
+void HeightRangeGizmo::on_node_added(Node* node)
+{
+    const SceneNodeTag* tag = node->tag_of_type<SceneNodeTag>();
+    if (tag == nullptr) {
+        return;
+    }
+
+    m_non_selected_volumes_nodes.push_back(node);
+    node->set_enabled(false);
+}
+
+void HeightRangeGizmo::on_node_removed(Node* node)
+{
+    std::erase(m_non_selected_volumes_nodes, node);
 }
 
 void HeightRangeGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
