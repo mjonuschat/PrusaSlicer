@@ -123,7 +123,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
     m_config(config),
     m_trafo(trafo)
 {
-    // Compute centering offet to be applied to our meshes so that we work with smaller coordinates
+    // Compute centering offset to be applied to our meshes so that we work with smaller coordinates
     // requiring less bits to represent Clipper coordinates.
 
 	// Snug bounding box of a rotated and scaled object by the 1st instantion, without the instance translation applied.
@@ -140,7 +140,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
 		bbox_center = (z_rot * bbox_center).eval();
 	}
 
-    // Center of the transformed mesh (without translation).
+    // Center of the transformed mesh (without shrinkage, without translation).
     m_center_offset_unscaled = Vec2d(bbox_center.x(), bbox_center.y());
     // Size of the transformed mesh. This bounding may not be snug in XY plane, but it is snug in Z.
     m_size = (BB::sizes(bbox) * (1. / SCALING_FACTOR)).cast<coord_t>();
@@ -151,17 +151,18 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
 
 Domain::Transform3d PrintObject::trafo_centered() const
 {
-    const Domain::Vec2d center_offset_2d(
-        -m_center_offset_unscaled.x(),
-        -m_center_offset_unscaled.y()
+    const Domain::Vec3d& shrinkage_compensation = this->print()->m_shrinkage_compensation;
+
+    // m_center_offset_unscaled already includes the rotation, so only
+    // the shrinkage scale is applied (not the full linear transformation).
+    const Domain::Vec3d center_offset_scaled_by_shrinkage(
+        -shrinkage_compensation.x() * m_center_offset_unscaled.x(),
+        -shrinkage_compensation.y() * m_center_offset_unscaled.y(),
+        0
     );
-    const Domain::Vec2d transformed_center_offset_2d =
-        this->trafo().linear().topLeftCorner<2, 2>() * center_offset_2d;
 
     Domain::Transform3d result = this->trafo();
-    result.pretranslate(
-        Domain::Vec3d(transformed_center_offset_2d.x(), transformed_center_offset_2d.y(), 0)
-    );
+    result.pretranslate(center_offset_scaled_by_shrinkage);
     return result;
 }
 
