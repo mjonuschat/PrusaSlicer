@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
@@ -249,16 +250,6 @@ static bool verbose_gcode()
     return s == "1" || s == "on" || s == "yes";
 }
 
-HwPrinterConfig create_dummy_hw_config(uint8_t tool_count)
-{
-    using Domain::Preset::HwToolConfig, Domain::Preset::HwToolConfigs;
-    return HwPrinterConfig{
-        .technology = Domain::PrinterTechnology::FFF,
-        .tool_count = tool_count,
-        .tools      = HwToolConfigs(tool_count, HwToolConfig{})
-    };
-}
-
 void init_print(
     std::vector<TriangleMesh>&& meshes,
     Slic3r::Print& print,
@@ -308,7 +299,7 @@ void init_print(
 
     const Biz::Print::SerializedConfig serialized_config{
         .json = Biz::beautify_json(Domain::as_boxes(config_in), 2),
-        .ini = Biz::serialize_as_legacy_config(config_in)
+        .ini = Biz::serialize_as_legacy_config(config_in, config_in.hw_config)
     };
     Domain::Bed model_bed;
     Domain::BedInstance bed_instance{model_bed};
@@ -322,7 +313,7 @@ void init_print(
         config,
         bed_instance,
         serialized_config,
-        create_dummy_hw_config(config.tool.size())
+        config.hw_config
     );
     print.validate();
     print.set_status_silent();

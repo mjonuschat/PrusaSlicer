@@ -173,6 +173,12 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         return _u8L("The value needs to be the same for all extruders.");
     case ErrorCode::PlaceholderParser:
         return _u8L("Placeholder parser substitution failed.");
+    case ErrorCode::MissingHwConfigNozzleDiameter:
+        return _u8L("A tool configuration is missing nozzle diameter in hardware config.");
+    case ErrorCode::NoHwConfigTools:
+        return _u8L("Invalid hardware configuration, there are no tools");
+    case ErrorCode::HwConfigLessMaterialsThanTools:
+        return _u8L("Material count is less than tool count");
     case ErrorCode::FailedToParseCustomParameters:
         return _u8L("Unable to parse custom parameters.");
     case ErrorCode::UnsupportedOutputFormat:

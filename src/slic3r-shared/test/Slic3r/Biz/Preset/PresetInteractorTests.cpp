@@ -159,7 +159,7 @@ struct BaseProjectInteractorFixture
 {
     Slic3r::Domain::Workbench workbench;
     Slic3r::App::Platform::StdMainThreadDispatcher main_thread_dispatcher;
-    Slic3r::Tests::MockThumbnailImageGenerator thumbnail_image_generator;
+    Slic3r::Test::MockThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Biz::ProjectInteractor project_interactor{workbench, main_thread_dispatcher, thumbnail_image_generator};
     TestPresetDialogManager preset_dialog_manager;
 

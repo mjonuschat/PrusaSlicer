@@ -125,6 +125,7 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
     WHEN("G-code block 1 with two extruders") {
         config.filament.emplace_back();
         config.tool.emplace_back();
+        config.hw_config = Test::create_dummy_hw_config(2);
         config.filament[0].items.opt("cooling").set(true);
         config.filament[1].items.opt("cooling").set(false);
         config.filament[0].items.opt("fan_below_layer_time").set(int(print_time2 + 1.));

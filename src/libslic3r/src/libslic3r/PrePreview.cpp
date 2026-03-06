@@ -544,7 +544,7 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     if (print.custom_gcode()) {
         result.custom_gcode_per_print_z = print.custom_gcode()->get().gcodes;
     }
-    result.extruders_count = print.config().full_config().tools_count();
+    result.extruders_count = print.config().hw_config().material_slot_count();
 
     auto* basic_print_stats{
         std::get_if<Domain::BasicPrintStatistics>(&result.print_statistics)

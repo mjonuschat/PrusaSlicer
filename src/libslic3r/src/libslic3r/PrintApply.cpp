@@ -174,18 +174,16 @@ public:
     LayerRanges() = default;
     LayerRanges(
         const Domain::LayerConfigRanges& in,
-        const std::size_t tools_count,
-        const std::size_t filaments_count
+        const std::size_t material_slot_count
     )
     {
-        this->assign(in, tools_count, filaments_count);
+        this->assign(in, material_slot_count);
     }
 
     // Convert input config ranges into continuous non-overlapping sorted vector of intervals and their configs.
     void assign(
         const Domain::LayerConfigRanges& in,
-        const std::size_t tools_count,
-        const std::size_t filaments_count
+        const std::size_t material_slot_count
     )
     {
         m_ranges.clear();
@@ -201,7 +199,7 @@ public:
                 }
                 if (range.first.second > last_z + EPSILON) {
                     const PartialVolumeConfigFDMPtr cfg{std::make_shared<
-                        const PartialVolumeConfigFDM>(range.second, tools_count, filaments_count)};
+                        const PartialVolumeConfigFDM>(range.second, material_slot_count)};
                     m_ranges.push_back({ Domain::LayerHeightRange(last_z, range.first.second), cfg });
                     last_z = range.first.second;
                 }
@@ -501,8 +499,7 @@ PrintRegionConfigView create_mm_painted_region_config(
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
         volume_settings,
-        parent_config.tools_count(),
-        parent_config.filaments_count()
+        parent_config.hw_config().material_slot_count()
     };
     painted_region_cfg.add_override(
         std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
@@ -521,8 +518,7 @@ PrintRegionConfigView create_fuzzy_skin_painted_region_config(
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
         volume_settings,
-        parent_config.tools_count(),
-        parent_config.filaments_count()
+        parent_config.hw_config().material_slot_count()
     };
     painted_region_cfg.add_override(
         std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
@@ -588,8 +584,7 @@ generate_print_object_regions(
                         }
                         const auto squashed_settings{prepare_slicing_volume_input(
                             volume.volume_settings,
-                            new_full_config->tools_count(),
-                            new_full_config->filaments_count()
+                            new_full_config->hw_config().material_slot_count()
                         )};
                         if (!squashed_settings.has_value()) {
                             return tl::unexpected{squashed_settings.error()};
@@ -625,8 +620,7 @@ generate_print_object_regions(
                                     const auto squashed_settings{
                                         prepare_slicing_volume_input(
                                             volume.volume_settings,
-                                            new_full_config->tools_count(),
-                                            new_full_config->filaments_count()
+                                            new_full_config->hw_config().material_slot_count()
                                         )
                                     };
                                     if (!squashed_settings.has_value()) {
@@ -1051,8 +1045,7 @@ tl::expected<PrintObjectsSyncResult, Errors> sync_print_objects(
 
         const auto object_settings{prepare_slicing_object_input(
             model_object->object_settings,
-            new_full_config->tools_count(),
-            new_full_config->filaments_count()
+            new_full_config->hw_config().material_slot_count()
         )};
         if (!object_settings.has_value()) {
             return tl::unexpected{object_settings.error()};
@@ -1116,7 +1109,7 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
         const auto new_regions{generate_print_object_regions(
             nullptr,
             print_object.model_object()->volumes,
-            LayerRanges(print_object.model_object()->layer_config_ranges, new_full_config->tools_count(), new_full_config->filaments_count()),
+            LayerRanges(print_object.model_object()->layer_config_ranges, new_full_config->hw_config().material_slot_count()),
             print_object.config().object_settings(),
             new_full_config,
             print_object.trafo(),
@@ -1332,11 +1325,86 @@ bool InvalidatedSteps::empty() const {
     return true;
 }
 
+InvalidatedSteps sync_hw_config(
+    const PrintObjectPtrs& print_objects,
+    const Domain::Preset::HwPrinterConfig& old_config,
+    const Domain::Preset::HwPrinterConfig& new_config
+)
+{
+    bool gcode_export_invalidated{false};
+    bool slicing_invalidated{false};
+
+    if (new_config.tools.size() != old_config.tools.size()) {
+        slicing_invalidated = true;
+    } else {
+        ASSERT(new_config.tools.size() == old_config.tools.size());
+        for (std::size_t extruder_index{}; extruder_index < new_config.tools.size();
+             extruder_index++)
+        {
+            const Domain::Preset::HwToolConfig new_tool{new_config.tools.at(extruder_index)};
+            const Domain::Preset::HwToolConfig old_tool{old_config.tools.at(extruder_index)};
+            const bool old_tool_high_flow{
+                Domain::Preset::get_feature<bool>(old_tool.features, "nozzle_high_flow")
+                    .value_or(false)
+            };
+            const bool new_tool_high_flow{
+                Domain::Preset::get_feature<bool>(new_tool.features, "nozzle_high_flow")
+                    .value_or(false)
+            };
+            if (old_tool_high_flow != new_tool_high_flow) {
+                gcode_export_invalidated = true;
+            }
+
+            const std::optional<double> old_tool_diameter{
+                Domain::Preset::get_feature<double>(old_tool.features, "nozzle_diameter")
+            };
+            const std::optional<double> new_tool_diameter{
+                Domain::Preset::get_feature<double>(new_tool.features, "nozzle_diameter")
+            };
+
+            if ((!old_tool_diameter || !new_tool_diameter)
+                || !Domain::fuzzy_compare(*old_tool_diameter, *new_tool_diameter))
+            {
+                slicing_invalidated = true;
+                break;
+            }
+        }
+    }
+
+    std::vector<SlicingSync::Step> invalid_steps;
+    if (gcode_export_invalidated) {
+        const std::vector<SlicingSync::Step> steps{SlicingSync::propagate(psGCodeExport)};
+        invalid_steps.insert(invalid_steps.end(), steps.begin(), steps.end());
+    }
+    if (slicing_invalidated) {
+        const std::vector<SlicingSync::Step> steps{SlicingSync::propagate(posSlice)};
+        invalid_steps.insert(invalid_steps.end(), steps.begin(), steps.end());
+    }
+
+    InvalidatedSteps result;
+    for (const auto& step : invalid_steps) {
+        std::visit(
+            Domain::overloaded{
+                [&](const PrintStep& step) { std::get<PrintSteps>(result.print).insert(step); },
+                [&](const PrintObjectStep& step)
+                {
+                    for (PrintObject* object : print_objects) {
+                        auto& object_steps{std::get<PrintObjectSteps>(result.object[object])};
+                        object_steps.insert(step);
+                    }
+                },
+            },
+            step
+        );
+    }
+
+    return result;
+}
+
 Biz::Print::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
-    const Domain::Preset::HwPrinterConfig& hw_config,
     const Domain::ModelWipeTower& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     const std::vector<unsigned>& extruder_candidates
@@ -1354,11 +1422,17 @@ Biz::Print::ApplyStatus::Status Print::apply(
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
 
-    const size_t num_extruders{new_print_config.get<std::vector<double>>("nozzle_diameter").size()};
+    const size_t num_extruders{new_print_config.hw_config().material_slot_count()};
     const bool num_extruders_changed{
-        m_config.get<std::vector<double>>("nozzle_diameter").size()
+        m_config.hw_config().material_slot_count()
         != num_extruders
     };
+
+    const InvalidatedSteps hw_config_invalidated_steps{sync_hw_config(
+        m_objects,
+        m_config.hw_config(),
+        new_print_config.hw_config()
+    )};
 
     if (model.id() != m_model.id()) {
         m_model.copy_id(model);
@@ -1391,7 +1465,6 @@ Biz::Print::ApplyStatus::Status Print::apply(
 
     m_extruder_candidates = extruder_candidates;
     m_shrinkage_compensation = shrinkage_compensation;
-    m_hw_config         = hw_config;
     m_serialized_config = serialized_config;
     m_config = new_print_config;
 
@@ -1451,7 +1524,8 @@ Biz::Print::ApplyStatus::Status Print::apply(
     }
 
     const InvalidatedSteps invalidated_steps{SlicingSync::merge(
-        {wipe_tower_invalidated_steps,
+        {hw_config_invalidated_steps,
+         wipe_tower_invalidated_steps,
          custom_gcode_invalidated_steps,
          model_sync_result->invalidated_steps,
          changed_objects_invalidated_steps,

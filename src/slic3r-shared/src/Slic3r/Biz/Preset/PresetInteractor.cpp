@@ -1471,6 +1471,7 @@ bool PresetInteractor::select_printer_tool_item(size_t tool_index, const std::st
                 );
             }
         );
+        invoke_slicing_input_changed();
     }
 
     return successfully_changed;

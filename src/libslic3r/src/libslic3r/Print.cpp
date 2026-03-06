@@ -265,7 +265,7 @@ Biz::Print::ApplyStatus::Status Print::update(
             return;
         }
 
-        const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates)};
+        const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates, hw_config)};
         if (!slicing_input.has_value()) {
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
             return;
@@ -275,7 +275,6 @@ Biz::Print::ApplyStatus::Status Print::update(
             model,
             slicing_input.value(),
             serialized_config,
-            hw_config,
             bed.wipe_tower,
             bed.custom_gcode,
             extruder_candidates
@@ -340,7 +339,7 @@ std::vector<unsigned int> Print::support_material_extruders() const
 {
     std::vector<unsigned int> extruders;
     bool support_uses_current_extruder = false;
-    auto num_extruders = (unsigned int)m_config.get<std::vector<double>>("nozzle_diameter").size();
+    auto num_extruders = (unsigned int)m_config.hw_config().material_slot_count();
 
     for (PrintObject *object : m_objects) {
         if (object->has_support_material()) {
@@ -379,7 +378,7 @@ std::vector<unsigned int> Print::extruders() const
     // The wipe tower extruder can also be set. When the wipe tower is enabled and it will be generated,
     // append its extruder into the list too.
     if (can_have_wipe_tower() && config().get<int>("wipe_tower_extruder") != 0 && extruders.size() > 1) {
-        assert(config().get<int>("wipe_tower_extruder") > 0 && config().get<int>("wipe_tower_extruder") < int(config().get<std::vector<double>>("nozzle_diameter").size()));
+        assert(config().get<int>("wipe_tower_extruder") > 0 && config().get<int>("wipe_tower_extruder") < int(config().hw_config().material_slot_count()));
         extruders.emplace_back(config().get<int>("wipe_tower_extruder") - 1); // the config value is 1-based
         sort_remove_duplicates(extruders);
     }
@@ -397,9 +396,13 @@ unsigned int Print::num_object_instances() const
 
 double Print::max_allowed_layer_height() const
 {
-    double nozzle_diameter_max = 0.;
-    for (unsigned int extruder_id : this->extruders())
-        nozzle_diameter_max = std::max(nozzle_diameter_max, m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id));
+    double nozzle_diameter_max{};
+    for (unsigned int extruder_id : this->extruders()) {
+        const double nozzle_diameter{
+            Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), extruder_id)
+        };
+        nozzle_diameter_max = std::max(nozzle_diameter_max, nozzle_diameter);
+    }
     return nozzle_diameter_max;
 }
 
@@ -449,12 +452,12 @@ Biz::Print::ValidationResult Print::validate() const
 
     std::vector<unsigned int> extruders = this->extruders();
 
-    const auto tool_count{
-        static_cast<unsigned>(config().get<std::vector<double>>("nozzle_diameter").size())
+    const std::size_t material_slot_count{
+        config().hw_config().material_slot_count()
     };
     for (const unsigned extruder : extruders) {
         // Invalid extruders should be hard rejected right away, this is just a sanity check.
-        ASSERT(0 <= extruder && extruder <= tool_count);
+        ASSERT(0 <= extruder && extruder <= material_slot_count);
     }
 
     if (m_config.get<int>("bed_temperature_extruder") == 0) {
@@ -633,14 +636,14 @@ DONE:;
         // Make sure all extruders use same diameter filament and have the same nozzle diameter
         // EPSILON comparison is used for nozzles and 10 % tolerance is used for filaments
         double first_nozzle_diam =
-            m_config.get<std::vector<double>>("nozzle_diameter").at(extruders.front());
+            Slicing::get_nozzle_diameter(m_config.hw_config(), extruders.front());
         double first_filament_diam =
             m_config.get<std::vector<double>>("filament_diameter").at(extruders.front());
 
         bool nozzle_diameter_warning_emitted = true;
         for (const auto& extruder_idx : extruders) {
             double nozzle_diam =
-                m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_idx);
+                Slicing::get_nozzle_diameter(m_config.hw_config(), extruder_idx);
             double filament_diam =
                 m_config.get<std::vector<double>>("filament_diameter").at(extruder_idx);
             if (nozzle_diameter_warning_emitted
@@ -654,7 +657,7 @@ DONE:;
                 errors.push_back(
                     Error{
                         ErrorCode::WipeTowerDifferentExtruderDiameters,
-                        {"nozzle_diameter", "filament_diameter"}
+                        {"filament_diameter"}
                     }
                 );
             }
@@ -771,7 +774,7 @@ DONE:;
         double min_nozzle_diameter = std::numeric_limits<double>::max();
         double max_nozzle_diameter = 0;
         for (unsigned int extruder_id : extruders) {
-            double dmr = m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
+            double dmr = Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), extruder_id);
             min_nozzle_diameter = std::min(min_nozzle_diameter, dmr);
             max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
         }
@@ -799,17 +802,17 @@ DONE:;
             return true;
         };
 
-        auto validate_extrusion_width_vector = [](const Domain::ConfigView& config,
-                                            const char* opt_key,
-                                            double layer_height,
-                                            Error& error) -> bool
+        auto validate_extrusion_width_vector = [](const std::vector<double>& nozzle_diameters,
+                                                  const Domain::ConfigView& config,
+                                                  const char* opt_key,
+                                                  double layer_height,
+                                                  Error& error) -> bool
         {
-            const auto nozzle_diameter{config.get<std::vector<double>>("nozzle_diameter")};
             const auto extrusion_width =
                 config.get<std::vector<Domain::FloatOrPercentage>>(opt_key);
 
-            for (std::size_t tool_index{}; tool_index < nozzle_diameter.size(); ++tool_index) {
-                double diameter{nozzle_diameter[tool_index]};
+            for (std::size_t tool_index{}; tool_index < nozzle_diameters.size(); ++tool_index) {
+                double diameter{nozzle_diameters[tool_index]};
                 double width{extrusion_width[tool_index].get_abs_value(diameter)};
 
                 if (width == 0) {
@@ -938,7 +941,7 @@ DONE:;
                         object->config().get<int>("support_material_extruder") - 1;
                 first_layer_min_nozzle_diameter = (first_layer_extruder == size_t(-1)) ?
                     min_nozzle_diameter :
-                    m_config.get<std::vector<double>>("nozzle_diameter").at(first_layer_extruder);
+                    Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), first_layer_extruder);
             } else {
                 // if we don't have raft layers, any nozzle diameter is potentially used in first layer
                 first_layer_min_nozzle_diameter = min_nozzle_diameter;
@@ -954,9 +957,19 @@ DONE:;
                 errors.push_back(Error{ErrorCode::LayerHeightTooLarge, {"layer_height"}});
             }
 
+            const std::vector<double> nozzle_diameters{
+                Biz::Slicing::get_nozzle_diameters(config().hw_config())
+            };
+
             // Validate extrusion widths.
             Error error;
-            if (!validate_extrusion_width_vector(object->config(), "extrusion_width", layer_height, error))
+            if (!validate_extrusion_width_vector(
+                    nozzle_diameters,
+                    object->config(),
+                    "extrusion_width",
+                    layer_height,
+                    error
+                ))
             {
                 errors.push_back(error);
             }
@@ -978,7 +991,14 @@ DONE:;
                   "top_infill_extrusion_width"})
             {
                 for (const PrintRegion& region : object->all_regions()) {
-                    if (!validate_extrusion_width_vector(region.config(), opt_key, layer_height, error)) {
+                    if (!validate_extrusion_width_vector(
+                            nozzle_diameters,
+                            region.config(),
+                            opt_key,
+                            layer_height,
+                            error
+                        ))
+                    {
                         errors.push_back(error);
                     }
                 }
@@ -1051,7 +1071,7 @@ Flow Print::brim_flow() const
     return Flow::new_from_config_width(
         frPerimeter,
 		width,
-        (float)m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id),
+        (float)Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), extruder_id),
 		(float)this->skirt_first_layer_height());
 }
 
@@ -1082,7 +1102,7 @@ Flow Print::skirt_flow() const
     return Flow::new_from_config_width(
         frPerimeter,
 		width,
-		(float)m_config.get<std::vector<double>>("nozzle_diameter").at(support_material_extruder_idx),
+		(float)Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), support_material_extruder_idx),
 		(float)this->skirt_first_layer_height());
 }
 
@@ -1701,7 +1721,7 @@ bool Print::can_have_wipe_tower() const
 {
     return !m_config.get<bool>("spiral_vase")
         && m_config.get<bool>("wipe_tower")
-        && m_config.full_config().filaments_count() > 1
+        && m_config.hw_config().material_slot_count() > 1
         && m_extruder_candidates.size() > 1;
 }
 
@@ -1788,7 +1808,7 @@ std::optional<WipeTowerData> Print::generate_wipe_tower_data()
     );
 
     // Set the extruder & material properties at the wipe tower object.
-    for (size_t i = 0; i < m_config.get<std::vector<double>>("nozzle_diameter").size(); ++ i)
+    for (size_t i = 0; i < m_config.hw_config().material_slot_count(); ++ i)
         wipe_tower.set_extruder(i, m_config);
 
     result.priming = std::make_unique<std::vector<WipeTower::ToolChangeResult>>(

@@ -15,6 +15,7 @@
 
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 
 using namespace Slic3r;
 using Slic3r::Domain::Point;
@@ -93,8 +94,17 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
                 }}
             };
 
+            const Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(1)};
             Domain::ConfigPack config;
-            Slic3rLegacy::store_3mf_legacy(test_file.c_str(), &src_model, config, false, src_wipe_towers, src_custom_gcodes);
+            Slic3rLegacy::store_3mf_legacy(
+                test_file.c_str(),
+                &src_model,
+                config,
+                hw_config,
+                false,
+                src_wipe_towers,
+                src_custom_gcodes
+            );
 
             // load back the model from the 3mf file
             Domain::Model dst_model;

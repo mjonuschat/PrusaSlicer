@@ -47,14 +47,12 @@ MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
 }
 
 namespace {
-ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const std::size_t filaments_count) {
-    ASSERT(tools_count == filaments_count || tools_count == 1);
+ConfigLocationSizes get_fdm_location_sizes(const std::size_t material_slot_count) {
     return {
         {FDMConfigLocation::Print, std::nullopt},
-        //{FDMConfigLocation::Tool, tools_count},
-        {FDMConfigLocation::Tool, filaments_count},
+        {FDMConfigLocation::Tool, material_slot_count},
         {FDMConfigLocation::Printer, std::nullopt},
-        {FDMConfigLocation::Filament, filaments_count},
+        {FDMConfigLocation::Filament, material_slot_count},
         {FDMConfigLocation::Project, std::nullopt},
         {FDMConfigLocation::Object, std::nullopt},
         {FDMConfigLocation::Volume, std::nullopt}
@@ -64,36 +62,34 @@ ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const 
 
 FullConfigFDM::FullConfigFDM(
     const ConfigPackFDM& config_pack,
-    const std::vector<unsigned>& extruder_candidates
+    const std::vector<unsigned>& extruder_candidates,
+    const Preset::HwPrinterConfig& hw_config
 ) :
     FullConfig{
         as_boxes(config_pack),
         extruder_candidates,
-        get_fdm_location_sizes(config_pack.tool.size(), config_pack.filament.size())
+        get_fdm_location_sizes(hw_config.material_slot_count())
     },
-    m_tools_count{config_pack.tool.size()},
-    m_filaments_count{config_pack.filament.size()}
+    m_hw_config{hw_config}
 {}
 
 PartialObjectConfigFDM::PartialObjectConfigFDM(
     const ObjectSettings& object_settings,
-    const std::size_t tools_count,
-    const std::size_t filaments_count
+    const std::size_t material_slot_count
 ) :
     PartialConfig{
         {object_settings},
-        get_fdm_location_sizes(tools_count, filaments_count)
+        get_fdm_location_sizes(material_slot_count)
     }
 {}
 
 PartialVolumeConfigFDM::PartialVolumeConfigFDM(
     const VolumeSettings& volume_settings,
-    const std::size_t tools_count,
-    const std::size_t filaments_count
+    const std::size_t material_slot_count
 ) :
     PartialConfig{
         {volume_settings},
-        get_fdm_location_sizes(tools_count, filaments_count)
+        get_fdm_location_sizes(material_slot_count)
     }
 {}
 

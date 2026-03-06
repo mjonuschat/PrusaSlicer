@@ -179,9 +179,8 @@ void test_slicing(std::initializer_list<TestMesh> meshes, TestConfig& config, co
 }
 
 TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
-    TestConfig config{4};
+    TestConfig config{4, 0.6};
 
-    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
     config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
@@ -205,9 +204,8 @@ TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
 }
 
 TEST_CASE("Slicing with retraction and lifting with travel_speed_z=10", "[retraction]") {
-    TestConfig config{4};
+    TestConfig config{4, 0.6};
 
-    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
     config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
@@ -353,9 +351,8 @@ bool values_are_in_range(const std::vector<double>& values, double from, double 
 
 TEST_CASE("Lift above/bellow layers", "[retraction]") {
 
-    TestConfig config{4};
+    TestConfig config{4, 0.6};
 
-    config.print.items.opt("nozzle_diameter").set(0.6);
     for (auto& tool : config.tool) {
         tool.overrides.set("retract_lift", 3.0);
         tool.overrides.set("retract_lift_above", 0.0);

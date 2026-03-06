@@ -13,6 +13,7 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/HwConfigUtils.hpp"
 
 namespace Slic3r {
 
@@ -65,15 +66,26 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
 
     // Get the configured nozzle_diameter for the extruder associated to the flow role requested.
     // Here this->extruder(role) is > 0.
-    auto nozzle_diameter = float(print_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id));
+    auto nozzle_diameter = float(Biz::Slicing::get_nozzle_diameter(print_config.hw_config(), extruder_id));
     return Flow::new_from_config_width(role, config_width, nozzle_diameter, float(layer_height));
 }
 
-double PrintRegion::nozzle_dmr_avg(const PrintConfigView &print_config) const
+double PrintRegion::nozzle_dmr_avg(const PrintConfigView& print_config) const
 {
-    return (print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("perimeter_extruder")    - 1) + 
-            print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("infill_extruder")       - 1) + 
-            print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("solid_infill_extruder") - 1)) / 3.;
+    using Biz::Slicing::get_nozzle_diameter;
+    return (get_nozzle_diameter(
+                print_config.hw_config(),
+                m_config.get<int>("perimeter_extruder") - 1
+            )
+            + get_nozzle_diameter(
+                print_config.hw_config(),
+                m_config.get<int>("infill_extruder") - 1
+            )
+            + get_nozzle_diameter(
+                print_config.hw_config(),
+                m_config.get<int>("solid_infill_extruder") - 1
+            ))
+        / 3.;
 }
 
 double PrintRegion::bridging_height_avg(const PrintConfigView &print_config) const
@@ -86,13 +98,13 @@ double PrintRegion::bridging_height_avg(const PrintConfigView &print_config) con
 }
 
 void PrintRegion::collect_object_printing_extruders(
-    const Domain::ConfigView& config,
+    const PrintRegionConfigView& config,
     const bool has_brim,
     std::vector<unsigned int>& object_extruders
 )
 {
     // These checks reflect the same logic used in the GUI for enabling/disabling extruder selection fields.
-    auto num_extruders    = (int) config.get<std::vector<double>>("nozzle_diameter").size();
+    auto num_extruders    = (int) config.hw_config().material_slot_count();
     auto emplace_extruder = [num_extruders, &object_extruders](int extruder_id)
     {
         int i = std::max(0, extruder_id - 1);
@@ -114,11 +126,16 @@ void PrintRegion::collect_object_printing_extruders(
         emplace_extruder(solid_infill_extruder);
 }
 
+double PrintRegion::nozzle_diameter(FlowRole role) const
+{
+    return Biz::Slicing::get_nozzle_diameter(m_config.hw_config(), extruder(role) - 1);
+}
+
 void PrintRegion::collect_object_printing_extruders(const Print &print, std::vector<unsigned int> &object_extruders) const
 {
     // PrintRegion, if used by some PrintObject, shall have all the extruders set to an existing printer extruder.
     // If not, then there must be something wrong with the Print::apply() function.
-    auto num_extruders = int(print.config().get<std::vector<double>>("nozzle_diameter").size());
+    auto num_extruders = int(print.config().hw_config().material_slot_count());
     ASSERT(this->config().get<int>("perimeter_extruder") <= num_extruders);
     ASSERT(this->config().get<int>("infill_extruder") <= num_extruders);
     ASSERT(this->config().get<int>("solid_infill_extruder") <= num_extruders);

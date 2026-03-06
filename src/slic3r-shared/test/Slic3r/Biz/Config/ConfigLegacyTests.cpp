@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/nowide/filesystem.hpp"
 #include "Slic3r/Assert.hpp"
@@ -16,7 +17,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include "miniz.h"
 
-namespace Slic3r::Tests {
+namespace Slic3r::Test {
 
 namespace fs = boost::filesystem;
 using Domain::PrinterTechnology;
@@ -73,9 +74,13 @@ static std::vector<std::string> roundtrip_and_get_diff_lines(const fs::path& fil
 {
     Domain::ConfigPack cfg = Biz::load_config_from_legacy_file(filename.string());
 
+    // HwConfig cannot be loaded just from ini, hence the nozzle diameters are lost.
+    // Mock the hw config, to mirror the ini.
+    Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(5, 0.4)};
+
     // Serialize the config again in the legacy format.
     std::stringstream ss;
-    std::visit([&](auto&& cfg) { ss << Biz::serialize_as_legacy_config(cfg); }, cfg);
+    std::visit([&](auto&& cfg) { ss << Biz::serialize_as_legacy_config(cfg, hw_config); }, cfg);
     ss.seekg(0);
 
     boost::nowide::ifstream original_stream{filename};
@@ -363,12 +368,31 @@ TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
-        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(
+            test_file_path.string().c_str(),
+            cfg,
+            preset_metadata,
+            &model,
+            true,
+            prusaslicer_generator_version,
+            wipe_towers,
+            custom_gcodes
+        );
+
+        // Hw printer config is NOT loaded, this mock config must match, what is in the 3mf.
+        const Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(5, 0.4)};
 
         TempFile tmp_file;
         const std::string file_path{debug_files ? "new_fdm.3mf" : tmp_file.get_path()};
-        Slic3rLegacy::store_3mf_legacy(file_path.c_str(), &model, std::get<Domain::ConfigPackFDM>(cfg),
-            false, wipe_towers, custom_gcodes);
+        Slic3rLegacy::store_3mf_legacy(
+            file_path.c_str(),
+            &model,
+            std::get<Domain::ConfigPackFDM>(cfg),
+            hw_config,
+            false,
+            wipe_towers,
+            custom_gcodes
+        );
 
         const Zip original_3mf{test_file_path.string().c_str()};
         const Zip new_3mf{file_path.c_str()};
@@ -388,10 +412,20 @@ TEST_CASE("Legacy SLA 3MF roundtrip", "[config]")
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
         Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
 
+        // Hw printer config is NOT loaded, this mock config must match, what is in the 3mf.
+        const Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(5, 0.4)};
+
         TempFile tmp_file;
         const std::string file_path{debug_files ? "new_sla.3mf" : tmp_file.get_path()};
-        Slic3rLegacy::store_3mf_legacy(file_path.c_str(), &model, std::get<Domain::ConfigPackSLA>(cfg),
-            false, wipe_towers, custom_gcodes);
+        Slic3rLegacy::store_3mf_legacy(
+            file_path.c_str(),
+            &model,
+            std::get<Domain::ConfigPackSLA>(cfg),
+            hw_config,
+            false,
+            wipe_towers,
+            custom_gcodes
+        );
 
         const Zip original_3mf{test_file_path.string().c_str()};
         const Zip new_3mf{file_path.c_str()};

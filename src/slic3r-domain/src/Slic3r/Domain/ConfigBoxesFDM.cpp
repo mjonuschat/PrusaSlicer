@@ -2708,18 +2708,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->height = 13;
     def->init_fn = init_with("");
 
-    def = defs.add("nozzle_diameter", typeid(double));
-    def->location = Print;
-    def->overrides_in = { Tool };
-    def->label = L("Nozzle diameter");
-    def->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Nozzle;
-    def->category = ConfigItemDef::Category::Print_ExtrusionRetraction;
-    def->order = 0;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->tooltip = L("This is the diameter of your extruder nozzle (for example: 0.5, 0.35 etc.)");
-    def->sidetext = L("mm");
-    def->init_fn = init_with(0.4);
-
     def = defs.add("only_retract_when_crossing_perimeters", typeid(bool));
     def->location = Print;
     def->require_compatibility_rule = true;
@@ -3163,17 +3151,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, PrusaSlicer detects obstacles along the travel path and makes the slope steeper "
                      "in case an obstacle might be hit during the initial phase of the travel.");
-    def->init_fn = init_with(false);
-
-    def = defs.add("nozzle_high_flow", typeid(bool));
-    def->location = Print;
-    def->overrides_in = { Tool };
-    def->label = L("High flow nozzle");
-    def->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Nozzle;
-    def->category = ConfigItemDef::Category::Print_ExtrusionRetraction;
-    def->order = 2;
-    def->gui_type = ConfigItemDef::GUIType::checkbox;
-    def->tooltip = L("High flow nozzles allow higher print speeds.");
     def->init_fn = init_with(false);
 
     def = defs.add("retract_lift", typeid(double));

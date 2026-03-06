@@ -19,7 +19,7 @@ target_include_directories(test_common INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_include_directories(test_common INTERFACE "$<TARGET_PROPERTY:libslic3r,SOURCE_DIR>/src")
 
 target_compile_definitions(test_common INTERFACE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)" CATCH_CONFIG_FAST_COMPILE)
-target_link_libraries(test_common INTERFACE Catch2::Catch2WithMain)
+target_link_libraries(test_common INTERFACE slic3r-test-utils Catch2::Catch2WithMain)
 
 if (APPLE)
     target_link_libraries(test_common INTERFACE "-liconv -framework IOKit" "-framework CoreFoundation" -lc++)

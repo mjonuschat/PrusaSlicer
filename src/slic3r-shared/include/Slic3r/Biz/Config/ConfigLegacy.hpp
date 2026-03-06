@@ -5,6 +5,7 @@
 
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 namespace Slic3rLegacy { class DynamicPrintConfig; }
 
@@ -46,7 +47,9 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg, Do
 Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box);
 
 // Export the config in the old format.
-std::string serialize_as_legacy_config(const Domain::ConfigPackFDM&);
-std::string serialize_as_legacy_config(const Domain::ConfigPackSLA&);
+std::string serialize_as_legacy_config(
+    const Domain::ConfigPack& config_pack,
+    const Domain::Preset::HwPrinterConfig& hw_config
+);
 
 } // namespace Slic3r::Biz

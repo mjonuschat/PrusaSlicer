@@ -13,6 +13,7 @@ using Domain::PartialVolumeConfigFDM;
 using Domain::PartialVolumeConfigFDMPtr;
 using Domain::VolumeSettings;
 using Biz::Slicing::Error;
+using Biz::Slicing::ErrorCode;
 
 
 namespace {
@@ -35,31 +36,50 @@ void set_extruders(PartialConfig& partial_config, const auto& settings)
 
 tl::expected<FullConfigFDMPtr, std::vector<Error>> prepare_slicing_input(
     const ConfigPackFDM& config_pack,
-    const std::vector<unsigned>& extruder_candidates
+    const std::vector<unsigned>& extruder_candidates,
+    const Domain::Preset::HwPrinterConfig& hw_config
 )
 {
-    FullConfigFDM result{config_pack, extruder_candidates};
+    std::vector<Error> errors;
+    if (hw_config.tools.size() == 0) {
+        errors.push_back(Error{ErrorCode::NoHwConfigTools});
+    }
+
+    if (hw_config.material_slot_count() < hw_config.tools.size()) {
+        errors.push_back(Error{ErrorCode::HwConfigLessMaterialsThanTools});
+    }
+
+    for (const Domain::Preset::HwToolConfig& tool : hw_config.tools) {
+        if (!tool.features.contains("nozzle_diameter")) {
+            errors.push_back(Error{ErrorCode::MissingHwConfigNozzleDiameter});
+            break;
+        }
+    }
+
+    if (!errors.empty()) {
+        return tl::unexpected{errors};
+    }
+
+    FullConfigFDM result{config_pack, extruder_candidates, hw_config};
     return std::make_shared<const FullConfigFDM>(std::move(result));
 }
 
 tl::expected<PartialObjectConfigFDMPtr, std::vector<Error>> prepare_slicing_object_input(
     const ObjectSettings& object_settings,
-    const std::size_t tools_count,
-    const std::size_t filaments_count
+    const std::size_t material_slot_count
 )
 {
-    PartialObjectConfigFDM result{object_settings, tools_count, filaments_count};
+    PartialObjectConfigFDM result{object_settings, material_slot_count};
     set_extruders(result, object_settings);
     return std::make_shared<PartialObjectConfigFDM>(std::move(result));
 };
 
 tl::expected<PartialVolumeConfigFDMPtr, std::vector<Error>> prepare_slicing_volume_input(
     const VolumeSettings& volume_settings,
-    const std::size_t tools_count,
-    const std::size_t filaments_count
+    const std::size_t material_slot_count
 )
 {
-    PartialVolumeConfigFDM result{volume_settings, tools_count, filaments_count};
+    PartialVolumeConfigFDM result{volume_settings, material_slot_count};
     set_extruders(result, volume_settings);
     return std::make_shared<const PartialVolumeConfigFDM>(std::move(result));
 }

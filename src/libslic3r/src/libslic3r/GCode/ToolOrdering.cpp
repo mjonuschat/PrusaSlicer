@@ -12,6 +12,7 @@
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 // #define SLIC3R_DEBUG
 
@@ -84,13 +85,13 @@ unsigned int LayerTools::extruder(const ExtrusionEntityCollection &extrusions, c
 	return (extruder == 0) ? 0 : extruder - 1;
 }
 
-static double calc_max_layer_height(const Domain::ConfigView &config, double max_object_layer_height)
+static double calc_max_layer_height(const PrintConfigView &config, double max_object_layer_height)
 {
     double max_layer_height = std::numeric_limits<double>::max();
-    for (size_t i = 0; i < config.get<std::vector<double>>("nozzle_diameter").size(); ++ i) {
+    for (size_t i = 0; i < config.hw_config().material_slot_count(); ++ i) {
         double mlh = config.get<std::vector<double>>("max_layer_height").at(i);
         if (mlh == 0.)
-            mlh = 0.75 * config.get<std::vector<double>>("nozzle_diameter")[i];
+            mlh = 0.75 * Biz::Slicing::get_nozzle_diameter(config.hw_config(), i);
         max_layer_height = std::min(max_layer_height, mlh);
     }
     // The Prusa3D Fast (0.35mm layer height) print profile sets a higher layer height than what is normally allowed
@@ -164,7 +165,7 @@ ToolOrdering::ToolOrdering(const Print &print, unsigned int first_extruder, bool
 	// Use the extruder switches from Model::custom_gcode_per_print_z to override the extruder to print the object.
 	// Do it only if all the objects were configured to be printed with a single extruder.
 	std::vector<std::pair<double, unsigned int>> per_layer_extruder_switches;
-    auto num_extruders = unsigned(print.config().get<std::vector<double>>("nozzle_diameter").size());
+    auto num_extruders = unsigned(print.config().hw_config().material_slot_count());
 	if (num_extruders > 1 && print.object_extruders().size() == 1 && // the current Print's configuration is CustomGCode::MultiAsSingle
 		print.custom_gcode() && print.custom_gcode()->get().mode == CustomGCode::Mode::MultiAsSingle) {
 		// Printing a single extruder platter on a printer with more than 1 extruder (or single-extruder multi-material).
@@ -632,7 +633,7 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 	if (custom_gcode_per_print_z.gcodes.empty())
 		return;
 
-	auto 						num_extruders = unsigned(print.config().get<std::vector<double>>("nozzle_diameter").size());
+	auto 						num_extruders = unsigned(print.config().hw_config().material_slot_count());
 	CustomGCode::Mode 			mode          =
 		(num_extruders == 1) ? CustomGCode::Mode::SingleExtruder :
 		print.object_extruders().size() == 1 ? CustomGCode::Mode::MultiAsSingle : CustomGCode::Mode::MultiExtruder;

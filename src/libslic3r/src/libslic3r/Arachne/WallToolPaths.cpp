@@ -11,6 +11,7 @@
 #include "WallToolPaths.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "SkeletalTrapezoidation.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 #include "utils/linearAlg2D.hpp"
 #include "utils/SparseLineGrid.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -59,7 +60,7 @@ WallToolPaths::WallToolPaths(
     , toolpaths_generated(false)
     , print_region_config(print_region_config)
 {
-    const auto nozzle_diameters{print_region_config.get<std::vector<double>>("nozzle_diameter")};
+    const auto nozzle_diameters{Biz::Slicing::get_nozzle_diameters(print_region_config.hw_config())};
     assert(!nozzle_diameters.empty());
     this->min_nozzle_diameter = float(*std::min_element(nozzle_diameters.begin(), nozzle_diameters.end()));
 

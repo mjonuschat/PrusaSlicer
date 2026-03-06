@@ -47,6 +47,7 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 //#define ARACHNE_DEBUG
 
@@ -1033,7 +1034,7 @@ void PerimeterGenerator::process_arachne(
         // We consider overhang any part where the entire nozzle diameter is not supported by the
         // lower layer, so we take lower slices and offset them by half the nozzle diameter used
         // in the current layer
-        double nozzle_diameter = params.config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
+        double nozzle_diameter = Biz::Slicing::get_nozzle_diameter(params.config.hw_config(), extruder_id);
         lower_slices_polygons_cache = offset(*lower_slices, float(scale_(+nozzle_diameter/2)));
     }
 
@@ -1259,7 +1260,7 @@ void PerimeterGenerator::process_classic(
         // We consider overhang any part where the entire nozzle diameter is not supported by the
         // lower layer, so we take lower slices and offset them by half the nozzle diameter used 
         // in the current layer
-        double nozzle_diameter = params.config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
+        double nozzle_diameter = Biz::Slicing::get_nozzle_diameter(params.config.hw_config(), extruder_id);
         lower_slices_polygons_cache = offset(*lower_slices, float(scale_(+nozzle_diameter/2)));
     }
 

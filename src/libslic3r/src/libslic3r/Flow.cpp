@@ -18,6 +18,7 @@
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/HwConfigUtils.hpp"
 
 namespace Slic3r {
 
@@ -158,9 +159,9 @@ static unsigned get_support_extruder_id(const PrintObject& object, bool is_inter
 
     // If object->config().support_material_extruder == 0 (which means to not trigger tool change,
     // but use the current extruder instead), use the smallest nozzle diameter.
-    const auto nozzle_diameters = object.print()->config().get<std::vector<double>>(
-        "nozzle_diameter"
-    );
+    const std::vector<double> nozzle_diameters{
+        Biz::Slicing::get_nozzle_diameters(object.config().hw_config())
+    };
     double min_nozzle_diameter{std::numeric_limits<double>::max()};
     int min_nozzle_extruder_id{-1};
 
@@ -181,7 +182,9 @@ Flow support_material_flow(const PrintObject *object, float layer_height)
     const PrintObjectConfigView &config{object->config()};
     const unsigned extruder{get_support_extruder_id(*object)};
 
-    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const float nozzle_diameter{
+        static_cast<float>(Biz::Slicing::get_nozzle_diameter(config.hw_config(), extruder))
+    };
     const float default_width{
         static_cast<float>(config.get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
                                .at(extruder)
@@ -206,7 +209,9 @@ Flow support_material_1st_layer_flow(const PrintObject *object, float layer_heig
     const PrintObjectConfigView &config{object->config()};
     const unsigned extruder{get_support_extruder_id(*object)};
 
-    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const float nozzle_diameter{
+        static_cast<float>(Biz::Slicing::get_nozzle_diameter(config.hw_config(), extruder))
+    };
     const Domain::FloatOrPercentage first_layer_extrusion_width{
         config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_extrusion_width")
             .at(extruder)
@@ -236,7 +241,9 @@ Flow support_material_interface_flow(const PrintObject *object, float layer_heig
     const unsigned extruder{get_support_extruder_id(*object)};
 
     // If object->config().support_material_interface_extruder == 0 (which means to not trigger tool change, but use the current extruder instead), use the smallest nozzle diameter.
-    const float nozzle_diameter{static_cast<float>(config.get<std::vector<double>>("nozzle_diameter").at(extruder))};
+    const float nozzle_diameter{
+        static_cast<float>(Biz::Slicing::get_nozzle_diameter(config.hw_config(), extruder))
+    };
     const float default_width{
         static_cast<float>(config.get<std::vector<Domain::FloatOrPercentage>>("extrusion_width")
                                .at(extruder)

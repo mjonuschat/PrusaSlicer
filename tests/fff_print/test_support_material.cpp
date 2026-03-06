@@ -38,7 +38,7 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 		layer_height_minimum_ok = true;
 		layer_height_maximum_ok = true;
 		double min_layer_height = print.config().get<std::vector<double>>("min_layer_height").front();
-		double max_layer_height = print.config().get<std::vector<double>>("nozzle_diameter").front();
+		double max_layer_height = std::get<double>(print.config().hw_config().tools.front().features.at("nozzle_diameter"));
 		if (print.config().get<std::vector<double>>("max_layer_height").front() > EPSILON)
 			max_layer_height = std::min(max_layer_height, print.config().get<std::vector<double>>("max_layer_height").front());
 		for (size_t i = 1; i < support_layers.size(); ++ i) {

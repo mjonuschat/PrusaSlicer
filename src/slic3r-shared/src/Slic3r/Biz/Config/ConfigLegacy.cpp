@@ -741,16 +741,52 @@ ConfigPack load_config_from_legacy_file(const std::string& filename)
     return convert_dynamic_print_config_to_new(cfg);
 }
 
+static std::vector<double> get_nozzle_diameters(const Domain::Preset::HwPrinterConfig& hw_config)
+{
+    std::vector<double> result;
 
+    for (const auto& tool : hw_config.tools) {
+        const std::optional<double> nozzle_diameter{
+            Domain::Preset::get_feature<double>(tool.features, "nozzle_diameter")
+        };
+        ASSERT(nozzle_diameter);
+        result.push_back(*nozzle_diameter);
+    }
 
-static std::string serialize_as_legacy_config(const std::variant<const ConfigPackFDM*, const ConfigPackSLA*>& cfgvar)
+    return result;
+}
+
+static std::vector<unsigned char> get_nozzle_high_flows(
+    const Domain::Preset::HwPrinterConfig& hw_config
+)
+{
+    std::vector<unsigned char> result;
+
+    for (const auto& tool : hw_config.tools) {
+        const std::optional<bool> high_flow{
+            Domain::Preset::get_feature<bool>(tool.features, "nozzle_high_flow")
+        };
+        if (high_flow.value_or(false)) {
+            result.push_back(1);
+        } else {
+            result.push_back(0);
+        }
+    }
+
+    return result;
+}
+
+std::string serialize_as_legacy_config(
+    const ConfigPack& cfgvar,
+    const Domain::Preset::HwPrinterConfig& hw_config
+)
 {
     std::vector<std::pair<const Domain::ConfigBox*, int>> boxes;
     LegacyKeysAndOverrides legacy_data;
 
-    if (std::holds_alternative<const ConfigPackFDM*>(cfgvar)) {
+    if (std::holds_alternative<ConfigPackFDM>(cfgvar)) {
         legacy_data = legacy_fdm_data();
-        const ConfigPackFDM& cfg = *std::get<const ConfigPackFDM*>(cfgvar);
+        const ConfigPackFDM& cfg = std::get<ConfigPackFDM>(cfgvar);
         boxes.emplace_back(&cfg.printer, -1);
         boxes.emplace_back(&cfg.print, -1);
         // TODO: At the moment only single-tool printers with MMU are supported,
@@ -767,7 +803,7 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
     }
     else {
         legacy_data = legacy_sla_data();
-        const ConfigPackSLA& cfg = *std::get<const ConfigPackSLA*>(cfgvar);
+        const ConfigPackSLA& cfg = std::get<ConfigPackSLA>(cfgvar);
         boxes.emplace_back(&cfg.sla_printer_settings, -1);
         boxes.emplace_back(&cfg.sla_material_settings, -1);
         boxes.emplace_back(&cfg.sla_print_settings, -1);
@@ -804,6 +840,17 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
         }
     }
 
+    if (std::holds_alternative<ConfigPackFDM>(cfgvar)) {
+        cfg_old->set_key_value(
+            "nozzle_diameter",
+            new Slic3rLegacy::ConfigOptionFloats(get_nozzle_diameters(hw_config))
+        );
+        cfg_old->set_key_value(
+            "nozzle_high_flow",
+            new Slic3rLegacy::ConfigOptionBools(get_nozzle_high_flows(hw_config))
+        );
+    }
+
     std::string out;
     for (const std::string& key : cfg_old->keys()) {
         out += key + " = " + cfg_old->opt_serialize(key) + "\n";
@@ -812,22 +859,6 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
         out.pop_back();
     return out;
 }
-
-
-
-std::string serialize_as_legacy_config(const ConfigPackFDM& cfg)
-{
-    std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
-    return serialize_as_legacy_config(cfgvar);
-}
-
-std::string serialize_as_legacy_config(const ConfigPackSLA& cfg)
-{
-    std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
-    return serialize_as_legacy_config(cfgvar);
-}
-
-
 
 Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box)
 {

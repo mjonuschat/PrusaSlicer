@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
@@ -37,17 +38,26 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 #endif
 
 namespace {
+
 PrintRegionConfigView get_region_config_view(const ObjectSettings& object_settings)
 {
-    const auto full_config{*prepare_slicing_input(Domain::ConfigPackFDM{}, {})};
+    const auto full_config{
+        *prepare_slicing_input(Domain::ConfigPackFDM{}, {}, Test::create_dummy_hw_config())
+    };
 
     return {
         full_config,
-        *prepare_slicing_object_input(object_settings, 1, 1),
-        {*prepare_slicing_volume_input(VolumeSettings{}, 1, 1)}
+        *prepare_slicing_object_input(
+            object_settings,
+            full_config->hw_config().material_slot_count()
+        ),
+        {*prepare_slicing_volume_input(
+            VolumeSettings{},
+            full_config->hw_config().material_slot_count()
+        )}
     };
 }
-}
+} // namespace
 
 TEST_CASE("Arachne - Closed ExtrusionLine", "[ArachneClosedExtrusionLine]") {
     Polygon poly = {

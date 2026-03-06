@@ -10,6 +10,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 #include "libslic3r/ShrinkageCompensation.hpp"
 #include "libslic3r/SlicingInput.hpp"
 
@@ -19,15 +20,37 @@
 using namespace Slic3r::Biz;
 
 using Slic3r::Biz::Algorithms::LayerHeight::GenerateLayersParams;
-using Slic3r::Biz::Algorithms::LayerHeight::max_layer_height_from_nozzle;
-using Slic3r::Biz::Algorithms::LayerHeight::MIN_LAYER_HEIGHT;
-using Slic3r::Biz::Algorithms::LayerHeight::min_layer_height_from_nozzle;
 using Slic3r::Biz::Algorithms::LayerHeight::ProfileFromRangesParams;
 using Slic3r::Domain::LayerZRanges;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r {
+
+constexpr double MIN_LAYER_HEIGHT         = 0.01;
+constexpr double MIN_LAYER_HEIGHT_DEFAULT = 0.07;
+
+static double
+min_layer_height_from_nozzle(const PrintObjectConfigView& print_config, int idx_nozzle)
+{
+    double min_layer_height =
+        print_config.get<std::vector<double>>("min_layer_height").at(idx_nozzle - 1);
+    return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT :
+                                      std::max(MIN_LAYER_HEIGHT, min_layer_height);
+}
+
+static double
+max_layer_height_from_nozzle(const PrintObjectConfigView& print_config, int idx_nozzle)
+{
+    double min_layer_height = min_layer_height_from_nozzle(print_config, idx_nozzle);
+    double max_layer_height =
+        print_config.get<std::vector<double>>("max_layer_height").at(idx_nozzle - 1);
+    double nozzle_dmr = Biz::Slicing::get_nozzle_diameter(print_config.hw_config(), idx_nozzle - 1);
+    return std::max(
+        min_layer_height,
+        (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height
+    );
+}
 
 SlicingParameters SlicingParameters::create_from_config(
 	const PrintObjectConfigView     &config,
@@ -47,8 +70,8 @@ SlicingParameters SlicingParameters::create_from_config(
     const int support_material_extruder_idx           = std::max<int>(config.get<int>("support_material_extruder") - 1, 0);
     const int support_material_interface_extruder_idx = std::max<int>(config.get<int>("support_material_interface_extruder") - 1, 0);
 
-    const double support_material_extruder_dmr           = config.get<std::vector<double>>("nozzle_diameter").at(support_material_extruder_idx);
-    const double support_material_interface_extruder_dmr = config.get<std::vector<double>>("nozzle_diameter").at(support_material_interface_extruder_idx);
+    const double support_material_extruder_dmr           = Biz::Slicing::get_nozzle_diameter(config.hw_config(), support_material_extruder_idx);
+    const double support_material_interface_extruder_dmr = Biz::Slicing::get_nozzle_diameter(config.hw_config(), support_material_interface_extruder_idx);
     const bool   soluble_interface                       = config.get<double>("support_material_contact_distance") == 0.;
 
     SlicingParameters params;
@@ -141,10 +164,11 @@ SlicingParameters SlicingParameters::create_from_config(
     const Domain::ConfigPackFDM& config,
     const Domain::ObjectSettings& object_settings,
     double object_height,
-    const std::vector<unsigned int>& object_extruders
+    const std::vector<unsigned int>& object_extruders,
+    const Domain::Preset::HwPrinterConfig& hw_config
 )
 {
-    const auto full_config_fdm = prepare_slicing_input(config, object_extruders);
+    const auto full_config_fdm = prepare_slicing_input(config, object_extruders, hw_config);
     ASSERT(full_config_fdm.has_value());
 
     const PrintConfigView print_config_view{full_config_fdm.value()};
@@ -153,8 +177,7 @@ SlicingParameters SlicingParameters::create_from_config(
 
     const auto partial_object_config_fdm = prepare_slicing_object_input(
         object_settings,
-        full_config_fdm.value()->tools_count(),
-        full_config_fdm.value()->filaments_count()
+        hw_config.material_slot_count()
     );
     ASSERT(partial_object_config_fdm.has_value());
 

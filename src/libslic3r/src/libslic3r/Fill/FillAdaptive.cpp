@@ -30,6 +30,7 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 // Boost pool: Don't use mutexes to synchronize memory allocation.
 #define BOOST_POOL_NO_MT
@@ -307,7 +308,7 @@ std::pair<double, double> adaptive_fill_line_spacing(const PrintObject &print_ob
     std::vector<RegionFillData> region_fill_data;
     region_fill_data.reserve(print_object.num_printing_regions());
     bool                       build_octree                   = false;
-    const std::vector<double> &nozzle_diameters               = print_object.print()->config().get<std::vector<double>>("nozzle_diameter");
+    const std::vector<double>  nozzle_diameters               = Biz::Slicing::get_nozzle_diameters(print_object.config().hw_config());
     double                     max_nozzle_diameter            = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
     double                     default_infill_extrusion_width = Flow::auto_extrusion_width(FlowRole::frInfill, float(max_nozzle_diameter));
     for (size_t region_id = 0; region_id < print_object.num_printing_regions(); ++ region_id) {

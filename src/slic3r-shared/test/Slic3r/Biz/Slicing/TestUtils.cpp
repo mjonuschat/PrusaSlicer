@@ -2,10 +2,11 @@
 
 #include "Slic3r/Uuid.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 
 #include <boost/filesystem.hpp>
 
-namespace Slic3r::Tests {
+namespace Slic3r::Test {
 
 using Domain::ConfigPack;
 using Slic3r::Domain::Vec3f;
@@ -65,20 +66,6 @@ Domain::ConfigPack get_config(Domain::PrinterTechnology technology)
     }
 }
 
-using Domain::Preset::HwPrinterConfig;
-
-static HwPrinterConfig create_dummy_hw_config(Domain::PrinterTechnology tech, uint8_t tool_count)
-{
-    using Domain::Preset::HwToolConfig, Domain::Preset::HwToolConfigs;
-    return HwPrinterConfig{
-        .id         = generate_uuid(),
-        .technology = tech,
-        .tool_count = tool_count,
-        .tools      = HwToolConfigs(tool_count, HwToolConfig{})
-    };
-}
-
-
 ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& input_config)
     : model{std::move(model)}, config{std::move(input_config)}, bed_instance{ModelOnBed::bed}
 {
@@ -91,9 +78,9 @@ ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& input_config)
     if (std::holds_alternative<Domain::ConfigPackFDM>(this->config)) {
         auto config_fdm{std::get<Domain::ConfigPackFDM>(this->config)};
         preset_metadata.hw_config =
-            create_dummy_hw_config(Domain::PrinterTechnology::FFF, config_fdm.tool.size());
+            create_dummy_hw_config(config_fdm.tool.size(), 0.4, Domain::PrinterTechnology::FFF);
     } else if (std::holds_alternative<Domain::ConfigPackSLA>(this->config)) {
-        preset_metadata.hw_config =create_dummy_hw_config(Domain::PrinterTechnology::SLA, 0);
+        preset_metadata.hw_config =create_dummy_hw_config(0, 0.0, Domain::PrinterTechnology::SLA);
     } else {
         PANIC("Invalid config pack!");
     }

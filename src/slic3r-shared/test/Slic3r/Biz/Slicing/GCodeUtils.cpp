@@ -167,7 +167,7 @@ parse_printing_time_seconds_from_gcode(const std::string& key, const std::string
 
 }
 
-namespace Slic3r::Tests {
+namespace Slic3r::Test {
 
 std::optional<std::string> are_statistics_sane(const std::string& gcode)
 {

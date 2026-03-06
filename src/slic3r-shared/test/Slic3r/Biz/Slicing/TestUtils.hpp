@@ -11,7 +11,7 @@
 #include <chrono>
 #include <memory>
 
-namespace Slic3r::Tests {
+namespace Slic3r::Test {
 void precise_sleep(const std::chrono::milliseconds duration);
 
 Domain::Model generate_cubes(const int count, const int row_size);

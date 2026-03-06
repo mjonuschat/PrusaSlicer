@@ -227,15 +227,10 @@ void BackgroundProcess::update(
         .stats = {},
     };
 
-    const Print::SerializedConfig serialized_config{std::visit(
-        [&metadata](auto&& config) {
-            return Print::SerializedConfig{
-                .json = beautify_json(metadata, 2, 14),
-                .ini = Biz::serialize_as_legacy_config(config)
-            };
-        },
-        config
-    )};
+    const Print::SerializedConfig serialized_config{
+        .json = beautify_json(metadata, 2, 14),
+        .ini  = Biz::serialize_as_legacy_config(config, preset_metadata.hw_config)
+    };
 
     apply_status = this->m_print->update(model, config, bed, serialized_config, preset_metadata.hw_config);
 }

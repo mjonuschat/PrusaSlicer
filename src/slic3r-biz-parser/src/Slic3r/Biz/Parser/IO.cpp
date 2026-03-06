@@ -360,6 +360,36 @@ void copy(const std::string& name, const ConfigValue& value, Config& config)
         }
     });
 }
+
+std::vector<double> get_nozzle_diameters(const Domain::Preset::HwPrinterConfig& hw_config)
+{
+    std::vector<double> result;
+
+    for (const auto& tool : hw_config.tools) {
+        const std::optional<double> nozzle_diameter{
+            Domain::Preset::get_feature<double>(tool.features, "nozzle_diameter")
+        };
+        ASSERT(nozzle_diameter);
+        result.push_back(*nozzle_diameter);
+    }
+
+    return result;
+}
+
+std::vector<bool> get_nozzle_high_flows(const Domain::Preset::HwPrinterConfig& hw_config)
+{
+    std::vector<bool> result;
+
+    for (const auto& tool : hw_config.tools) {
+        const std::optional<bool> high_flow{
+            Domain::Preset::get_feature<bool>(tool.features, "nozzle_high_flow")
+        };
+        result.push_back(high_flow.value_or(false));
+    }
+
+    return result;
+}
+
 } // namespace
 
 Config get_parser_config(const FullConfigFDM& full_config)
@@ -368,7 +398,8 @@ Config get_parser_config(const FullConfigFDM& full_config)
     for (const auto& [key, value] : full_config.values()) {
         copy(key, value, result);
     }
-
+    result.set("nozzle_diameter", get_nozzle_diameters(full_config.hw_config()));
+    result.set("nozzle_high_flow", get_nozzle_high_flows(full_config.hw_config()));
     return result;
 }
 

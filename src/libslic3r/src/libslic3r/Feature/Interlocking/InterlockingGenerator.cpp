@@ -5,6 +5,8 @@
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
+#include "Slic3r/Log.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -33,7 +35,7 @@ void InterlockingGenerator::generate_interlocking_structure(PrintObject &print_o
         return;
     }
 
-    const std::vector<double> &nozzle_diameters    = print_object.print()->config().get<std::vector<double>>("nozzle_diameter");
+    const std::vector<double> nozzle_diameters     = Biz::Slicing::get_nozzle_diameters(print_object.config().hw_config());
     double                     min_nozzle_diameter = *std::min_element(nozzle_diameters.begin(), nozzle_diameters.end());
     const float                rotation            = deg2rad(config.get<double>("interlocking_orientation"));
     const coord_t              beam_layer_count    = config.get<int>("interlocking_beam_layer_count");

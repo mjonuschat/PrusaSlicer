@@ -243,6 +243,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/Geometry/Curves.hpp
     src/libslic3r/Geometry/MedialAxis.cpp
     src/libslic3r/Geometry/MedialAxis.hpp
+    src/libslic3r/HwConfigUtils.hpp
+    src/libslic3r/HwConfigUtils.cpp
     src/libslic3r/InfillAboveBridges.cpp
     src/libslic3r/InfillAboveBridges.hpp
     src/libslic3r/InstanceTransformations.cpp

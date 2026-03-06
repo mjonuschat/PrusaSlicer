@@ -19,9 +19,9 @@ using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::chrono::high_resolution_clock;
 using Slic3r::Biz::Slicing::StatusCode;
-using Slic3r::Tests::get_cubes_model;
-using Slic3r::Tests::ModelOnBed;
-using Slic3r::Tests::is_gcode_sane;
+using Slic3r::Test::get_cubes_model;
+using Slic3r::Test::ModelOnBed;
+using Slic3r::Test::is_gcode_sane;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SelectionId;
@@ -29,22 +29,22 @@ using Slic3r::Biz::Slicing::IWipeTowerGeometryListener;
 using Slic3r::Biz::Print::OptWipeTowerGeometry;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Biz::Print::ZDepth;
-using Slic3r::Tests::SlicingFixture;
-using Slic3r::Tests::StatusEvent;
-using Slic3r::Tests::StatusEvents;
+using Slic3r::Test::SlicingFixture;
+using Slic3r::Test::StatusEvent;
+using Slic3r::Test::StatusEvents;
 using Slic3r::Biz::Slicing::ISLAResultListener;
 using Slic3r::Biz::Slicing::ISLAObjectListener;
 using Slic3r::Biz::Slicing::SLAResult;
 using Slic3r::Biz::Slicing::Sla::ResultType;
 using Slic3r::Biz::Slicing::Sla::Object;
-using Slic3r::Tests::ResultListener;
+using Slic3r::Test::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
 using Slic3r::Domain::ConfigPackSLA;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::Model;
-using Slic3r::Tests::are_statistics_sane;
+using Slic3r::Test::are_statistics_sane;
 
 void translate_instances(Model& model, const Vec3d& translation) {
     for (ModelObject* object : model.objects) {
@@ -60,7 +60,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor][
     slicing.set_listener<IFDMResultListener>(&result_listener);
     using namespace std::chrono_literals;
 
-    std::vector<Slic3r::Tests::ModelOnBed> bed_models;
+    std::vector<Slic3r::Test::ModelOnBed> bed_models;
     const int beds_count{5};
     for (std::size_t i{}; i < beds_count; ++i) {
         const Vec3d bed_offset{i * Vec3d{200.0, 150.0, 0.0}};

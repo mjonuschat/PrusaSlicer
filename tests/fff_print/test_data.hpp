@@ -2,6 +2,7 @@
 #define SLIC3R_TEST_DATA_HPP
 
 #include "Slic3r/Biz/Parser/IO.hpp"
+#include "Slic3r/TestUtils/HwConfigUtils.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
@@ -50,16 +51,40 @@ enum class TestMesh {
 
 struct TestConfig : public Domain::ConfigPackFDM
 {
-    using ConfigPackFDM::ConfigPackFDM;
+    explicit TestConfig(const int extruder_count, const double nozzle_diameter = 0.4) :
+        Domain::ConfigPackFDM{extruder_count}
+    {
+        hw_config = create_dummy_hw_config(extruder_count, nozzle_diameter);
+    }
 
-    Biz::Parser::IO::Config get_parser_config() const {
-        Domain::FullConfigFDMPtr config{*ASSERT_VAL(prepare_slicing_input(*this, {}))};
+    TestConfig() : Domain::ConfigPackFDM{}
+    {
+        hw_config = create_dummy_hw_config();
+    }
+
+    Biz::Parser::IO::Config get_parser_config() const
+    {
+        Domain::FullConfigFDMPtr config{
+            *ASSERT_VAL(prepare_slicing_input(*this, {}, hw_config))
+        };
         return Biz::Parser::IO::get_parser_config(*config);
     };
-    Domain::FullConfigFDM get_full_config() const { return **ASSERT_VAL(prepare_slicing_input(*this, {})); };
-    PrintConfigView get_view() const {
-        return PrintConfigView{*ASSERT_VAL(prepare_slicing_input(*this, {}))};
+
+    Domain::FullConfigFDM get_full_config() const
+    {
+        return **ASSERT_VAL(
+            prepare_slicing_input(*this, {}, hw_config)
+        );
     };
+
+    PrintConfigView get_view() const
+    {
+        return PrintConfigView{
+            *ASSERT_VAL(prepare_slicing_input(*this, {}, hw_config))
+        };
+    };
+
+    Domain::Preset::HwPrinterConfig hw_config{};
 };
 
 // Neccessary for <c++17
@@ -84,8 +109,6 @@ template<typename T> bool _equiv(const T &a, const T &b) { return std::abs(a - b
 template<typename T> bool _equiv(const T &a, const T &b, double epsilon) {
     return abs(a - b) < epsilon;
 }
-
-Domain::Preset::HwPrinterConfig create_dummy_hw_config(uint8_t tool_count = 1);
 
 Domain::Model model(const std::string& model_name, Domain::TriangleMesh&& _mesh);
 void init_print(

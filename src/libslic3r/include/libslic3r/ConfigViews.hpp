@@ -35,16 +35,13 @@ public:
         m_partial_configs.push_back(override);
     }
 
-    std::size_t tools_count() const {
-        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->tools_count();
-    }
-
-    std::size_t filaments_count() const {
-        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->filaments_count();
-    }
-
     const Domain::PartialVolumeConfigFDM volume_settings() const {
         return *std::dynamic_pointer_cast<const Domain::PartialVolumeConfigFDM>(m_partial_configs.back());
+    }
+
+    const Domain::Preset::HwPrinterConfig& hw_config() const
+    {
+        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
     }
 };
 
@@ -60,6 +57,11 @@ public:
 
     const Domain::PartialObjectConfigFDMPtr object_settings() const {
         return std::dynamic_pointer_cast<const Domain::PartialObjectConfigFDM>(m_partial_configs.front());
+    }
+
+    const Domain::Preset::HwPrinterConfig& hw_config() const
+    {
+        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
     }
 };
 
@@ -78,6 +80,11 @@ public:
 
     const Domain::FullConfigFDM& full_config() const {
         return *std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config);
+    }
+
+    const Domain::Preset::HwPrinterConfig& hw_config() const
+    {
+        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
     }
 };
 

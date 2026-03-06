@@ -1280,7 +1280,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
-    target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
+    target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared slic3r-test-utils Catch2::Catch2)
 
     if (SLIC3R_ENABLE_FORMAT_STEP)
         add_dependencies(slic3r-shared-tests OCCTWrapper)

@@ -598,7 +598,7 @@ namespace DoExport {
             "supports_tool_preheating"
         )};
         processor_config.do_M104_backtrace = supports_tool_preheating && *supports_tool_preheating;
-        processor_config.extruders.count = uint8_t(config.get<std::vector<double>>("nozzle_diameter").size());
+        processor_config.extruders.count = config.hw_config().material_slot_count();
 
         std::vector<Vec2f> out_bed_shape;
         const auto in_bed_shape{config.get<std::vector<Vec2d>>("bed_shape")};
@@ -755,7 +755,10 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     BOOST_LOG_TRIVIAL(info) << "Exporting G-code..." << log_memory_info();
 
-    ProcessorConfig processor_config = DoExport::populate_processor_config(print->config(), print->m_hw_config);
+    ProcessorConfig processor_config = DoExport::populate_processor_config(
+        print->config(),
+        print->config().full_config().hw_config()
+    );
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
 
@@ -1253,12 +1256,12 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
         this->placeholder_parser().set("first_layer_print_min",  std::vector<double>{ bbox.min.x(), bbox.min.y() });
         this->placeholder_parser().set("first_layer_print_max",  std::vector<double>{ bbox.max.x(), bbox.max.y() });
         this->placeholder_parser().set("first_layer_print_size", std::vector<double>{ BB::sizes(bbox).x(), BB::sizes(bbox).y() });
-        this->placeholder_parser().set("num_extruders", int(print.config().get<std::vector<double>>("nozzle_diameter").size()));
+        this->placeholder_parser().set("num_extruders", int(print.config().hw_config().material_slot_count()));
         // PlaceholderParser currently substitues non-existent vector values with the zero'th value, which is harmful in the case of "is_extruder_used[]"
         // as Slicer may lie about availability of such non-existent extruder.
         // We rather sacrifice 256B of memory before we change the behavior of the PlaceholderParser, which should really only fill in the non-existent
         // vector elements for filament parameters.
-        std::vector<bool> is_extruder_used(std::max(size_t(255), print.config().get<std::vector<double>>("nozzle_diameter").size()), false);
+        std::vector<bool> is_extruder_used(std::max(size_t(255), print.config().hw_config().material_slot_count()), false);
         for (unsigned int extruder_id : tool_ordering.all_extruders())
             is_extruder_used[extruder_id] = true;
         this->placeholder_parser().set("is_extruder_used", is_extruder_used);
@@ -1932,7 +1935,7 @@ void GCodeGenerator::print_machine_envelope(GCodeOutputStream &file, const Print
 
 std::string GCodeGenerator::_process_start_gcode(const Print& print, unsigned int current_extruder_id)
 {
-    const int num_extruders            = print.config().get<std::vector<double>>("nozzle_diameter").size();
+    const int num_extruders            = static_cast<int>(print.config().hw_config().material_slot_count());
     const int bed_temperature_extruder = print.config().get<int>("bed_temperature_extruder");
     if (0 < bed_temperature_extruder && bed_temperature_extruder <= num_extruders) {
         const int first_layer_bed_temperature = print.config().get<std::vector<int>>("first_layer_bed_temperature").at(bed_temperature_extruder - 1);
@@ -1951,7 +1954,7 @@ std::string GCodeGenerator::_process_start_gcode(const Print& print, unsigned in
 void GCodeGenerator::_print_first_layer_bed_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, unsigned int first_printing_extruder_id, bool wait)
 {
     const bool autoemit                    = print.config().get<bool>("autoemit_temperature_commands");
-    const int  num_extruders               = print.config().get<std::vector<double>>("nozzle_diameter").size();
+    const int  num_extruders               = static_cast<int>(print.config().hw_config().material_slot_count());
     const int  bed_temperature_extruder    = print.config().get<int>("bed_temperature_extruder");
     const bool use_first_printing_extruder = bed_temperature_extruder <= 0 || bed_temperature_extruder > num_extruders;
 
@@ -2090,7 +2093,7 @@ static std::string emit_custom_color_change_gcode_per_print_z(
     using Biz::libpgcode::Tags;
 
     const bool single_extruder_multi_material = config.get<bool>("single_extruder_multi_material");
-    const bool single_extruder_printer        = config.get<std::vector<double>>("nozzle_diameter").size() == 1;
+    const bool single_extruder_printer        = config.hw_config().tool_count == 1;
     const bool color_change                   = custom_gcode.type == Domain::CustomGCode::Type::ColorChange;
 
     std::string gcode;
@@ -2146,7 +2149,7 @@ static std::string emit_custom_gcode_per_print_z(
     const bool color_change = gcode_type == CustomGCode::Type::ColorChange;
     const bool tool_change = gcode_type == CustomGCode::Type::ToolChange;
     // Tool Change is applied as Color Change for a single extruder printer only.
-    assert(!tool_change || config.get<std::vector<double>>("nozzle_diameter").size() == 1);
+    assert(!tool_change || config.hw_config().material_slot_count() == 1);
 
     // we should add or not colorprint_change in respect to nozzle_diameter count instead of really
     // used extruders count
@@ -2421,9 +2424,9 @@ std::pair<GCode::SmoothPath, std::size_t> split_with_seam(
 }
 } // namespace GCode
 
-static inline double get_seam_gap_distance_value(const Domain::ConfigView &config, const unsigned extruder_id)
+static inline double get_seam_gap_distance_value(const PrintConfigView &config, const unsigned extruder_id)
 {
-    const double         nozzle_diameter            = config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
+    const double nozzle_diameter = Biz::Slicing::get_nozzle_diameter(config.hw_config(), extruder_id);
     const auto seam_gap_distance_override = config.get<std::vector<Domain::FloatOrPercentage>>("seam_gap_distance").at(extruder_id);
     if (!std::isnan(seam_gap_distance_override.get_abs_value(1.0))) {
         return seam_gap_distance_override.get_abs_value(nozzle_diameter);
@@ -2752,7 +2755,7 @@ LayerResult GCodeGenerator::process_layer(
 
         // Bed temperature for layers from the 2nd layer is based on the first printing
         // extruder on the layer or on the extruded in bed_temperature_extruder.
-        const int  num_extruders            = print.config().get<std::vector<double>>("nozzle_diameter").size();
+        const int  num_extruders            = print.config().hw_config().material_slot_count();
         const int  bed_temperature_extruder = print.config().get<int>("bed_temperature_extruder");
         const bool use_first_extruder       = bed_temperature_extruder <= 0 || bed_temperature_extruder > num_extruders;
         const int  bed_temperature          = print.config().get<std::vector<int>>("bed_temperature").at(use_first_extruder ? first_extruder_id : bed_temperature_extruder - 1);
@@ -3242,7 +3245,18 @@ std::string GCodeGenerator::extrude_perimeters(
         ) {
             // Only wipe inside if the wipe along the perimeter is disabled.
             // Make a little move inwards before leaving loop.
-            if (std::optional<Point> pt = wipe_hide_seam(perimeter.smooth_path, perimeter.reversed, scale_(region.config().get<std::vector<double>>("nozzle_diameter").at(m_writer.extruder()->id()))); pt) {
+            if (std::optional<Point> pt = wipe_hide_seam(
+                    perimeter.smooth_path,
+                    perimeter.reversed,
+                    scale_(
+                        Biz::Slicing::get_nozzle_diameter(
+                            region.config().hw_config(),
+                            m_writer.extruder()->id()
+                        )
+                    )
+                );
+                pt)
+            {
                 // Generate the seam hiding travel move.
                 gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
                 this->last_position = *pt;
@@ -3994,7 +4008,7 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
             gcode += m_writer.set_pressure_advance(
                 config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
-                this->m_print->m_hw_config.vendor_id
+                this->m_print->config().full_config().hw_config().vendor_id
             );
         }
 
@@ -4086,7 +4100,7 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
     if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
         gcode += m_writer.set_pressure_advance(
             config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
-            this->m_print->m_hw_config.vendor_id
+            this->m_print->config().full_config().hw_config().vendor_id
         );
     }
 

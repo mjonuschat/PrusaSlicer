@@ -2986,6 +2986,7 @@ namespace Slic3rLegacy {
             const std::string& filename,
             const Domain::Model& model,
             const std::optional<ConfigPack>& config,
+            const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
             bool fullpath_sources,
             const Domain::Image* thumbnail_data,
             bool zip64,
@@ -2999,6 +3000,7 @@ namespace Slic3rLegacy {
             const std::string& filename,
             const Domain::Model& model,
             const std::optional<ConfigPack>& config,
+            const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
             const Domain::Image* thumbnail_data,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
             const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -3015,7 +3017,7 @@ namespace Slic3rLegacy {
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Domain::Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Domain::Preset::HwPrinterConfig& hw_config, const Domain::Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Domain::Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes, const std::optional<ConfigPack>& config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
@@ -3025,6 +3027,7 @@ namespace Slic3rLegacy {
         const std::string& filename,
         const Domain::Model& model,
         const std::optional<ConfigPack>& config,
+        const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
         bool fullpath_sources,
         const Domain::Image* thumbnail_data,
         bool zip64,
@@ -3035,13 +3038,14 @@ namespace Slic3rLegacy {
         clear_errors();
         m_fullpath_sources = fullpath_sources;
         m_zip64 = zip64;
-        return _save_model_to_file(filename, model, config, thumbnail_data, wipe_towers, custom_gcodes);
+        return _save_model_to_file(filename, model, config, hw_config, thumbnail_data, wipe_towers, custom_gcodes);
     }
 
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
         const Domain::Model& model,
         const std::optional<ConfigPack>& config,
+        const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
         const Domain::Image* thumbnail_data,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -3153,7 +3157,8 @@ namespace Slic3rLegacy {
         // Adds slic3r print config file ("Metadata/Slic3r_PE.config").
         // This file contains the content of FullPrintConfing / SLAFullPrintConfig.
         if (config.has_value()) {
-            if (!_add_print_config_file_to_archive(archive, *config, model, wipe_towers)) {
+            ASSERT(hw_config);
+            if (!_add_print_config_file_to_archive(archive, *config, *hw_config, model, wipe_towers)) {
                 close_zip_writer(&archive);
                 boost::filesystem::remove(filename);
                 return false;
@@ -3879,18 +3884,20 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Domain::Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(
+        mz_zip_archive& archive,
+        const ConfigPack& config,
+        const Domain::Preset::HwPrinterConfig& hw_config,
+        const Domain::Model& model,
+        const Slic3r::Domain::WipeTowersOnBeds& wipe_towers
+    )
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
         sprintf(buffer, "; %s\n\n", header_slic3r_generated().c_str());
         std::string out = buffer;
 
-        std::string opts;
-        if (config.index() == 0)
-            opts += std::string("; ") + boost::replace_all_copy(Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackFDM>(config)), "\n", "\n; ") + "\n";
-        else
-            opts += std::string("; ") + boost::replace_all_copy(Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackSLA>(config)), "\n", "\n; ") + "\n";
+        std::string opts = std::string("; ") + boost::replace_all_copy(Slic3r::Biz::serialize_as_legacy_config(config, hw_config), "\n", "\n; ") + "\n";
 
         // Wipe tower values were historically stored in the config, but they were moved into
         // Model in PS 2.9.0. Keep saving the old values to maintain forward compatibility.
@@ -4584,6 +4591,7 @@ bool store_3mf_legacy(
     const char* path,
     const Domain::Model* model,
     const std::optional<ConfigPack>& config,
+    const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
     bool fullpath_sources,
     const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
     const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
@@ -4598,7 +4606,7 @@ bool store_3mf_legacy(
         return false;
 
     Slic3rLegacy::_3MF_Exporter exporter;
-    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
+    bool res = exporter.save_model_to_file(path, *model, config, hw_config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
     if (!res)
         exporter.log_errors();
 

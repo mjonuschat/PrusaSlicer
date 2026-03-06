@@ -91,7 +91,8 @@ LayerHeightParams compute_layer_height_params(
         fdm_config,
         model_object.object_settings,
         model_object.max_z(),
-        extruder_candidates
+        extruder_candidates,
+        config_container.selected_preset().hw_config
     );
 
     LayerHeightParams params = {

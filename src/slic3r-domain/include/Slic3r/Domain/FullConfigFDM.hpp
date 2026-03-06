@@ -2,6 +2,8 @@
 
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
+#include "Slic3r/Uuid.hpp"
 
 namespace Slic3r::Domain {
 
@@ -14,32 +16,45 @@ class FullConfigFDM : public FullConfig
 public:
     FullConfigFDM(
         const ConfigPackFDM& config_pack,
-        const std::vector<unsigned>& extruder_candidates
+        const std::vector<unsigned>& extruder_candidates,
+        const Preset::HwPrinterConfig& hw_config
     );
 
-    std::size_t tools_count() const {
-        return m_tools_count;
-    }
-
-    std::size_t filaments_count() const {
-        return m_filaments_count;
+    const Preset::HwPrinterConfig& hw_config() const {
+        return m_hw_config;
     }
 
     static FullConfigFDM defaults() {
-        return {ConfigPackFDM{}, {0}};
+
+        Preset::HwToolConfig tool_config;
+
+        Preset::HwPrinterConfig hw_config{
+            .id         = generate_uuid(),
+            .technology = PrinterTechnology::FFF,
+            .tool_count = 1,
+            .tools      = {1, Preset::HwToolConfig{}},
+            .feeders    = {
+                {Preset::Address{0},
+                    Preset::HwFeederConfig{
+                        .id         = generate_uuid(),
+                        .type       = Preset::FeederType::Manual,
+                        .slot_count = 1
+                 }}
+            }
+        };
+
+        return {ConfigPackFDM{}, {0}, hw_config};
     }
 
 private:
-    std::size_t m_tools_count;
-    std::size_t m_filaments_count;
+    Preset::HwPrinterConfig m_hw_config;
 };
 
 class PartialObjectConfigFDM : public PartialConfig {
 public:
     PartialObjectConfigFDM(
         const ObjectSettings& object_settings,
-        const std::size_t tools_count,
-        const std::size_t filaments_count
+        const std::size_t material_slot_count
     );
 };
 
@@ -47,8 +62,7 @@ class PartialVolumeConfigFDM : public PartialConfig {
 public:
     PartialVolumeConfigFDM(
         const VolumeSettings& volume_settings,
-        const std::size_t tools_count,
-        const std::size_t filaments_count
+        const std::size_t material_slot_count
     );
 };
 

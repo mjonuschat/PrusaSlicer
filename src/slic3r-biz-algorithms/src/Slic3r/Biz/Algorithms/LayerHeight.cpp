@@ -21,46 +21,6 @@ using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r::Biz::Algorithms::LayerHeight {
 
-double min_layer_height_from_nozzle(const Domain::ConfigView& print_config, int idx_nozzle)
-{
-    double min_layer_height =
-        print_config.get<std::vector<double>>("min_layer_height").at(idx_nozzle - 1);
-    return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT :
-                                      std::max(MIN_LAYER_HEIGHT, min_layer_height);
-}
-
-double max_layer_height_from_nozzle(const Domain::ConfigView& print_config, int idx_nozzle)
-{
-    double min_layer_height = min_layer_height_from_nozzle(print_config, idx_nozzle);
-    double max_layer_height =
-        print_config.get<std::vector<double>>("max_layer_height").at(idx_nozzle - 1);
-    double nozzle_dmr = print_config.get<std::vector<double>>("nozzle_diameter").at(idx_nozzle - 1);
-    return std::max(
-        min_layer_height,
-        (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height
-    );
-}
-
-double min_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_nozzle)
-{
-    double min_layer_height =
-        pack.tool.at(idx_nozzle - 1).find("min_layer_height").item->get<double>();
-    return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT :
-                                      std::max(MIN_LAYER_HEIGHT, min_layer_height);
-}
-
-double max_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_nozzle)
-{
-    double min_layer_height = min_layer_height_from_nozzle(pack, idx_nozzle);
-    const auto& tool        = pack.tool.at(idx_nozzle - 1);
-    double max_layer_height = tool.find("max_layer_height").item->get<double>();
-    double nozzle_dmr       = tool.find("nozzle_diameter").item->get<double>();
-    return std::max(
-        min_layer_height,
-        (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height
-    );
-}
-
 void adjust_layer_height_profile(
     const AdjustParams& params,
     ZHeightPairs& layer_height_profile,

@@ -12,9 +12,6 @@ struct ConfigPackFDM;
 
 namespace Slic3r::Biz::Algorithms::LayerHeight {
 
-constexpr double MIN_LAYER_HEIGHT         = 0.01;
-constexpr double MIN_LAYER_HEIGHT_DEFAULT = 0.07;
-
 /**
  * @brief Minimum layer height for the variable layer height algorithm.
  *

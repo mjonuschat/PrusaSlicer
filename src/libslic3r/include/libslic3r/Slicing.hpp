@@ -13,6 +13,7 @@
 
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 namespace Slic3r
 {
@@ -44,7 +45,8 @@ struct SlicingParameters
         const Domain::ConfigPackFDM& config,
         const Domain::ObjectSettings& object_settings,
         double object_height,
-        const std::vector<unsigned int>& object_extruders
+        const std::vector<unsigned int>& object_extruders,
+        const Domain::Preset::HwPrinterConfig& hw_config
     );
 
     // Has any raft layers?

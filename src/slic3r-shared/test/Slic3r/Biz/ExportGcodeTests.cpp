@@ -24,7 +24,7 @@
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/nowide/fstream.hpp>
 
-using Slic3r::Tests::is_gcode_sane;
+using Slic3r::Test::is_gcode_sane;
 using namespace Slic3r::Biz;
 using namespace trompeloeil;
 namespace fs = boost::filesystem;
@@ -188,11 +188,11 @@ private:
 
 struct CaseData
 {
-    Slic3r::Tests::ModelOnBed model_on_bed;
+    Slic3r::Test::ModelOnBed model_on_bed;
     Slic3r::Domain::SlicingId id;
     std::vector<TargetPathGuard> paths;
 
-    CaseData(Slic3r::Tests::ModelOnBed mob, Slic3r::Domain::SlicingId sid)
+    CaseData(Slic3r::Test::ModelOnBed mob, Slic3r::Domain::SlicingId sid)
         : model_on_bed(std::move(mob)), id(std::move(sid))
     {
     }
@@ -253,7 +253,7 @@ TEST_CASE("Export gcode")
     for (size_t i = 0; i < project_count; i++) {
 
         project_interactor.new_project();
-        Slic3r::Tests::ModelOnBed new_model{Slic3r::Tests::get_cubes_model(1, 5)};
+        Slic3r::Test::ModelOnBed new_model{Slic3r::Test::get_cubes_model(1, 5)};
         Slic3r::Domain::SlicingId new_id{i, new_model.bed_instance.id().id};
         projects.emplace_back(std::move(new_model), std::move(new_id));
         for (size_t k = 0; k < export_count; k++) {
@@ -347,7 +347,7 @@ TEST_CASE("Export sla")
     for (size_t i = 0; i < project_count; i++) {
 
         project_interactor.new_project();
-        Slic3r::Tests::ModelOnBed new_model {Slic3r::Tests::generate_cubes(1, 5), Slic3r::Domain::ConfigPackSLA{}};
+        Slic3r::Test::ModelOnBed new_model {Slic3r::Test::generate_cubes(1, 5), Slic3r::Domain::ConfigPackSLA{}};
         Slic3r::Domain::SlicingId new_id{i, new_model.bed_instance.id().id};
         projects.emplace_back(std::move(new_model), std::move(new_id));
         for (size_t k = 0; k < export_count; k++) {

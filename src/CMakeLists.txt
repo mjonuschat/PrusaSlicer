@@ -44,6 +44,10 @@ if (SLIC3R_GUI)
     add_subdirectory(slic3r-app-sdltest)
 endif ()
 
+if (SLIC3R_BUILD_TESTS)
+    add_subdirectory(slic3r-test-utils)
+endif ()
+
 add_subdirectory(slic3r-app-launcher)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/osx/Info.plist.in ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)

@@ -187,7 +187,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
 
     params_base.mode_below     = params_base.mode;
 
-    const size_t num_extruders = print_config.get<std::vector<double>>("nozzle_diameter").size();
+    const size_t num_extruders = print_config.hw_config().material_slot_count();
     const bool   is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const Domain::ModelVolume *mv) { return mv->is_mm_painted(); });
     const auto   extra_offset  = is_mm_painted ? 0.f : std::max(0.f, float(print_object_config.get<double>("xy_size_compensation")));
 
@@ -602,7 +602,7 @@ void apply_mm_segmentation(PrintObject &print_object, ThrowOnCancel throw_on_can
             const auto  &layer_ranges   = print_object.shared_regions()->layer_ranges;
             double       z              = print_object.get_layer(int(range.begin()))->slice_z;
             auto         it_layer_range = layer_range_first(layer_ranges, z);
-            const size_t num_extruders = print_object.print()->config().get<std::vector<double>>("nozzle_diameter").size();
+            const size_t num_extruders = print_object.print()->config().hw_config().material_slot_count();
 
             struct ByExtruder {
                 ExPolygons  expolygons;
@@ -906,7 +906,7 @@ void PrintObject::slice_volumes()
     m_print->throw_if_canceled();
 
     // Is any ModelVolume multi-material painted?
-    if (m_print->config().get<std::vector<double>>("nozzle_diameter").size() > 1 && this->model_object()->is_mm_painted()) {
+    if (m_print->config().hw_config().material_slot_count() > 1 && this->model_object()->is_mm_painted()) {
         // If XY Size compensation is also enabled, notify the user that XY Size compensation
         // would not be used because the object is multi-material painted.
         if (m_config.get<double>("xy_size_compensation") != 0.f) {
@@ -946,7 +946,7 @@ void PrintObject::slice_volumes()
     BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - make_slices in parallel - begin";
     {
         // Compensation value, scaled. Only applying the negative scaling here, as the positive scaling has already been applied during slicing.
-        const size_t num_extruders = print->config().get<std::vector<double>>("nozzle_diameter").size();
+        const size_t num_extruders = print->config().hw_config().material_slot_count();
         const auto   xy_compensation_scaled            = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(std::min(m_config.get<double>("xy_size_compensation"), 0.));
         const float  elephant_foot_compensation_scaled = (m_config.get<int>("raft_layers") == 0) ?
         	// Only enable Elephant foot compensation if printing directly on the print bed.

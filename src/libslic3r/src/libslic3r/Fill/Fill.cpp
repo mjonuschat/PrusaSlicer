@@ -47,6 +47,7 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ShortestPath.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -879,7 +880,7 @@ void Layer::make_ironing()
 
 		// Create the ironing extrusions for regions <i, j)
 		ExPolygons ironing_areas;
-		double nozzle_dmr = this->object()->print()->config().get<std::vector<double>>("nozzle_diameter")[ironing_params.extruder - 1];
+		double nozzle_dmr = Biz::Slicing::get_nozzle_diameter(this->object()->config().hw_config(), ironing_params.extruder - 1);
 		if (ironing_params.just_infill) {
 			//TODO just_infill is currently not used.
 			// Just infill.

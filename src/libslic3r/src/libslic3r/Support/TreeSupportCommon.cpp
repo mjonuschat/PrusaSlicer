@@ -18,6 +18,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Utils.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 namespace Slic3r::FFFTreeSupport {
 
@@ -45,10 +46,10 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     // Arache feature
     const auto min_feature_size{config.get<Domain::FloatOrPercentage>("min_feature_size")};
     if (min_feature_size.is_percentage()) {
-        const auto nozzle_diameter{config.get<std::vector<double>>("nozzle_diameter")};
+        const auto nozzle_diameters{Biz::Slicing::get_nozzle_diameters(config.hw_config())};
         const double max_nozzle_diameter{std::accumulate(
-            nozzle_diameter.begin(),
-            nozzle_diameter.end(),
+            nozzle_diameters.begin(),
+            nozzle_diameters.end(),
             0.0,
             [](double a, double b) { return std::max(a, b); }
         )};

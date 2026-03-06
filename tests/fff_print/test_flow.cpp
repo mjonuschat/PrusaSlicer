@@ -53,7 +53,7 @@ SCENARIO("Extrusion width specifics", "[Flow]") {
         }
     }
     GIVEN("A config.with more.items.options and a 20mm cube ") {
-        TestConfig config;
+        TestConfig config{1, 0.5};
         config.print.items.opt("skirts").set(1);
         config.print.items.opt("brim_width").set(2.0);
         config.print.items.opt("perimeters").set(3);
@@ -62,7 +62,6 @@ SCENARIO("Extrusion width specifics", "[Flow]") {
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.35});
         config.print.items.opt("bottom_solid_layers").set(1);
         config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{2.0});
-        config.print.items.opt("nozzle_diameter").set(0.5);
         config.filament.at(0).items.opt("filament_diameter").set(3.0);
         WHEN("Slicing a 20mm cube") {
             test(config);
@@ -90,7 +89,7 @@ SCENARIO(" Bridge flow specifics.", "[Flow]") {
                     E_per_mm.emplace_back(line.dist_E(self) / line.dist_XY(self));
             }
         });
-        const double nozzle_dmr                 = config.print.items.opt("nozzle_diameter").get<double>();
+        const double nozzle_dmr                 = std::get<double>(config.hw_config.tools.front().features.at("nozzle_diameter"));
         const double filament_dmr               = config.filament.at(0).items.opt("filament_diameter").get<double>();
         const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.print.items.opt("bridge_flow_ratio").get<double>();
         size_t num_errors = std::count_if(E_per_mm.begin(), E_per_mm.end(), 

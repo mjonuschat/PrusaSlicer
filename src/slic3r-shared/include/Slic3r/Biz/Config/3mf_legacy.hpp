@@ -9,6 +9,7 @@
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
 #include <map>
@@ -80,6 +81,7 @@ namespace Slic3rLegacy {
         const char* path,
         const Slic3r::Domain::Model* model,
         const std::optional<Slic3r::Domain::ConfigPack>& config,
+        const std::optional<Slic3r::Domain::Preset::HwPrinterConfig>& hw_config,
         bool fullpath_sources,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,

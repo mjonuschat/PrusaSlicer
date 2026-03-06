@@ -145,7 +145,11 @@ public:
 
     // Collect 0-based extruder indices used to print this region's object.
 	void                        collect_object_printing_extruders(const Print &print, std::vector<unsigned int> &object_extruders) const;
-	static void                 collect_object_printing_extruders(const Domain::ConfigView& config, const bool has_brim, std::vector<unsigned int> &object_extruders);
+    static void collect_object_printing_extruders(
+        const PrintRegionConfigView& config,
+        const bool has_brim,
+        std::vector<unsigned int>& object_extruders
+    );
 
     void set_print_region_id(const int id) {m_print_region_id = id;}
 
@@ -153,6 +157,8 @@ public:
     T extruder_config_value(const std::string& key, FlowRole role) const {
         return m_config.get<std::vector<T>>(key).at(extruder(role) - 1);
     }
+
+    double nozzle_diameter(FlowRole role) const;
 
 private:
     friend Print;
@@ -587,7 +593,6 @@ public:
         const Domain::Model& model,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
-        const Domain::Preset::HwPrinterConfig& hw_config,
         const Domain::ModelWipeTower& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         const std::vector<unsigned>& extruder_candidates
@@ -636,7 +641,11 @@ public:
     double              max_allowed_layer_height() const;
     bool                has_support_material() const;
 
-    const PrintConfigView& config() const { return m_config; }
+    const PrintConfigView& config() const
+    {
+        return m_config;
+    }
+
     void set_config(const PrintConfigView& config) { m_config = config; }
     SpanOfConstPtrs<PrintObject> objects() const { return SpanOfConstPtrs<PrintObject>(const_cast<const PrintObject* const* const>(m_objects.data()), m_objects.size()); }
     PrintObject*                get_object(size_t idx) { return const_cast<PrintObject*>(m_objects[idx]); }
@@ -702,7 +711,6 @@ public:
     OnExtruderCandidates m_on_extruder_candidates;
 
     PrintConfigView m_config;
-    Domain::Preset::HwPrinterConfig m_hw_config;
     Biz::Print::SerializedConfig m_serialized_config;
 
     PrintObjectPtrs m_objects;

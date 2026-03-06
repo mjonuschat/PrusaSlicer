@@ -94,7 +94,7 @@ struct ProjectInteractorWrapper
 
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
     Slic3r::Domain::Workbench workbench;
-    Slic3r::Tests::MockThumbnailImageGenerator thumbnail_image_generator;
+    Slic3r::Test::MockThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Biz::ProjectInteractor project_interactor;
 };
 

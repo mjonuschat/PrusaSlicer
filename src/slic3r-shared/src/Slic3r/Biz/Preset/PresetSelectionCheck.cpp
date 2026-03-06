@@ -108,6 +108,59 @@ static Domain::ConfigPack original_config(
     );
 }
 
+static std::vector<std::string>
+config_pack_diff(const Domain::ConfigPack& a, const Domain::ConfigPack& b)
+{
+    const Domain::BoxOrBoxesVector boxes_a{
+        std::visit([](const auto& pack) { return Domain::as_boxes(pack); }, a)
+    };
+    const Domain::BoxOrBoxesVector boxes_b{
+        std::visit([](const auto& pack) { return Domain::as_boxes(pack); }, b)
+    };
+
+    ASSERT(boxes_a.size() == boxes_b.size());
+
+    std::vector<std::string> result;
+    for (std::size_t outter_index{}; outter_index < boxes_a.size(); ++outter_index) {
+        const auto& box_or_boxes_a{boxes_a[outter_index]};
+        const auto& box_or_boxes_b{boxes_b[outter_index]};
+        std::visit(
+            Domain::overloaded{
+                [&](const Domain::BoxRef& box_ref_a)
+                {
+                    ASSERT(std::holds_alternative<Domain::BoxRef>(box_or_boxes_b));
+                    const auto& box_ref_b{std::get<Domain::BoxRef>(box_or_boxes_b)};
+                    const std::vector<std::string> diff_keys{
+                        box_ref_a.get().diff_keys(box_ref_b.get())
+                    };
+                    result.insert(result.end(), diff_keys.begin(), diff_keys.end());
+                },
+                [&](const Domain::BoxRefs& box_refs_a)
+                {
+                    ASSERT(std::holds_alternative<Domain::BoxRefs>(box_or_boxes_b));
+                    const auto& box_refs_b{std::get<Domain::BoxRefs>(box_or_boxes_b)};
+                    for (std::size_t inner_index{}; inner_index < box_refs_a.size();
+                         ++inner_index) {
+                        const Domain::BoxRef& box_ref_a{box_refs_a[inner_index]};
+                        const Domain::BoxRef& box_ref_b{box_refs_b[inner_index]};
+                        const std::vector<std::string> diff_keys{
+                            box_ref_a.get().diff_keys(box_ref_b.get())
+                        };
+                        result.insert(result.end(), diff_keys.begin(), diff_keys.end());
+                    }
+                }
+            },
+            box_or_boxes_a
+        );
+    }
+
+    std::ranges::sort(result);
+    const auto [first, last]{std::ranges::unique(result)};
+    result.erase(first, last);
+
+    return result;
+}
+
 /** @brief Detect if selected_preset is dirty.
  *
  * @param ignore_printer    If true, then modifications in printer will be ignored
@@ -132,23 +185,7 @@ static bool is_dirty_selected_preset(
             || preset_interactor.selected_printer_preset().technology()
                 == Domain::PrinterTechnology::SLA
     );
-
-    if (preset_interactor.selected_printer_preset().technology() == Domain::PrinterTechnology::FFF)
-    {
-        Domain::FullConfigFDM full_config_init(std::get<Domain::ConfigPackFDM>(config_initial), {});
-        Domain::FullConfigFDM full_config_selected(
-            std::get<Domain::ConfigPackFDM>(config_selected), {}
-        );
-
-        diff_keys = full_config_init.diff_keys(full_config_selected);
-    } else {
-        Domain::FullConfigSLA full_config_init(std::get<Domain::ConfigPackSLA>(config_initial));
-        Domain::FullConfigSLA full_config_selected(
-            std::get<Domain::ConfigPackSLA>(config_selected)
-        );
-
-        diff_keys = full_config_init.diff_keys(full_config_selected);
-    }
+    diff_keys = config_pack_diff(config_initial, config_selected);
     SPDLOG_INFO("Diffs count: {} ", diff_keys.size());
     return !diff_keys.empty();
 }

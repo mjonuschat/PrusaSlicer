@@ -30,8 +30,19 @@ ExportNameData parse_fdm_export_name(
     const Biz::ProjectInteractor& project_interactor 
 )
 {
+    const Domain::SelectionId project_id = project_interactor.selected_bed_slicing_id().project_id;
+    const auto& project            = project_interactor.workbench().project(project_id);
+    const auto* bed_instance       = project.find_bed_instance_by_id(
+        project_interactor.selected_bed_slicing_id().bed_instance_id
+    );
+    ASSERT(bed_instance != nullptr);
+
     ExportNameData result {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
-    Domain::FullConfigFDM full_config{fdm_config, {}};
+    Domain::FullConfigFDM full_config{
+        fdm_config,
+        bed_instance->extruder_candidates,
+        project_interactor.preset_interactor().current_printer_config()
+    };
     Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
     Biz::Parser::PlaceholderParser parser{io_config};
     const std::optional<Biz::FDMResultRef> fdm_result_opt{project_interactor.fdm_result_cache().get_result(project_interactor.selected_bed_slicing_id())};
@@ -87,9 +98,6 @@ ExportNameData parse_fdm_export_name(
     parser.set("initial_filament_type", print_statistics.initial_filament_type);
     parser.set("total_toolchanges", print_statistics.total_toolchanges);
 
-    // values from project interactor
-    Domain::SelectionId project_id = project_interactor.selected_bed_slicing_id().project_id;
-    const auto& project = project_interactor.workbench().project(project_id);
     const auto& ccc     = project_interactor.preset_interactor().selected_config_container_context();
     const auto* cc      = project.find_config_container(ccc.config_container_id);
     ASSERT(cc != nullptr);
@@ -109,9 +117,6 @@ ExportNameData parse_fdm_export_name(
             filament_name+=",";
         }
     }
-
-    const auto* bed_instance = project.find_bed_instance_by_id(project_interactor.selected_bed_slicing_id().bed_instance_id);
-    size_t model_instances_size = bed_instance->model_instances.size();
 
     std::vector<std::string> names;
     names.reserve(bed_instance->model_instances.size());

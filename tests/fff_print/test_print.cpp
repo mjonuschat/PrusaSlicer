@@ -188,8 +188,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
         }
     }
     GIVEN("Model with multiple objects") {
-        TestConfig config{4};
-        config.print.items.opt("nozzle_diameter").set(0.4);
+        TestConfig config{4, 0.4};
         Print print;
         Domain::Model model;
         Slic3r::Test::init_print({ TestMesh::cube_20x20x20 }, print, model, config);
@@ -351,14 +350,13 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     Domain::Model model;
     Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
 
-    auto full_config_result{prepare_slicing_input(config, {})};
+    auto full_config_result{prepare_slicing_input(config, {}, config.hw_config)};
     REQUIRE(full_config_result.has_value());
     auto& full_config{*full_config_result};
     Biz::Print::SerializedConfig serialized_config{};
-    HwPrinterConfig hw_config;
 
     auto apply_status{
-        print.apply(model, full_config, serialized_config, hw_config, Domain::ModelWipeTower{}, std::nullopt, {0})
+        print.apply(model, full_config, serialized_config, Domain::ModelWipeTower{}, std::nullopt, {0})
     };
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Unchanged>(apply_status));
 
@@ -385,11 +383,11 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
         }
     }
 
-    full_config_result = prepare_slicing_input(config, {});
+    full_config_result = prepare_slicing_input(config, {}, config.hw_config);
     REQUIRE(full_config_result.has_value());
     full_config = *full_config_result;
 
-    apply_status = print.apply(model, full_config, serialized_config, hw_config, Domain::ModelWipeTower{}, std::nullopt, {0});
+    apply_status = print.apply(model, full_config, serialized_config, Domain::ModelWipeTower{}, std::nullopt, {0});
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
 }
 
@@ -471,7 +469,7 @@ void apply_and_check(
     REQUIRE(is_exclusively_undone(context.print, {}));
 
     modify_config(context.config);
-    const auto slicing_input{prepare_slicing_input(context.config, {})};
+    const auto slicing_input{prepare_slicing_input(context.config, {}, hw_config)};
     REQUIRE(slicing_input);
     const auto full_config{*slicing_input};
 
@@ -479,7 +477,6 @@ void apply_and_check(
         context.model,
         full_config,
         serialized_config,
-        hw_config,
         Domain::ModelWipeTower{},
         std::nullopt,
         {0}

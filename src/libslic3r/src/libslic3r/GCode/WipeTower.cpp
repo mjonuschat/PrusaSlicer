@@ -21,6 +21,7 @@
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
@@ -691,7 +692,7 @@ void WipeTower::set_extruder(size_t idx, const PrintConfigView& config)
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.get<std::vector<double>>("filament_diameter").at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
-    float nozzle_diameter = float(config.get<std::vector<double>>("nozzle_diameter").at(idx));
+    float nozzle_diameter = float(Biz::Slicing::get_nozzle_diameter(config.hw_config(), idx));
     m_filpar[idx].nozzle_diameter = nozzle_diameter; // to be used in future with (non-single) multiextruder MM
 
     float max_vol_speed = float(config.get<std::vector<double>>("filament_max_volumetric_speed").at(idx));
@@ -1547,7 +1548,7 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
 
     // Extract purging volumes for each extruder pair:
     std::vector<std::vector<float>> wipe_volumes;
-    const unsigned int number_of_extruders = config.full_config().filaments_count();
+    const unsigned int number_of_extruders = config.hw_config().material_slot_count();
     for (size_t i = 0; i<number_of_extruders; ++i)
         wipe_volumes.push_back(std::vector<float>(wiping_matrix.begin()+i*number_of_extruders, wiping_matrix.begin()+(i+1)*number_of_extruders));
 

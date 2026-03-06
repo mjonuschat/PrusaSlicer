@@ -82,6 +82,9 @@ enum class ErrorCode
     FoundG92E0InLayerGCode, // _u8L("\"G92 E0\" was found in layer_gcode, which is incompatible with absolute extruder addressing.")
     SettingMustBeEqualForAllExtruders,
     PlaceholderParser,
+    MissingHwConfigNozzleDiameter,
+    HwConfigLessMaterialsThanTools,
+    NoHwConfigTools,
     FailedToParseCustomParameters,
     FatalError,
 

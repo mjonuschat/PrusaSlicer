@@ -49,8 +49,8 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
 
     auto test = [&](const TestData &data, const TestConfig& config) {
         const auto full_config{std::make_shared<const FullConfigFDM>(config.get_full_config())};
-        Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->tools_count(), full_config->filaments_count()};
-        Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->tools_count(), full_config->filaments_count()};
+        Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->hw_config().material_slot_count()};
+        Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->hw_config().material_slot_count()};
         const PrintRegionConfigView region_config_view{
             full_config,
             std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
@@ -344,10 +344,10 @@ SCENARIO("Perimeters", "[Perimeters]")
             const double perimeter_speed            = config.print.items.opt("perimeter_speed").get<double>() * 60.;
             const double external_perimeter_speed   = config.print.items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60.;
             const double bridge_speed               = config.print.items.opt("bridge_speed").get<double>() * 60.;
-            const double nozzle_dmr                 = config.print.items.opt("nozzle_diameter").get<double>();
+            const double nozzle_dmr                 = std::get<double>(config.hw_config.tools.front().features.at("nozzle_diameter"));
             const double filament_dmr               = config.filament.at(0).items.opt("filament_diameter").get<double>();
             const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.print.items.opt("bridge_flow_ratio").get<double>();
-            parser.parse_buffer(gcode, [&layer_speeds, &fan_speed, perimeter_speed, external_perimeter_speed, bridge_speed, nozzle_dmr, filament_dmr, bridge_mm_per_mm]
+            parser.parse_buffer(gcode, [&layer_speeds, &fan_speed, perimeter_speed, external_perimeter_speed, bridge_speed, bridge_mm_per_mm]
                 (GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 if (line.cmd_is("M107"))
@@ -424,8 +424,7 @@ SCENARIO("Perimeters", "[Perimeters]")
 
 SCENARIO("Some weird coverage test", "[Perimeters]")
 {
-    TestConfig config;
-    config.print.items.opt("nozzle_diameter").set(0.4);
+    TestConfig config{1, 0.4};
     config.print.items.opt("perimeters").set(2);
     config.print.items.opt("perimeter_extrusion_width").set(FloatOrPercentage{0.4});
     config.print.items.opt("external_perimeter_extrusion_width").set(FloatOrPercentage{0.4});

@@ -427,7 +427,7 @@ TEST_CASE_METHOD(
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are reported per filament", "[ConfigLoad]")
 {
     json["toolprint_settings"] = {
-        {"nozzle_diameter", ordered_json::array({1.4})},
+        {"retract_length", ordered_json::array({1.4})},
     };
     json["filament_settings"] = {{"invalid_key", ordered_json::array({"invalid"})}};
 
@@ -442,7 +442,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are repor
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[ConfigLoad]")
 {
     json["toolprint_settings"] = {
-        {"nozzle_diameter", ordered_json::array({1.4, 1.5, 1.6})},
+        {"retract_length", ordered_json::array({1.4, 1.5, 1.6})},
     };
     json["filament_settings"] = {{"filament_colour", ordered_json::array({"red", "blue", "green"})}};
 
@@ -451,9 +451,9 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double per tool works", "[Config
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     REQUIRE(result_config.tool.size() == 3);
 
-    CHECK(result_config.tool.at(0).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.4));
-    CHECK(result_config.tool.at(1).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.5));
-    CHECK(result_config.tool.at(2).overrides.get("nozzle_diameter")->get<double>() == Catch::Approx(1.6));
+    CHECK(result_config.tool.at(0).overrides.get("retract_length")->get<double>() == Catch::Approx(1.4));
+    CHECK(result_config.tool.at(1).overrides.get("retract_length")->get<double>() == Catch::Approx(1.5));
+    CHECK(result_config.tool.at(2).overrides.get("retract_length")->get<double>() == Catch::Approx(1.6));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing overrides are not reported in issues", "[ConfigLoad]")
@@ -477,7 +477,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing overrides are not reported in is
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Overrides can be set only partially", "[ConfigLoad]")
 {
     json["toolprint_settings"] = {
-        {"nozzle_diameter", ordered_json::array({1.4, 1.5})},
+        {"retract_length", ordered_json::array({1.4, 1.5})},
     };
     json["filament_settings"] = {{"retract_layer_change", ordered_json::array({nullptr, true})}};
     const auto result{load(json, fdm_hw_config)};

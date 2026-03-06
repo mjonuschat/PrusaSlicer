@@ -504,8 +504,11 @@ static inline float get_default_perimeter_spacing(const PrintObject &print_objec
     std::vector<unsigned int> printing_extruders = print_object.object_extruders();
     assert(!printing_extruders.empty());
     float avg_extruder = 0;
-    for(unsigned int extruder_id : printing_extruders)
-        avg_extruder += float(scale_(print_object.print()->config().get<std::vector<double>>("nozzle_diameter").at(extruder_id)));
+    for (unsigned int extruder_id : printing_extruders) {
+        avg_extruder += float(scale_(
+            Biz::Slicing::get_nozzle_diameter(print_object.config().hw_config(), extruder_id)
+        ));
+    }
     avg_extruder /= printing_extruders.size();
     return avg_extruder;
 }

@@ -67,6 +67,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/InfillAboveBridges.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 using namespace std::literals;
 
@@ -2876,8 +2877,10 @@ void PrintObject::combine_infill()
 
         // Limit the number of combined layers to the maximum height allowed by this regions' nozzle.
         //FIXME limit the layer height to max_layer_height
-        const double nozzle_diameter = std::min(this->print()->config().get<std::vector<double>>("nozzle_diameter").at(region.config().get<int>("infill_extruder") - 1),
-                                                this->print()->config().get<std::vector<double>>("nozzle_diameter").at(region.config().get<int>("solid_infill_extruder") - 1));
+        const double nozzle_diameter = std::min(
+            region.nozzle_diameter(FlowRole::frInfill),
+            region.nozzle_diameter(FlowRole::frSolidInfill)
+        );
 
         const double automatic_infill_combination_max_layer_height = region.config().get<Domain::FloatOrPercentage>("automatic_infill_combination_max_layer_height").get_abs_value(nozzle_diameter);
         const double max_combine_layer_height                      = automatic_infill_combination ? std::min(automatic_infill_combination_max_layer_height, nozzle_diameter) : nozzle_diameter;

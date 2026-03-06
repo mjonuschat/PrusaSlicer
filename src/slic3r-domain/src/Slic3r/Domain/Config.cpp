@@ -369,6 +369,7 @@ LocationSize get_max_location_size(
 using ConfigItemRef = std::reference_wrapper<const ConfigItem>;
 ConfigValue extract_values(const std::vector<ConfigItemRef>& items)
 {
+    ASSERT(!items.empty());
     return items.front().get().visit([&](auto&& value) -> ConfigValue {
         using ValueType = std::remove_cvref_t<decltype(value)>;
         if constexpr (std::is_same_v<ValueType, EnumWrapper>) {

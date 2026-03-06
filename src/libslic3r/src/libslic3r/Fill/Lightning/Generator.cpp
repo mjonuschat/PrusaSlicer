@@ -21,6 +21,7 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/HwConfigUtils.hpp"
 
 /* Possible future tasks/optimizations,etc.:
  * - Improve connecting heuristic to favor connecting to shorter trees
@@ -47,8 +48,7 @@ Generator::Generator(const PrintObject &print_object, const double fill_density,
     const PrintConfigView         &print_config         = print_object.print()->config();
     const PrintObjectConfigView   &object_config        = print_object.config();
     const std::unique_ptr<PrintRegion> &region          = print_object.shared_regions()->all_regions.front();
-    const PrintRegionConfigView   &region_config        = print_object.shared_regions()->all_regions.front()->config();
-    const std::vector<double> &nozzle_diameters     = print_config.get<std::vector<double>>("nozzle_diameter");
+    const std::vector<double> nozzle_diameters     = Biz::Slicing::get_nozzle_diameters(print_config.hw_config());
     double                     max_nozzle_diameter  = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
 //    const int                  infill_extruder      = region_config.infill_extruder.value;
     const double               default_infill_extrusion_width = Flow::auto_extrusion_width(FlowRole::frInfill, float(max_nozzle_diameter));

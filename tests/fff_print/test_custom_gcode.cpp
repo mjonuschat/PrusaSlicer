@@ -47,8 +47,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         }
     };
 
-    Test::TestConfig config{4};
-    config.print.items.opt("nozzle_diameter").set(0.6);
+    Test::TestConfig config{4, 0.6};
     config.print.items.opt("infill_extruder").set(2);
     config.print.items.opt("perimeter_extruder").set(2);
     config.filament[0].items.opt("first_layer_temperature").set(200);
@@ -155,8 +154,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     GIVEN("if / elsif / elsif / elsif / else / endif")
     {
 
-        Test::TestConfig config{5};
-        config.print.items.opt("nozzle_diameter").set(0.6);
+        Test::TestConfig config{5, 0.6};
         config.printer.items.opt("start_gcode").set(
                 ";substitution:{if infill_extruder==1}if block"
                 "{elsif infill_extruder==2}elsif block 1"
@@ -189,8 +187,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         WHEN("infill_extruder == 5") { test(5); }
     }
     GIVEN("nested if / if / else / endif") {
-        Test::TestConfig config{5};
-        config.print.items.opt("nozzle_diameter").set(0.6);
+        Test::TestConfig config{5, 0.6};
 
         config.printer.items.opt("start_gcode").set(
             ";substitution:{if infill_extruder==1}{if perimeter_extruder==1}block11{else}block12{endif}"

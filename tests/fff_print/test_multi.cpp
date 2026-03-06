@@ -35,8 +35,7 @@ SCENARIO("Basic tests", "[Multi]")
 {
     WHEN("Slicing multi-material print with non-consecutive extruders") {
 
-        Test::TestConfig config{4};
-        config.print.items.opt("nozzle_diameter").set(0.6);
+        Test::TestConfig config{4, 0.6};
         config.print.items.opt("support_material_extruder").set(0);
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
@@ -52,8 +51,7 @@ SCENARIO("Basic tests", "[Multi]")
     }
 
     WHEN("Slicing with multiple skirts with a single, non-zero extruder") {
-        Test::TestConfig config{4};
-        config.print.items.opt("nozzle_diameter").set(0.6);
+        Test::TestConfig config{4, 0.6};
         config.print.items.opt("support_material_interface_extruder").set(2);
         config.print.items.opt("support_material_extruder").set(0);
         config.print.items.opt("perimeter_extruder").set(2);
@@ -69,9 +67,8 @@ SCENARIO("Basic tests", "[Multi]")
 
 TEST_CASE("Ooze prevention", "[Multi]")
 {
-    TestConfig config{4};
+    TestConfig config{4, 0.6};
 
-    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("support_material_extruder").set(4);
     config.print.items.opt("raft_layers").set(2);
     config.print.items.opt("infill_extruder").set(2);
@@ -222,9 +219,8 @@ TEST_CASE("Stacked cubes", "[Multi]")
     upper_config.overrides.set("top_solid_layers", 0);
 
     static constexpr const double solid_infill_speed = 99;
-    TestConfig config{4};
+    TestConfig config{4, 0.6};
 
-    config.print.items.opt("nozzle_diameter").set(0.6);
     config.print.items.opt("fill_density").set(Percentage{0});
     config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
     config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
@@ -275,8 +271,7 @@ TEST_CASE("Stacked cubes", "[Multi]")
         }
     }
     WHEN("Slicing with auto-assigned extruders") {
-        TestConfig config{4};
-        config.print.items.opt("nozzle_diameter").set(0.6);
+        TestConfig config{4, 0.6};
         config.print.items.opt("layer_height").set(0.4);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
         config.print.items.opt("skirts").set(0);
