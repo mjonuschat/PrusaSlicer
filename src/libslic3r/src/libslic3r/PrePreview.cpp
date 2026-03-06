@@ -538,7 +538,7 @@ PreviewConfig::PreviewConfig(const Slic3r::Print& print)
         custom_gcode = print.custom_gcode()->get();
     }
     material_slot_count = print.config().hw_config().material_slot_count();
-    extruder_colors = print.config().get<std::vector<std::string>>("extruder_slot_colours");
+    extruder_colors = print.config().get<std::vector<std::string>>("extruder_colour");
 }
 
 PrePreview::PrePreview(const Slic3r::Print& print): m_prepreview_config{print} {

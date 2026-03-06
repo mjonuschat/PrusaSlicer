@@ -664,7 +664,7 @@ namespace DoExport {
         // are considered to be active for the single extruder multi-material printers only.
         processor_config.filament_change_time = (float) config.get<double>("filament_change_time");
 
-        processor_config.extruders.str_colors = config.get<std::vector<std::string>>("extruder_slot_colours");
+        processor_config.extruders.str_colors = config.get<std::vector<std::string>>("extruder_colour");
 
         processor_config.callbacks.cb_log = [](const std::string& msg){
             SPDLOG_WARN(msg);

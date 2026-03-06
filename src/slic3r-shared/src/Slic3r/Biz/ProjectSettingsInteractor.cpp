@@ -59,7 +59,7 @@ std::vector<Domain::ColorRGB> ProjectSettingsInteractor::get_colors(
         const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
         if (!fdm)
             return {};
-        const auto hex_colors = fdm->project.items.opt("extruder_slot_colours")
+        const auto hex_colors = fdm->project.items.opt("extruder_colour")
             .get<std::vector<std::string>>();
         std::vector<Domain::ColorRGB> result;
         result.reserve(hex_colors.size());
@@ -92,7 +92,7 @@ void ProjectSettingsInteractor::set_color_from_user(
         if (!fdm)
             return;
 
-        auto colors = fdm->project.items.opt("extruder_slot_colours")
+        auto colors = fdm->project.items.opt("extruder_colour")
             .get<std::vector<std::string>>();
 
         if (slot < 0 || slot >= static_cast<int>(colors.size()))
@@ -124,7 +124,7 @@ void ProjectSettingsInteractor::set_colors_from_connect(
         if (!fdm)
             return;
 
-        auto colors = fdm->project.items.opt("extruder_slot_colours")
+        auto colors = fdm->project.items.opt("extruder_colour")
             .get<std::vector<std::string>>();
 
         const size_t count = std::min(colors.size(), incoming_colors.size());
@@ -267,7 +267,7 @@ void ProjectSettingsInteractor::load_and_reconcile(
     if (!fdm)
         return;
 
-    auto colors = fdm->project.items.opt("extruder_slot_colours")
+    auto colors = fdm->project.items.opt("extruder_colour")
         .get<std::vector<std::string>>();
     const auto colors_old = colors;
 
@@ -292,7 +292,7 @@ void ProjectSettingsInteractor::store_and_notify(
         if (!cc)
             continue;
 
-        cc->project_settings().items.opt("extruder_slot_colours")
+        cc->project_settings().items.opt("extruder_colour")
             .set(colors);
 
         std::vector<Domain::ColorRGB> rgb_colors;

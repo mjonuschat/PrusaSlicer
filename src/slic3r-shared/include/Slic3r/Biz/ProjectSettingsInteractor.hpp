@@ -21,7 +21,7 @@ namespace Slic3r::Biz {
 /**
  * @brief Manages per-config-container project settings, including the extruder slot color map.
  *
- * Invariant: no entry in extruder_slot_colours is ever an empty string.
+ * Invariant: no entry in extruder_colour is ever an empty string.
  */
 class ProjectSettingsInteractor :
     public ISelectedConfigContainerChangedListener,
