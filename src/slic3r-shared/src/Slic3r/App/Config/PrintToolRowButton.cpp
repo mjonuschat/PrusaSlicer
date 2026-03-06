@@ -63,13 +63,13 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
         show_preview = true;
         m_config_item_preview
             ->set_data(*print_tool_item->print_item, print_tool_item->value.first, false);
-    } else if (!print_tool_item->extruder_candidates.empty()) {
+    } else if (!print_tool_item->shared_context.extruder_candidates.empty()) {
         // Maybe the tool values are same
         const Domain::ConfigValue& first_value =
-            print_tool_item->tool_value(*print_tool_item->extruder_candidates.cbegin());
+            print_tool_item->tool_value(*print_tool_item->shared_context.extruder_candidates.cbegin());
         show_preview = std::all_of(
-            print_tool_item->extruder_candidates.cbegin(),
-            print_tool_item->extruder_candidates.cend(),
+            print_tool_item->shared_context.extruder_candidates.cbegin(),
+            print_tool_item->shared_context.extruder_candidates.cend(),
             [&](unsigned extruder) { return print_tool_item->tool_value(extruder) == first_value; }
         );
         m_config_item_preview->set_data(*print_tool_item->print_item, first_value, false);

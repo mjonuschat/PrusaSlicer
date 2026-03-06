@@ -2906,7 +2906,7 @@ void PresetInteractor::update_print_tool_cbi(Domain::Preset::SelectedPreset& sel
         { return &preset.config_box(); }
     );
     m_print_tool_cbi_accessor
-        .set_sources(m_selected_project_id, &selected_preset.print.config_box(), tool_cbs);
+        .set_sources(m_selected_project_id, selected_preset, tool_cbs);
 }
 
 } // namespace Slic3r::Biz::Preset

@@ -20,7 +20,7 @@ void PrintToolItem::update_value()
     value = Domain::apply_compatibility_rule(
         &print_item->value(),
         construct_overrides(),
-        extruder_candidates
+        shared_context.extruder_candidates
     );
 }
 

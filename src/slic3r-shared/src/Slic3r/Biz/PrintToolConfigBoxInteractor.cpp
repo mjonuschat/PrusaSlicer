@@ -85,11 +85,11 @@ void PrintToolConfigBoxInteractor::SetAccessor::set_project_id(
 
 void PrintToolConfigBoxInteractor::SetAccessor::set_sources(
     const Domain::SelectionId selected_project_id,
-    Domain::ConfigBox* print_config_box,
+    Domain::Preset::SelectedPreset& selected_preset,
     const std::vector<Domain::ConfigBox*>& tool_config_boxes
 )
 {
-    m_observable_list.lock()->set_sources(selected_project_id, print_config_box, tool_config_boxes);
+    m_observable_list.lock()->set_sources(selected_project_id, selected_preset, tool_config_boxes);
 }
 
 } // namespace Slic3r::Biz

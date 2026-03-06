@@ -22,6 +22,13 @@ namespace Slic3r::Biz {
  */
 struct PrintToolItem
 {
+    struct SharedContext
+    {
+        bool has_multiple_extruders = false;
+        const std::set<unsigned>&
+            extruder_candidates; ///< extruder candidates vector stored probably in PrintToolCBOL
+    };
+
     using ToolOverride = std::pair<const Domain::ConfigItem*, bool>;
 
     std::string name;
@@ -30,8 +37,7 @@ struct PrintToolItem
     std::vector<ToolOverride>
         tool_overrides; ///< vector of turned overrides from Tool or nullptr, if override is off
     std::pair<Domain::ConfigValue, bool> value;
-    const std::set<unsigned>&
-        extruder_candidates; ///< extruder candidates vector stored probably in PrintToolCBOL
+    const SharedContext& shared_context;
 
     const Domain::ConfigValue& tool_value(size_t index) const;
 

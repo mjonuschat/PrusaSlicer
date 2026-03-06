@@ -12,6 +12,10 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 
+namespace Slic3r::Domain::Preset {
+struct SelectedPreset;
+}
+
 namespace Slic3r::Biz {
 
 class PrintToolConfigObservableList :
@@ -35,7 +39,7 @@ public:
      */
     void set_sources(
         const Domain::SelectionId selected_project_id,
-        Domain::ConfigBox* print_config_box,
+        Domain::Preset::SelectedPreset& selected_preset,
         const std::vector<Domain::ConfigBox*>& tool_config_boxes
     );
 
@@ -63,9 +67,9 @@ public:
     ) override;
 
 private:
-    using ToolPrintItems = std::vector<PrintToolItem>;
+    using PrintToolItems = std::vector<PrintToolItem>;
 
-    ToolPrintItems::iterator find_item(const std::string& name);
+    PrintToolItems::iterator find_item(const std::string& name);
 
     void update_items();
     void update_extruders();
@@ -88,8 +92,9 @@ private:
     Domain::SelectionId m_selected_project_id = Domain::INVALID_ID;
     Domain::ConfigBox* m_print_config_box{nullptr};
     std::vector<Domain::ConfigBox*> m_tool_config_boxes;
-    ToolPrintItems m_items;
+    PrintToolItems m_items;
     std::set<unsigned> m_extruder_candidates;
+    PrintToolItem::SharedContext m_print_tool_shared_context;
 };
 
 } // namespace Slic3r::Biz

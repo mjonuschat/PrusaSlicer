@@ -4,7 +4,9 @@
 ///|/
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 
+#include <Slic3r/Domain/Preset/HwConfig.hpp>
 #include <Slic3r/Domain/Config.hpp>
+#include <Slic3r/Domain/Preset/SelectedPreset.hpp>
 
 namespace Slic3r::Biz {
 
@@ -15,7 +17,8 @@ PrintToolConfigObservableList::PrintToolConfigObservableList(
     m_workbench(workbench),
     m_scene_interactor(scene_interactor),
     m_scene_bed_changed_listener_scope(scene_interactor, *this),
-    m_selected_bed_changed_listener_scope(scene_interactor, *this)
+    m_selected_bed_changed_listener_scope(scene_interactor, *this),
+    m_print_tool_shared_context{false, m_extruder_candidates}
 {}
 
 const PrintToolItem& PrintToolConfigObservableList::at(size_t index) const
@@ -30,19 +33,24 @@ size_t PrintToolConfigObservableList::size() const
 
 void PrintToolConfigObservableList::set_sources(
     const Domain::SelectionId selected_project_id,
-    Domain::ConfigBox* print_config_box,
+    Domain::Preset::SelectedPreset& selected_preset,
     const std::vector<Domain::ConfigBox*>& tool_config_boxes
 )
 {
-    m_selected_project_id                     = selected_project_id;
+    m_selected_project_id = selected_project_id;
     m_extruder_candidates.clear();
 
-    const std::vector<Domain::ConfigItem>& print_items = print_config_box->items.all_items();
+    Domain::ConfigBox& print_config_box = selected_preset.print.config_box();
+    m_print_tool_shared_context.has_multiple_extruders =
+        Domain::Preset::get_feature<bool>(selected_preset.hw_config.features, "multi_extruder")
+            .value_or(false);
+
+    const std::vector<Domain::ConfigItem>& print_items = print_config_box.items.all_items();
     if (!m_items.empty()
         && print_items.size() == m_items.size()
         && m_tool_config_boxes.size() == tool_config_boxes.size())
     {
-        m_print_config_box  = print_config_box;
+        m_print_config_box  = &print_config_box;
         m_tool_config_boxes = tool_config_boxes;
         // we shall simply update items
         update_items();
@@ -51,7 +59,7 @@ void PrintToolConfigObservableList::set_sources(
         invoke_listeners<IListObserver<PrintToolItem>>([](IListObserver<PrintToolItem>* l)
                                                        { l->on_will_be_reset(); });
 
-        m_print_config_box  = print_config_box;
+        m_print_config_box  = &print_config_box;
         m_tool_config_boxes = tool_config_boxes;
         m_items.clear();
         for (const Domain::ConfigItem& print_item : print_items) {
@@ -78,7 +86,7 @@ void PrintToolConfigObservableList::set_sources(
                     tool_overrides,
                     m_extruder_candidates
                 ),
-                m_extruder_candidates
+                m_print_tool_shared_context
             );
         }
 
@@ -92,7 +100,7 @@ void PrintToolConfigObservableList::set_print_value(
     const Domain::ConfigValue& value
 )
 {
-    ToolPrintItems::iterator index_it = find_item(key);
+    PrintToolItems::iterator index_it = find_item(key);
 
     if (index_it != m_items.end() && index_it->print_item->value() != value) {
         const size_t index = std::distance(m_items.begin(), index_it);
@@ -111,7 +119,7 @@ void PrintToolConfigObservableList::set_tool_override(
     bool override
 )
 {
-    ToolPrintItems::iterator index_it = find_item(key);
+    PrintToolItems::iterator index_it = find_item(key);
 
     if (index_it != m_items.cend() && index < index_it->tool_overrides.size()) {
         if (override) {
@@ -136,7 +144,7 @@ void PrintToolConfigObservableList::set_tool_value(
     const Domain::ConfigValue& value
 )
 {
-    ToolPrintItems::iterator index_it = find_item(key);
+    PrintToolItems::iterator index_it = find_item(key);
 
     if (index_it != m_items.cend()
         && index < index_it->tool_overrides.size()
@@ -200,7 +208,7 @@ void PrintToolConfigObservableList::on_selected_bed_instances_changed(
     }
 }
 
-PrintToolConfigObservableList::ToolPrintItems::iterator PrintToolConfigObservableList::find_item(
+PrintToolConfigObservableList::PrintToolItems::iterator PrintToolConfigObservableList::find_item(
     const std::string& name
 )
 {

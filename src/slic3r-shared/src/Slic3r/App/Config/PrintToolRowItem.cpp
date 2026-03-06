@@ -84,8 +84,9 @@ size_t PrintToolRowItem::size() const
 
 void PrintToolRowItem::on_data_update()
 {
-    const bool need_multiple = m_state->tool_overrides.size() > 1;
-    const bool need_init     = m_initialized_type == InitializedType::None
+    const bool need_multiple =
+        m_state->shared_context.has_multiple_extruders && !m_state->tool_overrides.empty();
+    const bool need_init = m_initialized_type == InitializedType::None
         || (m_initialized_type == InitializedType::PrintOnly && need_multiple)
         || (m_initialized_type == InitializedType::PrintTool && !need_multiple);
 
@@ -116,7 +117,7 @@ void PrintToolRowItem::on_data_update()
                             override.first,
                             m_state->print_item,
                             override.second,
-                            m_state->extruder_candidates.contains(index++)
+                            m_state->shared_context.extruder_candidates.contains(index++)
                         };
                     }
                 }
@@ -130,10 +131,11 @@ void PrintToolRowItem::on_data_update()
                 ToolRowOverride& override_row = m_tool_overrides.at(index);
                 const Biz::PrintToolItem::ToolOverride& override =
                     m_state->tool_overrides.at(index);
-                override_row.override_item      = override.first;
-                override_row.print_item         = m_state->print_item;
-                override_row.overriden          = override.second;
-                override_row.extruder_candidate = m_state->extruder_candidates.contains(index);
+                override_row.override_item = override.first;
+                override_row.print_item    = m_state->print_item;
+                override_row.overriden     = override.second;
+                override_row.extruder_candidate =
+                    m_state->shared_context.extruder_candidates.contains(index);
             }
             invoke_listeners<Biz::IListObserver<ToolRowOverride>>(
                 [new_tool_size](Biz::IListObserver<ToolRowOverride>* l)
@@ -182,7 +184,7 @@ void PrintToolRowItem::clear()
 void PrintToolRowItem::initialize()
 {
     ASSERT(m_initialized_type == InitializedType::None);
-    if (m_state->tool_overrides.size() < 2) {
+    if (!m_state->shared_context.has_multiple_extruders || m_state->tool_overrides.empty()) {
         m_initialized_type = InitializedType::PrintOnly;
 
         m_config_row_item =
@@ -250,9 +252,7 @@ void PrintToolRowItem::update_explanation()
 
     const ImColor text_color                           = ImGui::GetStyleColorVec4(ImGuiCol_Text);
     const Domain::CompatibilityRule compatibility_rule = m_state->print_item->compatibility_rule();
-    if (m_state->print_item->def().require_compatibility_rule
-        && m_state->value.second)
-    {
+    if (m_state->print_item->def().require_compatibility_rule && m_state->value.second) {
         if (compatibility_rule == Domain::CompatibilityRule::IgnoreOverrides) {
             label_visible = true;
         } else {
@@ -299,8 +299,8 @@ void PrintToolRowItem::update_explanation()
             for (size_t index = 0; index < m_state->tool_overrides.size(); ++index) {
                 const Biz::PrintToolItem::ToolOverride& tool_override =
                     m_state->tool_overrides.at(index);
-                if (!m_state->extruder_candidates.empty()
-                    && !m_state->extruder_candidates.contains(index))
+                if (!m_state->shared_context.extruder_candidates.empty()
+                    && !m_state->shared_context.extruder_candidates.contains(index))
                 {
                     continue;
                 }

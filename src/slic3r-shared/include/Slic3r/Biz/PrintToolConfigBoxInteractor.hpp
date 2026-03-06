@@ -18,6 +18,10 @@ struct ConfigValue;
 class Workbench;
 } // namespace Slic3r::Domain
 
+namespace Slic3r::Domain::Preset {
+struct SelectedPreset;
+}
+
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
 } // namespace Slic3r::Biz::Scene
@@ -44,7 +48,7 @@ public:
 
         void set_sources(
             const Domain::SelectionId selected_project_id,
-            Domain::ConfigBox* print_config_box,
+            Domain::Preset::SelectedPreset& selected_preset,
             const std::vector<Domain::ConfigBox*>& tool_config_boxes
         );
 
