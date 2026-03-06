@@ -7,34 +7,6 @@
 
 namespace Slic3r::Domain::Preset {
 
-uint8_t address_to_public(uint8_t address)
-{
-    return address + 1;
-}
-
-Address address_to_public(const Address& address)
-{
-    Address ret;
-    for (const auto component: address)
-        ret.push_back(address_to_public(component));
-    return ret;
-}
-
-uint8_t address_from_public(uint8_t address)
-{
-    ASSERT(address > 0);
-    return address - 1;
-}
-
-Address address_from_public(const Address& address)
-{
-    Address ret;
-    for (const auto component: address)
-        ret.push_back(address_from_public(component));
-    return ret;
-
-}
-
 FeatureValueMap build_features(const FeatureDefs& feature_defs)
 {
     FeatureValueMap result;
