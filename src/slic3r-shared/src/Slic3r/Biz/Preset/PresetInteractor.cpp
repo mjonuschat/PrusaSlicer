@@ -1648,6 +1648,9 @@ PresetInteractor::get_override_original_value(const Domain::ConfigItem& item, si
                 case Domain::FDMConfigLocation::Tool:
                     return m_print_tool_cbi.find_tool_value(name, index);
                 default:
+                case Domain::FDMConfigLocation::Object:{
+                    return m_object_settings_interactor_accessor.find_object_value(name, index);
+                } break;
                     break;
                 }
             } else if constexpr (std::is_same_v<T, Domain::SLAConfigLocation>) {

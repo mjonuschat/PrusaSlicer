@@ -162,4 +162,12 @@ void ObjectSettingsInteractor::SetAccessor::set_override(const std::string& key,
     m_object_observable_list.lock()->set_override(key, enable);
 }
 
+const Domain::ConfigValue* ObjectSettingsInteractor::SetAccessor::find_object_value(
+    const std::string& key,
+    size_t index
+) const
+{
+    return m_object_observable_list.lock()->find_object_value(key, index);
+}
+
 } // namespace Slic3r::Biz

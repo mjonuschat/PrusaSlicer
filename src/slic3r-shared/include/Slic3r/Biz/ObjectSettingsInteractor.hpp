@@ -32,6 +32,8 @@ public:
 
         void set_value(const std::string& key, const Domain::ConfigValue& value);
         void set_override(const std::string& key, bool enable);
+        const Domain::ConfigValue*
+            find_object_value(const std::string& key, size_t index = 0) const;
 
     private:
         std::weak_ptr<ObjectSettingsObservableList> m_object_observable_list;

@@ -128,6 +128,15 @@ void ObjectSettingsObservableList::set_override(const std::string& key, bool ena
                                                   { l->on_updated({m_item_index.at(key)}); });
 }
 
+const Domain::ConfigValue*
+ObjectSettingsObservableList::find_object_value(const std::string& key, size_t index)
+{
+    OverrideItem* item = find_item(key);
+    ASSERT(item && item->is_override(), "key has to correspond with existing override item");
+
+    return item ? &item->config_item->value() : nullptr;
+}
+
 OverrideItem* ObjectSettingsObservableList::find_item(const std::string& name)
 {
     ItemMap::const_iterator it = m_item_index.find(name);

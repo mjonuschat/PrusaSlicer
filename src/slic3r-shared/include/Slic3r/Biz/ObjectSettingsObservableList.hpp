@@ -23,6 +23,9 @@ public:
 
     void set_override(const std::string& key, bool enabled);
 
+    const Domain::ConfigValue*
+        find_object_value(const std::string& key, size_t index = 0);
+
 private:
     OverrideItem* find_item(const std::string& name);
     void update_overriden(OverrideItem* item);
