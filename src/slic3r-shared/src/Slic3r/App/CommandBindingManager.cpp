@@ -27,7 +27,10 @@ CommandBindingManager::bind_menu_item(const UIItemCommand* command, Yoga::Abstra
 void CommandBindingManager::bind_tb_item(const char* command_name, Yoga::AbstractButton* ui_item)
 {
     ui_item->callbacks().action = [this, command_name]()
-    { m_main_command_registry.command(command_name).execute(); };
+    {
+        m_main_command_registry.command(command_name).execute();
+        update_ui_items();
+    };
 
     ui_item->set_shortcut(
         m_main_command_registry.command(command_name).keyboard_shortcut_string(translator)
@@ -61,11 +64,13 @@ void CommandBindingManager::update_ui_items()
 {
     for (auto& [command_name, items] : m_ui_items) {
         const Platform::ICommand& cmd = command(command_name.c_str());
-        const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(&cmd);
-        const bool checked              = ui_command ? ui_command->checked() : false;
         for (Yoga::AbstractButton* ui_item : items) {
             ui_item->set_enabled(cmd.enabled());
-            ui_item->set_checked(checked);
+        }
+        if (const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(&cmd)) {
+            for (Yoga::AbstractButton* ui_item : items) {
+                ui_item->set_checked(ui_command->checked());
+            }
         }
     }
 }

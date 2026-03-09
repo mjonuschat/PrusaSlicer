@@ -441,15 +441,17 @@ void PlaterRenderModule::register_commands()
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
         const Scene::ToolType type{tool_gizmo->type()};
         m_command_registry.register_command(
-            std::make_unique<Platform::FuncCommand>(
+            std::make_unique<UIItemCommand>(
                 tool_type_to_command_name(type),
                 [this, type]() { toggle_activate_tool(type); },
-                FuncCommandExtraOpts{
+                UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
                             Platform::KeyboardShortcut{0, shortcuts.at(type)}
                         },
-                    .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); }
+                    .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); },
+                    .checked = [this, type]()
+                    { return type == m_gizmo_manager->current_tool_type(); }
                 }
             )
         );
@@ -708,7 +710,10 @@ void PlaterRenderModule::init_dialog_navigation()
     auto init_gizmo_dialog = [this](Scene::ToolType tool_type, GizmoWindowPtr dialog)
     {
         dialog->gizmo_callbacks().close_requested = [this]
-        { m_gizmo_manager->deactivate_current_tool(); };
+        {
+            m_gizmo_manager->deactivate_current_tool();
+            m_command_binding_manager.update_ui_items();
+        };
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
 
@@ -790,22 +795,13 @@ void PlaterRenderModule::update_toolbar_visibility()
     }
 }
 
-void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
-{
-    for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
-        const Scene::ToolType type{tool_gizmo->type()};
-        get_toolbar_button(tool_gizmo->type())->set_checked(current_tool_type == type);
-    }
-
-    update_current_right_sidebar();
-}
-
 void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 {
     m_gizmo_manager->toggle_activate_tool(
         tool_type,
         m_project_interactor.selected_config_container().print_technology()
     );
+    m_command_binding_manager.update_ui_items();
 }
 
 void PlaterRenderModule::init_scene()
@@ -1052,7 +1048,7 @@ Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
-    update_tool_selection(active_tool ? active_tool->type() : Scene::ToolType::None);
+    update_current_right_sidebar();
     m_scene_presenter->set_selection_bounding_box_visible(active_tool == nullptr);
 }
 

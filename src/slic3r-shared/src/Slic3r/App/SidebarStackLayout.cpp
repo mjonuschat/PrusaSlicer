@@ -40,6 +40,13 @@ void SidebarStackLayout::switch_to_gizmo(Scene::ToolType type) {
     set_current_item(it->second);
 }
 
+bool SidebarStackLayout::is_current_item(ItemType type)
+{
+    ItemMap::const_iterator it = m_item_map.find(type);
+    ASSERT(it != m_item_map.cend());
+    return current_index() == index_of(it->second);
+}
+
 bool SidebarStackLayout::contains_gizmo(Scene::ToolType type) const
 {
     return m_gizmo_map.find(type) != m_gizmo_map.cend();

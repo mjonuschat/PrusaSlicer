@@ -28,6 +28,7 @@ public:
     void switch_to_item(ItemType type);
     void switch_to_gizmo(Scene::ToolType type);
 
+    bool is_current_item(ItemType type);
     // Right now some of our gizmos do not have dialogs, this provides a checking method
     bool contains_gizmo(Scene::ToolType type) const;
 

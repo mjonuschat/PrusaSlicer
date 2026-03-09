@@ -588,7 +588,6 @@ void PreviewRenderModule::register_commands()
             )
         );
 
-    // Toolbar commands
     m_command_registry
         .register_command(
             std::make_unique<Platform::FuncCommand>(
@@ -605,92 +604,59 @@ void PreviewRenderModule::register_commands()
                     }}
                 }
             )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowTravels,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowWipes,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowRetractions,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowUnretractions,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowSeams,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowToolChanges,
-                [this]()
+        );
+
+    // Toolbar commands
+    const std::map<const char*, OptionType> tools{
+        {CommandName::ShowTravels, OptionType::Travels},
+        {CommandName::ShowWipes, OptionType::Wipes},
+        {CommandName::ShowRetractions, OptionType::Retractions},
+        {CommandName::ShowUnretractions, OptionType::Unretractions},
+        {CommandName::ShowSeams, OptionType::Seams},
+        {CommandName::ShowToolChanges, OptionType::ToolMarker},
+        {CommandName::ShowColorChanges, OptionType::ColorChanges},
+        {CommandName::ShowPausePrints, OptionType::PausePrints},
+        {CommandName::ShowCustomGCodes, OptionType::CustomGCodes},
+        {CommandName::ShowCenterOfGravity, OptionType::CenterOfGravity},
+        {CommandName::ShowToolMarker, OptionType::ToolMarker},
+    };
+    for (const auto& [cmd_name, option_type] : tools) {
+        m_command_registry.register_command(
+            std::make_unique<Platform::FuncCommand>(
+                cmd_name,
+                [this, option_type]()
                 {
-                    m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
-                    update_scene_aabb();
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowColorChanges,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowPausePrints,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowCustomGCodes,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowCenterOfGravity,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowToolMarker,
-                [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::ShowShell,
-                [this]() { m_scene_presenter->toggle_shells_visibility(); }
-            )
-        )
-        .register_command(
-            std::make_unique<UIItemCommand>(
-                CommandName::SwitchToInspect,
-                [this]() {},
-                UIItemCommandExtraOpts{
-                    .checked_changed = [this](bool checked) { update_current_right_sidebar(); }
+                    m_fdm_viewer.toggle_option_visibility(option_type);
+                    if (option_type == OptionType::ToolMarker) {
+                        update_scene_aabb();
+                    }
                 }
             )
         );
+    }
+    m_command_registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            CommandName::ShowShell,
+            [this]() { m_scene_presenter->toggle_shells_visibility(); }
+        )
+    );
+
+    m_command_registry.register_command(
+        std::make_unique<UIItemCommand>(
+            CommandName::SwitchToInspect,
+            [this]() {},
+            UIItemCommandExtraOpts{
+                .checked =
+                    [this]()
+                {
+                    return m_layout->sidebar_stack_layout()->is_current_item(
+                        SidebarStackLayout::ItemType::GCode
+                    );
+                },
+                .checked_changed = [this](bool checked) { update_current_right_sidebar(); }
+            }
+        )
+    );
 }
 
 void PreviewRenderModule::bind_commands() {

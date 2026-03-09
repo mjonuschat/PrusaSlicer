@@ -173,7 +173,6 @@ private:
 
     void init_scene();
     void init_scene_layout();
-    void update_tool_selection(Scene::ToolType current_tool_type);
     void
     render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
     void toggle_activate_tool(Scene::ToolType tool_type);
