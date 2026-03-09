@@ -34,6 +34,7 @@ namespace Slic3r::App {
 
 SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     Window("SidebarPrint"),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator)
 {
@@ -127,37 +128,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
         &m_project_interactor.preset_interactor().tool_presets()
     );
 
-/*
-    // To hide UI mock items.
+    update_tools_visibility();
 
-    const Vec2f button_size{24.f, 24.f};
-    constexpr float gap_size = 10;
-
-    add_separator();
-
-    std::unique_ptr<Item> extruders_selector = std::make_unique<Item>();
-    extruders_selector->set_gap(gap_size);
-
-    size_t extruer_id = 0;
-    for (const ImColor& color :
-         std::initializer_list<ImColor>{
-             ImColor{250, 100, 24},
-             ImColor{189, 1, 60},
-             ImColor{112, 193, 64},
-             ImColor{225, 249, 104}
-         })
-    {
-        RadioExtruder* radio_btn =
-            extruders_selector->emplace_back<RadioExtruder>(++extruer_id, color);
-        radio_btn->set_checkable(true);
-        if (extruer_id == 1)
-            radio_btn->set_checked(true);
-        radio_btn->set_border_width(2);
-        radio_btn->set_min_size(button_size);
-        m_group_extruder.insert_button(radio_btn);
-    }
-    add_row(m_content_area, "Extruders", std::move(extruders_selector));
-*/
     add_separator();
 
     create_favorite_params();
@@ -192,9 +164,47 @@ void SidebarPrint::create_favorite_params()
     );
 }
 
+void SidebarPrint::update_tools_visibility()
+{
+    const bool is_multi_extruder =
+        Domain::Preset::get_feature<bool>(
+            m_project_interactor.preset_interactor().selected_printer_preset().hw_config.features,
+            "multi_extruder"
+        )
+            .value_or(false);
+
+    m_tool_head_list_view->set_visible(is_multi_extruder);
+}
+
 PrintSettingsDialog& SidebarPrint::print_settings_dialog()
 {
     return *m_print_settings_dialog;
+}
+
+void SidebarPrint::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (type == Biz::Preset::PresetItemType::PrinterPreset
+        && m_project_interactor.selected_project_id() == project_id
+        && m_project_interactor.selected_config_container_id() == config_container_id)
+    {
+        update_tools_visibility();
+    }
+}
+
+void SidebarPrint::on_config_container_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id
+)
+{
+    if (m_project_interactor.selected_project_id() == project_id
+        && m_project_interactor.selected_config_container_id() == config_container_id)
+    {
+        update_tools_visibility();
+    }
 }
 
 } // namespace Slic3r::App

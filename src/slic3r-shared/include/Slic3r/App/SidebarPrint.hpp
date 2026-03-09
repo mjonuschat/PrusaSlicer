@@ -28,18 +28,31 @@ class ComboBox;
 class ScrollArea;
 } // namespace Yoga
 
-class SidebarPrint : public Yoga::Window
+class SidebarPrint : public Yoga::Window, public Biz::Preset::IPresetChangedListener
 {
 public:
     explicit SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
 
     PrintSettingsDialog& print_settings_dialog();
 
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
+
+    void on_config_container_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
+    ) override;
+
 private:
     void add_separator();
     void add_row(Item* container, const std::string& label, std::unique_ptr<Yoga::Item> control);
 
     void create_favorite_params();
+
+    void update_tools_visibility();
 
 private:
     using ToolHeadListView = Yoga::ListView<
@@ -49,6 +62,12 @@ private:
             SidebarToolHeadRow,
             Biz::Preset::PresetItemObservableList,
             Biz::ProjectInteractor&>>;
+
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        SidebarPrint>
+        m_preset_changed_listener_scope;
 
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
@@ -63,14 +82,14 @@ private:
     Yoga::ScrollArea* m_content_area{nullptr};
     Yoga::ComboBox* m_combo_tools{nullptr};
     Yoga::Item* m_favorite_params_layout{nullptr};
-    PrintToolFavoritesItem* m_favorite_params{ nullptr };
+    PrintToolFavoritesItem* m_favorite_params{nullptr};
 
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_print{nullptr};
     ToolHeadListView* m_tool_head_list_view{nullptr};
 
     PrintSettingsDialog* m_print_settings_dialog{nullptr};
 
-    int m_last_selected_index{ -1 };
+    int m_last_selected_index{-1};
 };
 
 } // namespace Slic3r::App
