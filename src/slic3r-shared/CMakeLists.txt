@@ -300,6 +300,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/PrintToolSubcategoryListView.cpp
         include/Slic3r/App/Config/PrintToolRowItem.hpp
         src/Slic3r/App/Config/PrintToolRowItem.cpp
+        include/Slic3r/App/Config/PrintToolFavoritesItem.hpp
+        src/Slic3r/App/Config/PrintToolFavoritesItem.cpp
         include/Slic3r/App/Config/ConfigItemPreview.hpp
         src/Slic3r/App/Config/ConfigItemPreview.cpp
         include/Slic3r/App/Config/OverridableSubcategoryListView.hpp

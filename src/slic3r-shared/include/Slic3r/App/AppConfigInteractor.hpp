@@ -33,6 +33,8 @@ public:
         size_t index = 0
     );
 
+    void toggle_favorite_param(const std::string& param);
+
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,

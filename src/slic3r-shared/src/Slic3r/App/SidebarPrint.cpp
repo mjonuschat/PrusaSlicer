@@ -17,6 +17,8 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 
+#include "Slic3r/App/Config/PrintToolFavoritesItem.hpp"
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
@@ -123,7 +125,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
         &m_project_interactor.preset_interactor().tool_presets()
     );
 
-    return; // To hide UI mock items.
+/*
+    // To hide UI mock items.
 
     const Vec2f button_size{24.f, 24.f};
     constexpr float gap_size = 10;
@@ -152,7 +155,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
         m_group_extruder.insert_button(radio_btn);
     }
     add_row(m_content_area, "Extruders", std::move(extruders_selector));
-
+*/
     add_separator();
 
     create_favorite_params();
@@ -181,39 +184,10 @@ void SidebarPrint::add_row(Item* container, const std::string& label, std::uniqu
 
 void SidebarPrint::create_favorite_params()
 {
-    m_combo_tools = m_content_area->emplace_back<ComboBox>(
-        std::initializer_list<std::string>{"All tools", "Tool 1", "Tool 2", "Tool 3", "Tool 4"}
+    m_favorite_params_layout = m_content_area->emplace_back<PrintToolFavoritesItem>(
+        m_project_interactor.preset_interactor().print_tool_cbi(),
+        m_project_interactor.preset_interactor()
     );
-
-    m_favorite_params_layout = m_content_area->emplace_back<Item>();
-    m_favorite_params_layout->set_flex_shrink(0);
-    m_favorite_params_layout->set_orientation(Orientation::Vertical);
-
-    create_favorite_params_page(m_favorite_params_layout); // Tool 4
-}
-
-void SidebarPrint::create_favorite_params_page(Item* container)
-{
-    Item* page = container->emplace_back<Item>();
-    page->set_orientation(Orientation::Vertical);
-    page->set_gap(5);
-
-    std::unique_ptr<InputTextField> input_text = std::make_unique<InputTextField>();
-    m_input_text_perimeters                    = input_text.get();
-    m_input_text_perimeters->set_validator(std::make_unique<IntValidator>());
-    m_input_text_perimeters->set_flags(ImGuiInputTextFlags_CharsDecimal);
-    add_row(page, "Perimeters", std::move(input_text));
-
-    add_separator();
-
-    add_row(page, "Infill", std::make_unique<Item>());
-
-    std::unique_ptr<ComboBox> combo_density = std::make_unique<ComboBox>(
-        std::initializer_list<std::string>{"0%", "5%", "10%", "15%", "20%", "30%"}
-    );
-    combo_density->set_editable(true);
-    m_combo_density = combo_density.get();
-    add_row(page, "Density", std::move(combo_density));
 }
 
 PrintSettingsDialog& SidebarPrint::print_settings_dialog()

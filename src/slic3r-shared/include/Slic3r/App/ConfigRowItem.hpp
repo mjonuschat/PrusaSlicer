@@ -52,6 +52,7 @@ private:
 private:
     Biz::IConfigBoxSetter& m_cb_setter;
     bool m_small{false};
+    std::optional<bool> m_last_full_width{std::nullopt};
     size_t m_cbi_index{0};
     std::optional<std::string> m_force_label;
 

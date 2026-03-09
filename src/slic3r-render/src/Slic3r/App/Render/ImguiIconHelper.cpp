@@ -169,6 +169,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Support, "support"},
     {Icon::Time, "time"},
     {Icon::Funnel, "funnel"},
+    {Icon::Star, "star"},
+    {Icon::StarSolid, "star_solid"},
     {Icon::Cog, "cog"},
     {Icon::Cogs, "cogs"},
     {Icon::Output, "output"},

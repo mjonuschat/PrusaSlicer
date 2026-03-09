@@ -18,6 +18,7 @@ class ProjectInteractor;
 namespace Slic3r::App {
 
 class PrintSettingsDialog;
+class PrintToolFavoritesItem;
 class Navigator;
 
 namespace Yoga {
@@ -39,7 +40,6 @@ private:
     void add_row(Item* container, const std::string& label, std::unique_ptr<Yoga::Item> control);
 
     void create_favorite_params();
-    void create_favorite_params_page(Item* container);
 
 private:
     using ToolHeadListView = Yoga::ListView<
@@ -63,6 +63,8 @@ private:
     Yoga::ScrollArea* m_content_area{nullptr};
     Yoga::ComboBox* m_combo_tools{nullptr};
     Yoga::Item* m_favorite_params_layout{nullptr};
+    PrintToolFavoritesItem* m_favorite_params{ nullptr };
+
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_print{nullptr};
     ToolHeadListView* m_tool_head_list_view{nullptr};
 

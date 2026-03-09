@@ -66,6 +66,8 @@ public:
         const Scene::BedSelection& bed_selection
     ) override;
 
+    void set_favorites(const std::vector<std::string>& favorites);
+
 private:
     using PrintToolItems = std::vector<PrintToolItem>;
 
@@ -95,6 +97,8 @@ private:
     PrintToolItems m_items;
     std::set<unsigned> m_extruder_candidates;
     PrintToolItem::SharedContext m_print_tool_shared_context;
+
+    std::set<std::string> m_favorites;
 };
 
 } // namespace Slic3r::Biz

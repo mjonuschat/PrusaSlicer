@@ -44,6 +44,7 @@ InputTextWithSpin::InputTextWithSpin(
     spins->set_orientation(Orientation::Vertical);
     spins->set_justify_content(YGJustifyCenter);
     spins->set_padding(Paddings(0, 0, 4, 0));
+    spins->set_flex_shrink(0.f);
 
     m_increase_button                     = spins->emplace_back<SpinButton>(ImGuiDir_Up);
     m_increase_button->callbacks().action = [this]() -> void {

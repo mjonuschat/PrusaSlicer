@@ -38,6 +38,7 @@ struct PrintToolItem
         tool_overrides; ///< vector of turned overrides from Tool or nullptr, if override is off
     std::pair<Domain::ConfigValue, bool> value;
     const SharedContext& shared_context;
+    bool is_favorite{ false };
 
     const Domain::ConfigValue& tool_value(size_t index) const;
 

@@ -186,8 +186,18 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::checkbox;
     def->label = L("Suppress opening hyperlinks in browser");
     def->init_fn = []() { return Domain::ConfigValue(false); };
+
+    def           = defs.add("favorite_params", typeid(std::vector<std::string>));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn  = []()
+    {
+        return Domain::ConfigValue(
+            std::vector<std::string>{"fill_pattern", "fill_density", "brim_width"}
+        );
+    };
 }
- 
+
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
 { 
     namespace fs = boost::filesystem;

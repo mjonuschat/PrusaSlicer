@@ -19,6 +19,7 @@
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 #include <Slic3r/App/AppConfigProvider.hpp>
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
@@ -246,6 +247,10 @@ bool DesktopApp::OnInit()
     std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
+
+    preset_interactor.print_tool_cbi().set_app_config_cbol(
+        app_services.app_config_interactor().app_config_cbi().config_box_list()
+    );
 
     // load new presets
     preset_interactor.load_preset_bundle(Biz::Preset::IO::BundlePaths::make_standard_runtime());

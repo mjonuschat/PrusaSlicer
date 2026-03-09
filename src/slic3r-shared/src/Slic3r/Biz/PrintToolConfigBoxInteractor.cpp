@@ -31,8 +31,7 @@ PrintToolConfigBoxInteractor::find_tool_value(const std::string& name, size_t in
     return m_observable_list->find_tool_value(name, index);
 }
 
-std::weak_ptr<PrintToolConfigObservableList>
-PrintToolConfigBoxInteractor::observable_list()
+std::weak_ptr<PrintToolConfigObservableList> PrintToolConfigBoxInteractor::observable_list()
 {
     return m_observable_list.get();
 }
@@ -41,6 +40,34 @@ std::weak_ptr<const PrintToolConfigObservableList>
 PrintToolConfigBoxInteractor::observable_list() const
 {
     return m_observable_list.get();
+}
+
+void PrintToolConfigBoxInteractor::set_app_config_cbol(
+    std::weak_ptr<ConfigBoxObservableList> app_config_cbol
+)
+{
+    m_app_config_cbol = app_config_cbol;
+    m_app_config_cbol.lock()->add_listener<IListObserver<Domain::ConfigItem>>(this);
+    update_favorites();
+}
+
+void PrintToolConfigBoxInteractor::on_reset()
+{
+    update_favorites();
+}
+
+void PrintToolConfigBoxInteractor::on_updated(const IndexRange&)
+{
+    update_favorites();
+}
+
+void PrintToolConfigBoxInteractor::update_favorites()
+{
+    // Get AppConfig item
+    const Domain::ConfigValue* favorites = m_app_config_cbol.lock()->find("favorite_params");
+    ASSERT(favorites);
+
+    m_observable_list->set_favorites(favorites->get<std::vector<std::string>>());
 }
 
 void PrintToolConfigBoxInteractor::SetAccessor::set_source(

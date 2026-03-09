@@ -28,6 +28,7 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
+    set_width(80);
     m_value_validator = dynamic_cast<IntValidator*>(validator());
 
     callbacks().text_edited = [this]()

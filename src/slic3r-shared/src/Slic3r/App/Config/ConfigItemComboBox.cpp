@@ -148,6 +148,11 @@ ConfigItemComboBox::ConfigItemComboBox(
 
 void ConfigItemComboBox::on_data_update()
 {
+    if (m_last_item != m_state) {
+        m_init = false;
+        m_last_item = m_state;
+    }
+
     // TODO: the validators gets constantly recreated, clean this up
     if (mixed()) {
         set_override_label(Biz::_u8L("Mixed"));

@@ -279,7 +279,7 @@ void InputText::request_focus()
 
 Vec2f InputText::get_item_size()
 {
-    return {50, ImGui::GetTextLineHeight() + GImGui->Style.FramePadding.y * 2.0f};
+    return {40, ImGui::GetTextLineHeight() + GImGui->Style.FramePadding.y * 2.0f};
 }
 
 void InputText::hovered_updated_internal() {}

@@ -26,12 +26,6 @@ ConfigItemTextField::ConfigItemTextField(
     m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
-    if (data.def().multiline) {
-        set_flags(flags() | ImGuiInputTextFlags_Multiline);
-        set_height(100);
-    }
-
-    set_min_size({150, 0});
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
 
@@ -77,6 +71,24 @@ ConfigItemTextField::ConfigItemTextField(
 void ConfigItemTextField::on_data_update()
 {
     if (m_last_item != m_state) {
+        if (!m_is_multiline || m_is_multiline.value() != m_state->def().multiline) {
+            if (m_state->def().multiline) {
+                set_flags(flags() | ImGuiInputTextFlags_Multiline);
+                set_height(100);
+                set_min_size({150, 0});
+            } else {
+                set_flags(flags() & ~ImGuiInputTextFlags_Multiline);
+                set_height(YGUndefined);
+                set_min_size({YGUndefined, 0});
+            }
+            m_is_multiline = m_state->def().multiline;
+        }
+
+        if (!m_is_full_width || m_is_full_width.value() != m_state->def().full_width) {
+            set_width(m_state->def().full_width ? YGUndefined : 80);
+            m_is_full_width = m_state->def().full_width;
+        }
+
         m_last_item = m_state;
 
         set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));

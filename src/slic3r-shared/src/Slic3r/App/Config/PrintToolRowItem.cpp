@@ -12,6 +12,9 @@
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 #include "Slic3r/App/Config/PrintToolRowButton.hpp"
 
+#include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppConfigInteractor.hpp"
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -44,6 +47,31 @@ PrintToolRowItem::PrintToolRowItem(
     set_border_width(2);
     set_padding(2);
     set_border_color(IM_COL32_BLACK_TRANS);
+
+    m_header = emplace_back<Item>();
+    m_header->set_orientation(Orientation::Horizontal);
+    m_header->set_flex_grow(1.f);
+
+    m_header->set_align_items(YGAlignFlexStart);
+    m_header->set_gap(3.f);
+
+    m_favorite_button = m_header->emplace_back<LayoutButton>("", Render::Icon::Star);
+    m_favorite_button->set_margin(Margins(0.f, 12.f, 0.f, 0.f));
+    m_favorite_button->set_min_size(Vec2f{ 16, 16 });
+    m_favorite_button->set_content_padding(0.f);
+    m_favorite_button
+        ->set_background_color_checked(m_favorite_button->background_color(), true);
+    m_favorite_button->set_tooltip(Biz::_u8L("Add to favorites"));
+
+    m_favorite_button->callbacks().action = [this]()
+        { AppServices::instance().app_config_interactor().toggle_favorite_param(m_state->name); };
+    m_favorite_button->callbacks().checked_changed = [this](bool checked)
+        {
+            m_favorite_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+            m_favorite_button->set_tooltip(
+                checked ? Biz::_u8L("Remove from favorites") : Biz::_u8L("Add to favorites")
+            );
+        };
 
     on_data_update();
 }
@@ -162,22 +190,24 @@ void PrintToolRowItem::on_data_update()
     if (m_config_row_item) {
         m_config_row_item->set_state(*m_state->print_item);
     }
+
+    m_favorite_button->set_checked(m_state->is_favorite);
 }
 
 void PrintToolRowItem::clear()
 {
     if (m_initialized_type == InitializedType::PrintOnly) {
-        remove(m_config_row_item);
+        m_header->remove(m_config_row_item);
         m_config_row_item = nullptr;
     } else if (m_initialized_type == InitializedType::PrintTool) {
         m_tool_list_view->set_source_list(nullptr, true);
         remove(m_content);
-        remove(m_main_button);
-        m_content        = nullptr;
-        m_main_button    = nullptr;
-        m_tool_list_view = nullptr;
+        m_header->remove(m_main_button);
+        m_content     = nullptr;
+        m_main_button = nullptr;
         m_tool_overrides.clear();
     }
+    m_tool_list_view  = nullptr;
     m_initialized_type = InitializedType::None;
 }
 
@@ -187,13 +217,20 @@ void PrintToolRowItem::initialize()
     if (!m_state->shared_context.has_multiple_extruders || m_state->tool_overrides.empty()) {
         m_initialized_type = InitializedType::PrintOnly;
 
-        m_config_row_item =
-            emplace_back<ConfigRowItem>(m_index, *m_state->print_item, m_cbi_setter, 0, false);
+        m_config_row_item = m_header->emplace<ConfigRowItem>(0,
+            m_index,
+            *m_state->print_item,
+            m_cbi_setter,
+            0,
+            false
+        );
+        m_config_row_item->set_flex_grow(1.f);
 
     } else {
         m_initialized_type = InitializedType::PrintTool;
 
-        m_main_button                              = emplace_back<PrintToolRowButton>();
+        m_main_button = m_header->emplace<PrintToolRowButton>(0);
+        m_main_button->set_flex_grow(1.f);
         m_main_button->callbacks().checked_changed = [this](bool checked)
         { m_content->set_visible(checked); };
 

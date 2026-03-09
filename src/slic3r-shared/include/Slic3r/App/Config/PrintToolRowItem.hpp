@@ -15,6 +15,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Config/ToolRowControl.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 namespace Slic3r::Biz {
 class PrintToolConfigBoxInteractor;
@@ -82,10 +83,12 @@ private:
     Biz::PrintToolConfigBoxInteractor& m_cbi;
     Biz::IConfigBoxSetter& m_cbi_setter;
 
+    Yoga::Item* m_header{nullptr};
     PrintToolRowButton* m_main_button{nullptr};
     Yoga::Rectangle* m_content{nullptr};
     Yoga::Item* m_explanation_container{nullptr};
     ToolRowListView* m_tool_list_view{nullptr};
+    Yoga::LayoutButton* m_favorite_button{nullptr};
 
     Biz::UnsharedPointer<Biz::ObservableList<ExplanationPart>> m_explanation_list_labels;
     Biz::UnsharedPointer<Biz::ObservableList<ExplanationPart>> m_explanation_list;
@@ -96,6 +99,7 @@ private:
     std::vector<ToolRowOverride> m_tool_overrides;
 
     ConfigRowItem* m_config_row_item{nullptr};
+    bool m_small{ false };
 };
 
 } // namespace Slic3r::App

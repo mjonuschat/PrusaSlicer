@@ -43,4 +43,15 @@ void AppConfigInteractor::set_item_value(
     invoke_listeners<IAppConfigChangedListener>([](auto* l) { l->on_app_config_changed(); });
 }
 
+void AppConfigInteractor::toggle_favorite_param(const std::string& param)
+{
+    std::vector<std::string> favorites =
+        m_app_config_cbi.find("favorite_params")->get<std::vector<std::string>>();
+
+    if (std::erase(favorites, param) == 0) {
+        favorites.push_back(param);
+    }
+    m_cbi_accessor.set_value("favorite_params", Domain::ConfigValue(favorites));
+}
+
 } // namespace Slic3r::App

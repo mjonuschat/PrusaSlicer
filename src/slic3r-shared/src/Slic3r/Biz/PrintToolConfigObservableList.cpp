@@ -86,7 +86,8 @@ void PrintToolConfigObservableList::set_sources(
                     tool_overrides,
                     m_extruder_candidates
                 ),
-                m_print_tool_shared_context
+                m_print_tool_shared_context,
+                m_favorites.contains(print_item.name())
             );
         }
 
@@ -208,6 +209,23 @@ void PrintToolConfigObservableList::on_selected_bed_instances_changed(
     }
 }
 
+void PrintToolConfigObservableList::set_favorites(const std::vector<std::string>& favorites)
+{
+    m_favorites = std::set<std::string>(favorites.begin(), favorites.end());
+
+    for (PrintToolItem& tool_print_item : m_items) {
+        tool_print_item.is_favorite = m_favorites.contains(tool_print_item.name);
+    }
+
+    if (m_items.empty()) {
+        return;
+    }
+    invoke_listeners<IListObserver<PrintToolItem>>(
+        [this](IListObserver<PrintToolItem>* l)
+        { l->on_updated(IndexRange{0, m_items.size() - 1}); }
+    );
+}
+
 PrintToolConfigObservableList::PrintToolItems::iterator PrintToolConfigObservableList::find_item(
     const std::string& name
 )
@@ -241,6 +259,8 @@ void PrintToolConfigObservableList::update_extruders()
 void PrintToolConfigObservableList::update_items()
 {
     for (PrintToolItem& tool_print_item : m_items) {
+        tool_print_item.is_favorite = m_favorites.find(tool_print_item.name) != m_favorites.end();
+
         tool_print_item.print_item = m_print_config_box->items.find(tool_print_item.name);
 
         tool_print_item.tool_overrides.clear();

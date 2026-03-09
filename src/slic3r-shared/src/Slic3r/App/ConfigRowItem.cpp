@@ -29,7 +29,6 @@ ConfigRowItem::ConfigRowItem(
     m_cbi_index(cbi_index),
     m_force_label(force_label)
 {
-    set_flex_shrink(0);
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_width(2);
     set_border_color(IM_COL32_BLACK_TRANS);
@@ -44,6 +43,8 @@ ConfigRowItem::ConfigRowItem(
 
     m_sidetext = emplace_back<Text>(m_state->def().sidetext);
     m_sidetext->set_self_align(YGAlignCenter);
+    m_sidetext->set_flex_grow(1.f);
+    m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
     if (m_small) {
         set_gap(5);
@@ -95,17 +96,22 @@ void ConfigRowItem::on_data_update()
 
         if (m_small) {
             m_input->set_min_size({50, YGUndefined});
-        } else {
-            if (m_state->def().full_width) {
-                m_input->set_flex_grow(1);
-                set_orientation(Orientation::Vertical);
-                set_align_items(YGAlign::YGAlignStretch);
-            } else {
-                m_input->set_flex_grow(0);
-                set_orientation(Orientation::Horizontal);
-                set_align_items(YGAlign::YGAlignCenter);
-            }
+            m_input->set_self_align(YGAlignCenter);
+            m_input->set_width(60);
         }
+    }
+
+    if (m_input && !m_small && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width))
+    {
+        m_input->set_flex_grow(m_state->def().full_width);
+        if (m_state->def().full_width) {
+            set_orientation(Orientation::Vertical);
+            set_align_items(YGAlign::YGAlignStretch);
+        } else {
+            set_orientation(Orientation::Horizontal);
+            set_align_items(YGAlign::YGAlignCenter);
+        }
+        m_last_full_width = m_state->def().full_width;
     }
 
     if (m_state->def().type != m_created_value_type) {

@@ -140,6 +140,8 @@ enum class Icon : wchar_t
     Time,
     Funnel,
     Cog,
+    Star,
+    StarSolid,
     Cogs,
     Output,
     Notes,

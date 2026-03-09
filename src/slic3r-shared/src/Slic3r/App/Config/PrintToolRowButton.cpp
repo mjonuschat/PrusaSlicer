@@ -32,6 +32,7 @@ PrintToolRowButton::PrintToolRowButton()
     m_icon_caret->set_height(22);
     m_label = emplace_back<Text>(std::string{});
     m_label->set_flex_grow(1);
+    m_label->set_wrap_mode(Text::WrapMode::WrapElide);
 
     const ImColor warning_color = ImColor(223, 93, 45);
 
@@ -45,6 +46,7 @@ PrintToolRowButton::PrintToolRowButton()
     m_compatibility_rule_label->set_text_color(warning_color);
     m_compatibility_rule_label->set_visible(false);
     m_config_item_preview = m_compatibility_rule_rect->emplace_back<ConfigItemPreview>();
+    m_compatibility_rule_rect->set_flex_shrink(0.f);
 
     m_per_extruder_label = emplace_back<Text>(Biz::_u8L("Per tool"), Render::ImguiFontType::Italic);
     m_per_extruder_label->set_visible(false);

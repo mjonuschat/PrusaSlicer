@@ -7,6 +7,8 @@
 #include "Slic3r/Domain/SelectionId.hpp"
 
 #include "Slic3r/Biz/IListObserver.hpp"
+#include "Slic3r/Biz/ConfigBoxObservableList.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 #include <vector>
 #include <string>
@@ -30,7 +32,7 @@ namespace Slic3r::Biz {
 
 class PrintToolConfigObservableList;
 
-class PrintToolConfigBoxInteractor
+class PrintToolConfigBoxInteractor : public IListObserver<Domain::ConfigItem>
 {
 public:
     class SetAccessor
@@ -51,7 +53,6 @@ public:
             Domain::Preset::SelectedPreset& selected_preset,
             const std::vector<Domain::ConfigBox*>& tool_config_boxes
         );
-
     private:
         std::weak_ptr<PrintToolConfigObservableList> m_observable_list;
     };
@@ -70,8 +71,19 @@ public:
 
     std::weak_ptr<const PrintToolConfigObservableList> observable_list() const;
 
+    void set_app_config_cbol(std::weak_ptr<ConfigBoxObservableList> app_config_cbol);
+
+    // Whenewer AppConfig invokes reset (probably never)
+    void on_reset() override;
+    // Whenever AppConfig has updated value(s)
+    void on_updated(const IndexRange&) override;
+
+private:
+    void update_favorites();
+
 private:
     Biz::UnsharedPointer<PrintToolConfigObservableList> m_observable_list;
+    std::weak_ptr<ConfigBoxObservableList> m_app_config_cbol;
 };
 
 } // namespace Slic3r::Biz
