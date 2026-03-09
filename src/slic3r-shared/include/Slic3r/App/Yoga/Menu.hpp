@@ -14,20 +14,21 @@ public:
 
     MenuItem* append_item(
         const std::string& label,
-        bool* init_checkable_value = nullptr,
-        Render::Icon icon = Render::Icon::None,
+        bool* init_checkable_value  = nullptr,
+        Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {}
     );
     MenuItem* append_item_as_menu(
         const std::string& label,
-        Render::Icon icon = Render::Icon::None,
+        Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {}
     );
+    void remove_item(size_t index);
     void append_separator();
     void close_all_submenus() const;
 
 private:
-    std::vector<MenuItem*> items;
+    std::vector<MenuItem*> m_items;
 };
 
 } // namespace Slic3r::App::Yoga

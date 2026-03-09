@@ -22,7 +22,9 @@ void ContextPopup::style_node()
         switch (m_position) {
         case Position::Right:
             set_right(-(m_offset + width()));
-            set_top(0.f/*parent_item()->height() * 0.5f - height() * 0.5f*/); //#ysFIXME - WIP: need to improve
+            set_top(
+                0.f /*parent_item()->height() * 0.5f - height() * 0.5f*/
+            ); // #ysFIXME - WIP: need to improve
             break;
         case Position::Left:
             set_left(-(m_offset + width()));
@@ -34,7 +36,9 @@ void ContextPopup::style_node()
             break;
         case Position::Bottom:
             set_bottom(-(m_offset + height()));
-            set_left(0.f/*parent_item()->width() * 0.5f - width() * 0.5f*/); //#ysFIXME - WIP: need to improve
+            set_left(
+                0.f /*parent_item()->width() * 0.5f - width() * 0.5f*/
+            ); // #ysFIXME - WIP: need to improve
             break;
         }
     }
@@ -150,6 +154,16 @@ void ContextPopup::close()
 bool ContextPopup::opened() const
 {
     return ImGui::IsPopupOpen(object_name().c_str());
+}
+
+ImGuiWindowFlags ContextPopup::flags() const
+{
+    return m_flags;
+}
+
+void ContextPopup::set_flags(ImGuiWindowFlags flags)
+{
+    m_flags = flags;
 }
 
 } // namespace Slic3r::App::Yoga

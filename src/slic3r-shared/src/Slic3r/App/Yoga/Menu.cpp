@@ -27,19 +27,22 @@ MenuItem* Menu::append_item(
         item->set_checked(*init_checkable_value);
     }
 
-    items.push_back(item);
+    m_items.push_back(item);
     return item;
 }
 
-MenuItem* Menu::append_item_as_menu(
-    const std::string& label,
-    Render::Icon icon,
-    const std::string& shortcut
-)
+MenuItem*
+Menu::append_item_as_menu(const std::string& label, Render::Icon icon, const std::string& shortcut)
 {
     MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut, true);
-    items.push_back(item);
+    m_items.push_back(item);
     return item;
+}
+
+void Menu::remove_item(size_t index)
+{
+    remove(m_items.at(index));
+    m_items.erase(m_items.cbegin() + index);
 }
 
 void Menu::append_separator()
@@ -50,7 +53,7 @@ void Menu::append_separator()
 
 void Menu::close_all_submenus() const
 {
-    for (MenuItem* item : items) {
+    for (MenuItem* item : m_items) {
         item->close_submenu();
     }
 }

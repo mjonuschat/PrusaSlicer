@@ -33,6 +33,7 @@ class SceneInteractor;
 
 namespace Slic3r::App::Yoga {
 class StackLayout;
+class Menu;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -152,6 +153,8 @@ private:
     PrintMetadataListView* m_metadata_stack_list_view{nullptr};
 
     Yoga::Item* m_footer{nullptr};
+    Yoga::LayoutButton* m_save_button{nullptr};
+    Yoga::Menu* m_save_preset_menu{nullptr};
     PageListView* m_category_page_list_view{nullptr};
     PageListView* m_extruder_page_list_view{nullptr};
 

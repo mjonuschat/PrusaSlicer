@@ -4,6 +4,9 @@
 ///|/
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
+
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
@@ -16,6 +19,8 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
 
 #include <fmt/format.h>
 
@@ -208,6 +213,24 @@ PrintSettingsDialog::PrintSettingsDialog(
     compare_button->set_flex_shrink(0);
     compare_button->set_margin(Margins(0, 0, 10, 0));
 
+    m_save_button = m_footer->emplace_back<LayoutButton>(_u8("Save preset"));
+
+    m_save_preset_menu = m_save_button->emplace_back<Menu>("SavePresetMenu", Position::Top);
+    MenuItem* save_print_preset_button = m_save_preset_menu->append_item(
+        Biz::_u8L("Print preset"),
+        nullptr,
+        Render::Icon::PrinterIconMarker
+    );
+    save_print_preset_button->callbacks().action = [this]
+    {
+        m_project_interactor.preset_interactor().save_user_preset(
+            Domain::Preset::PresetKind::FdmPrint,
+            0
+        );
+    };
+
+    m_save_button->callbacks().action = [this] { m_save_preset_menu->open(); };
+
     on_selected_bed_instances_changed(
         m_project_interactor.selected_project_id(),
         m_project_interactor.scene_interactor().bed_selection()
@@ -294,6 +317,32 @@ void PrintSettingsDialog::update_extruder_size()
     std::fill(m_extruders.begin(), m_extruders.end(), false);
 
     invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_reset(); });
+
+    const bool is_multi_extruder =
+        Domain::Preset::get_feature<bool>(
+            m_project_interactor.preset_interactor().selected_printer_preset().hw_config.features,
+            "multi_extruder"
+        )
+            .value_or(false);
+    const size_t extruder_count = is_multi_extruder ? m_extruders.size() : 0;
+    while (is_multi_extruder && extruder_count > m_save_preset_menu->object_count() - 1) {
+        const size_t index         = m_save_preset_menu->object_count() - 1;
+        MenuItem* tool_save_button = m_save_preset_menu->append_item(
+            fmt::format("{} {} {}", Biz::_u8L("Tool"), index + 1, Biz::_u8L("preset")),
+            nullptr,
+            Render::Icon::Funnel
+        );
+        tool_save_button->callbacks().action = [index, this]
+        {
+            m_project_interactor.preset_interactor().save_user_preset(
+                Domain::Preset::PresetKind::FdmToolPrint,
+                index
+            );
+        };
+    }
+    while (extruder_count < m_save_preset_menu->object_count() - 1) {
+        m_save_preset_menu->remove_item(m_save_preset_menu->object_count() - 1);
+    }
 }
 
 void PrintSettingsDialog::on_about_to_close()

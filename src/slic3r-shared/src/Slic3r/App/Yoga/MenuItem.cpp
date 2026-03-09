@@ -45,6 +45,7 @@ void MenuItem::create(
     if (has_sub_menu) {
         m_sub_menu = emplace_back<Menu>(label, Position::Right);
         m_sub_menu->set_offset(-5.f);
+        m_sub_menu->set_flags(m_sub_menu->flags() | ImGuiWindowFlags_NoFocusOnAppearing);
     }
     set_background_color(IM_COL32_BLACK_TRANS);
 
