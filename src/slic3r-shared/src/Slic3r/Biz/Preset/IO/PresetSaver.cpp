@@ -145,13 +145,15 @@ Domain::Preset::PresetValue convert(const std::vector<T>& v)
     return ret;
 }
 
-Domain::Preset::PresetValueMap
-config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_include)
+void append_selected_config_items(
+    Domain::Preset::PresetValueMap& ret,
+    const std::vector<Domain::ConfigItem>& all_items,
+    const KeySet& items_to_include
+)
 {
-    Domain::Preset::PresetValueMap ret;
-    for (const auto& item : cfg.items.all_items()) {
+    for (const auto& item : all_items) {
         if (!items_to_include.contains(item.name())) {
-            continue;;
+            continue;
         }
 
         ret.insert(
@@ -161,8 +163,8 @@ config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_includ
                  {
                      if constexpr (std::is_assignable_v<Domain::Preset::PresetValue, T>) {
                          return val;
-                     }
-                     else if constexpr (std::is_same_v<std::decay_t<T>, Domain::FloatOrPercentage>)
+                     } else if constexpr (std::
+                                              is_same_v<std::decay_t<T>, Domain::FloatOrPercentage>)
                      {
                          if (val.is_percentage())
                              return val.percentage();
@@ -174,6 +176,15 @@ config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_includ
              )}
         );
     }
+}
+
+Domain::Preset::PresetValueMap
+config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_include)
+{
+    Domain::Preset::PresetValueMap ret;
+
+    append_selected_config_items(ret, cfg.items.all_items(), items_to_include);
+    append_selected_config_items(ret, cfg.overrides.all_items(), items_to_include);
 
     return ret;
 }

@@ -7,7 +7,7 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
 
-#include <deque>
+#include <list>
 
 namespace Slic3r::App::Yoga {
 
@@ -52,7 +52,7 @@ protected:
 
     Vec2f m_size;
 
-    using Popups = std::deque<Popup*>;
+    using Popups = std::list<Popup*>;
     Popups m_popups;
     Popups m_popups_to_be_added;
     Popups m_popups_to_be_deleted;

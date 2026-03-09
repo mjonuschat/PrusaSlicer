@@ -790,8 +790,8 @@ private:
     bool material_has_unsaved_changes(size_t tool_index) const;
 
     void fill_printer_presets(ListenerInvokeLaterBag& bag);
-    void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
-    void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_print_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_tools_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
@@ -803,6 +803,12 @@ private:
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
+    PresetsSwitchStates::iterator find_unsaved_change(
+        PresetDiffOperation operation,
+        Domain::Preset::PresetKind kind,
+        std::optional<size_t> tool_id = std::nullopt);
+    void
+    process_all_save_changes(Domain::Preset::SelectedPreset& selected_preset, InvokeLaterBag& bag);
     void process_operation_from_unsaved_changes(
         Domain::Preset::SelectedPreset& selected_preset,
         PresetDiffOperation operation,

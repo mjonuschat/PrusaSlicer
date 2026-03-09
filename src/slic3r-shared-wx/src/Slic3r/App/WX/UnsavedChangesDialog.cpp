@@ -350,8 +350,9 @@ void UnsavedChangesDialog::update_transfer_button(PresetSwitchKindId kind_id)
     }
     case PresetKind::FdmToolPrint: {
         ASSERT(kind_id.id);
-        size_t tool_id = kind_id.id.value();
-        if (m_is_enabled_transfer = m_preset_names_new.tools.size() > tool_id) {
+        size_t tool_id          = kind_id.id.value();
+        const size_t tool_count = m_preset_names_new.tools.size();
+        if (m_is_enabled_transfer = tool_count > 1 && tool_id < tool_count) {
             is_keep = m_preset_names.tools[tool_id] == m_preset_names_new.tools[tool_id];
         }
         break;
