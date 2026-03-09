@@ -21,6 +21,7 @@ namespace Slic3r::App {
 
 class PrintMetadataSettings :
     public Biz::DataObserver<Biz::Preset::ToolConfigItemObservableList>,
+    public Biz::Preset::IPresetChangedListener,
     public Yoga::Item
 {
 public:
@@ -29,6 +30,12 @@ public:
         const Biz::Preset::ToolConfigItemObservableList& data,
         Biz::Preset::PresetInteractor& preset_interactor
     );
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
 
 protected:
     void on_data_update() override;
@@ -39,6 +46,12 @@ protected:
     void update_contents();
 
 private:
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        PrintMetadataSettings>
+        m_preset_changed_listener_scope;
+
     Biz::Preset::PresetInteractor& m_preset_interactor;
 
     Yoga::InputTextField* m_input_id{nullptr};

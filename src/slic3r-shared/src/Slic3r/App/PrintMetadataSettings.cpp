@@ -20,6 +20,7 @@ PrintMetadataSettings::PrintMetadataSettings(
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
     Biz::DataObserver<Biz::Preset::ToolConfigItemObservableList>(index, data),
+    m_preset_changed_listener_scope(preset_interactor, *this),
     m_preset_interactor(preset_interactor)
 {
     set_orientation(Orientation::Vertical);
@@ -41,6 +42,17 @@ PrintMetadataSettings::PrintMetadataSettings(
     // add_new_row(Biz::_u8L("Expression"), std::move(input_expression));
 
     update_contents();
+}
+
+void PrintMetadataSettings::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (type == Biz::Preset::PresetItemType::ToolPrintPreset) {
+        update_contents();
+    }
 }
 
 void PrintMetadataSettings::on_data_update()
@@ -71,7 +83,7 @@ void PrintMetadataSettings::update_contents()
     const Domain::Preset::SelectedPreset& selected_preset =
         m_preset_interactor.selected_printer_preset();
 
-    if (selected_preset.tools.empty()) {
+    if (selected_preset.tools.empty() || m_index >= selected_preset.hw_config.tool_count) {
         return;
     }
 
