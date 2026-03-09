@@ -1,4 +1,6 @@
 #include "Slic3r/Biz/Algorithms/StringUtils.hpp"
+#include "Slic3r/Assert.hpp"
+#include <algorithm>
 #include <vector>
 
 namespace Slic3r::Biz::Algorithms {
@@ -185,6 +187,26 @@ bool unescape_strings_cstyle(const std::string& str, std::vector<std::string>& o
             return true;
         }
     }
+}
+
+std::string to_lower_ascii(std::string_view data)
+{
+    std::string out;
+    out.reserve(data.size());
+    std::transform(
+        data.begin(),
+        data.end(),
+        std::back_inserter(out),
+        [](std::string_view::value_type v)
+        {
+            // Only ASCII is allowed here, handling UTF8 string would require a way more complicated
+            // logic as 1 character can have variable length (1..3 bytes)
+            ASSERT(v <= 127);
+            return std::tolower(v);
+        }
+    );
+
+    return out;
 }
 
 } // namespace Slic3r::Biz::Algorithms

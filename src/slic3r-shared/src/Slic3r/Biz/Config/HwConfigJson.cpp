@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/JsonValueJson.hpp"
 #include "Slic3r/Biz/Config/FeatureStructurizer.hpp"
 #include "Slic3r/Biz/Config/ConfigJson.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "fmt/format.h"
@@ -137,6 +138,24 @@ const KeyDesc MATERIAL_KEYS_TO_EXTRACT[] = {
     {"material_color"},
 };
 
+template <typename E>
+std::string enum_to_json(E val)
+{
+    return Slic3r::Biz::Algorithms::to_lower_ascii(magic_enum::enum_name(val));
+}
+
+template <typename E>
+std::optional<E> enum_from_json(std::string_view val)
+{
+    return magic_enum::enum_cast<E>(val, magic_enum::case_insensitive);
+}
+
+template <typename E>
+bool contains_enum(std::string_view val)
+{
+    return magic_enum::enum_contains<E>(val, magic_enum::case_insensitive);
+}
+
 }
 
 namespace Slic3r::Domain::Preset {
@@ -174,7 +193,7 @@ void to_json(ordered_json& j, const HwFeederConfig& v)
     j = ordered_json{
         {"id", v.id},
         {"slot_count", v.slot_count},
-        {"type", magic_enum::enum_name(v.type)},
+        {"type", enum_to_json(v.type)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
         {"features", v.features}
@@ -185,7 +204,7 @@ void from_json(const ordered_json& j, HwFeederConfig& v)
 {
     j.at("id").get_to(v.id);
     j.at("slot_count").get_to(v.slot_count);
-    v.type = magic_enum::enum_cast<FeederType>(j.at("type").get<std::string>()).value();
+    v.type = enum_from_json<FeederType>(j.at("type").get<std::string>()).value();
     j.get_to(v.model);
     j.at("features").get_to(v.features);
 }
@@ -320,7 +339,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"repo_id", v.repo_id},
         {"repo_version", v.repo_version},
         {"config_name", v.name},
-        {"technology", magic_enum::enum_name(v.technology)},
+        {"technology", enum_to_json(v.technology)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
         {"tool_count", v.tool_count},
@@ -467,7 +486,7 @@ tl::expected<void, std::string> is_valid<HwFeederConfig>(const nlohmann::ordered
     }
 
     const std::string enum_value{json_value.at("type").get<std::string>()};
-    if (!magic_enum::enum_contains<FeederType>(enum_value)) {
+    if (!contains_enum<FeederType>(enum_value)) {
         return tl::unexpected{"'" + enum_value + "' is not a valid enum value"};
     };
 
@@ -574,7 +593,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     if (!technology) {
         return tl::unexpected{"Invalid technology: " + technology.error()};
     }
-    const auto technology_enum{magic_enum::enum_cast<PrinterTechnology>(*technology)};
+    const auto technology_enum{enum_from_json<PrinterTechnology>(*technology)};
     if (!technology_enum) {
         return tl::unexpected{"Invalid technology enum: " + *technology};
     }

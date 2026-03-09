@@ -740,8 +740,10 @@ void update_hw_config_tools_and_materials_features_from_preset(
 
     for (size_t i = 0, n = preset.materials.size(); i < n; i++) {
         const auto& src_mat = preset.materials[i];
+        const auto address =
+            Domain::Preset::MaterialIterator::from_slot_index(preset.hw_config, i).address();
         auto& dest_mat =
-            preset.hw_config.materials[Domain::Preset::Address{static_cast<uint8_t>(i)}];
+            preset.hw_config.materials[address];
         override_features(dest_mat.features, src_mat.features);
         // TODO: maybe we should use '$.type.abbre'
         std::visit(
