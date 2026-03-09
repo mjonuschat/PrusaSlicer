@@ -15,7 +15,7 @@ namespace Slic3r::App::Plater {
 class ScaleGizmo :
     public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
-    App::Plater::ISelectionBoundingBoxChangedListener
+    App::Plater::ISelectionExtentsChangedListener
 {
 public:
     ScaleGizmo(
@@ -41,7 +41,7 @@ public:
     void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection&) override;
     void on_scene_selection_bounding_box_changed(
         Domain::SelectionId project_id,
-        const std::optional<Scene::OrientedBoundingBox>&
+        const std::optional<Biz::Scene::SelectionExtents>&
     ) override;
 
 private:
@@ -60,7 +60,7 @@ private:
         Biz::Scene::TransformMemento xform_memento;
         Scene::Ray scale_ray;
         AxisType scale_axis{AxisType::None};
-        Scene::OrientedBoundingBox start_obb;
+        Biz::Scene::OrientedBoundingBox start_obb;
         bool was_floating{false};
         double start_t{0};
         bool dragging{false};

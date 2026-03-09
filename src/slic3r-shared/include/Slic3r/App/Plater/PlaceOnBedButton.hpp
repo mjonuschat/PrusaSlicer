@@ -2,15 +2,14 @@
 
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 namespace Slic3r::App::Plater {
 class PlaceOnBedButton :
     public Yoga::LayoutButton,
-    public Biz::Scene::ISceneSelectionChangedListener,
-    public Biz::ISelectedProjectChangedListener
+    public Biz::ISelectedProjectChangedListener,
+    public ISelectionExtentsChangedListener
 {
 public:
     PlaceOnBedButton(
@@ -20,20 +19,12 @@ public:
 
     ~PlaceOnBedButton();
 
-    void on_scene_selection_changed(
-        Domain::SelectionId project_id,
-        const Biz::Scene::ObjectSelection&
-    ) override;
-
-    void on_scene_selection_transformed(
-        Domain::SelectionId,
-        const Biz::Scene::ObjectSelection&
-    ) override;
-
     void on_selected_project_changed_final(size_t) override;
 
-    bool is_floating{false};
-    void trigger();
+    void on_scene_selection_bounding_box_changed(
+        Domain::SelectionId,
+        const std::optional<Biz::Scene::SelectionExtents>&
+    ) override;
 
 private:
     void reload();

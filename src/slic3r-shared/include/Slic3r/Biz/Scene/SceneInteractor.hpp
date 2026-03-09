@@ -40,10 +40,7 @@ public:
     virtual ~ISceneSelectionChangedListener() = default;
     virtual void on_scene_selection_changed(Domain::SelectionId project_id, const ObjectSelection& selection) = 0;
     virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const ObjectSelection& selection) {};
-    virtual void on_scene_selection_reference_frame_changed(
-        Domain::SelectionId project_id,
-        const ObjectSelection& selection
-    ) {};
+    virtual void on_scene_selection_bounding_box_updated(Domain::SelectionId project_id, const ObjectSelection& selection) {};
 };
 
 enum class TransformState
@@ -328,7 +325,8 @@ public:
      */
     void transform_selection(
         const Transform& relative_transform,
-        TransformMemento& memento
+        TransformMemento& memento,
+        bool place_on_bed = false
     );
 
     /**
@@ -343,7 +341,7 @@ public:
      * @note This effectively same as calling transform_selection(const Transform&, TransformMemento&)
      * and then finalize_transform_selection()
      */
-    void transform_selection(const Transform& relative_transform);
+    void transform_selection(const Transform& relative_transform, bool place_on_bed = false);
 
     void transform_instances(const std::vector<Arrange::InstanceTransform2D>& transformations);
 
@@ -374,6 +372,9 @@ public:
         const Domain::SlicingId slicing_id,
         const Domain::CustomGCode::Info& custom_gcode
     );
+
+    void update_selection_bounding_box(const std::optional<SelectionExtents>& bounding_box = std::nullopt);
+    const std::optional<SelectionExtents> selection_bounding_box() const;
 
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
 

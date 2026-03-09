@@ -15,7 +15,7 @@ class TripleInput;
 
 class RotationDialog final :
     public Yoga::GizmoWindow,
-    public App::Plater::ISelectionBoundingBoxChangedListener,
+    public App::Plater::ISelectionExtentsChangedListener,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener
 {
@@ -29,7 +29,7 @@ public:
 
     void on_scene_selection_bounding_box_changed(
         Domain::SelectionId project_id,
-        const std::optional<Scene::OrientedBoundingBox>&
+        const std::optional<Biz::Scene::SelectionExtents>&
     ) override;
 
     void on_selected_project_changed_final(size_t index) override;

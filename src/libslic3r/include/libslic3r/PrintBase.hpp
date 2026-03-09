@@ -436,6 +436,12 @@ struct WipeTowerGeometry {
     double width{};
     double cone_angle{};
     double brim_width{};
+
+    [[nodiscard]] double get_height() const;
+
+    [[nodiscard]] Domain::ExPolygon get_outline(const Domain::ModelWipeTower& model_wipe_tower) const;
+
+    [[nodiscard]] Domain::BoundingBox3d get_bounding_box(const Domain::ModelWipeTower& model_wipe_tower) const;
 };
 
 using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;

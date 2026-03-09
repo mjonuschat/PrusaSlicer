@@ -128,7 +128,7 @@ void build_obb_node(NodeBuilder& builder, Render::GeometryManager<AuxiliaryEleme
     }
 }
 
-void update_obb_node(Node& node, const OrientedBoundingBox& obb, double edge_coverage_percent,
+void update_obb_node(Node& node, const Biz::Scene::OrientedBoundingBox& obb, double edge_coverage_percent,
     std::optional<Domain::ColorRGB> color)
 {
     AABBNodeTag* tag = node.tag_of_type<AABBNodeTag>();

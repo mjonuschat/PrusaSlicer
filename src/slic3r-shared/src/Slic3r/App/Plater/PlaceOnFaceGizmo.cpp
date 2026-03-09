@@ -287,12 +287,12 @@ void PlaceOnFaceGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
 
 void PlaceOnFaceGizmo::rotate_selection(const Domain::Vec3d& direction, const Domain::Vec3d& point) const
 {
-    const std::optional<Scene::OrientedBoundingBox> selection_bounding_box{
-        m_scene_presenter.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_scene_interactor.selection_bounding_box()
     };
     if (! selection_bounding_box)
         return;
-    const Domain::Vec3d& center = selection_bounding_box->center;
+    const Domain::Vec3d& center = selection_bounding_box->oriented_bounding_box().center;
 
     // direction and point are both in the coordinate system of the first
     // volume. Both need to be transformed into world before we can continue.
@@ -304,11 +304,8 @@ void PlaceOnFaceGizmo::rotate_selection(const Domain::Vec3d& direction, const Do
     tr.matrix().block<3,3>(0,0) = rotation_3x3;
     tr.matrix().block<3,1>(0,3) = center - rotation_3x3 * center;
 
-    // Move the object in z so it touches the bed.
-    tr.matrix().block<3, 1>(0, 3) -= Domain::Vec3d(0., 0., (tr * world_plane[1]).z());
-
     // Finally tell scene interactor to rotate the object.
-    m_scene_interactor.transform_selection(tr.matrix());
+    m_scene_interactor.transform_selection(tr.matrix(), true);
 }
 
 } // namespace Slic3r::App::Plater

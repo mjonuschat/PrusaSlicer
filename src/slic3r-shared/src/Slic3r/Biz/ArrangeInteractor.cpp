@@ -344,62 +344,6 @@ std::vector<BedRef> get_selected_beds(
     return result;
 }
 
-Polygon get_circle(double radius, std::size_t vertex_count) {
-    double angle_step{2.0 * std::numbers::pi / vertex_count};
-
-    Points points;
-    for (std::size_t i{}; i < vertex_count; ++i) {
-        const double angle{i * angle_step};
-        points.push_back(scaled(Vec2d{
-            std::cos(angle) * radius,
-            std::sin(angle) * radius,
-        }));
-    }
-    return Polygon{points};
-}
-
-Polygon get_rectangle(double width, double height)
-{
-    return Polygon{
-        scaled(Vec2d{-width / 2.0, -height / 2.0}),
-        scaled(Vec2d{width / 2.0, -height / 2.0}),
-        scaled(Vec2d{width / 2.0, height / 2.0}),
-        scaled(Vec2d{-width / 2.0, height / 2.0})
-    };
-}
-
-ArbitraryShape get_wipe_tower_projection(
-    const Print::WipeTowerGeometry& wipe_tower,
-    const Domain::ModelWipeTower& model_wipe_tower
-)
-{
-    const double height{
-        wipe_tower.depths.empty() ? wipe_tower.fallback_height : wipe_tower.depths.back().z
-    };
-
-    const double cone_base_radius{
-        height * std::tan(Slic3r::deg2rad(wipe_tower.cone_angle / 2.0)) + wipe_tower.brim_width
-    };
-
-    const double width{wipe_tower.width};
-    const double depth{
-        wipe_tower.depths.empty() ? wipe_tower.fallback_depth : wipe_tower.depths.front().depth
-    };
-
-    Polygon recangle{
-        get_rectangle(width + 2 * wipe_tower.brim_width, depth + 2 * wipe_tower.brim_width)
-    };
-    Polygon circle{get_circle(cone_base_radius, 200)};
-
-    Domain::ExPolygons outline{union_ex({recangle, circle})};
-    ASSERT(outline.size() == 1);
-
-    outline.front().translate(scaled(Vec2d{width / 2.0, depth / 2.0}));
-    outline.front().rotate(Slic3r::deg2rad(model_wipe_tower.rotation));
-
-    return outline;
-}
-
 ArrangeItem wipe_tower_to_arrange_item(
     SelectionId project_id,
     const BedRef bed_ref,
@@ -411,7 +355,7 @@ ArrangeItem wipe_tower_to_arrange_item(
     ArrangeItem result{
         InputShape{
             Domain::ElementRef{Domain::SlicingId{project_id, bed_ref.instance_id}},
-            get_wipe_tower_projection(wipe_tower, model_wipe_tower)
+            {wipe_tower.get_outline(model_wipe_tower)}
         },
         settings
     };

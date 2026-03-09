@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelInstance.hpp"
+#include "Slic3r/Biz/Scene/SelectionExtents.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
@@ -334,9 +335,11 @@ void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection)
 
     DEBUG_ASSERT(sel.is_valid());
     project_context.object_selection = sel;
+
     invoke_listeners<ISceneSelectionChangedListener>(
         [&](auto* l) { l->on_scene_selection_changed(m_selected_project_id, sel); }
     );
+    update_selection_bounding_box();
 }
 
 static Domain::SquareMatrix3d reset_shear(const Domain::SquareMatrix3d& matrix)
@@ -452,9 +455,7 @@ bool SceneInteractor::reload_object_selection_reference_frame(SelectionReference
 
     const bool changed{previous != it->second.object_selection_reference_frame};
     if (changed) {
-        invoke_listeners<ISceneSelectionChangedListener>(
-            [&](auto* l) { l->on_scene_selection_reference_frame_changed(m_selected_project_id, it->second.object_selection); }
-        );
+        update_selection_bounding_box();
     }
     return changed;
 }
@@ -517,6 +518,7 @@ void SceneInteractor::modify_selection(const std::function<void(ObjectSelection&
     auto& selection = it->second.object_selection;
     modifier(selection);
     DEBUG_ASSERT(selection.is_valid());
+    update_selection_bounding_box();
     invoke_listeners<ISceneSelectionChangedListener>(
         [&](auto* l) { l->on_scene_selection_changed(m_selected_project_id, selection); }
     );
@@ -1544,6 +1546,8 @@ void SceneInteractor::set_element_transforms(const SceneInteractor::ElementTrans
         }
     }
 
+    update_selection_bounding_box();
+
     const BedTrackingChanges changes = update_elements_bed_placement(elements, true);
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
@@ -1579,19 +1583,24 @@ void SceneInteractor::set_element_transforms(const SceneInteractor::ElementTrans
     }
 }
 
-void SceneInteractor::transform_selection(const Transform& relative_transform)
+void SceneInteractor::transform_selection(const Transform& relative_transform, bool place_on_bed)
 {
     TransformMemento memento;
-    transform_selection(relative_transform, memento);
+    transform_selection(relative_transform, memento, place_on_bed);
     finalize_transform_selection(memento, false);
 }
 
-void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transform, TransformMemento& memento)
+void SceneInteractor::transform_selection(
+    const SquareMatrix4d& relative_transform,
+    TransformMemento& memento,
+    bool place_on_bed
+)
 {
     DEBUG_ASSERT(fabs(relative_transform.determinant()) > 1e-9);
     auto& proj         = m_projects.find(m_selected_project_id)->second;
     bool instance_mode = proj.object_selection.mode == SelectionMode::Instance;
     auto selection     = proj.object_selection;
+
     if (instance_mode) {
         auto final_mode = transform_selection_instance_mode(proj, relative_transform, memento);
         if (final_mode == SelectionMode::Volume) {
@@ -1604,10 +1613,51 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
         }
     } else
         transform_selection_volume_mode(proj, relative_transform, memento);
+
+    std::optional<SelectionExtents> bounding_box{get_selection_extents(
+        m_selected_project_id,
+        proj.object_selection,
+        *this,
+        m_workbench
+    )};
+
+    if (bounding_box
+        && place_on_bed
+        && proj.object_selection.state() != SelectionState::SingleVolume
+        && bounding_box->is_floating()
+        && selection.mode == SelectionMode::Volume)
+    {
+        for (const auto& e : selection.elements) {
+            if (!e.has_instance() || !e.has_volume()) {
+                continue;
+            }
+            const auto* instance{proj.project.find_instance_by_id(e.object_id, e.instance_id)};
+            const auto instance_matrix{instance->get_matrix()};
+            ModelVolume* volume = proj.project.find_volume_by_id(e.object_id, e.volume_id);
+            if (!volume) {
+                continue;
+            }
+            Domain::Transform3d transformation{Domain::Transform3d::Identity()};
+            transformation.translate(Domain::Vec3d{0.0, 0.0, -bounding_box->min_z()});
+
+            const Domain::Transform3d volume_relative_transform =
+                instance_matrix.inverse() * transformation * instance_matrix;
+
+            volume->set_transformation(
+                Transformation{volume_relative_transform * volume->get_matrix()}
+            );
+        }
+        bounding_box->reset_z();
+    }
+
+    update_selection_bounding_box(bounding_box);
+
+
     const BedTrackingChanges changes = update_elements_bed_placement(
         proj.object_selection.elements,
         selection.mode == SelectionMode::Volume || memento.forced_volume_mode
     );
+
     for (const auto& [_, e] : memento.elements) {
         if (e.element.is_wipe_tower()) {
             invoke_listeners<ISceneChangedListener>(
@@ -1696,6 +1746,8 @@ void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTra
         }
         elements.push_back(trafo.instance_ref);
     }
+
+    update_selection_bounding_box();
 
     const BedTrackingChanges changes{m_bed_tracking.update_instances_bed_placement(project, elements)};
 
@@ -1892,6 +1944,7 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
         changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode);
     }
 
+    update_selection_bounding_box();
 
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
@@ -1949,6 +2002,10 @@ void SceneInteractor::remove_wipe_tower(const Domain::SlicingId slicing_id)
     }
     SceneInteractorProjectContext& context{project_it->second};
     context.wipe_tower_geometries.erase(slicing_id.bed_instance_id);
+
+    if (object_selection().is_selected(Domain::ElementRef{slicing_id})) {
+        update_selection_bounding_box();
+    }
     invoke_listeners<ISceneChangedListener>([&](auto listener)
                                             { listener->on_wipe_tower_removed(slicing_id); });
 }
@@ -1964,6 +2021,10 @@ void SceneInteractor::change_wipe_tower(
     }
     SceneInteractorProjectContext& context{project_it->second};
     context.wipe_tower_geometries[slicing_id.bed_instance_id] = wipe_tower;
+
+    if (object_selection().is_selected(Domain::ElementRef{slicing_id})) {
+        update_selection_bounding_box();
+    }
 
     invoke_listeners<ISceneChangedListener>(
         [&](auto listener) { listener->on_wipe_tower_changed(slicing_id, wipe_tower); }
@@ -1996,6 +2057,45 @@ void SceneInteractor::update_custom_gcode(
         return;
     }
     invoke_slicing_input_changed(Domain::BedRef{config_container->id().id, bed_instance->id().id});
+}
+
+void SceneInteractor::update_selection_bounding_box(
+    const std::optional<SelectionExtents>& bounding_box
+)
+{
+    const auto& project_it{m_projects.find(m_selected_project_id)};
+    if (project_it == m_projects.end()) {
+        return;
+    }
+    project_it->second.object_selection_bounding_box = std::nullopt;
+    if (!project_it->second.object_selection.empty() && !bounding_box) {
+        project_it->second.object_selection_bounding_box = Scene::get_selection_extents(
+            m_selected_project_id,
+            project_it->second.object_selection,
+            *this,
+            m_workbench
+        );
+    } else if (bounding_box) {
+        project_it->second.object_selection_bounding_box = bounding_box;
+    }
+    invoke_listeners<ISceneSelectionChangedListener>(
+        [&](auto* l)
+        {
+            l->on_scene_selection_bounding_box_updated(
+                m_selected_project_id,
+                project_it->second.object_selection
+            );
+        }
+    );
+}
+
+const std::optional<SelectionExtents> SceneInteractor::selection_bounding_box() const
+{
+    const auto& project_it{m_projects.find(m_selected_project_id)};
+    if (project_it == m_projects.end()) {
+        return std::nullopt;
+    }
+    return project_it->second.object_selection_bounding_box;
 }
 
 const Print::WipeTowerGeometry* SceneInteractor::wipe_tower_geometry(
@@ -2103,6 +2203,7 @@ void SceneInteractor::normalize_single_volume_object(Domain::ModelObject& object
     }
     vol->set_transformation(Domain::Transformation(Domain::Transform3d::Identity()));
     const auto changes = m_bed_tracking.update_instances_bed_placement(m_workbench.project(m_selected_project_id), instance_refs);
+
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l) {
             l->on_instance_transformed(m_selected_project_id, instance_refs, TransformState::Completed, changes);

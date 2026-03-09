@@ -33,7 +33,7 @@ TranslationDialog::TranslationDialog(
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
 {
-    m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.add_listener<App::Plater::ISelectionExtentsChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
@@ -51,17 +51,19 @@ TranslationDialog::TranslationDialog(
     m_absolute_input = m_absolute_input_row->emplace_back<TripleInput>(_u8L("mm"));
     m_absolute_input->on_change = [this](const Domain::Vec3d& value, int)
     {
-        const std::optional<Scene::OrientedBoundingBox> bounding_box{
-            m_scene_provider.selection_bounding_box()
+        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+            m_project_interactor.scene_interactor().selection_bounding_box()
         };
 
         const std::optional<Domain::Vec3d> reference_point{get_absolute_position_reference_point()};
 
-        if (!bounding_box || !reference_point) {
+        if (!selection_bounding_box || !reference_point) {
             return;
         }
 
-        const Domain::Vec3d current_value{bounding_box->center - *reference_point};
+        const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
+
+        const Domain::Vec3d current_value{bounding_box.center - *reference_point};
         apply_relative_translation(value - current_value);
     };
 
@@ -83,7 +85,7 @@ TranslationDialog::TranslationDialog(
 
 TranslationDialog::~TranslationDialog()
 {
-    m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.remove_listener<App::Plater::ISelectionExtentsChangedListener>(this);
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
@@ -100,7 +102,7 @@ void TranslationDialog::on_selected_bed_instances_changed(
 
 void TranslationDialog::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
-    const std::optional<Scene::OrientedBoundingBox>&
+    const std::optional<Biz::Scene::SelectionExtents>&
 )
 {
     reload(project_id);
@@ -192,12 +194,14 @@ void TranslationDialog::reload(Domain::SelectionId project_id)
         return;
     }
 
-    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return;
     }
+
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
 
     m_relative_input_row->set_visible(false);
     m_absolute_input_row->set_visible(false);
@@ -208,7 +212,7 @@ void TranslationDialog::reload(Domain::SelectionId project_id)
         m_relative_input->set_value({0, 0, 0});
     } else {
         m_absolute_input_row->set_visible(true);
-        m_absolute_input->set_value(bounding_box->center - *reference_point);
+        m_absolute_input->set_value(bounding_box.center - *reference_point);
     }
 
     if (m_project_interactor.scene_interactor().object_selection().contains_wipe_tower()) {
@@ -222,16 +226,16 @@ void TranslationDialog::reload(Domain::SelectionId project_id)
 
 void TranslationDialog::apply_relative_translation(const Domain::Vec3d& translation)
 {
-    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return;
     }
 
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
     scene_interactor.transform_selection(
-        get_translation_matrix(bounding_box->rotation, translation)
+        get_translation_matrix(selection_bounding_box->oriented_bounding_box().rotation, translation)
     );
 }
 

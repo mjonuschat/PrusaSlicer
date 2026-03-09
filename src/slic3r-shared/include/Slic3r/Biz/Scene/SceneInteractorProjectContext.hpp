@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Scene/Selection.hpp"
+#include "Slic3r/Biz/Scene/SelectionExtents.hpp"
 #include "libslic3r/PrintBase.hpp"
 
 namespace Slic3r::Domain { class Project; }
@@ -13,6 +14,7 @@ struct SceneInteractorProjectContext
     Domain::Project& project;
     BedSelection bed_selection;
     ObjectSelection object_selection;
+    std::optional<SelectionExtents> object_selection_bounding_box;
     SelectionReferenceFrame object_selection_reference_frame{SelectionReferenceFrame::Bed};
 
     // key is bed_instance_id

@@ -8,7 +8,6 @@
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Scene/BedError.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
-#include "Slic3r/App/Scene/OrientedBoundingBox.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 
 #define ENABLE_DEBUG_RENDER_SCENE_AABB 0
@@ -38,7 +37,6 @@ private: // Intialization order matters, hence this out of order private.
 public:
     Node& selection_root;
     Node& plain_selection_root;
-    std::optional<OrientedBoundingBox> selection_bounding_box;
 
     SceneChangeSession& selection_scene_changes()
     {

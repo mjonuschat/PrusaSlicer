@@ -25,6 +25,7 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/Scene/VolumeColor.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <libslic3r/GCode/WipeTower.hpp>
 
@@ -543,24 +544,14 @@ void PlaterScenePresenter::on_scene_selection_changed(
 )
 {
     m_volume_materials_dirty = true;
-
-    update_selection_obb(project_id, selection);
 }
 
-void PlaterScenePresenter::on_scene_selection_transformed(
+void PlaterScenePresenter::on_scene_selection_bounding_box_updated(
     Domain::SelectionId project_id,
     const Biz::Scene::ObjectSelection& selection
 )
 {
-    update_selection_obb(project_id, selection);
-}
-
-void PlaterScenePresenter::on_scene_selection_reference_frame_changed(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
-{
-    update_selection_obb(project_id, selection);
+    update_selection_root(project_id, selection);
 }
 
 void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
@@ -919,181 +910,7 @@ void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId proje
     }
 }
 
-// Intentionally different semantics than axis aligned bounding box.
-struct Extents {
-    Vec3d minimum{std::numeric_limits<double>::max() * Vec3d::Ones()};
-    Vec3d maximum{std::numeric_limits<double>::lowest() * Vec3d::Ones()};
-};
-
-Domain::Transform3d get_rotation_translation(const Domain::Transform3d& trafo)
-{
-    SquareMatrix4d result{Domain::SquareMatrix4d::Identity()};
-    result.block(0, 0, 3, 3) = trafo.rotation();
-    result.col(3).head<3>()  = trafo.translation();
-    return Domain::Transform3d{result};
-}
-
-Extents get_volume_extents_in_basis(
-    const Domain::ModelVolume& volume,
-    Domain::Transform3d instance_trafo,
-    const Domain::SquareMatrix3d& basis
-)
-{
-    Extents result;
-
-    for (const Domain::Vec3f& vertex : volume.get_convex_hull().its.vertices) {
-        const Domain::Transform3d volume_trafo{volume.get_matrix()};
-        const Vec3d world_vertex{
-            instance_trafo * volume_trafo * Vec3d{vertex.cast<double>()}
-        };
-
-        for (int i{}; i < 3; ++i) {
-            const Vec3d axis{basis.col(i)};
-            const double dot_product{axis.dot(world_vertex)};
-            result.minimum(i) = std::min(dot_product, result.minimum(i));
-            result.maximum(i) = std::max(dot_product, result.maximum(i));
-        }
-    }
-    return result;
-}
-
-static void update_extents(
-    const Domain::ModelInstance* instance,
-    const Domain::ModelVolume* volume,
-    const Domain::SquareMatrix3d& basis,
-    Extents& extents
-)
-{
-    const Extents volume_extents{
-        get_volume_extents_in_basis(*ASSERT_VAL(volume), instance->get_matrix(), basis)
-    };
-    extents.minimum = extents.minimum.cwiseMin(volume_extents.minimum);
-    extents.maximum = extents.maximum.cwiseMax(volume_extents.maximum);
-}
-
-Scene::OrientedBoundingBox get_selection_bounding_box_in_basis(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection,
-    const Biz::ProjectInteractor& project_interactor,
-    const Domain::SquareMatrix3d& basis
-)
-{
-    ASSERT(
-        (basis.transpose() * basis).isApprox(Eigen::Matrix3d::Identity()),
-        "Basis must be orthonormal!"
-    );
-
-    using Biz::Scene::SelectionState;
-
-    const Domain::Workbench& workbench{project_interactor.workbench()};
-    const Domain::Project& project{workbench.project(project_id)};
-
-    Extents extents;
-    for (const Domain::ElementRef& element : selection.elements) {
-        if (!element.has_instance()) {
-            continue;
-        }
-        const Domain::ModelInstance* instance{
-            project.find_instance_by_id(element.object_id, element.instance_id)
-        };
-        ASSERT(instance != nullptr);
-
-        if (element.has_volume()) {
-            const Domain::ModelVolume* volume{
-                project.find_volume_by_id(element.object_id, element.volume_id)
-            };
-            ASSERT(volume != nullptr);
-            update_extents(instance, volume, basis, extents);
-        } else {
-            for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
-                update_extents(instance, volume, basis, extents);
-            }
-        }
-    }
-
-    const Vec3d extents_dimensions{extents.maximum - extents.minimum};
-
-    return Scene::OrientedBoundingBox{
-        basis * ((extents.maximum + extents.minimum) / 2.0),
-        extents_dimensions,
-        basis
-    };
-}
-
-Scene::OrientedBoundingBox PlaterScenePresenter::get_global_obb(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
-{
-    ASSERT(!selection.elements.empty());
-    return get_selection_bounding_box_in_basis(
-        project_id,
-        selection,
-        m_project_interactor,
-        Domain::SquareMatrix3d::Identity()
-    );
-}
-
-Scene::OrientedBoundingBox PlaterScenePresenter::get_instance_obb(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
-{
-    ASSERT(!selection.elements.empty());
-    const Domain::ElementRef& element{selection.elements.front()};
-    ASSERT(element.has_instance());
-
-    const Domain::ModelInstance* instance{
-        m_workbench.project(project_id).find_instance_by_id(element.object_id, element.instance_id)
-    };
-    ASSERT(instance != nullptr);
-
-    return get_selection_bounding_box_in_basis(
-        project_id,
-        selection,
-        m_project_interactor,
-        instance->get_matrix().rotation()
-    );
-}
-
-Scene::OrientedBoundingBox PlaterScenePresenter::get_volume_obb(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
-{
-    ASSERT(!selection.elements.empty());
-    const Domain::ElementRef& element{selection.elements.front()};
-
-    const Domain::ModelObject* object{
-        m_workbench.project(m_selected_project_id).find_object_by_id(element.object_id)
-    };
-
-    ASSERT(element.has_instance() && element.has_volume());
-
-    const Domain::ModelInstance* instance{
-        m_workbench.project(project_id).find_instance_by_id(element.object_id, element.instance_id)
-    };
-    ASSERT(instance != nullptr);
-
-    const Domain::ModelVolume* volume{!element.has_volume() ? object->volumes.front() : nullptr};
-
-    if (volume == nullptr) {
-        ASSERT(element.has_volume());
-        volume =
-            m_workbench.project(project_id).find_volume_by_id(element.object_id, element.volume_id);
-    };
-
-    ASSERT(volume != nullptr);
-
-    return get_selection_bounding_box_in_basis(
-        project_id,
-        selection,
-        m_project_interactor,
-        (instance->get_matrix() * volume->get_matrix()).rotation()
-    );
-}
-
-void PlaterScenePresenter::update_selection_obb(
+void PlaterScenePresenter::update_selection_root(
     Domain::SelectionId project_id,
     const Biz::Scene::ObjectSelection& selection
 ) {
@@ -1103,14 +920,16 @@ void PlaterScenePresenter::update_selection_obb(
 
     project.selection_root.set_enabled(false);
     project.plain_selection_root.set_enabled(false);
-    project.selection_bounding_box = std::nullopt;
     project.set_selection_obb_node_as_dirty();
 
+    const std::optional<Biz::Scene::SelectionExtents> bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
+    };
 
-    if (selection.empty()) {
-        invoke_listeners<ISelectionBoundingBoxChangedListener>(
-            [&](ISelectionBoundingBoxChangedListener* l)
-            { l->on_scene_selection_bounding_box_changed(project_id, project.selection_bounding_box); }
+    if (!bounding_box) {
+        invoke_listeners<ISelectionExtentsChangedListener>(
+            [&](ISelectionExtentsChangedListener* l)
+            { l->on_scene_selection_bounding_box_changed(project_id, bounding_box); }
         );
         return;
     }
@@ -1119,59 +938,17 @@ void PlaterScenePresenter::update_selection_obb(
         m_project_interactor.scene_interactor().object_selection_reference_frame()
     );
 
-    switch (m_project_interactor.scene_interactor().object_selection_reference_frame()) {
-    case SelectionReferenceFrame::Volume: {
-        project.selection_bounding_box = get_volume_obb(project_id, selection);
-    } break;
-    case SelectionReferenceFrame::Instance: {
-        project.selection_bounding_box = get_instance_obb(project_id, selection);
-    } break;
-    case SelectionReferenceFrame::Bed: {
-        const Scene::OrientedBoundingBox obb{get_global_obb(project_id, selection)};
-        ASSERT(obb.rotation.isApprox(SquareMatrix3d::Identity()));
-        Eigen::AlignedBox3f bounding_box{
-            (obb.center - obb.dimensions / 2.0).cast<float>(),
-            (obb.center + obb.dimensions / 2.0).cast<float>()
-        };
-
-        for (const Domain::ElementRef& element : selection.elements) {
-            if (!element.is_wipe_tower()) {
-                continue;
-            }
-            Scene::Node::NodeList nodes;
-            project.scene().root().query([&](const Scene::Node* node){
-                const auto tag{node->tag_of_type<SceneNodeTag>()};
-                if (!tag) {
-                    return false;
-                }
-                return tag->wipe_tower_id == element.wipe_tower_id && node->raycast_component() != nullptr;
-            }, nodes);
-            for (const Scene::Node* node : nodes) {
-                const Eigen::AlignedBox3f wipe_tower_bounding_box{
-                    node->raycast_component()->world_bounding_box(node->world_transform().matrix())
-                };
-                bounding_box.extend(wipe_tower_bounding_box);
-            }
-        }
-        project.selection_bounding_box = Scene::OrientedBoundingBox{
-            .center = bounding_box.center().cast<double>(),
-            .dimensions = bounding_box.sizes().cast<double>(),
-            .rotation = obb.rotation
-        };
-    } break;
-    }
-
     Scene::Transform transform{SquareMatrix4d::Identity()};
-    transform.translate(project.selection_bounding_box->center);
-    transform.rotate(project.selection_bounding_box->rotation);
+    transform.translate(bounding_box->oriented_bounding_box().center);
+    transform.rotate(bounding_box->oriented_bounding_box().rotation);
     project.selection_root.set_world_transform(transform);
     project.selection_root.set_enabled(true);
     project.plain_selection_root.set_world_transform(transform);
     project.plain_selection_root.set_enabled(true);
 
-    invoke_listeners<ISelectionBoundingBoxChangedListener>(
-        [&](ISelectionBoundingBoxChangedListener* l)
-        { l->on_scene_selection_bounding_box_changed(project_id, project.selection_bounding_box); }
+    invoke_listeners<ISelectionExtentsChangedListener>(
+        [&](ISelectionExtentsChangedListener* l)
+        { l->on_scene_selection_bounding_box_changed(project_id, bounding_box); }
     );
 }
 
@@ -1280,9 +1057,6 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     auto& sinking_contours = project_context().sinking_contours();
     sinking_contours.update_scene(m_device, proj, scn, elements);
     sinking_contours.set_selection(elements);
-
-    const Biz::Scene::ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
-    update_selection_obb(project_id, selection);
 }
 
 void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
@@ -1470,7 +1244,6 @@ void PlaterScenePresenter::on_wipe_tower_changed(
     }
     m_volume_materials_dirty = true;
     invoke_bed_visually_changed(slicing_id.project_id);
-    update_wipe_tower_obb(slicing_id.project_id);
 }
 
 void PlaterScenePresenter::on_wipe_tower_moved(Domain::SlicingId slicing_id)
@@ -1504,7 +1277,6 @@ void PlaterScenePresenter::on_wipe_tower_moved(Domain::SlicingId slicing_id)
     transform.translate(Vec3d{wipe_tower.position.x(), wipe_tower.position.y(), 0.0});
     transform.rotate(Eigen::AngleAxisd{Slic3r::deg2rad(wipe_tower.rotation), Vec3d::UnitZ()});
     node->set_local_transform(transform);
-    update_wipe_tower_obb(slicing_id.project_id);
 }
 
 void PlaterScenePresenter::on_wipe_tower_removed(Domain::SlicingId slicing_id)
@@ -1516,19 +1288,6 @@ void PlaterScenePresenter::on_wipe_tower_removed(Domain::SlicingId slicing_id)
     Scene::Scene& project_scene{it->second.scene()};
     remove_wipe_tower_node(project_scene, slicing_id);
     invoke_bed_visually_changed(slicing_id.project_id);
-    update_wipe_tower_obb(slicing_id.project_id);
-}
-
-void PlaterScenePresenter::update_wipe_tower_obb(std::size_t project_id)
-{
-    if (project_id == m_selected_project_id
-        && m_project_interactor.scene_interactor().object_selection().contains_wipe_tower())
-    {
-        update_selection_obb(
-            project_id,
-            m_project_interactor.scene_interactor().object_selection()
-        );
-    }
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)

@@ -131,17 +131,21 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
     const auto& pick_ray = ctx.pick_ray();
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        const std::optional<Scene::OrientedBoundingBox> obb{m_scene_provider.selection_bounding_box()};
+        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+            m_scene_interactor.selection_bounding_box()
+        };
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<TranslationGizmoNodeTag>();
-        if (node == nullptr || !obb) {
+        if (node == nullptr || !selection_bounding_box) {
             project_context.dragging = false;
             return Scene::GizmoActivationState::Inactive;
         }
 
+        const Biz::Scene::OrientedBoundingBox& obb{selection_bounding_box->oriented_bounding_box()};
+
         const TranslationGizmoNodeTag& tag = *node->tag_of_type<TranslationGizmoNodeTag>();
         Transform3d transform{Transform3d::Identity()};
-        transform.translate(obb->center);
-        transform.rotate(obb->rotation);
+        transform.translate(obb.center);
+        transform.rotate(obb.rotation);
         project_context.translation_ray
             .origin = transform.translation();
         project_context.translation_ray.direction = transform.rotation() * tag.primary_axis_dir();

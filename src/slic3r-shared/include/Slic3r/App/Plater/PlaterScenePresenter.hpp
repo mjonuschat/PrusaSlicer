@@ -17,7 +17,7 @@
 #include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
-#include "Slic3r/App/Plater/ISelectionBoundingBoxChangedListener.hpp"
+#include "Slic3r/App/Plater/ISelectionExtentsChangedListener.hpp"
 #include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
@@ -38,7 +38,7 @@ class AnimationManager;
 namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter :
-    public WithListeners<Plater::IBedVisuallyChangedListener, ISelectionBoundingBoxChangedListener>,
+    public WithListeners<Plater::IBedVisuallyChangedListener, ISelectionExtentsChangedListener>,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
@@ -91,16 +91,6 @@ public:
     Scene::Node& plain_selection_root() override
     {
         return project_context().plain_selection_root;
-    }
-
-    std::optional<Scene::OrientedBoundingBox> selection_bounding_box()
-    {
-        return project_context().selection_bounding_box;
-    }
-
-    std::optional<Scene::OrientedBoundingBox> selection_bounding_box() const
-    {
-        return project_context().selection_bounding_box;
     }
 
     void set_selection_bounding_box_visible(bool visible)
@@ -214,9 +204,11 @@ private:
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
-    void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
-    void on_scene_selection_reference_frame_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_bounding_box_updated(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
 
     void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
 
@@ -240,7 +232,6 @@ private:
     ) override;
     void on_wipe_tower_moved(Domain::SlicingId slicing_id) override;
     void on_wipe_tower_removed(Domain::SlicingId slicing_id) override;
-    void update_wipe_tower_obb(std::size_t project_id);
 
     void on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
     void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
@@ -264,23 +255,7 @@ private:
 
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
 
-
-    Scene::OrientedBoundingBox get_instance_obb(
-        Domain::SelectionId project_id,
-        const Biz::Scene::ObjectSelection& selection
-    );
-
-    Scene::OrientedBoundingBox get_volume_obb(
-        Domain::SelectionId project_id,
-        const Biz::Scene::ObjectSelection& selection
-    );
-
-    Scene::OrientedBoundingBox get_global_obb(
-        Domain::SelectionId project_id,
-        const Biz::Scene::ObjectSelection& selection
-    );
-
-    void update_selection_obb(
+    void update_selection_root(
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection
     );

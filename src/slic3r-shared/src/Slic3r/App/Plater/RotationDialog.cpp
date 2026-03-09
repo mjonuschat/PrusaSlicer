@@ -25,7 +25,7 @@ RotationDialog::RotationDialog(
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
 {
-    m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.add_listener<App::Plater::ISelectionExtentsChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
@@ -52,10 +52,16 @@ RotationDialog::RotationDialog(
         if (project_context.reset_rotation_candidates.empty()) {
             return;
         }
-        const bool was_floating{m_place_on_bed_button->is_floating};
+        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+            m_project_interactor.scene_interactor().selection_bounding_box()
+        };
+        const bool was_floating{selection_bounding_box && selection_bounding_box->is_floating()};
         m_project_interactor.scene_interactor().set_element_transforms(project_context.reset_rotation_candidates);
-        if (!was_floating) {
-            m_place_on_bed_button->trigger();
+        if (selection_bounding_box && !was_floating) {
+            Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
+            relative_transform_world.col(3).z() =
+                -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
+            m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
         }
     };
 
@@ -76,7 +82,7 @@ RotationDialog::RotationDialog(
 
 RotationDialog::~RotationDialog()
 {
-    m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.remove_listener<App::Plater::ISelectionExtentsChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
@@ -84,7 +90,7 @@ RotationDialog::~RotationDialog()
 
 void RotationDialog::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
-    const std::optional<Scene::OrientedBoundingBox>&
+    const std::optional<Biz::Scene::SelectionExtents>&
 ) {
     reload(project_id);
 }
@@ -143,27 +149,27 @@ void RotationDialog::reload(std::optional<Domain::SelectionId> project_id) {
 
 void RotationDialog::add_rotation(Domain::Vec3d rotate_by_rads)
 {
-    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return;
     }
 
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
+
     rotate_by_rads(1) = -rotate_by_rads(1);
 
-    const bool was_floating{m_place_on_bed_button->is_floating};
+    const bool was_floating{selection_bounding_box->is_floating()};
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
     scene_interactor.transform_selection(
         get_rotation_matrix(
-            bounding_box->rotation,
-            bounding_box->center,
+            bounding_box.rotation,
+            bounding_box.center,
             rotate_by_rads
-        )
+        ),
+        !was_floating
     );
-    if (!was_floating) {
-        m_place_on_bed_button->trigger();
-    }
 }
 
 Domain::SquareMatrix4d remove_rotation(
@@ -216,12 +222,14 @@ Biz::Scene::SceneInteractor::ElementTransforms RotationDialog::get_reset_rotatio
         return {};
     }
 
-    std::optional<Scene::OrientedBoundingBox> bounding_box{
-        m_scene_provider.selection_bounding_box()
+    std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return {};
     }
+
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
 
     for (const Domain::ElementRef& element : scene_interactor.object_selection().elements) {
         ASSERT(element.has_instance());
@@ -243,7 +251,7 @@ Biz::Scene::SceneInteractor::ElementTransforms RotationDialog::get_reset_rotatio
             const Domain::Transform3d volume_matrix{volume->get_matrix()};
 
             const SquareMatrix4d no_rotation{
-                remove_rotation(volume_matrix, instance_matrix, bounding_box->center)
+                remove_rotation(volume_matrix, instance_matrix, bounding_box.center)
             };
             if (!volume_matrix.matrix().isApprox(no_rotation)) {
                 result.insert_or_assign(ref, no_rotation);
@@ -251,7 +259,7 @@ Biz::Scene::SceneInteractor::ElementTransforms RotationDialog::get_reset_rotatio
         } else {
             const Domain::ElementRef instance_ref{element.object_id, instance->id().id};
             const SquareMatrix4d instance_no_rotation{
-                remove_rotation(instance_matrix, bounding_box->center)
+                remove_rotation(instance_matrix, bounding_box.center)
             };
             if (!instance_matrix.matrix().isApprox(instance_no_rotation)) {
                 result.insert_or_assign(instance_ref, instance_no_rotation);
@@ -263,7 +271,7 @@ Biz::Scene::SceneInteractor::ElementTransforms RotationDialog::get_reset_rotatio
                 const SquareMatrix4d no_rotation{remove_rotation(
                     volume_matrix,
                     Domain::Transform3d{instance_no_rotation},
-                    bounding_box->center
+                    bounding_box.center
                 )};
                 if (!volume_matrix.matrix().isApprox(no_rotation)) {
                     result.insert_or_assign(volume_ref, no_rotation);

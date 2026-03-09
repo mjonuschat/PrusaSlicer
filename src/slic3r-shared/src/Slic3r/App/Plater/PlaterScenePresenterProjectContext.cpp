@@ -12,6 +12,9 @@ void PlaterScenePresenterProjectContext::update_selection_obb_node(Render::Devic
     if (!m_selection_obb_node.dirty)
         return;
 
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        project_interactor.scene_interactor().selection_bounding_box()
+    };
     if (!selection_bounding_box.has_value()) {
         if (m_selection_obb_node.main_node != nullptr)
             m_selection_obb_node.main_node->set_enabled(false);
@@ -50,7 +53,7 @@ void PlaterScenePresenterProjectContext::update_selection_obb_node(Render::Devic
     DEBUG_ASSERT(m_selection_obb_node.selection_node != nullptr);
     DEBUG_ASSERT(m_selection_obb_node.volume_nodes_parent != nullptr);
     // updates the selection aabb node
-    Scene::update_obb_node(*m_selection_obb_node.selection_node, *selection_bounding_box, 0.25);
+    Scene::update_obb_node(*m_selection_obb_node.selection_node, selection_bounding_box->oriented_bounding_box(), 0.25);
 
     const Biz::Scene::ObjectSelection& object_selection = project_interactor.scene_interactor().object_selection();
     if (object_selection.mode == Biz::Scene::SelectionMode::Volume) {

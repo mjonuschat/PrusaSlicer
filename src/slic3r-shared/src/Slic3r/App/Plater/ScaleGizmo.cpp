@@ -21,13 +21,13 @@ ScaleGizmo::ScaleGizmo(
     m_projects(project_interactor)
 {
     m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
-    m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.add_listener<App::Plater::ISelectionExtentsChangedListener>(this);
 }
 
 ScaleGizmo::~ScaleGizmo()
 {
     m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
-    m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.remove_listener<App::Plater::ISelectionExtentsChangedListener>(this);
 }
 
 void ScaleGizmo::on_cycle_prepare() {}
@@ -101,8 +101,8 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
         return Scene::GizmoActivationState::Inactive;
     }
 
-    const std::optional<Scene::OrientedBoundingBox> selection_bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_scene_interactor.selection_bounding_box()
     };
     if (!selection_bounding_box) {
         return Scene::GizmoActivationState::Inactive;
@@ -110,8 +110,8 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         project_context.start_t   = t;
-        project_context.start_obb = *selection_bounding_box;
-        project_context.was_floating = m_window->place_on_bed_button().is_floating;
+        project_context.start_obb = selection_bounding_box->oriented_bounding_box();
+        project_context.was_floating = selection_bounding_box->is_floating();
         project_context.dragging  = true;
         return Scene::GizmoActivationState::Active;
     }
@@ -145,14 +145,11 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
     )};
 
     project_context.xform_memento.forced_volume_mode = true;
-    m_scene_interactor.transform_selection(scale_matrix, project_context.xform_memento);
+    m_scene_interactor.transform_selection(scale_matrix, project_context.xform_memento, !project_context.was_floating);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
         m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
         project_context.dragging = false;
-        if (!project_context.was_floating) {
-            m_window->place_on_bed_button().trigger();
-        }
         return Scene::GizmoActivationState::Done;
     }
 
@@ -463,11 +460,11 @@ std::unique_ptr<Scene::Node> ScaleGizmo::generate_handle_nodes() const
     builder.set_debug_name("scale_handles");
     builder.set_tag(ScaleGizmoNodeTag{});
 
-    const auto bounding_box_opt{m_scene_provider.selection_bounding_box()};
-    if (!bounding_box_opt) {
+    const auto selection_bounding_box{m_scene_interactor.selection_bounding_box()};
+    if (!selection_bounding_box) {
         return nullptr;
     }
-    const Scene::OrientedBoundingBox& bounding_box{*bounding_box_opt};
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
 
     const BuilderContext builder_context{builder, m_device, m_data_factory};
 
@@ -554,7 +551,7 @@ void ScaleGizmo::on_scene_selection_transformed(
 
 void ScaleGizmo::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
-    const std::optional<Scene::OrientedBoundingBox>&
+    const std::optional<Biz::Scene::SelectionExtents>&
 )
 {
     update_handle_nodes();

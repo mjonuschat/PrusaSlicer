@@ -14,7 +14,7 @@ PlaceOnBedButton::PlaceOnBedButton(
     m_project_interactor(project_interactor),
     m_scene_interactor(project_interactor.scene_interactor())
 {
-    m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_provider.add_listener<ISelectionExtentsChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     set_flex_grow(1);
@@ -26,23 +26,14 @@ PlaceOnBedButton::PlaceOnBedButton(
 
 PlaceOnBedButton::~PlaceOnBedButton()
 {
-    m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_provider.remove_listener<ISelectionExtentsChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
 }
 
-void PlaceOnBedButton::on_scene_selection_changed(
+void PlaceOnBedButton::on_scene_selection_bounding_box_changed(
     Domain::SelectionId,
-    const Biz::Scene::ObjectSelection&
-)
-{
-    reload();
-}
-
-void PlaceOnBedButton::on_scene_selection_transformed(
-    Domain::SelectionId,
-    const Biz::Scene::ObjectSelection&
-)
-{
+    const std::optional<Biz::Scene::SelectionExtents>&
+) {
     reload();
 }
 
@@ -50,56 +41,26 @@ void PlaceOnBedButton::on_selected_project_changed_final(size_t) {
     reload();
 }
 
-void PlaceOnBedButton::trigger() {
-    if (is_floating) {
-        callbacks().action();
-    }
-}
-
 void PlaceOnBedButton::reload()
 {
-    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_scene_interactor.selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return;
     }
 
-    const Domain::Vec3d h{bounding_box->dimensions * 0.5};
-
-    const std::array<Domain::Vec3d, 8> offsets{
-        Domain::Vec3d{-h.x(), -h.y(), -h.z()},
-        Domain::Vec3d{-h.x(), -h.y(), h.z()},
-        Domain::Vec3d{-h.x(), h.y(), -h.z()},
-        Domain::Vec3d{-h.x(), h.y(), h.z()},
-        Domain::Vec3d{h.x(), -h.y(), -h.z()},
-        Domain::Vec3d{h.x(), -h.y(), h.z()},
-        Domain::Vec3d{h.x(), h.y(), -h.z()},
-        Domain::Vec3d{h.x(), h.y(), h.z()}
-    };
-
-    double min_z = std::numeric_limits<double>::max();
-
-    for (const auto& offset : offsets) {
-        const auto corner{bounding_box->center + bounding_box->rotation * offset};
-        if (corner.z() < min_z) {
-            min_z = corner.z();
-        }
-    }
-
-    if (bounding_box && std::abs(min_z) > Domain::EPSILON) {
+    if (selection_bounding_box->is_floating()) {
         set_visible(true);
         callbacks().action = [=, this]()
         {
             Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
-            relative_transform_world.col(3).z() = -min_z;
+            relative_transform_world.col(3).z() = -selection_bounding_box->min_z();
             m_scene_interactor.transform_selection(relative_transform_world);
         };
-        is_floating = true;
         return;
     }
 
-    is_floating = false;
     set_visible(false);
     callbacks().action = []() {};
 }

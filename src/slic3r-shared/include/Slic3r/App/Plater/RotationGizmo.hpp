@@ -21,7 +21,7 @@ class PlaterScenePresenter;
 
 class RotationGizmo :
     public Scene::IToolGizmo,
-    public ISelectionBoundingBoxChangedListener,
+    public ISelectionExtentsChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
@@ -52,7 +52,7 @@ public:
 
     void on_scene_selection_bounding_box_changed(
         Domain::SelectionId project_id,
-        const std::optional<Scene::OrientedBoundingBox>&
+        const std::optional<Biz::Scene::SelectionExtents>&
     ) override;
 
     void on_scene_selection_changed(
@@ -80,7 +80,7 @@ private:
         AxisType curr_axis{AxisType::None};
         Scene::Ray translation_ray;
         Domain::Vec2d start_direction{Domain::Vec2d::Zero()};
-        Scene::OrientedBoundingBox start_obb;
+        Biz::Scene::OrientedBoundingBox start_obb;
         bool was_floating{false};
         Biz::Scene::TransformMemento xform_memento;
         Scene::Node* highlight_node{nullptr};

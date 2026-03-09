@@ -324,7 +324,7 @@ RotationGizmo::RotationGizmo(
     m_scene_interactor(project_interactor.scene_interactor()),
     m_projects(project_interactor)
 {
-    m_scene_presenter.add_listener<ISelectionBoundingBoxChangedListener>(this);
+    m_scene_presenter.add_listener<ISelectionExtentsChangedListener>(this);
     m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
@@ -336,7 +336,7 @@ RotationGizmo::Snap RotationGizmo::m_snap = {
 
 RotationGizmo::~RotationGizmo()
 {
-    m_scene_presenter.remove_listener<ISelectionBoundingBoxChangedListener>(this);
+    m_scene_presenter.remove_listener<ISelectionExtentsChangedListener>(this);
     m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
@@ -369,8 +369,8 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        const std::optional<Scene::OrientedBoundingBox> selection_bounding_box{
-            m_scene_presenter.selection_bounding_box()
+        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+            m_scene_interactor.selection_bounding_box()
         };
 
         if (!selection_bounding_box) {
@@ -379,8 +379,8 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
         }
 
         project_context.dragging     = true;
-        project_context.start_obb    = *selection_bounding_box;
-        project_context.was_floating = m_window->place_on_bed_button().is_floating;
+        project_context.start_obb    = selection_bounding_box->oriented_bounding_box();
+        project_context.was_floating = selection_bounding_box->is_floating();
         Domain::Transform3d orient_matrix{Domain::Transform3d::Identity()};
         orient_matrix.rotate(project_context.start_obb.rotation);
         project_context.start_direction =
@@ -454,9 +454,9 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
                 project_context.start_obb.center,
                 rotation
             ),
-            project_context.xform_memento
+            project_context.xform_memento,
+            false
         );
-
         Transform3d local_rotation{Transform3d::Identity()};
         local_rotation.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
         project_context.handles[*axis_index]->set_local_transform(local_rotation);
@@ -464,10 +464,13 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
         m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
-        on_stop_dragging();
         if (!project_context.was_floating) {
-            m_window->place_on_bed_button().trigger();
+            Biz::Scene::TransformMemento memento;
+            memento.forced_volume_mode = true;
+            m_scene_interactor
+                .transform_selection(Domain::SquareMatrix4d::Identity(), memento, true);
         }
+        on_stop_dragging();
         return Scene::GizmoActivationState::Done;
     }
 
@@ -549,7 +552,7 @@ bool RotationGizmo::enabled() const
 
 void RotationGizmo::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
-    const std::optional<Scene::OrientedBoundingBox>&
+    const std::optional<Biz::Scene::SelectionExtents>&
 )
 {
     ProjectContext& project_context{m_projects.selected()};
@@ -605,10 +608,13 @@ void RotationGizmo::add_highlight_node(AxisType axis)
     if (project_context.highlight_node != nullptr) {
         return;
     }
-    const std::optional<Scene::OrientedBoundingBox> obb{m_scene_presenter.selection_bounding_box()};
-    if (!obb) {
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_scene_interactor.selection_bounding_box()
+    };
+    if (!selection_bounding_box) {
         return;
     }
+    const Biz::Scene::OrientedBoundingBox& obb{selection_bounding_box->oriented_bounding_box()};
 
     Scene::Scene& scene{m_scene_presenter.scene()};
     Scene::NodeBuilder builder{scene};
@@ -629,8 +635,8 @@ void RotationGizmo::add_highlight_node(AxisType axis)
     );
 
     Transform3d world_transform{Domain::Transform3d::Identity()};
-    world_transform.translate(obb->center);
-    world_transform.rotate(obb->rotation);
+    world_transform.translate(obb.center);
+    world_transform.rotate(obb.rotation);
     project_context.highlight_node->set_world_transform(world_transform);
     project_context.curr_axis = axis;
     for (auto& child : project_context.highlight_node->children()) {

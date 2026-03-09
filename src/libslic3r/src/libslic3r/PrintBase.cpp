@@ -11,8 +11,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "Slic3r/Math.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/I18N_private.hpp"
 #include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -129,6 +132,84 @@ std::function<void()> PrintObjectBase::cancel_callback(PrintBase *print)
 void PrintObjectBase::status_update_warnings(PrintBase *print, int step, PrintStateBase::WarningLevel warning_level, const std::string &message)
 {
     print->status_update_warnings(step, warning_level, message, this);
+}
+
+static Domain::Polygon get_circle(double radius, std::size_t vertex_count) {
+    double angle_step{2.0 * std::numbers::pi / vertex_count};
+
+    Domain::Points points;
+    for (std::size_t i{}; i < vertex_count; ++i) {
+        const double angle{i * angle_step};
+        points.push_back(scaled(Vec2d{
+            std::cos(angle) * radius,
+            std::sin(angle) * radius,
+        }));
+    }
+    return Domain::Polygon{points};
+}
+
+static Domain::Polygon get_rectangle(double width, double height)
+{
+    return Domain::Polygon{
+        scaled(Domain::Vec2d{-width / 2.0, -height / 2.0}),
+        scaled(Domain::Vec2d{width / 2.0, -height / 2.0}),
+        scaled(Domain::Vec2d{width / 2.0, height / 2.0}),
+        scaled(Domain::Vec2d{-width / 2.0, height / 2.0})
+    };
+}
+
+double Print::WipeTowerGeometry::get_height() const
+{
+    return depths.empty() ? fallback_height : depths.back().z;
+}
+
+Domain::ExPolygon Print::WipeTowerGeometry::get_outline(
+    const Domain::ModelWipeTower& model_wipe_tower
+) const
+{
+    const double height{get_height()};
+
+    const double cone_base_radius{
+        height * std::tan(Slic3r::deg2rad(cone_angle / 2.0)) + brim_width
+    };
+
+    const double depth{depths.empty() ? fallback_depth : depths.front().depth};
+
+    Domain::Polygon recangle{get_rectangle(width + 2 * brim_width, depth + 2 * brim_width)};
+    Domain::Polygon circle{get_circle(cone_base_radius, 200)};
+
+    Domain::ExPolygons outline{union_ex({recangle, circle})};
+    ASSERT(outline.size() == 1);
+
+    outline.front().translate(scaled(Vec2d{width / 2.0, depth / 2.0}));
+    outline.front().rotate(Slic3r::deg2rad(model_wipe_tower.rotation));
+
+    return outline.front();
+}
+
+Domain::BoundingBox3d Print::WipeTowerGeometry::get_bounding_box(
+    const Domain::ModelWipeTower& model_wipe_tower
+) const
+{
+    using Biz::Algorithms::BoundingBox::construct;
+    using Biz::Algorithms::BoundingBox::merge;
+    using Biz::Algorithms::BoundingBox::translated;
+    using Biz::Algorithms::BoundingBox::unscaled;
+
+    const ExPolygon polygon{get_outline(model_wipe_tower)};
+    const Domain::BoundingBox2crd bb_2d_scaled{construct(polygon.contour.points)};
+    const Domain::BoundingBox2d bb_2d{unscaled<double>(bb_2d_scaled)};
+
+    const double height{get_height()};
+
+    const Domain::BoundingBox3d bb_3d{
+        {bb_2d.min.x(), bb_2d.min.y(), 0.0},
+        {bb_2d.max.x(), bb_2d.max.y(), height}
+    };
+    return translated(
+        bb_3d,
+        Domain::Vec3d{model_wipe_tower.position.x(), model_wipe_tower.position.y(), 0.0}
+    );
 }
 
 } // namespace Slic3r

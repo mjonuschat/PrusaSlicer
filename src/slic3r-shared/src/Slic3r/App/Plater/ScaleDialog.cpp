@@ -31,7 +31,7 @@ ScaleDialog::ScaleDialog(
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
-    m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.add_listener<App::Plater::ISelectionExtentsChangedListener>(this);
 
     content()->set_padding({20, 20});
     content()->set_orientation(Orientation::Vertical);
@@ -54,12 +54,18 @@ ScaleDialog::ScaleDialog(
         if (project_context.reset_scale_candidates.empty()) {
             return;
         }
-        const bool was_floating{m_place_on_bed_button->is_floating};
+        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+            m_project_interactor.scene_interactor().selection_bounding_box()
+        };
+        const bool was_floating{selection_bounding_box && selection_bounding_box->is_floating()};
         m_project_interactor.scene_interactor().set_element_transforms(
             project_context.reset_scale_candidates
         );
-        if (!was_floating) {
-            m_place_on_bed_button->trigger();
+        if (selection_bounding_box && !was_floating) {
+            Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
+            relative_transform_world.col(3).z() =
+                -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
+            m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
         }
     };
 
@@ -135,7 +141,7 @@ ScaleDialog::~ScaleDialog()
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
-    m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+    m_scene_provider.remove_listener<App::Plater::ISelectionExtentsChangedListener>(this);
 }
 
 void ScaleDialog::on_scene_selection_changed(
@@ -154,7 +160,7 @@ void ScaleDialog::on_scene_selection_transformed(
 
 void ScaleDialog::on_scene_selection_bounding_box_changed(
     Domain::SelectionId project_id,
-    const std::optional<Scene::OrientedBoundingBox>&
+    const std::optional<Biz::Scene::SelectionExtents>&
 )
 {
     reload(project_id);
@@ -181,13 +187,13 @@ PlaceOnBedButton& ScaleDialog::place_on_bed_button() {
 
 std::optional<Domain::Vec3d> ScaleDialog::get_current_absolute_scale() const
 {
-    const std::optional<Scene::OrientedBoundingBox>& rotated_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> rotated_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
     if (!rotated_box) {
         return std::nullopt;
     }
-    return rotated_box->dimensions;
+    return rotated_box->oriented_bounding_box().dimensions;
 }
 
 static Domain::Vec3d get_relative_scale(const Domain::SquareMatrix3d& matrix) {
@@ -215,7 +221,7 @@ static bool same_euler_angels(
 static std::optional<Domain::Vec3d> get_volume_relative_scale(
     const Domain::ModelInstance& instance,
     const Domain::ModelVolume& volume,
-    const Scene::OrientedBoundingBox& obb
+    const Biz::Scene::OrientedBoundingBox& obb
 )
 {
     const double max_angle_diff{Slic3r::deg2rad(0.001)};
@@ -234,12 +240,14 @@ static std::optional<Domain::Vec3d> get_volume_relative_scale(
 
 std::optional<Domain::Vec3d> ScaleDialog::get_current_relative_scale() const
 {
-    const std::optional<Scene::OrientedBoundingBox>& rotated_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!rotated_box) {
+    if (!selection_bounding_box) {
         return std::nullopt;
     }
+    const Biz::Scene::OrientedBoundingBox& rotated_box{selection_bounding_box->oriented_bounding_box()};
+
     const Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
     const Domain::Workbench& workbench{m_project_interactor.workbench()};
     const Domain::Project& project{workbench.project(m_project_interactor.selected_project_id())};
@@ -252,7 +260,7 @@ std::optional<Domain::Vec3d> ScaleDialog::get_current_relative_scale() const
         const Domain::ModelInstance* instance{project.find_instance_by_id(element.object_id, element.instance_id)};
         if (element.has_volume()) {
             const Domain::ModelVolume* volume{project.find_volume_by_id(element.object_id, element.volume_id)};
-            const std::optional<Domain::Vec3d> scale{get_volume_relative_scale(*instance, *volume, *rotated_box)};
+            const std::optional<Domain::Vec3d> scale{get_volume_relative_scale(*instance, *volume, rotated_box)};
             if (!scale) {
                 return std::nullopt;
             }
@@ -265,7 +273,7 @@ std::optional<Domain::Vec3d> ScaleDialog::get_current_relative_scale() const
             }
         } else {
             for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
-                const std::optional<Domain::Vec3d> scale{get_volume_relative_scale(*instance, *volume, *rotated_box)};
+                const std::optional<Domain::Vec3d> scale{get_volume_relative_scale(*instance, *volume, rotated_box)};
                 if (!scale) {
                     return std::nullopt;
                 }
@@ -327,14 +335,15 @@ void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
         return;
     }
 
-    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
-        m_scene_provider.selection_bounding_box()
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return;
     }
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
 
-    const double upper_bound{std::sqrt(3) * bounding_box->dimensions.maxCoeff()};
+    const double upper_bound{std::sqrt(3) * bounding_box.dimensions.maxCoeff()};
     const double new_upper_bound{upper_bound * scale_by.maxCoeff()};
     if (new_upper_bound > upper_bound && new_upper_bound > 1e6) {
         return;
@@ -345,28 +354,25 @@ void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
 
     const Domain::SquareMatrix4d transormation{
-        get_scale_matrix(bounding_box->rotation, bounding_box->center, scale_by)
+        get_scale_matrix(bounding_box.rotation, bounding_box.center, scale_by)
     };
 
     if (std::abs(transormation.determinant()) < 1e-6) {
         return;
     }
 
-    const bool was_on_bed{!m_place_on_bed_button->is_floating};
+    const bool was_on_bed{!selection_bounding_box->is_floating()};
 
     scene_interactor.transform_selection(
         get_scale_matrix(
-            bounding_box->rotation,
-            bounding_box->center,
+            bounding_box.rotation,
+            bounding_box.center,
             scale_by
         ),
-        memento
+        memento,
+        was_on_bed
     );
     scene_interactor.finalize_transform_selection(memento, false);
-
-    if (was_on_bed) {
-        m_place_on_bed_button->trigger();
-    };
 }
 
 Domain::SquareMatrix4d remove_scale(
@@ -394,12 +400,13 @@ Biz::Scene::SceneInteractor::ElementTransforms ScaleDialog::get_reset_scale_cand
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
     Biz::Scene::SceneInteractor::ElementTransforms result;
 
-    std::optional<Scene::OrientedBoundingBox> bounding_box{
-        m_scene_provider.selection_bounding_box()
+    std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
     };
-    if (!bounding_box) {
+    if (!selection_bounding_box) {
         return {};
     }
+    const Biz::Scene::OrientedBoundingBox& bounding_box{selection_bounding_box->oriented_bounding_box()};
 
     for (const Domain::ElementRef& element : scene_interactor.object_selection().elements) {
         if (!element.has_instance()) {
@@ -420,7 +427,7 @@ Biz::Scene::SceneInteractor::ElementTransforms ScaleDialog::get_reset_scale_cand
                     .find_volume_by_id(element.object_id, element.volume_id)
             };
             const Domain::Transform3d volume_matrix{volume->get_matrix()};
-            const SquareMatrix4d no_scale{remove_scale(volume_matrix, instance_matrix, bounding_box->center)};
+            const SquareMatrix4d no_scale{remove_scale(volume_matrix, instance_matrix, bounding_box.center)};
             if (!volume_matrix.matrix().isApprox(no_scale)) {
                 result.insert_or_assign(ref, no_scale);
             }
@@ -429,7 +436,7 @@ Biz::Scene::SceneInteractor::ElementTransforms ScaleDialog::get_reset_scale_cand
             for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
                 const Domain::ElementRef ref{element.object_id, 0, volume->id().id};
                 const Domain::Transform3d volume_matrix{volume->get_matrix()};
-                const SquareMatrix4d no_scale{remove_scale(volume_matrix, instance_matrix, bounding_box->center)};
+                const SquareMatrix4d no_scale{remove_scale(volume_matrix, instance_matrix, bounding_box.center)};
                 if (!volume_matrix.matrix().isApprox(no_scale)) {
                     result.insert_or_assign(ref, no_scale);
                 }
