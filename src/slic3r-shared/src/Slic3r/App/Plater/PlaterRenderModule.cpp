@@ -776,6 +776,8 @@ void PlaterRenderModule::update_current_right_sidebar()
         stack_layout->switch_to_gizmo(tool_type);
     } else if (!empty_selection) {
         stack_layout->switch_to_item(SidebarStackLayout::ItemType::Object);
+        // upon object selection we are selecting sidebar and closing opened dialogs
+        m_render_module_navigator->set_opened_dialog(nullptr);
     } else {
         stack_layout->switch_to_item(SidebarStackLayout::ItemType::Bed);
     }
