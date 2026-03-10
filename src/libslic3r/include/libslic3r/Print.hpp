@@ -57,6 +57,10 @@ class Print;
 class PrintObject;
 class SupportLayer;
 
+namespace Biz::Print {
+class PrePreview;
+} // namespace Biz::Print
+
 namespace FillAdaptive {
     struct Octree;
     struct OctreeDeleter;
@@ -567,7 +571,7 @@ public:
         const OnWipeTowerGeometry& on_wipe_tower_geometry,
         const OnExtruderCandidates& on_extruder_candidates
     );
-    virtual ~Print() { this->clear(); }
+    virtual ~Print();
 
     Domain::PrinterTechnology	technology() const noexcept override { return Domain::PrinterTechnology::FFF; }
 
@@ -745,6 +749,7 @@ public:
 private:
     std::vector<unsigned> m_extruder_candidates;
     Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
+    std::unique_ptr<Biz::Print::PrePreview> m_pre_preview;
 };
 
 } /* slic3r_Print_hpp_ */

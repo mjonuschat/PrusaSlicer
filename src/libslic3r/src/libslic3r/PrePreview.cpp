@@ -10,7 +10,7 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::Biz::Print {
 
-MoveVerticesPerLayer merge(MoveVerticesPerLayer&& a, MoveVerticesPerLayer&& b) {
+MoveVerticesPerLayer merge(MoveVerticesPerLayer a, const MoveVerticesPerLayer& b) {
     MoveVerticesPerLayer result{std::move(a)};
 
     for (auto &[layer_id, move_vertices] : b) {
@@ -528,23 +528,115 @@ std::vector<Vec2f> double_to_float(const std::vector<Vec2d>& src)
     return ret;
 }
 
-void Preview::update(MoveVerticesPerLayer&& moves) {
-    std::scoped_lock lock{m_mutex};
-    m_moves_per_layer = merge(std::move(m_moves_per_layer), std::move(moves));
+PreviewConfig::PreviewConfig(const Slic3r::Print& print)
+{
+    spiral_vase_enabled = print.config().get<bool>("spiral_vase");
+    z_offset            = print.config().get<double>("z_offset");
+    max_print_height    = print.config().get<double>("max_print_height");
+    bed_shape           = double_to_float(print.config().get<std::vector<Vec2d>>("bed_shape"));
+    if (print.custom_gcode()) {
+        custom_gcode = print.custom_gcode()->get();
+    }
+    material_slot_count = print.config().hw_config().material_slot_count();
 }
 
-libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) const {
-    std::scoped_lock lock{m_mutex};
+PrePreview::PrePreview(const Slic3r::Print& print): m_prepreview_config{print} {
+    for (const PrintObject* object : print.objects()) {
+        ObjectPreview& object_preview{m_object_previews[object]};
+        object_preview.perimeters = get_perimeters_preview(*object);
+        object_preview.infill = get_infill_preview(*object);
+        object_preview.supports = get_supports_preview(*object);
+    }
+
+    const auto layer_height{print.config().get<double>("layer_height")};
+    const auto brim_height{static_cast<float>(print.config().get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height))};
+    m_brim_preview = get_brim_preview(print, brim_height);
+    m_wipe_tower_preview = get_wipe_tower_preview(print);
+
+    // TODO skirt
+    m_skirt_preview = get_skirt_preview(print, {});
+}
+
+PrePreview::~PrePreview() = default;
+
+bool PrePreview::invalidate(const Slic3r::Print& print)
+{
+    std::set<const PrintObject*> valid_objects{print.objects().begin(), print.objects().end()};
+
+    bool invalidated{false};
+
+    const std::size_t erase_count{std::erase_if(
+        m_object_previews,
+        [&](const auto& pair) { return !valid_objects.contains(pair.first); }
+    )};
+    if (erase_count > 0) {
+        invalidated = true;
+    }
+
+    for (auto& [object, object_preview] : m_object_previews) {
+        if (!object_preview.perimeters.empty()
+            && !object->is_step_done(PrintObjectStep::posPerimeters))
+        {
+            object_preview.perimeters = {};
+            invalidated               = true;
+        }
+        if (!object_preview.infill.empty() && !object->is_step_done(PrintObjectStep::posInfill)) {
+            object_preview.infill = {};
+            invalidated           = true;
+        }
+        if (!object_preview.supports.empty()
+            && !object->is_step_done(PrintObjectStep::posSupportMaterial))
+        {
+            object_preview.supports = {};
+            invalidated             = true;
+        }
+    }
+
+    if (!m_brim_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+        m_brim_preview = {};
+        invalidated    = true;
+    }
+    if (!m_skirt_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+        m_skirt_preview = {};
+        invalidated     = true;
+    }
+    if (!m_wipe_tower_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+        m_wipe_tower_preview = {};
+        invalidated          = true;
+    }
+
+    const PreviewConfig new_config{print};
+
+    if (m_prepreview_config != new_config) {
+        m_prepreview_config = new_config;
+        invalidated         = true;
+    }
+
+    return invalidated;
+}
+
+libpgcode::ProcessorResult PrePreview::generate_result() const {
+    MoveVerticesPerLayer moves_per_layer;
+
+    for (const auto& [_, moves]:  m_object_previews) {
+        moves_per_layer = merge(std::move(moves_per_layer), moves.infill);
+        moves_per_layer = merge(std::move(moves_per_layer), moves.perimeters);
+        moves_per_layer = merge(std::move(moves_per_layer), moves.supports);
+    }
+    moves_per_layer = merge(std::move(moves_per_layer), m_brim_preview);
+    moves_per_layer = merge(std::move(moves_per_layer), m_wipe_tower_preview);
+    moves_per_layer = merge(std::move(moves_per_layer), m_skirt_preview);
+
     libpgcode::ProcessorResult result;
     result.producer = libpgcode::GCodeProducer::PrusaSlicer;
-    result.spiral_vase_enabled = print.config().get<bool>("spiral_vase");
-    result.z_offset = print.config().get<double>("z_offset");
-    result.max_print_height = print.config().get<double>("max_print_height");
-    result.bed_shape = double_to_float(print.config().get<std::vector<Vec2d>>("bed_shape"));
-    if (print.custom_gcode()) {
-        result.custom_gcode_per_print_z = print.custom_gcode()->get().gcodes;
+    result.spiral_vase_enabled = m_prepreview_config.spiral_vase_enabled;
+    result.z_offset = m_prepreview_config.z_offset;
+    result.max_print_height = m_prepreview_config.max_print_height;
+    result.bed_shape = m_prepreview_config.bed_shape;
+    if (m_prepreview_config.custom_gcode) {
+        result.custom_gcode_per_print_z = m_prepreview_config.custom_gcode->gcodes;
     }
-    result.extruders_count = print.config().hw_config().material_slot_count();
+    result.extruders_count = m_prepreview_config.material_slot_count;
 
     auto* basic_print_stats{
         std::get_if<Domain::BasicPrintStatistics>(&result.print_statistics)
@@ -573,8 +665,8 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     result.extruder_str_colors.resize(result.extruders_count);
 
     std::vector<Domain::CustomGCode::Item> custom_color_gcodes;
-    if (print.custom_gcode()) {
-        for (const Domain::CustomGCode::Item& code : print.custom_gcode()->get().gcodes) {
+    if (m_prepreview_config.custom_gcode) {
+        for (const Domain::CustomGCode::Item& code : m_prepreview_config.custom_gcode->gcodes) {
             if (code.type == Domain::CustomGCode::Type::ColorChange) {
                 custom_color_gcodes.emplace_back(code);
             }
@@ -584,7 +676,7 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     }
 
     std::size_t layer_id{0};
-    for (const auto& [z, moves] : m_moves_per_layer) {
+    for (const auto& [z, moves] : moves_per_layer) {
         const auto it{std::upper_bound(
             custom_color_gcodes.begin(),
             custom_color_gcodes.end(),
@@ -623,38 +715,6 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
         result.moves()[gcode_id].gcode_id = gcode_id;
     }
     return result;
-}
-
-std::vector<int> Preview::get_scaled_print_zs() const {
-    std::scoped_lock lock{m_mutex};
-
-    std::vector<int> result;
-    result.reserve(m_moves_per_layer.size());
-    std::transform(m_moves_per_layer.begin(), m_moves_per_layer.end(),
-       std::back_inserter(result),
-       [](const auto& layer_moves) {
-           return layer_moves.first; // scaled print_z
-       }
-    );
-    return result;
-}
-
-libpgcode::ProcessorResult get_result_preview(const Slic3r::Print& print)
-{
-    Preview preview;
-    for (const PrintObject* object : print.objects()) {
-        preview.update(get_perimeters_preview(*object));
-        preview.update(get_infill_preview(*object));
-        preview.update(get_supports_preview(*object));
-    }
-
-    const auto layer_height{print.config().get<double>("layer_height")};
-    const auto brim_height{static_cast<float>(print.config().get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height))};
-    preview.update(get_brim_preview(print, brim_height));
-    preview.update(get_wipe_tower_preview(print));
-    preview.update(get_skirt_preview(print, preview.get_scaled_print_zs()));
-
-    return preview.generate_result(print);
 }
 
 }

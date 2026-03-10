@@ -109,6 +109,8 @@ Print::Print(
     m_on_extruder_candidates(on_extruder_candidates)
 {}
 
+Print::~Print() { this->clear(); }
+
 void Print::clear()
 {
 	std::scoped_lock<std::mutex> lock(this->state_mutex());
@@ -295,8 +297,10 @@ Biz::Print::ApplyStatus::Status Print::update(
         }
     });
 
-    if (std::holds_alternative<ApplyStatus::Changed>(result)) {
-        m_on_fdm_result(Biz::Print::get_result_preview(*this));
+    if (std::holds_alternative<ApplyStatus::Changed>(result) && m_pre_preview) {
+        if (m_pre_preview->invalidate(*this)) {
+            m_on_fdm_result(m_pre_preview->generate_result());
+        }
     } else if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
         m_on_fdm_result({});
     }
@@ -1139,8 +1143,6 @@ void Print::process()
 
     BOOST_LOG_TRIVIAL(info) << "Starting the slicing process." << log_memory_info();
 
-    Biz::Print::Preview preview;
-
     tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
             m_objects[idx]->make_perimeters();
@@ -1330,7 +1332,9 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
         "An earlier return should happen, if the whole thing is already finnished!"
     );
     this->process();
-    m_on_fdm_result(Biz::Print::get_result_preview(*this));
+
+    m_pre_preview = std::make_unique<Biz::Print::PrePreview>(*this);
+    m_on_fdm_result(m_pre_preview->generate_result());
     Biz::libpgcode::ProcessorResult result{this->process_gcode()};
     result.contained_in_bed = check_result(result, config(), append_warning_callback);
 

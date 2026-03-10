@@ -22,17 +22,40 @@ MoveVerticesPerLayer get_infill_preview(const PrintObject& object);
 
 MoveVerticesPerLayer get_supports_preview(const PrintObject& object);
 
-
-class Preview {
-public:
-    void update(MoveVerticesPerLayer&& moves);
-    libpgcode::ProcessorResult generate_result(const Slic3r::Print& print) const;
-    std::vector<int> get_scaled_print_zs() const;
-
-private:
-    MoveVerticesPerLayer m_moves_per_layer;
-    mutable std::mutex m_mutex;
+struct ObjectPreview {
+    MoveVerticesPerLayer perimeters;
+    MoveVerticesPerLayer infill;
+    MoveVerticesPerLayer supports;
 };
 
-libpgcode::ProcessorResult get_result_preview(const Slic3r::Print& print);
+struct PreviewConfig {
+    PreviewConfig() = default;
+    PreviewConfig(const Slic3r::Print& print);
+
+    bool spiral_vase_enabled{};
+    double z_offset{};
+    double max_print_height{};
+    std::vector<Domain::Vec2f> bed_shape;
+    std::optional<Domain::CustomGCode::Info> custom_gcode;
+    std::size_t material_slot_count{};
+
+    bool operator==(const PreviewConfig&) const = default;
+};
+
+class PrePreview {
+public:
+    PrePreview() = default;
+    PrePreview(const Slic3r::Print& print);
+    ~PrePreview();
+
+    bool invalidate(const Slic3r::Print& print);
+    libpgcode::ProcessorResult generate_result() const;
+
+private:
+    std::map<const PrintObject*, ObjectPreview> m_object_previews;
+    MoveVerticesPerLayer m_brim_preview;
+    MoveVerticesPerLayer m_wipe_tower_preview;
+    MoveVerticesPerLayer m_skirt_preview;
+    PreviewConfig m_prepreview_config;
+};
 }
