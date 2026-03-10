@@ -42,8 +42,21 @@ Bed& BedContainer::get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed
             texture_filename = assets_path + bed_texture_filename;
     }
 
-    bool is_single_tool_XL = preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1;
-    std::optional<BedSegments> segments = is_single_tool_XL ? std::optional{BedSegments{4, 4}} : std::nullopt;
+    BedSegments bed_segments{1, 1};
+    if (std::optional<int> bed_segments_x =
+            Preset::get_feature<int>(preset.hw_config.features, "bed_segments_x"))
+    {
+        bed_segments.x_count = *bed_segments_x;
+    }
+
+    if (std::optional<int> bed_segments_y =
+            Preset::get_feature<int>(preset.hw_config.features, "bed_segments_y"))
+    {
+        bed_segments.y_count = *bed_segments_y;
+    }
+
+    const std::optional<BedSegments> segments =
+        (bed_segments != BedSegments{1, 1}) ? std::optional{bed_segments} : std::nullopt;
 
     auto item = config_box.find("max_print_height");
     float bed_max_print_height = (item.item != nullptr) ? float(item.item->value().get<double>()) : 0.0f;
