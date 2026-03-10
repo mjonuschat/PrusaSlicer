@@ -58,4 +58,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         COMMAND slic3r-biz-arrange-tests ${CATCH_ALL_ARGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-endif()
+
+    if (WIN32)
+        prusaslicer_copy_dlls(slic3r-biz-arrange-tests)
+    endif ()
+endif ()
