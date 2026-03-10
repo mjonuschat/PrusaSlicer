@@ -34,7 +34,8 @@ public:
         Domain::ConfigPack* config_new_selected,
         const Biz::Preset::PresetSelectionNames& preset_names,
         const Biz::Preset::PresetSelectionNames& preset_names_new,
-        const Biz::Preset::PresetInteractor& preset_interactor
+        const Biz::Preset::PresetInteractor& preset_interactor,
+        bool new_printer_has_multiple_extruders = false
     );
     ~UnsavedChangesDialog() = default;
 
@@ -90,6 +91,7 @@ private:
     // Indicates a count of preset checkes in queue before close the dialog
     int m_exit_queue{0};
     bool m_is_enabled_transfer{false};
+    bool m_new_printer_has_multiple_extruders{false};
 };
 
 } // namespace Slic3r::App::WX

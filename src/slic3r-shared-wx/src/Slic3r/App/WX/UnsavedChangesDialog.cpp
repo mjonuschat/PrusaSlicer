@@ -41,7 +41,8 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     Domain::ConfigPack* config_new_selected,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
-    const Biz::Preset::PresetInteractor& preset_interactor
+    const Biz::Preset::PresetInteractor& preset_interactor,
+    bool new_printer_has_multiple_extruders
 ) :
     wxDialog(
         wxTheApp->GetTopWindow(),
@@ -56,7 +57,8 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     m_config_new(config_new_selected),
     m_preset_names(preset_names),
     m_preset_names_new(preset_names_new),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_new_printer_has_multiple_extruders(new_printer_has_multiple_extruders)
 {
     if (std::get_if<Domain::ConfigPackFDM>(&m_config_original) == nullptr) {
         m_printer_technology = Domain::PrinterTechnology::SLA;
@@ -217,7 +219,7 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
         "save",
         Biz::Preset::PresetDiffOperation::Save,
         _L("Save"),
-        [this]() {return m_tree->has_selection(); }// Temporary: until save functionality is implemented
+        [this]() { return m_tree->has_selection(); }
     );
     m_save_btn->Enable(false); // Temporary: until save functionality is implemented
 
@@ -352,7 +354,9 @@ void UnsavedChangesDialog::update_transfer_button(PresetSwitchKindId kind_id)
         ASSERT(kind_id.id);
         size_t tool_id          = kind_id.id.value();
         const size_t tool_count = m_preset_names_new.tools.size();
-        if (m_is_enabled_transfer = tool_count > 1 && tool_id < tool_count) {
+        m_is_enabled_transfer =
+            (tool_count > 1 || m_new_printer_has_multiple_extruders) && tool_id < tool_count;
+        if (m_is_enabled_transfer) {
             is_keep = m_preset_names.tools[tool_id] == m_preset_names_new.tools[tool_id];
         }
         break;
@@ -529,7 +533,7 @@ void UnsavedChangesDialog::update_tree(
         config_left = &std::get<Domain::ConfigPackSLA>(m_config_original).sla_material_settings;
         config_mid  = &std::get<Domain::ConfigPackSLA>(m_config_selected).sla_material_settings;
         if (m_config_new) {
-            config_right = &std::get<Domain::ConfigPackSLA>(*m_config_new).sla_material_settings;
+            config_right    = &std::get<Domain::ConfigPackSLA>(*m_config_new).sla_material_settings;
             new_preset_name = name(m_preset_names_new.materials[0]);
         }
         break;

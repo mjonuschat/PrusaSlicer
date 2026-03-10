@@ -96,7 +96,8 @@ public:
         Domain::ConfigPack* config_new_selected,
         const Biz::Preset::PresetSelectionNames& preset_names,
         const Biz::Preset::PresetSelectionNames& preset_names_new,
-        const Biz::Preset::PresetInteractor& preset_interactor
+        const Biz::Preset::PresetInteractor& preset_interactor,
+        bool new_printer_has_multiple_extruders
     ) override
     {
         return {};

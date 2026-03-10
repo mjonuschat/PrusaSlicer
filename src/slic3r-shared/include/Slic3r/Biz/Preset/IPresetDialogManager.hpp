@@ -47,7 +47,8 @@ public:
         Domain::ConfigPack* config_new_selected,
         const PresetSelectionNames& preset_names,
         const PresetSelectionNames& preset_names_new,
-        const PresetInteractor& preset_interactor
+        const PresetInteractor& preset_interactor,
+        bool new_printer_has_multiple_extruders = false
     ) = 0;
 
     virtual std::string show_save_dialog(

@@ -325,7 +325,9 @@ bool can_select_printer_preset(
             nullptr,
             selected_preset_names(preset_interactor),
             PresetSelectionNames(),
-            preset_interactor
+            preset_interactor,
+            Domain::Preset::get_feature<bool>(hw_printer_config.features, "multi_extruder")
+                .value_or(false)
         );
 
         const bool ret = !exit_states.empty();
@@ -375,7 +377,9 @@ bool can_select_printer_preset(
         &config_new,
         selected_preset_names(preset_interactor),
         names_new,
-        preset_interactor
+        preset_interactor,
+        Domain::Preset::get_feature<bool>(hw_printer_config.features, "multi_extruder")
+        .value_or(false)
     );
 
     const bool ret = !exit_states.empty();

@@ -40,7 +40,8 @@ public:
         Domain::ConfigPack* config_new_selected,
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
-        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
+        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor,
+        bool new_printer_has_multiple_extruders = false
     ) override;
     std::string show_save_dialog(
         Domain::Preset::PresetKind kind,

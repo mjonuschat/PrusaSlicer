@@ -182,7 +182,8 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
     Domain::ConfigPack* config_new_selected,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new,
-    const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
+    const Slic3r::Biz::Preset::PresetInteractor& preset_interactor,
+    bool new_printer_has_multiple_extruders
 )
 {
     UnsavedChangesDialog dlg(
@@ -192,7 +193,8 @@ Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsav
         config_new_selected,
         preset_names,
         preset_names_new,
-        preset_interactor
+        preset_interactor,
+        new_printer_has_multiple_extruders
     );
     dlg.ShowModal();
     return dlg.exit_states();
