@@ -46,8 +46,14 @@ Domain::Vec2ds bed_contour_as_triangles(const Domain::Bed& bed);
 indexed_triangle_set bed_contour_as_its(const Domain::Vec2ds& contour);
 AABBMesh bed_contour_as_aabb_mesh(const Domain::Bed& bed);
 
-BedContainmentState contains_2d(const BedInstanceCollisionData& bed_instance, const Domain::BoundingBox2d& object_bb,
-    const Domain::Vec2ds& object_ch);
-BedContainmentState contains_3d(const BedInstanceCollisionData& bed_instance, const ObjectCollisionData& collision_data);
+BedContainmentState contains_2d(
+    const BedInstanceCollisionData& bed_instance,
+    const Domain::BoundingBox2d& object_bounding_box,
+    const Domain::Vec2ds& object_convex_hull
+);
+BedContainmentState contains_3d(
+    const BedInstanceCollisionData& bed_instance,
+    const ObjectCollisionData& collision_data
+);
 
 } // namespace Slic3r::Biz::Algorithms::Bed

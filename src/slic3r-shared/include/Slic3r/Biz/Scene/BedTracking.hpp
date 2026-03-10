@@ -104,14 +104,15 @@ private:
         BedTrackingChanges& changes
     );
 
-    const Biz::Algorithms::Bed::ObjectCollisionData& get_instance_collision_data(
-        const Domain::Project& project,
-        const Domain::ModelInstance& inst
-    );
+    const Algorithms::Bed::ObjectCollisionData&
+    get_instance_collision_data(const Domain::Project& project, const Domain::ModelInstance& inst);
+
+    AABBMesh& get_or_create_bed_mesh(const Domain::Bed& bed);
+
     std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
     find_bed_instance_for_bounds(
         Domain::Project& project,
-        const Biz::Algorithms::Bed::ObjectCollisionData& obj_collision_data
+        const Algorithms::Bed::ObjectCollisionData& obj_collision_data
     );
 
     // The cache for transformed bounding boxes to allow quick lookup based on
@@ -139,7 +140,7 @@ private:
     std::chrono::steady_clock::time_point m_last_cache_clear_time =
         std::chrono::steady_clock::now();
 
-    // Cache containing bed contour's aabb mesh for beds with custom (non-convex) bed shape
+    // Cache containing bed contour's AABBMesh, keyed by bed ID, to avoid expensive recreation.
     std::map<size_t, AABBMesh> m_bed_mesh_cache;
 };
 

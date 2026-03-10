@@ -48,23 +48,38 @@ void remove_instance_from_bed(
     }
 }
 
-std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
-BedTracking::find_bed_instance_for_bounds(Domain::Project& project, const Algorithms::Bed::ObjectCollisionData& obj_collision_data)
+AABBMesh& BedTracking::get_or_create_bed_mesh(const Domain::Bed& bed)
 {
-    for (auto& cc : project.config_containers()) {
-        const auto& bed = cc->bed();
-        auto it = m_bed_mesh_cache.find(bed.id().id);
-        if (it == m_bed_mesh_cache.end())
-            // bed contour's aabb mesh not found, create and cache it
-            it = m_bed_mesh_cache.try_emplace(bed.id().id, std::move(Algorithms::Bed::bed_contour_as_aabb_mesh(bed))).first;
-        AABBMesh* bed_aabb_mesh_ptr = &it->second;
-        for (auto& bi : cc->bed_instances()) {
-            Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bi, bed_aabb_mesh_ptr);
-            Algorithms::Bed::BedContainmentState state = Algorithms::Bed::contains_3d(bi_collision_data, obj_collision_data);
-            if (state == Algorithms::Bed::BedContainmentState::Inside || state == Algorithms::Bed::BedContainmentState::Colliding)
+    std::map<size_t, AABBMesh>::iterator it = m_bed_mesh_cache.find(bed.id().id);
+    if (it == m_bed_mesh_cache.end()) {
+        it = m_bed_mesh_cache
+                 .try_emplace(bed.id().id, Algorithms::Bed::bed_contour_as_aabb_mesh(bed))
+                 .first;
+    }
+
+    return it->second;
+}
+
+std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
+BedTracking::find_bed_instance_for_bounds(
+    Domain::Project& project,
+    const Algorithms::Bed::ObjectCollisionData& obj_collision_data
+)
+{
+    for (const auto& cc : project.config_containers()) {
+        const AABBMesh& bed_aabb_mesh = get_or_create_bed_mesh(cc->bed());
+        for (const auto& bi : cc->bed_instances()) {
+            Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bi, &bed_aabb_mesh);
+            Algorithms::Bed::BedContainmentState state =
+                Algorithms::Bed::contains_3d(bi_collision_data, obj_collision_data);
+            if (state == Algorithms::Bed::BedContainmentState::Inside
+                || state == Algorithms::Bed::BedContainmentState::Colliding)
+            {
                 return std::make_tuple(cc.get(), bi.get(), state);
+            }
         }
     }
+
     return std::make_tuple(nullptr, nullptr, Algorithms::Bed::BedContainmentState::Outside);
 }
 
@@ -214,7 +229,7 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
 BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ElementRefs& instances,
     bool remove_original_links)
 {
-    // remove from cache meshes of beds whose shape has been changed from custom to non-custom
+    // Remove cached AABBMesh entries for beds that no longer exist in the project.
     std::vector<size_t> bed_ids;
     bed_ids.reserve(project.config_containers().size());
     for (const auto& cc : project.config_containers()) {
