@@ -383,10 +383,7 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         );
     }
 
-    std::optional<AABBMesh> bed_aabb_mesh;
-    if (bed.type() == Domain::BedType::Custom)
-        bed_aabb_mesh.emplace(Algorithms::Bed::bed_contour_as_aabb_mesh(bed));
-    AABBMesh* bed_aabb_mesh_ptr = bed_aabb_mesh.has_value() ? &*bed_aabb_mesh : nullptr;
+    const AABBMesh bed_aabb_mesh = Algorithms::Bed::bed_contour_as_aabb_mesh(bed);
 
     // Find the max index of occupied beds
     // If there is none occupied, leave at least one bed (index 0)
@@ -399,7 +396,7 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
             for (int i = 0; i < 9; ++i) {
                 Algorithms::Bed::BedInstanceCollisionData bi_collision_data(
                     bed_instances[i],
-                    bed_aabb_mesh_ptr
+                    &bed_aabb_mesh
                 );
                 if (contains_2d(bi_collision_data, bb, ch_2d) == Algorithms::Bed::BedContainmentState::Inside) {
                     max_bed_index = std::max(max_bed_index, i);

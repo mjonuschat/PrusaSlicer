@@ -1871,16 +1871,13 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
         // temporary placeholder until the convex hull of the wipe tower is implemented
         const Domain::Vec2ds convex_hull;
         using Algorithms::Bed::BedContainmentState;
-        const auto& bed = bed_instance->bed.get();
-        std::optional<AABBMesh> bed_aabb_mesh;
-        if (bed.type() == Domain::BedType::Custom)
-            bed_aabb_mesh.emplace(Algorithms::Bed::bed_contour_as_aabb_mesh(bed));
-        AABBMesh* bed_aabb_mesh_ptr = bed_aabb_mesh.has_value() ? &*bed_aabb_mesh : nullptr;
-        Algorithms::Bed::BedInstanceCollisionData bi_collision_data(
-            *bed_instance,
-            bed_aabb_mesh.has_value() ? &*bed_aabb_mesh : nullptr
-        );
-        const BedContainmentState contains{ Algorithms::Bed::contains_2d(bi_collision_data, bounding_box, convex_hull) };
+        const auto& bed              = bed_instance->bed.get();
+        const AABBMesh bed_aabb_mesh = Algorithms::Bed::bed_contour_as_aabb_mesh(bed);
+
+        Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bed_instance, &bed_aabb_mesh);
+        const BedContainmentState contains{
+            Algorithms::Bed::contains_2d(bi_collision_data, bounding_box, convex_hull)
+        };
         if (contains != BedContainmentState::Inside) {
             wipe_towers_outside.push_back(e);
         }

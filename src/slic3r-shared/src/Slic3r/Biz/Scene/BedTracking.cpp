@@ -57,7 +57,7 @@ BedTracking::find_bed_instance_for_bounds(Domain::Project& project, const Algori
         if (it == m_bed_mesh_cache.end())
             // bed contour's aabb mesh not found, create and cache it
             it = m_bed_mesh_cache.try_emplace(bed.id().id, std::move(Algorithms::Bed::bed_contour_as_aabb_mesh(bed))).first;
-        AABBMesh* bed_aabb_mesh_ptr = bed_aabb_mesh_ptr = &it->second;
+        AABBMesh* bed_aabb_mesh_ptr = &it->second;
         for (auto& bi : cc->bed_instances()) {
             Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bi, bed_aabb_mesh_ptr);
             Algorithms::Bed::BedContainmentState state = Algorithms::Bed::contains_3d(bi_collision_data, obj_collision_data);
