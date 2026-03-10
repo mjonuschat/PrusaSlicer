@@ -1008,38 +1008,31 @@ const Domain::ModelInstance* find_instance(const Domain::Project& project, const
 
 void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& instance_id, const Domain::ModelVolumeType type, const Domain::Transform3d& trmat, const BaseData& data)
 {
-    /* TODO: find way to add volume into not selected project
-    auto& project = data.project_interactor.workbench().project(data.project_id);
-    /*/
-    const Domain::Project& project = data.project_interactor.selected_project();
-    ASSERT(data.project_interactor.selected_project_id() == data.project_id); // project does not match
-    // */
-
     // create volume
     if (mesh.its.empty())
         return create_message("Can't create empty volume.");
 
-    //// only add volume without addition data
-    // scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
-    const Domain::ModelInstance* instance = find_instance(project, instance_id.id);
-    if(instance == nullptr)
-        return create_message("Bad instance to create volume.");
-    
-    Domain::ModelObject* obj = instance->get_object();
-    if (obj == nullptr)
-        return create_message("Bad object to create volume.");
+    auto& scene_interactor = data.project_interactor.scene_interactor();
+    scene_interactor.add_volume(
+        data.project_id,
+        instance_id.id,
+        [&](Domain::ModelObject& obj)
+        {
+            // Biz::Algorithms::ModelObject::add_volume - without centering
+            Domain::ModelVolume* vol =
+                Biz::Algorithms::ModelVolume::construct_ptr(&obj, std::move(mesh), type);
+            obj.volumes.push_back(vol);
+            obj.invalidate_bounding_box();
 
-    // Biz::Algorithms::ModelObject::add_volume - without centering
-    Domain::ModelVolume* vol = Biz::Algorithms::ModelVolume::construct_ptr(obj, std::move(mesh), type);
-    obj->volumes.push_back(vol);
-    obj->invalidate_bounding_box();
+            vol->name                           = data.volume_name; // copy
+            vol->source.is_from_builtin_objects = true; // disallow model reload from disk
+            vol->set_transformation(trmat);
 
-    vol->name = data.volume_name; // copy    
-    vol->source.is_from_builtin_objects = true; // disallow model reload from disk
-    vol->set_transformation(trmat);
-    
-    data.shape_provider->write(*vol);
-    data.project_interactor.scene_interactor().add_volume(vol, instance_id);
+            data.shape_provider->write(*vol);
+            return vol;
+        }
+    );
+
 }
 
 OrthoProject create_projection_for_cut(Domain::Transform3d tr, double shape_scale, const std::pair<float, float>& z_range)

@@ -30,6 +30,10 @@ Domain::ModelVolume* add_volume(Domain::ModelObject* model_object, Domain::Trian
 
 Domain::ModelVolume* add_volume(Domain::ModelObject* model_object, const Domain::ModelVolume& other, Domain::TriangleMesh&& mesh);
 
+void sort_volumes(Domain::ModelObject* model_object);
+
+bool are_volumes_sorted(const Domain::ModelObject* model_object);
+
 Domain::ModelVolume* insert_volume(Domain::ModelObject* model_object, size_t idx, const Domain::ModelVolume& other, Domain::TriangleMesh&& mesh);
 
 void center_around_origin(Domain::ModelObject& model_object, bool include_modifiers = true);

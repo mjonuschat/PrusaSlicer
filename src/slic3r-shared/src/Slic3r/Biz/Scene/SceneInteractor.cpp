@@ -567,6 +567,8 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     auto& inst    = *obj.add_instance();
     update_object(obj);
 
+    ASSERT(Algorithms::ModelObject::are_volumes_sorted(&obj));
+
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
@@ -604,6 +606,7 @@ void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& o
 
     Domain::ModelObjectPtrs new_objects;
     for (Domain::ModelObject* object : objects) {
+        Algorithms::ModelObject::sort_volumes(object);
         new_objects.emplace_back(project.model().add_object(*object));
     }
 
@@ -629,6 +632,8 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     }
     updated.emplace_back(obj.id().id, inst_id, vol.id().id);
 
+    Algorithms::ModelObject::sort_volumes(&obj);
+
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l) { l->on_volume_added(m_selected_project_id, updated); }
     );
@@ -637,26 +642,35 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
-void SceneInteractor::add_volume(const Domain::ModelVolume* volume, const Domain::ObjectID& instance_id)
+void SceneInteractor::add_volume(
+    Domain::SelectionId project_id,
+    Domain::SelectionId instance_id,
+    const std::function<Domain::ModelVolume*(Domain::ModelObject&)>& factory
+)
 {
-    const Domain::ModelObject* obj = volume->get_object();
-    // check that object contain instance id
-    ASSERT(std::find_if(obj->instances.begin(), obj->instances.end(),
-        [instance_id](const Domain::ModelInstance* inst) { return inst->id() == instance_id; }
-    ) != obj->instances.end());
+    auto& p = m_workbench.project(project_id);
+    auto* instance = p.find_instance_by_id(instance_id);
+    ASSERT(instance != nullptr);
+    auto* obj = instance->get_object();
+
+    auto* volume = factory(*obj);
+
+    // verify that the factory added volume to the object
+    ASSERT(std::ranges::find(obj->volumes, volume) != obj->volumes.end());
+
+    Algorithms::ModelObject::sort_volumes(obj);
+
     Domain::ElementRefs updated = {
-        Domain::ElementRef(obj->id().id, instance_id.id, volume->id().id)
+        Domain::ElementRef(obj->id().id, instance_id, volume->id().id)
     };
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
-        l->on_volume_added(m_selected_project_id, updated);
+        l->on_volume_added(project_id, updated);
     });
 
     set_object_selection({ SelectionMode::Volume, updated});
 
-    // Fix out of bed color settings
-    Domain::Project& project = m_workbench.project(m_selected_project_id);
-    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
+    auto changes = m_bed_tracking.update_instances_bed_placement(p, updated);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 }

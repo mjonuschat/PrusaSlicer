@@ -9,6 +9,8 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Exception.hpp"
 
+#include <ranges>
+
 #include <boost/filesystem.hpp>
 #include <boost/nowide/iostream.hpp>
 
@@ -119,6 +121,28 @@ Domain::ModelVolume* insert_volume(Domain::ModelObject* model_object, const size
     model_object->invalidate_bounding_box();
     return v;
 }
+
+static bool less_than(const Domain::ModelVolume* lhs, const Domain::ModelVolume* rhs)
+{
+    return lhs->type() < rhs->type();
+}
+
+void sort_volumes(Domain::ModelObject* model_object)
+{
+    std::ranges::stable_sort(
+        model_object->volumes,
+        less_than
+    );
+}
+
+bool are_volumes_sorted(const Domain::ModelObject* model_object)
+{
+    return std::ranges::is_sorted(
+        model_object->volumes,
+        less_than
+    );
+}
+
 
 void center_around_origin(Domain::ModelObject& model_object, const bool include_modifiers)
 {

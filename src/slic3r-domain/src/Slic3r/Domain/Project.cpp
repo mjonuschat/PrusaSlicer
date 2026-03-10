@@ -57,6 +57,17 @@ const ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)
     return find_by_id<ModelInstance>(obj->instances, inst_id);
 }
 
+const ModelInstance* Project::find_instance_by_id(size_t inst_id) const
+{
+    for (auto& obj : m_model->objects) {
+        if (auto* ret = find_by_id<ModelInstance>(obj->instances, inst_id); ret != nullptr) {
+            return ret;
+        }
+    }
+    return nullptr;
+}
+
+
 Domain::ModelObject* Project::find_object_by_id(size_t id)
 {
     return find_by_id<Domain::ModelObject>(m_model->objects, id);
@@ -77,6 +88,17 @@ ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)
         return nullptr;
     return find_by_id<ModelInstance>(obj->instances, inst_id);
 }
+
+ModelInstance* Project::find_instance_by_id(size_t inst_id)
+{
+    for (auto& obj : m_model->objects) {
+        if (auto* ret = find_by_id<ModelInstance>(obj->instances, inst_id); ret != nullptr) {
+            return ret;
+        }
+    }
+    return nullptr;
+}
+
 
 const BedInstance* Project::find_bed_instance_by_id(size_t id) const
 {

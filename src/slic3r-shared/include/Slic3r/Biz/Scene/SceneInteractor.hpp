@@ -183,11 +183,20 @@ public:
         const std::string& name = std::string(),
         const Transform& xform  = Domain::SquareMatrix4d::Identity()
     );
-    
+    using VolumeFactory = std::function<Domain::ModelVolume*(Domain::ModelObject&)>;
+    void add_volume(
+        Domain::SelectionId project_id,
+        Domain::SelectionId instance_id,
+        const VolumeFactory& factory
+    );
+
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;
     void new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
-    void new_object_from_mesh(Domain::TriangleMesh&& mesh, Domain::SelectionId project_id, UpdateObjectFn update_object);
-    void add_volume(const Domain::ModelVolume* volume, const Domain::ObjectID& instance_id);
+    void new_object_from_mesh(
+        Domain::TriangleMesh&& mesh,
+        Domain::SelectionId project_id,
+        UpdateObjectFn update_object
+    );
 
     void add_instance(const Domain::Vec2d& offset);
 

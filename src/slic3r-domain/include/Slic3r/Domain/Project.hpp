@@ -83,9 +83,11 @@ public:
     [[nodiscard]] const Domain::ModelObject* find_object_by_id(size_t id) const;
     [[nodiscard]] const Domain::ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
     [[nodiscard]] const Domain::ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id) const;
+    [[nodiscard]] const Domain::ModelInstance* find_instance_by_id(size_t inst_id) const;
     [[nodiscard]] Domain::ModelObject* find_object_by_id(size_t id);
     [[nodiscard]] Domain::ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
     [[nodiscard]] Domain::ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id);
+    [[nodiscard]] Domain::ModelInstance* find_instance_by_id(size_t inst_id);
 
     [[nodiscard]] const BedInstance* find_bed_instance_by_id(size_t id) const;
     [[nodiscard]] BedInstance* find_bed_instance_by_id(size_t id);
