@@ -85,9 +85,21 @@ public:
 
     std::string process(const std::string& input) override;
 
-    bool percentage_symbol() const;
+    /**
+     * @brief Indicates whether the last processed input contained a '%' symbol.
+     * @return True if the last input contained a percentage symbol.
+     */
+    bool entered_percentage_symbol() const;
+
+    /**
+     * @brief Controls visibility of the '%' symbol in the displayed value.
+     * @param visible If true, the percentage symbol will be visible.
+     */
+    void set_visible_percentage_symbol(bool visible);
 
 private:
-    bool m_percentage_symbol = false;
+    bool m_last_entered_percentage_symbol = false;
+    bool m_is_visible_percentage_symbol = false;
 };
+
 } // namespace Slic3r::App::Yoga

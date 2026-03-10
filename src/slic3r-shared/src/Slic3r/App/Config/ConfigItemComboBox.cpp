@@ -115,7 +115,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                     m_cbi_index
                 );
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
-                if (m_percentage_validator->percentage_symbol()) {
+                if (m_percentage_validator->entered_percentage_symbol()) {
                     m_cbi_container.set_item_value(
                         *m_state,
                         Domain::ConfigValue{Domain::FloatOrPercentage{
@@ -215,6 +215,9 @@ void ConfigItemComboBox::initialize()
             || *m_state->def().type == typeid(Domain::FloatOrPercentage))
         {
             m_percentage_validator = std::make_unique<PercentageValidator>();
+            m_percentage_validator->set_visible_percentage_symbol(
+                *m_state->def().type == typeid(Domain::FloatOrPercentage)
+            );
             set_validator(m_percentage_validator.release());
         } else {
             m_double_validator = std::make_unique<DoubleValidator>();

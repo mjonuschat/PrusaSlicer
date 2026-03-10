@@ -49,7 +49,7 @@ ConfigItemTextField::ConfigItemTextField(
             );
         } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
             const std::string value_text = text();
-            if (m_percentage_validator->percentage_symbol()) {
+            if (m_percentage_validator->entered_percentage_symbol()) {
                 m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::FloatOrPercentage{
@@ -105,6 +105,9 @@ void ConfigItemTextField::on_data_update()
             m_percentage_validator = std::make_unique<PercentageValidator>(
                 m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
                 m_state->def().max.value_or(std::numeric_limits<double>::max())
+            );
+            m_percentage_validator->set_visible_percentage_symbol(
+                *m_state->def().type == typeid(Domain::FloatOrPercentage)
             );
             set_validator(m_percentage_validator.release());
         }

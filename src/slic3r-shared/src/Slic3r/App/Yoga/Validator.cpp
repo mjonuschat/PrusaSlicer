@@ -140,19 +140,27 @@ std::string PercentageValidator::process(const std::string& input)
 {
     std::string_view trimmed_view = trim(input);
     if (!trimmed_view.empty() && trimmed_view.back() == '%') {
-        m_percentage_symbol = true;
+        m_last_entered_percentage_symbol = true;
         trimmed_view.remove_suffix(1); // so it would confuse parser
     } else {
-        m_percentage_symbol = false;
+        m_last_entered_percentage_symbol = false;
     }
 
     const std::string trimmed_string{trimmed_view};
-    return DoubleValidator::process(trimmed_string);
+    const std::string processed_string = DoubleValidator::process(trimmed_string);
+    return (m_last_entered_percentage_symbol && m_is_visible_percentage_symbol) ?
+        fmt::format("{}%", processed_string) :
+        fmt::format("{}", processed_string);
 }
 
-bool PercentageValidator::percentage_symbol() const
+bool PercentageValidator::entered_percentage_symbol() const
 {
-    return m_percentage_symbol;
+    return m_last_entered_percentage_symbol;
+}
+
+void PercentageValidator::set_visible_percentage_symbol(bool visible)
+{
+    m_is_visible_percentage_symbol = visible;
 }
 
 } // namespace Slic3r::App::Yoga
