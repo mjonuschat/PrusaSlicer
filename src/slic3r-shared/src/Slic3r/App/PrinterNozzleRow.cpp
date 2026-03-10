@@ -21,7 +21,7 @@ PrinterNozzleRow::PrinterNozzleRow(
     m_preset_interactor(preset_interactor)
 {
     m_callbacks.validation_updated = validation_updated;
-    Rectangle* id_background = emplace_back<Rectangle>();
+    Rectangle* id_background       = emplace_back<Rectangle>();
     id_background->set_fill(ImColor(41, 41, 41));
     id_background->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
     id_background->set_align_items(YGAlignCenter);
@@ -52,13 +52,14 @@ PrinterNozzleRow::PrinterNozzleRow(
     on_index_update();
 }
 
-PrinterNozzleRow::Callbacks& PrinterNozzleRow::callbacks() { return m_callbacks; }
+PrinterNozzleRow::Callbacks& PrinterNozzleRow::callbacks()
+{
+    return m_callbacks;
+}
 
 void PrinterNozzleRow::on_data_update()
 {
-    Biz::Preset::ToolConfigItemObservableList& list = m_preset_interactor.tool_items().at(m_index);
-    m_combo_box->set_source_list(&list.items());
-    m_combo_box->set_current_index(list.selected_index());
+    m_combo_box->set_source_list(&m_preset_interactor.tool_items().at(m_index));
 }
 
 void PrinterNozzleRow::on_index_update()

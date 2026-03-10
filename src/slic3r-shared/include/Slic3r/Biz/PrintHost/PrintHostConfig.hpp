@@ -92,7 +92,7 @@ inline PrintHostExportFormat get_export_format_from_extension(const std::string&
         return PrintHostExportFormat::GCode;
     if (extension == ".bgcode")
         return PrintHostExportFormat::BGCode;
-        if (extension == ".sl1")
+    if (extension == ".sl1")
         return PrintHostExportFormat::Sl1;
     if (extension == ".sl1s")
         return PrintHostExportFormat::Sl1s;

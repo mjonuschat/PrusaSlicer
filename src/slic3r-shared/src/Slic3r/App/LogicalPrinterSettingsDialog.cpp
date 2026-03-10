@@ -97,7 +97,8 @@ void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId
         return;
     }
 
-    for (size_t button_index = 0; button_index < m_printer_list_view->object_count(); ++button_index)
+    for (size_t button_index = 0; button_index < m_printer_list_view->object_count();
+         ++button_index)
     {
         LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
             m_printer_list_view->get_item(button_index)
@@ -231,9 +232,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     m_combo_sheets->set_get_name_fn(
         [](const Domain::Preset::HwSheetConfigDef* data) -> std::string { return data->name; }
     );
-    m_combo_sheets->set_source_list(
-        &m_project_interactor.preset_interactor().sheet_items().items()
-    );
+    m_combo_sheets->set_source_list(&m_project_interactor.preset_interactor().sheet_items());
     m_combo_sheets->callbacks().selection_changed = [this](int sheet_index)
     {
         if (sheet_index >= 0) {
@@ -242,9 +241,6 @@ void LogicalPrinterSettingsDialog::create_page_settings()
             );
         }
     };
-    m_project_interactor.preset_interactor()
-        .sheet_items()
-        .add_listener<Biz::IListSelectionChangedListener>(m_combo_sheets);
 
     Text* label = m_page_settings->emplace_back<Text>(_u8L("Nozzles"), Render::ImguiFontType::Bold);
     label->set_margin(Margins(0, 10, 0, 0));

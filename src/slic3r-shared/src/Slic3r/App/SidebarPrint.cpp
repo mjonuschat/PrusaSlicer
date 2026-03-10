@@ -77,9 +77,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
             return prefix + item->name;
         }
     );
-    m_combo_print->set_source_list(
-        &m_project_interactor.preset_interactor().print_presets().items()
-    );
+    m_combo_print->set_source_list(&m_project_interactor.preset_interactor().print_presets());
     m_combo_print->set_flex_grow(1);
     m_combo_print->callbacks().selection_changed = [this](int print_index)
     {
@@ -99,9 +97,6 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
             }
         }
     };
-    m_project_interactor.preset_interactor()
-        .print_presets()
-        .add_listener<Biz::IListSelectionChangedListener>(m_combo_print);
 
     m_settings_set_btn =
         layer_height_row->emplace_back<LayoutButton>(std::string{}, Render::Icon::Cog);

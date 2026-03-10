@@ -73,17 +73,13 @@ void SidebarToolHeadRow::on_data_update()
         on_view_will_be_removed();
 
         m_last_preset_item_observable_list = preset_item_observable_list;
-        m_combo_box->set_source_list(&preset_item_observable_list->items());
-        preset_item_observable_list->add_listener<Biz::IListSelectionChangedListener>(m_combo_box);
+        m_combo_box->set_source_list(preset_item_observable_list);
     }
 }
 
 void SidebarToolHeadRow::on_view_will_be_removed()
 {
     if (m_last_preset_item_observable_list) {
-        m_last_preset_item_observable_list->remove_listener<Biz::IListSelectionChangedListener>(
-            m_combo_box
-        );
         m_combo_box->set_source_list(nullptr);
         m_last_preset_item_observable_list = nullptr;
     }
