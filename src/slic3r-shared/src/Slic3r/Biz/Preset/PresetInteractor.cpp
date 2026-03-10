@@ -269,6 +269,11 @@ SelectedPresetIds from_selected_preset(const Domain::Preset::SelectedPreset& sp)
     return ret;
 }
 
+std::tuple<const std::string&, const std::string&> sort_key(const PresetItem& item)
+{
+    return std::tie(item.name, item.hw_printer_config_name);
+}
+
 } // namespace
 
 void PresetInteractor::save_user_preset(
@@ -513,22 +518,25 @@ void PresetInteractor::initialize_config_container_with_default(Domain::ConfigCo
     const static std::string selected_printer_name =
         "CORE One"; //"SL1S SPEED";//"Prusa MK4S";
     const auto& preset_bundle     = m_workbench.preset_bundle();
-    const auto& evaluated_presets = preset_bundle.evaluated_presets;
-    auto config_it                = preset_bundle.printer_configs.begin();
-    while (config_it != preset_bundle.printer_configs.end()) {
-        if (evaluated_presets.contains(config_it->second.id)
-            && config_it->second.name.starts_with(selected_printer_name))
-            break;
-        ++config_it;
-    }
-    ASSERT(config_it != preset_bundle.printer_configs.end());
 
-    const auto& printer_presets = evaluated_presets.at(config_it->second.id);
-    const auto printer_it       = printer_presets.begin();
-    ASSERT(printer_it != printer_presets.end());
+    std::vector<PresetItem> items;
+    for (const auto& p : preset_bundle.evaluated_presets | std::views::values | std::views::join) {
+        items.emplace_back(p.preset.id, p.preset.name, p.hw_config.id, p.hw_config.name);
+    }
+
+    ASSERT(items.size() > 0);
+
+    auto filtered_range =
+        items
+        | std::views::filter(
+            [](const PresetItem& p)
+            { return p.hw_printer_config_name.starts_with(selected_printer_name); }
+        );
+    auto it = std::ranges::min_element(filtered_range, {}, sort_key);
+    const PresetItem p  = it == std::ranges::end(filtered_range) ? items.front() : *it;
 
     InvokeLaterBag bag;
-    fill_config_container_with_selected_preset(cc, config_it->first, printer_it->preset.id, false, bag);
+    fill_config_container_with_selected_preset(cc, p.hw_printer_config_id, p.id, false, bag);
 }
 
 void PresetInteractor::initialize_config_container_with_selected(Domain::ConfigContainer& cc)
@@ -937,28 +945,36 @@ void PresetInteractor::fill_printer_presets(ListenerInvokeLaterBag& bag)
     const auto& p             = get_or_create_project_context(m_selected_project_id);
 
     std::vector<PresetItem> items;
-    std::optional<size_t> selected_index;
-    std::optional<size_t> selected_index_by_hw;
-    const auto& selected_preset = selected_printer_preset();
     const HwPrinterConfigProjectView config_view(preset_bundle, p.runtime_presets);
-    size_t idx = 0;
     for (const auto& [hw_config_rw, runtime] : config_view.items()) {
         const auto& hw_config = hw_config_rw.get();
         const PrinterPresetProjectView printer_view(preset_bundle, p.runtime_presets, hw_config.id);
         for (const auto& [printer_rw, is_runtime] : printer_view.items()) {
             const auto& printer = printer_rw.get();
             items.emplace_back(printer.id, printer.name, hw_config.id, hw_config.name, printer.origin, is_runtime);
-            const auto& item = items.back();
-            if (item.hw_printer_config_id == selected_preset.hw_config.id)
-            {
-                if (item.id == selected_preset.printer.id)
-                    selected_index = idx;
-                else
-                    selected_index_by_hw = idx;
-            }
-
-            idx++;
         }
+    }
+
+    std::ranges::sort(
+        items,
+        {},
+        sort_key
+    );
+
+    std::optional<size_t> selected_index;
+    std::optional<size_t> selected_index_by_hw;
+    const auto& selected_preset = selected_printer_preset();
+    size_t idx = 0;
+    for (const auto& item : items) {
+        if (item.hw_printer_config_id == selected_preset.hw_config.id)
+        {
+            if (item.id == selected_preset.printer.id)
+                selected_index = idx;
+            else
+                selected_index_by_hw = idx;
+        }
+
+        idx++;
     }
     m_printer_presets.items().set_items(std::move(items));
     size_t selected_index_val = selected_index.value_or(selected_index_by_hw.value_or(0));
