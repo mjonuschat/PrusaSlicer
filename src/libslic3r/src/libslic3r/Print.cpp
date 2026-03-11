@@ -280,6 +280,10 @@ Biz::Print::ApplyStatus::Status Print::update(
             bed.custom_gcode,
             extruder_candidates
         );
+        if (model.objects.empty()) {
+            result = ApplyStatus::Empty{};
+            return;
+        }
         if (std::holds_alternative<ApplyStatus::Changed>(result)) {
             Biz::Print::ValidationResult validation_result{validate()};
             if (!validation_result.errors.empty()) {
@@ -289,10 +293,6 @@ Biz::Print::ApplyStatus::Status Print::update(
             for (const Biz::Slicing::Warning& warning : validation_result.warnings) {
                 std::get<ApplyStatus::Changed>(result).warrnings.push_back(warning);
             }
-        }
-        if (model.objects.empty()) {
-            result = ApplyStatus::Empty{};
-            return;
         }
     });
 
