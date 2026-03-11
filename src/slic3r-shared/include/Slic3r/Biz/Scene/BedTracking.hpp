@@ -97,6 +97,22 @@ public:
         bool remove_original_links = true
     );
 
+    /**
+     * @brief Check whether a 2D shape is contained within the bed boundary.
+     *
+     * @param bed Bed definition providing the bed contour for collision mesh creation.
+     * @param bed_instance Bed instance whose offset is used to transform the tested shape into bed-local coordinates.
+     * @param bounding_box Axis-aligned bounding box of the shape to test, in scene coordinates.
+     * @param convex_hull Convex hull vertices of the shape to test, in scene coordinates.
+     * @return BedContainmentState indicating whether the shape is Inside, Colliding with, or Outside the bed.
+     */
+    Algorithms::Bed::BedContainmentState check_containment_2d(
+        const Domain::Bed& bed,
+        const Domain::BedInstance& bed_instance,
+        const Domain::BoundingBox2d& bounding_box,
+        const Domain::Vec2ds& convex_hull
+    );
+
 private:
     void update_instance_bed_placement(
         Domain::Project& project,

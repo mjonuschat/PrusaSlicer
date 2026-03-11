@@ -82,6 +82,8 @@ int closest_point_index(const Domain::Polygon& polygon, const Domain::Point& poi
 
 Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points);
 
+Domain::Polygon translated(const Domain::Polygon& polygon, const Domain::Point& offset);
+
 bool is_counter_clockwise(const Domain::Polygon& polygon);
 bool is_clockwise(const Domain::Polygon& polygon);
 

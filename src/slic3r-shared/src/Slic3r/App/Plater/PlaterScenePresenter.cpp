@@ -409,8 +409,6 @@ void PlaterScenePresenter::update_volume_materials()
                 bool is_wipe_tower = tag->is_wipe_tower();
                 bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
-                // TODO: The following line should be modified when bed containment detection for wipe tower will be implemented
-                //       so that the wipe tower will be rendered in the same way a model part volumes
                 bool is_on_selected_bed = is_wipe_tower ||
                     std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
                 bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
@@ -434,7 +432,13 @@ void PlaterScenePresenter::update_volume_materials()
 
                 std::optional<ColorRGBA> color;
                 if (is_wipe_tower) {
-                    color = select_color(true, is_selected, false, false, hover_type);
+                    const Domain::BedInstance* wipe_tower_bed_instance =
+                        proj.find_bed_instance_by_id(tag->wipe_tower_id.bed_instance_id);
+                    const bool wipe_tower_is_outside =
+                        (wipe_tower_bed_instance != nullptr
+                         && wipe_tower_bed_instance->wipe_tower_is_outside);
+                    color =
+                        select_color(true, is_selected, wipe_tower_is_outside, false, hover_type);
                 } else if (is_on_bed) {
                     bed_inst = find_bed_instance_by_model_instance_id(mi_to_bi_map, inst->id().id);
                     if (bed_inst == nullptr) {

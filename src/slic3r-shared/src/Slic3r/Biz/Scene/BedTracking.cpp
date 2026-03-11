@@ -4,8 +4,14 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Domain/Model.hpp"
+
+using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
+using Slic3r::Biz::Algorithms::Bed::BedInstanceCollisionData;
+using Slic3r::Domain::Bed;
+using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::BoundingBox2d;
+using Slic3r::Domain::Vec2ds;
 
 namespace Slic3r::Biz {
 
@@ -81,6 +87,18 @@ BedTracking::find_bed_instance_for_bounds(
     }
 
     return std::make_tuple(nullptr, nullptr, Algorithms::Bed::BedContainmentState::Outside);
+}
+
+BedContainmentState BedTracking::check_containment_2d(
+    const Bed& bed,
+    const BedInstance& bed_instance,
+    const BoundingBox2d& bounding_box,
+    const Vec2ds& convex_hull
+)
+{
+    const AABBMesh& bed_aabb_mesh = this->get_or_create_bed_mesh(bed);
+    const BedInstanceCollisionData bed_instance_collision_data(bed_instance, &bed_aabb_mesh);
+    return Algorithms::Bed::contains_2d(bed_instance_collision_data, bounding_box, convex_hull);
 }
 
 const Algorithms::Bed::ObjectCollisionData& BedTracking::get_instance_collision_data(const Domain::Project& project,

@@ -30,6 +30,18 @@ struct ObjectCollisionData
     void translate(const Domain::Vec3d& shift);
 };
 
+/**
+ * @brief 2D collision data for wipe tower containment detection.
+ *
+ * The footprint is the union of the rectangle (with brim) and the stabilization
+ * cone ellipse, or their convex hull for convex bed types.
+ */
+struct WipeTowerCollisionData
+{
+    Domain::BoundingBox2d bounding_box;
+    Domain::Vec2ds footprint_2d;
+};
+
 struct BedInstanceCollisionData
 {
     const Domain::BedInstance& instance;

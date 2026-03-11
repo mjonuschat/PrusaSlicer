@@ -388,6 +388,20 @@ private:
     void update_config_container_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
     void normalize_object_selection(ObjectSelection& object_selection) const;
 
+    /**
+     * Update BedInstance::wipe_tower_is_outside for wipe towers in `elements`.
+     * BedTracking skips wipe tower elements (they are not ModelInstance*),
+     * so we handle them here where we have access to the wipe tower geometry.
+     *
+     * @param project_context  Project context providing wipe tower geometries.
+     * @param elements         Elements being moved (non-wipe-tower entries are skipped).
+     * @param changes          Tracking changes to signal material refresh when containment state changes.
+     */
+    void update_wipe_tower_containment(
+        SceneInteractorProjectContext& project_context,
+        const Domain::ElementRefs& elements,
+        BedTrackingChanges& changes
+    );
 
     // Collapse the volume transform into the instance transforms, if the object constains only one volume.
     // No change is made otherwise.
