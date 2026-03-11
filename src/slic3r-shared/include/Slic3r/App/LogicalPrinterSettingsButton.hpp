@@ -25,6 +25,7 @@ public:
         size_t index,
         const Biz::Preset::PresetItem& logical_printer_preset,
         FnIndexClicked on_clicked,
+        FnIndexClicked on_cog_clicked,
         const Biz::Preset::PresetInteractor& preset_interactor
     );
 
@@ -33,6 +34,7 @@ protected:
 
 private:
     FnIndexClicked m_on_clicked;
+    FnIndexClicked m_on_cog_clicked;
     const Biz::Preset::PresetInteractor& m_preset_interactor;
 };
 

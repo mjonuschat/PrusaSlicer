@@ -16,17 +16,21 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
     size_t index,
     const Biz::Preset::PresetItem& logical_printer,
     FnIndexClicked on_clicked,
+    FnIndexClicked on_cog_clicked,
     const Biz::Preset::PresetInteractor& preset_interactor
 ) :
     Biz::DataObserver<Biz::Preset::PresetItem>(index, logical_printer),
     m_on_clicked(on_clicked),
+    m_on_cog_clicked(on_cog_clicked),
     m_preset_interactor(preset_interactor)
 {
     on_data_update();
     set_flex_shrink(0);
     set_checkable(false);
+    set_visible_cog(true);
 
     callbacks().action = [this]() { m_on_clicked(m_index); };
+    on_cog() = [this]() { m_on_cog_clicked(m_index); };
 }
 
 void LogicalPrinterSettingsButton::on_data_update()

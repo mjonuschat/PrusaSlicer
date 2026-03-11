@@ -69,31 +69,25 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     ScrollArea* scroll_area = content()->emplace_back<ScrollArea>("Foobar");
     scroll_area->set_orientation(Orientation::Vertical);
     scroll_area->set_min_size({0, 200});
-    scroll_area->set_max_size({YGUndefined, 200});
+    scroll_area->set_max_size({YGUndefined, 300});
+    scroll_area->set_margin({ 0.f, 0.f, -10.f,0.f });
+    scroll_area->set_padding({ 0.f, 0.f, 15.f,0.f });
 
-    m_selection_row_list_view = scroll_area->emplace_back<SelectionRowListView>(
-        SelectionRowListViewFactory{m_material_index, m_project_interactor.preset_interactor()}
-    );
+    m_selection_row_list_view =
+        scroll_area->emplace_back<SelectionRowListView>(SelectionRowListViewFactory{
+            [this]() { m_navigator.set_opened_dialog(nullptr); },
+            [this]()
+            {
+                if (!m_material_settings_dialog->opened()) {
+                    m_navigator.set_opened_dialog(m_material_settings_dialog);
+                }
+            },
+            m_material_index,
+            m_project_interactor.preset_interactor()
+        });
     m_selection_row_list_view->set_orientation(Orientation::Vertical);
     m_selection_row_list_view->set_gap(5);
-    m_selection_row_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_selection_row_list_view->set_source_list(m_material_filter.get());
-
-    content()->emplace_back<Separator>(Orientation::Horizontal);
-
-    m_advanced_button = content()->emplace_back<LayoutButton>(_u8L("Advanced settings"), Render::Icon::Cog);
-    m_advanced_button->set_content_padding({ 0.f, 7.f });
-    m_advanced_button->set_height({ 30.f });
-    m_advanced_button->set_background_color(ImColor(43, 43, 43));
-    m_advanced_button->set_checkable(true);
-    m_advanced_button->callbacks().action = [this]
-    {
-        if (m_material_settings_dialog->opened()) {
-            m_navigator.set_opened_dialog(this);
-        } else {
-            m_navigator.set_opened_dialog(m_material_settings_dialog);
-        }
-    };
 
     // Material Settings Dialog setup
     m_material_settings_dialog->attach_to_item(content_item(), Position::Left);
@@ -104,8 +98,6 @@ MaterialSelectionDialog::MaterialSelectionDialog(
             m_callbacks.advanced_settings_tab_opened(current_index);
         }
     };
-    m_material_settings_dialog->callbacks().closed = [this]()
-    { m_advanced_button->set_checked(false); };
 }
 
 MaterialSelectionDialog::~MaterialSelectionDialog()

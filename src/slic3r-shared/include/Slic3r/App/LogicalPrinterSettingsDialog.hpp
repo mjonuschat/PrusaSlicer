@@ -47,6 +47,7 @@ public:
     void on_selected_project_changed_final(size_t index) override;
 
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
+    void select_page_settings();
 
 private:
     void create_page_list();
@@ -63,6 +64,7 @@ private:
     using PrinterListViewFactory = Yoga::ViewFactory<
         LogicalPrinterSettingsButton,
         Biz::Preset::PresetItem,
+        LogicalPrinterSettingsButton::FnIndexClicked,
         LogicalPrinterSettingsButton::FnIndexClicked,
         const Biz::Preset::PresetInteractor&>;
     using PrinterListView = Yoga::

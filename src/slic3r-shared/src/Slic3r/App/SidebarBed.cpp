@@ -60,6 +60,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
     m_logical_printer_button->set_flex_grow(1.f);
+    m_logical_printer_button->set_visible_cog(true);
 
     m_logical_printer_settings_dialog->attach_to_item(this, Position::Left);
     m_logical_printer_settings_dialog->callbacks().opened = [this]()
@@ -73,13 +74,20 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_physical_printer_settings_dialog->callbacks().closed = [this]()
     { m_physical_printer_button->set_checked(false); };
 
-    m_logical_printer_button->callbacks().action = [this]()
+    auto toggle_logical_printer_settings_dialog = [this]()
     {
         if (m_logical_printer_settings_dialog->opened()) {
             m_navigator.set_opened_dialog(nullptr);
         } else {
             m_navigator.set_opened_dialog(m_logical_printer_settings_dialog);
         }
+    };
+    m_logical_printer_button->callbacks().action = [toggle_logical_printer_settings_dialog]()
+    { toggle_logical_printer_settings_dialog(); };
+    m_logical_printer_button->on_cog() = [toggle_logical_printer_settings_dialog, this]()
+    {
+        toggle_logical_printer_settings_dialog();
+        m_logical_printer_settings_dialog->select_page_settings();
     };
 
     m_physical_printer_button->callbacks().action = [this]()

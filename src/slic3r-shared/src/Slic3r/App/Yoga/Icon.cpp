@@ -133,9 +133,12 @@ ImColor Icon::tint() const
     return {m_tint};
 }
 
-void Icon::set_tint(const ImColor& tint)
+void Icon::set_tint(const ImColor& new_tint)
 {
-    m_tint = tint;
+    if (ImU32(tint()) != ImU32(new_tint)) {
+        m_tint = new_tint;
+        set_style_dirty();
+    }
 }
 
 void Icon::update_draw_sizes()

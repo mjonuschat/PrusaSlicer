@@ -3,12 +3,14 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App::Yoga {
 
 PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : RectangleButton(tooltip)
 {
     set_flex_shrink(0);
+    set_allow_overlap(true);
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
@@ -26,24 +28,25 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
     m_preset_name->set_flex_grow(1.f);
     m_preset_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    Vec2f btn_sz{20.f, 20.f};
+    auto add_button = [this](Render::Icon icon, const std::string& tooltip)
+    {
+        LayoutButton* button = emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+        button->set_self_align(YGAlignCenter);
+        button->set_min_size({24.f, 24.f});
+        button->set_flex_shrink(0);
+        button->set_background_color(IM_COL32_BLACK_TRANS);
+        // Extra button is hidden by default.
+        // It can be shown in the settings dialog under certain conditions.
+        button->set_visible(false);
 
-    m_printers_btn = emplace_back<LayoutButton>(
-        "",
-        Render::Icon::ConfigContainer,
-        "Show info about printer"
-    );
-    m_printers_btn->set_self_align(YGAlignCenter);
-    m_printers_btn->set_max_size(btn_sz);
+        button->callbacks().hovered_changed = [this](bool) { update_btns_visibility(); };
 
-    m_cog_btn = emplace_back<LayoutButton>("", Render::Icon::PrintIconMarker, "Show extruder settings");
-    m_cog_btn->set_self_align(YGAlignCenter);
-    m_cog_btn->set_max_size(btn_sz);
+        return button;
+    };
 
-    // Extra button is hidden by default.
-    // It can be shown in the settings dialog under certain conditions.
-    m_cog_btn->set_visible(false);
-    m_printers_btn->set_visible(false);
+    m_printers_btn =
+        add_button(Render::Icon::ConfigContainer, Biz::_u8L("Show info about printer"));
+    m_cog_btn = add_button(Render::Icon::PrintIconMarker, Biz::_u8L("Show extruder settings"));
 
     set_background_color(ImColor(41, 41, 41));
 }
@@ -70,20 +73,14 @@ void PrinterSettingsButton::set_printing_state(int state)
 
 void PrinterSettingsButton::set_visible_printer(bool is_visible)
 {
-    if (m_is_visible_printers != is_visible) {
-        m_is_visible_printers = is_visible;
-        m_printers_btn->set_background_color(background_color());
-        update_btns_visibility();
-    }
+    m_printers_btn->set_visible(is_visible);
+    update_btns_visibility();
 }
 
 void PrinterSettingsButton::set_visible_cog(bool is_visible)
 {
-    if (m_is_visible_cog != is_visible) {
-        m_is_visible_cog = is_visible;
-        m_cog_btn->set_background_color(background_color());
-        update_btns_visibility();
-    }
+    m_cog_btn->set_visible(is_visible);
+    update_btns_visibility();
 }
 
 std::function<void()>& PrinterSettingsButton::on_cog()
@@ -98,26 +95,33 @@ std::function<void()>& PrinterSettingsButton::on_printer()
 
 void PrinterSettingsButton::checked_updated_internal()
 {
-    update_btns_visibility();
     RectangleButton::checked_updated_internal();
-
     if (!checked()) {
-        m_cog_btn->set_background_color(background_color());
         m_printers_btn->set_background_color(background_color());
     }
+    update_btns_visibility();
 }
 
 void PrinterSettingsButton::hovered_updated_internal()
 {
-    update_btns_visibility();
     RectangleButton::hovered_updated_internal();
+    update_btns_visibility();
 }
 
 void PrinterSettingsButton::update_btns_visibility()
 {
-    bool is_visible_btns = !checked() && hovered();
-    m_printers_btn->set_visible(m_is_visible_printers && is_visible_btns);
-    m_cog_btn->set_visible(m_is_visible_cog && is_visible_btns);
+    auto tint_btn_icon = [this](LayoutButton* button)
+    {
+        if (button->is_visible()) {
+            button->set_icon_tint(
+                hovered() || button->hovered() ? ImColor(255, 255, 255) :
+                                                 ImColor(IM_COL32_BLACK_TRANS)
+            );
+        }
+    };
+
+    tint_btn_icon(m_cog_btn);
+    tint_btn_icon(m_printers_btn);
 }
 
 } // namespace Slic3r::App::Yoga

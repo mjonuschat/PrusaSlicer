@@ -61,6 +61,8 @@ private:
     using SelectionRowListViewFactory = Yoga::ViewFactory<
         MaterialSelectionRow,
         Biz::Preset::PresetItem,
+        MaterialSelectionRow::FnClicked,
+        MaterialSelectionRow::FnClicked,
         size_t&,
         Biz::Preset::PresetInteractor&>;
     using SelectionRowListView =
@@ -76,7 +78,6 @@ private:
     size_t m_material_index                              = Domain::INVALID_ID;
     Yoga::InputText* m_input_text_search                 = nullptr;
     SelectionRowListView* m_selection_row_list_view      = nullptr;
-    Yoga::LayoutButton* m_advanced_button                = nullptr;
     Biz::Preset::PresetItemObservableList* m_preset_list = nullptr;
     MaterialSettingsDialog* m_material_settings_dialog   = nullptr;
 };

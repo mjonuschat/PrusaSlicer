@@ -127,6 +127,11 @@ PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_se
     return *m_advanced_dialog;
 }
 
+void LogicalPrinterSettingsDialog::select_page_settings()
+{
+    m_stack_layout->set_current_index(1);
+}
+
 void LogicalPrinterSettingsDialog::create_page_list()
 {
     m_page_list = m_stack_layout->emplace_back<Item>();
@@ -149,6 +154,8 @@ void LogicalPrinterSettingsDialog::create_page_list()
 
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
     scroll_area->set_max_size({YGUndefined, 275});
+    scroll_area->set_margin({ 0.f, 0.f, -10.f,0.f });
+    scroll_area->set_padding({ 0.f, 0.f, 15.f,0.f });
 
     // Create the ViewFactory explicitly:
     auto factory = PrinterListViewFactory(
@@ -166,7 +173,32 @@ void LogicalPrinterSettingsDialog::create_page_list()
                 return;
             }
 
-            m_stack_layout->set_current_index(1);
+            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
+            m_navigator.set_opened_dialog(nullptr);
+        },
+        [this](size_t index)
+        {
+            auto& preset_interactor = m_project_interactor.preset_interactor();
+            const auto& item        = preset_interactor.printer_presets().items().at(index);
+
+            auto selected_preset = preset_interactor.selected_printer_preset();
+            if (selected_preset.hw_config.id == item.hw_printer_config_id
+                && selected_preset.printer.id == item.id)
+            {
+                select_page_settings();
+                return;
+            }
+
+            if (!Biz::Preset::PresetSelectionCheck::can_select_printer_preset(
+                    preset_interactor,
+                    item.hw_printer_config_id,
+                    item.id
+                ))
+            {
+                return;
+            }
+
+            select_page_settings();
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
         },
         m_project_interactor.preset_interactor()
@@ -210,7 +242,10 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     m_page_settings->set_padding(10);
 
     Item* title_row           = m_page_settings->emplace_back<Item>();
+    title_row->set_align_items(YGAlignCenter);
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
+    back_button->set_min_size({24.f, 24.f});
+    back_button->set_content_padding(3.f);
     back_button->callbacks().action = [this]()
     {
         m_stack_layout->set_current_index(0);
