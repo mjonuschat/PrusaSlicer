@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: AmazonBasics TPU
 condition: tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
 id: AmazonBasics TPU

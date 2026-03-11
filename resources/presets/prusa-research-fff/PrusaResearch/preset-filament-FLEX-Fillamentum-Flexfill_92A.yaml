@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: Fillamentum Flexfill 92A
 id: Fillamentum Flexfill 92A
 values:

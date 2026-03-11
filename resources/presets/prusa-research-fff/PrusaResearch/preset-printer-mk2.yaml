@@ -1,5 +1,31 @@
+id: '*default_print_MK2*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: fkTwCLHmTxiOC9QVZjaKdg
+  values:
+    default_print: 0.10mm DETAIL
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: LiECIp1lS8GxVmYtQKotXA
+  values:
+    default_print: 0.15mm OPTIMAL
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: D/YrNZQBQACOBC2pWj1FZw
+  values:
+    default_print: 0.30mm DETAIL
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: mkvdzD6qRo2UzcBY2QUBYA
+  values:
+    default_print: 0.40mm QUALITY
+---
 id: tXDBr9cuTT2D62ElgojUsQ
 kind: printer
+inherits:
+- '*default_print_MK2*'
 variants:
 - condition: printer.base_model=~/(MK2|MK2.5)/
   id: zuuDtizRS7eV2VFINYdWZQ

@@ -307,7 +307,6 @@ variants:
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4 HF0.6'
       id: j7gGjXCgSAWmy+7WG9y+eg
       values:
         filament_max_volumetric_speed: 30
@@ -606,7 +605,6 @@ variants:
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
-      name: '*PET* @MK3 0.25 MMU'
       id: QItKbcMBRPSRt2z+J+i9mw
       values:
         temperature: 230
@@ -614,7 +612,6 @@ variants:
         filament_ramming_parameters: 200 140 4.70968 4.74194 4.77419 4.80645 4.83871 4.87097 4.90323 5 5.25806 5.67742 6.29032 7.06452 7.83871 8.3871| 0.05 4.72901 0.45 4.73545 0.95 4.83226 1.45 4.88067 1.95 5.05483 2.45 5.93553 2.95 7.53556 3.45 8.6323 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK3 0.4'
     id: mXfontX5TiufoIAIz/Sseg
     values:
       slowdown_below_layer_time: 12
@@ -622,14 +619,12 @@ variants:
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
-      name: '*PET* @MK3 0.4 MMU'
       id: 6InsJGeSQCO1u44OESEXLA
       values:
         temperature: 230
         filament_max_volumetric_speed: 7
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK3 0.6'
     id: CyEPYXyVSJWBefNY/gs4yQ
     values:
       filament_max_volumetric_speed: 15
@@ -638,14 +633,12 @@ variants:
     variants:
     # MK3 0.6 MMU
     - condition: tool.nozzle_high_flow and feeder.base_model=~/.*MMU.*/
-      name: '*PET* @MK3 0.6 MMU'
       id: c7s0q0o7Roaj5zzD/0bUqQ
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK3 0.8'
     id: 0z6UL7+2SFGYKvWDHFg90A
     values:
       filament_max_volumetric_speed: 20
@@ -675,21 +668,18 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK2 0.25'
     id: 7+cohM66Qw+862CJ+WjwNw
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 45
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK2 0.4'
     id: 4q2cpO9FQMu65fWQeS0zew
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 45
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK2 0.6'
     id: caBrTzieQQS+33x6WP5Oqg
     values:
       filament_max_volumetric_speed: 15
@@ -717,21 +707,18 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK2MMU1 0.25'
     id: QgQPyw0hQs+CgKayKiA5RQ
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 200
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK2MMU1 0.4'
     id: Chvjf1wnQymX/mwWRTb6xg
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 200
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK2MMU1 0.6'
     id: amgdRCuITt6LLMyToivm8g
     values:
       filament_max_volumetric_speed: 12

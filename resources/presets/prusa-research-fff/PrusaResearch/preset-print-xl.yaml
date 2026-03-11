@@ -1,15 +1,66 @@
+id: '*default_toolprint_XL*'
+kind: print
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: cMCnS4t2QCWTvxlnbMGo8Q
+  values:
+    default_tool_print: 0.12mm SPEED
+# 0.3
+- condition: tool.nozzle_diameter == 0.3
+  id: mLl+4UDuRGCciJSG4E6HBg
+  values:
+    default_tool_print: 0.15mm SPEED
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: zhABwcCcT1iupy2QQjzE6g
+  values:
+    default_tool_print: 0.20mm SPEED
+# 0.5
+- condition: tool.nozzle_diameter == 0.5
+  id: H0YA1RdFQwihT9+ILP9aAw
+  values:
+    default_tool_print: 0.20mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: YTzWecejTZSqzi6Q47s3KQ
+    values:
+      default_tool_print: 0.25mm SPEED
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: 3oLhiaJSSySShtsV+WJXbw
+  values:
+    default_tool_print: 0.25mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: 07tBwR0GS+yF20O0XV7C0Q
+    values:
+      default_tool_print: 0.25mm SPEED
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: 0JkSh78UQJOmicMylfcGYg
+  values:
+    default_tool_print: 0.40mm QUALITY
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: 4X8MP2mFREeNmr1bd2xOyA
+    values:
+      default_tool_print: 0.40mm SPEED
+---
 id: 9XBedIhZSsabd2+hKKUPDw
 kind: print
 inherits:
 - '*common*'
 - '*XL_common_retract*'
 - '*XL_common_toolchange_retract*'
+- '*default_toolprint_XL*'
 match_mode: all_matches
 variants:
 ## XL
 - condition: printer.base_model == "XL"
   id: vsqSBMFOTK6R5f3DKv9q+A
   values:
+    default_material: Prusament PLA
     standby_temperature_delta: -110
     ooze_prevention: true
     wipe_tower_brim_width: 3

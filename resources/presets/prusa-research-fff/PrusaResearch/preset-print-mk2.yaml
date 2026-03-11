@@ -1,5 +1,7 @@
 kind: print
 id: '*common MK2*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.model == "MK2S" and feeder.base_model != "MMU1"
   id: K+7bXZvmTA+7skvu2+pMIg

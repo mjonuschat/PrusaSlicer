@@ -1,5 +1,56 @@
+id: '*default_print_C1*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: DgCuKMSXSC+htOG6fdBLJQ
+  values:
+    default_print: 0.12mm SPEED
+# 0.3
+- condition: tool.nozzle_diameter == 0.3
+  id: GPMHoto5RIiILY4qtnDREw
+  values:
+    default_print: 0.15mm SPEED
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: zdvCnBumRtKjByWaWZdcmQ
+  values:
+    default_print: 0.20mm BALANCED
+# 0.5
+- condition: tool.nozzle_diameter == 0.5
+  id: c3pYUGTvT8KQrFZLrwnfVA
+  values:
+    default_print: 0.20mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: Me+Hi1LjQYefoc+Yf7syTA
+    values:
+      default_print: 0.25mm BALANCED
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: CUM0kNoOQhe5aHewrVFk6Q
+  values:
+    default_print: 0.25mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: IZqu7yQaTkWEk+qZtaJNeQ
+    values:
+      default_print: 0.25mm BALANCED
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: K9dk6bTiRM+uFg/6bdrQjA
+  values:
+    default_print: 0.40mm QUALITY
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: +1Ra5xiKQ9C1fIlyz+mN/Q
+    values:
+      default_print: 0.40mm SPEED
+---
 id: 30Cuhu/1Tcyc37Ia6EsFBA
 kind: printer
+inherits:
+- '*default_print_C1*'
 variants:
 - condition: printer.model == "COREONE"
   name: Prusa CORE One & CORE One+
@@ -191,8 +242,11 @@ variants:
         M708 A0x0b X5   ; extra load distance
         M708 A0x0d X140 ; unload feeedrate
         M708 A0x11 X140 ; load feedrate
-        M708 A0x14 X20  ; slow feedrate
+        M708 A0x14 X50  ; slow feedrate
         M708 A0x1e X12  ; Pulley current to ~200mA
+        M708 A0x12 X90  ; selector feedrate mm/s
+        M708 A0x13 X400 ; idler feedrate deg/s
+        M708 A0x0f X400 ; selector acceleration mm/s2
 
         M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -305,9 +359,9 @@ variants:
         M572 S0 ; reset PA
         M84 X Y E ; disable motors
         ; max_layer_z = [max_layer_z]
-    variants:
-    - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
-      id: 152LA/JPTNSdnOYOh/AwoA
-      values:
-        machine_max_jerk_x: [8, 8]
-        machine_max_jerk_y: [8, 8]
+    # variants:
+    # - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
+      # id: 152LA/JPTNSdnOYOh/AwoA
+      # values:
+        # machine_max_jerk_x: [8, 8]
+        # machine_max_jerk_y: [8, 8]

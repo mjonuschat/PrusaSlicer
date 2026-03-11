@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: NinjaTek NinjaFlex TPU
 condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
 id: NinjaTek NinjaFlex TPU

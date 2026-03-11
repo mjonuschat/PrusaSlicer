@@ -13,12 +13,30 @@ features:
     planetary_gearbox:
       default: true
       user_editable: false
+    supports_025_nozzle:
+      default: true
     supports_03_nozzle:
+      default: true
+    supports_04_nozzle:
       default: true
     supports_05_nozzle:
       default: true
+    supports_06_nozzle:
+      default: true
     supports_08_nozzle:
       default: true
+    supports_mmu_025_nozzle:
+      default: false
+    supports_mmu_03_nozzle:
+      default: false
+    supports_mmu_04_nozzle:
+      default: false
+    supports_mmu_05_nozzle:
+      default: false
+    supports_mmu_06_nozzle:
+      default: false
+    supports_mmu_08_nozzle:
+      default: false
     bed_segments_x:
       default: 1
     bed_segments_y:
@@ -81,6 +99,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: coreonel_bed.stl
   bed_texture: coreonel.svg
@@ -96,6 +118,10 @@ model:
 tool_count: 1
 features:
   input_shaper:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
     default: true
 visual:
   bed_model: coreone_bed.stl
@@ -113,6 +139,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: coreone_bed.stl
   bed_texture: coreoneoak.svg
@@ -129,6 +159,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk4_bed.stl
   bed_texture: mk4.svg
@@ -144,6 +178,10 @@ model:
 tool_count: 1
 features:
   input_shaper:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
     default: true
 visual:
   bed_model: mk4_bed.stl
@@ -162,6 +200,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk4_bed.stl
   bed_texture: mk39.svg
@@ -177,6 +219,10 @@ model:
 tool_count: 1
 features:
   input_shaper:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
     default: true
 visual:
   bed_model: mk4_bed.stl
@@ -195,6 +241,12 @@ features:
   supports_high_flow_nozzle:
     default: false
   input_shaper:
+    default: true
+  supports_mmu_025_nozzle:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
     default: true
 visual:
   bed_model: mk3_bed.stl
@@ -219,6 +271,12 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+  supports_mmu_025_nozzle:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
@@ -241,6 +299,12 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+  supports_mmu_025_nozzle:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
@@ -287,6 +351,12 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+  supports_mmu_025_nozzle:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
@@ -309,6 +379,12 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+  supports_mmu_025_nozzle:
+    default: true
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
@@ -333,6 +409,10 @@ features:
     default: false
   supports_08_nozzle:
     default: false
+  supports_mmu_04_nozzle:
+    default: true
+  supports_mmu_06_nozzle:
+    default: true
 visual:
   bed_model: mk2_bed.stl
   bed_texture: mk2.svg
@@ -366,6 +446,7 @@ kind: tool
 technology: FFF
 id: '0.4'
 name: '0.4'
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_04_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_04_nozzle)
 features:
   nozzle_diameter:
     default: 0.4
@@ -374,6 +455,7 @@ kind: tool
 technology: FFF
 id: '0.25'
 name: '0.25'
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_025_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_025_nozzle)
 features:
   nozzle_diameter:
     default: 0.25
@@ -382,7 +464,7 @@ kind: tool
 technology: FFF
 id: '0.3'
 name: '0.3'
-condition: printer.supports_03_nozzle
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_03_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_03_nozzle)
 features:
   nozzle_diameter:
     default: 0.3
@@ -391,7 +473,7 @@ kind: tool
 technology: FFF
 id: '0.5'
 name: '0.5'
-condition: printer.supports_05_nozzle
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_05_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_05_nozzle)
 features:
   nozzle_diameter:
     default: 0.5
@@ -400,6 +482,7 @@ kind: tool
 technology: FFF
 id: '0.6'
 name: '0.6'
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_06_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_06_nozzle)
 features:
   nozzle_diameter:
     default: 0.6
@@ -408,7 +491,7 @@ kind: tool
 technology: FFF
 id: '0.8'
 name: '0.8'
-condition: printer.supports_08_nozzle
+condition: (feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_08_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_08_nozzle)
 features:
   nozzle_diameter:
     default: 0.8
@@ -417,7 +500,7 @@ kind: tool
 technology: FFF
 id: 0.4HF
 name: 0.4 HF
-condition: printer.supports_high_flow_nozzle
+condition: printer.supports_high_flow_nozzle and ((feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_04_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_04_nozzle))
 features:
   nozzle_high_flow:
     default: true
@@ -428,7 +511,7 @@ kind: tool
 technology: FFF
 id: 0.5HF
 name: 0.5 HF
-condition: printer.supports_high_flow_nozzle
+condition: printer.supports_high_flow_nozzle and ((feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_05_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_05_nozzle))
 features:
   nozzle_high_flow:
     default: true
@@ -439,7 +522,7 @@ kind: tool
 technology: FFF
 id: 0.6HF
 name: 0.6 HF
-condition: printer.supports_high_flow_nozzle
+condition: printer.supports_high_flow_nozzle and ((feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_06_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_06_nozzle))
 features:
   nozzle_high_flow:
     default: true
@@ -450,7 +533,7 @@ kind: tool
 technology: FFF
 id: 0.8HF
 name: 0.8 HF
-condition: printer.supports_high_flow_nozzle
+condition: printer.supports_high_flow_nozzle and ((feeder.base_model!~/.*MMU.*/ or feeder.single_mode) and printer.supports_08_nozzle or (feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode and printer.supports_mmu_08_nozzle))
 features:
   nozzle_high_flow:
     default: true
@@ -641,7 +724,7 @@ name: Signature Oak
 printer: COREONEOAK
 legacy_printer_model: [COREONEOAK]
 tools:
-- tool: 0.4HF
+- tool: '0.4HF'
 sheet: satin
 ---
 kind: printer_config
@@ -824,7 +907,7 @@ sheet: pei_smooth
 kind: printer_config
 id: mk2.5smmu2s
 name: MK2.5S MMU2S
-printer: MK2S
+printer: MK2.5S
 legacy_printer_model: [MK2.5SMMU2S]
 tools:
   - tool: '0.4'
@@ -840,16 +923,6 @@ printer: MK2.5
 legacy_printer_model: [MK2.5]
 tools:
 - tool: '0.4'
-sheet: pei_smooth
----
-#MK2.5MMU2
-kind: printer_config
-id: mk2.5mmu2
-name: MK2.5 MMU2S
-printer: MK2.5
-legacy_printer_model: [MK2.5MMU2]
-tools:
-  - tool: '0.4'
 sheet: pei_smooth
 ---
 kind: printer_config

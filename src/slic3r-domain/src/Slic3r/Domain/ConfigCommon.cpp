@@ -236,6 +236,19 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->height = 13;
     def->init_fn = init_with("");
 
+    def = defs.add("default_print", typeid(std::string));
+    def->location = printer;
+    def->label = L("Default Print Preset");
+    def->category = ConfigItemDef::Category::Hidden;
+    def->tooltip = L("Name or ID of print preset to use as default when this printer preset is selected.");
+    def->init_fn = init_with("");
+
+    def = defs.add("default_material", typeid(std::string));
+    def->location = print;
+    def->label = L("Default Material Preset");
+    def->category = ConfigItemDef::Category::Hidden;
+    def->tooltip = L("Name or ID of material preset to use as default when this print preset is selected.");
+    def->init_fn = init_with("");
 }
 
 }

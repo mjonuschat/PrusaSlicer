@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: Overture High Speed TPU
 id: Overture High Speed TPU
 values:

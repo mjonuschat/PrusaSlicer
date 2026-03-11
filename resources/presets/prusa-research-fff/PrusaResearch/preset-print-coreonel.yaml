@@ -1,5 +1,7 @@
 kind: print
 id: '*common COREONEL*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.model == "COREONEL"
   id: uCTI5HmoSFar4ZX010v06A
@@ -990,7 +992,7 @@ variants:
             gap_fill_speed: 60
             top_solid_infill_acceleration: 1500
             bridge_acceleration: 1500
-            top_solid_infill_speed: 60            
+            top_solid_infill_speed: 60
             perimeter_speed: 70
             external_perimeter_speed: 50
             small_perimeter_speed: 50
@@ -2088,7 +2090,7 @@ variants:
         - name: 0.20mm SOLUBLE INTERFACE @COREONEL 0.4
           id: U8SPxrZJSTW9x0so5KGHUA
           values:
-            support_material_interface_layers: 3              
+            support_material_interface_layers: 3
             bottom_solid_layers: 3
             top_solid_layers: 5
             raft_contact_distance: 0.2

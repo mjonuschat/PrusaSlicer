@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: NinjaTek Cheetah TPU
 id: NinjaTek Cheetah TPU
 values:

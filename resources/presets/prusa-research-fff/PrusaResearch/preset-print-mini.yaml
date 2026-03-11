@@ -1,5 +1,7 @@
 kind: print
 id: '*common MINI*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.model == "MINI"
   id: BhKWPNNQT3i/e8H1nswvIg

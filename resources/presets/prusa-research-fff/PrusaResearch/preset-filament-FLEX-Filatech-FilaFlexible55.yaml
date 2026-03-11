@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPE
 name: Filatech FilaFlexible55
 condition: tool.nozzle_diameter >= 0.4 and printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/ and feeder.base_model!~/.*MMU.*/
 id: Filatech FilaFlexible55

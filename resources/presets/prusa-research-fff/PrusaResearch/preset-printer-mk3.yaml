@@ -1,6 +1,31 @@
+id: '*default_print_MK3*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: wMl2YHfDR8u6ltSwNDj8yA
+  values:
+    default_print: 0.10mm QUALITY
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: SfpkfAKfSamDVTs4gZ5yHA
+  values:
+    default_print: 0.15mm QUALITY
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: xU7GyyOcRAqHwEfW+a6s0w
+  values:
+    default_print: 0.30mm QUALITY
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: 4/BZtmtKRpqbueUAd8x0DQ
+  values:
+    default_print: 0.40mm QUALITY
+---
 id: LFISBxvNQ2uvuZ7SOUV8sA
 kind: printer
 inherits:
+- '*default_print_MK3*'
 - '*MK3_nozzle_variant*'
 variants:
 - condition: printer.base_model == "MK3"
@@ -72,7 +97,7 @@ variants:
     multimaterial_purging: '140'
   variants:
   - condition: printer.model == "MK3S"
-    name: 'Original Prusa i3 MK3S & MK3S+'
+    name: Original Prusa i3 MK3S & MK3S+
     id: HyXD2z5/T6yMV4ae1jqjOQ
     variants:
     #MMU2S

@@ -1,5 +1,31 @@
+id: '*default_print_MINI*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: ObXmKx2aRHqrBZ6mjrOr4w
+  values:
+    default_print: 0.10mm QUALITY
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: K46jeuFJRIO6l9WDd9Ik/w
+  values:
+    default_print: 0.15mm QUALITY
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: P0U2XmgQRi28HgWTuxwUhg
+  values:
+    default_print: 0.30mm QUALITY
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: FHQcgX7nR7a3fWmaaozdqg
+  values:
+    default_print: 0.40mm QUALITY
+---
 id: SIQcB/YrR1S9QaXLihcl1Q
 kind: printer
+inherits:
+- '*default_print_MINI*'
 variants:
 - condition: printer.base_model == "MINI"
   name: Original Prusa MINI

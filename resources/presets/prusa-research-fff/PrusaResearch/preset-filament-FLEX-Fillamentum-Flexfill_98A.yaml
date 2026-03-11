@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: Fillamentum Flexfill 98A
 id: Fillamentum Flexfill 98A
 values:
@@ -27,13 +29,13 @@ variants:
   - condition: tool.nozzle_diameter == 0.4
     id: pBK2xFQ7SJquTkz81o2UZQ
     values:
-      filament_max_volumetric_speed: 2.5
+      filament_max_volumetric_speed: 2
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
       id: TMBj6307TiCa2mUAhRA2Mw
       values:
-        filament_max_volumetric_speed: 2.5
+        filament_max_volumetric_speed: 2
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
     id: 3jY8VsyqQEqMh49SF8ua5w
@@ -78,8 +80,8 @@ variants:
   - condition: tool.nozzle_diameter == 0.4
     id: pW8WJbdHQzmxEi5/ajpfNw
     values:
-      filament_max_volumetric_speed: 2.5
-      filament_multitool_ramming_flow: 2.5
+      filament_max_volumetric_speed: 2
+      filament_multitool_ramming_flow: 2
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
     id: Yy08NqEjR6SrR4nCi0G9yQ
@@ -106,7 +108,7 @@ variants:
   - condition: tool.nozzle_diameter == 0.4
     id: E0FPix1vSv6FUktNeGkF8g
     values:
-      filament_max_volumetric_speed: 3
+      filament_max_volumetric_speed: 2.5
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
     id: zSlxWtUXS7eXv3K1lOAcZA
@@ -133,7 +135,7 @@ variants:
   - condition: tool.nozzle_diameter == 0.4
     id: GeNKTguvSayLpaPa42du+A
     values:
-      filament_max_volumetric_speed: 3
+      filament_max_volumetric_speed: 2.5
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
     id: 6w9oLzL2SveiqcBtnsDvyA

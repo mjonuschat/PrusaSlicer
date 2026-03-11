@@ -1,5 +1,7 @@
 kind: print
 id: '*common MK4*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.base_model == "MK4"
   id: VgGuCDQESXSwzJFhZ24NRg

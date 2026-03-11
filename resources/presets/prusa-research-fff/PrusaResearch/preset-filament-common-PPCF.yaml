@@ -45,8 +45,8 @@ values:
   filament_stamping_loading_speed: 26.5
   filament_toolchange_delay: 0
   filament_type: PP
-  filament_unloading_speed: 100
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_vendor: Generic
   full_fan_speed_layer: 5
   idle_temperature: 150

@@ -1,8 +1,38 @@
+id: '*default_print_XL*'
+kind: printer
+variants:
+- condition: tool.nozzle_diameter == 0.25
+  id: fyAT2j1xSAWRnagL9vTe5A
+  values:
+    default_print: 0.12mm
+- condition: tool.nozzle_diameter == 0.3
+  id: KobI49aVRFaMg10IZU3Gqw
+  values:
+    default_print: 0.15mm
+- condition: tool.nozzle_diameter == 0.4
+  id: sIW6ekFdR7m6xQz5tzUZQw
+  values:
+    default_print: 0.20mm
+- condition: tool.nozzle_diameter == 0.5
+  id: 8f6HDALLTLCrZpaDv5Wuiw
+  values:
+    default_print: 0.20mm
+- condition: tool.nozzle_diameter == 0.6
+  id: anpzaIDTRF+Jrnx64j70Gg
+  values:
+    default_print: 0.25mm
+- condition: tool.nozzle_diameter == 0.8
+  id: ExIKQdWYTkeNcjKcHPKD9w
+  values:
+    default_print: 0.40mm
+---
 id: MCpL27/HRImB8Xc4J9ax+w
 kind: printer
 variants:
 - condition: printer.base_model == "XL"
   id: Ua5zKfZdQM2CmA/vnpbCNw
+  inherits:
+  - '*default_print_XL*'
   values:
     bed_shape:
     - '0x0'

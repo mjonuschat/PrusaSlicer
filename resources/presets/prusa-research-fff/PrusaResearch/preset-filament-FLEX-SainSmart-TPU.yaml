@@ -1,6 +1,8 @@
 kind: filament
 inherits:
 - '*FLEX*'
+features:
+  $.type: TPU
 name: SainSmart TPU
 id: SainSmart TPU
 values:

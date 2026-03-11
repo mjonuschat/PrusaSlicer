@@ -536,7 +536,7 @@ void PresetInteractor::initialize_config_container_with_default(Domain::ConfigCo
     const PresetItem p  = it == std::ranges::end(filtered_range) ? items.front() : *it;
 
     InvokeLaterBag bag;
-    fill_config_container_with_selected_preset(cc, p.hw_printer_config_id, p.id, false, bag);
+    fill_config_container_with_selected_preset(cc, p.hw_printer_config_id, p.id, true, bag);
 }
 
 void PresetInteractor::initialize_config_container_with_selected(Domain::ConfigContainer& cc)
@@ -896,6 +896,41 @@ void PresetInteractor::fill_config_container_with_selected_preset(
 
 namespace {
 
+template <typename Fdm, typename Sla>
+std::string get_string(const Domain::Preset::EvaluatedPreset<Fdm, Sla>& p, const std::string& item_name)
+{
+    const auto* item = p.config_box().items.find(item_name);
+    if (item == nullptr)
+        return "";
+    return item->value().template get<std::string>();
+}
+
+std::optional<size_t>
+find_preferred(const std::vector<PresetItem>& items, const std::string& preferred)
+{
+    if (!preferred.empty() && !items.empty()) {
+        auto it = std::ranges::find_if(
+            items,
+            [&preferred](const PresetItem& item) { return item.id == preferred; }
+        );
+        if (it != items.end()) {
+            auto ret = std::distance(items.begin(), it);
+            return ret;
+        }
+
+        it = std::ranges::find_if(
+            items,
+            [&preferred](const PresetItem& item) { return item.name == preferred; }
+        );
+        if (it != items.end()) {
+            auto ret = std::distance(items.begin(), it);
+            return ret;
+        }
+    }
+
+    return std::nullopt;
+}
+
 void
 set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, size_t selected_index)
 {
@@ -910,7 +945,8 @@ std::optional<size_t> set_items(
     const V& source,
     const std::string& hw_config_id,
     const std::string& hw_config_name,
-    const Domain::Preset::EvaluatedPreset<TF, TS>& selected
+    const Domain::Preset::EvaluatedPreset<TF, TS>& selected,
+    const std::optional<std::string>& preferred
 )
 {
     std::optional<std::size_t> selected_index;
@@ -930,9 +966,20 @@ std::optional<size_t> set_items(
         idx++;
     }
 
-    unsigned long selected_index_val = selected_index.value_or(
-        selected_by_name_index.value_or(items.empty() ? Domain::INVALID_ID : 0)
-    );
+    size_t selected_index_val = items.empty() ? Domain::INVALID_ID : 0;
+    const bool use_preferred  = preferred.has_value()
+        && (
+            // is a new project,
+            selected.id.empty()
+            // or we don't find preset with same name as the old one
+            || (!selected_index.has_value() && !selected_by_name_index.has_value())
+            );
+    if (use_preferred) {
+        selected_index_val = find_preferred(items, preferred.value()).value_or(selected_index_val);
+    } else {
+        selected_index_val =
+            selected_index.value_or(selected_by_name_index.value_or(selected_index_val));
+    }
     set_items(dest, std::move(items), selected_index_val);
     return selected_index.has_value() ? std::nullopt : std::optional{selected_index_val};
 }
@@ -1028,7 +1075,8 @@ void PresetInteractor::fill_print_presets(
         ),
         hw_config_id,
         hw_config.name,
-        selected_preset.print
+        selected_preset.print,
+        get_string(selected_preset.printer, "default_print")
     );
     const auto& item = m_print_presets.items().at(
         changed_selection_index.value_or(m_print_presets.selected_index())
@@ -1067,8 +1115,14 @@ void PresetInteractor::fill_tools_presets(const Domain::Preset::SelectedPreset& 
                 tool_index
             );
 
-            auto changes_selected_index =
-                set_items(items, view, hw_config.id, hw_config.name, selected_preset.tools[tool_index]);
+            auto changes_selected_index = set_items(
+                items,
+                view,
+                hw_config.id,
+                hw_config.name,
+                selected_preset.tools[tool_index],
+                get_string(selected_preset.print, "default_tool_print")
+            );
 
             tools.emplace_back(std::move(items));
             changed_selected_indices.emplace_back(changes_selected_index);
@@ -1107,8 +1161,14 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
             selected_preset.print.id,
             slot_index
         );
-        auto changed_selected_index =
-            set_items(items, view, hw_config.id, hw_config.name, selected_preset.materials[slot_index]);
+        auto changed_selected_index = set_items(
+            items,
+            view,
+            hw_config.id,
+            hw_config.name,
+            selected_preset.materials[slot_index],
+            get_string(selected_preset.print, "default_material")
+        );
         changed_selected_indices.emplace_back(changed_selected_index);
         materials.emplace_back(std::move(items));
     }

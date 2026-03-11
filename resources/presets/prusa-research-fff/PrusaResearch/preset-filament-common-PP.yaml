@@ -49,8 +49,8 @@ values:
   travel_ramping_lift:
   travel_slope:
   filament_type: PP
-  filament_unloading_speed: 90
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_vendor: Generic
   wipe: false
   full_fan_speed_layer: 0

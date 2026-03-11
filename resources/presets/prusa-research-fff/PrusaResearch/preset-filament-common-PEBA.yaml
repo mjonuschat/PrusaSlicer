@@ -42,8 +42,8 @@ values:
   wipe: 1
   retract_before_wipe: 20%
   filament_type: PEBA
-  filament_unloading_speed: 100
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_vendor: Generic
   first_layer_bed_temperature: 85
   first_layer_temperature: 250

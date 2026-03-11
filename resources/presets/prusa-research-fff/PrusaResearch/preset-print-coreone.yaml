@@ -1,5 +1,7 @@
 kind: print
 id: '*common COREONE*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.model=~/(COREONE|COREONEOAK)/
   id: N+crXA1SSmC9VuVxwSiJxQ

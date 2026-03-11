@@ -1,5 +1,7 @@
 kind: print
 id: '*common MK3*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.base_model == "MK3"
   id: g3JAOEG8SUiu31zEyaXu1g

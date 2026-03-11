@@ -1,5 +1,56 @@
+id: '*default_print_MK4*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: potugjeVSFOmtopS96Q9aw
+  values:
+    default_print: 0.12mm SPEED
+# 0.3
+- condition: tool.nozzle_diameter == 0.3
+  id: FtD5mJjUQoqk5pIYLF9Xfw
+  values:
+    default_print: 0.15mm SPEED
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: ue3ClFsSS1yEtcLlRZXx5g
+  values:
+    default_print: 0.20mm SPEED
+# 0.5
+- condition: tool.nozzle_diameter == 0.5
+  id: GF09izfUTw2ui5+eCHRg/g
+  values:
+    default_print: 0.20mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: XXluuD3sRnGks5ko8f+L8w
+    values:
+      default_print: 0.25mm SPEED
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: ZUM3v1/zR/WTq2dGnDn1kA
+  values:
+    default_print: 0.25mm SPEED
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: L33KGB0qSFyErE+zb7KsEw
+    values:
+      default_print: 0.25mm SPEED
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: hVWZVHBQQMqJHPG6Leqydw
+  values:
+    default_print: 0.40mm QUALITY
+  variants:
+  - condition: tool.nozzle_high_flow
+    id: S8HoIvmNR46eLCEMkHN9NQ
+    values:
+      default_print: 0.40mm SPEED
+---
 id: iTdBKPPOQeaxwd5slYDppg
 kind: printer
+inherits:
+- '*default_print_MK4*'
 variants:
 - condition: printer.base_model == "MK4"
   id: 2SjSwcEZSUKeNdw+2IkE5w
@@ -177,8 +228,11 @@ variants:
           M708 A0x0b X5   ; extra load distance
           M708 A0x0d X140 ; unload feeedrate
           M708 A0x11 X140 ; load feedrate
-          M708 A0x14 X20  ; slow feedrate
+          M708 A0x14 X50  ; slow feedrate
           M708 A0x1e X12  ; Pulley current to ~200mA
+          M708 A0x12 X90  ; selector feedrate mm/s
+          M708 A0x13 X400 ; idler feedrate deg/s
+          M708 A0x0f X400 ; selector acceleration mm/s2
 
           M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -371,8 +425,11 @@ variants:
           M708 A0x0b X5   ; extra load distance
           M708 A0x0d X140 ; unload feeedrate
           M708 A0x11 X140 ; load feedrate
-          M708 A0x14 X20  ; slow feedrate
+          M708 A0x14 X50  ; slow feedrate
           M708 A0x1e X12  ; Pulley current to ~200mA
+          M708 A0x12 X90  ; selector feedrate mm/s
+          M708 A0x13 X400 ; idler feedrate deg/s
+          M708 A0x0f X400 ; selector acceleration mm/s2
 
           M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -560,8 +617,11 @@ variants:
           M708 A0x0b X5   ; extra load distance
           M708 A0x0d X140 ; unload feeedrate
           M708 A0x11 X140 ; load feedrate
-          M708 A0x14 X20  ; slow feedrate
+          M708 A0x14 X50  ; slow feedrate
           M708 A0x1e X12  ; Pulley current to ~200mA
+          M708 A0x12 X90  ; selector feedrate mm/s
+          M708 A0x13 X400 ; idler feedrate deg/s
+          M708 A0x0f X400 ; selector acceleration mm/s2
 
           M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -749,8 +809,11 @@ variants:
           M708 A0x0b X5   ; extra load distance
           M708 A0x0d X140 ; unload feeedrate
           M708 A0x11 X140 ; load feedrate
-          M708 A0x14 X20  ; slow feedrate
+          M708 A0x14 X50  ; slow feedrate
           M708 A0x1e X12  ; Pulley current to ~200mA
+          M708 A0x12 X90  ; selector feedrate mm/s
+          M708 A0x13 X400 ; idler feedrate deg/s
+          M708 A0x0f X400 ; selector acceleration mm/s2
 
           M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 

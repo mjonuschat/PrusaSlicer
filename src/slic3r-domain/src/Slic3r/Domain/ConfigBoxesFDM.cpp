@@ -4844,6 +4844,14 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->full_width = true;
     def->height = 12;
     def->init_fn = init_with("");
+
+    def = defs.add("default_tool_print", typeid(std::string));
+    def->location = Print;
+    def->label = L("Default Tool Print Preset");
+    def->category = ConfigItemDef::Category::Hidden;
+    def->tooltip = L("Name or ID of tool print preset to use as default when this print preset is selected.");
+    def->init_fn = init_with("");
+
 }
 
 } // namespace Slic3r::Domain

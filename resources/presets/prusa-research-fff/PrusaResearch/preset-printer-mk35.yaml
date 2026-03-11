@@ -1,5 +1,41 @@
+id: '*default_print_MK35*'
+kind: printer
+variants:
+# 0.25
+- condition: tool.nozzle_diameter == 0.25
+  id: nLSXOjl7RW60FrWbogERvw
+  values:
+    default_print: 0.12mm SPEED
+# 0.3
+- condition: tool.nozzle_diameter == 0.3
+  id: kHTL36qUQJuho6qsoEQGww
+  values:
+    default_print: 0.15mm SPEED
+# 0.4
+- condition: tool.nozzle_diameter == 0.4
+  id: YkJXOFYmSYWEyk9d91Cavg
+  values:
+    default_print: 0.20mm BALANCED
+# 0.5
+- condition: tool.nozzle_diameter == 0.5
+  id: mRlPXk7RQEG+DQ+vypS4Kw
+  values:
+    default_print: 0.20mm SPEED
+# 0.6
+- condition: tool.nozzle_diameter == 0.6
+  id: NNN0RpaNQPqYGmcZ2TMePw
+  values:
+    default_print: 0.25mm SPEED
+# 0.8
+- condition: tool.nozzle_diameter == 0.8
+  id: y/y6zIf/S3+d5MAl9UYftg
+  values:
+    default_print: 0.40mm QUALITY
+---
 id: PGPofKx2RmaV17VXi9flMA
 kind: printer
+inherits:
+- '*default_print_MK35*'
 variants:
 - condition: printer.model == "MK3.5"
   name: Original Prusa MK3.5 & MK3.5S

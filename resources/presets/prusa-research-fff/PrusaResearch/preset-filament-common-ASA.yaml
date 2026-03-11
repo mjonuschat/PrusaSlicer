@@ -43,8 +43,8 @@ values:
   # travel_slope: 1
   # retract_length: 0.8
   filament_type: ASA
-  filament_unloading_speed: 100
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_vendor: Generic
   full_fan_speed_layer: 0
   max_fan_speed: 20

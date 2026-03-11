@@ -4,7 +4,7 @@ inherits:
 - '*PET*'
 features:
   $.type: CPE
-condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and feeder.model!~/(MMU2S|MMU3_8bit)/
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and ! (feeder.model=~/(MMU2S|MMU3_8bit)/ and ! feeder.single_mode)
 id: '*CPE*'
 values:
   first_layer_temperature: 265
@@ -68,7 +68,7 @@ variants:
       slowdown_below_layer_time: 15
       fan_below_layer_time: 30
       pressure_advance_value: 0.032
-      filament_infill_max_crossing_speed: 140
+      filament_infill_max_crossing_speed: 120
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
@@ -79,6 +79,7 @@ variants:
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
         pressure_advance_enable: true
         pressure_advance_value: 0.033
+        filament_infill_max_crossing_speed: 140
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
     name: '*CPE* @COREONE 0.8'
@@ -176,7 +177,7 @@ variants:
       filament_max_volumetric_speed: 17
       slowdown_below_layer_time: 15
       pressure_advance_value: 0.032
-      filament_infill_max_crossing_speed: 140
+      filament_infill_max_crossing_speed: 120
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
@@ -185,6 +186,7 @@ variants:
       values:
         filament_max_volumetric_speed: 27
         pressure_advance_value: 0.033
+        filament_infill_max_crossing_speed: 140
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     name: '*CPE* @XL 0.8'
@@ -280,7 +282,7 @@ variants:
       slowdown_below_layer_time: 14
       fan_below_layer_time: 20
       pressure_advance_value: 0.032
-      filament_infill_max_crossing_speed: 140
+      filament_infill_max_crossing_speed: 120
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
@@ -290,6 +292,7 @@ variants:
         filament_max_volumetric_speed: 27
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
         pressure_advance_value: 0.033
+        filament_infill_max_crossing_speed: 140
         # first_layer_# temperature: 250
         # temperature: 250
   # MK4 0.8
@@ -392,7 +395,7 @@ variants:
       fan_below_layer_time: 22
       bridge_fan_speed: 45
       pressure_advance_value: 0.032
-      filament_infill_max_crossing_speed: 140
+      filament_infill_max_crossing_speed: 120
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
@@ -402,6 +405,7 @@ variants:
         filament_max_volumetric_speed: 27
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
         pressure_advance_value: 0.033
+        filament_infill_max_crossing_speed: 140
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
     name: '*CPE* @MK4S 0.8'

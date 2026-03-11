@@ -39,8 +39,8 @@ values:
   filament_minimal_purge_on_wipe_tower: 35
   filament_loading_speed: 10
   filament_loading_speed_start: 50
-  filament_unloading_speed: 100
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_toolchange_delay: 0
   filament_cooling_moves: 3
   filament_cooling_final_speed: 3.5

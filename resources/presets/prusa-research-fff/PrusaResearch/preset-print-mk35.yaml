@@ -1,5 +1,7 @@
 kind: print
 id: '*common MK35*'
+values:
+  default_material: Prusament PLA
 variants:
 - condition: printer.model == "MK3.5"
   id: GGyheVZZTnyfJEDEdyNbgg

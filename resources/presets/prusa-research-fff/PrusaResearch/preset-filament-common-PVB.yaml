@@ -39,8 +39,8 @@ values:
   travel_ramping_lift: 1
   travel_slope: 1
   filament_type: PVB
-  filament_unloading_speed: 100
-  filament_unloading_speed_start: 100
+  filament_unloading_speed: 60
+  filament_unloading_speed_start: 60
   filament_vendor: Prusa Polymers
   first_layer_temperature: 220
   full_fan_speed_layer: 3
