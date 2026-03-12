@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/JsonValueJson.hpp"
 #include "Slic3r/Biz/Config/FeatureStructurizer.hpp"
 #include "Slic3r/Biz/Config/ConfigJson.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "fmt/format.h"
@@ -35,6 +36,21 @@ using PartiallyParsedFeederConfigs   = std::map<std::string, HwFeederConfig>;
 using PartiallyParsedMaterialConfigs = std::map<std::string, MaterialConfig>;
 
 using Slic3r::Domain::Preset::Address;
+
+uint8_t address_from_legacy_public(uint8_t address)
+{
+    ASSERT(address > 0);
+    return address - 1;
+}
+
+Address address_from_legacy_public(const Address& address)
+{
+    Address ret;
+    for (const auto component: address)
+        ret.push_back(address_from_legacy_public(component));
+    return ret;
+
+}
 
 std::string to_string(const Address& v)
 {
@@ -122,6 +138,24 @@ const KeyDesc MATERIAL_KEYS_TO_EXTRACT[] = {
     {"material_color"},
 };
 
+template <typename E>
+std::string enum_to_json(E val)
+{
+    return Slic3r::Biz::Algorithms::to_lower_ascii(magic_enum::enum_name(val));
+}
+
+template <typename E>
+std::optional<E> enum_from_json(std::string_view val)
+{
+    return magic_enum::enum_cast<E>(val, magic_enum::case_insensitive);
+}
+
+template <typename E>
+bool contains_enum(std::string_view val)
+{
+    return magic_enum::enum_contains<E>(val, magic_enum::case_insensitive);
+}
+
 }
 
 namespace Slic3r::Domain::Preset {
@@ -159,7 +193,7 @@ void to_json(ordered_json& j, const HwFeederConfig& v)
     j = ordered_json{
         {"id", v.id},
         {"slot_count", v.slot_count},
-        {"type", magic_enum::enum_name(v.type)},
+        {"type", enum_to_json(v.type)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
         {"features", v.features}
@@ -170,7 +204,7 @@ void from_json(const ordered_json& j, HwFeederConfig& v)
 {
     j.at("id").get_to(v.id);
     j.at("slot_count").get_to(v.slot_count);
-    v.type = magic_enum::enum_cast<FeederType>(j.at("type").get<std::string>()).value();
+    v.type = enum_from_json<FeederType>(j.at("type").get<std::string>()).value();
     j.get_to(v.model);
     j.at("features").get_to(v.features);
 }
@@ -219,7 +253,7 @@ void tools_to_json(
     for (size_t i = 0, n = tools.size(); i < n; ++i) {
         ordered_json ji      = tools[i];
         // shift by +1
-        j[std::to_string(address_to_public(i))] = ji;
+        j[std::to_string(i)] = ji;
     }
 
     for (const auto& [k, v] : feeders) {
@@ -236,7 +270,7 @@ void tools_to_json(
 
         Biz::Config::remove_structurize_features(mat.features);
         // shift by +1
-        std::string key = to_string(address_to_public(k));
+        std::string key = to_string(k);
         if (!j.contains(key)) {
             j[key] = ordered_json{};
         }
@@ -305,7 +339,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"repo_id", v.repo_id},
         {"repo_version", v.repo_version},
         {"config_name", v.name},
-        {"technology", magic_enum::enum_name(v.technology)},
+        {"technology", enum_to_json(v.technology)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
         {"tool_count", v.tool_count},
@@ -452,7 +486,7 @@ tl::expected<void, std::string> is_valid<HwFeederConfig>(const nlohmann::ordered
     }
 
     const std::string enum_value{json_value.at("type").get<std::string>()};
-    if (!magic_enum::enum_contains<FeederType>(enum_value)) {
+    if (!contains_enum<FeederType>(enum_value)) {
         return tl::unexpected{"'" + enum_value + "' is not a valid enum value"};
     };
 
@@ -559,7 +593,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     if (!technology) {
         return tl::unexpected{"Invalid technology: " + technology.error()};
     }
-    const auto technology_enum{magic_enum::enum_cast<PrinterTechnology>(*technology)};
+    const auto technology_enum{enum_from_json<PrinterTechnology>(*technology)};
     if (!technology_enum) {
         return tl::unexpected{"Invalid technology enum: " + *technology};
     }
@@ -620,6 +654,11 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
 
     HwToolConfigs& tools = result.tools;
     tools.resize(*tool_count);
+
+    const bool legacy_public_address_used =
+        tools_result->tools.contains("1") && !tools_result->tools.contains("0");
+
+
     for (const auto& [key, value] : tools_result->tools) {
         const auto address{from_string(key)};
         if (!address) {
@@ -632,8 +671,12 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
                 address->size()
             )};
         }
-        // shift address by -1
-        tools[Domain::Preset::address_from_public(address->at(0))] = value;
+        auto slicer_address = address->at(0);
+        if (legacy_public_address_used) {
+            // shift address by -1
+            slicer_address = address_from_legacy_public(slicer_address);
+        }
+        tools[slicer_address] = value;
     }
 
     HwFeederConfigs& feeders = result.feeders;
@@ -645,14 +688,18 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         feeders.insert({*address, value});
     }
 
-    HwMaterialConfigs materials = result.materials;
+    HwMaterialConfigs& materials = result.materials;
     for (const auto& [key, value] : tools_result->materials) {
         const auto address{from_string(key)};
         if (!address) {
             return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
         }
-        // shift address by -1
-        materials.insert({Domain::Preset::address_from_public(*address), value});
+        auto slicer_address = *address;
+        if (legacy_public_address_used) {
+            // shift address by -1
+            slicer_address = address_from_legacy_public(slicer_address);
+        }
+        materials.insert({slicer_address, value});
     }
 
     const auto sheet{parse<HwSheetConfig>(json.at("sheet"))};
