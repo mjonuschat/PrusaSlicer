@@ -749,6 +749,7 @@ void HeightRangeGizmo::perform_height_range_deletion(const LayerHeightRange& ran
     {
         m_dialog->clear_selection();
         m_selected_layer_height_range.reset();
+        m_planes_wrapper.set_planes_visible(false);
     }
 
     m_layer_config_ranges.erase(range_to_delete_it);
