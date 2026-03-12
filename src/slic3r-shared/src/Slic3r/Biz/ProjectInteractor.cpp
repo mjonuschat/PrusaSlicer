@@ -596,6 +596,7 @@ void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, Physi
 void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     set_output_dir(id.project_id, dest_path);
+    set_output_extension(id.project_id, dest_path.extension().string());
     PhysicalPrinter::PhysicalPrinterConfig config;
     config.payload = PhysicalPrinter::FileSystemExport{};
     PrintHost::PrintHostJobData data{
@@ -700,6 +701,22 @@ void ProjectInteractor::set_output_dir(Domain::SelectionId project_id, const boo
     ASSERT(it != m_workbench.projects().end());
 
     it->second.directory_storage().set_output_dir(path);
+}
+
+std::string ProjectInteractor::output_extension(Domain::SelectionId project_id, const std::string& app_config_val) const
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    return it->second.directory_storage().output_extension(app_config_val);
+}
+
+void ProjectInteractor::set_output_extension(Domain::SelectionId project_id, const std::string& extension)
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    it->second.directory_storage().set_output_extension(extension);
 }
 
 void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::path> paths)

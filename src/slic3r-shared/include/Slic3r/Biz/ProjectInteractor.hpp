@@ -532,6 +532,9 @@ public:
     boost::filesystem::path output_dir(Domain::SelectionId project_id, bool only_removable, const std::string& app_config_val) const;
     void set_output_dir(Domain::SelectionId project_id, const boost::filesystem::path& path);
 
+    std::string output_extension(Domain::SelectionId project_id, const std::string& app_config_val) const;
+    void set_output_extension(Domain::SelectionId project_id, const std::string& ext);
+
     ObservableProjectList& observable_project_list();
 
     /**

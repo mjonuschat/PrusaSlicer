@@ -53,11 +53,18 @@ std::string shorten_error(const std::string& errorMsg) {
     return errorMsg;
 }
 
-std::string gen_wildcards(const std::string& extension, Technology tech)
+std::string gen_wildcards(const std::string& extension, Technology tech, bool bgcode_allowed)
 {
     if (tech == Technology::Fdm) {
+        // If bgcode not allowed in printer setting, show just gcode
+        if (!bgcode_allowed) {
+             return Wildcards::generate_wildcards(Wildcards::TypeFlag::GCode, Wildcards::TypeFlag::GCode);
+        }
+        // TODO use last used extension as default
+
+        // If bgcode is written in output options, use it as default selected wildcard
         if (extension == ".bgcode" || extension == ".BGCODE") {
-            return Wildcards::generate_wildcards(Wildcards::TypeFlag::BinaryGCode | Wildcards::TypeFlag::GCode, Wildcards::TypeFlag::BinaryGCode);  
+            return Wildcards::generate_wildcards(Wildcards::TypeFlag::BinaryGCode | Wildcards::TypeFlag::GCode, Wildcards::TypeFlag::BinaryGCode);
         }
         return Wildcards::generate_wildcards(Wildcards::TypeFlag::GCode | Wildcards::TypeFlag::BinaryGCode, Wildcards::TypeFlag::GCode);
     } else if (tech == Technology::Sla) {
@@ -88,6 +95,8 @@ void show_modal_dialog(
         AppServices::instance().app_config().get<std::string>("last_used_directory")
     );
 
+    
+
     ExportNameData name_data;
     try {
         name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
@@ -107,8 +116,41 @@ void show_modal_dialog(
          name_data = Biz::ExportNameParser::error_state_export_name(project_interactor);
      }
 
+     bool bgcode_allowed = true;
+     const auto& cbox = project_interactor.preset_interactor().selected_printer_preset().printer.config_box();
+     if (const auto* item = cbox.find("binary_gcode").item; item)
+     {
+         bgcode_allowed = item->get<bool>();
+     }
+
+     // Replaced preferred extension with last used extension - if usable.
+     std::string default_extension = project_interactor.output_extension(
+         project_interactor.selected_project_id(),
+         AppServices::instance().app_config().get<std::string>("last_used_extension")
+     ); 
+
+     if (!default_extension.empty()) {
+         std::string ext_lower = default_extension;
+         std::transform(ext_lower.begin(), ext_lower.end(), ext_lower.begin(),
+             [](unsigned char c){ return std::tolower(c); });
+
+         bool is_valid = false;
+         if (name_data.technology == Technology::Fdm) {
+             is_valid = (ext_lower == ".gcode" || (bgcode_allowed && ext_lower == ".bgcode"));
+         } else if (name_data.technology == Technology::Sla) {
+             is_valid = (ext_lower == ".sl1" || ext_lower == ".sl1s");
+         }
+
+         if (is_valid) {
+             name_data.preferred_extension = default_extension;
+             boost::filesystem::path p(name_data.filename);
+             p.replace_extension(default_extension);
+             name_data.filename = p.string();
+         }
+     }
+
      std::string wildcards = wildcards_overide.empty() ?
-         gen_wildcards(name_data.preffered_extension, name_data.technology) :
+         gen_wildcards(name_data.preferred_extension, name_data.technology, bgcode_allowed) :
          wildcards_overide;
 
      std::string filename = name_data.filename;

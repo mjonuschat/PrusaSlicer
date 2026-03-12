@@ -93,6 +93,9 @@ DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& d
             wxString ext = wxString(ext_token).AfterFirst('*').BeforeFirst(';');
             path.replace_extension(into_u8(ext));
         }
+        
+        // Store last used extension
+        AppServices::instance().app_config().set<std::string>("last_used_extension", path.extension().string());
     }
 
     if (!out_paths.empty()) {

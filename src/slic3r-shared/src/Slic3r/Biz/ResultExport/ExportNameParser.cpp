@@ -13,7 +13,7 @@ namespace Slic3r::Biz::ExportNameParser {
 
 namespace {
 
-std::string resolve_preffered_extension(const std::string& output_filename_format)
+std::string resolve_preferred_extension(const std::string& output_filename_format)
 {
     return boost::filesystem::path(output_filename_format).extension().string();
 }
@@ -37,7 +37,7 @@ ExportNameData parse_fdm_export_name(
     );
     ASSERT(bed_instance != nullptr);
 
-    ExportNameData result {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
+    ExportNameData result {Technology::Fdm, project_name, resolve_preferred_extension(output_filename_format)};
     Domain::FullConfigFDM full_config{
         fdm_config,
         bed_instance->extruder_candidates,
@@ -150,7 +150,7 @@ ExportNameData parse_sla_export_name(
     const Biz::ProjectInteractor& project_interactor
 )
 {
-    ExportNameData result {Technology::Sla, project_name, resolve_preffered_extension(output_filename_format)};
+    ExportNameData result {Technology::Sla, project_name, resolve_preferred_extension(output_filename_format)};
     Domain::FullConfigSLA full_config{sla_config};
     Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
     Biz::Parser::PlaceholderParser parser{io_config};
@@ -218,7 +218,7 @@ ExportNameData parse_export_name(const Biz::ProjectInteractor& project_interacto
     } else {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve a slicing result.");
     }
-    return {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
+    return {Technology::Fdm, project_name, resolve_preferred_extension(output_filename_format)};
 }
 
 ExportNameData error_state_export_name(const Biz::ProjectInteractor& project_interactor)
@@ -235,13 +235,13 @@ ExportNameData error_state_export_name(const Biz::ProjectInteractor& project_int
     Domain::ConfigPack config = project_interactor.preset_interactor().selected_printer_preset().config();
 
     if (std::get_if<Domain::ConfigPackFDM>(&config)) {        
-        return {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
+        return {Technology::Fdm, project_name, resolve_preferred_extension(output_filename_format)};
     } else if (std::get_if<Domain::ConfigPackSLA>(&config)) {
-        return {Technology::Sla, project_name, resolve_preffered_extension(output_filename_format)};
+        return {Technology::Sla, project_name, resolve_preferred_extension(output_filename_format)};
     } else {
         SPDLOG_ERROR("Failed to figure output filename: Failed to retrieve a slicing result.");
     }
-    return {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
+    return {Technology::Fdm, project_name, resolve_preferred_extension(output_filename_format)};
 }
 
 }
