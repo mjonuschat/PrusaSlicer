@@ -201,7 +201,7 @@ std::string to_lower_ascii(std::string_view data)
         {
             // Only ASCII is allowed here, handling UTF8 string would require a way more complicated
             // logic as 1 character can have variable length (1..3 bytes)
-            ASSERT(v <= 127);
+            ASSERT(static_cast<unsigned char>(v) <= 127);
             return std::tolower(v);
         }
     );
