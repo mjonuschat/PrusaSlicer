@@ -35,6 +35,7 @@ struct ActionParams
     bool preset_updater_switch_repo         = false;
     bool preset_updater_cleanup             = false;
     bool dump_json_model                    = false;
+    bool generate_preset_cache              = false;
 
     bool has_any_action() const
     {
@@ -58,7 +59,8 @@ struct ActionParams
             || preset_updater_list_repos
             || preset_updater_switch_repo
             || preset_updater_cleanup
-            || dump_json_model;
+            || dump_json_model
+            || generate_preset_cache;
     }
 
     bool has_preset_updater_action() const

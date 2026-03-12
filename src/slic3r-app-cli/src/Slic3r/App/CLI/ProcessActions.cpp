@@ -45,6 +45,9 @@
 #include <spdlog/spdlog.h>
 
 #include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
+#include "Slic3r/Semver.hpp"
+#include "Slic3r/Version.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 
 namespace fs = boost::filesystem;
@@ -598,6 +601,35 @@ bool process_actions(
 
     if (action.dump_json_model) {
         dump_config_model(misc.config_model_json_file.value_or("config-model.json"));
+    }
+
+    if (action.generate_preset_cache) {
+        try {
+            Domain::Workbench workbench;
+            Scene::SceneInteractor scene_interactor{workbench};
+            Preset::PresetInteractor preset_interactor(workbench, scene_interactor);
+
+            Preset::IO::BundlePaths bundle_paths = Preset::IO::BundlePaths::make_standard_runtime();
+            preset_interactor.load_preset_bundle(bundle_paths);
+
+            // Strip build metadata from Slic3r::VERSION so that build server builds produce a cache
+            // compatible with local debug builds.
+            Semver semver(Slic3r::VERSION);
+            semver.set_metadata(nullptr);
+
+            const std::string cache_file =
+                fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
+            Preset::IO::serialize_bundle(
+                cache_file,
+                workbench.preset_bundle(),
+                bundle_paths,
+                semver.to_string()
+            );
+
+            boost::nowide::cout << "Preset cache generated: " << cache_file << std::endl;
+        } catch (const std::exception& ex) {
+            SPDLOG_ERROR("Failed to generate preset cache: {}", ex.what());
+        }
     }
 
     if (action.configuration_save) {
