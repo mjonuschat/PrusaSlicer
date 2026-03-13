@@ -159,6 +159,14 @@ bool ModelVolume::is_mm_painted() const { return !this->mm_segmentation_facets.e
 
 bool ModelVolume::is_fuzzy_skin_painted() const { return !this->fuzzy_skin_facets.empty(); }
 
+bool ModelVolume::is_painted() const
+{
+    return is_fdm_support_painted()
+        || is_seam_painted()
+        || is_mm_painted()
+        || is_fuzzy_skin_painted();
+}
+
 std::vector<size_t> ModelVolume::get_extruders_from_multi_material_painting() const
 {
     if (!this->is_mm_painted())

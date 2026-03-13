@@ -670,15 +670,29 @@ void SimplifyGizmo::apply_simplify()
     }
     result.clear();
 
+    // Check if any volume was painted before mesh change clears it.
+    const bool was_painted = std::ranges::any_of(
+        meshes,
+        [&project](const Biz::Scene::SceneInteractor::RefMesh& mesh)
+        {
+            const Domain::ModelVolume* volume = get_volume_by_id(mesh.first.volume_id, project);
+            return volume && volume->is_painted();
+        }
+    );
+
     close(); // unregistr on_selection_change
 
     Domain::ElementRefs refs;
-    refs.reserve(result.size());
+    refs.reserve(meshes.size());
     std::ranges::transform(meshes, std::back_inserter(refs), [](const auto& m) { return m.first; });
     m_notification->on_simplify(m_project_interactor.selected_project_id(), refs);
 
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.change_volume_meshes(std::move(meshes));
+
+    if (was_painted) {
+        m_notification->on_paint_removed_after_simplify();
+    }
 }
 
 namespace {

@@ -264,4 +264,20 @@ void SimplifyNotification::on_simplify(
     // after simplify apply is assumption that you do not want to simplify more
     // even when model has more than 1M triangles. Soo do not check result of simplificaiton.
 }
+
+void SimplifyNotification::on_paint_removed_after_simplify()
+{
+    m_notify.upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::SimplifySuggestion,
+            PopNotificationLevel::Warning,
+            0s,
+            PopNotificationLayoutText(_u8L(
+                "Custom supports, seams, fuzzy skin and multimaterial painting were removed after simplifying the mesh."
+            ))
+        },
+        never_equal_matcher
+    );
+}
+
 } // namespace Slic3r::App::Plater

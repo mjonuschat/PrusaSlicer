@@ -164,6 +164,7 @@ public:
     bool                                is_text() const;
     bool                                is_svg() const ;
     bool                                is_the_only_one_part() const;
+    bool                                is_painted() const;
     void                                reset_extra_facets();
 
     // Extract the current extruder ID based on this ModelVolume's config and the parent ModelObject's config.

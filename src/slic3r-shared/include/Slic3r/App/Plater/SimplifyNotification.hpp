@@ -51,6 +51,12 @@ public:
     /**@}*/
 
     void on_simplify(Domain::SelectionId project_id, const Domain::ElementRefs& simplified_volumes);
+
+    /**
+     * @brief Notify user that custom supports, seams and multimaterial painting
+     *        were removed after simplifying the mesh.
+     */
+    void on_paint_removed_after_simplify();
     
     struct Item {
         Domain::SelectionId project_id;

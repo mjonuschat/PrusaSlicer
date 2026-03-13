@@ -779,6 +779,7 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
             return;
 
         Domain::ModelVolume& volume = *volume_ptr;
+        volume.reset_extra_facets();
         volume.set_mesh(std::move(triangle_mesh));
         Algorithms::ModelVolume::calculate_convex_hull(volume);
         volume.set_new_unique_id();
