@@ -37,8 +37,6 @@ using Slic3r::Domain::ZHeightPairs;
 namespace Slic3r::App::Plater {
 
 const constexpr float HEIGHT_RANGE_INPUT_HEIGHT = 26.f;
-static const Vec2f KEY_HELP_SIZE                = {20.f, 20.f};
-static const Vec2f CTRL_HELP_SIZE               = {40.f, 20.f};
 static const Paddings HEIGHT_RANGE_PADDING      = {0.f, 10.f, 0.f, 10.f};
 
 const constexpr ImColor HEIGHT_RANGE_UNSELECTED_COLOR = ImColor(42, 42, 42, 255);
@@ -49,6 +47,18 @@ const constexpr std::array ALWAYS_VISIBLE_MODIFIER_CATEGORIES = {
     ConfigItemDef::Category::Print_LayersSurfaces,
     ConfigItemDef::Category::Print_Infill,
 };
+
+#ifdef __APPLE__
+constexpr Render::Icon CtrlIcon = Render::Icon::KeyCmd;
+
+static const Vec2f CTRL_HELP_SIZE = {39.f, 20.f};
+#else
+constexpr Render::Icon CtrlIcon = Render::Icon::KeyCtrl;
+
+static const Vec2f CTRL_HELP_SIZE = {46.f, 20.f};
+#endif
+
+static const Vec2f KEY_HELP_SIZE = {20.f, 20.f};
 
 static std::string format_trimmed(const double value, const int precision)
 {
@@ -385,11 +395,11 @@ void HeightRangeDialog::add_help_section(Item* parent)
     help.init(help_section);
     help.add_item({{Render::Icon::KeyH, KEY_HELP_SIZE}}, _u8L("Add layer height override"));
     help.add_item(
-        {{Render::Icon::KeyCtrl, CTRL_HELP_SIZE}, {Render::Icon::KeyC, KEY_HELP_SIZE}},
+        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::KeyC, KEY_HELP_SIZE}},
         _u8L("Copy settings overrides")
     );
     help.add_item(
-        {{Render::Icon::KeyCtrl, CTRL_HELP_SIZE}, {Render::Icon::KeyV, KEY_HELP_SIZE}},
+        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::KeyV, KEY_HELP_SIZE}},
         _u8L("Paste settings overrides")
     );
 }

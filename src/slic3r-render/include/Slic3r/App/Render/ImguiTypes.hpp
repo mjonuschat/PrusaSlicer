@@ -59,6 +59,8 @@ enum class Icon : wchar_t
     KeyAlt,
     KeyCtrl,
     KeyCtrlA,
+    KeyCmd,
+    KeyOpt,
     KeyA,
     KeyC,
     KeyH,

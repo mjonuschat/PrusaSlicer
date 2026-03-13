@@ -93,6 +93,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::MouseWheel, "mouse_wheel"},
     {Icon::MouseDrag, "mouse_drag"},
     {Icon::KeyShift, "key_shift"},
+    {Icon::KeyCmd, "key_cmd"},
+    {Icon::KeyOpt, "key_opt"},
     {Icon::KeyAlt, "key_alt"},
     {Icon::KeyCtrl, "key_ctrl"},
     {Icon::KeyCtrlA, "key_ctrl_a"},

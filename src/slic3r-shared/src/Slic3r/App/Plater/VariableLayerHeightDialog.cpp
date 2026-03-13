@@ -18,10 +18,23 @@ namespace Slic3r::App::Plater {
 
 const constexpr ImColor BUTTON_BACKGROUND_COLOR = {42, 42, 42, 255};
 static const Margins BUTTON_TEXT_MARGIN         = {10.f, 2.f, 10.f, 2.f};
-static const Vec2f MOUSE_HELP_SIZE              = {20.f, 20.f};
-static const Vec2f SHIFT_HELP_SIZE              = {40.f, 20.f};
-static const Vec2f CTRL_HELP_SIZE               = {40.f, 20.f};
-static const Vec2f ALT_HELP_SIZE                = {40.f, 16.f};
+
+#ifdef __APPLE__
+constexpr Render::Icon CtrlIcon = Render::Icon::KeyCmd;
+constexpr Render::Icon AltIcon  = Render::Icon::KeyOpt;
+
+static const Vec2f CTRL_HELP_SIZE = {39.f, 20.f};
+static const Vec2f ALT_HELP_SIZE  = {38.f, 20.f};
+#else
+constexpr Render::Icon CtrlIcon = Render::Icon::KeyCtrl;
+constexpr Render::Icon AltIcon  = Render::Icon::KeyAlt;
+
+static const Vec2f CTRL_HELP_SIZE = {46.f, 20.f};
+static const Vec2f ALT_HELP_SIZE  = {35.f, 20.f};
+#endif
+
+static const Vec2f SHIFT_HELP_SIZE = {48.f, 20.f};
+static const Vec2f MOUSE_HELP_SIZE = {20.f, 20.f};
 
 VariableLayerHeightDialog::VariableLayerHeightDialog() :
     GizmoWindowWithLeftSidePanel(_u8L("Variable layer height"), Render::Icon::VariableLayerHeight)
@@ -146,11 +159,11 @@ void VariableLayerHeightDialog::add_help_section(Item* item)
         _u8L("Manual blend")
     );
     help.add_item(
-        {{Render::Icon::KeyCtrl, CTRL_HELP_SIZE}, {Render::Icon::MouseWheel, MOUSE_HELP_SIZE}},
+        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::MouseWheel, MOUSE_HELP_SIZE}},
         _u8L("Adjust brush size")
     );
     help.add_item(
-        {{Render::Icon::KeyAlt, ALT_HELP_SIZE}, {Render::Icon::MouseLeft, MOUSE_HELP_SIZE}},
+        {{AltIcon, ALT_HELP_SIZE}, {Render::Icon::MouseLeft, MOUSE_HELP_SIZE}},
         _u8L("Edit height range")
     );
 }
