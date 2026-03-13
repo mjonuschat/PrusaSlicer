@@ -817,8 +817,9 @@ std::string serialize_as_legacy_config(
             const ConfigItem* item{box->items.find(key)};
 
             if (!item && box->location != legacy_data.override_box_type) {
-                if (auto override{box->overrides.get(key)}) {
-                    item = box->overrides.find(key);
+                const ConfigItem* override{box->overrides.find(key)};
+                if (override && box->overrides.get(key)) {
+                    item = override;
                 }
             }
             if (item) {

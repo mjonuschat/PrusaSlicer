@@ -223,6 +223,12 @@ const bool ConfigOverrides::empty() const
 
 std::optional<ConfigItem> ConfigOverrides::get(const std::string& key) const
 {
+    // In debug, check that the key even should be here.
+    DEBUG_ASSERT(
+        this->find(key) != nullptr,
+        "The " + key + " is not part of this instance of ConfigOverrides!"
+    );
+
     const auto it{m_used_overrides.find(key)};
     if (it == m_used_overrides.end()) {
         return std::nullopt;
