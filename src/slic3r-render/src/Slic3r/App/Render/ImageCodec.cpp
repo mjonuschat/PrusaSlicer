@@ -131,6 +131,37 @@ std::vector<Image> PngReadCodec::load(
     int image_height = png_get_image_height(png_info_struct.png, png_info_struct.info);
     size_t color_type = png_get_color_type(png_info_struct.png, png_info_struct.info);
     size_t bit_depth = png_get_bit_depth(png_info_struct.png, png_info_struct.info);
+
+    // Expand palette PNG to RGB/RGBA.
+    if (color_type == PNG_COLOR_TYPE_PALETTE) {
+        png_set_palette_to_rgb(png_info_struct.png);
+    }
+
+    // Expand transparency chunk to alpha channel if present.
+    if (png_get_valid(png_info_struct.png, png_info_struct.info, PNG_INFO_tRNS)) {
+        png_set_tRNS_to_alpha(png_info_struct.png);
+    }
+
+    // Convert 1/2/4-bit grayscale to 8-bit
+    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+        png_set_expand_gray_1_2_4_to_8(png_info_struct.png);
+    }
+
+    // Transform Grayscale/Grayscale + Alpha to RGB/RGBA
+    if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
+        png_set_gray_to_rgb(png_info_struct.png);
+    }
+
+    // Strip 16-bit to 8-bit
+    if (bit_depth == 16) {
+        png_set_strip_16(png_info_struct.png);
+    }
+
+    // Recompute PNG info after all requested transforms.
+    png_read_update_info(png_info_struct.png, png_info_struct.info);
+
+    color_type = png_get_color_type(png_info_struct.png, png_info_struct.info);
+    bit_depth  = png_get_bit_depth(png_info_struct.png, png_info_struct.info);
     size_t channels = png_get_channels(png_info_struct.png, png_info_struct.info);
     size_t pixel_stride = bit_depth / 8 * channels;
     PixelFormat out_format;
@@ -145,12 +176,12 @@ std::vector<Image> PngReadCodec::load(
         break;
 
     default:
-        SPDLOG_ERROR("Unsupported PNG format with color type: {}", color_type);
+        SPDLOG_ERROR("Unsupported PNG format after expansion with color type: {}", color_type);
         return ret;
     }
 
     if (bit_depth != 8) {
-        SPDLOG_ERROR("Unsupported PNG bit depth: {}", bit_depth);
+        SPDLOG_ERROR("Unsupported PNG bit depth after expansion: {}", bit_depth);
         return ret;
     }
 
