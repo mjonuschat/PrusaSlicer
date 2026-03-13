@@ -311,8 +311,12 @@ static void promote_hover_data_to_full_instances(Scene::Node::NodeList& nodes, S
     nodes.insert(nodes.end(), volume_nodes.begin(), volume_nodes.end());
 }
 
-static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, const Biz::Scene::ObjectSelection& selection,
-    Scene::Scene& scene)
+static void refine_hover_data(
+    HoverData& hover_data,
+    bool modifier_pressed,
+    const Biz::Scene::ObjectSelection& selection,
+    Scene::Scene& scene
+)
 {
     DEBUG_ASSERT(hover_data.nodes.size() == 1);
     if (hover_data.nodes.size() != 1)
@@ -341,8 +345,12 @@ static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, cons
         promote_hover_data_to_full_instances(hover_data.nodes, scene);
 }
 
-static void refine_rectangle_hover_data(HoverData& hover_data, const Biz::Scene::ObjectSelection& selection, RectangleSelection::Type type,
-    Scene::Scene& scene)
+static void refine_rectangle_hover_data(
+    HoverData& hover_data,
+    const Biz::Scene::ObjectSelection& selection,
+    RectangleSelection::Type type,
+    Scene::Scene& scene
+)
 {
     if (type == RectangleSelection::Type::Remove && !selection.empty()) {
         // filters out unselected nodes
@@ -409,7 +417,7 @@ static void refine_rectangle_hover_data(HoverData& hover_data, const Biz::Scene:
         hover_data.nodes = Scene::Node::NodeList();
 }
 
-static bool pick_results_contains_gizmo_nodes(const Scene::NodePickResults& pick_results)
+static bool contains_gizmo_nodes(const Scene::NodePickResults& pick_results)
 {
     auto gizmo_it = std::find_if(pick_results.begin(), pick_results.end(),
         [](const auto& item) {
@@ -420,6 +428,20 @@ static bool pick_results_contains_gizmo_nodes(const Scene::NodePickResults& pick
         }
     );
     return gizmo_it != pick_results.end();
+}
+
+static Scene::NodePickResults::const_iterator find_potentially_selected_node(
+    const Scene::NodePickResults& results
+)
+{
+    return std::ranges::find_if(
+        results,
+        [&](const auto& item)
+        {
+            const Scene::Node& n = *item.node;
+            return n.has_tag_of_type<SceneNodeTag>();
+        }
+    );
 }
 
 Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
@@ -436,11 +458,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
     constexpr static Clock::duration max_click_duration = Clock::duration {500ms};
 
-    auto it =
-        std::find_if(ctx.pick_results().begin(), ctx.pick_results().end(), [&](const auto& item) {
-            const Scene::Node& n = *item.node;
-            return n.has_tag_of_type<SceneNodeTag>();
-        });
+    const auto it = find_potentially_selected_node(ctx.pick_results());
 
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         if (evt.button() != Platform::MouseButton::Left) {
@@ -486,7 +504,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
     bool already_selected = (tag == nullptr) ? false : selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id });
 
-    if (type == Platform::MouseEvent::Type::Move || type == Platform::MouseEvent::Type::Wheel) {
+    if (type == Platform::MouseEvent::Type::Move) {
         if (m_rectangle_selection.is_active() && !m_rectangle_selection.is_already_processed()) {
             m_rectangle_selection.update({ evt.x(), evt.y() });
             HoverData hover_data{ shift_down ? HoverType::Select : HoverType::Unselect, m_rectangle_selection.contained_nodes() };
@@ -496,7 +514,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             return Scene::GizmoActivationState::Active;
         }
         else {
-            if (pick_results_contains_gizmo_nodes(ctx.pick_results())) {
+            if (contains_gizmo_nodes(ctx.pick_results())) {
                 HoverData hover_data = { HoverType::Select, Scene::Node::NodeList() };
                 invoke_hover_changed(hover_data);
                 return Scene::GizmoActivationState::Inactive;
@@ -569,6 +587,18 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             return Scene::GizmoActivationState::Active;
     }
     return Scene::GizmoActivationState::Inactive;
+}
+
+void QuickSelectGizmo::camera_updated(const Scene::Camera& cam)
+{
+    auto results = m_gizmo_controller.repick();
+    Scene::Node::NodeList nodes;
+    if (const auto it = find_potentially_selected_node(results);
+        it != results.end() && !contains_gizmo_nodes(results))
+    {
+        nodes.push_back(it->node);
+    }
+    invoke_hover_changed(HoverData{HoverType::Select, nodes});
 }
 
 void QuickSelectGizmo::render_scene(Render::CommandBuffer& cmd_buffer)

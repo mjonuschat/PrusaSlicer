@@ -120,7 +120,13 @@ public:
         return m_command_registry.command(name);
     }
 
+    NodePickResults repick() const override;
+
 private:
+    using PickResultWithRay = std::tuple<NodePickResults, Ray>;
+    PickResultWithRay
+    pick(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info) const;
+
     void on_selected_project_changed(size_t index) override;
 
     void prepare_cycle();
@@ -136,6 +142,11 @@ private:
 #endif
 
 private:
+    using MouseEventContext =
+        std::tuple<Platform::MouseEvent, Render::ScreenInfo>;
+    using LastMouseEventContext =
+        std::optional<MouseEventContext>;
+
     Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, GizmoManager>
         m_project_changed_listener_scope;
     Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, GizmoManager>
@@ -152,8 +163,8 @@ private:
 
         bool in_cycle {false};
         bool object_selection_disabled{ false };
+        LastMouseEventContext last_mouse_event;
         std::vector<IGizmo*> in_cycle_gizmos;
-
     };
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
 

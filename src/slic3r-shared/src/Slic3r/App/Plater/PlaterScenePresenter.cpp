@@ -268,6 +268,12 @@ void PlaterScenePresenter::on_node_changed(Scene::Node* node)
         set_scene_aabb_as_dirty();
 }
 
+void PlaterScenePresenter::camera_updated(const Scene::Camera& cam)
+{
+    set_scene_aabb_as_dirty();
+    invoke_listeners<ICameraUpdateListener>([&cam](auto* l) { l->camera_updated(cam); });
+}
+
 void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
 {
     center_camera_on_selected_bed(false);

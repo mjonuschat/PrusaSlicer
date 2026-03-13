@@ -20,6 +20,12 @@ public:
         : m_width(width), m_height(height), m_scale(scale)
     {}
 
+    ScreenInfo(const ScreenInfo& other) = default;
+    ScreenInfo(ScreenInfo&& other) = default;
+
+    ScreenInfo& operator=(const ScreenInfo& other) = default;
+    ScreenInfo& operator=(ScreenInfo&& other) = default;
+
     size_t physical_width() const { return m_width; }
     size_t physical_height() const { return m_height; }
     float logical_width() const { return m_width / m_scale; }

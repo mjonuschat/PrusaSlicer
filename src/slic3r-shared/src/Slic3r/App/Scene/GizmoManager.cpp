@@ -63,15 +63,23 @@ std::vector<IGizmo*> get_gizmos(const std::vector<std::unique_ptr<IGizmo>> &base
 }
 }
 
-void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
+NodePickResults GizmoManager::repick() const
+{
+    const auto& p = current_context();
+    if (!p.last_mouse_event.has_value()) {
+        return {};
+    }
+    const auto& [e, screen_info] = p.last_mouse_event.value();
+    auto [results, ray] = pick(e, screen_info);
+    return results;
+}
+
+GizmoManager::PickResultWithRay GizmoManager::pick(
+    const Platform::MouseEvent& e,
+    const Render::ScreenInfo& screen_info
+) const
 {
     auto& p = current_context();
-    if (!p.in_cycle) {
-        if (e.is_imgui_captured())
-            return;
-        prepare_cycle();
-    }
-
     Scene& scene = m_scene_provider.scene();
 
     NodePickResults pick_results;
@@ -112,8 +120,24 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         );
     }
 
+    return std::make_tuple(pick_results, pick_ray);
+}
+
+void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
+{
+    auto& p = current_context();
+    if (!p.in_cycle) {
+        if (e.is_imgui_captured())
+            return;
+        prepare_cycle();
+    }
+    p.last_mouse_event = MouseEventContext{e, screen_info};
+
+    Scene& scene = m_scene_provider.scene();
+    auto [pick_results, pick_ray] = pick(e, screen_info);
+
     GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
-    if (m_mouse_drag_detector && 
+    if (m_mouse_drag_detector &&
         m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
         return;
 

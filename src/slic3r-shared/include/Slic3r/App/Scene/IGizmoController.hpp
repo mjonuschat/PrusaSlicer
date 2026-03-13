@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/PrinterTechnology.hpp"
+#include "Slic3r/App/Scene/Scene.hpp"
 
 #include <cstdint>
 
@@ -15,6 +16,7 @@ public:
 
     virtual void deactivate_current_tool()                                  = 0;
     virtual void activate_tool(ToolType tool, Domain::PrinterTechnology pt) = 0;
+    virtual NodePickResults repick() const                                  = 0;
 };
 
 } // namespace Slic3r::App::Scene

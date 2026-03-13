@@ -37,6 +37,12 @@ public:
         : m_type(type), m_button(button), m_x(x), m_y(y), m_wheel_delta_x(wheel_delta_x), m_wheel_delta_y(wheel_delta_y), m_key_modifiers(key_modifiers)
     {}
 
+    MouseEvent(const MouseEvent& other) = default;
+    MouseEvent(MouseEvent&& other) = default;
+
+    MouseEvent& operator=(const MouseEvent& other) = default;
+    MouseEvent& operator=(MouseEvent&& other) = default;
+
     void set_imgui_captured(bool imgui_captured) { m_imgui_captured = imgui_captured; }
 
     [[nodiscard]] Type type() const { return m_type; }

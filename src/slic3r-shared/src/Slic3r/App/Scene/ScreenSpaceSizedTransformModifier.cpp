@@ -16,8 +16,6 @@ void ScreenSpaceSizedTransformModifier::modify_world_transform(
     const double scale = m_camera.cam_projection()
         .constant_screen_space_size_scale(m_camera, dist) * m_preserved_scale;
 
-    SPDLOG_INFO("Screen space size scale: {:f}  for zoom factor: {:f}  and dist {:f}", scale, m_camera.zoom(), dist);
-
     // remove scaling part
     const auto basis_x = world_xform.matrix().block<3, 1>(0, 0).normalized();
     const auto basis_y = world_xform.matrix().block<3, 1>(0, 1).normalized();
