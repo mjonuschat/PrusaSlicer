@@ -26,7 +26,7 @@ public:
         build_named_presets();
     }
 
-    EvaluatedPrinterPresets evaluate(const HwPrinterConfig& hw_config) const;
+    EvaluatedPrinterPresets evaluate(const HwPrinterConfig& hw_config, bool use_material_cache = true) const;
 
 private:
     friend class PresetCollectionEvaluator;

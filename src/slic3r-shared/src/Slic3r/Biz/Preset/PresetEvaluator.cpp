@@ -9,6 +9,7 @@
 
 #include <ranges>
 
+
 namespace Slic3r::Biz::Preset {
 
 namespace {
@@ -466,7 +467,7 @@ const Domain::Preset::PresetNode* PresetEvaluator::find_node(PresetKind kind, st
     return &*it;
 }
 
-PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrinterConfig& hw_config) const
+PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrinterConfig& hw_config, bool use_material_cache) const
 {
     Expr::ValueMap printer_values;
     append_printer_values(printer_values, hw_config);
@@ -564,6 +565,10 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             ASSERT(mats_it != m_presets.end() && mat_names_it != m_preset_ids.end());
 
             Domain::Preset::AllToolsEvaluatedMaterialPresets materials;
+
+            using MaterialCache =
+                std::map<std::string, Domain::Preset::SingleToolEvaluatedMaterialPresets>;
+            MaterialCache material_cache;
             for (const auto& it : Domain::Preset::MaterialIterator{hw_config}) {
                 Expr::ValueMap tool_values = print_values;
                 const auto& tool = it.tool_config();
@@ -577,6 +582,19 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 // }
 
                 Domain::Preset::SingleToolEvaluatedMaterialPresets variants;
+                // Cache key is tool.id because tool_values only depends on
+                // print_values (shared) + tool.features (same for same tool.id).
+                // If feeder values are added to tool_values, the cache key must
+                // include the feeder address as well.
+                if (use_material_cache) {
+                    if (const auto cache_it = material_cache.find(tool.id);
+                        cache_it != material_cache.end())
+                    {
+                        variants = cache_it->second;
+                        materials.emplace_back(std::move(variants));
+                        continue;
+                    }
+                }
 
                 PresetCollectionEvaluator material_eval(
                     mats_it->second,
@@ -594,6 +612,9 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                             mat
                         )
                     );
+                }
+                if (use_material_cache) {
+                    material_cache[tool.id] = variants;
                 }
                 materials.emplace_back(std::move(variants));
             }

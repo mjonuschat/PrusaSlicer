@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
+#include "spdlog/stopwatch.h"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
@@ -89,6 +90,8 @@ void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bu
 {
     const auto& vendor_bundle = preset_bundle.vendor_bundles.at(vendor_id);
 
+    spdlog::stopwatch sw;
+
     PresetEvaluator preset_evaluator{vendor_bundle.presets};
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, vendor_bundle.printer_configs.size()),
@@ -96,7 +99,7 @@ void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bu
             for (size_t i = r.begin(); i != r.end(); ++i) {
                 try {
                     const auto& hw_config = vendor_bundle.printer_configs[i];
-                    auto epps = preset_evaluator.evaluate(hw_config);
+                    auto epps = preset_evaluator.evaluate(hw_config, true);
                     {
                         std::lock_guard<std::mutex> guard(mut);
                         preset_bundle.evaluated_presets[hw_config.id] = std::move(epps);
@@ -107,6 +110,8 @@ void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bu
             }
         }
     );
+
+    SPDLOG_TRACE("Update vendor {} presets took {} secs", vendor_id, sw);
 
 }
 
