@@ -368,14 +368,19 @@ std::optional<LayerHeightRange> compute_new_height_range(
     const std::optional<LayerHeightRange>& selected,
     const std::optional<LayerHeightRange>& next_after_selected,
     const double max_existing_z,
+    const double object_max_z,
     const double min_layer_height
 )
 {
     if (selected.has_value()) {
         if (!next_after_selected.has_value()) {
+            if (selected->second >= object_max_z) {
+                return std::nullopt;
+            }
+
             return LayerHeightRange{
                 selected->second,
-                selected->second + HEIGHT_RANGE_DEFAULT_HEIGHT
+                std::min(selected->second + HEIGHT_RANGE_DEFAULT_HEIGHT, object_max_z)
             };
         }
 
@@ -402,10 +407,17 @@ std::optional<LayerHeightRange> compute_new_height_range(
     }
 
     if (max_existing_z > 0.) {
-        return LayerHeightRange{max_existing_z, max_existing_z + HEIGHT_RANGE_DEFAULT_HEIGHT};
+        if (max_existing_z >= object_max_z) {
+            return std::nullopt;
+        }
+
+        return LayerHeightRange{
+            max_existing_z,
+            std::min(max_existing_z + HEIGHT_RANGE_DEFAULT_HEIGHT, object_max_z)
+        };
     }
 
-    return LayerHeightRange{0., HEIGHT_RANGE_DEFAULT_HEIGHT};
+    return LayerHeightRange{0., std::min(HEIGHT_RANGE_DEFAULT_HEIGHT, object_max_z)};
 }
 
 void LayerHeightMaterialWrapper::init(Render::Device& device)

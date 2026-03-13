@@ -712,6 +712,7 @@ void HeightRangeGizmo::perform_height_range_addition()
         m_selected_layer_height_range,
         next_range,
         last_max_z,
+        m_layer_height_params.object_print_z_uncompensated_height,
         m_layer_height_params.min_layer_height
     );
 
@@ -801,9 +802,10 @@ void HeightRangeGizmo::perform_height_range_value_change(
         m_layer_config_ranges.find(m_selected_layer_height_range.value());
     ASSERT(selected_range_it != m_layer_config_ranges.end());
 
+    const double object_max_z = m_layer_height_params.object_print_z_uncompensated_height;
     const LayerHeightRange new_range{
-        min_z.has_value() ? min_z.value() : selected_range_it->first.first,
-        max_z.has_value() ? max_z.value() : selected_range_it->first.second
+        std::clamp(min_z.value_or(selected_range_it->first.first), 0., object_max_z),
+        std::clamp(max_z.value_or(selected_range_it->first.second), 0., object_max_z)
     };
 
     if (m_selected_layer_height_range.value() != new_range) {
@@ -824,6 +826,8 @@ void HeightRangeGizmo::perform_height_range_value_change(
     ASSERT(new_range_it != m_layer_config_ranges.end());
 
     m_dialog->select_range(new_range);
+    m_dialog->set_height_range_min_z(new_range.first);
+    m_dialog->set_height_range_max_z(new_range.second);
     m_dialog->set_selected_height_range_config_box(&new_range_it->second);
 
     m_planes_wrapper.set_planes_visible(true);

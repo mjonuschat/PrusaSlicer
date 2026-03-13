@@ -200,6 +200,7 @@ LayerHeightTexture generate_layer_height_texture(
  * @param selected Currently selected range, or nullopt if none.
  * @param next_after_selected First range after the selected one, or nullopt if selected is last.
  * @param max_existing_z Highest max_z across all existing ranges (0 if empty).
+ * @param object_max_z Maximum Z height of the object, new ranges are clamped to this value.
  * @param min_layer_height Minimum allowed layer height, used when splitting adjacent ranges.
  * @return The new height range, or nullopt if there is no space to insert one.
  */
@@ -207,6 +208,7 @@ std::optional<Domain::LayerHeightRange> compute_new_height_range(
     const std::optional<Domain::LayerHeightRange>& selected,
     const std::optional<Domain::LayerHeightRange>& next_after_selected,
     double max_existing_z,
+    double object_max_z,
     double min_layer_height
 );
 
