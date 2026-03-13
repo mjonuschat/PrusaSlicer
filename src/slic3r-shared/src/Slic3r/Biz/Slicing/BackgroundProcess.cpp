@@ -185,13 +185,9 @@ void BackgroundProcess::update(
         } else if (empty) {
             status_update.code = StatusCode::Empty;
         } else if (unchanged) {
-            if (previous_status == StatusCode::InvalidData) {
-                status_update.code = StatusCode::Modified;
-            } else {
-                status_update.code = previous_status;
-                status_update.clear_warnings = false;
-                status_update.clear_errors = false;
-            }
+            status_update.code = previous_status;
+            status_update.clear_warnings = false;
+            status_update.clear_errors = false;
         } else if (changed){
             const auto& changed_status{std::get<ApplyStatus::Changed>(*apply_status)};
             status_update.code = StatusCode::Modified;
