@@ -170,8 +170,8 @@ static BedContainmentState contains_2d_convex(
     // to detect the rare edge-edge intersection case where two convex shapes
     // overlap without any vertex of one being inside the other.
     if (!object_convex_hull.empty()) {
-        const Domain::Bed& bed                   = bed_instance.instance.bed.get();
-        const Domain::Polygon scaled_bed_contour = Polygon::scaled(bed.contour());
+        ASSERT(bed_instance.scaled_bed_contour != nullptr);
+        const Domain::Polygon& scaled_bed_contour = *bed_instance.scaled_bed_contour;
 
         Domain::Polygon scaled_object_contour = Polygon::scaled(object_convex_hull);
         scaled_object_contour.translate(Scaling::scaled(-instance_offset));
@@ -188,13 +188,15 @@ static BedContainmentState contains_2d_convex(
  * Uses Clipper boolean difference to determine overlap.
  */
 static BedContainmentState contains_2d_custom(
-    const Domain::Bed& bed,
+    const BedInstanceCollisionData& bed_instance,
     const Domain::Vec2ds& object_convex_hull,
     const Domain::Vec2d& instance_offset
 )
 {
-    const Domain::Polygon scaled_bed_contour = Polygon::scaled(bed.contour());
-    Domain::Polygon scaled_object_contour    = Polygon::scaled(object_convex_hull);
+    ASSERT(bed_instance.scaled_bed_contour != nullptr);
+
+    const Domain::Polygon& scaled_bed_contour = *bed_instance.scaled_bed_contour;
+    Domain::Polygon scaled_object_contour = Polygon::scaled(object_convex_hull);
     scaled_object_contour.translate(Scaling::scaled(-instance_offset));
     const Domain::Polygons contour_difference =
         ClipperUtils::diff(scaled_object_contour, scaled_bed_contour);
@@ -248,7 +250,7 @@ BedContainmentState contains_2d(
             instance_offset
         );
     case Domain::BedType::Custom:
-        return contains_2d_custom(bed, object_convex_hull, instance_offset);
+        return contains_2d_custom(bed_instance, object_convex_hull, instance_offset);
     default:
         PANIC("Found invalid bed");
         return BedContainmentState::Outside;

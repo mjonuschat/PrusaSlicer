@@ -5,9 +5,10 @@
 #include <set>
 #include <iterator>
 
-#include <Slic3r/Domain/Project.hpp>
-#include <Slic3r/Domain/BedRef.hpp>
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r::Biz {
 
@@ -114,6 +115,12 @@ public:
     );
 
 private:
+    struct BedCacheEntry
+    {
+        AABBMesh aabb_mesh;
+        Domain::Polygon scaled_contour;
+    };
+
     void update_instance_bed_placement(
         Domain::Project& project,
         Domain::ModelInstance& inst,
@@ -123,7 +130,7 @@ private:
     const Algorithms::Bed::ObjectCollisionData&
     get_instance_collision_data(const Domain::Project& project, const Domain::ModelInstance& inst);
 
-    AABBMesh& get_or_create_bed_mesh(const Domain::Bed& bed);
+    BedCacheEntry& get_or_create_bed_cache(const Domain::Bed& bed);
 
     std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
     find_bed_instance_for_bounds(
@@ -156,8 +163,8 @@ private:
     std::chrono::steady_clock::time_point m_last_cache_clear_time =
         std::chrono::steady_clock::now();
 
-    // Cache containing bed contour's AABBMesh, keyed by bed ID, to avoid expensive recreation.
-    std::map<size_t, AABBMesh> m_bed_mesh_cache;
+    // Cache containing bed contour's AABBMesh and scaled polygon, keyed by bed ID, to avoid expensive recreation.
+    std::map<size_t, BedCacheEntry> m_bed_cache;
 };
 
 } // namespace Slic3r::Biz

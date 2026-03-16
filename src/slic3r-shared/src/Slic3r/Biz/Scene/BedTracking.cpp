@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
 using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
@@ -54,12 +55,18 @@ void remove_instance_from_bed(
     }
 }
 
-AABBMesh& BedTracking::get_or_create_bed_mesh(const Domain::Bed& bed)
+BedTracking::BedCacheEntry& BedTracking::get_or_create_bed_cache(const Bed& bed)
 {
-    std::map<size_t, AABBMesh>::iterator it = m_bed_mesh_cache.find(bed.id().id);
-    if (it == m_bed_mesh_cache.end()) {
-        it = m_bed_mesh_cache
-                 .try_emplace(bed.id().id, Algorithms::Bed::bed_contour_as_aabb_mesh(bed))
+    std::map<size_t, BedCacheEntry>::iterator it = m_bed_cache.find(bed.id().id);
+    if (it == m_bed_cache.end()) {
+        it = m_bed_cache
+                 .try_emplace(
+                     bed.id().id,
+                     BedCacheEntry{
+                         Algorithms::Bed::bed_contour_as_aabb_mesh(bed),
+                         Algorithms::Polygon::scaled(bed.contour())
+                     }
+                 )
                  .first;
     }
 
@@ -73,20 +80,22 @@ BedTracking::find_bed_instance_for_bounds(
 )
 {
     for (const auto& cc : project.config_containers()) {
-        const AABBMesh& bed_aabb_mesh = get_or_create_bed_mesh(cc->bed());
+        const BedCacheEntry& bed_cache = get_or_create_bed_cache(cc->bed());
         for (const auto& bi : cc->bed_instances()) {
-            Algorithms::Bed::BedInstanceCollisionData bi_collision_data(*bi, &bed_aabb_mesh);
-            Algorithms::Bed::BedContainmentState state =
+            BedInstanceCollisionData bi_collision_data(
+                *bi,
+                &bed_cache.aabb_mesh,
+                &bed_cache.scaled_contour
+            );
+            BedContainmentState state =
                 Algorithms::Bed::contains_3d(bi_collision_data, obj_collision_data);
-            if (state == Algorithms::Bed::BedContainmentState::Inside
-                || state == Algorithms::Bed::BedContainmentState::Colliding)
-            {
+            if (state == BedContainmentState::Inside || state == BedContainmentState::Colliding) {
                 return std::make_tuple(cc.get(), bi.get(), state);
             }
         }
     }
 
-    return std::make_tuple(nullptr, nullptr, Algorithms::Bed::BedContainmentState::Outside);
+    return std::make_tuple(nullptr, nullptr, BedContainmentState::Outside);
 }
 
 BedContainmentState BedTracking::check_containment_2d(
@@ -96,8 +105,12 @@ BedContainmentState BedTracking::check_containment_2d(
     const Vec2ds& convex_hull
 )
 {
-    const AABBMesh& bed_aabb_mesh = this->get_or_create_bed_mesh(bed);
-    const BedInstanceCollisionData bed_instance_collision_data(bed_instance, &bed_aabb_mesh);
+    const BedCacheEntry& bed_cache = this->get_or_create_bed_cache(bed);
+    const BedInstanceCollisionData bed_instance_collision_data(
+        bed_instance,
+        &bed_cache.aabb_mesh,
+        &bed_cache.scaled_contour
+    );
     return Algorithms::Bed::contains_2d(bed_instance_collision_data, bounding_box, convex_hull);
 }
 
@@ -254,9 +267,11 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
         bed_ids.emplace_back(cc->bed().id().id);
     }
     std::sort(bed_ids.begin(), bed_ids.end());
-    std::erase_if(m_bed_mesh_cache, [&](const auto& item) {
-        return !std::binary_search(bed_ids.begin(), bed_ids.end(), item.first);
-    });
+    std::erase_if(
+        m_bed_cache,
+        [&](const auto& item)
+        { return !std::binary_search(bed_ids.begin(), bed_ids.end(), item.first); }
+    );
 
     BedTrackingChanges changes;
     for (const auto& e : instances) {

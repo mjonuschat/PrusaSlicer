@@ -15,6 +15,7 @@
 #include "Slic3r/Biz/Platform/IAppConfigProvider.hpp"
 
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 
 #include "Slic3r/Directories.hpp"
@@ -383,7 +384,8 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         );
     }
 
-    const AABBMesh bed_aabb_mesh = Algorithms::Bed::bed_contour_as_aabb_mesh(bed);
+    const AABBMesh bed_aabb_mesh     = Algorithms::Bed::bed_contour_as_aabb_mesh(bed);
+    const Polygon scaled_bed_contour = Algorithms::Polygon::scaled(bed.contour());
 
     // Find the max index of occupied beds
     // If there is none occupied, leave at least one bed (index 0)
@@ -396,7 +398,8 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
             for (int i = 0; i < 9; ++i) {
                 Algorithms::Bed::BedInstanceCollisionData bi_collision_data(
                     bed_instances[i],
-                    &bed_aabb_mesh
+                    &bed_aabb_mesh,
+                    &scaled_bed_contour
                 );
                 if (contains_2d(bi_collision_data, bb, ch_2d) == Algorithms::Bed::BedContainmentState::Inside) {
                     max_bed_index = std::max(max_bed_index, i);

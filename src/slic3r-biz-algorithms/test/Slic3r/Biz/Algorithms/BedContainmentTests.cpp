@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -17,6 +18,7 @@ using Slic3r::Domain::BedCreationData;
 using Slic3r::Domain::BedInstance;
 using Slic3r::Domain::BedType;
 using Slic3r::Domain::BoundingBox2d;
+using Slic3r::Domain::Polygon;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec2ds;
 
@@ -65,7 +67,8 @@ BedContainmentState check_containment(
 )
 {
     const BedInstance bed_instance(bed);
-    const BedInstanceCollisionData collision_data(bed_instance, &mesh);
+    const Polygon scaled_contour = Algorithms::Polygon::scaled(bed.contour());
+    const BedInstanceCollisionData collision_data(bed_instance, &mesh, &scaled_contour);
     return contains_2d(collision_data, object_bounding_box, object_convex_hull);
 }
 

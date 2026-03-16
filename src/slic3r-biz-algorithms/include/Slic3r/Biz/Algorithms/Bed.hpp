@@ -5,6 +5,7 @@
 
 namespace Slic3r::Domain {
 struct BedInstance;
+class Polygon;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::Biz::Algorithms::Bed {
@@ -45,10 +46,18 @@ struct WipeTowerCollisionData
 struct BedInstanceCollisionData
 {
     const Domain::BedInstance& instance;
-    const AABBMesh* aabb_mesh{ nullptr };
+    const AABBMesh* aabb_mesh{nullptr};
+    const Domain::Polygon* scaled_bed_contour{nullptr};
 
-    BedInstanceCollisionData(const Domain::BedInstance& bed_instance, const AABBMesh* bed_aabb_mesh = nullptr)
-        : instance(bed_instance), aabb_mesh(bed_aabb_mesh) {}
+    BedInstanceCollisionData(
+        const Domain::BedInstance& bed_instance,
+        const AABBMesh* bed_aabb_mesh         = nullptr,
+        const Domain::Polygon* scaled_contour = nullptr
+    ) :
+        instance(bed_instance),
+        aabb_mesh(bed_aabb_mesh),
+        scaled_bed_contour(scaled_contour)
+    {}
 
     Domain::Vec2d instance_offset() const;
 };
