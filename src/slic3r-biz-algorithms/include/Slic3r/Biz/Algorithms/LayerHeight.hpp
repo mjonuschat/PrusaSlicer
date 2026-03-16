@@ -275,4 +275,17 @@ bool check_object_layers_fixed(
     const Domain::ZHeightPairs& layer_height_profile
 );
 
+/**
+ * @brief Clamps all layer heights in the profile to the given min/max bounds.
+ *
+ * @param layer_height_profile The layer height profile to clamp in place.
+ * @param min_layer_height The minimum allowed layer height.
+ * @param max_layer_height The maximum allowed layer height.
+ */
+void clamp_layer_height_profile(
+    Domain::ZHeightPairs& layer_height_profile,
+    double min_layer_height,
+    double max_layer_height
+);
+
 } // namespace Slic3r::Biz::Algorithms::LayerHeight

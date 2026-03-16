@@ -170,6 +170,7 @@ private:
     );
     void perform_layer_height_profile_smoothing();
     void perform_layer_height_profile_reset();
+    void perform_layer_height_profile_clamping();
     void generate_adaptive_layer_height_profile();
 
     void apply_layer_height_profile_to_model() const;

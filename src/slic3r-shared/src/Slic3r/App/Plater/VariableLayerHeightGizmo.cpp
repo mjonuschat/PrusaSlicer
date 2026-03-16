@@ -321,9 +321,11 @@ void VariableLayerHeightGizmo::on_activated()
         config_container,
         m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
     );
+
     m_mouse_button_down = Button::None;
     m_mouse_dragging    = false;
 
+    this->perform_layer_height_profile_clamping();
     this->set_dialog_layer_heights_profile_parameters();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -697,6 +699,21 @@ void VariableLayerHeightGizmo::perform_layer_height_profile_reset()
     this->refresh_mesh_nodes_material();
     this->update_side_panel_layer_height_profile();
     this->apply_layer_height_profile_to_model();
+}
+
+void VariableLayerHeightGizmo::perform_layer_height_profile_clamping()
+{
+    const ZHeightPairs original_profile = m_layer_height_params.layer_height_profile;
+    ZHeightPairs& clamped_profile       = m_layer_height_params.layer_height_profile;
+    Algorithms::LayerHeight::clamp_layer_height_profile(
+        clamped_profile,
+        m_layer_height_params.min_layer_height,
+        m_layer_height_params.max_layer_height
+    );
+
+    if (clamped_profile != original_profile) {
+        this->apply_layer_height_profile_to_model();
+    }
 }
 
 void VariableLayerHeightGizmo::generate_adaptive_layer_height_profile()

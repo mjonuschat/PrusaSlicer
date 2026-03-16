@@ -554,6 +554,18 @@ bool check_object_layers_fixed(
     return true;
 }
 
+void clamp_layer_height_profile(
+    ZHeightPairs& layer_height_profile,
+    const double min_layer_height,
+    const double max_layer_height
+)
+{
+    for (ZHeightPair& z_height_pair : layer_height_profile) {
+        z_height_pair.layer_height =
+            std::clamp(z_height_pair.layer_height, min_layer_height, max_layer_height);
+    }
+}
+
 } // namespace Slic3r::Biz::Algorithms::LayerHeight
 
 namespace Slic3r::Biz::Algorithms::LayerHeight::Adaptive {

@@ -344,7 +344,8 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"max_fan_speed", steps({propagate(psGCodeExport)})},
     {"max_layer_height",
      steps(
-         {propagate(posPerimeters),
+         {propagate(posSlice),
+          propagate(posPerimeters),
           propagate(posInfill),
           propagate(posSupportMaterial),
           propagate(psSkirtBrim)}
@@ -359,7 +360,8 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"min_feature_size", steps({propagate(posSlice)})},
     {"min_layer_height",
      steps(
-         {propagate(posPerimeters),
+         {propagate(posSlice),
+          propagate(posPerimeters),
           propagate(posInfill),
           propagate(posSupportMaterial),
           propagate(psSkirtBrim)}

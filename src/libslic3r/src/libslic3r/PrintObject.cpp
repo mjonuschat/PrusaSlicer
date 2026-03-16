@@ -30,6 +30,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
+#include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
@@ -2539,6 +2540,13 @@ bool PrintObject::update_layer_height_profile(const Domain::ModelObject &model_o
         // The layer height profile is already compressed.
         updated = true;
     }
+
+    Algorithms::LayerHeight::clamp_layer_height_profile(
+        layer_height_profile,
+        slicing_parameters.min_layer_height,
+        slicing_parameters.max_layer_height
+    );
+
     return updated;
 }
 
