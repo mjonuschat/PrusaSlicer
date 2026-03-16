@@ -134,6 +134,8 @@ private:
     SelectedObjectData m_selected_object_data;
     LayerHeightParams m_layer_height_params;
     Scene::Node::NodeList m_non_selected_volumes_nodes;
+    /** Whether a variable layer height profile existed on the model when the gizmo was activated. */
+    bool m_has_variable_layer_height_profile{false};
 
     Domain::LayerConfigRanges m_layer_config_ranges;
     std::optional<Domain::LayerHeightRange> m_selected_layer_height_range;

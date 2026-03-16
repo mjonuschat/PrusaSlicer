@@ -31,7 +31,6 @@ using Slic3r::Biz::Algorithms::LayerHeight::AdaptiveParams;
 using Slic3r::Biz::Algorithms::LayerHeight::AdjustAction;
 using Slic3r::Biz::Algorithms::LayerHeight::AdjustParams;
 using Slic3r::Biz::Algorithms::LayerHeight::GenerateLayersParams;
-using Slic3r::Biz::Algorithms::LayerHeight::ProfileFromRangesParams;
 using Slic3r::Biz::Algorithms::LayerHeight::SmoothParams;
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::Scene::SceneInteractor;
@@ -680,25 +679,13 @@ void VariableLayerHeightGizmo::perform_layer_height_profile_reset()
     const ModelObject& model_object              = *m_selected_object_data.model_object;
     const LayerConfigRanges& layer_config_ranges = model_object.layer_config_ranges;
 
-    const ProfileFromRangesParams profile_from_ranges_params{
-        .layer_height              = m_layer_height_params.layer_height,
-        .first_object_layer_height = m_layer_height_params.first_object_layer_height,
-        .object_print_z_height     = m_layer_height_params.object_print_z_height,
-        .object_print_z_uncompensated_height =
-            m_layer_height_params.object_print_z_uncompensated_height,
-        .first_object_layer_height_fixed = m_layer_height_params.first_object_layer_height_fixed
-    };
-
     m_layer_height_params.layer_height_profile =
-        Algorithms::LayerHeight::layer_height_profile_from_ranges(
-            profile_from_ranges_params,
-            layer_config_ranges
-        );
+        compute_layer_height_profile(m_layer_height_params, layer_config_ranges);
 
     this->update_variable_layer_height_texture();
     this->refresh_mesh_nodes_material();
     this->update_side_panel_layer_height_profile();
-    this->apply_layer_height_profile_to_model();
+    this->clear_layer_height_profile_on_model();
 }
 
 void VariableLayerHeightGizmo::perform_layer_height_profile_clamping()
@@ -755,6 +742,21 @@ void VariableLayerHeightGizmo::apply_layer_height_profile_to_model() const
 
     const auto layer_height_profile_modificator = [this](ModelObject& object) -> void
     { object.layer_height_profile.set(m_layer_height_params.layer_height_profile); };
+
+    m_scene_interactor.modify_layer_height_profile(object_ref, layer_height_profile_modificator);
+}
+
+void VariableLayerHeightGizmo::clear_layer_height_profile_on_model() const
+{
+    ASSERT(m_selected_object_data.model_object != nullptr);
+    ASSERT(m_selected_object_data.model_instance != nullptr);
+    const ModelInstance& model_instance = *m_selected_object_data.model_instance;
+    const ModelObject& model_object     = *m_selected_object_data.model_object;
+
+    const Domain::ElementRef object_ref{model_object.id().id, model_instance.id().id};
+
+    const auto layer_height_profile_modificator = [](ModelObject& object) -> void
+    { object.layer_height_profile.clear(); };
 
     m_scene_interactor.modify_layer_height_profile(object_ref, layer_height_profile_modificator);
 }

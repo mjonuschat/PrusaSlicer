@@ -30,7 +30,6 @@ using Slic3r::App::Platform::KeyModifier;
 using Slic3r::App::Platform::KeyModifiers;
 using Slic3r::App::Scene::Node;
 using Slic3r::App::Scene::SceneNodeTag;
-using Slic3r::Biz::Algorithms::LayerHeight::ProfileFromRangesParams;
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::Scene::SceneInteractor;
 using Slic3r::Domain::BoundingBox3d;
@@ -268,7 +267,11 @@ void HeightRangeGizmo::on_activated()
         config_container,
         m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
     );
-    m_layer_config_ranges = m_selected_object_data.model_object->layer_config_ranges;
+    m_layer_config_ranges               = m_selected_object_data.model_object->layer_config_ranges;
+    m_has_variable_layer_height_profile = is_valid_layer_height_profile(
+        m_selected_object_data.model_object->layer_height_profile.get(),
+        m_layer_height_params.object_print_z_uncompensated_height
+    );
 
     this->set_dialog_layer_heights_profile_parameters();
     this->update_side_panel_layer_height_profile();
@@ -298,6 +301,7 @@ void HeightRangeGizmo::on_deactivated()
     m_clipboard_height_range_settings.reset();
     m_selected_object_data = {};
     m_non_selected_volumes_nodes.clear();
+    m_has_variable_layer_height_profile = false;
 
     scene.remove_listener<ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
@@ -649,20 +653,14 @@ void HeightRangeGizmo::update_side_panel_height_ranges()
 
 void HeightRangeGizmo::update_layer_height_profile()
 {
-    const ProfileFromRangesParams profile_from_ranges_params{
-        .layer_height              = m_layer_height_params.layer_height,
-        .first_object_layer_height = m_layer_height_params.first_object_layer_height,
-        .object_print_z_height     = m_layer_height_params.object_print_z_height,
-        .object_print_z_uncompensated_height =
-            m_layer_height_params.object_print_z_uncompensated_height,
-        .first_object_layer_height_fixed = m_layer_height_params.first_object_layer_height_fixed
-    };
+    if (m_has_variable_layer_height_profile) {
+        // Variable layer height profile has priority, so we keep showing the painted profile.
+        return;
+    }
 
+    // No variable layer height profile, so we regenerate from ranges to show height range overrides.
     m_layer_height_params.layer_height_profile =
-        Algorithms::LayerHeight::layer_height_profile_from_ranges(
-            profile_from_ranges_params,
-            m_layer_config_ranges
-        );
+        compute_layer_height_profile(m_layer_height_params, m_layer_config_ranges);
 }
 
 void HeightRangeGizmo::update_layer_height_title(

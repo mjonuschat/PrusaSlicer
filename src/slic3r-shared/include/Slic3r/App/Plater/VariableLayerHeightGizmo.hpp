@@ -174,6 +174,7 @@ private:
     void generate_adaptive_layer_height_profile();
 
     void apply_layer_height_profile_to_model() const;
+    void clear_layer_height_profile_on_model() const;
 
     void update_side_panel_layer_height_profile();
     void update_side_panel_height_ranges();

@@ -82,7 +82,9 @@ LayerHeightParams compute_layer_height_params(
     const ConfigPackFDM& fdm_config = std::get<ConfigPackFDM>(config_pack);
 
     ASSERT(bed_ref.config_container_id == config_container.id().id);
-    const Domain::BedInstance& bed_instance{config_container.find_bed_instance(bed_ref.instance_id)};
+    const Domain::BedInstance& bed_instance{
+        config_container.find_bed_instance(bed_ref.instance_id)
+    };
 
     const std::vector<unsigned> extruder_candidates =
         Slicing::get_extruder_candidates(project.model(), fdm_config, bed_instance);
@@ -107,29 +109,50 @@ LayerHeightParams compute_layer_height_params(
         .object_shrinkage_compensation_z = slicing_parameters.object_shrinkage_compensation_z
     };
 
-    const ZHeightPairs& layer_height_profile = model_object.layer_height_profile.get();
-    const bool valid_layer_height_profile    = !layer_height_profile.empty()
-        && std::abs(layer_height_profile.back().z - params.object_print_z_uncompensated_height)
-            <= LAYERS_HEIGHT_PROFILE_VALID_THRESHOLD;
-
-    if (valid_layer_height_profile) {
-        params.layer_height_profile = layer_height_profile;
-    } else {
-        const LayerConfigRanges& layer_config_ranges = model_object.layer_config_ranges;
-        const ProfileFromRangesParams profile_from_ranges_params{
-            .layer_height                        = params.layer_height,
-            .first_object_layer_height           = params.first_object_layer_height,
-            .object_print_z_height               = params.object_print_z_height,
-            .object_print_z_uncompensated_height = params.object_print_z_uncompensated_height,
-            .first_object_layer_height_fixed     = params.first_object_layer_height_fixed
-        };
-        params.layer_height_profile = Algorithms::LayerHeight::layer_height_profile_from_ranges(
-            profile_from_ranges_params,
-            layer_config_ranges
-        );
-    }
+    params.layer_height_profile = compute_layer_height_profile(
+        params,
+        model_object.layer_config_ranges,
+        model_object.layer_height_profile.get()
+    );
 
     return params;
+}
+
+bool is_valid_layer_height_profile(
+    const ZHeightPairs& layer_height_profile,
+    const double object_print_z_uncompensated_height
+)
+{
+    return !layer_height_profile.empty()
+        && std::abs(layer_height_profile.back().z - object_print_z_uncompensated_height)
+        <= LAYERS_HEIGHT_PROFILE_VALID_THRESHOLD;
+}
+
+ZHeightPairs compute_layer_height_profile(
+    const LayerHeightParams& params,
+    const LayerConfigRanges& layer_config_ranges,
+    const ZHeightPairs& layer_height_profile
+)
+{
+    if (is_valid_layer_height_profile(
+            layer_height_profile,
+            params.object_print_z_uncompensated_height
+        ))
+    {
+        return layer_height_profile;
+    }
+
+    const ProfileFromRangesParams profile_from_ranges_params{
+        .layer_height                        = params.layer_height,
+        .first_object_layer_height           = params.first_object_layer_height,
+        .object_print_z_height               = params.object_print_z_height,
+        .object_print_z_uncompensated_height = params.object_print_z_uncompensated_height,
+        .first_object_layer_height_fixed     = params.first_object_layer_height_fixed
+    };
+    return Algorithms::LayerHeight::layer_height_profile_from_ranges(
+        profile_from_ranges_params,
+        layer_config_ranges
+    );
 }
 
 HeightRangeEntries create_height_ranges_from_config(
