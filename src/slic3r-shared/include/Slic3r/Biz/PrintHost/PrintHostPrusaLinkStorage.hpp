@@ -31,7 +31,7 @@ public:
     std::string operation_type() const override { return "storage"; }
 private:
     std::string make_url(const std::string& path) const;
-    void set_auth(Network::IHttp* http) const;
+    bool set_auth(Network::IHttp* http, std::string& err_msg) const;
 };
 
 }

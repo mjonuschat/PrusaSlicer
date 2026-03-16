@@ -42,7 +42,11 @@ bool PrintHostPrusaLinkStorage::perform(
         std::move(url),
         retry_fn
     );
-    set_auth(http.get());
+    std::string auth_err_msg;
+    if (!set_auth(http.get(), auth_err_msg)) {
+        error_fn(auth_err_msg);
+        return false;
+    }
     http->header("Accept-Language", lang);
     http->on_error([&](std::string body, std::string error, unsigned status) {
             SPDLOG_ERROR("{}: Error getting storage: {}, HTTP {}, body: `{}`", name, error, status, body);
@@ -99,7 +103,7 @@ std::string PrintHostPrusaLinkStorage::make_url(const std::string& path) const
     }
 }
 
-void PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http) const
+bool PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http, std::string& err_msg) const
 {
     const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
     ASSERT(auth);
@@ -112,8 +116,8 @@ void PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http) const
         http->auth_digest(auth->username, auth->password);
         break;
     default:
-        ASSERT(false, "PrusaLink does not support other auth method than api key or http digest.");
-        break;
+        err_msg = _u8L("PrusaLink does not support other authentication method than api-key or http digest.");
+        return false;
     }
 
     if (!auth->ca_file.empty()) {
