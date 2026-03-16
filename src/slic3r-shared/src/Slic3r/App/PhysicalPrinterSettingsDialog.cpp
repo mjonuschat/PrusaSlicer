@@ -15,6 +15,9 @@
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
 
+#include "Slic3r/App/IDialogManager.hpp"
+#include <Slic3r/App/AppServices.hpp>
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -189,8 +192,18 @@ void PhysicalPrinterSettingsDialog::create_page_settings()
         m_page_settings->emplace_back<LayoutButton>(_u8L("Remove"));
     m_button_delete->callbacks().action = [this]
     {
-        m_stack_layout->set_current_index(0);
-        m_physical_printer_interactor.remove_selected();
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
+        dlg_manager.show_yesno_dialog(
+            _u8L("Remove Physical Printer?"),
+            _u8L("Do you wish to remove the Physical Printer?"),
+            [this](bool checked)
+            {
+                if (checked) {
+                     m_stack_layout->set_current_index(0);
+                    m_physical_printer_interactor.remove_selected();
+                }
+            }
+        );
     };
 }
 
