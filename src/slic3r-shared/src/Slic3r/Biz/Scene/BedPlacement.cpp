@@ -50,13 +50,14 @@ Domain::ElementRefs BedPlacement::layout(Domain::Project& project, const Vec2d& 
             if (j > 0)
                 pos.x() += bed_size.x() + gap.x();
 
-            Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
-            Transform3d old_bed_trafo = instances[j]->matrix();
+            const Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
+            const Transform3d old_bed_trafo = instances[j]->matrix();
+            const Transform3d delta_xform = xform * old_bed_trafo.inverse();
             instances[j]->transformation = Domain::Transformation(xform);
             for (Domain::ModelInstance* mi : instances[j]->model_instances) {
                 mi->set_transformation(
                     Domain::Transformation(
-                        mi->get_transformation().get_matrix() * xform * old_bed_trafo.inverse()
+                        delta_xform * mi->get_transformation().get_matrix()
                     )
                 );
                 ret.emplace_back(mi->get_object()->id().id, mi->id().id);

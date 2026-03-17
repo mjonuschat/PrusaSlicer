@@ -709,6 +709,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Utils/MeshClipper.hpp
         src/Slic3r/Biz/Utils/CutUtils.cpp
         include/Slic3r/Biz/Utils/CutUtils.hpp
+        src/Slic3r/Biz/Utils/Transformation.cpp
+        include/Slic3r/Biz/Utils/Transformation.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp

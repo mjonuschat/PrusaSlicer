@@ -1,6 +1,17 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
+#include "Slic3r/Biz/Utils/Transformation.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Biz/Scene/BedFactory.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Math.hpp"
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
@@ -100,35 +111,6 @@ Transformation transform_product(const SceneInteractor::Transform& orig_xform, c
     DEBUG_ASSERT(fabs(xform.determinant()) > 1e-9);
 
     return Transformation{Transform3d{xform}};
-}
-
-/**
- * @param xform The relative transformation matrix to check.
- * @return true if the transform contains any rotation component around
- * the X or Y axes, which would change the direction of the Z-axis or
- * any tranlation in z.
- */
-static bool changes_z_rotation_or_position(const Eigen::Matrix4d& xform)
-{
-    // Extract the third column of the linear part (rotation/scaling).
-    // This vector shows where the original Z-axis (0,0,1) points after transformation.
-    Eigen::Vector3d transformed_z = xform.topLeftCorner<3, 3>().col(2);
-
-    // Handle the edge case where the Z-axis is scaled to zero length.
-    // Such a transform is highly distorting and should be flagged.
-    if (transformed_z.norm() < 1e-9) {
-        return true;
-    }
-
-    // Normalize the vector to get its direction, ignoring any scaling.
-    transformed_z.normalize();
-
-    double dz = xform(2, 3);
-
-    // Check if the direction is still parallel to the original Z-axis and if there is a delta z.
-    // We use isApprox() for safe floating-point comparison. A dot product
-    // check like `abs(transformed_z.dot(Eigen::Vector3d::UnitZ()))` could also work.
-    return !transformed_z.isApprox(Eigen::Vector3d::UnitZ()) || std::abs(dz) > Domain::EPSILON;
 }
 
 static Domain::SquareMatrix4d get_wipe_tower_transform(const Domain::BedInstance& bed_instance)

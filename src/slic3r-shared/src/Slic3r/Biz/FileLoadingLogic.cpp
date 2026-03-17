@@ -19,6 +19,7 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 
+#include "Slic3r/Biz/Utils/Transformation.hpp"
 #include "Slic3r/Directories.hpp"
 
 #include "tl/expected.hpp"
@@ -451,6 +452,126 @@ void fix_svg_and_text_transformation(Loaded3MF& loaded_3mf) {
 }
 }
 
+using VolumeTrafos = std::vector<Domain::Transform3d>;
+using InstanceTrafos = std::vector<Domain::Transform3d>;
+
+struct Trafos {
+    VolumeTrafos volume_trafos;
+    InstanceTrafos instance_trafos;
+};
+
+class TrafoMap
+{
+public:
+    void insert(const VolumeTrafos& volume_trafos, const Domain::Transform3d& instance_trafo)
+    {
+        const auto it{std::ranges::find_if(
+            m_trafos,
+            [&](const Trafos& trafos)
+            { return is_approx_equal(volume_trafos, trafos.volume_trafos); }
+        )};
+        if (it != m_trafos.end()) {
+            it->instance_trafos.push_back(instance_trafo);
+        } else {
+            m_trafos.push_back(Trafos{volume_trafos, {instance_trafo}});
+        }
+    }
+
+    const std::vector<Trafos>& get_trafos() const
+    {
+        return m_trafos;
+    }
+
+private:
+    static bool is_approx_equal(
+        const std::vector<Domain::Transform3d>& a,
+        const std::vector<Domain::Transform3d>& b
+    )
+    {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        for (std::size_t i{}; i < a.size(); ++i) {
+            if (!a[i].isApprox(b[i], 1e-6)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    std::vector<Trafos> m_trafos;
+};
+
+/* @brief Makes sure that instance transform is just xy translation and rotation
+ * around z and bakes everything else directly to the object volumes. */
+static void bake_in_legacy_transorms(Loaded3MF& loaded_3mf)
+{
+    for (ModelObject* object : loaded_3mf.model.objects) {
+        TrafoMap trafo_map;
+
+        for (ModelInstance* instance : object->instances) {
+            const Domain::Transform3d& instance_trafo{instance->get_matrix()};
+            if (changes_z_rotation_or_position(instance_trafo.matrix())) {
+                const Domain::SquareMatrix3d rotation{instance_trafo.rotation()};
+                const double yaw{std::atan2(rotation(1, 0), rotation(0, 0))};
+                const Domain::SquareMatrix3d rotation_z{
+                    Eigen::AngleAxisd(yaw, Domain::Vec3d::UnitZ()).toRotationMatrix()
+                };
+                const Domain::Vec3d translation_xy{
+                    instance_trafo.translation().x(),
+                    instance_trafo.translation().y(),
+                    0.0
+                };
+                Domain::Transform3d new_instance_trafo{Domain::Transform3d::Identity()};
+                new_instance_trafo.translate(translation_xy);
+                new_instance_trafo.rotate(rotation_z);
+
+                VolumeTrafos new_volume_trafos;
+                for (ModelVolume* volume : object->volumes) {
+                    Domain::Transform3d world_transform{
+                        instance_trafo * volume->get_transformation().get_matrix()
+                    };
+                    Domain::Transform3d new_volume_trafo{
+                        new_instance_trafo.inverse() * world_transform
+                    };
+                    new_volume_trafos.push_back(new_volume_trafo);
+                }
+                trafo_map.insert(new_volume_trafos, new_instance_trafo);
+            } else {
+                VolumeTrafos volume_trafos;
+                for (ModelVolume* volume : object->volumes) {
+                    volume_trafos.push_back(volume->get_transformation().get_matrix());
+                }
+                trafo_map.insert(volume_trafos, instance_trafo);
+            }
+        }
+        if (trafo_map.get_trafos().size() != 1) {
+            // This happens if the 3mf contains transformations, such that there is no way to
+            // bake them into volume transformations of a **single** object.
+            // This should not happen, for older slice3r projects, but in the end anyone can modify
+            // the 3mf in any way.
+
+            // If this is a problem **in the wild**, we can always remove this exception and create a
+            // new object for each trafo_map[1...N].
+            throw Loaded3MFException{
+                Read3mfIssue{Read3mfIssueType::legacy_loader_failed, _u8L("Invalid transformations!")}
+            };
+        }
+        const InstanceTrafos& new_instance_trafos{trafo_map.get_trafos().front().instance_trafos};
+        const VolumeTrafos& new_volume_trafos{trafo_map.get_trafos().front().volume_trafos};
+        ASSERT(object->instances.size() == new_instance_trafos.size());
+        ASSERT(object->volumes.size() == new_volume_trafos.size());
+
+        for (std::size_t i{}; i < object->instances.size(); ++i) {
+            object->instances[i]->set_transformation(Transformation{new_instance_trafos[i]});
+        }
+        for (std::size_t i{}; i < object->volumes.size(); ++i) {
+            object->volumes[i]->set_transformation(Transformation{new_volume_trafos[i]});
+        }
+    }
+}
+
 // The following function is used to load projects from PS 2.x.
 static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPresetBundle bundle)
 {
@@ -519,6 +640,7 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
         fix_svg_and_text_transformation(loaded_3mf);
     }
 
+    bake_in_legacy_transorms(loaded_3mf);
 
     loaded_3mf.filepath_3mf = file_path;
     return loaded_3mf;
