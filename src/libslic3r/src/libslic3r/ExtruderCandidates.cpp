@@ -174,12 +174,26 @@ std::vector<unsigned> get_extruder_candidates(
         extruders.merge(support_extruders);
     }
 
+    const bool can_have_wipe_tower{
+        !config.print.items.opt("spiral_vase").get<bool>()
+        && config.print.items.opt("wipe_tower").get<bool>()
+        && extruders.size() > 1
+    };
+
+    if (can_have_wipe_tower) {
+        const int wipe_tower_extruder{config.print.items.opt("wipe_tower_extruder").get<int>()};
+        if (wipe_tower_extruder > 0 && wipe_tower_extruder < config.filament.size() + 1) {
+            extruders.insert(static_cast<unsigned>(wipe_tower_extruder - 1));
+        }
+    }
+
     std::vector<unsigned> result;
     for (unsigned extruder : extruders) {
         if (extruder < config.filament.size()) {
             result.push_back(extruder);
         }
     }
+
     return result;
 }
 } // namespace Slic3r::Biz::Slicing

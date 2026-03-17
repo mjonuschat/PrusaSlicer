@@ -750,6 +750,7 @@ private:
     std::vector<unsigned> m_extruder_candidates;
     Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
     std::unique_ptr<Biz::Print::PrePreview> m_pre_preview;
+    bool m_invalid{false};
 };
 
 } /* slic3r_Print_hpp_ */

@@ -263,12 +263,14 @@ Biz::Print::ApplyStatus::Status Print::update(
 
         std::vector<Biz::Slicing::Error> errors{validate_input(model, config_fdm, hw_config)};
         if (!errors.empty()) {
+            m_invalid = true;
             result = ApplyStatus::InvalidData{std::move(errors)};
             return;
         }
 
         const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates, hw_config)};
         if (!slicing_input.has_value()) {
+            m_invalid = true;
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
             return;
         }
@@ -296,6 +298,15 @@ Biz::Print::ApplyStatus::Status Print::update(
             }
         }
     });
+
+    if (std::holds_alternative<ApplyStatus::InvalidData>(result)) {
+        m_invalid = true;
+    } else {
+        if (m_invalid && std::holds_alternative<ApplyStatus::Unchanged>(result)) {
+            result = ApplyStatus::Changed{};
+        }
+        m_invalid = false;
+    }
 
     if (std::holds_alternative<ApplyStatus::Changed>(result) && m_pre_preview) {
         if (m_pre_preview->invalidate(*this)) {
