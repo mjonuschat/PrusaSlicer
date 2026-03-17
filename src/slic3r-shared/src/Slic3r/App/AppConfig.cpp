@@ -80,6 +80,17 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
         }
     );
 
+    def               = defs.add("translation_language", typeid(std::string));
+    def->location     = Domain::AppConfigLocation{};
+    def->label        = L("Language");
+    def->category     = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
+    def->gui_type     = GUIType::language_selection;
+    def->tooltip =
+        L("Selection of the application language.\n"
+          "Note: Application should be recreated after selection change.");
+    def->init_fn = Domain::init_with("en");
+
 #ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
     def->location = Domain::AppConfigLocation{};
@@ -122,6 +133,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->label = L("Downloads directory");
     def->tooltip = L("Sets directory for downloads such as objects from Printables service or app updates. Must be valid path.");
     def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->full_width = true;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
     def->init_fn = []() { return Domain::ConfigValue(system_downloads_dir().string()); };
 

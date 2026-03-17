@@ -282,6 +282,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigItemExtruderSelection.cpp
         include/Slic3r/App/Config/ConfigItemRammingParams.hpp
         src/Slic3r/App/Config/ConfigItemRammingParams.cpp
+        include/Slic3r/App/Config/ConfigItemLanguageSelection.hpp
+        src/Slic3r/App/Config/ConfigItemLanguageSelection.cpp
         include/Slic3r/App/Config/ConfigItemFilePicker.hpp
         src/Slic3r/App/Config/ConfigItemFilePicker.cpp
         include/Slic3r/App/Config/ConfigItemBedShape.hpp

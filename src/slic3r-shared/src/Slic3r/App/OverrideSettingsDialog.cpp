@@ -29,14 +29,17 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
 
     m_categorizer = std::make_shared<ObservableOverrideCategorizer>();
 
-    m_select_category = [this](Domain::ConfigItemDef::Category category) {
+    m_select_category = [this](Domain::ConfigItemDef::Category category)
+    {
         if (m_current_category != category) {
             m_current_category = category;
             m_category_filter->invalidate();
             m_options_category_text->set_text(
-                Domain::ConfigItemDef::translate_category(
-                    category,
-                    m_project_interactor.selected_config_container().print_technology()
+                Biz::_u8(
+                    Domain::ConfigItemDef::translate_category(
+                        category,
+                        m_project_interactor.selected_config_container().print_technology()
+                    )
                 )
             );
         }

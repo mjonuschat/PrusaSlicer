@@ -7,6 +7,7 @@
 #include "Slic3r/Domain/Config.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -39,10 +40,10 @@ void OverrideCategoryButton::on_data_update()
     set_label(m_state->name);
 
     set_label(
-        Domain::ConfigItemDef::translate_category(
+        Biz::_u8(Domain::ConfigItemDef::translate_category(
             m_state->config_item->def().category,
             m_project_interactor.selected_config_container().print_technology()
-        )
+        ))
     );
 }
 

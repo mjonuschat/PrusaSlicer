@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 namespace {
 inline std::string string_to_lower(std::string_view input)
@@ -246,16 +247,20 @@ int SearchObservableList::score_item(const Domain::ConfigItem* item)
             std::make_pair(
                 name,
                 ItemStrings{
-                    string_to_lower(item->def().label),
+                    string_to_lower(Biz::_u8(item->def().label)),
                     string_to_lower(
-                        Domain::ConfigItemDef::translate_category(
-                            item->def().category,
-                            Domain::PrinterTechnology::FFF
+                        Biz::_u8(
+                            Domain::ConfigItemDef::translate_category(
+                                item->def().category,
+                                Domain::PrinterTechnology::FFF
+                            )
                         )
                     ),
-                    string_to_lower(item->def().tooltip),
+                    string_to_lower(Biz::_u8(item->def().tooltip)),
                     string_to_lower(
-                        Domain::ConfigItemDef::translate_option_group(item->def().option_group)
+                        Biz::_u8(
+                            Domain::ConfigItemDef::translate_option_group(item->def().option_group)
+                        )
                     )
                 }
             )

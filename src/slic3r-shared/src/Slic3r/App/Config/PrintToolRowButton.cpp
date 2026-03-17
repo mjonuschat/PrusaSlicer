@@ -95,7 +95,7 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
     update_rule_visibility();
 
     set_tooltip(ConfigItemUtils::config_item_tooltip(*print_tool_item->print_item));
-    m_label->set_text(print_tool_item->print_item->def().label);
+    m_label->set_text(Biz::_u8(print_tool_item->print_item->def().label));
 }
 
 void PrintToolRowButton::checked_updated_internal()

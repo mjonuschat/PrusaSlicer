@@ -63,7 +63,7 @@ void TabsBarCtrl::Button::messure_min_size()
     int btn_margin = w_config()->em_unit(this);
     int x, y;
 
-    wxString localized_label = _(m_appearance.label);
+    wxString localized_label = m_appearance.label;
 
     if (m_appearance.orient == wxHORIZONTAL) {
         GetTextExtent(localized_label.IsEmpty() ? wxString::FromUTF8("a") : localized_label, &x, &y);
@@ -150,7 +150,7 @@ void TabsBarCtrl::Button::render()
         dc.DrawRoundedRectangle(rc, int(0.5* em));
 
     wxPoint pt = { 0, 0 };
-    wxString text = _(m_appearance.label);
+    wxString text = m_appearance.label;
 
     if (m_appearance.orient == wxHORIZONTAL) {
         if (m_bmp_bundle.IsOk()) {

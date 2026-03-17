@@ -176,8 +176,6 @@ bool DesktopApp::OnInit()
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
-    init_translations();
-
     const bool is_dark             = true;
     const bool is_sys_menu         = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
@@ -224,6 +222,7 @@ bool DesktopApp::OnInit()
     auto& app_services{AppServices::instance()};
 
     app_services.set_app_config(std::move(app_config));
+    init_translations();
 
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 
@@ -354,32 +353,61 @@ DesktopApp::~DesktopApp() {
 
 void DesktopApp::init_translations()
 {
+    AppConfig& app_config = AppServices::instance().app_config();
     // Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
-    std::string language = ""; // app_config->get("translation_language");
+    std::string language             = app_config.get<std::string>("translation_language");
+    std::string language_description = localization().language_description(language);
     if (!language.empty())
-        BOOST_LOG_TRIVIAL(trace) << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
+        BOOST_LOG_TRIVIAL(trace) << boost::format(
+                                        "translation_language provided by PrusaSlicer.ini: %1%"
+                                    )
+                % language_description;
 
     if (!localization().set_language(language)) {
         // Loading the language dictionary failed.
-        wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
+        wxString message =
+            WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language_description);
 #if !defined(_WIN32) && !defined(__APPLE__)
         // likely some linux system
-        message += "\n" + WX::format_wxstr(("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"), "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
+        message +=
+            "\n"
+            + WX::format_wxstr(
+                (
+                    "You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
+                ),
+                "\"locale-gen\"",
+                "\"dpkg-reconfigure locales\""
+            );
 #endif
         message += WX::from_u8("\n\nApplication will close.");
-        wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
+        wxMessageBox(
+            message,
+            WX::from_u8("PrusaSlicer - Switching language failed"),
+            wxOK | wxICON_ERROR
+        );
 
         std::exit(EXIT_FAILURE);
     } else if (!language.empty() && language != localization().active_language()) {
         // Loading the language dictionary failed.
-        wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
-        message +=
-            WX::from_u8("\n\n")
+        wxString message =
+            WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language_description);
+        message += WX::from_u8("\n\n")
             + WX::format_wxstr(
-                localization().is_alternative_language() ? "Application is started in alternative language %1%." : "Application is started in system language %1%.",
-                localization().active_language()
+                       localization().is_alternative_language() ?
+                           "Application is started in alternative language %1%." :
+                           "Application is started in system language %1%.",
+                       localization().active_language()
             );
-        wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
+        wxMessageBox(
+            message,
+            WX::from_u8("PrusaSlicer - Switching language"),
+            wxOK | wxICON_WARNING
+        );
+        app_config.set(
+            "translation_language",
+            localization().language_description(localization().active_language())
+        );
+        app_config.save();
     }
 }
 

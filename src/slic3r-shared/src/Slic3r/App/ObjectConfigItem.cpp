@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 using namespace Slic3r::App::Yoga;
 
@@ -55,7 +56,7 @@ void ObjectConfigItem::on_data_update()
         ASSERT(m_control_item, "ConfigItem needs to derive from Yoga::Item");
     }
 
-    m_label->set_text(m_state->config_item->def().label);
+    m_label->set_text(Biz::_u8(m_state->config_item->def().label));
 
     m_control->set_state(*m_state->config_item);
     m_control->set_mixed(m_state->mixed);

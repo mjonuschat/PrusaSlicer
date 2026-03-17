@@ -5,6 +5,7 @@
 #include "Slic3r/App/SearchResultRow.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
@@ -82,11 +83,11 @@ void SearchResultRow::on_data_update()
     Domain::ConfigItemDef::Category category =
         is_override ? Domain::ConfigItemDef::Category::Filament_Overrides : def.category;
 
-    m_text_category->set_text(Domain::ConfigItemDef::translate_category(category, technology));
+    m_text_category->set_text(Biz::_u8(Domain::ConfigItemDef::translate_category(category, technology)));
 
-    m_text_label->set_text(def.label);
+    m_text_label->set_text(Biz::_u8(def.label));
 
-    m_tooltip->set_text(fmt::format("{}\n{}\n{}", def.label, m_text_category->text(), def.tooltip));
+    m_tooltip->set_text(fmt::format("{}\n{}\n{}", Biz::_u8(def.label), m_text_category->text(), Biz::_u8(def.tooltip)));
 }
 
 void SearchResultRow::hovered_updated_internal()

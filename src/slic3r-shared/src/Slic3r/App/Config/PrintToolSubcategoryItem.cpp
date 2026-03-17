@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 using namespace Slic3r::App::Yoga;
 
@@ -34,7 +35,9 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
     set_padding(Paddings(20.f, 20.f, 20.f, 0.f));
 
     m_label = emplace_back<Text>(
-        Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group),
+        Biz::_u8(
+            Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group)
+        ),
         Render::ImguiFontType::Bold
     );
 
@@ -103,7 +106,9 @@ void PrintToolSubcategoryItem::clear_navigation()
 void PrintToolSubcategoryItem::on_data_update()
 {
     m_label->set_text(
-        Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group)
+        Biz::_u8(
+            Domain::ConfigItemDef::translate_option_group(m_state->print_item->def().option_group)
+        )
     );
 
     const Domain::ConfigItemDef::OptionGroup option_group = m_state->print_item->def().option_group;

@@ -15,6 +15,7 @@
 #include "Slic3r/App/WX/DiffDVCModel.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 #include <wx/app.h>
 #include <wx/stattext.h>
@@ -604,11 +605,13 @@ static void append_diff_key_in_tree(
             key,
             kind,
             kind_preset_name,
-            Domain::ConfigItemDef::translate_category(def.category, pt),
-            def.option_group == Domain::ConfigItemDef::OptionGroup::Unknown ?
-                def.label :
-                Domain::ConfigItemDef::translate_option_group(def.option_group),
-            def.full_label.empty() ? def.label : def.full_label,
+            Biz::_u8(Domain::ConfigItemDef::translate_category(def.category, pt)),
+            Biz::_u8(
+                def.option_group == Domain::ConfigItemDef::OptionGroup::Unknown ?
+                    def.label :
+                    Domain::ConfigItemDef::translate_option_group(def.option_group)
+            ),
+            Biz::_u8(def.full_label.empty() ? def.label : def.full_label),
             Diff::get_display_value_or_na(config_left, key),
             Diff::get_display_value_or_na(config_right, key),
             "",

@@ -122,6 +122,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "Maximum layer height could be specified either as an absolute in millimeters value or as a percentage of nozzle diameter. "
                      "For printing with different nozzle diameters, it is recommended to use percentage value over absolute value.");
     def->init_fn = init_with(FloatOrPercentage(Percentage{100.}));
+    def->sidetext = L("mm or %");
 
     // Maximum extruder temperature, bumped to 1500 to support printing of glass.
     const int max_temp = 1500;

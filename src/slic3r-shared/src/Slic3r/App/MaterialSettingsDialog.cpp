@@ -204,7 +204,10 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
                 this->project_interactor.selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
-            return PageEntry{Domain::ConfigItemDef::translate_category(category, pt), icon};
+            return PageEntry{
+                Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
+                icon
+            };
         }
     );
 

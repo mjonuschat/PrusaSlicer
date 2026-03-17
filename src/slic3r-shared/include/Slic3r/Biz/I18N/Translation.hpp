@@ -36,7 +36,10 @@ public:
     bool    is_alternative_language() const;
 
     const std::vector<LanguageShortInfo>&   languages()         const { return m_translations; }
-    const std::string                       active_language()   const { return m_language_short_info_active ? m_language_short_info_active->canonical_name : ""; }
+    const std::string                       active_language()   const { return m_language_short_info_active ? m_language_short_info_active->canonical_name : "";
+    }
+
+    const std::string language_description(const std::string& name) const;
 
 private:
     std::set<std::string>   load_available_languages(const boost::filesystem::path& local_dir);

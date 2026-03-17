@@ -5,6 +5,7 @@
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 
@@ -18,7 +19,7 @@ std::string ConfigItemUtils::config_item_to_string(const Domain::ConfigItem& con
 std::string ConfigItemUtils::config_item_tooltip(const Domain::ConfigItem& config_item)
 {
     const Domain::ConfigItemDef& def = config_item.def();
-    std::string text = fmt::format("{}\n\nParameter name: {}", def.tooltip, def.name);
+    std::string text = fmt::format("{}\n\n{}: {}", Biz::_u8(def.tooltip), Biz::_u8L("Parameter name"), def.name);
 
     if (def.min.has_value()) {
         text += fmt::format("\nMin: {:.10g}", def.min.value());

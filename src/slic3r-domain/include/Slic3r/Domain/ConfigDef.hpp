@@ -356,7 +356,8 @@ struct ConfigItemDef
         bed_shape,
         substitutions,
         ramming_params,
-        extruder_selection
+        extruder_selection,
+        language_selection
     };
     GUIType gui_type = GUIType::undefined;
 };

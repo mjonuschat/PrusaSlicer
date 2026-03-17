@@ -18,7 +18,9 @@
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemSubstitutions.hpp"
 #include "Slic3r/App/Config/ConfigItemExtruderSelection.hpp"
+#include "Slic3r/App/Config/ConfigItemLanguageSelection.hpp"
 #include "Slic3r/App/Config/ConfigItemRammingParams.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 
@@ -33,7 +35,7 @@ ConfigItemControl::ConfigItemControl(size_t index, const Domain::ConfigItem& dat
 std::string ConfigItemControl::tooltip_text() const
 {
     const Domain::ConfigItemDef& def = m_state->def();
-    std::string text = fmt::format("{}\n\nParameter name: {}", def.tooltip, def.name);
+    std::string text = fmt::format("{}\n\nParameter name: {}", Biz::_u8(def.tooltip), def.name);
 
     std::optional<std::string> default_val = default_value();
     if (default_val.has_value()) {
@@ -252,6 +254,15 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::ramming_params:
         item_control = container->emplace<ConfigItemRammingParams>(
+            child_index,
+            data_index,
+            item,
+            cb_setter,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::language_selection:
+        item_control = container->emplace<ConfigItemLanguageSelection>(
             child_index,
             data_index,
             item,

@@ -55,7 +55,7 @@ void LayerRangeSettingsDialog::init_categories_page()
 
         category_names.emplace(
             category,
-            ConfigItemDef::translate_category(category, PrinterTechnology::FFF)
+            Biz::_u8(ConfigItemDef::translate_category(category, PrinterTechnology::FFF))
         );
     }
 
@@ -126,7 +126,7 @@ void LayerRangeSettingsDialog::on_about_to_show()
 void LayerRangeSettingsDialog::select_category(const ConfigItemDef::Category category)
 {
     const std::string& category_name =
-        ConfigItemDef::translate_category(category, PrinterTechnology::FFF);
+        Biz::_u8(ConfigItemDef::translate_category(category, PrinterTechnology::FFF));
 
     this->clear_settings();
     this->create_settings_page_for_category(category);
@@ -157,7 +157,7 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         setting_row->set_align_items(YGAlignCenter);
 
         const std::string& setting_label =
-            item.def().full_label.empty() ? item.def().label : item.def().full_label;
+            Biz::_u8(item.def().full_label.empty() ? item.def().label : item.def().full_label);
         Text* label_text = setting_row->emplace_back<Text>(setting_label);
         label_text->set_width(120);
         label_text->set_max_size({120, YGUndefined});
@@ -181,7 +181,7 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         control->set_overriden(true);
         control->set_state(*config_item);
 
-        Text* setting_right_sidetext = setting_row->emplace_back<Text>(config_item->def().sidetext);
+        Text* setting_right_sidetext = setting_row->emplace_back<Text>(Biz::_u8(config_item->def().sidetext));
         setting_right_sidetext->set_flex_grow(1);
         setting_right_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 

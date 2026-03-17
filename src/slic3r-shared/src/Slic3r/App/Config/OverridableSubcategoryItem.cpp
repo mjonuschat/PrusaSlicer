@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/OverridableConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 using namespace Slic3r::App::Yoga;
 
@@ -36,7 +37,7 @@ OverridableSubcategoryItem::OverridableSubcategoryItem(
     set_padding(20);
 
     m_label = emplace_back<Text>(
-        Domain::ConfigItemDef::translate_option_group(m_state->config_item->def().option_group),
+        Biz::_u8(Domain::ConfigItemDef::translate_option_group(m_state->config_item->def().option_group)),
         Render::ImguiFontType::Bold
     );
 
@@ -108,7 +109,7 @@ void OverridableSubcategoryItem::on_data_update()
     const Domain::ConfigItem* config_item = m_state->config_item;
 
     m_label->set_text(
-        Domain::ConfigItemDef::translate_option_group(config_item->def().option_group)
+        Biz::_u8(Domain::ConfigItemDef::translate_option_group(config_item->def().option_group))
     );
 
     const Domain::ConfigItemDef::OptionGroup option_group = config_item->def().option_group;

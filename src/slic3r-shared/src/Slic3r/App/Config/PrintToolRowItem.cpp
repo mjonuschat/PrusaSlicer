@@ -297,7 +297,7 @@ void PrintToolRowItem::update_explanation()
             list_labels.reserve(16);
             list_values.reserve(16);
 
-            list_labels.emplace_back(ExplanationPart{m_state->print_item->def().label, text_color});
+            list_labels.emplace_back(ExplanationPart{ Biz::_u8(m_state->print_item->def().label), text_color});
             list_values.emplace_back(
                 ExplanationPart{
                     ConfigItemUtils::config_item_to_string(

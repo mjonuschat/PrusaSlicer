@@ -301,7 +301,7 @@ void HeightRangeDialog::add_override_category_section(
     this->add_separator(parent);
 
     const std::string category_name =
-        ConfigItemDef::translate_category(category, PrinterTechnology::FFF);
+        Biz::_u8(ConfigItemDef::translate_category(category, PrinterTechnology::FFF));
 
     LayoutButton* add_override_button =
         parent->emplace_back<LayoutButton>(_u8L(category_name), Render::Icon::PlusModifier);
@@ -338,8 +338,8 @@ void HeightRangeDialog::add_override_category_section(
         override_row->set_align_items(YGAlignCenter);
 
         const std::string& config_item_name = config_item.def().full_label.empty() ?
-            config_item.def().label :
-            config_item.def().full_label;
+            Biz::_u8(config_item.def().label) :
+            Biz::_u8(config_item.def().full_label);
         Text* config_item_title             = override_row->emplace_back<Text>(config_item_name);
         config_item_title->set_text_color(HEIGHT_RANGE_MODIFIER_COLOR);
         config_item_title->set_width(120);
@@ -363,7 +363,7 @@ void HeightRangeDialog::add_override_category_section(
         control->set_overriden(true);
         control->set_state(*override_item);
 
-        Text* sidetext = override_row->emplace_back<Text>(config_item.def().sidetext);
+        Text* sidetext = override_row->emplace_back<Text>(Biz::_u8(config_item.def().sidetext));
         sidetext->set_text_color(HEIGHT_RANGE_MODIFIER_COLOR);
         sidetext->set_flex_shrink(0);
 

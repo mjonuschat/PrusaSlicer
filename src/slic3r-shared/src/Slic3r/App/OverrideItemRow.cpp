@@ -89,11 +89,11 @@ void OverrideItemRow::on_data_update()
         m_control_item->set_flex_shrink(0);
     }
 
-    m_label->set_text(m_state->config_item->def().label);
+    m_label->set_text(Biz::_u8(m_state->config_item->def().label));
     m_control->set_mixed(m_state->mixed);
     m_control->set_overriden(m_state->overriden);
     m_control->set_state(*m_state->config_item);
-    m_sidetext->set_text(m_state->config_item->def().sidetext);
+    m_sidetext->set_text(Biz::_u8(m_state->config_item->def().sidetext));
 }
 
 } // namespace Slic3r::App

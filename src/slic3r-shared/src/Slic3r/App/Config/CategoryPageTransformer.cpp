@@ -5,6 +5,7 @@
 #include "Slic3r/App/Config/CategoryPageTransformer.hpp"
 #include "Slic3r/App/Config/CategoryUtils.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App {
 
@@ -20,7 +21,10 @@ CategoryPageTransformer::CategoryPageTransformer()
                 Domain::PrinterTechnology::FFF;
             Render::Icon icon            = CategoryUtils::category_render_icon(category, pt);
 
-            return PageEntry{Domain::ConfigItemDef::translate_category(category, pt), icon};
+            return PageEntry{
+                Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
+                icon
+            };
         }
     );
 }

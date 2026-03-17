@@ -91,6 +91,20 @@ void Translations::init_system_locale_values()
     m_sys_locale_language = properties.language();
 }
 
+const std::string Translations::language_description(const std::string& name) const
+{
+    auto it = std::find_if(
+        m_translations.begin(),
+        m_translations.end(),
+        [name](const Biz::LanguageShortInfo& item) { return item.canonical_name == name; }
+    );
+    if (it == m_translations.end()) {
+        return std::string();
+    }
+
+    return it->description;
+}
+
 std::set<std::string> Translations::load_available_languages(const boost::filesystem::path& local_dir)
 {
     std::set<std::string> lang_tags;

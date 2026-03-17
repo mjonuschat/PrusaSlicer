@@ -233,7 +233,7 @@ void ConfigItemComboBox::initialize()
         set_validator(m_int_validator.release());
 
         for (const auto& choice : m_state->def().choices) {
-            items.push_back(choice.second);
+            items.push_back(Biz::_u8(choice.second));
         }
 
     } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
@@ -245,14 +245,14 @@ void ConfigItemComboBox::initialize()
         set_editable(true);
 
         for (const auto& choice : m_state->def().choices) {
-            items.push_back(choice.second);
+            items.push_back(Biz::_u8(choice.second));
         }
     } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
         set_editable(false);
         const Domain::EnumWrapper enum_wrapper = m_state->get<Domain::EnumWrapper>();
 
         for (const Domain::EnumValueDef& value : enum_wrapper.def()) {
-            items.push_back(std::string(value.str_ui));
+            items.push_back(Biz::_u8(value.str_ui));
         }
     }
 

@@ -10,6 +10,7 @@
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
 
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include <Slic3r/Biz/I18N/I18N.hpp>
 
 using namespace Slic3r::App::Yoga;
 
@@ -36,13 +37,13 @@ ConfigRowItem::ConfigRowItem(
 
     m_left_side = emplace_back<Item>();
 
-    m_label = m_left_side->emplace_back<Text>(m_force_label.value_or(data.def().label));
+    m_label = m_left_side->emplace_back<Text>(m_force_label.value_or(Biz::_u8(data.def().label)));
     m_label->set_height(40);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
     m_label->set_align({AlignH::Left, AlignV::Center});
     m_label->set_padding(Paddings(0, 0, 5, 0));
 
-    m_sidetext = emplace_back<Text>(m_state->def().sidetext);
+    m_sidetext = emplace_back<Text>(Biz::_u8(m_state->def().sidetext));
     m_sidetext->set_self_align(YGAlignCenter);
     m_sidetext->set_flex_grow(1.f);
     m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
@@ -142,8 +143,8 @@ void ConfigRowItem::on_data_update()
         }
     }
 
-    m_label->set_text(m_force_label.value_or(m_state->def().label));
-    m_sidetext->set_text(m_state->def().sidetext);
+    m_label->set_text(m_force_label.value_or(Biz::_u8(m_state->def().label)));
+    m_sidetext->set_text(Biz::_u8(m_state->def().sidetext));
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
         std::optional<int> value = m_state->value().get<std::optional<int>>();

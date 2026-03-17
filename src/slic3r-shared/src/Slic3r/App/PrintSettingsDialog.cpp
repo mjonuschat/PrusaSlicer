@@ -98,7 +98,10 @@ PrintSettingsDialog::PrintSettingsDialog(
                 m_project_interactor.selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
-            return PageEntry{Domain::ConfigItemDef::translate_category(category, pt), icon};
+            return PageEntry{
+                Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
+                icon
+            };
         }
     );
     m_tool_print_transformer->set_source_model(m_tool_print_categorizer.get());

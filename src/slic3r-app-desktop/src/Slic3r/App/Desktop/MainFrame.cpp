@@ -372,6 +372,25 @@ void MainFrame::on_app_config_changed()
 {
     update_left_bar();
     update_graphics_settings();
+
+    AppConfig& app_config = AppServices::instance().app_config();
+    if (const std::string new_language = app_config.get<std::string>("translation_language");
+        localization().active_language() != new_language)
+    {
+        IDialogManager& dialog_manager = AppServices::instance().dialog_manager();
+
+        // If something was failed during the set new language:
+        std::string message = fmt::format(
+            fmt::runtime(
+                Biz::_u8L(
+                    "The selected language \"{}\" has been saved and will be applied the next time the application starts."
+                )
+            ),
+            localization().language_description(new_language)
+        );
+        // Show info dialog
+        dialog_manager.show_info_dialog(message, Biz::_u8L("PrusaSlicer - Switching language"));
+    }
 }
 
 void MainFrame::on_close(wxCloseEvent& event)

@@ -331,7 +331,7 @@ MeasureDialog::SpotDescription::SpotDescription() : Item()
 {
     set_orientation(Yoga::Orientation::Vertical);
     set_gap(0);
-    m_name = emplace_back<Text>(_u8L(""));
+    m_name = emplace_back<Text>("");
     m_name->set_font_type(Render::ImguiFontType::Bold);
     m_value = emplace_back<Text>("");
     m_value->set_flex_grow(1);
