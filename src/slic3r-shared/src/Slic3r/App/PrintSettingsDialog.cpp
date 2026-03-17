@@ -202,7 +202,8 @@ PrintSettingsDialog::PrintSettingsDialog(
     Item* spacer = m_footer->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
-    LayoutButton* compare_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8("Compare"), Render::Icon::Compare);
+    LayoutButton* compare_button =
+        AbstractSettingsDialog::add_footer_button(m_footer, _u8("Compare"), Render::Icon::Compare);
     compare_button->callbacks().action = [this]
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
@@ -231,11 +232,11 @@ PrintSettingsDialog::PrintSettingsDialog(
 
     m_save_button->callbacks().action = [this] { m_save_preset_menu->open(); };
 
+    update_extruder_size();
     on_selected_bed_instances_changed(
         m_project_interactor.selected_project_id(),
         m_project_interactor.scene_interactor().bed_selection()
     );
-    on_preset_selection_changed(0, 0, Biz::Preset::PresetItemType::PrinterPreset);
 }
 
 PrintSettingsDialog::~PrintSettingsDialog()
@@ -289,19 +290,7 @@ void PrintSettingsDialog::update_extruder_candidates()
         return;
     }
 
-    std::fill(m_extruders.begin(), m_extruders.end(), false);
-
-    const Domain::BedRef last_selected_bed =
-        m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-
-    const Domain::BedInstance* bed_instance =
-        m_project_interactor.selected_project().find_bed_instance_by_id(
-            last_selected_bed.instance_id
-        );
-
-    for (const auto& candidate : std::as_const(bed_instance->extruder_candidates)) {
-        m_extruders.at(candidate) = true;
-    }
+    update_extruder_candidates_internal();
 
     invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l)
                                           { l->on_updated({0, m_extruders.size() - 1}); });
@@ -314,7 +303,8 @@ void PrintSettingsDialog::update_extruder_size()
     m_extruders.resize(
         m_project_interactor.preset_interactor().current_printer_config().material_slot_count()
     );
-    std::fill(m_extruders.begin(), m_extruders.end(), false);
+
+    update_extruder_candidates_internal();
 
     invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_reset(); });
 
@@ -342,6 +332,27 @@ void PrintSettingsDialog::update_extruder_size()
     }
     while (extruder_count < m_save_preset_menu->object_count() - 1) {
         m_save_preset_menu->remove_item(m_save_preset_menu->object_count() - 1);
+    }
+}
+
+void PrintSettingsDialog::update_extruder_candidates_internal()
+{
+    std::fill(m_extruders.begin(), m_extruders.end(), false);
+
+    const Domain::BedRef last_selected_bed =
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+
+    const Domain::BedInstance* bed_instance =
+        m_project_interactor.selected_project().find_bed_instance_by_id(
+            last_selected_bed.instance_id
+        );
+
+    for (unsigned candidate : std::as_const(bed_instance->extruder_candidates)) {
+        // there is a chance we are still reading old extruder candidates
+        if (candidate >= m_extruders.size()) {
+            continue;
+        }
+        m_extruders.at(candidate) = true;
     }
 }
 

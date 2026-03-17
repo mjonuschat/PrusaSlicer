@@ -124,6 +124,8 @@ protected:
     void update_extruder_size();
 
 private:
+    void update_extruder_candidates_internal();
+
     void on_about_to_close() override;
 
 private:
