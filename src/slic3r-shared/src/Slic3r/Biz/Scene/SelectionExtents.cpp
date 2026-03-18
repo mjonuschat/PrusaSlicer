@@ -225,6 +225,14 @@ static std::optional<double> get_selection_min_z(
     std::optional<double> min_z;
 
     for (const Domain::ElementRef& element : selection.elements) {
+        if (element.is_wipe_tower()) {
+            if (!min_z) {
+                min_z = 0.0;
+            } else {
+                min_z = std::min(*min_z, 0.0);
+            }
+            continue;
+        }
         if (!element.has_instance()) {
             continue;
         }
@@ -277,6 +285,10 @@ std::optional<SelectionExtents> get_selection_extents(
 {
     namespace BB = Biz::Algorithms::BoundingBox;
 
+    if (selection.empty()) {
+        return std::nullopt;
+    }
+
     const Domain::Project& project{workbench.project(project_id)};
 
     std::optional<OrientedBoundingBox> oriented_bounding_box{};
@@ -291,14 +303,14 @@ std::optional<SelectionExtents> get_selection_extents(
         const std::optional<Biz::Scene::OrientedBoundingBox> global_obb{
             get_global_obb(project_id, selection, workbench)
         };
-        if (!global_obb) {
-            return std::nullopt;
-        }
-        ASSERT(global_obb->rotation.isApprox(Domain::SquareMatrix3d::Identity()));
 
-        Domain::BoundingBox3d bounding_box{
-            global_obb->center - global_obb->dimensions / 2.0,
-            global_obb->center + global_obb->dimensions / 2.0
+        Domain::BoundingBox3d bounding_box;
+        if (global_obb) {
+            ASSERT(global_obb->rotation.isApprox(Domain::SquareMatrix3d::Identity()));
+            bounding_box = Domain::BoundingBox3d{
+                global_obb->center - global_obb->dimensions / 2.0,
+                global_obb->center + global_obb->dimensions / 2.0
+            };
         };
 
         for (const Domain::ElementRef& element : selection.elements) {
@@ -325,10 +337,13 @@ std::optional<SelectionExtents> get_selection_extents(
                 BB::transformed(wipe_tower_bb, bed_instance->transformation.get_matrix());
             bounding_box = BB::merge(bounding_box, wipe_tower_bb);
         }
+        if (!bounding_box.defined) {
+            return std::nullopt;
+        }
         oriented_bounding_box = Biz::Scene::OrientedBoundingBox{
             .center     = BB::center(bounding_box),
             .dimensions = BB::sizes(bounding_box),
-            .rotation   = global_obb->rotation
+            .rotation   = Domain::SquareMatrix3d::Identity()
         };
     } break;
     }
@@ -338,10 +353,6 @@ std::optional<SelectionExtents> get_selection_extents(
     }
 
     const std::optional<double> min_z{get_selection_min_z(project_id, selection, workbench)};
-    if (!min_z) {
-        return std::nullopt;
-    }
-
-    return Biz::Scene::SelectionExtents{*oriented_bounding_box, *min_z};
+    return Biz::Scene::SelectionExtents{*oriented_bounding_box, min_z.value_or(0.0)};
 }
 } // namespace Slic3r::Biz::Scene
