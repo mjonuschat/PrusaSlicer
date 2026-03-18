@@ -346,8 +346,13 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                             Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
                         },
 #endif
-                    .enabled = [this]()
-                    { return !m_project_interactor.scene_interactor().object_selection().empty(); }
+                    .enabled =
+                        [this]()
+                    {
+                        const Biz::Scene::ObjectSelection& object_selection =
+                            m_project_interactor.scene_interactor().object_selection();
+                        return !object_selection.empty() && !object_selection.contains_wipe_tower();
+                    }
                 }
             )
         )
