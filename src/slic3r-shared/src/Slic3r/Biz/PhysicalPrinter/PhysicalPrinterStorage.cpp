@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Config/HwConfigJson.hpp"
 #include "Slic3r/Domain/ConfigPhysical.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Log.hpp"
@@ -60,14 +61,18 @@ void PhysicalPrinterStorage::load_all()
                 SPDLOG_ERROR("Physical printer configuration was not loaded due missing uuid. The file will be deleted.");
                 continue;
             }
+
+            auto hw_config_expected = Biz::Config::load_hw_config(json.at("hw_config"));
+            m_hw_config_supplement_map[uuid] = std::move(hw_config_expected.value());
+
+            Domain::PhysicalPrinterSettings settings;
+            Biz::Config::load_box(json, settings);
+            m_map[uuid] = std::move(settings);
+
         } catch (...) {
             SPDLOG_ERROR("Failed to read physical printer from json file: {}", entry.path().string());
             continue;
         }
-
-        Domain::PhysicalPrinterSettings settings;
-        Biz::Config::load_box(json, settings);
-        m_map[uuid] = std::move(settings);
     }
 
     consolidate_files();
@@ -97,8 +102,7 @@ void PhysicalPrinterStorage::consolidate_files()
     }
 }
 
-
-void PhysicalPrinterStorage::save_one(const std::string& uuid)
+void PhysicalPrinterStorage::save_one(const std::string& uuid, const Domain::Preset::HwPrinterConfig& hw_config)
 {
     auto it = m_map.find(uuid);
     if (it == m_map.end()) {
@@ -121,9 +125,9 @@ void PhysicalPrinterStorage::save_one(const std::string& uuid)
         SPDLOG_ERROR("Failed to open file for writing: {}", full_path.string());
         return;
     }
-    
     try {
         nlohmann::ordered_json json = it->second;
+        json["hw_config"] = hw_config;
         out << json.dump(2);
     } catch (...) {
         SPDLOG_ERROR("Failed to write physical printer in json file: {}", full_path.string());
@@ -153,7 +157,7 @@ void PhysicalPrinterStorage::remove_one(const std::string& uuid)
 void PhysicalPrinterStorage::save_all()
 {
     for (const auto& [uuid, settings] : m_map) {
-        save_one(uuid);
+        save_one(uuid, m_hw_config_supplement_map.at(uuid));
     } 
 }
 
@@ -183,15 +187,14 @@ Domain::PhysicalPrinterSettings& PhysicalPrinterStorage::dummy_settings()
     return m_dummy_settings;
 }
 
-std::string PhysicalPrinterStorage::store_dummy(const std::string& model, const std::string& base_model)
+std::string PhysicalPrinterStorage::create_from_dummy(const Domain::Preset::HwPrinterConfig& hw_config)
 {
     std::string uuid{boost::uuids::to_string(boost::uuids::random_generator()())};
     m_dummy_settings.find("physical_printer_uuid").item->set<std::string>(uuid);
-    m_dummy_settings.find("physical_printer_preset_model").item->set<std::string>(model);
-    m_dummy_settings.find("physical_printer_preset_base_model").item->set<std::string>(base_model);
     m_map[uuid] = std::move(m_dummy_settings);
+    m_hw_config_supplement_map[uuid] = hw_config;
     m_dummy_settings = Domain::PhysicalPrinterSettings();
-    save_all();
+    save_one(uuid, hw_config);
     return uuid;
 }
 

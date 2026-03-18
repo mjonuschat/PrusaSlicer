@@ -22,7 +22,6 @@ class Text;
 namespace Slic3r::App {
 
 class Navigator;
-class PhysicalPrinterSettingsDialog;
 
 class PhysicalPrinterAdvancedSettingsDialog :
     public ConfigSettingsDialog,
@@ -31,12 +30,16 @@ class PhysicalPrinterAdvancedSettingsDialog :
 public:
     explicit PhysicalPrinterAdvancedSettingsDialog(
         Biz::ProjectInteractor& project_interactor,
-        Navigator& navigator,
-        PhysicalPrinterSettingsDialog* physical_printer_settings_dialog
+        Navigator& navigator
     );
     ~PhysicalPrinterAdvancedSettingsDialog() = default;
 
     void on_selected_physical_printer_changed() override;
+
+    void set_parent(Yoga::Dialog* parent)
+    {
+        m_parent = parent;
+    }
 
 protected:
     void close_action() override;
@@ -48,7 +51,7 @@ private:
         PhysicalPrinterAdvancedSettingsDialog>
         m_physical_printer_changed_listener_scope;
 
-    PhysicalPrinterSettingsDialog* m_physical_printer_settings_dialog{nullptr}; 
     Yoga::LayoutButton* m_save_button{nullptr};
+    Yoga::Dialog*       m_parent{nullptr};
 };
 } // namespace Slic3r::App

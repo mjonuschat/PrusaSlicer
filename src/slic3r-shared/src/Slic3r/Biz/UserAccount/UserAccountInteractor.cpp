@@ -12,6 +12,11 @@ UserAccountInteractor::UserAccountInteractor(Platform::IMainThreadDispatcher& di
     m_communication.add_session_listener(this);
 }
 
+void UserAccountInteractor::init()
+{
+    m_communication.init();
+}
+
 UserAccountInteractor::~UserAccountInteractor()
 {
     ASSERT(

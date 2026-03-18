@@ -196,7 +196,6 @@ private:
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
-    Yoga::Passthrough<SidebarPhysical> m_sidebar_physical;
     Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<GCodeWindow> m_gcode_window;
     Yoga::Passthrough<LegendWindow> m_legend;

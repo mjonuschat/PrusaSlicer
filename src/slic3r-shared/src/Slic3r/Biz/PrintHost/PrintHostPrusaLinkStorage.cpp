@@ -22,7 +22,7 @@ bool PrintHostPrusaLinkStorage::perform(
     InfoFn info_fn
 ) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -105,7 +105,7 @@ std::string PrintHostPrusaLinkStorage::make_url(const std::string& path) const
 
 bool PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http, std::string& err_msg) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     switch (auth->auth_type) {
@@ -123,5 +123,6 @@ bool PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http, std::string& err_
     if (!auth->ca_file.empty()) {
         http->ca_file(auth->ca_file);
     }
+    return true;
 }
 } // namespace Slic3r::Biz::PrintHost

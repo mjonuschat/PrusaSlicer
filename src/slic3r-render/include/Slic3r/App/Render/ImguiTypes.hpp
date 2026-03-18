@@ -140,6 +140,12 @@ enum class Icon : wchar_t
     PlusHeightRange,
     PlusModifier,
 
+    // Physical printer
+    ExportToSD,
+    ConnectUpload,
+    ExportToLocal,
+    ExclamationMark,
+
     Layers,
     Infill,
     SkirtBrim,

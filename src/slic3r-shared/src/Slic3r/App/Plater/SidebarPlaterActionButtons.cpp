@@ -22,17 +22,6 @@ using Domain::SlicingId;
 SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
     SidebarActionButtons("SidebarPlaterActionButtons", Render::ModuleType::Plater, render_module_navigator)
 {
-    set_gap(15.f);
-    auto navigation_button{get_navigation_button()};
-    m_navigation_button = navigation_button.get();
-    append(std::move(navigation_button));
-
-    m_button_slice = emplace_back<LayoutButton>("Slice");
-    m_button_slice->set_flex_grow(1);
-    m_button_slice->set_background_color(Platform::Color::AccentPrimary);
-    m_button_slice->set_min_size({0, button_height});
-    m_button_slice->set_label_font_type(Render::ImguiFontType::Bold);
-    m_button_slice->set_enabled(false);
 }
 
 SidebarPlaterActionButtons::~SidebarPlaterActionButtons()
@@ -51,6 +40,23 @@ void SidebarPlaterActionButtons::on_init(Biz::ProjectInteractor* project_interac
     m_project_interactor->scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
+
+    init_physical_printer_ui();
+
+    auto layout_bottom = m_buttons_layout->emplace_back<Item>();
+    layout_bottom->set_orientation(Orientation::Horizontal);
+    layout_bottom->set_gap(15.f);
+
+    auto navigation_button{get_navigation_button()};
+    m_navigation_button = navigation_button.get();
+    layout_bottom->append(std::move(navigation_button));
+
+    m_button_slice = layout_bottom->emplace_back<LayoutButton>("Slice");
+    m_button_slice->set_flex_grow(1);
+    m_button_slice->set_background_color(color_primary);
+    m_button_slice->set_min_size({0, button_height});
+    m_button_slice->set_label_font_type(Render::ImguiFontType::Bold);
+    m_button_slice->set_enabled(false);
 }
 
 void SidebarPlaterActionButtons::on_status_cache_status_code_changed(const Domain::SlicingId slicing_id)

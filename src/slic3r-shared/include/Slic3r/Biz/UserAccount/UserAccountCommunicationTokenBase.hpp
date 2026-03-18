@@ -22,6 +22,8 @@ public:
     UserAccountCommunicationTokenBase& operator=(const UserAccountCommunicationTokenBase&) = delete;
     UserAccountCommunicationTokenBase& operator=(UserAccountCommunicationTokenBase&& other) = delete;
 
+    void init();
+
     /**
      *@brief Sets token timer to try refreshing tokens based on given input.
      * Latest refresh is 10 seconds before token expires.

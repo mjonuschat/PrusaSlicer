@@ -822,7 +822,6 @@ void PreviewRenderModule::init_scene_layout()
     m_sidebar_print =
         std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator);
     m_sidebar_object             = std::make_unique<SidebarObject>(m_project_interactor);
-    m_sidebar_physical = std::make_unique<SidebarPhysical>(m_project_interactor, *m_render_module_navigator);
     m_pop_notification_list_view = std::make_unique<PopNotification::PopNotificationListView>(
         AppServices::instance().pop_notification_center().observable_list()
     );
@@ -842,7 +841,6 @@ void PreviewRenderModule::init_scene_layout()
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
         m_sidebar_object.release(),
-        m_sidebar_physical.release(),
         m_sidebar_action_buttons.release(),
         m_gcode_window.release(),
         m_legend.release(),
@@ -1022,10 +1020,10 @@ void PreviewRenderModule::init_dialog_navigation()
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
 
-    m_dialog_navigation.insert_dialog(&m_sidebar_physical->physical_printer_settings_dialog());
+    m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(
-        &m_sidebar_physical->print_host_settings_dialog(),
-        &m_sidebar_physical->physical_printer_settings_dialog()
+        &m_sidebar_action_buttons->physical_printer_advanced_settings_dialog(),
+        &m_sidebar_action_buttons->physical_printer_settings_dialog()
     );
 }
 

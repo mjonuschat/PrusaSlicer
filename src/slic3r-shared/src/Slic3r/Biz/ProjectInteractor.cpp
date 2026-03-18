@@ -549,7 +549,8 @@ void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, Physi
 void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     set_output_dir(id.project_id, dest_path);
-    PhysicalPrinter::PhysicalPrinterConfig config{PhysicalPrinter::OperationType::Local, ""};
+    PhysicalPrinter::PhysicalPrinterConfig config;
+    config.payload = PhysicalPrinter::FileSystemExport{};
     PrintHost::PrintHostJobData data{
         std::monostate{},
         dest_path,
@@ -572,12 +573,11 @@ void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::
 
 void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
 {
-    PhysicalPrinter::PhysicalPrinterConfig
-        config{PhysicalPrinter::OperationType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
-
-    PhysicalPrinter::CloudAuth auth;
+    PhysicalPrinter::PhysicalPrinterConfig config;
+    config.host = Network::ServiceConfig::instance().connect_url();
+    PhysicalPrinter::ConnectUpload auth;
     auth.access_token = m_user_account_interactor.access_token();
-    config.connection_data = std::move(auth);
+    config.payload = std::move(auth);
 
     std::string filename;
     std::string body_json;

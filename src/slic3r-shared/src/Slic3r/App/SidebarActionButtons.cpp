@@ -1,10 +1,20 @@
 #include "Slic3r/App/SidebarActionButtons.hpp"
 
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
+#include "Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp"
+#include "Slic3r/App/PhysicalPrinterSettingsButton.hpp"
+
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui/imgui_internal.h>
+
+using namespace Slic3r::Biz::PhysicalPrinter;
 
 namespace Slic3r::App {
 
@@ -27,6 +37,85 @@ SidebarActionButtons::SidebarActionButtons(
 
     set_min_size({220, 0});
     set_flex_shrink(0);
+}
+
+SidebarActionButtons::~SidebarActionButtons() {
+    if (m_project_interactor) {
+        m_project_interactor->physical_printer_interactor()
+            .remove_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
+        m_project_interactor->preset_interactor().remove_listener<Biz::Preset::IPresetChangedListener>(this);
+    }
+}
+
+void SidebarActionButtons::init_physical_printer_ui()
+{
+    m_project_interactor->physical_printer_interactor()
+        .add_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
+    m_project_interactor->preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
+
+    m_printer_add_dialog = emplace_back<PrinterAddDialog>(*m_render_module_navigator);
+    
+    m_physical_printer_advanced_settings_dialog = emplace_back<PhysicalPrinterAdvancedSettingsDialog>(
+        *m_project_interactor,
+        *m_render_module_navigator
+    );
+    
+    m_physical_printer_settings_dialog = emplace_back<PhysicalPrinterSettingsDialog>(
+        *m_project_interactor,
+        m_printer_add_dialog,
+        *m_render_module_navigator,
+        m_physical_printer_advanced_settings_dialog
+    );
+
+    m_physical_printer_advanced_settings_dialog->set_parent(m_physical_printer_settings_dialog);
+
+    auto& interactor = m_project_interactor->physical_printer_interactor();
+    
+    m_buttons_layout = emplace_back<Yoga::Item>();
+    m_buttons_layout->set_orientation(Yoga::Orientation::Vertical);
+    m_buttons_layout->set_gap(10.0f);
+    m_buttons_layout->set_flex_grow(1);
+
+    m_buttons_layout->emplace_back<Yoga::Text>(Biz::_u8L("Destination"));
+
+    m_physical_printer_button = m_buttons_layout->emplace_back<PhysicalPrinterSettingsButton>(
+        0,
+        interactor.selected_physical_printer_data(),
+        [this](size_t) {},
+        [this](size_t) {},
+        [this](size_t) {}
+    );
+    
+    m_physical_printer_button->set_visible(true);
+    m_physical_printer_button->set_self_align(YGAlignStretch);
+
+    m_physical_printer_settings_dialog->attach_to_item(this, Yoga::Position::Left);
+    
+    m_physical_printer_settings_dialog->callbacks().opened = [this]() {
+        m_physical_printer_button->set_checked(true);
+    };
+    
+    m_physical_printer_settings_dialog->callbacks().closed = [this]() {
+        m_physical_printer_button->set_checked(false);
+    };
+
+    m_physical_printer_button->callbacks().action = [this]() {
+        m_render_module_navigator->set_opened_dialog(
+            m_physical_printer_settings_dialog->opened() ? nullptr : m_physical_printer_settings_dialog
+        );
+    };
+    
+    m_physical_printer_button->on_cog() = [this]() {
+        if (m_physical_printer_advanced_settings_dialog->opened()) {
+            m_render_module_navigator->set_opened_dialog(nullptr);
+        } else {
+            m_physical_printer_advanced_settings_dialog->attach_to_item(
+                m_physical_printer_settings_dialog->content_item(),
+                Yoga::Position::Left
+            );
+            m_render_module_navigator->set_opened_dialog(m_physical_printer_advanced_settings_dialog);
+        }
+    };
 }
 
 std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button()
@@ -53,6 +142,80 @@ Domain::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 void SidebarActionButtons::navigate_to_other()
 {
     m_render_module_navigator->navigate_to_module_type(m_navigate_to_type);
+}
+
+PhysicalPrinterSettingsDialog& SidebarActionButtons::physical_printer_settings_dialog()
+{
+    return *m_physical_printer_settings_dialog;
+}
+
+PhysicalPrinterAdvancedSettingsDialog& SidebarActionButtons::physical_printer_advanced_settings_dialog()
+{
+    return *m_physical_printer_advanced_settings_dialog;
+}
+
+void SidebarActionButtons::on_printer_data_changed()
+{
+    if (!m_project_interactor) {
+        return;
+    }
+    PhysicalPrinterInteractor& physical_printer_interactor =
+        m_project_interactor->physical_printer_interactor();
+    const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer =
+        physical_printer_interactor.selected_physical_printer_data();
+
+    m_physical_printer_button->set_state(physical_printer);
+    m_physical_printer_button->update();
+    m_physical_printer_button->set_visible_bin(false);
+
+    update_buttons();
+}
+
+void SidebarActionButtons::on_selected_physical_printer_changed()
+{    
+    if (!m_project_interactor) {
+        return;
+    }
+    PhysicalPrinterInteractor& physical_printer_interactor =
+        m_project_interactor->physical_printer_interactor();
+    const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer =
+        physical_printer_interactor.selected_physical_printer_data();
+
+    m_physical_printer_button->set_state(physical_printer);
+    m_physical_printer_button->update();
+    m_physical_printer_button->set_visible_bin(false);
+
+    update_buttons();
+
+    const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
+    bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
+            *m_physical_printer_button->state(),
+            printer_config
+        );
+        m_physical_printer_button->set_compatible(
+            compatible
+        );
+}
+
+void SidebarActionButtons::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (m_project_interactor->selected_project_id() == project_id
+        && m_project_interactor->selected_config_container_id() == config_container_id
+        && type == Biz::Preset::PresetItemType::PrinterPreset)
+    {
+        const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
+        bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
+            *m_physical_printer_button->state(),
+            printer_config
+        );
+        m_physical_printer_button->set_compatible(
+            compatible
+        );
+    }
 }
 
 } // namespace Slic3r::App

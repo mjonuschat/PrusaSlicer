@@ -97,6 +97,7 @@ public:
             &m_preset_interactor.object_settings_interactor()
         );
 
+        m_user_account_interactor.init();
     }
 
     const Domain::Workbench& workbench() const

@@ -8,21 +8,66 @@
 
 namespace Slic3r::Biz::PhysicalPrinter {
 
-
 std::string physical_printer_type_to_string(const PhysicalPrinterConfig& data)
 {
-    if (const auto* local = std::get_if<LocalAuth>(&data.connection_data); local) {
-        return print_host_type_to_string(local->type);
-    } else if (const auto* cloud = std::get_if<CloudAuth>(&data.connection_data); cloud) {
-        return "Connect";
-    } else {
-        return {};
-    }
+    return std::visit(
+        [](const auto& auth) -> std::string
+        {
+            using T = std::remove_cvref_t<decltype(auth)>;
+            if constexpr (std::is_same_v<T, PrinterUpload>) {
+                return print_host_type_to_string(auth.type);
+            } else if constexpr (std::is_same_v<T, ConnectUpload>) {
+                return {};
+            } else {
+                return {};
+            }
+        },
+        data.payload
+    );
 }
 
-PhysicalPrinterConfig none()
+PhysicalPrinterConfig filesystem_export_local()
 {
-    return {OperationType::None, _u8L("No Physical Printer"), boost::uuids::to_string(boost::uuids::random_generator()())};
+    return {
+        FileSystemExport{false},
+        {},
+        _u8L("Local Drive"),
+        boost::uuids::to_string(boost::uuids::random_generator()()),
+
+    };
 }
 
-} //namespace Slic3r::Biz::PhysicalPrinter
+PhysicalPrinterConfig filesystem_export_removable()
+{
+    return {
+        FileSystemExport{true},
+        {},
+        _u8L("Removable Drive"),
+        boost::uuids::to_string(boost::uuids::random_generator()()),
+    };
+}
+
+PhysicalPrinterConfig connect_upload_generic()
+{
+    return {
+        ConnectUpload{},
+        {},
+        _u8L("Connect"),
+        boost::uuids::to_string(boost::uuids::random_generator()()),
+    };
+}
+
+bool is_physical_printer_compatible(
+    const PhysicalPrinterConfig& physical_config,
+    const Domain::Preset::HwPrinterConfig& hw_config
+)
+{
+    bool compatible = physical_config.hw_config.technology == hw_config.technology
+        && physical_config.hw_config.model == hw_config.model
+        && physical_config.hw_config.tool_count == hw_config.tool_count
+        && physical_config.hw_config.tools == hw_config.tools
+        ;
+    return compatible;
+}
+
+} // namespace Slic3r::Biz::PhysicalPrinter

@@ -62,7 +62,7 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
 void PresetUpdaterCLI::on_preset_updater_error(const std::string& body)
 {
     nlohmann::json j = {{"error", body}};
-    printf(j.dump(-1).c_str());
+    printf("%s", j.dump(-1).c_str());
     printf("\n");
     m_has_result = true;
 }

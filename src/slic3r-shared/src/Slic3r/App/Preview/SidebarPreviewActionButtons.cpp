@@ -14,102 +14,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App::Preview {
 
 namespace {
-
-constexpr float secondary_button_size = 24.f;
-
-void style_secondary_button(LayoutButton* button)
-{
-    button->set_min_size({secondary_button_size, secondary_button_size});
-    button->set_background_color(IM_COL32_BLACK_TRANS);
-}
-
 const std::string export_tooltip{"Export gcode to a file"};
-
-std::unique_ptr<LayoutButton> get_export_button(Biz::ProjectInteractor& project_interactor)
-{
-    auto result{std::make_unique<LayoutButton>("", Render::Icon::SavePrint, export_tooltip)};
-    style_secondary_button(result.get());
-    result->callbacks().action = ExportActions::export_gcode(project_interactor);
-
-    return result;
-}
-
-std::unique_ptr<LayoutButton> get_export_flash_button(Biz::ProjectInteractor& project_interactor)
-{
-    auto result{std::make_unique<LayoutButton>(
-        "",
-        Render::Icon::SavePrintToFlash,
-        "Export to a flash drive"
-    )};
-    style_secondary_button(result.get());
-    result->callbacks().action = ExportActions::export_gcode_to_flash(project_interactor);
-    return result;
-}
-
-std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor& project_interactor)
-{
-    auto result{std::make_unique<LayoutButton>(
-        "",
-        Render::Icon::SavePrintToLocal,
-        "Send directly to a printer\nAdd a physical printer to enable."
-    )};
-    style_secondary_button(result.get());
-    result->set_enabled(false);
-    return result;
-}
-
-void style_layout(Item& layout, float gap)
-{
-    layout.set_min_size({200, 0});
-    layout.set_orientation(Orientation::Vertical);
-    layout.set_gap(gap);
-    layout.set_flex_grow(1);
-}
-
-ItemPtr get_layout(
-    Biz::ProjectInteractor& project_interactor,
-    ItemPtr navigation_button,
-    std::vector<std::unique_ptr<LayoutButton>> secondary_buttons,
-    std::unique_ptr<LayoutButton> primary_button,
-    float gap,
-    float navig_btn_width
-)
-{
-    auto layout{std::make_unique<Item>()};
-    style_layout(*layout, gap);
-
-    auto secondary_buttons_layout{layout->emplace_back<Item>()};
-    secondary_buttons_layout->set_gap(gap);
-    secondary_buttons_layout->set_flex_grow(1);
-    secondary_buttons_layout->set_orientation(Orientation::Horizontal);
-    secondary_buttons_layout->set_justify_content(YGJustify::YGJustifyFlexEnd);
-    secondary_buttons_layout->set_max_size({YGUndefined, secondary_button_size});
-
-    for (auto& button : secondary_buttons) {
-        secondary_buttons_layout->append(std::move(button));
-    }
-
-    auto layout_bottom{layout->emplace_back<Item>()};
-    layout_bottom->set_orientation(Orientation::Horizontal);
-    layout_bottom->set_gap(gap);
-
-    layout_bottom->append(std::move(navigation_button));
-
-    layout_bottom->append(std::move(primary_button));
-
-    return layout;
-}
-
-std::vector<LayoutButton*> get_raw(const std::vector<std::unique_ptr<LayoutButton>>& buttons)
-{
-    std::vector<LayoutButton*> result;
-    std::ranges::transform(
-        buttons,
-        std::back_inserter(result),
-        [](const auto& button) { return button.get(); }
-    );
-    return result;
-}
 } // namespace
 
 std::unique_ptr<LayoutButton> SidebarPreviewActionButtons::get_primary_button()
@@ -129,128 +34,37 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
 
 SidebarPreviewActionButtons::~SidebarPreviewActionButtons()
 {
-    m_project_interactor->user_account_interactor()
-        .remove_listener<Biz::UserAccount::IUserAccountListener>(this);
     m_project_interactor->status_cache().remove_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor->scene_interactor()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    m_project_interactor->removable_drive_service().remove_status_listener(this);
 }
 
 void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_interactor)
 {
     m_project_interactor = project_interactor;
-    m_project_interactor->user_account_interactor()
-        .add_listener<Biz::UserAccount::IUserAccountListener>(this);
     m_project_interactor->status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor->scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
     m_project_interactor->removable_drive_service().add_status_listener(this);
-    m_project_interactor->physical_printer_interactor()
-        .add_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
 
-    const float gap{15.0f};
+    init_physical_printer_ui();
 
-    std::unique_ptr<LayoutButton> primary_button{get_primary_button()};
-    m_layout_without_connect.primary_button = primary_button.get();
+    auto layout_bottom = m_buttons_layout->emplace_back<Item>();
+    layout_bottom->set_orientation(Orientation::Horizontal);
+    layout_bottom->set_gap(15.0f);
 
-    std::vector<std::unique_ptr<LayoutButton>> secondary_buttons;
-    secondary_buttons.emplace_back(get_send_directly_button(*m_project_interactor));
-    secondary_buttons.emplace_back(get_export_flash_button(*m_project_interactor));
+    auto navigation_button = get_navigation_button();
+    m_navigation_button = navigation_button.get();
+    m_navigation_button->set_visible(false);
+    layout_bottom->append(std::move(navigation_button));
 
-    std::unique_ptr<LayoutButton> navigation_button{get_navigation_button()};
-    m_layout_without_connect.navigation_button = navigation_button.get();
-    navigation_button->set_visible(false);
-
-    m_layout_without_connect.secondary_buttons = get_raw(secondary_buttons);
-    m_layout_without_connect.layout            = get_layout(
-        *m_project_interactor,
-        std::move(navigation_button),
-        std::move(secondary_buttons),
-        std::move(primary_button),
-        gap,
-        navig_btn_width
-    );
-    m_layout_without_connect.layout_raw = m_layout_without_connect.layout.get();
-
-    primary_button                       = get_primary_button();
-    m_layout_with_connect.primary_button = primary_button.get();
-
-    secondary_buttons.clear();
-    secondary_buttons.emplace_back(get_export_button(*m_project_interactor));
-    secondary_buttons.emplace_back(get_send_directly_button(*m_project_interactor));
-    secondary_buttons.emplace_back(get_export_flash_button(*m_project_interactor));
-
-    navigation_button                       = get_navigation_button();
-    m_layout_with_connect.navigation_button = navigation_button.get();
-    navigation_button->set_visible(false);
-
-    m_layout_with_connect.secondary_buttons = get_raw(secondary_buttons);
-
-    m_layout_with_connect.layout = get_layout(
-        *m_project_interactor,
-        std::move(navigation_button),
-        std::move(secondary_buttons),
-        std::move(primary_button),
-        gap,
-        navig_btn_width
-    );
-    m_layout_with_connect.layout_raw = m_layout_with_connect.layout.get();
+    auto primary_button = get_primary_button();
+    m_primary_button = primary_button.get();
+    layout_bottom->append(std::move(primary_button));
 
     update_buttons();
-}
-
-void SidebarPreviewActionButtons::switch_layout(ActionButtonsLayoutType layout_type)
-{
-    ASSERT(m_layout_without_connect.layout || m_layout_with_connect.layout);
-
-    switch (layout_type) {
-    case ActionButtonsLayoutType::WithoutConnect: {
-        if (!m_layout_without_connect.layout) {
-            return;
-        }
-        if (!m_layout_with_connect.layout) {
-            m_layout_with_connect.layout = remove(m_layout_with_connect.layout_raw);
-        }
-        ASSERT(object_count() == 0);
-        append(std::move(m_layout_without_connect.layout));
-    } break;
-    case ActionButtonsLayoutType::WithConnect: {
-        if (!m_layout_with_connect.layout) {
-            return;
-        }
-        if (!m_layout_without_connect.layout) {
-            m_layout_without_connect.layout = remove(m_layout_without_connect.layout_raw);
-        }
-        ASSERT(object_count() == 0);
-        append(std::move(m_layout_with_connect.layout));
-    } break;
-    default:
-        PANIC("No laytout selected layout!");
-    }
-}
-
-void SidebarPreviewActionButtons::on_user_account_id_success(bool, const std::string&)
-{
-    update_buttons();
-}
-
-void SidebarPreviewActionButtons::on_user_account_logged_out()
-{
-    update_buttons();
-}
-
-ActionButtonsLayoutType SidebarPreviewActionButtons::active_layout() const
-{
-    if (!m_layout_without_connect.layout) {
-        return ActionButtonsLayoutType::WithoutConnect;
-    }
-
-    if (!m_layout_with_connect.layout) {
-        return ActionButtonsLayoutType::WithConnect;
-    }
-
-    return ActionButtonsLayoutType::None;
 }
 
 void SidebarPreviewActionButtons::on_selected_bed_instances_changed(
@@ -280,28 +94,17 @@ void SidebarPreviewActionButtons::on_removable_drive_status_changed(
 
 void SidebarPreviewActionButtons::update_buttons()
 {
-    const bool logged_in{m_project_interactor->user_account_interactor().is_logged_in()};
-    switch_layout(
-        logged_in ? ActionButtonsLayoutType::WithConnect : ActionButtonsLayoutType::WithoutConnect
-    );
-
     const Domain::SlicingId slicing_id{m_project_interactor->selected_bed_slicing_id()};
     const auto optional_status{m_project_interactor->status_cache().get_status(slicing_id)};
     if (!optional_status) {
         return;
     }
-    const ActionButtonsLayoutType layout_type{active_layout()};
-    if (layout_type == ActionButtonsLayoutType::None) {
-        return;
-    }
 
     const Biz::Slicing::Status status{*optional_status};
 
-    LayoutButton* primary_button{
-        layout_type == ActionButtonsLayoutType::WithoutConnect ?
-            m_layout_without_connect.primary_button :
-            m_layout_with_connect.primary_button
-    };
+    m_primary_button->set_background_color(color_primary);
+    m_primary_button->callbacks().action = []() {};
+    m_navigation_button->set_visible(true);
 
     const std::vector<LayoutButton*>& secondary_buttons{
         layout_type == ActionButtonsLayoutType::WithoutConnect ?
@@ -345,7 +148,7 @@ void SidebarPreviewActionButtons::update_buttons()
             error_message += to_display_string(error, project) + "\n";
         }
 
-        primary_button->callbacks().action = [error_message]()
+        m_primary_button->callbacks().action = [error_message]()
         {
             AppServices::instance().dialog_manager().show_error_dialog(
                 error_message,
@@ -354,45 +157,33 @@ void SidebarPreviewActionButtons::update_buttons()
         };
     } break;
     case StatusCode::Finished: {
-        if (layout_type == ActionButtonsLayoutType::WithoutConnect) {
-            primary_button->set_label("Export");
-            primary_button->set_enabled(true);
-            primary_button->set_tooltip(export_tooltip);
-            primary_button->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
-
-            if (m_project_interactor->physical_printer_interactor().is_local_auth_selected()) {
-                secondary_buttons.at(0)->set_enabled(true);
-                secondary_buttons.at(0)->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
-            }
-            if (m_project_interactor->removable_drive_service().has_removable_drives()) {
-                secondary_buttons.at(1)->set_enabled(true);
-                secondary_buttons.at(1)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
-            }
-
-        } else if (layout_type == ActionButtonsLayoutType::WithConnect) {
-            primary_button->set_label("Send to Connect");
-            primary_button->set_tooltip("Send to Connect");
-            primary_button->callbacks().action = ExportActions::send_gcode_to_connect(*m_project_interactor);
-
-            secondary_buttons.at(0)->set_enabled(true);
-            secondary_buttons.at(0)->callbacks().action = ExportActions::export_gcode(*m_project_interactor);
-            if (m_project_interactor->physical_printer_interactor().is_local_auth_selected()) {
-                secondary_buttons.at(1)->set_enabled(true);
-                secondary_buttons .at(1)->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
-            }
-            if (m_project_interactor->removable_drive_service().has_removable_drives()) {
-                secondary_buttons.at(2)->set_enabled(true);
-                secondary_buttons.at(2)->callbacks().action = ExportActions::export_gcode_to_flash(*m_project_interactor);
-            }
+        if (m_project_interactor->physical_printer_interactor().is_filesystem_export_selected()) {
+            const auto& phys_printer = m_project_interactor->physical_printer_interactor().selected_physical_printer_data();
+            const auto* payload = std::get_if<Slic3r::Biz::PhysicalPrinter::FileSystemExport>(&phys_printer.payload);
+            ASSERT(payload);
+            m_primary_button->set_label("Export");
+            m_primary_button->set_enabled(true);
+            m_primary_button->set_tooltip(export_tooltip);
+            m_primary_button->callbacks().action = payload->prefer_removable ? 
+                ExportActions::export_gcode_to_flash(*m_project_interactor) :
+                ExportActions::export_gcode(*m_project_interactor);
+        } else if (m_project_interactor->physical_printer_interactor().is_connect_upload_selected()) {
+            m_primary_button->set_label("Send to Connect");
+            m_primary_button->set_tooltip("Send to Connect");
+            m_primary_button->callbacks().action = ExportActions::send_gcode_to_connect(*m_project_interactor);
+        } else if (m_project_interactor->physical_printer_interactor().is_printer_upload_selected()) {
+            m_primary_button->set_label("Send to Printer");
+            m_primary_button->set_tooltip("Send to Printer");
+            m_primary_button->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
         } else {
             PANIC("Unreachable!");
         }
     } break;
     case StatusCode::Modified: {
-        primary_button->set_label("Slice");
-        primary_button->set_enabled(true);
-        primary_button->set_tooltip("Slice");
-        primary_button->callbacks().action = [this, slicing_id]()
+        m_primary_button->set_label("Slice");
+        m_primary_button->set_enabled(true);
+        m_primary_button->set_tooltip("Slice");
+        m_primary_button->callbacks().action = [this, slicing_id]()
         { m_project_interactor->slicing_interactor().slice_bed(slicing_id); };
     } break;
     default: {
@@ -402,7 +193,7 @@ void SidebarPreviewActionButtons::update_buttons()
         primary_button->set_enabled(true);
         primary_button->callbacks().action = [this]() { navigate_to_other(); };
 
-        navigation_button->set_visible(false);
+        m_navigation_button->set_visible(false);
     } break;
     }
 }
@@ -410,13 +201,6 @@ void SidebarPreviewActionButtons::update_buttons()
 void SidebarPreviewActionButtons::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 {
     SidebarActionButtons::render_body(pos, size);
-}
-
-
-
-void SidebarPreviewActionButtons::on_selected_physical_printer_changed()
-{
-    update_buttons();
 }
 
 } // namespace Slic3r::App::Preview

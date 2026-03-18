@@ -9,7 +9,7 @@ namespace Slic3r::Biz::UserAccount::ConnectUtils {
 
 bool config_from_json(const std::string& json, PhysicalPrinter::PhysicalPrinterConfig& config, std::string& filename, std::string& body_json)
 {
-    PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&config.connection_data);
+    PhysicalPrinter::ConnectUpload* auth = std::get_if<PhysicalPrinter::ConnectUpload>(&config.payload);
     ASSERT(auth);
 
     // {"action":"PRINT","set_ready":false,"team_id":12345,"printer_uuid":"12345-12345-12345-12345-12345","filename":"file.gcode","data":{"set_ready":false,"team_id":10533,"printer_uuid":"12345-12345-12345-12345-12345","filename":"file.gcode"}}

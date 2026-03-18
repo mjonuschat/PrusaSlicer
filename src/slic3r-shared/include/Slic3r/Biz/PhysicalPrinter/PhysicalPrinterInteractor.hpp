@@ -34,24 +34,25 @@ public:
 
     const ObservableList<PhysicalPrinterConfig>&  observable_list() const;
 
-    void select_index(size_t index);
+    void select_uuid(const std::string& uuid);
+    void select_default();
+    void remove_uuid(const std::string& uuid);
+    std::string selected_uuid() const
+    {
+        return m_selected_uuid;
+    }
 
-    size_t selected_index();
-
-    bool is_none_selected();
-
-    bool is_local_auth_selected();
+    bool is_filesystem_export_selected() const;
+    bool is_printer_upload_selected() const;
+    bool is_connect_upload_selected() const;
 
     const PhysicalPrinterConfig& selected_physical_printer_data();
 
-    void remove_selected();
-
     ConfigBoxInteractor* cbi();
 
-    void save_current_edit();
+    void save_new_printer();
 
     void on_dialog_button_add_new();
-
 
     // IConfigBoxSetter
 
@@ -67,10 +68,12 @@ public:
     void
     set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0) override;
 
-    bool is_printer_on_index_compatible(size_t index, const Domain::Preset::HwPrinterConfig& config);
+    bool is_printer_compatible(const std::string& uuid, const Domain::Preset::HwPrinterConfig& config);
 
 private:
     void read_storage();
+     
+    size_t index_of(const std::string& uuid) const;
 
     void add_printer_settings(Domain::PhysicalPrinterSettings&& settings, const std::string& filename);
 
@@ -83,6 +86,7 @@ private:
     ConfigBoxInteractor::SetAccessor m_cbi_accessor;
     ConfigBoxInteractor m_cbi;
 
-    size_t m_selected_index {0};
+    std::string m_selected_uuid;
+    size_t      m_selected_index;
 };
 } //namespace Slic3r::Biz::PhysicalPrinter

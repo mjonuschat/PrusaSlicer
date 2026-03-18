@@ -102,7 +102,7 @@ bool PrintHostPrusaConnect::test(std::string& curl_msg, RetryFn retry_fn) const
 {
     // Test is not used by upload and gets list of files on a device.
 
-    const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::ConnectUpload* auth = std::get_if<PhysicalPrinter::ConnectUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const std::string name = get_name();
@@ -142,7 +142,7 @@ bool PrintHostPrusaConnect::init_upload(
 {
     // Register upload. Then upload must be performed immediately with returned "id"
 
-    const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::ConnectUpload* auth = std::get_if<PhysicalPrinter::ConnectUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     bool res = true;
@@ -202,7 +202,7 @@ bool PrintHostPrusaConnect::perform(
     InfoFn info_fn
 ) const
 {
-     const PhysicalPrinter::CloudAuth* auth = std::get_if<PhysicalPrinter::CloudAuth>(&m_print_host_config.connection_data);
+     const PhysicalPrinter::ConnectUpload* auth = std::get_if<PhysicalPrinter::ConnectUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     std::string printer_page_url = fmt::format(

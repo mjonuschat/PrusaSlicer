@@ -13,6 +13,10 @@ namespace Slic3r::Biz::UserAccount {
 UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher) :
     m_session{dispatcher}
 {
+}
+
+void UserAccountCommunicationTokenBase::init()
+{
     TokenStore::StoreData stored_data;
     bool tokens_loaded = TokenStore::load_tokens(stored_data);
 

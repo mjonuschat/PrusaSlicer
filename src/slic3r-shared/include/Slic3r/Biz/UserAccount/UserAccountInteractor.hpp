@@ -25,6 +25,12 @@ public:
     UserAccountInteractor& operator=(UserAccountInteractor&& other) = delete;
 
     /**
+     * @brief Reads tokens from store, starts communication in bg thread.
+     * Moved to delayed init function prevent possible race conditions.
+     */
+    void init();
+
+    /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
      */
     void do_log_out(bool notify_owner);

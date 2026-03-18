@@ -29,6 +29,12 @@ public:
         m_monitor->add_listener<IRemovableDriveStatusListener>(listener);
     }
 
+    void remove_status_listener(IRemovableDriveStatusListener* listener)
+    {
+        remove_listener<IRemovableDriveStatusListener>(listener);
+        m_monitor->remove_listener<IRemovableDriveStatusListener>(listener);
+    }
+
     /**
      * @brief Returns path to removable drive if any exists. Prefarably one with preferred_path.
      */

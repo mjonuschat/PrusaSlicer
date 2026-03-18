@@ -16,7 +16,7 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 {
     // POST /server/files/upload
 
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name              = get_name();
@@ -115,7 +115,7 @@ bool PrintHostMoonraker::test(std::string& msg, RetryFn retry_fn) const
 {
     // GET /server/info
 
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     // Since the request is performed synchronously here,
@@ -193,7 +193,7 @@ std::string PrintHostMoonraker::make_url(const std::string& path) const
 
 void PrintHostMoonraker::set_auth(Network::IHttp* http) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     switch (auth->auth_type) {

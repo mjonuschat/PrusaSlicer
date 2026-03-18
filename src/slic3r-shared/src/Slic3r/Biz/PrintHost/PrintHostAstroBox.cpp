@@ -142,7 +142,7 @@ std::string PrintHostAstroBox::make_url(const std::string& path) const
 
 void PrintHostAstroBox::set_auth(Network::IHttp* http) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     http->header("X-Api-Key", auth->api_key);

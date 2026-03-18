@@ -31,7 +31,7 @@ void ResultExportInteractor::perform(PhysicalPrinter::PhysicalPrinterConfig conf
 
 void ResultExportInteractor::process_gcode_inner(PhysicalPrinter::PhysicalPrinterConfig config, PrintHost::PrintHostJobData data)
 {
-    if (const auto* auth = std::get_if<PhysicalPrinter::LocalAuth>(&config.connection_data);
+    if (const auto* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&config.payload);
         auth && auth->type == Domain::PrintHostType::PrusaLink)
     {
         upload_gcode_with_storage_choice(std::move(config), std::move(data));
@@ -47,7 +47,7 @@ void ResultExportInteractor::upload_gcode_with_storage_choice(PhysicalPrinter::P
     auto config_ptr = std::make_shared<PhysicalPrinter::PhysicalPrinterConfig>(std::move(config));
     auto data_ptr   = std::make_shared<PrintHost::PrintHostJobData>(std::move(data));
 
-    PhysicalPrinter::LocalAuth* other_auth = std::get_if<PhysicalPrinter::LocalAuth>(&config_ptr->connection_data);
+    PhysicalPrinter::PrinterUpload* other_auth = std::get_if<PhysicalPrinter::PrinterUpload>(&config_ptr->payload);
     ASSERT(other_auth);
 
     StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& storage) mutable
@@ -56,20 +56,13 @@ void ResultExportInteractor::upload_gcode_with_storage_choice(PhysicalPrinter::P
         m_print_host_job_manager.emplace_job(std::move(*config_ptr), std::move(*data_ptr));
     };
 
-    // Create PrusaLinkStorage config by copying the shared pointer.
-    // PhysicalPrinter::PhysicalPrinterConfig has deleted copy constructor.
-    PhysicalPrinter::PhysicalPrinterConfig storage_config = {PhysicalPrinter::OperationType::PrusaLinkStorage};
-    storage_config.host = config_ptr->host;
-    PhysicalPrinter::LocalAuth new_auth;
-    new_auth.type                   = Domain::PrintHostType::PrusaLink;
-    new_auth.ca_file                = other_auth->ca_file;
-    new_auth.ssl_revoke_best_effort = other_auth->ssl_revoke_best_effort;
-    new_auth.port                   = other_auth->port;
-    new_auth.auth_type              = other_auth->auth_type;
-    new_auth.api_key                = other_auth->api_key;
-    new_auth.username               = other_auth->username;
-    new_auth.password               = other_auth->password;
-    storage_config.connection_data = std::move(new_auth);
+    PhysicalPrinter::PrinterUpload new_auth = *other_auth;
+    new_auth.type = Domain::PrintHostType::PrusaLinkStorage;
+
+    PhysicalPrinter::PhysicalPrinterConfig storage_config{
+        .payload = std::move(new_auth),
+        .host    = config_ptr->host
+    };
 
     size_t id = m_print_host_job_manager.emplace_job(std::move(storage_config), {std::monostate{}, data_ptr->dest_path, PrintHost::PrintHostExportFormat::Undefined});
 

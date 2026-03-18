@@ -29,7 +29,7 @@ bool validate_repetier(const boost::optional<std::string>& name, const boost::op
 
 bool PrintHostRepetier::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -175,7 +175,7 @@ std::string PrintHostRepetier::make_url(const std::string& path) const
 
 void PrintHostRepetier::set_auth(Network::IHttp* http) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     http->header("X-Api-Key", auth->api_key);

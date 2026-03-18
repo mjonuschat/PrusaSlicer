@@ -107,7 +107,7 @@ bool PrintHostOctoPrint::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
 bool PrintHostOctoPrint::test(std::string& msg, RetryFn retry_fn) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -172,7 +172,7 @@ bool PrintHostOctoPrint::test_with_resolved_ip(std::string& msg, RetryFn retry_f
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
 
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -249,7 +249,7 @@ bool PrintHostOctoPrint::upload_inner_with_host(
     InfoFn info_fn
 ) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -356,7 +356,7 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(
     const boost::asio::ip::address& resolved_addr
 ) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     info_fn(PrintHostJobInfoTag::Resolve, resolved_addr.to_string());
@@ -456,7 +456,7 @@ std::string PrintHostOctoPrint::make_url(const std::string& path) const
 
 void PrintHostOctoPrint::set_auth(Network::IHttp* http) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     http->header("X-Api-Key", auth->api_key);

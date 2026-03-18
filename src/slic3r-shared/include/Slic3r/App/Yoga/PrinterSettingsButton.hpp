@@ -15,7 +15,6 @@ public:
     explicit PrinterSettingsButton(const std::string& tooltip = {});
 
     void set_image(const std::string& image);
-    void set_icon(Render::Icon icon);
     void set_printer_name(const std::string& printer_name);
     void set_preset_name(const std::string& preset_name);
     void set_printing_state(int state);
@@ -30,11 +29,15 @@ protected:
     void checked_updated_internal() override;
     void hovered_updated_internal() override;
     void update_btns_visibility();
+    LayoutButton* add_button(Render::Icon icon, const std::string& tooltip);
+
+protected:
+    Icon*           m_icon{nullptr};
+    Item*           m_texts_wrapper{nullptr};
+    Text*           m_preset_name{nullptr};
 
 private:
-    Icon*           m_icon{nullptr};
     Text*           m_printer_name{nullptr};
-    Text*           m_preset_name{nullptr};
     LayoutButton*   m_printers_btn{nullptr};
     LayoutButton*   m_cog_btn{nullptr};
 

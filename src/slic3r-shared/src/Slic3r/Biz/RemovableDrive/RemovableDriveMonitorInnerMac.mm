@@ -55,7 +55,7 @@
     for(NSURL *volURL in mountedRemovableMedia)
     {
         int                 err = 0;
-        DADiskRef           disk;
+        DADiskRef           disk = nullptr;
         CFDictionaryRef     descDict = nullptr;        
         DASessionRef        session = DASessionCreate(nullptr);
         if (session == nullptr)

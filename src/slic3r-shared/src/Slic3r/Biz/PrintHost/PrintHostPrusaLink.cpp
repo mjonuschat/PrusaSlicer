@@ -29,7 +29,7 @@ bool PrintHostPrusaLink::validate_version_text(const boost::optional<std::string
 
 void PrintHostPrusaLink::set_auth(Network::IHttp* http) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     switch (auth->auth_type) {
@@ -151,7 +151,7 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
 bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     // Since the request is performed synchronously here,
@@ -218,7 +218,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
 
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -297,7 +297,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(
     // Since the request is performed synchronously here,
     // it is ok to refer to `msg` from within the closure
 
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     const char* name = get_name();
@@ -495,7 +495,7 @@ bool PrintHostPrusaLink::put_inner(
 ) const
 {
     //info_fn("set_complete_off", {});
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     bool res = true;
@@ -557,7 +557,7 @@ bool PrintHostPrusaLink::post_inner(
     InfoFn info_fn
 ) const
 {
-    const PhysicalPrinter::LocalAuth* auth = std::get_if<PhysicalPrinter::LocalAuth>(&m_print_host_config.connection_data);
+    const PhysicalPrinter::PrinterUpload* auth = std::get_if<PhysicalPrinter::PrinterUpload>(&m_print_host_config.payload);
     ASSERT(auth);
 
     //info_fn("set_complete_off", {});

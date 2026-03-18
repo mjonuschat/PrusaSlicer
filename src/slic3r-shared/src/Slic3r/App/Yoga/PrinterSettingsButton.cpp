@@ -11,38 +11,22 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
 {
     set_flex_shrink(0);
     set_allow_overlap(true);
+
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
 
-    Item* texts_wrapper = emplace_back<Item>();
-    texts_wrapper->set_orientation(Orientation::Vertical);
-    texts_wrapper->set_flex_grow(1.f);
+    m_texts_wrapper = emplace_back<Item>();
+    m_texts_wrapper->set_orientation(Orientation::Vertical);
+    m_texts_wrapper->set_flex_grow(1.f);
+    m_texts_wrapper->set_justify_content(YGJustifyCenter);
 
-    m_printer_name = texts_wrapper->emplace_back<Text>("");
+    m_printer_name = m_texts_wrapper->emplace_back<Text>("");
     m_printer_name->set_font_type(Render::ImguiFontType::Bold);
-    m_printer_name->set_flex_grow(1.f);
     m_printer_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    m_preset_name = texts_wrapper->emplace_back<Text>("");
-    m_preset_name->set_flex_grow(1.f);
+    m_preset_name = m_texts_wrapper->emplace_back<Text>("");
     m_preset_name->set_wrap_mode(Text::WrapMode::WrapElide);
-
-    auto add_button = [this](Render::Icon icon, const std::string& tooltip)
-    {
-        LayoutButton* button = emplace_back<LayoutButton>(std::string{}, icon, tooltip);
-        button->set_self_align(YGAlignCenter);
-        button->set_min_size({24.f, 24.f});
-        button->set_flex_shrink(0);
-        button->set_background_color(IM_COL32_BLACK_TRANS);
-        // Extra button is hidden by default.
-        // It can be shown in the settings dialog under certain conditions.
-        button->set_visible(false);
-
-        button->callbacks().hovered_changed = [this](bool) { update_btns_visibility(); };
-
-        return button;
-    };
 
     m_printers_btn =
         add_button(Render::Icon::ConfigContainer, Biz::_u8L("Show info about printer"));
@@ -52,11 +36,6 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
 void PrinterSettingsButton::set_image(const std::string& image)
 {
     m_icon->set_image(image);
-}
-
-void PrinterSettingsButton::set_icon(Render::Icon icon)
-{
-     m_icon->set_icon(icon);
 }
 
 void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
@@ -126,5 +105,21 @@ void PrinterSettingsButton::update_btns_visibility()
     tint_btn_icon(m_cog_btn);
     tint_btn_icon(m_printers_btn);
 }
+
+LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::string& tooltip)
+{
+    LayoutButton* button = emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+    button->set_self_align(YGAlignCenter);
+    button->set_min_size({24.f, 24.f});
+    button->set_flex_shrink(0);
+    button->set_background_color(IM_COL32_BLACK_TRANS);
+    // Extra button is hidden by default.
+    // It can be shown in the settings dialog under certain conditions.
+    button->set_visible(false);
+
+    button->callbacks().hovered_changed = [this](bool) { update_btns_visibility(); };
+
+    return button;
+};
 
 } // namespace Slic3r::App::Yoga

@@ -158,6 +158,12 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::PlusHeightRange, "plus_height_range"},
     {Icon::PlusModifier, "plus_modifier"},
 
+    // Physical printer
+    {Icon::ExportToSD, "export_to_sd"},    
+    {Icon::ConnectUpload, "connect_gcode"},
+    {Icon::ExportToLocal, "save"},
+    {Icon::ExclamationMark, "exclamation_mark"},
+
     // Gizmo Emboss
     {Icon::AlignHLeftBtn, "align_horizontal_left"},
     {Icon::AlignHCenterBtn, "align_horizontal_center"},

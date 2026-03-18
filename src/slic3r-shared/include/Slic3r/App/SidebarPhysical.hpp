@@ -12,10 +12,10 @@ class Navigator;
 class PhysicalPrinterSettingsDialog;
 class PrinterAddDialog;
 class PhysicalPrinterAdvancedSettingsDialog;
+class PhysicalPrinterSettingsButton;
 
 namespace Yoga {
 class Text;
-class PrinterSettingsButton;
 } // namespace Yoga
 
 class SidebarPhysical :
@@ -26,7 +26,7 @@ public:
     explicit SidebarPhysical(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
 
     PhysicalPrinterSettingsDialog& physical_printer_settings_dialog();
-    PhysicalPrinterAdvancedSettingsDialog& print_host_settings_dialog();
+    PhysicalPrinterAdvancedSettingsDialog& physical_printer_advanced_settings_dialog();
 
     void on_printer_data_changed() override;
 
@@ -36,9 +36,9 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
 
-    Yoga::PrinterSettingsButton* m_physical_printer_button{nullptr};
+    PhysicalPrinterSettingsButton* m_physical_printer_button{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
     PhysicalPrinterSettingsDialog* m_physical_printer_settings_dialog{nullptr};
-    //PhysicalPrinterAdvancedSettingsDialog* m_print_host_settings_dialog{nullptr};
+    PhysicalPrinterAdvancedSettingsDialog* m_physical_printer_advanced_settings_dialog{nullptr};
 };
 } // namespace Slic3r::App

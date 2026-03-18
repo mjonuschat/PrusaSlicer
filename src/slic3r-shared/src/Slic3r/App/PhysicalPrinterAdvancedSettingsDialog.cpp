@@ -23,12 +23,10 @@ namespace Slic3r::App {
 
 PhysicalPrinterAdvancedSettingsDialog::PhysicalPrinterAdvancedSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
-    Navigator& navigator,
-    PhysicalPrinterSettingsDialog* physical_printer_settings_dialog
+    Navigator& navigator
 ) :
     ConfigSettingsDialog(project_interactor, navigator, "PhysicalPrinterAdvancedSettingsDialog"),
-    m_physical_printer_changed_listener_scope(project_interactor.physical_printer_interactor(), *this),
-    m_physical_printer_settings_dialog(physical_printer_settings_dialog)
+    m_physical_printer_changed_listener_scope(project_interactor.physical_printer_interactor(), *this)
 {
     Item* footer_items = m_footer->emplace_back<Item>();
     footer_items->set_gap(5.f);
@@ -38,8 +36,8 @@ PhysicalPrinterAdvancedSettingsDialog::PhysicalPrinterAdvancedSettingsDialog(
     m_save_button = footer_items->emplace_back<LayoutButton>(_u8("Save"));
     m_save_button->callbacks().action = [&]
     {
-        m_project_interactor->physical_printer_interactor().save_current_edit();
-        m_navigator.set_opened_dialog(m_physical_printer_settings_dialog);
+        m_project_interactor->physical_printer_interactor().save_new_printer();
+        m_navigator.set_opened_dialog(nullptr);
     };
 
     Tab* tab = append_tab(_u8L("Printer"));
@@ -54,12 +52,12 @@ PhysicalPrinterAdvancedSettingsDialog::PhysicalPrinterAdvancedSettingsDialog(
 
 void PhysicalPrinterAdvancedSettingsDialog::close_action()
 {
-    m_navigator.set_opened_dialog(m_physical_printer_settings_dialog);
+    m_navigator.set_opened_dialog(m_parent);
 }
 
 void PhysicalPrinterAdvancedSettingsDialog::on_selected_physical_printer_changed() 
 {
-    m_save_button->set_visible(m_project_interactor->physical_printer_interactor().is_none_selected());
+    m_save_button->set_visible(m_project_interactor->physical_printer_interactor().is_filesystem_export_selected());
 }
 
 } // namespace Slic3r::App

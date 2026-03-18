@@ -619,16 +619,13 @@ PopNotificationLayout storage_resolve_layout(const PrintHostProgressNotification
 {
     switch (data.status) {
     case PrintHostJobStatus::None: {
-        std::string msg = _u8L("Resolving PrusaLink storage.");
-        return PopNotificationLayoutText(std::move(msg));
+        return PopNotificationLayoutText(_u8L("Resolving PrusaLink storage."));
     }
     case PrintHostJobStatus::Started: {
-        std::string msg = _u8L("Resolving PrusaLink storage.");
-        return PopNotificationLayoutTextProgress(std::move(msg), data.progress);
+        return PopNotificationLayoutTextProgress(_u8L("Resolving PrusaLink storage."), data.progress);
     }
     case PrintHostJobStatus::Finished: {
-        std::string msg = _u8L("Resolving storage has finished.");
-        return PopNotificationLayoutText(std::move(msg));
+        return PopNotificationLayoutText(_u8L("Resolving storage has finished."));
     }
     case PrintHostJobStatus::Failed: {
         std::string translatable_part = _u8L("Resolving storage has Failed.");
@@ -826,10 +823,7 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
                 const auto payload{
                     std::get_if<PrintHostProgressNotificationData>(&notification.payload)
                 };
-                if (payload == nullptr) {
-                    return false;
-                }
-                return payload->print_host_id == print_host_id;
+                return payload ? payload->print_host_id == print_host_id : false;
             }
         );
         return;

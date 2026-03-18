@@ -20,6 +20,7 @@ enum class PrintHostAuthType {
 };
 enum PrintHostType {
     PrusaLink,
+    PrusaLinkStorage,
     SL1Host,
     OctoPrint,
     Moonraker,

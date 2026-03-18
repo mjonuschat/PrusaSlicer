@@ -9,29 +9,11 @@ class LayoutButton;
 
 namespace Slic3r::App::Preview {
 
-enum class ActionButtonsLayoutType
-{
-    None,
-    WithoutConnect,
-    WithConnect
-};
-
-struct ActionButtonsLayout
-{
-    Yoga::ObjectPtr layout;
-    Yoga::Object* layout_raw;
-    Yoga::LayoutButton* primary_button;
-    std::vector<Yoga::LayoutButton*> secondary_buttons;
-    Yoga::LayoutButton* navigation_button;
-};
-
 class SidebarPreviewActionButtons :
     public SidebarActionButtons,
-    public Biz::UserAccount::IUserAccountListener,
     public Biz::IStatusCacheChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
-    public Biz::RemovableDrive::IRemovableDriveStatusListener,
-    public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
+    public Biz::RemovableDrive::IRemovableDriveStatusListener
 {
 public:
     SidebarPreviewActionButtons(Navigator* render_module_navigator);
@@ -40,11 +22,6 @@ public:
     void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
 
     void on_init(Biz::ProjectInteractor* project_interactor) override;
-
-    void switch_layout(ActionButtonsLayoutType layout_type);
-
-    void on_user_account_id_success(bool, const std::string&) override;
-    void on_user_account_logged_out() override;
 
     void on_selected_bed_instances_changed(
         Domain::SelectionId project_id,
@@ -57,15 +34,13 @@ public:
         Biz::RemovableDrive::RemovableDriveStatus
     ) override;
 
-    void on_selected_physical_printer_changed() override;
+protected:
+    void update_buttons() override;
 
 private:
-    ActionButtonsLayout m_layout_with_connect;
-    ActionButtonsLayout m_layout_without_connect;
+    Yoga::LayoutButton* m_primary_button{nullptr};
+    Yoga::LayoutButton* m_navigation_button{nullptr};
 
     std::unique_ptr<Yoga::LayoutButton> get_primary_button();
-    void update_buttons();
-
-    ActionButtonsLayoutType active_layout() const;
 };
 } // namespace Slic3r::App::Preview
