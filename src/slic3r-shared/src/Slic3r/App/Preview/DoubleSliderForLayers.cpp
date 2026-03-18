@@ -885,8 +885,8 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
         );
 
         // add tooltip
-        if (ImGui::IsMouseHoveringRect(band_rc.Min, band_rc.Max))
-            m_focus = FocusedItem::ColorBand;
+        m_focus = ImGui::IsMouseHoveringRect(band_rc.Min, band_rc.Max) ? FocusedItem::ColorBand :
+                                                                         FocusedItem::None;
     };
 
     auto draw_main_band = [&main_band](const ImU32& clr)
