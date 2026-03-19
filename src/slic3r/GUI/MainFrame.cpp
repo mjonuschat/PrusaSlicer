@@ -581,7 +581,7 @@ void MainFrame::update_title()
         boost::replace_first(build_id, SLIC3R_APP_NAME, GCODEVIEWER_APP_NAME);
     size_t 		idx_plus = build_id.find('+');
     if (idx_plus != build_id.npos) {
-	build_id.erase(build_id.begin() + idx_plus, build_id.end());
+    		build_id.erase(build_id.begin() + idx_plus, build_id.end());
     }
 
     title += wxString(build_id);
