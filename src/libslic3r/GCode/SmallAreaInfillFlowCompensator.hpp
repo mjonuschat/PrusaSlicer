@@ -9,7 +9,7 @@
 #include "../libslic3r.h"
 #include "../PrintConfig.hpp"
 #include "../ExtrusionRole.hpp"
-#include "spline.h"
+#include <spline.h>
 namespace Slic3r {
 
 class SmallAreaInfillFlowCompensator
