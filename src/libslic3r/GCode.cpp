@@ -4157,14 +4157,14 @@ std::string GCodeGenerator::_extrude(
                 double angle = Geometry::ArcWelder::arc_angle(prev.cast<double>(), p.cast<double>(), double(radius));
                 assert(angle > 0);
                 const double line_length = angle * std::abs(radius);
-                auto dE                  = e_per_mm * line_length;
+                double dE                = e_per_mm * line_length;
                 assert(dE > 0);
                 if (m_small_area_infill_flow_compensator) {
-                    auto oldE = dE;
+                    double oldE = dE;
                     dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path_attr.role);
 
-                    if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
-                        tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f",oldE, line_length);
+                    if (m_config.gcode_comments && oldE > 0 && !Slic3r::nearly_equal(oldE, dE)) {
+                        tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f", oldE, line_length);
                     }
                 }
                 gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, tempComment);

@@ -513,7 +513,6 @@ private:
     friend class GCode::Wipe;
     friend class GCode::WipeTowerIntegration;
     friend class PressureEqualizer;
-    friend class SmallAreaInfillFlowCompensator;
 };
 
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print);
