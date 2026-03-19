@@ -1396,7 +1396,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     model = FileReader::load_model(path.string(), FileReader::LoadAttributes{}, &load_stats);
 
                 if (init_z_rotate != 0) {
-                    for (auto obj : model.objects) {
+                    for (auto *obj : model.objects) {
                         obj->rotate(Geometry::deg2rad(init_z_rotate), Axis::Z);
                     }
                 }
