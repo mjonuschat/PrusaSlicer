@@ -3,10 +3,16 @@
 export ROOT=`pwd`
 export NCORES=`nproc --all`
 export CMAKE_BUILD_PARALLEL_LEVEL=${NCORES}
-FOUND_GTK2=$(dpkg -l libgtk* | grep gtk2)
-FOUND_GTK3=$(dpkg -l libgtk* | grep gtk-3)
 
 set -e # exit on first error
+
+if ! command -v dpkg &>/dev/null; then
+    echo "ERROR: This script requires a Debian/Ubuntu-based system (dpkg not found)"
+    exit 1
+fi
+
+FOUND_GTK2=$(dpkg -l libgtk* 2>/dev/null | grep gtk2 || true)
+FOUND_GTK3=$(dpkg -l libgtk* 2>/dev/null | grep gtk-3 || true)
 
 function check_available_memory_and_disk() {
     FREE_MEM_GB=$(free -g -t | grep 'Mem:' | rev | cut -d" " -f1 | rev)
@@ -85,36 +91,35 @@ if [ $(dpkg --get-selections | grep -E "$(echo ${REQUIRED_DEV_PACKAGES} | tr ' '
     sudo apt install -y ${REQUIRED_DEV_PACKAGES} git cmake wget file gettext
 fi
 
-#FIXME: require root for -u option
 if [[ -n "$UPDATE_LIB" ]]
 then
     echo -n -e "Updating linux ...\n"
-    apt update
+    sudo apt update
     if [[ -z "$FOUND_GTK3" ]]
     then
         echo -e "\nInstalling: libgtk2.0-dev libglew-dev libudev-dev libdbus-1-dev cmake git\n"
-        apt install -y libgtk2.0-dev libglew-dev libudev-dev libdbus-1-dev cmake git
+        sudo apt install -y libgtk2.0-dev libglew-dev libudev-dev libdbus-1-dev cmake git
     else
         echo -e "\nFound libgtk-3, installing: libgtk-3-dev libglew-dev libudev-dev libdbus-1-dev cmake git\n"
-        apt install -y libgtk-3-dev libglew-dev libudev-dev libdbus-1-dev cmake git
+        sudo apt install -y libgtk-3-dev libglew-dev libudev-dev libdbus-1-dev cmake git
     fi
     # for ubuntu 22+ and 23+:
     ubu_major_version="$(grep VERSION_ID /etc/os-release | cut -d "=" -f 2 | cut -d "." -f 1 | tr -d /\"/)"
     if [ $ubu_major_version == "22" ] || [ $ubu_major_version == "23" ]
     then
-        apt install -y curl libfuse-dev libssl-dev libcurl4-openssl-dev m4
+        sudo apt install -y curl libfuse-dev libssl-dev libcurl4-openssl-dev m4
     fi
     if [[ -n "$BUILD_DEBUG" ]]
     then
         echo -e "\nInstalling: libssl-dev libcurl4-openssl-dev\n"
-        apt install -y libssl-dev libcurl4-openssl-dev
+        sudo apt install -y libssl-dev libcurl4-openssl-dev
     fi
     echo -e "done\n"
     exit 0
 fi
 
-FOUND_GTK2_DEV=$(dpkg -l libgtk* | grep gtk2.0-dev || echo '')
-FOUND_GTK3_DEV=$(dpkg -l libgtk* | grep gtk-3-dev || echo '')
+FOUND_GTK2_DEV=$(dpkg -l libgtk* 2>/dev/null | grep gtk2.0-dev || true)
+FOUND_GTK3_DEV=$(dpkg -l libgtk* 2>/dev/null | grep gtk-3-dev || true)
 echo "FOUND_GTK2=$FOUND_GTK2)"
 if [[ -z "$FOUND_GTK2_DEV" ]]
 then
