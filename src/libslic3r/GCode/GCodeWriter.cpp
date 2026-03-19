@@ -45,7 +45,8 @@ void GCodeWriter::apply_print_config(const PrintConfig &print_config)
     m_single_extruder_multi_material = print_config.single_extruder_multi_material.value;
     bool use_mach_limits = print_config.gcode_flavor.value == gcfMarlinLegacy
                         || print_config.gcode_flavor.value == gcfMarlinFirmware
-                        || print_config.gcode_flavor.value == gcfRepRapFirmware;
+                        || print_config.gcode_flavor.value == gcfRepRapFirmware
+                        || print_config.gcode_flavor.value == gcfKlipper;
     m_max_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
         print_config.machine_max_acceleration_extruding.values.front() : 0));
     m_max_travel_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode && supports_separate_travel_acceleration(print_config.gcode_flavor.value)) ?
