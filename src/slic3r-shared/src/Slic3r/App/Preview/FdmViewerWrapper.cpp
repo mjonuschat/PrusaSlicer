@@ -518,9 +518,9 @@ void FdmViewerWrapper::update_slider_layers()
     m_slider_layers->set_extruder_colors(convert(m_viewer.tool_colors()));
     bool one_extruder_printed_model = used_extruders_count() == 1;
     int8_t only_extruder = (one_extruder_printed_model && m_viewer.extruders_count() > 1) ? m_viewer.used_extruders_ids().front() : -1;
+    m_slider_layers->set_slider_values(std::move(layers_zs));
     m_slider_layers->set_ticks_values(m_data.custom_gcode_info);
     m_slider_layers->set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
-    m_slider_layers->set_slider_values(std::move(layers_zs));
     m_slider_layers->force_ruler_update();
     assert(m_slider_layers->min_pos() == 0);
     m_slider_layers->freeze();
