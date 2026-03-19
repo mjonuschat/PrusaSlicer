@@ -1,9 +1,9 @@
-# Simple workflow for deploying version information to GitHub Pages
-name: Publish Version Information
+# Update version information on GitHub Pages when a release is yanked
+name: Update Version Information on Unpublish
 
 on:
   release:
-    types: [published, unpublished]
+    types: [unpublished]
 
   workflow_dispatch:
 
