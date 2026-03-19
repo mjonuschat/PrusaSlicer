@@ -639,7 +639,6 @@ target_link_libraries(libslic3r PRIVATE
     fastfloat
     int128
     nlohmann_json::nlohmann_json
-    tkspline
 )
 target_link_libraries(libslic3r PUBLIC
     Eigen3::Eigen
@@ -654,6 +653,7 @@ target_link_libraries(libslic3r PUBLIC
     ankerl
     boost_headeronly
     libseqarrange
+    tkspline
 )
 
 if (APPLE)
