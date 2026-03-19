@@ -112,6 +112,15 @@ public:
         return m_new_vendors;
     }
 
+    bool empty() const
+    {
+        return m_regular_updates.empty()
+            && m_forced_updates.empty()
+            && m_forced_downgrades.empty()
+            && m_not_in_index.empty()
+            && m_new_vendors.empty();
+    }
+
 private:
     std::vector<VendorReconfiguration> m_regular_updates; 
     std::vector<VendorReconfiguration> m_forced_updates; 

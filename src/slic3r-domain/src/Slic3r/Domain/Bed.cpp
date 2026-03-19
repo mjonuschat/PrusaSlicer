@@ -39,16 +39,6 @@ Bed Bed::create(const BedCreationData& data)
     ret.m_model_filename   = data.model_filename;
     ret.m_texture_filename = data.texture_filename;
 
-    if (!ret.m_model_filename.empty() && !check_model(ret.m_model_filename)) {
-        SPDLOG_WARN("Invalid or unreachable bed model: {}", ret.m_model_filename);
-        ret.m_model_filename.clear();
-    }
-
-    if (!ret.m_texture_filename.empty() && !check_texture(ret.m_texture_filename)) {
-        SPDLOG_WARN("Invalid or unreachable bed texture: {}", ret.m_texture_filename);
-        ret.m_texture_filename.clear();
-    }
-
     Vec2d min = {DBL_MAX, DBL_MAX};
     Vec2d max = {-DBL_MAX, -DBL_MAX};
 

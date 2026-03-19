@@ -8,8 +8,14 @@
 
 namespace Slic3r::App {
 
-PresetUpdaterUI::PresetUpdaterUI(Biz::PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor) :
-    m_preset_updater_interactor(preset_updater_interactor)
+PresetUpdaterUI::PresetUpdaterUI(
+    Biz::PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor,
+    Biz::Preset::PresetInteractor& preset_interactor,
+    const Biz::Preset::IO::BundlePaths& bundle_paths
+) :
+    m_preset_updater_interactor(preset_updater_interactor),
+    m_preset_interactor(preset_interactor),
+    m_bundle_paths(bundle_paths)
 {
     m_preset_updater_interactor.add_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(this);
 
@@ -83,6 +89,9 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_perfomed(
 )
 {
     SPDLOG_INFO(__FUNCTION__);
+    // TODO: detect if reload is needed
+    SPDLOG_INFO("Update finished, Reloading presets");
+    m_preset_interactor.load_preset_bundle(m_bundle_paths);
 }
 
 void PresetUpdaterUI::on_preset_updater_status(const std::string& target, int attempt, unsigned delay)
@@ -97,7 +106,7 @@ void PresetUpdaterUI::on_preset_updater_repository_info_vector(
 {
     std::string dialog_msg = "Preset Updater Sources\n\n";
 
-    for (const auto pair : descriptor) {
+    for (const auto& pair : descriptor) {
         dialog_msg += fmt::
             format("source: {}({}) {}\n", pair.descriptor.id, pair.descriptor.unzipped_data_path.empty() ? "online" : "local", pair.selected ? "selected" : "not selected");
     }

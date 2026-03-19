@@ -33,12 +33,18 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::Biz::Scene {
 
+BedGeometry::Resolver BedGeometry::s_resolver{nullptr};
+
 using Domain::TriangleMesh;
 
 TriangleMesh BedGeometry::model(const Domain::Bed& bed)
 {
-    namespace TriMesh                 = Biz::Algorithms::TriangleMesh;
-    const std::string& model_filename = bed.model_filename();
+    namespace TriMesh          = Biz::Algorithms::TriangleMesh;
+    std::string model_filename = bed.model_filename();
+
+    if (s_resolver) {
+        model_filename = s_resolver(model_filename);
+    }
     if (!model_filename.empty()) {
         auto mesh = Biz::load_stl(model_filename);
         if (mesh) {
@@ -262,6 +268,11 @@ std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> BedGeometry::label(
         {{width, height, 0.0f}, {1.0f, 1.0f}},
     };
     return ret;
+}
+
+void BedGeometry::set_resolver(Resolver resolver)
+{
+    s_resolver = resolver;
 }
 
 } // namespace Slic3r::Biz::Scene

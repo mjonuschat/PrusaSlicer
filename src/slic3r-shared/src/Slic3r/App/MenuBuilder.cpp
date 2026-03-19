@@ -138,6 +138,8 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Send G-code");
     case MenuItemName::ExportGcodeToFlash:
         return Biz::_u8L("Export G-code to SD Card / Flash Drive");
+    case MenuItemName::OnlinePresetUpdate:
+        return Biz::_u8L("Update from Online Presets");
     default:
         return std::string();
     }

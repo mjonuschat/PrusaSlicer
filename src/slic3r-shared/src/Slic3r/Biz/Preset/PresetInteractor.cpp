@@ -126,6 +126,14 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
     if (! preset_bundle_opt) {
         preset_bundle_opt = std::make_optional(IO::load_bundle(bundle_paths));
         Domain::Preset::Bundle& preset_bundle = *preset_bundle_opt;
+        // copy over printer configs from original bundle, so these are not lost on reload
+        if (m_workbench.has_preset_bundle()) {
+            preset_bundle.printer_configs = m_workbench.preset_bundle().printer_configs;
+            for (const auto& hw_config : preset_bundle.printer_configs | std::views::values) {
+                auto& vendor_bundle = preset_bundle.vendor_bundles.at(hw_config.vendor_id);
+                vendor_bundle.printer_configs.push_back(hw_config);
+            }
+        }
 
         // TODO: remove this when config wizard is ready
         if (preset_bundle.printer_configs.empty()) {

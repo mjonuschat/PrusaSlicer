@@ -100,6 +100,13 @@ public:
      * @note The geometry is a rectangle width x height (with origin in its bottom-left corner) made by two triangles.
      */
     [[nodiscard]] static std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> label(const Domain::Bed& bed, float width, float height);
+
+    using Resolver = std::function<std::string(const std::string&)>;
+
+    static void set_resolver(Resolver resolver);
+
+private:
+    static Resolver s_resolver;
 };
 
 } // namespace Slic3r::Biz::Scene

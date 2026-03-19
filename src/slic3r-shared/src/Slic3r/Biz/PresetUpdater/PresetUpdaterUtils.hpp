@@ -4,9 +4,7 @@
 #include <string>
 #include <map>
 
-namespace boost::filesystem {
-class path;
-} // namespace boost::filesystem
+#include <boost/filesystem/path.hpp>
 
 namespace Slic3r::Biz::PresetUpdater {
 
@@ -15,6 +13,13 @@ class PresetUpdaterProcessStatus;
 class PresetUpdaterReconfigurationList;
 class AbstractPresetUpdaterRepository;
 typedef std::vector<const AbstractPresetUpdaterRepository*> SharedRepositoryVector;
+
+boost::filesystem::path local_presets_path();
+boost::filesystem::path local_vendor_path(
+    const std::string& repo_id,
+    const std::string& vendor_id,
+    const std::string& suffix = ""
+);
 
 bool copy_file_wrapper(
     const boost::filesystem::path& source,

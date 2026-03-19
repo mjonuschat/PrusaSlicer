@@ -48,7 +48,7 @@ ServiceConfig::ServiceConfig() :
     m_account_url("https://account.prusa3d.com"),
     m_account_client_id("oamhmhZez7opFosnwzElIgE2oGgI2iJORSkw587O"),
     m_media_url("https://media.printables.com"),
-    m_preset_repo_url(/*"https://preset-repo-api.prusa3d.com"*/ "http://localhost:8000"),
+    m_preset_repo_url(/*"https://preset-repo-api.prusa3d.com"*/ "https://preset-repo-api-stage.prusa3d.com"),
     m_printables_url("https://www.printables.com")
 {
 #ifdef SLIC3R_REPO_URL

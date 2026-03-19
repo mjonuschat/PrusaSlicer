@@ -58,11 +58,8 @@ fs::path create_temp_dir()
 
 bool is_vendor_installed(const std::string& vendor_id, const std::string& repo_id)
 {
-    const fs::path installed_vendors_dir = fs::path(data_dir()) / "profiles" / "local" / "vendor";
-    const fs::path vendor_folder_path    = installed_vendors_dir / repo_id / vendor_id;
+    const fs::path vendor_folder_path    = local_vendor_path(repo_id, vendor_id);
     boost::system::error_code ec;
-
-    ASSERT(fs::exists(installed_vendors_dir) && fs::is_directory(installed_vendors_dir));
 
     if (!fs::exists(vendor_folder_path, ec) || ec) {
         return false;
@@ -398,12 +395,8 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     const PresetUpdaterIndex& source_index
 ) const
 {
-    const fs::path installed_vendor_dir = fs::path(data_dir())
-        / "profiles"
-        / "local"
-        / "vendor"
-        / repo->descriptor().id
-        / source_index.vendor();
+    const fs::path installed_vendor_dir =
+        local_vendor_path(repo->descriptor().id, source_index.vendor());
     const fs::path installed_vendor_yaml = installed_vendor_dir / "vendor.yaml";
 
     const fs::path update_sync_vendor_dir = fs::path(data_dir())
@@ -1045,12 +1038,8 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     const PresetUpdaterIndex& index
 ) const
 {
-    const fs::path installed_vendor_dir_path = fs::path(data_dir())
-        / "profiles"
-        / "local"
-        / "vendor"
-        / repo->descriptor().id
-        / index.vendor();
+    const fs::path installed_vendor_dir_path =
+        local_vendor_path(repo->descriptor().id, index.vendor());
     const fs::path update_sync_vendor_dir_path = fs::path(data_dir())
         / "update_sync"
         / repo->descriptor().id

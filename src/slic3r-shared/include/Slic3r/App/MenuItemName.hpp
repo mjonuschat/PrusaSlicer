@@ -74,6 +74,8 @@ enum class MenuItemName
     SendGcode,
     ExportGcodeToFlash,
 
+    OnlinePresetUpdate,
+
     JumpToValue,
 };
 } // namespace Slic3r::App

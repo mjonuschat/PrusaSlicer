@@ -66,6 +66,8 @@ Domain::Preset::Bundle load_bundle(const BundlePaths& bundle_paths)
 
             bool loaded = false;
             Domain::Preset::VendorBundle vendor_bundle;
+            SPDLOG_INFO("Loading preset bundle vendor dir: {}", vendor_dir.string());
+
             try {
 
                 config_loader.load(vendor_yaml_path.string());

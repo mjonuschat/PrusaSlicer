@@ -123,7 +123,13 @@ TexturePtr TextureManager::get_or_create_dynamic(
 
 void TextureManager::set_resource_resolver(std::unique_ptr<IResourceResolver> resource_resolver)
 {
-    TextureManager::m_resource_resolver = std::move(resource_resolver);
+    m_resource_resolver = std::move(resource_resolver);
+}
+
+IResourceResolver& TextureManager::resource_resolver()
+{
+    ASSERT(m_resource_resolver != nullptr);
+    return *m_resource_resolver;
 }
 
 void TextureManager::shutdown()

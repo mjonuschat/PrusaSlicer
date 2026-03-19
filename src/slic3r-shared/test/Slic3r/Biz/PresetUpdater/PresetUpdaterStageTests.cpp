@@ -112,7 +112,7 @@ TEST_CASE("Preset updater")
     Slic3r::set_data_dir((resource_dir / "datadir").string());
     const fs::path data_dir = fs::path(Slic3r::data_dir());
     
-    const fs::path installed_path = data_dir / "profiles" / "local" / "vendor";
+    const fs::path installed_path = data_dir / "presets" / "local";
     const fs::path staged_path = data_dir / "update_sync";
     const fs::path shared_runtime_path = data_dir / "shared_runtime";
     const fs::path resources_repo_path = resource_dir / "presets" / repo_name;
@@ -120,6 +120,8 @@ TEST_CASE("Preset updater")
     const fs::path server_runtime_path = resource_dir / "server" / "runtime";
     const fs::path resources_profile_path = resource_dir / "preset updater";
     const fs::path temp_dir_path = resource_dir / "temp";
+
+    Network::ServiceConfig::instance().set_preset_repo_url("http://localhost:8000/");
 
     fs::create_directories(installed_path);
     fs::create_directories(staged_path);
@@ -177,7 +179,7 @@ TEST_CASE("Preset updater")
 
             ret->default_allow_timeout = NAMED_ALLOW_CALL(*ret, timeout_total_mock(trompeloeil::_));
 
-            return std::move(ret);
+            return ret;
         }
     );
 
