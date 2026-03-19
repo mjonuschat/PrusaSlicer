@@ -69,7 +69,9 @@ TestRenderModule::TestRenderModule() :
 
 const Platform::CommandRegistry::CommandsMap& TestRenderModule::gizmo_commands() const
 {
-    return {};
+    PANIC("Unexpected function call. Define gizmo manager to use it");
+    static Platform::CommandRegistry::CommandsMap commands;
+    return commands;
 }
 
 void TestRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
