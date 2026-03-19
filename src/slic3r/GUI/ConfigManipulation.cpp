@@ -864,7 +864,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     for (auto el : { "raft_expansion", "first_layer_speed_over_raft" })
         toggle_field(el, have_raft);
 
-    //for default_extrusion_width/spacing, you need to ahve at least an extrusion_width with 0
+    // for default_extrusion_width/spacing, you need to have at least an extrusion_width with 0
     bool have_default_width = config->option("first_layer_extrusion_width")->getFloat() == 0 ||
         (config->option("perimeter_extrusion_width")->getFloat() == 0 && (have_perimeters || have_brim)) ||
         (config->option("external_perimeter_extrusion_width")->getFloat() == 0 && have_perimeters) ||
