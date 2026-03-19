@@ -216,11 +216,14 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "wipe_tower_acceleration",
         "wipe_tower_minimum_cruise_ratio",
         "wipe_tower_jerk",
+        // BOSS
         "first_layer_flow_ratio",
         "top_layer_flow_ratio",
-        // BOSS
         "autoemit_toolchange_commands",
         "prime_length_at_start",
+        "seam_type",
+        "seam_notch_width",
+        "seam_notch_angle",
     };
 
     static std::unordered_set<std::string> steps_ignore;
