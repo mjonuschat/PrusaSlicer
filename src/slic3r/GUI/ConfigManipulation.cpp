@@ -551,11 +551,15 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
            fill_density == 0 &&
            ! config->opt_bool("support_material") &&
            config->opt_int("support_material_enforce_layers") == 0 &&
-           ! config->opt_bool("thin_walls")))
+           ! config->opt_bool("thin_walls") &&
+           ! config->opt_bool("overhangs_reverse") &&
+           ! config->opt_bool("infill_reverse") &&
+           ! config->opt_bool("internal_perimeters_reverse")))
     {
         wxString msg_text = _(L("The Spiral Vase mode requires:\n"
                                 "- one perimeter\n"
                                 "- no extra perimeter on odd layers\n"
+                                "- no reverse on odd layers\n"
                                 "- no top solid layers\n"
                                 "- 0% fill density\n"
                                 "- no support material\n"
@@ -574,6 +578,9 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             new_conf.set_key_value("support_material", new ConfigOptionBool(false));
             new_conf.set_key_value("support_material_enforce_layers", new ConfigOptionInt(0));
             new_conf.set_key_value("thin_walls", new ConfigOptionBool(false));
+            new_conf.set_key_value("overhangs_reverse", new ConfigOptionBool(false));
+            new_conf.set_key_value("infill_reverse", new ConfigOptionBool(false));
+            new_conf.set_key_value("internal_perimeters_reverse", new ConfigOptionBool(false));
             fill_density = 0;
             support = false;
         }
