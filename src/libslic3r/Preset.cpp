@@ -577,9 +577,6 @@ static std::vector<std::string> s_Preset_print_options {
 
     "print_extrusion_multiplier",
 
-    "preheat_time",
-    "preheat_steps",
-
     "wipe_tower_disable_filament_ramming",
     "wipe_tower_disable_cooling_moves",
     "wipe_tower_disable_linear_advance",
@@ -655,6 +652,8 @@ static std::vector<std::string> s_Preset_printer_options {
     // BOSS
     "init_z_rotate",
     "autoemit_toolchange_commands",
+    "preheat_time",
+    "preheat_steps",
 };
 
 static std::vector<std::string> s_Preset_sla_print_options {
