@@ -47,6 +47,10 @@ void ConfigItemColorPicker::on_data_update()
     if (Biz::Algorithms::Color::decode_color(m_state->get<std::string>(), color)) {
         set_color(ImColor(color.r(), color.g(), color.b()));
     }
+    else {
+        // set default color
+        set_color(IM_COL32_BLACK);
+    }
 }
 
 } // namespace Slic3r::App
