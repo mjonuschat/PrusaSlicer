@@ -152,7 +152,7 @@ private:
     bool            m_single_extruder_multi_material;
     Extruder*       m_extruder;
     unsigned int    m_last_acceleration = (unsigned int)(-1);
-    unsigned int    m_last_minimum_cruise_ratio = (double)(-1);
+    double          m_last_minimum_cruise_ratio = -1.0;
     unsigned int    m_last_travel_acceleration = (unsigned int)(-1); // only used for flavors supporting separate print/travel acc
     // Limit for setting the acceleration, to respect the machine limits set for the Marlin firmware.
     // If set to zero, the limit is not in action.
@@ -161,8 +161,8 @@ private:
     double          m_max_junction_deviation;
 
     unsigned int    m_last_jerk = (unsigned int)(-1);
-    unsigned int    m_max_jerk_x;
-    unsigned int    m_max_jerk_y;
+    unsigned int    m_max_jerk_x = 0;
+    unsigned int    m_max_jerk_y = 0;
 
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;

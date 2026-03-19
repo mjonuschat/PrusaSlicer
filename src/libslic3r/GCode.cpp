@@ -3116,7 +3116,7 @@ std::string GCodeGenerator::extrude_smooth_path(
         m_config.default_minimum_cruise_ratio,
         "Default"
     );
-    //reset jerk
+    // reset jerk
     gcode += m_writer.set_jerk(fast_round_up<unsigned int>(m_config.default_jerk.value), "Default");
 
     if (is_loop) {
@@ -3916,20 +3916,20 @@ std::string GCodeGenerator::_extrude(
 
     // adjust jerk
     if (m_config.default_jerk.value > 0) {
-        int jerk;
+        unsigned int jerk;
         if (this->on_first_layer() && m_config.first_layer_jerk.value > 0) {
             jerk = m_config.first_layer_jerk.value;
         } else if (this->object_layer_over_raft() && m_config.first_layer_jerk_over_raft.value > 0) {
             jerk = m_config.first_layer_jerk_over_raft.value;
         } else if (m_config.bridge_jerk.value > 0 && path_attr.role.is_bridge()) {
             jerk = m_config.bridge_jerk.value;
-        } else if (m_config.top_solid_infill_jerk > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
+        } else if (m_config.top_solid_infill_jerk.value > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
             jerk = m_config.top_solid_infill_jerk.value;
-        } else if (m_config.solid_infill_jerk > 0 && path_attr.role.is_solid_infill()) {
+        } else if (m_config.solid_infill_jerk.value > 0 && path_attr.role.is_solid_infill()) {
             jerk = m_config.solid_infill_jerk.value;
         } else if (m_config.infill_jerk.value > 0 && path_attr.role.is_infill()) {
             jerk = m_config.infill_jerk.value;
-        } else if (m_config.external_perimeter_jerk > 0 && path_attr.role.is_external_perimeter()) {
+        } else if (m_config.external_perimeter_jerk.value > 0 && path_attr.role.is_external_perimeter()) {
             jerk = m_config.external_perimeter_jerk.value;
         } else if (m_config.perimeter_jerk.value > 0 && path_attr.role.is_perimeter()) {
             jerk = m_config.perimeter_jerk.value;
