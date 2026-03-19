@@ -171,6 +171,8 @@ void split_solid_surface(size_t layer_id, const SurfaceFill &fill, ExPolygons &n
 
     Polygons normal_fill_areas;  // Areas that filled with normal infill
 
+    constexpr bool connect_extrusions = true;
+
     const coord_t scaled_spacing                      = scaled<coord_t>(fill.params.spacing);
     double        distance_limit_reconnection         = 2.0 * double(scaled_spacing);
     double        squared_distance_limit_reconnection = distance_limit_reconnection * distance_limit_reconnection;
