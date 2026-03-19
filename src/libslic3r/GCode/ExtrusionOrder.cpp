@@ -129,13 +129,13 @@ std::vector<Perimeter> extract_perimeter_extrusions(
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(ee)) {
                     const bool is_hole = loop->is_clockwise();
 
-                    const bool is_odd_layer = layer.id() % 2 == 0;
+                    const bool is_odd_layer = layer.id() % 2 == 1;
                     const bool should_reverse_internal_perimeter = role.is_internal_perimeter() &&
                         region.config().internal_perimeters_reverse;
                     bool should_reverse_overhang_perimeters{false};
 
                     if (region.config().overhangs_reverse && is_odd_layer) {
-                        for (ExtrusionPath el : loop->paths) {
+                        for (const ExtrusionPath &el : loop->paths) {
                             if (el.role().is_overhang_perimeter()) {
                                 should_reverse_overhang_perimeters = true;
                                 break;
@@ -209,7 +209,7 @@ std::vector<InfillRange> extract_infill_ranges(
         const std::optional<InstancePoint> previous_instance_point{get_instance_point(previous_position, offset)};
         const Point* start_near{previous_instance_point ? &(previous_instance_point->local_point) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
-        const bool reverse_infill = region.config().infill_reverse && layer.id() % 2 == 0;
+        const bool reverse_infill = region.config().infill_reverse && layer.id() % 2 == 1;
 
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
