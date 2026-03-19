@@ -1186,7 +1186,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Solid fill pattern");
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for solid (internal) infill. This only affects the solid not-visible layers. You should use rectilinear in most cases. You can try ironing for translucent material.");
-    def->cli = "solid-fill-pattern|external-fill-pattern";
+    def->cli = "solid-fill-pattern";
     def->enum_def = Slic3r::clonable_ptr<Slic3r::ConfigOptionEnumDef>(def_top_fill_pattern->enum_def->clone());
     def->aliases = def_top_fill_pattern->aliases;
     def->mode = comExpert;
