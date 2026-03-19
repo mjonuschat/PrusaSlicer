@@ -51,12 +51,15 @@ static Domain::ConfigPack config(
  * @param ignore_printer    If true, then modifications in printer will be ignored
  * @param ignore_print      If true, then modifications in print will be ignored
  * @param ignore_tool_print If true, then modifications in tool_print will be ignored
+ * @param index             Index of the intended tool/material for which the preset is checked.
+ *                          Check all tool/materials, when index isn't set
  */
 static Domain::ConfigPack original_config(
     const PresetInteractor& preset_interactor,
     bool ignore_printer    = false,
     bool ignore_print      = false,
-    bool ignore_tool_print = false
+    bool ignore_tool_print = false,
+    std::optional<size_t> index = std::nullopt
 )
 {
     auto& selected_preset = preset_interactor.selected_printer_preset();
@@ -77,6 +80,10 @@ static Domain::ConfigPack original_config(
             tools.emplace_back(&tool);
     } else {
         for (size_t i = 0, n = selected_preset.tools.size(); i < n; i++) {
+            if (index && i != *index) {
+                tools.emplace_back(&selected_preset.tools[i]);
+                continue;
+            }
             const auto& [ref, is_runtime] = preset_interactor.get_tool_print_preset(
                 selected_preset.hw_config.id,
                 selected_preset.printer.id,
@@ -90,6 +97,10 @@ static Domain::ConfigPack original_config(
 
     std::vector<const Domain::Preset::EvaluatedMaterialPreset::Preset*> materials;
     for (size_t i = 0, n = selected_preset.materials.size(); i < n; i++) {
+        if (index && i != *index) {
+            materials.emplace_back(&selected_preset.materials[i]);
+            continue;
+        }
         const auto& [ref, is_runtime] = preset_interactor.get_material_preset(
             selected_preset.hw_config.id,
             selected_preset.printer.id,
@@ -166,12 +177,15 @@ config_pack_diff(const Domain::ConfigPack& a, const Domain::ConfigPack& b)
  * @param ignore_printer    If true, then modifications in printer will be ignored
  * @param ignore_print      If true, then modifications in print will be ignored
  * @param ignore_tool_print If true, then modifications in tool_print will be ignored
+ * @param index             Index of the intended tool/material for which the preset is checked.
+ *                          Check all tool/materials, when index isn't set
  */
 static bool is_dirty_selected_preset(
     const PresetInteractor& preset_interactor,
     bool ignore_printer    = false,
     bool ignore_print      = false,
-    bool ignore_tool_print = false
+    bool ignore_tool_print = false,
+    std::optional<size_t> index = std::nullopt
 )
 {
     std::vector<std::string> diff_keys;
@@ -183,7 +197,8 @@ static bool is_dirty_selected_preset(
         ignore_print,
         ignore_tool_print
             || preset_interactor.selected_printer_preset().technology()
-                == Domain::PrinterTechnology::SLA
+                == Domain::PrinterTechnology::SLA,
+        index
     );
     diff_keys = config_pack_diff(config_initial, config_selected);
     SPDLOG_INFO("Diffs count: {} ", diff_keys.size());
@@ -196,14 +211,14 @@ static bool is_dirty_selected_print(const PresetInteractor& preset_interactor)
     return is_dirty_selected_preset(preset_interactor, true);
 }
 
-static bool is_dirty_selected_tool_print(const PresetInteractor& preset_interactor)
+static bool is_dirty_selected_tool_print(const PresetInteractor& preset_interactor, size_t index)
 {
-    return is_dirty_selected_preset(preset_interactor, true, true);
+    return is_dirty_selected_preset(preset_interactor, true, true, false, index);
 }
 
-static bool is_dirty_selected_material(const PresetInteractor& preset_interactor)
+static bool is_dirty_selected_material(const PresetInteractor& preset_interactor, size_t index)
 {
-    return is_dirty_selected_preset(preset_interactor, true, true, true);
+    return is_dirty_selected_preset(preset_interactor, true, true, true, index);
 }
 
 static PresetSelectionNames selected_preset_names(const PresetInteractor& preset_interactor)
@@ -461,7 +476,7 @@ bool can_select_tool_print_preset(
     const std::string& tool_print_id
 )
 {
-    if (!is_dirty_selected_tool_print(preset_interactor))
+    if (!is_dirty_selected_tool_print(preset_interactor, tool_index))
         return true;
 
     auto& selected_preset = preset_interactor.selected_printer_preset();
@@ -534,7 +549,7 @@ bool can_select_tool_print_preset(
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
     PresetsSwitchStates exit_states   = dlg_manager->show_unsaved_changes_dialog(
         dialog_name(),
-        original_config(preset_interactor, true, true),
+        original_config(preset_interactor, true, true, false, tool_index),
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
@@ -553,7 +568,7 @@ bool can_select_material_preset(
     const std::string& material_id
 )
 {
-    if (!is_dirty_selected_material(preset_interactor))
+    if (!is_dirty_selected_material(preset_interactor, material_index))
         return true;
 
     auto& selected_preset = preset_interactor.selected_printer_preset();
@@ -606,7 +621,7 @@ bool can_select_material_preset(
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
     PresetsSwitchStates exit_states   = dlg_manager->show_unsaved_changes_dialog(
         dialog_name(),
-        original_config(preset_interactor, true, true, true),
+        original_config(preset_interactor, true, true, true, material_index),
         selected_preset.config(),
         &config_new,
         selected_preset_names(preset_interactor),
