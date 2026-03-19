@@ -1,3 +1,6 @@
+#ifndef slic3r_FillUtils_hpp_
+#define slic3r_FillUtils_hpp_
+
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Line.hpp"
 
@@ -241,4 +244,6 @@ static std::vector<Lines> filter_vibrating_extrusions(const std::vector<Lines> &
     return lines_sections_out;
 }
 
-}
+} // namespace Slic3r
+
+#endif /* slic3r_FillUtils_hpp_ */

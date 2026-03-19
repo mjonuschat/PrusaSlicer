@@ -171,8 +171,6 @@ void split_solid_surface(size_t layer_id, const SurfaceFill &fill, ExPolygons &n
 
     Polygons normal_fill_areas;  // Areas that filled with normal infill
 
-    constexpr double connect_extrusions = true;
-
     const coord_t scaled_spacing                      = scaled<coord_t>(fill.params.spacing);
     double        distance_limit_reconnection         = 2.0 * double(scaled_spacing);
     double        squared_distance_limit_reconnection = distance_limit_reconnection * distance_limit_reconnection;
@@ -593,7 +591,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                 // BOSS: all expolygons are narrow, directly change the fill pattern
                 surface_fills[i].params.pattern = ipEnsuring;
             } else {
-                // BOSS: some expolygons are narrow, spilit surface_fills[i] and rearrange the expolygons
+                // BOSS: some expolygons are narrow, split surface_fills[i] and rearrange the expolygons
                 params = surface_fills[i].params;
                 params.pattern = ipEnsuring;
                 surface_fills.emplace_back(params);
