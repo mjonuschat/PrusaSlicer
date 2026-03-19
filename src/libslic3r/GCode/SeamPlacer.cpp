@@ -282,8 +282,18 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
     using Perimeters::offset_along_perimeter;
     using Perimeters::PointOnPerimeter;
 
+    // Don't stagger the first inner perimeter (index 1) when Nip/Tuck is enabled,
+    // because Nip/Tuck trims it at a specific seam location
+    bool is_niptuck_inner = false;    
+    if (staggered_inner_seams && region->config().seam_notch.value && !loop.paths.empty())
+    {
+        auto pi = loop.paths.front().attributes().perimeter_index;
+        if (pi.has_value() && *pi == 1)
+            is_niptuck_inner = true;
+    }
+
     const Polygon loop_polygon{Geometry::to_polygon(loop)};
-    const bool do_staggering{staggered_inner_seams && loop.role() == ExtrusionRole::Perimeter};
+    const bool do_staggering{staggered_inner_seams && loop.role() == ExtrusionRole::Perimeter && !is_niptuck_inner};
     const double loop_width{loop.paths.empty() ? 0.0 : loop.paths.front().width()};
 
     const ExPolygon perimeter_polygon{Geometry::scaled(perimeter.positions)};

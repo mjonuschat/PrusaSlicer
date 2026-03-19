@@ -1480,6 +1480,9 @@ void TabPrint::build()
 
         optgroup = page->new_optgroup(L("Advanced"));
         optgroup->append_single_option_line("seam_position", category_path + "seam-position");
+        optgroup->append_single_option_line("seam_notch", category_path + "seam-notch");
+        optgroup->append_single_option_line("seam_notch_width", category_path + "seam-notch-width");
+        optgroup->append_single_option_line("seam_notch_angle", category_path + "seam-notch-angle");
         optgroup->append_single_option_line("seam_gap_distance", category_path + "seam-gap-distance");
         optgroup->append_single_option_line("staggered_inner_seams", category_path + "staggered-inner-seams");
 

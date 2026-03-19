@@ -597,6 +597,10 @@ static std::vector<std::string> s_Preset_print_options {
 
     "external_perimeter_overlap",
     "perimeter_perimeter_overlap",    
+
+    "seam_notch",
+    "seam_notch_width",
+    "seam_notch_angle",    
 };
 
 static std::vector<std::string> s_Preset_filament_options {
