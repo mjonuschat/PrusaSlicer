@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euxo pipefail
 
 while getopts ":a:sdpt:hn" opt; do
@@ -32,10 +32,9 @@ while getopts ":a:sdpt:hn" opt; do
   esac
 done
 
-if [ -z "$ARCH" ]
-then
-  export ARCH=$(uname -m)
-fi
+ARCH="${ARCH:-$(uname -m)}"
+BUILD_TARGET="${BUILD_TARGET:-}"
+OSX_DEPLOYMENT_TARGET="${OSX_DEPLOYMENT_TARGET:-11.3}"
 
 echo "Arch: $ARCH"
 echo "BUILD_TARGET: $BUILD_TARGET"
@@ -55,60 +54,53 @@ echo "OSX_DEPLOYMENT_TARGET: $OSX_DEPLOYMENT_TARGET"
 
 
 WD="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd $WD/deps
-mkdir -p build_$ARCH
-cd build_$ARCH
-DEPS=$PWD/PrusaSlicer_dep_$ARCH
-mkdir -p $DEPS
-if [ "slicer." != $BUILD_TARGET. ];
-then
+cd "$WD/deps"
+mkdir -p "build_${ARCH}"
+cd "build_${ARCH}"
+DEPS="$PWD/PrusaSlicer_dep_${ARCH}"
+mkdir -p "$DEPS"
+if [ "slicer" != "${BUILD_TARGET}" ]; then
     echo "building deps..."
     echo "cmake ../ -DDESTDIR=$DEPS -DOPENSSL_ARCH=darwin64-${ARCH}-cc -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES:STRING=${ARCH} -DCMAKE_OSX_DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}"
-    cmake ../ -DDESTDIR="$DEPS" -DOPENSSL_ARCH="darwin64-${ARCH}-cc" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES:STRING=${ARCH} -DCMAKE_OSX_DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
+    cmake ../ -DDESTDIR="$DEPS" -DOPENSSL_ARCH="darwin64-${ARCH}-cc" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES:STRING="${ARCH}" -DCMAKE_OSX_DEPLOYMENT_TARGET="${OSX_DEPLOYMENT_TARGET}"
     # cmake --build . --config Release --target deps
-    make -j $(sysctl -n hw.logicalcpu)
-    if [ "1." == "${PACK_DEPS-}". ];
-    then
-        tar -zcvf PrusaSlicer_dep_mac_${ARCH}_$(date +"%Y%m%d").tar.gz PrusaSlicer_dep_$ARCH
+    make -j "$(sysctl -n hw.logicalcpu)"
+    if [ "1" = "${PACK_DEPS-}" ]; then
+        tar -zcvf "PrusaSlicer_dep_mac_${ARCH}_$(date +"%Y%m%d").tar.gz" "PrusaSlicer_dep_${ARCH}"
     fi
 fi
 
 
-if [ "deps." == "$BUILD_TARGET". ];
-then
+if [ "deps" = "${BUILD_TARGET}" ]; then
     exit 0
 fi
 
-cd $WD
-mkdir -p build_$ARCH
-cd build_$ARCH
+cd "$WD"
+mkdir -p "build_${ARCH}"
+cd "build_${ARCH}"
 echo "building slicer..."
-cmake .. -GXcode -DCMAKE_PREFIX_PATH="$DEPS/usr/local" -DCMAKE_INSTALL_PREFIX="$PWD/PrusaSlicer" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MACOSX_RPATH=ON -DCMAKE_INSTALL_RPATH="$DEPS/usr/local" -DCMAKE_MACOSX_BUNDLE=ON -DCMAKE_OSX_ARCHITECTURES=${ARCH} -DCMAKE_OSX_DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
+cmake .. -GXcode -DCMAKE_PREFIX_PATH="$DEPS/usr/local" -DCMAKE_INSTALL_PREFIX="$PWD/PrusaSlicer" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MACOSX_RPATH=ON -DCMAKE_INSTALL_RPATH="$DEPS/usr/local" -DCMAKE_MACOSX_BUNDLE=ON -DCMAKE_OSX_ARCHITECTURES="${ARCH}" -DCMAKE_OSX_DEPLOYMENT_TARGET="${OSX_DEPLOYMENT_TARGET}"
 cmake --build . --config Release --target ALL_BUILD
 # make -j $(sysctl -n hw.logicalcpu)
 cd ..
 # ./run_gettext.sh
-cd build_$ARCH
+cd "build_${ARCH}"
 mkdir -p PrusaSlicer
 cd PrusaSlicer
 rm -rf ./PrusaSlicer.app
 cp -pR ../src/Release/PrusaSlicer.app ./PrusaSlicer.app
 cp -pR ../src/Info.plist ./PrusaSlicer.app/Contents
-resources_path=$(readlink ../src/resources)
+resources_path=$(readlink ../src/resources || true)
+if [ -z "$resources_path" ]; then
+    resources_path="../src/resources"
+fi
+if [ ! -d "$resources_path" ]; then
+    echo "ERROR: resources directory not found at $resources_path"
+    exit 1
+fi
 rm -rf ./PrusaSlicer.app/Contents/Resources
-cp -R $resources_path ./PrusaSlicer.app/Contents/Resources
-cp -R $resources_path/icons/PrusaSlicer.icns ./PrusaSlicer.app/Contents/Resources
+cp -R "$resources_path" ./PrusaSlicer.app/Contents/Resources
+cp -R "$resources_path/icons/PrusaSlicer.icns" ./PrusaSlicer.app/Contents/Resources
 touch ./PrusaSlicer.app
 # delete .DS_Store file
 find ./PrusaSlicer.app/ -name '.DS_Store' -delete
-# extract version
-# export ver=$(grep '^#define SoftFever_VERSION' ../src/libslic3r/libslic3r_version.h | cut -d ' ' -f3)
-# ver="_V${ver//\"}"
-# echo $PWD
-# if [ "1." != "$NIGHTLY_BUILD". ];
-# then
-#     ver=${ver}_dev
-# fi
-
-
-# zip -FSr PrusaSlicer${ver}_Mac_${ARCH}.zip PrusaSlicer.app
