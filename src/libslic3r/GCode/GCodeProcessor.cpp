@@ -4435,7 +4435,7 @@ void GCodeProcessor::post_process()
 
     unsigned int line_id = 0;
     // Backtrace data for Tx gcode lines
-    static const ExportLines::Backtrace backtrace_T = { m_preheat_time, static_cast<unsigned int>(m_preheat_steps) };
+    const ExportLines::Backtrace backtrace_T = { m_preheat_time, static_cast<unsigned int>(m_preheat_steps) };
     // In case there are multiple sources of backtracing, keeps track of the longest backtrack time needed
     // to flush the backtrace cache accordingly
     float max_backtrace_time = 120.0f;
