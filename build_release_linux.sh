@@ -6,14 +6,6 @@ export CMAKE_BUILD_PARALLEL_LEVEL=${NCORES}
 
 set -e # exit on first error
 
-if ! command -v dpkg &>/dev/null; then
-    echo "ERROR: This script requires a Debian/Ubuntu-based system (dpkg not found)"
-    exit 1
-fi
-
-FOUND_GTK2=$(dpkg -l libgtk* 2>/dev/null | grep gtk2 || true)
-FOUND_GTK3=$(dpkg -l libgtk* 2>/dev/null | grep gtk-3 || true)
-
 function check_available_memory_and_disk() {
     FREE_MEM_GB=$(free -g -t | grep 'Mem:' | rev | cut -d" " -f1 | rev)
     MIN_MEM_GB=10
@@ -79,7 +71,15 @@ then
     exit 0
 fi
 
-# Addtional Dev packages for OrcaSlicer
+if ! command -v dpkg &>/dev/null; then
+    echo "ERROR: This script requires a Debian/Ubuntu-based system (dpkg not found)"
+    exit 1
+fi
+
+FOUND_GTK2=$(dpkg -l libgtk* 2>/dev/null | grep gtk2 || true)
+FOUND_GTK3=$(dpkg -l libgtk* 2>/dev/null | grep gtk-3 || true)
+
+# Additional Dev packages
 export REQUIRED_DEV_PACKAGES="libmspack-dev libsecret-1-dev libwebkit2gtk-4.0-dev libosmesa6-dev libssl-dev libcurl4-openssl-dev eglexternalplatform-dev libudev-dev libdbus-1-dev extra-cmake-modules texinfo"
 # libwebkit2gtk-4.1-dev ??
 export DEV_PACKAGES_COUNT=$(echo ${REQUIRED_DEV_PACKAGES} | wc -w)
