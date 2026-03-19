@@ -116,7 +116,7 @@ std::string GCodeWriter::set_temperature(unsigned int temperature, GCodeFlavor f
     std::string_view code;
     if (wait && flavor != gcfTeacup && flavor != gcfRepRapFirmware) {
         code = "M109"sv;
-        if(comment.empty())
+        if (comment.empty())
             comment = "set temperature and wait for it to be reached"sv;
     } else {
         if (flavor == gcfRepRapFirmware) { // M104 is deprecated on RepRapFirmware
@@ -124,7 +124,7 @@ std::string GCodeWriter::set_temperature(unsigned int temperature, GCodeFlavor f
         } else {
             code = "M104"sv;
         }
-        if(comment.empty())
+        if (comment.empty())
             comment = "set temperature"sv;
     }
     
