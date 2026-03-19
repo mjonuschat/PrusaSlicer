@@ -727,6 +727,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "first_layer_extrusion_width"
             || opt_key == "first_layer_flow_ratio"
             || opt_key == "top_layer_flow_ratio"
+            || opt_key == "print_extrusion_multiplier"
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"
             || opt_key == "external_perimeters_first"

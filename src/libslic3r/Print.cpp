@@ -220,7 +220,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "prime_length_at_start",
         "seam_notch",
         "seam_notch_width",
-        "seam_notch_angle",        
+        "seam_notch_angle",
     };
 
     static std::unordered_set<std::string> steps_ignore;
