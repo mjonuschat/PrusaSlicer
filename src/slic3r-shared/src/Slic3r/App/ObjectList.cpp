@@ -1610,6 +1610,29 @@ void ObjectList::invalidate_bed_selection()
     ctx.selected_bed_instance_id = 0;
 }
 
+namespace {
+// detects svg and text volume and open gizmo for editing them when they are selected in object list
+void open_gizmo_for_volume(const Biz::Scene::ObjectSelection& sels, Biz::ProjectInteractor* project_interactor, Scene::IGizmoController* gizmo_controller) {
+    if (project_interactor == nullptr ||
+        gizmo_controller == nullptr ||
+        sels.elements.size() != 1)
+        return;
+    const Domain::ElementRef& el = sels.elements.front();
+    Domain::ModelVolume* volume = project_interactor->selected_project()
+            .find_volume_by_id(el.object_id, el.volume_id);
+    if (volume == nullptr)
+        return;
+    Scene::ToolType tool = gizmo_controller->current_tool_type();
+    auto get_tech = [project_interactor]() {
+        return project_interactor->selected_config_container().print_technology(); };
+    if (volume->is_svg() && tool != Scene::ToolType::Svg) {
+        gizmo_controller->activate_tool(Scene::ToolType::Svg, get_tech());
+    } else if(volume->is_text() && tool != Scene::ToolType::TextGizmo) {
+        gizmo_controller->activate_tool(Scene::ToolType::TextGizmo, get_tech());
+    }
+}
+}
+
 void ObjectList::propagate_selection()
 {
     const auto& ctx = selected_project_context();
@@ -1626,6 +1649,7 @@ void ObjectList::propagate_selection()
         ctx.selected_items.end()
     );
     m_scene_interactor->set_object_selection(sels);
+    open_gizmo_for_volume(sels, m_project_interactor, m_gizmo_controller);
 }
 
 void ObjectList::propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name)

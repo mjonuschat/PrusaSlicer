@@ -84,9 +84,15 @@ public:
     void render_imgui();
 
     void toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt);
+    /**
+     * @name Implementation of IGizmoController interface
+     * @{
+     */
     void deactivate_current_tool() override;
     void activate_tool(ToolType tool, Domain::PrinterTechnology pt) override;
-    ToolType current_tool_type() const;
+    ToolType current_tool_type() const override;
+    /**@}*/
+
     bool is_tool_active_in_current_project(const IToolGizmo& tool) const;
 
     GeometryDataFactory& data_factory() { return m_data_factory; }

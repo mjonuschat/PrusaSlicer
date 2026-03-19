@@ -16,6 +16,7 @@ public:
 
     virtual void deactivate_current_tool()                                  = 0;
     virtual void activate_tool(ToolType tool, Domain::PrinterTechnology pt) = 0;
+    virtual ToolType current_tool_type() const                              = 0;
     virtual NodePickResults repick() const                                  = 0;
 };
 
