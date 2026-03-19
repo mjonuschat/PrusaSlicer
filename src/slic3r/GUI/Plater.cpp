@@ -1397,8 +1397,14 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
                 if (init_z_rotate != 0) {
                     for (auto *obj : model.objects) {
-                        for (auto *inst : obj->instances) {
-                            inst->set_rotation(Z, inst->get_rotation(Z) + Geometry::deg2rad(init_z_rotate));
+                        if (obj->instances.empty()) {
+                            // STL/OBJ: no instances yet, rotate geometry directly
+                            obj->rotate(Geometry::deg2rad(init_z_rotate), Axis::Z);
+                        } else {
+                            // 3MF/AMF: rotate instances to preserve infill alignment
+                            for (auto *inst : obj->instances) {
+                                inst->set_rotation(Z, inst->get_rotation(Z) + Geometry::deg2rad(init_z_rotate));
+                            }
                         }
                     }
                 }
