@@ -35,7 +35,7 @@ jobs:
           echo "ver=$ver" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "ver_pure=$ver_pure" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "date=$date" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
-          echo "date: ${{ env.date }} version: ${{ env.ver }}"
+          echo "date: $date version: $ver"
         shell: pwsh
 
       - name: Setup cmake
