@@ -32,7 +32,7 @@
 @ECHO                  app-dirty - build main applications without cleaning
 @ECHO                  deps - clean and build deps
 @ECHO                  deps-dirty - build deps without cleaning
-@ECHO                  pakc - pack deps for upload
+@ECHO                  pack - pack deps for upload
 @ECHO                Default: %PS_STEPS_DEFAULT%
 @ECHO  -r -RUN       Specifies what to perform at the run step:
 @ECHO                  console - run and wait on prusa-slicer-console.exe
@@ -205,15 +205,8 @@ IF "%PS_DRY_RUN_ONLY%" NEQ "" (
     GOTO :END
 )
 IF /I "%PS_STEPS:~0,3%" EQU "app" GOTO :BUILD_APP
+IF /I "%PS_STEPS:~0,4%" EQU "pack" GOTO :PACK_DEPS
 IF /I "%PS_STEPS:~0,4%" EQU "deps" GOTO :BUILD_DEPS
-
-@REM Pack deps
-setlocal enableDelayedExpansion
-cd .\deps\build
-for /f "tokens=2-4 delims=/ " %%a in ('date /t') do set build_date=%%c%%a%%b
-@ECHO packing deps: PrusaSlicer_dep_win64_!build_date!_vs2022.zip
-7z a PrusaSlicer_dep_win64_!build_date!_vs2022.zip PrusaSlicer_dep
-IF /I "%PS_STEPS:~0,4%" EQU "pack" GOTO :EOF
 
 REM Build deps
 :BUILD_DEPS
@@ -232,6 +225,20 @@ IF %ERRORLEVEL% NEQ 0 IF "%PS_STEPS_DIRTY%" NEQ "" (
 msbuild /m ALL_BUILD.vcxproj /p:Configuration=%PS_CONFIG% /v:quiet %PS_PRIORITY% || GOTO :END
 cd ..\..
 IF /I "%PS_STEPS:~0,4%" EQU "deps" GOTO :RUN_APP
+GOTO :BUILD_APP
+
+:PACK_DEPS
+setlocal enableDelayedExpansion
+cd deps\build || GOTO :END
+for /f "tokens=2-4 delims=/ " %%a in ('date /t') do set build_date=%%c%%a%%b
+@ECHO packing deps: PrusaSlicer_dep_win64_!build_date!_vs2022.zip
+where 7z >nul 2>nul || (
+    @ECHO ERROR: 7z not found on PATH 1>&2
+    GOTO :END
+)
+7z a PrusaSlicer_dep_win64_!build_date!_vs2022.zip PrusaSlicer_dep || GOTO :END
+endlocal
+GOTO :RUN_APP
 
 REM Build app
 :BUILD_APP
