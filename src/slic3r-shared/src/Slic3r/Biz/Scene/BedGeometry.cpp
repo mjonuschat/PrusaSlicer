@@ -34,32 +34,38 @@ using namespace Slic3r::Biz;
 namespace Slic3r::Biz::Scene {
 
 BedGeometry::Resolver BedGeometry::s_resolver{nullptr};
+BedGeometry::ModelCache BedGeometry::s_model_cache{MAX_CACHE_ITEMS};
 
 using Domain::TriangleMesh;
 
-TriangleMesh BedGeometry::model(const Domain::Bed& bed)
+const TriangleMesh& BedGeometry::model(const Domain::Bed& bed)
 {
     namespace TriMesh          = Biz::Algorithms::TriangleMesh;
-    std::string model_filename = bed.model_filename();
-
-    if (s_resolver) {
-        model_filename = s_resolver(model_filename);
-    }
-    if (!model_filename.empty()) {
-        auto mesh = Biz::load_stl(model_filename);
-        if (mesh) {
-            mesh->translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
-            return mesh.value();
+    return s_model_cache.get(bed.model_filename(), [&bed](const std::string& key) -> auto
+    {
+        std::string model_filename = key;
+        if (s_resolver) {
+            model_filename = s_resolver(model_filename);
         }
-        SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);
-    }
-    return TriangleMesh{};
+
+        if (!model_filename.empty()) {
+            auto mesh = Biz::load_stl(model_filename);
+            if (mesh) {
+                mesh->translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
+                return mesh.value();
+
+        }
+        SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);}
+        static TriangleMesh null_mesh{};
+        return null_mesh;
+
+    });
 }
 
 Eigen::AlignedBox3d BedGeometry::model_aabb(const Domain::Bed& bed)
 {
     Eigen::AlignedBox3d ret;
-    TriangleMesh mesh = model(bed);
+    const TriangleMesh& mesh = model(bed);
     if (!mesh.empty()) {
         Domain::BoundingBox3d aabb = mesh.bounding_box();
         ret.min()                  = aabb.min;

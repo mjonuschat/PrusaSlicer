@@ -36,7 +36,7 @@ Domain::ElementRefs BedPlacement::layout(Domain::Project& project, const Vec2d& 
         const BoundingBoxf& bed_contour_aabb = bed.contour_aabb();
         Vec2d bed_pos = bed_contour_aabb.min;
         Vec2d bed_size = bed.contour_aabb_extent();
-        Domain::TriangleMesh model = BedGeometry::model(bed);
+        const Domain::TriangleMesh& model = BedGeometry::model(bed);
         if (!model.empty()) {
             Domain::BoundingBox3d model_aabb = model.bounding_box();
             bed_pos = min(bed_pos, Algorithms::Point::to_2d(model_aabb.min));

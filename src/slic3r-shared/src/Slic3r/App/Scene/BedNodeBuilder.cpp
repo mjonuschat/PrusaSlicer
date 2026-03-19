@@ -192,6 +192,7 @@ model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
         id,
         [&]() -> std::unique_ptr<TriangleMesh>
         {
+            // copy made intentionally
             Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::model(bed);
             ASSERT(!mesh.empty());
             return std::make_unique<TriangleMesh>(std::move(mesh.its));

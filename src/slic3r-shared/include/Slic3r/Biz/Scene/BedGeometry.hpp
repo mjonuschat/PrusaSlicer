@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/LruCache.hpp"
 
 namespace Slic3r::Domain {
 class Bed;
@@ -20,7 +21,7 @@ public:
      * 
      * @note The filename of the model is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static Domain::TriangleMesh model(const Domain::Bed& bed);
+    [[nodiscard]] static const Domain::TriangleMesh& model(const Domain::Bed& bed);
 
     /**
      * @brief Load the bed model and return its axis aligned bounding box.
@@ -106,7 +107,10 @@ public:
     static void set_resolver(Resolver resolver);
 
 private:
+    using ModelCache = Algorithms::LruCache<std::string, Domain::TriangleMesh>;
+    static constexpr size_t MAX_CACHE_ITEMS{100};
     static Resolver s_resolver;
+    static ModelCache s_model_cache;
 };
 
 } // namespace Slic3r::Biz::Scene
