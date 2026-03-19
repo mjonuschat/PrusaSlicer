@@ -3628,8 +3628,6 @@ std::string GCodeGenerator::extrude_perimeters(
             double min_length = scale_d(m_config.small_perimeter_min_length.value);
             double max_length = scale_d(m_config.small_perimeter_max_length.value);
             if (perimeter.extrusion_entity->length() < max_length) {
-                float factor = float(-speed + SMALL_PERIMETER_SPEED_RATIO_OFFSET);
-
                 if (perimeter.extrusion_entity->length() <= min_length) {
                     speed = SMALL_PERIMETER_SPEED_RATIO_OFFSET;
                 } else if (max_length > min_length) {
