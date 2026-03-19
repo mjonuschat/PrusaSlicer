@@ -1279,8 +1279,8 @@ void PrintConfigDef::init_fff_params()
                    "infill gets wedged vertically between the perimeters, resulting in stronger "
                    "prints. Using lightning infill together with this option is not recommended "
                    "as there is limited infill to anchor the extra perimeters to.");
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
-
 
     def = this->add("extruder", coInt);
     def->label = L("Extruder");
