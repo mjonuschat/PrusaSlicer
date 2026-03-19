@@ -292,7 +292,7 @@ std::string GCodeWriter::set_jerk(unsigned int jerk, const std::string_view comm
 
     std::ostringstream gcode;
     if (FLAVOR_IS(gcfKlipper))
-        gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << jerk;
+        gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << std::min(jerk_x, jerk_y);
     else if (FLAVOR_IS(gcfRepRapFirmware))
         gcode << "M566 X" << jerk_x << " Y" << jerk_y;
     else
