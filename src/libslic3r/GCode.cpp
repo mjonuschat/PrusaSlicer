@@ -17,7 +17,8 @@
 ///|/ Copyright (c) 2013 Robert Giseburt
 ///|/ Copyright (c) 2012 Mark Hindess
 ///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
-///|/ Copyright (c) 2024 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) 2024 - 2026 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) preFlight 2026 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -2606,7 +2607,7 @@ LayerResult GCodeGenerator::process_layer(
     const float height = first_layer ? static_cast<float>(print_z) : static_cast<float>(print_z) - m_last_layer_z;
 
     using GCode::ExtrusionOrder::ExtruderExtrusions;
-    const std::vector<ExtruderExtrusions> extrusions{
+    std::vector<ExtruderExtrusions> extrusions{
         this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, smooth_path_caches, first_layer)};
 
     if (extrusions.empty()) {
@@ -2744,7 +2745,7 @@ LayerResult GCodeGenerator::process_layer(
     this->m_moved_to_first_layer_point = false;
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
-    for (const ExtruderExtrusions &extruder_extrusions : extrusions)
+    for (ExtruderExtrusions &extruder_extrusions : extrusions)
     {
         gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
             m_wipe_tower->tool_change(*this, extruder_extrusions.extruder_id, extruder_extrusions.extruder_id == layer_tools.extruders.back()) :
@@ -2829,7 +2830,7 @@ LayerResult GCodeGenerator::process_layer(
             for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
                 const InstanceToPrint &instance{instances_to_print[i]};
                 using GCode::ExtrusionOrder::OverridenExtrusions;
-                const OverridenExtrusions &overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
+                OverridenExtrusions &overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
                 if (is_empty(overriden_extrusions.slices_extrusions)) {
                     continue;
                 }
@@ -2850,7 +2851,7 @@ LayerResult GCodeGenerator::process_layer(
             using GCode::ExtrusionOrder::SupportPath;
             const std::vector<SupportPath> &support_extrusions{extruder_extrusions.normal_extrusions[i].support_extrusions};
             const ObjectLayerToPrint &layer_to_print{layers[instance.object_layer_to_print_id]};
-            const std::vector<SliceExtrusions> &slices_extrusions{extruder_extrusions.normal_extrusions[i].slices_extrusions};
+            std::vector<SliceExtrusions> &slices_extrusions{extruder_extrusions.normal_extrusions[i].slices_extrusions};
 
             if (support_extrusions.empty() && is_empty(slices_extrusions)) {
                 continue;
@@ -2912,7 +2913,7 @@ void GCodeGenerator::initialize_instance(
 std::string GCodeGenerator::extrude_slices(
     const InstanceToPrint &print_instance,
     const ObjectLayerToPrint &layer_to_print,
-    const std::vector<SliceExtrusions> &slices_extrusions
+    std::vector<SliceExtrusions> &slices_extrusions
 ) {
     const PrintObject &print_object = print_instance.print_object;
 
@@ -2922,8 +2923,8 @@ std::string GCodeGenerator::extrude_slices(
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
     std::string gcode;
-    for (const SliceExtrusions &slice_extrusions : slices_extrusions) {
-        for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
+    for (SliceExtrusions &slice_extrusions : slices_extrusions) {
+        for (IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
             if (island_extrusions.infill_first) {
                 gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill");
                 gcode += this->extrude_perimeters(*island_extrusions.region, island_extrusions.perimeters, print_instance);
@@ -3168,13 +3169,522 @@ std::string GCodeGenerator::extrude_infill_ranges(
     return gcode;
 }
 
+// preFlight: Nip/Tuck seams - offsets external perimeter path inward at the seam
+// to create a V-shaped channel that hides start/stop blobs. The first inner perimeter gets
+// trimmed to fit the notch so remaining perimeters are unaffected.
+
+// Subdivide segments in a SmoothPath region to ensure no segment exceeds max_len (scaled).
+// Operates on the path in-place. Returns the number of points inserted.
+static size_t subdivide_smooth_path_region(Geometry::ArcWelder::Path &path, size_t start_idx, size_t end_idx,
+                                           double max_len)
+{
+    size_t inserted = 0;
+    for (size_t i = start_idx; i < end_idx && i < path.size(); ++i)
+    {
+        if (i == 0)
+            continue;
+        const Vec2d seg = (path[i].point - path[i - 1].point).cast<double>();
+        const double seg_len = seg.norm();
+        if (seg_len > max_len * 1.5)
+        {
+            const int n_splits = static_cast<int>(std::ceil(seg_len / max_len));
+            const Vec2d step = seg / n_splits;
+            // Linearize if arc
+            const float orig_e_fraction = path[i].e_fraction;
+            const float orig_h_fraction = path[i].height_fraction;
+            std::vector<Geometry::ArcWelder::Segment> new_segs;
+            for (int j = 1; j < n_splits; ++j)
+            {
+                Geometry::ArcWelder::Segment s;
+                s.point = path[i - 1].point + (step * j).cast<coord_t>();
+                s.radius = 0; // linearize
+                s.e_fraction = orig_e_fraction;
+                s.height_fraction = orig_h_fraction;
+                new_segs.push_back(s);
+            }
+            path.insert(path.begin() + i, new_segs.begin(), new_segs.end());
+            const size_t count = new_segs.size();
+            inserted += count;
+            end_idx += count;
+            i += count; // skip past inserted points
+        }
+    }
+    return inserted;
+}
+
+// Compute the inward direction at the seam point of an external perimeter loop.
+// The seam is at path start (first point) and path end (last point) of the open SmoothPath.
+// Returns a unit vector pointing toward the interior of the part.
+static Vec2d compute_seam_inward_direction(const GCode::SmoothPath &smooth_path, bool reversed)
+{
+    // Get the first segment's forward direction (from seam toward loop body)
+    Vec2d dir_start = Vec2d::Zero();
+    for (const auto &elem : smooth_path)
+    {
+        if (elem.path.size() >= 2)
+        {
+            dir_start = (elem.path[1].point - elem.path[0].point).cast<double>();
+            break;
+        }
+    }
+
+    // Get the last segment's forward direction (from loop body arriving at seam)
+    Vec2d dir_end = Vec2d::Zero();
+    for (auto it = smooth_path.rbegin(); it != smooth_path.rend(); ++it)
+    {
+        if (it->path.size() >= 2)
+        {
+            const auto &p = it->path;
+            dir_end = (p[p.size() - 1].point - p[p.size() - 2].point).cast<double>();
+            break;
+        }
+    }
+
+    if (dir_start.squaredNorm() < 1e-10 || dir_end.squaredNorm() < 1e-10)
+        return Vec2d::Zero();
+
+    dir_start.normalize();
+    dir_end.normalize();
+
+    // Bisector of the two directions at the seam
+    // dir_start points AWAY from seam (forward), dir_end points TOWARD seam (forward)
+    // The "opening" angle bisector is: dir_start - dir_end (points away from the V opening)
+    Vec2d bisect = (dir_start - dir_end);
+    if (bisect.squaredNorm() < 1e-10)
+    {
+        // Directions are nearly parallel — use perpendicular to path direction
+        bisect = Vec2d(-dir_start.y(), dir_start.x());
+    }
+    bisect.normalize();
+
+    // Determine which side is interior using winding.
+    // For a CCW contour (not reversed), the interior is to the LEFT of travel direction.
+    // LEFT of dir_start = rotate 90° CCW = (-dir_start.y, dir_start.x)
+    Vec2d left_of_start = Vec2d(-dir_start.y(), dir_start.x());
+
+    // If reversed (CW hole printed as CCW, or CCW contour printed CW), interior is RIGHT.
+    if (reversed)
+        left_of_start = -left_of_start;
+
+    // Make bisect point toward interior
+    if (bisect.dot(left_of_start) < 0)
+        bisect = -bisect;
+
+    return bisect;
+}
+
+// Apply V-notch offset to the start and end of an external perimeter's SmoothPath.
+// half_width_scaled: half the notch width in scaled coordinates
+// depth_scaled: maximum inward offset in scaled coordinates
+// inward: unit vector pointing toward part interior
+static void apply_notch_to_external(GCode::SmoothPath &smooth_path, double half_width_scaled, double depth_scaled,
+                                    const Vec2d &inward, SeamNotchType notch_type)
+{
+    if (smooth_path.empty() || inward.squaredNorm() < 1e-10)
+        return;
+
+    const double max_seg_len = half_width_scaled * 0.15; // ~15% of half width for smooth taper
+
+    // --- Taper from path START (seam start) ---
+    // Tuck mode skips the start taper (only the end cuts inward).
+    if (notch_type != sntTuck) {
+        auto &first_path = smooth_path.front().path;
+
+        // Find the segment that crosses the taper boundary and split it there,
+        // so subdivision only creates fine segments within the taper zone.
+        size_t taper_end_idx = 1;
+        double accum_dist = 0;
+        for (size_t i = 1; i < first_path.size(); ++i)
+        {
+            double seg_len = (first_path[i].point - first_path[i - 1].point).cast<double>().norm();
+            if (accum_dist + seg_len >= half_width_scaled)
+            {
+                // Split this segment at the taper boundary
+                double remaining = half_width_scaled - accum_dist;
+                double frac = (seg_len > 1e-6) ? (remaining / seg_len) : 1.0;
+                if (frac > 0.001 && frac < 0.999)
+                {
+                    Geometry::ArcWelder::Segment s;
+                    s.point = first_path[i - 1].point +
+                              ((first_path[i].point - first_path[i - 1].point).cast<double>() * frac).cast<coord_t>();
+                    s.radius = 0;
+                    s.e_fraction = first_path[i].e_fraction;
+                    s.height_fraction = first_path[i].height_fraction;
+                    first_path.insert(first_path.begin() + i, s);
+                }
+                taper_end_idx = i;
+                break;
+            }
+            accum_dist += seg_len;
+            taper_end_idx = i;
+        }
+
+        // Linearize arcs in taper region
+        for (size_t i = 1; i <= taper_end_idx && i < first_path.size(); ++i)
+            first_path[i].radius = 0;
+
+        // Subdivide only within the taper zone (not the remainder of the segment)
+        subdivide_smooth_path_region(first_path, 1, taper_end_idx + 1, max_seg_len);
+
+        // Now apply offset
+        double dist_from_start = 0;
+        for (size_t i = 0; i < first_path.size(); ++i)
+        {
+            if (i > 0)
+                dist_from_start += (first_path[i].point - first_path[i - 1].point).cast<double>().norm();
+            if (dist_from_start > half_width_scaled)
+                break;
+            // t goes from 0 (at seam) to 1 (at taper end)
+            double t = (half_width_scaled > 0) ? (dist_from_start / half_width_scaled) : 1.0;
+            t = std::min(t, 1.0);
+            double offset = depth_scaled * (1.0 - t);
+            first_path[i].point += (inward * offset).cast<coord_t>();
+        }
+    }
+
+    // --- Taper from path END (seam end) ---
+    // Nip mode skips the end taper (only the start cuts inward).
+    if (notch_type != sntNip) {
+        auto &last_path = smooth_path.back().path;
+        if (last_path.size() < 2)
+            return;
+
+        // Find the segment that crosses the taper boundary (walking backward) and split it,
+        // so subdivision only creates fine segments within the taper zone.
+        size_t taper_start_idx = last_path.size() - 2;
+        double accum_dist = 0;
+        for (int i = static_cast<int>(last_path.size()) - 1; i > 0; --i)
+        {
+            double seg_len = (last_path[i].point - last_path[i - 1].point).cast<double>().norm();
+            if (accum_dist + seg_len >= half_width_scaled)
+            {
+                // Split this segment at the taper boundary
+                double remaining = half_width_scaled - accum_dist;
+                double frac_from_end = (seg_len > 1e-6) ? (remaining / seg_len) : 1.0;
+                double frac_from_start = 1.0 - frac_from_end;
+                if (frac_from_start > 0.001 && frac_from_start < 0.999)
+                {
+                    Geometry::ArcWelder::Segment s;
+                    s.point = last_path[i - 1].point +
+                              ((last_path[i].point - last_path[i - 1].point).cast<double>() * frac_from_start)
+                                  .cast<coord_t>();
+                    s.radius = 0;
+                    s.e_fraction = last_path[i].e_fraction;
+                    s.height_fraction = last_path[i].height_fraction;
+                    last_path.insert(last_path.begin() + i, s);
+                    // Split point at index i, original point moved to i+1
+                }
+                taper_start_idx = static_cast<size_t>(i);
+                break;
+            }
+            accum_dist += seg_len;
+            taper_start_idx = static_cast<size_t>(i - 1);
+        }
+
+        // Linearize arcs in taper region
+        for (size_t i = taper_start_idx + 1; i < last_path.size(); ++i)
+            last_path[i].radius = 0;
+
+        // Subdivide only within the taper zone
+        subdivide_smooth_path_region(last_path, taper_start_idx + 1, last_path.size(), max_seg_len);
+
+        // Apply offset walking backward from end
+        double dist_from_end = 0;
+        for (int i = static_cast<int>(last_path.size()) - 1; i >= 0; --i)
+        {
+            if (i < static_cast<int>(last_path.size()) - 1)
+                dist_from_end += (last_path[i + 1].point - last_path[i].point).cast<double>().norm();
+            if (dist_from_end > half_width_scaled)
+                break;
+            double t = (half_width_scaled > 0) ? (dist_from_end / half_width_scaled) : 1.0;
+            t = std::min(t, 1.0);
+            double offset = depth_scaled * (1.0 - t);
+            last_path[i].point += (inward * offset).cast<coord_t>();
+        }
+    }
+}
+
+// Extend a path past its last point in the direction of the last segment.
+static void extend_path_end(GCode::SmoothPath &smooth_path, double extension_scaled)
+{
+    if (smooth_path.empty() || smooth_path.back().path.size() < 2)
+        return;
+    auto &last_path = smooth_path.back().path;
+    const Vec2d dir = (last_path.back().point - last_path[last_path.size() - 2].point).cast<double>().normalized();
+    Geometry::ArcWelder::Segment s;
+    s.point = last_path.back().point + (dir * extension_scaled).cast<coord_t>();
+    s.radius = 0;
+    s.e_fraction = last_path.back().e_fraction;
+    s.height_fraction = last_path.back().height_fraction;
+    last_path.push_back(s);
+}
+
+// Extend a path before its first point in the reverse direction of the first segment.
+static void extend_path_start(GCode::SmoothPath &smooth_path, double extension_scaled)
+{
+    if (smooth_path.empty() || smooth_path.front().path.size() < 2)
+        return;
+    auto &first_path = smooth_path.front().path;
+    const Vec2d dir = (first_path[0].point - first_path[1].point).cast<double>().normalized();
+    Geometry::ArcWelder::Segment s;
+    s.point = first_path[0].point + (dir * extension_scaled).cast<coord_t>();
+    s.radius = 0;
+    s.e_fraction = first_path[0].e_fraction;
+    s.height_fraction = first_path[0].height_fraction;
+    first_path.insert(first_path.begin(), s);
+}
+
+// Adjust the end of a path: positive values clip, negative values extend.
+static void adjust_path_end(GCode::SmoothPath &smooth_path, double adjustment_scaled)
+{
+    if (adjustment_scaled > 0) {
+        const double min_threshold = scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length);
+        clip_end(smooth_path, adjustment_scaled, min_threshold);
+    } else if (adjustment_scaled < 0) {
+        extend_path_end(smooth_path, -adjustment_scaled);
+    }
+}
+
+// Adjust the start of a path: positive values clip, negative values extend.
+static void adjust_path_start(GCode::SmoothPath &smooth_path, double adjustment_scaled)
+{
+    if (adjustment_scaled > 0) {
+        const double min_threshold = scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length);
+        GCode::reverse(smooth_path);
+        clip_end(smooth_path, adjustment_scaled, min_threshold);
+        GCode::reverse(smooth_path);
+    } else if (adjustment_scaled < 0) {
+        extend_path_start(smooth_path, -adjustment_scaled);
+    }
+}
+
+// Adjust the inner perimeter at the notch location. Start and end adjustments
+// can differ for asymmetric modes (Nip-only, Tuck-only).
+static void apply_notch_to_inner(GCode::SmoothPath &smooth_path, double start_adjust_scaled, double end_adjust_scaled)
+{
+    if (smooth_path.empty())
+        return;
+    adjust_path_end(smooth_path, end_adjust_scaled);
+    adjust_path_start(smooth_path, start_adjust_scaled);
+}
+
+// Apply seam notch to a single (external, inner) perimeter pair.
+// Modifies the external perimeter and optionally the first inner perimeter in-place.
+static void apply_seam_notch_pair(GCode::ExtrusionOrder::Perimeter &ext_perim,
+                                  GCode::ExtrusionOrder::Perimeter *inner_perim,
+                                  const FullPrintConfig &config, int layer_index)
+{
+    // Check corner sharpness at the seam — sharp corners naturally hide seams.
+    // Extract the path directions arriving at and leaving the seam point, same vectors
+    // that compute_seam_inward_direction() uses. The dot product of these normalized
+    // directions gives cos(deviation_from_straight). Skip if the corner is sharper
+    // than the configured threshold.
+    const double corner_threshold_deg = config.seam_notch_angle.value;
+    if (corner_threshold_deg > 0)
+    {
+        Vec2d dir_start = Vec2d::Zero();
+        for (const auto &elem : ext_perim.smooth_path)
+            if (elem.path.size() >= 2)
+            {
+                dir_start = (elem.path[1].point - elem.path[0].point).cast<double>();
+                break;
+            }
+
+        Vec2d dir_end = Vec2d::Zero();
+        for (auto it = ext_perim.smooth_path.rbegin(); it != ext_perim.smooth_path.rend(); ++it)
+            if (it->path.size() >= 2)
+            {
+                const auto &p = it->path;
+                dir_end = (p[p.size() - 1].point - p[p.size() - 2].point).cast<double>();
+                break;
+            }
+
+        if (dir_start.squaredNorm() > 1e-10 && dir_end.squaredNorm() > 1e-10)
+        {
+            dir_start.normalize();
+            dir_end.normalize();
+            const double cos_deviation = dir_start.dot(dir_end);
+            const double cos_threshold = std::cos(corner_threshold_deg * M_PI / 180.0);
+            if (cos_deviation < cos_threshold)
+                return; // Corner is sharp enough to hide the seam naturally
+        }
+    }
+
+    // Get external perimeter extrusion width (needed for notch width and depth calculations)
+    const auto *ext_loop = dynamic_cast<const ExtrusionLoop *>(ext_perim.extrusion_entity);
+    double ext_width = 0;
+    if (ext_loop != nullptr && !ext_loop->paths.empty())
+        ext_width = ext_loop->paths.front().width();
+    if (ext_width <= 0)
+        ext_width = config.nozzle_diameter.get_at(0);
+
+    // Notch width is a multiple of external perimeter extrusion width
+    const double notch_width_mm = config.seam_notch_width.value * ext_width;
+    const double half_width_scaled = scale_(notch_width_mm);
+
+    // Check minimum loop length — don't notch tiny features
+    const double min_loop_length = scale_(notch_width_mm * 3.0);
+    double ext_loop_len = 0;
+    for (const auto &elem : ext_perim.smooth_path)
+        for (size_t i = 1; i < elem.path.size(); ++i)
+            ext_loop_len += (elem.path[i].point - elem.path[i - 1].point).cast<double>().norm();
+    if (ext_loop_len < min_loop_length)
+        return;
+
+    // The center-to-center spacing between ext and first inner is approximately ext_width
+    // (since perimeters are offset by their spacing which is close to width).
+    // Use 90% of ext_width as depth to avoid pushing all the way to the inner perimeter.
+    const double depth_scaled = scale_(ext_width * 0.9);
+
+    // Compute inward direction from the external perimeter's seam geometry
+    Vec2d inward = compute_seam_inward_direction(ext_perim.smooth_path, ext_perim.reversed);
+    if (inward.squaredNorm() < 0.5) // degenerate — can't determine direction
+        return;
+
+    // Resolve notch type for this layer (Alternating flips per layer)
+    SeamNotchType notch_type = config.seam_type.value;
+    if (notch_type == sntAlternating)
+        notch_type = (layer_index % 2 == 0) ? sntNip : sntTuck;
+
+    // Apply V-notch to external perimeter
+    apply_notch_to_external(ext_perim.smooth_path, half_width_scaled, depth_scaled, inward, notch_type);
+
+    // For asymmetric modes, adjust the non-notched endpoint of the external perimeter
+    // to prevent bead overlap or close gaps depending on notch width.
+    if (notch_type == sntNip || notch_type == sntTuck) {
+        const double ext_adjust = scale_(std::max(0.0, ext_width * (1.0 - 0.5 * config.seam_notch_width.value)));
+        if (notch_type == sntNip)
+            adjust_path_end(ext_perim.smooth_path, ext_adjust);
+        else
+            adjust_path_start(ext_perim.smooth_path, ext_adjust);
+    }
+
+    // Trim the first inner perimeter where the V-leg crosses it.
+    if (inner_perim != nullptr)
+    {
+        const auto *inner_loop = dynamic_cast<const ExtrusionLoop *>(inner_perim->extrusion_entity);
+        double inner_width = 0;
+        if (inner_loop != nullptr && !inner_loop->paths.empty())
+            inner_width = inner_loop->paths.front().width();
+        if (inner_width <= 0)
+            inner_width = ext_width;
+
+        const double notch_depth = ext_width * 0.9;
+
+        // Resolve external_perimeter_overlap to absolute mm (PreciseWalls formula)
+        double overlap_mm;
+        if (config.external_perimeter_overlap.percent)
+            overlap_mm = config.layer_height.value *
+                         (std::min(config.external_perimeter_overlap.value, 100.0) * 2.0 / 100.0);
+        else
+            overlap_mm = std::min(config.external_perimeter_overlap.value, ext_width);
+
+        // Center-to-center spacing between ext and inner perimeters (accounts for overlap)
+        const double spacing = ext_width - overlap_mm;
+
+        // V-leg centerline intersection with inner perimeter centerline
+        const double x_int = (notch_depth > spacing && notch_width_mm > 0)
+                                 ? notch_width_mm * (1.0 - spacing / notch_depth)
+                                 : 0.0;
+
+        const double base_trim = x_int + inner_width / 2.0;
+        const double notch_trim_mm = std::max(0.0, base_trim * (0.65 + 0.35 * config.seam_notch_width.value));
+        const double notch_trim_scaled = scale_(notch_trim_mm);
+        const double inner_non_notch_clip = scale_(inner_width / 2.0);
+
+        // For asymmetric modes, the notched side gets full trim, the non-notched side
+        // gets a smaller clip of half-bead width to prevent overlap at the seam point.
+        double start_adjust = notch_trim_scaled;
+        double end_adjust = notch_trim_scaled;
+        if (notch_type == sntNip)
+            end_adjust = inner_non_notch_clip;
+        else if (notch_type == sntTuck)
+            start_adjust = inner_non_notch_clip;
+
+        apply_notch_to_inner(inner_perim->smooth_path, start_adjust, end_adjust);
+    }
+}
+
+// Main entry point: apply seam notch to all external perimeters in an island.
+// Finds all external perimeters and matches each with its closest inner perimeter (index 1)
+// by seam start point proximity, then applies the notch to each pair.
+static void apply_seam_notch(std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
+                             const FullPrintConfig &config, int layer_index)
+{
+    using GCode::ExtrusionOrder::Perimeter;
+
+    // Helper to get seam start point from a perimeter
+    auto get_seam_point = [](const Perimeter &p) -> Point
+    {
+        if (!p.smooth_path.empty() && !p.smooth_path.front().path.empty())
+            return p.smooth_path.front().path.front().point;
+        return Point(0, 0);
+    };
+
+    // Collect all external perimeters and all inner perimeters (index 1)
+    std::vector<Perimeter *> ext_perims;
+    std::vector<Perimeter *> inner_perims;
+
+    for (auto &p : perimeters)
+    {
+        if (p.extrusion_entity == nullptr || p.smooth_path.empty())
+            continue;
+
+        const auto *loop = dynamic_cast<const ExtrusionLoop *>(p.extrusion_entity);
+        if (loop == nullptr)
+            continue;
+
+        if (loop->role().is_external_perimeter())
+        {
+            ext_perims.push_back(&p);
+        }
+        else if (loop->role().is_perimeter() && !loop->paths.empty())
+        {
+            auto pi = loop->paths.front().attributes().perimeter_index;
+            if (pi.has_value() && *pi == 1)
+                inner_perims.push_back(&p);
+        }
+    }
+
+    // Apply notch to each external perimeter, matched with closest inner perimeter
+    for (Perimeter *ext : ext_perims)
+    {
+        Perimeter *best_inner = nullptr;
+
+        if (!inner_perims.empty())
+        {
+            Point ext_seam = get_seam_point(*ext);
+            double best_dist = std::numeric_limits<double>::max();
+            for (Perimeter *inner : inner_perims)
+            {
+                double dist = (get_seam_point(*inner) - ext_seam).cast<double>().norm();
+                if (dist < best_dist)
+                {
+                    best_dist = dist;
+                    best_inner = inner;
+                }
+            }
+        }
+
+        // Only apply notch when an inner perimeter exists to absorb the disturbance
+        if (best_inner != nullptr)
+            apply_seam_notch_pair(*ext, best_inner, config, layer_index);
+    }
+}
+
 std::string GCodeGenerator::extrude_perimeters(
     const PrintRegion &region,
-    const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
+    std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
     const InstanceToPrint &print_instance
 ) {
     if (!perimeters.empty()) {
         m_config.apply(region.config());
+    }
+
+    // preFlight: Apply seam notch if enabled and we have multiple perimeters
+    if (m_config.seam_type.value != sntRegular && m_config.perimeters.value > 1 &&
+        !m_config.spiral_vase && !perimeters.empty()) {
+        apply_seam_notch(perimeters, m_config, m_layer_index);
     }
 
     std::string gcode{};
