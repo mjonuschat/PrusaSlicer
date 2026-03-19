@@ -745,8 +745,15 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
                     "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds",
                     "small_perimeter_min_length", "small_perimeter_max_length", "external_perimeters_first_holes",
-                    "external_perimeters_first_holes_min_size", "external_perimeters_first_disabled_first_layers"})
+                    "external_perimeters_first_holes_min_size", "external_perimeters_first_disabled_first_layers",
+                    // BOSS
+                    "seam_type", "seam_notch_width", "seam_notch_angle",
+                })
         toggle_field(el, have_perimeters);
+
+    bool has_seam_notch = have_perimeters && config->opt_enum<SeamNotchType>("seam_type") != sntRegular;
+    toggle_field("seam_notch_width", has_seam_notch);
+    toggle_field("seam_notch_angle", has_seam_notch);
 
     for (size_t i = 0; i < 4; i++) {
         toggle_field("overhang_speed_" + std::to_string(i), config->opt_bool("enable_dynamic_overhang_speeds"));
