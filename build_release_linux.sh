@@ -35,8 +35,7 @@ function check_available_memory_and_disk() {
 }
 
 function usage() {
-    echo "Usage: ./build_release_linux.sh [-i][-u][-d][-s][-b][-g]"
-    echo "   -i: Generate appimage (optional)"
+    echo "Usage: ./build_release_linux.sh [-u][-d][-s][-b][-g]"
     echo "   -g: force gtk2 build"
     echo "   -b: build in debug mode"
     echo "   -d: build deps (optional)"
@@ -44,17 +43,14 @@ function usage() {
     echo "   -u: only update clock & dependency packets (optional and need sudo)"
     echo "   -r: skip free ram check (low ram compiling)"
     echo "For a first use, you want to 'sudo ./build_release_linux.sh -u'"
-    echo "   and then './build_release_linux.sh -dsi'"
+    echo "   and then './build_release_linux.sh -ds'"
 }
 
 unset name
-while getopts ":dsiuhgbr" opt; do
+while getopts ":dsuhgbr" opt; do
   case ${opt} in
     u )
         UPDATE_LIB="1"
-        ;;
-    i )
-        BUILD_IMAGE="1"
         ;;
     d )
         BUILD_DEPS="1"
@@ -220,18 +216,3 @@ then
     echo "done"
 fi
 
-if [[ -e $ROOT/build/src/build_linux_image.sh ]]; then
-# Give proper permissions to script
-chmod 755 $ROOT/build/src/build_linux_image.sh
-
-echo "[9/9] Generating Linux app..."
-    pushd build
-        if [[ -n "$BUILD_IMAGE" ]]
-        then
-            $ROOT/build/src/build_linux_image.sh -i
-        else
-            $ROOT/build/src/build_linux_image.sh
-        fi
-    popd
-echo "done"
-fi
