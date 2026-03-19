@@ -644,19 +644,19 @@ std::string AppUpdater::get_default_dest_folder()
 std::string AppUpdater::get_filename_from_url(const std::string& url)
 {
 	std::string clean_url = url;
-        CURL* curl = curl_easy_init();
-        if (curl) {
-                int decodelen;
-                char* decoded = curl_easy_unescape(curl, url.c_str(), url.size(), &decodelen);
-                if (decoded) {
-                        clean_url = std::string(decoded);
-                        curl_free(decoded);
-                }
-                curl_easy_cleanup(curl);
-        }
+	CURL* curl = curl_easy_init();
+	if (curl) {
+		int decodelen;
+		char* decoded = curl_easy_unescape(curl, url.c_str(), url.size(), &decodelen);
+		if (decoded) {
+			clean_url = std::string(decoded);
+			curl_free(decoded);
+		}
+		curl_easy_cleanup(curl);
+	}
 
-        size_t slash = clean_url.rfind('/');
-        return (slash != std::string::npos ? clean_url.substr(slash + 1) : clean_url);
+	size_t slash = clean_url.rfind('/');
+	return (slash != std::string::npos ? clean_url.substr(slash + 1) : clean_url);
 }
 
 std::string AppUpdater::get_file_extension_from_url(const std::string& url)
