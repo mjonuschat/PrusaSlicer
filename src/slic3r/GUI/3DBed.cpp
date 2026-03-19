@@ -591,7 +591,7 @@ void Bed3D::render_custom(GLCanvas3D& canvas, const Transform3d& view_matrix, co
 
     if (m_models_overlap && s_multiple_beds.get_number_of_beds() + int(s_multiple_beds.should_show_next_bed()) > 1) {
         if (m_texture_filename.empty())
-            render_default(bottom, false, show_texture, view_matrix, projection_matrix);
+            render_default(bottom, picking, show_texture, view_matrix, projection_matrix);
     } else if (!bottom) {
         render_model(view_matrix, projection_matrix);
     }
