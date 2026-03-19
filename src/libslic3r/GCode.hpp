@@ -305,7 +305,7 @@ private:
 
     std::string extrude_perimeters(
         const PrintRegion &region,
-        const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
+        std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
         const InstanceToPrint &print_instance
     );
 
@@ -323,7 +323,7 @@ private:
     std::string extrude_slices(
         const InstanceToPrint &print_instance,
         const ObjectLayerToPrint &layer_to_print,
-        const std::vector<SliceExtrusions> &slices_extrusions
+        std::vector<SliceExtrusions> &slices_extrusions
     );
 
     std::string extrude_support(

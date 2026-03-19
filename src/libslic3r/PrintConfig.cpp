@@ -203,6 +203,15 @@ static const t_config_enum_values s_keys_map_SeamPosition {
 
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(SeamPosition)
 
+static const t_config_enum_values s_keys_map_SeamNotchType {
+    { "regular",     sntRegular },
+    { "niptuck",     sntNipTuck },
+    { "nip",         sntNip },
+    { "tuck",        sntTuck },
+    { "alternating", sntAlternating }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(SeamNotchType)
+
 static const t_config_enum_values s_keys_map_ScarfSeamPlacement {
     { "nowhere",        static_cast<int>(ScarfSeamPlacement::nowhere) },
     { "contours",       static_cast<int>(ScarfSeamPlacement::countours) },
@@ -3535,6 +3544,66 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("This option causes the inner seams to be shifted backwards based on their depth, forming a zigzag pattern.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("seam_type", coEnum);
+    def->label = L("Nip/Tuck seams");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L(
+        "Creates a small V-shaped channel at the seam point on external perimeters to hide "
+        "start/stop blobs. The external perimeter is nipped inward at the seam and the first "
+        "inner perimeter is tucked to absorb the disturbance, so remaining perimeters are "
+        "unaffected.\n\n"
+        "Regular: No seam notch applied.\n"
+        "Nip/Tuck: Symmetric V-notch at both ends of the seam.\n"
+        "Nip: Only the start of the perimeter is pushed inward.\n"
+        "Tuck: Only the end of the perimeter is pushed inward.\n"
+        "Alternating: Switches between Nip and Tuck on alternating layers.\n\n"
+        "Requires at least 2 perimeters. Skipped on single-perimeter regions and in spiral vase mode."
+    );
+    def->mode = comAdvanced;
+    def->set_enum<SeamNotchType>({
+        { "regular",     L("Regular") },
+        { "niptuck",     L("Nip/Tuck") },
+        { "nip",         L("Nip") },
+        { "tuck",        L("Tuck") },
+        { "alternating", L("Alternating") }
+    });
+    def->set_default_value(new ConfigOptionEnum<SeamNotchType>(sntRegular));
+
+    def = this->add("seam_notch_width", coFloat);
+    def->label = L("Nip/Tuck width");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L(
+        "Width of the V-shaped notch as a multiple of the external perimeter extrusion width. "
+        "The depth is automatically calculated from perimeter spacing. "
+        "Wider values are more forgiving for blobs but create a larger surface depression. "
+        "Narrower values are subtler."
+    );
+    def->sidetext = L("x ext. width");
+    def->min = 1;
+    def->max = 3;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(2.0));
+
+    def = this->add("seam_notch_angle", coFloat);
+    def->label = L("Nip/Tuck corner threshold");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L(
+        "Controls where Nip/Tuck is applied based on corner sharpness. "
+        "At sharp corners the seam is naturally hidden by the geometry, so the Nip/Tuck surgery "
+        "is unnecessary.\n\n"
+        "Seams on corners sharper than this angle are skipped. The default of 44\u00B0 means any "
+        "corner "
+        "of 44\u00B0 or less is considered sharp enough to hide the seam on its own \u2014 just "
+        "under 45\u00B0, "
+        "where a clean fold already conceals the junction.\n\n"
+        "Set to 0 to apply Nip/Tuck everywhere regardless of corner angle."
+    );
+    def->sidetext = L("\u00B0");
+    def->min = 0;
+    def->max = 90;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(44.0));
 
     def = this->add("scarf_seam_placement", coEnum);
     def->label = L("Scarf joint placement");

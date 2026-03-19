@@ -145,6 +145,14 @@ enum SeamPosition {
     spRandom, spNearest, spAligned, spAlignedRear, spRear
 };
 
+enum SeamNotchType {
+    sntRegular,
+    sntNipTuck,
+    sntNip,
+    sntTuck,
+    sntAlternating
+};
+
 enum class ScarfSeamPlacement {
     nowhere,
     countours,
@@ -839,6 +847,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     // Precise walls
     ((ConfigOptionFloatOrPercent,       external_perimeter_overlap))
     ((ConfigOptionFloatOrPercent,       perimeter_perimeter_overlap))
+
+    // Nip/Tuck (V-Notch) Seam
+    ((ConfigOptionEnum<SeamNotchType>,  seam_type))
+    ((ConfigOptionFloat,                seam_notch_width))
+    ((ConfigOptionFloat,                seam_notch_angle))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
