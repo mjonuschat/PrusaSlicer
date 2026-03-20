@@ -10,6 +10,35 @@ project(libslic3r)
 
 include(PrecompiledHeader)
 
+# Extract git hash for dev/nightly builds.
+# Suppressed for release builds via -DSLIC3R_RELEASE_BUILD=ON or
+# when building from a release/* branch.
+set(SLIC3R_GIT_HASH "")
+if (NOT SLIC3R_RELEASE_BUILD)
+    execute_process(
+        COMMAND git rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE _git_branch
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if (_git_branch MATCHES "^release/")
+        # Release branch — no hash
+    else()
+        execute_process(
+            COMMAND git rev-parse --short HEAD
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE SLIC3R_GIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+            RESULT_VARIABLE GIT_RESULT
+        )
+        if (NOT GIT_RESULT EQUAL 0)
+            set(SLIC3R_GIT_HASH "")
+        endif()
+    endif()
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libslic3r_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/libslic3r_version.h @ONLY)
 
 if (MINGW)
