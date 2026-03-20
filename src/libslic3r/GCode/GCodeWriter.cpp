@@ -245,6 +245,16 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     last_acceleration_value = acceleration;
     last_minimum_cruise_ratio = minimum_cruise_ratio;
 
+    if (FLAVOR_IS(gcfKlipper) && m_last_jerk > 0) {
+        // Buffer acceleration for merging with SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY
+        // in set_jerk(). This avoids emitting two consecutive SET_VELOCITY_LIMIT commands.
+        // Only buffer when jerk/SCV is active (m_last_jerk > 0), meaning set_jerk() will be
+        // called after this. When jerk is not configured, emit immediately.
+        m_klipper_accel_pending = true;
+        m_klipper_pending_accel = acceleration;
+        m_klipper_pending_mcr = minimum_cruise_ratio;
+        return {};
+    }
 
     std::string gcode;
     const auto accel_str = std::to_string(acceleration);
@@ -347,8 +357,6 @@ std::string GCodeWriter::set_jerk(unsigned int jerk, const std::string_view comm
 
     gcode += '\n';
     return gcode;
-}
-
 }
 
 std::string GCodeWriter::reset_e(bool force)
