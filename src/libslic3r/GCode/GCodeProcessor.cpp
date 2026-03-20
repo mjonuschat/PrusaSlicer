@@ -1,6 +1,6 @@
 ///|/ Copyright (c) Prusa Research 2020 - 2023 Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, Pavel Mikuš @Godrak, Lukáš Matěna @lukasmatena, Filip Sykala @Jony01, Oleksandra Iushchenko @YuSanka
 ///|/ Copyright (c) SuperSlicer 2023 Remi Durand @supermerill
-///|/ Copyright (c) 2025 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) 2025 - 2026 Morton Jonuschat @mjonuschat
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/#include "libslic3r/libslic3r.h"
@@ -41,6 +41,7 @@ static const float MMMIN_TO_MMSEC = 1.0f / 60.0f;
 static const float DEFAULT_ACCELERATION = 1500.0f; // Prusa Firmware 1_75mm_MK2
 static const float DEFAULT_RETRACT_ACCELERATION = 1500.0f; // Prusa Firmware 1_75mm_MK2
 static const float DEFAULT_TRAVEL_ACCELERATION = 1250.0f;
+static constexpr float KLIPPER_SQRT2_MINUS_1 = 0.41421356237f; // sqrt(2) - 1, used in Klipper SCV→JD conversion
 
 static const size_t MIN_EXTRUDERS_COUNT = 5;
 static const float DEFAULT_FILAMENT_DIAMETER = 1.75f;
@@ -204,6 +205,7 @@ void GCodeProcessor::TimeMachine::reset()
     max_retract_acceleration = 0.0f;
     travel_acceleration = 0.0f;
     max_travel_acceleration = 0.0f;
+    square_corner_velocity = 0.0f;
     extrude_factor_override_percentage = 1.0f;
     time = 0.0f;
     stop_times = std::vector<StopTime>();
@@ -999,6 +1001,21 @@ void GCodeProcessor::apply_config(const DynamicPrintConfig& config)
         float max_travel_acceleration = get_option_value(m_time_processor.machine_limits.machine_max_acceleration_travel, i);
         m_time_processor.machines[i].max_travel_acceleration = max_travel_acceleration;
         m_time_processor.machines[i].travel_acceleration = (max_travel_acceleration > 0.0f) ? max_travel_acceleration : DEFAULT_TRAVEL_ACCELERATION;
+        // For Klipper, convert SCV to junction deviation using the same formula as Klipper:
+        //   junction_deviation = SCV² * (√2 - 1) / max_accel
+        // This lets the existing Marlin JD cornering path handle Klipper correctly.
+        if (m_flavor == gcfKlipper) {
+            // Clear any pre-existing JD value — Klipper does not use Marlin-style JD.
+            set_option_value(m_time_processor.machine_limits.machine_max_junction_deviation, i, 0.f);
+            float jerk_x = get_option_value(m_time_processor.machine_limits.machine_max_jerk_x, i);
+            float jerk_y = get_option_value(m_time_processor.machine_limits.machine_max_jerk_y, i);
+            float scv = std::min(jerk_x, jerk_y);
+            m_time_processor.machines[i].square_corner_velocity = scv;
+            if (scv > 0.f && m_time_processor.machines[i].max_acceleration > 0.f) {
+                float jd = scv * scv * KLIPPER_SQRT2_MINUS_1 / m_time_processor.machines[i].max_acceleration;
+                set_option_value(m_time_processor.machine_limits.machine_max_junction_deviation, i, jd);
+            }
+        }
     }
 
     if (m_flavor == gcfMarlinLegacy || m_flavor == gcfMarlinFirmware) { // No Klipper here, it does not support silent mode.
@@ -1839,6 +1856,9 @@ void GCodeProcessor::process_gcode_line(const GCodeReader::GCodeLine& line, bool
             process_T(line); // Select Tool
             break;
         default:
+            // Klipper extended commands (e.g., SET_VELOCITY_LIMIT)
+            if (m_flavor == gcfKlipper && cmd == "SET_VELOCITY_LIMIT")
+                process_SET_VELOCITY_LIMIT(line);
             break;
         }
     }
@@ -2774,8 +2794,12 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
         static const float PREVIOUS_FEEDRATE_THRESHOLD = 0.0001f;
 
         float vmax_junction = 0.f; // Init entry speed to zero. Assume it starts from rest. Planner will correct this later.
-        if (const float junction_deviation = get_junction_deviation(static_cast<PrintEstimatedStatistics::ETimeMode>(i)); junction_deviation > 0.f) {
-            // Junction deviation.
+        const float junction_deviation = get_junction_deviation(static_cast<PrintEstimatedStatistics::ETimeMode>(i));
+        if (junction_deviation > 0.f) {
+            // Junction deviation cornering (Marlin JD and Klipper SCV).
+            // Klipper's SCV is converted to JD at config load and on SET_VELOCITY_LIMIT parse:
+            //   JD = SCV² * (√2 - 1) / max_accel
+            // Both then use: v² = accel * JD * sin(θ/2) / (1 - sin(θ/2))
 
             curr.jd_unit_vec = Vec4f(
                 static_cast<float>(delta_pos[X]) / block.distance,
@@ -2803,22 +2827,35 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
                     float vmax_junction_sqr = (junction_acceleration * junction_deviation * sin_theta_d2) / (1.f - sin_theta_d2);
 
-                    // For small moves with >135° junction (octagon) find speed for approximate arc
-                    if (block.distance < 1 && junction_cos_theta < -0.7071067812f) {
-                        // Fast acos(-t) approximation (max. error +-0.033rad = 1.89°)
-                        // Based on MinMax polynomial published by W. Randolph Franklin, see
-                        // https://wrf.ecse.rpi.edu/Research/Short_Notes/arcsin/onlyelem.html
-                        //  acos( t) = pi / 2 - asin(x)
-                        //  acos(-t) = pi - acos(t) ... pi / 2 + asin(x)
+                    if (m_flavor == gcfKlipper) {
+                        // Klipper centripetal velocity limit: the approximated inscribed circle
+                        // must not extend past the midpoint of a move.
+                        // Klipper checks both current and previous move; we approximate using
+                        // only the current move distance.
+                        //   centripetal_v² = 0.5 * move_d * accel * tan(θ/2)
+                        const float cos_theta_d2 = std::sqrt(0.5f * (1.f + junction_cos_theta));
+                        if (cos_theta_d2 > 0.f) {
+                            const float tan_theta_d2 = sin_theta_d2 / cos_theta_d2;
+                            const float centripetal_v2 = 0.5f * block.distance * junction_acceleration * tan_theta_d2;
+                            vmax_junction_sqr = std::min(vmax_junction_sqr, centripetal_v2);
+                        }
+                    } else {
+                        // Marlin: for small moves with >135° junction (octagon) find speed for approximate arc
+                        if (block.distance < 1 && junction_cos_theta < -0.7071067812f) {
+                            // Fast acos(-t) approximation (max. error +-0.033rad = 1.89°)
+                            // Based on MinMax polynomial published by W. Randolph Franklin, see
+                            // https://wrf.ecse.rpi.edu/Research/Short_Notes/arcsin/onlyelem.html
+                            //  acos( t) = pi / 2 - asin(x)
+                            //  acos(-t) = pi - acos(t) ... pi / 2 + asin(x)
+                            const float neg = junction_cos_theta < 0.f ? -1.f : 1.f;
+                            const float t = neg * junction_cos_theta;
+                            const float asinx = 0.032843707f + t * (-1.451838349f + t * (29.66153956f + t * (-131.1123477f + t * (262.8130562f + t * (-242.7199627f + t * (84.31466202f))))));
+                            const float junction_theta = Geometry::deg2rad(90.f) + neg * asinx; // acos(-t)
 
-                        const float neg = junction_cos_theta < 0.f ? -1.f : 1.f;
-                        const float t = neg * junction_cos_theta;
-                        const float asinx = 0.032843707f + t * (-1.451838349f + t * (29.66153956f + t * (-131.1123477f + t * (262.8130562f + t * (-242.7199627f + t * (84.31466202f))))));
-                        const float junction_theta = Geometry::deg2rad(90.f) + neg * asinx; // acos(-t)
-
-                        // NOTE: junction_theta bottoms out at 0.033 which avoids divide by 0.
-                        const float limit_sqr = (block.distance * junction_acceleration) / junction_theta;
-                        vmax_junction_sqr = std::min(vmax_junction_sqr, limit_sqr);
+                            // NOTE: junction_theta bottoms out at 0.033 which avoids divide by 0.
+                            const float limit_sqr = (block.distance * junction_acceleration) / junction_theta;
+                            vmax_junction_sqr = std::min(vmax_junction_sqr, limit_sqr);
+                        }
                     }
 
                     // Get the lowest speed
@@ -3713,6 +3750,52 @@ void GCodeProcessor::process_M566(const GCodeReader::GCodeLine& line)
 
         if (line.has_e())
             set_option_value(m_time_processor.machine_limits.machine_max_jerk_e, i, line.e() * MMMIN_TO_MMSEC);
+    }
+}
+
+void GCodeProcessor::process_SET_VELOCITY_LIMIT(const GCodeReader::GCodeLine& line)
+{
+    // Parse Klipper SET_VELOCITY_LIMIT parameters from the raw line.
+    // Format: SET_VELOCITY_LIMIT ACCEL=<value> SQUARE_CORNER_VELOCITY=<value>
+    const std::string& raw = line.raw();
+
+    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
+        if (static_cast<PrintEstimatedStatistics::ETimeMode>(i) == PrintEstimatedStatistics::ETimeMode::Normal ||
+            m_time_processor.machine_envelope_processing_enabled) {
+            // Parse ACCEL=<value>
+            // In Klipper, SET_VELOCITY_LIMIT ACCEL= sets max_accel, which affects both
+            // the acceleration ceiling and the SCV→JD conversion.
+            if (size_t pos = raw.find("ACCEL="); pos != std::string::npos) {
+                char* end = nullptr;
+                float value = std::strtof(raw.c_str() + pos + 6, &end);
+                if (end != raw.c_str() + pos + 6 && value > 0.f) {
+                    // Klipper's ACCEL= updates max_accel (the ceiling), not just working accel.
+                    m_time_processor.machines[i].max_acceleration = value;
+                    m_time_processor.machines[i].max_travel_acceleration = value;
+                    set_acceleration(static_cast<PrintEstimatedStatistics::ETimeMode>(i), value);
+                    set_travel_acceleration(static_cast<PrintEstimatedStatistics::ETimeMode>(i), value);
+                    // Recompute JD since it depends on max_accel: JD = SCV² * (√2-1) / max_accel
+                    float scv = m_time_processor.machines[i].square_corner_velocity;
+                    if (scv > 0.f) {
+                        set_option_value(m_time_processor.machine_limits.machine_max_junction_deviation, i,
+                            scv * scv * KLIPPER_SQRT2_MINUS_1 / value);
+                    }
+                }
+            }
+            // Parse SQUARE_CORNER_VELOCITY=<value> and convert to junction deviation.
+            if (size_t pos = raw.find("SQUARE_CORNER_VELOCITY="); pos != std::string::npos) {
+                char* end = nullptr;
+                float scv = std::strtof(raw.c_str() + pos + 23, &end);
+                if (end != raw.c_str() + pos + 23 && scv > 0.f) {
+                    m_time_processor.machines[i].square_corner_velocity = scv;
+                    float max_accel = m_time_processor.machines[i].max_acceleration;
+                    if (max_accel > 0.f) {
+                        set_option_value(m_time_processor.machine_limits.machine_max_junction_deviation, i,
+                            scv * scv * KLIPPER_SQRT2_MINUS_1 / max_accel);
+                    }
+                }
+            }
+        }
     }
 }
 
