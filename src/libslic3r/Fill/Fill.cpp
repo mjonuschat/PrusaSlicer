@@ -5,6 +5,7 @@
 ///|/ Copyright (c) 2013 Mark Hindess
 ///|/ Copyright (c) 2011 Michael Moon
 ///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
+///|/ Copyright (c) OrcaSlicer 2023 SoftFever @SoftFever
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -546,6 +547,12 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 			// Spacing is modified by the filler to indicate adjustments. Reset it for each expolygon.
 			f->spacing = surface_fill.params.spacing;
 			surface_fill.surface.expolygon = std::move(expoly);
+
+			if (surface_fill.params.bridge && surface_fill.surface.is_external() && surface_fill.params.density > 99.0) {
+				params.density = layerm.region().config().bridge_density.get_abs_value(1.0);
+				params.dont_adjust = true;
+			}
+
             Polylines      polylines;
             ThickPolylines thick_polylines;
 			try {
