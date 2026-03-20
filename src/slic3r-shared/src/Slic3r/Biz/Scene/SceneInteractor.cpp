@@ -1,39 +1,58 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
-#include "Slic3r/Biz/Arrange/Arrange.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Types.hpp"
-
-#include "Slic3r/Biz/Arrange/Arrange.hpp"
-#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
-#include "Slic3r/Biz/Scene/BedFactory.hpp"
-#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
-#include "Slic3r/Math.hpp"
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelInstance.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonUtils.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/Scene/SelectionExtents.hpp"
+#include "Slic3r/Directories.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Log.hpp"
+#include "Slic3r/Math.hpp"
 
-#include <Slic3r/Assert.hpp>
-#include <Slic3r/Log.hpp>
-#include <Slic3r/Directories.hpp>
+#include <algorithm>
+#include <boost/filesystem/path.hpp>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <vector>
-#include <algorithm>
-#include <boost/filesystem/path.hpp>
 
+#include <libslic3r/GCode/WipeTower.hpp>
+
+using Eigen::Rotation2Dd;
+using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
+using Slic3r::Biz::Algorithms::Bed::WipeTowerCollisionData;
+using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Domain::BedContainer;
+using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::BedRef;
+using Slic3r::Domain::BoundingBox2d;
 using Slic3r::Domain::ConstModelInstanceList;
+using Slic3r::Domain::ElementRef;
+using Slic3r::Domain::ElementRefs;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Points;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec2ds;
 using Slic3r::Domain::Vec3d;
 
 using namespace Slic3r::Biz;
@@ -1749,11 +1768,7 @@ void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTra
 
     update_selection_bounding_box();
 
-    const BedTrackingChanges changes{m_bed_tracking.update_instances_bed_placement(project, elements)};
-
-    for (const auto& bed_ref : changes.updated_beds) {
-        invoke_slicing_input_changed(bed_ref);
-    }
+    const BedTrackingChanges changes{update_elements_bed_placement(elements, false)};
 
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
@@ -1761,82 +1776,102 @@ void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTra
     );
 }
 
-static Vec2d rotate_around(
-    const Vec2d& p,
-    const Vec2d& center,
-    double angle_rad)
-{
-    Eigen::Rotation2Dd rotation(angle_rad);
-    return rotation * (p - center) + center;
-}
-
-static Domain::BoundingBox2d get_wipe_tower_bounding_box(
-    const Print::WipeTowerGeometry& wipe_tower_geometry,
-    const Domain::BedInstance& bed_instance
+static WipeTowerCollisionData get_wipe_tower_collision_data(
+    const WipeTowerGeometry& wipe_tower_geometry,
+    const BedInstance& bed_instance
 )
 {
+    const constexpr size_t CONE_BASE_RADIUS_RESOLUTION = 32;
+
+    const auto scaled_d = [](const double v)
+    { return static_cast<double>(Algorithms::Scaling::scaled(v)); };
+
     const Vec2d position{
         bed_instance.wipe_tower.position + bed_instance.transformation.get_offset().head<2>()
     };
-    const double rotation{
-        bed_instance.wipe_tower.rotation + get_xy_rotation(bed_instance.transformation)
+    const double rotation_angle{
+        Slic3r::deg2rad(bed_instance.wipe_tower.rotation)
+        + get_xy_rotation(bed_instance.transformation)
     };
 
     const double block_width{wipe_tower_geometry.width};
     double block_depth{wipe_tower_geometry.fallback_depth};
 
-    const double width{wipe_tower_geometry.width + 2 * wipe_tower_geometry.brim_width};
+    const double scaled_width =
+        scaled_d(wipe_tower_geometry.width + 2 * wipe_tower_geometry.brim_width);
+    double scaled_depth =
+        scaled_d(wipe_tower_geometry.fallback_depth + 2 * wipe_tower_geometry.brim_width);
     double height{wipe_tower_geometry.fallback_height};
-    double depth{wipe_tower_geometry.fallback_depth + 2 * wipe_tower_geometry.brim_width};
 
     if (!wipe_tower_geometry.depths.empty()) {
         block_depth = wipe_tower_geometry.depths.front().depth;
-        depth  = wipe_tower_geometry.depths.front().depth + 2 * wipe_tower_geometry.brim_width;
+        scaled_depth =
+            scaled_d(wipe_tower_geometry.depths.front().depth + 2 * wipe_tower_geometry.brim_width);
         height = wipe_tower_geometry.depths.back().z;
     }
 
-    const double cone_depth{
-        2.0 * height * std::tan(Slic3r::deg2rad(wipe_tower_geometry.cone_angle / 2.0))
-        + 2 * wipe_tower_geometry.brim_width
-    };
-    if (depth < cone_depth) {
-        depth = cone_depth;
+    const Vec2d center{block_width / 2., block_depth / 2.};
+    const Point scaled_center{Algorithms::Scaling::scaled(center)};
+
+    // Rectangle with brim.
+    const Polygon rectangle_base{Algorithms::Polygon::translated(
+        Algorithms::PolygonUtils::create_rect(scaled_width, scaled_depth),
+        scaled_center
+    )};
+
+    Polygons footprint_polygons = {rectangle_base};
+
+    // Stabilization cone.
+    const auto [cone_r, cone_scale_x] = WipeTower::get_wipe_tower_cone_base(
+        block_width,
+        height,
+        block_depth,
+        wipe_tower_geometry.cone_angle
+    );
+    if (cone_r > 0.) {
+        const double brim = wipe_tower_geometry.brim_width;
+        footprint_polygons.push_back(
+            Algorithms::PolygonUtils::create_ellipse(
+                scaled_d(cone_r / cone_scale_x + brim),
+                scaled_d(cone_r + brim),
+                CONE_BASE_RADIUS_RESOLUTION,
+                scaled_center
+            )
+        );
     }
 
-    const Vec2d front_left{
-        position.x() - (width - block_width) / 2.0,
-        position.y() - (depth - block_depth) / 2.0
-    };
-    const Vec2d front_right{
-        front_left.x() + width,
-        front_left.y()
-    };
-    const Vec2d back_right{
-        front_left.x() + width,
-        front_left.y() + depth
-    };
-    const Vec2d back_left{
-        front_left.x(),
-        front_left.y() + depth
-    };
+    // Convex hull for convex beds, Clipper union for non-convex beds.
+    const Domain::BedType bed_type = bed_instance.bed.get().type();
+    Vec2ds footprint_unscaled;
+    if (bed_type == Domain::BedType::Rectangle
+        || bed_type == Domain::BedType::Circle
+        || bed_type == Domain::BedType::Convex)
+    {
+        Points footprint_points;
+        for (const Polygon& polygon : footprint_polygons) {
+            footprint_points
+                .insert(footprint_points.end(), polygon.points.begin(), polygon.points.end());
+        }
 
-    Domain::Vec2ds square{
-        front_left,
-        front_right,
-        back_right,
-        back_left
-    };
-
-    Domain::BoundingBox2d bounding_box;
-    for (const Vec2d& point : square) {
-        const Vec2d rotated_point{rotate_around(
-            point,
-            position,
-            Slic3r::deg2rad(rotation)
-        )};
-        bounding_box = Biz::Algorithms::BoundingBox::merge(bounding_box, rotated_point);
+        const Polygon convex_hull = Algorithms::Geometry::convex_hull(std::move(footprint_points));
+        footprint_unscaled        = Algorithms::Point::unscaled(convex_hull.points);
+    } else {
+        const Polygons footprint_union = Algorithms::ClipperUtils::union_(footprint_polygons);
+        footprint_unscaled = Algorithms::Point::unscaled(footprint_union.front().points);
     }
-    return bounding_box;
+
+    const Rotation2Dd rotation{rotation_angle};
+
+    BoundingBox2d bounding_box;
+    Vec2ds footprint_transformed;
+    footprint_transformed.reserve(footprint_unscaled.size());
+    for (const Vec2d& point : footprint_unscaled) {
+        const Vec2d transformed_point = rotation * point + position;
+        footprint_transformed.push_back(transformed_point);
+        bounding_box = Algorithms::BoundingBox::merge(bounding_box, transformed_point);
+    }
+
+    return {bounding_box, std::move(footprint_transformed)};
 }
 
 void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bool canceled)
@@ -1865,14 +1900,20 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
         // Here the wipe tower geometry is not updated yet. The backend callback comes after this.
         // Make sure to check with the position and rotation after transformation.
         // Also, the wipe tower position and rotation are bed relative.
-        Print::WipeTowerGeometry geometry{it->second};
-        const Domain::BoundingBox2d bounding_box{get_wipe_tower_bounding_box(geometry, *bed_instance)};
-        using Algorithms::Bed::BedContainmentState;
-        const BedContainmentState contains{Algorithms::Bed::contains_2d(*bed_instance, bounding_box)};
-        if (contains != BedContainmentState::Inside) {
+        const WipeTowerCollisionData collision_data =
+            get_wipe_tower_collision_data(it->second, *bed_instance);
+
+        // Check whether the wipe tower lies within the bed contour.
+        const BedContainmentState containment_state{m_bed_tracking.check_containment_2d(
+            bed_instance->bed.get(),
+            *bed_instance,
+            collision_data.bounding_box,
+            collision_data.footprint_2d
+        )};
+        if (containment_state != BedContainmentState::Inside) {
             wipe_towers_outside.push_back(e);
         }
-    };
+    }
 
     const bool vol_mode = memento.forced_volume_mode || proj.object_selection.mode == SelectionMode::Volume;
 
@@ -2021,6 +2062,11 @@ void SceneInteractor::change_wipe_tower(
     }
     SceneInteractorProjectContext& context{project_it->second};
     context.wipe_tower_geometries[slicing_id.bed_instance_id] = wipe_tower;
+
+    // Recheck bed containment, the changed geometry (brim, cone) may have resized the footprint.
+    const ElementRefs wipe_tower_element{ElementRef{slicing_id}};
+    BedTrackingChanges changes;
+    this->update_wipe_tower_containment(context, wipe_tower_element, changes);
 
     if (object_selection().is_selected(Domain::ElementRef{slicing_id})) {
         update_selection_bounding_box();
@@ -2175,11 +2221,54 @@ BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::
     } else {
         changes = m_bed_tracking.update_instances_bed_placement(proj.project, elements);
     }
-    for (const auto& bed_ref : changes.updated_beds) {
+
+    this->update_wipe_tower_containment(proj, elements, changes);
+
+    for (const BedRef& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
     }
 
     return changes;
+}
+
+void SceneInteractor::update_wipe_tower_containment(
+    SceneInteractorProjectContext& project_context,
+    const ElementRefs& elements,
+    BedTrackingChanges& changes
+)
+{
+    for (const ElementRef& element : elements) {
+        if (!element.is_wipe_tower()) {
+            continue;
+        }
+
+        BedInstance* bed_instance =
+            project_context.project.find_bed_instance_by_id(element.wipe_tower_id.bed_instance_id);
+        if (bed_instance == nullptr) {
+            continue;
+        }
+
+        const auto geometry_it =
+            project_context.wipe_tower_geometries.find(element.wipe_tower_id.bed_instance_id);
+        if (geometry_it == project_context.wipe_tower_geometries.end()) {
+            continue;
+        }
+
+        const WipeTowerCollisionData collision_data =
+            get_wipe_tower_collision_data(geometry_it->second, *bed_instance);
+        const BedContainmentState containment_state = m_bed_tracking.check_containment_2d(
+            bed_instance->bed.get(),
+            *bed_instance,
+            collision_data.bounding_box,
+            collision_data.footprint_2d
+        );
+        const bool is_outside = (containment_state != BedContainmentState::Inside);
+        if (bed_instance->wipe_tower_is_outside != is_outside) {
+            bed_instance->wipe_tower_is_outside = is_outside;
+            // Signal that colliding state changed so PlaterScenePresenter triggers material refresh.
+            ++changes.colliding_instances_updated_count;
+        }
+    }
 }
 
 void SceneInteractor::normalize_single_volume_object(Domain::ModelObject& object)

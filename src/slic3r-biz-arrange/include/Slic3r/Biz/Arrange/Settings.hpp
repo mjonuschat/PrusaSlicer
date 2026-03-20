@@ -34,7 +34,7 @@ struct Settings
     GeometryHandling fixed_geometry{GeometryHandling::Convex};
     GeometryHandling movable_geometry{GeometryHandling::Convex};
     std::optional<PivotPoint> bed_pivot_point;
-    std::optional<Domain::Bed::Segments> bed_segments;
+    std::optional<Domain::BedSegments> bed_segments;
     int scaled_simplification_tolerance{Biz::Algorithms::Scaling::scaled(.2)};
     std::optional<Domain::Vec2d> auxiliary_travel_anchor;
 };

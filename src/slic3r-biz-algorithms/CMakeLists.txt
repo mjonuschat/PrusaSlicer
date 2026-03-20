@@ -3,6 +3,8 @@ project(slic3r-biz-algorithms)
 add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/BoundingBox.hpp
     src/Slic3r/Biz/Algorithms/BoundingBox.cpp
+    include/Slic3r/Biz/Algorithms/AABBMesh.hpp
+    src/Slic3r/Biz/Algorithms/AABBMesh.cpp
     include/Slic3r/Biz/Algorithms/DouglasPeucker.hpp
     src/Slic3r/Biz/Algorithms/DouglasPeucker.cpp
     include/Slic3r/Biz/Algorithms/ExPolygon.hpp
@@ -116,6 +118,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp
         test/Slic3r/Biz/Algorithms/BundleCacheTests.cpp
+        test/Slic3r/Biz/Algorithms/BedContainmentTests.cpp
     )
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)
 

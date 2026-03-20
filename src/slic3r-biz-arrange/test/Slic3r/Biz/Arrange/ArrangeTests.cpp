@@ -34,7 +34,7 @@ using Slic3r::Domain::Polygon;
 using Slic3r::Domain::Polygons;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec2d;
-using BedSegments = Slic3r::Domain::Bed::Segments;
+using BedSegments = Slic3r::Domain::BedSegments;
 
 #ifndef NDEBUG
 constexpr bool output_result_svgs{true};

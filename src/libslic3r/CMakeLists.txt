@@ -42,7 +42,6 @@ slic3r_remap_configs(LibBGCode::bgcode_binarize RelWithDebInfo Release)
 slic3r_remap_configs(LibBGCode::bgcode_convert RelWithDebInfo Release)
 
 set(SLIC3R_SOURCES
-    src/libslic3r/AABBMesh.cpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.cpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.hpp
     src/libslic3r/Algorithm/PathSorting.hpp
@@ -395,7 +394,6 @@ set(SLIC3R_SOURCES
 )
 
 set(SLIC3R_PUBLIC_HEADERS
-    include/libslic3r/AABBMesh.hpp
     include/libslic3r/AnyPtr.hpp
     #include/libslic3r/AppConfig.hpp
     include/libslic3r/BoostAdapter.hpp

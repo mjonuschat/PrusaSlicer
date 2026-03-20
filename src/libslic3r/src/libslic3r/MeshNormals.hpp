@@ -9,10 +9,9 @@
 #include <functional>
 #include <vector>
 
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
-#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 class AABBMesh;
@@ -23,8 +22,8 @@ class AABBMesh;
 // normalized sum of each unique face normal (works nicely). The eps parameter
 // gives a tolerance for how close a sample point has to be to an edge or
 // vertex to start considering neighboring faces for the resulting normal.
-Vec3d get_normal(const AABBMesh &mesh,
-                 const Vec3d    &picking_point,
+Domain::Vec3d get_normal(const AABBMesh &mesh,
+                 const Domain::Vec3d    &picking_point,
                  double          eps = 0.05);
 
 using PointSet = Eigen::MatrixXd;

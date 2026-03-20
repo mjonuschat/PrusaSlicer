@@ -10,13 +10,13 @@
 
 namespace Slic3r::Domain {
 
-class Bed;
 class ConfigContainer;
 
 class BedContainer
 {
 public:
-    [[nodiscard]] Bed& get_or_create_bed(const ConfigContainer& config_container, const std::string& resources_dir_path,
+    [[nodiscard]] Bed& get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed_shape, const indexed_triangle_set& contour_mesh,
+        const ConfigContainer& config_container, const std::string& resources_dir_path,
         SelectionId project_id = INVALID_ID, SelectionId config_container_id = INVALID_ID,
         std::function<Vec2ds(SelectionId, SelectionId)> system_preset_bed_shape_getter = nullptr);
 

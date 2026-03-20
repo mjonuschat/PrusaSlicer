@@ -45,14 +45,14 @@ struct BedShape
     static std::string get_type_name(Type type);
     static const ParamAttributes& attributes(Parameter param);
 
-    BedShape(const std::vector<Domain::Vec2d>& points);
+    BedShape(const Domain::Vec2ds& points);
 
     bool is_custom() const;
-    bool is_equal_to(const std::vector<Domain::Vec2d>& points) const;
+    bool is_equal_to(const Domain::Vec2ds& points) const;
 
     Type get_type() const;
-    const std::vector<Domain::Vec2d>& contour() const;
-    std::vector<Domain::Vec2d> triangles() const;
+    const Domain::Vec2ds& contour() const;
+    Domain::Vec2ds triangles() const;
     Domain::Vec2d get_size() const;
     Domain::Vec2d get_origin() const;
     double get_diameter() const;

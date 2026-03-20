@@ -33,6 +33,35 @@ Polygon PolygonUtils::create_regular(size_t       count_points,
     return Polygon(points);
 }
 
+Polygon PolygonUtils::create_ellipse(
+    const double radius_x,
+    const double radius_y,
+    const size_t count_points,
+    const Point& center
+)
+{
+    assert(radius_x >= 1.);
+    assert(radius_y >= 1.);
+    assert(count_points >= 3);
+
+    Points points;
+    points.reserve(count_points);
+
+    const double increase_angle = 2 * std::numbers::pi / static_cast<double>(count_points);
+    for (size_t i = 0; i < count_points; ++i) {
+        const double angle = static_cast<double>(i) * increase_angle;
+        const double x     = std::cos(angle) * radius_x + center.x();
+        const double y     = std::sin(angle) * radius_y + center.y();
+
+        assert(is_in_coord_limits(x));
+        assert(is_in_coord_limits(y));
+
+        points.emplace_back(x, y);
+    }
+
+    return Polygon(points);
+}
+
 Polygon PolygonUtils::create_equilateral_triangle(double edge_size)
 {
     coord_t x = edge_size / 2;

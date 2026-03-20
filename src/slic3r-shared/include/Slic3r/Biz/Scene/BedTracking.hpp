@@ -5,8 +5,10 @@
 #include <set>
 #include <iterator>
 
-#include <Slic3r/Domain/Project.hpp>
-#include <Slic3r/Domain/BedRef.hpp>
+#include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r::Biz {
 
@@ -96,21 +98,52 @@ public:
         bool remove_original_links = true
     );
 
+    /**
+     * @brief Check whether a 2D shape is contained within the bed boundary.
+     *
+     * @param bed Bed definition providing the bed contour for collision mesh creation.
+     * @param bed_instance Bed instance whose offset is used to transform the tested shape into bed-local coordinates.
+     * @param bounding_box Axis-aligned bounding box of the shape to test, in scene coordinates.
+     * @param convex_hull Convex hull vertices of the shape to test, in scene coordinates.
+     * @return BedContainmentState indicating whether the shape is Inside, Colliding with, or Outside the bed.
+     */
+    Algorithms::Bed::BedContainmentState check_containment_2d(
+        const Domain::Bed& bed,
+        const Domain::BedInstance& bed_instance,
+        const Domain::BoundingBox2d& bounding_box,
+        const Domain::Vec2ds& convex_hull
+    );
+
 private:
+    struct BedCacheEntry
+    {
+        AABBMesh aabb_mesh;
+        Domain::Polygon scaled_contour;
+    };
+
     void update_instance_bed_placement(
         Domain::Project& project,
         Domain::ModelInstance& inst,
         BedTrackingChanges& changes
     );
-    Domain::BoundingBox3d
-    get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst);
+
+    const Algorithms::Bed::ObjectCollisionData&
+    get_instance_collision_data(const Domain::Project& project, const Domain::ModelInstance& inst);
+
+    BedCacheEntry& get_or_create_bed_cache(const Domain::Bed& bed);
+
+    std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
+    find_bed_instance_for_bounds(
+        Domain::Project& project,
+        const Algorithms::Bed::ObjectCollisionData& obj_collision_data
+    );
 
     // The cache for transformed bounding boxes to allow quick lookup based on
     // object_id and instance_id.
     struct CacheInstanceEntry
     {
         Domain::Transformation inst_trafo;
-        Domain::BoundingBox3d cached_bb;
+        Biz::Algorithms::Bed::ObjectCollisionData collision;
     };
 
     struct VolData
@@ -129,6 +162,9 @@ private:
     std::map<size_t, CacheObjectEntry> m_cache;
     std::chrono::steady_clock::time_point m_last_cache_clear_time =
         std::chrono::steady_clock::now();
+
+    // Cache containing bed contour's AABBMesh and scaled polygon, keyed by bed ID, to avoid expensive recreation.
+    std::map<size_t, BedCacheEntry> m_bed_cache;
 };
 
 } // namespace Slic3r::Biz

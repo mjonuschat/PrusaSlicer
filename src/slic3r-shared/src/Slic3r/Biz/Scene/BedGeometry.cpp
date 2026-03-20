@@ -39,16 +39,14 @@ TriangleMesh BedGeometry::model(const Domain::Bed& bed)
 {
     namespace TriMesh                 = Biz::Algorithms::TriangleMesh;
     const std::string& model_filename = bed.model_filename();
-
     if (!model_filename.empty()) {
         auto mesh = Biz::load_stl(model_filename);
         if (mesh) {
             mesh->translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
             return mesh.value();
         }
+        SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);
     }
-
-    SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);
     return TriangleMesh{};
 }
 

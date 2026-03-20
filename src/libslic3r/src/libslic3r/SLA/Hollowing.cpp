@@ -7,7 +7,7 @@
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/SLA/Hollowing.hpp>
 #include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>
-#include <libslic3r/AABBMesh.hpp>
+#include <Slic3r/Biz/Algorithms/AABBMesh.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include <libslic3r/Model.hpp>

@@ -118,6 +118,13 @@ Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points)
     return Domain::Polygon(Point::scaled(points));
 }
 
+Domain::Polygon translated(const Domain::Polygon& polygon, const Domain::Point& offset)
+{
+    Domain::Polygon result(polygon);
+    result.translate(offset);
+    return result;
+}
+
 bool is_counter_clockwise(const Domain::Polygon& polygon)
 {
     return ClipperLib::Orientation(polygon.points);

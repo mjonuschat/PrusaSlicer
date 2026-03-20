@@ -34,6 +34,21 @@ public:
         return create_regular(count_points, radius, center);
     }
 
+    /**
+     * @brief Create an ellipse polygon with the given radii.
+     * @param radius_x Radius along the X axis (in scaled coordinates).
+     * @param radius_y Radius along the Y axis (in scaled coordinates).
+     * @param count_points Number of vertices.
+     * @param center Center point.
+     * @return Polygon with CCW points.
+     */
+    static Domain::Polygon create_ellipse(
+        double radius_x,
+        double radius_y,
+        size_t count_points         = 10,
+        const Domain::Point& center = Domain::Point(0, 0)
+    );
+
     /// <summary>
     /// Create triangle with same length for all sides
     /// </summary>

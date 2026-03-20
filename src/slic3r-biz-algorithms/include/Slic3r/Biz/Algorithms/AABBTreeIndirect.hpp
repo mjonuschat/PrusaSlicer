@@ -9,6 +9,7 @@
 // while the implicit balanced tree representation and memory optimizations are Vojtech's.
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <type_traits>
 #include <vector>
@@ -291,10 +292,8 @@ namespace detail {
 		Scalar tymin = (box.min().y()  - origin.y()) * inv_dir.y();
 		if (tymin > tmax)
 			return false;
-		if (tymin > tmin)
-			tmin = tymin;
-		if (tymax < tmax)
-			tmax = tymax;
+		tmin = std::fmax(tmin, tymin);
+		tmax = std::fmin(tmax, tymax);
 		if (inv_dir.z() < 0)
 			std::swap(box.min().z(), box.max().z());
 		Scalar tzmin = (box.min().z()  - origin.z()) * inv_dir.z();
@@ -303,10 +302,8 @@ namespace detail {
 		Scalar tzmax = (box.max().z() - origin.z()) * inv_dir.z();
 		if (tmin > tzmax)
 			return false;
-		if (tzmin > tmin)
-			tmin = tzmin;
-		if (tzmax < tmax)
-			tmax = tzmax;
+		tmin = std::fmax(tmin, tzmin);
+		tmax = std::fmin(tmax, tzmax);
         return tmin < t1 && tmax > t0;
 	}
 
@@ -415,8 +412,8 @@ namespace detail {
             auto   face = ray_intersector.faces[node.idx];
 		    double t, u, v;
 		    if (intersect_triangle(
-		    		ray_intersector.origin, ray_intersector.dir, 
-		    		ray_intersector.vertices[face[0]], ray_intersector.vertices[face[1]], ray_intersector.vertices[face[2]], 
+		    		ray_intersector.origin, ray_intersector.dir,
+		    		ray_intersector.vertices[face[0]], ray_intersector.vertices[face[1]], ray_intersector.vertices[face[2]],
                     t, u, v, ray_intersector.eps)
 		    	&& t > 0.) {
                 hit = igl::Hit { int(node.idx), -1, float(u), float(v), float(t) };

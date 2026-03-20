@@ -2,7 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <test_utils.hpp>
 
-#include <libslic3r/AABBMesh.hpp>
+#include <Slic3r/Biz/Algorithms/AABBMesh.hpp>
 #include <libslic3r/SLA/Hollowing.hpp>
 
 #include "sla_test_utils.hpp"

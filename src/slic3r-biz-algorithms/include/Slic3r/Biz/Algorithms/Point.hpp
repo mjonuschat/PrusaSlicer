@@ -28,7 +28,8 @@ bool has_consecutive_duplicate_points(const Domain::Points& points);
  */
 bool remove_consecutive_duplicate_points(Domain::Points& points, bool check_first_and_last = false);
 
-Domain::Points scaled(const std::vector<Domain::Vec2d> &points);
+Domain::Points scaled(const Domain::Vec2ds& points);
+Domain::Vec2ds unscaled(const Domain::Points& points);
 
 template<typename Derived>
 Domain::Advanced::Vec<typename Derived::Scalar, 2> to_2d(const Eigen::MatrixBase<Derived> &ptN) {

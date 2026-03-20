@@ -9,11 +9,13 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
 #include "Slic3r/Biz/Platform/IAppConfigProvider.hpp"
 
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 
 #include "Slic3r/Directories.hpp"
@@ -363,25 +365,13 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
                          .get<double>();
     }
 
-    using namespace Biz::Algorithms::Bed;
-
-    auto bed = Domain::Bed::from(pts, max_height, std::nullopt, std::nullopt, "", "");
-    bed.set_type(detect_bed_type(bed));
-    switch (bed.type())
-    {
-    case Domain::BedType::Circle:
-    {
-        Algorithms::Geometry::Circled circle = Algorithms::Bed::as_circular_bed(bed);
-        bed.set_circle({ circle.center, circle.radius });
-        break;
-    }
-    case Domain::BedType::Convex:
-    {
-        bed.set_top_bottom_convex_hull_decomposition(Algorithms::Geometry::decompose_convex_polygon_top_bottom(bed.contour()));
-        break;
-    }
-    default: { break; }
-    }
+    Domain::BedCreationData data{
+        .type = Algorithms::Bed::detect_bed_type_from_contour(pts),
+        .contour = pts,
+        .contour_mesh = Algorithms::Bed::bed_contour_as_its(pts),
+        .max_print_height = float(max_height)
+    };
+    auto bed = Domain::Bed::create(data);
 
     double size_x = bed.contour_aabb_extent().x();
     double size_y = bed.contour_aabb_extent().y();
@@ -394,17 +384,24 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         );
     }
 
+    const AABBMesh bed_aabb_mesh     = Algorithms::Bed::bed_contour_as_aabb_mesh(bed);
+    const Polygon scaled_bed_contour = Algorithms::Polygon::scaled(bed.contour());
+
     // Find the max index of occupied beds
     // If there is none occupied, leave at least one bed (index 0)
     int max_bed_index = 0;
     for (ModelObject* mo : loaded_3mf.model.objects) {
         for (ModelInstance* mi : mo->instances) {
-            const auto bb = Algorithms::ModelObject::instance_bounding_box(*mo, *mi);
+            const auto bb = Algorithms::BoundingBox::to_2d(Algorithms::ModelObject::instance_bounding_box(*mo, *mi));
+            const auto ch_2d = Algorithms::Point::unscaled(Algorithms::ModelObject::convex_hull_2d(*mo, mi->get_matrix()).points);
 
             for (int i = 0; i < 9; ++i) {
-                if (contains_2d(bed_instances[i], Biz::Algorithms::BoundingBox::to_2d(bb))
-                    == BedContainmentState::Inside)
-                {
+                Algorithms::Bed::BedInstanceCollisionData bi_collision_data(
+                    bed_instances[i],
+                    &bed_aabb_mesh,
+                    &scaled_bed_contour
+                );
+                if (contains_2d(bi_collision_data, bb, ch_2d) == Algorithms::Bed::BedContainmentState::Inside) {
                     max_bed_index = std::max(max_bed_index, i);
                     break;
                 }

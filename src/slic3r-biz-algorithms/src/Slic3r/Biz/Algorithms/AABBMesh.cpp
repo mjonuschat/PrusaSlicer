@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include "admesh/stl.h"
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Point.hpp"
 
 #ifdef SLIC3R_HOLE_RAYCASTER
 #include <libslic3r/SLA/Hollowing.hpp>
@@ -21,6 +21,9 @@ namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 using Domain::TriangleMesh;
 using Domain::Index3;
+using Domain::Vec3d;
+using Domain::Vec3f;
+
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 class AABBMesh::AABBImpl {
@@ -173,7 +176,7 @@ Vec3d AABBMesh::normal_by_face_id(int face_id) const {
 AABBMesh::hit_result
 AABBMesh::query_ray_hit(const Vec3d &s, const Vec3d &dir) const
 {
-    assert(is_approx(dir.norm(), 1.));
+    assert(Domain::is_approx(dir.norm(), 1.));
     igl::Hit hit{-1, -1, 0.f, 0.f, 0.f};
     hit.t = std::numeric_limits<float>::infinity();
 

@@ -47,6 +47,9 @@ struct BedInstance : public ObjectBase
     std::optional<CustomGCode::Info> custom_gcode;
     std::vector<unsigned> extruder_candidates;
 
+    /** Indicates whether the wipe tower is partially or fully outside the bed. */
+    bool wipe_tower_is_outside{false};
+
 private:
     size_t m_index{0};
     std::string m_label;

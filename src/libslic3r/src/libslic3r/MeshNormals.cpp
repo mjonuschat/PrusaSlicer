@@ -11,11 +11,13 @@
 #include <cassert>
 #include <cstddef>
 
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
+
+using Domain::Vec3d;
 
 static bool point_on_edge(const Vec3d& p, const Vec3d& e1, const Vec3d& e2,
                           double epsSq = 0.05)

@@ -95,7 +95,7 @@ double InfiniteBed::area() const
 RectangleBed::RectangleBed(
     const Domain::BoundingBox2crd& bb,
     const PivotPoint pivot_point,
-    const Domain::Bed::Segments segments
+    const Domain::BedSegments segments
 ) :
     m_bb{bb},
     m_pivot_point{pivot_point},
@@ -158,7 +158,7 @@ PivotPoint RectangleBed::pivot_point() const
     return m_pivot_point;
 }
 
-Domain::Bed::Segments RectangleBed::segments() const
+Domain::BedSegments RectangleBed::segments() const
 {
     return m_segments;
 }

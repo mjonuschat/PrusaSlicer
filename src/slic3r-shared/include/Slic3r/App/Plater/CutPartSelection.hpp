@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
-#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/Biz/Algorithms/AABBMesh.hpp"
 #include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
 
 namespace Slic3r::App::Scene {

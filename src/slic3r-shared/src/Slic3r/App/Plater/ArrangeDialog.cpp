@@ -212,28 +212,17 @@ ArrangeDialog::ArrangeDialog(
     m_arrange_button->set_label_font_type(Render::ImguiFontType::Bold);
 }
 
-void ArrangeDialog::update_segments_visibility() {
-    if (m_bed_segments && !m_auxiliary_travel_anchor) {
+void ArrangeDialog::set_bed_segments(const std::optional<Domain::BedSegments>& bed_segments)
+{
+    m_bed_segments = bed_segments;
+
+    if (bed_segments) {
         m_bed_segments_row->set_visible(true);
         m_bed_segments_separator->set_visible(true);
     } else {
         m_bed_segments_row->set_visible(false);
         m_bed_segments_separator->set_visible(false);
     }
-}
-
-void ArrangeDialog::set_bed_segments(const std::optional<Domain::Bed::Segments>& bed_segments)
-{
-    m_bed_segments = bed_segments;
-    update_segments_visibility();
-}
-
-void ArrangeDialog::set_auxiliary_travel_anchor(
-    const std::optional<Domain::Vec2d>& auxiliary_travel_anchor
-)
-{
-    m_auxiliary_travel_anchor = auxiliary_travel_anchor;
-    update_segments_visibility();
 }
 
 void ArrangeDialog::update_status(const ArrangeTaskStatus status)
@@ -289,8 +278,6 @@ Settings ArrangeDialog::get_settings() const
         result.bed_pivot_point = m_pivot_picker->get_selected_pivot();
         result.bed_segments    = m_bed_segments;
     }
-    result.auxiliary_travel_anchor = m_auxiliary_travel_anchor;
-
     result.allow_rotations = m_enable_rotations_toggle->checked();
 
     return result;
