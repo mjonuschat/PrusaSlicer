@@ -364,6 +364,7 @@ namespace Slic3r {
             float travel_acceleration; // mm/s^2
             // hard limit for the travel acceleration, to which the firmware will clamp.
             float max_travel_acceleration; // mm/s^2
+            float square_corner_velocity; // mm/s, Klipper SCV used to recompute JD when ACCEL changes mid-print
             float extrude_factor_override_percentage;
             // We accumulate total print time in doubles to reduce the loss of precision
             // while adding big floating numbers with small float numbers.
@@ -773,6 +774,9 @@ namespace Slic3r {
 
         // Unload the current filament into the MK3 MMU2 unit at the end of print.
         void process_M702(const GCodeReader::GCodeLine& line);
+
+        // Klipper SET_VELOCITY_LIMIT: ACCEL, SQUARE_CORNER_VELOCITY
+        void process_SET_VELOCITY_LIMIT(const GCodeReader::GCodeLine& line);
 
         // Processes T line (Select Tool)
         void process_T(const GCodeReader::GCodeLine& line);
