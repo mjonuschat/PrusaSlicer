@@ -169,7 +169,6 @@ private:
     unsigned int    m_klipper_pending_accel = 0;
     double          m_klipper_pending_mcr = 0.0;
 
-
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;
     Vec3d           m_pos = Vec3d::Zero();
