@@ -5,6 +5,7 @@
 ///|/ Copyright (c) Slic3r 2014 - 2016 Alessandro Ranellucci @alranel
 ///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
 ///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
+///|/ Copyright (c) preFlight 2026 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -3072,7 +3073,7 @@ void PrintObject::discover_horizontal_shells()
                                                    opening(new_internal_solid, margin, margin + ClipperSafetyOffset, jtMiter, 5));
                         // Trim the regularized region by the original region.
                         if (!too_narrow.empty())
-                            new_internal_solid = solid = diff(new_internal_solid, too_narrow);
+                            new_internal_solid = diff(new_internal_solid, too_narrow);
                     }
 
                     // make sure the new internal solid is wide enough, as it might get collapsed
