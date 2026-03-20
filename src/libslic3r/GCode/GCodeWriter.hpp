@@ -164,6 +164,11 @@ private:
     unsigned int    m_max_jerk_x = 0;
     unsigned int    m_max_jerk_y = 0;
 
+    // Klipper SET_VELOCITY_LIMIT merging: buffer pending acceleration to merge with SCV.
+    bool            m_klipper_accel_pending = false;
+    unsigned int    m_klipper_pending_accel = 0;
+    double          m_klipper_pending_mcr = 0.0;
+
 
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;
