@@ -577,15 +577,17 @@ void MainFrame::update_title()
     }
 
     std::string build_id = SLIC3R_BUILD_ID;
-    if (! wxGetApp().is_editor())
+    if (!wxGetApp().is_editor())
         boost::replace_first(build_id, SLIC3R_APP_NAME, GCODEVIEWER_APP_NAME);
-    size_t 		idx_plus = build_id.find('+');
+    size_t idx_plus = build_id.find('+');
     if (idx_plus != build_id.npos) {
-    		build_id.erase(build_id.begin() + idx_plus, build_id.end());
+        build_id.erase(build_id.begin() + idx_plus, build_id.end());
     }
 
     title += wxString(build_id);
     title += "+BOSS";
+    if (std::string git_hash = SLIC3R_GIT_HASH; !git_hash.empty())
+        title += " (" + git_hash + ")";
 
     if (wxGetApp().is_editor())
         title += (" " + _L("based on Slic3r"));
