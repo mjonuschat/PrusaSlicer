@@ -4,6 +4,7 @@
 ///|/ Copyright (c) Slic3r 2011 - 2015 Alessandro Ranellucci @alranel
 ///|/ Copyright (c) 2013 Mark Hindess
 ///|/ Copyright (c) 2011 Michael Moon
+///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -160,6 +161,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	std::vector<std::vector<const SurfaceFillParams*>> 	region_to_surface_params(layer.regions().size(), std::vector<const SurfaceFillParams*>());
     SurfaceFillParams									params;
     bool 												has_internal_voids = false;
+	const PrintObjectConfig&							object_config = layer.object()->config();
 	for (size_t region_id = 0; region_id < layer.regions().size(); ++ region_id) {
 		const LayerRegion  &layerm = *layer.regions()[region_id];
 		region_to_surface_params[region_id].assign(layerm.fill_surfaces().size(), nullptr);
@@ -207,7 +209,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        params.bridge = is_bridge || Fill::use_bridge_flow(params.pattern);
 				params.flow   = params.bridge ?
 					// Always enable thick bridges for internal bridges.
-					layerm.bridging_flow(extrusion_role, surface.is_bridge() && ! surface.is_external()) :
+					layerm.bridging_flow(extrusion_role, (surface.is_bridge() && !surface.is_external()) || object_config.thick_bridges) :
 					layerm.flow(extrusion_role, (surface.thickness == -1) ? layer.height : surface.thickness);
 
 				// Calculate flow spacing for infill pattern generation.
