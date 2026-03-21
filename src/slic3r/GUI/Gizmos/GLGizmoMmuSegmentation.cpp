@@ -6,6 +6,7 @@
 #include "GLGizmoMmuSegmentation.hpp"
 
 #include "slic3r/GUI/GLCanvas3D.hpp"
+#include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 #include "slic3r/GUI/Camera.hpp"
@@ -123,6 +124,8 @@ bool GLGizmoMmuSegmentation::on_init()
     m_desc["second_color"]         = _u8L("Second color");
     m_desc["remove_caption"]       = _u8L("Shift + Left mouse button") + ": ";
     m_desc["remove"]               = _u8L("Remove painted color");
+    m_desc["draw_caption"]         = GUI::shortkey_ctrl_prefix() + _u8L("Left mouse button") + ": ";
+    m_desc["draw"]                 = _u8L("Draw line");
 
     m_desc["alt_caption"]          = _u8L("Alt + Mouse wheel") + ": ";
     m_desc["alt_brush"]            = _u8L("Change brush size");
@@ -326,12 +329,12 @@ void GLGizmoMmuSegmentation::on_render_input_window(float x, float y, float bott
     const float split_triangles_checkbox_width = ImGuiPureWrap::calc_text_size(m_desc["split_triangles"]).x + m_imgui->scaled(2.5f);
 
     float caption_max = 0.f;
-    for (const std::string t : {"first_color", "second_color", "remove", "alt"}) {
+    for (const std::string t : {"first_color", "second_color", "remove", "draw", "alt"}) {
         caption_max = std::max(caption_max, ImGuiPureWrap::calc_text_size(m_desc[t + "_caption"]).x);
     }
 
     float total_text_max = 0.f;
-    for (const std::string t : {"first_color", "second_color", "remove", "alt_brush", "alt_fill", "alt_height_range"}) {
+    for (const std::string t : {"first_color", "second_color", "remove", "draw", "alt_brush", "alt_fill", "alt_height_range"}) {
         total_text_max = std::max(total_text_max, ImGuiPureWrap::calc_text_size(m_desc[t]).x);
     }
 
@@ -354,7 +357,7 @@ void GLGizmoMmuSegmentation::on_render_input_window(float x, float y, float bott
         ImGuiPureWrap::text(text);
     };
 
-    for (const std::string t : {"first_color", "second_color", "remove"}) {
+    for (const std::string t : {"first_color", "second_color", "remove", "draw"}) {
         draw_text_with_caption(m_desc.at(t + "_caption"), m_desc.at(t));
     }
 

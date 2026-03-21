@@ -523,8 +523,9 @@ bool GLGizmosManager::on_char(wxKeyEvent& evt)
         case WXK_ESCAPE:
         {
             if (m_current != Undefined) {
-                if (m_current == Measure && gizmo_event(SLAGizmoEventType::Escape)) {
-                    // do nothing
+                if ((m_current == Measure || m_current == FdmSupports || m_current == Seam || m_current == FuzzySkin || m_current == MmSegmentation)
+                    && gizmo_event(SLAGizmoEventType::Escape)) {
+                    // Escape was handled by the gizmo (e.g. cancel line drawing)
                 }
                 else if (m_current != SlaSupports || !gizmo_event(SLAGizmoEventType::DiscardChanges))
                     reset_all_states();
