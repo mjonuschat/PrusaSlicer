@@ -4504,6 +4504,29 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(0.));
 
+    // BOSS: Narrow solid infill detection
+    def = this->add("detect_narrow_solid_infill", coBool);
+    def->label = L("Detect narrow solid infill");
+    def->category = L("Infill");
+    def->tooltip = L("If enabled, narrow solid infill surfaces are filled using variable-width "
+                     "paths (Arachne) instead of the configured pattern, which prevents zigzag "
+                     "artifacts and unfilled gaps on thin solid areas. Applies to internal solid, "
+                     "top solid, and bottom solid infill. Does not affect bridge infill.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("detect_narrow_solid_infill_threshold", coFloat);
+    def->label = L("Narrow threshold");
+    def->category = L("Infill");
+    def->tooltip = L("Solid infill areas narrower than this many extrusion widths will use "
+                     "variable-width fill instead of the configured pattern. Only applies when "
+                     "'Detect narrow solid infill' is enabled.");
+    def->sidetext = L("x extrusion width");
+    def->min = 1.0;
+    def->max = 10.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(3.0));
+
     def = this->add("travel_speed", coFloat);
     def->label = L("Travel");
     def->tooltip = L("Speed for travel moves (jumps between distant extrusion points).");
