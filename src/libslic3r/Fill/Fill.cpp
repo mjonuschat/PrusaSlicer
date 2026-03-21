@@ -158,6 +158,21 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 {
 	std::vector<SurfaceFill> surface_fills;
 
+    // preFlight: Test whether a solid surface is narrow enough to benefit from variable-width
+    // fill (ipEnsuring/Arachne) instead of the configured pattern.
+    // Uses morphological opening (erode + dilate) via Clipper instead of the medial axis
+    // approach from preFlight. The medial axis uses Boost Voronoi which crashes on certain
+    // geometries (e.g. 3DBenchy) due to unfixed upstream bugs. The erosion test is
+    // mathematically equivalent for the binary narrow/not-narrow classification.
+    auto is_surface_narrow = [](const Surface &surface, const Flow &flow, float threshold_multiplier) -> bool
+    {
+        if (!surface.is_solid())
+            return false;
+
+        const float erode_radius = flow.scaled_width() * threshold_multiplier * 0.5f;
+        return opening_ex(ExPolygons{surface.expolygon}, erode_radius).empty();
+    };
+
 	// Fill in a map of a region & surface to SurfaceFillParams.
 	std::set<SurfaceFillParams> 						set_surface_params;
 	std::vector<std::vector<const SurfaceFillParams*>> 	region_to_surface_params(layer.regions().size(), std::vector<const SurfaceFillParams*>());
@@ -186,6 +201,42 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                         params.pattern = surface.is_top() ? region_config.top_fill_pattern.value : region_config.bottom_fill_pattern.value;
 					else if (! is_bridge)
 					    params.pattern = region_config.solid_fill_pattern.value;
+
+                    // preFlight: Skip very narrow top/bottom slivers that perimeters already cover.
+                    if ((surface.surface_type == stTop || surface.surface_type == stBottom) && !is_bridge)
+                    {
+                        const Flow solid_flow = layerm.flow(frSolidInfill);
+                        const double area_threshold = sqr(solid_flow.scaled_width() * 1.5) * 4.0;
+                        if (std::abs(surface.expolygon.area()) < area_threshold &&
+                            is_surface_narrow(surface, solid_flow, 1.5f))
+                            continue;
+                    }
+
+                    // preFlight: Narrow solid surfaces use ipEnsuring (Arachne variable-width fill).
+                    if ((surface.surface_type == stInternalSolid || surface.surface_type == stTop ||
+                         surface.surface_type == stBottom) &&
+                        params.pattern != ipEnsuring && !is_bridge &&
+                        object_config.detect_narrow_solid_infill)
+                    {
+                        const Flow solid_flow = layerm.flow(frSolidInfill);
+                        const float threshold = float(object_config.detect_narrow_solid_infill_threshold.value);
+                        const double area_threshold = sqr(solid_flow.scaled_width() * threshold) * 4.0;
+                        if (std::abs(surface.expolygon.area()) < area_threshold &&
+                            is_surface_narrow(surface, solid_flow, threshold))
+                            params.pattern = ipEnsuring;
+                    }
+
+                    // preFlight: Unconditional fallback for very thin surfaces (<1.5x width).
+                    if (params.pattern != ipEnsuring && !is_bridge &&
+                        (surface.surface_type == stInternalSolid || surface.surface_type == stTop ||
+                         surface.surface_type == stBottom))
+                    {
+                        const Flow solid_flow = layerm.flow(frSolidInfill);
+                        const double fallback_area_threshold = sqr(solid_flow.scaled_width() * 1.5) * 4.0;
+                        if (std::abs(surface.expolygon.area()) < fallback_area_threshold &&
+                            is_surface_narrow(surface, solid_flow, 1.5f))
+                            params.pattern = ipEnsuring;
+                    }
 		        } else if (params.density <= 0)
 		            continue;
 

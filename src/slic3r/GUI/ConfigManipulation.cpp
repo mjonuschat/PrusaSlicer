@@ -783,6 +783,10 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
                     "solid_infill_extrusion_width", "solid_infill_speed" })
         toggle_field(el, has_solid_infill);
 
+    bool has_narrow_detection = has_solid_infill && config->opt_bool("detect_narrow_solid_infill");
+    toggle_field("detect_narrow_solid_infill", has_solid_infill);
+    toggle_field("detect_narrow_solid_infill_threshold", has_narrow_detection);
+
     for (auto el : { "fill_angle", "bridge_angle", "infill_extrusion_width",
                     "infill_speed", "bridge_speed", "over_bridge_speed" })
         toggle_field(el, have_infill || has_solid_infill);
