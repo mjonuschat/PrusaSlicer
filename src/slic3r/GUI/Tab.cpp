@@ -3394,7 +3394,7 @@ PageShp TabPrinter::build_kinematics_page()
 
 const std::vector<std::string> extruder_options = {
     "min_layer_height", "max_layer_height", "extruder_offset",
-    "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below",
+    "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_lift_enforce",
     "retract_speed", "deretract_speed", "retract_restart_extra", "retract_before_travel",
     "retract_layer_change", "wipe", "retract_before_wipe", "travel_ramping_lift",
     "travel_slope", "travel_max_lift", "travel_lift_before_obstacle", "nozzle_high_flow",
@@ -3595,6 +3595,8 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
         line.append_option(optgroup->get_option("retract_lift_above", extruder_idx));
         line.append_option(optgroup->get_option("retract_lift_below", extruder_idx));
         optgroup->append_line(line);
+
+        optgroup->append_single_option_line("retract_lift_enforce", "", extruder_idx);
 
         optgroup = page->new_optgroup(L("Retraction"));
         optgroup->append_single_option_line("retract_length", "", extruder_idx);
@@ -3832,7 +3834,7 @@ void TabPrinter::toggle_options()
 
         // retract lift above / below only applies if using retract lift
         vec.resize(0);
-        vec = { "retract_lift_above", "retract_lift_below" };
+        vec = { "retract_lift_above", "retract_lift_below", "retract_lift_enforce" };
         for (auto el : vec)
             toggle_option(el, lifts_z, i);
 

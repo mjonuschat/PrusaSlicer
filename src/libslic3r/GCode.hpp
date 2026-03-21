@@ -32,6 +32,7 @@
 #include "libslic3r/GCode/LabelObjects.hpp"
 #include "libslic3r/GCode/PressureEqualizer.hpp"
 #include "libslic3r/GCode/RetractWhenCrossingPerimeters.hpp"
+#include "libslic3r/GCode/SurfaceLiftChecker.hpp"
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/GCode/SpiralVase.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
@@ -414,6 +415,7 @@ private:
     AvoidCrossingPerimeters             m_avoid_crossing_perimeters;
     JPSPathFinder                       m_avoid_crossing_curled_overhangs;
     RetractWhenCrossingPerimeters       m_retract_when_crossing_perimeters;
+    SurfaceLiftChecker                  m_surface_lift_checker;
     GCode::TravelObstacleTracker        m_travel_obstacle_tracker;
     bool                                m_enable_loop_clipping;
     // If enabled, the G-code generator will put following comments at the ends
