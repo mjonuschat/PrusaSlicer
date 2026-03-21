@@ -600,6 +600,9 @@ static std::vector<std::string> s_Preset_print_options {
     "seam_type",
     "seam_notch_width",
     "seam_notch_angle",
+
+    "detect_narrow_solid_infill",
+    "detect_narrow_solid_infill_threshold",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
