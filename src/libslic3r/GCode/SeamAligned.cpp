@@ -1,3 +1,7 @@
+///|/ Copyright (c) preFlight 2024 oozeBot R&D @oozebot
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "libslic3r/GCode/SeamAligned.hpp"
 
 #include <algorithm>
@@ -112,6 +116,57 @@ std::optional<std::size_t> snap_to_angle(
     return match;
 }
 
+// Compute centroid of enforcer vertices within max_distance of reference_position.
+// Centers the seam in the painted region rather than snapping to an arbitrary enforcer vertex.
+std::optional<Vec2d> get_enforcer_centroid_near(const Perimeters::Perimeter &perimeter,
+                                                const Vec2d &reference_position,
+                                                const double max_distance)
+{
+    Vec2d sum = Vec2d::Zero();
+    int count = 0;
+    for (std::size_t i = 0; i < perimeter.positions.size(); ++i) {
+        if (perimeter.point_types[i] == PointType::enforcer) {
+            if ((perimeter.positions[i] - reference_position).norm() <= max_distance) {
+                sum += perimeter.positions[i];
+                ++count;
+            }
+        }
+    }
+    if (count == 0)
+        return std::nullopt;
+    return sum / static_cast<double>(count);
+}
+
+// Cluster nearby positions within cluster_radius and return cluster centroids.
+// Reduces many per-vertex starting positions to one centroid per painted region.
+std::vector<Vec2d> cluster_positions(const std::vector<Vec2d> &positions, const double cluster_radius)
+{
+    if (positions.empty())
+        return {};
+
+    std::vector<bool> assigned(positions.size(), false);
+    std::vector<Vec2d> centroids;
+
+    for (std::size_t i = 0; i < positions.size(); ++i) {
+        if (assigned[i])
+            continue;
+        Vec2d sum = positions[i];
+        int count = 1;
+        assigned[i] = true;
+        for (std::size_t j = i + 1; j < positions.size(); ++j) {
+            if (assigned[j])
+                continue;
+            if ((positions[j] - positions[i]).norm() <= cluster_radius) {
+                sum += positions[j];
+                ++count;
+                assigned[j] = true;
+            }
+        }
+        centroids.push_back(sum / static_cast<double>(count));
+    }
+    return centroids;
+}
+
 SeamOptions get_seam_options(
     const Perimeters::Perimeter &perimeter,
     const Vec2d &prefered_position,
@@ -221,12 +276,13 @@ double VisibilityCalculator::get_angle_visibility_modifier(
     return -angle_smooth_weight;
 }
 
-std::vector<Vec2d> get_starting_positions(const Shells::Shell<> &shell) {
+std::vector<Vec2d> get_starting_positions(const Shells::Shell<> &shell, const double cluster_radius) {
     const Perimeters::Perimeter &perimeter{shell.front().boundary};
 
     std::vector<Vec2d> enforcers{Perimeters::extract_points(perimeter, Perimeters::PointType::enforcer)};
     if (!enforcers.empty()) {
-        return enforcers;
+        // Cluster enforcers and return centroids to center seam in painted regions
+        return Impl::cluster_positions(enforcers, cluster_radius);
     }
     std::vector<Vec2d> common{Perimeters::extract_points(perimeter, Perimeters::PointType::common)};
     if (!common.empty()) {
@@ -281,12 +337,33 @@ SeamCandidate get_seam_candidate(
 
     std::vector<double> choice_visibilities(shell.size(), 1.0);
     std::vector<SeamChoice> choices{
-        get_shell_seam(shell, [&, previous_position{starting_position}](const Perimeter &perimeter, std::size_t slice_index) mutable {
+        get_shell_seam(shell,
+        // Forward pass: Use reference_position with layer-height-scaled blending
+        // to track painted seam angles while filtering vertex noise.
+        [&, reference_position{starting_position}, prev_z{0.0}](const Perimeter &perimeter, std::size_t slice_index) mutable {
+            // Scale blend factor by layer height so the seam tracks equally well
+            // at any layer height. The 0.25 base factor was tuned at 0.1mm reference height.
+            constexpr double base_blend = 0.25;
+            constexpr double reference_layer_height = 0.1;
+            const double current_z = perimeter.slice_z;
+            const double layer_height = (prev_z > 0.0) ? (current_z - prev_z) : reference_layer_height;
+            prev_z = current_z;
+            const double blend_factor = std::clamp(base_blend * (layer_height / reference_layer_height),
+                                                   base_blend, 0.9);
+
+            // Compute enforcer centroid near reference to center seam in painted region
+            Vec2d search_target = reference_position;
+            bool has_nearby_enforcers = false;
+            if (auto centroid = Impl::get_enforcer_centroid_near(perimeter, reference_position, params.max_detour)) {
+                search_target = *centroid;
+                has_nearby_enforcers = true;
+            }
+
             SeamChoice candidate{Seams::choose_seam_point(
-                perimeter, Impl::Nearest{previous_position, params.max_detour}
+                perimeter, Impl::Nearest{search_target, params.max_detour}
             )};
             const bool is_too_far{
-                (candidate.position - previous_position).norm() > params.max_detour};
+                (candidate.position - reference_position).norm() > params.max_detour};
             const LeastVisiblePoint &least_visible{least_visible_points[slice_index]};
 
             const bool is_on_edge{
@@ -304,12 +381,61 @@ SeamCandidate get_seam_candidate(
                 least_visible.visibility + params.jump_visibility_threshold};
             const bool can_be_on_edge{
                 perimeter.angle_types[least_visible.choice.next_index] != AngleType::smooth};
-            if (is_too_far || (can_be_on_edge  && is_too_visible)) {
+            if (is_too_far || (can_be_on_edge && is_too_visible)) {
                 candidate = least_visible.choice;
+                // Update reference when jumping to least-visible (geometry changed significantly)
+                reference_position = candidate.position;
+            } else {
+                // Blend reference toward current centroid to track painted seam angles
+                // while filtering vertex noise. Acts as a low-pass filter.
+                if (has_nearby_enforcers && !is_on_edge) {
+                    reference_position = reference_position * (1.0 - blend_factor) + search_target * blend_factor;
+                    candidate.position = reference_position;
+                } else {
+                    // No enforcers: track actual seam position (preserves original behavior)
+                    reference_position = candidate.position;
+                }
             }
-            previous_position = candidate.position;
             return candidate;
         })};
+
+    // Backward smoothing pass to eliminate convergence lag at shell start.
+    // The forward blend takes several layers to settle from a bad starting position.
+    // Walking backwards from the converged end straightens out the early layers.
+    if (choices.size() > 1) {
+        constexpr double back_base_blend = 0.1;
+        constexpr double back_ref_height = 0.1;
+        Vec2d backward_ref = choices.back().position;
+        for (std::size_t i = choices.size() - 1; i > 0; --i) {
+            const std::size_t idx = i - 1;
+            const Perimeters::Perimeter &perimeter = shell[idx].boundary;
+            if (perimeter.is_degenerate)
+                continue; // backward_ref intentionally not reset across degenerate gaps
+
+            // Scale backward blend by layer height
+            const double layer_h = (idx + 1 < shell.size())
+                ? (shell[idx + 1].boundary.slice_z - perimeter.slice_z)
+                : back_ref_height;
+            const double back_blend = std::clamp(back_base_blend * (layer_h / back_ref_height),
+                                                 back_base_blend, 0.5);
+
+            const bool is_on_edge =
+                choices[idx].previous_index == choices[idx].next_index &&
+                perimeter.angle_types[choices[idx].next_index] != AngleType::smooth;
+
+            bool has_nearby_enforcers =
+                Impl::get_enforcer_centroid_near(perimeter, backward_ref, params.max_detour).has_value();
+
+            if (has_nearby_enforcers && !is_on_edge) {
+                backward_ref = backward_ref * (1.0 - back_blend) + choices[idx].position * back_blend;
+                // Average forward and backward positions
+                choices[idx].position = (choices[idx].position + backward_ref) * 0.5;
+            } else {
+                backward_ref = choices[idx].position;
+            }
+        }
+    }
+
     return {std::move(choices), std::move(choice_visibilities)};
 }
 
@@ -369,11 +495,12 @@ std::vector<ShellLeastVisiblePoints> get_shells_least_visible_points(
 using ShellStartingPositions = std::vector<Vec2d>;
 
 std::vector<ShellStartingPositions> get_shells_starting_positions(
-    const Shells::Shells<> &shells
+    const Shells::Shells<> &shells,
+    const Params &params
 ) {
     std::vector<ShellStartingPositions> result;
     for (const Shells::Shell<> &shell : shells) {
-        std::vector<Vec2d> starting_positions{get_starting_positions(shell)};
+        std::vector<Vec2d> starting_positions{get_starting_positions(shell, params.max_detour)};
         result.push_back(std::move(starting_positions));
     }
     return result;
@@ -473,7 +600,7 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
     };
 
     const std::vector<ShellStartingPositions> starting_positions{
-        get_shells_starting_positions(shells)
+        get_shells_starting_positions(shells, params)
     };
 
     const std::vector<ShellSeamCandidates> seam_candidates{
