@@ -181,6 +181,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "retract_lift",
         "retract_lift_above",
         "retract_lift_below",
+        "retract_lift_enforce",
         "retract_restart_extra",
         "retract_restart_extra_toolchange",
         "retract_speed",

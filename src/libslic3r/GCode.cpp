@@ -3840,6 +3840,28 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
             lift = 0.0;
         }
 
+        // BOSS: Z-hop surface filtering
+        if (lift > 0 && m_layer != nullptr) {
+            auto enforce = EXTRUDER_CONFIG(retract_lift_enforce);
+            if (enforce != RetractLiftEnforceType::AllSurfaces) {
+                bool suppress = true;
+                switch (enforce) {
+                case RetractLiftEnforceType::TopOnly:
+                    suppress = !m_surface_lift_checker.is_over_top_surface(*m_layer, point.head<2>());
+                    break;
+                case RetractLiftEnforceType::BottomOnly:
+                    suppress = !this->on_first_layer();
+                    break;
+                case RetractLiftEnforceType::TopAndBottom:
+                    suppress = !m_surface_lift_checker.is_over_top_surface(*m_layer, point.head<2>()) && !this->on_first_layer();
+                    break;
+                default: suppress = false; break;
+                }
+                if (suppress)
+                    lift = 0.0;
+            }
+        }
+
         if (EXTRUDER_CONFIG(retract_length) > 0 && !this->last_position) {
             if (!this->last_position || EXTRUDER_CONFIG(retract_before_travel) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
                 gcode += this->writer().retract();
@@ -4471,6 +4493,26 @@ std::string GCodeGenerator::travel_to(
     if ((lower_limit > 0 && initial_elevation < lower_limit) ||
         (upper_limit > 0 && initial_elevation > upper_limit)) {
         can_be_flat = true;
+    }
+
+    // BOSS: Z-hop surface filtering
+    if (!can_be_flat && m_layer != nullptr) {
+        auto enforce = m_config.retract_lift_enforce.get_at(extruder_id);
+        if (enforce != RetractLiftEnforceType::AllSurfaces) {
+            switch (enforce) {
+            case RetractLiftEnforceType::TopOnly:
+                if (!m_surface_lift_checker.is_over_top_surface(*m_layer, start_point.head<2>()))
+                    can_be_flat = true;
+                break;
+            case RetractLiftEnforceType::BottomOnly:
+                if (!this->on_first_layer()) can_be_flat = true; break;
+            case RetractLiftEnforceType::TopAndBottom:
+                if (!m_surface_lift_checker.is_over_top_surface(*m_layer, start_point.head<2>()) && !this->on_first_layer())
+                    can_be_flat = true;
+                break;
+            default: break;
+            }
+        }
     }
 
     Points3 travel = (
