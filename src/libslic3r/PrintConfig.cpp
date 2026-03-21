@@ -377,6 +377,14 @@ static const t_config_enum_values s_keys_map_CoolingSlowdownLogicType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CoolingSlowdownLogicType)
 
+static const t_config_enum_values s_keys_map_RetractLiftEnforceType {
+    { "all_surfaces",    int(RetractLiftEnforceType::AllSurfaces)  },
+    { "top_only",        int(RetractLiftEnforceType::TopOnly)      },
+    { "bottom_only",     int(RetractLiftEnforceType::BottomOnly)   },
+    { "top_and_bottom",  int(RetractLiftEnforceType::TopAndBottom) },
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(RetractLiftEnforceType)
+
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
     for (std::pair<const t_config_option_key, ConfigOptionDef> &kvp : options)
@@ -3455,6 +3463,20 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("retract_lift_enforce", coEnums);
+    def->label = L("Z-hop allowed");
+    def->tooltip = L("Restrict Z-hop to specific surface types. \"Everywhere\" applies Z-hop on every retraction "
+                   "(default behavior). \"Top Surfaces\" only lifts when the nozzle is over a top surface. "
+                   "\"First Layer\" only lifts on the first layer. \"Top and First Layer\" lifts in both cases.");
+    def->set_enum<RetractLiftEnforceType>({
+        { "all_surfaces",   L("Everywhere")          },
+        { "top_only",       L("Top Surfaces")        },
+        { "bottom_only",    L("First Layer")         },
+        { "top_and_bottom", L("Top and First Layer") },
+    });
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionEnums<RetractLiftEnforceType>{ RetractLiftEnforceType::AllSurfaces });
+
     def = this->add("retract_restart_extra", coFloats);
     def->label = L("Deretraction extra length");
     def->tooltip = L("When the retraction is compensated after the travel move, the extruder will push "
@@ -4903,7 +4925,7 @@ void PrintConfigDef::init_extruder_option_keys()
     // ConfigOptionFloats, ConfigOptionPercents, ConfigOptionBools, ConfigOptionStrings
     m_extruder_option_keys = {
         "nozzle_diameter", "min_layer_height", "max_layer_height", "extruder_offset",
-        "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_speed", "deretract_speed",
+        "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_lift_enforce", "retract_speed", "deretract_speed",
         "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe",
         "travel_slope", "travel_max_lift", "travel_ramping_lift", "travel_lift_before_obstacle",
         "retract_layer_change", "retract_length_toolchange", "retract_restart_extra_toolchange", "extruder_colour",
@@ -4924,6 +4946,7 @@ void PrintConfigDef::init_extruder_option_keys()
         "retract_lift",
         "retract_lift_above",
         "retract_lift_below",
+        "retract_lift_enforce",
         "retract_restart_extra",
         "retract_restart_extra_toolchange",
         "retract_speed",
