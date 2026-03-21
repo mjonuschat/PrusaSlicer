@@ -693,7 +693,6 @@ target_link_libraries(libslic3r PUBLIC
     boost_headeronly
     libseqarrange
     prusa_fdm_mixer
-    tkspline
 )
 
 if (APPLE)
