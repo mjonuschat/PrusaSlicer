@@ -153,7 +153,8 @@ static const t_config_enum_values s_keys_map_InfillPattern {
     { "supportcubic",       ipSupportCubic },
     { "lightning",          ipLightning },
     { "zigzag",             ipZigZag },
-    { "crosshatch",         ipCrossHatch }
+    { "crosshatch",         ipCrossHatch },
+    { "flowsnake",          ipFlowsnake }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -1218,7 +1219,8 @@ void PrintConfigDef::init_fff_params()
         { "concentric",         L("Concentric") },
         { "hilbertcurve",       L("Hilbert Curve") },
         { "archimedeanchords",  L("Archimedean Chords") },
-        { "octagramspiral",     L("Octagram Spiral") }
+        { "octagramspiral",     L("Octagram Spiral") },
+        { "flowsnake",          L("Flowsnake") }
     });
 
     // solid_fill_pattern is an obsolete equivalent to top_fill_pattern/bottom_fill_pattern.
@@ -1870,7 +1872,8 @@ void PrintConfigDef::init_fff_params()
         { "supportcubic",       L("Support Cubic")},
         { "lightning",          L("Lightning")},
         { "zigzag",             L("Zig Zag")},
-        { "crosshatch",         L("Cross Hatch")}
+        { "crosshatch",         L("Cross Hatch")},
+        { "flowsnake",          L("Flowsnake")}
     });
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipStars));
 
