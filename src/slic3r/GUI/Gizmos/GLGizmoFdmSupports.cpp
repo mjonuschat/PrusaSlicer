@@ -11,6 +11,7 @@
 #include "libslic3r/SupportSpotsGenerator.hpp"
 #include "libslic3r/TriangleSelectorWrapper.hpp"
 #include "slic3r/GUI/GLCanvas3D.hpp"
+#include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 #include "slic3r/GUI/Plater.hpp"
@@ -62,6 +63,8 @@ bool GLGizmoFdmSupports::on_init()
     m_desc["block"]            = _u8L("Block supports");
     m_desc["remove_caption"]   = _u8L("Shift + Left mouse button") + ": ";
     m_desc["remove"]           = _u8L("Remove selection");
+    m_desc["draw_caption"]     = GUI::shortkey_ctrl_prefix() + _u8L("Left mouse button") + ": ";
+    m_desc["draw"]             = _u8L("Draw line");
     m_desc["remove_all"]       = _u8L("Remove all selection");
     m_desc["circle"]           = _u8L("Circle");
     m_desc["sphere"]           = _u8L("Sphere");
@@ -137,7 +140,7 @@ void GLGizmoFdmSupports::on_render_input_window(float x, float y, float bottom_l
 
     float caption_max    = 0.f;
     float total_text_max = 0.f;
-    for (const auto &t : std::array<std::string, 3>{"enforce", "block", "remove"}) {
+    for (const auto &t : std::array<std::string, 4>{"enforce", "block", "remove", "draw"}) {
         caption_max    = std::max(caption_max, ImGuiPureWrap::calc_text_size(m_desc[t + "_caption"]).x);
         total_text_max = std::max(total_text_max, ImGuiPureWrap::calc_text_size(m_desc[t]).x);
     }
@@ -161,7 +164,7 @@ void GLGizmoFdmSupports::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text(text);
     };
 
-    for (const auto &t : std::array<std::string, 3>{"enforce", "block", "remove"})
+    for (const auto &t : std::array<std::string, 4>{"enforce", "block", "remove", "draw"})
         draw_text_with_caption(m_desc.at(t + "_caption"), m_desc.at(t));
 
     ImGui::Separator();
