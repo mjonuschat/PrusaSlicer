@@ -6,6 +6,7 @@
 ///|/ Copyright (c) 2011 Michael Moon
 ///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/ Copyright (c) OrcaSlicer 2023 SoftFever @SoftFever
+///|/ Copyright (c) preFlight 2026 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -351,6 +352,357 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	        	internal_solid_fill->expolygons = union_ex(extensions);
 	        }
 		}
+    }
+
+    // preFlight: Compute the total fill boundary from the layer's fill_expolygons - the area
+    // inside the innermost perimeters. This is the true boundary for all fills, unaffected by
+    // inter-fill trimming (which introduces safety-offset micro-gaps). Grow/union/shrink can
+    // push geometry beyond fill boundaries into perimeter territory, so we clip results back
+    // to this boundary after each merge operation.
+    Polygons total_fill_boundary;
+    for (size_t region_id = 0; region_id < layer.regions().size(); ++region_id)
+        append(total_fill_boundary, to_polygons(layer.regions()[region_id]->fill_expolygons()));
+    total_fill_boundary = union_(total_fill_boundary);
+
+    // preFlight: Compute the sparse fill threshold once - used for hole removal
+    // and sparse absorption below. Based on the sparse fill's actual line spacing so it
+    // adapts to different infill densities and nozzle sizes.
+    double sparse_min_area = 0;
+    float sparse_erode_radius = 0;
+    for (const SurfaceFill &sf : surface_fills)
+        if (sf.surface.surface_type == stInternal && !sf.expolygons.empty() && sf.params.density < 99.f)
+        {
+            const float line_spacing = float(scale_(sf.params.spacing)) / (sf.params.density / 100.f);
+            sparse_min_area = double(line_spacing) * double(line_spacing) * 4.0;
+            sparse_erode_radius = line_spacing * 0.75f;
+            break;
+        }
+
+    // preFlight: Consolidate all stSolidOverBridge SurfaceFill entries into one.
+    // mark_as_infill_above_bridge() assigns different bridge_angles to fragments,
+    // causing group_fills to place them in separate SurfaceFill entries. Merge them
+    // so all subsequent processing (hole removal, absorption, grow/union/shrink) operates
+    // on a single unified stSolidOverBridge region.
+    {
+        SurfaceFill *primary_sob = nullptr;
+        double primary_area = 0;
+        for (SurfaceFill &sf : surface_fills)
+        {
+            if (sf.expolygons.empty() || sf.surface.surface_type != stSolidOverBridge)
+                continue;
+            double total_area = 0;
+            for (const ExPolygon &ep : sf.expolygons)
+                total_area += std::abs(ep.area());
+            if (!primary_sob || total_area > primary_area)
+            {
+                primary_sob = &sf;
+                primary_area = total_area;
+            }
+        }
+        if (primary_sob)
+        {
+            for (SurfaceFill &sf : surface_fills)
+            {
+                if (&sf == primary_sob || sf.expolygons.empty() || sf.surface.surface_type != stSolidOverBridge)
+                    continue;
+                append(primary_sob->expolygons, std::move(sf.expolygons));
+                sf.expolygons.clear();
+            }
+            primary_sob->expolygons = union_ex(primary_sob->expolygons);
+        }
+    }
+
+    // preFlight: Remove small holes from stInternalSolid ExPolygons.
+    // These holes come from trimming against bridge/top fills but are too small for
+    // those fills to generate meaningful lines, leaving dark unfilled gaps.
+    // Only remove holes that aren't occupied by another fill (stTop, bridge, etc.).
+    if (sparse_min_area > 0)
+    {
+        Polygons other_fill_polys;
+        for (const SurfaceFill &sf : surface_fills)
+            if (sf.surface.surface_type != stInternalSolid && sf.surface.surface_type != stInternal &&
+                !sf.expolygons.empty())
+                append(other_fill_polys, to_polygons(sf.expolygons));
+
+        for (SurfaceFill &fill : surface_fills)
+        {
+            if (fill.expolygons.empty() || fill.surface.surface_type != stInternalSolid)
+                continue;
+            for (ExPolygon &ep : fill.expolygons)
+                ep.holes.erase(
+                    std::remove_if(ep.holes.begin(), ep.holes.end(),
+                                   [sparse_min_area, sparse_erode_radius, &other_fill_polys,
+                                    &total_fill_boundary](const Polygon &hole)
+                                   {
+                                       Polygon contour = hole;
+                                       contour.reverse();
+                                       // Keep large holes unless they're too thin for sparse fill
+                                       if (std::abs(hole.area()) >= sparse_min_area)
+                                       {
+                                           if (sparse_erode_radius <= 0)
+                                               return false;
+                                           // Large area but possibly too thin - erosion test
+                                           ExPolygons eroded = opening_ex(ExPolygons{ExPolygon(contour)},
+                                                                          sparse_erode_radius);
+                                           if (!eroded.empty())
+                                               return false; // Thick enough for sparse fill
+                                           // Falls through: large area but too thin, evaluate further
+                                       }
+                                       // Keep hole if another fill occupies it
+                                       if (!intersection_ex(ExPolygons{ExPolygon(contour)}, other_fill_polys).empty())
+                                           return false;
+                                       // Keep hole if it extends outside the fill boundary (real model feature
+                                       // like a through-hole, not a trimming artifact)
+                                       ExPolygons outside = diff_ex(ExPolygons{ExPolygon(contour)},
+                                                                    total_fill_boundary);
+                                       if (!outside.empty())
+                                       {
+                                           double outside_area = 0;
+                                           for (const ExPolygon &o : outside)
+                                               outside_area += std::abs(o.area());
+                                           // If significant portion is outside fill boundary, it's a real feature
+                                           if (outside_area > std::abs(contour.area()) * 0.1)
+                                               return false;
+                                       }
+                                       return true;
+                                   }),
+                    ep.holes.end());
+        }
+    }
+
+    // preFlight: Remove thin holes from stSolidOverBridge ExPolygons.
+    // The surface classification creates stSolidOverBridge with holes for model features
+    // (arcs, crescents, through-holes). Thin features like arcs and crescents are too
+    // narrow for any fill to produce lines, leaving dark gaps. Remove holes that vanish
+    // under erosion (too thin) while keeping thick ones (through-holes that bridge fills).
+    if (sparse_erode_radius > 0)
+        for (SurfaceFill &fill : surface_fills)
+        {
+            if (fill.surface.surface_type != stSolidOverBridge || fill.expolygons.empty())
+                continue;
+            for (ExPolygon &ep : fill.expolygons)
+            {
+                Polygons kept_holes;
+                for (const Polygon &hole : ep.holes)
+                {
+                    // Reverse hole orientation (CW -> CCW) to create a testable ExPolygon.
+                    Polygon contour = hole;
+                    contour.reverse();
+                    // Erosion test: if the hole shape vanishes, it's too thin to keep.
+                    ExPolygons eroded = opening_ex(ExPolygons{ExPolygon(contour)}, sparse_erode_radius);
+                    if (!eroded.empty())
+                        kept_holes.push_back(hole);
+                }
+                ep.holes = std::move(kept_holes);
+            }
+        }
+
+    // preFlight: Transfer stInternalSolid that physically touches stSolidOverBridge into SOB.
+    // Surface classification splits solid areas into SOB (above bridge) and InternalSolid (other).
+    // When these are adjacent, filling them separately leaves thin gaps (e.g. arc-shaped voids
+    // around hole features) that are too narrow for sparse fill. Merging adjacent pieces into
+    // SOB lets the subsequent grow/union/shrink heal these gaps.
+    // Only transfer InternalSolid that geometrically touches SOB - never reclassify
+    // distant pieces that happen to share the same layer.
+    {
+        SurfaceFill *sob_fill = nullptr;
+        for (SurfaceFill &sf : surface_fills)
+            if (sf.surface.surface_type == stSolidOverBridge && !sf.expolygons.empty())
+            {
+                sob_fill = &sf;
+                break;
+            }
+        if (sob_fill)
+        {
+            // Grow SOB slightly to detect touching/near-touching InternalSolid.
+            // 0.1mm bridges classification micro-gaps without reaching distant pieces.
+            Polygons sob_grown = offset(to_polygons(sob_fill->expolygons), scale_(0.1));
+
+            bool merged = false;
+            for (SurfaceFill &sf : surface_fills)
+            {
+                if (&sf == sob_fill || sf.surface.surface_type != stInternalSolid || sf.expolygons.empty())
+                    continue;
+                ExPolygons to_transfer;
+                ExPolygons to_keep;
+                for (const ExPolygon &ep : sf.expolygons)
+                {
+                    if (!intersection_ex(ExPolygons{ep}, sob_grown).empty())
+                        to_transfer.push_back(ep);
+                    else
+                        to_keep.push_back(ep);
+                }
+                if (!to_transfer.empty())
+                {
+                    sf.expolygons = std::move(to_keep);
+                    append(sob_fill->expolygons, std::move(to_transfer));
+                    merged = true;
+                }
+            }
+            if (merged)
+                sob_fill->expolygons = union_ex(sob_fill->expolygons);
+        }
+    }
+
+    // preFlight: After stSolidOverBridge modifications (hole removal + thin region merge),
+    // re-trim fills that were trimmed against the original stSolidOverBridge. The expanded
+    // coverage now overlaps with remaining stInternalSolid and sparse fills.
+    {
+        Polygons sob_polys;
+        for (const SurfaceFill &sf : surface_fills)
+            if (sf.surface.surface_type == stSolidOverBridge && !sf.expolygons.empty())
+                append(sob_polys, to_polygons(sf.expolygons));
+        if (!sob_polys.empty())
+            for (SurfaceFill &sf : surface_fills)
+            {
+                if (sf.expolygons.empty())
+                    continue;
+                if (sf.surface.surface_type == stInternalSolid || sf.surface.surface_type == stInternal)
+                    sf.expolygons = diff_ex(sf.expolygons, sob_polys);
+            }
+    }
+
+    // preFlight: Absorb small sparse infill regions that are fully enclosed by solid infill.
+    // These regions are too small for meaningful sparse fill lines and appear as unfilled holes
+    // within solid infill areas. Only absorb regions entirely inside a solid contour - never
+    // expand into external sparse areas at the solid boundary.
+    for (SurfaceFill &solid_fill : surface_fills)
+    {
+        if (solid_fill.expolygons.empty())
+            continue;
+        if (solid_fill.surface.surface_type != stInternalSolid && solid_fill.surface.surface_type != stSolidOverBridge)
+            continue;
+
+        // Build the "filled" solid boundary from contours only (no holes).
+        // For stInternalSolid: contours already encompass the sparse pockets (one big region
+        // with holes carved out), so stripping holes and unioning is sufficient.
+        // For stSolidOverBridge: mark_as_infill_above_bridge() fragments the solid into
+        // disjoint pieces covering only areas above bridge extrusions. Sparse pockets sit
+        // in gaps between fragments. Morphological closing (dilate + erode) bridges these
+        // inter-fragment gaps to reconstruct the encompassing boundary.
+        ExPolygons solid_filled;
+        if (solid_fill.surface.surface_type == stSolidOverBridge && sparse_erode_radius > 0)
+        {
+            Polygons sob_contours;
+            for (const ExPolygon &ep : solid_fill.expolygons)
+                sob_contours.push_back(ep.contour);
+            solid_filled = closing_ex(sob_contours, sparse_erode_radius);
+        }
+        else
+        {
+            solid_filled.reserve(solid_fill.expolygons.size());
+            for (const ExPolygon &ep : solid_fill.expolygons)
+                solid_filled.emplace_back(ep.contour);
+            solid_filled = union_ex(solid_filled);
+        }
+
+        for (SurfaceFill &sparse_fill : surface_fills)
+        {
+            if (sparse_fill.surface.surface_type != stInternal || sparse_fill.expolygons.empty())
+                continue;
+            if (sparse_fill.params.density >= 99.f)
+                continue;
+
+            // Threshold: area that can't fit meaningful sparse fill.
+            // line_spacing is the actual distance between sparse fill lines.
+            // A region needs at least a 2x2 grid of lines to be useful.
+            const float line_spacing = float(scale_(sparse_fill.params.spacing)) / (sparse_fill.params.density / 100.f);
+            const double min_area = double(line_spacing) * double(line_spacing) * 4.0;
+
+            ExPolygons to_absorb;
+            ExPolygons to_keep;
+
+            for (const ExPolygon &ep : sparse_fill.expolygons)
+            {
+                double area = std::abs(ep.area());
+                if (area >= min_area)
+                {
+                    to_keep.push_back(ep);
+                    continue;
+                }
+
+                // Check if this small sparse region is fully enclosed by this solid fill.
+                // If the intersection with the solid contours covers >= 90% of the sparse
+                // region's area, it's an internal pocket that should be filled solid.
+                double contained_area = 0;
+                for (const ExPolygon &c : intersection_ex(ExPolygons{ep}, solid_filled))
+                    contained_area += std::abs(c.area());
+
+                if (contained_area >= area * 0.9)
+                    to_absorb.push_back(ep);
+                else
+                    to_keep.push_back(ep);
+            }
+
+            if (!to_absorb.empty())
+            {
+                sparse_fill.expolygons = std::move(to_keep);
+                append(solid_fill.expolygons, std::move(to_absorb));
+                solid_fill.expolygons = union_ex(solid_fill.expolygons);
+            }
+        }
+
+        // preFlight: Merge nearby solid ExPolygons into a unified region. Grow/union/shrink
+        // bridges micro-gaps between fragments that plain union can't bridge.
+        // stSolidOverBridge uses sparse_erode_radius (gaps proportional to sparse spacing).
+        // stInternalSolid uses 1x extrusion width (small classification gaps).
+        if (solid_fill.expolygons.size() > 1)
+        {
+            const float merge_delta = (solid_fill.surface.surface_type == stSolidOverBridge && sparse_erode_radius > 0)
+                                          ? sparse_erode_radius
+                                          : float(scale_(solid_fill.params.flow.width()));
+            Polygons grown;
+            for (const ExPolygon &ep : solid_fill.expolygons)
+                append(grown, offset(ep, merge_delta));
+            solid_fill.expolygons = intersection_ex(offset_ex(union_(grown), -merge_delta), total_fill_boundary);
+        }
+    }
+
+    // preFlight: After grow/union/shrink, solid fills may have expanded into adjacent fills.
+    // Re-trim to prevent overlaps: solid fills against each other (priority to earlier entries),
+    // then sparse fills against all expanded solid fills.
+    {
+        Polygons processed_solid;
+        for (SurfaceFill &sf : surface_fills)
+        {
+            if (sf.expolygons.empty())
+                continue;
+            if (sf.surface.surface_type != stInternalSolid && sf.surface.surface_type != stSolidOverBridge)
+                continue;
+            if (!processed_solid.empty())
+                sf.expolygons = diff_ex(sf.expolygons, processed_solid);
+            append(processed_solid, to_polygons(sf.expolygons));
+        }
+        if (!processed_solid.empty())
+            for (SurfaceFill &sf : surface_fills)
+                if (sf.surface.surface_type == stInternal && !sf.expolygons.empty())
+                    sf.expolygons = diff_ex(sf.expolygons, processed_solid);
+    }
+
+    // preFlight: Remove tiny stSolidOverBridge expolygons that are too small for meaningful
+    // fill lines. The grow/union/shrink merge can leave behind small fragments near tight
+    // features (screw holes, pegs) that overlap perimeters when filled.
+    // Use solid fill spacing (not sparse) for the threshold - stSolidOverBridge is 100% density
+    // so even small areas produce valid fill. The sparse_min_area threshold was too large and
+    // deleted legitimate SOB regions.
+    {
+        double sob_min_area = 0;
+        for (const SurfaceFill &sf : surface_fills)
+            if (sf.surface.surface_type == stSolidOverBridge && !sf.expolygons.empty())
+            {
+                // Solid fill at 100% density: minimum useful area is a few line widths squared.
+                // Use scale_() so area threshold is in nm^2 like ep.area().
+                double solid_spacing = scale_(sf.params.spacing);
+                sob_min_area = solid_spacing * solid_spacing * 4.0; // 2x2 line grid
+                break;
+            }
+        if (sob_min_area > 0)
+            for (SurfaceFill &sf : surface_fills)
+                if (sf.surface.surface_type == stSolidOverBridge && !sf.expolygons.empty())
+                    sf.expolygons.erase(std::remove_if(sf.expolygons.begin(), sf.expolygons.end(),
+                                                       [sob_min_area](const ExPolygon &ep)
+                                                       { return std::abs(ep.area()) < sob_min_area; }),
+                                        sf.expolygons.end());
     }
 
     return surface_fills;
