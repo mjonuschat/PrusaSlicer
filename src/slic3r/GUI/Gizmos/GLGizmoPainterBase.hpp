@@ -1,4 +1,5 @@
 ///|/ Copyright (c) Prusa Research 2019 - 2023 Pavel Mikuš @Godrak, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas, Filip Sykala @Jony01
+///|/ Copyright (c) preFlight 2024 - 2026 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -221,6 +222,24 @@ private:
         size_t facet;
     };
     mutable RaycastResult m_rr = {Vec2d::Zero(), -1, Vec3f::Zero(), 0};
+
+    // Line drawing mode state (Ctrl+Click to set start, click again to draw line)
+    bool   m_line_start_set = false;
+    Vec3f  m_line_start_pos = Vec3f::Zero();
+    int    m_line_start_mesh_idx = -1;
+    size_t m_line_start_facet_idx = 0;
+    Button m_line_button_type = Button::None;
+    mutable GLModel m_line_preview;
+    bool   m_z_snap_active = false;
+    static constexpr float LineSnapThresholdDegrees = 15.0f;
+
+    void update_line_preview(const Vec2d& mouse_position);
+    void render_line_preview() const;
+    void reset_line_drawing_state();
+    void draw_line_between_points(const Vec3f& start_pos, int mesh_idx, size_t start_facet_idx,
+                                  const Vec3f& end_pos, Button button_type, bool shift_down);
+    bool detect_z_snap(const Vec3f& start, const Vec3f& end) const;
+    Vec3f apply_z_snap(const Vec3f& start, const Vec3f& end) const;
 
 protected:
     void on_set_state() override;

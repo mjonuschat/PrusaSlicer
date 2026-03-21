@@ -1,4 +1,5 @@
 ///|/ Copyright (c) Prusa Research 2019 - 2023 Oleksandra Iushchenko @YuSanka, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, Filip Sykala @Jony01, Lukáš Hejl @hejllukas
+///|/ Copyright (c) preFlight 2024 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -47,6 +48,7 @@ void GLGizmoPainterBase::data_changed(bool is_serializing)
     if (mo && selection.is_from_single_instance()
      && (m_schedule_update || mo->id() != m_old_mo_id || mo->volumes.size() != m_old_volumes_size))
     {
+        reset_line_drawing_state();
         update_from_model_object();
         m_old_mo_id = mo->id();
         m_old_volumes_size = mo->volumes.size();
@@ -137,6 +139,12 @@ void GLGizmoPainterBase::render_cursor()
     }
     // Raycast and return if there's no hit.
     update_raycast_cache(m_parent.get_local_mouse_position(), camera, trafo_matrices);
+
+    // Render line preview even when cursor is off-mesh so the preview
+    // doesn't flicker as the cursor crosses mesh boundaries.
+    if (m_line_start_set)
+        render_line_preview();
+
     if (m_rr.mesh_id == -1)
         return;
 
@@ -587,6 +595,68 @@ bool GLGizmoPainterBase::gizmo_event(SLAGizmoEventType action, const Vec2d& mous
         return true;
     }
 
+    // Escape cancels line drawing mode
+    if (action == SLAGizmoEventType::Escape && m_line_start_set) {
+        reset_line_drawing_state();
+        m_parent.set_as_dirty();
+        return true;
+    }
+
+    // Line drawing mode: Ctrl+Click sets start point, second click draws line
+    if (m_tool_type == ToolType::BRUSH &&
+        (m_cursor_type == TriangleSelector::CursorType::SPHERE || m_cursor_type == TriangleSelector::CursorType::CIRCLE)) {
+
+        bool is_line_start = !m_line_start_set && control_down &&
+                             (action == SLAGizmoEventType::LeftDown || action == SLAGizmoEventType::RightDown);
+        bool is_line_end   = m_line_start_set &&
+                             (action == SLAGizmoEventType::LeftDown || action == SLAGizmoEventType::RightDown);
+        bool is_line_move  = m_line_start_set && action == SLAGizmoEventType::Moving;
+
+        if (is_line_start) {
+            if (m_rr.mesh_id == -1)
+                return false;
+            m_line_start_set = true;
+            m_line_start_pos = m_rr.hit;
+            m_line_start_mesh_idx = m_rr.mesh_id;
+            m_line_start_facet_idx = m_rr.facet;
+            m_line_button_type = (action == SLAGizmoEventType::LeftDown) ? Button::Left : Button::Right;
+            m_parent.set_as_dirty();
+            return true;
+        }
+
+        if (is_line_end) {
+            if (m_rr.mesh_id == -1) {
+                reset_line_drawing_state();
+                m_parent.set_as_dirty();
+                return true;
+            }
+
+            Vec3f end_pos = m_rr.hit;
+            if (m_z_snap_active)
+                end_pos = apply_z_snap(m_line_start_pos, end_pos);
+
+            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _L("Paint line"), UndoRedo::SnapshotType::GizmoAction);
+            draw_line_between_points(m_line_start_pos, m_line_start_mesh_idx, m_line_start_facet_idx,
+                                     end_pos, m_line_button_type, shift_down);
+            update_model_object();
+            reset_line_drawing_state();
+            m_parent.set_as_dirty();
+            return true;
+        }
+
+        if (is_line_move) {
+            update_line_preview(mouse_position);
+            m_parent.set_as_dirty();
+            return false;
+        }
+    }
+
+    // When line mode is not active and Ctrl is held, let the event fall through
+    // for scene rotation/pan (return false for LeftDown/RightDown)
+    if (control_down && !m_line_start_set &&
+        (action == SLAGizmoEventType::LeftDown || action == SLAGizmoEventType::RightDown))
+        return false;
+
     if (action == SLAGizmoEventType::LeftDown
      || action == SLAGizmoEventType::RightDown
     || (action == SLAGizmoEventType::Dragging && m_button_down != Button::None)) {
@@ -783,27 +853,22 @@ bool GLGizmoPainterBase::on_mouse(const wxMouseEvent &mouse_event)
     Vec2d mouse_pos = mouse_coord.cast<double>();
 
     if (mouse_event.Moving()) {
-        gizmo_event(SLAGizmoEventType::Moving, mouse_pos, mouse_event.ShiftDown(), mouse_event.AltDown(), false);
+        gizmo_event(SLAGizmoEventType::Moving, mouse_pos, mouse_event.ShiftDown(), mouse_event.AltDown(), mouse_event.CmdDown());
         return false;
     }
 
     // when control is down we allow scene pan and rotation even when clicking
-    // over some object
-    bool control_down           = mouse_event.CmdDown();
-    bool grabber_contains_mouse = (get_hover_id() != -1);
+    // over some object, unless line drawing mode is active
+    bool control_down = mouse_event.CmdDown();
 
     const Selection &selection = m_parent.get_selection();
     int selected_object_idx = selection.get_object_idx();
     if (mouse_event.LeftDown()) {
-        if ((!control_down || grabber_contains_mouse) &&            
-            gizmo_event(SLAGizmoEventType::LeftDown, mouse_pos, mouse_event.ShiftDown(), mouse_event.AltDown(), false))
-            // the gizmo got the event and took some action, there is no need
-            // to do anything more
+        if (gizmo_event(SLAGizmoEventType::LeftDown, mouse_pos, mouse_event.ShiftDown(), mouse_event.AltDown(), control_down))
             return true;
     } else if (mouse_event.RightDown()){
-        if (!control_down && selected_object_idx != -1 &&
-            gizmo_event(SLAGizmoEventType::RightDown, mouse_pos, false, false, false)) 
-            // event was taken care of
+        if (selected_object_idx != -1 &&
+            gizmo_event(SLAGizmoEventType::RightDown, mouse_pos, false, false, control_down))
             return true;
     } else if (mouse_event.Dragging()) {
         if (m_parent.get_move_volume_id() != -1)
@@ -817,7 +882,7 @@ bool GLGizmoPainterBase::on_mouse(const wxMouseEvent &mouse_event)
             m_parent.set_as_dirty();
             return true;
         }
-        if(control_down && (mouse_event.LeftIsDown() || mouse_event.RightIsDown()))
+        if (control_down && (mouse_event.LeftIsDown() || mouse_event.RightIsDown()))
         {
             // CTRL has been pressed while already dragging -> stop current action
             if (mouse_event.LeftIsDown())
@@ -926,6 +991,7 @@ void GLGizmoPainterBase::on_set_state()
     }
     if (m_state == Off && m_old_state != Off) { // the gizmo was just turned Off
         // we are actually shutting down
+        reset_line_drawing_state();
         on_shutdown();
         m_old_mo_id = -1;
         //m_iva.release_geometry();
@@ -1228,6 +1294,158 @@ void TriangleSelectorGUI::render_paint_contour(const Transform3d& matrix)
 
     if (curr_shader != nullptr)
         curr_shader->start_using();
+}
+
+void GLGizmoPainterBase::draw_line_between_points(const Vec3f& start_pos, int mesh_idx, size_t start_facet_idx,
+                                                   const Vec3f& end_pos, Button button_type, bool shift_down)
+{
+    TriangleStateType new_state = TriangleStateType::NONE;
+    if (!shift_down)
+        new_state = (button_type == Button::Left) ? this->get_left_button_state_type() : this->get_right_button_state_type();
+
+    const Selection     &selection = m_parent.get_selection();
+    const ModelObject   *mo        = m_c->selection_info()->model_object();
+    const ModelInstance  *mi        = mo->instances[selection.get_instance_idx()];
+    const Transform3d    instance_trafo               = mi->get_transformation().get_matrix();
+    const Transform3d    instance_trafo_not_translate  = mi->get_transformation().get_matrix_no_offset();
+    const Transform3d trafo_matrix               = instance_trafo * mo->volumes[mesh_idx]->get_matrix();
+    const Transform3d trafo_matrix_not_translate  = instance_trafo_not_translate * mo->volumes[mesh_idx]->get_matrix_no_offset();
+
+    const Camera &camera = wxGetApp().plater()->get_camera();
+    Vec3f camera_pos = (trafo_matrix.inverse() * camera.get_position()).cast<float>();
+    const TriangleSelector::ClippingPlane &clp = this->get_clipping_plane_in_volume_coordinates(trafo_matrix);
+
+    std::unique_ptr<TriangleSelector::Cursor> cursor = TriangleSelector::DoublePointCursor::cursor_factory(
+        start_pos, end_pos, camera_pos, m_cursor_radius, m_cursor_type, trafo_matrix, clp);
+    m_triangle_selectors[mesh_idx]->select_patch(int(start_facet_idx), std::move(cursor), new_state,
+                                                  trafo_matrix_not_translate, m_triangle_splitting_enabled,
+                                                  m_paint_on_overhangs_only ? m_highlight_by_angle_threshold_deg : 0.f);
+    m_triangle_selectors[mesh_idx]->request_update_render_data();
+}
+
+void GLGizmoPainterBase::update_line_preview(const Vec2d& mouse_position)
+{
+    if (!m_line_start_set)
+        return;
+
+    const Camera &camera = wxGetApp().plater()->get_camera();
+    const Selection &selection = m_parent.get_selection();
+    const ModelObject *mo = m_c->selection_info()->model_object();
+    const ModelInstance *mi = mo->instances[selection.get_instance_idx()];
+
+    std::vector<Transform3d> trafo_matrices;
+    for (const ModelVolume *mv : mo->volumes)
+        if (mv->is_model_part())
+            trafo_matrices.emplace_back(mi->get_transformation().get_matrix() * mv->get_matrix());
+
+    update_raycast_cache(mouse_position, camera, trafo_matrices);
+
+    if (m_rr.mesh_id == -1) {
+        m_z_snap_active = false;
+        m_line_preview.reset();
+        return;
+    }
+
+    Vec3f end_pos = m_rr.hit;
+    const Transform3d &start_trafo = trafo_matrices[m_line_start_mesh_idx];
+    Vec3f start_world = (start_trafo * m_line_start_pos.cast<double>()).cast<float>();
+
+    const Transform3d &end_trafo = trafo_matrices[m_rr.mesh_id];
+    Vec3f end_world = (end_trafo * end_pos.cast<double>()).cast<float>();
+
+    m_z_snap_active = detect_z_snap(start_world, end_world);
+    if (m_z_snap_active) {
+        end_pos = apply_z_snap(m_line_start_pos, end_pos);
+        end_world = (end_trafo * end_pos.cast<double>()).cast<float>();
+    }
+
+    // Build line preview model
+    m_line_preview.reset();
+    GLModel::Geometry init_data;
+    init_data.format = {GLModel::Geometry::EPrimitiveType::Lines, GLModel::Geometry::EVertexLayout::P3};
+    init_data.reserve_vertices(2);
+    init_data.reserve_indices(2);
+    init_data.color = ColorRGBA::WHITE();
+    init_data.add_vertex(start_world);
+    init_data.add_vertex(end_world);
+    init_data.add_line(0, 1);
+    m_line_preview.init_from(std::move(init_data));
+}
+
+void GLGizmoPainterBase::reset_line_drawing_state()
+{
+    m_line_start_set = false;
+    m_line_start_mesh_idx = -1;
+    m_line_start_facet_idx = 0;
+    m_line_button_type = Button::None;
+    m_z_snap_active = false;
+    m_line_preview.reset();
+}
+
+bool GLGizmoPainterBase::detect_z_snap(const Vec3f& start, const Vec3f& end) const
+{
+    Vec3f diff = end - start;
+    float len = diff.norm();
+    if (len < EPSILON)
+        return false;
+
+    // Check if line is within threshold degrees of vertical (Z axis)
+    float cos_angle = std::abs(diff.z()) / len;
+    float threshold_cos = std::cos(Geometry::deg2rad(LineSnapThresholdDegrees));
+    return cos_angle >= threshold_cos;
+}
+
+Vec3f GLGizmoPainterBase::apply_z_snap(const Vec3f& start, const Vec3f& end) const
+{
+    // Snap endpoint to start's X/Y, keep endpoint's Z.
+    // Note: operates in local (volume) coordinates. Both start and end must
+    // be in the same volume's coordinate space for correct results.
+    return Vec3f(start.x(), start.y(), end.z());
+}
+
+void GLGizmoPainterBase::render_line_preview() const
+{
+    if (!m_line_preview.is_initialized())
+        return;
+
+    glsafe(::glDisable(GL_DEPTH_TEST));
+
+#if !SLIC3R_OPENGL_ES
+    if (!OpenGLManager::get_gl_info().is_core_profile())
+        glsafe(::glLineWidth(m_z_snap_active ? 3.0f : 1.5f));
+#endif // !SLIC3R_OPENGL_ES
+
+    GLShaderProgram *shader = OpenGLManager::get_gl_info().is_core_profile()
+        ? wxGetApp().get_shader("dashed_thick_lines")
+        : wxGetApp().get_shader("flat");
+    if (shader == nullptr)
+        return;
+
+    shader->start_using();
+
+    const Camera &camera = wxGetApp().plater()->get_camera();
+    shader->set_uniform("view_model_matrix", camera.get_view_matrix());
+    shader->set_uniform("projection_matrix", camera.get_projection_matrix());
+
+    if (OpenGLManager::get_gl_info().is_core_profile()) {
+        const std::array<int, 4>& viewport = camera.get_viewport();
+        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+        shader->set_uniform("width", m_z_snap_active ? 1.5f : 0.5f);
+        shader->set_uniform("gap_size", 0.0f);
+    }
+
+    // Color: blue for left button (enforce), red for right button (block)
+    ColorRGBA line_color = (m_line_button_type == Button::Left)
+        ? ColorRGBA(0.2f, 0.2f, 1.0f, 0.8f)
+        : ColorRGBA(1.0f, 0.2f, 0.2f, 0.8f);
+    if (m_z_snap_active)
+        line_color = ColorRGBA(0.0f, 1.0f, 0.0f, 0.9f);
+
+    m_line_preview.set_color(line_color);
+    m_line_preview.render();
+
+    shader->stop_using();
+    glsafe(::glEnable(GL_DEPTH_TEST));
 }
 
 } // namespace Slic3r::GUI
