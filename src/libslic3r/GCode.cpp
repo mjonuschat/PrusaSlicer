@@ -4059,9 +4059,14 @@ std::string GCodeGenerator::_extrude(
     if (m_volumetric_speed != 0. && speed == 0)
         speed = m_volumetric_speed / path_attr.mm3_per_mm;
 
-    // Apply small perimeter modifier but don't adjust bridge speed
+    // Apply small perimeter modifier but don't adjust bridge speed.
+    // Resolve percentage against the correct base speed for the perimeter type:
+    // external perimeters use external_perimeter_speed, internal use perimeter_speed.
     if (factor < 1 && !path_attr.role.is_bridge()) {
-        float small_speed = (float) m_config.small_perimeter_speed.get_abs_value(m_config.get_abs_value("perimeter_speed"));
+        double base_speed = path_attr.role == ExtrusionRole::ExternalPerimeter
+            ? m_config.get_abs_value("external_perimeter_speed")
+            : m_config.get_abs_value("perimeter_speed");
+        float small_speed = (float) m_config.small_perimeter_speed.get_abs_value(base_speed);
         if (small_speed > 0)
             // Apply proportional factor between small speed and feature speed
             speed = (speed * factor) + double((1.f - factor) * small_speed);
