@@ -2213,6 +2213,7 @@ void PrintObject::bridge_over_infill()
         switch (dominant_pattern) {
         case ipHilbertCurve: bridging_angle += 0.25 * PI; break;
         case ipOctagramSpiral: bridging_angle += (1.0 / 16.0) * PI; break;
+        case ipFlowsnake: bridging_angle += (1.0 / 6.0) * PI; break; // 30° for 6-fold hex symmetry
         default: break;
         }
 
