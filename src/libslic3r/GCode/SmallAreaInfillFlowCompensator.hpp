@@ -1,7 +1,7 @@
 ///|/ Copyright (c) Prusa Research 2016 - 2023 Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas
 ///|/ Copyright (c) SuperSlicer 2023 Remi Durand @supermerill
 ///|/ Copyright (c) 2023 Alexander Thor @Alexander-T-Moss
-///|/ Copyright (c) 2024 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) 2024 - 2026 Morton Jonuschat @mjonuschat
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -11,7 +11,9 @@
 #include "../libslic3r.h"
 #include "../PrintConfig.hpp"
 #include "../ExtrusionRole.hpp"
-#include <spline.h>
+
+#include <vector>
+
 namespace Slic3r {
 
 class SmallAreaInfillFlowCompensator
@@ -24,13 +26,16 @@ public:
     double modify_flow(const double line_length, const double dE, const ExtrusionRole role);
 
 private:
-    // Model points
+    // Data points
     std::vector<double> eLengths;
     std::vector<double> flowComps;
 
-    // TODO: Cubic Spline
-    tk::spline flowModel;
+    // Akima interpolation coefficients (per interval)
+    std::vector<double> m_slopes;  // slopes at each knot
+    std::vector<double> m_c;       // quadratic coefficients
+    std::vector<double> m_d;       // cubic coefficients
 
+    void compute_akima_coefficients();
     double flow_comp_model(const double line_length);
 
     double max_modified_length() {
