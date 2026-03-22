@@ -885,6 +885,16 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     for (auto el : { "ironing_type", "ironing_flowrate", "ironing_spacing", "ironing_speed" })
     	toggle_field(el, has_ironing);
 
+    bool has_fuzzy_skin = config->opt_enum<FuzzySkinType>("fuzzy_skin") != FuzzySkinType::None;
+    for (auto el : { "fuzzy_skin_thickness", "fuzzy_skin_point_dist", "fuzzy_skin_noise_type" })
+        toggle_field(el, has_fuzzy_skin);
+    auto fuzzy_noise_type = config->opt_enum<FuzzySkinNoiseType>("fuzzy_skin_noise_type");
+    bool has_structured_noise = has_fuzzy_skin && fuzzy_noise_type != FuzzySkinNoiseType::Classic;
+    toggle_field("fuzzy_skin_feature_size", has_structured_noise);
+    toggle_field("fuzzy_skin_octaves", has_structured_noise && fuzzy_noise_type != FuzzySkinNoiseType::Voronoi);
+    toggle_field("fuzzy_skin_persistence", has_structured_noise &&
+        (fuzzy_noise_type == FuzzySkinNoiseType::Perlin || fuzzy_noise_type == FuzzySkinNoiseType::Billow));
+
     bool have_ooze_prevention = config->opt_bool("ooze_prevention");
     toggle_field("standby_temperature_delta", have_ooze_prevention);
     toggle_field("preheat_time", have_ooze_prevention);

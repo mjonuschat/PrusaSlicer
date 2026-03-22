@@ -52,6 +52,7 @@ struct Parameters {
     Parameters(
         double                      layer_height,
         int                         layer_id,
+        coordf_t                    slice_z,
         Flow                        perimeter_flow,
         Flow                        ext_perimeter_flow,
         Flow                        overhang_flow,
@@ -60,15 +61,16 @@ struct Parameters {
         const PrintObjectConfig    &object_config,
         const PrintConfig          &print_config,
         const PerimeterRegions     &perimeter_regions,
-        const bool                  spiral_vase) :   
+        const bool                  spiral_vase) :
             layer_height(layer_height),
             layer_id(layer_id),
-            perimeter_flow(perimeter_flow), 
+            slice_z(slice_z),
+            perimeter_flow(perimeter_flow),
             ext_perimeter_flow(ext_perimeter_flow),
-            overhang_flow(overhang_flow), 
+            overhang_flow(overhang_flow),
             solid_infill_flow(solid_infill_flow),
-            config(config), 
-            object_config(object_config), 
+            config(config),
+            object_config(object_config),
             print_config(print_config),
             perimeter_regions(perimeter_regions),
             spiral_vase(spiral_vase),
@@ -82,6 +84,7 @@ struct Parameters {
     // Input parameters
     double                       layer_height;
     int                          layer_id;
+    coordf_t                     slice_z;
     Flow                         perimeter_flow;
     Flow                         ext_perimeter_flow;
     Flow                         overhang_flow;

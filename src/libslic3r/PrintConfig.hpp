@@ -102,6 +102,14 @@ enum class FuzzySkinType {
     All,
 };
 
+enum class FuzzySkinNoiseType {
+    Classic,
+    Perlin,
+    Billow,
+    RidgedMulti,
+    Voronoi,
+};
+
 enum InfillPattern : int {
     ipRectilinear, ipMonotonic, ipMonotonicLines, ipAlignedRectilinear, ipGrid, ipTriangles, ipStars, ipCubic, ipLine, ipConcentric, ipHoneycomb, ip3DHoneycomb,
     ipGyroid, ipHilbertCurve, ipArchimedeanChords, ipOctagramSpiral, ipAdaptiveCubic, ipSupportCubic, ipSupportBase,
@@ -308,6 +316,7 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(MachineLimitsUsage)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PrintHostType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(AuthorizationType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinType)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinNoiseType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(InfillPattern)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(IroningType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(SlicingMode)
@@ -792,6 +801,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionEnum<FuzzySkinType>,  fuzzy_skin))
     ((ConfigOptionFloat,                fuzzy_skin_thickness))
     ((ConfigOptionFloat,                fuzzy_skin_point_dist))
+    ((ConfigOptionEnum<FuzzySkinNoiseType>, fuzzy_skin_noise_type))
+    ((ConfigOptionFloat,                fuzzy_skin_feature_size))
+    ((ConfigOptionInt,                  fuzzy_skin_octaves))
+    ((ConfigOptionFloat,                fuzzy_skin_persistence))
     ((ConfigOptionBool,                 gap_fill_enabled))
     ((ConfigOptionFloat,                gap_fill_speed))
     ((ConfigOptionFloatOrPercent,       infill_anchor))
