@@ -594,11 +594,11 @@ function(prusaslicer_copy_dlls target)
     get_target_property(_alt_out_dir ${target} RUNTIME_OUTPUT_DIRECTORY)
 
     if (_alt_out_dir)
-        set (_out_dir "${_alt_out_dir}")
+        set(_out_dir "${_alt_out_dir}")
     elseif (_is_multi)
-        set (_out_dir "$<TARGET_PROPERTY:${target},BINARY_DIR>/$<CONFIG>")
+        set(_out_dir "$<TARGET_PROPERTY:${target},BINARY_DIR>/$<CONFIG>")
     else ()
-        set (_out_dir "$<TARGET_PROPERTY:${target},BINARY_DIR>")
+        set(_out_dir "$<TARGET_PROPERTY:${target},BINARY_DIR>")
     endif ()
     
     # This has to be a separate target due to the windows command line lenght limits    
@@ -631,7 +631,10 @@ endif()
 
 
 if (WIN32)
-    install(DIRECTORY "${SLIC3R_RESOURCES_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/resources")
+    install(DIRECTORY "${SLIC3R_RESOURCES_DIR}/" DESTINATION "./resources")
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    include(InstallRequiredSystemLibraries) 
+    install (PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ".")
 elseif (SLIC3R_FHS)
     # CMAKE_INSTALL_FULL_DATAROOTDIR: read-only architecture-independent data root (share)
     set(SLIC3R_FHS_RESOURCES "${CMAKE_INSTALL_FULL_DATAROOTDIR}/PrusaSlicer")
@@ -655,3 +658,6 @@ else ()
     install(FILES src/platform/unix/PrusaGcodeviewer.desktop DESTINATION resources/applications)
     install(DIRECTORY "${SLIC3R_RESOURCES_DIR}/" DESTINATION resources)
 endif ()
+
+install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION ".")
+configure_file(src/platform/unix/fhs.hpp.in ${LIBDIR_BIN}/platform/unix/fhs.hpp)
