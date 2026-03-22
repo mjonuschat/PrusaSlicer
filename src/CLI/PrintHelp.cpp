@@ -130,7 +130,7 @@ void print_help(bool include_print_options/* = false*/, PrinterTechnology printe
         << " (without GUI support)"
 #endif /* SLIC3R_GUI */
         << std::endl
-        << "https://github.com/prusa3d/PrusaSlicer" << std::endl << std::endl
+        << "https://github.com/mjonuschat/PrusaSlicer" << std::endl << std::endl
         << "Usage: prusa-slicer [ INPUT ] [ OPTIONS ] [ ACTIONS ] [ TRANSFORM ] [ file.stl ... ]" << std::endl;
 
     boost::nowide::cout
