@@ -681,6 +681,7 @@ target_link_libraries(libslic3r PRIVATE
 )
 target_link_libraries(libslic3r PUBLIC
     Eigen3::Eigen
+    fastnoiselite
     semver
     admesh
     localesutils
