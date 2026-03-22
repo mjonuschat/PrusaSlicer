@@ -48,6 +48,9 @@ target_include_directories(tcbspan INTERFACE tcbspan)
 
 add_subdirectory(prusa_fdm_mixer)
 
+add_library(fastnoiselite INTERFACE)
+target_include_directories(fastnoiselite INTERFACE fastnoiselite)
+
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(hidapi)
