@@ -299,7 +299,7 @@ private:
             title = wxGetApp().is_editor() ? SLIC3R_APP_NAME : GCODEVIEWER_APP_NAME;
 
             // dynamically get the version to display
-            version = _L("Version") + " " + std::string(SLIC3R_VERSION);
+            version = _L("Version") + " " + std::string(SLIC3R_VERSION) + "+BOSS";
 
             // credits infornation
             credits = "\n" + title + " " +
