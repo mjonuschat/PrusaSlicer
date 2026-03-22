@@ -132,6 +132,15 @@ static const t_config_enum_values s_keys_map_FuzzySkinType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(FuzzySkinType)
 
+static const t_config_enum_values s_keys_map_FuzzySkinNoiseType {
+    { "classic",        int(FuzzySkinNoiseType::Classic)    },
+    { "perlin",         int(FuzzySkinNoiseType::Perlin)     },
+    { "billow",         int(FuzzySkinNoiseType::Billow)     },
+    { "ridgedmulti",    int(FuzzySkinNoiseType::RidgedMulti) },
+    { "voronoi",        int(FuzzySkinNoiseType::Voronoi)    },
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(FuzzySkinNoiseType)
+
 static const t_config_enum_values s_keys_map_InfillPattern {
     { "rectilinear",        ipRectilinear },
     { "monotonic",          ipMonotonic },
@@ -2039,6 +2048,53 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.8));
+
+    def = this->add("fuzzy_skin_noise_type", coEnum);
+    def->label = L("Noise type");
+    def->category = L("Fuzzy Skin");
+    def->tooltip = L("Type of noise used for fuzzy skin displacement. "
+                     "\"Classic\" uses uniform random noise (original behavior). "
+                     "Structured noise types produce coherent textures that flow vertically across layers.");
+    def->set_enum<FuzzySkinNoiseType>({
+        { "classic",     L("Classic")              },
+        { "perlin",      L("Perlin")               },
+        { "billow",      L("Billow")               },
+        { "ridgedmulti", L("Ridged Multifractal")  },
+        { "voronoi",     L("Voronoi")              },
+    });
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionEnum<FuzzySkinNoiseType>(FuzzySkinNoiseType::Classic));
+
+    def = this->add("fuzzy_skin_feature_size", coFloat);
+    def->label = L("Feature size");
+    def->category = L("Fuzzy Skin");
+    def->tooltip = L("The base size of coherent noise features. "
+                     "Higher values produce larger, more spread out features.");
+    def->sidetext = L("mm");
+    def->min = 0.1;
+    def->max = 500;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1.0));
+
+    def = this->add("fuzzy_skin_octaves", coInt);
+    def->label = L("Noise octaves");
+    def->category = L("Fuzzy Skin");
+    def->tooltip = L("Number of octaves of noise to layer together. "
+                     "Higher values add finer detail but increase computation.");
+    def->min = 1;
+    def->max = 10;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(4));
+
+    def = this->add("fuzzy_skin_persistence", coFloat);
+    def->label = L("Noise persistence");
+    def->category = L("Fuzzy Skin");
+    def->tooltip = L("Controls how much each successive octave contributes. "
+                     "Lower values produce smoother noise, higher values add more fine detail.");
+    def->min = 0.01;
+    def->max = 1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.5));
 
     def = this->add("gap_fill_enabled", coBool);
     def->label = L("Fill gaps");

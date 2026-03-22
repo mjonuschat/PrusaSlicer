@@ -1511,6 +1511,10 @@ void TabPrint::build()
         optgroup->append_single_option_line("fuzzy_skin", category_path + "fuzzy-skin-type");
         optgroup->append_single_option_line("fuzzy_skin_thickness", category_path + "fuzzy-skin-thickness");
         optgroup->append_single_option_line("fuzzy_skin_point_dist", category_path + "fuzzy-skin-point-distance");
+        optgroup->append_single_option_line("fuzzy_skin_noise_type", category_path + "fuzzy-skin-noise-type");
+        optgroup->append_single_option_line("fuzzy_skin_feature_size", category_path + "fuzzy-skin-feature-size");
+        optgroup->append_single_option_line("fuzzy_skin_octaves", category_path + "fuzzy-skin-octaves");
+        optgroup->append_single_option_line("fuzzy_skin_persistence", category_path + "fuzzy-skin-persistence");
 
         optgroup = page->new_optgroup(L("Only one perimeter"));
         category_path = "layers-and-perimeters_1748/#";
