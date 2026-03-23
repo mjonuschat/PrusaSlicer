@@ -110,6 +110,7 @@ public:
     virtual void on_clipping_of_view_changed(double value) {}
 
     bool enabled() const override;
+    void provide_gizmo_controller(Scene::IGizmoController& gizmo_controller) override;
 
 protected:
     Render::Device& m_device;
@@ -121,6 +122,7 @@ protected:
     Scene::Clipper m_sinking_plane_clipper;
     Scene::ClipperPresenter m_clipping_plane_presenter;
     Scene::ClipperPresenter m_sinking_plane_presenter;
+    Scene::IGizmoController* m_gizmo_controller = nullptr;
 
     PaintableVolumes m_paintable_volumes;
     std::vector<TriangleSelectorRenderWrapper> m_triangle_selector_wrappers;

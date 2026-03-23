@@ -89,26 +89,23 @@ collect_visible_volumes_nodes(const Project& project, Scene::Scene& scene)
     return visible_volumes_nodes;
 }
 
-static VariableLayerHeightGizmo::SelectedObjectData collect_selected_object_data(
+static std::optional<VariableLayerHeightGizmo::SelectedObjectData> collect_selected_object_data(
     const ObjectSelection& object_selection,
     Project& project,
     const PlaterScenePresenter::MeshManager& mesh_manager
 )
 {
-    ASSERT(object_selection.elements.size() == 1);
+    if (object_selection.elements.size() != 1) {
+        return std::nullopt;
+    }
+
     const Domain::ElementRef& first_element = object_selection.elements.front();
     ModelObject* model_object               = project.find_object_by_id(first_element.object_id);
     const ModelInstance* model_instance =
         project.find_instance_by_id(first_element.object_id, first_element.instance_id);
 
-    ASSERT(model_object != nullptr && model_instance != nullptr);
-
-    std::set<std::pair<size_t, size_t>> variable_layer_height_objects_instances_ids;
-    for (const Domain::ElementRef& selected_element : object_selection.elements) {
-        variable_layer_height_objects_instances_ids.emplace(
-            selected_element.object_id,
-            selected_element.instance_id
-        );
+    if (model_object == nullptr || model_instance == nullptr) {
+        return std::nullopt;
     }
 
     VariableLayerHeightGizmo::SelectedObjectData::Volumes volumes;
@@ -122,7 +119,9 @@ static VariableLayerHeightGizmo::SelectedObjectData collect_selected_object_data
             model_volume->id().id
         };
         const Scene::TriangleMesh* mesh = mesh_manager.get(volume_id);
-        ASSERT(mesh != nullptr);
+        if (mesh == nullptr) {
+            return std::nullopt;
+        }
 
         volumes.push_back(
             {.model_volume = *model_volume,
@@ -308,12 +307,19 @@ void VariableLayerHeightGizmo::on_activated()
     Scene::Scene& scene                     = m_scene_presenter.scene();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
-        this->on_deactivated();
+        m_gizmo_controller->deactivate_current_tool();
         return;
     }
 
+    std::optional<SelectedObjectData> selected_object_data =
+        collect_selected_object_data(object_selection, project, mesh_manager);
+    if (!selected_object_data) {
+        m_gizmo_controller->deactivate_current_tool();
+        return;
+    }
+
+    m_selected_object_data  = std::move(*selected_object_data);
     m_visible_volumes_nodes = collect_visible_volumes_nodes(project, scene);
-    m_selected_object_data  = collect_selected_object_data(object_selection, project, mesh_manager);
     m_layer_height_params   = compute_layer_height_params(
         object_selection,
         project,

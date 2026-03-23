@@ -97,7 +97,7 @@ collect_visible_volumes_nodes(const Project& project, Scene::Scene& scene)
     return visible_volumes_nodes;
 }
 
-static PaintOnGizmoBase::PaintableVolumes collect_paintable_volumes(
+static std::optional<PaintOnGizmoBase::PaintableVolumes> collect_paintable_volumes(
     const ObjectSelection& object_selection,
     const Project& project,
     const PlaterScenePresenter::MeshManager& mesh_manager
@@ -117,7 +117,10 @@ static PaintOnGizmoBase::PaintableVolumes collect_paintable_volumes(
         const ModelInstance* model_instance =
             project.find_instance_by_id(object_instance_id.first, object_instance_id.second);
 
-        ASSERT(model_object != nullptr && model_instance != nullptr);
+        if (model_object == nullptr || model_instance == nullptr) {
+            return std::nullopt;
+        }
+
         for (ModelVolume* model_volume : model_object->volumes) {
             if (!model_volume->is_model_part()) {
                 continue;
@@ -128,7 +131,9 @@ static PaintOnGizmoBase::PaintableVolumes collect_paintable_volumes(
                 model_volume->id().id
             };
             const Scene::TriangleMesh* mesh = mesh_manager.get(volume_id);
-            ASSERT(mesh != nullptr);
+            if (mesh == nullptr) {
+                return std::nullopt;
+            }
 
             paintable_volumes.push_back(
                 {*model_object,
@@ -228,9 +233,7 @@ void PaintOnGizmoBase::on_thumbnail_render_end()
     this->hide_visible_volumes();
 }
 
-void PaintOnGizmoBase::on_model_reloaded(
-    Domain::SelectionId project_id
-)
+void PaintOnGizmoBase::on_model_reloaded(Domain::SelectionId project_id)
 {
     if (project_id != m_project_interactor.selected_project_id()) {
         return;
@@ -378,13 +381,19 @@ void PaintOnGizmoBase::on_activated()
     Scene::Scene& scene                     = m_scene_presenter.scene();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
-        on_deactivated();
-        // We can't perform a paint on supports for multiple objects simultaneously.
+        m_gizmo_controller->deactivate_current_tool();
+        return;
+    }
+
+    std::optional<PaintableVolumes> paintable_volumes =
+        collect_paintable_volumes(object_selection, project, mesh_manager);
+    if (!paintable_volumes) {
+        m_gizmo_controller->deactivate_current_tool();
         return;
     }
 
     m_visible_volumes_nodes  = collect_visible_volumes_nodes(project, scene);
-    m_paintable_volumes      = collect_paintable_volumes(object_selection, project, mesh_manager);
+    m_paintable_volumes      = std::move(*paintable_volumes);
     m_default_painting_color = this->create_default_painting_color();
     m_painting_colors        = this->create_painting_colors();
     m_mouse_dragging         = false;
@@ -1086,7 +1095,8 @@ void PaintOnGizmoBase::update_cursors()
     }
 }
 
-void PaintOnGizmoBase::rebuild_paintable_geometry() {
+void PaintOnGizmoBase::rebuild_paintable_geometry()
+{
     using MeshManager = PlaterScenePresenter::MeshManager;
 
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
@@ -1107,12 +1117,19 @@ void PaintOnGizmoBase::rebuild_paintable_geometry() {
     m_sinking_plane_presenter.deactivate();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
-        on_deactivated();
+        m_gizmo_controller->deactivate_current_tool();
         return;
     }
 
-    m_visible_volumes_nodes  = collect_visible_volumes_nodes(project, scene);
-    m_paintable_volumes      = collect_paintable_volumes(object_selection, project, mesh_manager);
+    std::optional<PaintableVolumes> paintable_volumes =
+        collect_paintable_volumes(object_selection, project, mesh_manager);
+    if (!paintable_volumes) {
+        m_gizmo_controller->deactivate_current_tool();
+        return;
+    }
+
+    m_visible_volumes_nodes = collect_visible_volumes_nodes(project, scene);
+    m_paintable_volumes     = std::move(*paintable_volumes);
 
     this->hide_visible_volumes();
     this->init_main_nodes();
@@ -1181,6 +1198,11 @@ bool PaintOnGizmoBase::enabled() const
     const bool is_fdm{config_container->print_technology() == Domain::PrinterTechnology::FFF};
 
     return whole_instance && is_fdm;
+}
+
+void PaintOnGizmoBase::provide_gizmo_controller(Scene::IGizmoController& gizmo_controller)
+{
+    m_gizmo_controller = &gizmo_controller;
 }
 
 TriangleSelector::ClippingPlane PaintOnGizmoBase::get_clipping_plane_in_volume_coordinates(
