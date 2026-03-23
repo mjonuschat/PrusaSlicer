@@ -38,6 +38,7 @@ struct PreviewConfig {
     std::vector<Domain::Vec2f> bed_shape;
     std::optional<Domain::CustomGCode::Info> custom_gcode;
     std::size_t material_slot_count{};
+    std::vector<std::string> extruder_colors;
 
     bool operator==(const PreviewConfig&) const = default;
 };

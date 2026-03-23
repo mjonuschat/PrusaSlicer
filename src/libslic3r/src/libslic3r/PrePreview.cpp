@@ -538,6 +538,7 @@ PreviewConfig::PreviewConfig(const Slic3r::Print& print)
         custom_gcode = print.custom_gcode()->get();
     }
     material_slot_count = print.config().hw_config().material_slot_count();
+    extruder_colors = print.config().get<std::vector<std::string>>("extruder_slot_colours");
 }
 
 PrePreview::PrePreview(const Slic3r::Print& print): m_prepreview_config{print} {
@@ -649,7 +650,7 @@ libpgcode::ProcessorResult PrePreview::generate_result() const {
         result.filament_densities.push_back(0.0);
     }
 
-    result.extruder_str_colors = print.config().get<std::vector<std::string>>("extruder_slot_colours");
+    result.extruder_str_colors = m_prepreview_config.extruder_colors;
     result.extruder_str_colors.resize(result.extruders_count);
 
     std::vector<Domain::CustomGCode::Item> custom_color_gcodes;
