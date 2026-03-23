@@ -17,7 +17,6 @@
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
-#include <Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp> // calc 2d convex hull for adding new text
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
 #include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs
 
@@ -719,75 +718,6 @@ void TextGizmo::on_project_activated(size_t new_project_id)
 }
 
 namespace {
-Domain::Point get_screen_center(const Domain::ModelVolume& volume, const Domain::ModelInstance& instance, const Scene::Camera& camera) {
-    const Domain::Transform3d to_world = instance.get_matrix() * volume.get_matrix();
-    const Domain::TriangleMesh& hull = volume.get_convex_hull();
-    Domain::Points points;
-    points.reserve(hull.its.vertices.size());
-    for (const Domain::Vec3f& v : hull.its.vertices) {
-        Domain::Vec3d v_world = to_world * v.cast<double>();
-        Domain::Vec2d coor = camera.project_to_screen_space(v_world);
-        // projection to screen coor space has reverse Y against mouse coordinate
-        coor.y() = camera.viewport().height - coor.y();
-        points.push_back(coor.cast<Domain::coord_t>());
-    }
-
-    Domain::Polygon hull_2d = Biz::Algorithms::Geometry::convex_hull(points);
-    return hull_2d.centroid();
-}
-} // namespace
-
-bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
-{
-    if (!init_create(volume_type))
-        return false;    
-
-    // get (pickray + pickresults) from screen center
-    Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
-    const Scene::Camera& camera = scene.camera();
-    const Render::Rect& v = camera.viewport();
-    Domain::Vec2f logic_center{ v.x + v.width / 2.f, v.y + v.height / 2.f };
-
-    // get selected object centroid center
-    const Domain::Project& project = m_project_interactor.selected_project();
-    const Domain::ElementRefs& els = m_project_interactor.scene_interactor().object_selection().elements;
-    float squared_norm = std::numeric_limits<float>::max();
-    std::optional<Domain::Point> screen_coor;
-    auto eval_center_closest = [&camera, &squared_norm, &screen_coor, &logic_center]
-    (const Domain::ModelVolume& volume, const Domain::ModelInstance& instance) {
-        Domain::Point center = get_screen_center(volume, instance, camera);
-        if (float norm = (center.cast<float>() - logic_center).squaredNorm();
-            squared_norm > norm) { // is cloeser to screen center
-            squared_norm = norm;
-            screen_coor = center;
-        }
-    };
-
-    for (const Domain::ElementRef& el: els) {
-        const Domain::ModelInstance* instance = project.find_instance_by_id(el.object_id, el.instance_id);
-        if (instance == nullptr) {
-            continue; // e.g. wipe tower
-        }
-        if (el.volume_id == 0) { // Whole object selected
-            const Domain::ModelObject* obj = project.find_object_by_id(el.object_id);
-            for (const Domain::ModelVolume* vol : obj->volumes) {
-                eval_center_closest(*vol, *instance);
-            }
-            continue;
-        }
-        const Domain::ModelVolume* vol = project.find_volume_by_id(el.object_id, el.volume_id);
-        eval_center_closest(*vol, *instance);
-    }
-
-    const Domain::Vec2f p = screen_coor.has_value() ? screen_coor->cast<float>() : logic_center;
-    Scene::NodePickResults pick_results;
-    Scene::Ray pick_ray;
-    scene.pick_at(p.x(), p.y(), pick_results, &pick_ray);
-    return emboss_text(volume_type, pick_ray, pick_results);
-}
-
-namespace {
-
 class TextShapeProvider : public Biz::Emboss::ShapeProvider
 {
 public:
@@ -909,10 +839,44 @@ Biz::Emboss::BaseData::IssueFn create_issue_fn(
         case JobIssue::default_volume: prepend_tooltip(_u8L("Default object volume was applied. Please change the font or text.")); break;
         case JobIssue::canceled:       prepend_tooltip(_u8L("Job was canceled."));  break;
         }
-    };
+    };  
 }
 
+bool is_allowed_type(Domain::ModelVolumeType volume_type) {
+    return volume_type == Domain::ModelVolumeType::MODEL_PART
+        || volume_type == Domain::ModelVolumeType::NEGATIVE_VOLUME
+        || volume_type == Domain::ModelVolumeType::PARAMETER_MODIFIER;
+}
 } // namespace
+
+bool TextGizmo::add_text_to_scene(Domain::ModelVolumeType volume_type)
+{
+    if (!is_allowed_type(volume_type))
+        return false;
+
+    m_preset_manager.init();
+    m_preset_manager.discard_preset_changes(); // create volume with stored settings
+
+    const Domain::ElementRefs& els = m_project_interactor.scene_interactor().object_selection().elements;
+    const Domain::Project& project = m_project_interactor.selected_project();
+    const Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
+    auto guess = Scene::guess_volume_transformation(els, project, scene);
+
+    Biz::Emboss::TextLines text_lines;
+    const std::string& text = _u8L("Embossed text");
+    auto issue_fn = create_issue_fn(dialog(), m_proj_ctxs->selected().warning_tooltip, m_project_interactor);
+    auto base = create_base_data(text, volume_type, m_preset_manager, m_project_interactor, text_lines, issue_fn);
+    if (guess.instance == nullptr) { // create object
+        Biz::Emboss::CreateVolumeParams params{
+            .base = std::move(base),
+            .volume_type = volume_type
+        };
+        return Biz::Emboss::start_create_object_job(params, guess.bed_coor);
+    }
+    else {
+        return Biz::Emboss::start_create_volume_job(*guess.instance, guess.transformation, base, volume_type);
+    }
+}
 
 bool TextGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type) {
     Biz::Emboss::SelectedText selected = Biz::Emboss::get_selected_text_volume(m_project_interactor);
@@ -982,31 +946,5 @@ void TextGizmo::rotate(double absolut_angle_in_rad) {
     if (m_preset_manager.get_preset().projection.use_surface ||
         m_preset_manager.get_font_prop().per_glyph)
         update_volume();
-}
-
-bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
-{
-    if (volume_type != Domain::ModelVolumeType::MODEL_PART
-        && volume_type != Domain::ModelVolumeType::NEGATIVE_VOLUME
-        && volume_type != Domain::ModelVolumeType::PARAMETER_MODIFIER)
-        return false; // invalid volume type for emboss text
-
-    // if (wxGetApp().obj_list()->has_selected_cut_object()) return false;
-    return true;
-}
-
-bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
-{
-    m_preset_manager.init();
-    m_preset_manager.discard_preset_changes(); // create volume with stored settings
-
-    Biz::Emboss::TextLines text_lines;
-    const std::string& text = _u8L("Embossed text");
-    auto issue_fn = create_issue_fn(dialog(), m_proj_ctxs->selected().warning_tooltip, m_project_interactor);
-    Biz::Emboss::CreateVolumeParams params{
-        .base = create_base_data(text, volume_type, m_preset_manager, m_project_interactor, text_lines, issue_fn),
-        .volume_type = volume_type
-    };
-    return Scene::start_create(params, ray, results);
 }
 } // namespace Slic3r::App::Plater

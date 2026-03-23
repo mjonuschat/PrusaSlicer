@@ -89,8 +89,6 @@ private:
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
     void close();
     void rotate(double absolut_angle_in_rad); // callback on_rotation_change
-    bool init_create(Domain::ModelVolumeType volume_type);
-    bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
 
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;

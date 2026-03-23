@@ -24,6 +24,7 @@
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedMaterials.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/EmbossCreate.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
@@ -93,6 +94,7 @@
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
+#include <boost/algorithm/string/predicate.hpp> // iends_with
 
 #define ENABLED_DEBUG_BEDS 0
 #define ENABLED_NODE_LOGGING 0
@@ -993,25 +995,88 @@ void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
         .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER); };
 }
 
+namespace {
+// open SvgGizmo, when svg volume is just added into scene
+// TODO: solve multiple svgs at once        
+std::optional<Scene::TrafoGuess> get_svg_guess_tr(
+    const std::vector<boost::filesystem::path>& file_paths,
+    const Biz::ProjectInteractor& project_interactor,
+    const Scene::ISceneProvider& scene_provider
+)
+{
+    if (file_paths.empty() ||
+        !boost::algorithm::iends_with(file_paths.front().string(), ".svg"))
+        return {}; // not svg file
+
+    const Biz::Scene::ObjectSelection& selection = 
+        project_interactor.scene_interactor().object_selection();
+    const Domain::Project& project = project_interactor.selected_project();
+    const Scene::Scene& scene = scene_provider.scene();
+    return Scene::guess_volume_transformation(selection.elements, project, scene);
+}
+
+void open_svg_gizmo(
+    const std::optional<Scene::TrafoGuess>& volume_tr,
+    Biz::ProjectInteractor& project_interactor, 
+    const Scene::IGizmoController& gizmo_controller, 
+    const PlaterRenderModule& render_module) {
+    if (!volume_tr.has_value())
+        return;
+    
+    const Biz::Scene::ObjectSelection& selection =
+        project_interactor.scene_interactor().object_selection();
+    if (selection.elements.size() != 1)
+        return;
+
+    const Domain::ElementRef& element = selection.elements.front();
+    const Domain::Project& project = project_interactor.selected_project();
+    const Domain::ModelVolume* volume = nullptr;
+    if (element.has_volume()) {
+        volume = project.find_volume_by_id(element.object_id, element.volume_id);
+    } else {
+        const Domain::ModelObject* object = project.find_object_by_id(element.object_id);
+        if (object != nullptr && object->volumes.size() == 1)
+            volume = object->volumes.front();
+    }
+    if (volume == nullptr)
+        return;
+
+    const Domain::ModelInstance* instance =
+        project.find_instance_by_id(element.object_id, element.instance_id);
+    if (instance == nullptr || instance != volume_tr->instance)
+        return;
+    const Domain::Transform3d& instance_tr = instance->get_matrix();
+    Domain::Transform3d world_relative = instance_tr *
+        volume->get_matrix().inverse() * volume_tr->transformation *
+        instance_tr.inverse();
+
+    project_interactor.scene_interactor().transform_selection(world_relative.matrix());
+    if (gizmo_controller.current_tool_type() != Scene::ToolType::Svg)
+        render_module.command(CommandName::SvgGizmo).execute();    
+}
+} // namepsace
+
 void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
 {
     IDialogManager::FileCallback callback =
         [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
     {
-        if (success) {
-            Biz::FileLoadingLogic::import_volumes_into_selected_object(
-                file_paths,
-                type,
-                m_project_interactor.scene_interactor(),
-                &AppServices::instance().dialog_manager()
-            );
-            // open SvgGizmo, when svg volume is selected(was imported into object)
-            if(m_gizmo_manager->current_tool_type() != Scene::ToolType::Svg)
-                command(CommandName::SvgGizmo).execute();
+        if (!success || file_paths.empty())
+            return;
+
+        // NOTE: Need to ray cast into scene before import
+        auto svg_transform = get_svg_guess_tr(file_paths, m_project_interactor, *m_scene_presenter);
+        Biz::FileLoadingLogic::import_volumes_into_selected_object(
+            file_paths,
+            type,
+            m_project_interactor.scene_interactor(),
+            &AppServices::instance().dialog_manager()
+        );
+        open_svg_gizmo(svg_transform, m_project_interactor, *m_gizmo_manager, *this);
+        
 #if ENABLED_NODE_LOGGING
-            m_scene_presenter->scene().log_nodes();
-#endif
-        }
+        m_scene_presenter->scene().log_nodes();
+#endif        
     };
 
     auto& dlg_manager = AppServices::instance().dialog_manager();

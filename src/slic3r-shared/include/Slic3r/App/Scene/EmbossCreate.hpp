@@ -9,15 +9,19 @@
 #include "Slic3r/Biz/Emboss/EmbossJob.hpp" // CreateVolumeParams
 
 namespace Slic3r::App::Scene {
+struct TrafoGuess {
+    Domain::Transform3d transformation;
+    const Domain::ModelInstance* instance;
+    Domain::Vec2d bed_coor; // only for object creation, when instance == nullptr
+};
 /**
-@brief Create new volume on position of mouse cursor
-@param input Cantain all needed data for start creation job
-@param pick_ray Ray into scene given by coordinate on screen
-@param picks Scene Node with intersection of picked ray
-@return True on success otherwise False
+@brief Create volume transformation for just added volume by scene view
+@param selection Contain instance where to add volume, when emtpy, than guess transformation for new object
+@param project Project where is instance
+@param scene Define current view into scene to guess where one wants to add volume
+@return Transformation onto surface of the object for new added volume
 */
-bool start_create(Biz::Emboss::CreateVolumeParams& input, const Ray& pick_ray, const NodePickResults& picks);
-bool start_create_volume(Biz::Emboss::CreateVolumeParams& input, const Ray& pick_ray, const NodePickResults& picks);
-bool start_create_object(Biz::Emboss::CreateVolumeParams& input, const Ray& pick_ray, const NodePickResults& picks);
+TrafoGuess guess_volume_transformation(
+    const Domain::ElementRefs& selection, const Domain::Project& project, const Scene& scene);
 
 } // namespace Slic3r::App::Scene

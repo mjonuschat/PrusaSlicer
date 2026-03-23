@@ -854,18 +854,6 @@ void SvgGizmo::on_project_activated(size_t new_project_id)
     update_svg_dialog(dialog(), m_proj_ctxs->project(new_project_id), *volume_ptr);
 }
 
-bool SvgGizmo::add_svg_by_view_direction(std::string_view svg_filepath, Domain::ModelVolumeType volume_type)
-{
-    // get (pickray + pickresults) from screen center
-    Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
-    const Render::Rect& v = scene.camera().viewport();
-    Domain::Point logic_center{ v.x + v.width / 2, v.y + v.height / 2 };
-    Scene::NodePickResults pick_results;
-    Scene::Ray pick_ray;
-    scene.pick_at(logic_center.x(), logic_center.y(), pick_results, &pick_ray);
-    return emboss_svg(svg_filepath, volume_type, pick_ray, pick_results);
-}
-
 namespace {
 Biz::Emboss::BaseData::IssueFn create_issue_fn(
     SvgDialog& dialog,
@@ -936,29 +924,5 @@ bool SvgGizmo::update_volume(std::optional<Domain::ModelVolumeType> volume_type)
 
 void SvgGizmo::close() {
     m_gizmo_controller.deactivate_current_tool();
-}
-
-bool SvgGizmo::emboss_svg(std::string_view svg_filepath, Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
-{
-    ProjectContext& proj_ctx = m_proj_ctxs->selected();
-    // create shape
-    // checking that exist is inside of function "is_svg"
-    proj_ctx.shape = Domain::EmbossShape{
-        .svg_file = Domain::EmbossShape::SvgFile{
-            .path{svg_filepath}
-        }
-    };
-    std::optional<double> no_scale;
-    Biz::Emboss::ReadShapeResult res =
-        Biz::Emboss::read_shape_from_file(proj_ctx.shape, no_scale, no_scale);
-    if (res != Biz::Emboss::ReadShapeResult::success)
-        return false;
-        
-    auto issue_fn = create_issue_fn(dialog(), proj_ctx.warning_tooltip, m_project_interactor);
-    Biz::Emboss::CreateVolumeParams params{
-        .base = create_base_data(volume_type, proj_ctx, m_project_interactor, issue_fn),
-        .volume_type = volume_type
-    };
-    return Scene::start_create_volume(params, ray, results);
 }
 } // namespace Slic3r::App::Plater

@@ -67,13 +67,9 @@ public:
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
 private:
-    bool add_svg_by_view_direction(std::string_view svg_filepath, 
-        Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
     void close();
-    bool emboss_svg(std::string_view svg_filepath, Domain::ModelVolumeType volume_type,
-        const Scene::Ray& ray, const Scene::NodePickResults& results);
 
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
