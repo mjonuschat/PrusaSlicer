@@ -8,8 +8,10 @@
 
 #include "Slic3r/Biz/OverridableConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include "Slic3r/App/Yoga/Text.hpp"
-#include <Slic3r/Biz/I18N/I18N.hpp>
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -124,7 +126,8 @@ void OverridableSubcategoryItem::on_data_update()
 
 void OverridableSubcategoryItem::on_index_update()
 {
-    set_fill(m_index % 2 == 0 ? ImColor(27, 27, 27) : ImColor(22, 22, 22));
+    ImColor color = m_theme->color_imgui(Platform::Color::WindowBg);
+    set_fill(m_index % 2 == 0 ? color : Imgui::adjust_brightness(color, 0.9));
 }
 
 } // namespace Slic3r::App

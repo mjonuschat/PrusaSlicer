@@ -6,6 +6,7 @@
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <Slic3r/App/libvgcode/Types.hpp>
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
@@ -39,7 +40,9 @@ LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapp
 
     m_settings = content()->emplace_back<Rectangle>();
     m_settings->set_flex_shrink(0.f);
-    m_settings->set_fill(ImColor(32, 32, 32));
+    m_settings->set_fill(
+        Imgui::adjust_brightness(m_theme->color_imgui(Platform::Color::WindowBg), 1.25f)
+    );
     m_settings->set_flags(ImDrawFlags_RoundCornersBottom);
     m_settings->set_padding(Paddings(20.f, 15.f));
     m_settings->set_gap(10.f);

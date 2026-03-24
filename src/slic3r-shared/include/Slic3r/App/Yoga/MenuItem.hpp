@@ -22,7 +22,6 @@ public:
     MenuItem(
         Menu* parent,
         const std::string& label,
-        ImColor color_icon_rect,
         const std::string& shortcut = {},
         bool has_sub_menu           = false
     );
@@ -43,7 +42,6 @@ private:
     void create(
         const std::string& label,
         Render::Icon icon           = Render::Icon::None,
-        ImColor color_icon_rect     = IM_COL32_BLACK_TRANS,
         const std::string& shortcut = {},
         bool has_sub_menu           = false
     );

@@ -7,6 +7,7 @@
 #include "Slic3r/App/ResultExport/ExportActions.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -115,7 +116,7 @@ std::unique_ptr<LayoutButton> SidebarPreviewActionButtons::get_primary_button()
 {
     auto result{std::make_unique<LayoutButton>("Plater", Render::Icon::None, "Back to Plater")};
     result->set_label_font_type(Render::ImguiFontType::Bold);
-    result->set_background_color(color_secondary);
+    result->set_background_color(Platform::Color::AccentSecondary);
     result->set_min_size({0, button_height});
     result->set_flex_grow(1);
     result->callbacks().action = [this]() { navigate_to_other(); };
@@ -312,7 +313,7 @@ void SidebarPreviewActionButtons::update_buttons()
             m_layout_with_connect.navigation_button
     };
 
-    primary_button->set_background_color(color_primary);
+    primary_button->set_background_color(Platform::Color::AccentPrimary);
     primary_button->callbacks().action = []() {};
     navigation_button->set_visible(true);
     for (LayoutButton* button : secondary_buttons) {
@@ -323,15 +324,15 @@ void SidebarPreviewActionButtons::update_buttons()
     using Biz::Slicing::StatusCode;
     switch (status.code) {
     case StatusCode::Running: {
-        primary_button->set_label("Cancel");
+        primary_button->set_label(Biz::_u8L("Cancel"));
         primary_button->set_enabled(true);
         primary_button->callbacks().action = [this, slicing_id]()
         { m_project_interactor->slicing_interactor().stop_slicing_bed(slicing_id); };
     } break;
     case StatusCode::InvalidData: {
         ASSERT(!status.errors.empty());
-        primary_button->set_label("Invalid settings");
-        primary_button->set_background_color(color_error);
+        primary_button->set_label(Biz::_u8L("Invalid settings"));
+        primary_button->set_background_color(Platform::Color::Error);
         primary_button->set_enabled(true);
 
         const Domain::Project& project{
@@ -387,7 +388,7 @@ void SidebarPreviewActionButtons::update_buttons()
     default: {
         primary_button->set_label("Plater");
         primary_button->set_tooltip("Back to Plater");
-        primary_button->set_background_color(color_secondary);
+        primary_button->set_background_color(Platform::Color::AccentSecondary);
         primary_button->set_enabled(true);
         primary_button->callbacks().action = [this]() { navigate_to_other(); };
 

@@ -11,7 +11,6 @@ const constexpr float DIALOG_CONTENT_PADDING   = 20;
 const constexpr float DIALOG_HEADER_HEIGHT     = 36.f;
 const constexpr float SIDE_PANEL_HEADER_HEIGHT = 40.f;
 const constexpr float SIDE_PANEL_WIDTH         = 80.f;
-const ImColor SIDE_PANEL_BACKGROUND_COLOR      = ImColor(41, 41, 41);
 const ImColor HEADER_LABEL_COLOR               = ImColor(184, 184, 184);
 const Paddings DIALOG_HEADER_PADDING           = Paddings(20, 10, 10, 10);
 
@@ -35,7 +34,7 @@ GizmoWindowWithLeftSidePanel::GizmoWindowWithLeftSidePanel(
 
     // Background rectangle for the side panel (with rounded corners on the left).
     m_side_panel_background = m_side_panel->emplace_back<Rectangle>();
-    m_side_panel_background->set_fill(SIDE_PANEL_BACKGROUND_COLOR);
+    m_side_panel_background->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     m_side_panel_background->set_flags(ImDrawFlags_RoundCornersLeft);
     m_side_panel_background->set_rounding(5.0f);
     m_side_panel_background->set_flex_grow(1);
@@ -70,7 +69,7 @@ GizmoWindowWithLeftSidePanel::GizmoWindowWithLeftSidePanel(
     Rectangle* buttons_rect = m_top_row->emplace_back<Rectangle>();
     buttons_rect->set_align_items(YGAlignCenter);
     buttons_rect->set_padding(DIALOG_HEADER_PADDING);
-    buttons_rect->set_fill(m_color_bg_alternate);
+    buttons_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     buttons_rect->set_flex_grow(1);
     buttons_rect->set_flags(ImDrawFlags_RoundCornersTopRight);
 

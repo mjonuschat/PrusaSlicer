@@ -13,9 +13,11 @@ namespace Slic3r::App::Yoga {
 
 InputTextField::InputTextField(const std::string& name)
 {
-    m_tooltip = emplace_back<Tooltip>(this, "", "");
+    m_tooltip = emplace_back<Tooltip>(this, std::string{}, std::string{});
     set_padding(1);
-    set_disabled_fill(ImColor(32, 32, 32));
+    set_disabled_fill(
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled)
+    );
     m_input_text = emplace_back<InputText>(name.empty() ? "InputText" : name);
     m_input_text->set_flex_grow(1);
 
@@ -124,9 +126,13 @@ InputText* InputTextField::input_text() const
 
 void InputTextField::update_fill()
 {
-    set_fill(
-        m_input_text->active() || m_input_text->active() ? ImColor(60, 60, 60) : ImColor(41, 41, 41)
-    );
+    ImColor color;
+    if (hovered() || m_input_text->active()) {
+        color = m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered);
+    } else {
+        color = m_theme->color_imgui(Platform::Color::Button);
+    }
+    set_fill(color);
 }
 
 void InputTextField::set_default(double default_value)
@@ -136,9 +142,7 @@ void InputTextField::set_default(double default_value)
     {
         m_default_text =
             fmt::format("{1:.{0}f}", double_validator->precision().value(), default_value);
-    } else if (PercentageValidator* percentage_validator =
-                   dynamic_cast<PercentageValidator*>(validator()))
-    {
+    } else if (dynamic_cast<PercentageValidator*>(validator())) {
         m_default_text = default_value;
     } else {
         m_default_text = fmt::format("{:.10g}", default_value);

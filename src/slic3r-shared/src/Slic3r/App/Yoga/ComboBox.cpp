@@ -158,9 +158,11 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
     {
         Imgui::ScopedStyleColors colors(
-            {{ImGuiCol_FrameBg, ImColor(41, 41, 41)},
-             {ImGuiCol_FrameBgHovered, ImColor(60, 60, 60)},
-             {ImGuiCol_FrameBgActive, ImColor(60, 60, 60)}}
+            {{ImGuiCol_FrameBg, m_theme->color_imgui(Platform::Color::Button)},
+             {ImGuiCol_FrameBgHovered,
+              m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered)},
+             {ImGuiCol_FrameBgActive,
+              m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)}}
         );
 
         ImGui::SetCursorScreenPos(to_im(pos));

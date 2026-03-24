@@ -3,13 +3,21 @@
 namespace Slic3r::App::Platform {
 
 void AbstractRenderModule::on_scene_mouse_event(const MouseEvent& e) {}
+
 void AbstractRenderModule::on_scene_keyboard_event(const KeyboardEvent& e)
 {
     m_command_registry.process_keyboard_event(e);
 }
+
 void AbstractRenderModule::on_activated() {}
+
 void AbstractRenderModule::on_deactivated() {}
+
 void AbstractRenderModule::on_screen_resized() {}
+
+void AbstractRenderModule::register_commands() {}
+
+void AbstractRenderModule::bind_commands() {}
 
 using Biz::Platform::IRenderRequestHandler;
 
@@ -28,8 +36,9 @@ void AbstractRenderModule::deactivate()
 void AbstractRenderModule::request_render()
 {
     // Only request render when activated
-    if (m_render_request_handler)
+    if (m_render_request_handler) {
         m_render_request_handler->request_render();
+    }
 }
 
 void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info)
@@ -40,34 +49,36 @@ void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info
     }
 }
 
-void AbstractRenderModule::ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render,
-    Platform::AnimationManager& animation_manager)
+void AbstractRenderModule::ensure_initialized(
+    Render::Device& device,
+    Render::ImguiRender& imgui_render,
+    AbstractTheme& theme,
+    AnimationManager& animation_manager
+)
 {
     if (!m_initialized) {
-        on_init(device, imgui_render, animation_manager);
+        on_init(device, imgui_render, theme, animation_manager);
         register_commands();
         bind_commands();
         m_initialized = true;
     }
 }
 
-bool AbstractRenderModule::is_initialized() const {
+bool AbstractRenderModule::is_initialized() const
+{
     return m_initialized;
 }
 
-void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
+void AbstractRenderModule::on_init(
+    Render::Device& device,
+    Render::ImguiRender& imgui_render,
+    Platform::AbstractTheme& theme,
+    Platform::AnimationManager& animation_manager
+)
 {
-    if (m_imgui_render != imgui_render) {
-        m_imgui_render = imgui_render;
-        on_set_imgui_render();
-    }
-}
-
-void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &imgui_render,
-    Platform::AnimationManager& animation_manager)
-{
-    m_device = &device;
-    m_imgui_render = &imgui_render;
+    m_device            = &device;
+    m_imgui_render      = &imgui_render;
+    m_theme             = &theme;
     m_animation_manager = &animation_manager;
 }
 
@@ -87,4 +98,3 @@ bool AbstractRenderModule::is_gizmo_manager_completed() const
 }
 
 } // namespace Slic3r::App::Platform
-

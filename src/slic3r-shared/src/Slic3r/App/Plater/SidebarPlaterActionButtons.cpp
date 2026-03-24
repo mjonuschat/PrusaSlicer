@@ -29,7 +29,7 @@ SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_
 
     m_button_slice = emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);
-    m_button_slice->set_background_color(color_primary);
+    m_button_slice->set_background_color(Platform::Color::AccentPrimary);
     m_button_slice->set_min_size({0, button_height});
     m_button_slice->set_label_font_type(Render::ImguiFontType::Bold);
     m_button_slice->set_enabled(false);
@@ -150,11 +150,11 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
     std::string tooltip;
     Render::Icon icon = Render::Icon::None;
     m_navigation_button->set_visible(true);
-    ImColor button_color = color_primary;
+    ImColor button_color = m_theme->color_imgui(Platform::Color::AccentPrimary);
 
     if (any_invalid) {
         label        = _u8L("Invalid settings");
-        button_color = color_error;
+        button_color = m_theme->color_imgui(Platform::Color::Error);
         icon         = Render::Icon::EyeOpen;
 
         std::string error_mesage;
@@ -174,7 +174,6 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             AppServices::instance().dialog_manager().show_error_dialog(error_mesage, label);
         };
     } else if (any_modified) {
-        std::string warning_tooltip;
         for (const BedStatus& bed_status : statuses) {
             if (bed_status.status == StatusCode::Modified) {
                 std::string bed_warning;
@@ -217,7 +216,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         m_button_slice->callbacks().action = [this]() {
             navigate_to_other();
         };
-        button_color = color_secondary;
+        button_color = m_theme->color_imgui(Platform::Color::AccentSecondary);
     }
 
     m_button_slice->set_icon(icon);

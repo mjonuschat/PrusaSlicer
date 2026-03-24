@@ -103,7 +103,9 @@ void ConfigRowItem::on_data_update()
         }
     }
 
-    if (m_input && !m_small && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width))
+    if (m_input
+        && !m_small
+        && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width))
     {
         m_input->set_flex_grow(m_state->def().full_width);
         if (m_state->def().full_width) {
@@ -157,7 +159,7 @@ void ConfigRowItem::on_data_update()
 void ConfigRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     if (m_state == config_item) {
-        set_border_color(ImColor(250, 104, 45));
+        set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
     } else {
         set_border_color(IM_COL32_BLACK_TRANS);
     }

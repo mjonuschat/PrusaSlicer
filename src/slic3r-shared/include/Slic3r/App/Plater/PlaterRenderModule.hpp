@@ -138,7 +138,7 @@ public:
 
     bool is_gizmo_manager_completed() const override
     {
-        return m_gizmo_manager ? true : false;
+        return m_gizmo_manager.get();
     }
 
     /**
@@ -149,11 +149,15 @@ public:
     /**@}*/
 
 protected:
-    void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
+    void on_init(
+        Render::Device& device,
+        Render::ImguiRender& imgui_render,
+        Platform::AbstractTheme& theme,
+        Platform::AnimationManager& animation_manager
+    ) override;
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
-    void on_set_imgui_render() override;
     void register_commands() override;
     void bind_commands() override;
     /**

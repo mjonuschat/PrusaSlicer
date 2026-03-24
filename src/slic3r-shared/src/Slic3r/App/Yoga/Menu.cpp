@@ -47,8 +47,7 @@ void Menu::remove_item(size_t index)
 
 void Menu::append_separator()
 {
-    Separator* sep = emplace_back<Separator>();
-    sep->set_fill(ImColor(36, 36, 36));
+    emplace_back<Separator>();
 }
 
 void Menu::close_all_submenus() const

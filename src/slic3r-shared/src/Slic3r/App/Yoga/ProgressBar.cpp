@@ -13,22 +13,30 @@ namespace Slic3r::App::Yoga {
 ProgressBar::ProgressBar() : Rectangle()
 {
     set_fill(IM_COL32_BLACK_TRANS);
-    set_border_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    set_border_color(m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
     set_border_width(1.f);
     set_justify_content(YGJustifyCenter);
 
     Item* wrap = emplace_back<Item>();
     wrap->set_flex_grow(1.0);
     m_progress_area = wrap->emplace_back<Rectangle>();
-    m_progress_area->set_border_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    m_progress_area->set_border_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
     m_progress_area->set_border_width(1.f);
-    m_progress_area->set_disabled_fill(ImColor(95, 95, 95));
+    m_progress_area->set_disabled_fill(m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled));
     m_progress_area->set_justify_content(YGJustifyFlexEnd);
+    m_progress_area->set_fill(
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)
+    );
 
-    m_overlay = emplace_back<Text>(""); 
+    m_overlay = emplace_back<Text>("");
     m_overlay->set_font_type(Render::ImguiFontType::Bold);
     m_overlay->set_position_type(YGPositionTypeAbsolute);
     m_overlay->set_self_align(YGAlignCenter);
+    m_overlay->set_text_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
 }
 
 double ProgressBar::progress() const
@@ -82,7 +90,7 @@ void ProgressBar::update_area_width() {}
 
 void ProgressBar::on_resized()
 {
-    if (!m_progress_set_on_resized && width() > 0){
+    if (!m_progress_set_on_resized && width() > 0) {
         m_progress_area->set_width(std::lerp(height(), width(), 0.01 * m_value));
         m_progress_set_on_resized = true;
     }

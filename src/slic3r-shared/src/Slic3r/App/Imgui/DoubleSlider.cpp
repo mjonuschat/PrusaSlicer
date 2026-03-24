@@ -4,9 +4,20 @@
 
 namespace Slic3r::App::Imgui::DoubleSlider {
 
-static ImU32 fg_color()         { return ImGui::GetColorU32({ 0.99f, 0.41f, 0.2f, 1.0f }); } // color from SidebarAfterSlice::render()
-static ImU32 bg_color()         { return ImGui::GetColorU32({ 0.5f, 0.5f, 0.5f, 1.0f }); }
-static ImU32 tooltip_bg_color() { return ImColor({ 40, 40, 40 }); }
+ImU32 Control::fg_color() const
+{
+    return ImGui::GetColorU32({0.99f, 0.41f, 0.2f, 1.0f});
+} // color from SidebarAfterSlice::render()
+
+ImU32 Control::bg_color() const
+{
+    return ImGui::GetColorU32({0.5f, 0.5f, 0.5f, 1.0f});
+}
+
+ImU32 Control::tooltip_bg_color() const
+{
+    return m_theme->color_imgui(Platform::Color::WindowBg);
+}
 
 ImVec2 Control::DrawOptions::dummy_sz() const
 {

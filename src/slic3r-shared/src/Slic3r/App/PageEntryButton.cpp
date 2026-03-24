@@ -8,10 +8,14 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PageEntryButton::PageEntryButton(size_t index, const PageEntry& page_entry, FnIndexClicked on_clicked)
-    : LayoutButton(page_entry.name, page_entry.icon)
-    , Biz::DataObserver<PageEntry>(index, page_entry)
-    , m_on_clicked(on_clicked)
+PageEntryButton::PageEntryButton(
+    size_t index,
+    const PageEntry& page_entry,
+    FnIndexClicked on_clicked
+) :
+    LayoutButton(page_entry.name, page_entry.icon),
+    Biz::DataObserver<PageEntry>(index, page_entry),
+    m_on_clicked(on_clicked)
 {
     ASSERT(m_on_clicked);
 
@@ -21,6 +25,11 @@ PageEntryButton::PageEntryButton(size_t index, const PageEntry& page_entry, FnIn
     set_content_justify_content(YGJustifyFlexStart);
 
     set_content_padding({5, 10});
+
+    set_background_color(
+        IM_COL32_BLACK_TRANS,
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered)
+    );
 }
 
 void PageEntryButton::on_data_update()

@@ -16,8 +16,8 @@ ToolbarSwitchButton::ToolbarSwitchButton(
     m_switch_position(switch_position)
 {
     set_label(label);
-    set_background_color(ImColor(41, 41, 41));
-    set_background_color_checked(ImColor(39, 47, 64));
+
+    set_background_color(Platform::Color::Button);
 
     switch (switch_position) {
     case SwitchPosition::Left:

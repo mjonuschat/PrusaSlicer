@@ -8,7 +8,9 @@ namespace Slic3r::App::Yoga {
 Toggler::Toggler()
 {
     set_align_items(YGAlignCenter);
-    set_disabled_fill(ImColor(95, 95, 95));
+    set_disabled_fill(
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled)
+    );
 
     set_width(20);
     set_height(14);
@@ -16,12 +18,12 @@ Toggler::Toggler()
 
     m_knob = emplace_back<Circle>();
     m_knob->set_height_percent(100);
-    m_knob->set_disabled_fill(ImColor(20, 20, 20));
+    m_knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
 
     m_inner_oval = emplace_back<Oval>();
     m_inner_oval->set_width_percent(100);
     m_inner_oval->set_height_percent(100);
-    m_inner_oval->set_disabled_fill(ImColor(20, 20, 20));
+    m_inner_oval->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
     m_inner_oval->set_visible(false);
 }
 

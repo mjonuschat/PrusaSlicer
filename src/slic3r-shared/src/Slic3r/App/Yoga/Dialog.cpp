@@ -49,11 +49,11 @@ Dialog::Dialog(const std::string& name)
     buttons_rect->set_justify_content(YGJustifyFlexEnd);
     buttons_rect->set_align_items(YGAlignCenter);
     buttons_rect->set_padding(dialog_padding);
-    buttons_rect->set_fill(m_color_bg_alternate);
+    buttons_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     buttons_rect->set_flex_grow(1);
     buttons_rect->set_rounding(0);
 
-    m_close_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    m_close_button = buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::PrintIdle);
     m_close_button->set_min_size({20, 20});
     m_close_button->callbacks().action = [this] {
         close_action();
@@ -117,8 +117,8 @@ LayoutButton* Dialog::append_tab(const std::string& tab)
     LayoutButton* tab_button = m_tab_container->emplace_back<LayoutButton>(tab);
     tab_button->set_checkable(true);
     tab_button->set_content_padding({10, 3});
-    tab_button->set_background_color(ImColor(41, 41, 41));
-    tab_button->set_background_color_checked(ImColor(27, 27, 27));
+    tab_button->set_background_color(Platform::Color::WindowBgAlternate);
+    tab_button->set_background_color_checked(m_theme->color_imgui(Platform::Color::WindowBg));
 
     if (m_tab_buttons.empty()) {
         tab_button->set_checked(true);

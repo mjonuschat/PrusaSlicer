@@ -242,10 +242,16 @@ void PlaterRenderModule::open_search()
     m_top_bar->focus_search();
 }
 
-void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
+void PlaterRenderModule::on_init(
+    Render::Device& device,
+    Render::ImguiRender& imgui_render,
+    Platform::AbstractTheme& theme,
+    Platform::AnimationManager& animation_manager
+)
 {
-    AbstractRenderModule::on_init(device, imgui_render, animation_manager);
+    AbstractRenderModule::on_init(device, imgui_render, theme, animation_manager);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
+    Yoga::Item::set_theme(&theme);
     ConfigItemControl::set_project_interactor(&m_project_interactor);
     m_scene_presenter = std::make_unique<PlaterScenePresenter>(
         m_workbench,
@@ -272,8 +278,8 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(&m_command_binding_manager);
 
     // Set our color styles before gizmos initialization
-    // to use them during GiymoDialogs creation
-    AbstractRenderLayout::set_our_style_colors();
+    // to use them during GizmoDialogs creation
+    m_theme->initialize_imgui_style();
 
     init_gizmos();
     init_scene();
@@ -1324,8 +1330,6 @@ void PlaterRenderModule::on_screen_resized()
     auto viewport = Render::Rect::from(0, 0, m_screen_info);
     m_scene_presenter->screen_resized(viewport);
 }
-
-void PlaterRenderModule::on_set_imgui_render() {}
 
 void PlaterRenderModule::on_selected_project_changed(size_t index)
 {

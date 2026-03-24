@@ -107,7 +107,7 @@ TopBar::TopBar(
     for (Rectangle* wrapper :
          std::initializer_list<Rectangle*>{left_wrapper, right_wrapper, project_actions_wrapper})
     {
-        wrapper->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
+        wrapper->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
         wrapper->set_rounding(0.f);
         wrapper->set_gap(15.f);
         wrapper->set_padding({15.f, 5.f});
@@ -120,7 +120,12 @@ void TopBar::on_selected_project_changed(size_t index)
         ProjectButton* button = m_list_view->item_at(button_index);
         if (button->project_id() == index) {
             m_list_view->scroll_at_item(m_list_view->get_item(button_index));
-            break;
+            button->set_separator_visible(false);
+            if (button_index > 0) {
+                m_list_view->item_at(button_index - 1)->set_separator_visible(false);
+            }
+        } else {
+            button->set_separator_visible(true);
         }
     }
 }

@@ -100,8 +100,6 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
     m_progress = row->emplace_back<ProgressBar>();
     m_progress->set_show_overlay(true);
     m_progress->set_flex_grow(1.f);
-    m_progress->set_progress_fill(GImGui->Style.Colors[ImGuiCol_ButtonActive]);
-    m_progress->set_overlay_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
 }
 
 void SimplifyDialog::set_mesh_name(const std::string& name)
@@ -199,7 +197,9 @@ void SimplifyDialog::add_text_row(const std::string& title, std::unique_ptr<Yoga
 
     text_item->set_flex_grow(1);
     text_item->set_wrap_mode(Text::WrapMode::WrapElide);
-    text_item->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    text_item->set_text_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
     row->append(std::move(text_item));
 }
 

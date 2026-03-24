@@ -866,7 +866,10 @@ void ObjectList::render_all_beds_node()
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * m_inner_padding.y()));
 
         BoldFontGuard bfg(m_imgui_render);
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImGui::GetColorU32(BLUE_BUTTON_COLOR));
+        ImGui::PushStyleColor(
+            ImGuiCol_PlotHistogram,
+            m_theme->color_imgui(Platform::Color::AccentSecondary).Value
+        );
         if (total_beds_cnt == finished_beds_cnt)
             ImGui::ProgressBar(1.0, progress_bar_sz, "SLICED");
         else
@@ -1546,7 +1549,11 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 1.f));
     if (status_code == StatusCode::Finished) {
         BoldFontGuard bfg(m_imgui_render);
-        text_with_bg_aligned(align_x, L("SLICED"), BLUE_BUTTON_COLOR);
+        text_with_bg_aligned(
+            align_x,
+            L("SLICED"),
+            m_theme->color_imgui(Platform::Color::AccentSecondary)
+        );
     } else if (status_code == StatusCode::Updating) {
         text_with_bg_aligned(align_x, L("UPDATING"), DARK_BLUE);
     } else if (status_code == StatusCode::Stopping) {
@@ -1557,7 +1564,10 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
         text_with_bg_aligned(align_x, L("INVALID"), DARK_BLUE);
     } else if (m_mode == Mode::Preview && status_code == StatusCode::Modified) {
         BoldFontGuard bfg(m_imgui_render);
-        ImGui::PushStyleColor(ImGuiCol_Button, ORANGE_BUTTON_COLOR);
+        ImGui::PushStyleColor(
+            ImGuiCol_Button,
+            m_theme->color_imgui(Platform::Color::AccentPrimary).Value
+        );
         if (button_aligned(align_x, L("SLICE"), ImVec2(0, 0), ImGuiButtonFlags_AlignTextBaseLine))
             m_project_interactor->slicing_interactor().slice_bed(
                 {m_project_interactor->selected_project_id(), bed_instance_id}

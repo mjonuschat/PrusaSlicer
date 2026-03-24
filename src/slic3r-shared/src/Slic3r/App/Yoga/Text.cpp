@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/App/Render/ImguiRender.hpp"
+#include "Slic3r/App/Platform/AbstractTheme.hpp"
 
 #include <imgui_internal.h>
 
@@ -29,7 +30,11 @@ public:
         ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
         ImGui::PushStyleColor(
             ImGuiCol_Text,
-            enabled() ? ImVec4(m_text_color) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled)
+            enabled() ? ImVec4(m_text_color) :
+                        ImVec4(m_theme->color_imgui(
+                            Platform::Color::Text,
+                            Platform::ColorGroup::Disabled
+                        ))
         );
 
         switch (m_wrap_mode) {

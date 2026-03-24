@@ -35,8 +35,10 @@ SearchResultRow::SearchResultRow(
     set_rounding(0);
     set_checkable(true);
 
-    set_background_color(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
-    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    set_background_color(Platform::Color::WindowBg);
+    set_background_color_checked(
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)
+    );
 
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_width(18);

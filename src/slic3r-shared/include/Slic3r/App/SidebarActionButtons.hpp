@@ -41,9 +41,6 @@ protected:
     std::string m_navigator_name;
     std::string m_navigator_tooltip;
 
-    static constexpr ImColor color_primary{223, 93, 45};
-    static constexpr ImColor color_secondary{ImVec4(0.32f, 0.48f, 0.84f, 1.0f)};
-    static constexpr ImColor color_error{ImVec4(0.79f, 0.18f, 0.14f, 1.0f)};
     static constexpr float button_height{45};
     static constexpr float navig_btn_width{40.f};
 };

@@ -14,7 +14,7 @@ Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label) :
 {}
 
 LayoutButton::LayoutButton(const std::string& label, Render::Icon icon) :
-    LayoutButton(label, icon, "")
+    LayoutButton(label, icon, std::string{})
 {}
 
 Slic3r::App::Yoga::LayoutButton::LayoutButton(
@@ -34,9 +34,6 @@ Slic3r::App::Yoga::LayoutButton::LayoutButton(
     m_text = emplace_back<Text>(label);
     m_text->set_self_align(YGAlign::YGAlignCenter);
     m_text->set_visible(!label.empty());
-
-    set_background_color(ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 }
 
 const std::string& Slic3r::App::Yoga::LayoutButton::label() const

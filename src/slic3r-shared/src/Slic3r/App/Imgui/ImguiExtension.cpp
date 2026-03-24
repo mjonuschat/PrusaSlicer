@@ -1,4 +1,5 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/Color.hpp"
@@ -22,33 +23,6 @@ void UnifiedWindowStyle::pop()
     ImGui::PopStyleVar(3);
 }
 
-void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle, float rounding)
-{
-    if ((col & IM_COL32_A_MASK) == 0)
-        return;
-
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-    float a_min = start_angle;
-    float a_max = start_angle + TWO_PI;
-
-    if (rounding <= 0)
-        window->DrawList->PathArcTo(center, radius, a_min, a_max, 6);
-    else {
-        float a_delta = IM_PI / 4.0f;
-        radius -= rounding;
-
-        for (int i = 0; i <= 6; i++) {
-            float a = a_min + ((float) i / 6.0f) * (a_max - a_min);
-            if (a >= TWO_PI)
-                a -= TWO_PI;
-            ImVec2 pos = ImVec2(center.x + ImCos(a) * radius, center.y + ImSin(a) * radius);
-            window->DrawList->PathArcTo(pos, rounding, a - a_delta, a + a_delta, 5);
-        }
-    }
-    window->DrawList->PathFillConvex(col);
-}
-
 void tooltip(const char* label, float wrap_width)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3.0f);
@@ -67,17 +41,6 @@ void tooltip(const char* label, float wrap_width)
 void tooltip(const std::string& label, float wrap_width)
 {
     tooltip(label.c_str(), wrap_width);
-}
-
-void item_tooltip(const char* label, float wrap_width)
-{
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
-        tooltip(label, wrap_width);
-}
-
-void item_tooltip(const std::string& label, float wrap_width)
-{
-    item_tooltip(label.c_str(), wrap_width);
 }
 
 static bool IsRootOfOpenMenuSet()
@@ -377,46 +340,6 @@ ImColor adjust_brightness(ImColor color, float factor)
     return ImColor(adjustedColor);
 }
 
-void text_aligned(float align_x, const std::string& label)
-{
-    using namespace ImGui;
-    ImGuiWindow* window = GetCurrentWindow();
-    if (window->SkipItems)
-        return;
-
-    float avail_x = GetContentRegionAvail().x;
-
-    const char *text, *text_end;
-    ImFormatStringToTempBuffer(&text, &text_end, "%s", label.c_str());
-    const ImVec2 text_size = CalcTextSize(text, text_end);
-
-    ImVec2 pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
-    ImVec2 pos_max(pos.x + avail_x, window->ClipRect.Max.y);
-    ImVec2 size(ImMin(avail_x, text_size.x), text_size.y);
-    window->DC.CursorMaxPos.x = ImMax(window->DC.CursorMaxPos.x, pos.x + text_size.x);
-    window->DC.IdealMaxPos.x  = ImMax(window->DC.IdealMaxPos.x, pos.x + text_size.x);
-    if (align_x > 0.0f && text_size.x < avail_x) {
-        pos.x += ImTrunc((avail_x - text_size.x) * align_x);
-        window->DC.CursorPos = pos;
-    }
-    RenderTextEllipsis(
-        window->DrawList,
-        pos,
-        pos_max,
-        pos_max.x,
-        text,
-        text_end,
-        &text_size
-    );
-
-    const ImVec2 backup_max_pos = window->DC.CursorMaxPos;
-    ItemSize(size);
-    ItemAdd(ImRect(pos, pos + size), 0);
-    window->DC.CursorMaxPos.x =
-        backup_max_pos
-            .x; // Cancel out extending content size because right-aligned text would otherwise mess it up.
-}
-
 void text_with_bg_aligned(float align_x, const std::string& label, ImVec4 bg_color)
 {
     using namespace ImGui;
@@ -489,10 +412,10 @@ bool button_aligned(
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
 
     ImVec2 pos = window->DC.CursorPos;
-    if ((flags & ImGuiButtonFlags_AlignTextBaseLine)
-        && style.FramePadding.y
-            < window->DC
-                  .CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+    if (
+        (flags & ImGuiButtonFlags_AlignTextBaseLine)
+        && style.FramePadding.y < window->DC.CurrLineTextBaseOffset
+    ) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
         pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
     ImVec2 size = CalcItemSize(
         ImVec2(ImMin(avail_x, size_arg.x), size_arg.y),
@@ -543,85 +466,6 @@ bool button_aligned(
     return pressed;
 }
 
-bool colored_circle_button_aligned(
-    float align_x,
-    const std::string& label_str,
-    ImVec4 color,
-    const ImVec2& size_arg
-)
-{
-    using namespace ImGui;
-    float TWO_PI = 2.0f * float(IM_PI);
-
-    ImGuiWindow* window = GetCurrentWindow();
-    if (window->SkipItems)
-        return false;
-
-    ImGuiContext& g         = *GImGui;
-    const ImGuiStyle& style = g.Style;
-
-    float avail_x     = GetContentRegionAvail().x - style.FramePadding.x * 2.0f;
-    const char* label = label_str.c_str();
-
-    const ImGuiID id        = window->GetID(label);
-    const ImVec2 label_size = CalcTextSize(label, NULL, true);
-
-    ImVec2 pos = window->DC.CursorPos;
-    if (style.FramePadding.y
-        < window->DC
-              .CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
-        pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
-
-    const float height = label_size.y + style.FramePadding.y * 2.0f;
-    ImVec2 size = CalcItemSize(ImVec2(ImMin(avail_x, size_arg.x), size_arg.y), height, height);
-
-    if (align_x > 0.0f && size.x < avail_x) {
-        pos.x += ImTrunc((avail_x - size.x) * align_x);
-        window->DC.CursorPos = pos;
-    }
-
-    const ImRect bb(pos, pos + size);
-    ItemSize(size, style.FramePadding.y);
-    if (!ItemAdd(bb, id))
-        return false;
-
-    bool hovered, held;
-    bool pressed = ButtonBehavior(bb, id, &hovered, &held);
-
-    const ImVec2 backup_max_pos = window->DC.CursorMaxPos;
-    // Render
-
-    RenderNavCursor(bb, id);
-
-    const ImVec2 center = bb.GetCenter();
-    const float radius  = 0.5f * height;
-
-    const ImU32 col = (held && hovered) ? GetColorU32(ImGuiCol_ButtonActive) :
-        hovered                         ? GetColorU32(ImGuiCol_ButtonHovered) :
-                                          GetColorU32(color);
-    window->DrawList->PathArcTo(center, radius, 0.f, TWO_PI, 24);
-    window->DrawList->PathFillConvex(col);
-
-    if (g.LogEnabled)
-        LogSetNextTextDecoration("[", "]");
-    RenderTextClipped(
-        bb.Min + style.FramePadding,
-        bb.Max - style.FramePadding,
-        label,
-        NULL,
-        &label_size,
-        style.ButtonTextAlign,
-        &bb
-    );
-
-    window->DC.CursorMaxPos.x =
-        backup_max_pos
-            .x; // Cancel out extending content size because right-aligned text would otherwise mess it up.
-
-    IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
-    return pressed;
-}
-
 void colored_circle_marker_aligned(
     float align_x,
     const std::string& label_str,
@@ -644,9 +488,9 @@ void colored_circle_marker_aligned(
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
 
     ImVec2 pos = window->DC.CursorPos;
-    if (style.FramePadding.y
-        < window->DC
-              .CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+    if (
+        style.FramePadding.y < window->DC.CurrLineTextBaseOffset
+    ) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
         pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
 
     const float height = label_size.y + style.FramePadding.y * 2.0f;
@@ -729,57 +573,6 @@ ImVec2 calc_text_size(
         hide_text_after_double_hash,
         wrap_width
     );
-}
-
-std::string trunc(const std::string& text, float width, const char* tail)
-{
-    float text_width = ImGui::CalcTextSize(text.c_str()).x;
-    if (text_width < width)
-        return text;
-    float tail_width = ImGui::CalcTextSize(tail).x;
-    assert(width > tail_width);
-    if (width <= tail_width)
-        return "Error: Can't add tail and not be under wanted width.";
-    float allowed_width = width - tail_width;
-
-    // guess approx count of letter
-    float average_letter_width = calc_text_size(std::string_view("n")).x; // average letter width
-    unsigned count_letter = static_cast<unsigned>(allowed_width / average_letter_width);
-
-    std::string_view text_ = text;
-    std::string_view result_text = text_.substr(0, count_letter);
-    text_width = calc_text_size(result_text).x;
-    if (text_width < allowed_width) {
-        // increase letter count
-        while (count_letter < text.length()) {
-            ++count_letter;
-            std::string_view act_text = text_.substr(0, count_letter);
-            text_width = calc_text_size(act_text).x;
-            if (text_width > allowed_width)
-                break;
-            result_text = act_text;
-        }
-    } else {
-        // decrease letter count
-        while (count_letter > 1) {
-            --count_letter;
-            result_text = text_.substr(0, count_letter);
-            text_width = calc_text_size(result_text).x;
-            if (text_width < allowed_width)
-                break;
-        }
-    }
-    return std::string(result_text) + tail;
-}
-
-void escape_double_hash(std::string& text)
-{
-    // add space between hashes
-    const std::string search = "##";
-    const std::string replace = "# #";
-    size_t pos = 0;
-    while ((pos = text.find(search, pos)) != std::string::npos)
-        text.replace(pos, search.length(), replace);
 }
 
 } // namespace Slic3r::App::Imgui

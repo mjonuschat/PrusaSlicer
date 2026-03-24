@@ -65,16 +65,18 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
     btns->set_justify_content(YGJustifyCenter);
 
     m_revert_btn = btns->emplace_back<Yoga::LayoutButton>(
-        "",
+        std::string{},
         Render::Icon::DSRevert,
         _u8L("Discard all custom changes")
     );
     m_revert_btn->set_visible(can_edit());
     m_revert_btn->set_enabled(!m_ticks.empty());
     m_revert_btn->callbacks().action = [this]() { discard_all_ticks(); };
+    m_revert_btn->set_background_color(Platform::Color::ButtonTransparent);
 
     m_lock_btn =
         btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::Unlock, _u8L("One layer mode"));
+    m_lock_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_lock_btn->set_checkable(true);
     m_lock_btn->callbacks().action = [this]()
     {
@@ -83,6 +85,7 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
     };
 
     m_cog_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSSettings);
+    m_cog_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_cog_btn->callbacks().action = [this]() { m_cog_menu->open(); };
 
     Vec2f btns_size = {22.f, 22.f};

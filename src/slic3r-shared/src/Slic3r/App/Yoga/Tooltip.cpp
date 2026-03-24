@@ -36,7 +36,9 @@ Tooltip::Tooltip(
     m_text->set_visible(!text.empty());
     m_shortcut = window->emplace_back<Text>(shortcut);
     m_shortcut->set_visible(!shortcut.empty());
-    m_shortcut->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    m_shortcut->set_text_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
 
     set_content_item(std::move(window));
 

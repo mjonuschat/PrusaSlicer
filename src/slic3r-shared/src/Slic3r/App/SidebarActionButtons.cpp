@@ -34,7 +34,7 @@ std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button(
     auto result{
         std::make_unique<Yoga::LayoutButton>(m_navigator_name, Render::Icon::None, m_navigator_tooltip)
     };
-    result->set_background_color(color_secondary);
+    result->set_background_color(m_theme->color_imgui(Platform::Color::AccentSecondary));
     result->set_label_font_type(Render::ImguiFontType::Bold);
     result->set_min_size({navig_btn_width, button_height});
 

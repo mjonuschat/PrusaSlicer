@@ -56,21 +56,23 @@ PrintToolRowItem::PrintToolRowItem(
 
     m_favorite_button = m_header->emplace_back<LayoutButton>("", Render::Icon::Star);
     m_favorite_button->set_margin(Margins(0.f, 12.f, 0.f, 0.f));
-    m_favorite_button->set_min_size(Vec2f{ 16, 16 });
+    m_favorite_button->set_min_size(Vec2f{16, 16});
     m_favorite_button->set_content_padding(0.f);
-    m_favorite_button
-        ->set_background_color_checked(m_favorite_button->background_color(), true);
+    m_favorite_button->set_background_color(Platform::Color::ButtonTransparent);
+    m_favorite_button->set_background_color_checked(
+        m_theme->color_imgui(Platform::Color::Transparent)
+    );
     m_favorite_button->set_tooltip(Biz::_u8L("Add to favorites"));
 
     m_favorite_button->callbacks().action = [this]()
-        { AppServices::instance().app_config_interactor().toggle_favorite_param(m_state->name); };
+    { AppServices::instance().app_config_interactor().toggle_favorite_param(m_state->name); };
     m_favorite_button->callbacks().checked_changed = [this](bool checked)
-        {
-            m_favorite_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
-            m_favorite_button->set_tooltip(
-                checked ? Biz::_u8L("Remove from favorites") : Biz::_u8L("Add to favorites")
-            );
-        };
+    {
+        m_favorite_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+        m_favorite_button->set_tooltip(
+            checked ? Biz::_u8L("Remove from favorites") : Biz::_u8L("Add to favorites")
+        );
+    };
 
     on_data_update();
 }
@@ -85,7 +87,7 @@ PrintToolRowItem::~PrintToolRowItem()
 void PrintToolRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     if (config_item && m_state->print_item->name() == config_item->name()) {
-        set_border_color(ImColor(250, 104, 45));
+        set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
         if (m_main_button) {
             m_main_button->set_checked(true);
         }
@@ -170,8 +172,9 @@ void PrintToolRowItem::on_data_update()
             );
         }
 
-        const ImColor text_color     = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        const ImColor disabled_color = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+        const ImColor text_color = m_theme->color_imgui(Platform::Color::Text);
+        const ImColor disabled_color =
+            m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
 
         m_config_row_item->set_label_text_color(
             std::any_of(
@@ -206,7 +209,7 @@ void PrintToolRowItem::clear()
         m_main_button = nullptr;
         m_tool_overrides.clear();
     }
-    m_tool_list_view  = nullptr;
+    m_tool_list_view   = nullptr;
     m_initialized_type = InitializedType::None;
 }
 
@@ -216,13 +219,9 @@ void PrintToolRowItem::initialize()
     if (!m_state->shared_context.has_multiple_extruders || m_state->tool_overrides.empty()) {
         m_initialized_type = InitializedType::PrintOnly;
 
-        m_config_row_item = m_header->emplace<ConfigRowItem>(0,
-            m_index,
-            *m_state->print_item,
-            m_cbi_setter,
-            0,
-            false
-        );
+        m_config_row_item =
+            m_header
+                ->emplace<ConfigRowItem>(0, m_index, *m_state->print_item, m_cbi_setter, 0, false);
         m_config_row_item->set_flex_grow(1.f);
 
     } else {
@@ -240,7 +239,9 @@ void PrintToolRowItem::initialize()
         m_content->set_gap(5);
         m_content->set_padding(5);
         m_content->set_fill(IM_COL32_BLACK_TRANS);
-        m_content->set_border_color(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+        m_content->set_border_color(
+            m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)
+        );
         m_content->set_border_width(1);
 
         m_explanation_container = m_content->emplace_back<Item>();
@@ -286,7 +287,7 @@ void PrintToolRowItem::update_explanation()
     bool labels_visible = false;
     bool values_visible = false;
 
-    const ImColor text_color                           = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+    const ImColor text_color = m_theme->color_imgui(Platform::Color::Text);
     const Domain::CompatibilityRule compatibility_rule = m_state->print_item->compatibility_rule();
     if (m_state->print_item->def().require_compatibility_rule && m_state->value.second) {
         if (compatibility_rule == Domain::CompatibilityRule::IgnoreOverrides) {

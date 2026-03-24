@@ -161,8 +161,6 @@ protected:
     Item* m_tab_container         = nullptr;
     size_t m_current_tab_index    = 0;
 
-    ImColor m_color_bg           = ImColor(27, 27, 27);
-    ImColor m_color_bg_alternate = ImColor(41, 41, 41);
     std::vector<LayoutButton*> m_tab_buttons;
     ButtonGroup m_tab_button_group;
 

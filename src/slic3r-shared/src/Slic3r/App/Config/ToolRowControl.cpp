@@ -71,8 +71,8 @@ void ToolRowControl::on_data_update()
     );
     m_switch_override->set_tooltip_position(Position::Top);
 
-    const ImColor text_color     = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-    const ImColor disabled_color = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+    const ImColor text_color     = m_theme->color_imgui(Platform::Color::Text);
+    const ImColor disabled_color = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
 
     m_switch_override->set_icon_tint(overriden ? text_color : disabled_color);
     const Domain::ConfigItem* config_item = m_state->override_item;

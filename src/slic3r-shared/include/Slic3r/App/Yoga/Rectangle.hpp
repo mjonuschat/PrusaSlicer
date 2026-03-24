@@ -38,7 +38,8 @@ private:
     ImColor m_fill = IM_COL32_WHITE;
     std::optional<ImColor> m_disabled_fill;
     ImColor m_border_color = IM_COL32_WHITE;
-    ImColor m_border_color_disabled = ImColor(95, 95, 95);
+    ImColor m_border_color_disabled =
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled);
     float m_border_width = 0;
     float m_rounding = 5.f;
     ImDrawFlags m_flags = ImDrawFlags_RoundCornersAll;

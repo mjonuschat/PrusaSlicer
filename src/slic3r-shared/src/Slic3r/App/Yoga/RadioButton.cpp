@@ -22,8 +22,8 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
     set_checkable(true);
 
     m_knob = emplace_back<Circle>();
-    m_knob->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
-    m_knob->set_disabled_fill(ImColor(20, 20, 20));
+    m_knob->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
+    m_knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
     m_knob->set_border_width(1);
     m_knob->set_min_size({12, 12});
 
@@ -59,7 +59,10 @@ void RadioButton::checked_updated_internal()
 {
     AbstractButton::checked_updated_internal();
 
-    m_knob->set_fill(GImGui->Style.Colors[checked() ? ImGuiCol_ButtonActive : ImGuiCol_WindowBg]);
+    m_knob->set_fill(m_theme->color_imgui(
+        Platform::Color::Button,
+        checked() ? Platform::ColorGroup::Active : Platform::ColorGroup::Default
+    ));
     m_knob->set_border_width(checked() ? 3 : 1);
 }
 

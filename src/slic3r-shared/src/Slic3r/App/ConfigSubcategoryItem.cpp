@@ -5,8 +5,10 @@
 #include "Slic3r/App/ConfigSubcategoryItem.hpp"
 
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include "Slic3r/App/Yoga/Text.hpp"
-#include <Slic3r/Biz/I18N/I18N.hpp>
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -18,7 +20,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     Biz::IConfigBoxSetter& cbi_container,
     Biz::ConfigBoxInteractor& cbi,
     size_t cbi_index
-    ) :
+) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_cbi(cbi),
     m_cbi_container(cbi_container),
@@ -41,7 +43,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_rows_filter_list->set_filter_fn(
         [this](const Domain::ConfigItem& item) -> bool
         { return item.def().option_group == m_option_group && item.def().category == m_category; }
-        );
+    );
     // also group by row_group
     m_rows_filter_list->set_group_by_fn(
         [](const Domain::ConfigItem& item, std::unordered_set<std::string>& seen_keys) -> bool
@@ -58,7 +60,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
                 }
             }
         }
-        );
+    );
     m_rows_filter_list->set_sort_fn([](const Domain::ConfigItem& lhs, const Domain::ConfigItem& rhs)
                                     { return lhs.def().order < rhs.def().order; });
 
@@ -66,7 +68,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
 
     m_rows_list_view = emplace_back<ConfigRowListView>(
         ConfigRowListViewFactory{m_cbi_container, m_cbi, m_cbi_index}
-        );
+    );
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);
@@ -112,7 +114,8 @@ void ConfigSubcategoryItem::on_data_update()
 
 void ConfigSubcategoryItem::on_index_update()
 {
-    set_fill(m_index % 2 == 0 ? ImColor(27, 27, 27) : ImColor(22, 22, 22));
+    ImColor color = m_theme->color_imgui(Platform::Color::WindowBg);
+    set_fill(m_index % 2 == 0 ? color : Imgui::adjust_brightness(color, 0.9));
 }
 
 } // namespace Slic3r::App

@@ -18,7 +18,7 @@ CollapsibleWindow::CollapsibleWindow(const std::string& label, const std::string
     set_orientation(Orientation::Vertical);
     set_padding(0.f);
     m_header_row = emplace_back<Item>();
-    m_header_row->set_padding({ 20.f, 10.f });
+    m_header_row->set_padding({20.f, 10.f});
     m_header_row->set_gap(5);
     m_header_row->set_flex_shrink(0.f);
 
@@ -32,9 +32,9 @@ CollapsibleWindow::CollapsibleWindow(const std::string& label, const std::string
     m_collapse_button->set_width(22);
     m_collapse_button->set_height(22);
     m_collapse_button->set_content_padding({});
+    m_collapse_button->set_background_color(Platform::Color::ButtonTransparent);
 
     m_separator = emplace_back<Separator>(Orientation::Horizontal);
-    m_separator->set_fill(ImColor(41, 41, 41));
 
     m_content = emplace_back<Item>();
     m_content->set_padding(Paddings(20.f, 10.f, 20.f, 20.f));

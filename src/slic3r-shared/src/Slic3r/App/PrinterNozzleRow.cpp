@@ -22,7 +22,7 @@ PrinterNozzleRow::PrinterNozzleRow(
 {
     m_callbacks.validation_updated = validation_updated;
     Rectangle* id_background       = emplace_back<Rectangle>();
-    id_background->set_fill(ImColor(41, 41, 41));
+    id_background->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     id_background->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
     id_background->set_align_items(YGAlignCenter);
     id_background->set_justify_content(YGJustifyCenter);

@@ -51,7 +51,6 @@ LayoutButton* AbstractSettingsDialog::add_footer_button(Item* footer, const std:
     LayoutButton* button = footer->emplace_back<LayoutButton>(label, icon);
     button->set_content_padding({7.f});
     button->set_height({30.f});
-    button->set_background_color(ImColor(43, 43, 43));
     return button;
 }
 

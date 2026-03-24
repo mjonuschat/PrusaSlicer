@@ -18,9 +18,6 @@ namespace Slic3r::App::Imgui {
 
 static constexpr float DEFAULT_WINDOW_BG_ALPHA = 0.8f;
 
-static constexpr ImVec4 ORANGE_BUTTON_COLOR { 0.99f, 0.41f, 0.2f , 1.0f };
-static constexpr ImVec4 BLUE_BUTTON_COLOR   { 0.32f, 0.48f, 0.84f, 1.0f };
-
 class ScopedStyleColors {
 public:
     ScopedStyleColors(std::initializer_list<std::pair<ImGuiCol, ImColor>> initializer_list);
@@ -54,12 +51,8 @@ struct ScopedGroup
 
 inline void disable_background_fadeout_animation() { ImGui::GetCurrentContext()->DimBgRatio = 1.0f; }
 
-void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle = 0.0f, float rounding = 0.0f);
-
 void tooltip(const char* label, float wrap_width = 0.0f);
 void tooltip(const std::string& label, float wrap_width = 0.0f);
-void item_tooltip(const char* label, float wrap_width = 0.0f);
-void item_tooltip(const std::string& label, float wrap_width = 0.0f);
 
 bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU32 icon_color = 0,
     bool selected = false, bool enabled = true);
@@ -91,32 +84,9 @@ std::string to_string_with_precision(const T a_value, const uint8_t n = 2)
 // Aligned widgets
 // align_x: 0.0f = left, 0.5f = center, 1.0f = right.
 
-// Code from this function is partially borrowed from https://github.com/ocornut/imgui/commit/6a42d6b339e0c86cdf0bce866bf390496155df69
-// It will be removed after update of imgui library, when TextAligned() will be a part of it
-void text_aligned(float align_x, const std::string& label);
-
 void text_with_bg_aligned(float align_x, const std::string& label, ImVec4 color = {});
 bool button_aligned(float align_x, const std::string& label, const ImVec2& size_arg = ImVec2(0, 0), ImGuiButtonFlags flags= ImGuiButtonFlags_None);
 
-bool colored_circle_button_aligned(float align_x, const std::string& label_str, ImVec4 color, const ImVec2& size_arg = ImVec2(0, 0));
 void colored_circle_marker_aligned(float align_x, const std::string& label_str, const std::vector<ImVec4>& colors, const ImVec2& size_arg = ImVec2(0, 0));
-
-/// <summary>
-/// Truncate text by ImGui draw function to specific width
-/// NOTE 1: ImGui must be initialized
-/// NOTE 2: Calculation for actual acive imgui font
-/// </summary>
-/// <param name="text">Text to be truncated</param>
-/// <param name="width">Maximal width before truncate</param>
-/// <param name="tail">String puted on end of text to be visible truncation</param>
-/// <returns>Truncated text</returns>
-std::string trunc(const std::string& text, float width, const char* tail = " ..");
-
-/// <summary>
-/// Escape ## in data by add space between hashes
-/// Needed when user written text is visualized by ImGui.
-/// </summary>
-/// <param name="text">In/Out text to be escaped</param>
-void escape_double_hash(std::string& text);
 
 } // namespace Slic3r::App::Imgui

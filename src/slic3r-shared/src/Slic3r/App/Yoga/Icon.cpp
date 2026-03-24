@@ -56,7 +56,8 @@ void Icon::render(Vec2f pos, Vec2f size)
             uv0,
             uv1,
             {0, 0, 0, 0},
-            enabled() ? tint() : ImColor(143, 143, 143)
+            enabled() ? tint() :
+                        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
         );
     }
 

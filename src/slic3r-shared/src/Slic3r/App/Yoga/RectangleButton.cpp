@@ -18,11 +18,9 @@ RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(to
     m_background->set_justify_content(YGJustifyCenter);
     m_background->set_gap(5);
     m_background->set_flex_grow(1);
-    m_background->set_disabled_fill(IM_COL32_DISABLE);
     m_background->set_flex_shrink(0);
 
-    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-    update_colors();
+    set_background_color(Platform::Color::Button);
 }
 
 void RectangleButton::append(ObjectPtr child)
@@ -45,17 +43,28 @@ const ImColor& RectangleButton::background_color() const
     return m_background->fill();
 }
 
-void RectangleButton::set_background_color(const ImColor& color, bool adjust_hover)
+void RectangleButton::set_background_color(Platform::Color color)
+{
+    m_background_color          = m_theme->color_imgui(color);
+    m_background_color_hover    = m_theme->color_imgui(color, Platform::ColorGroup::Hovered);
+    m_background_color_disabled = m_theme->color_imgui(color, Platform::ColorGroup::Disabled);
+    set_background_color_checked(color);
+
+    update_colors();
+}
+
+void RectangleButton::set_background_color(const ImColor& color)
+{
+    set_background_color(color, Imgui::adjust_brightness(color, 1.25f));
+}
+
+void RectangleButton::set_background_color(const ImColor& color, const ImColor& color_hover)
 {
     m_background_color = color;
-    if (adjust_hover && color.Value.w == 0.f)
-        m_background_color_hover = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
-    else {
-        m_background_color_hover =
-            adjust_hover ? Imgui::adjust_brightness(m_background_color, 1.2f) : m_background_color;
-        m_background_color_disabled = Imgui::adjust_brightness(m_background_color, 0.85f);
-        m_background->set_disabled_fill(m_background_color_disabled);
-    }
+
+    m_background_color_hover    = color_hover;
+    m_background_color_disabled = Imgui::adjust_brightness(m_background_color, 0.85f);
+
     update_colors();
 }
 
@@ -64,15 +73,33 @@ const ImColor& RectangleButton::background_color_checked() const
     return m_background_color_checked;
 }
 
+void RectangleButton::set_background_color_checked(Platform::Color color)
+{
+    m_background_color_checked       = m_theme->color_imgui(color, Platform::ColorGroup::Active);
+    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.2f);
+    m_background_color_checked_disabled =
+        m_theme->color_imgui(color, Platform::ColorGroup::ActiveDisabled);
+
+    update_colors();
+}
+
+void RectangleButton::set_background_color_checked(const ImColor& background_color_checked)
+{
+    set_background_color_checked(
+        background_color_checked,
+        Imgui::adjust_brightness(background_color_checked, 1.25f)
+    );
+
+    update_colors();
+}
+
 void RectangleButton::set_background_color_checked(
     const ImColor& background_color_checked,
-    bool adjust_hover
+    const ImColor& background_color_checked_hover
 )
 {
     m_background_color_checked       = background_color_checked;
-    m_background_color_checked_hover = adjust_hover ?
-        Imgui::adjust_brightness(m_background_color_checked, 1.25f) :
-        m_background_color_checked;
+    m_background_color_checked_hover = background_color_checked_hover;
     m_background_color_checked_disabled =
         Imgui::adjust_brightness(m_background_color_checked, 0.85f);
     update_colors();
@@ -83,15 +110,21 @@ const ImColor& RectangleButton::background_color_border() const
     return m_background_color_border;
 }
 
+void RectangleButton::set_background_color_border(const ImColor& background_color_border)
+{
+    set_background_color_border(
+        background_color_border,
+        Imgui::adjust_brightness(m_background_color_border, 1.25f)
+    );
+}
+
 void RectangleButton::set_background_color_border(
     const ImColor& background_color_border,
-    bool adjust_hover
+    const ImColor& background_color_border_hover
 )
 {
     m_background_color_border          = background_color_border;
-    m_background_color_border_hover    = adjust_hover ?
-           Imgui::adjust_brightness(m_background_color_border, 1.25f) :
-           m_background_color_border;
+    m_background_color_border_hover    = background_color_border_hover;
     m_background_color_border_disabled = Imgui::adjust_brightness(m_background_color_border, 0.85f);
     update_colors();
 }
@@ -179,9 +212,6 @@ void RectangleButton::set_draw_flags(ImDrawFlags draw_flags)
 void RectangleButton::checked_updated_internal()
 {
     update_colors();
-    m_background->set_disabled_fill(
-        checked() ? m_background_color_checked_disabled : m_background_color
-    );
 }
 
 void RectangleButton::hovered_updated_internal()
@@ -200,6 +230,9 @@ void RectangleButton::update_colors()
     }
     m_background->set_fill(fill_color);
     m_background->set_border_color(border_color);
+    m_background->set_disabled_fill(
+        checked() ? m_background_color_checked_disabled : m_background_color
+    );
 }
 
 } // namespace Slic3r::App::Yoga

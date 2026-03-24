@@ -15,7 +15,7 @@ ColorPickerButton::ColorPickerButton(const std::string& name)
     set_width(30);
     set_height(25);
     set_background_border_width(2);
-    set_background_color(ImColor(50, 50, 50));
+    set_background_color(m_theme->color_imgui(Platform::Color::WindowBg));
 
     m_popup = emplace_back<ContextPopup>("ColorPickerPopup");
     m_popup->set_orientation(Orientation::Vertical);

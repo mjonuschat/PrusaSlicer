@@ -303,7 +303,6 @@ void LogicalPrinterSettingsDialog::create_page_settings()
         m_page_settings->emplace_back<LayoutButton>(_u8L("Advanced settings"), Render::Icon::Cog);
     button_advanced_setting->set_content_padding({ 0.f, 7.f });
     button_advanced_setting->set_height({ 30.f });
-    button_advanced_setting->set_background_color(ImColor(43, 43, 43));
     button_advanced_setting->callbacks().action = [this]
     {
         if (m_advanced_dialog->opened()) {

@@ -39,8 +39,6 @@ class AbstractRenderLayout
 public:
     using Vec2f = Yoga::Vec2f;
 
-    static void set_our_style_colors();
-
     AbstractRenderLayout(
         Navigator& navigator,
         std::unique_ptr<TopBar> top_bar,

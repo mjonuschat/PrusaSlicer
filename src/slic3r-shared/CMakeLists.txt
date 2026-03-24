@@ -176,8 +176,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarObject.cpp
         include/Slic3r/App/SidebarActionButtons.hpp
         src/Slic3r/App/SidebarActionButtons.cpp
-        include/Slic3r/App/SidebarGraphicsSettings.hpp
-        src/Slic3r/App/SidebarGraphicsSettings.cpp
         include/Slic3r/App/LightSetting.hpp
         src/Slic3r/App/LightSetting.cpp
         include/Slic3r/App/IDialogManager.hpp
@@ -255,6 +253,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PrintMetadataSettings.cpp
         include/Slic3r/App/ToolLabel.hpp
         src/Slic3r/App/ToolLabel.cpp
+        include/Slic3r/App/Theme.hpp
+        src/Slic3r/App/Theme.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -527,8 +527,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/SliderWithInput.hpp
         src/Slic3r/App/Yoga/RadioButton.cpp
         include/Slic3r/App/Yoga/RadioButton.hpp
-        src/Slic3r/App/Yoga/RadioExtruder.cpp
-        include/Slic3r/App/Yoga/RadioExtruder.hpp
         src/Slic3r/App/Yoga/MenuItem.cpp
         include/Slic3r/App/Yoga/MenuItem.hpp
         src/Slic3r/App/Yoga/Menu.cpp

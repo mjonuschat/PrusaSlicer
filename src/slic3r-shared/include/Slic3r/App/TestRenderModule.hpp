@@ -35,7 +35,12 @@ public:
     const Platform::CommandRegistry::CommandsMap & gizmo_commands() const override;
 
 protected:
-    void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
+    void on_init(
+        Render::Device& device,
+        Render::ImguiRender& imgui_render,
+        Platform::AbstractTheme& theme,
+        Platform::AnimationManager& animation_manager
+    ) override;
     void on_screen_resized() override;
 
     virtual void register_commands() override;

@@ -20,21 +20,26 @@ Slider::Slider(double begin, double end, double step) :
     m_value(m_begin_value)
 {
     set_fill(IM_COL32_BLACK_TRANS);
-    set_border_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    set_border_color(m_theme->color_imgui(Platform::Color::Button));
     set_border_width(1.f);
 
     m_area = emplace_back<Oval>();
-    m_area->set_fill(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
-    m_area->set_disabled_fill(ImColor(95, 95, 95));
+    m_area->set_fill(m_theme->color_imgui(Platform::Color::Button));
+    m_area->set_disabled_fill(
+        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled)
+    );
     m_area->set_justify_content(YGJustifyFlexEnd);
 
     m_thumb = m_area->emplace_back<Circle>();
-    m_thumb->set_disabled_fill(ImColor(105, 105, 105));
+    m_thumb->set_fill(m_theme->color_imgui(Platform::Color::Text));
+    m_thumb->set_disabled_fill(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
     m_thumb->set_padding(4.f);
     m_thumb->set_min_size({14, 14});
     Circle* knob = m_thumb->emplace_back<Circle>();
-    knob->set_fill(GImGui->Style.Colors[ImGuiCol_ButtonActive]);
-    knob->set_disabled_fill(ImColor(20, 20, 20));
+    knob->set_fill(m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active));
+    knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
 }
 
 Slider::Slider() :
@@ -47,9 +52,10 @@ void Slider::set_hovered(bool hovered)
         m_hovered = hovered;
 
         // updated fill on hovering change
-        m_area->set_fill(
-            GImGui->Style.Colors[m_hovered ? ImGuiCol_ButtonHovered : ImGuiCol_TextDisabled]
-        );
+        m_area->set_fill(m_theme->color_imgui(
+            Platform::Color::Button,
+            m_hovered ? Platform::ColorGroup::Hovered : Platform::ColorGroup::Default
+        ));
         m_thumb->set_padding(m_hovered ? 2.f : 4.f);
     }
 }
@@ -75,9 +81,8 @@ double Slider::snap_to_nearest(double value)
 void Slider::update_area_width()
 {
     if (!Domain::fuzzy_compare(m_end_value, m_begin_value)) {
-        float ratio = static_cast<float>(
-            fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value)
-        );
+        float ratio =
+            static_cast<float>(fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value));
         m_area->set_width(std::lerp(m_thumb->width(), width(), ratio));
     }
 }
@@ -116,7 +121,8 @@ void Slider::render(Vec2f pos, Vec2f size)
             m_dragging = false;
         } else {
             const double proc_pos = pos.x() + 0.5 * m_thumb->width();
-            const double proc_width = static_cast<double>(std::max(0.f, width() - m_thumb->width()));
+            const double proc_width =
+                static_cast<double>(std::max(0.f, width() - m_thumb->width()));
 
             double mouse_abs_pos   = io.MousePos[ImGuiAxis_X];
             double mouse_pos_ratio = Domain::fuzzy_compare(proc_width, 0.) ?

@@ -16,7 +16,6 @@ using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r::App::Plater {
 
-const constexpr ImColor BUTTON_BACKGROUND_COLOR = {42, 42, 42, 255};
 static const Margins BUTTON_TEXT_MARGIN         = {10.f, 2.f, 10.f, 2.f};
 
 #ifdef __APPLE__
@@ -88,7 +87,6 @@ void VariableLayerHeightDialog::add_smart_resolution_section(Item* item)
     m_auto_calculate_button =
         auto_calculate_button_row->emplace_back<LayoutButton>(_u8L("Auto-calculate"));
     m_auto_calculate_button->text()->set_margin(BUTTON_TEXT_MARGIN);
-    m_auto_calculate_button->set_background_color(BUTTON_BACKGROUND_COLOR);
     m_auto_calculate_button->callbacks().action = [this]()
     { m_callbacks.auto_calculate_clicked(); };
 }
@@ -134,7 +132,6 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
     Item* smooth_button_row = item->emplace_back<Item>();
     m_smooth_button         = smooth_button_row->emplace_back<LayoutButton>(_u8L("Smooth"));
     m_smooth_button->text()->set_margin(BUTTON_TEXT_MARGIN);
-    m_smooth_button->set_background_color(BUTTON_BACKGROUND_COLOR);
     m_smooth_button->callbacks().action = [this]() { m_callbacks.smooth_clicked(); };
 }
 

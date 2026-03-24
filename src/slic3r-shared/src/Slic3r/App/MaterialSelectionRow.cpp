@@ -46,8 +46,9 @@ MaterialSelectionRow::MaterialSelectionRow(
         }
         return false;
     };
-    
-    callbacks().action = [switch_matrial, this]() { 
+
+    callbacks().action = [switch_matrial, this]()
+    {
         switch_matrial();
         m_on_clicked_extention();
     };
@@ -98,7 +99,8 @@ void MaterialSelectionRow::hovered_updated_internal()
 void MaterialSelectionRow::update_cog_visibility()
 {
     m_cog_btn->set_icon_tint(
-        (hovered() || m_cog_btn->hovered()) ? ImColor(255, 255, 255) : ImColor(IM_COL32_BLACK_TRANS)
+        (hovered() || m_cog_btn->hovered()) ? m_theme->color_imgui(Platform::Color::Button) :
+                                              ImColor(IM_COL32_BLACK_TRANS)
     );
 }
 

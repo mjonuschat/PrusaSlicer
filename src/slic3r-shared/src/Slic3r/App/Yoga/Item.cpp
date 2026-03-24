@@ -152,7 +152,9 @@ static void traverse(Object* object, std::function<void(Object* object)> functio
     }
 }
 
-Render::ImguiRender* Slic3r::App::Yoga::Item::m_imgui_render = nullptr;
+Render::ImguiRender* Item::m_imgui_render = nullptr;
+
+Platform::AbstractTheme* Object::m_theme = nullptr;
 
 std::unordered_map<std::string, int> Object::m_object_names = {};
 
@@ -824,6 +826,11 @@ Vec2f Item::get_global_pos() const
 void Item::set_imgui_render(Render::ImguiRender* imgui_render)
 {
     m_imgui_render = imgui_render;
+}
+
+void Object::set_theme(Platform::AbstractTheme* theme)
+{
+    m_theme = theme;
 }
 
 void Item::update_children_render_order()

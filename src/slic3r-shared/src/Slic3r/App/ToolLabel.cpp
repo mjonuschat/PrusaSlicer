@@ -47,7 +47,7 @@ void ToolLabel::update_markings()
         im_color     = ConfigItemUtils::colors.at(m_index);
         tooltip_text = Biz::_u8L("Tool " + index_str + " is used on this bed");
     } else {
-        im_color     = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+        im_color     = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
         tooltip_text = Biz::_u8L("Tool " + index_str + " is not used on this bed");
     }
     set_tooltip(tooltip_text);

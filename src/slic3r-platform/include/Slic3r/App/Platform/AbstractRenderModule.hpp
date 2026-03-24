@@ -26,6 +26,8 @@ class ImguiRender;
 
 namespace Slic3r::App::Platform {
 
+class AbstractTheme;
+
 /**
  * Provides abstract interface for render module and common infrastructure for rendering
  * and event processing.
@@ -45,13 +47,17 @@ public:
     void deactivate();
 
     void set_screen_size(const Render::ScreenInfo& screen_info);
-    void ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager);
+    void ensure_initialized(
+        Render::Device& device,
+        Render::ImguiRender& imgui_render,
+        AbstractTheme& theme,
+        AnimationManager& animation_manager
+    );
     bool is_initialized() const;
 
     virtual const std::optional<CameraSynchData>& camera_synch_data() const = 0;
-    virtual void set_camera_synch_data(const CameraSynchData& data) = 0;
+    virtual void set_camera_synch_data(const CameraSynchData& data)         = 0;
 
-    void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};
 
     virtual const ICommand& command(const char* name) const;
@@ -59,21 +65,27 @@ public:
     virtual const CommandRegistry::CommandsMap& gizmo_commands() const = 0;
     virtual bool is_gizmo_manager_completed() const;
     virtual CommandBindingManager& command_binding_manager() = 0;
-    virtual MenuManager& menu_manager() = 0;
+    virtual MenuManager& menu_manager()                      = 0;
 
 protected:
     /**
      * Initialize all Render objects here.
      */
-    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager);
+    virtual void on_init(
+        Render::Device& device,
+        Render::ImguiRender& imgui_render,
+        Platform::AbstractTheme& theme,
+        Platform::AnimationManager& animation_manager
+    );
 
     virtual void on_activated();
     virtual void on_deactivated();
     virtual void on_screen_resized();
-    virtual void on_set_imgui_render() {}
 
-    virtual void register_commands() {}
-    virtual void bind_commands() {}
+    virtual void register_commands();
+
+    virtual void bind_commands();
+
     void request_render();
 
     virtual void set_navigator(Navigator* n) = 0;
@@ -82,9 +94,11 @@ protected:
     Render::Device* m_device{nullptr};
     CommandRegistry m_command_registry;
     Render::ImguiRender* m_imgui_render{nullptr};
-    Platform::AnimationManager* m_animation_manager{nullptr};
+    AbstractTheme* m_theme{nullptr};
+    AnimationManager* m_animation_manager{nullptr};
 
     Render::ScreenInfo m_screen_info{0, 0, 1};
+
 private:
     bool m_initialized{false};
     Biz::Platform::IRenderRequestHandler* m_render_request_handler{nullptr};

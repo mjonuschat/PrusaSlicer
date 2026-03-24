@@ -40,7 +40,6 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
             Render::Icon::ConfigContainer
         );
         m_add_container_button->set_flex_shrink(0.f);
-        m_add_container_button->set_background_color(ImColor(41, 41, 41));
         m_add_container_button->set_padding({20.f, 5.f});
         m_add_container_button->callbacks().action = [this]()
         {
@@ -72,7 +71,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     } else {
         m_sliced_info = content()->emplace_back<Rectangle>();
         m_sliced_info->set_orientation(Orientation::Vertical);
-        m_sliced_info->set_fill(ImColor(32, 32, 32));
+        m_sliced_info->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
         m_sliced_info->set_flags(ImDrawFlags_RoundCornersBottom);
         m_sliced_info->set_padding(15.f);
         m_sliced_info->set_gap(10.f);

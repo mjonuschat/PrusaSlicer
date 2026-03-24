@@ -90,7 +90,6 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     };
     m_add_settings_button->set_flex_shrink(0);
     m_add_settings_button->set_content_padding({20.f, 5.f});
-    m_add_settings_button->set_background_color(ImColor(43, 43, 43));
 
     m_no_overrides_label =
         scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));

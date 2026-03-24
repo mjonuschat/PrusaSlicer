@@ -35,7 +35,7 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon) : Window("
     Rectangle* buttons_rect = m_top_row->emplace_back<Rectangle>();
     buttons_rect->set_align_items(YGAlignCenter);
     buttons_rect->set_padding(dialog_padding);
-    buttons_rect->set_fill(m_color_bg_alternate);
+    buttons_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     buttons_rect->set_flex_grow(1);
     buttons_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight);
 

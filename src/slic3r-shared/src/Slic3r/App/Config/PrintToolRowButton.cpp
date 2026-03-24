@@ -22,8 +22,7 @@ PrintToolRowButton::PrintToolRowButton()
     set_content_orientation(Orientation::Horizontal);
     set_content_align_items(YGAlignCenter);
     set_content_justify_content(YGJustifyFlexStart);
-    set_background_color(ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    set_background_color(Platform::Color::ButtonTransparent);
     set_allow_overlap(true);
     set_checkable(true);
 
@@ -34,16 +33,14 @@ PrintToolRowButton::PrintToolRowButton()
     m_label->set_flex_grow(1);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    const ImColor warning_color = ImColor(223, 93, 45);
-
     m_compatibility_rule_rect = emplace_back<Rectangle>();
     m_compatibility_rule_rect->set_fill(IM_COL32_BLACK_TRANS);
-    m_compatibility_rule_rect->set_border_color(warning_color);
+    m_compatibility_rule_rect->set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
     m_compatibility_rule_rect->set_gap(5);
     m_compatibility_rule_rect->set_padding(4);
     m_compatibility_rule_label =
         m_compatibility_rule_rect->emplace_back<Text>(std::string{"conflict resolved"});
-    m_compatibility_rule_label->set_text_color(warning_color);
+    m_compatibility_rule_label->set_text_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
     m_compatibility_rule_label->set_visible(false);
     m_config_item_preview = m_compatibility_rule_rect->emplace_back<ConfigItemPreview>();
     m_compatibility_rule_rect->set_flex_shrink(0.f);

@@ -12,7 +12,6 @@
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/RadioButton.hpp"
-#include "Slic3r/App/Yoga/RadioExtruder.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/PrintSettingsDialog.hpp"
@@ -62,7 +61,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     Item* layer_height_row = m_content_area->emplace_back<Item>();
     layer_height_row->set_flex_shrink(0);
     Rectangle* text_rect = layer_height_row->emplace_back<Rectangle>();
-    text_rect->set_fill(ImColor(41, 41, 41));
+    text_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     text_rect->set_align_items(YGAlignCenter);
     text_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
     text_rect->set_padding(Paddings(5, 0));
@@ -103,6 +102,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_settings_set_btn->set_checkable(true);
     m_settings_set_btn->set_height(24.f);
     m_settings_set_btn->set_self_align(YGAlignCenter);
+    m_settings_set_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_settings_set_btn->callbacks().action = [this]()
     {
         m_navigator.set_opened_dialog(

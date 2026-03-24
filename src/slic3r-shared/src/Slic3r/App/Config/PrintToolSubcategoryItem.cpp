@@ -7,6 +7,8 @@
 #include <Slic3r/Domain/Config.hpp>
 
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+
 #include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 #include <Slic3r/Biz/I18N/I18N.hpp>
@@ -123,7 +125,8 @@ void PrintToolSubcategoryItem::on_data_update()
 
 void PrintToolSubcategoryItem::on_index_update()
 {
-    set_fill(m_index % 2 == 0 ? ImColor(27, 27, 27) : ImColor(22, 22, 22));
+    ImColor color = m_theme->color_imgui(Platform::Color::WindowBg);
+    set_fill(m_index % 2 == 0 ? color : Imgui::adjust_brightness(color, 0.9));
 }
 
 } // namespace Slic3r::App

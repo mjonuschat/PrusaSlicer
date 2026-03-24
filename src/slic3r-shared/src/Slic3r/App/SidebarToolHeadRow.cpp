@@ -26,7 +26,7 @@ SidebarToolHeadRow::SidebarToolHeadRow(
 {
     set_flex_shrink(0);
     Rectangle* rect = emplace_back<Rectangle>();
-    rect->set_fill(ImColor(41, 41, 41));
+    rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     rect->set_justify_content(YGJustifyCenter);
     rect->set_align_items(YGAlignCenter);
     rect->set_width(25);

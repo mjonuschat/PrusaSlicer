@@ -27,15 +27,24 @@ public:
     virtual ObjectPtr remove(Object* child) override;
 
     const ImColor& background_color() const;
-    void set_background_color(const ImColor& color, bool adjust_hover = true);
+    void set_background_color(Platform::Color color);
+    void set_background_color(const ImColor& color);
+    void set_background_color(const ImColor& color, const ImColor& color_hover);
 
     const ImColor& background_color_checked() const;
-    void
-    set_background_color_checked(const ImColor& background_color_checked, bool adjust_hover = true);
+    void set_background_color_checked(Platform::Color color);
+    void set_background_color_checked(const ImColor& background_color_checked);
+    void set_background_color_checked(
+        const ImColor& background_color_checked,
+        const ImColor& background_color_checked_hover
+    );
 
     const ImColor& background_color_border() const;
-    void
-    set_background_color_border(const ImColor& background_color_border, bool adjust_hover = true);
+    void set_background_color_border(const ImColor& background_color_border);
+    void set_background_color_border(
+        const ImColor& background_color_border,
+        const ImColor& background_color_border_hover
+    );
 
     float background_border_width() const;
     void set_background_border_width(float width);

@@ -18,26 +18,24 @@ MenuItem::MenuItem(
     RectangleButton(),
     m_parent_menu(parent)
 {
-    create(label, icon, IM_COL32_BLACK_TRANS, shortcut, has_sub_menu);
+    create(label, icon, shortcut, has_sub_menu);
 }
 
 MenuItem::MenuItem(
     Menu* parent,
     const std::string& label,
-    ImColor color_icon_rect,
     const std::string& shortcut,
     bool has_sub_menu
 ) :
     RectangleButton(),
     m_parent_menu(parent)
 {
-    create(label, Render::Icon::None, color_icon_rect, shortcut, has_sub_menu);
+    create(label, Render::Icon::None, shortcut, has_sub_menu);
 }
 
 void MenuItem::create(
     const std::string& label,
     Render::Icon icon,
-    ImColor color_icon_rect,
     const std::string& shortcut,
     bool has_sub_menu
 )
@@ -47,7 +45,7 @@ void MenuItem::create(
         m_sub_menu->set_offset(-5.f);
         m_sub_menu->set_flags(m_sub_menu->flags() | ImGuiWindowFlags_NoFocusOnAppearing);
     }
-    set_background_color(IM_COL32_BLACK_TRANS);
+    set_background_color(Platform::Color::ButtonTransparent);
 
     float icon_size = 16;
 
@@ -59,7 +57,9 @@ void MenuItem::create(
     m_label->set_flex_grow(1.f);
 
     m_shortcut_text = emplace_back<Text>(shortcut);
-    m_shortcut_text->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    m_shortcut_text->set_text_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
 
     // for expanded menu item use expander icon
     Icon* expander_icon = emplace_back<Icon>(Render::Icon::CloseArrow);

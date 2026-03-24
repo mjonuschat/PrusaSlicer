@@ -17,6 +17,7 @@
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/Log.hpp>
+#include <Slic3r/App/Theme.hpp>
 
 namespace Slic3r::App::Platform::WX {
 
@@ -392,7 +393,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
 
     this->Bind(
         wxEVT_KILL_FOCUS,
-        [this](wxFocusEvent& e)
+        [](wxFocusEvent& e)
         {
             // When the OS intercepts the key and shows a dialog / overlay, 
             // the application never receives the WM_KEYUP / key - release event, 
@@ -402,6 +403,8 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
             io.ClearInputKeys();
         }
     );
+
+    set_theme(std::make_unique<Theme>());
 }
 
 WXRenderCanvas::~WXRenderCanvas()

@@ -118,6 +118,10 @@ private:
     bool draw_slider(int* higher_pos, int* lower_pos, const std::string& higher_label, const std::string& lower_label,
                      const ImVec2& pos, const ImVec2& size);
 
+    ImU32 fg_color() const;
+    ImU32 bg_color() const;
+    ImU32 tooltip_bg_color() const;
+
 private:
     struct DrawOptions
     {
