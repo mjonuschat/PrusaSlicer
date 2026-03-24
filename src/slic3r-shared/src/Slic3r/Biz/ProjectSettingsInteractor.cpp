@@ -68,7 +68,7 @@ std::vector<Domain::ColorRGB> ProjectSettingsInteractor::get_colors(
         const Domain::ConfigContainer* cc = project.find_config_container(config_container_id);
         if (!cc)
             continue;
-        const auto config = cc->print_config();
+        const auto config = cc->build_print_config();
         const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
         if (!fdm)
             return {};
@@ -90,7 +90,7 @@ void ProjectSettingsInteractor::set_color_from_user(
         if (!cc)
             continue;
 
-        auto config = cc->print_config();
+        auto config = cc->build_print_config();
         auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
         if (!fdm)
             return;
@@ -122,7 +122,7 @@ void ProjectSettingsInteractor::set_colors_from_connect(
         if (!cc)
             continue;
 
-        auto config = cc->print_config();
+        auto config = cc->build_print_config();
         auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
         if (!fdm)
             return;
@@ -226,7 +226,7 @@ std::string ProjectSettingsInteractor::preset_color(
     if (!cc)
         return {};
 
-    const auto config = cc->print_config();
+    const auto config = cc->build_print_config();
     const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
     if (!fdm)
         return {};
@@ -247,7 +247,7 @@ int ProjectSettingsInteractor::extruder_count(
     if (!cc)
         return 0;
 
-    const auto config = cc->print_config();
+    const auto config = cc->build_print_config();
     const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
     if (!fdm)
         return 0;
@@ -265,7 +265,7 @@ void ProjectSettingsInteractor::load_and_reconcile(
     if (!cc)
         return;
 
-    const Domain::ConfigPack config = cc->print_config();
+    const Domain::ConfigPack config = cc->build_print_config();
     const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
     if (!fdm)
         return;

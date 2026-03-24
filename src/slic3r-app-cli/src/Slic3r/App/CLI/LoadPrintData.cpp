@@ -318,7 +318,7 @@ static bool process_input_files(
 
                 // TODO: For now, we always use the first ConfigContainer.
                 Domain::ConfigPack loaded_config =
-                    loaded_project.config_containers().front()->print_config();
+                    loaded_project.config_containers().front()->build_print_config();
 
                 if (!can_apply_printer_technology(
                         printer_technology,

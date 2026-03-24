@@ -1399,7 +1399,7 @@ void write(
         std::vector<nlohmann::json> beds_json;
 
         bool has_wipe_tower = false;
-        const Domain::ConfigPack config_pack{config_container->print_config()};
+        const Domain::ConfigPack config_pack{config_container->build_print_config()};
         if (auto config_pack_fdm{std::get_if<Domain::ConfigPackFDM>(&config_pack)}) {
             const bool enabled{config_pack_fdm->print.items.opt("wipe_tower").get<bool>()};
             has_wipe_tower = config_pack_fdm->tool.size() > 1 && enabled;
@@ -1421,7 +1421,7 @@ void write(
         cc_json["beds"] = beds_json;
 
         cc_json[PRESET_METADATA] = nlohmann::ordered_json(config_container->selected_preset().metadata());
-        const auto& cfg_var = config_container->print_config();
+        const auto& cfg_var = config_container->build_print_config();
         if (std::holds_alternative<Domain::ConfigPackFDM>(cfg_var))
             cc_json[CONFIGURATION] = nlohmann::ordered_json(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)));
         else if (std::holds_alternative<Domain::ConfigPackSLA>(cfg_var))

@@ -78,7 +78,7 @@ LayerHeightParams compute_layer_height_params(
 {
     const ModelObject& model_object =
         *project.find_object_by_id(object_selection.elements.front().object_id);
-    const ConfigPack config_pack    = config_container.print_config();
+    const ConfigPack config_pack    = config_container.build_print_config();
     const ConfigPackFDM& fdm_config = std::get<ConfigPackFDM>(config_pack);
 
     ASSERT(bed_ref.config_container_id == config_container.id().id);

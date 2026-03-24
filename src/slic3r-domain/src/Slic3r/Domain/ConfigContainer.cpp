@@ -3,7 +3,7 @@
 
 namespace Slic3r::Domain {
 
-ConfigPack ConfigContainer::print_config() const
+ConfigPack ConfigContainer::build_print_config() const
 {
     ConfigPack pack = m_preset.config();
     if (auto* fdm = std::get_if<ConfigPackFDM>(&pack)) {

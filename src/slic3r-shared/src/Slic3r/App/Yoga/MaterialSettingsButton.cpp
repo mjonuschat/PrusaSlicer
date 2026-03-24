@@ -148,9 +148,13 @@ void MaterialSettingsButton::on_colors_changed(
         return;
     }
 
-    ASSERT(colors.size() > m_index);
+    // May receive a notification with fewer slots than our index during
+    // project switches (buttons from the old extruder count are still alive).
+    // Handle this as "no color for this slot -> leave what we have".
+    if (m_index >= colors.size())
+        return;
 
-    const Domain::ColorRGB& color = colors.at(m_index);
+    const Domain::ColorRGB& color = colors[m_index];
     set_color({color.r(), color.g(), color.b()});
 }
 

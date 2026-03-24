@@ -430,7 +430,7 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_insta
         project.model(),
         project.metadata(),
         selected_preset.metadata(),
-        config_container->print_config(),
+        config_container->build_print_config(),
         *instance
     );
 }
@@ -456,7 +456,7 @@ void ProjectInteractor::on_colors_changed(
             project.model(),
             project.metadata(),
             selected_preset.metadata(),
-            config_container->print_config(),
+            config_container->build_print_config(),
             *bed_instance
         );
     }
