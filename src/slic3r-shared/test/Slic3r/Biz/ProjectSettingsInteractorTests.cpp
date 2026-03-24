@@ -155,4 +155,41 @@ TEST_CASE_METHOD(
     REQUIRE(after_unlock[0] != custom_color);
 }
 
+TEST_CASE_METHOD(
+    ProjectSettingsInteractorFixture,
+    "Multiple config containers have independent color state",
+    "[ProjectSettingsInteractor]"
+)
+{
+    using namespace Slic3r::Biz;
+
+    project_interactor.new_project();
+
+    auto& psi = project_interactor.project_settings_interactor();
+    const Domain::SelectionId cc0_id = project_interactor.selected_config_container_id();
+    REQUIRE(cc0_id != Domain::INVALID_ID);
+
+    // Set a custom color on the first container's slot 0.
+    const std::string custom_hex = "#112233";
+    psi.set_color_from_user(cc0_id, 0, custom_hex);
+
+    // Add a second config container.
+    const Domain::SelectionId cc1_id = project_interactor.add_config_container();
+    REQUIRE(cc1_id != Domain::INVALID_ID);
+    REQUIRE(cc1_id != cc0_id);
+
+    // The second container should have its own colors (auto-resolved, not the custom one).
+    const auto colors_cc1 = psi.get_colors(cc1_id);
+    REQUIRE(!colors_cc1.empty());
+
+    Domain::ColorRGB custom_color;
+    Biz::Algorithms::Color::decode_color(custom_hex, custom_color);
+    REQUIRE(colors_cc1[0] != custom_color);
+
+    // The first container should still have the custom color.
+    const auto colors_cc0 = psi.get_colors(cc0_id);
+    REQUIRE(!colors_cc0.empty());
+    REQUIRE(colors_cc0[0] == custom_color);
+}
+
 } // namespace Slic3r

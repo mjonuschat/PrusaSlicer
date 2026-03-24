@@ -75,6 +75,19 @@ void remove_children(Scene::Scene& scn, const std::vector<RefT>& elements, const
         scn.remove_child(node);
 }
 
+std::optional<ColorRGBA> color_from_extruder_slot(
+    const std::vector<Domain::ColorRGB>& slot_colors,
+    const Domain::ModelVolume& vol)
+{
+    const int raw_id = vol.extruder_id();
+    const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
+    if (slot < static_cast<int>(slot_colors.size())) {
+        const auto& c = slot_colors[slot];
+        return ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
+    }
+    return std::nullopt;
+}
+
 } // namespace
 
 PlaterScenePresenter::PlaterScenePresenter(
@@ -501,14 +514,8 @@ void PlaterScenePresenter::update_volume_materials()
                         const auto* vol = obj
                             ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
                             : nullptr;
-                        if (vol) {
-                            const int raw_id = vol->extruder_id();
-                            const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
-                            if (slot < static_cast<int>(slot_colors.size())) {
-                                const auto& c = slot_colors[slot];
-                                color = ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
-                            }
-                        }
+                        if (vol)
+                            color = color_from_extruder_slot(slot_colors, *vol);
                     }
                 }
 

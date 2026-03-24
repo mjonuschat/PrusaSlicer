@@ -105,6 +105,8 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
 
     const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
     set_material_name(prefix + preset_item.name);
+    // Color is not set here - it comes exclusively via the on_colors_changed listener
+    // from ProjectSettingsInteractor. Use a default that nobody should see.
     set_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
 
     const auto& hw_config =

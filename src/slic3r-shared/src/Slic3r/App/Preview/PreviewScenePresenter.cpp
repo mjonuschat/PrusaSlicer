@@ -10,6 +10,23 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include <Slic3r/App/libvgcode/SlaObjectNodeTag.hpp>
 
+namespace {
+
+std::optional<Slic3r::Domain::ColorRGBA> color_from_extruder_slot(
+    const std::vector<Slic3r::Domain::ColorRGB>& slot_colors,
+    const Slic3r::Domain::ModelVolume& vol)
+{
+    const int raw_id = vol.extruder_id();
+    const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
+    if (slot < static_cast<int>(slot_colors.size())) {
+        const auto& c = slot_colors[slot];
+        return Slic3r::Domain::ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
 namespace Slic3r::App::Preview {
 
 PreviewScenePresenter::PreviewScenePresenter(
@@ -247,12 +264,8 @@ void PreviewScenePresenter::add_shells()
                             if (cc_it != mi_to_cc_map.end()) {
                                 const auto& slot_colors = m_project_interactor
                                     .project_settings_interactor().get_colors(cc_it->second);
-                                const int raw_id = vol->extruder_id();
-                                const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
-                                if (slot < static_cast<int>(slot_colors.size())) {
-                                    const auto& c = slot_colors[slot];
-                                    clr = Domain::ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
-                                }
+                                if (auto c = color_from_extruder_slot(slot_colors, *vol))
+                                    clr = *c;
                             }
                         } else {
                             auto color_it = Scene::VOLUME_COLORS.find(vol->type());

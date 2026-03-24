@@ -81,7 +81,11 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->callbacks().painting_reset = [this]() { this->clear_all_paintings(); };
 }
 
-MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo() = default;
+MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
+{
+    m_project_interactor.project_settings_interactor()
+        .remove_listener<Biz::IColorsChangedListener>(this);
+}
 
 Scene::ToolType MultiMaterialPaintingGizmo::type() const
 {
