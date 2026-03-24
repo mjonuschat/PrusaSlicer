@@ -464,12 +464,19 @@ Scene::ToolType SvgGizmo::type() const {
 
 bool SvgGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext& ctx)
 {
-    // is double click on text volume?
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
+    if (selection.elements.size() != 1)
+        return false; // allow only when svg is already selected
+
+    const Domain::ElementRef& selected = selection.elements.front();
+
+    // is double click on selected svg volume?
     const Domain::Project& project = m_project_interactor.selected_project();
     for (const App::Scene::NodePickResult& pick : ctx.pick_results()) {
-        if (!pick.node->has_tag_of_type<App::Scene::SceneNodeTag>())
-            continue; // ignore staff(node) infront of text volume
-        auto* tag = pick.node->tag_of_type<App::Scene::SceneNodeTag>();
+        if (!pick.node->has_tag_of_type<Scene::SceneNodeTag>())
+            continue; // ignore staff(node) infront of svg volume
+        auto* tag = pick.node->tag_of_type<Scene::SceneNodeTag>();
         if (tag == nullptr)
             continue;
         const Domain::ModelVolume* volume_ptr =
@@ -482,22 +489,12 @@ bool SvgGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext&
         if (volume.text_configuration.has_value())
             break; // it is text not svg
 
-        // set selection to the Svg volume
-        Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-        if (volume.get_object()->volumes.size() == 1) {
-            // selection is object
-            scene_interactor.set_object_selection(
-                Biz::Scene::ObjectSelection{
-                    .mode = Biz::Scene::SelectionMode::Instance,
-                    .elements = {Domain::ElementRef(tag->object_id, tag->instance_id, 0)}
-                });
-        } else{
-            scene_interactor.set_object_selection(
-                Biz::Scene::ObjectSelection{
-                    .mode = Biz::Scene::SelectionMode::Volume,
-                    .elements = {Domain::ElementRef(tag->object_id, tag->instance_id, tag->volume_id)}
-                });
-        }
+        if (selected.volume_id != tag->volume_id ||
+            selected.object_id != tag->object_id ||
+            selected.instance_id != tag->instance_id)
+            break; // double click is on other volume, not selected one
+
+        // double click is on selected text volume, allow activation
         return true;
     }
     return false;

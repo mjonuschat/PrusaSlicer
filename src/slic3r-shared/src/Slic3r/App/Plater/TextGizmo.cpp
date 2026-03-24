@@ -442,7 +442,14 @@ void TextGizmo::on_project_deactivated(size_t old_project_id)
 
 bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext& ctx)
 {
-    // is double click on text volume?
+    const Biz::Scene::ObjectSelection &selection =
+        m_project_interactor.scene_interactor().object_selection();
+    if (selection.elements.size() != 1)
+        return false; // allow only when text is already selected
+
+    const Domain::ElementRef& selected = selection.elements.front();
+
+    // is double click on selected text volume?
     const Domain::Project& project = m_project_interactor.selected_project();
     for (const App::Scene::NodePickResult& pick : ctx.pick_results()) {
         if (!pick.node->has_tag_of_type<Scene::SceneNodeTag>())
@@ -458,22 +465,12 @@ bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext
         if (!volume.text_configuration.has_value())
             break; // it is not text, check only first volume
 
-        // set selection on text volume
-        Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-        if (volume.get_object()->volumes.size() == 1) {
-            // selection is object
-            scene_interactor.set_object_selection(
-                Biz::Scene::ObjectSelection{
-                    .mode = Biz::Scene::SelectionMode::Instance,
-                    .elements = {Domain::ElementRef(tag->object_id, tag->instance_id, 0)}
-                });
-        } else{
-            scene_interactor.set_object_selection(
-                Biz::Scene::ObjectSelection{
-                    .mode = Biz::Scene::SelectionMode::Volume,
-                    .elements = {Domain::ElementRef(tag->object_id, tag->instance_id, tag->volume_id)}
-                });
-        }
+        if (selected.volume_id != tag->volume_id ||
+            selected.object_id != tag->object_id ||
+            selected.instance_id != tag->instance_id)
+            break; // double click is on other volume, not selected one
+
+        // double click is on selected text volume, allow activation
         return true;
     }
     return false;
