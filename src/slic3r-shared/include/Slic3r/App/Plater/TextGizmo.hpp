@@ -6,6 +6,7 @@
 #include <optional>
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo, forward-declaration of Slic3r::App::Yoga::Dialog
 #include "Slic3r/App/Scene/IGizmoController.hpp"
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Yoga/Item.hpp" // Passthrough
@@ -22,16 +23,17 @@ class TextDialog;
 
 /**
  *  @brief   Tool for emboss text on surface of model
- *  @details Main idea: 
+ *  @details Main idea:
  *  1) Gizmo is open only with selected text volume (detail in 'on_activated').
  *  2) Shown data are from m_preset_manager cache (actualized in 'on_scene_selection_changed')
  *  3) ModelVolume always contain TextConfiguration to recreate volume (without modification)
- *  4) Volume is created in a process thread (detail inside file 'EmbossJob'). 
+ *  4) Volume is created in a process thread (detail inside file 'EmbossJob').
  */
-class TextGizmo : 
+class TextGizmo :
     public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
-    public Scene::IMouseDrag // surface dragging
+    public Scene::IMouseDrag, // surface dragging
+    public Scene::IThumbnailRenderListener
 {
 public:
     TextGizmo(
@@ -66,6 +68,12 @@ public:
     void on_deactivated() override;
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    /**
+     * @name Implementation of IThumbnailRenderListener interface
+     */
+    void on_thumbnail_render_begin() override;
+    void on_thumbnail_render_end() override;
 
     Scene::ToolType type() const override;
     bool allows_activation_by_double_click(const Scene::GizmoEventContext& ctx) override;

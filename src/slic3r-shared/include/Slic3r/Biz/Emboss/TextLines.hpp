@@ -12,6 +12,10 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 
+namespace Slic3r::App::Scene {
+class Node;
+} // namespace Slic3r::App::Scene
+
 namespace Slic3r::Biz::Emboss {
 
 /// <summary>
@@ -44,9 +48,11 @@ class TextLinesModel {
     
     App::Render::Material m_material;
 
-    struct ProjectContext {
+    struct ProjectContext
+    {
         TextLines lines;
         std::unique_ptr<App::Render::Geometry> geometry;
+        App::Scene::Node* m_text_line_node = nullptr;
     };
     ProjectScoped<ProjectContext> m_proj_ctxs;
 public:
@@ -61,6 +67,7 @@ public:
     // Text transformation(inside object not world) is set when no text volume exist for selected object
     void create_text_lines(unsigned count_lines = 1, const Domain::Transform3d* text_tr = nullptr);
     void reset();
+    void set_visible(bool visible);
 };
 
 struct SelectedText {

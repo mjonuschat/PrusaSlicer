@@ -432,13 +432,13 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
 
     TextLineNodeTag tag{};
     int layer_index = int(App::Plater::PlaterSceneLayer::DocumentObjects);
-    App::Scene::NodeBuilder builder{ scene };
-    builder
-        .set_debug_name("Text lines")
+    App::Scene::NodeBuilder builder{scene};
+    builder.set_debug_name("Text lines")
         .set_transform(*text_tr)
         .set_tag(tag)
         .set_mesh(proj_ctx.geometry.get(), m_material, layer_index);
-    scene.add_child(builder.build().release(), object_node);
+    proj_ctx.m_text_line_node = builder.build().release();
+    scene.add_child(proj_ctx.m_text_line_node, object_node);
 }
 
 void TextLinesModel::reset()
@@ -450,14 +450,18 @@ void TextLinesModel::reset()
     proj_ctx.lines.clear();
     proj_ctx.geometry = nullptr;
 
-    auto is_text_line = [](const App::Scene::Node* n) {
-        return n->has_tag_of_type<TextLineNodeTag>();
-    };
+    if (proj_ctx.m_text_line_node != nullptr) {
+        m_scene_presenter.scene().remove_child(proj_ctx.m_text_line_node);
+        proj_ctx.m_text_line_node = nullptr;
+    }
+}
 
-    App::Scene::Node::NodeList nodes;
-    m_scene_presenter.scene().root().query(is_text_line, nodes);
-    // Should by always only one
-    for (auto node : nodes) m_scene_presenter.scene().remove_child(node);
+void TextLinesModel::set_visible(const bool visible)
+{
+    ProjectContext& proj_ctx = m_proj_ctxs.selected();
+    if (proj_ctx.m_text_line_node != nullptr) {
+        proj_ctx.m_text_line_node->set_enabled(visible);
+    }
 }
 
 SelectedText get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {

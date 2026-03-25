@@ -423,6 +423,16 @@ void TextGizmo::render_imgui(){
     m_surface_drag.imgui_draw(); // cross hair during drag
 }
 
+void TextGizmo::on_thumbnail_render_begin()
+{
+    m_text_lines.set_visible(false);
+}
+
+void TextGizmo::on_thumbnail_render_end()
+{
+    m_text_lines.set_visible(true);
+}
+
 void TextGizmo::on_activated()
 {
     m_preset_manager.init();
@@ -442,6 +452,7 @@ void TextGizmo::on_activated()
     // Register for scene changes
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_presenter.scene().add_listener<Scene::IThumbnailRenderListener>(this);
 
     // when text volume is not selected, create new one
     if (Biz::Emboss::get_selected_text_volume(m_project_interactor).volume == nullptr) {
@@ -466,6 +477,7 @@ void TextGizmo::on_activated()
 void TextGizmo::on_deactivated() {
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_presenter.scene().remove_listener<Scene::IThumbnailRenderListener>(this);
     m_text_lines.reset(); // remove scene node
     m_proj_ctxs->selected().last_loaded_volume_id = Domain::ObjectID{}; // invalid
 }
@@ -474,6 +486,7 @@ void TextGizmo::on_project_deactivated(size_t old_project_id)
 {
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_presenter.scene().remove_listener<Scene::IThumbnailRenderListener>(this);
 }
 
 bool TextGizmo::allows_activation_by_double_click(const Scene::GizmoEventContext& ctx)
@@ -745,6 +758,7 @@ void TextGizmo::on_project_activated(size_t new_project_id)
 {
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_scene_presenter.scene().add_listener<Scene::IThumbnailRenderListener>(this);
 
     // fill dialog with current data
     const Domain::Project& project = m_project_interactor.project(new_project_id);

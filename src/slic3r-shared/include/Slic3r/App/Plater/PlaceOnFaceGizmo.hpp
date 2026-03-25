@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
@@ -19,7 +20,11 @@ namespace Slic3r::App::Scene { class NodeBuilder; }
 namespace Slic3r::App::Plater {
 class PlaterScenePresenter;
 
-class PlaceOnFaceGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener, public App::Scene::ISceneChangedListener
+class PlaceOnFaceGizmo :
+    public Scene::IToolGizmo,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Scene::ISceneChangedListener,
+    public Scene::IThumbnailRenderListener
 {
     using ModelGeometryManager     = Render::GeometryManager<Scene::AuxiliaryElementId>;
     using ModelTriangleMeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
@@ -48,6 +53,9 @@ public:
 
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    void on_thumbnail_render_begin() override;
+    void on_thumbnail_render_end() override;
 
     void on_scene_selection_changed(
         Domain::SelectionId project_id,

@@ -4,6 +4,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/App/Scene/IGizmoController.hpp" // provide ability to close gizmo
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener + ISceneChangedListener
@@ -17,10 +18,11 @@ class SimplifyNotification;
 // Continue development for GLGizmoSimplify permanent link: 
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.hpp
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.cpp
-class SimplifyGizmo : 
-    public Scene::IToolGizmo, 
+class SimplifyGizmo :
+    public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
-    public Biz::Scene::ISceneChangedListener
+    public Biz::Scene::ISceneChangedListener,
+    public Scene::IThumbnailRenderListener
 {
 public:
     SimplifyGizmo(
@@ -46,6 +48,10 @@ public:
     void on_deactivated() override;
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    void on_thumbnail_render_begin() override;
+    void on_thumbnail_render_end() override;
+
     Scene::ToolType type() const override;
     bool enabled() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;

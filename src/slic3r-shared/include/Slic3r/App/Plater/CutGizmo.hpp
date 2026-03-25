@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
@@ -48,8 +49,10 @@ class PlaterScenePresenter;
 
 using namespace Slic3r::Domain;
 
-// Please implement me!
-class CutGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener
+class CutGizmo :
+    public Scene::IToolGizmo,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Scene::IThumbnailRenderListener
 {
     using ModelGeometryManager         = Render::GeometryManager<CutAuxiliaryElementId>;
     using ModelTriangleMeshManager     = Scene::TriangleMeshManager<CutAuxiliaryElementId>;
@@ -85,6 +88,9 @@ public:
 
     void on_project_activated(size_t new_project_id) override;
     void on_project_deactivated(size_t old_project_id) override;
+
+    void on_thumbnail_render_begin() override;
+    void on_thumbnail_render_end() override;
 
     void on_scene_selection_changed(
         Domain::SelectionId project_id,

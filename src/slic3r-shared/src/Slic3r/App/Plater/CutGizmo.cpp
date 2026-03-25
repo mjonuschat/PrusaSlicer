@@ -625,12 +625,38 @@ CutGizmo::CutGizmo(
     };
 }
 
+void CutGizmo::on_thumbnail_render_begin()
+{
+    // Before rendering a thumbnail, hide gizmo nodes and show original model nodes.
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(false);
+    }
+
+    m_clipper_presenter.set_enable_plane(false);
+    m_clipper_presenter.set_enable_contour(false);
+    this->set_enabled_scene_nodes(true);
+}
+
+void CutGizmo::on_thumbnail_render_end()
+{
+    // After rendering a thumbnail, restore gizmo nodes and hide original model nodes.
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(true);
+    }
+
+    m_clipper_presenter.set_enable_contour(this->is_planar_mode());
+    m_clipper_presenter.set_enable_plane(this->is_planar_mode());
+    this->set_enabled_scene_nodes(false);
+}
+
 void CutGizmo::on_activated()
 {
     init_scene_nodes();
 
     update_scene_nodes();
     set_enabled_scene_nodes(false);
+
+    m_scene_presenter.scene().add_listener<IThumbnailRenderListener>(this);
 }
 
 void CutGizmo::on_deactivated()
@@ -643,6 +669,8 @@ void CutGizmo::on_deactivated()
 
     // Clear solid meshes to force their recreation when the selected object is changed
     m_solid_meshes.clear();
+
+    m_scene_presenter.scene().remove_listener<IThumbnailRenderListener>(this);
 }
 
 void CutGizmo::on_project_activated(size_t new_project_id)

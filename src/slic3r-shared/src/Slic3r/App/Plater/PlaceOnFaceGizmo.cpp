@@ -40,12 +40,32 @@ void PlaceOnFaceGizmo::on_activated()
 {
     recreate_planes_and_nodes();
     m_is_active = true;
+
+    m_scene_presenter.scene().add_listener<IThumbnailRenderListener>(this);
 }
 
 void PlaceOnFaceGizmo::on_deactivated()
 {
     destroy_planes_and_nodes();
     m_is_active = false;
+
+    m_scene_presenter.scene().remove_listener<IThumbnailRenderListener>(this);
+}
+
+void PlaceOnFaceGizmo::on_thumbnail_render_begin()
+{
+    // Before rendering a thumbnail, hide gizmo nodes.
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(false);
+    }
+}
+
+void PlaceOnFaceGizmo::on_thumbnail_render_end()
+{
+    // After rendering a thumbnail, restore gizmo nodes.
+    if (m_main_node != nullptr) {
+        m_main_node->set_enabled(true);
+    }
 }
 
 void PlaceOnFaceGizmo::on_project_activated(size_t new_project_id)

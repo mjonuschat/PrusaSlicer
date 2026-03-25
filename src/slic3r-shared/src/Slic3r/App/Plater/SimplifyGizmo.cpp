@@ -497,27 +497,77 @@ void SimplifyGizmo::on_selection_change(Domain::SelectionId project_id, const Bi
 }
 
 namespace {
-void add_listeners(Biz::Scene::SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
+void add_listeners(
+    Biz::Scene::SceneInteractor& scene_interactor,
+    Scene::Scene& scene,
+    SimplifyGizmo* gizmo
+)
+{
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(gizmo);
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(gizmo);
+    scene.add_listener<Scene::IThumbnailRenderListener>(gizmo);
 }
-void remove_listeners(Biz::Scene::SceneInteractor& scene_interactor, SimplifyGizmo* gizmo) {
+
+void remove_listeners(
+    Biz::Scene::SceneInteractor& scene_interactor,
+    Scene::Scene& scene,
+    SimplifyGizmo* gizmo
+)
+{
     scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(gizmo);
     scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(gizmo);
+    scene.remove_listener<Scene::IThumbnailRenderListener>(gizmo);
 }
-}// namespace
+} // namespace
 
-void SimplifyGizmo::on_activated() 
+void SimplifyGizmo::on_activated()
 {
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    Domain::SelectionId project_id = m_project_interactor.selected_project_id();
+    Domain::SelectionId project_id                = m_project_interactor.selected_project_id();
     on_selection_change(project_id, scene_interactor.object_selection());
-    add_listeners(scene_interactor, this);
+    add_listeners(scene_interactor, m_scene_presenter.scene(), this);
 }
 
-void SimplifyGizmo::on_deactivated() {
+void SimplifyGizmo::on_deactivated()
+{
     deactivate(m_project_interactor.selected_project_id());
-    remove_listeners(m_project_interactor.scene_interactor(), this);
+    remove_listeners(m_project_interactor.scene_interactor(), m_scene_presenter.scene(), this);
+}
+
+void SimplifyGizmo::on_thumbnail_render_begin()
+{
+    // Before rendering a thumbnail, hide phantom nodes and show original model nodes.
+    ProjectContext& proj_ctx = m_proj_ctxs->selected();
+    Scene::Node& root_node   = m_scene_presenter.scene().root();
+    for (Scene::Node* node : proj_ctx.phantom_nodes) {
+        if (exist_node(root_node, node)) {
+            node->set_enabled(false);
+        }
+    }
+
+    for (Scene::Node* node : proj_ctx.to_enable) {
+        if (exist_node(root_node, node)) {
+            node->set_enabled(true);
+        }
+    }
+}
+
+void SimplifyGizmo::on_thumbnail_render_end()
+{
+    // After rendering the thumbnail, restore phantom nodes and hide original model nodes.
+    ProjectContext& proj_ctx = m_proj_ctxs->selected();
+    Scene::Node& root_node   = m_scene_presenter.scene().root();
+    for (Scene::Node* node : proj_ctx.phantom_nodes) {
+        if (exist_node(root_node, node)) {
+            node->set_enabled(true);
+        }
+    }
+
+    for (Scene::Node* node : proj_ctx.to_enable) {
+        if (exist_node(root_node, node)) {
+            node->set_enabled(false);
+        }
+    }
 }
 
 void SimplifyGizmo::on_project_activated(size_t new_project_id)
@@ -532,12 +582,13 @@ void SimplifyGizmo::on_project_activated(size_t new_project_id)
         m_dialog->set_progress(100);
         m_dialog->set_enable_apply_button(!proj_ctx.job_data.data.empty());
     }
-    add_listeners(m_project_interactor.scene_interactor(), this);
+
+    add_listeners(m_project_interactor.scene_interactor(), m_scene_presenter.scene(), this);
 }
 
 void SimplifyGizmo::on_project_deactivated(size_t old_project_id)
 {
-    remove_listeners(m_project_interactor.scene_interactor(), this);
+    remove_listeners(m_project_interactor.scene_interactor(), m_scene_presenter.scene(), this);
 }
 
 Scene::ToolType SimplifyGizmo::type() const 
