@@ -74,12 +74,14 @@ void ConfigItemTextField::on_data_update()
         if (!m_is_multiline || m_is_multiline.value() != m_state->def().multiline) {
             if (m_state->def().multiline) {
                 set_flags(flags() | ImGuiInputTextFlags_Multiline);
-                set_height(100);
-                set_min_size({150, 0});
+                set_resizable(true);
+                set_height(YGUndefined);
+                input_text()->set_min_size({0, 80});
             } else {
                 set_flags(flags() & ~ImGuiInputTextFlags_Multiline);
+                set_resizable(false);
                 set_height(YGUndefined);
-                set_min_size({YGUndefined, 0});
+                input_text()->set_min_size({YGUndefined, 0});
             }
             m_is_multiline = m_state->def().multiline;
         }
@@ -99,8 +101,10 @@ void ConfigItemTextField::on_data_update()
                 m_state->def().max.value_or(std::numeric_limits<double>::max())
             );
             set_validator(m_double_validator.release());
-        } else if (*m_state->def().type == typeid(Domain::Percentage)
-                   || *m_state->def().type == typeid(Domain::FloatOrPercentage))
+        } else if (
+            *m_state->def().type == typeid(Domain::Percentage)
+            || *m_state->def().type == typeid(Domain::FloatOrPercentage)
+        )
         {
             m_percentage_validator = std::make_unique<PercentageValidator>(
                 m_state->def().min.value_or(std::numeric_limits<double>::lowest()),

@@ -84,8 +84,30 @@ void InputText::render(Vec2f pos, Vec2f size)
     render_item_begin(pos, size);
 
     {
-        Imgui::ScopedStyleColors colors({{ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS}});
+        Imgui::ScopedStyleColors colors(
+            {{ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS},
+             {ImGuiCol_Border, IM_COL32_BLACK_TRANS},
+             {ImGuiCol_BorderShadow, IM_COL32_BLACK_TRANS}}
+        );
+
         ImGui::SetCursorScreenPos(to_im(pos));
+        if (m_resizable) {
+            ImGui::SetNextWindowSizeConstraints(
+                ImVec2(
+                    YGFloatIsUndefined(m_min_size.x()) ? 0 : m_min_size.x(),
+                    YGFloatIsUndefined(m_min_size.y()) ? 0 : m_min_size.y()
+                ),
+                ImVec2(
+                    YGFloatIsUndefined(m_max_size.x()) ? FLT_MAX : m_max_size.x(),
+                    YGFloatIsUndefined(m_max_size.y()) ? FLT_MAX : m_max_size.y()
+                )
+            );
+            const std::string child_id = object_name() + "_child";
+            ImGui::BeginChild(child_id.c_str(), to_im(size), m_child_flags, m_window_flags);
+
+            // Each frame ImGui can have a different height, this will update Yoga size
+            set_height(ImGui::GetWindowSize().y);
+        }
         const std::string id = "###" + object_name();
 
         ImU32 text_color = ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled);
@@ -197,6 +219,10 @@ void InputText::render(Vec2f pos, Vec2f size)
                 m_callbacks.active_changed(active);
             }
         }
+
+        if (m_resizable) {
+            ImGui::EndChild();
+        }
     }
 
     render_item_end(pos, size);
@@ -285,6 +311,16 @@ Vec2f InputText::get_item_size()
 void InputText::hovered_updated_internal() {}
 
 void InputText::active_updated_internal() {}
+
+bool InputText::resizable() const
+{
+    return m_resizable;
+}
+
+void InputText::set_resizable(bool resizable)
+{
+    m_resizable = resizable;
+}
 
 const std::string& InputText::override_label() const
 {

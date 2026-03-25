@@ -49,6 +49,9 @@ public:
     bool is_changed_value() const override;
     void reset() override;
 
+    bool resizable() const;
+    void set_resizable(bool resizable);
+
 protected:
     virtual void text_updated_internal() {}
 

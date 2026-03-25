@@ -97,6 +97,9 @@ public:
     bool has_focus() const;
     void request_focus();
 
+    bool resizable() const;
+    void set_resizable(bool resizable);
+
 protected:
     Vec2f get_item_size() override;
 
@@ -119,11 +122,17 @@ private:
     std::string m_hint;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
 
+    ///////////// These are for resizable begin child //////////////
+    ImGuiChildFlags m_child_flags   = ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY;
+    ImGuiWindowFlags m_window_flags = 0;
+    ////////////////////////////////////////////////////////////////
+
     bool m_active        = false;
     bool m_updated       = false; ///< Input was edited but not yet lost focus
     bool m_request_focus = false;
     bool m_has_focus     = false;
     bool m_hovered       = false;
+    bool m_resizable     = false; ///< If true, height of the input text can be adjusted
 };
 
 } // namespace Slic3r::App::Yoga

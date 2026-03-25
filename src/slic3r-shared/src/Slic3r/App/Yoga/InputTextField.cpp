@@ -169,4 +169,14 @@ void InputTextField::reset()
         callbacks().text_edited();
     }
 }
+
+bool InputTextField::resizable() const
+{
+    return m_input_text->resizable();
+}
+
+void InputTextField::set_resizable(bool resizable)
+{
+    m_input_text->set_resizable(resizable);
+}
 } // namespace Slic3r::App::Yoga
