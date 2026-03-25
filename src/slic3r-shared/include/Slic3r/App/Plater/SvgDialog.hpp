@@ -90,13 +90,13 @@ private:
     Yoga::LayoutButton* m_warning{nullptr};
     Yoga::Text* m_filename{ nullptr };
     Yoga::LayoutButton* m_reload{ nullptr };
-    Yoga::Passthrough<Yoga::InputTextWithSpin> m_depth;
-    Yoga::Passthrough<Yoga::InputTextWithSpin> m_width;
-    Yoga::Passthrough<Yoga::InputTextWithSpin> m_height;
+    Yoga::InputTextWithSpin* m_depth{ nullptr };
+    Yoga::InputTextWithSpin* m_width{ nullptr };
+    Yoga::InputTextWithSpin* m_height{ nullptr };
     Yoga::LayoutButton* m_lock_size_btn{ nullptr };
     Yoga::Passthrough<Yoga::ToggleButton> m_use_surface;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_surface_distance;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_rotation;
+    Yoga::SliderWithInput* m_surface_distance{ nullptr };
+    Yoga::SliderWithInput* m_rotation{ nullptr };
     Yoga::LayoutButton* m_lock_rotation_btn{nullptr};
 
     Yoga::Passthrough<Yoga::LayoutButton> m_mirror_x{ nullptr };
@@ -105,7 +105,6 @@ private:
     // vector of Text items used for mm/inch units
     // Will be updated on units switch
     std::vector<Yoga::Text*> m_units;
-    Yoga::Text* m_angle_unit{ nullptr };
 
     Yoga::LayoutButton* m_face_the_camera_btn{nullptr};
 

@@ -31,8 +31,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Yoga {
 
-static const float label_width{85.f};
-
 static LayoutButton* add_button(Item* parent, Render::Icon icon, const std::string& tooltip)
 {
     LayoutButton* btn = parent->emplace_back<LayoutButton>("", icon, tooltip);
@@ -178,30 +176,18 @@ void WarningPanel::set_extention(const std::string& extention)
     m_extention->set_text(extention);
 }
 
-static LayoutButton* add_revert_btn(Item* parent, const std::string& tooltip)
-{
-    Item* revert_space = parent->emplace_back<Item>();
-    revert_space->set_min_size(Vec2f(24.f, 24.f));
-    revert_space->set_justify_content(YGJustifyFlexEnd);
-    LayoutButton* revert_btn =
-        revert_space->emplace_back<LayoutButton>("", Render::Icon::DSRevert, tooltip);
-    revert_btn->set_min_size(Vec2f(20.f, 20.f));
-    revert_btn->set_self_align(YGAlignCenter);
-    return revert_btn;
-}
-
 } // namespace Slic3r::App::Yoga
 
-using namespace Slic3r::App::Yoga;
-
 namespace Slic3r::App::Plater {
+
+using namespace Slic3r::App::Yoga;
 
 CutDialog::Callbacks& CutDialog::callbacks()
 {
     return m_callbacks;
 }
 
-static const Vec2f mouse_help_size{ 20.f, 20.f };
+static const Vec2f mouse_help_size{20.f, 20.f};
 static const Vec2f shortcut_help_size{40.f, 20.f};
 
 static constexpr ImColor build_volume_color{192, 154, 247};
@@ -393,49 +379,7 @@ void CutDialog::add_cut_plane_help_panel()
     help.add_item({{Render::Icon::KeyShift, shortcut_help_size}}, _u8L("Hold to draw a cut line"));
 }
 
-static void add_slider(
-    Item* parent,
-    SliderWithInput** slider,
-    const std::string& name,
-    const std::string& revert_tooltip
-)
-{
-    Text* header = parent->emplace_back<Text>(name);
-    header->set_font_type(Render::ImguiFontType::Bold);
-    header->set_margin(Margins(0, 5, 0, 0));
-
-    Item* line_wrap = parent->emplace_back<Item>();
-
-    (*slider) = line_wrap->emplace_back<SliderWithInput>(_u8L("mm"));
-
-    (*slider)->set_flex_grow(1.f);
-    (*slider)->set_revert_button(add_revert_btn(line_wrap, revert_tooltip));
-}
-
-static Item* add_labeled_row(Item* parent, const std::string& label)
-{
-    Item* labeled_row = parent->emplace_back<Item>();
-    labeled_row->set_gap(10);
-
-    Text* text = labeled_row->emplace_back<Text>(label);
-    text->set_width(label_width);
-    text->set_flex_shrink(0.f);
-    text->set_font_type(Render::ImguiFontType::Bold);
-    text->set_self_align(YGAlignCenter);
-
-    return labeled_row;
-}
-
-static Item* add_flex_shrinked_wrap(Item* parent)
-{
-    Item* wrap = parent->emplace_back<Item>();
-    wrap->set_flex_grow(1.f);
-    wrap->set_flex_shrink(0.f);
-    wrap->set_gap(3.f);
-    return wrap;
-}
-
-static void add_angles_row(
+void CutDialog::add_angles_row(
     Item* parent,
     InputTextWithSpin** first_input,
     const std::string& first_input_tooltip,
@@ -447,7 +391,7 @@ static void add_angles_row(
 {
     Item* angles_row = add_labeled_row(parent, _u8L("Angles"));
 
-    auto add_item = [angles_row](
+    auto add_item = [angles_row, this](
                         InputTextWithSpin** input,
                         const std::string& input_tooltip,
                         const std::string& revert_tooltip,
@@ -511,7 +455,13 @@ void CutDialog::add_groove_input_panel()
 
     add_separator(m_groove_input_panel);
 
-    add_slider(m_groove_input_panel, &m_groove_depth_value, _u8L("Depth"), _u8L("Revert depth"));
+    add_row_with_slider(
+        m_groove_input_panel,
+        &m_groove_depth_value,
+        _u8L("Depth"),
+        _u8L("mm"),
+        _u8L("Revert depth")
+    );
     m_groove_depth_value->callbacks().value_changed = [this](double value)
     {
         if (callbacks().groove_depth_value_changed) {
@@ -519,7 +469,13 @@ void CutDialog::add_groove_input_panel()
         }
     };
 
-    add_slider(m_groove_input_panel, &m_groove_width_value, _u8L("Width"), _u8L("Revert width"));
+    add_row_with_slider(
+        m_groove_input_panel,
+        &m_groove_width_value,
+        _u8L("Width"),
+        _u8L("mm"),
+        _u8L("Revert width")
+    );
     m_groove_width_value->callbacks().value_changed = [this](double value)
     {
         if (callbacks().groove_width_value_changed) {
@@ -783,30 +739,6 @@ void CutDialog::init_connectors_header()
     add_separator(content());
 }
 
-static Item* add_row_with_spin(
-    const std::string& title,
-    Yoga::Item* parent,
-    Yoga::InputTextWithSpin** input,
-    const std::string& unit,
-    const std::string& revert_button_tooltip,
-    int min,
-    int max
-)
-{
-    Item* row           = add_labeled_row(parent, title);
-    Item* wrap_row_item = add_flex_shrinked_wrap(row);
-
-    (*input) =
-        wrap_row_item->emplace_back<InputTextWithSpin>(std::make_unique<IntValidator>(min, max));
-
-    wrap_row_item->emplace_back<Text>(unit)->set_self_align(YGAlignCenter);
-
-    (*input)->set_revert_button(add_revert_btn(wrap_row_item, revert_button_tooltip));
-    (*input)->set_flex_grow(1.f);
-
-    return row;
-}
-
 void CutDialog::init_connectors_input_panel()
 {
     m_connectors_input_panel = m_scroll_area->emplace_back<Item>();
@@ -876,10 +808,11 @@ void CutDialog::init_connectors_input_panel()
 
     add_separator(m_connectors_input_panel);
 
-    add_slider(
+    add_row_with_slider(
         m_connectors_input_panel,
         &m_connector_depth_value,
         _u8L("Depth"),
+        _u8L("mm"),
         _u8L("Revert depth")
     );
     m_connector_depth_value->callbacks().value_changed = [this](double value)
@@ -889,10 +822,11 @@ void CutDialog::init_connectors_input_panel()
             callbacks().connector_transformations_changed();
     };
 
-    add_slider(
+    add_row_with_slider(
         m_connectors_input_panel,
         &m_connector_size_value,
         _u8L("Size"),
+        _u8L("mm"),
         _u8L("Revert size")
     );
     m_connector_size_value->callbacks().value_changed = [this](double value)
@@ -925,7 +859,7 @@ void CutDialog::init_connectors_input_panel()
         }
     };
 
-    add_row_with_spin(
+    add_row_with_spin_int(
         _u8L("Rotation"),
         m_connectors_input_panel,
         &m_connector_rotation,
@@ -943,7 +877,7 @@ void CutDialog::init_connectors_input_panel()
             callbacks().connector_transformations_changed();
     };
 
-    m_snap_bulge_row = add_row_with_spin(
+    m_snap_bulge_row = add_row_with_spin_int(
         _u8L("Bulge"),
         m_connectors_input_panel,
         &m_snap_bulge_proportion,
@@ -960,7 +894,7 @@ void CutDialog::init_connectors_input_panel()
             callbacks().snap_settings_changed();
     };
 
-    m_snap_space_row = add_row_with_spin(
+    m_snap_space_row = add_row_with_spin_int(
         _u8L("Space"),
         m_connectors_input_panel,
         &m_snap_space_proportion,
@@ -1038,7 +972,7 @@ Item* CutDialog::add_row(const std::string& title, Yoga::Item* parent)
     row->set_gap(3);
 
     Text* text = row->emplace_back<Text>(title);
-    text->set_width(label_width);
+    text->set_width(m_label_width);
     text->set_self_align(YGAlignCenter);
 
     Item* box = row->emplace_back<Item>();
@@ -1289,12 +1223,7 @@ void CutDialog::set_connector_defaults(double max_size)
     set_text_input(m_connector_size_tolerance, 0., max_tolerance, connector_size_tolerance, 0.);
     set_spin_input(m_connector_rotation, connector_angle, 0.);
 
-    set_spin_input(
-        m_snap_bulge_proportion,
-        snap_bulge_proportion,
-        15.,
-        snap_space_proportion
-    );
+    set_spin_input(m_snap_bulge_proportion, snap_bulge_proportion, 15., snap_space_proportion);
     set_spin_input(m_snap_space_proportion, snap_space_proportion, 30.);
 
     // set attributes defaults

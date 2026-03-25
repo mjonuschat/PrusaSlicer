@@ -192,6 +192,15 @@ private:
         Yoga::InputTextField** second_input,
         const std::string& second_input_tooltip
     );
+    void add_angles_row(
+        Yoga::Item* parent,
+        Yoga::InputTextWithSpin** first_input,
+        const std::string& first_input_tooltip,
+        const std::string& first_revert_tooltip,
+        Yoga::InputTextWithSpin** second_input,
+        const std::string& second_input_tooltip,
+        const std::string& second_revert_tooltip
+    );
 
 private:
     Yoga::ScrollArea* m_scroll_area{nullptr};

@@ -73,27 +73,57 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
 
     add_separator(content());
 
-    m_depth = Passthrough{ std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(MIN_DEPTH, MAX_DEPTH), 0.1, 1.) };
-    m_depth->callbacks().text_edited = [this]() {
+    add_row_with_spin_double(
+        _u8L("Depth"),
+        content(),
+        &m_depth,
+        _u8L("mm"),
+        "", // no revert button
+        MIN_DEPTH,
+        MAX_DEPTH,
+        0.1,
+        1.
+    );
+    m_depth->callbacks().text_edited = [this]()
+    {
         if (m_callbacks.depth_changed)
             m_callbacks.depth_changed(std::stod(m_depth->text()));
     };
     std::string no_revert;
-    add_row(_u8L("Depth"), m_depth.release(), content(), no_revert, "mm");
 
-    m_width = Passthrough{ std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(MIN_WIDTH, MAX_WIDTH), 1., 5., "svg width") };
-    m_width->callbacks().text_edited = [this]() {
+    add_row_with_spin_double(
+        _u8L("Width"),
+        content(),
+        &m_width,
+        _u8L("mm"),
+        _u8L("Revert width"),
+        MIN_DEPTH,
+        MAX_DEPTH,
+        1.,
+        5.
+    );
+    m_width->callbacks().text_edited = [this]()
+    {
         if (m_callbacks.size_changed)
-            m_callbacks.size_changed(Domain::Vec2d{ std::stod(m_width->text()), 0. });
+            m_callbacks.size_changed(Domain::Vec2d{std::stod(m_width->text()), 0.});
     };
-    add_row(_u8L("Width"), m_width.release(), content(), _u8L("use size from svg file"), "mm");
 
-    m_height = Passthrough{ std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(MIN_HEIGHT, MAX_HEIGHT), 1., 5., "svg height") };
-    m_height->callbacks().text_edited = [this]() {
+    auto height = add_row_with_spin_double(
+        _u8L("Height"),
+        content(),
+        &m_height,
+        _u8L("mm"),
+        _u8L("Revert height"),
+        MIN_DEPTH,
+        MAX_DEPTH,
+        1.,
+        5.
+    );
+    m_height->callbacks().text_edited = [this]()
+    {
         if (m_callbacks.size_changed)
-            m_callbacks.size_changed(Domain::Vec2d{ 0., std::stod(m_height->text()) });
+            m_callbacks.size_changed(Domain::Vec2d{0., std::stod(m_height->text())});
     };
-    auto height = add_row(_u8L("Height"), m_height.release(), content(), _u8L("use size from svg file"), "mm");
 
     m_lock_size_btn = height->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
     m_lock_size_btn->set_min_size(Vec2f{ 20.f,20.f });
@@ -120,32 +150,39 @@ otherwise text is flat and you have to deal with distance from surface.")
         };
     add_row(_u8L("Use Surface"), m_use_surface.release(), content(), no_revert);
 
-    m_surface_distance = Passthrough{std::make_unique<SliderWithInput>()};
+    add_row_with_slider(
+        content(),
+        &m_surface_distance,
+        _u8L("From surface"),
+        _u8L("mm"),
+        _u8L("Revert")
+    );
     m_surface_distance->set_begin_value(-2.);
     m_surface_distance->set_end_value(2.);
     m_surface_distance->set_step(SURFACE_DISTANCE_STEP);
     m_surface_distance->set_default(0.);
-    m_surface_distance->callbacks().value_changed = [this](double value) {
+    m_surface_distance->callbacks().value_changed = [this](double value)
+    {
         if (m_use_inch)
             value *= INCH_TO_MM;
         if (m_callbacks.surface_distance_changed)
             m_callbacks.surface_distance_changed(value);
     };
-    add_row(_u8L("From surface"), m_surface_distance.release(), content(), _u8L("Zero surface distance."), "mm");
 
-    m_rotation = Passthrough{std::make_unique<SliderWithInput>()};
+    Item* rotation_row =
+        add_row_with_slider(content(), &m_rotation, _u8L("Rotation"), _u8L("°"), _u8L("Revert"));
     m_rotation->set_begin_value(-180.);
     m_rotation->set_end_value(180.);
     m_rotation->set_step(ANGLE_DEG_STEP);
     m_rotation->set_default(0.);
-    m_rotation->callbacks().value_changed = [this](double value) {
+    m_rotation->callbacks().value_changed = [this](double value)
+    {
         if (m_use_deg)
             value *= DEG_TO_RAD;
         if (m_callbacks.rotation_changed)
             m_callbacks.rotation_changed(value);
     };
-    
-    Item* rotation_row = add_row(_u8L("Rotation"), m_rotation.release(), content(), _u8L("Zero rotation"), std::string("°"));
+
     m_lock_rotation_btn = rotation_row->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
     m_lock_rotation_btn->set_min_size(Vec2f{ 20.f,20.f });
     m_lock_rotation_btn->set_self_align(YGAlignCenter);
@@ -202,13 +239,19 @@ void SvgDialog::set_warning(const std::string& warning)
     m_warning->set_tooltip(warning);
 }
 
+// Round doubles for 1 digits to correct behavior of revert buttons
+static double round_1(double value)
+{
+    return std::round(value * 10.0) / 10.0;
+};
+
 void SvgDialog::set_filename(const std::string& filename) { m_filename->set_text(filename); }
 void SvgDialog::set_enable_reload_from_disk(bool enable) { m_reload->set_visible(enable); }
 void SvgDialog::set_size(const Domain::Vec2d& size, const Domain::Vec2d& size_original) {
     m_width->set_text(fmt::format("{:.1f}", size.x()));
-    m_width->set_default(size_original.x());
+    m_width->set_default(round_1(size_original.x()));
     m_height->set_text(fmt::format("{:.1f}", size.y()));
-    m_height->set_default(size_original.y());
+    m_height->set_default(round_1(size_original.y()));
 }
 void SvgDialog::set_size_lock(bool lock) { m_lock_size_btn->set_checked(lock); }
 
@@ -311,8 +354,6 @@ Item* SvgDialog::add_row(
             // Means that unit will be changed in respect to the "use_inches" app_config option
             // so, add it to the m_units vector
             m_units.emplace_back(unit_text);
-        } else if (unit == "°") {
-            m_angle_unit = unit_text;
         }
         unit_text->set_self_align(YGAlignCenter);
         return box;
@@ -338,9 +379,9 @@ void SvgDialog::update_units(bool use_inch)
     }
     // update limits
     if (use_inch) {
-        set_spin_limits(m_depth.get(), .005, 4., .005, .05);
+        set_spin_limits(m_depth, .005, 4., .005, .05);
     } else {
-        set_spin_limits(m_depth.get(), .1, 100., .1, 1.);    
+        set_spin_limits(m_depth, .1, 100., .1, 1.);    
     }
 }
 
@@ -349,11 +390,11 @@ void SvgDialog::update_angle(bool use_deg) {
         return; // already setted
     m_use_deg = use_deg;
 
-    m_angle_unit->set_text(use_deg ? _u8L("°") : _u8L("rad"));
+    m_rotation->set_unit(use_deg ? _u8L("°") : _u8L("rad"));
     if (use_deg) {
-        set_limit_step(m_rotation.get(), 180., 1.);
+        set_limit_step(m_rotation, 180., 1.);
     } else {
-        set_limit_step(m_rotation.get(), M_PI, .02);
+        set_limit_step(m_rotation, M_PI, .02);
     }
 }
 
@@ -410,7 +451,7 @@ void SvgDialog::set_enable_use_surface(bool enable)
 
 void SvgDialog::set_enable_surface_distance(bool enable)
 {
-    enable_row_with_control(m_surface_distance.get(), enable);
+    enable_row_with_control(m_surface_distance, enable);
 }
 
 } // namespace Slic3r::App::Plater

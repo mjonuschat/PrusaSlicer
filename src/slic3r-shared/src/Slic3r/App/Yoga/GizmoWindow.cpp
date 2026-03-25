@@ -5,9 +5,13 @@
 
 #include "Slic3r/App/Yoga/GizmoWindow.hpp"
 
+#include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
+#include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
+#include "Slic3r/App/Yoga/SliderWithInput.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -131,6 +135,116 @@ LayoutButton* GizmoWindow::close_button() const
 LayoutButton* GizmoWindow::revert_button() const
 {
     return m_revert_button;
+}
+
+Item* GizmoWindow::add_flex_shrinked_wrap(Item* parent)
+{
+    Item* wrap = parent->emplace_back<Item>();
+    wrap->set_flex_grow(1.f);
+    wrap->set_flex_shrink(0.f);
+    wrap->set_gap(3.f);
+    return wrap;
+}
+
+LayoutButton* GizmoWindow::add_revert_btn(Item* parent, const std::string& tooltip)
+{
+    Item* revert_space = parent->emplace_back<Item>();
+    revert_space->set_min_size(Vec2f(24.f, 24.f));
+    revert_space->set_justify_content(YGJustifyFlexEnd);
+    LayoutButton* revert_btn =
+        revert_space->emplace_back<LayoutButton>("", Render::Icon::DSRevert, tooltip);
+    revert_btn->set_min_size(Vec2f(20.f, 20.f));
+    revert_btn->set_self_align(YGAlignCenter);
+    return revert_btn;
+}
+
+Item* GizmoWindow::add_labeled_row(Item* parent, const std::string& label)
+{
+    Item* labeled_row = parent->emplace_back<Item>();
+    labeled_row->set_gap(10);
+
+    Text* text = labeled_row->emplace_back<Text>(label);
+    text->set_width(m_label_width);
+    text->set_flex_shrink(0.f);
+    text->set_font_type(Render::ImguiFontType::Bold);
+    text->set_self_align(YGAlignCenter);
+
+    return labeled_row;
+}
+
+Item* GizmoWindow::add_row_with_spin_int(
+    const std::string& title,
+    Yoga::Item* parent,
+    Yoga::InputTextWithSpin** input,
+    const std::string& unit,
+    const std::string& revert_button_tooltip,
+    int min,
+    int max
+)
+{
+    Item* row           = add_labeled_row(parent, title);
+    Item* wrap_row_item = add_flex_shrinked_wrap(row);
+
+    (*input) =
+        wrap_row_item->emplace_back<InputTextWithSpin>(std::make_unique<IntValidator>(min, max));
+
+    wrap_row_item->emplace_back<Text>(unit)->set_self_align(YGAlignCenter);
+
+    if (!revert_button_tooltip.empty()) {
+        (*input)->set_revert_button(add_revert_btn(wrap_row_item, revert_button_tooltip));
+        (*input)->set_flex_grow(1.f);
+    }
+
+    return row;
+}
+
+Item* GizmoWindow::add_row_with_spin_double(
+    const std::string& title,
+    Yoga::Item* parent,
+    Yoga::InputTextWithSpin** input,
+    const std::string& unit,
+    const std::string& revert_button_tooltip,
+    double min,
+    double max,
+    double step,
+    double step_fast
+)
+{
+    Item* row           = add_labeled_row(parent, title);
+    Item* wrap_row_item = add_flex_shrinked_wrap(row);
+
+    (*input) =
+        wrap_row_item->emplace_back<InputTextWithSpin>(std::make_unique<DoubleValidator>(min, max), step, step_fast);
+
+    wrap_row_item->emplace_back<Text>(unit)->set_self_align(YGAlignCenter);
+
+    if (!revert_button_tooltip.empty()) {
+        (*input)->set_revert_button(add_revert_btn(wrap_row_item, revert_button_tooltip));
+    }
+    (*input)->set_flex_grow(1.f);
+
+    return row;
+}
+
+Item* GizmoWindow::add_row_with_slider(
+    Item* parent,
+    SliderWithInput** slider,
+    const std::string& name,
+    const std::string& unit,
+    const std::string& revert_tooltip
+)
+{
+    Text* header = parent->emplace_back<Text>(name);
+    header->set_font_type(Render::ImguiFontType::Bold);
+    header->set_margin(Margins(0, 5, 0, 0));
+
+    Item* line_wrap = parent->emplace_back<Item>();
+
+    (*slider) = line_wrap->emplace_back<SliderWithInput>(unit);
+
+    (*slider)->set_flex_grow(1.f);
+    (*slider)->set_revert_button(add_revert_btn(line_wrap, revert_tooltip));
+    return line_wrap;
 }
 
 } // namespace Slic3r::App::Yoga
