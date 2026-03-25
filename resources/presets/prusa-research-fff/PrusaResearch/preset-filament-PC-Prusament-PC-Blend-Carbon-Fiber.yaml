@@ -35,7 +35,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: ck9+ah4eT72yliqhjFAEbw
       values:
-        filament_max_volumetric_speed: 14
+        filament_max_volumetric_speed: 15
   # 0.6      
   - condition: tool.nozzle_diameter == 0.6
     id: Xb2RIdtMT52TRiSGQNSz2g
@@ -46,7 +46,7 @@ variants:
     - condition: tool.nozzle_high_flow
       id: K0rz7w7SS3WeCK5nX3I9RQ
       values:
-        filament_max_volumetric_speed: 16
+        filament_max_volumetric_speed: 18
   # 0.8      
   - condition: tool.nozzle_diameter == 0.8
     id: 5ccT/kTqR16W1dlqgrpBVg
@@ -57,4 +57,4 @@ variants:
     - condition: tool.nozzle_high_flow
       id: pgPgHinJQZuvbj13zi7CIw
       values:
-        filament_max_volumetric_speed: 21
+        filament_max_volumetric_speed: 23

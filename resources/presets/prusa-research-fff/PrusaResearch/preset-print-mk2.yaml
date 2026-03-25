@@ -26,7 +26,6 @@ variants:
     values:
       max_layer_height: 0.15
       min_layer_height: 0.05
-      nozzle_diameter: 0.25
       retract_lift: 0.15
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
@@ -34,7 +33,6 @@ variants:
     values:
       max_layer_height: 0.30
       min_layer_height: 0.07
-      nozzle_diameter: 0.4
       retract_lift: 0.4
       retract_before_travel: 1.5
 # 0.6    
@@ -43,7 +41,6 @@ variants:
     values:
       max_layer_height: 0.40
       min_layer_height: 0.15
-      nozzle_diameter: 0.6
       retract_length: 0.8
       retract_lift: 0.4
       deretract_speed: 25
@@ -70,7 +67,6 @@ variants:
     # values:
       # max_layer_height: 0.15
       # min_layer_height: 0.05
-      # nozzle_diameter: 0.25
       # retract_lift: 0.4
 # # 0.4    
   # - condition: tool.nozzle_diameter == 0.4
@@ -78,14 +74,12 @@ variants:
     # values:
       # max_layer_height: 0.30
       # min_layer_height: 0.07
-      # nozzle_diameter: 0.4
 # # 0.6    
   # - condition: tool.nozzle_diameter == 0.6
     # id: o+x0QC3vRSyVN2A3ztAfew
     # values:
       # max_layer_height: 0.40
       # min_layer_height: 0.15
-      # nozzle_diameter: 0.6
 ---
 id: sXE0StKqTj+zOkDn0jTviA
 kind: print

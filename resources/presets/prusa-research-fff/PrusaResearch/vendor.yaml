@@ -544,7 +544,7 @@ kind: feeder
 technology: FFF
 id: mmu3_32b
 name: MMU3
-condition: printer.base_model=~/(COREONE|MK4)/ and (tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6) and ! (tool.nozzle_diameter == 0.6 and tool.nozzle_high_flow)
+condition: printer.base_model=~/(COREONE|MK4)/ #and (tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6) and ! (tool.nozzle_diameter == 0.6 and tool.nozzle_high_flow)
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -555,7 +555,7 @@ kind: feeder
 technology: FFF
 id: mmu3_8b
 name: MMU3 8bit
-condition: printer.model=~/(MK3S|MK3.5)/ and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
+condition: printer.model=~/(MK3S|MK3.5)/ #and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -566,7 +566,7 @@ kind: feeder
 technology: FFF
 id: mmu2s
 name: MMU2S
-condition: printer.model=~/(MK3S|MK2.5S)/ and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
+condition: printer.model=~/(MK3S|MK2.5S)/ #and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
 feeder_type: mmu
 model:
   base_model: MMU2
