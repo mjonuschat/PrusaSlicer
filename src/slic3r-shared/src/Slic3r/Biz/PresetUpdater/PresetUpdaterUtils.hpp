@@ -5,6 +5,7 @@
 #include <map>
 
 #include <boost/filesystem/path.hpp>
+#include <tl/expected.hpp>
 
 namespace Slic3r::Biz::PresetUpdater {
 
@@ -20,6 +21,10 @@ boost::filesystem::path local_vendor_path(
     const std::string& vendor_id,
     const std::string& suffix = ""
 );
+
+using FileOpResult = tl::expected<void, std::string>;
+
+FileOpResult safe_move(const boost::filesystem::path& source, const boost::filesystem::path& target);
 
 bool copy_file_wrapper(
     const boost::filesystem::path& source,

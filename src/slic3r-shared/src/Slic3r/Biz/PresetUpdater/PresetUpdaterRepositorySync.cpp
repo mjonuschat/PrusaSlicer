@@ -732,12 +732,12 @@ void PresetUpdaterRepositorySync::sync_repository(
                         Slic3r::close_zip_reader(&archive);
                         return;
                     }
-                    fs::rename(tmp_path, target_path, ec);
-                    if (ec) {
+                    auto result = safe_move(tmp_path, target_path);
+                    if (ec || !result.has_value()) {
                         std::string msg = fmt::format(
                             "Failed to rename unzipped file at {}. Terminating Preset updater synchorinzation. Error message: {}",
                             tmp_path.string(),
-                            ec.message()
+                            ec ? ec.message() : result.error()
                         );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
@@ -979,14 +979,14 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
             process_status->set_warning(msg);
             return;
         }
-        fs::rename(target_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(target_path, dest_path);
+        if (!result) {
             std::string msg = fmt::format(
                 "{}: Failed to move file {} to {}: {}",
                 std::string(__FUNCTION__),
                 target_path.string(),
                 dest_path.string(),
-                ec.message()
+                ec ? ec.message() : result.error()
             );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
@@ -994,26 +994,26 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     }
 
     // Move index to stage_sync
-    fs::rename(index.path(), index_update_sync_path, ec);
-    if (ec) {
+    auto result = safe_move(index.path(), index_update_sync_path);
+    if (!result) {
         std::string msg = fmt::format(
             "{}: Failed to move file {}: {}",
             std::string(__FUNCTION__),
             index.path().string(),
-            ec.message()
+            result.error()
         );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
 
     // Move manifest file to update_sync
-    fs::rename(temp_manifest_path, update_sync_manifest_path, ec);
-    if (ec) {
+    result = safe_move(temp_manifest_path, update_sync_manifest_path);
+    if (!result) {
         std::string msg = fmt::format(
             "{}: Failed to move file {}: {}",
             std::string(__FUNCTION__),
             index.path().string(),
-            ec.message()
+            result.error()
         );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
@@ -1305,14 +1305,14 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
             process_status->set_warning(msg);
             return;
         }
-        fs::rename(target_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(target_path, dest_path);
+        if (!result) {
             std::string msg = fmt::format(
                 "{}: Failed to move file {} to {}: {}",
                 std::string(__FUNCTION__),
                 target_path.string(),
                 dest_path.string(),
-                ec.message()
+                result.error()
             );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
@@ -1320,26 +1320,26 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     }
 
     // Move index to update_sync
-    fs::rename(index.path(), index_update_sync_path, ec);
-    if (ec) {
+    auto result = safe_move(index.path(), index_update_sync_path);
+    if (!result) {
         std::string msg = fmt::format(
             "{}: Failed to move file {}: {}",
             std::string(__FUNCTION__),
             index.path().string(),
-            ec.message()
+            result.error()
         );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
 
     // Move manifest file to update_sync
-    fs::rename(temp_manifest_path, update_sync_manifest_path, ec);
-    if (ec) {
+    result = safe_move(temp_manifest_path, update_sync_manifest_path);
+    if (!result) {
         std::string msg = fmt::format(
             "{}: Failed to move file {}: {}",
             std::string(__FUNCTION__),
             index.path().string(),
-            ec.message()
+            result.error()
         );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);

@@ -15,6 +15,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/nowide/cstdio.hpp>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <type_traits>
@@ -36,6 +37,21 @@ boost::filesystem::path local_vendor_path(
 {
     return local_presets_path() / repo_id / (vendor_id + suffix);
 }
+
+FileOpResult safe_move(const boost::filesystem::path& source, const boost::filesystem::path& target)
+{
+    std::string src, tgt, error_message;
+    src = source.string();
+    tgt = target.string();
+    auto result = Utils::copy_file(src, tgt, error_message);
+    if (result == Utils::Success) {
+        boost::nowide::remove(src.c_str());
+    } else {
+        return tl::unexpected(error_message);
+    }
+    return {};
+}
+
 
 bool copy_file_wrapper(const fs::path& source, const fs::path& target, PresetUpdaterProcessStatus* process_status)
 {
@@ -324,14 +340,14 @@ void perform_update_no_source_manifest(
             return;
         }
 
-        fs::rename(source_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(source_path, dest_path);
+        if (!result) {
             process_status->set_error(
                 fmt::format(
                     "Failed to move file {} to {}: {}",
                     source_path.string(),
                     dest_path.string(),
-                    ec.message()
+                    result.error()
                 )
             );
             return;
@@ -349,14 +365,14 @@ void perform_update_no_source_manifest(
     }
 
     // move index
-    fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
-    if (ec) {
+    auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
+    if (!result) {
         process_status->set_error(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
-                ec.message()
+                result.error()
             )
         );
         return;
@@ -468,28 +484,28 @@ void perform_update_with_source_manifest(
             return;
         }
         // move file
-        fs::rename(source_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(source_path, dest_path);
+        if (!result) {
             process_status->set_error(
                 fmt::format(
                     "Failed to move file {} to {}: {}",
                     source_path.string(),
                     dest_path.string(),
-                    ec.message()
+                    result.error()
                 )
             );
             return;
         }
     }
     // move index
-    fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
-    if (ec) {
+    auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
+    if (!result) {
         process_status->set_error(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
-                ec.message()
+                result.error()
             )
         );
         return;
