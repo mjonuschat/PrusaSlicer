@@ -52,7 +52,11 @@ PhysicalPrinterAdvancedSettingsDialog::PhysicalPrinterAdvancedSettingsDialog(
 
 void PhysicalPrinterAdvancedSettingsDialog::close_action()
 {
-    m_navigator.set_opened_dialog(m_parent);
+    if (dialog_callbacks().close_requested) {
+        dialog_callbacks().close_requested();
+    } else {
+        m_navigator.set_opened_dialog(nullptr);
+    }
 }
 
 void PhysicalPrinterAdvancedSettingsDialog::on_selected_physical_printer_changed() 

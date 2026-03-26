@@ -181,7 +181,7 @@ private:
         void operator()(curl_httppost* ptr) const { if (ptr) curl_formfree(ptr); }
     };
     std::unique_ptr<curl_httppost, FormDeleter> m_form;
-    std::unique_ptr<curl_httppost, FormDeleter> m_form_end;
+    curl_httppost* m_form_end = nullptr; // form_end does not own the memory
 
     struct SListDeleter {
         void operator()(curl_slist* ptr) const { if (ptr) curl_slist_free_all(ptr); }

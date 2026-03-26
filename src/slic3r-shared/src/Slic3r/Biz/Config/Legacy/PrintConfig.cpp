@@ -480,46 +480,46 @@ void PrintConfigDef::init_common_params()
     
     // Options used by physical printers
     
-//    def = this->add("printhost_user", coString);
-//    def->label = L("User");
-////    def->tooltip = L("");
-//    def->mode = comAdvanced;
-//    def->cli = ConfigOptionDef::nocli;
-//    def->set_default_value(new ConfigOptionString(""));
-//    
-//    def = this->add("printhost_password", coString);
-//    def->label = L("Password");
-////    def->tooltip = L("");
-//    def->gui_type = ConfigOptionDef::GUIType::password;
-//    def->mode = comAdvanced;
-//    def->cli = ConfigOptionDef::nocli;
-//    def->set_default_value(new ConfigOptionString(""));
-//
-//    // Only available on Windows.
-//    def = this->add("printhost_ssl_ignore_revoke", coBool);
-//    def->label = L("Ignore HTTPS certificate revocation checks");
-//    def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
-//                     "One may want to enable this option for self signed certificates if connection fails.");
-//    def->mode = comAdvanced;
-//    def->cli = ConfigOptionDef::nocli;
-//    def->set_default_value(new ConfigOptionBool(false));
-//    
-//    def = this->add("preset_names", coStrings);
-//    def->label = L("Printer preset names");
-//    def->tooltip = L("Names of presets related to the physical printer");
-//    def->mode = comAdvanced;
-//    def->set_default_value(new ConfigOptionStrings());
-//
-//    def = this->add("printhost_authorization_type", coEnum);
-//    def->label = L("Authorization Type");
-////    def->tooltip = L("");
-//    def->set_enum<AuthorizationType>({
-//        { std::make_pair("key", L("API key")) },
-//        { std::make_pair("user", L("HTTP digest")) }
-//    });
-//    def->mode = comAdvanced;
-//    def->cli = ConfigOptionDef::nocli;
-//    def->set_default_value(new ConfigOptionEnum<AuthorizationType>(atKeyPassword));
+    def = this->add("printhost_user", coString);
+    def->label = L("User");
+    def->tooltip = L("");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionString(""));
+    
+    def = this->add("printhost_password", coString);
+    def->label = L("Password");
+    def->tooltip = L("");
+    def->gui_type = ConfigOptionDef::GUIType::password;
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionString(""));
+
+    // Only available on Windows.
+    def = this->add("printhost_ssl_ignore_revoke", coBool);
+    def->label = L("Ignore HTTPS certificate revocation checks");
+    def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
+                     "One may want to enable this option for self signed certificates if connection fails.");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionBool(false));
+    
+    def = this->add("preset_names", coStrings);
+    def->label = L("Printer preset names");
+    def->tooltip = L("Names of presets related to the physical printer");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionStrings());
+
+    def = this->add("printhost_authorization_type", coEnum);
+    def->label = L("Authorization Type");
+    def->tooltip = L("");
+    def->set_enum<AuthorizationType>({
+        { std::make_pair("key", L("API key")) },
+        { std::make_pair("user", L("HTTP digest")) }
+    });
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionEnum<AuthorizationType>(atKeyPassword));
 
     def = this->add("profile_vendor", coString);
     def->label = L("Profile vendor");

@@ -69,7 +69,6 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
-#include "Slic3r/App/SidebarPhysical.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"

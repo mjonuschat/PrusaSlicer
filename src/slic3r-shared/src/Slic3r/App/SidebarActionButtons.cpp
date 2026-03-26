@@ -67,7 +67,8 @@ void SidebarActionButtons::init_physical_printer_ui()
         m_physical_printer_advanced_settings_dialog
     );
 
-    m_physical_printer_advanced_settings_dialog->set_parent(m_physical_printer_settings_dialog);
+    m_physical_printer_advanced_settings_dialog->dialog_callbacks().close_requested = [this]()
+    { m_render_module_navigator->set_opened_dialog(m_physical_printer_settings_dialog); };
 
     auto& interactor = m_project_interactor->physical_printer_interactor();
     
@@ -81,13 +82,14 @@ void SidebarActionButtons::init_physical_printer_ui()
     m_physical_printer_button = m_buttons_layout->emplace_back<PhysicalPrinterSettingsButton>(
         0,
         interactor.selected_physical_printer_data(),
-        [this](size_t) {},
-        [this](size_t) {},
-        [this](size_t) {}
+        [](size_t) {},
+        [](size_t) {},
+        [](size_t) {}
     );
     
     m_physical_printer_button->set_visible(true);
     m_physical_printer_button->set_self_align(YGAlignStretch);
+    m_physical_printer_button->set_flex_grow(1.f);
 
     m_physical_printer_settings_dialog->attach_to_item(this, Yoga::Position::Left);
     
@@ -116,6 +118,13 @@ void SidebarActionButtons::init_physical_printer_ui()
             m_render_module_navigator->set_opened_dialog(m_physical_printer_advanced_settings_dialog);
         }
     };
+
+    const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
+    bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
+        *m_physical_printer_button->state(),
+        printer_config
+    );
+    m_physical_printer_button->set_compatible(compatible);
 }
 
 std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button()
@@ -204,17 +213,14 @@ void SidebarActionButtons::on_preset_selection_changed(
 )
 {
     if (m_project_interactor->selected_project_id() == project_id
-        && m_project_interactor->selected_config_container_id() == config_container_id
-        && type == Biz::Preset::PresetItemType::PrinterPreset)
+        && m_project_interactor->selected_config_container_id() == config_container_id)
     {
         const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
         bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
             *m_physical_printer_button->state(),
             printer_config
         );
-        m_physical_printer_button->set_compatible(
-            compatible
-        );
+        m_physical_printer_button->set_compatible(compatible);
     }
 }
 

@@ -135,7 +135,9 @@ HttpCurl::HttpCurl(RequestMethod request_method, std::string&& url, RetryFn fn) 
     }
 }
 
-HttpCurl::~HttpCurl() {}
+HttpCurl::~HttpCurl() 
+{
+}
 
 bool HttpCurl::ca_file_supported_inner(::CURL* curl)
 {
@@ -251,11 +253,10 @@ void HttpCurl::form_add_file_inner(const char* name, const fs::path& path, const
     stream.seekg(0);
 
     if (filename != nullptr) {
-        curl_httppost* raw_form     = m_form.get();
-        curl_httppost* raw_form_end = m_form_end.get();
+        curl_httppost* raw_form     = m_form.release();
         ::curl_formadd(
             &raw_form,
-            &raw_form_end,
+            &m_form_end,
             CURLFORM_COPYNAME,
             name,
             CURLFORM_FILENAME,
@@ -268,6 +269,7 @@ void HttpCurl::form_add_file_inner(const char* name, const fs::path& path, const
             static_cast<long>(size),
             CURLFORM_END
         );
+        m_form.reset(raw_form);
     }
 }
 
@@ -549,17 +551,18 @@ IHttp& HttpCurl::ca_file(const std::string& name)
 
 IHttp& HttpCurl::form_add(const std::string& name, const std::string& contents)
 {
-    curl_httppost* raw_form     = m_form.get();
-    curl_httppost* raw_form_end = m_form_end.get();
+    curl_httppost* raw_form     = m_form.release();
     ::curl_formadd(
         &raw_form,
-        &raw_form_end,
+        &m_form_end,
         CURLFORM_COPYNAME,
         name.c_str(),
         CURLFORM_COPYCONTENTS,
         contents.c_str(),
         CURLFORM_END
     );
+
+    m_form.reset(raw_form);
 
     return *this;
 }

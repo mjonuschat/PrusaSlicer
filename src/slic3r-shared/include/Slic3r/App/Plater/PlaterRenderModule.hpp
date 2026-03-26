@@ -26,7 +26,6 @@ class ObjectListWindow;
 class SidebarBed;
 class SidebarObject;
 class SidebarPrint;
-class SidebarPhysical;
 class CubeView;
 class TopBar;
 class PreferencesDialog;

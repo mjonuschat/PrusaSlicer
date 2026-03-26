@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/log/trivial.hpp>
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 

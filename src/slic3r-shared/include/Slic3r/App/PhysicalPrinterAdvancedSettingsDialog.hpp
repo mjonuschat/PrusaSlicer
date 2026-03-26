@@ -36,11 +36,6 @@ public:
 
     void on_selected_physical_printer_changed() override;
 
-    void set_parent(Yoga::Dialog* parent)
-    {
-        m_parent = parent;
-    }
-
 protected:
     void close_action() override;
 
@@ -52,6 +47,5 @@ private:
         m_physical_printer_changed_listener_scope;
 
     Yoga::LayoutButton* m_save_button{nullptr};
-    Yoga::Dialog*       m_parent{nullptr};
 };
 } // namespace Slic3r::App

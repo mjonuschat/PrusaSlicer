@@ -13,10 +13,6 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
 
-namespace {
-const std::string export_tooltip{"Export gcode to a file"};
-} // namespace
-
 std::unique_ptr<LayoutButton> SidebarPreviewActionButtons::get_primary_button()
 {
     auto result{std::make_unique<LayoutButton>("Plater", Render::Icon::None, "Back to Plater")};
@@ -94,6 +90,8 @@ void SidebarPreviewActionButtons::on_removable_drive_status_changed(
 
 void SidebarPreviewActionButtons::update_buttons()
 {
+    const std::string export_tooltip{Biz::_u8L("Export gcode to a file")};
+
     const Domain::SlicingId slicing_id{m_project_interactor->selected_bed_slicing_id()};
     const auto optional_status{m_project_interactor->status_cache().get_status(slicing_id)};
     if (!optional_status) {
@@ -161,28 +159,28 @@ void SidebarPreviewActionButtons::update_buttons()
             const auto& phys_printer = m_project_interactor->physical_printer_interactor().selected_physical_printer_data();
             const auto* payload = std::get_if<Slic3r::Biz::PhysicalPrinter::FileSystemExport>(&phys_printer.payload);
             ASSERT(payload);
-            m_primary_button->set_label("Export");
+            m_primary_button->set_label(Biz::_u8L("Export"));
             m_primary_button->set_enabled(true);
             m_primary_button->set_tooltip(export_tooltip);
             m_primary_button->callbacks().action = payload->prefer_removable ? 
                 ExportActions::export_gcode_to_flash(*m_project_interactor) :
                 ExportActions::export_gcode(*m_project_interactor);
         } else if (m_project_interactor->physical_printer_interactor().is_connect_upload_selected()) {
-            m_primary_button->set_label("Send to Connect");
+            m_primary_button->set_label(Biz::_u8L("Send to Connect"));
             m_primary_button->set_tooltip("Send to Connect");
             m_primary_button->callbacks().action = ExportActions::send_gcode_to_connect(*m_project_interactor);
         } else if (m_project_interactor->physical_printer_interactor().is_printer_upload_selected()) {
-            m_primary_button->set_label("Send to Printer");
-            m_primary_button->set_tooltip("Send to Printer");
+            m_primary_button->set_label(Biz::_u8L("Send to Printer"));
+            m_primary_button->set_tooltip(Biz::_u8L("Send to Printer"));
             m_primary_button->callbacks().action = ExportActions::upload_gcode_to_print_host(*m_project_interactor);
         } else {
             PANIC("Unreachable!");
         }
     } break;
     case StatusCode::Modified: {
-        m_primary_button->set_label("Slice");
+        m_primary_button->set_label(Biz::_u8L("Slice"));
         m_primary_button->set_enabled(true);
-        m_primary_button->set_tooltip("Slice");
+        m_primary_button->set_tooltip(Biz::_u8L("Slice"));
         m_primary_button->callbacks().action = [this, slicing_id]()
         { m_project_interactor->slicing_interactor().slice_bed(slicing_id); };
     } break;

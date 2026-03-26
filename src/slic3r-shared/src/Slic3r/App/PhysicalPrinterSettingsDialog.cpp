@@ -13,7 +13,6 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
-#include "Slic3r/App/SidebarPhysical.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp>
 
@@ -100,6 +99,9 @@ PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
 PhysicalPrinterSettingsDialog::~PhysicalPrinterSettingsDialog()
 {
     m_project_interactor.removable_drive_service().remove_status_listener(this);
+    if (m_printer_list_view) {
+        m_printer_list_view->set_source_list(nullptr, true);
+    }
 }
 
 void PhysicalPrinterSettingsDialog::close_action()
@@ -183,7 +185,6 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     m_printer_list_view->set_gap(8);
     m_printer_list_view->set_max_size({YGUndefined, 275});
     m_printer_list_view->set_orientation(Orientation::Vertical);
-    //m_printer_list_view->set_source_list(&m_physical_printer_interactor.observable_list());
     m_printer_list_view->set_source_list(&m_filtered_printers);
 
     check_printer_button(m_physical_printer_interactor.selected_uuid());
@@ -248,8 +249,7 @@ void PhysicalPrinterSettingsDialog::on_preset_selection_changed(
 )
 {
     if (m_project_interactor.selected_project_id() == project_id
-        && m_project_interactor.selected_config_container_id() == config_container_id
-        && type == Biz::Preset::PresetItemType::PrinterPreset)
+        && m_project_interactor.selected_config_container_id() == config_container_id)
     {
         m_filtered_printers.invalidate();
         set_compatibility_to_buttons();

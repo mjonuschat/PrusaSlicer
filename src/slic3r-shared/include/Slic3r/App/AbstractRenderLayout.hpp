@@ -8,7 +8,6 @@
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
-#include "Slic3r/App/SidebarPhysical.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
