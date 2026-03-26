@@ -920,7 +920,7 @@ Biz::Emboss::BaseData create_base_data(
         .project_interactor = project_interactor,
         .project_id = project_id,
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-        .volume_name = get_filename(*proj_ctx.shape.svg_file),
+        //.volume_name = get_filename(*proj_ctx.shape.svg_file), -> "do not reset name"
         .issue_fn = std::move(issue_fn)
     };
 }

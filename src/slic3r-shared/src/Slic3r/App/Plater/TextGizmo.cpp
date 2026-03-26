@@ -810,6 +810,15 @@ private:
     Biz::Emboss::FontFileWithCache m_font_with_cache;
 };
 
+bool is_set_volume_name(const Biz::ProjectInteractor& project_interactor) {
+    const Domain::ModelVolume* volume_ptr = 
+        Biz::Emboss::get_selected_text_volume(project_interactor).volume;
+    if (volume_ptr == nullptr)
+        return true; // creation of the new volume
+    ASSERT(volume_ptr->is_text());
+    return volume_ptr->name == volume_ptr->text_configuration->text;
+}
+
 Biz::Emboss::BaseData create_base_data(
     const std::string& text,
     Domain::ModelVolumeType volume_type,
@@ -836,7 +845,7 @@ Biz::Emboss::BaseData create_base_data(
         .project_id = project_interactor.selected_project_id(),
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
         .per_glyph_surface_distance = from_surface,
-        .volume_name = text,
+        .volume_name = is_set_volume_name(project_interactor) ? text : std::string{},
         .issue_fn = std::move(issue_fn)
     };
 }
