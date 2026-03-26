@@ -54,6 +54,10 @@ struct ProjectContext {
     bool use_deg = true;
 
     Domain::ObjectID last_loaded_volume_id; // initial invalid
+
+    // flag wheather surface point lay under the text
+    // when no surface point and change 'from surface', relative move without recalculation is made
+    bool exist_surface_point;
 };
 
 template<typename T>
@@ -74,6 +78,16 @@ namespace Slic3r::App::Plater {
 namespace {
 void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager);
 void set_dialog_surface_distance(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, const std::optional<double>& scale);
+void calc_from_surface(std::optional<float>& from_surface, bool& exist_surface_point, const Domain::Project& project,
+    const Domain::ElementRef& ref, PlaterScenePresenter& scene_presenter) {
+    Scene::Node& root = scene_presenter.scene().root();
+    auto distance_exp = Biz::Emboss::calc_distance(project, ref, root);
+    exist_surface_point = distance_exp.has_value() ||
+        distance_exp.error() == Biz::Emboss::DistanceIssue::ApproxZero;
+    from_surface = distance_exp.has_value() ?
+        std::optional<float>{ *distance_exp} : std::optional<float>{};
+}
+
 } // namespace
 
 struct TextGizmo::ProjectContext : public ::ProjectContext {};
@@ -202,13 +216,18 @@ TextGizmo::TextGizmo(
     m_dialog->callbacks().skew_ratio_changed = [this, set_optional_f](double value) {
         set_optional_f(m_preset_manager.get_font_prop().skew, value, 1.); // no scale
     };
-    m_dialog->callbacks().surface_distance_changed = [this](double distance_in_mm) {        
+    m_dialog->callbacks().surface_distance_changed = [this](double distance_in_mm) {
+        ProjectContext& proj_ctx = m_proj_ctxs->selected();
+        bool& exist_surface_point = proj_ctx.exist_surface_point;
+        if (!exist_surface_point)
+            return;
+
         std::optional<float>& distance = m_preset_manager.get_preset().distance;
         double diff = distance_in_mm - distance.value_or(0.f);
         if (Domain::is_approx(diff, 0., 1e-3))
             return; // no change
                 
-        if (const std::optional<double>& scale = m_proj_ctxs->selected().volume_scale.depth;
+        if (const std::optional<double>& scale = proj_ctx.volume_scale.depth;
             scale.has_value()) 
             diff = diff / (*scale);
 
@@ -218,9 +237,7 @@ TextGizmo::TextGizmo(
         // calculate current surface distance
         const Domain::Project& project = m_project_interactor.selected_project();
         const Domain::ElementRef& ref = m_project_interactor.scene_interactor().object_selection().elements.front();
-        Scene::Node& root = m_scene_presenter.scene().root();
-        distance = Biz::Emboss::calc_distance(project, ref, root);
-
+        calc_from_surface(distance, exist_surface_point, project, ref, m_scene_presenter);
         if (m_preset_manager.get_font_prop().per_glyph) {
             // Slice of object(text lines) are relative to text volume position so need recalculate
             m_text_lines.create_text_lines(m_text_lines.get_lines().size());
@@ -352,6 +369,10 @@ bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) {
         distance = static_cast<float>((*distance) / (*d_scale));
     return m_surface_drag.on_drag_start(ctx, distance); 
 }
+namespace {
+void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager,
+    const ProjectContext& proj_ctx, const Domain::ModelVolume& volume);
+} // namepsace
 bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
     const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
     const ProjectContext& proj_ctx = m_proj_ctxs->selected();
@@ -378,6 +399,16 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
     if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
         m_text_lines.create_text_lines(m_text_lines.get_lines().size());
 
+    if (!proj_ctx.exist_surface_point) {
+        m_proj_ctxs->selected().exist_surface_point = true;
+        // enable from surface distance in dialog   
+        const Domain::ModelVolume* volume_ptr =
+            Biz::Emboss::get_selected_text_volume(
+                m_project_interactor.selected_project(),
+                m_project_interactor.scene_interactor().object_selection()).volume;
+        ASSERT(volume_ptr != nullptr);
+        activate_preset(dialog(), m_preset_manager, proj_ctx, *volume_ptr);
+    }
     return true;
 }
 void TextGizmo::on_drag_finish() { 
@@ -569,7 +600,7 @@ void activate_preset(
     double skew_ratio_ = prop_.skew.value_or(0.f);
     dialog.set_skew_ratio(skew_ratio, skew_ratio_);
 
-    dialog.set_enable_surface_distance(is_part && !use_surface);
+    dialog.set_enable_surface_distance(is_part && !use_surface && proj_ctx.exist_surface_point);
     set_dialog_surface_distance(dialog, preset_manager, proj_ctx.volume_scale.depth);
 
     bool rotation_lock = !proj_ctx.up_limit.has_value();
@@ -694,10 +725,9 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
 
     calc_scales(proj_ctx.volume_scale, project, ref, m_preset_manager); // volume scale for each axis
     if (is_part) {
-        Scene::Node& root = m_scene_presenter.scene().root();
-        m_preset_manager.get_preset().distance = Biz::Emboss::calc_distance(project, ref, root);
+        calc_from_surface(m_preset_manager.get_preset().distance, 
+            proj_ctx.exist_surface_point, project, ref, m_scene_presenter);
     }
-
     activate_preset(dialog(), m_preset_manager, proj_ctx, volume);
 }
 

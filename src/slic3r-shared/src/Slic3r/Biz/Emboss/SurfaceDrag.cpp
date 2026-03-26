@@ -309,7 +309,7 @@ std::optional<float> calc_rotation(const Domain::Project& project, const Domain:
     return Biz::Emboss::calc_up(to_world, Biz::Emboss::UP_LIMIT);
 }
 
-std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref,
+tl::expected<float, DistanceIssue> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref,
     App::Scene::Node& root)
 {
     Domain::Transform3d world = world_tr(project, ref);
@@ -342,7 +342,7 @@ std::optional<float> calc_distance(const Domain::Project& project, const Domain:
     for (auto& r : r_negative) r.second.distance = overlap - r.second.distance;
     r_positive.insert(r_positive.end(), r_negative.begin(), r_negative.end());
     if (r_positive.empty())
-        return {}; // no intersection
+        return tl::unexpected(DistanceIssue::NoSurfacePoint); // no intersection
 
     std::sort(r_positive.begin(), r_positive.end(), [](const auto& a, const auto& b) {
         return fabs(a.second.distance) < fabs(b.second.distance);  });
@@ -350,7 +350,7 @@ std::optional<float> calc_distance(const Domain::Project& project, const Domain:
     const auto& closest = r_positive.front();
     double distance = closest.second.distance;
     if (Domain::is_approx(distance, 0., 1e-4))
-        return {}; // numerical discrepancy -> lay on surface
+        return tl::unexpected(DistanceIssue::ApproxZero); // numerical discrepancy -> lay on surface
 
     return distance;
 }

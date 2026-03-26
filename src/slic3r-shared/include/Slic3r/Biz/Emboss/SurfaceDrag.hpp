@@ -4,6 +4,8 @@
 ///|/
 #pragma once
 
+#include <optional>
+#include <tl/expected.hpp>
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Scene/GizmoEventContext.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -62,15 +64,19 @@ Domain::Transform3d world_tr(const Domain::Project& project, const Domain::Eleme
 /// <returns>Angle in radians when exists</returns>
 std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref);
 
+enum class DistanceIssue {
+    NoSurfacePoint,
+    ApproxZero
+};
 /// <summary>
 /// Calculate distance of the object from the surface
 /// </summary>
 /// <param name="project">Project containing reference</param>
 /// <param name="ref">Reference on model volume</param>
 /// <param name="root">Scene root node to be able cast into scene in direction of the emboss</param>
-/// <returns>Distance from surface when exists</returns>
-std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref,
-    App::Scene::Node& root);
+/// <returns>Distance from surface when exists and not apporx zero</returns>
+tl::expected<float, DistanceIssue> calc_distance(const Domain::Project& project,
+    const Domain::ElementRef& ref, App::Scene::Node& root);
 
 /// <summary>
 /// Applies a relative 3D transformation to the current selection.

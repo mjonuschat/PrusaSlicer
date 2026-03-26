@@ -49,6 +49,9 @@ struct ProjectContext {
 
     std::optional<float> from_surface; // [in mm]
 
+    // when no surface point and change 'from surface', relative move is made
+    bool exist_surface_point;
+
     std::optional<float> up_limit = Biz::Emboss::UP_LIMIT;
     std::optional<float> rotation; // [in radians]
 
@@ -92,6 +95,8 @@ namespace {
     Domain::ModelVolume& get_selected_volume(Biz::ProjectInteractor& project_interactor);
     std::string get_filename(const Domain::EmbossShape::SvgFile& svg);
     Domain::Vec2d get_world_size(const ProjectContext& proj_ctx); // current (world) size in mm 
+    void calc_from_surface(ProjectContext& proj_ctx, const Domain::Project& project,
+        const Domain::ElementRef& ref, PlaterScenePresenter& scene_presenter);
 } // namespace
 Yoga::GizmoWindowPtr SvgGizmo::release_ui_window() {
     auto dialog_ptr = std::make_unique<SvgDialog>();
@@ -147,6 +152,8 @@ Yoga::GizmoWindowPtr SvgGizmo::release_ui_window() {
     };
     callbacks.surface_distance_changed = [this](double distance_in_mm) {
         ProjectContext& proj_ctx = m_proj_ctxs->selected();
+        if (!proj_ctx.exist_surface_point)
+            return; // disallow to change distance when no surface point
         std::optional<float>& distance = proj_ctx.from_surface;
         double diff = distance_in_mm - distance.value_or(0.f);
         if (Domain::is_approx(diff, 0., 1e-3))
@@ -162,8 +169,7 @@ Yoga::GizmoWindowPtr SvgGizmo::release_ui_window() {
         // calculate current surface distance
         const Domain::Project& project = m_project_interactor.selected_project();
         const Domain::ElementRef& ref = m_project_interactor.scene_interactor().object_selection().elements.front();
-        Scene::Node& root = m_scene_presenter.scene().root();
-        distance = Biz::Emboss::calc_distance(project, ref, root);
+        calc_from_surface(proj_ctx, project, ref, m_scene_presenter);
     };
     callbacks.rotation_changed = [this](double angle_in_rad) {
         ProjectContext& proj_ctx = m_proj_ctxs->selected();
@@ -351,6 +357,10 @@ Scene::GizmoActivationState SvgGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
 
 bool SvgGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) { 
     return m_surface_drag.on_drag_start(ctx, m_proj_ctxs->selected().from_surface); }
+namespace {
+const Domain::ModelVolume* get_selected_svg_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection);
+void update_svg_dialog(SvgDialog& dialog, const ProjectContext& proj_ctx, const Domain::ModelVolume& volume);
+} // namespace
 bool SvgGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
     ProjectContext& proj_ctx = m_proj_ctxs->selected(); // Can recalculate rotation during drag
     const auto& up_limit = proj_ctx.up_limit;
@@ -367,6 +377,17 @@ bool SvgGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
 
         proj_ctx.rotation = Biz::Emboss::calc_rotation(project, element);
         dialog().set_rotation(proj_ctx.rotation.value_or(0.f));
+    }
+
+    if (!proj_ctx.exist_surface_point) {
+        m_proj_ctxs->selected().exist_surface_point = true;
+        // enable from surface distance in dialog
+        const Domain::Project& project = m_project_interactor.selected_project();
+        const Domain::ModelVolume* volume_ptr = get_selected_svg_volume(
+            m_project_interactor.selected_project(),
+            m_project_interactor.scene_interactor().object_selection());
+        ASSERT(volume_ptr != nullptr); // cant activated without selected embossed svg volume
+        update_svg_dialog(dialog(), proj_ctx, *volume_ptr); // update dialog to new state with surface point
     }
     return true;
 }
@@ -584,7 +605,7 @@ void update_svg_dialog(
     bool use_surface = projection.use_surface;
     dialog.set_use_surface(use_surface);
     
-    dialog.set_enable_surface_distance(is_part && !use_surface);
+    dialog.set_enable_surface_distance(is_part && !use_surface && proj_ctx.exist_surface_point);
     set_dialog_surface_distance(dialog, proj_ctx);
     dialog.set_rotation(proj_ctx.rotation.value_or(0.f));
     dialog.set_rotation_lock(!proj_ctx.up_limit.has_value());    
@@ -790,6 +811,16 @@ public:
         return !m_shape.shapes_with_ids.empty();
     }
 };
+
+void calc_from_surface(ProjectContext& proj_ctx, const Domain::Project& project,
+    const Domain::ElementRef& ref, PlaterScenePresenter& scene_presenter) {
+    Scene::Node& root = scene_presenter.scene().root();
+    auto distance_exp = Biz::Emboss::calc_distance(project, ref, root);
+    proj_ctx.exist_surface_point = distance_exp.has_value() ||
+        distance_exp.error() == Biz::Emboss::DistanceIssue::ApproxZero;
+    proj_ctx.from_surface = distance_exp.has_value() ?
+        std::optional<float>{ *distance_exp} : std::optional<float>{};
+}
 } // namespace
 
 void SvgGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
@@ -814,9 +845,9 @@ void SvgGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const 
     Domain::ElementRef ref(object.id().id, instance->id().id, volume.id().id);
     proj_ctx.rotation = Biz::Emboss::calc_rotation(project, ref);
     bool is_part = object.volumes.size() != 1;
-    proj_ctx.from_surface = is_part ?
-        Biz::Emboss::calc_distance(project, ref, m_scene_presenter.scene().root()) :
-        std::nullopt;
+    proj_ctx.from_surface.reset();
+    if (is_part)
+        calc_from_surface(proj_ctx, project, ref, m_scene_presenter);
 
     if (proj_ctx.shape.shapes_with_ids.empty()) {
         // first open of embossed SVG loaded from 3mf
