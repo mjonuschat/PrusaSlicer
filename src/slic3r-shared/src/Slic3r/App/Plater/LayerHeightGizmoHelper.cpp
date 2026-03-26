@@ -392,7 +392,8 @@ static void apply_layer_height_intensity(
  */
 int generate_layer_height_texture(
     const LayerHeightTextureParams& params,
-    const LayerZRanges& layers,
+    const LayerZRanges& color_layers,
+    const LayerZRanges& stripe_layers,
     void* data,
     const int rows,
     const int cols,
@@ -434,9 +435,9 @@ int generate_layer_height_texture(
         return scale == 0. ? params.default_layer_height : scale;
     }();
 
-    for (const LayerZRange& layer_z_range : layers) {
-        const size_t layer_z_range_idx = &layer_z_range - &layers.front();
-        const bool is_last_layer       = (layer_z_range_idx + 1 == layers.size());
+    for (const LayerZRange& layer_z_range : color_layers) {
+        const size_t layer_z_range_idx = &layer_z_range - &color_layers.front();
+        const bool is_last_layer       = (layer_z_range_idx + 1 == color_layers.size());
 
         const double layer_bottom_z = layer_z_range.bottom_z;
         const double layer_height   = layer_z_range.height();
@@ -471,14 +472,15 @@ int generate_layer_height_texture(
     }
 
     // Apply intensity modulation to LOD 0 only.
-    apply_layer_height_intensity(layers, lod0, lod0_data);
+    apply_layer_height_intensity(stripe_layers, lod0, lod0_data);
 
     // Returns the number of cells of the 0th LOD level.
     return lod0.cell_count;
 }
 
 LayerHeightTexture generate_layer_height_texture(
-    const LayerZRanges& layers,
+    const LayerZRanges& color_layers,
+    const LayerZRanges& stripe_layers,
     const double min_layer_height,
     const double max_layer_height,
     const double layer_height,
@@ -500,7 +502,8 @@ LayerHeightTexture generate_layer_height_texture(
     layer_height_texture.allocate();
     layer_height_texture.cells = generate_layer_height_texture(
         params,
-        layers,
+        color_layers,
+        stripe_layers,
         layer_height_texture.data.data(),
         LAYERS_TEXTURE_HEIGHT,
         LAYERS_TEXTURE_WIDTH,
@@ -610,7 +613,8 @@ const Render::Material& LayerHeightMaterialWrapper::material() const
 }
 
 void LayerHeightMaterialWrapper::set_layers(
-    const LayerZRanges& layers,
+    const LayerZRanges& color_layers,
+    const LayerZRanges& stripe_layers,
     const double min_layer_height,
     const double max_layer_height,
     const double layer_height,
@@ -619,7 +623,8 @@ void LayerHeightMaterialWrapper::set_layers(
 )
 {
     const LayerHeightTexture layer_height_texture = generate_layer_height_texture(
-        layers,
+        color_layers,
+        stripe_layers,
         min_layer_height,
         max_layer_height,
         layer_height,
