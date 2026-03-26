@@ -217,7 +217,7 @@ bool Translations::is_available_locale(LanguageShortInfo* language_info)
         // Use whatever the operating system recommends, if it the language code of the dictionary matches the recommended language.
         // This allows a Swiss guy to use a German dictionary without forcing him to German locales.
         m_sys_locale :
-        language_info->canonical_name
+        language_info->canonical_ref
     ) + ".UTF-8";
 
     bool is_available = std::setlocale(LC_NUMERIC, num_locale.c_str()) != nullptr;
@@ -229,7 +229,7 @@ bool Translations::is_available_locale(LanguageShortInfo* language_info)
         language_info = linux_get_existing_locale_language(language_info, m_language_short_info_system);
         BOOST_LOG_TRIVIAL(trace) << boost::format("Can't switch language to %1% (missing locales). Using %2% instead.")
             % original_lang % language_info->canonical_name;
-        is_available = std::setlocale(LC_NUMERIC, language_info->canonical_name.c_str()) != nullptr;
+        is_available = std::setlocale(LC_NUMERIC, language_info->canonical_ref.c_str()) != nullptr;
     }
 
     if (!is_available) {
