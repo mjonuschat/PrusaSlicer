@@ -192,12 +192,198 @@ struct LayerHeightTextureParams
     /**
      * Default layer height.
      */
-    double layer_height{0.};
+    double default_layer_height{0.};
     /**
      * Total Z height (with applied shrinkage compensation).
      */
     double object_height{0.};
 };
+
+/**
+ * Cell layout for a single LOD level of the layer height texture.
+ *
+ * Describes how a 1D sequence of cells is packed into a 2D texture region
+ * and how cell indices relate to Z-height positions on the object.
+ */
+struct LodCellLayout
+{
+    /**
+     * Number of 1D cells in this LOD level.
+     */
+    int cell_count{0};
+    /**
+     * Factor to convert a Z-height to a cell index.
+     */
+    double z_to_cell{0.};
+    /**
+     * Factor to convert a cell index back to a Z-height.
+     */
+    double cell_to_z{0.};
+    /**
+     * Number of columns in the 2D texture for this LOD level.
+     */
+    int column_count{0};
+    /**
+     * Number of rows in the 2D texture for this LOD level.
+     */
+    int row_count{0};
+};
+
+/**
+ * Fill texture cells for a single layer with RGBA color derived from the layer height.
+ *
+ * Maps the layer height to a palette color via linear interpolation. Cells are addressed
+ * in a 1D-to-2D wrapping layout. The first cell of each row is duplicated as the last cell
+ * of the preceding row for seamless texture filtering.
+ *
+ * @param layer_height Height of the current layer.
+ * @param default_layer_height Nominal layer height used as the palette midpoint.
+ * @param height_color_scale Color scale range for mapping layer height deviation to palette index.
+ * @param layer_bottom_z Bottom Z of the layer.
+ * @param layer_top_z Top Z of the layer (clamped to object height).
+ * @param cell_layout Cell layout for this LOD level.
+ * @param texture_data Pointer to the RGBA texture data buffer for this LOD level.
+ */
+static void fill_layer_height_texture_cells(
+    const double layer_height,
+    const double default_layer_height,
+    const double height_color_scale,
+    const double layer_bottom_z,
+    const double layer_top_z,
+    const LodCellLayout& cell_layout,
+    unsigned char* texture_data
+)
+{
+    // https://github.com/aschn/gnuplot-colorbrewer
+    static const std::array<Vec3crd, 8> palette = {{
+        {0x01A, 0x098, 0x050},
+        {0x066, 0x0BD, 0x063},
+        {0x0A6, 0x0D9, 0x06A},
+        {0x0D9, 0x0F1, 0x0EB},
+        {0x0FE, 0x0E6, 0x0EB},
+        {0x0FD, 0x0AE, 0x061},
+        {0x0F4, 0x06D, 0x043},
+        {0x0D7, 0x030, 0x027},
+    }};
+
+    // Color mapping from layer height to RGB.
+    constexpr int palette_last_idx = static_cast<int>(palette.size() - 1);
+    const double palette_idx_f = (0.5 * height_color_scale + (layer_height - default_layer_height))
+        * static_cast<double>(palette_last_idx)
+        / height_color_scale;
+    const int palette_idx1 =
+        std::clamp(static_cast<int>(std::floor(palette_idx_f)), 0, palette_last_idx);
+    const int palette_idx2            = std::min(palette_last_idx, palette_idx1 + 1);
+    const double t                    = palette_idx_f - static_cast<double>(palette_idx1);
+    const Vec3crd& color1             = palette[palette_idx1];
+    const Vec3crd& color2             = palette[palette_idx2];
+    const unsigned char color_rgba[4] = {
+        static_cast<unsigned char>(std::clamp(
+            std::lround(
+                std::lerp(static_cast<double>(color1.x()), static_cast<double>(color2.x()), t)
+            ),
+            0L,
+            255L
+        )),
+        static_cast<unsigned char>(std::clamp(
+            std::lround(
+                std::lerp(static_cast<double>(color1.y()), static_cast<double>(color2.y()), t)
+            ),
+            0L,
+            255L
+        )),
+        static_cast<unsigned char>(std::clamp(
+            std::lround(
+                std::lerp(static_cast<double>(color1.z()), static_cast<double>(color2.z()), t)
+            ),
+            0L,
+            255L
+        )),
+        255
+    };
+
+    const int cell_first = std::clamp(
+        static_cast<int>(std::ceil(layer_bottom_z * cell_layout.z_to_cell)),
+        0,
+        cell_layout.cell_count - 1
+    );
+    const int cell_last = std::clamp(
+        static_cast<int>(std::floor(layer_top_z * cell_layout.z_to_cell)),
+        0,
+        cell_layout.cell_count - 1
+    );
+    for (int cell = cell_first; cell <= cell_last; ++cell) {
+        const int row = cell / (cell_layout.column_count - 1);
+        const int col = cell - row * (cell_layout.column_count - 1);
+        assert(row >= 0 && row < cell_layout.row_count);
+        assert(col >= 0 && col < cell_layout.column_count);
+        unsigned char* cell_ptr = texture_data + (row * cell_layout.column_count + col) * 4;
+        std::memcpy(cell_ptr, color_rgba, 4);
+        if (col == 0 && row > 0) {
+            // Duplicate the first value in a row as a last value of the preceding row.
+            std::memcpy(cell_ptr - 4, color_rgba, 4);
+        }
+    }
+}
+
+/**
+ * Apply per-layer cosine intensity modulation to visualize individual layers.
+ *
+ * For each layer, computes a cosine-based intensity profile that darkens cell colors
+ * near layer boundaries, making individual layers visually distinguishable in the
+ * layer height texture. Each cell's RGB values are multiplied by the intensity factor,
+ * while alpha is preserved. Intended for LOD 0 only.
+ *
+ * @param layers Layer Z ranges defining the intensity profile.
+ * @param cell_layout Cell layout for the LOD level.
+ * @param texture_data Pointer to the RGBA texture data buffer (modified in place).
+ */
+static void apply_layer_height_intensity(
+    const LayerZRanges& layers,
+    const LodCellLayout& cell_layout,
+    unsigned char* texture_data
+)
+{
+    for (const LayerZRange& layer_z_range : layers) {
+        const double layer_bottom_z = layer_z_range.bottom_z;
+        const double layer_top_z    = layer_z_range.top_z;
+        const double mid            = layer_z_range.middle_z();
+        const double h              = layer_z_range.height();
+
+        const int cell_first = std::clamp(
+            static_cast<int>(std::ceil(layer_bottom_z * cell_layout.z_to_cell)),
+            0,
+            cell_layout.cell_count - 1
+        );
+        const int cell_last = std::clamp(
+            static_cast<int>(std::floor(layer_top_z * cell_layout.z_to_cell)),
+            0,
+            cell_layout.cell_count - 1
+        );
+
+        for (int cell = cell_first; cell <= cell_last; ++cell) {
+            const double z         = cell_layout.cell_to_z * static_cast<double>(cell);
+            const double intensity = std::cos(std::numbers::pi * 0.7 * (mid - z) / h);
+
+            const int row = cell / (cell_layout.column_count - 1);
+            const int col = cell - row * (cell_layout.column_count - 1);
+            assert(row >= 0 && row < cell_layout.row_count);
+            assert(col >= 0 && col < cell_layout.column_count);
+
+            unsigned char* cell_ptr = texture_data + (row * cell_layout.column_count + col) * 4;
+            for (int i = 0; i < 3; ++i) {
+                cell_ptr[i] = static_cast<unsigned char>(
+                    std::clamp(std::lround(intensity * static_cast<double>(cell_ptr[i])), 0L, 255L)
+                );
+            }
+
+            if (col == 0 && row > 0) {
+                // Duplicate the first value in a row as a last value of the preceding row.
+                std::memcpy(cell_ptr - 4, cell_ptr, 3);
+            }
+        }
+    }
+}
 
 /**
  * Produce a 1D texture packed into a 2D texture describing in the RGBA format the planned object layers.
@@ -208,134 +394,87 @@ int generate_layer_height_texture(
     const LayerHeightTextureParams& params,
     const LayerZRanges& layers,
     void* data,
-    int rows,
-    int cols,
-    bool level_of_detail_2nd_level
+    const int rows,
+    const int cols,
+    const bool level_of_detail_2nd_level
 )
 {
-    // https://github.com/aschn/gnuplot-colorbrewer
-    std::vector<Vec3crd> palette_raw;
-    palette_raw.emplace_back(0x01A, 0x098, 0x050);
-    palette_raw.emplace_back(0x066, 0x0BD, 0x063);
-    palette_raw.emplace_back(0x0A6, 0x0D9, 0x06A);
-    palette_raw.emplace_back(0x0D9, 0x0F1, 0x0EB);
-    palette_raw.emplace_back(0x0FE, 0x0E6, 0x0EB);
-    palette_raw.emplace_back(0x0FD, 0x0AE, 0x061);
-    palette_raw.emplace_back(0x0F4, 0x06D, 0x043);
-    palette_raw.emplace_back(0x0D7, 0x030, 0x027);
-
-    // 2nd LOD level data start.
-    unsigned char* data1 = reinterpret_cast<unsigned char*>(data) + rows * cols * 4;
-    int ncells           = std::min(
+    const int lod0_cell_count = std::min(
         (cols - 1) * rows,
-        int(ceil(16. * (params.object_height / params.min_layer_height)))
+        static_cast<int>(std::ceil(16. * (params.object_height / params.min_layer_height)))
     );
-    int ncells1       = ncells / 2;
-    int cols1         = cols / 2;
-    double z_to_cell  = double(ncells - 1) / params.object_height;
-    double cell_to_z  = params.object_height / double(ncells - 1);
-    double z_to_cell1 = double(ncells1 - 1) / params.object_height;
+    const int lod1_cell_count = lod0_cell_count / 2;
+
+    const LodCellLayout lod0{
+        .cell_count   = lod0_cell_count,
+        .z_to_cell    = static_cast<double>(lod0_cell_count - 1) / params.object_height,
+        .cell_to_z    = params.object_height / static_cast<double>(lod0_cell_count - 1),
+        .column_count = cols,
+        .row_count    = rows,
+    };
+    const LodCellLayout lod1 = LodCellLayout{
+        .cell_count   = lod1_cell_count,
+        .z_to_cell    = static_cast<double>(lod1_cell_count - 1) / params.object_height,
+        .cell_to_z    = params.object_height / static_cast<double>(lod1_cell_count - 1),
+        .column_count = cols / 2,
+        .row_count    = rows / 2,
+    };
+
+    unsigned char* lod0_data = static_cast<unsigned char*>(data);
+    unsigned char* lod1_data = lod0_data + rows * cols * 4;
+
     // For color scaling.
-    double hscale = 2.f
-        * std::max(params.max_layer_height - params.layer_height,
-                   params.layer_height - params.min_layer_height);
-    if (hscale == 0) {
-        // All layers have the same height. Provide some height scale to avoid division by zero.
-        hscale = params.layer_height;
-    }
+    const double height_color_scale = [&]()
+    {
+        double scale = 2.
+            * std::max(params.max_layer_height - params.default_layer_height,
+                       params.default_layer_height - params.min_layer_height);
+
+        // If all layers have the same height, provide some height scale to avoid division by zero.
+        return scale == 0. ? params.default_layer_height : scale;
+    }();
 
     for (const LayerZRange& layer_z_range : layers) {
         const size_t layer_z_range_idx = &layer_z_range - &layers.front();
         const bool is_last_layer       = (layer_z_range_idx + 1 == layers.size());
 
-        const double lo  = layer_z_range.bottom_z;
-        const double mid = layer_z_range.middle_z();
-        assert(mid <= params.object_height);
-        const double h = layer_z_range.height();
+        const double layer_bottom_z = layer_z_range.bottom_z;
+        const double layer_height   = layer_z_range.height();
+        assert(layer_z_range.middle_z() <= params.object_height);
 
         // Extend the last layer to cover the full object height to avoid unfilled cells at the top.
-        const double hi = is_last_layer ? params.object_height :
-                                          std::min(layer_z_range.top_z, params.object_height);
+        const double layer_top_z = is_last_layer ?
+            params.object_height :
+            std::min(layer_z_range.top_z, params.object_height);
 
-        int cell_first = std::clamp(int(ceil(lo * z_to_cell)), 0, ncells - 1);
-        int cell_last  = std::clamp(int(floor(hi * z_to_cell)), 0, ncells - 1);
-        for (int cell = cell_first; cell <= cell_last; ++cell) {
-            double idxf = (0.5 * hscale + (h - params.layer_height))
-                * double(palette_raw.size() - 1)
-                / hscale;
-            int idx1              = std::clamp(int(floor(idxf)), 0, int(palette_raw.size() - 1));
-            int idx2              = std::min(int(palette_raw.size() - 1), idx1 + 1);
-            double t              = idxf - double(idx1);
-            const Vec3crd& color1 = palette_raw[idx1];
-            const Vec3crd& color2 = palette_raw[idx2];
-            double z              = cell_to_z * double(cell);
-            assert(lo - Domain::EPSILON <= z && z <= hi + Domain::EPSILON);
-            // Intensity profile to visualize the layers.
-            double intensity = cos(std::numbers::pi * 0.7 * (mid - z) / h);
-            // Color mapping from layer height to RGB.
-            Vec3d color(
-                intensity * std::lerp(double(color1.x()), double(color2.x()), t),
-                intensity * std::lerp(double(color1.y()), double(color2.y()), t),
-                intensity * std::lerp(double(color1.z()), double(color2.z()), t)
-            );
-            int row = cell / (cols - 1);
-            int col = cell - row * (cols - 1);
-            assert(row >= 0 && row < rows);
-            assert(col >= 0 && col < cols);
-            unsigned char* ptr = (unsigned char*) data + (row * cols + col) * 4;
-            ptr[0]             = (unsigned char) std::clamp(int(floor(color.x() + 0.5)), 0, 255);
-            ptr[1]             = (unsigned char) std::clamp(int(floor(color.y() + 0.5)), 0, 255);
-            ptr[2]             = (unsigned char) std::clamp(int(floor(color.z() + 0.5)), 0, 255);
-            ptr[3]             = 255;
-            if (col == 0 && row > 0) {
-                // Duplicate the first value in a row as a last value of the preceding row.
-                ptr[-4] = ptr[0];
-                ptr[-3] = ptr[1];
-                ptr[-2] = ptr[2];
-                ptr[-1] = ptr[3];
-            }
-        }
+        fill_layer_height_texture_cells(
+            layer_height,
+            params.default_layer_height,
+            height_color_scale,
+            layer_bottom_z,
+            layer_top_z,
+            lod0,
+            lod0_data
+        );
 
         if (level_of_detail_2nd_level) {
-            cell_first = std::clamp(int(ceil(lo * z_to_cell1)), 0, ncells1 - 1);
-            cell_last  = std::clamp(int(floor(hi * z_to_cell1)), 0, ncells1 - 1);
-            for (int cell = cell_first; cell <= cell_last; ++cell) {
-                double idxf = (0.5 * hscale + (h - params.layer_height))
-                    * double(palette_raw.size() - 1)
-                    / hscale;
-                int idx1 = std::clamp(int(floor(idxf)), 0, int(palette_raw.size() - 1));
-                int idx2 = std::min(int(palette_raw.size() - 1), idx1 + 1);
-                double t = idxf - double(idx1);
-                const Vec3crd& color1 = palette_raw[idx1];
-                const Vec3crd& color2 = palette_raw[idx2];
-                // Color mapping from layer height to RGB.
-                Vec3d color(
-                    std::lerp(double(color1.x()), double(color2.x()), t),
-                    std::lerp(double(color1.y()), double(color2.y()), t),
-                    std::lerp(double(color1.z()), double(color2.z()), t)
-                );
-                int row = cell / (cols1 - 1);
-                int col = cell - row * (cols1 - 1);
-                assert(row >= 0 && row < rows / 2);
-                assert(col >= 0 && col < cols / 2);
-                unsigned char* ptr = data1 + (row * cols1 + col) * 4;
-                ptr[0] = (unsigned char) std::clamp(int(floor(color.x() + 0.5)), 0, 255);
-                ptr[1] = (unsigned char) std::clamp(int(floor(color.y() + 0.5)), 0, 255);
-                ptr[2] = (unsigned char) std::clamp(int(floor(color.z() + 0.5)), 0, 255);
-                ptr[3] = 255;
-                if (col == 0 && row > 0) {
-                    // Duplicate the first value in a row as a last value of the preceding row.
-                    ptr[-4] = ptr[0];
-                    ptr[-3] = ptr[1];
-                    ptr[-2] = ptr[2];
-                    ptr[-1] = ptr[3];
-                }
-            }
+            fill_layer_height_texture_cells(
+                layer_height,
+                params.default_layer_height,
+                height_color_scale,
+                layer_bottom_z,
+                layer_top_z,
+                lod1,
+                lod1_data
+            );
         }
     }
 
+    // Apply intensity modulation to LOD 0 only.
+    apply_layer_height_intensity(layers, lod0, lod0_data);
+
     // Returns the number of cells of the 0th LOD level.
-    return ncells;
+    return lod0.cell_count;
 }
 
 LayerHeightTexture generate_layer_height_texture(
@@ -347,10 +486,10 @@ LayerHeightTexture generate_layer_height_texture(
 )
 {
     LayerHeightTextureParams params = {
-        .min_layer_height = min_layer_height,
-        .max_layer_height = max_layer_height,
-        .layer_height     = layer_height,
-        .object_height    = object_height
+        .min_layer_height     = min_layer_height,
+        .max_layer_height     = max_layer_height,
+        .default_layer_height = layer_height,
+        .object_height        = object_height
     };
 
     LayerHeightTexture layer_height_texture = {
