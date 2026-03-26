@@ -245,13 +245,20 @@ int generate_layer_height_texture(
     }
 
     for (const LayerZRange& layer_z_range : layers) {
+        const size_t layer_z_range_idx = &layer_z_range - &layers.front();
+        const bool is_last_layer       = (layer_z_range_idx + 1 == layers.size());
+
         const double lo  = layer_z_range.bottom_z;
         const double mid = layer_z_range.middle_z();
         assert(mid <= params.object_height);
-        const double h  = layer_z_range.height();
-        const double hi = std::min(layer_z_range.top_z, params.object_height);
-        int cell_first  = std::clamp(int(ceil(lo * z_to_cell)), 0, ncells - 1);
-        int cell_last   = std::clamp(int(floor(hi * z_to_cell)), 0, ncells - 1);
+        const double h = layer_z_range.height();
+
+        // Extend the last layer to cover the full object height to avoid unfilled cells at the top.
+        const double hi = is_last_layer ? params.object_height :
+                                          std::min(layer_z_range.top_z, params.object_height);
+
+        int cell_first = std::clamp(int(ceil(lo * z_to_cell)), 0, ncells - 1);
+        int cell_last  = std::clamp(int(floor(hi * z_to_cell)), 0, ncells - 1);
         for (int cell = cell_first; cell <= cell_last; ++cell) {
             double idxf = (0.5 * hscale + (h - params.layer_height))
                 * double(palette_raw.size() - 1)
