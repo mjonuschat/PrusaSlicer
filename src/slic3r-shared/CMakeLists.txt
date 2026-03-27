@@ -1293,6 +1293,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
 
+        test/Slic3r/Biz/Format/3MFTests.cpp
         test/Slic3r/Biz/Format/STEPTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)

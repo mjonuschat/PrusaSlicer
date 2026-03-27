@@ -282,8 +282,11 @@ bool process_object_with_components(
 
         // identification of object
         PathId path_id_c{component.object_id};
-        if (!component.path.empty())
+        if (!component.path.empty()) {
             path_id_c.path = component.path;
+        } else if (filepath != nullptr) {
+            path_id_c.path = *filepath;
+        }
 
         ObjectMap::iterator it_object = object_map.find(path_id_c);
         if (it_object == object_map.end()) {
