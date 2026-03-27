@@ -106,7 +106,7 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
     case ErrorCode::InsufficientExtrusionWidth:
         return _u8L("Extrusion width is too low to be printable at current layer height.");
     case ErrorCode::ExcesiveExtrusionWidth:
-        return _u8L("Excessive extrusion width to be printable with the nozzle diameter.");
+        return _u8L("Extrusion width is too large to be printable with the nozzle diameter.");
     case ErrorCode::WipeTowerSoluableUnsynchronizedLayers:
         return _u8L(
             "For the Wipe Tower to work with the soluble supports, the support layers need to be "

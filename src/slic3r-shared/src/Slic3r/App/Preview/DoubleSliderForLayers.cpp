@@ -468,7 +468,7 @@ void DoubleSliderForLayers::auto_color_change()
         m_yes_no_cancel_popup.txt =
             _u8L("This action will cause deletion of all ticks on vertical slider.")
             + "\n\n"
-            + _u8L("This action is not revertible.")
+            + _u8L("This action is not reversible.")
             + "\n"
             + _u8L("Do you want to proceed?");
         m_yes_no_cancel_popup.result = PopupResult::Undefined;
@@ -1679,7 +1679,7 @@ bool DoubleSliderForLayers::render_pause_print_popup(const ImVec2& pos)
     std::string msg_text =
         _u8L("Enter short message shown on Printer display when a print is paused") + ":";
     std::string win_name =
-        _u8L("Message for pause print on current layer")
+        _u8L("Message for pausing the print on the current layer")
         + " ("
         + convert_and_format_units(
             m_pause_print_popup.z,

@@ -91,13 +91,23 @@ std::string create_list_text(const Domain::ModelVolume& volume) {
 }
 
 using namespace Slic3r::App::PopNotification;
-std::string create_message(const SimplifyNotification::Items& items) {
+
+std::string create_message(const SimplifyNotification::Items& items)
+{
     if (items.size() == 1)
-        return _u8L("Triangle mesh with more than 1M triangles could be slow to process. It is highly recommended to reduce amount of triangles.");
-    std::string message = _u8L("Application keep multiple huge meshes. It is highly recommended to reduce amount of triangles for") + ":";
+        return _u8L(
+            "Triangle mesh with more than 1M triangles could be slow to process.\n"
+            "It is highly recommended to reduce the amount of triangles."
+        );
+    std::string message =
+        _u8L(
+            "Application keeps multiple huge meshes.\n"
+            "It is highly recommended to reduce the amount of triangles for"
+        )
+        + ":";
     for (const SimplifyNotification::Item& item : items)
         message += "\n \t" + item.list_text;
-    return message;    
+    return message;
 }
 
 namespace {

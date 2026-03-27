@@ -1327,7 +1327,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_MultitoolRamming;
     def->category = ConfigItemDef::Category::Filament_MultiMaterial;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
-    def->tooltip = L("Temperature difference to be applied right before for ramming. The value can be negative.");
+    def->tooltip = L("Temperature difference to be applied right before ramming. The value can be negative.");
     def->sidetext = "∆°C";
     def->init_fn = init_with(0);
 

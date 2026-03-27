@@ -225,8 +225,7 @@ void Row::set_state(State new_state)
                 + _L("Click this button to select the same preset for the right and left preset.");
         } else {
             tooltip += from_u8("\n")
-                + _L("All previous settings should be equal to equalize them\n"
-                     "(to select the same preset for the right and left preset)");
+                + _L("To make these presets identical, presets above them must also match.");
         }
     }
     m_equal_bmp->SetToolTip(tooltip);

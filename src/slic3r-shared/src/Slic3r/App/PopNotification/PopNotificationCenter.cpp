@@ -1027,7 +1027,7 @@ void PopNotificationCenter::on_elements_not_arranged(
         text += name + "\n";
         if (instance_indicies.size() > 1) {
             for (int instance_index : instance_indicies) {
-                text += _u8L("  Instance ") + std::to_string(instance_index + 1) + "\n";
+                text += "  "+_u8L("Instance")+ " " + std::to_string(instance_index + 1) + "\n";
             }
         }
     }

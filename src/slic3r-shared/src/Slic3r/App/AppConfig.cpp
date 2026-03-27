@@ -88,7 +88,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type     = GUIType::language_selection;
     def->tooltip =
         L("Selection of the application language.\n"
-          "Note: Application should be recreated after selection change.");
+          "Note: Language selection will be applied on the next application start.");
     def->init_fn = Domain::init_with("en");
 
 #ifdef SLIC3R_HAS_WEBKIT

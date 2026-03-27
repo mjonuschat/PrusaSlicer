@@ -793,8 +793,8 @@ convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provid
         // Implementation of the config loading is not completed jet, so we can't create a correct project
         if (dialog_provider) {
             dialog_provider->show_info_dialog(
-                _u8L("It's not possible to load legacy 3mf temporary."),
-                _u8L("Load legacy 3mf file.")
+                "Loading legacy 3MF projects is not supported yet.",
+                "Load legacy 3mf file."
             );
         }
         return project;

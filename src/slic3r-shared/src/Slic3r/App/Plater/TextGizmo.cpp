@@ -988,9 +988,9 @@ Biz::Emboss::BaseData::IssueFn create_issue_fn(
     return [prepend_tooltip](Biz::Emboss::JobIssue issue) {
         using namespace Slic3r::Biz::Emboss; // JobIssue
         switch (issue) {
-        case JobIssue::no_shape:       prepend_tooltip(_u8L("Current text input with selected font do not create any shape. Change font or text.")); break;
-        case JobIssue::no_surface:     prepend_tooltip(_u8L("There is no surface to emboss shape. Move text on the better surface.")); break;
-        case JobIssue::default_volume: prepend_tooltip(_u8L("Default volume was used. Change font or text.")); break;
+        case JobIssue::no_shape:       prepend_tooltip(_u8L("Current text input with selected font does not create any shape. Change font or text.")); break;
+        case JobIssue::no_surface:     prepend_tooltip(_u8L("There is no surface to emboss the shape on. Move the text to a suitable surface.")); break;
+        case JobIssue::default_volume: prepend_tooltip(_u8L("Default object volume was applied. Please change the font or text.")); break;
         case JobIssue::canceled:       prepend_tooltip(_u8L("Job was canceled."));  break;
         }
     };

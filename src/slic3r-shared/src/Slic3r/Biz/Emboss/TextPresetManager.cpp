@@ -91,21 +91,28 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
 void TextPresetManager::save_preset_as() {
     auto& dlg_manager = App::AppServices::instance().dialog_manager();
     App::IDialogManager::YesNoCallback callback;
-    auto save_preset_as_fn = [this, &dlg_manager, &callback]() {
-        std::string name = dlg_manager.show_input_dialog(_u8L("New presset name") + ':', _u8L("Type unique presset name to save current settings"),
-            get_preset().emboss_style.descriptor.name);
+    auto save_preset_as_fn = [this, &dlg_manager, &callback]()
+    {
+        std::string name = dlg_manager.show_input_dialog(
+            _u8L("New preset name") + ':',
+            _u8L("Type unique preset name to save current settings"),
+            get_preset().emboss_style.descriptor.name
+        );
         if (name.empty())
             return;
         if (!is_unique_style_name(name)) {
-            dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
-        }
-        else {
-            PresetCache& cache = m_proj_preset_cache.selected();
+            dlg_manager.show_yesno_dialog(
+                _u8L("Preset name is not unique"),
+                _u8L("Preset already exists, would you like to try a new name?"),
+                callback
+            );
+        } else {
+            PresetCache& cache         = m_proj_preset_cache.selected();
             Domain::EmbossStyle& style = cache.preset.emboss_style;
-            style.descriptor.name = name;
+            style.descriptor.name      = name;
             ::make_unique_name(m_data.presets, style.descriptor.name);
             cache.preset_index = m_data.presets.size();
-            m_data.presets.emplace_back(Preset{.emboss_style=style});
+            m_data.presets.emplace_back(Preset{.emboss_style = style});
             m_data.current_index = *cache.preset_index;
             store_presets();
         }
@@ -118,19 +125,27 @@ void TextPresetManager::rename_preset()
 {
     auto& dlg_manager = App::AppServices::instance().dialog_manager();
     App::IDialogManager::YesNoCallback callback;
-    auto rename_preset_fn = [this, &dlg_manager, &callback]() {
-        std::string name = dlg_manager.show_input_dialog(_u8L("Re name presset") + ':', _u8L("Type unique presset name to save current settings"),
-            get_preset().emboss_style.descriptor.name);
+    auto rename_preset_fn = [this, &dlg_manager, &callback]()
+    {
+        std::string name = dlg_manager.show_input_dialog(
+            _u8L("Rename preset") + ':',
+            _u8L("Type unique preset name to save current settings"),
+            get_preset().emboss_style.descriptor.name
+        );
         if (name.empty())
             return;
         if (!is_unique_style_name(name)) {
-            dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
+            dlg_manager.show_yesno_dialog(
+                _u8L("Preset name is not unique"),
+                _u8L("Preset already exists, would you like to try a new name?"),
+                callback
+            );
         } else {
-            PresetCache& cache = m_proj_preset_cache.selected();
+            PresetCache& cache                        = m_proj_preset_cache.selected();
             cache.preset.emboss_style.descriptor.name = name;
             if (!exist_stored_style())
-                return; 
-            
+                return;
+
             m_data.presets[*cache.preset_index].emboss_style.descriptor.name = name;
 
             // rename in all projects
