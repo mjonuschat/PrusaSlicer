@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
+#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
 
@@ -310,7 +311,12 @@ static void promote_hover_data_to_full_instances(Scene::Node::NodeList& nodes, S
     nodes.insert(nodes.end(), volume_nodes.begin(), volume_nodes.end());
 }
 
-static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, Biz::Scene::ObjectSelection selection, Scene::Scene& scene)
+static void refine_hover_data(
+    HoverData& hover_data,
+    bool modifier_pressed,
+    const Biz::Scene::ObjectSelection& selection,
+    Scene::Scene& scene
+)
 {
     DEBUG_ASSERT(hover_data.nodes.size() == 1);
     if (hover_data.nodes.size() != 1)
@@ -339,8 +345,12 @@ static void refine_hover_data(HoverData& hover_data, bool modifier_pressed, Biz:
         promote_hover_data_to_full_instances(hover_data.nodes, scene);
 }
 
-static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::ObjectSelection selection, RectangleSelection::Type type,
-    Scene::Scene& scene)
+static void refine_rectangle_hover_data(
+    HoverData& hover_data,
+    const Biz::Scene::ObjectSelection& selection,
+    RectangleSelection::Type type,
+    Scene::Scene& scene
+)
 {
     if (type == RectangleSelection::Type::Remove && !selection.empty()) {
         // filters out unselected nodes
@@ -407,6 +417,33 @@ static void refine_rectangle_hover_data(HoverData& hover_data, Biz::Scene::Objec
         hover_data.nodes = Scene::Node::NodeList();
 }
 
+static bool contains_gizmo_nodes(const Scene::NodePickResults& pick_results)
+{
+    auto gizmo_it = std::find_if(pick_results.begin(), pick_results.end(),
+        [](const auto& item) {
+            const Scene::Node& n = *item.node;
+            return n.has_tag_of_type<TranslationGizmoNodeTag>() ||
+                   n.has_tag_of_type<RotationGizmoNodeTag>() ||
+                   n.has_tag_of_type<ScaleGizmoNodeTag>();
+        }
+    );
+    return gizmo_it != pick_results.end();
+}
+
+static Scene::NodePickResults::const_iterator find_potentially_selected_node(
+    const Scene::NodePickResults& results
+)
+{
+    return std::ranges::find_if(
+        results,
+        [&](const auto& item)
+        {
+            const Scene::Node& n = *item.node;
+            return n.has_tag_of_type<SceneNodeTag>();
+        }
+    );
+}
+
 Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     using namespace std::chrono_literals;
@@ -415,17 +452,13 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
     const auto& selection = m_scene_interactor.object_selection();
 
-    bool shift_down = (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0;
-    bool ctrl_down  = (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Ctrl)) != 0;
-    bool alt_down   = (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Alt)) != 0;
+    bool shift_down = Platform::shift_down(evt.key_modifiers());
+    bool ctrl_down  = Platform::ctrl_down(evt.key_modifiers());
+    bool alt_down   = Platform::alt_down(evt.key_modifiers());
 
     constexpr static Clock::duration max_click_duration = Clock::duration {500ms};
 
-    auto it =
-        std::find_if(ctx.pick_results().begin(), ctx.pick_results().end(), [&](const auto& item) {
-            const Scene::Node& n = *item.node;
-            return n.has_tag_of_type<SceneNodeTag>();
-        });
+    const auto it = find_potentially_selected_node(ctx.pick_results());
 
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         if (evt.button() != Platform::MouseButton::Left) {
@@ -481,7 +514,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             return Scene::GizmoActivationState::Active;
         }
         else {
-            if (ctx.pick_results_contains_gizmo_nodes()) {
+            if (contains_gizmo_nodes(ctx.pick_results())) {
                 HoverData hover_data = { HoverType::Select, Scene::Node::NodeList() };
                 invoke_hover_changed(hover_data);
                 return Scene::GizmoActivationState::Inactive;
@@ -554,6 +587,18 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             return Scene::GizmoActivationState::Active;
     }
     return Scene::GizmoActivationState::Inactive;
+}
+
+void QuickSelectGizmo::camera_updated(const Scene::Camera& cam)
+{
+    auto results = m_gizmo_controller.repick();
+    Scene::Node::NodeList nodes;
+    if (const auto it = find_potentially_selected_node(results);
+        it != results.end() && !contains_gizmo_nodes(results))
+    {
+        nodes.push_back(it->node);
+    }
+    invoke_hover_changed(HoverData{HoverType::Select, nodes});
 }
 
 void QuickSelectGizmo::render_scene(Render::CommandBuffer& cmd_buffer)

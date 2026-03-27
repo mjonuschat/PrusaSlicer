@@ -101,20 +101,24 @@ public:
     virtual void on_hover_changed(const HoverData& hover_data) = 0;
 };
 
-class QuickSelectGizmo : public Scene::IGizmo,
-                         public WithListeners<IHoverChangedListener>
+class QuickSelectGizmo :
+    public Scene::IGizmo,
+    public Scene::ICameraUpdateListener,
+    public WithListeners<IHoverChangedListener>
 {
 public:
     QuickSelectGizmo(
+        const Scene::IGizmoController& gizmo_controller,
         Biz::Scene::SceneInteractor& scene_interactor,
         Render::Device& device,
         Scene::ISceneProvider& scene_provider,
         const Render::ScreenInfo& screen_info
-    )
-        : m_scene_interactor(scene_interactor)
-        , m_scene_provider(scene_provider)
-        , m_selection_handler(scene_interactor)
-        , m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
+    ) :
+        m_gizmo_controller(gizmo_controller),
+        m_scene_interactor(scene_interactor),
+        m_scene_provider(scene_provider),
+        m_selection_handler(scene_interactor),
+        m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
     {}
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
@@ -125,6 +129,8 @@ public:
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
 
+    void camera_updated(const Scene::Camera& cam) override;
+
 private:
     void invoke_hover_changed(const HoverData& hover_data);
 
@@ -132,6 +138,7 @@ private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
+    const Scene::IGizmoController& m_gizmo_controller;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;

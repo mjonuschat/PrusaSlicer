@@ -22,7 +22,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::ZoomIn,
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
+                [this]() { update_zoom(1.); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -34,7 +34,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::ZoomOut,
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
+                [this]() { update_zoom(-1.); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -313,7 +313,7 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         return only_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else if (type == Platform::MouseEvent::Type::Wheel) {
         update_zoom(event.wheel_delta_y());
-        return GizmoActivationState::Done;
+        return (m_state == State::Inactive) ? GizmoActivationState::Inactive : GizmoActivationState::Done;
     }
     if (m_state == State::Inactive)
         return GizmoActivationState::Inactive;

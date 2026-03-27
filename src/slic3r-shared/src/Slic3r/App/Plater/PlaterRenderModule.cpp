@@ -831,12 +831,14 @@ void PlaterRenderModule::init_gizmos()
         *m_animation_manager);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor, *m_scene_presenter);
     QuickSelectGizmo& quick_select_gizmo = m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
+        *m_gizmo_manager,
         m_project_interactor.scene_interactor(),
         *m_device,
         *m_scene_presenter,
         m_screen_info
     );
     quick_select_gizmo.add_listener<IHoverChangedListener>(m_scene_presenter.get());
+    m_scene_presenter->add_listener<Scene::ICameraUpdateListener>(&quick_select_gizmo);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
         m_project_interactor.scene_interactor(),
         *m_scene_presenter

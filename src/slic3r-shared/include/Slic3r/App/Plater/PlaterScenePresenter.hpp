@@ -38,7 +38,10 @@ class AnimationManager;
 namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter :
-    public WithListeners<Plater::IBedVisuallyChangedListener, ISelectionExtentsChangedListener>,
+    public WithListeners<
+        IBedVisuallyChangedListener,
+        ISelectionExtentsChangedListener,
+        Scene::ICameraUpdateListener>,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
@@ -143,7 +146,7 @@ public:
      * @name Implementation of Scene::ICameraUpdateListener public interface
      * @{
      */
-    void camera_updated(const Scene::Camera& cam) override { set_scene_aabb_as_dirty(); }
+    void camera_updated(const Scene::Camera& cam) override;
     /**@}*/
 
     /**
