@@ -126,16 +126,13 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
             }
         )
         .on_exception(
-            [](const std::exception_ptr& exception, const cpptrace::stacktrace& stacktrace)
+            [](const std::exception_ptr& exception)
             {
                 try {
                     std::rethrow_exception(exception);
                 } catch (const FileDownloadFailed& e) {
                    SPDLOG_WARN("File Download Failed exception thrown: {}", e.what());
                 } catch (...) {
-                    if (debug) {
-                        stacktrace.print();
-                    }
                     throw(exception);
                 }
             }
@@ -234,16 +231,13 @@ void FileDownloaderInteractor::init_multi_job(FileDownloaderMultiTicket ticket)
             }
         )
         .on_exception(
-            [](const std::exception_ptr& exception, const cpptrace::stacktrace& stacktrace)
+            [](const std::exception_ptr& exception)
             {
                 try {
                     std::rethrow_exception(exception);
                 } catch (const FileDownloadFailed& e) {
                    SPDLOG_WARN("File Download Failed exception thrown: {}", e.what());
                 } catch (...) {
-                    if (debug) {
-                        stacktrace.print();
-                    }
                     throw(exception);
                 }
             }

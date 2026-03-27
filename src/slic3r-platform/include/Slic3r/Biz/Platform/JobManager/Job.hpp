@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cpptrace/from_current.hpp>
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 #include <jthread/JThread.hpp>
 #include "Slic3r/Biz/Platform/JobManager/ProgressTracker.hpp"
@@ -48,7 +47,7 @@ public:
     using Result      = R;
     using OnResult    = Impl::get_on_result_type_t<Result>;
     using CallAfter   = std::function<void(size_t)>;
-    using OnException = std::function<void(std::exception_ptr, cpptrace::stacktrace)>;
+    using OnException = std::function<void(std::exception_ptr)>;
 
     Job& on_result(OnResult on_result)
     {
@@ -74,7 +73,7 @@ public:
                 const auto not_emitted{[&]() { SPDLOG_WARN("{}: job result not emitted!", m_name); }};
 
                 m_progress_tracker.set_status(Domain::JobStatus::Started);
-                CPPTRACE_TRY
+                try
                 {
                     if constexpr (!std::is_void_v<Result>) {
                         auto result_in_thread{std::apply(std::move(m_function), get_args(stop_token))};
@@ -104,14 +103,13 @@ public:
                         }
                     }
                 }
-                CPPTRACE_CATCH(...)
+                catch (...)
                 {
                     const std::exception_ptr exception{std::current_exception()};
-                    const cpptrace::stacktrace stacktrace{cpptrace::from_current_exception()};
                     if (!m_dispatcher.get().dispatch_on_main_thread(
-                            [on_exception = m_on_exception, progress_tracker = m_progress_tracker, call_after = m_call_after, exception, stacktrace]() mutable
+                            [on_exception = m_on_exception, progress_tracker = m_progress_tracker, call_after = m_call_after, exception]() mutable
                             {
-                                on_exception(exception, stacktrace);
+                                on_exception(exception);
                                 progress_tracker.set_status_unsafe(Domain::JobStatus::Failed);
                                 call_after();
                             }
@@ -152,11 +150,8 @@ private:
     OnResult m_on_result{};
     std::function<void()> m_call_after;
     OnException m_on_exception{
-        [](const std::exception_ptr exception, const cpptrace::stacktrace& stacktrace)
+        [](const std::exception_ptr exception)
         {
-            if (debug) {
-                stacktrace.print();
-            }
             std::rethrow_exception(exception);
         }
     };

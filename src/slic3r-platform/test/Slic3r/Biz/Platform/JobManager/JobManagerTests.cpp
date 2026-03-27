@@ -151,7 +151,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled by starting
     bool stop_requested{true};
     job_manager.create_job("test_job", job)
         .on_exception(
-            [&](const std::exception_ptr& exception, const cpptrace::stacktrace&)
+            [&](const std::exception_ptr& exception)
             {
                 try {
                     std::rethrow_exception(exception);
@@ -237,7 +237,7 @@ TEST_CASE_METHOD(JobManagerFixture, "Exception handling can be configured (swall
     bool exception_recieved{false};
     job_manager.create_job("test_job", job)
         .on_exception(
-            [&](const std::exception_ptr, const cpptrace::stacktrace&) { exception_recieved = true; }
+            [&](const std::exception_ptr) { exception_recieved = true; }
         )
         .on_result([&]() { REQUIRE(false); })
         .start();

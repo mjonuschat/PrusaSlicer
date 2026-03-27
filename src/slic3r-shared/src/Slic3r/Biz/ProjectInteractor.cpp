@@ -162,7 +162,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         }
     };
 
-    auto on_error{[&](std::exception_ptr eptr, cpptrace::stacktrace)
+    auto on_error{[&](std::exception_ptr eptr)
     {
         std::string description = "Unknown error";
         try {
