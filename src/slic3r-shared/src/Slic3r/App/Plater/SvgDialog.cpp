@@ -451,7 +451,7 @@ void SvgDialog::set_enable_use_surface(bool enable)
 
 void SvgDialog::set_enable_surface_distance(bool enable)
 {
-    enable_row_with_control(m_surface_distance, enable);
+    m_surface_distance->set_enabled(enable);
 }
 
 } // namespace Slic3r::App::Plater
