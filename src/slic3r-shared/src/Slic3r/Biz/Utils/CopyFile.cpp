@@ -13,7 +13,6 @@
 #include <boost/system/error_code.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <boost/nowide/cstdio.hpp>
-#include <boost/log/trivial.hpp>
 
 #include <Slic3r/Log.hpp>
 
@@ -541,23 +540,14 @@ fail_errno:
     if (to_mode != from_mode && ::fchmod(outfile.fd, from_mode) != 0) {
         if (platform_flavor() == PlatformFlavor::LinuxOnChromium) {
             // Ignore that. 9p filesystem does not allow fmod().
-            BOOST_LOG_TRIVIAL(info)
-                << "copy_file_linux() failed to fchmod() the output file \""
-                << to.string()
-                << "\" to "
-                << from_mode
-                << ": "
-                << ec.message()
-                << " This may be expected when writing to a 9p filesystem.";
+            SPDLOG_ERROR("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {} "
+                "This may be expected when writing to a 9p filesystem.", to.string(), from_mode, ec.message());
         } else {
             // Generic linux. Write out an error to console. At least we may get some feedback.
-            BOOST_LOG_TRIVIAL(error)
-                << "copy_file_linux() failed to fchmod() the output file \""
-                << to.string()
-                << "\" to "
-                << from_mode
-                << ": "
-                << ec.message();
+            SPDLOG_ERROR("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {}",
+                to.string(), from_mode, ec.message());
+
+
         }
     }
 

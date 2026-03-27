@@ -7,7 +7,7 @@
 
 #include <optional>
 #include "boost/nowide/cstdio.hpp"
-#include "boost/log/trivial.hpp"
+#include <Slic3r/Log.hpp>
 #include <boost/predef/other/endian.h>
 
 namespace Slic3r::Biz {
@@ -35,7 +35,7 @@ static bool its_write_stl_ascii(
 {
     FILE* fp = boost::nowide::fopen(file.c_str(), "w");
     if (fp == nullptr) {
-        BOOST_LOG_TRIVIAL(error) << "its_write_stl_ascii: Couldn't open " << file << " for writing";
+        SPDLOG_ERROR("its_write_stl_ascii: Couldn't open {} for writing", file);
         return false;
     }
 
@@ -67,7 +67,7 @@ static bool its_write_stl_binary(
 {
     FILE* fp = boost::nowide::fopen(file.c_str(), "wb");
     if (fp == nullptr) {
-        BOOST_LOG_TRIVIAL(error) << "its_write_stl_binary: Couldn't open " << file << " for writing";
+        SPDLOG_ERROR("its_write_stl_binary: Couldn't open {} for writing", file);
         return false;
     }
 

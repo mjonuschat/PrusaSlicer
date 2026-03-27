@@ -10,7 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/locale/info.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <iostream>
 
 #include "libslic3r/libslic3r_version.h"
@@ -59,8 +59,7 @@ void Translations::init_translations(const boost::filesystem::path& local_dir)
             if (lang.LayoutDirection == psLayout_RightToLeft) {
                 // PrusaSlicer does not support the Right to Left languages yet.
                 // Don't add this dictionary into m_translations.
-                BOOST_LOG_TRIVIAL(trace) << boost::format("The following language code requires right to left layout, "
-                                                          "which is not supported by PrusaSlicer: %1%") % lang.CanonicalName;
+                SPDLOG_TRACE("The following language code requires right to left layout, which is not supported by PrusaSlicer: {}", lang.CanonicalName);
             }
             else
                 m_translations.emplace_back( LanguageShortInfo{ lang.CanonicalName, 
@@ -126,8 +125,8 @@ void Translations::init_system_language()
 {
     if (!m_sys_locale.empty()) {
         m_language_short_info_system = get_language_short_info(m_sys_locale);
-        BOOST_LOG_TRIVIAL(trace) << boost::format("System language detected (user locales and such): %1%") % 
-                                    m_language_short_info_system ? m_language_short_info_system->canonical_name : m_sys_locale;
+        SPDLOG_TRACE("System language detected (user locales and such): {}",
+                     m_language_short_info_system ? m_language_short_info_system->canonical_name : m_sys_locale);
     }
 }
 
@@ -227,8 +226,8 @@ bool Translations::is_available_locale(LanguageShortInfo* language_info)
         // instead of just reporting that it is impossible to switch.
         std::string original_lang = language_info->canonical_name;
         language_info = linux_get_existing_locale_language(language_info, m_language_short_info_system);
-        BOOST_LOG_TRIVIAL(trace) << boost::format("Can't switch language to %1% (missing locales). Using %2% instead.")
-            % original_lang % language_info->canonical_name;
+        SPDLOG_TRACE("Can't switch language to {} (missing locales). Using {} instead.",
+                     original_lang, language_info->canonical_name);
         is_available = std::setlocale(LC_NUMERIC, language_info->canonical_ref.c_str()) != nullptr;
     }
 
@@ -276,12 +275,12 @@ void Translations::init_best_language()
     if (!m_language_short_info_best && m_sys_locale_language == "sk") {
         // Slovaks understand Czech well. Give them the Czech translation.
         m_language_short_info_best = get_language_short_info("cs");
-        BOOST_LOG_TRIVIAL(trace) << "Using Czech dictionaries for Slovak language";
+        SPDLOG_TRACE("Using Czech dictionaries for Slovak language");
     }
 
     if (m_language_short_info_best)
-        BOOST_LOG_TRIVIAL(trace) << boost::format("Best translation language detected (may be different from user locales): %1%") % 
-                                    m_language_short_info_best->canonical_name;
+        SPDLOG_TRACE("Best translation language detected (may be different from user locales): {}",
+                     m_language_short_info_best->canonical_name);
 }
 
 LanguageShortInfo* Translations::get_language_short_info(const std::string& lang_tag)

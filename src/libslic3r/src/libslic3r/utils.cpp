@@ -42,9 +42,7 @@
 	#endif
 #endif
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp> // IWYU pragma: keep
+#include <Slic3r/Log.hpp>
 
 #include <boost/locale.hpp>
 
@@ -619,11 +617,10 @@ bool copy_file_linux(const boost::filesystem::path &from, const boost::filesyste
 	if (to_mode != from_mode && ::fchmod(outfile.fd, from_mode) != 0) {
 		if (platform_flavor() == PlatformFlavor::LinuxOnChromium) {
 			// Ignore that. 9p filesystem does not allow fmod().
-			BOOST_LOG_TRIVIAL(info) << "copy_file_linux() failed to fchmod() the output file \"" << to.string() << "\" to " << from_mode << ": " << ec.message() << 
-				" This may be expected when writing to a 9p filesystem.";
+            SPDLOG_INFO("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {}. This may be expected when writing to a 9p filesystem.", to.string(), from_mode, ec.message());
 		} else {
 			// Generic linux. Write out an error to console. At least we may get some feedback.
-			BOOST_LOG_TRIVIAL(error) << "copy_file_linux() failed to fchmod() the output file \"" << to.string() << "\" to " << from_mode << ": " << ec.message();
+            SPDLOG_ERROR("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {}", to.string(), from_mode, ec.message());
 		}
 	}
 
@@ -657,7 +654,6 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
         SPDLOG_DEBUG("boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): {}", ec.message());
-		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): " << ec.message();
 	ec.clear();
 #ifdef __linux__
 	// We want to allow copying files on Linux to succeed even if changing the file attributes fails.
@@ -674,7 +670,6 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
         SPDLOG_DEBUG("boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): {}", ec.message());
-		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): " << ec.message();
 	return SUCCESS;
 }
 

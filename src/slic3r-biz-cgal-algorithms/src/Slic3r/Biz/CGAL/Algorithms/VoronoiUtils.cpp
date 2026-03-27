@@ -1,4 +1,4 @@
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/PolygonsSegmentIndex.hpp"
 #include "Slic3r/Biz/Algorithms/ColoredLine.hpp"
@@ -175,7 +175,7 @@ VoronoiUtils::discretize_parabola(const Point &source_point, const Segment &sour
 
     assert(!add_marking_start || !add_marking_end || add_apex);
     if (add_marking_start && add_marking_end && !add_apex)
-        BOOST_LOG_TRIVIAL(warning) << "Failing to discretize parabola! Must add an apex or one of the endpoints.";
+        SPDLOG_WARN("Failing to discretize parabola! Must add an apex or one of the endpoints.");
 
     const coord_t step_count = lround(static_cast<double>(std::abs(ex - sx)) / approximate_step_size);
     discretized.emplace_back(start);

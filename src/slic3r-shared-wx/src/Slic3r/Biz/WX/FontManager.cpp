@@ -2,11 +2,11 @@
 #include "Slic3r/Biz/WX/FontUtils.hpp"
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
 #include "Slic3r/App/WX/I18N.hpp" // translation for name of favorit fonts
+#include "Slic3r/Log.hpp"
 
 #include <wx/fontenum.h>
 #include <boost/functional/hash.hpp>
 #include <boost/nowide/fstream.hpp>
-#include <boost/log/trivial.hpp>
 
 // cache font list by cereal
 #include <cereal/cereal.hpp>
@@ -77,7 +77,7 @@ bool store(
     try {
         archive(data);
     } catch (const std::exception& ex) {
-        BOOST_LOG_TRIVIAL(error) << "Failed to write fontlist cache - " << path.string() << ex.what();
+        SPDLOG_ERROR("Failed to write fontlist cache - {}{}", path.string(), ex.what());
         return false;
     }
     return true;
@@ -93,7 +93,7 @@ bool load(
 )
 {
     if (!boost::filesystem::exists(path)) {
-        BOOST_LOG_TRIVIAL(warning) << "Fontlist cache - '" << path.string() << "' does not exists.";
+        SPDLOG_WARN("Fontlist cache - '{}' does not exists.", path.string());
         return false;
     }
     boost::nowide::ifstream file(path, std::ios::binary);
@@ -103,11 +103,7 @@ bool load(
     try {
         archive(data);
     } catch (const std::exception& ex) {
-        BOOST_LOG_TRIVIAL(error)
-            << "Failed to load fontlist cache - '"
-            << path.string()
-            << "'. Exception: "
-            << ex.what();
+        SPDLOG_ERROR("Failed to load fontlist cache - '{}'. Exception: {}", path.string(), ex.what());
         return false;
     }
 
@@ -163,14 +159,7 @@ const Domain::FontList& FontManager::get_fonts()
         // no new installed font -> skip validation
         return m_openable;
     }
-    BOOST_LOG_TRIVIAL(info)
-        << "Changed fontlist detected("
-        << "prev_hash="
-        << m_hash.value_or(0)
-        << ", "
-        << "curr_hash="
-        << hash
-        << ").";
+    SPDLOG_INFO("Changed fontlist detected(prev_hash={}, curr_hash={}).", m_hash.value_or(0), hash);
 
     // extend fonts
     m_hash  = hash;

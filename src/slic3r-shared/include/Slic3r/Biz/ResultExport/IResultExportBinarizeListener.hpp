@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/log/trivial.hpp>
 #include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
 
 namespace Slic3r::Biz::ResultExport {

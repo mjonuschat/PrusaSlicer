@@ -14,7 +14,6 @@
 #include <wx/msw/registry.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/nowide/convert.hpp>
 
@@ -199,7 +198,7 @@ void delete_cookies_with_counter(wxWebView* webview, const std::string& url, std
                     pt::read_json(ss, ptree);
                 }
                 catch (const std::exception& e) {
-                    BOOST_LOG_TRIVIAL(error) << "Failed to parse cookies json: " << e.what();
+                    SPDLOG_ERROR("Failed to parse cookies json: {}", e.what());
                     return S_OK;
                 }
                 auto& cookies = ptree.get_child("cookies");

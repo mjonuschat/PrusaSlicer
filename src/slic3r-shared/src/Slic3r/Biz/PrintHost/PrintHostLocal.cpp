@@ -6,7 +6,6 @@
 #include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
 
 namespace fs = boost::filesystem;

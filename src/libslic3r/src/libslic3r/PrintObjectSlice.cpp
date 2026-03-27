@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <algorithm>
@@ -452,7 +452,7 @@ std::string fix_slicing_errors(LayerPtrs &layers, const std::function<void()> &t
         if (layers[idx_layer]->slicing_errors)
             buggy_layers.push_back(idx_layer);
 
-    BOOST_LOG_TRIVIAL(debug) << "Slicing objects - fixing slicing errors in parallel - begin";
+    SPDLOG_DEBUG("Slicing objects - fixing slicing errors in parallel - begin");
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, buggy_layers.size()),
         [&layers, &throw_if_canceled, &buggy_layers](const tbb::blocked_range<size_t>& range) {
@@ -462,7 +462,7 @@ std::string fix_slicing_errors(LayerPtrs &layers, const std::function<void()> &t
                 Layer *layer     = layers[idx_layer];
                 assert(layer->slicing_errors);
                 // Try to repair the layer surfaces by merging all contours and all holes from neighbor layers.
-                // BOOST_LOG_TRIVIAL(trace) << "Attempting to repair layer" << idx_layer;
+                SPDLOG_TRACE("Attempting to repair layer {}", idx_layer);
                 for (size_t region_id = 0; region_id < layer->region_count(); ++ region_id) {
                     LayerRegion *layerm = layer->get_region(region_id);
                     // Find the first valid layer below / above the current layer.
@@ -509,7 +509,7 @@ std::string fix_slicing_errors(LayerPtrs &layers, const std::function<void()> &t
             }
         });
     throw_if_canceled();
-    BOOST_LOG_TRIVIAL(debug) << "Slicing objects - fixing slicing errors in parallel - end";
+    SPDLOG_DEBUG("Slicing objects - fixing slicing errors in parallel - end");
 
     // remove empty layers from bottom
     while (! layers.empty() && (layers.front()->lslices.empty() || layers.front()->empty())) {
@@ -557,7 +557,7 @@ void PrintObject::slice()
     std::string warning = fix_slicing_errors(m_layers, [this](){ m_print->throw_if_canceled(); });
     m_print->throw_if_canceled();
     if (! warning.empty())
-        BOOST_LOG_TRIVIAL(info) << warning;
+    SPDLOG_INFO("{}", warning);
 #endif
     // Update bounding boxes, back up raw slices of complex models.
     tbb::parallel_for(
@@ -867,7 +867,7 @@ void apply_fuzzy_skin_segmentation(PrintObject &print_object, ThrowOnCancel thro
 // this should be idempotent
 void PrintObject::slice_volumes()
 {
-    BOOST_LOG_TRIVIAL(info) << "Slicing volumes..." << log_memory_info();
+    SPDLOG_INFO("Slicing volumes... {}", log_memory_info());
     const Print *print                      = this->print();
     const auto   throw_on_cancel_callback   = std::function<void()>([print](){ print->throw_if_canceled(); });
 
@@ -893,7 +893,7 @@ void PrintObject::slice_volumes()
     }
     region_slices.clear();
     
-    BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - removing top empty layers";
+    SPDLOG_DEBUG("Slicing volumes - removing top empty layers");
     while (! m_layers.empty()) {
         const Layer *layer = m_layers.back();
         if (! layer->empty())
@@ -917,7 +917,7 @@ void PrintObject::slice_volumes()
                     "\n" + (_u8L("Object name")) + ": " + this->model_object()->name);
         }
 
-        BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - MMU segmentation";
+        SPDLOG_DEBUG("Slicing volumes - MMU segmentation");
         apply_mm_segmentation(*this, [print]() { print->throw_if_canceled(); });
     }
 
@@ -933,17 +933,17 @@ void PrintObject::slice_volumes()
                     "\n" + (_u8L("Object name")) + ": " + this->model_object()->name);
         }
 
-        BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - Fuzzy skin segmentation";
+        SPDLOG_DEBUG("Slicing volumes - Fuzzy skin segmentation");
         apply_fuzzy_skin_segmentation(*this, [print]() { print->throw_if_canceled(); });
     }
 
     if (m_config.get<bool>("interlocking_beam")) {
-        BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - Applying multi-material interlocking";
+        SPDLOG_DEBUG("Slicing volumes - Applying multi-material interlocking");
         InterlockingGenerator::generate_interlocking_structure(*this);
         m_print->throw_if_canceled();
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - make_slices in parallel - begin";
+    SPDLOG_DEBUG("Slicing volumes - make_slices in parallel - begin");
     {
         // Compensation value, scaled. Only applying the negative scaling here, as the positive scaling has already been applied during slicing.
         const size_t num_extruders = print->config().hw_config().material_slot_count();
@@ -1021,7 +1021,7 @@ void PrintObject::slice_volumes()
 	}
 
     m_print->throw_if_canceled();
-    BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - make_slices in parallel - end";
+    SPDLOG_DEBUG("Slicing volumes - make_slices in parallel - end");
 }
 
 std::vector<Polygons> PrintObject::slice_support_volumes(const Domain::ModelVolumeType model_volume_type) const

@@ -3,7 +3,6 @@
 
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
-#include <boost/log/trivial.hpp>
 #include "libslic3r/Utils.hpp"
 
 namespace{

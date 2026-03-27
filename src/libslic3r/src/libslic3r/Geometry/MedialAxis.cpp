@@ -4,7 +4,7 @@
 ///|/
 #include "MedialAxis.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <cassert>
 #include <cmath>
@@ -493,7 +493,7 @@ void MedialAxis::build(ThickPolylines* polylines)
         m_vd.construct_voronoi(m_lines.begin(), m_lines.end());
 
         if (!m_vd.is_valid())
-            BOOST_LOG_TRIVIAL(error) << "MedialAxis - Invalid Voronoi diagram even after morphological closing.";
+            SPDLOG_ERROR("MedialAxis - Invalid Voronoi diagram even after morphological closing.");
     }
 
     Voronoi::annotate_inside_outside(m_vd, m_lines);

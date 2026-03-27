@@ -13,7 +13,7 @@
 #include <libslic3r/SLA/BranchingTreeSLA.hpp>
 #include <libslic3r/MTUtils.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <chrono>
 #include <iterator>
 #include <cstddef>
@@ -56,9 +56,7 @@ indexed_triangle_set create_support_tree(const SupportableMesh &sm,
 
         using std::chrono::duration;
         using std::chrono::seconds;
-        BOOST_LOG_TRIVIAL(info) << "Support tree creation took: "
-                                << duration<double>{stop - start}.count()
-                                << " seconds";
+        SPDLOG_INFO("Support tree creation took: {} seconds", duration<double>{stop - start}.count());
 
         builder->merge_and_cleanup();   // clean metadata, leave only the meshes.
     }

@@ -29,7 +29,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/spirit/include/karma.hpp>
 #include <boost/spirit/include/qi_int.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 
@@ -462,7 +462,7 @@ namespace Slic3rLegacy {
         void log_errors()
         {
             for (const std::string& error : m_errors)
-                BOOST_LOG_TRIVIAL(error) << error;
+                SPDLOG_ERROR("{}", error);
         }
     };
 
@@ -4482,7 +4482,7 @@ bool to_xml(std::stringstream &stream, const EmbossShape::SvgFile &svg, const Do
     if (file_data == nullptr && !svg.path.empty())
         file_data = Biz::Emboss::read_from_disk(svg.path);
     if (file_data == nullptr) {
-        BOOST_LOG_TRIVIAL(warning) << "Can't write svg file no filedata";
+        SPDLOG_WARN("Can't write svg file no filedata");
         return false;
     }
     const std::string &file_data_str = *file_data; 
@@ -4498,7 +4498,7 @@ void to_xml(std::stringstream &stream, const EmbossShape &es, const Domain::Mode
     stream << "   <" << SHAPE_TAG << " ";
     if (es.svg_file.has_value())
         if(!to_xml(stream, *es.svg_file, volume, archive))
-            BOOST_LOG_TRIVIAL(warning) << "Can't write svg file defiden embossed shape into 3mf";
+            SPDLOG_WARN("Can't write svg file defiden embossed shape into 3mf");
     
     stream << SHAPE_SCALE_ATTR << "=\"" << es.scale << "\" ";
 

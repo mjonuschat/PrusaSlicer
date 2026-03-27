@@ -14,7 +14,7 @@
 
 #include <tbb/parallel_for.h>
 #include <boost/filesystem/path.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 
 #include "Slic3r/Biz/Parser/IO.hpp"
 #include "libslic3r/ModelUtils.hpp"
@@ -1136,7 +1136,7 @@ void SLAPrint::process()
     
     double st = Steps::min_objstatus;
 
-    BOOST_LOG_TRIVIAL(info) << "Start slicing process.";
+    SPDLOG_INFO("Start slicing process.");
 
 #ifdef SLAPRINT_DO_BENCHMARK
     Benchmark bench;

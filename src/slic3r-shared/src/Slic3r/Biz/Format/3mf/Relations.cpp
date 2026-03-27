@@ -1,6 +1,6 @@
 #include "Relations.hpp"
 #include "pugixml.hpp"
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include "boost/filesystem.hpp"
 #include "libslic3r/Utils.hpp"
 
@@ -74,9 +74,7 @@ static void append_realationship(const pugi::xml_node &node, std::optional<RootR
         else
             collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_project_without_target));
     } else {
-        BOOST_LOG_TRIVIAL(info) << "Not known realtions (Type=" << r.type << 
-            ", Target=" << r.target <<
-            ", Id=" << r.id << ")";
+        SPDLOG_INFO("Not known realtions (Type={}, Target={}, Id={})", r.type, r.target, r.id);
         collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_unexpected_type, 
             std::nullopt, std::string(r.type) + " " + std::string(r.target) + " " + std::string(r.id)));
     }
@@ -189,8 +187,7 @@ tl::expected<LoadedRelations, Read3mfIssue> load_relations(mz_zip_archive &archi
     pugi::xml_document doc;
     pugi::xml_parse_result parse_result = doc.load_buffer_inplace(buffer, uncomp_size);
     if (parse_result.status != pugi::xml_parse_status::status_ok) {
-        BOOST_LOG_TRIVIAL(error) << "Pugi can't load Relations xml from given data for Relations: "
-                                 << parse_result.description();
+        SPDLOG_ERROR("Pugi can't load Relations xml from given data for Relations: {}", parse_result.description());
         std::string description = parse_result.description();
         return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_pugi_error, description));
     }

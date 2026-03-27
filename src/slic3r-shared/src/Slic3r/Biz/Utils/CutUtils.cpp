@@ -5,7 +5,7 @@
 
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -315,7 +315,7 @@ const Domain::ModelObjectPtrs& Cut::perform_with_plane()
 
     Domain::ModelObject* mo = m_model.objects.front();
 
-    BOOST_LOG_TRIVIAL(trace) << "ModelObject::cut - start";
+    SPDLOG_TRACE("ModelObject::cut - start");
 
     // Clone the object to duplicate instances, materials etc.
     Domain::ModelObject* upper{ nullptr };
@@ -393,7 +393,7 @@ const Domain::ModelObjectPtrs& Cut::perform_with_plane()
         }
     }
 
-    BOOST_LOG_TRIVIAL(trace) << "ModelObject::cut - end";
+    SPDLOG_TRACE("ModelObject::cut - end");
 
     finalize(cut_object_ptrs);
 

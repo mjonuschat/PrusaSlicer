@@ -4,7 +4,6 @@
 #include "fast_float.h"
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/spirit/include/qi_int.hpp> // text to int
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp> // uuid to stream

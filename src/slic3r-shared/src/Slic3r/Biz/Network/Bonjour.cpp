@@ -10,7 +10,7 @@
 #include <boost/endian/conversion.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/bind/bind.hpp>
 
 using boost::optional;
@@ -645,11 +645,11 @@ UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multica
 			socket.set_option(asio::ip::multicast::outbound_interface(interface_address.to_v6().scope_id()));
 		}
 		mcast_endpoint = udp::endpoint(multicast_address, BonjourRequest::MCAST_PORT);
-		
-		BOOST_LOG_TRIVIAL(info) << "Socket created. Multicast: " << multicast_address << ". Interface: " << interface_address;
+
+		SPDLOG_INFO("Socket created. Multicast: {}. Interface: {}", multicast_address.to_string(), interface_address.to_string());
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 
@@ -669,11 +669,11 @@ UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multica
 		socket.bind(listen_endpoint);
 		socket.set_option(boost::asio::ip::multicast::join_group(multicast_address));
 		mcast_endpoint = udp::endpoint(multicast_address, BonjourRequest::MCAST_PORT);
-		
-		BOOST_LOG_TRIVIAL(info) << "Socket created. Multicast: " << multicast_address;
+
+		SPDLOG_INFO("Socket created. Multicast: {}", multicast_address.to_string());
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 
@@ -687,7 +687,7 @@ void UdpSocket::send()
 		async_receive();
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 
@@ -701,7 +701,7 @@ void UdpSocket::async_receive()
 			, boost::bind(&UdpSocket::receive_handler, this, session, asio::placeholders::error, asio::placeholders::bytes_transferred));
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 
@@ -726,7 +726,7 @@ void LookupSession::handle_receive(const error_code& error, size_t bytes)
 	assert(socket);
 
 	if (error) {
-		BOOST_LOG_TRIVIAL(error) << error.message();
+		SPDLOG_ERROR("{}", error.message());
 		return;
 	}
 	if (bytes == 0 || !replyfn) {
@@ -776,7 +776,7 @@ void ResolveSession::handle_receive(const error_code& error, size_t bytes)
 	assert(socket);
 	if (error) {
 		// todo: what level? do we even log? There might be callbacks when timer runs out
-		BOOST_LOG_TRIVIAL(info) << error.message();
+		SPDLOG_INFO("{}", error.message());
 		return;
 	}
 	if (bytes == 0 || !replyfn) {
@@ -793,7 +793,7 @@ void ResolveSession::handle_receive(const error_code& error, size_t bytes)
 		str += hex_chars[(ch & 0xF0) >> 4];
 		str += hex_chars[(ch & 0x0F) >> 0];
 	}
-	BOOST_LOG_TRIVIAL(debug) << remote_endpoint.address()<< " " << str;
+	SPDLOG_DEBUG("{} {}", remote_endpoint.address(), str);
 #endif
 	// decode buffer, txt keys are not needed for A / AAAA answer
 	auto dns_msg = DnsMessage::decode(buffer, Bonjour::TxtKeys());
@@ -888,7 +888,7 @@ void Bonjour::priv::lookup_perform()
 		for (const auto& intrfc : interfaces) 		
 			sockets.emplace_back(new LookupSocket(txt_keys, service, service_dn, protocol, replyfn, BonjourRequest::MCAST_IP4, intrfc, io_service));
 	} else {
-		BOOST_LOG_TRIVIAL(info) << "Failed to resolve ipv4 interfaces: " << ec.message();
+		SPDLOG_INFO("Failed to resolve ipv4 interfaces: {}", ec.message());
 	}
 	if (sockets.empty())
 		sockets.emplace_back(new LookupSocket(txt_keys, service, service_dn, protocol, replyfn, BonjourRequest::MCAST_IP4, io_service));
@@ -910,7 +910,7 @@ void Bonjour::priv::lookup_perform()
 		if (interfaces.empty())
 			sockets.emplace_back(new LookupSocket(txt_keys, service, service_dn, protocol, replyfn, BonjourRequest::MCAST_IP6, io_service));
 	} else {
-		BOOST_LOG_TRIVIAL(info)<< "Failed to resolve ipv6 interfaces: " << ec.message();
+		SPDLOG_INFO("Failed to resolve ipv6 interfaces: {}", ec.message());
 	}
 	
 	try {
@@ -946,7 +946,7 @@ void Bonjour::priv::lookup_perform()
 		io_service->run();
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 
@@ -982,7 +982,7 @@ void Bonjour::priv::resolve_perform()
 		for (const auto& intrfc : interfaces)
 			sockets.emplace_back(new ResolveSocket(hostname, reply_callback, BonjourRequest::MCAST_IP4, intrfc, io_service));
 	} else {
-		BOOST_LOG_TRIVIAL(info) << "Failed to resolve ipv4 interfaces: " << ec.message();
+		SPDLOG_INFO("Failed to resolve ipv4 interfaces: {}", ec.message());
 	}
 	if (sockets.empty())
 		sockets.emplace_back(new ResolveSocket(hostname, reply_callback, BonjourRequest::MCAST_IP4, io_service));
@@ -1003,7 +1003,7 @@ void Bonjour::priv::resolve_perform()
 		if (interfaces.empty())
 			sockets.emplace_back(new ResolveSocket(hostname, reply_callback, BonjourRequest::MCAST_IP6, io_service));
 	} else {
-		BOOST_LOG_TRIVIAL(info) << "Failed to resolve ipv6 interfaces: " << ec.message();
+		SPDLOG_INFO("Failed to resolve ipv6 interfaces: {}", ec.message());
 	}
 
 	try {
@@ -1040,7 +1040,7 @@ void Bonjour::priv::resolve_perform()
 		io_service->run();
 	}
 	catch (std::exception& e) {
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		SPDLOG_ERROR("{}", e.what());
 	}
 }
 

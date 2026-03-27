@@ -10,7 +10,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_group.h>
@@ -271,7 +271,7 @@ PrintObjectSupportMaterial::PrintObjectSupportMaterial(const PrintObject *object
 
 void PrintObjectSupportMaterial::generate(PrintObject &object)
 {
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Start";
+    SPDLOG_INFO("Support generator - Start");
 
     double max_object_layer_height = 0.;
     for (size_t i = 0; i < object.layer_count(); ++ i)
@@ -281,7 +281,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     // The layers will be referenced by various LayersPtr (of type std::vector<Layer*>)
     SupportGeneratorLayerStorage layer_storage;
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating top contacts";
+    SPDLOG_INFO("Support generator - Creating top contacts");
 
     // Per object layer projection of the object below the layer into print bed.
     std::vector<Polygons> buildplate_covered = this->buildplate_covered(object);
@@ -306,7 +306,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
             union_ex(layer->polygons));
 #endif /* SLIC3R_DEBUG */
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating bottom contacts";
+    SPDLOG_INFO("Support generator - Creating bottom contacts");
 
     // Determine the bottom contact surfaces of the supports over the top surfaces of the object.
     // Depending on whether the support is soluble or not, the contact layer thickness is decided.
@@ -324,7 +324,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
             union_ex(layer_support_areas[layer_id]));
 #endif /* SLIC3R_DEBUG */
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating intermediate layers - indices";
+    SPDLOG_INFO("Support generator - Creating intermediate layers - indices");
 
     // Allocate empty layers between the top / bottom support contact layers
     // as placeholders for the base and intermediate support layers.
@@ -343,7 +343,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
             union_ex(layer->polygons));
 #endif
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating base layers";
+    SPDLOG_INFO("Support generator - Creating base layers");
 
     // Fill in intermediate layers between the top / bottom support contact layers, trim them by the object.
     this->generate_base_layers(object, bottom_contacts, top_contacts, intermediate_layers, layer_support_areas);
@@ -355,7 +355,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
             union_ex((*it)->polygons));
 #endif /* SLIC3R_DEBUG */
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Trimming top contacts by bottom contacts";
+    SPDLOG_INFO("Support generator - Trimming top contacts by bottom contacts");
 
     // Because the top and bottom contacts are thick slabs, they may overlap causing over extrusion 
     // and unwanted strong bonds to the object.
@@ -364,7 +364,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     this->trim_top_contacts_by_bottom_contacts(object, bottom_contacts, top_contacts);
 
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating interfaces";
+    SPDLOG_INFO("Support generator - Creating interfaces");
 
     // Propagate top / bottom contact layers to generate interface layers 
     // and base interface layers (for soluble interface / non souble base only)
@@ -372,7 +372,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     auto [interface_layers, base_interface_layers] = FFFSupport::generate_interface_layers(
         *m_object_config, m_support_params, bottom_contacts, top_contacts, empty_layers, empty_layers, intermediate_layers, layer_storage);
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating raft";
+    SPDLOG_INFO("Support generator - Creating raft");
 
     // If raft is to be generated, the 1st top_contact layer will contain the 1st object layer silhouette with holes filled.
     // There is also a 1st intermediate layer containing bases of support columns.
@@ -398,7 +398,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     }
 */
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Creating layers";
+    SPDLOG_INFO("Support generator - Creating layers");
 
 // For debugging purposes, one may want to show only some of the support extrusions.
 //    raft_layers.clear();
@@ -412,7 +412,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
 #endif // SLIC3R_DEBUG
     generate_support_layers(object, raft_layers, bottom_contacts, top_contacts, intermediate_layers, interface_layers, base_interface_layers);
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - Generating tool paths";
+    SPDLOG_INFO("Support generator - Generating tool paths");
 
 #if 0 // #ifdef SLIC3R_DEBUG
     {
@@ -471,7 +471,7 @@ void PrintObjectSupportMaterial::generate(PrintObject &object)
     }
 #endif /* SLIC3R_DEBUG */
 
-    BOOST_LOG_TRIVIAL(info) << "Support generator - End";
+    SPDLOG_INFO("Support generator - End");
 }
 
 // Collect all polygons of all regions in a layer with a given surface type.
@@ -1111,7 +1111,7 @@ std::vector<Polygons> PrintObjectSupportMaterial::buildplate_covered(const Print
     const bool            buildplate_only = this->build_plate_only();
     std::vector<Polygons> buildplate_covered;
     if (buildplate_only) {
-        BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::buildplate_covered() - start";
+        SPDLOG_DEBUG("PrintObjectSupportMaterial::buildplate_covered() - start");
         buildplate_covered.assign(object.layers().size(), Polygons());
         //FIXME prefix sum algorithm, parallelize it! Parallelization will also likely be more numerically stable.
         for (size_t layer_id = 1; layer_id < object.layers().size(); ++ layer_id) {
@@ -1126,7 +1126,7 @@ std::vector<Polygons> PrintObjectSupportMaterial::buildplate_covered(const Print
             Slic3r::append(covered, offset(lower_layer.lslices, scale_(0.01)));
             covered = union_(covered);
         }
-        BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::buildplate_covered() - end";
+        SPDLOG_DEBUG("PrintObjectSupportMaterial::buildplate_covered() - end");
     }
     return buildplate_covered;
 }
@@ -1700,7 +1700,7 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::top_contact_layers(
     // Output layers, sorted by top Z.
     SupportGeneratorLayersPtr contact_out;
 
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::top_contact_layers() in parallel - start";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::top_contact_layers() in parallel - start");
     // Determine top contact areas.
     // If generating raft only (no support), only calculate top contact areas for the 0th layer.
     // If having a raft, start with 0th layer, otherwise with 1st layer.
@@ -1763,7 +1763,7 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::top_contact_layers(
     // the top contact layer is merged into the bottom contact layer.
     merge_contact_layers(m_slicing_params, m_support_params.support_layer_height_min, contact_out);
 
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::top_contact_layers() in parallel - end";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::top_contact_layers() in parallel - end");
 
     return contact_out;
 }
@@ -2015,7 +2015,7 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::bottom_contact_layers_and_
     // Last top contact layer visited when collecting the projection of contact areas.
     int       contact_idx = int(top_contacts.size()) - 1;
     for (int layer_id = int(object.total_layer_count()) - 2; layer_id >= 0; -- layer_id) {
-        BOOST_LOG_TRIVIAL(trace) << "Support generator - bottom_contact_layers - layer " << layer_id;
+        SPDLOG_TRACE("Support generator - bottom_contact_layers - layer {}", layer_id);
         const Layer &layer = *object.get_layer(layer_id);
         // Collect projections of all contact areas above or at the same level as this top surface.
 #ifdef SLIC3R_DEBUG
@@ -2367,7 +2367,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
         // No top contacts -> no intermediate layers will be produced.
         return;
 
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::generate_base_layers() in parallel - start";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::generate_base_layers() in parallel - start");
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, intermediate_layers.size()),
         [&object, &bottom_contacts, &top_contacts, &intermediate_layers, &layer_support_areas](const tbb::blocked_range<size_t>& range) {
@@ -2378,8 +2378,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
             // Counting down due to the way idx_lower_or_equal caches indices to avoid repeated binary search over the complete sequence.
             for (int idx_intermediate = int(range.end()) - 1; idx_intermediate >= int(range.begin()); -- idx_intermediate)
             {
-                BOOST_LOG_TRIVIAL(trace) << "Support generator - generate_base_layers - creating layer " << 
-                    idx_intermediate << " of " << intermediate_layers.size();
+                SPDLOG_TRACE("Support generator - generate_base_layers - creating layer {} of {}", idx_intermediate, intermediate_layers.size());
                 SupportGeneratorLayer &layer_intermediate = *intermediate_layers[idx_intermediate];
                 // Layers must be sorted by print_z. 
                 assert(idx_intermediate == 0 || layer_intermediate.print_z >= intermediate_layers[idx_intermediate - 1]->print_z);
@@ -2492,7 +2491,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
         #endif
             }
         });
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::generate_base_layers() in parallel - end";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::generate_base_layers() in parallel - end");
 
 #ifdef SLIC3R_DEBUG
     for (SupportGeneratorLayersPtr::const_iterator it = intermediate_layers.begin(); it != intermediate_layers.end(); ++it)
@@ -2526,14 +2525,14 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
     }
 
     // For all intermediate support layers:
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::trim_support_layers_by_object() in parallel - start";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::trim_support_layers_by_object() in parallel - start");
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, nonempty_layers.size()),
         [this, &object, &nonempty_layers, gap_extra_above, gap_extra_below, gap_xy_scaled](const tbb::blocked_range<size_t>& range) {
             size_t idx_object_layer_overlapping = size_t(-1);
             for (size_t idx_layer = range.begin(); idx_layer < range.end(); ++ idx_layer) {
                 SupportGeneratorLayer &support_layer = *nonempty_layers[idx_layer];
-                // BOOST_LOG_TRIVIAL(trace) << "Support generator - trim_support_layers_by_object - trimmming non-empty layer " << idx_layer << " of " << nonempty_layers.size();
+                SPDLOG_TRACE("Support generator - trim_support_layers_by_object - trimmming non-empty layer {} of {}", idx_layer, nonempty_layers.size());
                 assert(! support_layer.polygons.empty() && support_layer.print_z >= m_slicing_params.raft_contact_top_z + EPSILON);
                 // Find the overlapping object layers including the extra above / below gap.
                 double z_threshold = support_layer.bottom_print_z() - gap_extra_below + EPSILON;
@@ -2576,7 +2575,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                 support_layer.polygons = diff(support_layer.polygons, polygons_trimming);
             }
         });
-    BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::trim_support_layers_by_object() in parallel - end";
+    SPDLOG_DEBUG("PrintObjectSupportMaterial::trim_support_layers_by_object() in parallel - end");
 }
 
 /*

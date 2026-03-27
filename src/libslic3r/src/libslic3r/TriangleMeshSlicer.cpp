@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <ankerl/unordered_dense.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
@@ -1736,7 +1736,7 @@ static std::vector<Polygons> make_slab_loops(
                         assert(! loops.empty());
                         assert(open_polylines.empty());
                         if (! open_polylines.empty())
-                            BOOST_LOG_TRIVIAL(trace) << "make_slab_loops - chaining failed. #" << open_polylines.size() << " open polylines";
+                            SPDLOG_TRACE("make_slab_loops - chaining failed. #{} open polylines", open_polylines.size());
                     }
                 }
             }
@@ -1965,7 +1965,7 @@ std::vector<typename PolygonsType<mesh_info>::type> slice_mesh(
             return FacetColorFunctor<mesh_info>();
     }();
 
-    BOOST_LOG_TRIVIAL(debug) << "slice_mesh to polygons";
+    SPDLOG_DEBUG("slice_mesh to polygons");
        
     std::vector<IntersectionLines> lines;
 
@@ -2161,7 +2161,7 @@ std::vector<ExPolygons> slice_mesh_ex(
         layers_p = slice_mesh(mesh, zs, slicing_params, throw_on_cancel);
     }
     
-//    BOOST_LOG_TRIVIAL(debug) << "slice_mesh make_expolygons in parallel - start";
+    SPDLOG_DEBUG("slice_mesh make_expolygons in parallel - start");
     std::vector<ExPolygons> layers(layers_p.size(), ExPolygons{});
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, layers_p.size()),
@@ -2219,7 +2219,7 @@ std::vector<ExPolygons> slice_mesh_ex(
 #endif // NDEBUG
             }
         });
-//    BOOST_LOG_TRIVIAL(debug) << "slice_mesh make_expolygons in parallel - end";
+    SPDLOG_DEBUG("slice_mesh make_expolygons in parallel - end");
 
     return layers;
 }
@@ -2239,7 +2239,7 @@ void slice_mesh_slabs(
     std::vector<Polygons>            *out_bottom,
     std::function<void()>             throw_on_cancel)
 {
-    BOOST_LOG_TRIVIAL(debug) << "slice_mesh_slabs to polygons";
+    SPDLOG_DEBUG("slice_mesh_slabs to polygons");
 
 #ifdef EXPENSIVE_DEBUG_CHECKS
     {
@@ -2457,7 +2457,7 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
     const size_t had_degenerate_faces = TriMesh::its_num_degenerate_faces(mesh);
 #endif // NDEBUG
 
-    BOOST_LOG_TRIVIAL(trace) << "cut_mesh - slicing object";
+    SPDLOG_TRACE("cut_mesh - slicing object");
 
     if (upper) {
         upper->clear();

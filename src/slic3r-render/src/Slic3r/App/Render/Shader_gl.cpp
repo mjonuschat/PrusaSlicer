@@ -14,7 +14,6 @@
 #include <boost/nowide/fstream.hpp>
 #include <GL/glew.h>
 
-#include <boost/log/trivial.hpp>
 
 using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;

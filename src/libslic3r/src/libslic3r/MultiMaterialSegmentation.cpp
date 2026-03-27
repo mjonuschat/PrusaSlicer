@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <boost/container_hash/hash.hpp>
@@ -798,7 +798,7 @@ static void cut_segmented_layers(const std::vector<ExPolygons>        &input_exp
                                  const float                           interlocking_depth,
                                  const std::function<void()>          &throw_on_cancel_callback)
 {
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Cutting segmented layers in parallel - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Cutting segmented layers in parallel - Begin");
     const float interlocking_cut_width = interlocking_depth > 0.f ? std::max(cut_width - interlocking_depth, 0.f) : 0.f;
     tbb::parallel_for(tbb::blocked_range<size_t>(0, segmented_regions.size()),[&segmented_regions, &input_expolygons, &cut_width, &interlocking_cut_width, &throw_on_cancel_callback](const tbb::blocked_range<size_t>& range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
@@ -814,7 +814,7 @@ static void cut_segmented_layers(const std::vector<ExPolygons>        &input_exp
             }
         }
     }); // end of parallel_for
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Cutting segmented layers in parallel - End";
+    SPDLOG_DEBUG("Print object segmentation - Cutting segmented layers in parallel - End");
 }
 
 static bool is_volume_sinking(const indexed_triangle_set &its, const Transform3d &trafo) {
@@ -848,7 +848,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                                                                                       const size_t                                                             num_facets_states,
                                                                                       const std::function<void()>                                             &throw_on_cancel_callback)
 {
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Segmentation of top and bottom layers in parallel - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Segmentation of top and bottom layers in parallel - Begin");
     const size_t                 num_layers = input_expolygons.size();
     const SpanOfConstPtrs<Layer> layers     = print_object.layers();
 
@@ -1120,7 +1120,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                                                                           triangles_by_color_merged[color_idx - 1][layer_idx]);
         }
     });
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Segmentation of top and bottom layers in parallel - End";
+    SPDLOG_DEBUG("Print object segmentation - Segmentation of top and bottom layers in parallel - End");
 
     return triangles_by_color_merged;
 }
@@ -1135,7 +1135,7 @@ static std::vector<std::vector<ExPolygons>> merge_segmented_layers(const std::ve
     segmented_regions_merged.assign(num_layers, std::vector<ExPolygons>(num_facets_states - 1));
     assert(!top_and_bottom_layers.size() || num_facets_states == top_and_bottom_layers.size());
 
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Merging segmented layers in parallel - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Merging segmented layers in parallel - Begin");
     tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&segmented_regions, &top_and_bottom_layers, &segmented_regions_merged, &num_facets_states, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
             assert(segmented_regions[layer_idx].size() == num_facets_states);
@@ -1166,7 +1166,7 @@ static std::vector<std::vector<ExPolygons>> merge_segmented_layers(const std::ve
             }
         }
     }); // end of parallel_for
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Merging segmented layers in parallel - End";
+    SPDLOG_DEBUG("Print object segmentation - Merging segmented layers in parallel - End");
 
     return segmented_regions_merged;
 }
@@ -2114,7 +2114,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
     std::vector<std::vector<ColorLines>>   color_polygons_lines_layers(num_layers);
 
     // Merge all regions and remove small holes
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Slices preprocessing in parallel - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Slices preprocessing in parallel - Begin");
     tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&layers, &input_expolygons, &input_expolygons_projection_lines_layers, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
             throw_on_cancel_callback();
@@ -2146,9 +2146,9 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             }
         }
     }); // end of parallel_for
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Slices preprocessing in parallel - End";
+    SPDLOG_DEBUG("Print object segmentation - Slices preprocessing in parallel - End");
 
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Slicing painted triangles - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Slicing painted triangles - Begin");
     const std::vector<float> layer_zs = get_print_object_layers_zs(layers);
     for (const Domain::ModelVolume *mv : print_object.model_object()->volumes) {
         std::vector<ColorPolygons> color_polygons_per_layer = slice_model_volume_with_color(*mv, extract_facets_info, layer_zs, print_object, num_facets_states);
@@ -2182,7 +2182,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             }
         }); // end of parallel_for
     }
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Slicing painted triangles - End";
+    SPDLOG_DEBUG("Print object segmentation - Slicing painted triangles - End");
 
     if constexpr (MM_SEGMENTATION_DEBUG_FILTERED_COLOR_LINES) {
         for (size_t layer_idx = 0; layer_idx < print_object.layers().size(); ++layer_idx) {
@@ -2191,7 +2191,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
     }
 
     // Project sliced ColorPolygons on sliced layers (input_expolygons).
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Projection of painted triangles - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Projection of painted triangles - Begin");
     tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&color_polygons_lines_layers, &input_expolygons_projection_lines_layers, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
             throw_on_cancel_callback();
@@ -2205,14 +2205,14 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             project_color_projection_expolygons_on_color_lines(input_expolygons_projection_lines_layers[layer_idx], color_lines_distancer);
         }
     }); // end of parallel_for
-    BOOST_LOG_TRIVIAL(debug) << "MM segmentation - Projection of painted triangles - End";
+    SPDLOG_DEBUG("MM segmentation - Projection of painted triangles - End");
 
     std::vector<std::vector<ExPolygons>>  segmented_regions(num_layers);
     segmented_regions.assign(num_layers, std::vector<ExPolygons>(num_facets_states));
 
     // Be aware that after the projection of the ColorPolygons and its postprocessing isn't
     // ensured that consistency of the color_prev. So, only color_next can be used.
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Layers segmentation in parallel - Begin";
+    SPDLOG_DEBUG("Print object segmentation - Layers segmentation in parallel - Begin");
     tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&input_expolygons_projection_lines_layers, &segmented_regions, &input_expolygons, &num_facets_states, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
             throw_on_cancel_callback();
@@ -2260,7 +2260,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             }
         }
     }); // end of parallel_for
-    BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Layers segmentation in parallel - End";
+    SPDLOG_DEBUG("Print object segmentation - Layers segmentation in parallel - End");
     throw_on_cancel_callback();
 
     // The first index is extruder number (includes default extruder), and the second one is layer number

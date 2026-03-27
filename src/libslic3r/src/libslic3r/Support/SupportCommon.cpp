@@ -5,7 +5,7 @@
 #include <boost/container/static_vector.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cmath>
 #include <initializer_list>
 #include <limits>
@@ -168,7 +168,7 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
 
     if (! intermediate_layers.empty() && support_params.has_interfaces()) {
         // For all intermediate layers, collect top contact surfaces, which are not further than support_material_interface_layers.
-        BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::generate_interface_layers() in parallel - start";
+        SPDLOG_DEBUG("PrintObjectSupportMaterial::generate_interface_layers() in parallel - start");
         const bool snug_supports   = config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsSnug;
         const bool smooth_supports = config.get<Domain::SupportMaterialStyle>("support_material_style") != Domain::SupportMaterialStyle::smsGrid;
         SupportGeneratorLayersPtr &interface_layers       = base_and_interface_layers.first;
@@ -334,7 +334,7 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
         };
         interface_layers      = merge_remove_empty(interface_layers,      top_interface_layers);
         base_interface_layers = merge_remove_empty(base_interface_layers, top_base_interface_layers);
-        BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::generate_interface_layers() in parallel - end";
+        SPDLOG_DEBUG("PrintObjectSupportMaterial::generate_interface_layers() in parallel - end");
     }
     
     return base_and_interface_layers;

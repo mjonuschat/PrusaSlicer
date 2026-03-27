@@ -12,7 +12,7 @@
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include <libslic3r/Model.hpp>
 #include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include "libslic3r/I18N_private.hpp"
 #include <functional>
 #include <numeric>
@@ -166,8 +166,7 @@ void cut_drainholes(std::vector<ExPolygons> & obj_slices,
     std::vector<ExPolygons> hole_slices = slice_mesh_ex(mesh.its, slicegrid, closing_radius, thr);
     
     if (obj_slices.size() != hole_slices.size())
-        BOOST_LOG_TRIVIAL(warning)
-            << "Sliced object and drain-holes layer count does not match!";
+        SPDLOG_WARN("Sliced object and drain-holes layer count does not match!");
 
     size_t until = std::min(obj_slices.size(), hole_slices.size());
     
@@ -442,10 +441,8 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
         new_faces.emplace_back(Index3{int(o), int(o + 1), int(o + 2)});
     }
 
-    BOOST_LOG_TRIVIAL(info)
-            << "Trimming: " << mesh_mods.to_remove_cnt() << " triangles removed";
-    BOOST_LOG_TRIVIAL(info)
-            << "Trimming: " << mesh_mods.new_triangles.size() << " triangles added";
+    SPDLOG_INFO("Trimming: {} triangles removed", mesh_mods.to_remove_cnt());
+    SPDLOG_INFO("Trimming: {} triangles added", mesh_mods.new_triangles.size());
 
     faces.swap(new_faces);
     new_faces = {};
@@ -669,9 +666,9 @@ double get_voxel_scale(double mesh_volume, const HollowingConfig &hc)
     double max_oversampl_scaled = std::max(min_oversampl, MAX_OVERSAMPL / sc_divider);
     auto   voxel_scale          = min_oversampl + (max_oversampl_scaled - min_oversampl) * hc.quality;
 
-    BOOST_LOG_TRIVIAL(debug) << "Hollowing: max oversampl will be: " << max_oversampl_scaled;
-    BOOST_LOG_TRIVIAL(debug) << "Hollowing: voxel scale will be: " << voxel_scale;
-    BOOST_LOG_TRIVIAL(debug) << "Hollowing: mesh volume is: " << mesh_volume;
+    SPDLOG_DEBUG("Hollowing: max oversampl will be: {}", max_oversampl_scaled);
+    SPDLOG_DEBUG("Hollowing: voxel scale will be: {}", voxel_scale);
+    SPDLOG_DEBUG("Hollowing: mesh volume is: {}", mesh_volume);
 
     return voxel_scale;
 }

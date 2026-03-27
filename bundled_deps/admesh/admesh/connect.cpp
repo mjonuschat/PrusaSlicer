@@ -29,7 +29,7 @@
 #include <vector>
 
 #include <boost/predef/other/endian.h>
-#include <boost/log/trivial.hpp>
+#include <spdlog/spdlog.h>
 // Boost pool: Don't use mutexes to synchronize memory allocation.
 #define BOOST_POOL_NO_MT
 #include <boost/pool/object_pool.hpp>
@@ -400,7 +400,7 @@ private:
 
 				if (facet_num == first_facet) {
 					// back to the beginning
-					BOOST_LOG_TRIVIAL(info) << "Back to the first facet changing vertices: probably a mobius part. Try using a smaller tolerance or don't do a nearby check.";
+					SPDLOG_INFO("Back to the first facet changing vertices: probably a mobius part. Try using a smaller tolerance or don't do a nearby check.");
 					return;
 				}
 			}
@@ -534,7 +534,7 @@ void stl_remove_unconnected_facets(stl_file *stl)
 		    	if (neighbors.neighbor[i] != -1) {
 			    	int &other_face_idx = stl->neighbors_start[neighbors.neighbor[i]].neighbor[(neighbors.which_vertex_not[i] + 1) % 3];
 			  		if (other_face_idx != stl->stats.number_of_facets) {
-			  			BOOST_LOG_TRIVIAL(info) << "in remove_facet: neighbor = " << other_face_idx << " numfacets = " << stl->stats.number_of_facets << " this is wrong";
+			  			SPDLOG_INFO("in remove_facet: neighbor = {} numfacets = {} this is wrong", other_face_idx, stl->stats.number_of_facets);
 			    		return;
 			  		}
 			  		other_face_idx = facet_number;
@@ -722,7 +722,7 @@ void stl_fill_holes(stl_file *stl)
 
 	    		if (facet_num == first_facet) {
 	      			// back to the beginning
-		  			BOOST_LOG_TRIVIAL(info) << "Back to the first facet filling holes: probably a mobius part. Try using a smaller tolerance or don't do a nearby check.";
+		  			SPDLOG_INFO("Back to the first facet filling holes: probably a mobius part. Try using a smaller tolerance or don't do a nearby check.");
 	      			return;
 	    		}
 	  		}

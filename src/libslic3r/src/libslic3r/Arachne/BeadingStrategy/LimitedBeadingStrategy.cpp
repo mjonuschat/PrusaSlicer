@@ -1,7 +1,7 @@
 //Copyright (c) 2022 Ultimaker B.V.
 //CuraEngine is released under the terms of the AGPLv3 or higher.
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cassert>
 #include <utility>
 #include <cstddef>
@@ -35,7 +35,7 @@ LimitedBeadingStrategy::LimitedBeadingStrategy(const coord_t max_bead_count, Bea
 {
     if (max_bead_count % 2 == 1)
     {
-        BOOST_LOG_TRIVIAL(warning) << "LimitedBeadingStrategy with odd bead count is odd indeed!";
+        SPDLOG_WARN("LimitedBeadingStrategy with odd bead count is odd indeed!");
     }
 }
 
@@ -58,7 +58,7 @@ LimitedBeadingStrategy::Beading LimitedBeadingStrategy::compute(coord_t thicknes
     assert(bead_count == max_bead_count + 1);
     if(bead_count != max_bead_count + 1)
     {
-        BOOST_LOG_TRIVIAL(warning) << "Too many beads! " << bead_count << " != " << max_bead_count + 1;
+        SPDLOG_WARN("Too many beads! {} != {}", bead_count, max_bead_count + 1);
     }
 
     coord_t optimal_thickness = parent->getOptimalThickness(max_bead_count);

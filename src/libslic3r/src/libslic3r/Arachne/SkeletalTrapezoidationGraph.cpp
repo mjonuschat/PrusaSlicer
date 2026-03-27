@@ -4,7 +4,7 @@
 #include "SkeletalTrapezoidationGraph.hpp"
 
 #include <ankerl/unordered_dense.h>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <iostream>
 #include <cassert>
@@ -239,7 +239,7 @@ void SkeletalTrapezoidationGraph::collapseSmallEdges(coord_t snap_dist)
             assert(quad_mid->twin);
             if(!quad_mid->twin)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Encountered quad edge without a twin.";
+                SPDLOG_WARN("Encountered quad edge without a twin.");
                 continue; //Prevent accessing unallocated memory.
             }
             int count = 0;

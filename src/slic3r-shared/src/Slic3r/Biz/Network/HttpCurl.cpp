@@ -10,7 +10,6 @@
 #include "libslic3r/libslic3r_version.h"
 
 #include "fmt/format.h"
-#include <boost/log/trivial.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <random>
 #include <thread>

@@ -43,7 +43,7 @@
 //#include <libslic3r/ShortEdgeCollapse.hpp>
 #include "libslic3r/BuildVolume.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include "libslic3r/I18N_private.hpp"
@@ -222,7 +222,7 @@ std::optional<indexed_triangle_set> create_cgal_preview(const CSGContainer& mesh
         cgalmeshptr = csg::perform_csgmesh_booleans(r);
     } catch (...) {
         // leaves cgalmeshptr as nullptr
-        BOOST_LOG_TRIVIAL(warning) << "CSG mesh is not egligible for proper CGAL booleans!";
+        SPDLOG_WARN("CSG mesh is not egligible for proper CGAL booleans!");
         return std::nullopt;
     }
 
@@ -434,7 +434,7 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject& po, SLAPrintObjectStep st
             handled = true;
         } else {
             issues.push_back(ObjectIssueType::BadCGALBooleans);
-            BOOST_LOG_TRIVIAL(warning) << "CSG mesh is not egligible for proper CGAL booleans!";
+            SPDLOG_WARN("CSG mesh is not egligible for proper CGAL booleans!");
         }
     } else {
         // Normal cgal processing failed. If there are no negative volumes,
@@ -474,24 +474,24 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject& po, SLAPrintObjectStep st
 
                 if (ret & static_cast<int>(sla::HollowMeshResult::FaultyMesh)) {
                     issues.push_back(ObjectIssueType::BadMashForHollowing);
-                    BOOST_LOG_TRIVIAL(warning) << "Mesh to be hollowed is not suitable for hollowing (does not bound a volume).";
+                    SPDLOG_WARN("Mesh to be hollowed is not suitable for hollowing (does not bound a volume).");
                 }
                 if (ret & static_cast<int>(sla::HollowMeshResult::FaultyHoles)) {
                     issues.push_back(ObjectIssueType::BadHoles);
-                    BOOST_LOG_TRIVIAL(warning) << "Unable to drill the current configuration of holes into the model.";
+                    SPDLOG_WARN("Unable to drill the current configuration of holes into the model.");
                 }
 
                 handled = true;
 
                 if (ret & static_cast<int>(sla::HollowMeshResult::DrillingFailed)) {
                     issues.push_back(ObjectIssueType::BadHolesDrilling);
-                    BOOST_LOG_TRIVIAL(warning) << "Drilling holes into the mesh failed. This is usually caused by broken model. Try to fix it first.";
+                    SPDLOG_WARN("Drilling holes into the mesh failed. This is usually caused by broken model. Try to fix it first.");
                     handled = false;
                 }
 
                 if (hole_fail) {
                     issues.push_back(ObjectIssueType::BadHolesFailed);
-                    BOOST_LOG_TRIVIAL(warning) << "Failed to drill some holes into the model";
+                    SPDLOG_WARN("Failed to drill some holes into the model");
                     handled = false;
                 }
             }
@@ -501,7 +501,7 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject& po, SLAPrintObjectStep st
     if (!handled) { // Last resort to voxelization.
         m = generate_preview_vdb(po);
         issues.push_back(ObjectIssueType::VoxelizedPreview);
-        BOOST_LOG_TRIVIAL(warning) << "Some parts of the print will be previewed with approximated meshes. This does not affect the quality of slices or the physical print in any way.";
+        SPDLOG_WARN("Some parts of the print will be previewed with approximated meshes. This does not affect the quality of slices or the physical print in any way.");
     }
 
     // recreate preview instances
@@ -536,11 +536,11 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
     clear_csg(po.m_mesh_to_slice, slaposHollowing);
 
     if (!po.m_config.get<bool>("hollowing_enable")) {
-        BOOST_LOG_TRIVIAL(info) << "Skipping hollowing step!";
+        SPDLOG_INFO("Skipping hollowing step!");
         return;
     }
 
-    BOOST_LOG_TRIVIAL(info) << "Performing hollowing step!";
+    SPDLOG_INFO("Performing hollowing step!");
 
     double thickness = po.m_config.get<double>("hollowing_min_thickness");
     double quality  = po.m_config.get<double>("hollowing_quality");
@@ -552,7 +552,7 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
 
     sla::InteriorPtr interior = generate_interior(po.mesh_to_slice(), hlwcfg, ctl);
     if (!interior || sla::get_mesh(*interior).empty()) {
-        BOOST_LOG_TRIVIAL(warning) << "Hollowed interior is empty!";
+        SPDLOG_WARN("Hollowed interior is empty!");
         return;
     }
     
@@ -787,7 +787,7 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     if (!po.m_supportable_mesh.has_value()) {
         assert(po.m_preview.has_value() && po.m_preview->mesh);
         if (!po.m_preview.has_value() || po.m_preview->mesh == nullptr) {
-            BOOST_LOG_TRIVIAL(warning) << "No mesh to support!";
+            SPDLOG_WARN("No mesh to support!");
             return;
         }
         const TriangleMesh& tm = *po.m_preview->mesh;
@@ -904,7 +904,7 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     SuppPtMask mask{blockers, enforcers, po.config().get<bool>("support_enforcers_only")};
     filter_support_points_by_modifiers(support_points, mask, po.m_model_height_levels);
     
-    BOOST_LOG_TRIVIAL(debug) << "Automatic support points: " << support_points.size();
+    SPDLOG_DEBUG("Automatic support points: {}", support_points.size());
     po.m_preview->support_points = std::make_shared<const SupportPoints>(std::move(support_points));
     po.m_supportable_mesh->pts = po.m_preview->support_points;
 }

@@ -10,7 +10,7 @@
 ///|/
 #include "libslic3r/Layer.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <clipper/clipper_z.hpp>
 #include <cstdint>
 #include <iterator>
@@ -720,7 +720,7 @@ inline bool has_compatible_layer_regions(const PrintRegionConfigView &config, co
 // The resulting fill surface is split back among the originating regions.
 void Layer::make_perimeters()
 {
-    BOOST_LOG_TRIVIAL(trace) << "Generating perimeters for layer " << this->id();
+    SPDLOG_TRACE("Generating perimeters for layer {}", this->id());
     
     // keep track of regions whose perimeters we have already generated
     std::vector<unsigned char>                              done(m_regions.size(), false);
@@ -757,7 +757,7 @@ void Layer::make_perimeters()
             continue;
         }
 
-        BOOST_LOG_TRIVIAL(trace) << "Generating perimeters for layer " << this->id() << ", region " << curr_region_id;
+        SPDLOG_TRACE("Generating perimeters for layer {}, region {}", this->id(), curr_region_id);
         done[curr_region_id]                 = true;
         const PrintRegionConfigView &curr_config = curr_region.region().config();
 
@@ -852,7 +852,7 @@ void Layer::make_perimeters()
         }
     }
 
-    BOOST_LOG_TRIVIAL(trace) << "Generating perimeters for layer " << this->id() << " - Done";
+    SPDLOG_TRACE("Generating perimeters for layer {} - Done", this->id());
 }
 
 void Layer::sort_perimeters_into_islands(
