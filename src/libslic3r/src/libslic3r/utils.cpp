@@ -83,38 +83,6 @@ namespace Slic3r {
 
 
 // TODO: migrate this logging stuff to slic3r-base/Slic3r/Log.hpp
-#ifndef __EMSCRIPTEN__
-static boost::log::trivial::severity_level boost_log_severity = boost::log::trivial::error;
-
-static boost::log::trivial::severity_level level_to_boost(unsigned level)
-{
-    switch (level) {
-    // Report fatal errors only.
-    case 0: return boost::log::trivial::fatal;
-    // Report fatal errors and errors.
-    case 1: return boost::log::trivial::error;
-    // Report fatal errors, errors and warnings.
-    case 2: return boost::log::trivial::warning;
-    // Report all errors, warnings and infos.
-    case 3: return boost::log::trivial::info;
-    // Report all errors, warnings, infos and debugging.
-    case 4: return boost::log::trivial::debug;
-    // Report everything including fine level tracing information.
-    default: return boost::log::trivial::trace;
-    }
-}
-
-void set_boost_logging_level(unsigned int level)
-{
-    boost_log_severity = level_to_boost(level);
-
-    boost::log::core::get()->set_filter
-    (
-        boost::log::trivial::severity >= boost_log_severity
-    );
-}
-#endif // #ifndef __EMSCRIPTEN__
-
 static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
 {
     switch (level) {
@@ -138,9 +106,6 @@ void set_logging_level(unsigned int level)
 {
     spdlog::level::level_enum lvl = log_level_to_spdlog(level);
     spdlog::set_level(lvl);
-#ifndef __EMSCRIPTEN__
-    set_boost_logging_level(level);
-#endif
 }
 
 unsigned get_logging_level()
@@ -1021,7 +986,7 @@ std::string format_memsize(size_t bytes, unsigned int decimals)
 std::string log_memory_info(bool ignore_loglevel)
 {
     std::string out;
-    if (ignore_loglevel || /*boost_log_severity <= boost::log::trivial::info*/ spdlog::get_level() <= spdlog::level::info) {
+    if (ignore_loglevel || spdlog::get_level() <= spdlog::level::info) {
 #ifdef WIN32
     #ifndef PROCESS_MEMORY_COUNTERS_EX
         // MingW32 doesn't have this struct in psapi.h

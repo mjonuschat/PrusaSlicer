@@ -14,7 +14,7 @@ std::string get_json_print_tool_filament_profiles(const std::string& printer_pro
 
 // Load full print config into config
 // Return value is always error string if any exists
-// Note, that all appearing warnings are added into BOOST_LOG
+// Note, that all appearing warnings are added into log
 // When printer_technology is set, then it will be compared with printer technology of the printer_profile and return the error, when they aren't the same
 std::string load_full_print_config(
     const std::string& print_preset_name,
