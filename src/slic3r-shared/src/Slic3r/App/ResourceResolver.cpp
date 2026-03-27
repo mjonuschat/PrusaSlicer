@@ -4,8 +4,9 @@
 ///|/
 #include "Slic3r/App/ResourceResolver.hpp"
 
-#include <Slic3r/Log.hpp>
+#include <optional>
 
+#include <Slic3r/Log.hpp>
 #include <boost/filesystem/operations.hpp>
 
 namespace Slic3r::App {

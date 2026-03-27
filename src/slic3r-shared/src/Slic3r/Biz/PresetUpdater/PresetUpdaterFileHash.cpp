@@ -1,5 +1,7 @@
 #include "PresetUpdaterFileHash.hpp"
 
+#include <iomanip>
+
 #include "Slic3r/Biz/SHA256.hpp"
 
 #include "Slic3r/Exception.hpp"

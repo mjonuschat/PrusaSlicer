@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <ranges>
 
 namespace Slic3r::Biz::Network {
 
