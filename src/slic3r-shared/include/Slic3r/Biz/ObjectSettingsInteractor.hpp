@@ -45,6 +45,7 @@ public:
         Scene::SceneInteractor& scene_interactor
     );
     ~ObjectSettingsInteractor();
+    ObjectSettingsInteractor(ObjectSettingsInteractor&&) = default;
 
     std::weak_ptr<ObjectSettingsObservableList> object_observable_list() const;
 

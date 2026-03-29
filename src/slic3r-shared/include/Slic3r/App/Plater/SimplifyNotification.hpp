@@ -12,7 +12,7 @@ namespace Slic3r::App::Plater {
 /**
 * @brief Manage notification about huge triangle meshes with suggestion to simplify it
 */
-class SimplifyNotification : public Biz::Scene::ISceneChangedListener 
+class SimplifyNotification final : public Biz::Scene::ISceneChangedListener
 {    
 public:
     SimplifyNotification(

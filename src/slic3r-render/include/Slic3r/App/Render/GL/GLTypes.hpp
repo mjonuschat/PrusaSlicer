@@ -72,8 +72,10 @@ inline GLenum type(BufferTarget target)
     case BufferTarget::TextureBuffer:
         return GL_TEXTURE_BUFFER;
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    default:
+        throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(FramebufferTarget target)
@@ -86,8 +88,10 @@ inline GLenum type(FramebufferTarget target)
         return GL_DRAW_FRAMEBUFFER;
     case FramebufferTarget::ReadFramebuffer:
         return GL_READ_FRAMEBUFFER;
+    default:
+        throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(TextureTarget target)
@@ -116,8 +120,10 @@ inline GLenum type(TextureTarget target)
         return GL_TEXTURE_2D_MULTISAMPLE;
     case TextureTarget::Texture2DMultisampleArray:
         return GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+    default:
+        throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(BufferUsage usage)
@@ -129,8 +135,10 @@ inline GLenum type(BufferUsage usage)
         return GL_DYNAMIC_DRAW;
     case BufferUsage::StreamDraw:
         return GL_STREAM_DRAW;
+    default:
+        throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(BufferAccess access)
@@ -139,8 +147,9 @@ inline GLenum type(BufferAccess access)
     case BufferAccess::ReadOnly:  return GL_READ_ONLY;
     case BufferAccess::WriteOnly: return GL_WRITE_ONLY;
     case BufferAccess::ReadWrite: return GL_READ_WRITE;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(TextureMinFilter filter)
@@ -153,8 +162,9 @@ inline GLenum type(TextureMinFilter filter)
     case TextureMinFilter::MipMapLinearNearest:  return GL_LINEAR_MIPMAP_NEAREST;
     case TextureMinFilter::MipMapNearestLinear:  return GL_NEAREST_MIPMAP_LINEAR;
     case TextureMinFilter::MipMapLinearLinear:   return GL_LINEAR_MIPMAP_LINEAR;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(TextureMagFilter filter)
@@ -163,8 +173,9 @@ inline GLenum type(TextureMagFilter filter)
     {
     case TextureMagFilter::Linear:  return GL_LINEAR;
     case TextureMagFilter::Nearest: return GL_NEAREST;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(TextureWrap wrap)
@@ -176,8 +187,9 @@ inline GLenum type(TextureWrap wrap)
     case TextureWrap::Repeat:            return GL_REPEAT;
     case TextureWrap::MirroredRepeat:    return GL_MIRRORED_REPEAT;
     case TextureWrap::MirrorClampToEdge: return GL_MIRROR_CLAMP_TO_EDGE;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();    
 }
 
 inline GLenum type(CullFaceMode mode)
@@ -187,8 +199,9 @@ inline GLenum type(CullFaceMode mode)
     case CullFaceMode::Front:         return GL_FRONT;
     case CullFaceMode::Back:          return GL_BACK;
     case CullFaceMode::FrontAndBack:  return GL_FRONT_AND_BACK;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{"Unreachable code!"};
+    UNREACHABLE();
 }
 
 inline GLenum type(BlitFramebufferMask mask)
@@ -198,8 +211,9 @@ inline GLenum type(BlitFramebufferMask mask)
     case BlitFramebufferMask::ColorBufferBit:   return GL_COLOR_BUFFER_BIT;
     case BlitFramebufferMask::DepthBufferBit:   return GL_DEPTH_BUFFER_BIT;
     case BlitFramebufferMask::StencilBufferBit: return GL_STENCIL_BUFFER_BIT;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{ "Unreachable code!" };
+    UNREACHABLE();
 }
 
 inline GLenum type(BlitFramebufferFilter filter)
@@ -208,8 +222,9 @@ inline GLenum type(BlitFramebufferFilter filter)
     {
     case BlitFramebufferFilter::Nearest: return GL_NEAREST;
     case BlitFramebufferFilter::Linear:  return GL_LINEAR;
+    default: throw std::runtime_error{"Unreachable code!"};
     }
-    throw std::runtime_error{ "Unreachable code!" };
+    UNREACHABLE();
 }
 
 const char* shader_input_name(VertexAttribType vat);
