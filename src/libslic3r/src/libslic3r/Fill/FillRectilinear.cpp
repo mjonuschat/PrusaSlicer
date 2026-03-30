@@ -8,7 +8,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/container/small_vector.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/scalable_allocator.h>
 #include <boost/container/vector.hpp>
 #include <algorithm>
@@ -433,7 +433,7 @@ public:
         // assert(aoffset2 == 0 || aoffset2 < aoffset1);
 //        bool sticks_removed = 
         remove_sticks(polygons_src);
-//        if (sticks_removed) BOOST_LOG_TRIVIAL(error) << "Sticks removed!";
+        SPDLOG_ERROR("Sticks removed!");
         polygons_outer = aoffset1 == 0 ? Algorithms::ExPolygon::to_polygons(polygons_src) : offset(polygons_src, float(aoffset1), ClipperLib::jtMiter, miterLimit);
         if (aoffset2 < 0)
             polygons_inner = shrink(polygons_outer, float(aoffset1 - aoffset2), ClipperLib::jtMiter, miterLimit);
@@ -3002,7 +3002,7 @@ Polylines FillRectilinear::fill_surface(const Surface *surface, const FillParams
 {
     Polylines polylines_out;
     if (! fill_surface_by_lines(surface, params, 0.f, 0.f, polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillRectilinear::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillRectilinear::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3012,7 +3012,7 @@ Polylines FillMonotonic::fill_surface(const Surface *surface, const FillParams &
     params2.monotonic = true;
     Polylines polylines_out;
     if (! fill_surface_by_lines(surface, params2, 0.f, 0.f, polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillMonotonic::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillMonotonic::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3023,7 +3023,7 @@ Polylines FillMonotonicLines::fill_surface(const Surface *surface, const FillPar
     params2.anchor_length_max = 0.0f;
     Polylines polylines_out;
     if (! fill_surface_by_lines(surface, params2, 0.f, 0.f, polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillMonotonicLines::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillMonotonicLines::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3034,7 +3034,7 @@ Polylines FillGrid::fill_surface(const Surface *surface, const FillParams &param
             surface, params,
             { { 0.f, 0.f }, { float(M_PI / 2.), 0.f } },
             polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillGrid::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillGrid::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3045,7 +3045,7 @@ Polylines FillTriangles::fill_surface(const Surface *surface, const FillParams &
             surface, params,
             { { 0.f, 0.f }, { float(M_PI / 3.), 0.f }, { float(2. * M_PI / 3.), 0. } },
             polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillTriangles::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillTriangles::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3056,7 +3056,7 @@ Polylines FillStars::fill_surface(const Surface *surface, const FillParams &para
             surface, params,
             { { 0.f, 0.f }, { float(M_PI / 3.), 0.f }, { float(2. * M_PI / 3.), float((3./2.) * this->spacing / params.density) } },
             polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillStars::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillStars::fill_surface() failed to fill a region.");
     return polylines_out;
 }
 
@@ -3068,7 +3068,7 @@ Polylines FillCubic::fill_surface(const Surface *surface, const FillParams &para
             surface, params, 
             { { 0.f, float(dx) }, { float(M_PI / 3.), - float(dx) }, { float(M_PI * 2. / 3.), float(dx) } },
             polylines_out))
-        BOOST_LOG_TRIVIAL(error) << "FillCubic::fill_surface() failed to fill a region.";
+        SPDLOG_ERROR("FillCubic::fill_surface() failed to fill a region.");
     return polylines_out; 
 }
 

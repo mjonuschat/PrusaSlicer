@@ -4,8 +4,6 @@
 ///|/
 #include "Slic3r/Platform.hpp"
 #include "Slic3r/Log.hpp"
-
-#include <boost/log/trivial.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #if defined(__APPLE__)
@@ -22,11 +20,11 @@ static auto s_platform_flavor = PlatformFlavor::Uninitialized;
 void detect_platform()
 {
 #if defined(_WIN32)
-    BOOST_LOG_TRIVIAL(info) << "Platform: Windows";
+    SPDLOG_INFO("Platform: Windows");
 	s_platform 		  = Platform::Windows;
 	s_platform_flavor = PlatformFlavor::Generic;
 #elif defined(__APPLE__)
-    BOOST_LOG_TRIVIAL(info) << "Platform: OSX";
+    SPDLOG_INFO("Platform: OSX");
     s_platform        = Platform::OSX;
     s_platform_flavor = PlatformFlavor::GenericOSX;
     {
@@ -42,26 +40,26 @@ void detect_platform()
                     if (errno == ENOENT) {
                         // Native CPU is X86, and property sysctl.proc_translated doesn't exist.
                         s_platform_flavor = PlatformFlavor::OSXOnX86;
-                        BOOST_LOG_TRIVIAL(info) << "Platform flavor: OSXOnX86";
+                        SPDLOG_INFO("Platform flavor: OSXOnX86");
                     }
                 } else if (proc_translated == 1) {
                     // Native CPU is ARM and PrusaSlicer runs through Rosetta.
                     s_platform_flavor = PlatformFlavor::OSXOnArm;
-                    BOOST_LOG_TRIVIAL(info) << "Platform flavor: OSXOnArm";
+                    SPDLOG_INFO("Platform flavor: OSXOnArm");
                 } else {
                     // Native CPU is X86.
                     s_platform_flavor = PlatformFlavor::OSXOnX86;
-                    BOOST_LOG_TRIVIAL(info) << "Platform flavor: OSXOnX86";
+                    SPDLOG_INFO("Platform flavor: OSXOnX86");
                 }
             } else if (type == CPU_TYPE_ARM) {
                 // Native CPU is ARM
                 s_platform_flavor = PlatformFlavor::OSXOnArm;
-                BOOST_LOG_TRIVIAL(info) << "Platform flavor: OSXOnArm";
+                SPDLOG_INFO("Platform flavor: OSXOnArm");
             }
         }
     }
 #elif defined(__linux__)
-    BOOST_LOG_TRIVIAL(info) << "Platform: Linux";
+    SPDLOG_INFO("Platform: Linux");
 	s_platform 		  = Platform::Linux;
 	s_platform_flavor = PlatformFlavor::GenericLinux;
 	// Test for Chromium.
@@ -73,13 +71,13 @@ void detect_platform()
 			if (::fgets(buf, 4096, f)) {
 				if (strstr(buf, "Chromium OS") != nullptr) {
 					s_platform_flavor = PlatformFlavor::LinuxOnChromium;
-				    BOOST_LOG_TRIVIAL(info) << "Platform flavor: LinuxOnChromium";
+				    SPDLOG_INFO("Platform flavor: LinuxOnChromium");
 				} else if (strstr(buf, "microsoft") != nullptr || strstr(buf, "Microsoft") != nullptr) {
 					if (boost::filesystem::exists("/run/WSL") && getenv("WSL_INTEROP") != nullptr) {
-						BOOST_LOG_TRIVIAL(info) << "Platform flavor: WSL2";
+						SPDLOG_INFO("Platform flavor: WSL2");
 						s_platform_flavor = PlatformFlavor::WSL2;
 					} else {
-						BOOST_LOG_TRIVIAL(info) << "Platform flavor: WSL";
+						SPDLOG_INFO("Platform flavor: WSL");
 						s_platform_flavor = PlatformFlavor::WSL;
 					}
 				}
@@ -88,7 +86,7 @@ void detect_platform()
 		}
 	}
 #elif defined(__OpenBSD__)
-    BOOST_LOG_TRIVIAL(info) << "Platform: OpenBSD";
+    SPDLOG_INFO("Platform: OpenBSD");
 	s_platform 		  = Platform::BSDUnix;
 	s_platform_flavor = PlatformFlavor::OpenBSD;
 #elif defined(__EMSCRIPTEN__)
@@ -97,7 +95,7 @@ void detect_platform()
     s_platform_flavor = PlatformFlavor::Generic;
 #else
 	// This should not happen.
-    BOOST_LOG_TRIVIAL(info) << "Platform: Unknown";
+    SPDLOG_INFO("Platform: Unknown");
 	static_assert(false, "Unknown platform detected");
 	s_platform 		  = Platform::Unknown;
 	s_platform_flavor = PlatformFlavor::Unknown;

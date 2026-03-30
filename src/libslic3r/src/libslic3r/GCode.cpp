@@ -61,7 +61,7 @@
 #include <boost/algorithm/string/find.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/cstdio.hpp>
@@ -753,7 +753,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
         );
     }
 
-    BOOST_LOG_TRIVIAL(info) << "Exporting G-code..." << log_memory_info();
+    SPDLOG_INFO("Exporting G-code... {}", log_memory_info());
 
     ProcessorConfig processor_config = DoExport::populate_processor_config(
         print->config(),
@@ -778,7 +778,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
         }};
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
+    SPDLOG_DEBUG("Start processing gcode, {}", log_memory_info());
     ProcessorResult result{processor.finalize()};
     PostProcessorConfig post_processor_config = processor.post_processor_config();
     result                                    = GCode::post_process(
@@ -789,7 +789,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
         [print](Biz::Slicing::Warning warning)
         { print->append_warning_callback(std::move(warning)); }
     );
-    BOOST_LOG_TRIVIAL(debug) << "Finished processing gcode, " << log_memory_info();
+    SPDLOG_DEBUG("Finished processing gcode, {}", log_memory_info());
 
     print->set_done(psGCodeExport);
 
@@ -1016,7 +1016,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
         if (str.size() < 50 && std::all_of(str.begin(), str.end(), [](char c) { return c < 127 && c != '\n' && c != '\r'; }))
             prepared_by_info = extras;
         else {
-            BOOST_LOG_TRIVIAL(error) << "Value in SLIC3R_PREPARED_BY_INFO env variable is invalid. Closing.";
+            SPDLOG_ERROR("Value in SLIC3R_PREPARED_BY_INFO env variable is invalid. Closing.");
             std::terminate();
         }
     }
@@ -2934,8 +2934,7 @@ LayerResult GCodeGenerator::process_layer(
     }
 
 
-    BOOST_LOG_TRIVIAL(trace) << "Exported layer " << layer.id() << " print_z " << print_z <<
-    log_memory_info();
+    SPDLOG_TRACE("Exported layer {} print_z {} {}", layer.id(), print_z, log_memory_info());
 
     result.gcode = std::move(gcode);
     result.cooling_buffer_flush = object_layer || raft_layer || last_layer;
@@ -3836,8 +3835,7 @@ Polyline GCodeGenerator::generate_travel_xy_path(
     Polyline xy_path{start_point, end_point};
     if (config.avoid_crossing_curled_overhangs) {
         if (avoid_crossing_perimeters) {
-            BOOST_LOG_TRIVIAL(warning)
-                << "Option >avoid crossing curled overhangs< is not compatible with avoid crossing perimeters and it will be ignored!";
+            SPDLOG_WARN("Option >avoid crossing curled overhangs< is not compatible with avoid crossing perimeters and it will be ignored!");
         } else {
             xy_path = this->m_avoid_crossing_curled_overhangs.find_path(
                 start_point + scaled_origin,

@@ -12,7 +12,7 @@
 
 #include "TreeSupport.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/partitioner.h>
@@ -624,8 +624,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
                     } else {
                         if (current_point == next_point->first) {
                             // In case a fixpoint is encountered, better aggressively overcompensate so the code does not become stuck here...
-                            BOOST_LOG_TRIVIAL(warning) << "Tree Support: Encountered a fixpoint in polyline_sample_next_point_at_distance. This is expected to happen if the distance (currently " << next_distance << 
-                                ") is smaller than 100";
+                            SPDLOG_WARN("Tree Support: Encountered a fixpoint in polyline_sample_next_point_at_distance. This is expected to happen if the distance (currently {}) is smaller than 100", next_distance);
                             tree_supports_show_error("Encountered issue while placing tips. Some tips may be missing."sv, true);
                             if (next_distance > 2 * current_distance)
                                 // This case should never happen, but better safe than sorry.
@@ -775,7 +774,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
     if (! first.empty() || ! second.empty()) {
         result = union_(first, second);
         if (result.empty()) {
-            BOOST_LOG_TRIVIAL(debug) << "Caught an area destroying union, enlarging areas a bit.";
+            SPDLOG_DEBUG("Caught an area destroying union, enlarging areas a bit.");
             // just take the few lines we have, and offset them a tiny bit. Needs to be offsetPolylines, as offset may aleady have problems with the area.
             result = union_(offset(Algorithms::Polygon::to_polylines(first), scaled<float>(0.002), jtMiter, 1.2), offset(Algorithms::Polygon::to_polylines(second), scaled<float>(0.002), jtMiter, 1.2));
         }
@@ -809,7 +808,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
     if (distance == 0)
         return do_final_difference ? diff(ret, collision_trimmed()) : union_(ret);
     if (safe_step_size < 0 || last_step_offset_without_check < 0) {
-        BOOST_LOG_TRIVIAL(error) << "Offset increase got invalid parameter!";
+        SPDLOG_ERROR("Offset increase got invalid parameter!");
         tree_supports_show_error("Negative offset distance... How did you manage this ?"sv, true);
         return do_final_difference ? diff(ret, collision_trimmed()) : union_(ret);
     }
@@ -960,7 +959,7 @@ private:
         bool gracious = to_bp || p.second == LineStatus::TO_MODEL_GRACIOUS || p.second == LineStatus::TO_MODEL_GRACIOUS_SAFE;
         bool safe_radius = p.second == LineStatus::TO_BP_SAFE || p.second == LineStatus::TO_MODEL_GRACIOUS_SAFE;
         if (! config.support_rests_on_model && ! to_bp) {
-            BOOST_LOG_TRIVIAL(warning) << "Tried to add an invalid support point";
+            SPDLOG_WARN("Tried to add an invalid support point");
             tree_supports_show_error("Unable to add tip. Some overhang may not be supported correctly."sv, true);
             return;
         }
@@ -1620,8 +1619,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
         if (! current_elem.to_buildplate && Algorithms::Polygon::area(to_bp_data) > tiny_area_threshold) {
             // mostly happening in the tip, but with merges one should check every time, just to be sure.
             current_elem.to_buildplate = true; // sometimes nodes that can reach the buildplate are marked as cant reach, tainting subtrees. This corrects it.
-            BOOST_LOG_TRIVIAL(debug) << "Corrected taint leading to a wrong to model value on layer " << layer_idx - 1 << " targeting " << 
-                current_elem.target_height << " with radius " << radius;
+            SPDLOG_DEBUG("Corrected taint leading to a wrong to model value on layer {} targeting {} with radius {}", layer_idx - 1, current_elem.target_height, radius);
         }
     }
     if (config.support_rests_on_model) {
@@ -1631,8 +1629,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
         if (!current_elem.to_model_gracious) {
             if (mergelayer && Algorithms::Polygon::area(to_model_data) >= tiny_area_threshold) {
                 current_elem.to_model_gracious = true;
-                BOOST_LOG_TRIVIAL(debug) << "Corrected taint leading to a wrong non gracious value on layer " << layer_idx - 1 << " targeting " << 
-                    current_elem.target_height << " with radius " << radius;
+                SPDLOG_DEBUG("Corrected taint leading to a wrong non gracious value on layer {} targeting {} with radius {}", layer_idx - 1, current_elem.target_height, radius);
             } else
                 // Cannot route to gracious areas. Push the tree away from object and route it down anyways.
                 to_model_data = safe_union(diff_clipped(increased, volumes.getCollision(radius, layer_idx - 1, settings.use_min_distance)));
@@ -1701,8 +1698,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
                 ));
             check_layer_data = current_elem.to_buildplate ? to_bp_data : to_model_data;
             if (Algorithms::Polygon::area(check_layer_data) < tiny_area_threshold) {
-                BOOST_LOG_TRIVIAL(error) << "Lost area by doing catch up from " << ceil_radius_before << " to radius " << 
-                    volumes.ceilRadius(support_element_collision_radius(config, current_elem), settings.use_min_distance);
+                SPDLOG_ERROR("Lost area by doing catch up from {} to radius {}", ceil_radius_before, volumes.ceilRadius(support_element_collision_radius(config, current_elem), settings.use_min_distance));
                 tree_supports_show_error("Area lost catching up radius. May not cause visible malformation."sv, true);
             }
         }
@@ -1956,18 +1952,21 @@ static void increase_areas_one_layer(
                     Polygons base_error_area = union_(parent.influence_area, lines_offset);
                     result = increase_single_area(volumes, config, settings, layer_idx, parent, 
                         base_error_area, to_bp_data, to_model_data, inc_wo_collision, (config.maximum_move_distance + extra_speed) * 1.5, mergelayer);
-#ifdef TREE_SUPPORT_SHOW_ERRORS
-                    BOOST_LOG_TRIVIAL(error)
-#else // TREE_SUPPORT_SHOW_ERRORS
-                    BOOST_LOG_TRIVIAL(warning)
-#endif // TREE_SUPPORT_SHOW_ERRORS
-                          << "Influence area could not be increased! Data about the Influence area: "
+                    
+                    std::stringstream log_ss;
+                    log_ss << "Influence area could not be increased! Data about the Influence area: "
                              "Radius: " << radius << " at layer: " << layer_idx - 1 << " NextTarget: " << elem.layer_idx << " Distance to top: " << elem.distance_to_top <<
                              " Elephant foot increases " << elem.elephant_foot_increases << " use_min_xy_dist " << elem.use_min_xy_dist << " to buildplate " << elem.to_buildplate << 
                              " gracious " << elem.to_model_gracious << " safe " << elem.can_use_safe_radius << " until move " << elem.dont_move_until << " \n "
                              "Parent " << &parent << ": Radius: " << support_element_collision_radius(config, parent.state) << " at layer: " << layer_idx << " NextTarget: " << parent.state.layer_idx <<
                              " Distance to top: " << parent.state.distance_to_top << " Elephant foot increases " << parent.state.elephant_foot_increases << "  use_min_xy_dist " << parent.state.use_min_xy_dist <<
                              " to buildplate " << parent.state.to_buildplate << " gracious " << parent.state.to_model_gracious << " safe " << parent.state.can_use_safe_radius << " until move " << parent.state.dont_move_until;
+#ifdef TREE_SUPPORT_SHOW_ERRORS
+                    SPDLOG_ERROR("{}", log_ss.str());
+#else // TREE_SUPPORT_SHOW_ERRORS
+                    SPDLOG_WARN("{}", log_ss.str());
+#endif // TREE_SUPPORT_SHOW_ERRORS
+                    
                     tree_supports_show_error("Potentially lost branch!"sv, true);
 #ifdef TREE_SUPPORTS_TRACK_LOST
                     if (result)
@@ -1995,14 +1994,13 @@ static void increase_areas_one_layer(
                         elem.use_min_xy_dist = false;
                     if (!settings.no_error)
 #ifdef TREE_SUPPORT_SHOW_ERRORS
-                        BOOST_LOG_TRIVIAL(error) 
+                        SPDLOG_ERROR("Trying to keep area by moving faster than intended: Success");
 #else // TREE_SUPPORT_SHOW_ERRORS
-                        BOOST_LOG_TRIVIAL(info)
+                        SPDLOG_INFO("Trying to keep area by moving faster than intended: Success");
 #endif // TREE_SUPPORT_SHOW_ERRORS
-                            << "Trying to keep area by moving faster than intended: Success";
                     break;
                 } else if (!settings.no_error)
-                    BOOST_LOG_TRIVIAL(error) << "Trying to keep area by moving faster than intended: FAILURE! WRONG BRANCHES LIKLY!";
+                    SPDLOG_ERROR("Trying to keep area by moving faster than intended: FAILURE! WRONG BRANCHES LIKLY!");
             }
 
             if (add) {
@@ -2483,7 +2481,7 @@ static void create_layer_pathing(const TreeModelVolumes &volumes, const TreeSupp
                         return true;
                     if (elem.areas.to_bp_areas.empty() && elem.areas.to_model_areas.empty()) {
                         if (Algorithms::Polygon::area(elem.areas.influence_areas) < tiny_area_threshold) {
-                            BOOST_LOG_TRIVIAL(error) << "Insert Error of Influence area bypass on layer " << layer_idx - 1;
+                            SPDLOG_ERROR("Insert Error of Influence area bypass on layer {}", layer_idx - 1);
                             tree_supports_show_error("Insert error of area after bypassing merge.\n"sv, true);
                         }
                         // Move the area to output.
@@ -2516,7 +2514,9 @@ static void create_layer_pathing(const TreeModelVolumes &volumes, const TreeSupp
                 if (! elem.areas.influence_areas.empty()) {
                     Polygons new_area = safe_union(elem.areas.influence_areas);
                     if (Algorithms::Polygon::area(new_area) < tiny_area_threshold) {
-                        BOOST_LOG_TRIVIAL(error) << "Insert Error of Influence area on layer " << layer_idx - 1 << ". Origin of " << elem.parents.size() << " areas. Was to bp " << elem.state.to_buildplate;
+                        std::stringstream ss;
+                        ss << "Insert Error of Influence area on layer " << layer_idx - 1 << ". Origin of " << elem.parents.size() << " areas. Was to bp " << elem.state.to_buildplate;
+                        SPDLOG_ERROR("{}", ss.str());
                         tree_supports_show_error("Insert error of area after merge.\n"sv, true);
                     }
                     this_layer.emplace_back(elem.state, std::move(elem.parents), std::move(new_area));
@@ -2529,8 +2529,8 @@ static void create_layer_pathing(const TreeModelVolumes &volumes, const TreeSupp
             throw_on_cancel();
         }
 
-    BOOST_LOG_TRIVIAL(info) << "Time spent with creating influence areas' subtasks: Increasing areas " << dur_inc.count() / 1000000 << 
-        " ms merging areas: " << (dur_total - dur_inc).count() / 1000000 << " ms";
+    SPDLOG_INFO("Time spent with creating influence areas' subtasks: Increasing areas {} ms merging areas: {} ms",
+        dur_inc.count() / 1000000, (dur_total - dur_inc).count() / 1000000);
 }
 
 /*!
@@ -2545,7 +2545,7 @@ static void set_points_on_areas(const SupportElement &elem, SupportElements *lay
 
     // Based on the branch center point of the current layer, the point on the next (further up) layer is calculated.
     if (! elem.state.result_on_layer_is_set()) {
-        BOOST_LOG_TRIVIAL(error) << "Uninitialized support element";
+        SPDLOG_ERROR("Uninitialized support element");
         tree_supports_show_error("Uninitialized support element. A branch may be missing.\n"sv, true);
         return;
     }
@@ -2572,7 +2572,7 @@ static void set_to_model_contact_simple(SupportElement &elem)
 {
     const Point best = move_inside_if_outside(elem.influence_area, elem.state.next_position);
     elem.state.result_on_layer = best;
-    BOOST_LOG_TRIVIAL(debug) << "Added NON gracious Support On Model Point (" << best.x() << "," << best.y() << "). The current layer is " << elem.state.layer_idx;
+    SPDLOG_DEBUG("Added NON gracious Support On Model Point ({}, {}). The current layer is {}", best.x(), best.y(), elem.state.layer_idx);
 }
 
 /*!
@@ -2609,7 +2609,7 @@ static void set_to_model_contact_to_model_gracious(
 
     // Could not find valid placement, even though it should exist => error handling
     if (last_successfull_layer == nullptr) {
-        BOOST_LOG_TRIVIAL(warning) << "No valid placement found for to model gracious element on layer " << first_elem.state.layer_idx;
+        SPDLOG_WARN("No valid placement found for to model gracious element on layer {}", first_elem.state.layer_idx);
         tree_supports_show_error("Could not fine valid placement on model! Just placing it down anyway. Could cause floating branches."sv, true);
         first_elem.state.to_model_gracious = false;
         set_to_model_contact_simple(first_elem);
@@ -2625,7 +2625,7 @@ static void set_to_model_contact_to_model_gracious(
         // Guess a point inside the influence area, in which the branch will be placed in.
         const Point best = move_inside_if_outside(last_successfull_layer->influence_area, last_successfull_layer->state.next_position);
         last_successfull_layer->state.result_on_layer = best;
-        BOOST_LOG_TRIVIAL(debug) << "Added gracious Support On Model Point (" << best.x() << "," << best.y() << "). The current layer is " << last_successfull_layer;
+        SPDLOG_DEBUG("Added gracious Support On Model Point ({}, {}). The current layer is {}", best.x(), best.y(), last_successfull_layer->state.layer_idx);
     }
 }
 
@@ -2713,8 +2713,8 @@ static void create_nodes_from_area(
             if (! elem.state.result_on_layer_is_set()) {
                 if (elem.state.to_buildplate || (elem.state.distance_to_top < config.min_dtt_to_model && ! elem.state.supports_roof)) {
                     if (elem.state.to_buildplate) {
-                        BOOST_LOG_TRIVIAL(error) << "Uninitialized Influence area targeting " << elem.state.target_position.x() << "," << elem.state.target_position.y() << ") "
-                            "at target_height: " << elem.state.target_height << " layer: " << layer_idx;
+                        SPDLOG_ERROR("Uninitialized Influence area targeting {}, {} at target_height: {} layer: {}",
+                            elem.state.target_position.x(), elem.state.target_position.y(), elem.state.target_height, layer_idx);
                         tree_supports_show_error("Uninitialized support element! A branch could be missing or exist partially."sv, true);
                     }
                     // we dont need to remove yet the parents as they will have a lower dtt and also no result_on_layer set
@@ -3416,11 +3416,13 @@ static void draw_areas(
     auto dur_drop = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_drop - t_smooth).count();
     auto dur_finalize = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_drop).count();
 
-    BOOST_LOG_TRIVIAL(info) << 
+    std::stringstream ss;
+    ss << 
         "Time used for drawing subfuctions: generate_branch_areas: " << dur_gen_tips << " ms "
         "smooth_branch_areas: " << dur_smooth << " ms "
         "drop_non_gracious_areas: " << dur_drop << " ms "
         "finalize_interface_and_support_areas " << dur_finalize << " ms";
+    SPDLOG_INFO("{}", ss.str());
 }
 
 extern bool g_showed_critical_error;
@@ -3453,7 +3455,7 @@ static void generate_support_areas(Print &print, const BuildVolume &build_volume
         //FIXME this is a copy
         // Contains config settings to avoid loading them in every function. This was done to improve readability of the code.
         const TreeSupportSettings &config = processing.first;
-        BOOST_LOG_TRIVIAL(info) << "Processing support tree mesh group " << counter + 1 << " of " << grouped_meshes.size() << " containing " << grouped_meshes[counter].second.size() << " meshes.";
+        SPDLOG_INFO("Processing support tree mesh group {} of {} containing {} meshes.", counter + 1, grouped_meshes.size(), grouped_meshes[counter].second.size());
         auto t_start = std::chrono::high_resolution_clock::now();
 #if 0
         std::vector<Polygons> exclude(num_support_layers);
@@ -3587,15 +3589,17 @@ static void generate_support_areas(Print &print, const BuildVolume &build_volume
             auto dur_place = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_place - t_path).count();
             auto dur_draw = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_draw - t_place).count();
             auto dur_total = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_draw - t_start).count();
-            BOOST_LOG_TRIVIAL(info) <<
+            std::stringstream ss;
+            ss <<
                 "Total time used creating Tree support for the currently grouped meshes: " << dur_total << " ms. "
                 "Different subtasks:\nCalculating Avoidance: " << dur_pre_gen << " ms "
                 "Creating inital influence areas: " << dur_gen << " ms "
                 "Influence area creation: " << dur_path << "ms "
                 "Placement of Points in InfluenceAreas: " << dur_place << "ms "
                 "Drawing result as support " << dur_draw << " ms";
+            SPDLOG_INFO("{}", ss.str());
     //        if (config.branch_radius==2121)
-    //            BOOST_LOG_TRIVIAL(error) << "Why ask questions when you already know the answer twice.\n (This is not a real bug, please dont report it.)";
+    //            SPDLOG_ERROR("Why ask questions when you already know the answer twice.\n (This is not a real bug, please dont report it.)");
             
             move_bounds.clear();
         } else if (generate_raft_contact(print_object, config, interface_placer) >= 0) {

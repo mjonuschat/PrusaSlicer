@@ -8,7 +8,7 @@
 #include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
 
 #include <png.h>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <pngconf.h>
 #include <pnglibconf.h>
@@ -124,25 +124,25 @@ static bool write_rgb_or_gray_to_file(const char *file_name_utf8, size_t width, 
  
     FILE        *fp = boost::nowide::fopen(file_name_utf8, "wb");
     if (! fp) {
-        BOOST_LOG_TRIVIAL(error) << "write_png_file: File could not be opened for writing: " << file_name_utf8;
+        SPDLOG_ERROR("write_png_file: File could not be opened for writing: {}", file_name_utf8);
         goto fopen_failed;
     }
 
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if (! png_ptr) {
-        BOOST_LOG_TRIVIAL(error) << "write_png_file: png_create_write_struct() failed";
+        SPDLOG_ERROR("write_png_file: png_create_write_struct() failed");
         goto png_create_write_struct_failed;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
     if (! info_ptr) {
-        BOOST_LOG_TRIVIAL(error) << "write_png_file: png_create_info_struct() failed";
+        SPDLOG_ERROR("write_png_file: png_create_info_struct() failed");
         goto png_create_info_struct_failed;
     }
 
     // Set up error handling.
     if (setjmp(png_jmpbuf(png_ptr))) {
-        BOOST_LOG_TRIVIAL(error) << "write_png_file: setjmp() failed";
+        SPDLOG_ERROR("write_png_file: setjmp() failed");
         goto png_failure;
     }
 

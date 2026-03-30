@@ -16,7 +16,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <string>

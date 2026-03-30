@@ -8,7 +8,7 @@
 #include <libslic3r/SLA/Clustering.hpp>
 #include <libslic3r/MeshNormals.hpp>
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cmath>
 #include <functional>
 #include <iterator>
@@ -113,8 +113,7 @@ bool DefaultSupportTree::execute(SupportTreeBuilder    &builder,
 
     if(sm.cfg.ground_facing_only) {
         program[ROUTING_NONGROUND] = []() {
-            BOOST_LOG_TRIVIAL(info)
-                << "Skipping model-facing supports as requested.";
+            SPDLOG_INFO("Skipping model-facing supports as requested.");
         };
     }
 
@@ -613,8 +612,7 @@ void DefaultSupportTree::routing_to_ground()
         Head &h = m_builder.head(hid);
 
         if (!create_ground_pillar(h.junction(), h.dir, h.id)) {
-            BOOST_LOG_TRIVIAL(warning)
-                << "Pillar cannot be created for support point id: " << hid;
+            SPDLOG_WARN("Pillar cannot be created for support point id: {}", hid);
             m_iheads_onmodel.emplace_back(h.id);
             continue;
         }
@@ -710,7 +708,7 @@ bool DefaultSupportTree::connect_to_model_body(Head &head)
     double w = dist - 2 * head.r_pin_mm - head.r_back_mm;
 
     if (w < 0.) {
-        BOOST_LOG_TRIVIAL(warning) << "Pinhead width is negative!";
+        SPDLOG_WARN("Pinhead width is negative!");
         w = 0.;
     }
 
@@ -783,8 +781,7 @@ void DefaultSupportTree::routing_to_model()
             if (connect_to_model_body(head)) { return; }
 
             // We have failed to route this head.
-            BOOST_LOG_TRIVIAL(warning)
-                << "Failed to route model facing support point. ID: " << idx;
+            SPDLOG_WARN("Failed to route model facing support point. ID: {}", idx);
 
             head.invalidate();
         },

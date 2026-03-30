@@ -10,9 +10,9 @@ if (APPLE AND CMAKE_OSX_ARCHITECTURES)
     set(_context_arch_line "-DBOOST_CONTEXT_ARCHITECTURE:STRING=${CMAKE_OSX_ARCHITECTURES}")
 endif ()
 
-set(_excluded_libs contract|fiber|numpy|stacktrace|wave|test)
+set(_excluded_libs contract|fiber|numpy|stacktrace|wave|test|log)
 if (EMSCRIPTEN)
-    set(_excluded_libs ${_excluded_libs}|context|coroutine|asio|log)
+    set(_excluded_libs ${_excluded_libs}|context|coroutine|asio)
     set(CMAKE_CXX_FLAGS "-s USE_PTHREADS=1 ${CMAKE_CXX_FLAGS}")
 endif ()
 

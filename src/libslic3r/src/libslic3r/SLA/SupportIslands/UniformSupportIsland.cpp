@@ -6,8 +6,6 @@
 #include <cassert>
 #include <memory>
 
-#include <boost/log/trivial.hpp>
-
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"

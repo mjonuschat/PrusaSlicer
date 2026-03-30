@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cassert>
 #include <cstddef>
 
@@ -98,13 +98,13 @@ indexed_triangle_set slices_to_mesh(
     // in the output. It is very hard to do the meshing in a way that does not
     // leave errors.
     int num_mergedv = TriMesh::its_merge_vertices(ret);
-    BOOST_LOG_TRIVIAL(debug) << "Merged vertices count: " << num_mergedv;
+    SPDLOG_DEBUG("Merged vertices count: {}", num_mergedv);
 
     int remcnt = TriMesh::its_remove_degenerate_faces(ret);
-    BOOST_LOG_TRIVIAL(debug) << "Removed degenerate faces count: " << remcnt;
+    SPDLOG_DEBUG("Removed degenerate faces count: {}", remcnt);
 
     int num_erasedv = TriMesh::its_compactify_vertices(ret);
-    BOOST_LOG_TRIVIAL(debug) << "Erased vertices count: " << num_erasedv;
+    SPDLOG_DEBUG("Erased vertices count: {}", num_erasedv);
 
     return ret;
 }

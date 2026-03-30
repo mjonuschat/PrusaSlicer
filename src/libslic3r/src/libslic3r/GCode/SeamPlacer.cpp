@@ -21,6 +21,8 @@
 #include "libslic3r/Layer.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+#include "Slic3r/Log.hpp"
+
 using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams {
@@ -160,7 +162,7 @@ void Placer::init(
     const Params &params,
     const std::function<void(void)> &throw_if_canceled
 ) {
-    BOOST_LOG_TRIVIAL(debug) << "SeamPlacer: init: start";
+    SPDLOG_DEBUG("SeamPlacer: init: start");
 
     ObjectPainting object_painting;
     for (const PrintObject *print_object : objects) {
@@ -183,7 +185,7 @@ void Placer::init(
     this->params = params;
     this->seams_per_object = precalculate_seams(params, std::move(perimeters_for_precalculation), throw_if_canceled);
 
-    BOOST_LOG_TRIVIAL(debug) << "SeamPlacer: init: end";
+    SPDLOG_DEBUG("SeamPlacer: init: end");
 }
 
 const SeamPerimeterChoice &choose_closest_seam(

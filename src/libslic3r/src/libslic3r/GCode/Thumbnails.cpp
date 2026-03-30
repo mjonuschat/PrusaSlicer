@@ -10,7 +10,6 @@
 #include <jmorecfg.h>
 #include <stdlib.h>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 #include <string>
 #include <cstdint>

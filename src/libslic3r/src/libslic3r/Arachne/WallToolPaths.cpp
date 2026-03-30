@@ -570,7 +570,7 @@ void WallToolPaths::stitchToolPaths(std::vector<VariableWidthLines> &toolpaths, 
 #ifdef ARACHNE_STITCH_PATCH_DEBUG
         for (const ExtrusionLine& line : stitched_polylines) {
             if ( ! line.is_odd && line.polylineLength() > 3 * stitch_distance && line.size() > 3) {
-                BOOST_LOG_TRIVIAL(error) << "Some even contour lines could not be closed into polygons!";
+                SPDLOG_ERROR("Some even contour lines could not be closed into polygons!");
                 assert(false && "Some even contour lines could not be closed into polygons!");
                 BoundingBox aabb;
                 for (auto line2 : wall_lines)

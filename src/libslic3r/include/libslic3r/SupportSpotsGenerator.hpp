@@ -5,7 +5,6 @@
 #ifndef SRC_LIBSLIC3R_SUPPORTABLEISSUESSEARCH_HPP_
 #define SRC_LIBSLIC3R_SUPPORTABLEISSUESSEARCH_HPP_
 
-#include <boost/log/trivial.hpp>
 #include <cstddef>
 #include <vector>
 #include <algorithm>
@@ -23,6 +22,8 @@
 
 #include "libslic3r/PrintBase.hpp"
 
+#include "Slic3r/Log.hpp"
+
 namespace Slic3r {
 class ExtrusionEntity;
 class ExtrusionEntityCollection;
@@ -39,15 +40,14 @@ struct Params
         : max_acceleration(max_acceleration), raft_layers_count(raft_layers_count), brim_type(brim_type), brim_width(brim_width)
     {
         if (filament_types.size() > 1) {
-            BOOST_LOG_TRIVIAL(warning)
-                << "SupportSpotsGenerator does not currently handle different materials properly, only first will be used";
+            SPDLOG_WARN("SupportSpotsGenerator does not currently handle different materials properly, only first will be used");
         }
         if (filament_types.empty() || filament_types[0].empty()) {
-            BOOST_LOG_TRIVIAL(error) << "SupportSpotsGenerator error: empty filament_type";
+            SPDLOG_ERROR("SupportSpotsGenerator error: empty filament_type");
             filament_type = std::string("PLA");
         } else {
             filament_type = filament_types[0];
-            BOOST_LOG_TRIVIAL(debug) << "SupportSpotsGenerator: applying filament type: " << filament_type;
+            SPDLOG_DEBUG("SupportSpotsGenerator: applying filament type: {}", filament_type);
         }
     }
 

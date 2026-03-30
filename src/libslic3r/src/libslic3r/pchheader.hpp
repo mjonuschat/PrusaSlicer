@@ -87,9 +87,6 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/locale.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/nowide/convert.hpp>
 #include <boost/nowide/cstdio.hpp>

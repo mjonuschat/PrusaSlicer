@@ -3,7 +3,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/nowide/fstream.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
 #include <fast_float.h>

@@ -3,7 +3,7 @@
 
 #include "SkeletalTrapezoidation.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <queue>
 #include <algorithm>
@@ -129,7 +129,7 @@ void SkeletalTrapezoidation::transferEdge(const Point &from, const Point &to, co
         {
             if(!twin)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Encountered a voronoi edge without twin.";
+                SPDLOG_WARN("Encountered a voronoi edge without twin.");
                 continue; //Prevent reading unallocated memory.
             }
             assert(twin);
@@ -156,7 +156,7 @@ void SkeletalTrapezoidation::transferEdge(const Point &from, const Point &to, co
             
             if (!twin->prev || !twin->prev->twin || !twin->prev->twin->prev)
             {
-                BOOST_LOG_TRIVIAL(error) << "Discretized segment behaves oddly!";
+                SPDLOG_ERROR("Discretized segment behaves oddly!");
                 return;
             }
             
@@ -174,13 +174,13 @@ void SkeletalTrapezoidation::transferEdge(const Point &from, const Point &to, co
         assert(discretized.size() >= 2);
         if(discretized.size() < 2)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Discretized Voronoi edge is degenerate.";
+            SPDLOG_WARN("Discretized Voronoi edge is degenerate.");
         }
         
         assert(!prev_edge || prev_edge->to);
         if(prev_edge && !prev_edge->to)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Previous edge doesn't go anywhere.";
+            SPDLOG_WARN("Previous edge doesn't go anywhere.");
         }
         node_t* v0 = (prev_edge)? prev_edge->to : &makeNode(*vd_edge.vertex0(), from); // TODO: investigate whether boost:voronoi can produce multiple verts and violates consistency
         Point p0 = discretized.front();
@@ -580,7 +580,7 @@ void SkeletalTrapezoidation::updateIsCentral()
         assert(edge.twin);
         if(!edge.twin)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Encountered a Voronoi edge without twin!";
+            SPDLOG_WARN("Encountered a Voronoi edge without twin!");
             continue;
         }
         if(edge.twin->data.centralIsSet())
@@ -673,7 +673,7 @@ void SkeletalTrapezoidation::updateBeadCount()
         {
             if (node.data.distance_to_boundary < 0)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Distance to boundary not yet computed for local maximum!";
+                SPDLOG_WARN("Distance to boundary not yet computed for local maximum!");
                 node.data.distance_to_boundary = std::numeric_limits<coord_t>::max();
                 edge_t* edge = node.incident_edge;
                 do
@@ -697,7 +697,7 @@ void SkeletalTrapezoidation::filterNoncentralRegions()
         }
         if(edge.to->data.bead_count < 0 && edge.to->data.distance_to_boundary != 0)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Encountered an uninitialized bead at the boundary!";
+            SPDLOG_WARN("Encountered an uninitialized bead at the boundary!");
         }
         assert(edge.to->data.bead_count >= 0 || edge.to->data.distance_to_boundary == 0);
         constexpr coord_t max_dist = scaled<coord_t>(0.4);
@@ -806,7 +806,7 @@ void SkeletalTrapezoidation::generateTransitionMids(ptr_vector_t<std::list<Trans
             assert(edge.from->data.bead_count == edge.to->data.bead_count);
             if(edge.from->data.bead_count != edge.to->data.bead_count)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Bead count " << edge.from->data.bead_count << " is different from " << edge.to->data.bead_count << " even though distance to boundary is the same.";
+                SPDLOG_WARN("Bead count {} is different from {} even though distance to boundary is the same.", edge.from->data.bead_count, edge.to->data.bead_count);
             }
             continue;
         }
@@ -823,12 +823,12 @@ void SkeletalTrapezoidation::generateTransitionMids(ptr_vector_t<std::list<Trans
         if (start_bead_count > beading_strategy.getOptimalBeadCount(start_R * 2)
             || end_bead_count > beading_strategy.getOptimalBeadCount(end_R * 2))
         { // Wasn't the case earlier in this function because of already introduced transitions
-            BOOST_LOG_TRIVIAL(error) << "transitioning segment overlap! (?)";
+            SPDLOG_ERROR("transitioning segment overlap! (?)");
         }
         assert(start_R < end_R);
         if(start_R >= end_R)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Transitioning the wrong way around! This function expects to transition from small R to big R, but was transitioning from " << start_R << " to " << end_R;
+            SPDLOG_WARN("Transitioning the wrong way around! This function expects to transition from small R to big R, but was transitioning from {} to {}.", start_R, end_R);
         }
         coord_t edge_size = (edge.from->p - edge.to->p).cast<int64_t>().norm();
         for (int transition_lower_bead_count = start_bead_count; transition_lower_bead_count < end_bead_count; transition_lower_bead_count++)
@@ -836,12 +836,12 @@ void SkeletalTrapezoidation::generateTransitionMids(ptr_vector_t<std::list<Trans
             coord_t mid_R = beading_strategy.getTransitionThickness(transition_lower_bead_count) / 2;
             if (mid_R > end_R)
             {
-                BOOST_LOG_TRIVIAL(error) << "transition on segment lies outside of segment!";
+                SPDLOG_ERROR("transition on segment lies outside of segment!");
                 mid_R = end_R;
             }
             if (mid_R < start_R)
             {
-                BOOST_LOG_TRIVIAL(error) << "transition on segment lies outside of segment!";
+                SPDLOG_ERROR("transition on segment lies outside of segment!");
                 mid_R = start_R;
             }
             coord_t mid_pos = int64_t(edge_size) * int64_t(mid_R - start_R) / int64_t(end_R - start_R);
@@ -850,7 +850,7 @@ void SkeletalTrapezoidation::generateTransitionMids(ptr_vector_t<std::list<Trans
             assert(mid_pos <= edge_size);
             if(mid_pos < 0 || mid_pos > edge_size)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Transition mid is out of bounds of the edge.";
+                SPDLOG_WARN("Transition mid is out of bounds of the edge.");
             }
             auto transitions = edge.data.getTransitions();
             constexpr bool ignore_empty = true;
@@ -1092,7 +1092,7 @@ void SkeletalTrapezoidation::generateTransitionEnds(edge_t& edge, coord_t mid_po
 #ifdef DEBUG
         if (! generateTransitionEnd(edge, start_pos, end_pos, transition_half_length, mid_rest, end_rest, lower_bead_count, edge_transition_ends))
         {
-            BOOST_LOG_TRIVIAL(warning) << "There must have been at least one direction in which the bead count is increasing enough for the transition to happen!";
+            SPDLOG_WARN("There must have been at least one direction in which the bead count is increasing enough for the transition to happen!");
         }
 #else
         generateTransitionEnd(edge, start_pos, end_pos, transition_half_length, mid_rest, end_rest, lower_bead_count, edge_transition_ends);
@@ -1110,7 +1110,7 @@ bool SkeletalTrapezoidation::generateTransitionEnd(edge_t& edge, coord_t start_p
     assert(start_pos <= ab_size);
     if(start_pos > ab_size)
     {
-        BOOST_LOG_TRIVIAL(warning) << "Start position of edge is beyond edge range.";
+        SPDLOG_WARN("Start position of edge is beyond edge range.");
     }
 
     bool going_up = end_rest > start_rest;
@@ -1118,7 +1118,7 @@ bool SkeletalTrapezoidation::generateTransitionEnd(edge_t& edge, coord_t start_p
     assert(edge.data.isCentral());
     if (!edge.data.isCentral())
     {
-        BOOST_LOG_TRIVIAL(warning) << "This function shouldn't generate ends in or beyond non-central regions.";
+        SPDLOG_WARN("This function shouldn't generate ends in or beyond non-central regions.");
         return false;
     }
 
@@ -1221,7 +1221,7 @@ bool SkeletalTrapezoidation::isGoingDown(edge_t* outgoing, coord_t traveled_dist
         assert(upward_edge->data.hasTransitions() && "If the bead count is going down there has to be a transition mid!");
         if(!upward_edge->data.hasTransitions())
         {
-            BOOST_LOG_TRIVIAL(warning) << "If the bead count is going down there has to be a transition mid!";
+            SPDLOG_WARN("If the bead count is going down there has to be a transition mid!");
         }
         return false;
     }
@@ -1485,7 +1485,7 @@ void SkeletalTrapezoidation::generateSegments()
                 assert(node_beadings.back()->beading.total_thickness == node.data.distance_to_boundary * 2);
                 if(node_beadings.back()->beading.total_thickness != node.data.distance_to_boundary * 2)
                 {
-                    BOOST_LOG_TRIVIAL(warning) << "If transitioning to an endpoint (ratio 0), the node should be exactly in the middle.";
+                    SPDLOG_WARN("If transitioning to an endpoint (ratio 0), the node should be exactly in the middle.");
                 }
             }
             else
@@ -1498,7 +1498,7 @@ void SkeletalTrapezoidation::generateSegments()
                 assert(merged.total_thickness == node.data.distance_to_boundary * 2);
                 if(merged.total_thickness != node.data.distance_to_boundary * 2)
                 {
-                    BOOST_LOG_TRIVIAL(warning) << "If merging two beads, the new bead must be exactly in the middle.";
+                    SPDLOG_WARN("If merging two beads, the new bead must be exactly in the middle.");
                 }
             }
         }
@@ -1621,7 +1621,7 @@ void SkeletalTrapezoidation::propagateBeadingsDownward(edge_t* edge_to_peak, ptr
     assert(top_beading.beading.total_thickness >= edge_to_peak->to->data.distance_to_boundary * 2);
     if(top_beading.beading.total_thickness < edge_to_peak->to->data.distance_to_boundary * 2)
     {
-        BOOST_LOG_TRIVIAL(warning) << "Top bead is beyond the center of the total width.";
+        SPDLOG_WARN("Top bead is beyond the center of the total width.");
     }
     assert(!top_beading.is_upward_propagated_only);
 
@@ -1634,7 +1634,7 @@ void SkeletalTrapezoidation::propagateBeadingsDownward(edge_t* edge_to_peak, ptr
         assert(propagated_beading.beading.total_thickness >= edge_to_peak->from->data.distance_to_boundary * 2);
         if(propagated_beading.beading.total_thickness < edge_to_peak->from->data.distance_to_boundary * 2)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Propagated bead is beyond the center of the total width.";
+            SPDLOG_WARN("Propagated bead is beyond the center of the total width.");
         }
     }
     else
@@ -1656,7 +1656,7 @@ void SkeletalTrapezoidation::propagateBeadingsDownward(edge_t* edge_to_peak, ptr
             assert(merged_beading.total_thickness >= edge_to_peak->from->data.distance_to_boundary * 2);
             if(merged_beading.total_thickness < edge_to_peak->from->data.distance_to_boundary * 2)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Merged bead is beyond the center of the total width.";
+                SPDLOG_WARN("Merged bead is beyond the center of the total width.");
             }
         }
     }
@@ -1754,7 +1754,7 @@ void SkeletalTrapezoidation::generateJunctions(ptr_vector_t<BeadingPropagation>&
         assert(beading->total_thickness >= edge->to->data.distance_to_boundary * 2);
         if(beading->total_thickness < edge->to->data.distance_to_boundary * 2)
         {
-            BOOST_LOG_TRIVIAL(warning) << "Generated junction is beyond the center of total width.";
+        SPDLOG_WARN("Generated junction is beyond the center of total width.");
         }
 
         Point a = edge->to->p;
@@ -1833,7 +1833,7 @@ std::shared_ptr<SkeletalTrapezoidationJoint::BeadingPropagation> SkeletalTrapezo
             }
             if (!has_central_edge)
             {
-                BOOST_LOG_TRIVIAL(error) << "Unknown beading for non-central node!";
+                SPDLOG_ERROR("Unknown beading for non-central node!");
             }
             assert(dist != std::numeric_limits<coord_t>::max());
             node->data.bead_count = beading_strategy.getOptimalBeadCount(dist * 2);
@@ -1922,7 +1922,7 @@ void SkeletalTrapezoidation::addToolpathSegment(const ExtrusionJunction& from, c
     {
         if ( ! is_odd)
         {
-            BOOST_LOG_TRIVIAL(error) << "Reversing even wall line causes it to be printed CCW instead of CW!";
+            SPDLOG_ERROR("Reversing even wall line causes it to be printed CCW instead of CW!");
         }
         generated_toolpaths[inset_idx].back().junctions.push_back(from);
     }
@@ -1994,7 +1994,7 @@ void SkeletalTrapezoidation::connectJunctions(ptr_vector_t<LineJunctions>& edge_
                 assert(!edge_to_peak->prev->prev);
                 if(edge_to_peak->prev->prev)
                 {
-                    BOOST_LOG_TRIVIAL(warning) << "The edge we're about to connect is already connected.";
+                    SPDLOG_WARN("The edge we're about to connect is already connected.");
                 }
             }
             if (edge_from_peak->next)
@@ -2009,13 +2009,13 @@ void SkeletalTrapezoidation::connectJunctions(ptr_vector_t<LineJunctions>& edge_
                 assert(!edge_from_peak->next->next);
                 if(edge_from_peak->next->next)
                 {
-                    BOOST_LOG_TRIVIAL(warning) << "The edge we're about to connect is already connected!";
+                    SPDLOG_WARN("The edge we're about to connect is already connected!");
                 }
             }
             assert(std::abs(int(from_junctions.size()) - int(to_junctions.size())) <= 1); // at transitions one end has more beads
             if(std::abs(int(from_junctions.size()) - int(to_junctions.size())) > 1)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Can't create a transition when connecting two perimeters where the number of beads differs too much! " << from_junctions.size() << " vs. " << to_junctions.size();
+                SPDLOG_WARN("Can't create a transition when connecting two perimeters where the number of beads differs too much! {} vs. {}", from_junctions.size(), to_junctions.size());
             }
 
             size_t segment_count = std::min(from_junctions.size(), to_junctions.size());
@@ -2026,7 +2026,7 @@ void SkeletalTrapezoidation::connectJunctions(ptr_vector_t<LineJunctions>& edge_
                 assert(from.perimeter_index == to.perimeter_index);
                 if(from.perimeter_index != to.perimeter_index)
                 {
-                    BOOST_LOG_TRIVIAL(warning) << "Connecting two perimeters with different indices! Perimeter " << from.perimeter_index << " and " << to.perimeter_index;
+                    SPDLOG_WARN("Connecting two perimeters with different indices! Perimeter {} and {}", from.perimeter_index, to.perimeter_index);
                 }
                 const bool from_is_odd =
                     quad_start->to->data.bead_count > 0 && quad_start->to->data.bead_count % 2 == 1 // quad contains single bead segment

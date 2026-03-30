@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <LocalesUtils.hpp>
 #include <fast_float.h>
@@ -339,7 +339,7 @@ static bool obj_parseline(const char *line, ObjData &data)
 		break;
 	}
 	default:
-    	BOOST_LOG_TRIVIAL(error) << "ObjParser: Unknown command: " << c1;
+    	SPDLOG_ERROR("ObjParser: Unknown command: {}", c1);
 		break;
 	}
 
@@ -383,7 +383,7 @@ bool objparse(const char *path, ObjData &data)
 				}
 			lenPrev = len - lastLine;
             if (lenPrev > half_buf) {
-		    	BOOST_LOG_TRIVIAL(error) << "ObjParser: Excessive line length";
+		    	SPDLOG_ERROR("ObjParser: Excessive line length");
 				::fclose(pFile);
 				return false;
 			}
@@ -391,7 +391,7 @@ bool objparse(const char *path, ObjData &data)
 		}
     }
     catch (std::bad_alloc&) {
-    	BOOST_LOG_TRIVIAL(error) << "ObjParser: Out of memory";
+    	SPDLOG_ERROR("ObjParser: Out of memory");
 	}
 	::fclose(pFile);
 
@@ -425,7 +425,7 @@ bool objparse(std::istream &stream, ObjData &data)
         }
     }
     catch (std::bad_alloc&) {
-    	BOOST_LOG_TRIVIAL(error) << "ObjParser: Out of memory";
+    	SPDLOG_ERROR("ObjParser: Out of memory");
     	return false;
     }
     

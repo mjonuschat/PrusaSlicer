@@ -58,7 +58,7 @@
 #include <unordered_set>
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/regex.hpp>
 
 #include "libslic3r/ModelUtils.hpp"
@@ -1152,7 +1152,7 @@ void Print::process()
 {
     name_tbb_thread_pool_threads_set_locale();
 
-    BOOST_LOG_TRIVIAL(info) << "Starting the slicing process." << log_memory_info();
+    SPDLOG_INFO("Starting the slicing process. {}", log_memory_info());
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
@@ -1259,7 +1259,7 @@ void Print::process()
 
     m_sequential_collision_detected = config().get<bool>("complete_objects") ? std::nullopt /*check_seq_conflict(model(), config())*/ : std::nullopt;
 
-    BOOST_LOG_TRIVIAL(info) << "Slicing process finished." << log_memory_info();
+    SPDLOG_INFO("Slicing process finished. {}", log_memory_info());
 }
 
 // G-code export process, running at a background thread.
@@ -1575,7 +1575,7 @@ void Print::finalize_first_layer_convex_hull()
 void Print::alert_when_supports_needed()
 {
     if (this->set_started(psAlertWhenSupportsNeeded)) {
-        BOOST_LOG_TRIVIAL(debug) << "psAlertWhenSupportsNeeded - start";
+        SPDLOG_DEBUG("psAlertWhenSupportsNeeded - start");
         set_status(Domain::Percentage{69}, Biz::Slicing::ProgressInfo::CheckingStability);
 
         auto issue_to_alert_message = [](SupportSpotsGenerator::SupportPointCause cause, bool critical) {
@@ -1613,8 +1613,7 @@ void Print::alert_when_supports_needed()
 
         auto elements_to_translated_list = [](const std::vector<std::string> &translated_elements, std::string expansion_rule) {
             if (expansion_rule.find("%1%") == expansion_rule.npos || expansion_rule.find("%2%") == expansion_rule.npos) {
-                BOOST_LOG_TRIVIAL(error) << "INCORRECT EXPANSION RULE FOR LIST TRANSLATION: " << expansion_rule
-                                         << " - IT SHOULD CONTAIN %1% and %2%!";
+                SPDLOG_ERROR("INCORRECT EXPANSION RULE FOR LIST TRANSLATION: {} - IT SHOULD CONTAIN %1% and %2%!", expansion_rule);
                 expansion_rule = "%1% %2%";
             }
             if (translated_elements.size() == 0) {
@@ -1726,7 +1725,7 @@ void Print::alert_when_supports_needed()
             );
         }
 
-        BOOST_LOG_TRIVIAL(debug) << "psAlertWhenSupportsNeeded - end";
+        SPDLOG_DEBUG("psAlertWhenSupportsNeeded - end");
         this->set_done(psAlertWhenSupportsNeeded);
     }
 }

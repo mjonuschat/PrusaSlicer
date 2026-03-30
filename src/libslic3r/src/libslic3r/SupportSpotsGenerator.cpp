@@ -5,7 +5,7 @@
 ///|/
 #include "libslic3r/SupportSpotsGenerator.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/blocked_range.h>
@@ -631,8 +631,8 @@ float ObjectPart::compute_elastic_section_modulus(
     float elastic_section_modulus = second_moment_of_area / extreme_fiber_dist;
 
 #ifdef DETAILED_DEBUG_LOGS
-    BOOST_LOG_TRIVIAL(debug) << "extreme_fiber_dist: " << extreme_fiber_dist;
-    BOOST_LOG_TRIVIAL(debug) << "elastic_section_modulus: " << elastic_section_modulus;
+    SPDLOG_DEBUG("extreme_fiber_dist: {}", extreme_fiber_dist);
+    SPDLOG_DEBUG("elastic_section_modulus: {}", elastic_section_modulus);
 #endif
 
     return elastic_section_modulus;
@@ -689,18 +689,18 @@ std::tuple<float, SupportPointCause> ObjectPart::is_stable_while_extruding(const
         float bed_total_torque = bed_movement_torque + bed_extruder_conflict_torque + bed_weight_torque + bed_yield_torque;
 
 #ifdef DETAILED_DEBUG_LOGS
-        BOOST_LOG_TRIVIAL(debug) << "bed_centroid: " << bed_centroid.x() << "  " << bed_centroid.y() << "  " << bed_centroid.z();
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_yield_torque: " << bed_yield_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_weight_arm: " << bed_weight_arm_len;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_weight_torque: " << bed_weight_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_movement_arm: " << bed_movement_arm;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_movement_torque: " << bed_movement_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_conflict_torque_arm: " << bed_conflict_torque_arm;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: extruded_line.curled_up_height: " << extruded_line.curled_up_height;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: extruded_line.form_quality: " << extruded_line.form_quality;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: extruder_conflict_force: " << extruder_conflict_force;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: bed_extruder_conflict_torque: " << bed_extruder_conflict_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: total_torque: " << bed_total_torque << "   layer_z: " << layer_z;
+        SPDLOG_DEBUG("bed_centroid: {}  {}  {}", bed_centroid.x(), bed_centroid.y(), bed_centroid.z());
+        SPDLOG_DEBUG("SSG: bed_yield_torque: {}", bed_yield_torque);
+        SPDLOG_DEBUG("SSG: bed_weight_arm: {}", bed_weight_arm_len);
+        SPDLOG_DEBUG("SSG: bed_weight_torque: {}", bed_weight_torque);
+        SPDLOG_DEBUG("SSG: bed_movement_arm: {}", bed_movement_arm);
+        SPDLOG_DEBUG("SSG: bed_movement_torque: {}", bed_movement_torque);
+        SPDLOG_DEBUG("SSG: bed_conflict_torque_arm: {}", bed_conflict_torque_arm);
+        SPDLOG_DEBUG("SSG: extruded_line.curled_up_height: {}", extruded_line.curled_up_height);
+        SPDLOG_DEBUG("SSG: extruded_line.form_quality: {}", extruded_line.form_quality);
+        SPDLOG_DEBUG("SSG: extruder_conflict_force: {}", extruder_conflict_force);
+        SPDLOG_DEBUG("SSG: bed_extruder_conflict_torque: {}", bed_extruder_conflict_torque);
+        SPDLOG_DEBUG("SSG: total_torque: {}   layer_z: {}", bed_total_torque, layer_z);
 #endif
 
         if (bed_total_torque > 0) {
@@ -741,15 +741,15 @@ std::tuple<float, SupportPointCause> ObjectPart::is_stable_while_extruding(const
         float conn_total_torque = conn_movement_torque + conn_extruder_conflict_torque + conn_weight_torque - conn_yield_torque;
 
 #ifdef DETAILED_DEBUG_LOGS
-        BOOST_LOG_TRIVIAL(debug) << "conn_centroid: " << conn_centroid.x() << "  " << conn_centroid.y() << "  " << conn_centroid.z();
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_yield_torque: " << conn_yield_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_weight_arm: " << conn_weight_arm;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_weight_torque: " << conn_weight_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_movement_arm: " << conn_movement_arm;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_movement_torque: " << conn_movement_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_conflict_torque_arm: " << conn_conflict_torque_arm;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: conn_extruder_conflict_torque: " << conn_extruder_conflict_torque;
-        BOOST_LOG_TRIVIAL(debug) << "SSG: total_torque: " << conn_total_torque << "   layer_z: " << layer_z;
+        SPDLOG_DEBUG("conn_centroid: {}  {}  {}", conn_centroid.x(), conn_centroid.y(), conn_centroid.z());
+        SPDLOG_DEBUG("SSG: conn_yield_torque: {}", conn_yield_torque);
+        SPDLOG_DEBUG("SSG: conn_weight_arm: {}", conn_weight_arm);
+        SPDLOG_DEBUG("SSG: conn_weight_torque: {}", conn_weight_torque);
+        SPDLOG_DEBUG("SSG: conn_movement_arm: {}", conn_movement_arm);
+        SPDLOG_DEBUG("SSG: conn_movement_torque: {}", conn_movement_torque);
+        SPDLOG_DEBUG("SSG: conn_conflict_torque_arm: {}", conn_conflict_torque_arm);
+        SPDLOG_DEBUG("SSG: conn_extruder_conflict_torque: {}", conn_extruder_conflict_torque);
+        SPDLOG_DEBUG("SSG: total_torque: {}   layer_z: {}", conn_total_torque, layer_z);
 #endif
 
         return {conn_total_torque / conn_conflict_torque_arm, SupportPointCause::WeakObjectPart};
@@ -1208,7 +1208,7 @@ void debug_export(const SupportPoints& support_points,const PartialObjects& obje
     {
         FILE *fp = boost::nowide::fopen(debug_out_path((file_name + "_supports.obj").c_str()).c_str(), "w");
         if (fp == nullptr) {
-            BOOST_LOG_TRIVIAL(error) << "Debug files: Couldn't open " << file_name << " for writing";
+            SPDLOG_ERROR("Debug files: Couldn't open {} for writing", file_name);
             return;
         }
 

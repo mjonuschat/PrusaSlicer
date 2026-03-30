@@ -25,7 +25,7 @@
 
 #include <vector>
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/nowide/cstdio.hpp>
 
 #include "stl.h"
@@ -133,7 +133,7 @@ bool its_write_off(const indexed_triangle_set &its, const char *file)
 	/* Open the file */
 	FILE *fp = boost::nowide::fopen(file, "w");
 	if (fp == nullptr) {
-		BOOST_LOG_TRIVIAL(error) << "stl_write_ascii: Couldn't open " << file << " for writing";
+		SPDLOG_ERROR("stl_write_ascii: Couldn't open {} for writing", file);
 		return false;
 	}
 
@@ -153,7 +153,7 @@ bool its_write_vrml(const indexed_triangle_set &its, const char *file)
 	/* Open the file */
   	FILE *fp = boost::nowide::fopen(file, "w");
 	if (fp == nullptr) {
-		BOOST_LOG_TRIVIAL(error) << "stl_write_vrml: Couldn't open " << file << " for writing";
+		SPDLOG_ERROR("stl_write_vrml: Couldn't open {} for writing", file);
 		return false;
 	}
 
@@ -195,7 +195,7 @@ bool its_write_obj(const indexed_triangle_set &its, const char *file)
     Slic3r::CNumericLocalesSetter locales_setter;
   	FILE *fp = boost::nowide::fopen(file, "w");
   	if (fp == nullptr) {
-		BOOST_LOG_TRIVIAL(error) << "stl_write_obj: Couldn't open " << file << " for writing";
+		SPDLOG_ERROR("stl_write_obj: Couldn't open {} for writing", file);
     	return false;
   	}
 
@@ -212,7 +212,7 @@ bool its_write_obj(const indexed_triangle_set& its, const std::vector<obj_color>
     Slic3r::CNumericLocalesSetter locales_setter;
     FILE* fp = boost::nowide::fopen(file, "w");
     if (fp == nullptr) {
-        BOOST_LOG_TRIVIAL(error) << "stl_write_obj: Couldn't open " << file << " for writing";
+        SPDLOG_ERROR("stl_write_obj: Couldn't open {} for writing", file);
         return false;
     }
 

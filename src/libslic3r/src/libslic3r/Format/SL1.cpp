@@ -4,7 +4,6 @@
 ///|/
 #include "SL1.hpp"
 
-#include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 
 #include <sstream>

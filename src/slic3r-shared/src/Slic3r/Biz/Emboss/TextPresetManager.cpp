@@ -7,7 +7,7 @@
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp> // singleton for dialog
 #include <fast_float.h>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 
 using namespace Slic3r;
 
@@ -392,18 +392,14 @@ void store_styles_obj(const std::string& path, PresetsObj& data)
 {
     std::ofstream file(path, std::ios::binary);
     if (!file.is_open()) {
-        BOOST_LOG_TRIVIAL(error)
-            << "Text Preset can't be stored. "
-            << "Failed to open cache file "
-            << path
-            << " for writing.";
+        SPDLOG_ERROR("Text Preset can't be stored. Failed to open cache file {} for writing.", path);
         return;
     }
     cereal::BinaryOutputArchive archive(file);
     try {
         archive(data);
     } catch (const std::exception& ex) {
-        BOOST_LOG_TRIVIAL(error) << "Failed to store file - " << path << ": " << ex.what();
+        SPDLOG_ERROR("Failed to store file - {}: {}", path, ex.what());
     }
 }
 
@@ -416,7 +412,7 @@ bool load_styles_obj(const std::string& path, PresetsObj& data)
     try {
         archive(data);
     } catch (const std::exception& ex) {
-        BOOST_LOG_TRIVIAL(error) << "Failed to read from file - " << path << ": " << ex.what();
+        SPDLOG_ERROR("Failed to read from file - {}: {}", path, ex.what());
         return false;
     }
     return true;

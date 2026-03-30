@@ -18,7 +18,7 @@
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/nowide/cstdlib.hpp>
@@ -180,7 +180,7 @@ static int run_script(const std::string &script, const std::string &gcode, std::
     }
     command.push_back('\'');
 
-    BOOST_LOG_TRIVIAL(debug) << boost::format("Executing script, shell: %1%, command: %2%") % shell % command;
+    SPDLOG_DEBUG("Executing script, shell: {}, command: {}", shell, command);
 
     process::ipstream istd_err;
     process::child child(shell, "-c", command, process::std_err > istd_err);
@@ -971,7 +971,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
             if (boost::filesystem::exists(path))
                 boost::filesystem::remove(path);
         } catch (const std::exception &err) {
-            BOOST_LOG_TRIVIAL(error) << Slic3r::format("Failed deleting an old temporary file %1% before running a post-processing script: %2%", path, err.what());
+            SPDLOG_ERROR("Failed deleting an old temporary file {} before running a post-processing script: {}", path, err.what());
         }
         // Second make a copy.
         std::string error_message;
@@ -988,7 +988,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
                 if (boost::filesystem::exists(path))
                     boost::filesystem::remove(path);
             } catch (const std::exception &err) {
-                BOOST_LOG_TRIVIAL(error) << Slic3r::format("Failed deleting a temporary copy %1% of a G-code file %2% : %3%", path, src_path, err.what());
+                SPDLOG_ERROR("Failed deleting a temporary copy {} of a G-code file {} : {}", path, src_path, err.what());
             }
     };
 
@@ -1014,7 +1014,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
             if (boost::filesystem::exists(path_output_name))
                 boost::filesystem::remove(path_output_name);
         } catch (const std::exception &err) {
-            BOOST_LOG_TRIVIAL(error) << Slic3r::format("Failed deleting a file %1% carrying the final name / path of a G-code file %2%: %3%", path_output_name, src_path, err.what());
+            SPDLOG_ERROR("Failed deleting a file {} carrying the final name / path of a G-code file {}: {}", path_output_name, src_path, err.what());
         }
     };
     // Remove possible stalled path_output_name of the previous run.
@@ -1029,13 +1029,13 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
                 boost::trim(script);
                 if (script.empty())
                     continue;
-                BOOST_LOG_TRIVIAL(info) << "Executing script " << script << " on file " << path;
+                SPDLOG_INFO("Executing script {} on file {}", script, path);
                 std::string std_err;
                 const int result = run_script(script, gcode_file.string(), std_err);
                 if (result != 0) {
                     const std::string msg = std_err.empty() ? (boost::format("Post-processing script %1% on file %2% failed.\nError code: %3%") % script % path % result).str()
                         : (boost::format("Post-processing script %1% on file %2% failed.\nError code: %3%\nOutput:\n%4%") % script % path % result % std_err).str();
-                    BOOST_LOG_TRIVIAL(error) << msg;
+                    SPDLOG_ERROR("{}", msg);
                     delete_copy();
                     throw Slic3r::RuntimeError(msg);
                 }
@@ -1045,7 +1045,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
                         "The post-processing script is expected to change the G-code file %2% in place, but the G-code file was deleted and likely saved under a new name.\n"
                         "Please adjust the post-processing script to change the G-code in place and consult the manual on how to optionally rename the post-processed G-code file.\n"))
                         % script % path).str();
-                    BOOST_LOG_TRIVIAL(error) << msg;
+                    SPDLOG_ERROR("{}", msg);
                     throw Slic3r::RuntimeError(msg);
                 }
             }
@@ -1077,7 +1077,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
                                                                   fs::path(new_output_name).parent_path().string()));
                 }
 
-                BOOST_LOG_TRIVIAL(trace) << "Post-processing script changed the file name from " << output_name << " to " << new_output_name;
+                SPDLOG_TRACE("Post-processing script changed the file name from {} to {}", output_name, new_output_name);
                 output_name = new_output_name;
             } catch (const std::exception &err) {
                 throw Slic3r::RuntimeError(Slic3r::format("run_post_process_scripts: Failed reading a file %1% "

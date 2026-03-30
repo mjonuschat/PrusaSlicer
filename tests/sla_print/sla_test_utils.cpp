@@ -8,6 +8,8 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+#include "Slic3r/Log.hpp"
+
 #include <iomanip>
 
 using namespace Slic3r::Biz;
@@ -308,9 +310,7 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
     Polygons diff_poly = diff(Algorithms::ExPolygon::to_polygons(polys), hull);
 
     if (!diff_poly.empty()) {
-        BOOST_LOG_TRIVIAL(warning)
-            << "Concave hull diff with original shape is not completely empty."
-            << "See pad_chull.svg for details.";
+        SPDLOG_WARN("Concave hull diff with original shape is not completely empty. See pad_chull.svg for details.");
 
         SVG svg("pad_chull.svg");
         svg.draw(polys, "green");

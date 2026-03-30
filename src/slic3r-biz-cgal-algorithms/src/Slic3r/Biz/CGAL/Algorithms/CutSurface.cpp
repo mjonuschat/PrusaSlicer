@@ -57,7 +57,6 @@ using namespace Slic3r;
 
 #ifdef DEBUG_OUTPUT_DIR
 #include <CGAL/IO/OFF.h>
-#include <boost/log/trivial.hpp>
 #include <filesystem>
 
 #include "Slic3r/Biz/Algorithms/SVG.hpp"

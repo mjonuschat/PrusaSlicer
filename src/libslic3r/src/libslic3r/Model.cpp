@@ -24,7 +24,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/nowide/iostream.hpp>
 
 #include <oneapi/tbb/parallel_for.h>

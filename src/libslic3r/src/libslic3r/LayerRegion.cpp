@@ -3,7 +3,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <string>
 #include <map>
@@ -512,12 +512,12 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
 
     SurfaceCollection bridges;
     {
-        BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges. layer" << this->layer()->print_z;
+        SPDLOG_TRACE("Processing external surface, detecting bridges. layer {}", this->layer()->print_z);
         const double custom_angle = this->region().config().get<double>("bridge_angle");
         bridges.surfaces = custom_angle > 0 ?
             expand_merge_surfaces(m_fill_surfaces.surfaces, stBottomBridge, expansion_zones, closing_radius, deg2rad(custom_angle)) :
             expand_bridges_detect_orientations(m_fill_surfaces.surfaces, expansion_zones, closing_radius);
-        BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges - done";
+        SPDLOG_TRACE("Processing external surface, detecting bridges - done");
 #if 0
         {
             static int iRun = 0;
@@ -687,7 +687,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
                 // Grown by 3mm.
                 Polygons polys = offset(bridges[i].expolygon, margin, EXTERNAL_SURFACES_OFFSET_PARAMETERS);
                 if (idx_island == -1) {
-				    BOOST_LOG_TRIVIAL(trace) << "Bridge did not fall into the source region!";
+                    SPDLOG_TRACE("Bridge did not fall into the source region!");
                 } else {
                     // Found an island, to which this bridge region belongs. Trim the expanded bridging region
                     // with its source region, so it does not overflow into a neighbor region.
@@ -726,7 +726,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
 
         // 3) Merge the groups with the same group id, detect bridges.
         {
-			BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges. layer" << this->layer()->print_z << ", bridge groups: " << n_groups;
+            SPDLOG_TRACE("Processing external surface, detecting bridges. layer {}, bridge groups: {}", this->layer()->print_z, n_groups);
             for (size_t group_id = 0; group_id < n_groups; ++ group_id) {
                 size_t n_bridges_merged = 0;
                 size_t idx_last = (size_t)-1;
@@ -795,7 +795,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
             }
 
             fill_boundaries = to_polygons(fill_boundaries_ex);
-			BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges - done";
+            SPDLOG_TRACE("Processing external surface, detecting bridges - done");
 		}
 
     #if 0

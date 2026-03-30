@@ -6,7 +6,7 @@
 
 #include <boost/nowide/convert.hpp>
 #include <boost/nowide/cstdio.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -540,7 +540,7 @@ std::unique_ptr<Domain::FontFile> create_font_file(const char* file_path)
     FILE* file = boost::nowide::fopen(file_path, "rb");
     if (file == nullptr) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Couldn't open " << file_path << " for reading.";
+        SPDLOG_ERROR("Couldn't open {} for reading.", file_path);
         return nullptr;
     }
     ScopeGuard sg([&file]() { std::fclose(file); });
@@ -548,13 +548,13 @@ std::unique_ptr<Domain::FontFile> create_font_file(const char* file_path)
     // find size of file
     if (fseek(file, 0L, SEEK_END) != 0) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Couldn't fseek file " << file_path << " for size measure.";
+        SPDLOG_ERROR("Couldn't fseek file {} for size measure.", file_path);
         return nullptr;
     }
     size_t size = ftell(file);
     if (size == 0) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Size of font file is zero. Can't read.";
+        SPDLOG_ERROR("Size of font file is zero. Can't read.");
         return nullptr;
     }
     rewind(file);
@@ -562,7 +562,7 @@ std::unique_ptr<Domain::FontFile> create_font_file(const char* file_path)
     size_t count_loaded_bytes = fread((void*) &buffer->front(), 1, size, file);
     if (count_loaded_bytes != size) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Different loaded(from file) data size.";
+        SPDLOG_ERROR("Different loaded(from file) data size.");
         return nullptr;
     }
     return create_font_file_from_data(std::move(buffer));
@@ -618,7 +618,7 @@ std::unique_ptr<Domain::FontFile> create_font_file(void* hfont)
     HDC hdc = ::CreateCompatibleDC(NULL);
     if (hdc == NULL) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Can't create HDC by CreateCompatibleDC(NULL).";
+        SPDLOG_ERROR("Can't create HDC by CreateCompatibleDC(NULL).");
         return nullptr;
     }
 
@@ -633,7 +633,7 @@ std::unique_ptr<Domain::FontFile> create_font_file(void* hfont)
     ::DeleteDC(hdc);
     if (size != loaded_size) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Different loaded(from HFONT) data size.";
+        SPDLOG_ERROR("Different loaded(from HFONT) data size.");
         return nullptr;
     }
     return create_font_file_from_data(std::move(buffer));

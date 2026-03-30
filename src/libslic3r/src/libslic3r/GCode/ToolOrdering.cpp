@@ -23,7 +23,7 @@
     #undef NDEBUG
 #endif
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <libslic3r/libslic3r.h>
 #include <cassert>
 #include <limits>
@@ -709,7 +709,7 @@ void WipingExtrusions::set_extruder_override(const ExtrusionEntity* entity, size
 
     assert(copies_vector[copy_id] == -1);
     if (copies_vector[copy_id] != -1)
-        BOOST_LOG_TRIVIAL(error) << "ERROR: Entity extruder overriden multiple times!!!";
+        SPDLOG_ERROR("ERROR: Entity extruder overriden multiple times!!!");
 
     copies_vector[copy_id] = extruder;
 }

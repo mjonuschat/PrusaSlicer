@@ -16,7 +16,7 @@
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
 #include <libqhullcpp/QhullVertexSet.h>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <libqhull_r/user_r.h>
 #include <libqhullcpp/QhullFacet.h>
@@ -98,11 +98,11 @@ void trianglemesh_repair_on_import(stl_file &stl)
     if (stl.stats.number_of_facets == 0)
         return;
 
-    BOOST_LOG_TRIVIAL(debug) << "TriangleMesh::repair() started";
+    SPDLOG_DEBUG("TriangleMesh::repair() started");
 
     // checking exact
 #ifdef SLIC3R_TRACE_REPAIR
-    BOOST_LOG_TRIVIAL(trace) << "\tstl_check_faces_exact";
+    SPDLOG_TRACE("\tstl_check_faces_exact");
 #endif /* SLIC3R_TRACE_REPAIR */
     assert(stl_validate(&stl));
     stl_check_facets_exact(&stl);
@@ -123,7 +123,7 @@ void trianglemesh_repair_on_import(stl_file &stl)
                 // Still not a manifold, some triangles have unconnected edges.
                 //printf("Checking nearby. Tolerance= %f Iteration=%d of %d...", tolerance, i + 1, iterations);
 #ifdef SLIC3R_TRACE_REPAIR
-                BOOST_LOG_TRIVIAL(trace) << "\tstl_check_faces_nearby";
+                SPDLOG_TRACE("\tstl_check_faces_nearby");
 #endif /* SLIC3R_TRACE_REPAIR */
                 stl_check_facets_nearby(&stl, tolerance);
                 //printf("  Fixed %d edges.\n", stl.stats.edges_fixed - last_edges_fixed);
@@ -139,7 +139,7 @@ void trianglemesh_repair_on_import(stl_file &stl)
     // remove_unconnected
     if (stl.stats.connected_facets_3_edge < (int)stl.stats.number_of_facets) {
 #ifdef SLIC3R_TRACE_REPAIR
-        BOOST_LOG_TRIVIAL(trace) << "\tstl_remove_unconnected_facets";
+        SPDLOG_TRACE("\tstl_remove_unconnected_facets");
 #endif /* SLIC3R_TRACE_REPAIR */
         stl_remove_unconnected_facets(&stl);
         assert(stl_validate(&stl));
@@ -151,7 +151,7 @@ void trianglemesh_repair_on_import(stl_file &stl)
     // Rather let the slicing algorithm close gaps in 2D slices.
     if (stl.stats.connected_facets_3_edge < stl.stats.number_of_facets) {
 #ifdef SLIC3R_TRACE_REPAIR
-        BOOST_LOG_TRIVIAL(trace) << "\tstl_fill_holes";
+        SPDLOG_TRACE("\tstl_fill_holes");
 #endif /* SLIC3R_TRACE_REPAIR */
         stl_fill_holes(&stl);
         stl_clear_error(&stl);
@@ -160,21 +160,21 @@ void trianglemesh_repair_on_import(stl_file &stl)
 
     // normal_directions
 #ifdef SLIC3R_TRACE_REPAIR
-    BOOST_LOG_TRIVIAL(trace) << "\tstl_fix_normal_directions";
+    SPDLOG_TRACE("\tstl_fix_normal_directions");
 #endif /* SLIC3R_TRACE_REPAIR */
     stl_fix_normal_directions(&stl);
     assert(stl_validate(&stl));
 
     // normal_values
 #ifdef SLIC3R_TRACE_REPAIR
-    BOOST_LOG_TRIVIAL(trace) << "\tstl_fix_normal_values";
+    SPDLOG_TRACE("\tstl_fix_normal_values");
 #endif /* SLIC3R_TRACE_REPAIR */
     stl_fix_normal_values(&stl);
     assert(stl_validate(&stl));
     
     // always calculate the volume and reverse all normals if volume is negative
 #ifdef SLIC3R_TRACE_REPAIR
-    BOOST_LOG_TRIVIAL(trace) << "\tstl_calculate_volume";
+    SPDLOG_TRACE("\tstl_calculate_volume");
 #endif /* SLIC3R_TRACE_REPAIR */
     // If the volume is negative, all the facets are flipped and added to stats.facets_reversed.
     stl_calculate_volume(&stl);
@@ -182,7 +182,7 @@ void trianglemesh_repair_on_import(stl_file &stl)
     
     // neighbors
 #ifdef SLIC3R_TRACE_REPAIR
-    BOOST_LOG_TRIVIAL(trace) << "\tstl_verify_neighbors";
+    SPDLOG_TRACE("\tstl_verify_neighbors");
 #endif /* SLIC3R_TRACE_REPAIR */
     stl_verify_neighbors(&stl);
     assert(stl_validate(&stl));
@@ -191,7 +191,7 @@ void trianglemesh_repair_on_import(stl_file &stl)
     if (auto nr_degenerated = stl.stats.degenerate_facets; stl.stats.number_of_facets > 0 && nr_degenerated > 0)
         stl_check_facets_exact(&stl);
 
-    BOOST_LOG_TRIVIAL(debug) << "TriangleMesh::repair() finished";
+    SPDLOG_DEBUG("TriangleMesh::repair() finished");
 }
 
 TriangleMesh construct(const std::vector<Vec3f> &vertices, const std::vector<Index3> &faces)
@@ -1360,7 +1360,7 @@ indexed_triangle_set its_convex_hull(const std::vector<Vec3f> &pts)
             qhull.runQhull("", 3, (int)src_vertices.size() / 3, src_vertices.data(), "Qt");
     #endif
         } catch (...) {
-            BOOST_LOG_TRIVIAL(error) << "its_convex_hull: Unable to create convex hull";
+            SPDLOG_ERROR("its_convex_hull: Unable to create convex hull");
             return {};
         }
 

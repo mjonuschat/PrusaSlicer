@@ -12,7 +12,7 @@
 
 #include "TreeModelVolumes.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_arena.h>
@@ -44,10 +44,6 @@ namespace Slic3r::FFFTreeSupport
 {
 
 using namespace std::literals;
-
-// or warning
-// had to use a define beacuse the macro processing inside macro BOOST_LOG_TRIVIAL()
-#define error_level_not_in_cache error
 
 //FIXME Machine border is currently ignored.
 static Polygons calculateMachineBorderCollision(Polygon machine_border)
@@ -262,7 +258,7 @@ void TreeModelVolumes::precalculate(const PrintObject& print_object, const coord
     auto dur_avo = 0.001 * std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_coll).count();
 
 //    m_precalculated = true;
-    BOOST_LOG_TRIVIAL(info) << "Precalculating collision took" << dur_col << " ms. Precalculating avoidance took " << dur_avo << " ms.";
+    SPDLOG_INFO("Precalculating collision took {} ms. Precalculating avoidance took {} ms.", dur_col, dur_avo);
 
 #if 0
     // Paint caches into SVGs:
@@ -308,7 +304,7 @@ const Polygons& TreeModelVolumes::getCollision(const coord_t orig_radius, LayerI
     if (std::optional<std::reference_wrapper<const Polygons>> result = m_collision_cache.getArea({ radius, layer_idx }); result)
         return (*result).get();
     if (m_precalculated) {
-        BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate collision at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+        SPDLOG_ERROR("Had to calculate collision at radius {} and layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
         tree_supports_show_error("Not precalculated Collision requested."sv, false);
     }
     const_cast<TreeModelVolumes*>(this)->calculateCollision(radius, layer_idx, []{});
@@ -331,7 +327,7 @@ const Polygons& TreeModelVolumes::getCollisionHolefree(coord_t radius, LayerInde
     if (std::optional<std::reference_wrapper<const Polygons>> result = m_collision_cache_holefree.getArea({ radius, layer_idx }); result)
         return (*result).get();
     if (m_precalculated) {
-        BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate collision holefree at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+        SPDLOG_ERROR("Had to calculate collision holefree at radius {} and layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
         tree_supports_show_error("Not precalculated Holefree Collision requested."sv, false);
     }
     const_cast<TreeModelVolumes*>(this)->calculateCollisionHolefree({ radius, layer_idx });
@@ -355,10 +351,10 @@ const Polygons& TreeModelVolumes::getAvoidance(const coord_t orig_radius, LayerI
 
     if (m_precalculated) {
         if (to_model) {
-            BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate Avoidance to model at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+            SPDLOG_ERROR("Had to calculate Avoidance to model at radius {}, layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
             tree_supports_show_error("Not precalculated Avoidance(to model) requested."sv, false);
         } else {
-            BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate Avoidance at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+            SPDLOG_ERROR("Had to calculate Avoidance at radius {}, layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
             tree_supports_show_error("Not precalculated Avoidance(to buildplate) requested."sv, false);
         }
     }
@@ -373,7 +369,7 @@ const Polygons& TreeModelVolumes::getPlaceableAreas(const coord_t orig_radius, L
     if (std::optional<std::reference_wrapper<const Polygons>> result = m_placeable_areas_cache.getArea({ radius, layer_idx }); result)
         return (*result).get();
     if (m_precalculated) {
-        BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate Placeable Areas at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+        SPDLOG_ERROR("Had to calculate Placeable Areas at radius {}, layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
         tree_supports_show_error(format("Not precalculated Placeable areas requested, radius %1%, layer %2%", radius, layer_idx), false);
     }
     if (orig_radius == 0)
@@ -400,7 +396,7 @@ const Polygons& TreeModelVolumes::getWallRestriction(const coord_t orig_radius, 
         result)
         return (*result).get();
     if (m_precalculated) {
-        BOOST_LOG_TRIVIAL(error_level_not_in_cache) << "Had to calculate Wall restricions at radius " << radius << " and layer " << layer_idx << ", but precalculate was called. Performance may suffer!";
+        SPDLOG_ERROR("Had to calculate Wall restricions at radius {}, layer {}, but precalculate was called. Performance may suffer!", radius, layer_idx);
         tree_supports_show_error(
             min_xy_dist ? 
                 "Not precalculated Wall restriction of minimum xy distance requested )." :
@@ -646,7 +642,7 @@ void TreeModelVolumes::calculateAvoidance(const std::vector<RadiusLayerPair> &ke
         // Ensure start_layer is at least 1 as if no avoidance was calculated yet getMaxCalculatedLayer() returns -1.
         task.start_layer = std::max<LayerIndex>(1, 1 + avoidance_cache(task.type, task.to_model).getMaxCalculatedLayer(task.radius));
         if (task.start_layer > task.max_required_layer) {
-            BOOST_LOG_TRIVIAL(debug) << "Calculation requested for value already calculated?";
+            SPDLOG_DEBUG("Calculation requested for value already calculated?");
             continue;
         }
         if ((task.to_model ? to_model : to_build_plate) &&
@@ -732,7 +728,7 @@ void TreeModelVolumes::calculatePlaceables(const coord_t radius, const LayerInde
 {
     LayerIndex start_layer = 1 + m_placeable_areas_cache.getMaxCalculatedLayer(radius);
     if (start_layer > max_required_layer) {
-        BOOST_LOG_TRIVIAL(debug) << "Requested calculation for value already calculated ?";
+        SPDLOG_DEBUG("Requested calculation for value already calculated ?");
         return;
     }
 

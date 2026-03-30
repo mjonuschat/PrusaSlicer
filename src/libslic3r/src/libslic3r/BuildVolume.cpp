@@ -4,7 +4,7 @@
 ///|/
 #include "BuildVolume.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -95,7 +95,7 @@ BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_p
         m_top_bottom_convex_hull_decomposition_bed   = convex_decomposition(m_convex_hull, BedEpsilon);
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "BuildVolume bed_shape clasified as: " << this->type_name();
+    SPDLOG_DEBUG("BuildVolume bed_shape clasified as: {}", this->type_name());
 }
 
 #if 0

@@ -12,5 +12,5 @@ add_library(admesh STATIC
 )
 
 target_include_directories(admesh PUBLIC .)
-target_link_libraries(admesh PRIVATE boost_libs localesutils)
+target_link_libraries(admesh PRIVATE slic3r-base localesutils)
 target_link_libraries(admesh PUBLIC slic3r-domain-types)

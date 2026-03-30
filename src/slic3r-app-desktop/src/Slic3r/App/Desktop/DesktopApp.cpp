@@ -40,8 +40,6 @@
 
 #include "libslic3r/Utils.hpp"
 
-// TODO: replace with spdlog
-#include <boost/log/trivial.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -358,10 +356,7 @@ void DesktopApp::init_translations()
     std::string language             = app_config.get<std::string>("translation_language");
     std::string language_description = localization().language_description(language);
     if (!language.empty())
-        BOOST_LOG_TRIVIAL(trace) << boost::format(
-                                        "translation_language provided by PrusaSlicer.ini: %1%"
-                                    )
-                % language_description;
+        SPDLOG_TRACE("translation_language provided by PrusaSlicer.ini: {}", language_description);
 
     if (!localization().set_language(language)) {
         // Loading the language dictionary failed.

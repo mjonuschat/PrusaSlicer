@@ -6,7 +6,7 @@
 
 #include <boost/container/vector.hpp>
 #include <boost/geometry.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <map>
 #include <algorithm>
 #include <mutex>
@@ -175,8 +175,7 @@ public:
         if (add_ground_bridge(j, dst))
             return;
 
-        BOOST_LOG_TRIVIAL(warning) << "Cannot route junction at " << j.pos.x()
-                                   << " " << j.pos.y() << " " << j.pos.z();
+        SPDLOG_WARN("Cannot route junction at {}, {}, {}", j.pos.x(), j.pos.y(), j.pos.z());
 
         // Discard all the support points connecting to this branch.
         discard_subtree_rescure(j.id);

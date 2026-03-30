@@ -3,8 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/WX/FontUtils.hpp"
-
-#include <boost/log/trivial.hpp>
+#include "Slic3r/Log.hpp"
 #include <wx/string.h>
 #include <optional>
 #include <vector>
@@ -81,14 +80,7 @@ std::string get_file_path(const wxFont& font)
     const wxString& path    = uri.GetPath();
     wxString path_unescaped = wxURI::Unescape(path);
     std::string path_str    = path_unescaped.ToUTF8().data();
-    BOOST_LOG_TRIVIAL(trace)
-        << "input uri("
-        << file_uri.c_str()
-        << ") convert to path("
-        << path.c_str()
-        << ") string("
-        << path_str
-        << ").";
+    SPDLOG_TRACE("input uri({}) convert to path({}) string({}).", file_uri.ToUTF8().data(), path.ToUTF8().data(), path_str);
     return path_str;
 }
 } // namespace
@@ -197,24 +189,14 @@ std::unique_ptr<Domain::FontFile> create_font_file(const wxFont& font)
 #elif defined(__APPLE__)
     std::string file_path = get_file_path(font);
     if (!is_valid_ttf(file_path)) {
-        BOOST_LOG_TRIVIAL(error)
-            << "Can not process font('"
-            << get_human_readable_name(font)
-            << "'), "
-            << "file in path('"
-            << file_path
-            << "') is not valid TTF.";
+        SPDLOG_ERROR("Can not process font('{}'), file in path('{}') is not valid TTF.", get_human_readable_name(font), file_path);
         return nullptr;
     }
     return Emboss::create_font_file(file_path.c_str());
 #elif defined(__linux__)
     std::string font_path = get_font_path(font);
     if (font_path.empty()) {
-        BOOST_LOG_TRIVIAL(error)
-            << "Can not read font('"
-            << get_human_readable_name(font)
-            << "'), "
-            << "file path is empty.";
+        SPDLOG_ERROR("Can not read font('{}'), file path is empty.", get_human_readable_name(font));
         return nullptr;
     }
     return Emboss::create_font_file(font_path.c_str());
@@ -288,8 +270,8 @@ std::string store_wxFont(const wxFont& font)
 
     // wxString os = wxPlatformInfo::Get().GetOperatingSystemIdName();
     wxString font_descriptor = font.GetNativeFontInfoDesc();
-    BOOST_LOG_TRIVIAL(trace)
-        << "'"
+    std::stringstream ss;
+    ss  << "'"
         << font_descriptor
         << "' wx string get from GetNativeFontInfoDesc. wxFont "
         << "IsOk("
@@ -309,19 +291,17 @@ std::string store_wxFont(const wxFont& font)
         << "Encoding("
         << (int) font.GetEncoding()
         << "), ";
+    SPDLOG_TRACE("{}", ss.str());
     return std::string(font_descriptor.ToUTF8().data());
 }
 
 wxFont load_wxFont(const std::string& font_descriptor)
 {
-    BOOST_LOG_TRIVIAL(trace)
-        << "'"
-        << font_descriptor
-        << "'font descriptor string param of load_wxFont()";
+    SPDLOG_TRACE("'{}' font descriptor string param of load_wxFont()", font_descriptor);
     wxString font_descriptor_wx = wxString::FromUTF8(font_descriptor);
-    BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor_wx.ToUTF8().data() << "' wx string descriptor";
+    SPDLOG_TRACE("'{}' wx string descriptor", font_descriptor_wx.ToUTF8().data());
     wxFont wx_font(font_descriptor_wx);
-    BOOST_LOG_TRIVIAL(trace) << "loaded font is '" << get_human_readable_name(wx_font) << "'.";
+    SPDLOG_TRACE("loaded font is '{}'.", get_human_readable_name(wx_font));
     return wx_font;
 }
 
@@ -496,7 +476,7 @@ namespace {
             g_hdc = ::CreateCompatibleDC(NULL);
             if (g_hdc == NULL) {
                 assert(false);
-                BOOST_LOG_TRIVIAL(error) << "Can't create HDC by CreateCompatibleDC(NULL).";
+                SPDLOG_ERROR("Can't create HDC by CreateCompatibleDC(NULL).");
                 return {};
             }
         }

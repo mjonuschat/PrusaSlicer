@@ -1,5 +1,5 @@
 #include "BuildTicket.hpp"
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/string_generator.hpp>
 #include <boost/spirit/include/qi_int.hpp> // parse int
@@ -58,10 +58,10 @@ BuildTicket::Property get_property(const pugi::xml_node &prop)
 {
     pugi::xml_attribute name_attr = prop.attribute("Name");
     if (name_attr.empty())
-        BOOST_LOG_TRIVIAL(warning) << "Property 'Name' is empty. (value='" << prop.text() << "')";
+        SPDLOG_WARN("Property 'Name' is empty. (value='{}')", prop.text().as_string());
     // pugi::xml_attribute type_attr = prop.attribute("Type"); // "string"
     if (prop.text().empty())
-        BOOST_LOG_TRIVIAL(warning) << "Property(name='" << name_attr << "') doesn't have value";
+        SPDLOG_WARN("Property(name='{}') doesn't have value", name_attr.as_string());
 
     return BuildTicket::Property{name_attr.as_string(), prop.text().as_string()};
 }
@@ -69,12 +69,12 @@ BuildTicket::Property get_property(const pugi::xml_node &prop)
 BuildTicket::Properties get_properties(const pugi::xml_node &props_parent)
 {
     if (props_parent.empty())
-        BOOST_LOG_TRIVIAL(warning) << "Propertis parent is empty";
+        SPDLOG_WARN("Propertis parent is empty");
     BuildTicket::Properties properties; // result
     for (const pugi::xml_node &prop : props_parent.children("Property"))
         properties.push_back(get_property(prop));
     if (properties.empty())
-        BOOST_LOG_TRIVIAL(warning) << "Propertis are empty";
+        SPDLOG_WARN("Propertis are empty");
     return properties;
 }
 
@@ -90,23 +90,23 @@ std::optional<BuildTicket> create_build_ticket(void *data, size_t data_size)
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_buffer_inplace(data, data_size);
     if (result.status != pugi::xml_parse_status::status_ok) {
-        BOOST_LOG_TRIVIAL(error) << "Pugi can't load xml from given data for BuildTicket: " << result.description();
+        SPDLOG_ERROR("Pugi can't load xml from given data for BuildTicket: {}", result.description());
         return {};
     }
     pugi::xml_node root = doc.child("MtlsBuildTicket");
     if (root.empty()) {
-        BOOST_LOG_TRIVIAL(error) << "There is missing root tag \"MtlsBuildTicket\" OR it is empty";
+        SPDLOG_ERROR("There is missing root tag \"MtlsBuildTicket\" OR it is empty");
         return {};
     }
     if (std::strcmp(root.attribute("xmlns").value(), "http://schemas.materialise.com/build_processing/2016/04") != 0)
-        BOOST_LOG_TRIVIAL(warning) << "Attribute \"xmlns\" is not \"http://schemas.materialise.com/build_processing/2016/04\"";
+        SPDLOG_WARN("Attribute \"xmlns\" is not \"http://schemas.materialise.com/build_processing/2016/04\"");
 
     pugi::xml_node defs = root.child("Defaults");
     // pugi::xml_attribute type_attr = defs.attribute("type"); // "build"
     BuildTicket bt;
     bt.default_properties = get_properties(defs);
     if (bt.default_properties.empty()) {
-        BOOST_LOG_TRIVIAL(error) << "There is no Defaults properties";
+        SPDLOG_ERROR("There is no Defaults properties");
         return {};
     }
 
@@ -116,7 +116,7 @@ std::optional<BuildTicket> create_build_ticket(void *data, size_t data_size)
     for (const pugi::xml_node &instance : part_overrides.children("Instance")) {
         pugi::xml_attribute uuid_attr = instance.attribute("uuid");
         if (uuid_attr.empty()) {
-            BOOST_LOG_TRIVIAL(warning) << "UUID is required attribute for Instance";
+            SPDLOG_WARN("UUID is required attribute for Instance");
             continue;
         }
         // pugi::xml_attribute type_attr = instance.attribute("type"); // "builditem"
@@ -124,7 +124,7 @@ std::optional<BuildTicket> create_build_ticket(void *data, size_t data_size)
         boost::uuids::uuid uuid = gen(uuid_str);
         auto it = bt.overrides.find(uuid);
         if (it != bt.overrides.end())
-            BOOST_LOG_TRIVIAL(warning) << "UUID('" << uuid_attr << "') already exists and its property will be overrided";
+            SPDLOG_WARN("UUID('{}') already exists and its property will be overrided", uuid_attr.as_string());
         bt.overrides[uuid] = get_properties(instance);
     }
     return bt;
@@ -145,7 +145,7 @@ static const std::string no_value = "";
 const std::string& BuildTicket::get(const std::string &name) const {
     const Property *res = get_property(default_properties, name);
     if (res == nullptr) { // not known property name
-        BOOST_LOG_TRIVIAL(warning) << "Property with name \"" << name << "\" is not defined";
+        SPDLOG_WARN("Property with name \"{}\" is not defined", name);
         assert(false);
         return no_value;
     }
@@ -193,15 +193,14 @@ void apply(const BuildTicket         &build_ticket,
     auto get_postfix_number = [](const std::string &prefix, const std::string &value,
                                  bool is_zero_based = false) -> int {
         int postfix_number;
-        if (value.size() <= prefix.size() ||            
+        if (value.size() <= prefix.size() ||
             !boost::spirit::qi::parse(&value[prefix.size()], &value.back()+1,
             boost::spirit::qi::int_, postfix_number)) {
-            BOOST_LOG_TRIVIAL(warning) << "Postfix number should have value=" << prefix
-                                       << "{N}, where {N} is number. Can't parse value: \"" << value << "\" soo zero is used";
+            SPDLOG_WARN("Postfix number should have value=\"{}{{N}}\", where {{N}} is number. Can't parse value: \"{}\" soo zero is used", prefix, value);
             return 0;
         }
         if (postfix_number <= 0) {
-            BOOST_LOG_TRIVIAL(warning) << "Should be positive number. Can't parse value: \"" << value << "\" as positive number";
+            SPDLOG_WARN("Should be positive number. Can't parse value: \"{}\" as positive number", value);
             return 0;
         }
 
@@ -222,7 +221,7 @@ void apply(const BuildTicket         &build_ticket,
         if (value == "true") return "1";
         if (value == "false") return "0";
 
-        BOOST_LOG_TRIVIAL(warning) << "Can't parse bool value from: \"" << value << "\" soo false is used";
+        SPDLOG_WARN("Can't parse bool value from: \"{}\" soo false is used", value);
         return "0";
     };
 
@@ -250,7 +249,7 @@ void apply(const BuildTicket         &build_ticket,
             if (cfg_names.filaments.empty()) {
                 cfg_names.filaments.push_back(prop.value);
             } else {
-                BOOST_LOG_TRIVIAL(warning) << "Mixed definition of filament for single and multiple tool printer";
+                SPDLOG_WARN("Mixed definition of filament for single and multiple tool printer");
                 cfg_names.filaments.front() = prop.value; // set as first filament
             }
         } else if (prop.name == BT_PRINTER_PROFILE_NAME) {
@@ -269,7 +268,7 @@ void apply(const BuildTicket         &build_ticket,
     for (const BuildTicket::Property &prop : build_ticket.default_properties) {
         // check uniquity of property name
         if (contain_name.find(prop.name) != contain_name.end()) {
-            BOOST_LOG_TRIVIAL(warning) << "Do not support second use of same property Name: " << prop.name << " with value \"" << prop.value << "\"";
+            SPDLOG_WARN("Do not support second use of same property Name: {} with value \"{}\"", prop.name, prop.value);
             continue;
         }
         contain_name.insert(prop.name);
@@ -291,14 +290,14 @@ void apply(const BuildTicket         &build_ticket,
         } else if (prop.name == BT_EXTRUDER_NUMBER_FOR_SUPPORT_NAME) {
             config.set_deserialize("support_material_extruder", get_extruder_number(prop.value, true), config_substitutions);
         } else {
-            BOOST_LOG_TRIVIAL(warning) << "Unsupported Build Ticket name: " << prop.name << " with value \"" << prop.value << "\"";
+            SPDLOG_WARN("Unsupported Build Ticket name: {} with value \"{}\"", prop.name, prop.value);
         }
     }
     
     for (const auto& [uuid, properties]: build_ticket.overrides){
         auto it = uuid_to_instance.find(uuid);
         if (it == uuid_to_instance.end()) {
-            BOOST_LOG_TRIVIAL(warning) << "Build ticket contain unused object";
+            SPDLOG_WARN("Build ticket contain unused object");
             continue;
         }
         const ModelInstance* mi = it->second;
@@ -340,7 +339,7 @@ void apply(const BuildTicket         &build_ticket,
             } else if (prop.name == BT_GENERATE_SUPPORT_NAME) {
                 mo.config.set_deserialize("support_material", get_bool_value(prop.value), config_substitutions);
             } else {
-                BOOST_LOG_TRIVIAL(warning) << "Unsupported Build Ticket override name: " << prop.name << " with value \"" << prop.value << "\"";
+                SPDLOG_WARN("Unsupported Build Ticket override name: {} with value \"{}\"", prop.name, prop.value);
             }
         }
     }
@@ -359,12 +358,12 @@ void process_build_ticket(
 ) {
     std::unique_ptr<char[]> file_data(new char[stat.m_uncomp_size]);
     if (file_data == nullptr) {
-        BOOST_LOG_TRIVIAL(error) << "Can not allocate memmory for build ticket";
+        SPDLOG_ERROR("Can not allocate memmory for build ticket");
         return;
     }
 
     if (mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, file_data.get(), stat.m_uncomp_size, 0) != MZ_TRUE) {
-        BOOST_LOG_TRIVIAL(error) << "Can't extract build ticket file to memory";
+        SPDLOG_ERROR("Can't extract build ticket file to memory");
         return;
     }
 

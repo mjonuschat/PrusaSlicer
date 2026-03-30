@@ -1,4 +1,4 @@
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <igl/Hit.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
@@ -107,9 +107,7 @@ std::vector<float> raycast_visibility(
 ) {
     namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: raycast visibility of " << samples.positions.size() << " samples over " << triangles.indices.size()
-            << " triangles: end";
+    SPDLOG_DEBUG("SeamPlacer: raycast visibility of {} samples over {} triangles: end", samples.positions.size(), triangles.indices.size());
 
     //prepare uniform samples of a hemisphere
     float step_size = 1.0f / params.sqr_rays_per_sample_point;
@@ -191,9 +189,7 @@ std::vector<float> raycast_visibility(
                 }
             });
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: raycast visibility of " << samples.positions.size() << " samples over " << triangles.indices.size()
-            << " triangles: end";
+    SPDLOG_DEBUG("SeamPlacer: raycast visibility of {} samples over {} triangles: end", samples.positions.size(), triangles.indices.size());
 
     return result;
 }
@@ -205,8 +201,7 @@ Visibility::Visibility(
     const Params &params,
     const std::function<void(void)> &throw_if_canceled
 ) {
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: gather occlusion meshes: start";
+    SPDLOG_DEBUG("SeamPlacer: gather occlusion meshes: start");
     indexed_triangle_set triangle_set;
     indexed_triangle_set negative_volumes_set;
     //add all parts
@@ -225,22 +220,18 @@ Visibility::Visibility(
     }
     throw_if_canceled();
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: gather occlusion meshes: end";
+    SPDLOG_DEBUG("SeamPlacer: gather occlusion meshes: end");
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: decimate: start";
+    SPDLOG_DEBUG("SeamPlacer: decimate: start");
     its_short_edge_collpase(triangle_set, params.fast_decimation_triangle_count_target);
     its_short_edge_collpase(negative_volumes_set, params.fast_decimation_triangle_count_target);
 
     size_t negative_volumes_start_index = triangle_set.indices.size();
     its_merge(triangle_set, negative_volumes_set);
     its_transform(triangle_set, obj_transform);
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: decimate: end";
+    SPDLOG_DEBUG("SeamPlacer: decimate: end");
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: Compute visibility sample points: start";
+    SPDLOG_DEBUG("SeamPlacer: Compute visibility sample points: start");
 
     this->mesh_samples = sample_its_uniform_parallel(params.raycasting_visibility_samples_count,
             triangle_set);
@@ -262,21 +253,17 @@ Visibility::Visibility(
     float search_radius = sqrt(search_area / PI);
     this->mesh_samples_radius = search_radius;
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: Compute visiblity sample points: end";
+    SPDLOG_DEBUG("SeamPlacer: Compute visiblity sample points: end");
     throw_if_canceled();
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: Mesh sample raidus: " << this->mesh_samples_radius;
+    SPDLOG_DEBUG("SeamPlacer: Mesh sample raidus: {}", this->mesh_samples_radius);
 
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: build AABB tree: start";
+    SPDLOG_DEBUG("SeamPlacer: build AABB tree: start");
     auto raycasting_tree = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(triangle_set.vertices,
             triangle_set.indices);
 
     throw_if_canceled();
-    BOOST_LOG_TRIVIAL(debug)
-    << "SeamPlacer: build AABB tree: end";
+    SPDLOG_DEBUG("SeamPlacer: build AABB tree: end");
     this->mesh_samples_visibility = Impl::raycast_visibility(raycasting_tree, triangle_set, this->mesh_samples,
             negative_volumes_start_index, params);
     throw_if_canceled();

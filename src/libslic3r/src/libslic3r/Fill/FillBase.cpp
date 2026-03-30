@@ -7,7 +7,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
@@ -149,7 +149,7 @@ std::pair<float, Point> Fill::_infill_direction(const Surface *surface) const
 
 	if (out_angle == FLT_MAX) {
         assert(false);
-        BOOST_LOG_TRIVIAL(error) << "Using undefined infill angle";
+        SPDLOG_ERROR("Using undefined infill angle");
         out_angle = 0.f;
     }
 

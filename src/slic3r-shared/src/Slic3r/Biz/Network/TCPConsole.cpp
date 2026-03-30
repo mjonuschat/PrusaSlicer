@@ -8,7 +8,7 @@
 #include <boost/asio/write.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <iostream>
@@ -25,10 +25,7 @@ void TCPConsole::transmit_next_command()
     std::string cmd = m_cmd_queue.front();
     m_cmd_queue.pop_front();
 
-    BOOST_LOG_TRIVIAL(debug) << boost::format("TCPConsole: transmitting '%3%' to %1%:%2%")
-        % m_host_name
-        % m_port_name
-        % cmd;
+    SPDLOG_DEBUG("TCPConsole: transmitting '{}' to {}:{}", cmd, m_host_name, m_port_name);
 
     m_send_buffer = cmd + m_newline;
 
@@ -67,10 +64,7 @@ void TCPConsole::handle_read(
     m_error_code = ec;
 
     if (ec) {
-        BOOST_LOG_TRIVIAL(error) << boost::format("TCPConsole: Can't read from %1%:%2%: %3%")
-            % m_host_name
-            % m_port_name
-            % ec.message();
+        SPDLOG_ERROR("TCPConsole: Can't read from {}:{}: {}", m_host_name, m_port_name, ec.message());
 
         m_io_context.stop();
     }
@@ -78,10 +72,7 @@ void TCPConsole::handle_read(
         std::string line = extract_next_line();
         boost::trim(line);
 
-        BOOST_LOG_TRIVIAL(debug) << boost::format("TCPConsole: received '%3%' from %1%:%2%")
-            % m_host_name
-            % m_port_name
-            % line;
+        SPDLOG_DEBUG("TCPConsole: received '{}' from {}:{}", line, m_host_name, m_port_name);
 
         boost::to_lower(line);
 
@@ -98,10 +89,7 @@ void TCPConsole::handle_write(
 {
     m_error_code = ec;
     if (ec) {
-        BOOST_LOG_TRIVIAL(error) << boost::format("TCPConsole: Can't write to %1%:%2%: %3%")
-            % m_host_name
-            % m_port_name
-            % ec.message();
+        SPDLOG_ERROR("TCPConsole: Can't write to {}:{}: {}", m_host_name, m_port_name, ec.message());
 
         m_io_context.stop();
     }
@@ -115,18 +103,13 @@ void TCPConsole::handle_connect(const boost::system::error_code& ec)
     m_error_code = ec;
 
     if (ec) {
-        BOOST_LOG_TRIVIAL(error) << boost::format("TCPConsole: Can't connect to %1%:%2%: %3%")
-            % m_host_name
-            % m_port_name
-            % ec.message();
+        SPDLOG_ERROR("TCPConsole: Can't connect to {}:{}: {}", m_host_name, m_port_name, ec.message());
 
         m_io_context.stop();
     }
     else {
         m_is_connected = true;
-        BOOST_LOG_TRIVIAL(info) << boost::format("TCPConsole: connected to %1%:%2%")
-            % m_host_name
-            % m_port_name;
+        SPDLOG_INFO("TCPConsole: connected to {}:{}", m_host_name, m_port_name);
 
         transmit_next_command();
     }
@@ -179,16 +162,13 @@ bool TCPConsole::run_queue()
 
         // It's expected to have empty queue after successful exchange
         if (!m_cmd_queue.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "TCPConsole: command queue is not empty after end of exchange";
+            SPDLOG_ERROR("TCPConsole: command queue is not empty after end of exchange");
             return false;
         }
     }
     catch (std::exception& e)
     {
-        BOOST_LOG_TRIVIAL(error) << boost::format("TCPConsole: Exception while talking with %1%:%2%: %3%")
-            % m_host_name
-            % m_port_name
-            % e.what();
+        SPDLOG_ERROR("TCPConsole: Exception while talking with {}:{}: {}", m_host_name, m_port_name, e.what());
 
         return false;
     }

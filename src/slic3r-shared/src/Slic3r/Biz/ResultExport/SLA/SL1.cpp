@@ -11,7 +11,7 @@
 
 #include <LocalesUtils.hpp>
 #include <sstream>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
@@ -237,7 +237,7 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
 
         zipper.finalize();
     } catch(std::exception& e) {
-        BOOST_LOG_TRIVIAL(error) << e.what();
+        SPDLOG_ERROR("{}", e.what());
         // Rethrow the exception
         throw;
     }

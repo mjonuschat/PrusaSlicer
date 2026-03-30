@@ -19,7 +19,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <boost/filesystem.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 
 using namespace Slic3r::Biz;
 
@@ -132,7 +132,7 @@ void convert_from_meters(Domain::ModelVolume* volume)
 
 void convert_units(Domain::Model& model_to, Domain::ModelObject* object_from, ConversionType conv_type, std::vector<int> volume_idxs)
 {
-    BOOST_LOG_TRIVIAL(trace) << "ModelObject::convert_units - start";
+    SPDLOG_TRACE("ModelObject::convert_units - start");
 
     float koef = conv_type == ConversionType::CONV_FROM_INCH ? 25.4f   : conv_type == ConversionType::CONV_TO_INCH ? 0.0393700787f :
                  conv_type == ConversionType::CONV_FROM_METER ? 1000.f : conv_type == ConversionType::CONV_TO_METER ? 0.001f : 1.f;
@@ -184,7 +184,7 @@ void convert_units(Domain::Model& model_to, Domain::ModelObject* object_from, Co
     }
     new_object->invalidate_bounding_box();
 
-    BOOST_LOG_TRIVIAL(trace) << "ModelObject::convert_units - end";
+    SPDLOG_TRACE("ModelObject::convert_units - end");
 }
 
 TriangleMeshStats get_object_mesh_stats(const Domain::ModelObject* object)

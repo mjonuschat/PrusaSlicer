@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/ResultExport/SLA/Zipper.hpp"
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <cstring>
 
 #include "Slic3r/Exception.hpp"
@@ -55,16 +55,16 @@ Zipper::~Zipper()
     if(m_impl->is_alive()) {
         // Flush the current entry if not finished yet.
         try { finish_entry(); } catch(...) {
-            BOOST_LOG_TRIVIAL(error) << m_impl->formatted_errorstr();
+            SPDLOG_ERROR("{}", m_impl->formatted_errorstr());
         }
 
         if(!mz_zip_writer_finalize_archive(&m_impl->arch))
-            BOOST_LOG_TRIVIAL(error) << m_impl->formatted_errorstr();
+            SPDLOG_ERROR("{}", m_impl->formatted_errorstr());
     }
 
     // The file should be closed no matter what...
     if(!close_zip_writer(&m_impl->arch))
-        BOOST_LOG_TRIVIAL(error) << m_impl->formatted_errorstr();
+        SPDLOG_ERROR("{}", m_impl->formatted_errorstr());
 }
 
 Zipper::Zipper(Zipper &&m):

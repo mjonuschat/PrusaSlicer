@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Ultimaker B.V.
 // CuraEngine is released under the terms of the AGPLv3 or higher.
 
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 
 #include "VoxelUtils.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -138,7 +138,7 @@ bool VoxelUtils::_walkAreas(const ExPolygon &ex_polygon, coord_t z, const std::f
         const BoundingBox ex_polygon_bbox = get_extents(ex_polygon);
         grid_points                       = sample_grid_pattern(ex_polygon, cell_size_.x(), ex_polygon_bbox);
     } catch (InfillFailedException &) {
-        BOOST_LOG_TRIVIAL(warning) << "Sampling ExPolygon failed.";
+        SPDLOG_WARN("Sampling ExPolygon failed.");
     }
 
     const Vec3crd grid_point_offset(cell_size_.x() / 2, cell_size_.y() / 2, z);

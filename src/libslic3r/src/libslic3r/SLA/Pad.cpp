@@ -6,7 +6,7 @@
 #include <libslic3r/SLA/SpatIndex.hpp>
 //#include <libslic3r/SLA/Contour3D.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <utility>
 #include <cstdlib>
@@ -371,7 +371,7 @@ bool add_cavity(indexed_triangle_set &pad,
                 const PadConfig3D &   cfg,
                 ThrowOnCancel         thr)
 {
-    auto logerr = []{BOOST_LOG_TRIVIAL(error)<<"Could not create pad cavity";};
+    auto logerr = []{SPDLOG_ERROR("Could not create pad cavity");};
 
     double    wing_distance = cfg.wing_height / std::tan(cfg.slope);
     coord_t   delta_inner   = -scaled(cfg.thickness + wing_distance);

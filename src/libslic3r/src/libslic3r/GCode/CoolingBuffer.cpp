@@ -10,7 +10,7 @@
 ///|/
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/log/trivial.hpp>
+#include <Slic3r/Log.hpp>
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -854,7 +854,7 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
                 else {
                     // Only log the error in case of MM printer. Single extruder printers likely ignore any T anyway.
                     if (map_extruder_to_per_extruder_adjustment.size() > 1)
-                        BOOST_LOG_TRIVIAL(error) << "CoolingBuffer encountered an invalid toolchange, maybe from a custom gcode: " << sline;
+                        SPDLOG_ERROR("CoolingBuffer encountered an invalid toolchange, maybe from a custom gcode: {}", sline);
                 }
             }
         } else if (boost::starts_with(sline, ";_BRIDGE_FAN_START")) {

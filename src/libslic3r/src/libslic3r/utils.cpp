@@ -42,9 +42,7 @@
 	#endif
 #endif
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp> // IWYU pragma: keep
+#include <Slic3r/Log.hpp>
 
 #include <boost/locale.hpp>
 
@@ -85,38 +83,6 @@ namespace Slic3r {
 
 
 // TODO: migrate this logging stuff to slic3r-base/Slic3r/Log.hpp
-#ifndef __EMSCRIPTEN__
-static boost::log::trivial::severity_level boost_log_severity = boost::log::trivial::error;
-
-static boost::log::trivial::severity_level level_to_boost(unsigned level)
-{
-    switch (level) {
-    // Report fatal errors only.
-    case 0: return boost::log::trivial::fatal;
-    // Report fatal errors and errors.
-    case 1: return boost::log::trivial::error;
-    // Report fatal errors, errors and warnings.
-    case 2: return boost::log::trivial::warning;
-    // Report all errors, warnings and infos.
-    case 3: return boost::log::trivial::info;
-    // Report all errors, warnings, infos and debugging.
-    case 4: return boost::log::trivial::debug;
-    // Report everything including fine level tracing information.
-    default: return boost::log::trivial::trace;
-    }
-}
-
-void set_boost_logging_level(unsigned int level)
-{
-    boost_log_severity = level_to_boost(level);
-
-    boost::log::core::get()->set_filter
-    (
-        boost::log::trivial::severity >= boost_log_severity
-    );
-}
-#endif // #ifndef __EMSCRIPTEN__
-
 static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
 {
     switch (level) {
@@ -140,9 +106,6 @@ void set_logging_level(unsigned int level)
 {
     spdlog::level::level_enum lvl = log_level_to_spdlog(level);
     spdlog::set_level(lvl);
-#ifndef __EMSCRIPTEN__
-    set_boost_logging_level(level);
-#endif
 }
 
 unsigned get_logging_level()
@@ -619,11 +582,10 @@ bool copy_file_linux(const boost::filesystem::path &from, const boost::filesyste
 	if (to_mode != from_mode && ::fchmod(outfile.fd, from_mode) != 0) {
 		if (platform_flavor() == PlatformFlavor::LinuxOnChromium) {
 			// Ignore that. 9p filesystem does not allow fmod().
-			BOOST_LOG_TRIVIAL(info) << "copy_file_linux() failed to fchmod() the output file \"" << to.string() << "\" to " << from_mode << ": " << ec.message() << 
-				" This may be expected when writing to a 9p filesystem.";
+            SPDLOG_INFO("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {}. This may be expected when writing to a 9p filesystem.", to.string(), from_mode, ec.message());
 		} else {
 			// Generic linux. Write out an error to console. At least we may get some feedback.
-			BOOST_LOG_TRIVIAL(error) << "copy_file_linux() failed to fchmod() the output file \"" << to.string() << "\" to " << from_mode << ": " << ec.message();
+            SPDLOG_ERROR("copy_file_linux() failed to fchmod() the output file \"{}\" to {}: {}", to.string(), from_mode, ec.message());
 		}
 	}
 
@@ -657,7 +619,6 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
         SPDLOG_DEBUG("boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): {}", ec.message());
-		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): " << ec.message();
 	ec.clear();
 #ifdef __linux__
 	// We want to allow copying files on Linux to succeed even if changing the file attributes fails.
@@ -674,7 +635,6 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
         SPDLOG_DEBUG("boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): {}", ec.message());
-		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): " << ec.message();
 	return SUCCESS;
 }
 
@@ -1026,7 +986,7 @@ std::string format_memsize(size_t bytes, unsigned int decimals)
 std::string log_memory_info(bool ignore_loglevel)
 {
     std::string out;
-    if (ignore_loglevel || /*boost_log_severity <= boost::log::trivial::info*/ spdlog::get_level() <= spdlog::level::info) {
+    if (ignore_loglevel || spdlog::get_level() <= spdlog::level::info) {
 #ifdef WIN32
     #ifndef PROCESS_MEMORY_COUNTERS_EX
         // MingW32 doesn't have this struct in psapi.h

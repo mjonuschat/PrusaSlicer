@@ -5,8 +5,6 @@
 #ifndef BRANCHINGTREESLA_HPP
 #define BRANCHINGTREESLA_HPP
 
-#include <boost/log/trivial.hpp>
-
 #include "libslic3r/BranchingTree/BranchingTree.hpp"
 #include "SupportTreeBuilder.hpp"
 
