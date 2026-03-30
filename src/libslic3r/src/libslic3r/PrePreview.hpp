@@ -7,6 +7,7 @@
 namespace Slic3r::Biz::Print {
 
 using MoveVerticesPerLayer = std::map<int, libpgcode::MoveVertices>;
+using ObjectInstanceShifts = std::vector<Domain::Point>;
 
 MoveVerticesPerLayer get_wipe_tower_preview(const Slic3r::Print& print);
 
@@ -22,10 +23,12 @@ MoveVerticesPerLayer get_infill_preview(const PrintObject& object);
 
 MoveVerticesPerLayer get_supports_preview(const PrintObject& object);
 
-struct ObjectPreview {
+struct ObjectPreview
+{
     MoveVerticesPerLayer perimeters;
     MoveVerticesPerLayer infill;
     MoveVerticesPerLayer supports;
+    ObjectInstanceShifts instance_shifts;
 };
 
 struct PreviewConfig {

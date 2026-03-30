@@ -519,6 +519,17 @@ MoveVerticesPerLayer get_supports_preview(
     return result;
 }
 
+ObjectInstanceShifts get_object_instance_shifts(const PrintObject& print_object)
+{
+    ObjectInstanceShifts object_instance_shifts;
+    object_instance_shifts.reserve(print_object.instances().size());
+    for (const PrintInstance& instance : print_object.instances()) {
+        object_instance_shifts.emplace_back(instance.shift());
+    }
+
+    return object_instance_shifts;
+}
+
 std::vector<Vec2f> double_to_float(const std::vector<Vec2d>& src)
 {
     std::vector<Vec2f> ret;
@@ -541,12 +552,14 @@ PreviewConfig::PreviewConfig(const Slic3r::Print& print)
     extruder_colors = print.config().get<std::vector<std::string>>("extruder_colour");
 }
 
-PrePreview::PrePreview(const Slic3r::Print& print): m_prepreview_config{print} {
+PrePreview::PrePreview(const Slic3r::Print& print) : m_prepreview_config{print}
+{
     for (const PrintObject* object : print.objects()) {
         ObjectPreview& object_preview{m_object_previews[object]};
-        object_preview.perimeters = get_perimeters_preview(*object);
-        object_preview.infill = get_infill_preview(*object);
-        object_preview.supports = get_supports_preview(*object);
+        object_preview.perimeters      = get_perimeters_preview(*object);
+        object_preview.infill          = get_infill_preview(*object);
+        object_preview.supports        = get_supports_preview(*object);
+        object_preview.instance_shifts = get_object_instance_shifts(*object);
     }
 
     const auto layer_height{print.config().get<double>("layer_height")};
@@ -590,6 +603,17 @@ bool PrePreview::invalidate(const Slic3r::Print& print)
         {
             object_preview.supports = {};
             invalidated             = true;
+        }
+    }
+
+    for (auto& [object, object_preview] : m_object_previews) {
+        const ObjectInstanceShifts current_shifts{get_object_instance_shifts(*object)};
+        if (object_preview.instance_shifts != current_shifts) {
+            object_preview.perimeters      = {};
+            object_preview.infill          = {};
+            object_preview.supports        = {};
+            object_preview.instance_shifts = current_shifts;
+            invalidated                    = true;
         }
     }
 
