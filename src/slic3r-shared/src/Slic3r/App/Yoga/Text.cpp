@@ -13,6 +13,24 @@
 
 namespace Slic3r::App::Yoga {
 
+static bool utf8_last_byte_is_ascii_space(std::string_view s)
+{
+    return !s.empty() && std::isspace(static_cast<unsigned char>(s.back()));
+}
+
+static void utf8_remove_last_codepoint(std::string_view& s)
+{
+    if (s.empty()) {
+        return;
+    }
+
+    size_t i = s.size() - 1;
+    while (i > 0 && (static_cast<unsigned char>(s[i]) & 0xC0) == 0x80) {
+        --i;
+    }
+    s.remove_suffix(s.size() - i);
+}
+
 class TextInternal : public Yoga::Item
 {
 public:
@@ -180,14 +198,13 @@ protected:
                     target_size.x
                 );
                 while (current_size.y > target_size.y && !elided_text.empty()) {
-                    if (std::isspace(elided_text.back())) {
-                        while (std::isspace(elided_text.back())) {
-                            elided_text.remove_suffix(1);
-                        }
-                    } else {
-                        elided_text.remove_suffix(1);
+                    utf8_remove_last_codepoint(elided_text);
+                    // also remove trailing whitespaces
+                    while (!elided_text.empty() && utf8_last_byte_is_ascii_space(elided_text)) {
+                        utf8_remove_last_codepoint(elided_text);
                     }
-                    m_rendered_text = std::string(elided_text) + "...";
+
+                    m_rendered_text = std::string(elided_text) + "…";
                     current_size =
                         ImGui::CalcTextSize(m_rendered_text.c_str(), nullptr, false, target_size.x);
                 }

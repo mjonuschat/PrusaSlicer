@@ -306,8 +306,9 @@ bool Translations::set_best_translation_for_language(const std::string& language
         language_info = get_language_short_info("en");
 
     ASSERT(language_info != nullptr);
-    if (!is_available_locale(language_info))
-        return false;
+    // System locale may not be available and that should not be needed
+    // if (!is_available_locale(language_info))
+    //     return false;
 
     m_language_short_info_active = language_info;
 
