@@ -282,6 +282,10 @@ public:
     const ObjectSelection& object_selection() const;
     void set_object_selection(const ObjectSelection& object_selection);
     void set_object_selection(const ObjectSelection& object_selection, Domain::SelectionId project_id);
+    /*
+    * Return an equivalent selection but for Volume mode from single instance selection
+    */
+    Domain::ElementRefs selected_instance_all_volumes() const;
 
     Domain::ElementRefs selected_volumes_with_shear() const;
     std::set<SelectionReferenceFrame> object_selection_reference_frame_options() const;

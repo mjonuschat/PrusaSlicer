@@ -8,7 +8,12 @@ using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 
-void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging)
+void SelectionHandler::mark_selected(
+    Scene::Node& n,
+    bool replace,
+    bool dragging,
+    bool force_volume_selection
+)
 {
     const auto* tag = n.tag_of_type<SceneNodeTag>();
     if (tag == nullptr)
@@ -19,20 +24,13 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging
         Domain::ElementRef{tag->object_id, tag->instance_id, tag->volume_id};
 
     const Biz::Scene::ObjectSelection& object_selection = m_scene_interactor.object_selection();
-    if (object_selection.is_selected(element)) {
-        if (element.has_volume() && replace && !dragging) {
-            Biz::Scene::ObjectSelection selection{Biz::Scene::SelectionMode::Volume, {element}};
-            m_scene_interactor.set_object_selection(selection);
-        }
-        return;
-    }
 
     Biz::Scene::SelectionMode new_selection_mode{};
     if (element.is_wipe_tower()) {
         new_selection_mode = object_selection.mode;
-    } else if (tag->volume_type == Domain::ModelVolumeType::MODEL_PART) {
+    } else if (!force_volume_selection) {
         new_selection_mode = Biz::Scene::SelectionMode::Instance;
-    } else if (replace) {
+    } else if (replace || force_volume_selection) {
         new_selection_mode = Biz::Scene::SelectionMode::Volume;
     } else {
         new_selection_mode = object_selection.mode;
@@ -50,16 +48,29 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging
     m_scene_interactor.set_object_selection(selection);
 }
 
-void SelectionHandler::mark_unselected(Scene::Node& n)
+void SelectionHandler::mark_unselected(Scene::Node& n, bool force_volume_mode)
 {
     Biz::Scene::ObjectSelection selection = m_scene_interactor.object_selection();
-    const auto* tag = n.tag_of_type<SceneNodeTag>();
+    const auto* tag                       = n.tag_of_type<SceneNodeTag>();
     if (tag == nullptr)
         return;
 
     const Domain::ElementRef element = tag->wipe_tower_id != Domain::SlicingId{} ?
         Domain::ElementRef{tag->wipe_tower_id} :
         Domain::ElementRef{tag->object_id, tag->instance_id, tag->volume_id};
+
+    if (force_volume_mode
+        && selection.mode == Biz::Scene::SelectionMode::Instance
+        && selection.elements.size() == 1)
+    {
+        Domain::ElementRefs new_elements = m_scene_interactor.selected_instance_all_volumes();
+        ASSERT(!new_elements.empty());
+        // We will remove volume from full selected instance
+        // Normalize selection to volume mode first
+        selection.mode = Biz::Scene::SelectionMode::Volume;
+        selection.elements = new_elements;
+    }
+
     selection.remove(element);
 
     m_scene_interactor.set_object_selection(selection);

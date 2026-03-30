@@ -11,12 +11,17 @@ namespace Slic3r::App::Plater {
 class SelectionHandler
 {
 public:
-    explicit SelectionHandler(Biz::Scene::SceneInteractor& scene_interactor)
-        : m_scene_interactor(scene_interactor)
+    explicit SelectionHandler(Biz::Scene::SceneInteractor& scene_interactor) :
+        m_scene_interactor(scene_interactor)
     {}
 
-    void mark_selected(Scene::Node& n, bool replace=true, bool dragging=false);
-    void mark_unselected(Scene::Node& n);
+    void mark_selected(
+        Scene::Node& n,
+        bool replace                = true,
+        bool dragging               = false,
+        bool force_volume_selection = false
+    );
+    void mark_unselected(Scene::Node& n, bool force_volume_mode = false);
     void clear_selection();
 
 private:

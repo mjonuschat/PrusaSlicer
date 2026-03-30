@@ -1,4 +1,4 @@
-#include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
+﻿#include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -9,6 +9,8 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
+
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
 
@@ -444,6 +446,11 @@ static Scene::NodePickResults::const_iterator find_potentially_selected_node(
     );
 }
 
+QuickSelectGizmo::~QuickSelectGizmo()
+{
+    clear_timers();
+}
+
 Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     using namespace std::chrono_literals;
@@ -460,78 +467,129 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
     const auto it = find_potentially_selected_node(ctx.pick_results());
 
+    // replace the following line with
+    // bool modifier_pressed = ctrl_down;
+    // if you want to use [Ctrl] instead of [Shift]
+    bool modifier_pressed   = shift_down;
+    bool already_selected   = false;
+    const SceneNodeTag* tag = nullptr;
+    if (it != ctx.pick_results().end()) {
+        tag = it->node->tag_of_type<SceneNodeTag>();
+        if (tag) {
+            already_selected =
+                selection.is_selected({tag->object_id, tag->instance_id, tag->volume_id})
+                || selection.is_selected({tag->object_id, tag->instance_id, 0});
+        }
+    }
+
+    auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
+
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         if (evt.button() != Platform::MouseButton::Left) {
-            m_processing = false;
-            return Scene::GizmoActivationState::Inactive;
+            if (evt.button() == Platform::MouseButton::Right && !already_selected) {
+                // continue process it as a LeftClick -> we need to select this node before context menu showing
+            } else {
+                m_processing = false;
+                return Scene::GizmoActivationState::Inactive;
+            }
         }
 
-        RectangleSelection::Type rect_sel_type = (shift_down && ctrl_down) ? RectangleSelection::Type::Add :
-                                                 shift_down ? RectangleSelection::Type::Replace :
-                                                 alt_down ? RectangleSelection::Type::Remove :
-                                                 RectangleSelection::Type::Undefined;
+        m_pending_single_click = true;
+        m_pending_click_node   = it == ctx.pick_results().end() ? nullptr : it->node;
+
+        RectangleSelection::Type rect_sel_type = (shift_down && ctrl_down) ?
+            RectangleSelection::Type::Add :
+            shift_down ? RectangleSelection::Type::Replace :
+            alt_down   ? RectangleSelection::Type::Remove :
+                         RectangleSelection::Type::Undefined;
         if (rect_sel_type == RectangleSelection::Type::Add && selection.empty())
             rect_sel_type = RectangleSelection::Type::Replace;
 
         if (rect_sel_type != RectangleSelection::Type::Undefined)
-            m_rectangle_selection.activate(rect_sel_type, { evt.x(), evt.y() });
+            m_rectangle_selection.activate(rect_sel_type, {evt.x(), evt.y()});
 
         if (m_rectangle_selection.is_active() && !m_rectangle_selection.is_already_processed())
             return Scene::GizmoActivationState::Active;
         else {
             m_click_start = Clock::now();
-            m_processing = true;
+            m_processing  = true;
         }
 
-        return (only_active && m_hover_data.nodes.empty()) ?
-            Scene::GizmoActivationState::Active : Scene::GizmoActivationState::Probing;
+        return (only_active && m_hover_data.nodes.empty()) ? Scene::GizmoActivationState::Active :
+                                                             Scene::GizmoActivationState::Probing;
+    } else if (type == Platform::MouseEvent::Type::DoubleClick) {
+        if (evt.button() != Platform::MouseButton::Left) {
+            // process just left DoubleClick
+            m_processing = false;
+            return Scene::GizmoActivationState::Inactive;
+        }
+
+        m_pending_single_click = false;
+        m_pending_click_node   = nullptr;
+
+        // Clear timers with postponed processing of ButtonUp events
+        // They are no longer needed
+        clear_timers();
+
+        // complete click
+        if (selection.empty() && it == ctx.pick_results().end()) {
+            return Scene::GizmoActivationState::Inactive;
+        }
+        on_double_click(it == ctx.pick_results().end() ? nullptr : it->node, modifier_pressed);
+        return Scene::GizmoActivationState::Done;
     }
 
     if (!m_rectangle_selection.is_active()) {
         if (m_processing && Clock::now() - m_click_start >= max_click_duration) {
             m_processing = false;
+            clear_timers();
             SPDLOG_INFO("QuickSelectGizmo activation timed out");
         }
     }
 
-    // replace the following line with
-    // bool modifier_pressed = ctrl_down;
-    // if you want to use [Ctrl] instead of [Shift]
-    bool modifier_pressed = shift_down;
-    const SceneNodeTag* tag = nullptr;
-    if (it != ctx.pick_results().end())
-        tag = it->node->tag_of_type<SceneNodeTag>();
-
-    bool already_selected = (tag == nullptr) ? false : selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id });
-
     if (type == Platform::MouseEvent::Type::Move) {
         if (m_rectangle_selection.is_active() && !m_rectangle_selection.is_already_processed()) {
-            m_rectangle_selection.update({ evt.x(), evt.y() });
-            HoverData hover_data{ shift_down ? HoverType::Select : HoverType::Unselect, m_rectangle_selection.contained_nodes() };
-            refine_rectangle_hover_data(hover_data, selection, m_rectangle_selection.type(), m_scene_provider.scene());
+            m_rectangle_selection.update({evt.x(), evt.y()});
+            HoverData hover_data{
+                shift_down ? HoverType::Select : HoverType::Unselect,
+                m_rectangle_selection.contained_nodes()
+            };
+            refine_rectangle_hover_data(
+                hover_data,
+                selection,
+                m_rectangle_selection.type(),
+                m_scene_provider.scene()
+            );
             m_rectangle_selection.set_contained_nodes(hover_data.nodes);
             invoke_hover_changed(hover_data);
             return Scene::GizmoActivationState::Active;
-        }
-        else {
+        } else {
             if (contains_gizmo_nodes(ctx.pick_results())) {
-                HoverData hover_data = { HoverType::Select, Scene::Node::NodeList() };
+                HoverData hover_data = {HoverType::Select, Scene::Node::NodeList()};
                 invoke_hover_changed(hover_data);
                 return Scene::GizmoActivationState::Inactive;
             }
 
-            HoverType type = (modifier_pressed && already_selected) ? HoverType::Unselect : HoverType::Select;
+            HoverType type =
+                (modifier_pressed && already_selected) ? HoverType::Unselect : HoverType::Select;
             Scene::Node::NodeList nodes;
             if (tag != nullptr)
-                nodes = Scene::Node::NodeList{ it->node };
+                nodes = Scene::Node::NodeList{it->node};
 
-            HoverData hover_data = { type, nodes };
+            HoverData hover_data = {type, nodes};
             if (!hover_data.nodes.empty())
-                refine_hover_data(hover_data, modifier_pressed, selection, m_scene_provider.scene());
+                refine_hover_data(
+                    hover_data,
+                    modifier_pressed,
+                    selection,
+                    m_scene_provider.scene()
+                );
             invoke_hover_changed(hover_data);
             return Scene::GizmoActivationState::Inactive;
         }
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
+        // First, deactivate rectangle selection if it is active
+        // to avoid drawing the rectangle on Move after ButtonUp
         if (m_rectangle_selection.is_active()) {
             if (m_rectangle_selection.is_already_processed()) {
                 m_rectangle_selection.deactivate();
@@ -544,45 +602,28 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
                 return Scene::GizmoActivationState::Done;
         }
 
-        if (selection.empty()) {
-            if (it == ctx.pick_results().end())
-                return Scene::GizmoActivationState::Inactive;
-
-            m_selection_handler.mark_selected(*it->node);
-            return Scene::GizmoActivationState::Done;
-        } else {
-            if (it == ctx.pick_results().end()) {
-                if (!modifier_pressed)
-                    m_selection_handler.clear_selection();
-                return Scene::GizmoActivationState::Done;
+        // Process ButtonUp
+        if (m_pending_single_click) {
+            std::optional<size_t> node_id{std::nullopt};
+            if (m_pending_click_node) {
+                node_id = m_pending_click_node->id();
             }
-
-            if (!can_be_added_to_object_selection(*it->node, selection)) {
-                m_selection_handler.clear_selection();
-                return Scene::GizmoActivationState::Done;
-            }
-
-            if (already_selected && selection.mode == Biz::Scene::SelectionMode::Instance && m_hover_data.type == HoverType::Select) {
-                if (tag->volume_type != Domain::ModelVolumeType::MODEL_PART) {
-                    m_selection_handler.clear_selection();
-                    m_selection_handler.mark_selected(*it->node);
-                    return Scene::GizmoActivationState::Done;
+            // This is the first ButtonUp after ButtonDown, before a possible DoubleClick
+            // We need to postpone its processing slightly, because a DoubleClick may follow
+            // There may be cases where, using a modifier, multiple objects are selected quickly
+            // That is why a vector of timers is used instead of a single timer
+            m_up_timer_ids.push_back(timer_queue.set_timer(
+                std::chrono::milliseconds(150),
+                [this, node_id, is_modifier_pressed = modifier_pressed]()
+                {
+                    on_mouse_up(node_id, is_modifier_pressed);
+                    Biz::Platform::PlatformServices::instance()
+                        .render_request_handler()
+                        .request_render();
                 }
-            }
-
-            if (modifier_pressed) {
-                if (already_selected)
-                    m_selection_handler.mark_unselected(*it->node);
-                else
-                    m_selection_handler.mark_selected(*it->node, false);
-            }
-            else
-                m_selection_handler.mark_selected(*it->node);
-
-            return Scene::GizmoActivationState::Done;
+            ));
         }
-    }
-    else if (evt.type() == Platform::MouseEvent::Type::Leave) {
+    } else if (evt.type() == Platform::MouseEvent::Type::Leave) {
         if (m_rectangle_selection.is_active())
             return Scene::GizmoActivationState::Active;
     }
@@ -615,11 +656,10 @@ void QuickSelectGizmo::on_keyboard(Scene::GizmoKeyEventContext& ctx)
 
     Platform::KeyCode code = evt.code();
     // replace the following line with
-    // bool is_modifier_key = code == Platform::KeyCode::RCtrl || code == Platform::KeyCode::LCtrl;
+    // bool is_modifier_key = Platform::is_ctrl(code);
     // if you want to use [Ctrl] instead of [Shift]
-    bool is_modifier_key = code == Platform::KeyCode::RShift || code == Platform::KeyCode::LShift;
-    bool is_alt_key = code == Platform::KeyCode::RAlt || code == Platform::KeyCode::LAlt;
-    if (!is_modifier_key && !is_alt_key)
+    bool is_modifier_key = Platform::is_shift(code);
+    if (!is_modifier_key && !Platform::is_alt(code))
         return;
 
     if (m_rectangle_selection.is_active()) {
@@ -652,6 +692,89 @@ void QuickSelectGizmo::invoke_hover_changed(const HoverData& hover_data)
             [&](IHoverChangedListener* l) { l->on_hover_changed(m_hover_data); }
         );
     }
+}
+
+void QuickSelectGizmo::on_mouse_up(std::optional<size_t> node_id, bool modifier_pressed)
+{
+    const auto& selection = m_scene_interactor.object_selection();
+    if (!node_id) {
+        if (!selection.empty()) {
+            m_selection_handler.clear_selection();
+        }
+        return;
+    }
+
+    Scene::Node* node = m_scene_provider.scene().node(node_id.value());
+    if (!node) {
+        // this node doesn't exist for this time
+        return;
+    }
+
+    if (selection.empty()) {
+        m_selection_handler.mark_selected(*node);
+    } else {
+        if (modifier_pressed) {
+            const SceneNodeTag* tag = node->tag_of_type<SceneNodeTag>();
+            bool already_selected =
+                tag && selection.is_selected({tag->object_id, tag->instance_id, 0});
+
+            if (already_selected)
+                m_selection_handler.mark_unselected(*node);
+            else
+                m_selection_handler.mark_selected(*node, false);
+        } else {
+            m_selection_handler.mark_selected(*node);
+        }
+    }
+}
+
+void QuickSelectGizmo::on_double_click(Scene::Node* node, bool modifier_pressed)
+{
+    const auto& selection = m_scene_interactor.object_selection();
+    if (!node) {
+        if (!selection.empty() || !modifier_pressed) {
+            m_selection_handler.clear_selection();
+        }
+        return;
+    }
+
+    if (selection.empty()) {
+        m_selection_handler.mark_selected(*node, true, false, true);
+        return;
+    }
+    bool already_selected = false;
+    if (const SceneNodeTag* tag = node->tag_of_type<SceneNodeTag>()) {
+        already_selected =
+            selection.is_selected({tag->object_id, tag->instance_id, tag->volume_id});
+    }
+
+    bool can_modify_multi_part_selection = (selection.mode == Biz::Scene::SelectionMode::Volume
+                                            && can_be_added_to_object_selection(*node, selection))
+        || (selection.mode == Biz::Scene::SelectionMode::Instance
+            && selection.elements.size() == 1
+            && already_selected);
+
+    if (modifier_pressed && can_modify_multi_part_selection) {
+        if (already_selected)
+            m_selection_handler.mark_unselected(*node, true);
+        else
+            m_selection_handler.mark_selected(*node, false, false, true);
+        return;
+    }
+
+    m_selection_handler.clear_selection();
+    m_selection_handler.mark_selected(*node, true, false, true);
+}
+
+void QuickSelectGizmo::clear_timers()
+{
+    auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
+    for (auto& id : m_up_timer_ids) {
+        if (timer_queue.is_timer_running(id)) {
+            timer_queue.cancel_timer(id);
+        }
+    }
+    m_up_timer_ids.clear();
 }
 
 } // namespace Slic3r::App::Plater

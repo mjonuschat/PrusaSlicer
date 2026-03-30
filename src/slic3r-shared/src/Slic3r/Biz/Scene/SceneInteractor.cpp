@@ -349,6 +349,32 @@ void SceneInteractor::set_object_selection(
     update_selection_bounding_box();
 }
 
+Domain::ElementRefs SceneInteractor::selected_instance_all_volumes() const
+{
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    const ObjectSelection& selection{it->second.object_selection};
+
+    Domain::ElementRefs result;
+    if (selection.mode != SelectionMode::Instance || selection.elements.size() != 1)
+        return result;
+
+    const Domain::ElementRef& element = selection.elements.front();
+    const Domain::ModelObject* object{
+        m_workbench.project(m_selected_project_id).find_object_by_id(element.object_id)
+    };
+
+    ASSERT(element.has_instance());
+    for (const Domain::ModelVolume* volume : object->volumes) {
+        const Domain::ElementRef ref{element.object_id, element.instance_id, volume->id().id};
+        result.push_back(ref);
+    }
+
+    return result;
+}
+
 static Domain::SquareMatrix3d reset_shear(const Domain::SquareMatrix3d& matrix)
 {
     const Eigen::JacobiSVD<Domain::SquareMatrix3d> svd(

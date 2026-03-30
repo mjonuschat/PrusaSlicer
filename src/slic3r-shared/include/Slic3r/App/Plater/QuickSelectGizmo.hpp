@@ -7,8 +7,10 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
-#include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/App/Plater/RectangleSelectionPicker.hpp"
+
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/Biz/Platform/TimerQueue.hpp"
 
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
@@ -121,6 +123,8 @@ public:
         m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
     {}
 
+    ~QuickSelectGizmo();
+
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
 
@@ -134,6 +138,10 @@ public:
 private:
     void invoke_hover_changed(const HoverData& hover_data);
 
+    void on_mouse_up(std::optional<size_t> node_id, bool modifier_pressed);
+    void on_double_click(Scene::Node* node, bool modifier_pressed);
+    void clear_timers();
+
 private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;
@@ -145,6 +153,10 @@ private:
     TimePoint m_click_start;
 
     bool m_processing{false};
+
+    std::vector<Biz::Platform::TimerQueue::TimerID> m_up_timer_ids;
+    bool m_pending_single_click{ false };
+    Scene::Node* m_pending_click_node{ nullptr };  // instance-level node to select on timeout
 
     RectangleSelection m_rectangle_selection;
     HoverData m_hover_data;

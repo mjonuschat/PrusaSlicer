@@ -43,7 +43,15 @@ bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
     if (!can_be_added_to_object_selection(*n->node, m_scene_interactor.object_selection()))
         return false;
 
-    m_selection_handler.mark_selected(*n->node, true, true);
+    const auto& selection = m_scene_interactor.object_selection();
+
+    const SceneNodeTag* tag = n->node->tag_of_type<SceneNodeTag>();
+    bool already_selected = tag
+        && (selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id })
+            || selection.is_selected({ tag->object_id, tag->instance_id, 0 }));
+    if (!already_selected) {
+        m_selection_handler.mark_selected(*n->node, true, true);
+    }
     return true;
 }
 
