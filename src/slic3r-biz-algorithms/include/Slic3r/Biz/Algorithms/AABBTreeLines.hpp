@@ -33,7 +33,7 @@ template<typename ALineType, typename ATreeType, typename AVectorType> struct In
     {
         Domain::Advanced::Vec<typename LineType::Scalar, LineType::Dim> nearest_point;
         const LineType                               &line = lines[primitive_index];
-        squared_distance = Biz::Algorithms::Line::line_alg::distance_to_squared(line, origin.template cast<typename LineType::Scalar>(), &nearest_point);
+        squared_distance = Biz::Algorithms::Line::line_alg::distance_to_squared(line, Domain::Advanced::Vec<typename LineType::Scalar, LineType::Dim>(origin.template cast<typename LineType::Scalar>()), &nearest_point);
         return nearest_point.template cast<ScalarType>();
     }
 };

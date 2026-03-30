@@ -8,7 +8,6 @@
 #include <wx/clipbrd.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-#include <cpptrace/from_current.hpp>
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/Platform/PlatformError.hpp>

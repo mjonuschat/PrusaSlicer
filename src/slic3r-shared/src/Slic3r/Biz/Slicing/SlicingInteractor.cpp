@@ -1,4 +1,4 @@
-#include <cpptrace/from_current.hpp>
+
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Assert.hpp"

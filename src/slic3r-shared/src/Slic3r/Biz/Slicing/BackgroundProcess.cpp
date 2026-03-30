@@ -1,6 +1,5 @@
 #include <fmt/ostream.h>
 #include <nlohmann/json.hpp>
-#include <cpptrace/from_current.hpp>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
 #include <Slic3r/Assert.hpp>
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
@@ -283,21 +282,17 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                     m_on_status(status_update);
                 }};
 
-                cpptrace::try_catch(
-                    [&] {
-                        print->slice(m_id, thumbnail_generator);
-                        finished = true;
-                    },
-                    [&](const Biz::Slicing::Exception& exception) { slicing_error = exception.error(); },
-                    [&](CanceledException&) { /* Intentionally pass. */ },
-                    [&](){
-                        SPDLOG_CRITICAL("Unhandled exception on background thread!");
-                        std::ostringstream oss;
-                        cpptrace::from_current_exception().print(oss, true);
-                        SPDLOG_CRITICAL("{}", oss.str());
-                        m_on_exception(std::current_exception());
-                    }
-                );
+                try {
+                    print->slice(m_id, thumbnail_generator);
+                    finished = true;
+                } catch (const Biz::Slicing::Exception& exception) {
+                    slicing_error = exception.error();
+                } catch (CanceledException&) {
+                    /* Intentionally pass. */
+                } catch (...) {
+                    SPDLOG_CRITICAL("Unhandled exception on background thread!");
+                    m_on_exception(std::current_exception());
+                }
             },
             this->m_print.get()
         };

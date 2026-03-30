@@ -1,4 +1,6 @@
 add_cmake_project(fmt
-    URL "https://github.com/fmtlib/fmt/releases/download/11.2.0/fmt-11.2.0.zip"
-    URL_HASH SHA256=203eb4e8aa0d746c62d8f903df58e0419e3751591bb53ff971096eaa0ebd4ec3
+    URL "https://github.com/fmtlib/fmt/releases/download/12.1.0/fmt-12.1.0.zip"
+    URL_HASH SHA256=695fd197fa5aff8fc67b5f2bbc110490a875cdf7a41686ac8512fb480fa8ada7
+    EMSCRIPTEN_CMAKE_ARGS
+        -DFMT_TEST=OFF
 )

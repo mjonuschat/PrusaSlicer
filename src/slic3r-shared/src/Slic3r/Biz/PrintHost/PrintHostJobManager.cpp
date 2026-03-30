@@ -121,7 +121,7 @@ size_t PrintHostJobManager::emplace_job(PrintHostConfig config, PrintHostJobData
             m_wrappers.erase(id); 
         })
         .on_exception(
-            [id, this](const std::exception_ptr& exception, const cpptrace::stacktrace&)
+            [id, this](const std::exception_ptr& exception)
             {
                 m_wrappers.erase(id);
             }
