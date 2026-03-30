@@ -771,17 +771,24 @@ private:
     void select_printer_preset_internal(
         const std::string& printer_hw_config_id,
         const std::string printer_preset_id,
+        bool no_data_update,
         ListenerInvokeLaterBag& bag
     );
-    void select_print_preset_internal(const std::string id, ListenerInvokeLaterBag& bag);
+    void select_print_preset_internal(
+        const std::string id,
+        bool no_data_update,
+        ListenerInvokeLaterBag& bag
+    );
     void select_tool_print_preset_internal(
         size_t tool_index,
         const std::string id,
+        bool no_data_update,
         ListenerInvokeLaterBag& bag
     );
     void select_material_preset_internal(
         size_t material_index,
         const std::string id,
+        bool no_data_update,
         ListenerInvokeLaterBag& bag
     );
 
@@ -789,10 +796,22 @@ private:
     bool tool_print_has_unsaved_changes(size_t tool_index) const;
     bool material_has_unsaved_changes(size_t tool_index) const;
 
-    void fill_printer_presets(ListenerInvokeLaterBag& bag);
-    void fill_print_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
-    void fill_tools_presets(const Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
-    void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_printer_presets(bool no_data_update, ListenerInvokeLaterBag& bag);
+    void fill_print_presets(
+        const Domain::Preset::SelectedPreset& selected_preset,
+        bool no_data_update,
+        ListenerInvokeLaterBag& bag
+    );
+    void fill_tools_presets(
+        const Domain::Preset::SelectedPreset& selected_preset,
+        bool no_data_update,
+        ListenerInvokeLaterBag& bag
+    );
+    void fill_materials_presets(
+        Domain::Preset::SelectedPreset& selected_preset,
+        bool no_data_update,
+        ListenerInvokeLaterBag& bag
+    );
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
