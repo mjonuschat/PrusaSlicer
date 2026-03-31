@@ -13,10 +13,20 @@
 
 namespace Slic3r::App::Yoga {
 
+static float CalcMaxPopupHeightFromItemCount(int items_count)
+{
+    ImGuiContext& g = *GImGui;
+    if (items_count <= 0)
+        return FLT_MAX;
+    return (g.FontSize + g.Style.ItemSpacing.y) * items_count
+        - g.Style.ItemSpacing.y
+        + (g.Style.WindowPadding.y * 2);
+}
+
 /**
  * @note copied from imgui internals, we need our custom styling
  */
-static bool YGBeginCombo(
+bool ComboBox::YGBeginCombo(
     const char* label,
     const char* preview_value,
     ImVec2 size_arg,
@@ -34,8 +44,7 @@ static bool YGBeginCombo(
 {
     ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
 
-    // clang-format off
-    ImGuiContext& g = *GImGui;
+    ImGuiContext& g     = *GImGui;
     ImGuiWindow* window = ImGui::GetCurrentWindow();
 
     ImGuiNextWindowDataFlags backup_next_window_data_flags = g.NextWindowData.HasFlags;
@@ -44,18 +53,32 @@ static bool YGBeginCombo(
         return false;
 
     const ImGuiStyle& style = g.Style;
-    const ImGuiID id = window->GetID(label);
-    IM_ASSERT((flags & (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)) != (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)); // Can't use both flags together
+    const ImGuiID id        = window->GetID(label);
+    IM_ASSERT(
+        (flags & (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview))
+        != (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)
+    ); // Can't use both flags together
     if (flags & ImGuiComboFlags_WidthFitPreview)
-        IM_ASSERT((flags & (ImGuiComboFlags_NoPreview | (ImGuiComboFlags)ImGuiComboFlags_CustomPreview)) == 0);
+        IM_ASSERT(
+            (flags & (ImGuiComboFlags_NoPreview | (ImGuiComboFlags) ImGuiComboFlags_CustomPreview))
+            == 0
+        );
 
     if (editable) {
         ImGui::SetNextItemAllowOverlap();
     }
 
-    const float arrow_size = (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : ImGui::GetFrameHeight();
-    const float preview_width = ((flags & ImGuiComboFlags_WidthFitPreview) && (preview_value != NULL)) ? ImGui::CalcTextSize(preview_value, NULL, true).x : 0.0f;
-    const float w = (flags & ImGuiComboFlags_NoPreview) ? arrow_size : ((flags & ImGuiComboFlags_WidthFitPreview) ? (arrow_size + preview_width + style.FramePadding.x * 2.0f) : ImGui::CalcItemWidth());
+    const float arrow_size =
+        (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : ImGui::GetFrameHeight();
+    const float preview_width =
+        ((flags & ImGuiComboFlags_WidthFitPreview) && (preview_value != NULL)) ?
+        ImGui::CalcTextSize(preview_value, NULL, true).x :
+        0.0f;
+    const float w = (flags & ImGuiComboFlags_NoPreview) ?
+        arrow_size :
+        ((flags & ImGuiComboFlags_WidthFitPreview) ?
+             (arrow_size + preview_width + style.FramePadding.x * 2.0f) :
+             ImGui::CalcItemWidth());
 
     const ImVec2 frame_size = ImGui::CalcItemSize(size_arg, w, style.FramePadding.y * 2.0f);
 
@@ -67,35 +90,47 @@ static bool YGBeginCombo(
 
     // Open on click
     bool held;
-    bool pressed = enabled && ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    bool pressed           = enabled && ImGui::ButtonBehavior(bb, id, &hovered, &held);
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
-    bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
-    if (pressed && !popup_open)
-    {
+    bool popup_open        = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
+    if (pressed && !popup_open) {
         ImGui::OpenPopupEx(popup_id, ImGuiPopupFlags_None);
         popup_open = true;
     }
 
     // Render shape
-    const ImU32 frame_col = ImGui::GetColorU32(hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+    const ImU32 frame_col = ImGui::GetColorU32(
+        hovered ? ImGuiCol_FrameBgHovered : (popup_open ? ImGuiCol_FrameBgActive : ImGuiCol_FrameBg)
+    );
     const float value_x2 = ImMax(bb.Min.x, bb.Max.x - arrow_size);
     ImGui::RenderNavCursor(bb, id);
     if (!(flags & ImGuiComboFlags_NoPreview))
-        window->DrawList->AddRectFilled(bb.Min, bb.Max, frame_col, style.FrameRounding, ImDrawFlags_RoundCornersAll);
-    if (!(flags & ImGuiComboFlags_NoArrowButton))
-    {
+        window->DrawList->AddRectFilled(
+            bb.Min,
+            bb.Max,
+            frame_col,
+            style.FrameRounding,
+            popup_open ? ImDrawFlags_RoundCornersTop : ImDrawFlags_RoundCornersAll
+        );
+    if (!(flags & ImGuiComboFlags_NoArrowButton)) {
         ImU32 text_col = ImGui::GetColorU32(hovered ? ImGuiCol_Text : ImGuiCol_TextDisabled);
         if (value_x2 + arrow_size - style.FramePadding.x <= bb.Max.x) {
             const float w = arrow_size - 2.f * style.FramePadding.x;
             const float h = g.FontSize;
-            YGRenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.x, bb.Min.y + style.FramePadding.y), ImVec2(w, h), text_col, ImGuiDir_Down, 1.0f);
+            YGRenderArrow(
+                window->DrawList,
+                ImVec2(value_x2 + style.FramePadding.x, bb.Min.y + style.FramePadding.y),
+                ImVec2(w, h),
+                text_col,
+                ImGuiDir_Down,
+                1.0f
+            );
         }
     }
     ImGui::RenderFrameBorder(bb.Min, bb.Max, style.FrameRounding);
 
     // Custom preview
-    if (flags & ImGuiComboFlags_CustomPreview)
-    {
+    if (flags & ImGuiComboFlags_CustomPreview) {
         g.ComboPreviewData.PreviewRect = ImRect(bb.Min.x, bb.Min.y, value_x2, bb.Max.y);
         IM_ASSERT(preview_value == NULL || preview_value[0] == 0);
         preview_value = NULL;
@@ -104,7 +139,15 @@ static bool YGBeginCombo(
     if (editable) {
         ImGui::SetCursorScreenPos(cursor_pos);
         const std::string lab = std::string(label) + "##inputtext";
-        edited |= ImGui::InputTextEx(lab.c_str(), "", buffer, buf_size, ImVec2(value_x2 - bb.Min.x, bb.Max.y - bb.Min.y), ImGuiInputTextFlags_AutoSelectAll, nullptr);
+        edited |= ImGui::InputTextEx(
+            lab.c_str(),
+            "",
+            buffer,
+            buf_size,
+            ImVec2(value_x2 - bb.Min.x, bb.Max.y - bb.Min.y),
+            ImGuiInputTextFlags_AutoSelectAll,
+            nullptr
+        );
         if (edited && ImGui::IsItemDeactivatedAfterEdit()) {
             edited = false;
             if (validator) {
@@ -119,12 +162,17 @@ static bool YGBeginCombo(
         }
     } else {
         // Render preview and label
-        if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview))
-        {
+        if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview)) {
             ImGui::PushFont(label_font, GImGui->FontSizeBase);
             if (g.LogEnabled)
                 ImGui::LogSetNextTextDecoration("{", "}");
-            ImGui::RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
+            ImGui::RenderTextClipped(
+                bb.Min + style.FramePadding,
+                ImVec2(value_x2, bb.Max.y),
+                preview_value,
+                NULL,
+                NULL
+            );
             ImGui::PopFont();
         }
     }
@@ -133,8 +181,101 @@ static bool YGBeginCombo(
         return false;
 
     g.NextWindowData.HasFlags = backup_next_window_data_flags;
-    return ImGui::BeginComboPopup(popup_id, bb, flags);
-    // clang-format on
+    return BeginComboPopup(popup_id, bb, flags);
+}
+
+bool ComboBox::BeginComboPopup(ImGuiID popup_id, const ImRect& bb, ImGuiComboFlags flags)
+{
+    ImGuiContext& g = *GImGui;
+    if (!ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None)) {
+        g.NextWindowData.ClearFlags();
+        return false;
+    }
+
+    // Set popup size
+    float w = bb.GetWidth();
+    if (g.NextWindowData.HasFlags & ImGuiNextWindowDataFlags_HasSizeConstraint) {
+        g.NextWindowData.SizeConstraintRect.Min.x =
+            ImMax(g.NextWindowData.SizeConstraintRect.Min.x, w);
+    } else {
+        int popup_max_height_in_items = -1;
+        if ((flags & ImGuiComboFlags_HeightMask_) == 0)
+            popup_max_height_in_items = 12; // Default size
+        IM_ASSERT(
+            (flags & ImGuiComboFlags_HeightMask_) == 0
+            || ImIsPowerOfTwo(flags & ImGuiComboFlags_HeightMask_)
+        ); // Only one
+        if (flags & ImGuiComboFlags_HeightRegular)
+            popup_max_height_in_items = 8;
+        else if (flags & ImGuiComboFlags_HeightSmall)
+            popup_max_height_in_items = 4;
+        else if (flags & ImGuiComboFlags_HeightLarge)
+            popup_max_height_in_items = 20;
+        ImVec2 constraint_min(0.0f, 0.0f), constraint_max(FLT_MAX, FLT_MAX);
+        if ((g.NextWindowData.HasFlags & ImGuiNextWindowDataFlags_HasSize) == 0
+            || g.NextWindowData.SizeVal.x
+                <= 0.0f) // Don't apply constraints if user specified a size
+            constraint_min.x = w;
+        if ((g.NextWindowData.HasFlags & ImGuiNextWindowDataFlags_HasSize) == 0
+            || g.NextWindowData.SizeVal.y <= 0.0f)
+            constraint_max.y = CalcMaxPopupHeightFromItemCount(popup_max_height_in_items);
+        ImGui::SetNextWindowSizeConstraints(constraint_min, constraint_max);
+    }
+
+    // This is essentially a specialized version of BeginPopupEx()
+    char name[16];
+    ImFormatString(
+        name,
+        IM_COUNTOF(name),
+        "##Combo_%02d",
+        g.BeginComboDepth
+    ); // Recycle windows based on depth
+
+    // Set position given a custom constraint (peak into expected window size so we can position it)
+    // FIXME: This might be easier to express with an hypothetical SetNextWindowPosConstraints() function?
+    // FIXME: This might be moved to Begin() or at least around the same spot where Tooltips and other Popups are calling FindBestWindowPosForPopupEx()?
+    if (ImGuiWindow* popup_window = ImGui::FindWindowByName(name))
+        if (popup_window->WasActive) {
+            // Always override 'AutoPosLastDirection' to not leave a chance for a past value to affect us.
+            ImVec2 size_expected               = ImGui::CalcWindowNextAutoFitSize(popup_window);
+            popup_window->AutoPosLastDirection = (flags & ImGuiComboFlags_PopupAlignLeft) ?
+                ImGuiDir_Left :
+                ImGuiDir_Down; // Left = "Below, Toward Left", Down = "Below, Toward Right (default)"
+            ImRect r_outer                     = ImGui::GetPopupAllowedExtentRect(popup_window);
+            ImVec2 pos                         = ImGui::FindBestWindowPosForPopupEx(
+                bb.GetBL(),
+                size_expected,
+                &popup_window->AutoPosLastDirection,
+                r_outer,
+                bb,
+                ImGuiPopupPositionPolicy_ComboBox
+            );
+            ImGui::SetNextWindowPos(pos);
+        }
+
+    // We don't use BeginPopupEx() solely because we have a custom name string, which we could make an argument to BeginPopupEx()
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize
+        | ImGuiWindowFlags_Popup
+        | ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoSavedSettings
+        | ImGuiWindowFlags_NoMove;
+    ImGui::PushStyleVarX(
+        ImGuiStyleVar_WindowPadding,
+        g.Style.FramePadding.x
+    ); // Horizontally align ourselves with the framed text
+    bool ret = ImGui::Begin(name, NULL, window_flags);
+    ImGui::PopStyleVar();
+    if (!ret) {
+        ImGui::EndPopup();
+        if (
+            !g.IO.ConfigDebugBeginReturnValueOnce && !g.IO.ConfigDebugBeginReturnValueLoop
+        ) // Begin may only return false with those debug tools activated.
+            IM_ASSERT(0); // This should never happen as we tested for IsPopupOpen() above
+        return false;
+    }
+    g.BeginComboDepth++;
+    return true;
 }
 
 ComboBox::ComboBox(const std::string& name)
@@ -157,20 +298,28 @@ void ComboBox::render(Vec2f pos, Vec2f size)
     render_item_begin(pos, size);
 
     {
-        Imgui::ScopedStyleColors colors(
-            {{ImGuiCol_FrameBg, m_theme->color_imgui(Platform::Color::Button)},
-             {ImGuiCol_FrameBgHovered,
-              m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered)},
-             {ImGuiCol_FrameBgActive,
-              m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)}}
-        );
+        Imgui::ScopedStyleColors colors({
+            {ImGuiCol_FrameBg, m_theme->color_imgui(Platform::Color::Button)},
+            {ImGuiCol_FrameBgHovered,
+             m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered)},
+            {ImGuiCol_FrameBgActive,
+             m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered)},
+            {ImGuiCol_Text,
+             m_theme->color_imgui(
+                 Platform::Color::Text,
+                 enabled() ? Platform::ColorGroup::Default : Platform::ColorGroup::Disabled
+             )},
+            {ImGuiCol_Border,
+             m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)},
+            {ImGuiCol_BorderShadow,
+             m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)},
+            {ImGuiCol_Header,
+             m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active)},
+        });
 
         ImGui::SetCursorScreenPos(to_im(pos));
-
-        ImGui::PushStyleColor(
-            ImGuiCol_Text,
-            ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
-        );
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 2.0f);
+        // ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 5.0f);
 
         const std::string id = "###" + object_name();
         bool new_hovered     = false;
@@ -212,7 +361,8 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
             ImGui::EndCombo();
         }
-        ImGui::PopStyleColor();
+
+        ImGui::PopStyleVar(1);
 
         if (m_hovered != new_hovered) {
             m_hovered = new_hovered;

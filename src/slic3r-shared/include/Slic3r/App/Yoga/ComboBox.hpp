@@ -9,6 +9,8 @@
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
+#include <imgui_internal.h>
+
 namespace Slic3r::App::Yoga {
 
 class Validator;
@@ -85,6 +87,26 @@ public:
 
 protected:
     Vec2f get_item_size() override;
+
+private:
+    ////////////////////// Copied from ImGui //////////////////////////////////////
+    bool YGBeginCombo(
+        const char* label,
+        const char* preview_value,
+        ImVec2 size_arg,
+        ImGuiComboFlags flags,
+        bool editable,
+        bool enabled,
+        char* buffer,
+        int buf_size,
+        bool& edited,
+        Validator* validator,
+        ComboBox::Callbacks& callbacks,
+        bool& hovered,
+        ImFont* label_font
+    );
+    bool BeginComboPopup(ImGuiID popup_id, const ImRect& bb, ImGuiComboFlags flags);
+    ///////////////////////////////////////////////////////////////////////////////
 
 protected:
     std::vector<std::string> m_items;
