@@ -51,5 +51,8 @@ endif()
 
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
+endif ()
+
+if (SLIC3R_GUI AND NOT EMSCRIPTEN)
     add_subdirectory(hidapi)
 endif ()

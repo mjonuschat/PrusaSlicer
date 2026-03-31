@@ -63,7 +63,7 @@ target_link_libraries(slic3r-platform PUBLIC slic3r-render slic3r-jthread)
 add_target_to_doxygen(slic3r-platform)
 
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-platform-tests
         test/Slic3r/Biz/Platform/JobManager/JobManagerTests.cpp
         test/Slic3r/Biz/Platform/ListenerListTests.cpp

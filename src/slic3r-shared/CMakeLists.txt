@@ -1098,7 +1098,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif ()
 
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     list(APPEND SLIC3R_SHARED_FILES
         test/Slic3r/Biz/Network/MockHttp.hpp
         test/Slic3r/Biz/Network/MockHttpFactory.cpp
@@ -1232,7 +1232,7 @@ endif()
 
 add_target_to_doxygen(slic3r-shared)
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-shared-tests
         test/main.cpp
 

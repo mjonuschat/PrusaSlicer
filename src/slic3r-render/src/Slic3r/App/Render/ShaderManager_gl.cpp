@@ -34,13 +34,13 @@ std::pair<bool, std::string> ShaderManager::init()
 
     bool valid = true;
 
-#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#if SLIC3R_OPENGL_ES
     const std::string prefix = "ES/";
     // used to render wireframed triangles
     valid &= append_shader("wireframe", { prefix + "wireframe.vs", prefix + "wireframe.fs" });
 #else
     const std::string prefix = m_context.gl_version() >= Semver(3, 1, 0) ? "140/" : "110/";
-#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#endif // SLIC3R_OPENGL_ES
     // imgui shader
     valid &= append_shader("imgui", { prefix + "imgui.vs", prefix + "imgui.fs" });
     // basic shader, used to render all what was previously rendered using the immediate mode
@@ -51,14 +51,14 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("flat_texture", { prefix + "flat_texture.vs", prefix + "flat_texture.fs" });
     // used to render 3D scene background
     valid &= append_shader("background", { prefix + "background.vs", prefix + "background.fs" });
-#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#if SLIC3R_OPENGL_ES
     // used to render dashed lines
     valid &= append_shader("dashed_lines", { prefix + "dashed_lines.vs", prefix + "dashed_lines.fs" });
 #else
     if (m_context.is_core_profile())
         // used to render thick and/or dashed lines
         valid &= append_shader("dashed_thick_lines", { prefix + "dashed_thick_lines.vs", prefix + "dashed_thick_lines.fs", prefix + "dashed_thick_lines.gs" });
-#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#endif // SLIC3R_OPENGL_ES
     // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
     valid &= append_shader("gouraud_light", { prefix + "gouraud_light.vs", prefix + "gouraud_light.fs" });
     // extend "gouraud_light" by adding two clipping planes at different world z, used in sla preview

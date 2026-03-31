@@ -114,7 +114,7 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     PNG::PNG
 )
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-algorithms-tests
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp

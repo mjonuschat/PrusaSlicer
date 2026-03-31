@@ -34,7 +34,7 @@ public:
 
     bool is_es() const
     {
-#if SLIC3R_OPENGL_ES //|| defined(__EMSCRIPTEN__)
+#if SLIC3R_OPENGL_ES
         return true;
 #else
         return false;

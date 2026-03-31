@@ -11,7 +11,7 @@
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
-#define ENABLE_RENDER_TO_TEXTURE (0 && (!SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)))
+#define ENABLE_RENDER_TO_TEXTURE (0 && !SLIC3R_OPENGL_ES)
 
 namespace Slic3r::App::Render {
 class Device;

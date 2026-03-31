@@ -402,7 +402,7 @@ void GLDeviceInternal::unbing_pull_geometry(const PullGeometry& g) {
 void GLDeviceInternal::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
     BlitFramebufferMask mask, BlitFramebufferFilter filter)
 {
-#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#if SLIC3R_OPENGL_ES
     PANIC("Not implemented yet");
 #else
     ResourceId src_id = src_fb.get_internal_as<GLFramebufferInternal>().m_id;
@@ -439,13 +439,13 @@ void GLDeviceInternal::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, read_id);
         glCheck();
     }
-#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#endif // SLIC3R_OPENGL_ES
 }
 
 void GLDeviceInternal::blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
     BlitFramebufferFilter filter)
 {
-#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#if SLIC3R_OPENGL_ES
     PANIC("Not implemented yet");
 #else
     ResourceId src_id = fb.get_internal_as<GLFramebufferInternal>().m_id;
@@ -466,7 +466,7 @@ void GLDeviceInternal::blit_to_draw_framebuffer(const Framebuffer& fb, int width
         glBindFramebuffer(GL_READ_FRAMEBUFFER, read_id);
         glCheck();
     }
-#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+#endif // SLIC3R_OPENGL_ES
 }
 
 void GLDeviceInternal::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, Domain::PixelFormat format, void* pixels)

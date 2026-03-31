@@ -92,7 +92,7 @@ if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
     target_compile_definitions(slic3r-biz-cgal-algorithms PRIVATE CGAL_DO_NOT_USE_MPZF)
 endif ()
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-cgal-algorithms-tests
         test/Slic3r/Biz/CGAL/Algorithms/CGALTests.cpp
     )

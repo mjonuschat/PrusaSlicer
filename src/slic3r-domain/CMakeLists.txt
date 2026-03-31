@@ -183,7 +183,7 @@ target_link_libraries(slic3r-domain PUBLIC
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-domain-tests
         test/Slic3r/Domain/ConfigValueTests.cpp
         test/Slic3r/Domain/ConfigTests.cpp

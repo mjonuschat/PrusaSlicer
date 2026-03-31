@@ -84,7 +84,7 @@ endif ()
 # Doxygen
 add_target_to_doxygen(slic3r-base)
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
 	add_executable(slic3r-base-tests
 			test/Slic3r/InvokeLaterBagTests.cpp
 	)

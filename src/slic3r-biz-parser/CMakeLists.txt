@@ -13,7 +13,7 @@ target_link_libraries(slic3r-biz-parser PUBLIC slic3r-domain)
 target_compile_definitions(slic3r-biz-parser PRIVATE SLIC3R_VERSION="3.0.0")
 
 
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-parser-tests
         test/Slic3r/Biz/Parser/IOTests.cpp
         test/Slic3r/Biz/Parser/ParserTests.cpp
