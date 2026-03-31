@@ -153,6 +153,8 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                     return Biz::_u8L("Export G-code to SD Card / Flash Drive");
                 case MenuItemName::OnlinePresetUpdate:
                     return Biz::_u8L("Update from Online Presets");
+                case MenuItemName::PresetReposManagement:
+                    return Biz::_u8L("Preset Update Management");
                 case MenuItemName::ArrangeBed:
                     return Biz::_u8L("Arrange Bed");
                 case MenuItemName::ArrangeSelectionBed:

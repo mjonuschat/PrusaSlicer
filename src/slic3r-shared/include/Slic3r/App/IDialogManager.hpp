@@ -3,6 +3,8 @@
 #include "Slic3r/App/Browser/AbstractUploadBrowserLogic.hpp"
 #include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
 #include "Slic3r/Assert.hpp"
 #include <memory>
 #include <vector>
@@ -96,6 +98,15 @@ public:
     virtual std::string show_ramming_dialog(const std::string& ramming_parameters) = 0;
 
     virtual void open_in_browser(const std::string& link, int flag) = 0;
+
+    virtual Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector show_preset_sources_dialog(
+        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
+    ) = 0;
+
+    virtual void show_forced_reconfigurations_dialog(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::function<void(bool)>& callback
+    ) = 0;
 };
 
 } // namespace Slic3r::App

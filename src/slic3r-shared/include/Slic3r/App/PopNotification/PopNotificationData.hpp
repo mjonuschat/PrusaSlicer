@@ -26,6 +26,10 @@ enum class PopNotificationType
     ArrangeEvent,
     ConnectError,
     FileExplorerError
+    PresetUpdaterStatus,
+    PresetUpdateAvailable,
+    PresetUpdaterWarning,
+    PresetUpdaterError,
 };
 
 /*

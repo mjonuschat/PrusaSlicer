@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <string>
-#include <map>
 #include <functional>
 
 #include <jthread/JThread.hpp>
@@ -17,20 +16,17 @@ namespace Slic3r::Biz::PresetUpdater {
 class PresetUpdaterProcessStatus
 {
 public:
-    typedef std::function<void(const std::string& /* target */, int /* attempt */, unsigned /* delay */)>
-        StatusChangedFn;
     enum class PresetUpdaterRetryPolicy
     {
         PURP_5_TRIES,
         PURP_NO_RETRY,
     };
 
+    typedef std::function<void(const std::string& /* target */, int /* attempt */, unsigned /* delay */)>
+        StatusChangedFn;
+
     // called from PresetUpdaterWrapper
-    PresetUpdaterProcessStatus(JThread::StopToken& stop_token, StatusChangedFn status_fn, bool ignore_hash = false) :
-        m_dispatch_status_fn(status_fn),
-        m_stop_token(stop_token),
-        m_ignore_file_hash(ignore_hash)
-    {}
+    PresetUpdaterProcessStatus(JThread::StopToken stop_token, StatusChangedFn status_fn, PresetUpdaterRetryPolicy retry_policy, bool ignore_hash = false);
 
     PresetUpdaterProcessStatus(PresetUpdaterProcessStatus&&)                 = delete;
     PresetUpdaterProcessStatus(const PresetUpdaterProcessStatus&)            = delete;
@@ -115,10 +111,12 @@ public:
         m_warning_target_vendor = {};
     }
 
-    void set_target(const std::string& target)
+    void set_download_target(const std::string& target)
     {
-        m_target = target;
+        m_download_target = target;
     }
+
+    void set_install_target(const std::string& target);
 
     bool has_warning(const std::string& repo, const std::string& vendor) const
     {
@@ -132,21 +130,19 @@ public:
         return false;
     }
 
-    bool ignore_file_hash () { return m_ignore_file_hash; }
+    bool ignore_file_hash () const { return m_ignore_file_hash; }
 
 private:
     std::string m_error;
     std::vector<PresetUpdaterWarning> m_warnings;
     std::string m_warning_target_repo;
     std::string m_warning_target_vendor;
-    std::string m_target;
+    std::string m_download_target;
     Network::HttpRetryOpt m_retry_policy;
-    static const std::map<PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy, Network::HttpRetryOpt>
-        policy_map;
     std::string m_access_token;
     StatusChangedFn m_dispatch_status_fn;
 
-    JThread::StopToken& m_stop_token;
+    JThread::StopToken m_stop_token;
 
     bool m_ignore_file_hash;
 };

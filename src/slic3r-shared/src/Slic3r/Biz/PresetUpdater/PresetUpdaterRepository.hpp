@@ -53,7 +53,6 @@ public:
     virtual bool get_file(
         const std::string& source_subpath,
         const boost::filesystem::path& target_path,
-        const std::string& expected_hash_string,
         PresetUpdaterProcessStatus* process_status
     ) const = 0;
 
@@ -95,7 +94,7 @@ public:
     static bool extract_repository_header(
         const nlohmann::json& json,
         PresetUpdaterRepositoryDescriptor& data,
-        PresetUpdaterProcessStatus* process_status
+        std::string& warning_msg
     );
 
 protected:
@@ -140,7 +139,6 @@ public:
     virtual bool get_file(
         const std::string& source_subpath,
         const boost::filesystem::path& target_path,
-        const std::string& expected_hash_string,
         PresetUpdaterProcessStatus* process_status
     ) const override;
 
@@ -194,7 +192,6 @@ public:
     virtual bool get_file(
         const std::string& source_subpath,
         const boost::filesystem::path& target_path,
-        const std::string& expected_hash_string,
         PresetUpdaterProcessStatus* process_status
     ) const override;
 
@@ -210,12 +207,12 @@ public:
 
     static bool extract_local_archive_repository(
         PresetUpdaterRepositoryDescriptor& manifest_data,
-        PresetUpdaterProcessStatus* process_status
+        std::string& error_msg
     );
 
     static bool data_structure_check(
         const boost::filesystem::path& unzipped_path,
-        PresetUpdaterProcessStatus* process_status
+        std::string& error_msg
     );
 
 private:

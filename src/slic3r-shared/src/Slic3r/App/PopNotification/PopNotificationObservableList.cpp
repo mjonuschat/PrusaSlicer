@@ -11,7 +11,7 @@ void PopNotificationObservableList::upsert_notifcation(
     auto it{std::find_if(
         m_notifications.begin(),
         m_notifications.end(),
-        [&](const PopNotificationDataPtr& notif_ptr) { return matcher(data.payload, notif_ptr->payload); }
+        [&](const PopNotificationDataPtr& notif_ptr) { return data.type == notif_ptr->type && matcher(data.payload, notif_ptr->payload); }
     )};
 
     if (it == m_notifications.end()) {

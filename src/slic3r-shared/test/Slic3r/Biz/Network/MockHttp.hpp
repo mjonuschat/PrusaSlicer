@@ -80,6 +80,8 @@ public:
         return *this;
     }
 
+    std::unique_ptr<trompeloeil::expectation> default_allow_size_limit;
+
     MAKE_MOCK1(size_limit_mock, void(size_t));
 
     IHttp& size_limit(size_t s) override

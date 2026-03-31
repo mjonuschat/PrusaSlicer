@@ -354,6 +354,11 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
 
+    m_project_interactor->preset_updater_interactor()
+        .add_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(
+            &app_services.pop_notification_center()
+        );
+
     auto font_manager = std::make_unique<Biz::WX::FontManager>(data_dir());
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
@@ -418,6 +423,7 @@ bool DesktopApp::OnInit()
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
         m_project_interactor->preset_updater_interactor(),
         preset_interactor,
+        m_navigator,
         bundle_paths
     );
 

@@ -33,27 +33,28 @@ PresetUpdaterCLI::PresetUpdaterCLI(Biz::PresetUpdater::PresetUpdaterInteractor& 
 void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
 {
     if (action.preset_updater_sync) {
-        m_preset_updater_interactor.build_update_sync_and_reconfiguration_check();
+        m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(true, Biz::PresetUpdater::VerboseStyle::NoProgress);
     } else if (action.preset_updater_perform) {
         m_perform_after_sync = true;
-        m_preset_updater_interactor.build_update_sync_and_reconfiguration_check();
+        m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(true, Biz::PresetUpdater::VerboseStyle::NoProgress);
     } else if (action.preset_updater_add_local) {
         ASSERT(!data.empty());
         boost::filesystem::path path(data);
-        m_preset_updater_interactor.add_local_repository(path, true);
+        m_preset_updater_interactor.add_local_repository(true, path, true);
     } else if (action.preset_updater_remove_local) {
         ASSERT(!data.empty());
-        m_preset_updater_interactor.remove_local_repository(data);
+        m_preset_updater_interactor.remove_local_repository(true, data);
     } else if (action.preset_updater_list_repos) {
         m_preset_updater_interactor.update_repositories(
+            true,
             Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{}
         );
     } else if (action.preset_updater_switch_repo) {
         ASSERT(!data.empty());
         m_repo_to_switch = data;
-        m_preset_updater_interactor.list_repositories();
+        m_preset_updater_interactor.list_repositories(true);
     } else if (action.preset_updater_cleanup) {
-        m_preset_updater_interactor.cleanup_update_sync();
+        m_preset_updater_interactor.cleanup_update_sync(true);
     } else {
         ASSERT(false);
     }
@@ -62,19 +63,27 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
 void PresetUpdaterCLI::on_preset_updater_error(const std::string& body)
 {
     nlohmann::json j = {{"error", body}};
-    printf("%s", j.dump(-1).c_str());
-    printf("\n");
+    printf("%s\n",j.dump(-1).c_str());
     m_has_result = true;
 }
 
-void PresetUpdaterCLI::on_preset_updater_status(const std::string& target, int attempt, unsigned delay)
+void PresetUpdaterCLI::on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
 {
     SPDLOG_INFO("target:{} attempt:{} delay:{}", target, attempt, delay);
 }
 
-void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
+void PresetUpdaterCLI::on_preset_updater_forced_reconfigurations_list(
     const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
+{
+    // This is empty on purpose - if preset updater functions are run in CLI, we do not check forced reconf before.
+}
+
+void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
+    const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
+    Biz::PresetUpdater::VerboseStyle verbose
 )
 {
     if (m_perform_after_sync) {
@@ -83,25 +92,22 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", reconfigurations},{"warnings", warnings}};
-            printf("%s", j.dump(4).c_str());
-            printf("\n");
+            printf("%s\n",j.dump(4).c_str());
         } else {
             nlohmann::json j = {{"result", reconfigurations}};
-            printf("%s", j.dump(4).c_str());
-            printf("\n");
+            printf("%s\n",j.dump(4).c_str());
         }
         m_has_result = true;
     }
 }
 
-void PresetUpdaterCLI::on_preset_updater_reconfigurations_perfomed(
+void PresetUpdaterCLI::on_preset_updater_reconfigurations_performed(
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
 {
     if (!warnings.empty()) {
         nlohmann::json j = {{"warnings", warnings}};
-        printf("%s", j.dump(4).c_str());
-        printf("\n");
+        printf("%s\n",j.dump(4).c_str());
     }
     m_has_result = true;
 }
@@ -136,19 +142,25 @@ void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
             }
         }
         m_repo_to_switch.clear();
-        m_preset_updater_interactor.update_repositories(updated_descriptor);
+        m_preset_updater_interactor.update_repositories(true, updated_descriptor);
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", descriptor},{"warnings", warnings}};
-            printf("%s", j.dump(4).c_str());
-            printf("\n");
+            printf("%s\n",j.dump(4).c_str());
         } else {
             nlohmann::json j = {{"result", descriptor}};
-            printf("%s", j.dump(4).c_str());
-            printf("\n");
+            printf("%s\n",j.dump(4).c_str());
         }
         m_has_result = true;
     }
 }
+void PresetUpdaterCLI::on_preset_updater_repository_selection_performed(
+    const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
+{
+    on_preset_updater_repository_info_vector(descriptor, warnings);
+}
+
 
 } // namespace Slic3r::App

@@ -178,6 +178,7 @@ TEST_CASE("Preset updater")
             );
 
             ret->default_allow_timeout = NAMED_ALLOW_CALL(*ret, timeout_total_mock(trompeloeil::_));
+            ret->default_allow_size_limit = NAMED_ALLOW_CALL(*ret, size_limit_mock(trompeloeil::_));
 
             return ret;
         }
@@ -194,7 +195,7 @@ TEST_CASE("Preset updater")
         auto [resources_version, server_version, staged_version, installed_version, result_version, result_type] =
             GENERATE(
                 table<std::string, std::string, std::string, std::string, Slic3r::Semver, PresetUpdater::ReconfigurationResult>({
-                
+
                     {"100", "", "", "", Slic3r::Semver{1,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"", "100", "", "", Slic3r::Semver{1,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"", "", "100", "", Slic3r::Semver{1,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
@@ -291,7 +292,7 @@ TEST_CASE("Preset updater")
                     {"102", "101", "100", "", Slic3r::Semver{1,0,1}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"101", "100", "102", "", Slic3r::Semver{1,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"100", "102", "101", "", Slic3r::Semver{1,0,2}, PresetUpdater::ReconfigurationResult::NewVendor},
-                
+
                     {"100", "100", "100", "100", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
 
                     {"101", "100", "100", "100", Slic3r::Semver{1,0,1}, PresetUpdater::ReconfigurationResult::None},

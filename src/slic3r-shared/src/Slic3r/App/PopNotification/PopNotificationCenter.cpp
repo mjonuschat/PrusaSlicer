@@ -1307,7 +1307,7 @@ void PopNotificationCenter::on_fatal_arrange_error(
     );
 }
 
-void PopNotificationCenter::on_connect_handler_error(const std::string& msg) 
+void PopNotificationCenter::on_connect_handler_error(const std::string& msg)
 {
     // TRN Header of the Prusa Connect error notification.
     const std::string header{_u8L("Prusa Connect Error")};
@@ -1369,6 +1369,192 @@ void PopNotificationCenter::on_file_explorer_error(
         },
         never_equal_matcher
     );
+}
+
+void PopNotificationCenter::on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdateAvailable);
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterWarning);
+    if (verbose ==  Biz::PresetUpdater::VerboseStyle::NoProgress) {
+        return;
+    }
+    
+    // attempt 0 & delay 0 = installation
+    if (attempt == 0 && delay == 0) {
+        const std::string header{_u8L("Installing...")};
+        std::string text = fmt::format(fmt::runtime(_u8L("Vendor: {}")), target);
+
+        upsert_notifcation(
+            PopNotificationData{
+                PopNotificationType::PresetUpdaterStatus,
+                PopNotificationLevel::Regular,
+                0s,
+                PopNotificationLayoutHeaderText{
+                    header,
+                    text
+                }
+            },
+            always_equal_matcher
+        );
+        return;
+    }
+
+    const std::string header{_u8L("Downloading Preset Update assets")};
+    std::string text = fmt::format(fmt::runtime(_u8L("Target: {}")), target);
+    if (attempt > 1) {
+        text += "\n";
+        text += fmt::format(
+            fmt::runtime(_u8L("(Attempt {}) The connection is taking longer than usual. Please wait.")),
+            attempt
+        );
+    }
+    
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::PresetUpdaterStatus,
+            PopNotificationLevel::Regular,
+            0s,
+            PopNotificationLayoutHeaderTextButtons{
+                header,
+                text,
+                {
+                    {_u8L("Cancel"),
+                     [this]() {
+                         m_project_interactor.preset_updater_interactor().on_notification_cancel();
+                         return true;
+                     }},
+                }
+            }
+        },
+        always_equal_matcher
+    );
+}
+
+void PopNotificationCenter::on_preset_updater_error(const std::string& body)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterStatus);
+    const std::string header{_u8L("Preset Updater Error")};
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::PresetUpdaterWarning,
+            PopNotificationLevel::Error,
+            0s,
+            PopNotificationLayoutHeaderText{header, body}
+        },
+        never_equal_matcher
+    );
+}
+
+void PopNotificationCenter::on_preset_updater_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
+        Biz::PresetUpdater::VerboseStyle verbose
+)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterStatus);
+}
+
+void PopNotificationCenter::on_preset_updater_repository_info_vector(
+        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+    )
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterStatus);
+}
+
+void PopNotificationCenter::on_preset_updater_reconfigurations_performed(
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
+{
+    const std::string header{_u8L("Update Successful")};
+    std::string text {_u8L("All presets are now up to date.")};
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::PresetUpdaterStatus,
+            PopNotificationLevel::Regular,
+            60s,
+            PopNotificationLayoutHeaderText{header, text}
+        },
+        always_equal_matcher
+    );
+}
+
+void PopNotificationCenter::show_preset_updater_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::function<void(void)>& confirmed_callback
+    )
+{
+    ASSERT(confirmed_callback);
+    const std::string header{_u8L("Configuration Updates Available")};
+    std::string text;
+
+    for (const auto& reconf : reconfigurations.new_vendors()) {
+        text += fmt::format( fmt::runtime(_u8L("* {}\nsource: {}\nversion: {}\nreason: New vendor\n")), reconf.vendor_id, reconf.vendor_repo_id, reconf.recommended_version.to_string());
+    }
+    for (const auto& reconf : reconfigurations.regular_updates()) {
+        text += fmt::format( fmt::runtime(_u8L("* {}\nsource: {}\nversion: {}\nreason: Update\n")), reconf.vendor_id, reconf.vendor_repo_id, reconf.recommended_version.to_string());
+    }
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::PresetUpdateAvailable,
+            PopNotificationLevel::Regular,
+            0s,
+            PopNotificationLayoutHeaderTextButtons{
+                header,
+                text,
+                {
+                    {_u8L("Install"),
+                     [confirmed_callback]() {
+                         confirmed_callback();
+                         return true;
+                     }},
+                }
+            }
+        },
+        always_equal_matcher
+    );
+}
+
+void PopNotificationCenter::show_preset_updater_no_reconfigurations()
+{
+    const std::string header{_u8L("No Configuration Updates Available")};
+    std::string text = Biz::_u8L("There are no configuration updates available at the moment.");
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::PresetUpdateAvailable,
+            PopNotificationLevel::Regular,
+            60s,
+            PopNotificationLayoutHeaderText{
+                header,
+                text
+            }
+        },
+        always_equal_matcher
+    );
+}
+
+void PopNotificationCenter::show_preset_updater_warnings(const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterWarning);
+    for (const auto& warning : warnings) {
+        const std::string header{_u8L("Preset Updater Warning")};
+        upsert_notifcation(
+            PopNotificationData{
+                PopNotificationType::PresetUpdaterWarning,
+                PopNotificationLevel::Warning,
+                60s,
+                PopNotificationLayoutHeaderText{
+                    header,
+                    warning.string()
+                }
+            },
+            never_equal_matcher
+        );
+    }
 }
 
 } // namespace Slic3r::App::PopNotification

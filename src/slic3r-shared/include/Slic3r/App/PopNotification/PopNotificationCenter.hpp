@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 #include "Slic3r/App/Platform/IFileExplorerErrorListener.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
+#include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -31,6 +32,7 @@ class PopNotificationCenter :
     public Biz::IArrangeEventsListener,
     public Biz::Connect::IConnectHandlerListener,
     public Platform::IFileExplorerErrorListener
+    public Biz::PresetUpdater::IPresetUpdaterResultListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
@@ -78,6 +80,39 @@ public:
         Domain::SelectionId project_id
     ) override;
 
+    // Preset Updater
+    void on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose) override;
+    void on_preset_updater_error(const std::string& body) override;
+    void on_preset_updater_forced_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+    ) override
+    {}
+
+    void on_preset_updater_repository_info_vector(
+        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+    ) override;
+
+    void on_preset_updater_reconfigurations_performed(
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+    ) override;
+
+    void on_preset_updater_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
+        Biz::PresetUpdater::VerboseStyle verbose
+    ) override;
+
+    void show_preset_updater_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::function<void(void)>& confirmed_callback
+    );
+
+    void show_preset_updater_no_reconfigurations();
+
+    void show_preset_updater_warnings(const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings);
+     
     PopNotificationObservableList& observable_list() {return m_notification_list;}
     Biz::ObservableListSortFilter<PopNotificationData>& source_list() { return m_list_sort_filter; }
 

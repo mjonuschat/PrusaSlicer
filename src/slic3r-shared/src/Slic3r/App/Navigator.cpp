@@ -7,6 +7,8 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewRenderModule.hpp"
 #include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "Slic3r/Log.hpp"
@@ -32,6 +34,7 @@ void Navigator::on_init(
     m_project_contexts = std::make_unique<ProjectContexts>(*project_interactor);
 
     project_interactor->add_listener<ISelectedProjectChangedListener>(this);
+    AppServices::instance().app_config_interactor().add_listener<IAppConfigChangedListener>(this);
 }
 
 void Navigator::navigate_to_module_type(Render::ModuleType type)
@@ -159,6 +162,12 @@ void Navigator::set_fullscreen(bool fullscreen)
 void Navigator::close_application()
 {
     m_canvas->close_application();
+}
+
+void Navigator::on_app_config_changed(const std::string& key)
+{
+    m_plater_module->command_binding_manager().update_ui_items();
+    m_preview_module->command_binding_manager().update_ui_items();
 }
 
 } // namespace Slic3r::App

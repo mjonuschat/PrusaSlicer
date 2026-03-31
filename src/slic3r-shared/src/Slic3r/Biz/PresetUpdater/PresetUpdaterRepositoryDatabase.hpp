@@ -72,6 +72,9 @@ public:
      */
     void remove_local_repository(const std::string& uuid, PresetUpdaterProcessStatus* process_status);
 
+    static SharedPresetUpdaterRepositoryInfo prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg);
+    static void remove_local_repository_files(const SharedPresetUpdaterRepositoryInfo& info);
+
 private:
     /**
      * @brief Reads manifest file in data dir or creates it from resources. Called from constructor. Fills repository vectors and maps. \
@@ -88,15 +91,24 @@ private:
      */
     void save_app_manifest_json(PresetUpdaterProcessStatus* process_status) const;
 
+    /**
+     * @brief Deletes all data in destination folder, that are not part of repo vector.
+     * This cannot be done at any time. When user adds new offline repo, it is only unzipped (prepare_local_repository_files)
+     * and only when user confirms the dialog, it is added to the vector and written to manifest.
+     * This means that it is possible to unzip and cancel, leaving useless uzziped repo behind.
+     * This function should be called only after the uzziped repo is added to vector so only really useless data are deleted.
+     */
+    void consolidate_offline_repo_unzipped_folders(PresetUpdaterProcessStatus* process_status) const;
+
     // Helper methods
     void copy_initial_manifest(PresetUpdaterProcessStatus* process_status) const;
     void clear_online_repos();
-    std::string get_next_uuid();
+    
     boost::filesystem::path get_stored_manifest_path() const;
-
     boost::filesystem::path m_unq_tmp_path;
     PrivateRepositoryVector m_all_repositories;
-    boost::uuids::random_generator m_uuid_generator;
+    
+    static std::string get_next_uuid();
 };
 
 } // namespace Slic3r::Biz::PresetUpdater

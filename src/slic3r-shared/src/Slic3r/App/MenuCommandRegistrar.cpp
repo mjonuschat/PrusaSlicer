@@ -1807,6 +1807,18 @@ void MenuCommandRegistrar::register_main_menu_config_commands()
             )
         );
 #endif
+    m_menu_manager.register_menu_item(
+    {MenuItemName::MainMenu, MenuItemName::PresetReposManagement},
+    std::make_unique<UIItemCommand>(
+        CommandName::PresetReposManagement,
+        [this]() { m_project_interactor.preset_updater_interactor().list_repositories(AppServices::instance().app_config().get<bool>("enable_preset_update")); },
+        UIItemCommandExtraOpts{
+            .enabled = []() {
+                return AppServices::instance().app_config().get<bool>("enable_preset_update");
+            }
+        }
+    )
+);
 }
 
 void MenuCommandRegistrar::register_main_menu_help_commands()
@@ -2239,18 +2251,6 @@ void MenuCommandRegistrar::register_file_menu_commands()
 
     register_file_menu_import_commands();
     register_file_menu_export_commands();
-    m_menu_manager.register_menu_separator_item({MenuItemName::FileMenu})
-        .register_menu_item(
-            {MenuItemName::FileMenu, MenuItemName::OnlinePresetUpdate},
-            std::make_unique<UIItemCommand>(
-                CommandName::OnlinePresetUpdate,
-                [this]()
-                {
-                    m_project_interactor.preset_updater_interactor()
-                        .build_update_sync_and_reconfiguration_check();
-                }
-            )
-        );
 }
 
 void MenuCommandRegistrar::update_main_menu_plugin_commands(Lua::PluginSystem& plugin_system)

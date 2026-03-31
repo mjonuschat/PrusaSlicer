@@ -77,6 +77,7 @@ enum class MenuItemName
     ExportGcodeToFlash,
 
     OnlinePresetUpdate,
+    PresetReposManagement,
 
     JumpToValue,
 

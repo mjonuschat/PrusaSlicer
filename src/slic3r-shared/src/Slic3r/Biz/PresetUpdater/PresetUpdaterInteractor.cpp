@@ -41,6 +41,9 @@ PresetUpdaterInteractor::~PresetUpdaterInteractor()
 
 void PresetUpdaterInteractor::check_forced_reconfigurations()
 {
+    //Does not care about App config value - allways runs
+    // Forced reconfigurations must be checked on startup
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -50,15 +53,15 @@ void PresetUpdaterInteractor::check_forced_reconfigurations()
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::NoProgress);
     };
     auto dispatch_suc = [this](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_list(reconfigurations, warnings);
+        dispatch_forced_reconfigurations_list(reconfigurations, warnings);
     };
 
     m_thread = JThread::JThread(
         [dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
             if (process_status.has_error()) {
                 dispatch_err(process_status.get_error());
@@ -79,8 +82,12 @@ void PresetUpdaterInteractor::check_forced_reconfigurations()
     );
 }
 
-void PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(bool ignore_hash /*= false*/)
+void PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(bool app_config_preset_updater_allowed, VerboseStyle verbose, bool ignore_hash /*= false*/)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -89,16 +96,16 @@ void PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(bool i
     auto dispatch_err = [this](const std::string& body) {
         dispatch_error(body);
     };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+    auto dispatch_sta = [this, verbose](const std::string& target, int attempt, unsigned delay) {
+        dispatch_status(target, attempt, delay, verbose);
     };
-    auto dispatch_suc = [this](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_list(reconfigurations, warnings);
+    auto dispatch_suc = [this, verbose](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
+        dispatch_reconfigurations_list(reconfigurations, warnings, verbose);
     };
 
     m_thread = JThread::JThread(
         [dispatch_err, dispatch_sta, dispatch_suc, ignore_hash](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, ignore_hash);
+            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES, ignore_hash);
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
             PresetUpdaterRepositorySync archive_sync;
 
@@ -144,6 +151,9 @@ void PresetUpdaterInteractor::perform_reconfigurations(
     const PresetUpdaterReconfigurationList& reconfigurations
 )
 {
+    // Does not care about App config value - allways runs
+    // Possible forced reconfigurations must be able to be performed
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -153,7 +163,7 @@ void PresetUpdaterInteractor::perform_reconfigurations(
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
     };
     auto dispatch_suc = [this](const std::vector<PresetUpdaterWarning>& warnings) {
         dispatch_reconfigurations_performed(warnings);
@@ -161,7 +171,7 @@ void PresetUpdaterInteractor::perform_reconfigurations(
 
     m_thread = JThread::JThread(
         [reconfigurations, dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
 
             PresetUpdater::perform_reconfigurations(reconfigurations, ReconfigurationType::All, &process_status);
             if (process_status.has_error()) {
@@ -173,8 +183,12 @@ void PresetUpdaterInteractor::perform_reconfigurations(
     );
 }
 
-void PresetUpdaterInteractor::update_repositories(const SharedPresetUpdaterRepositoryInfoVector& repos)
+void PresetUpdaterInteractor::update_repositories(bool app_config_preset_updater_allowed, const SharedPresetUpdaterRepositoryInfoVector& repos)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -184,16 +198,16 @@ void PresetUpdaterInteractor::update_repositories(const SharedPresetUpdaterRepos
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
     };
     auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_repository_info_vector(repos, warnings);
+        dispatch_repository_selection_performed(repos, warnings);
     };
 
     m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, repos](
                                     JThread::StopToken stop_token
                                 ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
         PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
         if (process_status.has_error()) {
@@ -221,8 +235,12 @@ void PresetUpdaterInteractor::update_repositories(const SharedPresetUpdaterRepos
     });
 }
 
-void PresetUpdaterInteractor::add_local_repository(const boost::filesystem::path& zip_path, bool unselect_others)
+void PresetUpdaterInteractor::add_local_repository(bool app_config_preset_updater_allowed, const boost::filesystem::path& zip_path, bool unselect_others)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -232,7 +250,7 @@ void PresetUpdaterInteractor::add_local_repository(const boost::filesystem::path
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
     };
     auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
         dispatch_repository_info_vector(repos, warnings);
@@ -241,7 +259,7 @@ void PresetUpdaterInteractor::add_local_repository(const boost::filesystem::path
     m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, zip_path, unselect_others](
                                     JThread::StopToken stop_token
                                 ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
         PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
         if (process_status.has_error()) {
@@ -264,8 +282,12 @@ void PresetUpdaterInteractor::add_local_repository(const boost::filesystem::path
     });
 }
 
-void PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
+void PresetUpdaterInteractor::remove_local_repository(bool app_config_preset_updater_allowed, const std::string& uuid)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -275,7 +297,7 @@ void PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
     };
     auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
         dispatch_repository_info_vector(repos, warnings);
@@ -284,7 +306,7 @@ void PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
     m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, uuid](
                                     JThread::StopToken stop_token
                                 ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
         PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
         repo_database.remove_local_repository(uuid, &process_status);
@@ -302,8 +324,12 @@ void PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
     });
 }
 
-void PresetUpdaterInteractor::list_repositories()
+void PresetUpdaterInteractor::list_repositories(bool app_config_preset_updater_allowed)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -313,7 +339,7 @@ void PresetUpdaterInteractor::list_repositories()
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
     };
     auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
         dispatch_repository_info_vector(repos, warnings);
@@ -322,9 +348,15 @@ void PresetUpdaterInteractor::list_repositories()
     m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc](
                                     JThread::StopToken stop_token
                                 ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
         PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
+        if (process_status.has_error()) {
+            dispatch_err(process_status.get_error());
+            return;
+        }
+
+        repo_database.sync(&process_status);
         if (process_status.has_error()) {
             dispatch_err(process_status.get_error());
             return;
@@ -336,8 +368,12 @@ void PresetUpdaterInteractor::list_repositories()
     });
 }
 
-void PresetUpdaterInteractor::cleanup_update_sync()
+void PresetUpdaterInteractor::cleanup_update_sync(bool app_config_preset_updater_allowed)
 {
+    if (!app_config_preset_updater_allowed) {
+        return;
+    }
+
     if (m_thread.joinable()) {
         m_thread.request_stop();
         m_thread.join();
@@ -347,16 +383,16 @@ void PresetUpdaterInteractor::cleanup_update_sync()
         dispatch_error(body);
     };
     auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay);
+        dispatch_status(target, attempt, delay, VerboseStyle::NoProgress);
     };
     auto dispatch_suc = [this](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_list(reconfigurations, warnings);
+        dispatch_reconfigurations_list(reconfigurations, warnings, VerboseStyle::NoProgress);
     };
 
     m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc](
                                     JThread::StopToken stop_token
                                 ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta);
+        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
         PresetUpdater::cleanup_update_sync(&process_status);
         if (process_status.has_error()) {
             dispatch_err(process_status.get_error());
@@ -379,6 +415,14 @@ void PresetUpdaterInteractor::cleanup_update_sync()
     });
 }
 
+void PresetUpdaterInteractor::on_notification_cancel()
+{
+    if (m_thread.joinable()) {
+        m_thread.request_stop();
+        m_thread.join();
+    }
+}
+
 void PresetUpdaterInteractor::dispatch_error(const std::string& body)
 {
     m_dispatcher.dispatch_on_main_thread([this, body]() {
@@ -388,23 +432,36 @@ void PresetUpdaterInteractor::dispatch_error(const std::string& body)
     });
 }
 
-void PresetUpdaterInteractor::dispatch_status(const std::string& target, int attempt, unsigned delay)
+void PresetUpdaterInteractor::dispatch_status(const std::string& target, int attempt, unsigned delay, VerboseStyle verbose)
 {
-    m_dispatcher.dispatch_on_main_thread([this, target, attempt, delay]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([target, attempt, delay](auto* listener) {
-            listener->on_preset_updater_status(target, attempt, delay);
+    m_dispatcher.dispatch_on_main_thread([this, target, attempt, delay, verbose]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([target, attempt, delay, verbose](auto* listener) {
+            listener->on_preset_updater_status(target, attempt, delay, verbose);
         });
     });
 }
 
-void PresetUpdaterInteractor::dispatch_reconfigurations_list(
+void PresetUpdaterInteractor::dispatch_forced_reconfigurations_list(
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {
     m_dispatcher.dispatch_on_main_thread([this, reconfigurations, warnings]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([reconfigurations, warnings](auto* listener) {
-            listener->on_preset_updater_reconfigurations_list(reconfigurations, warnings);
+            listener->on_preset_updater_forced_reconfigurations_list(reconfigurations, warnings);
+        });
+    });
+}
+
+void PresetUpdaterInteractor::dispatch_reconfigurations_list(
+    const PresetUpdaterReconfigurationList& reconfigurations,
+    const std::vector<PresetUpdaterWarning>& warnings,
+    VerboseStyle verbose
+)
+{
+    m_dispatcher.dispatch_on_main_thread([this, reconfigurations, warnings, verbose]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([reconfigurations, warnings, verbose](auto* listener) {
+            listener->on_preset_updater_reconfigurations_list(reconfigurations, warnings, verbose);
         });
     });
 }
@@ -413,7 +470,7 @@ void PresetUpdaterInteractor::dispatch_reconfigurations_performed(const std::vec
 {
     bool dispatched = m_dispatcher.dispatch_on_main_thread([this, warnings]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([warnings](auto* listener) {
-            listener->on_preset_updater_reconfigurations_perfomed(warnings);
+            listener->on_preset_updater_reconfigurations_performed(warnings);
         });
     });
 }
@@ -426,6 +483,18 @@ void PresetUpdaterInteractor::dispatch_repository_info_vector(
     bool dispatched = m_dispatcher.dispatch_on_main_thread([this, repos, warnings]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([repos, warnings](auto* listener) {
             listener->on_preset_updater_repository_info_vector(repos, warnings);
+        });
+    });
+}
+
+void PresetUpdaterInteractor::dispatch_repository_selection_performed(
+    const SharedPresetUpdaterRepositoryInfoVector& repos,
+    const std::vector<PresetUpdaterWarning>& warnings
+)
+{
+    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, repos, warnings]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([repos, warnings](auto* listener) {
+            listener->on_preset_updater_repository_selection_performed(repos, warnings);
         });
     });
 }
