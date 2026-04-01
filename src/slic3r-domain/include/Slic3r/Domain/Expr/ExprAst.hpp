@@ -61,10 +61,6 @@ struct Binary
         : op(op), left(std::move(left)), right(std::move(right))
     {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(op, left, right);
-    }
 };
 
 enum class UnaryOp
@@ -88,10 +84,6 @@ struct Unary
         : op(op), expr(std::move(expr))
     {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(op, expr);
-    }
 };
 
 struct FuncCall
@@ -110,10 +102,6 @@ struct FuncCall
         : name(std::move(name)), args(std::move(args))
     {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(name, args);
-    }
 };
 
 struct VarRef
@@ -131,10 +119,6 @@ struct VarRef
         : name(std::move(name))
     {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(name);
-    }
 };
 
 struct ExprPrinter : boost::static_visitor<std::ostream&>

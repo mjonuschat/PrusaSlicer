@@ -22,7 +22,7 @@ using Slic3r::Biz::SecretStoreDummy;
 int main( int argc, char* argv[] ) {
     using Slic3r::Biz::Platform::PlatformServices;
 
-     PlatformServices::instance().set_main_thread_dispatcher(
+    PlatformServices::instance().set_main_thread_dispatcher(
         std::make_unique<StdMainThreadDispatcher>()
     );
 

@@ -4,6 +4,19 @@
 #include <boost/algorithm/string/replace.hpp>
 
 namespace Slic3r::Domain::Expr {
+struct RegEx;
+} // namespace Slic3r::Domain::Expr
+
+namespace cereal {
+
+template <class Archive>
+void save(Archive& archive, const Slic3r::Domain::Expr::RegEx& value);
+
+template <class Archive>
+void load(Archive& archive, Slic3r::Domain::Expr::RegEx& value);
+} // namespace cereal
+
+namespace Slic3r::Domain::Expr {
 
 /**
  * @brief Regular expression
@@ -42,17 +55,15 @@ struct RegEx
 
     const std::string& source() const { return m_source; }
 
-    template<class Archive> void save(Archive& archive) const {
-        archive(m_source);
-    }
-    template<class Archive> void load(Archive& archive) {
-        archive(m_source);
-        m_regex = m_source;
-    }
-
 private:
     std::regex m_regex;
     std::string m_source;
+
+    template <class Archive>
+    friend void cereal::save(Archive& archive, const Slic3r::Domain::Expr::RegEx& value);
+
+    template <class Archive>
+    friend void cereal::load(Archive& archive, Slic3r::Domain::Expr::RegEx& value);
 };
 
 }

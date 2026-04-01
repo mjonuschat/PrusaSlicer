@@ -4,7 +4,19 @@
 ///|/
 #pragma once
 
-#include <cereal/access.hpp>
+#include <cstddef>
+#include <cstdint>
+
+
+namespace Slic3r::Domain {
+    class ObjectBase;
+    class ObjectWithTimestamp;
+}
+
+namespace cereal{
+template <class Archive> void serialize(Archive& ar, Slic3r::Domain::ObjectBase& base);
+template <class Archive> void serialize(Archive& ar, Slic3r::Domain::ObjectWithTimestamp& object);
+}
 
 namespace Slic3r::Domain {
 
@@ -35,8 +47,6 @@ public:
     size_t  id;
 
 private:
-    friend class cereal::access;
-    template<class Archive> void serialize(Archive &ar) { ar(id); }
 };
 
 // Base for Model, ModelObject, ModelVolume or ModelInstance to provide a unique ID
@@ -81,12 +91,11 @@ private:
     static inline ObjectID  generate_new_id() { return {++s_last_id}; }
     static size_t           s_last_id;
 
-    friend class cereal::access;
-    template<class Archive> void serialize(Archive &ar) { ar(m_id); }
+    template <class Archive>
+    friend void cereal::serialize(Archive& ar, Slic3r::Domain::ObjectBase& base);
 protected: // #vbCHECKME && #ysFIXME
     explicit ObjectBase(const ObjectID id) : m_id(id) {}
 private:
-    template<class Archive> static void load_and_construct(Archive & ar, cereal::construct<ObjectBase> &construct) { ObjectID id; ar(id); construct(id); }
 };
 
 class ObjectWithTimestamp : public ObjectBase
@@ -119,8 +128,8 @@ private:
     Timestamp        m_timestamp { 1 };
     static Timestamp s_last_timestamp;
 
-    friend class cereal::access;
-    template<class Archive> void serialize(Archive &ar) { ar(m_timestamp); }
+    template <class Archive>
+    friend void cereal::serialize(Archive& ar, Slic3r::Domain::ObjectWithTimestamp& object);
 };
 
 // Unique object / instance ID for the wipe tower.

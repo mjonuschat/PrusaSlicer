@@ -71,7 +71,7 @@ target_link_libraries(slic3r-base PUBLIC
     spdlog::spdlog
     semver
     boost_headeronly
-	Boost::filesystem
+    Boost::filesystem
 	tl::expected
     slic3r-domain-types
 )

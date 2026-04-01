@@ -4,8 +4,6 @@
 #include <vector>
 #include <set>
 
-#include <cereal/types/base_class.hpp>
-
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "Slic3r/Domain/Preset/SourceLocatedExpr.hpp"
 
@@ -38,11 +36,6 @@ struct PresetNode
 
     std::optional<std::string_view> short_name() const;
 
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-        archive(id, name, inherits, unconditional_inherits, condition, match_mode, values, features, variants, source_location);
-    }
 };
 
 struct RootPresetNode : PresetNode
@@ -65,13 +58,6 @@ struct PresetName
     std::set<std::string> id;
     PresetOrigin origin;
 
-    template<class Archive> void
-    serialize(Archive& archive)
-    {
-        std::vector<std::string> id_vec{id.begin(), id.end()};
-        archive(name, id_vec, origin);
-        id = std::set<std::string>{id_vec.begin(), id_vec.end()};
-    }
 };
 
 using PresetNames = std::vector<PresetName>;

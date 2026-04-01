@@ -14,12 +14,6 @@ bool TriangleBitStreamMapping::operator!=(const TriangleBitStreamMapping& rhs) c
     return !(rhs == *this);
 }
 
-template<class Archive>
-void TriangleBitStreamMapping::serialize(Archive& ar)
-{
-    ar(this->triangle_idx, this->bitstream_start_idx);
-}
-
 bool TriangleSplittingData::operator==(const TriangleSplittingData& rhs) const
 {
     return this->triangles_to_split == rhs.triangles_to_split
@@ -72,12 +66,6 @@ void TriangleSelector::TriangleSplittingData::update_used_states(const size_t bi
 
         this->used_states[facet_state] = true;
     }
-}
-
-template<class Archive>
-void TriangleSplittingData::serialize(Archive& ar)
-{
-    ar(this->triangles_to_split, this->bitstream, this->used_states);
 }
 
 } // namespace Slic3r::Domain::TriangleSelector

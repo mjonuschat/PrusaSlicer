@@ -1,8 +1,8 @@
+#include <algorithm>
+
 #include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Assert.hpp"
-
-#include <cereal/types/base_class.hpp>
 
 namespace Slic3r::Domain {
 
@@ -126,12 +126,6 @@ void FacetsAnnotation::shrink_to_fit()
 {
     this->triangle_splitting_data.triangles_to_split.shrink_to_fit();
     this->triangle_splitting_data.bitstream.shrink_to_fit();
-}
-
-template<class Archive>
-void FacetsAnnotation::serialize(Archive& ar)
-{
-    ar(cereal::base_class<ObjectWithTimestamp>(this), this->triangle_splitting_data);
 }
 
 } // namespace Slic3r::Domain

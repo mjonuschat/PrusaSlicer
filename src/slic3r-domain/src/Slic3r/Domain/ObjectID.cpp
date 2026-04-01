@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Domain/ObjectID.hpp"
+#include <vector>
 
 namespace Slic3r::Domain {
 

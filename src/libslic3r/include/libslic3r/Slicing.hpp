@@ -164,9 +164,4 @@ Domain::LayerZRanges generate_object_layers(
 
 } // namespace Slic3r
 
-namespace cereal
-{
-	template<class Archive> void serialize(Archive& archive, Slic3r::Domain::LayerHeightRange &lhr) { archive(lhr.first, lhr.second); }
-}
-
 #endif /* slic3r_Slicing_hpp_ */

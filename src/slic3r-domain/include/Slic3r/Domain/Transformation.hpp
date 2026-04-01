@@ -3,8 +3,15 @@
 
 #include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include <cereal/access.hpp>
 
+namespace Slic3r::Domain {
+class Transformation;
+} // namespace Slic3r::Domain
+
+namespace cereal {
+template <class Archive>
+void serialize(Archive& ar, Slic3r::Domain::Transformation& transformation);
+} // namespace cereal
 
 namespace Slic3r::Domain {
 
@@ -113,21 +120,9 @@ public:
     Transformation operator*(const Transformation& other) const;
 
 private:
-    friend class cereal::access;
+
     template<class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(m_matrix);
-    }
-    explicit Transformation(int) {}
-    template<class Archive>
-    static void load_and_construct(Archive& ar, cereal::construct<Transformation>& construct)
-    {
-        // Calling a private constructor with special "int" parameter to indicate that no
-        // construction is necessary.
-        construct(1);
-        ar(construct.ptr()->m_matrix);
-    }
+    friend void cereal::serialize(Archive& ar, Transformation& transformation);
 };
 
 struct TransformationSVD

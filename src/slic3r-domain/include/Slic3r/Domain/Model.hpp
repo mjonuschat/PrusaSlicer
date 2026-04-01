@@ -44,11 +44,6 @@ public:
 
     // For serialization / deserialization of ModelWipeTower composed into another class into the
     // Undo / Redo stack as a separate object.
-    template<typename Archive>
-    void serialize(Archive& ar)
-    {
-        ar(position, rotation);
-    }
 };
 
 /**

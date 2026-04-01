@@ -24,8 +24,9 @@ Domain::ModelObject* add_object(Domain::Model*, const char*, const char*, Domain
 } // namespace Slic3r::Biz::Algorithms::Model
 
 namespace cereal {
-template<class Archive> void load(Archive&, Slic3r::Domain::ModelObject&);
 template<class Archive> void save(Archive&, const Slic3r::Domain::ModelObject&);
+template<class Archive> void load(Archive&, Slic3r::Domain::ModelObject&);
+template<class Archive> void load(Archive& ar, Slic3r::Domain::Model& model);
 } // namespace cereal
 
 namespace Slic3r::Domain {
@@ -255,14 +256,11 @@ private:
     friend const Domain::BoundingBox3d& Slic3r::Biz::Algorithms::ModelObject::raw_bounding_box(const Domain::ModelObject&);
     friend const Domain::BoundingBox3d& Slic3r::Biz::Algorithms::ModelObject::raw_mesh_bounding_box(const Domain::ModelObject&);
 
-    template<class Archive> friend void cereal::load(Archive&, Slic3r::Domain::ModelObject&);
     template<class Archive> friend void cereal::save(Archive&, const Slic3r::Domain::ModelObject&);
+    template<class Archive> friend void cereal::load(Archive&, Slic3r::Domain::ModelObject&);
+    template<class Archive> friend void cereal::load(Archive& ar, Slic3r::Domain::Model& model);
 };
 
 using ModelObjectPtrs = std::vector<ModelObject*>;
 
 } // namespace Slic3r::Domain
-
-namespace cereal {
-template<class Archive> struct specialize<Archive, Slic3r::Domain::ModelObject, cereal::specialization::non_member_load_save> {};
-} // namespace cereal

@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
+#include "Slic3r/Biz/CerealUtils.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp> // singleton for dialog

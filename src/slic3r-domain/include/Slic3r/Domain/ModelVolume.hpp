@@ -33,6 +33,7 @@ void calculate_convex_hull(Domain::ModelVolume&);
 namespace cereal {
 template<class Archive> void load(Archive&, Slic3r::Domain::ModelVolume &);
 template<class Archive> void save(Archive&, const Slic3r::Domain::ModelVolume &);
+template<class Archive> void load(Archive&, Slic3r::Domain::ModelObject &);
 } // namespace cereal
 
 namespace Slic3r::Domain {
@@ -74,12 +75,6 @@ public:
         bool is_converted_from_inches{ false };
         bool is_converted_from_meters{ false };
         bool is_from_builtin_objects{ false };
-
-        template<class Archive> void serialize(Archive& ar) {
-            //FIXME Vojtech: Serialize / deserialize only if the Source is set.
-            // likely testing input_file or object_idx would be sufficient.
-            ar(input_file, object_idx, volume_idx, mesh_offset, transform, is_converted_from_inches, is_converted_from_meters, is_from_builtin_objects);
-        }
     };
     Source              source;
 
@@ -106,10 +101,6 @@ public:
         void set_processed() { is_processed = true; }
         void invalidate()    { is_connector = false; }
         void reset_from_upper() { is_from_upper = true; }
-
-        template<class Archive> inline void serialize(Archive& ar) {
-            ar(is_connector, is_processed, connector_type, radius_tolerance, height_tolerance);
-        }
     };
     CutInfo             cut_info;
 
@@ -347,12 +338,9 @@ private:
 
     template<class Archive> friend void cereal::load(Archive&, Slic3r::Domain::ModelVolume &);
     template<class Archive> friend void cereal::save(Archive&, const Slic3r::Domain::ModelVolume &);
+    template<class Archive> friend void cereal::load(Archive&, Slic3r::Domain::ModelObject &);
 };
 
 using ModelVolumePtrs = std::vector<ModelVolume*>;
 
 } // namespace Slic3r::Domain
-
-namespace cereal {
-template<class Archive> struct specialize<Archive, Slic3r::Domain::ModelVolume, cereal::specialization::non_member_load_save> {};
-} // namespace cereal

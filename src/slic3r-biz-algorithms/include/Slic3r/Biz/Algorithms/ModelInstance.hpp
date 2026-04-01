@@ -5,8 +5,6 @@
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include <cereal/types/base_class.hpp>
-
 namespace Slic3r::Biz::Algorithms::ModelInstance {
 
 /**
@@ -30,13 +28,3 @@ Domain::Vec3d transformed_vector(const Domain::Vec3d& v, const Domain::ModelInst
 void transform_polygon(Domain::Polygon& polygon, const Domain::ModelInstance& model_instance);
 
 } // namespace Slic3r::Biz::Algorithms::ModelInstance
-
-namespace cereal {
-
-template<class Archive>
-void serialize(Archive& ar, Slic3r::Domain::ModelInstance& model_instance)
-{
-    ar(cereal::base_class<Slic3r::Domain::ObjectBase>(&model_instance), model_instance.m_transformation, model_instance.print_volume_state, model_instance.printable);
-}
-
-} // namespace cereal

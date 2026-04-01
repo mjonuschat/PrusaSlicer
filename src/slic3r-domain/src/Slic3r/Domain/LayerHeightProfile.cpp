@@ -1,7 +1,5 @@
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
-#include <cereal/types/base_class.hpp>
-
 namespace Slic3r::Domain {
 
 double LayerZRange::height() const

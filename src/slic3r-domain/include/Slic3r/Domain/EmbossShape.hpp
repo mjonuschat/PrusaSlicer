@@ -3,11 +3,6 @@
 #include <string>
 #include <optional>
 #include <memory> // unique_ptr
-#include <cereal/cereal.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/optional.hpp>
-#include <cereal/archives/binary.hpp>
 #include "Slic3r/Domain/Types.hpp" // Transform3d
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include <nanosvg/nanosvg.h>
@@ -26,8 +21,6 @@ struct EmbossProjection{
         return depth == other.depth && use_surface == other.use_surface;
     }
 
-    // undo / redo stack recovery
-    template<class Archive> void serialize(Archive &ar) { ar(depth, use_surface); }
 };
 
 // Extend expolygons with information whether it was successfull healed
@@ -96,37 +89,8 @@ struct EmbossShape
         // Loaded string data from file
         std::shared_ptr<std::string> file_data;
 
-        template<class Archive> void save(Archive &ar) const {
-            // Note: image is only cache it is not neccessary to store
-
-            // Store file data as plain string
-            // For Embossed text file_data are nullptr
-            ar(path, path_in_3mf, (file_data != nullptr) ? *file_data : std::string(""));
-        }
-        template<class Archive> void load(Archive &ar) {
-            // for restore shared pointer on file data
-            std::string file_data_str;
-            ar(path, path_in_3mf, file_data_str);
-            if (!file_data_str.empty())
-                file_data = std::make_unique<std::string>(file_data_str);
-        }
     };
     // When embossing shape is made by svg file this is source data
     std::optional<SvgFile> svg_file;
-
-    // undo / redo stack recovery
-    template<class Archive> void serialize(Archive &ar)
-    {
-        // final_shape is not neccessary to store - it is only cache
-        ar(shapes_with_ids, final_shape, scale, projection, svg_file);
-        // legacy_fix_3mf_tr SHOULD stay empty after finish load of the 3mf
-        assert(!legacy_fix_3mf_tr.has_value());
-    }
 };
 } // namespace Slic3r
-
-// Serialization through the Cereal library
-namespace cereal {
-template<class Archive> void serialize(Archive &ar, Slic3r::Domain::ExPolygonsWithId &o) { ar(o.id, o.expoly, o.is_healed); }
-template<class Archive> void serialize(Archive &ar, Slic3r::Domain::HealedExPolygons &o) { ar(o.expolygons, o.is_healed); }
-}; // namespace cereal

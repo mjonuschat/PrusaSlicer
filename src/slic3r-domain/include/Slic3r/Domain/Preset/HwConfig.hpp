@@ -35,11 +35,6 @@ struct HwModel
     std::string model;
     std::string base_model;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(model, base_model);
-    }
-
     friend bool operator==(const HwModel& lhs, const HwModel& rhs)
     {
         return lhs.model == rhs.model && lhs.base_model == rhs.base_model;
@@ -67,11 +62,6 @@ struct HwToolConfig
     std::string id;
     std::string name;
     FeatureValueMap features;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, features);
-    }
 
     friend bool operator==(const HwToolConfig& lhs, const HwToolConfig& rhs)
     {
@@ -101,11 +91,6 @@ struct HwFeederConfig
     uint32_t slot_count{0};
     FeatureValueMap features;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, type, model, slot_count, features);
-    }
-
     friend bool operator==(const HwFeederConfig& lhs, const HwFeederConfig& rhs)
     {
         return lhs.id == rhs.id && lhs.type == rhs.type && lhs.model == rhs.model && lhs.slot_count == rhs.slot_count && lhs.features == rhs.features;
@@ -122,11 +107,6 @@ struct MaterialConfig
     std::string id;
     std::optional<std::string> type;
     FeatureValueMap features;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, type, features);
-    }
 
     friend bool operator==(const MaterialConfig& lhs, const MaterialConfig& rhs)
     {
@@ -145,11 +125,6 @@ struct HwSheetConfig
     std::string name;
     std::string type;
     FeatureValueMap features;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, type, features);
-    }
 
     friend bool operator==(const HwSheetConfig& lhs, const HwSheetConfig& rhs)
     {
@@ -171,11 +146,6 @@ struct VisualRepresentation
     std::optional<std::string> bed_model;
     std::optional<std::string> bed_texture;
     std::optional<std::string> thumbnail;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(bed_model, bed_texture, thumbnail);
-    }
 
     friend bool operator==(const VisualRepresentation& lhs, const VisualRepresentation& rhs)
     {
@@ -209,12 +179,6 @@ struct HwPrinterConfig
     HwMaterialConfigs materials;
     HwSheetConfig sheet;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, printer_id, vendor_id, repo_id, repo_version, name, technology,
-            model, tool_count, features, visual, tools, feeders, materials, sheet);
-    }
-
     size_t material_slot_count() const;
 
     std::string relative_path_to_assets() const;
@@ -230,10 +194,6 @@ struct FeatureDef
     std::vector<FeatureValue> allowed_values;
     bool user_editable{true};
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(default_value, allowed_values, user_editable);
-    }
 };
 
 using FeatureDefs = std::map<std::string, FeatureDef>;
@@ -258,10 +218,6 @@ struct HwPrinterConfigDef
     uint8_t tool_count;
     VisualRepresentation visual;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, technology, model, features, legacy_printer_model, tool_count, visual);
-    }
 };
 
 struct HwToolConfigDef
@@ -272,10 +228,6 @@ struct HwToolConfigDef
     std::optional<SourceLocatedExpr> condition;
     FeatureDefs features;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, technology, condition, features);
-    }
 };
 
 struct HwFeederConfigDef
@@ -289,10 +241,6 @@ struct HwFeederConfigDef
     FeatureDefs features;
     uint8_t slot_count;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, technology, type, condition, model, features, slot_count);
-    }
 };
 
 struct HwSheetConfigDef
@@ -303,9 +251,6 @@ struct HwSheetConfigDef
     std::optional<SourceLocatedExpr> condition;
     FeatureDefs features;
 
-    template<class Archive> void serialize(Archive& archive){
-        archive(id, name, type, condition, features);
-    }
 };
 
 struct HwPrinterTechnologyDefs
@@ -316,10 +261,6 @@ struct HwPrinterTechnologyDefs
     std::map<std::string, HwFeederConfigDef> feeders;
     std::map<std::string, HwSheetConfigDef> sheets;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(technology, printers, tools, feeders, sheets);
-    }
 };
 
 using HwDefs = std::map<PrinterTechnology, HwPrinterTechnologyDefs>;
@@ -329,10 +270,6 @@ struct HwToolConfigTemplate
     std::string id;
     FeatureValueMap features;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, features);
-    }
 };
 
 using HwToolConfigTemplates = std::vector<HwToolConfigTemplate>;
@@ -343,10 +280,6 @@ struct HwFeederConfigTemplate
     Address address;
     FeatureValueMap features;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, address, features);
-    }
 };
 
 using HwFeederConfigTemplates = std::vector<HwFeederConfigTemplate>;
@@ -364,10 +297,6 @@ struct HwPrinterConfigTemplate
     HwFeederConfigTemplates feeders;
     VisualRepresentation visual;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, name, printer, legacy_printer_model, sheet, tool_count, features, tools, feeders, visual);
-    }
 };
 
 using HwPrinterConfigTemplates = std::vector<HwPrinterConfigTemplate>;
@@ -379,10 +308,6 @@ struct VendorFeatures
     FeatureDefs feeder;
     FeatureDefs sheet;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(printer, tool, feeder, sheet);
-    }
 };
 
 struct VendorInfo
@@ -393,10 +318,6 @@ struct VendorInfo
     std::string version;
     VendorFeatures features;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(id, repo_id, name, version, features);
-    }
 };
 
 struct VendorData
@@ -404,11 +325,6 @@ struct VendorData
     VendorInfo info;
     HwPrinterConfigTemplates printer_configs;
     HwDefs defs;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(info, printer_configs, defs);
-    }
 
     const HwPrinterConfigDef* find_printer_config_def_by_id(const std::string& id) const;
     const HwPrinterConfigDef* find_printer_config_def_by_legacy_printer_model(const std::string& id) const;

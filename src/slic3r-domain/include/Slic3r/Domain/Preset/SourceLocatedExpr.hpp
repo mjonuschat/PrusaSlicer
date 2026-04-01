@@ -9,11 +9,6 @@ struct SourceLocation
     size_t line{0};
     size_t column{0};
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(file, line, column);
-    }
-
     [[nodiscard]] std::string to_string() const
     {
         return file + ": " + std::to_string(line) + ":" + std::to_string(column);
@@ -29,9 +24,6 @@ struct SourceLocated
     const T& operator*() const { return value; }
     T& operator*() { return value; }
 
-    template<class Archive> void serialize(Archive& archive){
-        archive(value, source_location);
-    }
 };
 
 using SourceLocatedExpr = SourceLocated<Expr::ExprAst>;

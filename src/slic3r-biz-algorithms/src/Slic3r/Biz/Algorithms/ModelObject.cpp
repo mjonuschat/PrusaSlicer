@@ -10,6 +10,7 @@
 #include "Slic3r/Exception.hpp"
 
 #include <ranges>
+#include <iostream>
 
 #include <boost/filesystem.hpp>
 #include <boost/nowide/iostream.hpp>

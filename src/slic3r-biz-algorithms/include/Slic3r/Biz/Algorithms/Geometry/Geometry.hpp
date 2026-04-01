@@ -18,8 +18,6 @@
 
 #pragma once
 
-// Serialization through the Cereal library
-#include <cereal/access.hpp>
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

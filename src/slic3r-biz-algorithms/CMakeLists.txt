@@ -87,7 +87,6 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/ImageUtils.cpp
     include/Slic3r/Biz/Algorithms/Bed.hpp
     src/Slic3r/Biz/Algorithms/Bed.cpp
-    include/Slic3r/Biz/Algorithms/CerealUtils.hpp
     include/Slic3r/Biz/Algorithms/LayerHeight.hpp
     src/Slic3r/Biz/Algorithms/LayerHeight.cpp
 )
@@ -120,7 +119,6 @@ if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-algorithms-tests
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp
-        test/Slic3r/Biz/Algorithms/BundleCacheTests.cpp
         test/Slic3r/Biz/Algorithms/BedContainmentTests.cpp
     )
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)

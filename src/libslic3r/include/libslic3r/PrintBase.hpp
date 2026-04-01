@@ -24,6 +24,7 @@
 #include "libslic3r/SlicingStatus.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
+#include "libslic3r/WipeTowerGeometry.hpp"
 
 namespace Slic3r {
 
@@ -423,26 +424,6 @@ struct InvalidData
 using Status = std::variant<InvalidData, Unchanged, Changed, Empty>;
 } // namespace ApplyStatus
 
-
-struct ZDepth{
-    double z{};
-    double depth{};
-};
-
-struct WipeTowerGeometry {
-    std::vector<ZDepth> depths;
-    double fallback_depth{};
-    double fallback_height{};
-    double width{};
-    double cone_angle{};
-    double brim_width{};
-
-    [[nodiscard]] double get_height() const;
-
-    [[nodiscard]] Domain::ExPolygon get_outline(const Domain::ModelWipeTower& model_wipe_tower) const;
-
-    [[nodiscard]] Domain::BoundingBox3d get_bounding_box(const Domain::ModelWipeTower& model_wipe_tower) const;
-};
 
 using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;
 

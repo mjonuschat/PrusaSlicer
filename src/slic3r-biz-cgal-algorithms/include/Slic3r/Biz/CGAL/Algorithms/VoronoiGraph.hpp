@@ -2,6 +2,7 @@
 #define slic3r_SLA_SuppotstIslands_VoronoiGraph_hpp_
 
 #include <map>
+#include <memory>
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/Voronoi.hpp"
 #include <numeric>

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
+#include "Slic3r/Biz/CerealUtils.hpp"
 #include <cereal/archives/binary.hpp>
 
 #include "boost/variant.hpp"

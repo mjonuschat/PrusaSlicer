@@ -17,11 +17,6 @@ struct DrainHole
 
     bool operator!=(const DrainHole &sp) const;
 
-    template<class Archive> inline void serialize(Archive &ar)
-    {
-        ar(pos, normal, radius, height, failed);
-    }
-
     static constexpr size_t steps = 32;
 };
 

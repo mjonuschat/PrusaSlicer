@@ -119,35 +119,3 @@ void scale_to_fit(Domain::ModelObject& model_object, const Domain::Vec3d& size);
 void bake_xy_rotation_into_meshes(Domain::ModelObject& model_object, size_t instance_idx);
 
 } // namespace Slic3r::Biz::Algorithms::ModelObject
-
-namespace cereal {
-
-template<class Archive>
-void load(Archive& ar, Slic3r::Domain::ModelObject& model_object)
-{
-    ar(cereal::base_class<Slic3r::Domain::ObjectBase>(&model_object), model_object.name, model_object.input_file, model_object.instances, model_object.volumes);
-    cereal::load_by_value(ar, model_object.object_settings);
-    cereal::load_by_value(ar, model_object.object_settings_sla);
-    ar(model_object.layer_config_ranges);
-    cereal::load_by_value(ar, model_object.layer_height_profile);
-    ar(model_object.sla_support_points, model_object.sla_points_status, model_object.sla_drain_holes, model_object.printable, model_object.origin_translation,
-       model_object.m_bounding_box_approx, model_object.m_bounding_box_approx_valid, model_object.m_bounding_box_exact, model_object.m_bounding_box_exact_valid,
-       model_object.m_min_max_z_valid, model_object.m_raw_bounding_box, model_object.m_raw_bounding_box_valid, model_object.m_raw_mesh_bounding_box,
-       model_object.m_raw_mesh_bounding_box_valid, model_object.cut_connectors, model_object.cut_id);
-}
-
-template<class Archive>
-void save(Archive& ar, const Slic3r::Domain::ModelObject& model_object)
-{
-    ar(cereal::base_class<Slic3r::Domain::ObjectBase>(&model_object), model_object.name, model_object.input_file, model_object.instances, model_object.volumes);
-    cereal::save_by_value(ar, model_object.object_settings);
-    cereal::save_by_value(ar, model_object.object_settings_sla);
-    ar(model_object.layer_config_ranges);
-    cereal::save_by_value(ar, model_object.layer_height_profile);
-    ar(model_object.sla_support_points, model_object.sla_points_status, model_object.sla_drain_holes, model_object.printable, model_object.origin_translation,
-       model_object.m_bounding_box_approx, model_object.m_bounding_box_approx_valid, model_object.m_bounding_box_exact, model_object.m_bounding_box_exact_valid,
-       model_object.m_min_max_z_valid, model_object.m_raw_bounding_box, model_object.m_raw_bounding_box_valid, model_object.m_raw_mesh_bounding_box,
-       model_object.m_raw_mesh_bounding_box_valid, model_object.cut_connectors, model_object.cut_id);
-}
-
-} // namespace cereal

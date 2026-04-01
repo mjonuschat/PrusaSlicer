@@ -8,6 +8,7 @@
 
 namespace cereal {
 template<class Archive> void serialize(Archive&, Slic3r::Domain::ModelInstance&);
+template<class Archive> void load(Archive& ar, Slic3r::Domain::ModelObject& model_object);
 } // namespace cereal
 
 namespace Slic3r::Domain {
@@ -102,6 +103,7 @@ private:
     friend class ModelObject;
 
     template<class Archive> friend void cereal::serialize(Archive&, ModelInstance&);
+    template<class Archive> friend void cereal::load(Archive& ar, Slic3r::Domain::ModelObject& model_object);
 };
 
 using ModelInstancePtrs = std::vector<ModelInstance*>;

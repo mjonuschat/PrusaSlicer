@@ -16,7 +16,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <cereal/cereal.hpp>
 #include <functional>
 #include <vector>
 #include <Eigen/Geometry>

@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/WX/FontManager.hpp"
 #include "Slic3r/Biz/WX/FontUtils.hpp"
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
+#include "Slic3r/Biz/CerealUtils.hpp"
 #include "Slic3r/App/WX/I18N.hpp" // translation for name of favorit fonts
 #include "Slic3r/Log.hpp"
 

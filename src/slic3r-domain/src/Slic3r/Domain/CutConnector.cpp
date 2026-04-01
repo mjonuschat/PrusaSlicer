@@ -16,18 +16,6 @@ bool CutConnectorAttributes::operator==(const CutConnectorAttributes& other) con
     return this->type == other.type && this->style == other.style && this->shape == other.shape;
 }
 
-template<class Archive>
-void CutConnectorAttributes::serialize(Archive& ar)
-{
-    ar(this->type, this->style, this->shape);
-}
-
-template<class Archive>
-void CutConnector::serialize(Archive& ar)
-{
-    ar(this->pos, this->rotation_m, this->radius, this->height, this->radius_tolerance, this->height_tolerance, this->z_angle, this->attribs);
-}
-
 bool CutId::operator<(const CutId& rhs) const { return this->m_unique_id < rhs.m_unique_id; }
 
 CutId& CutId::operator=(const CutId& rhs)

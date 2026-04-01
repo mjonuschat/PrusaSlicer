@@ -3,8 +3,6 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
-#include <cereal/types/base_class.hpp>
-
 namespace Slic3r::Domain {
 
 ModelObject* ModelVolume::get_object() const { return this->object; }

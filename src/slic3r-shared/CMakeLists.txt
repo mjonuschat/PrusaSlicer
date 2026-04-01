@@ -763,6 +763,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.cpp
         include/Slic3r/Biz/Preset/IO/BundleLoader.hpp
         src/Slic3r/Biz/Preset/IO/BundleLoader.cpp
+        include/Slic3r/Biz/CerealUtils.hpp
         src/Slic3r/Biz/Yaml/Yaml.hpp
         src/Slic3r/Biz/Yaml/Yaml.cpp
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
@@ -1176,6 +1177,7 @@ target_link_libraries(slic3r-shared PUBLIC
         TBB::tbbmalloc
         pugixml::pugixml
         range-v3::range-v3
+        libcereal
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
@@ -1309,6 +1311,8 @@ if(SLIC3R_BUILD_TESTS)
 
         test/Slic3r/Biz/Format/3MFTests.cpp
         test/Slic3r/Biz/Format/STEPTests.cpp
+
+        test/Slic3r/Biz/BundleCacheTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 

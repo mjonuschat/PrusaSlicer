@@ -8,10 +8,6 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <cereal/cereal.hpp>
-#include <cereal/types/optional.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/archives/binary.hpp>
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 
@@ -66,8 +62,6 @@ struct FontProp
         HorizontalAlign horizontal{ HorizontalAlign::center };
         VerticalAlign vertical{VerticalAlign::center};
         bool operator==(const Align& other) const;
-        template<class Archive> void serialize(Archive& archive)
-        { archive(horizontal, vertical); }
     };
     // change pivot of text
     // When not set, center is used and is not stored
@@ -97,28 +91,6 @@ struct FontProp
     FontProp(float line_height = 10.f);
 
     bool operator==(const FontProp& other) const;
-    // undo / redo stack recovery
-    template <class Archive>
-    void save(Archive& ar) const
-    {
-        ar(size_in_mm, per_glyph, align);
-        cereal::save(ar, char_gap);
-        cereal::save(ar, line_gap);
-        cereal::save(ar, boldness);
-        cereal::save(ar, skew);
-        cereal::save(ar, collection_number);
-    }
-
-    template <class Archive>
-    void load(Archive& ar)
-    {
-        ar(size_in_mm, per_glyph, align);
-        cereal::load(ar, char_gap);
-        cereal::load(ar, line_gap);
-        cereal::load(ar, boldness);
-        cereal::load(ar, skew);
-        cereal::load(ar, collection_number);
-    }
 };
 
 /// <summary>
@@ -155,12 +127,6 @@ struct FontDescriptor
     Type type;
 
     bool operator==(const FontDescriptor& other) const;
-
-    template <class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(name, path, type);
-    }
 };
 
 using FontList = std::vector<FontDescriptor>;
@@ -180,13 +146,6 @@ struct EmbossStyle
     FontProp prop;
 
     bool operator==(const EmbossStyle& other) const;
-
-    // undo / redo stack recovery
-    template <class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(descriptor, prop);
-    }
 };
 
 // Emboss style name inside vector is unique
@@ -206,13 +165,6 @@ struct TextConfiguration
 
     // Embossed text value
     std::string text = "None";
-
-    // undo / redo stack recovery
-    template <class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(style, text);
-    }
 };
 
 } // namespace Slic3r::Domain

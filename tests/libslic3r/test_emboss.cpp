@@ -2,17 +2,16 @@
 
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 #include "Slic3r/Domain/TriangleMesh.hpp"
-#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
 
 #include <optional>
 #include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>
 #include <libslic3r/Utils.hpp> // for next_highest_power_of_2()
 #include <Slic3r/Biz/Algorithms/IntersectionPoints.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include <libslic3r/ExPolygonSerialize.hpp>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Exact_integer.h>
 #include <CGAL/Surface_mesh.h>
@@ -24,12 +23,19 @@ using Domain::Index3;
 using Domain::its_merge;
 namespace triangle_mesh    = Biz::Algorithms::TriangleMesh;
 namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
-using Domain::EmbossShape;
-using Domain::EmbossStyle;
 using Domain::ExPolygonsWithId;
 using Domain::ExPolygonsWithIds;
 using Domain::FontProp;
-using Domain::TextConfiguration;
+using Domain::Vec2d;
+using Domain::Vec3d;
+using Domain::Vec3f;
+using Domain::ExPolygon;
+using Domain::ExPolygons;
+using Domain::Point;
+using Domain::Points;
+using Domain::Polygon;
+using Domain::Polygons;
+using Domain::Transform3d;
 
 namespace Private {
 
@@ -232,7 +238,7 @@ ExPolygons heal_and_check(const Polygons& polygons)
 {
     IntersectionsLines intersections_prev = get_intersections(polygons);
     Points polygons_points                = Algorithms::Polygon::to_points(polygons);
-    Points duplicits_prev                 = collect_duplicates(polygons_points);
+    Points duplicits_prev                 = Algorithms::Point::collect_duplicates(polygons_points);
 
     auto [shape, success] = Algorithms::HealPolygon::heal_polygons(polygons);
     CHECK(success);
@@ -246,7 +252,7 @@ ExPolygons heal_and_check(const Polygons& polygons)
 
     IntersectionsLines intersections = get_intersections(shape);
     Points shape_points              = Algorithms::ExPolygon::to_points(shape);
-    Points duplicits                 = collect_duplicates(shape_points);
+    Points duplicits                 = Algorithms::Point::collect_duplicates(shape_points);
     //{
     // BoundingBox bb(polygons_points);
     // // bb.scale(svg_scale);
@@ -577,83 +583,6 @@ TEST_CASE("Cut surface", "[its]")
     // its_write_obj(its, "C:/data/temp/projected.obj");
 }
 
-#include <sstream>
-#include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
-
-TEST_CASE("UndoRedo TextConfiguration serialization", "[Emboss]")
-{
-    TextConfiguration tc;
-    tc.text              = "Dovede-li se člověk zasmát sám sobě, nevyjde ze smíchu po celý život.";
-    EmbossStyle& es      = tc.style;
-    es.descriptor.name   = "Seneca";
-    es.descriptor.path   = "Simply the best";
-    es.descriptor.type   = Domain::FontDescriptor::Type::file_path;
-    FontProp& fp         = es.prop;
-    fp.char_gap          = 3;
-    fp.line_gap          = 7;
-    fp.boldness          = 2.3f;
-    fp.skew              = 4.5f;
-    fp.collection_number = 13;
-    fp.size_in_mm        = 6.7f;
-
-    std::stringstream ss; // any stream can be used
-    {
-        cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
-        oarchive(tc);
-    } // archive goes out of scope, ensuring all contents are flushed
-
-    TextConfiguration tc_loaded;
-    {
-        cereal::BinaryInputArchive iarchive(ss); // Create an input archive
-        iarchive(tc_loaded);
-    }
-    CHECK(tc.style == tc_loaded.style);
-    CHECK(tc.text == tc_loaded.text);
-}
-
-#include "Slic3r/Domain/EmbossShape.hpp"
-
-TEST_CASE("UndoRedo EmbossShape serialization", "[Emboss]")
-{
-    EmbossShape emboss;
-    emboss.shapes_with_ids = {
-        {0, {{{0, 0}, {10, 0}, {10, 10}, {0, 10}}, {{5, 5}, {6, 5}, {6, 6}, {5, 6}}}}
-    };
-    emboss.scale                  = 2.;
-    emboss.projection.depth       = 5.;
-    emboss.projection.use_surface = true;
-    emboss.svg_file               = EmbossShape::SvgFile{};
-    emboss.svg_file->path =
-        "Everything starts somewhere, though many physicists disagree.\
- But people have always been dimly aware of the problem with the start of things.\
- They wonder how the snowplough driver gets to work,\
- or how the makers of dictionaries look up the spelling of words.";
-    emboss.svg_file->path_in_3mf =
-        "Všechno někde začíná, i když mnoho fyziků nesouhlasí.\
- Ale lidé si vždy jen matně uvědomovali problém se začátkem věcí.\
- Zajímalo je, jak se řidič sněžného pluhu dostane do práce\
- nebo jak tvůrci slovníků vyhledávají pravopis slov.";
-    emboss.svg_file->file_data = std::make_unique<std::string>("cite: Terry Pratchett");
-
-    std::stringstream ss; // any stream can be used
-    {
-        cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
-        oarchive(emboss);
-    } // archive goes out of scope, ensuring all contents are flushed
-
-    EmbossShape emboss_loaded;
-    {
-        cereal::BinaryInputArchive iarchive(ss); // Create an input archive
-        iarchive(emboss_loaded);
-    }
-    CHECK(emboss.shapes_with_ids.front().expoly == emboss_loaded.shapes_with_ids.front().expoly);
-    CHECK(emboss.scale == emboss_loaded.scale);
-    CHECK(emboss.projection.depth == emboss_loaded.projection.depth);
-    CHECK(emboss.projection.use_surface == emboss_loaded.projection.use_surface);
-    CHECK(emboss.svg_file->path == emboss_loaded.svg_file->path);
-    CHECK(emboss.svg_file->path_in_3mf == emboss_loaded.svg_file->path_in_3mf);
-}
 
 /// <summary>
 /// Distiguish point made by shape(Expolygon)

@@ -51,13 +51,3 @@ Domain::TriangleMesh flatten_to_mesh(const Domain::Model& model);
 void print_info(const Domain::Model& model);
 
 } // namespace Slic3r::Biz::Algorithms::Model
-
-namespace cereal {
-
-template<class Archive>
-void serialize(Archive& ar, Slic3r::Domain::Model& model)
-{
-    ar(cereal::base_class<Slic3r::Domain::ObjectBase>(&model), model.objects);
-}
-
-} // namespace cereal

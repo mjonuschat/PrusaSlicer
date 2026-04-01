@@ -4,6 +4,7 @@
 #ifndef INTERLOCKING_GENERATOR_HPP
 #define INTERLOCKING_GENERATOR_HPP
 
+#include <unordered_set>
 #include "libslic3r/Print.hpp"
 #include "VoxelUtils.hpp"
 

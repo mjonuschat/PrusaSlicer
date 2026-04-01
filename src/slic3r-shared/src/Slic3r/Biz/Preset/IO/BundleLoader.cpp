@@ -4,7 +4,7 @@
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
-#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
+#include "Slic3r/Biz/CerealUtils.hpp"
 
 #include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/path.hpp>

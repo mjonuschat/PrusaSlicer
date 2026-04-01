@@ -48,12 +48,6 @@ struct TriangleBitStreamMapping
 
     bool operator==(const TriangleBitStreamMapping& rhs) const;
     bool operator!=(const TriangleBitStreamMapping& rhs) const;
-
-private:
-    template<class Archive>
-    void serialize(Archive& ar);
-
-    friend class cereal::access;
 };
 
 struct TriangleSplittingData {
@@ -78,12 +72,6 @@ struct TriangleSplittingData {
      * Update used states based on the bitstream. It just iterated over the bitstream from the bitstream_start_idx till the end.
      */
     void update_used_states(std::size_t bitstream_start_idx);
-
-private:
-    template<class Archive>
-    void serialize(Archive& ar);
-
-    friend class cereal::access;
 };
 
 } // namespace Slic3r::Domain::TriangleSelector

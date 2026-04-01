@@ -55,13 +55,8 @@ private:
     FacetsAnnotation& operator=(const FacetsAnnotation& rhs) = default;
     FacetsAnnotation& operator=(FacetsAnnotation&& rhs) = default;
 
-    template<class Archive>
-    void serialize(Archive& ar);
-
     // To access set_new_unique_id() when copy / pasting a ModelVolume.
     friend class ModelVolume;
-
-    friend class cereal::access;
 };
 
 } // namespace Slic3r::Domain

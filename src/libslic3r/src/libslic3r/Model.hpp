@@ -105,11 +105,4 @@ void check_model_ids_equal(const Domain::Model &model1, const Domain::Model &mod
 
 } // namespace Slic3r
 
-namespace cereal
-{
-    template <class Archive> struct specialize<Archive, Slic3r::Domain::VolumeSettings, cereal::specialization::member_serialize> {};
-    template <class Archive> struct specialize<Archive, Slic3r::Domain::ObjectSettings, cereal::specialization::member_serialize> {};
-    template <class Archive> struct specialize<Archive, Slic3r::Domain::SLAObjectSettings, cereal::specialization::member_serialize> {};
-}
-
 #endif /* slic3r_Model_hpp_ */

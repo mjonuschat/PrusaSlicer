@@ -5,6 +5,15 @@
 #include <vector>
 
 namespace Slic3r::Domain {
+class CutId;
+}
+
+namespace cereal {
+template <typename Archive>
+void serialize(Archive& ar, Slic3r::Domain::CutId&);
+} // namespace cereal
+
+namespace Slic3r::Domain {
 
 enum class CutConnectorType : int
 {
@@ -48,9 +57,6 @@ struct CutConnectorAttributes
 
     bool operator<(const CutConnectorAttributes& other) const;
     bool operator==(const CutConnectorAttributes& other) const;
-
-    template<class Archive>
-    void serialize(Archive& ar);
 };
 
 struct CutConnector
@@ -74,9 +80,6 @@ struct CutConnector
 
     CutConnector(const CutConnector& rhs) :
         CutConnector(rhs.pos, rhs.rotation_m, rhs.radius, rhs.height, rhs.radius_tolerance, rhs.height_tolerance, rhs.z_angle, rhs.attribs) {}
-
-    template<class Archive>
-    void serialize(Archive& ar);
 };
 
 using CutConnectors = std::vector<CutConnector>;
@@ -112,10 +115,7 @@ public:
     void increase_connectors_cnt(size_t connectors_cnt);
 
     template<class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(m_unique_id, m_check_sum, m_connectors_cnt);
-    }
+    friend void cereal::serialize(Archive& ar, CutId&);
 };
 
 } // namespace Slic3r::Domain

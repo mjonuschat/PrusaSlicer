@@ -5,7 +5,6 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -71,98 +70,3 @@ SCENARIO("Basics", "[ExPolygon]") {
     }
 }
 
-#include <sstream>
-#include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
-#include "libslic3r/ExPolygonSerialize.hpp"
-TEST_CASE("Serialization of expolygons", "[ExPolygon, Cereal, serialization]")
-{
-    ExPolygons expolys{{
-        // expolygon 1 - without holes
-        {Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}}, // contour
-        // expolygon 2 - with rect 1px hole
-        {{Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}},
-        {Point{5, 5}, Point{6, 5}, Point{6, 6}, Point{5, 6}}}
-    }};
-
-    std::stringstream ss; // any stream can be used
-    {
-        cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
-        oarchive(expolys);
-    } // archive goes out of scope, ensuring all contents are flushed
-
-    std::string data = ss.str();
-    CHECK(!data.empty());
-
-    ExPolygons expolys_loaded;
-    {
-        cereal::BinaryInputArchive iarchive(ss); // Create an input archive
-        iarchive(expolys_loaded);
-    }
-
-    CHECK(expolys == expolys_loaded);
-}
-
-#include <cereal/archives/json.hpp>
-#include <regex>
-// It is used to serialize expolygons into 3mf.
-TEST_CASE("Serialization of expolygons to string", "[ExPolygon, Cereal, serialization]")
-{
-    ExPolygons expolys{{
-        // expolygon 1 - without holes
-        {Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}}, // contour
-        // expolygon 2 - with rect 1px hole
-        {{Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}},
-        {Point{5, 5}, Point{6, 5}, Point{6, 6}, Point{5, 6}}} 
-    }};
-
-    std::stringstream ss_out; // any stream can be used
-    {
-        cereal::JSONOutputArchive oarchive(ss_out); // Create an output archive
-        oarchive(expolys);
-    } // archive goes out of scope, ensuring all contents are flushed
-
-    //Simplify text representation of expolygons
-    std::string data = ss_out.str();
-    // Data contain this JSON string
-    //{
-    //    "value0": [
-    //        {
-    //            "value0": {
-    //                "value0":
-    //                    [{"value0": 0, "value1": 0}, {"value0": 10, "value1": 0}, {"value0": 10, "value1": 10}, {"value0": 0, "value1": 10}]
-    //            },
-    //            "value1": []
-    //        },
-    //        {
-    //            "value0": {
-    //                "value0":
-    //                    [{"value0": 0, "value1": 0}, {"value0": 10, "value1": 0}, {"value0": 10, "value1": 10}, {"value0": 0, "value1": 10}]
-    //            },
-    //            "value1": [{
-    //                "value0":
-    //                    [{"value0": 5, "value1": 5}, {"value0": 6, "value1": 5}, {"value0": 6, "value1": 6}, {"value0": 5, "value1": 6}]
-    //            }]
-    //        }
-    //    ]
-    //}
-
-    // Change JSON named object to JSON arrays(without name)
-    
-    // RegEx for wihitespace = "[ \t\r\n\v\f]"
-    std::regex r("\"value[0-9]+\":|[ \t\r\n\v\f]");
-    std::string data_short = std::regex_replace(data, r , "");    
-    std::replace(data_short.begin(), data_short.end(), '{', '[');
-    std::replace(data_short.begin(), data_short.end(), '}', ']');
-    CHECK(!data_short.empty());
-    // Cereal acceptable string
-    // [[[[[[0,0],[10,0],[10,10],[0,10]]],[]],[[[[0,0],[10,0],[10,10],[0,10]]],[[[[5,5],[6,5],[6,6],[5,6]]]]]]]
-    std::stringstream ss_in(data_short);
-    ExPolygons expolys_loaded;
-    {
-        cereal::JSONInputArchive iarchive(ss_in); // Create an input archive
-        iarchive(expolys_loaded);
-    }
-
-    CHECK(expolys == expolys_loaded);
-}

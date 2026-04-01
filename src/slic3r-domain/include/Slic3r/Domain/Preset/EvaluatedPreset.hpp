@@ -48,11 +48,6 @@ struct EvaluatedPreset
     Expressions conditions;
     SourceLocation last_node_location;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(kind, root_id, id, name, values, features, conditions, last_node_location);
-    }
-
     bool has_same_values(const EvaluatedPreset& rhs) const
     {
         // last_node_location and conditions intentionally left
@@ -130,10 +125,6 @@ struct EvaluatedToolPrintPreset
 
     explicit EvaluatedToolPrintPreset(Preset&& preset) : preset(std::move(preset)) {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(preset);
-    }
 };
 
 /**
@@ -159,10 +150,6 @@ struct EvaluatedMaterialPreset
 
     explicit EvaluatedMaterialPreset(Preset&& preset) : preset(std::move(preset)) {}
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(preset);
-    }
 };
 
 using SingleToolEvaluatedMaterialPresets = std::vector<EvaluatedMaterialPreset>;
@@ -196,10 +183,6 @@ struct EvaluatedPrintPreset
     const EvaluatedToolPrintPreset* find_tool_preset_by_id(size_t tool_idx, const std::string& id) const;
     const EvaluatedMaterialPreset* find_material_preset_by_id(size_t tool_idx, const std::string& id) const;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(preset, tools, materials);
-    }
 };
 
 using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
@@ -222,10 +205,6 @@ struct EvaluatedPrinterPreset
 
     bool is_valid() const;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(hw_config, preset, prints);
-    }
 };
 
 template <typename EP>

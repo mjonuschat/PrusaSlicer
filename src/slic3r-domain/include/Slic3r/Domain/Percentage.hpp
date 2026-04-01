@@ -2,6 +2,15 @@
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Domain {
+    class FloatOrPercentage;
+}
+
+namespace cereal {
+template <class Archive>
+void serialize(Archive& archive, Slic3r::Domain::FloatOrPercentage& value);
+}
+
+namespace Slic3r::Domain {
 class Percentage
 {
 public:
@@ -9,9 +18,6 @@ public:
     double get_abs_value(double ratio_over) const { return (value / 100.) * ratio_over; }
 
     double value = 0.;
-    template<class Archive> void serialize(Archive& archive){
-        archive(value);
-    }
 };
 
 class FloatOrPercentage
@@ -47,12 +53,12 @@ public:
         return m_value == other.m_value && m_is_percentage == other.m_is_percentage;
     }
 
-    template<class Archive> void serialize(Archive& archive) {
-        archive(m_value, m_is_percentage);
-    }
 
 private:
     double m_value = 0.;
     bool m_is_percentage = false;
+
+    template <class Archive>
+    friend void cereal::serialize(Archive& archive, Slic3r::Domain::FloatOrPercentage& value);
 };
 } // namespace Slic3r::Domain

@@ -40,9 +40,6 @@ struct SupportPoint
     SupportPointType type{SupportPointType::manual_add};
 
     bool is_island() const { return type == SupportPointType::island; }
-    template<class Archive> void serialize(Archive &ar){
-        ar(pos, head_front_radius, type);
-    }
 
     // unsaved changes + cache invalidation
     bool operator==(const SupportPoint &sp) const;

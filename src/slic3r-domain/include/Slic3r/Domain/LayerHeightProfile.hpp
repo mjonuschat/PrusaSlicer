@@ -6,7 +6,14 @@
 
 #include <map>
 
-#include <cereal/types/base_class.hpp>
+namespace Slic3r::Domain {
+class LayerHeightProfile;
+} // namespace Slic3r::Domain
+
+namespace cereal {
+template <class Archive>
+void serialize(Archive& ar, Slic3r::Domain::LayerHeightProfile& profile);
+} // namespace cereal
 
 namespace Slic3r::Domain {
 
@@ -65,14 +72,11 @@ private:
     LayerHeightProfile& operator=(const LayerHeightProfile& rhs) = default;
     LayerHeightProfile& operator=(LayerHeightProfile&& rhs)      = default;
 
-    template <class Archive>
-    void serialize(Archive& ar)
-    {
-        ar(cereal::base_class<ObjectWithTimestamp>(this), m_data);
-    }
-
     // To access set_new_unique_id() when copy / pasting an object.
     friend class ModelObject;
+
+    template <class Archive>
+    friend void cereal::serialize(Archive& ar, LayerHeightProfile& profile);
 };
 
 using LayerHeightRange  = std::pair<double, double>;

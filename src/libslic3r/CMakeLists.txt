@@ -115,7 +115,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/ElephantFootCompensation.hpp
     src/libslic3r/ExPolygon.cpp
     src/libslic3r/ExPolygon.hpp
-    src/libslic3r/ExPolygonSerialize.hpp
     src/libslic3r/Extruder.cpp
     src/libslic3r/Extruder.hpp
     src/libslic3r/ExtruderCandidates.cpp
@@ -468,7 +467,6 @@ find_package(JPEG REQUIRED)
 
 target_link_libraries(libslic3r PRIVATE
     libnest2d
-    libcereal
     libexpat
     qhull
     TBB::tbb

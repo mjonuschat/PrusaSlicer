@@ -116,12 +116,3 @@ inline Domain::Vec2ds to_polygon(const Domain::BoundingBox2d& box)
 }
 
 } // namespace Slic3r::Biz::Algorithms::BoundingBox
-
-namespace cereal {
-template<class Archive, Slic3r::Domain::BoundingBoxConcept BoxType>
-void serialize(Archive& archive, const BoxType& box)
-{
-    archive(box.min, box.max, box.defined);
-}
-
-} // namespace cereal

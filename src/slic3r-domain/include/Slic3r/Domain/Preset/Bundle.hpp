@@ -16,11 +16,6 @@ struct VendorBundle
     PresetNamesCollection preset_names;
     HwPrinterConfigs printer_configs;
 
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(vendor_data, presets, preset_names, printer_configs);
-    }
-
     const HwPrinterConfig* find_printer_config(const std::string& id) const;
     HwPrinterConfig* find_printer_config(const std::string& id);
 };
@@ -51,11 +46,6 @@ struct Bundle
     VendorBundles vendor_bundles;
     PrinterConfigs printer_configs;
     EvaluatedPrinterPresets evaluated_presets;
-
-    template<class Archive> void serialize(Archive& archive)
-    {
-        archive(vendor_bundles, printer_configs, evaluated_presets);
-    }
 
     const EvaluatedPrinterPreset* find_printer_preset(
         const std::string& printer_hw_config_id,
