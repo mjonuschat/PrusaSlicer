@@ -64,7 +64,7 @@ SimplifyNotification::SimplifyNotification(
             };
             m_project_interactor.scene_interactor().set_object_selection(selection);
             if (gizmo_manager.current_tool_type() != Scene::ToolType::Simplify) {
-                gizmo_manager.toggle_activate_tool(Scene::ToolType::Simplify, Domain::PrinterTechnology::FFF);
+                gizmo_manager.activate_tool(Scene::ToolType::Simplify);
             }
             return true; // close popup
         };

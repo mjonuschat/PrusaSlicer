@@ -42,8 +42,11 @@ static std::string get_as_string(const Domain::ConfigItem& item)
 std::string get_display_value_or_na(const Domain::ConfigBox* config, const std::string& key)
 {
     if (config) {
-        if (const auto override = config->overrides.get(key))
-            return get_as_string(*override);
+        if (const auto override = config->overrides.find(key)) {
+            if (config->overrides.get(key)) {
+                return get_as_string(*override);
+            }
+        }
         if (const auto item = config->items.find(key))
             return get_as_string(*item);
     }

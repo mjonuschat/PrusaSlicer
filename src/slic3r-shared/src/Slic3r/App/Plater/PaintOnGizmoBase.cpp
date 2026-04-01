@@ -228,6 +228,17 @@ void PaintOnGizmoBase::on_thumbnail_render_end()
     this->hide_visible_volumes();
 }
 
+void PaintOnGizmoBase::on_model_reloaded(
+    Domain::SelectionId project_id
+)
+{
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+
+    rebuild_paintable_geometry();
+}
+
 void PaintOnGizmoBase::apply_painting_to_model() const
 {
     Domain::ElementRefs volume_refs;
@@ -418,7 +429,8 @@ void PaintOnGizmoBase::on_activated()
     this->update_clipping_plane();
     this->update_overhang_detection();
 
-    scene.add_listener<ISceneChangedListener>(this);
+    scene.add_listener<App::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
 }
 
@@ -443,7 +455,8 @@ void PaintOnGizmoBase::on_deactivated()
     m_clipping_plane_presenter.deactivate();
     m_sinking_plane_presenter.deactivate();
 
-    scene.remove_listener<ISceneChangedListener>(this);
+    scene.remove_listener<App::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
 }
 
@@ -1071,6 +1084,75 @@ void PaintOnGizmoBase::update_cursors()
         m_circle_cursor_render_wrapper.set_enabled(false);
         m_height_range_cursor_render_wrapper.set_enabled(false);
     }
+}
+
+void PaintOnGizmoBase::rebuild_paintable_geometry() {
+    using MeshManager = PlaterScenePresenter::MeshManager;
+
+    const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const ObjectSelection& object_selection = scene_interactor.object_selection();
+    const Project& project                  = m_project_interactor.selected_project();
+    const MeshManager& mesh_manager         = m_scene_presenter.model_triangle_mesh_manager();
+    Scene::Scene& scene                     = m_scene_presenter.scene();
+
+    // Remove all the scene nodes created by this gizmo.
+    if (m_main_node != nullptr) {
+        scene.remove_child(m_main_node);
+        m_main_node               = nullptr;
+        m_cursors_node            = nullptr;
+        m_triangle_selectors_node = nullptr;
+    }
+
+    m_clipping_plane_presenter.deactivate();
+    m_sinking_plane_presenter.deactivate();
+
+    if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
+        on_deactivated();
+        return;
+    }
+
+    m_visible_volumes_nodes  = collect_visible_volumes_nodes(project, scene);
+    m_paintable_volumes      = collect_paintable_volumes(object_selection, project, mesh_manager);
+
+    this->hide_visible_volumes();
+    this->init_main_nodes();
+    this->init_cursors_nodes();
+
+    m_triangle_selector_wrappers.clear();
+
+    for (PaintableVolume& paintable_volume : m_paintable_volumes) {
+        const ModelVolume& model_volume           = paintable_volume.model_volume;
+        const Domain::TriangleMesh& triangle_mesh = model_volume.mesh();
+
+        m_triangle_selector_wrappers.emplace_back(
+            triangle_mesh,
+            paintable_volume.aabb_mesh,
+            m_painting_colors,
+            m_default_painting_color
+        );
+        // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
+        m_triangle_selector_wrappers.back().triangle_selector().deserialize(
+            this->get_facets_annotation(model_volume).get_data(),
+            false
+        );
+        m_triangle_selector_wrappers.back().init_painted_mesh_node(
+            m_device,
+            scene,
+            *m_triangle_selectors_node,
+            paintable_volume.world_trafo
+        );
+        m_triangle_selector_wrappers.back().init_painted_contour_node(
+            m_device,
+            scene,
+            *m_triangle_selectors_node,
+            paintable_volume.world_trafo
+        );
+    }
+
+    this->init_clipper_presenters();
+
+    this->update_clipping_plane();
+    this->update_overhang_detection();
 }
 
 void PaintOnGizmoBase::render_scene(Render::CommandBuffer& cmd_buffer)

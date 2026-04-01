@@ -6,9 +6,15 @@
 
 namespace Slic3r::Biz::Scene {
 
-Domain::Bed& get_or_create_bed(Domain::BedContainer& bed_container, const Domain::ConfigContainer& config_container,
-    const std::string& assets_path, Domain::SelectionId project_id, Domain::SelectionId config_container_id,
-    std::function<Domain::Vec2ds(Domain::SelectionId, Domain::SelectionId)> system_preset_bed_shape_getter)
+Domain::Bed& get_or_create_bed(
+    Domain::BedContainer& bed_container,
+    const Domain::ConfigContainer& config_container,
+    const std::string& assets_path,
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    std::function<Domain::Vec2ds(Domain::SelectionId, Domain::SelectionId)>
+        system_preset_bed_shape_getter
+)
 {
     size_t old_bed_count = bed_container.beds_count();
     auto item = config_container.selected_preset().printer.config_box().find("bed_shape");

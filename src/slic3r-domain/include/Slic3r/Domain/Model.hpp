@@ -119,10 +119,11 @@ public:
     // Checks if any of objects is painted using the fuzzy skin painting gizmo.
     bool          is_fuzzy_skin_painted() const;
 
+    void update_links_bottom_up_recursive();
+
 private:
     explicit Model(int) : ObjectBase(-1) { assert(this->id().invalid()); }
 
     void assign_new_unique_ids_recursive() override;
-    void update_links_bottom_up_recursive();
 };
 }

@@ -13,12 +13,13 @@ using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 QuickDragGizmo::QuickDragGizmo(
-    Biz::Scene::SceneInteractor& scene_interactor,
+    Biz::ProjectInteractor& project_interactor,
     Scene::ISceneProvider& scene_provider
 ) :
-    m_scene_interactor(scene_interactor),
+    m_project_interactor(project_interactor),
+    m_scene_interactor(project_interactor.scene_interactor()),
     m_scene_provider(scene_provider),
-    m_selection_handler(scene_interactor)
+    m_selection_handler(project_interactor.scene_interactor())
 {}
 
 Scene::GizmoActivationState QuickDragGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
@@ -73,6 +74,7 @@ bool QuickDragGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
 void QuickDragGizmo::on_drag_finish()
 {
     m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::QuickDrag);
 }
 
 void QuickDragGizmo::on_drag_cancel()

@@ -2760,11 +2760,16 @@ void CutGizmo::perform_cut()
         settings.mode          = Biz::Arrange::Mode::Local;
         m_project_interactor->arrange_interactor().arrange(
             m_project_interactor->selected_project_id(),
-            settings
+            settings,
+            [this](){
+                m_project_interactor->undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::Cut
+                );
+            }
         );
-
         // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
+
     }
 
     context().invalidate();

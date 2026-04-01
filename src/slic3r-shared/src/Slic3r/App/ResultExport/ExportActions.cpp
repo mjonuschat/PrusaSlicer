@@ -14,6 +14,9 @@ using Biz::Platform::PlatformServices;
 
 bool can_export(Biz::ProjectInteractor& project_interactor)
 {
+    if (project_interactor.scene_interactor().bed_selection().empty()) {
+        return false;
+    }
     const Domain::SlicingId slicing_id{ project_interactor.selected_bed_slicing_id() };
     const auto optional_status{ project_interactor.status_cache().get_status(slicing_id) };
     if (!optional_status) {

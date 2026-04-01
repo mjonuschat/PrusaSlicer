@@ -1114,7 +1114,8 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
                     }
                 }
             }
-        }
+        },
+        state != Biz::Scene::TransformState::InProgress
     );
 
     if (state == Biz::Scene::TransformState::Completed ||
@@ -1170,6 +1171,9 @@ void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, con
         scene(),
         volumes,
         [](const SceneNodeTag& tag, const Domain::ElementRef& el) {
+            if (el.has_instance() && tag.instance_id != el.instance_id) {
+                return false;
+            }
             return tag.object_id == el.object_id && tag.volume_id == el.volume_id;
         }
     );

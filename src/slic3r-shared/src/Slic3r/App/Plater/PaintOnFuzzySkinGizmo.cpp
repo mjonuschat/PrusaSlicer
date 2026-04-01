@@ -83,7 +83,11 @@ bool PaintOnFuzzySkinGizmo::set_facets_annotation(
     const Biz::Algorithms::TriangleSelector& triangle_selector
 ) const
 {
-    return model_volume.fuzzy_skin_facets.set_data(triangle_selector.serialize());
+    const bool result{model_volume.fuzzy_skin_facets.set_data(triangle_selector.serialize())};
+    m_project_interactor.undo_provider().take_snapshot(
+        Biz::UndoSnapshotType::PaintOnFuzzySkinStroke
+    );
+    return result;
 }
 
 Domain::TriangleSelector::TriangleStateType

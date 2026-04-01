@@ -83,13 +83,13 @@ public:
     void render_scene(Render::CommandBuffer& cmd_buffer);
     void render_imgui();
 
-    void toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt);
     /**
      * @name Implementation of IGizmoController interface
      * @{
      */
     void deactivate_current_tool() override;
-    void activate_tool(ToolType tool, Domain::PrinterTechnology pt) override;
+    void activate_tool(ToolType tool) override;
+
     ToolType current_tool_type() const override;
     /**@}*/
 

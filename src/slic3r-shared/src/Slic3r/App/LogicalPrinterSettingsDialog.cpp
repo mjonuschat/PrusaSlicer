@@ -175,6 +175,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
 
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
             m_navigator.set_opened_dialog(nullptr);
+            m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::SelectPrinterPreset);
         },
         [this](size_t index)
         {
@@ -200,6 +201,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
 
             select_page_settings();
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
+            m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::SelectPrinterPreset);
         },
         m_project_interactor.preset_interactor()
     );

@@ -254,7 +254,7 @@ VariableLayerHeightGizmo::VariableLayerHeightGizmo(
     m_dialog->callbacks().on_height_range_click = [this]()
     {
         ASSERT(m_gizmo_controller != nullptr);
-        m_gizmo_controller->activate_tool(ToolType::HeightRangeGizmo, PrinterTechnology::FFF);
+        m_gizmo_controller->activate_tool(ToolType::HeightRangeGizmo);
     };
 }
 

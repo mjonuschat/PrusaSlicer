@@ -71,7 +71,11 @@ bool PaintOnSeamsGizmo::set_facets_annotation(
     const Biz::Algorithms::TriangleSelector& triangle_selector
 ) const
 {
-    return model_volume.seam_facets.set_data(triangle_selector.serialize());
+    const bool result{model_volume.seam_facets.set_data(triangle_selector.serialize())};
+    m_project_interactor.undo_provider().take_snapshot(
+        Biz::UndoSnapshotType::PaintOnSeamsStroke
+    );
+    return result;
 }
 
 Domain::TriangleSelector::TriangleStateType PaintOnSeamsGizmo::get_left_button_state_type() const

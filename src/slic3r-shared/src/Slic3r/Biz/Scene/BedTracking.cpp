@@ -247,6 +247,11 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
                 insts.clear();
                 changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
             }
+            auto& colliding_insts = bi->colliding_instances;
+            if (!colliding_insts.empty()) {
+                colliding_insts.clear();
+                changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
+            }
         }
 
     // Build new tracking

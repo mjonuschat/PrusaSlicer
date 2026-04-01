@@ -49,6 +49,7 @@ public:
     PreviewRenderModule(
         const Domain::Workbench& workbench,
         Biz::ProjectInteractor& project_interactor,
+        App::Undo::Store& undo_store,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
         std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
@@ -56,6 +57,7 @@ public:
     ) :
         m_workbench(workbench),
         m_project_interactor(project_interactor),
+        m_undo_store(undo_store),
         m_thumbnail_store(thumbnail_store),
         m_thumbnail_store_updater(thumbnail_store_updater),
         m_thumbnail_image_generator(thumbnail_image_generator),
@@ -149,6 +151,11 @@ public:
         return m_gizmo_manager ? true : false;
     }
 
+    TopBar* top_bar()
+    {
+        return m_top_bar.get();
+    }
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface
@@ -172,6 +179,7 @@ protected:
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
+    Undo::Store& m_undo_store;
     std::unique_ptr<PreviewScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
     DialogNavigation m_dialog_navigation;

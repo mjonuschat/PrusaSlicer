@@ -40,6 +40,8 @@ public:
     );
 
 private:
+
+    void register_undo_redo_commands();
     void register_main_menu_commands();
     void register_main_menu_edit_commands();
     void register_main_menu_view_commands();

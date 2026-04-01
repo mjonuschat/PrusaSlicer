@@ -11,6 +11,7 @@
 
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/TimerQueue.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
@@ -156,7 +157,7 @@ private:
 
     std::vector<Biz::Platform::TimerQueue::TimerID> m_up_timer_ids;
     bool m_pending_single_click{ false };
-    Scene::Node* m_pending_click_node{ nullptr };  // instance-level node to select on timeout
+    std::size_t m_pending_click_node{ Domain::INVALID_ID };  // instance-level node to select on timeout
 
     RectangleSelection m_rectangle_selection;
     HoverData m_hover_data;

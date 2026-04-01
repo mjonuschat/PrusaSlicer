@@ -34,7 +34,11 @@ class ArrangeInteractor : public WithListeners<IArrangeEventsListener>
 public:
     ArrangeInteractor(Scene::SceneInteractor& scene_interactor, const Domain::Workbench& workbench);
 
-    void arrange(const Domain::SelectionId project_id, const Biz::Arrange::Settings& settings);
+    void arrange(
+        const Domain::SelectionId project_id,
+        const Biz::Arrange::Settings& settings,
+        std::function<void()> on_finished
+    );
 
 private:
     Scene::SceneInteractor& m_scene_interactor;

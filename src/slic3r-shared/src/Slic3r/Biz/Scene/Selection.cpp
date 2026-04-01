@@ -219,6 +219,22 @@ bool BedSelection::remove(const Domain::BedRef& bed_ref)
     return erased_count != 0;
 }
 
+void BedSelection::set_state(
+    Domain::BedRefs selected_beds,
+    Domain::SelectionId selected_config_container,
+    Domain::BedRef last_selected_bed,
+    BedSelectionMode mode,
+    CameraActionOnBedSelection camera_action_on_selection
+)
+{
+    m_selected_beds = std::move(selected_beds);
+    m_selected_config_container = selected_config_container;
+    m_last_selected_bed = last_selected_bed;
+    m_mode  = mode;
+    m_camera_action_on_selection = camera_action_on_selection;
+    on_change(*this);
+}
+
 BedInstances get_selected_beds(
     const Domain::SelectionId project_id,
     const BedSelection& selection,

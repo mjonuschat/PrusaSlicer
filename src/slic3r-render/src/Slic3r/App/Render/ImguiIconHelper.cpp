@@ -115,6 +115,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ToolbarCut, "cut"},
     {Icon::PrinterNEXT, "printer_NEXT"},
 
+    {Icon::TopBarUndo, "tb_undo"},
+    {Icon::TopBarRedo, "tb_redo"},
     {Icon::TobBarLoad, "tb_load"},
     {Icon::TobBarSave, "tb_save"},
     {Icon::TobBarShowUI, "tb_show_ui"},

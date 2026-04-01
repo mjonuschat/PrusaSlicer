@@ -67,6 +67,10 @@ ScaleDialog::ScaleDialog(
                 -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
             m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
         }
+
+        m_project_interactor.undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::RevertScale
+        );
     };
 
     auto title = content()->emplace_back<Text>("Size");
@@ -373,7 +377,9 @@ void ScaleDialog::apply_relative_scale(const Domain::Vec3d& scale_by)
         memento,
         was_on_bed
     );
-    scene_interactor.finalize_transform_selection(memento, false);
+    scene_interactor
+        .finalize_transform_selection(memento, false);
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::SetScale);
 }
 
 Domain::SquareMatrix4d remove_scale(

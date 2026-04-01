@@ -44,8 +44,10 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
         m_add_container_button->callbacks().action = [this]()
         {
             m_project_interactor->add_config_container();
-            if (on_config_container_added != nullptr)
+            if (on_config_container_added != nullptr) {
                 on_config_container_added();
+                m_project_interactor->undo_provider().take_snapshot(Biz::UndoSnapshotType::AddConfigContainer);
+            }
         };
     }
 
@@ -189,7 +191,12 @@ void ObjectListWindow::init_cc_context_menu()
     m_delete_cc_menu_item =
         m_cc_context_menu->append_item(_u8L("Delete"), Render::Icon::DeleteBtnIcon);
     m_delete_cc_menu_item->callbacks().action = [this]()
-    { m_project_interactor->remove_config_container(m_selected_config_container_id); };
+    {
+        m_project_interactor->remove_config_container(m_selected_config_container_id);
+        m_project_interactor->undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::DeleteConfigContainer
+        );
+    };
 
     m_cc_context_menu->append_item(_u8L("Duplicate"), Render::Icon::CopyForGizmo)
         ->callbacks()

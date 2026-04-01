@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Utils/SetDiff.hpp"
 
 #include "Slic3r/Directories.hpp"
 
@@ -733,6 +734,26 @@ Domain::SelectionId ProjectInteractor::add_config_container()
     return id;
 }
 
+Domain::SelectionId ProjectInteractor::insert_config_container(
+    Domain::SelectionId project_id,
+    std::unique_ptr<Domain::ConfigContainer> config_container,
+    std::size_t position
+)
+{
+    auto& p = m_workbench.project(project_id);
+    ASSERT(position <= p.config_containers().size());
+    auto it{p.config_containers().insert(
+        p.config_containers().begin() + position,
+        std::move(config_container)
+    )};
+    auto& cc = **it;
+    auto id = cc.id().id;
+
+    m_scene_interactor.update_beds(project_id, id);
+
+    return id;
+}
+
 Domain::SelectionId ProjectInteractor::duplicate_config_container(Domain::SelectionId config_container_id)
 {
     select_config_container(config_container_id); 
@@ -771,6 +792,182 @@ void ProjectInteractor::select_config_container(Domain::SelectionId container_id
 {
     if (container_id != m_selection.config_container_id())
         do_select_config_container(container_id);
+}
+
+static std::set<std::size_t> get_ids(const Domain::Project::ConfigContainerList& config_containers)
+{
+    std::set<std::size_t> result;
+    std::ranges::transform(
+        config_containers,
+        std::inserter(result, result.begin()),
+        [](const std::unique_ptr<Domain::ConfigContainer>& config_container)
+        { return config_container->id().id; }
+    );
+    return result;
+}
+
+static std::set<std::size_t> get_ids(const Domain::ConfigContainer::BedInstanceList& bed_instances)
+{
+    std::set<std::size_t> result;
+    std::ranges::transform(
+        bed_instances,
+        std::inserter(result, result.begin()),
+        [](const std::unique_ptr<Domain::BedInstance>& bed_instance)
+        { return bed_instance->id().id; }
+    );
+    return result;
+}
+
+static void reload_config_container_after_undo(
+    Domain::SelectionId project_id,
+    std::unique_ptr<Domain::ConfigContainer>& active_container,
+    const std::unique_ptr<Domain::ConfigContainer>& new_container,
+    Biz::Scene::SceneInteractor& scene_interactor,
+    bool is_different_printer
+)
+{
+    active_container->set_bed(new_container->bed());
+
+    if (is_different_printer)
+    {
+        active_container->mutable_selected_preset() = new_container->selected_preset();
+    }
+
+    std::set<std::size_t> new_bed_instance_ids{get_ids(new_container->bed_instances())};
+    std::set<std::size_t> old_bed_instance_ids{get_ids(active_container->bed_instances())};
+
+    const Utils::SetDiff<std::size_t> bed_instances_diff{
+        Utils::get_sets_diff(old_bed_instance_ids, new_bed_instance_ids)
+    };
+
+    for (std::size_t bed_instance_id : bed_instances_diff.removed) {
+        scene_interactor.erase_bed_instance(
+            project_id,
+            Domain::BedRef{active_container->id().id, bed_instance_id}
+        );
+    }
+
+    for (std::size_t bed_instance_id : bed_instances_diff.added) {
+        const auto instance_it{std::ranges::find_if(
+            new_container->bed_instances(),
+            [&](const auto& bi) { return bi->id().id == bed_instance_id; }
+        )};
+
+        const std::size_t position{static_cast<std::size_t>(
+            std::distance(new_container->bed_instances().begin(), instance_it)
+        )};
+        ASSERT(position < new_container->bed_instances().size());
+
+        scene_interactor.insert_bed_instance(
+            project_id,
+            active_container->id().id,
+            position,
+            std::move(*instance_it)
+        );
+        // Moved out unique ptr is already guaranteed nullptr, but lets be explicit.
+        *instance_it = nullptr;
+    }
+
+    for (std::size_t bed_instance_id : bed_instances_diff.changed) {
+        const auto active_instance_it{std::ranges::find_if(
+            active_container->bed_instances(),
+            [&](const auto& bi) { return bi->id().id == bed_instance_id; }
+        )};
+        const auto new_instance_it{std::ranges::find_if(
+            new_container->bed_instances(),
+            [&](const auto& bi)
+            {
+                // Skip moved out of instances.
+                if (!bi) {
+                    return false;
+                }
+                return bi->id().id == bed_instance_id;
+            }
+        )};
+
+        ASSERT(active_instance_it != active_container->bed_instances().end());
+        ASSERT(new_instance_it != new_container->bed_instances().end());
+
+        Domain::BedInstance& active_instance{**active_instance_it};
+        const Domain::BedInstance& new_instance{**new_instance_it};
+
+        active_instance.set_index(new_instance.index());
+        active_instance.bed                  = new_instance.bed;
+        active_instance.transformation       = new_instance.transformation;
+        active_instance.print_volume_enabled = new_instance.print_volume_enabled;
+        active_instance.wipe_tower           = new_instance.wipe_tower;
+        active_instance.custom_gcode         = new_instance.custom_gcode;
+    }
+}
+
+void ProjectInteractor::reload_config_containers_after_undo(
+    Domain::SelectionId project_id,
+    Domain::Project::ConfigContainerList new_containers
+)
+{
+    Domain::Project::ConfigContainerList& old_containers{
+        m_workbench.project(project_id).config_containers()
+    };
+    std::set<std::size_t> new_container_ids{get_ids(new_containers)};
+    std::set<std::size_t> old_container_ids{get_ids(old_containers)};
+
+    const Utils::SetDiff<std::size_t> containers_diff{
+        Utils::get_sets_diff(old_container_ids, new_container_ids)
+    };
+
+    for (std::size_t id : containers_diff.removed) {
+        remove_config_container(id);
+    }
+    for (std::size_t id : containers_diff.added) {
+        auto it{
+            std::ranges::find_if(new_containers, [&](const auto& cc) { return cc->id().id == id; })
+        };
+        const std::size_t position{
+            static_cast<std::size_t>(std::distance(new_containers.begin(), it))
+        };
+        ASSERT(position < new_containers.size());
+
+        // Since the containers are in order, and modified only containers
+        // are not removed, the position should be always valid, even
+        // if project.config_containers.size() != new_containers.size().
+        insert_config_container(project_id, std::move(*it), position);
+    }
+
+    for (std::size_t config_container_id : containers_diff.changed) {
+        auto active_it{std::ranges::find_if(
+            old_containers,
+            [&](const auto& cc) { return cc->id().id == config_container_id; }
+        )};
+        auto new_it{std::ranges::find_if(
+            new_containers,
+            [&](const auto& cc) { return cc->id().id == config_container_id; }
+        )};
+
+        ASSERT(active_it != old_containers.end());
+        ASSERT(new_it != old_containers.end());
+
+        const bool is_different_printer{
+            (*active_it)->selected_preset().hw_config.id
+            != (*new_it)->selected_preset().hw_config.id
+        };
+
+        reload_config_container_after_undo(
+            project_id,
+            *active_it,
+            *new_it,
+            m_scene_interactor,
+            is_different_printer
+        );
+
+        if (is_different_printer) {
+            invoke_listeners<ISelectedConfigContainerChangedListener>(
+                [&](auto* l)
+                { l->on_selected_config_container_changed(project_id, config_container_id); }
+            );
+        }
+
+        m_scene_interactor.update_beds(project_id, config_container_id);
+    }
 }
 
 } // namespace Slic3r::Biz

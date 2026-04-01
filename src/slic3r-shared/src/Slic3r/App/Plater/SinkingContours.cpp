@@ -82,7 +82,7 @@ static Domain::Transformation volume_world_transformation(const Domain::Project&
 {
     const Domain::ModelInstance* inst = project.find_instance_by_id(volume.object_id, volume.instance_id);
     const Domain::ModelVolume* vol = project.find_volume_by_id(volume.object_id, volume.volume_id);
-    return inst->get_transformation() * vol->get_transformation();
+    return ASSERT_VAL(inst)->get_transformation() * ASSERT_VAL(vol)->get_transformation();
 }
 
 static Domain::Transform3d volume_world_matrix(const Domain::Project& project, const Domain::ElementRef& volume)

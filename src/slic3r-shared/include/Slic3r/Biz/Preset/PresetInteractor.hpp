@@ -699,7 +699,15 @@ public:
      * @name Implementation of Biz::Preset::IPresetVisualGetter public interface
      * @{
      */
-    Domain::Vec2ds system_preset_bed_shape(Domain::SelectionId project_id, Domain::SelectionId config_container_id) const override;
+    Domain::Vec2ds system_preset_bed_shape(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
+    ) const override;
+
+    Domain::Vec2ds system_preset_bed_shape(
+        Domain::SelectionId project_id,
+        const Domain::Preset::SelectedPreset& selected_preset
+    ) const;
     /**@}*/
 
 private:

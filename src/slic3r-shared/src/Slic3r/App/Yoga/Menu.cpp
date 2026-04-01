@@ -16,10 +16,14 @@ Menu::Menu(const std::string& name, Position position)
     );
 }
 
-MenuItem*
-Menu::append_item(const std::string& label, Render::Icon icon, const std::string& shortcut)
+MenuItem* Menu::append_item(
+    const std::string& label,
+    Render::Icon icon,
+    const std::string& shortcut,
+    bool action_closes_parent
+)
 {
-    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut);
+    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut, action_closes_parent);
 
     m_items.push_back(item);
     return item;
@@ -29,6 +33,14 @@ void Menu::remove_item(size_t index)
 {
     remove(m_items.at(index));
     m_items.erase(m_items.cbegin() + index);
+}
+
+void Menu::clear()
+{
+    for (MenuItem* item : m_items) {
+        remove_later(item);
+    }
+    m_items.clear();
 }
 
 void Menu::append_separator()

@@ -89,6 +89,30 @@ struct BedSelection
 
     CameraActionOnBedSelection camera_action_on_selection() const { return m_camera_action_on_selection; }
 
+    void set_state(
+        Domain::BedRefs selected_beds,
+        Domain::SelectionId selected_config_container,
+        Domain::BedRef last_selected_bed,
+        BedSelectionMode mode,
+        CameraActionOnBedSelection camera_action_on_selection
+    );
+
+    const Domain::BedRefs& selected_beds() const
+    {
+        return m_selected_beds;
+    }
+
+    // Call config_container_id() instead
+    Domain::SelectionId selected_config_container() const
+    {
+        return m_selected_config_container;
+    }
+
+    BedSelectionMode mode() const
+    {
+        return m_mode;
+    }
+
 private:
     Domain::BedRefs m_selected_beds;
     Domain::SelectionId m_selected_config_container{Domain::INVALID_ID};

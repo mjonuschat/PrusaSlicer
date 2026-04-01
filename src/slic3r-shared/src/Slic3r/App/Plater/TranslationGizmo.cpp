@@ -175,7 +175,11 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
         .transform_selection(translation_matrix, project_context.xform_memento);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
+        m_scene_interactor.finalize_transform_selection(
+            project_context.xform_memento,
+            false
+        );
+        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::Translate);
         project_context.dragging = false;
         clear_highlight();
         return Scene::GizmoActivationState::Done;

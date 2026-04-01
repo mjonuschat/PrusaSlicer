@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/Config.hpp"
 
 #include "Slic3r/Biz/IObservableList.hpp"
@@ -14,6 +15,8 @@ namespace Slic3r::Biz {
 class ObjectSettingsObservableList : public Biz::IObservableList<OverrideItem>
 {
 public:
+    ObjectSettingsObservableList(Scene::SceneInteractor& scene_interactor);
+
     virtual const OverrideItem& at(size_t index) const;
     virtual size_t size() const;
 
@@ -31,6 +34,8 @@ private:
     void update_overriden(OverrideItem* item);
 
 private:
+    Scene::SceneInteractor& m_scene_interactor;
+
     using OverrideItemPtr = std::unique_ptr<OverrideItem>;
     using ItemMap         = std::unordered_map<std::string, size_t>;
     std::vector<Domain::ConfigBox*> m_sources;

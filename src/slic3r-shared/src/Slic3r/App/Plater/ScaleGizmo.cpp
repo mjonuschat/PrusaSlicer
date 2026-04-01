@@ -148,7 +148,11 @@ Scene::GizmoActivationState ScaleGizmo::on_mouse(Scene::GizmoEventContext& ctx, 
     m_scene_interactor.transform_selection(scale_matrix, project_context.xform_memento, !project_context.was_floating);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
+        m_scene_interactor.finalize_transform_selection(
+            project_context.xform_memento,
+            false
+        );
+        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::Scale);
         project_context.dragging = false;
         return Scene::GizmoActivationState::Done;
     }

@@ -1,4 +1,3 @@
-//
 #pragma once
 
 #include <functional>
@@ -22,6 +21,7 @@
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "libslic3r/PrintBase.hpp"
+#include "Slic3r/Biz/IUndoProvider.hpp"
 
 namespace Slic3r { class ObjectModel; }
 namespace Slic3r::Domain { class Bed; class ObjectID;}
@@ -128,6 +128,8 @@ public:
     virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
 
     virtual void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) {}
+
+    virtual void on_model_reloaded(Domain::SelectionId project_id) {}
 };
 
 class ISceneBedInstanceChangedListener
@@ -158,7 +160,8 @@ class SceneInteractor final :
         ISceneChangedListener,
         ISceneBedInstanceChangedListener,
         ISelectedBedInstancesChangedListener,
-        ISlicingInputChangedListener>
+        ISlicingInputChangedListener
+    >
 {
 public:
     using Transform = Domain::SquareMatrix4d;
@@ -251,6 +254,13 @@ public:
     void prepare_added_project(Domain::SelectionId project_id);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
+    void insert_bed_instance(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        std::size_t position,
+        std::unique_ptr<Domain::BedInstance> bed_instance
+    );
+    void erase_bed_instance(Domain::SelectionId project_id, const Domain::BedRef& instance);
     void remove_bed_instance(const Domain::BedRef& instance, bool allow_to_remove_last_one = false);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
 
@@ -280,6 +290,7 @@ public:
      * @{
      */
     const ObjectSelection& object_selection() const;
+    const ObjectSelection& object_selection(Domain::SelectionId project_id) const;
     void set_object_selection(const ObjectSelection& object_selection);
     void set_object_selection(const ObjectSelection& object_selection, Domain::SelectionId project_id);
     /*
@@ -303,9 +314,7 @@ public:
     BedSelection* bed_selection(const Domain::SelectionId project_id);
 
     using ElementTransforms = std::map<Domain::ElementRef, Domain::SquareMatrix4d>;
-    void set_element_transforms(
-        const ElementTransforms& transforms
-    );
+    void set_element_transforms(const ElementTransforms& transforms);
 
     /**
      * @name Transforming selection
@@ -391,6 +400,26 @@ public:
         const std::string& name
     );
 
+    void set_state(
+        Domain::SelectionId project_id,
+        Domain::Model model,
+        ObjectSelection object_selection
+    );
+
+    void clear_beds(Domain::Project& project);
+    void update_beds(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
+
+    void set_undo_provider(IUndoProvider* undo_provider)
+    {
+        m_undo_provider = undo_provider;
+    }
+
+    IUndoProvider& undo_provider() const
+    {
+        ASSERT(m_undo_provider);
+        return *m_undo_provider;
+    };
+
 private:
     void layout_after_project_load(Domain::Project& added_project);
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
@@ -430,6 +459,7 @@ private:
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
     BedPlacement m_bed_placement;
     BedTracking m_bed_tracking;
+    IUndoProvider *m_undo_provider{nullptr};
 };
 
 struct TransformMemento

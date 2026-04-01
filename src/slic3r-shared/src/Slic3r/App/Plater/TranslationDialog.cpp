@@ -235,8 +235,13 @@ void TranslationDialog::apply_relative_translation(const Domain::Vec3d& translat
 
     Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
     scene_interactor.transform_selection(
-        get_translation_matrix(selection_bounding_box->oriented_bounding_box().rotation, translation)
+        get_translation_matrix(
+            selection_bounding_box->oriented_bounding_box().rotation,
+            translation
+        ),
+        false
     );
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::SetTranslation);
 }
 
 } // namespace Slic3r::App::Plater

@@ -16,7 +16,7 @@ ObjectSettingsInteractor::ObjectSettingsInteractor(
     m_scene_interactor(scene_interactor),
     m_scene_selection_listener_scope(scene_interactor, *this),
     m_scene_changed_listener_scope(scene_interactor, *this),
-    m_object_observable_list(std::make_shared<ObjectSettingsObservableList>())
+    m_object_observable_list(std::make_shared<ObjectSettingsObservableList>(m_scene_interactor))
 {
     set_accessor.set_source(m_object_observable_list.get());
 }

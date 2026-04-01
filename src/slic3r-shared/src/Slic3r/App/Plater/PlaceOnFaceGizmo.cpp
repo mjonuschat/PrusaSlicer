@@ -306,6 +306,7 @@ void PlaceOnFaceGizmo::rotate_selection(const Domain::Vec3d& direction, const Do
 
     // Finally tell scene interactor to rotate the object.
     m_scene_interactor.transform_selection(tr.matrix(), true);
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::PlaceOnFace);
 }
 
 } // namespace Slic3r::App::Plater

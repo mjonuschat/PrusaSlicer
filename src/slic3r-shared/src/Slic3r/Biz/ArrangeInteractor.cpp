@@ -822,7 +822,11 @@ ConstModelInstanceList get_instances(
 
 } // namespace
 
-void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Settings& settings)
+void ArrangeInteractor::arrange(
+    const Domain::SelectionId project_id,
+    const Settings& settings,
+    std::function<void()> on_finished
+)
 {
     if (project_id == Domain::INVALID_ID) {
         return;
@@ -865,7 +869,7 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                     wipe_tower_per_bed
                 )
                 .on_result(
-                    [this, project_id, settings, unplaced_offset](const std::optional<ArrangeGlobalResult>& result)
+                    [this, project_id, settings, unplaced_offset, on_finished](const std::optional<ArrangeGlobalResult>& result)
                     {
                         if (!result) {
                             return;
@@ -884,6 +888,7 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                             unplaced_offset,
                             &not_arranged
                         );
+                        on_finished();
                         if (!not_arranged.empty()) {
                             invoke_listeners<IArrangeEventsListener>(
                                 [&](auto* listener)
@@ -938,7 +943,7 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                     wipe_tower_per_bed
                 )
                 .on_result(
-                    [this, project_id, settings, unplaced_offset](
+                    [this, project_id, settings, unplaced_offset, on_finished](
                         const std::optional<ArrangeLocalResult>& result
                     )
                     {
@@ -965,6 +970,7 @@ void ArrangeInteractor::arrange(const Domain::SelectionId project_id, const Sett
                                 &not_arranged
                             );
                         }
+                        on_finished();
                         if (!not_arranged.empty()) {
                             invoke_listeners<IArrangeEventsListener>(
                                 [&](auto* listener)

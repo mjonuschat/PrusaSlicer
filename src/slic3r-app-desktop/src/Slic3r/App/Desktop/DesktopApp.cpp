@@ -1,5 +1,6 @@
 #include "DesktopApp.hpp"
 #include "MainFrame.hpp"
+#include "Slic3r/App/Undo/Store.hpp"
 #include "SplashScreen.hpp"
 #include "AppInstanceCheck.hpp"
 #include "SecretStoreFactory.hpp"
@@ -247,6 +248,11 @@ bool DesktopApp::OnInit()
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
 
+    auto undo_store_ptr{std::make_unique<Undo::Store>(*m_project_interactor)};
+    Undo::Store& undo_store{*undo_store_ptr};
+
+    m_project_interactor->set_undo_provider(std::move(undo_store_ptr));
+
     std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
     std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
@@ -279,6 +285,7 @@ bool DesktopApp::OnInit()
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
         m_workbench,
         *m_project_interactor,
+        undo_store,
         thumbnail_store,
         thumbnail_store_updater,
         thumbnail_image_generator,
@@ -288,8 +295,15 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Preparing Preview") + dots);
 
-    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store,
-        thumbnail_store_updater, thumbnail_image_generator, m_plater_module.get());
+    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
+        m_workbench,
+        *m_project_interactor,
+        undo_store,
+        thumbnail_store,
+        thumbnail_store_updater,
+        thumbnail_image_generator,
+        m_plater_module.get()
+    );
 
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
     ));

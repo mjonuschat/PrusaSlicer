@@ -10,17 +10,25 @@ MenuItem::MenuItem(
     Menu* parent,
     const std::string& label,
     Render::Icon icon,
-    const std::string& shortcut
+    const std::string& shortcut,
+    bool action_closes_parent
 ) :
     RectangleButton(),
-    m_parent_menu(parent)
+    m_parent_menu(parent),
+    m_action_closes_parent(action_closes_parent)
 {
     create(label, icon, shortcut);
 }
 
-MenuItem::MenuItem(Menu* parent, const std::string& label, const std::string& shortcut) :
+MenuItem::MenuItem(
+    Menu* parent,
+    const std::string& label,
+    const std::string& shortcut,
+    bool action_closes_parent
+) :
     RectangleButton(),
-    m_parent_menu(parent)
+    m_parent_menu(parent),
+    m_action_closes_parent(action_closes_parent)
 {
     create(label, Render::Icon::None, shortcut);
 }
@@ -97,7 +105,7 @@ void MenuItem::set_shortcut_internal(const std::string& shortcut)
 
 void MenuItem::action_internal()
 {
-    if (!m_sub_menu) {
+    if (!m_sub_menu && m_action_closes_parent) {
         m_parent_menu->close();
     }
 }

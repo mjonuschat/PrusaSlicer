@@ -463,7 +463,10 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(project_context.xform_memento, false);
+        m_scene_interactor.finalize_transform_selection(
+            project_context.xform_memento,
+            false
+        );
         if (!project_context.was_floating) {
             Biz::Scene::TransformMemento memento;
             memento.forced_volume_mode = true;
@@ -471,6 +474,11 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
                 .transform_selection(Domain::SquareMatrix4d::Identity(), memento, true);
         }
         on_stop_dragging();
+
+        m_project_interactor.undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::Rotate
+        );
+
         return Scene::GizmoActivationState::Done;
     }
 

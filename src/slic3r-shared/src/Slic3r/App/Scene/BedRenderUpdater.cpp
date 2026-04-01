@@ -24,9 +24,9 @@ void BedRenderUpdater::update_materials(const BedError& bed_error)
     visit(m_scene_provider.scene().root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr && tag->type != BedElementType::Undefined) {
-            DEBUG_ASSERT(m_project != nullptr);
+            ASSERT(m_project != nullptr);
             const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
-            DEBUG_ASSERT(cc != nullptr);
+            ASSERT(cc != nullptr);
             const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
             if (inst == nullptr)
                 return;

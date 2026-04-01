@@ -28,7 +28,8 @@ enum class CursorType
 
 class PaintOnGizmoBase :
     public Scene::IToolGizmo,
-    public Scene::ISceneChangedListener,
+    public App::Scene::ISceneChangedListener,
+    public Biz::Scene::ISceneChangedListener,
     public Scene::IThumbnailRenderListener
 {
 public:
@@ -89,6 +90,8 @@ public:
 
     void on_thumbnail_render_begin() override;
     void on_thumbnail_render_end() override;
+
+    void on_model_reloaded(Domain::SelectionId project_id) override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
@@ -253,6 +256,7 @@ private:
     void init_clipper_presenters();
     void init_cursors_nodes();
     void update_cursors();
+    void rebuild_paintable_geometry();
 };
 
 } // namespace Slic3r::App::Plater

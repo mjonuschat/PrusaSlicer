@@ -150,8 +150,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         if (it != m_tool_gizmos.end()) {
             ToolType tool_type = (*it)->type();
             if (tool_type != current_tool_type()) {
-                auto technology = m_project_interactor.selected_config_container().selected_preset().hw_config.technology;
-                toggle_activate_tool(tool_type, technology);
+                activate_tool(tool_type);
             }
             return;
         }
@@ -289,21 +288,6 @@ void GizmoManager::render_imgui() {
 #endif
 }
 
-void GizmoManager::toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt)
-{
-    auto& p = current_context();
-    IToolGizmo* original_tool = p.active_tool;
-    deactivate_current_tool();
-
-    IToolGizmo* next_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
-    if (next_tool != original_tool) {
-        p.active_tool = next_tool;
-        p.active_tool->on_activated();
-        invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
-    }
-    p.object_selection_disabled = p.active_tool ? p.active_tool->disable_object_selection() : false;
-}
-
 void GizmoManager::deactivate_current_tool()
 {
     auto& p = current_context();
@@ -313,16 +297,42 @@ void GizmoManager::deactivate_current_tool()
     p.active_tool = nullptr;
     invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
     p.object_selection_disabled = false;
+
+    m_project_interactor.undo_provider().take_snapshot(
+        Biz::UndoSnapshotType::DeactivateGizmo
+    );
 }
 
-void GizmoManager::activate_tool(ToolType tool, Domain::PrinterTechnology pt)
+void GizmoManager::activate_tool(ToolType tool)
 {
-    this->toggle_activate_tool(tool, pt);
+    if (tool == ToolType::None) {
+        deactivate_current_tool();
+        return;
+    }
+
+    auto& p = m_projects.project(m_project_interactor.selected_project_id());
+    IToolGizmo* next_tool = ASSERT_VAL(
+        find_tool(tool, m_project_interactor.selected_config_container().print_technology())
+    );
+
+    IToolGizmo* original_tool{p.active_tool};
+    deactivate_current_tool();
+    if (next_tool != original_tool) {
+        p.active_tool = next_tool;
+        p.active_tool->on_activated();
+        invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
+
+        m_project_interactor.undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::ActivateGizmo
+        );
+    }
+
+    p.object_selection_disabled = p.active_tool ? p.active_tool->disable_object_selection() : false;
 }
 
 ToolType GizmoManager::current_tool_type() const
 {
-    const auto& ctx = current_context();
+    const auto& ctx = m_projects.project(m_project_interactor.selected_project_id());
     return (ctx.active_tool != nullptr) ? ctx.active_tool->type() : ToolType::None;
 }
 

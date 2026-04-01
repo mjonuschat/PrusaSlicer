@@ -20,6 +20,12 @@ MenuManager& MenuManager::register_menu_item(
     return *this;
 }
 
+MenuManager& MenuManager::register_command(std::unique_ptr<Platform::ICommand> command)
+{
+    m_command_registry.register_command(std::move(command));
+    return *this;
+}
+
 MenuManager& MenuManager::register_menu_item_from_command(
     std::vector<MenuItemName> path,
     const Platform::ICommand& command

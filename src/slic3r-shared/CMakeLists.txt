@@ -1071,6 +1071,21 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterStorage.cpp
         include/Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp
 
+        include/Slic3r/App/Undo/Store.hpp
+        src/Slic3r/App/Undo/Store.cpp
+        include/Slic3r/App/Undo/BedSelectionState.hpp
+        src/Slic3r/App/Undo/BedSelectionState.cpp
+        include/Slic3r/App/Undo/Stack.hpp
+        src/Slic3r/App/Undo/Stack.cpp
+
+        src/Slic3r/App/Undo/ModelSerialize.hpp
+        src/Slic3r/App/Undo/ModelSerialize.cpp
+        src/Slic3r/App/Undo/ObjectSelectionSerialize.hpp
+        src/Slic3r/App/Undo/ObjectSelectionSerialize.cpp
+        src/Slic3r/App/Undo/ConfigContainerListSerialize.hpp
+        src/Slic3r/App/Undo/ConfigContainerListSerialize.cpp
+        src/Slic3r/App/Undo/BedSelectionStateSerialize.hpp
+        src/Slic3r/App/Undo/BedSelectionStateSerialize.cpp
 )
 
 if (WIN32)

@@ -495,7 +495,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
         }
 
         m_pending_single_click = true;
-        m_pending_click_node   = it == ctx.pick_results().end() ? nullptr : it->node;
+        m_pending_click_node   = it == ctx.pick_results().end() ? Domain::INVALID_ID : it->node->id();
 
         RectangleSelection::Type rect_sel_type = (shift_down && ctrl_down) ?
             RectangleSelection::Type::Add :
@@ -525,7 +525,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
         }
 
         m_pending_single_click = false;
-        m_pending_click_node   = nullptr;
+        m_pending_click_node   = Domain::INVALID_ID;
 
         // Clear timers with postponed processing of ButtonUp events
         // They are no longer needed
@@ -605,9 +605,9 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
         // Process ButtonUp
         if (m_pending_single_click) {
             std::optional<size_t> node_id{std::nullopt};
-            if (m_pending_click_node) {
-                node_id = m_pending_click_node->id();
-                m_pending_click_node = nullptr;
+            if (m_pending_click_node != Domain::INVALID_ID) {
+                node_id = m_pending_click_node;
+                m_pending_click_node = Domain::INVALID_ID;
             }
             // This is the first ButtonUp after ButtonDown, before a possible DoubleClick
             // We need to postpone its processing slightly, because a DoubleClick may follow
@@ -776,7 +776,7 @@ void QuickSelectGizmo::clear_timers()
         }
     }
     m_up_timer_ids.clear();
-    m_pending_click_node = nullptr;
+    m_pending_click_node = Domain::INVALID_ID;
 }
 
 } // namespace Slic3r::App::Plater

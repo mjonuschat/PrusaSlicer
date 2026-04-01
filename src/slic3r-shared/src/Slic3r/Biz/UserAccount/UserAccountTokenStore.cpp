@@ -58,7 +58,7 @@ bool load_tokens(StoreData& result)
     // read data
     std::vector<std::string> token_list;
     boost::split(token_list, tokens, boost::is_any_of("|"), boost::token_compress_off);
-    assert(token_list.empty() || token_list.size() == 5);
+    //assert(token_list.empty() || token_list.size() == 5);
     if (token_list.size() < 5) {
         SPDLOG_ERROR("Size of read secrets is only: {} (expected 5). Data: {}", token_list.size(), tokens);
     }

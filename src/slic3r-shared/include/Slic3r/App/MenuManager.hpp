@@ -31,6 +31,8 @@ public:
     MenuManager&
     register_menu_item(std::vector<MenuItemName> path, std::unique_ptr<UIItemCommand> command);
 
+    MenuManager& register_command(std::unique_ptr<Platform::ICommand> command);
+
     /**
      * @brief Register single menu item with related command
      * @param path Path to menu item as a stack of MenuItemNames, where first is a root item name

@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "Slic3r/App/Undo/Store.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
@@ -80,6 +81,7 @@ public:
     PlaterRenderModule(
         const Domain::Workbench& workbench,
         Biz::ProjectInteractor& project_interactor,
+        App::Undo::Store& undo_store,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
         std::shared_ptr<ThumbnailImageGenerator> thumbnail_image_generator,
@@ -95,6 +97,7 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection
     ) override;
+
     void set_navigator(Navigator* navigator) override;
 
     void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
@@ -145,6 +148,8 @@ public:
     }
 
     Scene::IToolGizmo* tool_gizmo(Scene::ToolType type, Domain::PrinterTechnology pt) override;
+
+    Scene::IGizmoController& gizmo_controller();
 
     /**
      * @name Implementation of Scene::ISharedModelGeometryProvider public interface
@@ -198,6 +203,7 @@ private:
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
+    App::Undo::Store& m_undo_store;
     std::unique_ptr<PlaterScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 

@@ -60,7 +60,18 @@ ArrangeGizmo::ArrangeGizmo(
     m_dialog(
         std::make_unique<ArrangeDialog>(
             [this](const Settings& settings)
-            { m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings); },
+            {
+                m_arrange_interactor.arrange(
+                    m_project_interactor.selected_project_id(),
+                    settings,
+                    [this]()
+                    {
+                        m_project_interactor.undo_provider().take_snapshot(
+                            Biz::UndoSnapshotType::Arrange
+                        );
+                    }
+                );
+            },
             []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
             [this](const Mode mode)
             {

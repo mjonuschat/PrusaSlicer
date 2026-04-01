@@ -48,7 +48,7 @@ bool FdmViewerWrapper::init(Render::Device& device, Scene::Scene& scene, Scene::
         return true;
     }
     catch (const std::exception& e) {
-        std::cout << e.what();
+        SPDLOG_ERROR(e.what());
         return false;
     }
 }
@@ -93,7 +93,7 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         return true;
     }
     catch (const std::exception& e) {
-        std::cout << e.what();
+        SPDLOG_ERROR(e.what());
         return false;
     }
 }

@@ -27,6 +27,7 @@
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 #include "Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
+#include "Slic3r/Biz/IUndoProvider.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -39,6 +40,23 @@ class ISelectedProjectChangedListener;
 class ISelectedConfigContainerChangedListener;
 class IProjectsChangedListener;
 class IMessageDialogProvider;
+
+class NoopUndoProvider : public IUndoProvider
+{
+    void take_snapshot(UndoSnapshotType type) {}
+
+    void select_snapshot(UndoSnapshotSelection::Variant snapshot_variant) {}
+
+    bool is_undo_possible() const
+    {
+        return false;
+    }
+
+    bool is_redo_possible() const
+    {
+        return false;
+    }
+};
 
 /**
  * @brief Top level interactor managing list of projects and their bed selection.
@@ -75,7 +93,8 @@ public:
         m_removable_drive_service(dispatcher),
         m_file_downloader_interactor(dispatcher),
         m_physical_printer_interactor(dispatcher, m_preset_interactor),
-        m_project_list(*this)
+        m_project_list(*this),
+        m_undo_provider(std::make_unique<NoopUndoProvider>())
     {
         m_scene_interactor.set_preset_visual_getter(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
@@ -180,9 +199,20 @@ public:
      */
 
     Domain::SelectionId add_config_container();
+
+    Domain::SelectionId insert_config_container(
+        Domain::SelectionId project_id,
+        std::unique_ptr<Domain::ConfigContainer> config_container,
+        std::size_t position
+    );
+
     Domain::SelectionId duplicate_config_container(Domain::SelectionId config_container_id);
     void remove_config_container(Domain::SelectionId config_container_id);
     void select_config_container(Domain::SelectionId config_container_id);
+    void reload_config_containers_after_undo(
+        Domain::SelectionId project_id,
+        Domain::Project::ConfigContainerList new_containers
+    );
 
     /** @} */
 
@@ -317,6 +347,16 @@ public:
     const ProjectSettingsInteractor& project_settings_interactor() const
     {
         return m_project_settings_interactor;
+    }
+
+    IUndoProvider& undo_provider() {
+        return *ASSERT_VAL(m_undo_provider);
+    }
+
+    void set_undo_provider(std::unique_ptr<IUndoProvider> undo_provider)
+    {
+        m_undo_provider = std::move(undo_provider);
+        m_scene_interactor.set_undo_provider(m_undo_provider.get());
     }
 
     Domain::SlicingId selected_bed_slicing_id() const;
@@ -583,6 +623,7 @@ private:
 
     ObservableProjectList m_project_list;
     IMessageDialogProvider* m_dialog_provider{ nullptr };
+    std::unique_ptr<IUndoProvider> m_undo_provider;
 
     
     /*

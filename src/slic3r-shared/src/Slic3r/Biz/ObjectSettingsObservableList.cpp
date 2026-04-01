@@ -6,6 +6,12 @@
 
 namespace Slic3r::Biz {
 
+ObjectSettingsObservableList::ObjectSettingsObservableList(
+    Scene::SceneInteractor& scene_interactor
+) :
+    m_scene_interactor{scene_interactor}
+{}
+
 const OverrideItem& ObjectSettingsObservableList::at(size_t index) const
 {
     ASSERT(index < m_items.size());
@@ -107,6 +113,8 @@ ObjectSettingsObservableList::set_value(const std::string& key, const Domain::Co
             box->items.opt(key).set(value);
         }
     }
+
+    m_scene_interactor.undo_provider().take_snapshot(UndoSnapshotType::SetPartSettingsValue);
 
     invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
                                                   { l->on_updated({m_item_index.at(key)}); });

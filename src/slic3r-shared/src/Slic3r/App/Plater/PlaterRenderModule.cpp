@@ -117,6 +117,7 @@ using FuncCommandExtraOpts = Platform::FuncCommandExtraOpts;
 PlaterRenderModule::PlaterRenderModule(
     const Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
+    App::Undo::Store& undo_store,
     std::shared_ptr<ThumbnailStore> thumbnail_store,
     std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
     std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
@@ -124,10 +125,11 @@ PlaterRenderModule::PlaterRenderModule(
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
+    m_undo_store(undo_store),
+    m_font_manager(std::move(font_manager)),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
     m_thumbnail_image_generator(thumbnail_image_generator),
-    m_font_manager(std::move(font_manager)),
     m_menu_manager(m_command_registry),
     m_command_binding_manager(m_command_registry)
 {}
@@ -377,6 +379,9 @@ void PlaterRenderModule::register_commands()
 #if ENABLED_NODE_LOGGING
         m_scene_presenter->scene().log_nodes();
 #endif
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::AddInstance
+        );
     };
 
     // Toolbar commands
@@ -421,7 +426,12 @@ void PlaterRenderModule::register_commands()
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::CreateObjectAsText,
-                [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
+                [this]()
+                {
+                    m_gizmo_manager->activate_tool(
+                        Scene::ToolType::TextGizmo
+                    );
+                },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -456,7 +466,10 @@ void PlaterRenderModule::register_commands()
         m_command_registry.register_command(
             std::make_unique<UIItemCommand>(
                 tool_type_to_command_name(type),
-                [this, type]() { toggle_activate_tool(type); },
+                [this, type]()
+                {
+                    m_gizmo_manager->activate_tool(type);
+                },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -520,7 +533,8 @@ void PlaterRenderModule::init_scene_layout()
         &m_project_interactor,
         this,
         *m_thumbnail_store,
-        *m_render_module_navigator
+        *m_render_module_navigator,
+        &m_undo_store
     );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
@@ -856,13 +870,8 @@ void PlaterRenderModule::update_toolbar_visibility()
     }
 }
 
-void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
-{
-    m_gizmo_manager->toggle_activate_tool(
-        tool_type,
-        m_project_interactor.selected_config_container().print_technology()
-    );
-    m_command_binding_manager.update_ui_items();
+Scene::IGizmoController& PlaterRenderModule::gizmo_controller() {
+    return *m_gizmo_manager;
 }
 
 void PlaterRenderModule::init_scene()
@@ -885,6 +894,7 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         std::move(drag_detector)
     );
+    m_undo_store.set_gizmo_controller(m_gizmo_manager.get());
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
     m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter,
         *m_animation_manager);
@@ -904,7 +914,7 @@ void PlaterRenderModule::init_gizmos()
     quick_select_gizmo.add_listener<IHoverChangedListener>(m_scene_presenter.get());
     m_scene_presenter->add_listener<Scene::ICameraUpdateListener>(&quick_select_gizmo);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
-        m_project_interactor.scene_interactor(),
+        m_project_interactor,
         *m_scene_presenter
     );
     m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
@@ -1066,6 +1076,7 @@ void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
     update_current_right_sidebar();
     m_scene_presenter->set_selection_bounding_box_visible(active_tool == nullptr);
+    m_command_binding_manager.update_ui_items();
 }
 
 void PlaterRenderModule::set_navigator(Navigator* navigator)

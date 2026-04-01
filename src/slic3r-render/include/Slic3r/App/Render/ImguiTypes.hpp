@@ -87,6 +87,8 @@ enum class Icon : wchar_t
     SavePrintAddBookmark,
 
     SettingsSet,
+    TopBarUndo,
+    TopBarRedo,
     TobBarLoad,
     TobBarSave,
     TobBarShowUI,

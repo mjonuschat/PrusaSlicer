@@ -56,13 +56,19 @@ RotationDialog::RotationDialog(
             m_project_interactor.scene_interactor().selection_bounding_box()
         };
         const bool was_floating{selection_bounding_box && selection_bounding_box->is_floating()};
-        m_project_interactor.scene_interactor().set_element_transforms(project_context.reset_rotation_candidates);
+        m_project_interactor.scene_interactor().set_element_transforms(
+            project_context.reset_rotation_candidates
+        );
         if (selection_bounding_box && !was_floating) {
             Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
             relative_transform_world.col(3).z() =
                 -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
             m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
         }
+
+        m_project_interactor.undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::RevertRotation
+        );
     };
 
     auto title = content()->emplace_back<Text>("Relative rotation");
@@ -170,6 +176,7 @@ void RotationDialog::add_rotation(Domain::Vec3d rotate_by_rads)
         ),
         !was_floating
     );
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::SetRotation);
 }
 
 Domain::SquareMatrix4d remove_rotation(

@@ -22,7 +22,7 @@ class QuickDragGizmo : public Scene::IGizmo, public Scene::IMouseDrag
 {
 public:
     QuickDragGizmo(
-        Biz::Scene::SceneInteractor& scene_interactor,
+        Biz::ProjectInteractor& project_interactor,
         Scene::ISceneProvider& scene_provider
     );
 
@@ -38,6 +38,7 @@ private:
     bool mouse_pos(float screen_x, float screen_y, Domain::Vec3d& out_pos);
 
 private:
+    Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;

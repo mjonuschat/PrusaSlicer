@@ -15,9 +15,11 @@ public:
     MenuItem* append_item(
         const std::string& label,
         Render::Icon icon           = Render::Icon::None,
-        const std::string& shortcut = {}
+        const std::string& shortcut = {},
+        bool action_closes_parent   = true
     );
     void remove_item(size_t index);
+    void clear();
     void append_separator();
     void close_all_submenus() const;
 

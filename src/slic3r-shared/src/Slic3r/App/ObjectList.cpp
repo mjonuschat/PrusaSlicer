@@ -1636,9 +1636,9 @@ void open_gizmo_for_volume(const Biz::Scene::ObjectSelection& sels, Biz::Project
     auto get_tech = [project_interactor]() {
         return project_interactor->selected_config_container().print_technology(); };
     if (volume->is_svg() && tool != Scene::ToolType::Svg) {
-        gizmo_controller->activate_tool(Scene::ToolType::Svg, get_tech());
+        gizmo_controller->activate_tool(Scene::ToolType::Svg);
     } else if(volume->is_text() && tool != Scene::ToolType::TextGizmo) {
-        gizmo_controller->activate_tool(Scene::ToolType::TextGizmo, get_tech());
+        gizmo_controller->activate_tool(Scene::ToolType::TextGizmo);
     }
 }
 }
@@ -1705,8 +1705,7 @@ void ObjectList::show_gizmo(const ElementRef& sel_element, const Render::Icon gi
 
     if (tool != Scene::ToolType::None) {
         m_gizmo_controller->activate_tool(
-            tool,
-            m_project_interactor->selected_config_container().print_technology()
+            tool
         );
     }
 }
@@ -1723,8 +1722,13 @@ const ObjectList::ProjectContext& ObjectList::selected_project_context() const
 
 void ObjectList::add_bed(size_t config_container_id)
 {
-    m_deferred_actions.emplace_back([this, config_container_id]()
-                                    { m_scene_interactor->add_bed_instance(config_container_id); });
+    m_deferred_actions.emplace_back(
+        [this, config_container_id]()
+        {
+            m_scene_interactor->add_bed_instance(config_container_id);
+            m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::AddBed);
+        }
+    );
 }
 
 void ObjectList::remove_bed(size_t config_container_id, size_t bed_id)
@@ -1735,6 +1739,7 @@ void ObjectList::remove_bed(size_t config_container_id, size_t bed_id)
             m_scene_interactor->remove_bed_instance(
                 {.config_container_id = config_container_id, .instance_id = bed_id}
             );
+            m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::DeleteBed);
         }
     );
 }

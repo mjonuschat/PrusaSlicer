@@ -16,9 +16,15 @@ public:
         Menu* parent,
         const std::string& label,
         Render::Icon icon           = Render::Icon::None,
-        const std::string& shortcut = {}
+        const std::string& shortcut = {},
+        bool action_closes_parent   = true
     );
-    MenuItem(Menu* parent, const std::string& label, const std::string& shortcut = {});
+    MenuItem(
+        Menu* parent,
+        const std::string& label,
+        const std::string& shortcut = {},
+        bool action_closes_parent   = true
+    );
 
     MenuItem* append_sub_menu_item(
         const std::string& label,
@@ -43,6 +49,8 @@ private:
     void hovered_updated_internal() override;
 
     Menu* m_parent_menu{nullptr};
+    bool m_action_closes_parent{true};
+
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};
     Menu* m_sub_menu{nullptr};
