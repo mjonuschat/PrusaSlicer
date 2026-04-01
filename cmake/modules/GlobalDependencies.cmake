@@ -11,6 +11,8 @@ find_package(TBB REQUIRED)
 slic3r_remap_configs(TBB::tbb RelWithDebInfo Release)
 slic3r_remap_configs(TBB::tbbmalloc RelWithDebInfo Release)
 
+find_package(Boost REQUIRED COMPONENTS filesystem)
+
 find_package(NLopt 1.4 REQUIRED)
 slic3r_remap_configs(NLopt::nlopt RelWithDebInfo Release)
 

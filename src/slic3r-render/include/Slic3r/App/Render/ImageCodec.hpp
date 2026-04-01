@@ -40,7 +40,7 @@ public:
      * Load image(s) from given input stream with optional loading options.
      * @param is Input stream with image data to read.
      * @param opts
-     * @param optional pointer to Size that will contain the size of the image
+     * @param image_size optional pointer to Size that will contain the size of the image
      * @return List of loaded image mipmaps (if its generation is enabled in loading options),
      * or a single image (if mipmaps disabled) or empty vector if error happened.
      */

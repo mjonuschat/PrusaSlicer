@@ -1107,7 +1107,6 @@ if(SLIC3R_BUILD_TESTS)
 endif()
 
 find_package(NanoSVG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 find_package(EXPAT CONFIG REQUIRED)

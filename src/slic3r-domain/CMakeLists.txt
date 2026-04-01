@@ -179,6 +179,7 @@ target_link_libraries(slic3r-domain PUBLIC
     NanoSVG::nanosvg # TODO remove dependency on nanosvg by refactoring EmbossShape
     NanoSVG::nanosvgrast
     boost_headeronly # TODO remove boost voronoi traits
+    Boost::filesystem # Bed.cpp file checks
 )
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)

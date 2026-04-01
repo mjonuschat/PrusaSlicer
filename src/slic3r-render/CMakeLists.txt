@@ -79,7 +79,6 @@ set(SLIC3R_RENDER_FILES
 )
 
 find_package(NanoSVG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem)
 add_library(slic3r-render STATIC ${SLIC3R_RENDER_FILES})
 target_link_libraries(slic3r-render PUBLIC
         PlatformGL
