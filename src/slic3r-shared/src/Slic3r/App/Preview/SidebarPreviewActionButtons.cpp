@@ -100,43 +100,23 @@ void SidebarPreviewActionButtons::update_buttons()
 
     const Biz::Slicing::Status status{*optional_status};
 
-    m_primary_button->set_background_color(color_primary);
+    m_primary_button->set_background_color(Platform::Color::AccentPrimary);
     m_primary_button->callbacks().action = []() {};
     m_navigation_button->set_visible(true);
-
-    const std::vector<LayoutButton*>& secondary_buttons{
-        layout_type == ActionButtonsLayoutType::WithoutConnect ?
-            m_layout_without_connect.secondary_buttons :
-            m_layout_with_connect.secondary_buttons
-    };
-
-    LayoutButton* navigation_button{
-        layout_type == ActionButtonsLayoutType::WithoutConnect ?
-            m_layout_without_connect.navigation_button :
-            m_layout_with_connect.navigation_button
-    };
-
-    primary_button->set_background_color(Platform::Color::AccentPrimary);
-    primary_button->callbacks().action = []() {};
-    navigation_button->set_visible(true);
-    for (LayoutButton* button : secondary_buttons) {
-        button->set_enabled(false);
-        button->callbacks().action = []() {};
-    }
 
     using Biz::Slicing::StatusCode;
     switch (status.code) {
     case StatusCode::Running: {
-        primary_button->set_label(Biz::_u8L("Cancel"));
-        primary_button->set_enabled(true);
-        primary_button->callbacks().action = [this, slicing_id]()
+        m_primary_button->set_label(Biz::_u8L("Cancel"));
+        m_primary_button->set_enabled(true);
+        m_primary_button->callbacks().action = [this, slicing_id]()
         { m_project_interactor->slicing_interactor().stop_slicing_bed(slicing_id); };
     } break;
     case StatusCode::InvalidData: {
         ASSERT(!status.errors.empty());
-        primary_button->set_label(Biz::_u8L("Invalid settings"));
-        primary_button->set_background_color(Platform::Color::Error);
-        primary_button->set_enabled(true);
+        m_primary_button->set_label(Biz::_u8L("Invalid settings"));
+        m_primary_button->set_background_color(Platform::Color::Error);
+        m_primary_button->set_enabled(true);
 
         const Domain::Project& project{
             m_project_interactor->workbench().project(slicing_id.project_id)
@@ -185,11 +165,11 @@ void SidebarPreviewActionButtons::update_buttons()
         { m_project_interactor->slicing_interactor().slice_bed(slicing_id); };
     } break;
     default: {
-        primary_button->set_label("Plater");
-        primary_button->set_tooltip("Back to Plater");
-        primary_button->set_background_color(Platform::Color::AccentSecondary);
-        primary_button->set_enabled(true);
-        primary_button->callbacks().action = [this]() { navigate_to_other(); };
+        m_primary_button->set_label("Plater");
+        m_primary_button->set_tooltip("Back to Plater");
+        m_primary_button->set_background_color(Platform::Color::AccentSecondary);
+        m_primary_button->set_enabled(true);
+        m_primary_button->callbacks().action = [this]() { navigate_to_other(); };
 
         m_navigation_button->set_visible(false);
     } break;

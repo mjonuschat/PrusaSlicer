@@ -53,7 +53,7 @@ void SidebarPlaterActionButtons::on_init(Biz::ProjectInteractor* project_interac
 
     m_button_slice = layout_bottom->emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);
-    m_button_slice->set_background_color(color_primary);
+    m_button_slice->set_background_color(Platform::Color::AccentPrimary);
     m_button_slice->set_min_size({0, button_height});
     m_button_slice->set_label_font_type(Render::ImguiFontType::Bold);
     m_button_slice->set_enabled(false);
