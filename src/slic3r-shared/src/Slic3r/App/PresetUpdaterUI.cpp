@@ -57,7 +57,8 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
     }
 
     std::string dialog_msg = fmt::format(
-        "Preset Updater returned these reconfigurations:\n\nupdates: {}\nforced updates: {}\nforced downgrades: {}\n\n",
+        "Preset Updater returned these reconfigurations:\n\nnew vendors: {}\nupdates: {}\nforced updates: {}\nforced downgrades: {}\n\n",
+        std::to_string(reconfigurations.new_vendors().size()),
         std::to_string(reconfigurations.regular_updates().size()),
         std::to_string(reconfigurations.forced_updates().size()),
         std::to_string(reconfigurations.forced_downgrades().size())

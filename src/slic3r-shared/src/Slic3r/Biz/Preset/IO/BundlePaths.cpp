@@ -17,6 +17,7 @@ BundlePaths BundlePaths::make_standard_runtime()
     return {
         .app_bundle_path   = app_preset_bundle_dir.string(),
         .local_bundle_path = local_preset_bundle_dir.string(),
+        .populate_local_bundle = true,
         .user_bundle_path  = user_preset_bundle_dir.string(),
         .user_config_path  = config_dir.string(),
     };
@@ -40,6 +41,7 @@ BundlePaths BundlePaths::make_test_runtime(const boost::filesystem::path& test_d
     return {
         .app_bundle_path  = app_preset_bundle_dir.string(),
         .local_bundle_path = local_bundle.string(),
+        .populate_local_bundle = false,
         .user_bundle_path  = user_bundle.string(),
         .user_config_path = config_dir.string(),
     };

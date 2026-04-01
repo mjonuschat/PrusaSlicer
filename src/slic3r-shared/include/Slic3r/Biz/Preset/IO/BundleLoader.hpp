@@ -4,6 +4,7 @@
 
 namespace Slic3r::Biz::Preset::IO {
 
+void populate_local_bundle(const BundlePaths& bundle_paths);
 Domain::Preset::Bundle load_bundle(const BundlePaths& bundle_paths);
 
 void save_bundle_configs(const Domain::Preset::Bundle& bundle, const std::string& config_path);
