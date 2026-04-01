@@ -282,8 +282,11 @@ bool process_object_with_components(
 
         // identification of object
         PathId path_id_c{component.object_id};
-        if (!component.path.empty())
+        if (!component.path.empty()) {
             path_id_c.path = component.path;
+        } else if (filepath != nullptr) {
+            path_id_c.path = *filepath;
+        }
 
         ObjectMap::iterator it_object = object_map.find(path_id_c);
         if (it_object == object_map.end()) {
@@ -674,8 +677,17 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
         model_map = move_model(loaded_model, model, collected_issues);
 
         // Set the source file path for each loaded model object.
-        for (ModelObject* model_object : model.objects) {
-            model_object->input_file = filepath_3mf;
+        const std::string fallback_name = boost::filesystem::path(filepath_3mf).stem().string();
+        for (size_t object_idx = 0; object_idx < model.objects.size(); ++object_idx) {
+            ModelObject* model_object = model.objects[object_idx];
+            model_object->input_file  = filepath_3mf;
+
+            // Use the 3MF filename as a fallback name for objects without one (e.g. BambuStudio/OrcaSlicer 3MFs).
+            if (model_object->name.empty()) {
+                model_object->name = model.objects.size() > 1 ?
+                    fallback_name + "_" + std::to_string(object_idx + 1) :
+                    fallback_name;
+            }
         }
     }
 

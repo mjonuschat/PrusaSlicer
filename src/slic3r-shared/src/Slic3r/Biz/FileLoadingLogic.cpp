@@ -914,10 +914,28 @@ static std::vector<ReturnData> import_files(
     return ret;
 }
 
-static Domain::Project
-convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provider)
+static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provider)
 {
-    Domain::Project project;
+    Project project;
+    if (loaded_3mf.config_containers_data.empty()) {
+        // 3MF file with unavailable configuration (e.g. from BambuStudio, OrcaSlicer).
+        // Load only the geometry.
+        if (dialog_provider) {
+            dialog_provider->show_info_dialog(
+                _u8L(
+                    "The 3MF file does not contain PrusaSlicer configuration. "
+                    "Only geometry was loaded."
+                ),
+                _u8L("Loading 3MF file")
+            );
+        }
+
+        project.set_metadata(loaded_3mf.metadata);
+        project.set_file_name(boost::filesystem::path(loaded_3mf.filepath_3mf).stem().string());
+        project.model() = std::move(loaded_3mf.model);
+        return project;
+    }
+
     if (loaded_3mf.config_containers_data.front().preset.hw_config.id.empty()) {
         // If we are here, then legacy project was loaded.
         // Implementation of the config loading is not completed jet, so we can't create a correct project
