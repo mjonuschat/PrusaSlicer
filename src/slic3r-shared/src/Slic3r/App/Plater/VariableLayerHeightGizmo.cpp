@@ -594,13 +594,20 @@ void VariableLayerHeightGizmo::update_variable_layer_height_texture()
         .first_object_layer_height_fixed = m_layer_height_params.first_object_layer_height_fixed
     };
 
-    const LayerZRanges layers = Algorithms::LayerHeight::generate_object_layers(
+    const LayerZRanges color_layers = Algorithms::LayerHeight::generate_object_layers(
         generate_layers_params,
         m_layer_height_params.layer_height_profile
     );
 
+    const ZHeightPairs& stripe_profile = m_baseline_layer_height_profile.empty() ?
+        m_layer_height_params.layer_height_profile :
+        m_baseline_layer_height_profile;
+    const LayerZRanges stripe_layers =
+        Algorithms::LayerHeight::generate_object_layers(generate_layers_params, stripe_profile);
+
     m_material_wrapper.set_layers(
-        layers,
+        color_layers,
+        stripe_layers,
         m_layer_height_params.min_layer_height,
         m_layer_height_params.max_layer_height,
         m_layer_height_params.layer_height,
@@ -857,6 +864,8 @@ bool VariableLayerHeightGizmo::process_gizmo_event(const GizmoEvent& event)
             return false;
         }
 
+        m_baseline_layer_height_profile = m_layer_height_params.layer_height_profile;
+
         const bool is_left_down   = (event.type == GizmoEvent::Type::LeftDown);
         const AdjustAction action = determine_adjust_action(is_left_down, event.shift_down);
         this->perform_layer_height_profile_adjustment(event.cursor_z.value(), action);
@@ -874,7 +883,10 @@ bool VariableLayerHeightGizmo::process_gizmo_event(const GizmoEvent& event)
         this->refresh_mesh_nodes_material();
         return true;
     } else if (event.type == GizmoEvent::Type::LeftUp || event.type == GizmoEvent::Type::RightUp) {
+        m_baseline_layer_height_profile.clear();
+
         this->apply_layer_height_profile_to_model();
+        this->update_variable_layer_height_texture();
         this->set_cursor_z(std::nullopt);
         this->refresh_mesh_nodes_material();
         return true;

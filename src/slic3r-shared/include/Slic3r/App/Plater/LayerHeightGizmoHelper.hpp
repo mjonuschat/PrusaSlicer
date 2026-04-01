@@ -174,7 +174,8 @@ struct LayerHeightTexture
  * Produces a 2D RGBA texture visualizing layer heights using a color gradient.
  * Supports up to 2 LOD levels for mipmap-based rendering.
  *
- * @param layers Layer height profile as pairs (z_bottom, z_top).
+ * @param color_layers Layers for palette color mapping.
+ * @param stripe_layers Layers for visualizing layer height boundaries via intensity modulation.
  * @param min_layer_height Minimum allowed layer height.
  * @param max_layer_height Maximum allowed layer height.
  * @param layer_height Default layer height.
@@ -182,7 +183,8 @@ struct LayerHeightTexture
  * @return LayerHeightTexture with allocated and filled texture data.
  */
 LayerHeightTexture generate_layer_height_texture(
-    const Domain::LayerZRanges& layers,
+    const Domain::LayerZRanges& color_layers,
+    const Domain::LayerZRanges& stripe_layers,
     double min_layer_height,
     double max_layer_height,
     double layer_height,
@@ -230,7 +232,8 @@ public:
     /**
      * Set layer data and regenerate texture.
      *
-     * @param layers Layer height profile as pairs (z_bottom, z_top).
+     * @param color_layers Layers for palette color mapping.
+     * @param stripe_layers Layers for visualizing layer height boundaries via intensity modulation.
      * @param min_layer_height Minimum allowed layer height.
      * @param max_layer_height Maximum allowed layer height.
      * @param layer_height Default layer height.
@@ -238,7 +241,8 @@ public:
      * @param object_max_z Maximum Z of the object.
      */
     void set_layers(
-        const Domain::LayerZRanges& layers,
+        const Domain::LayerZRanges& color_layers,
+        const Domain::LayerZRanges& stripe_layers,
         double min_layer_height,
         double max_layer_height,
         double layer_height,

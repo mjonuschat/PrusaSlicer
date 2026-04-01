@@ -154,6 +154,7 @@ private:
     bool m_last_shift_down = false;
     bool m_last_ctrl_down  = false;
     std::optional<float> m_last_cursor_z;
+    Domain::ZHeightPairs m_baseline_layer_height_profile;
 
     void restore_visible_volumes();
     void hide_visible_volumes();
