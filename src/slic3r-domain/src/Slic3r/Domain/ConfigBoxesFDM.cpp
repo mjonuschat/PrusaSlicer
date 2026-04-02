@@ -2870,7 +2870,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->label = L("Post-processing scripts");
     def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_ScriptSubstitutions;
-    def->category = ConfigItemDef::Category::Print_PrecisionSlicing;
+    def->category = ConfigItemDef::Category::Hidden;
     def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If you want to process the output G-code through custom scripts, "
