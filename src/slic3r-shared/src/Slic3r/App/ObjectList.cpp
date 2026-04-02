@@ -793,7 +793,7 @@ bool ObjectList::render_config_containers()
 
         if (hit_row.is_mouse_right_licked()) {
             if (callbacks().show_context_menu) {
-                const Vec2f pos = Vec2f(left(), top()) - Item::from_im(ImGui::GetIO().MousePos);
+                const Vec2f pos = Item::from_im(ImGui::GetIO().MousePos-ImGui::GetCurrentWindow()->Pos);
                 callbacks().show_context_menu(pos, cc->id().id);
             }
         }

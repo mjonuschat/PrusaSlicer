@@ -5,6 +5,10 @@
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/ResultExport/ExportActions.hpp"
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/IGizmoController.hpp"
+#include "Slic3r/App/Scene/EmbossCreate.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/App/AppServices.hpp"
@@ -15,14 +19,18 @@
 #include "Slic3r/App/Localization.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+
+#include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 
 namespace Slic3r::App {
 
-//#define SHOW_NOT_IMPLEMENTED_ITEMS
+// #define SHOW_NOT_IMPLEMENTED_ITEMS
 
 using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
@@ -40,10 +48,456 @@ MenuCommandRegistrar::MenuCommandRegistrar(
     m_thumbnail_store(thumbnail_store)
 {}
 
-void MenuCommandRegistrar::register_all()
+void MenuCommandRegistrar::register_top_bar_menus()
 {
     register_main_menu_commands();
     register_file_menu_commands();
+}
+
+void MenuCommandRegistrar::register_context_menus(
+    Scene::GeometryDataFactory& data_factory,
+    Scene::ISceneProvider* scene_provider
+)
+{
+    m_data_factory   = &data_factory;
+    m_scene_provider = scene_provider;
+    register_bed_menu_commands();
+    register_object_menu_commands();
+}
+
+void MenuCommandRegistrar::register_bed_menu_commands()
+{
+    register_bed_menu_add_shape_commands();
+
+    m_menu_manager.register_menu_separator_item({MenuItemName::BedContextMenu})
+        .register_menu_item(
+            {MenuItemName::BedContextMenu, MenuItemName::DeleteBed},
+            std::make_unique<UIItemCommand>(
+                CommandName::DeleteBed,
+                [this]
+                {
+                    m_project_interactor.scene_interactor().remove_bed_instance(
+                        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+                    );
+                },
+                UIItemCommandExtraOpts{
+                    .enabled = [this]()
+                    {
+                        return m_project_interactor.selected_config_container()
+                                   .bed_instances()
+                                   .size()
+                            > 1;
+                    }
+                }
+            )
+        );
+}
+
+static std::string geometry_name(Scene::GeometryDataId geometry_id)
+{
+    switch (geometry_id) {
+    case Scene::GeometryDataId::Cube:
+        return _u8L("Cube");
+    case Scene::GeometryDataId::Cylinder:
+        return _u8L("Cylinder");
+    case Scene::GeometryDataId::Sphere:
+        return _u8L("Sphere");
+    }
+    PANIC("Unsupported geometry");
+    return "Undefined";
+}
+
+void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
+{
+    m_menu_manager
+        .register_menu_item_from_command(
+            {MenuItemName::BedContextMenu,
+             MenuItemName::AddObjectShape,
+             MenuItemName::ObjectShapeLoad},
+            m_render_module.command(CommandName::ImportGeometry)
+        )
+        .register_menu_separator_item({MenuItemName::BedContextMenu, MenuItemName::AddObjectShape});
+
+    auto add_object_shape = [this](Scene::GeometryDataId geometry_id)
+    {
+        m_project_interactor.scene_interactor().add_object_to_active_bed(
+            m_data_factory->triangle_mesh(geometry_id)->triangles(),
+            geometry_name(geometry_id)
+        );
+    };
+
+    m_menu_manager
+        .register_menu_item(
+            {MenuItemName::BedContextMenu,
+             MenuItemName::AddObjectShape,
+             MenuItemName::ObjectShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-object-shape-cube",
+                [add_object_shape]() { add_object_shape(Scene::GeometryDataId::Cube); }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::BedContextMenu,
+             MenuItemName::AddObjectShape,
+             MenuItemName::ObjectShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-object-shape-cylinder",
+                [add_object_shape]() { add_object_shape(Scene::GeometryDataId::Cylinder); }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::BedContextMenu,
+             MenuItemName::AddObjectShape,
+             MenuItemName::ObjectShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-object-shape-sphere",
+                [add_object_shape]() { add_object_shape(Scene::GeometryDataId::Sphere); }
+            )
+        );
+
+    m_menu_manager
+        .register_menu_separator_item({MenuItemName::BedContextMenu, MenuItemName::AddObjectShape})
+        .register_menu_item_from_command(
+            {MenuItemName::BedContextMenu,
+             MenuItemName::AddObjectShape,
+             MenuItemName::ObjectShapeText},
+            m_render_module.command(CommandName::CreateObjectAsText)
+        );
+}
+
+void MenuCommandRegistrar::register_object_menu_commands()
+{
+    register_object_menu_add_volume_commands();
+    m_menu_manager.register_menu_separator_item({MenuItemName::ObjectMenu});
+    m_menu_manager.register_menu_item_from_command(
+        {MenuItemName::ObjectMenu, MenuItemName::DeleteSelectedObject},
+        m_render_module.command(Platform::CommandName::DeleteSelected)
+    );
+}
+
+void MenuCommandRegistrar::register_object_menu_add_volume_commands()
+{
+    auto add_volume_shape =
+        [this](Scene::GeometryDataId geometry_id, Domain::ModelVolumeType volume_type)
+    {
+        m_project_interactor.scene_interactor().add_volume_to_active_object(
+            m_data_factory->triangle_mesh(geometry_id)->triangles(),
+            volume_type,
+            geometry_name(geometry_id)
+        );
+    };
+
+    // Solid part menu
+    m_menu_manager
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SolidPartVolume,
+             MenuItemName::SolidPartVolumeShapeLoad},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-load-solid",
+                [this]() { load_volume(Domain::ModelVolumeType::MODEL_PART); }
+            )
+        )
+        .register_menu_separator_item(
+            {MenuItemName::ObjectMenu, MenuItemName::AddVolume, MenuItemName::SolidPartVolume}
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SolidPartVolume,
+             MenuItemName::SolidPartVolumeShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cube-solid",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cube,
+                        Domain::ModelVolumeType::MODEL_PART
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SolidPartVolume,
+             MenuItemName::SolidPartVolumeShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cylinder-solid",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cylinder,
+                        Domain::ModelVolumeType::MODEL_PART
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SolidPartVolume,
+             MenuItemName::SolidPartVolumeShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-sphere-solid",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Sphere,
+                        Domain::ModelVolumeType::MODEL_PART
+                    );
+                }
+            )
+        )
+        // Negative Volume menu
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::NegativeVolume,
+             MenuItemName::NegativeVolumeShapeLoad},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-load-negative",
+                [this]() { load_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME); }
+            )
+        )
+        .register_menu_separator_item(
+            {MenuItemName::ObjectMenu, MenuItemName::AddVolume, MenuItemName::NegativeVolume}
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::NegativeVolume,
+             MenuItemName::NegativeVolumeShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cube-negative",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cube,
+                        Domain::ModelVolumeType::NEGATIVE_VOLUME
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::NegativeVolume,
+             MenuItemName::NegativeVolumeShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cylinder-negative",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cylinder,
+                        Domain::ModelVolumeType::NEGATIVE_VOLUME
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::NegativeVolume,
+             MenuItemName::NegativeVolumeShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-sphere-negative",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Sphere,
+                        Domain::ModelVolumeType::NEGATIVE_VOLUME
+                    );
+                }
+            )
+        )
+        // Modifier Volume menu
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::ModifierVolume,
+             MenuItemName::ModifierVolumeShapeLoad},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-load-modifier",
+                [this]() { load_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER); }
+            )
+        )
+        .register_menu_separator_item(
+            {MenuItemName::ObjectMenu, MenuItemName::AddVolume, MenuItemName::ModifierVolume}
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::ModifierVolume,
+             MenuItemName::ModifierVolumeShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cube-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cube,
+                        Domain::ModelVolumeType::PARAMETER_MODIFIER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::ModifierVolume,
+             MenuItemName::ModifierVolumeShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cylinder-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cylinder,
+                        Domain::ModelVolumeType::PARAMETER_MODIFIER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::ModifierVolume,
+             MenuItemName::ModifierVolumeShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-sphere-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Sphere,
+                        Domain::ModelVolumeType::PARAMETER_MODIFIER
+                    );
+                }
+            )
+        )
+        // Support Blocker menu
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportBlocker,
+             MenuItemName::SupportBlockerShapeLoad},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-load-support-blocker",
+                [this]() { load_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER); }
+            )
+        )
+        .register_menu_separator_item(
+            {MenuItemName::ObjectMenu, MenuItemName::AddVolume, MenuItemName::SupportBlocker}
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportBlocker,
+             MenuItemName::SupportBlockerShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cube-support-blocker",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cube,
+                        Domain::ModelVolumeType::SUPPORT_BLOCKER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportBlocker,
+             MenuItemName::SupportBlockerShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cylinder-support-blocker",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cylinder,
+                        Domain::ModelVolumeType::SUPPORT_BLOCKER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportBlocker,
+             MenuItemName::SupportBlockerShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-sphere-support-blocker",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Sphere,
+                        Domain::ModelVolumeType::SUPPORT_BLOCKER
+                    );
+                }
+            )
+        )
+        // Support Modifier menu
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportModifier,
+             MenuItemName::SupportModifierShapeLoad},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-load-support-modifier",
+                [this]() { load_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER); }
+            )
+        )
+        .register_menu_separator_item(
+            {MenuItemName::ObjectMenu, MenuItemName::AddVolume, MenuItemName::SupportModifier}
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportModifier,
+             MenuItemName::SupportModifierShapeCube},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cube-support-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cube,
+                        Domain::ModelVolumeType::SUPPORT_ENFORCER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportModifier,
+             MenuItemName::SupportModifierShapeCylinder},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-cylinder-support-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Cylinder,
+                        Domain::ModelVolumeType::SUPPORT_ENFORCER
+                    );
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::ObjectMenu,
+             MenuItemName::AddVolume,
+             MenuItemName::SupportModifier,
+             MenuItemName::SupportModifierShapeSphere},
+            std::make_unique<UIItemCommand>(
+                "add-volume-shape-sphere-support-modifier",
+                [add_volume_shape]()
+                {
+                    add_volume_shape(
+                        Scene::GeometryDataId::Sphere,
+                        Domain::ModelVolumeType::SUPPORT_ENFORCER
+                    );
+                }
+            )
+        );
 }
 
 void MenuCommandRegistrar::load_project()
@@ -96,13 +550,11 @@ void MenuCommandRegistrar::save_project_as()
             };
 
             // The 'true' is here for the development phase - effectively it always "Saves as":
-            if (true || project_name.empty()) { 
+            if (true || project_name.empty()) {
                 // Saving a new project - show file save dialog.
                 IDialogManager::FileCallback callback =
-                    [this, &params](
-                        bool success,
-                        const std::vector<boost::filesystem::path>& file_paths
-                    )
+                    [this,
+                     &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
                 {
                     if (success)
                         m_project_interactor.save_project(file_paths.front(), params);
@@ -113,9 +565,7 @@ void MenuCommandRegistrar::save_project_as()
                     _u8L("Save Project"),
                     m_project_interactor.project_dir(
                         m_project_interactor.selected_project_id(),
-                        AppServices::instance().app_config().get<std::string>(
-                            "last_used_directory"
-                        )
+                        AppServices::instance().app_config().get<std::string>("last_used_directory")
                     ),
                     project_name,
                     Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
@@ -124,12 +574,115 @@ void MenuCommandRegistrar::save_project_as()
             } else {
                 // Saving an existing project - just save.
                 // DK: How this could work with just project_name?
-                m_project_interactor.save_project(
-                    boost::filesystem::path(project_name),
-                    params
-                );
+                m_project_interactor.save_project(boost::filesystem::path(project_name), params);
             }
         }
+    );
+}
+
+namespace {
+// open SvgGizmo, when svg volume is just added into scene
+// TODO: solve multiple svgs at once
+std::optional<Scene::TrafoGuess> get_svg_guess_tr(
+    const std::vector<boost::filesystem::path>& file_paths,
+    const Biz::ProjectInteractor& project_interactor,
+    const Scene::ISceneProvider& scene_provider
+)
+{
+    const Biz::Scene::ObjectSelection& selection =
+        project_interactor.scene_interactor().object_selection();
+    const Domain::Project& project = project_interactor.selected_project();
+    const Scene::Scene& scene      = scene_provider.scene();
+    return Scene::guess_volume_transformation(selection.elements, project, scene);
+}
+
+void open_svg_gizmo(
+    const std::optional<Scene::TrafoGuess>& volume_tr,
+    Biz::ProjectInteractor& project_interactor,
+    Platform::AbstractRenderModule* render_module
+)
+{
+    const Biz::Scene::ObjectSelection& selection =
+        project_interactor.scene_interactor().object_selection();
+    if (selection.elements.size() != 1)
+        return;
+
+    const Domain::ElementRef& element = selection.elements.front();
+    const Domain::Project& project    = project_interactor.selected_project();
+    const Domain::ModelVolume* volume = nullptr;
+    if (element.has_volume()) {
+        volume = project.find_volume_by_id(element.object_id, element.volume_id);
+    } else {
+        const Domain::ModelObject* object = project.find_object_by_id(element.object_id);
+        if (object != nullptr && object->volumes.size() == 1)
+            volume = object->volumes.front();
+    }
+    if (volume == nullptr)
+        return;
+
+    const Domain::ModelInstance* instance =
+        project.find_instance_by_id(element.object_id, element.instance_id);
+    if (instance == nullptr || instance != volume_tr->instance)
+        return;
+    const Domain::Transform3d& instance_tr = instance->get_matrix();
+    Domain::Transform3d world_relative     = instance_tr
+        * volume->get_matrix().inverse()
+        * volume_tr->transformation
+        * instance_tr.inverse();
+
+    if (Plater::PlaterRenderModule* plater_rm =
+            dynamic_cast<Plater::PlaterRenderModule*>(render_module))
+    {
+        plater_rm->toggle_activate_tool(Scene::ToolType::Svg);
+    }
+}
+} // namespace
+
+void MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type)
+{
+    IDialogManager::FileCallback callback =
+        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (!success || file_paths.empty())
+            return;
+
+        bool svg_loading = file_paths.size() == 1 && file_paths.back().extension() == ".svg";
+
+        // NOTE: Need to ray cast into scene before import
+        auto svg_transform = svg_loading ?
+            get_svg_guess_tr(file_paths, m_project_interactor, *m_scene_provider) :
+            std::nullopt;
+        Biz::FileLoadingLogic::import_volumes_into_selected_object(
+            file_paths,
+            type,
+            m_project_interactor.scene_interactor(),
+            &AppServices::instance().dialog_manager()
+        );
+
+        // open SvgGizmo, when svg volume is selected(was imported)
+        if (svg_loading) {
+            open_svg_gizmo(svg_transform, m_project_interactor, &m_render_module);
+        }
+    };
+
+    auto& dlg_manager = AppServices::instance().dialog_manager();
+    dlg_manager.show_file_dialog(
+        FileDialogType::OpenMultiple,
+        _u8L("Import File"),
+        m_project_interactor.project_dir(
+            m_project_interactor.selected_project_id(),
+            AppServices::instance().app_config().get<std::string>("last_used_directory")
+        ),
+        "",
+        Wildcards::generate_wildcards(
+            Wildcards::TypeFlag::Project3mf
+                | Wildcards::TypeFlag::Stl
+                | Wildcards::TypeFlag::Obj
+                | Wildcards::TypeFlag::Svg
+                | Wildcards::TypeFlag::Step,
+            Wildcards::TypeFlag::AllImportFiles
+        ),
+        callback
     );
 }
 
@@ -814,7 +1367,7 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
         .register_menu_item(
             {MenuItemName::FileMenu, MenuItemName::Import, MenuItemName::ImportGeometry},
             std::make_unique<UIItemCommand>(
-                CommandName::AddObject,
+                CommandName::ImportGeometry,
                 [this]()
                 {
                     IDialogManager::FileCallback callback =
@@ -910,7 +1463,7 @@ void MenuCommandRegistrar::register_file_menu_export_commands()
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::U
                     }},
-                    .enabled           = [this]()
+                    .enabled            = [this]()
                     {
                         return ExportActions::can_export(m_project_interactor)
                             && m_project_interactor.removable_drive_service()

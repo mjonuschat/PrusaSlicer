@@ -140,6 +140,54 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Export G-code to SD Card / Flash Drive");
     case MenuItemName::OnlinePresetUpdate:
         return Biz::_u8L("Update from Online Presets");
+    case MenuItemName::DeleteBed:
+    case MenuItemName::DeleteSelectedObject:
+        return Biz::_u8L("Delete");
+    case MenuItemName::AddObjectShape:
+        return Biz::_u8L("Add shape");
+    case MenuItemName::ObjectShapeLoad:
+    case MenuItemName::SolidPartVolumeShapeLoad:
+    case MenuItemName::NegativeVolumeShapeLoad:
+    case MenuItemName::ModifierVolumeShapeLoad:
+    case MenuItemName::SupportBlockerShapeLoad:
+    case MenuItemName::SupportModifierShapeLoad:
+        return Biz::_u8L("Load");
+    case MenuItemName::ObjectShapeCube:
+    case MenuItemName::SolidPartVolumeShapeCube:
+    case MenuItemName::NegativeVolumeShapeCube:
+    case MenuItemName::ModifierVolumeShapeCube:
+    case MenuItemName::SupportBlockerShapeCube:
+    case MenuItemName::SupportModifierShapeCube:
+        return Biz::_u8L("Cube");
+    case MenuItemName::ObjectShapeCylinder:
+    case MenuItemName::SolidPartVolumeShapeCylinder:
+    case MenuItemName::NegativeVolumeShapeCylinder:
+    case MenuItemName::ModifierVolumeShapeCylinder:
+    case MenuItemName::SupportBlockerShapeCylinder:
+    case MenuItemName::SupportModifierShapeCylinder:
+        return Biz::_u8L("Cylinder");
+    case MenuItemName::ObjectShapeSphere:
+    case MenuItemName::SolidPartVolumeShapeSphere:
+    case MenuItemName::NegativeVolumeShapeSphere:
+    case MenuItemName::ModifierVolumeShapeSphere:
+    case MenuItemName::SupportBlockerShapeSphere:
+    case MenuItemName::SupportModifierShapeSphere:
+        return Biz::_u8L("Sphere");
+    case MenuItemName::ObjectShapeText:
+        return Biz::_u8L("Text");
+    case MenuItemName::AddVolume:
+        return Biz::_u8L("Add volume");
+    case MenuItemName::SolidPartVolume:
+        return Biz::_u8L("Solid part");
+    case MenuItemName::NegativeVolume:
+        return Biz::_u8L("Negative volume");
+    case MenuItemName::ModifierVolume:
+        return Biz::_u8L("Modifier");
+    case MenuItemName::SupportBlocker:
+        return Biz::_u8L("Support blocker");
+    case MenuItemName::SupportModifier:
+        return Biz::_u8L("Support modifier");
+
     default:
         return std::string();
     }
@@ -151,6 +199,8 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::MainMenu:
         return Render::Icon::PrusaSlicerIcon;
     case MenuItemName::DeleteSelected:
+    case MenuItemName::DeleteBed:
+    case MenuItemName::DeleteSelectedObject:
         return Render::Icon::DeleteBtnIcon;
     case MenuItemName::Search:
         return Render::Icon::Search;
@@ -167,14 +217,29 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::ImportGeometry:
         return Render::Icon::AddObject;
     case MenuItemName::ShapeGallery:
+    case MenuItemName::AddObjectShape:
         return Render::Icon::Shapes;
     case MenuItemName::RecentProjects:
         return Render::Icon::RecentProjects;
+    case MenuItemName::AddVolume:
+        return Render::Icon::AddVolume;
+    case MenuItemName::SolidPartVolume:
+        return Render::Icon::SolidPartVolume;
+    case MenuItemName::NegativeVolume:
+        return Render::Icon::NegativeVolume;
+    case MenuItemName::ModifierVolume:
+        return Render::Icon::ModifierVolume;
+    case MenuItemName::SupportBlocker:
+        return Render::Icon::SupportBlocker;
+    case MenuItemName::SupportModifier:
+        return Render::Icon::SupportModifier;
 
     case MenuItemName::Edit:
     case MenuItemName::Import:
     case MenuItemName::DeselectAll:
     case MenuItemName::JumpToValue:
+    case MenuItemName::BedContextMenu:
+    case MenuItemName::SolidPartVolumeShapeLoad:
     default:
         return Render::Icon::None;
     }
@@ -184,8 +249,7 @@ std::string MenuBuilder::icon_name(MenuItemName menu_item_name)
 {
     if (Render::Icon icon = item_icon(menu_item_name); icon == Render::Icon::None) {
         return std::string();
-    }
-    else {
+    } else {
         return Render::ImguiIconHelper::icon_name(icon);
     }
     return std::string();

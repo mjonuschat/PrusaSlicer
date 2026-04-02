@@ -20,6 +20,9 @@ public:
     float offset() const;
     void set_offset(float offset);
 
+    std::optional<Vec2f> open_pos() const;
+    void set_open_pos(std::optional<Vec2f> pos);
+
     Position position() const;
     void set_position(Position position);
 
@@ -34,6 +37,9 @@ public:
     void set_flags(ImGuiWindowFlags flags);
 
 private:
+    void invalidate_style();
+
+private:
     float m_offset           = 10;
     Position m_position      = Position::Right;
     float m_rounding         = 5;
@@ -41,6 +47,9 @@ private:
     bool m_request_close     = false;
 
     std::string m_id_on_right_click;
+
+    std::optional<Vec2f> m_open_pos   = std::nullopt;
+    bool m_force_open_popup_in_render = false;
 };
 
 } // namespace Slic3r::App::Yoga

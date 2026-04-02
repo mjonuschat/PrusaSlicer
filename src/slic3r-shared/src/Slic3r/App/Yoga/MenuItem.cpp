@@ -40,11 +40,6 @@ void MenuItem::create(
     bool has_sub_menu
 )
 {
-    if (has_sub_menu) {
-        m_sub_menu = emplace_back<Menu>(label, Position::Right);
-        m_sub_menu->set_offset(-5.f);
-        m_sub_menu->set_flags(m_sub_menu->flags() | ImGuiWindowFlags_NoFocusOnAppearing);
-    }
     set_background_color(Platform::Color::ButtonTransparent);
 
     float icon_size = 16;
@@ -62,11 +57,15 @@ void MenuItem::create(
     );
 
     // for expanded menu item use expander icon
-    Icon* expander_icon = emplace_back<Icon>(Render::Icon::CloseArrow);
-    expander_icon->set_visible(has_sub_menu);
-    expander_icon->set_aspect_ratio(1.f);
-    expander_icon->set_width(icon_size);
-    expander_icon->set_self_align(YGAlignCenter);
+    m_expander_icon = emplace_back<Icon>(Render::Icon::CloseArrow);
+    m_expander_icon->set_visible(false);
+    m_expander_icon->set_aspect_ratio(1.f);
+    m_expander_icon->set_width(icon_size);
+    m_expander_icon->set_self_align(YGAlignCenter);
+
+    if (has_sub_menu) {
+        add_submenu(label);
+    }
 }
 
 MenuItem* MenuItem::append_sub_menu_item(
@@ -76,11 +75,15 @@ MenuItem* MenuItem::append_sub_menu_item(
     const std::string& shortcut
 )
 {
+    if (!m_sub_menu) {
+        add_submenu(label);
+    }
     return m_sub_menu->append_item(label, init_checkable_value, icon, shortcut);
 }
 
 void MenuItem::append_sub_menu_separator()
 {
+    ASSERT(m_sub_menu);
     m_sub_menu->append_separator();
 }
 
@@ -122,6 +125,14 @@ void MenuItem::hovered_updated_internal()
             m_parent_menu->close_all_submenus();
         }
     }
+}
+
+void MenuItem::add_submenu(const std::string& label)
+{
+    m_sub_menu = emplace_back<Menu>(label, Position::Right);
+    m_sub_menu->set_offset(-2.f);
+
+    m_expander_icon->set_visible(true);
 }
 
 } // namespace Slic3r::App::Yoga

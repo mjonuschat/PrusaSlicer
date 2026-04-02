@@ -35,7 +35,8 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
         return Scene::GizmoActivationState::Inactive;
     }
 
-    if (evt.button() != Platform::MouseButton::Left) {
+    if (evt.button() != Platform::MouseButton::Left && evt.button() != Platform::MouseButton::Right)
+    {
         return Scene::GizmoActivationState::Inactive;
     }
 

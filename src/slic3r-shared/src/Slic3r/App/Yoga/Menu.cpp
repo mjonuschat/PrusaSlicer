@@ -11,6 +11,7 @@ Menu::Menu(const std::string& name, Position position)
     set_orientation(Orientation::Vertical);
     set_padding({3.f, 3.f});
     set_gap(3.f);
+    set_flags(flags() | ImGuiWindowFlags_NoFocusOnAppearing);
 }
 
 MenuItem* Menu::append_item(

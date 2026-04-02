@@ -13,6 +13,7 @@
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
+#include "Slic3r/App/Plater/ContextMenuGizmo.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -72,7 +73,8 @@ class PlaterRenderModule final :
     private Scene::IGizmoActiveToolListener,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Preset::IPresetChangedListener,
-    public Scene::ISharedModelGeometryProvider
+    public Scene::ISharedModelGeometryProvider,
+    public IShowContextMenuListener
 {
 public:
     PlaterRenderModule(
@@ -96,6 +98,7 @@ public:
     void set_navigator(Navigator* navigator) override;
 
     void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
+    void on_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_pos) override;
 
     void set_sidebars_visible(bool visible) override;
 
@@ -147,6 +150,7 @@ public:
      */
     std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider() override;
     /**@}*/
+    void toggle_activate_tool(Scene::ToolType tool_type);
 
 protected:
     void on_init(
@@ -180,15 +184,12 @@ private:
     void init_scene_layout();
     void
     render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
-    void toggle_activate_tool(Scene::ToolType tool_type);
     void init_dialog_navigation();
     void update_object_selection();
     void update_current_right_sidebar();
     void update_toolbar_visibility();
 
     void init_gizmos();
-    void init_add_volume_menu(Yoga::Item* parent);
-    void add_volume(const Domain::ModelVolumeType& type);
 
     Yoga::ToolbarButton* get_toolbar_button(Scene::ToolType tool_type) const;
 
@@ -198,8 +199,8 @@ private:
     std::unique_ptr<PlaterScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 
-    // tmp menu for add volume
-    Yoga::Menu* m_add_volumes_menu = nullptr;
+    Yoga::Menu* m_bed_menu = nullptr;
+    Yoga::Menu* m_object_menu = nullptr;
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects
@@ -215,7 +216,6 @@ private:
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 
     Yoga::ToolbarButton* m_toolbar_add                     = nullptr;
-    Yoga::ToolbarButton* m_toolbar_add_volume              = nullptr;
     Yoga::ToolbarButton* m_toolbar_delete                  = nullptr;
     Yoga::ToolbarButton* m_toolbar_add_instance            = nullptr;
     Yoga::ToolbarButton* m_toolbar_move                    = nullptr;

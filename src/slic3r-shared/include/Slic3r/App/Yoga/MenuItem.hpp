@@ -45,6 +45,7 @@ private:
         const std::string& shortcut = {},
         bool has_sub_menu           = false
     );
+    void add_submenu(const std::string& label);
     void action_internal() override;
     void hovered_updated_internal() override;
 
@@ -52,7 +53,8 @@ private:
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};
     Menu* m_sub_menu{nullptr};
-    Text* m_shortcut_text{nullptr};
+    Text* m_shortcut_text{ nullptr };
+    Icon* m_expander_icon{ nullptr };
 };
 
 } // namespace Slic3r::App::Yoga

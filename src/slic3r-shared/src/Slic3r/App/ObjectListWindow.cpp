@@ -204,7 +204,7 @@ void ObjectListWindow::init_cc_context_menu()
         ASSERT(config_container_id != Domain::INVALID_ID);
 
         // Workaround till context menu doesn't allow to be shown on click position
-        m_cc_context_menu->set_offset(open_pos.y());
+        m_cc_context_menu->set_open_pos(open_pos);
 
         // Don't allow to delete last config container
         const size_t containers_cnt =

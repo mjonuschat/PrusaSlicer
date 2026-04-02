@@ -39,7 +39,7 @@ TopBar::TopBar(
     m_navigator(navigator),
     m_menu_command_registrar(*render_module, *project_interactor, navigator, thumbnail_store)
 {
-    m_menu_command_registrar.register_all();
+    m_menu_command_registrar.register_top_bar_menus();
 
     set_padding(0);
     set_rounding(0.f);
@@ -215,6 +215,14 @@ void TopBar::add_menu_btns(Item* parent)
         m_file_menu->set_offset(0.f);
         menu_builder.add_menu_items(m_file_menu, file_menu_item);
     }
+}
+
+void TopBar::register_context_menus(
+    Scene::GeometryDataFactory& data_factory,
+    Scene::ISceneProvider* scene_provider
+)
+{
+    m_menu_command_registrar.register_context_menus(data_factory, scene_provider);
 }
 
 } // namespace Slic3r::App

@@ -82,9 +82,11 @@ struct CommandName
     static constexpr const char* CheckAppUpdates      = "check-app-updates";
     static constexpr const char* FlashPrinterFirmware = "flash-printer-firmware";
 
-    static constexpr const char* ExportGcode         = "export-gcode";
-    static constexpr const char* SendGcode           = "send-gcode";
-    static constexpr const char* ExportGcodeToFlash  = "export-gcode-to-flash";
+    static constexpr const char* ImportGeometry = "import-geometry";
+
+    static constexpr const char* ExportGcode        = "export-gcode";
+    static constexpr const char* SendGcode          = "send-gcode";
+    static constexpr const char* ExportGcodeToFlash = "export-gcode-to-flash";
 
     static constexpr const char* OnlinePresetUpdate = "online-preset-update";
 
@@ -96,9 +98,11 @@ struct CommandName
     static constexpr const char* SystemInfo     = "system-info";
     static constexpr const char* ConfigFolder   = "config-folder";
 
-    static constexpr const char* ReportAnIssue     = "report-issue";
-    static constexpr const char* About             = "about";
-    static constexpr const char* TipOfTheDay       = "tip-of-the-day";
+    static constexpr const char* ReportAnIssue           = "report-issue";
+    static constexpr const char* About                   = "about";
+    static constexpr const char* TipOfTheDay             = "tip-of-the-day";
     static constexpr const char* KeyboardShortcutsDialog = "keyboard-shortcuts";
+
+    static constexpr const char* DeleteBed = "delete-bed";
 };
 } // namespace Slic3r::App::Platform

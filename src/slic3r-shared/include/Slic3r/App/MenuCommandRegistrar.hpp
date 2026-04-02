@@ -1,10 +1,16 @@
 #pragma once
 
+#include "Slic3r/Domain/ModelVolume.hpp"
 #include <string>
 
 namespace Slic3r::App::Platform {
 class AbstractRenderModule;
 } // namespace Slic3r::App::Platform
+
+namespace Slic3r::App::Scene {
+class GeometryDataFactory;
+class ISceneProvider;
+} // namespace Slic3r::App::Scene
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -26,7 +32,11 @@ public:
         ThumbnailStore& thumbnail_store
     );
 
-    void register_all();
+    void register_top_bar_menus();
+    void register_context_menus(
+        Scene::GeometryDataFactory& data_factory,
+        Scene::ISceneProvider* scene_provider
+    );
 
 private:
     void register_main_menu_commands();
@@ -39,9 +49,17 @@ private:
     void register_file_menu_import_commands();
     void register_file_menu_export_commands();
 
+    void register_bed_menu_commands();
+    void register_bed_menu_add_shape_commands();
+
+    void register_object_menu_commands();
+    void register_object_menu_add_volume_commands();
+
     void load_project();
     void save_project();
     void save_project_as();
+
+    void load_volume(Domain::ModelVolumeType type);
 
     struct OpenBrowserParams
     {
@@ -49,6 +67,7 @@ private:
         bool force_remember_choice{true};
         bool is_localized_url{false};
     };
+
     void open_browser(OpenBrowserParams params);
 
     Platform::AbstractRenderModule& m_render_module;
@@ -56,6 +75,8 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
     ThumbnailStore& m_thumbnail_store;
+    Scene::GeometryDataFactory* m_data_factory{nullptr};
+    Scene::ISceneProvider* m_scene_provider{nullptr};
 };
 
 } // namespace Slic3r::App

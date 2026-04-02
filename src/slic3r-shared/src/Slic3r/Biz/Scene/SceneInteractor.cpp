@@ -26,6 +26,7 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/Scene/SelectionExtents.hpp"
+#include "Slic3r/Biz/Config/BedShape.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -2342,6 +2343,111 @@ void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_ins
     invoke_listeners<ISlicingInputChangedListener>(
         [&](auto listener) { listener->on_slicing_input_changed(bed_instance); }
     );
+}
+
+void
+SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const std::string& name)
+{
+    const auto& project = m_workbench.project(m_selected_project_id);
+    Domain::BedRef selected_bed = bed_selection().last_selected_bed();
+    const Domain::ConfigContainer* cc =
+        project.find_config_container(selected_bed.config_container_id);
+    const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
+
+    const Domain::Vec2d& bed_center =
+        cc->bed().center() + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset());
+
+    Domain::TriangleMeshStats mesh_stats;
+    {
+        Domain::BoundingBox3d bbox = Domain::bounding_box(its);
+        mesh_stats.min = bbox.min.cast<float>();
+        mesh_stats.max = bbox.max.cast<float>();
+        mesh_stats.size = mesh_stats.max - mesh_stats.min;
+    }
+
+    auto mesh = Domain::TriangleMesh(its, mesh_stats);
+
+    Biz::Config::BedShape bed_shape(cc->bed().contour());
+    mesh.scale(std::max(10., std::round(0.1 * bed_shape.get_size().x())));
+    Domain::BoundingBox3d bbox = mesh.bounding_box();
+
+    new_object_from_mesh(std::move(mesh), name);
+
+    if (bbox.defined) {
+        Domain::Transform3d xform = Domain::Transform3d::Identity();
+        using namespace Biz::Algorithms::BoundingBox;
+        xform.translate(-center(bbox));
+        xform.translate(Domain::Vec3d(0., 0., sizes(bbox).z() * 0.5));
+        xform.translate(Domain::Vec3d{ bed_center.x(), bed_center.y(), 0. });
+        transform_selection(xform.matrix());
+    }
+}
+
+// code is borrowed from:
+// #include <arrange-wrapper/SceneBuilder.hpp>
+static Domain::BoundingBox3d instance_no_offset_bounding_box(const Domain::ModelInstance& mi)
+{
+    using Slic3r::Biz::Algorithms::BoundingBox::merge;
+
+    Domain::BoundingBox3d bb;
+    const Domain::Transform3d inst_matrix = mi.get_transformation().get_matrix_no_offset();
+
+    for (Domain::ModelVolume* v : mi.get_object()->volumes) {
+        if (v->is_model_part()) {
+            bb = merge(
+                bb,
+                Slic3r::Biz::Algorithms::ModelVolume::transformed_bounding_box(
+                    *v,
+                    inst_matrix * v->get_matrix()
+                )
+            );
+        }
+    }
+
+    return bb;
+}
+
+void SceneInteractor::add_volume_to_active_object(
+    const indexed_triangle_set& its,
+    Domain::ModelVolumeType volume_type,
+    const std::string& name
+)
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    ASSERT(selection.mode == Biz::Scene::SelectionMode::Instance && selection.only_single_object());
+    const Domain::ElementRef& element = selection.elements.front();
+
+    const auto& project = m_workbench.project(m_selected_project_id);
+    const Domain::ModelInstance* instance =
+        project.find_instance_by_id(element.object_id, element.instance_id);
+
+    using namespace Biz::Algorithms::BoundingBox;
+    Domain::BoundingBox3d inst_bbox = instance_no_offset_bounding_box(*instance);
+
+    const Domain::ConfigContainer* cc =
+        project.find_config_container(bed_selection().last_selected_bed().config_container_id);
+    Biz::Config::BedShape bed_shape(cc->bed().contour());
+    float scale = static_cast<float>(std::max(10., std::round(0.1 * bed_shape.get_size().x())));
+
+    Domain::TriangleMeshStats mesh_stats;
+    {
+        Domain::BoundingBox3d bbox = Domain::bounding_box(its);
+        mesh_stats.min             = bbox.min.cast<float>();
+        mesh_stats.max             = bbox.max.cast<float>();
+        mesh_stats.size            = mesh_stats.max - mesh_stats.min;
+    }
+
+    auto mesh = Domain::TriangleMesh(its, mesh_stats);
+    mesh.scale(scale);
+    Domain::Transform3d xform  = Domain::Transform3d::Identity();
+    Domain::BoundingBox3d bbox = mesh.bounding_box();
+    if (bbox.defined) {
+        using namespace Biz::Algorithms::BoundingBox;
+        xform.translate(-center(bbox));
+        xform.translate(Domain::Vec3d(inst_bbox.max.x(), inst_bbox.max.y(), sizes(bbox).z() * 0.5));
+    }
+
+    add_volume_from_mesh(std::move(mesh), volume_type, name, xform.matrix());
 }
 
 } // namespace Slic3r::Biz::Scene

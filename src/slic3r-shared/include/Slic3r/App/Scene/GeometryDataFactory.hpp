@@ -46,9 +46,10 @@ public:
     const TriangleMesh* triangle_mesh(GeometryDataId id)
     {
         auto triangle_mesh = m_triangle_mesh_manager.get(id);
-        if (triangle_mesh == nullptr && geometry(id) == nullptr) {
+        if (triangle_mesh == nullptr) {
             create_data(id);
             triangle_mesh = m_triangle_mesh_manager.get(id);
+            ASSERT(triangle_mesh);
         }
         return triangle_mesh;
     }

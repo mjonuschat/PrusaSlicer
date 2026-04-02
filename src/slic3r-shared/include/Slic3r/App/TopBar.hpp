@@ -42,7 +42,10 @@ public:
     );
 
     void on_selected_project_changed(size_t index) override;
-
+    void register_context_menus(
+        Scene::GeometryDataFactory& data_factory,
+        Scene::ISceneProvider* scene_provider
+    );
     void focus_search();
 
 private:

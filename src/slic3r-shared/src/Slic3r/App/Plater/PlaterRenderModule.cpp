@@ -90,6 +90,7 @@
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include "Slic3r/App/MenuBuilder.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 
@@ -377,13 +378,6 @@ void PlaterRenderModule::register_commands()
     m_command_registry
         .register_command(
             std::make_unique<Platform::FuncCommand>(
-                CommandName::AddVolume,
-                [this]() { m_add_volumes_menu->open(); },
-                FuncCommandExtraOpts{.enabled = is_instance_from_same_object_selected}
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
                 CommandName::AddInstance,
                 add_instance,
                 FuncCommandExtraOpts{
@@ -420,10 +414,10 @@ void PlaterRenderModule::register_commands()
         )
         // Command for create separate text object and open Text-gizmo
         .register_command(
-            std::make_unique<Platform::FuncCommand>(
+            std::make_unique<UIItemCommand>(
                 CommandName::CreateObjectAsText,
                 [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); },
-                Platform::FuncCommandExtraOpts{
+                UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
                             Platform::KeyboardShortcut{0, Platform::KeyCode::T}
@@ -470,12 +464,26 @@ void PlaterRenderModule::register_commands()
             )
         );
     }
+
+    m_top_bar->register_context_menus(m_gizmo_manager->data_factory(), m_scene_presenter.get());
+
+    MenuBuilder menu_builder(
+        menu_manager(),
+        command_binding_manager()
+    );
+
+    if (App::MenuItem* main_bed_menu_item = menu_manager().menu_item(MenuItemName::BedContextMenu)) {
+        menu_builder.add_menu_items(m_bed_menu, main_bed_menu_item);
+    }
+
+    if (App::MenuItem* main_object_item = menu_manager().menu_item(MenuItemName::ObjectMenu)) {
+        menu_builder.add_menu_items(m_object_menu, main_object_item);
+    }
 }
 
 void PlaterRenderModule::bind_commands()
 {
-    m_command_binding_manager.bind_tb_item(CommandName::AddObject, m_toolbar_add);
-    m_command_binding_manager.bind_tb_item(CommandName::AddVolume, m_toolbar_add_volume);
+    m_command_binding_manager.bind_tb_item(CommandName::ImportGeometry, m_toolbar_add);
     m_command_binding_manager.bind_tb_item(CommandName::DeleteSelected, m_toolbar_delete);
     m_command_binding_manager.bind_tb_item(CommandName::AddInstance, m_toolbar_add_instance);
     m_command_binding_manager.bind_tb_item(CommandName::SwitchToPreview, m_toolbar_preview_switch);
@@ -559,11 +567,12 @@ void PlaterRenderModule::init_scene_layout()
     // m_history.get()
     // );
 
-    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
+    m_bed_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("bed_context_menu", Yoga::Position::Bottom);
+    m_object_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("object_context_menu", Yoga::Position::Bottom);
 
-    m_toolbar_add_volume =
-        m_layout->add_toolbar_item(ToolbarID::Middle, Render::Icon::AddVolume, _u8L("Add Volume"));
-    init_add_volume_menu(m_toolbar_add_volume);
+    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
 
     m_toolbar_delete = m_layout->add_toolbar_item(
         ToolbarID::Middle,
@@ -817,11 +826,16 @@ void PlaterRenderModule::update_toolbar_visibility()
         get_toolbar_button(tool_gizmo->type())->set_visible(tool_gizmo->enabled());
     }
 
-    m_toolbar_add->set_visible(m_command_binding_manager.command(CommandName::AddObject).enabled());
-    if (m_command_binding_manager.has_command(CommandName::AddVolume)) {
-        m_toolbar_add_volume->set_visible(m_command_binding_manager.command(CommandName::AddVolume).enabled());
-        m_toolbar_delete->set_visible(m_command_binding_manager.command(CommandName::DeleteSelected).enabled());
-        m_toolbar_add_instance->set_visible(m_command_binding_manager.command(CommandName::AddInstance).enabled());
+    m_toolbar_add->set_visible(
+        m_command_binding_manager.command(CommandName::ImportGeometry).enabled()
+    );
+    m_toolbar_delete->set_visible(
+        m_command_binding_manager.command(CommandName::DeleteSelected).enabled()
+    );
+    if (m_command_binding_manager.has_command(CommandName::AddInstance)) {
+        m_toolbar_add_instance->set_visible(
+            m_command_binding_manager.command(CommandName::AddInstance).enabled()
+        );
     }
 }
 
@@ -858,6 +872,11 @@ void PlaterRenderModule::init_gizmos()
     m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter,
         *m_animation_manager);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor, *m_scene_presenter);
+    ContextMenuGizmo& context_menu_gizmo = m_gizmo_manager->add_base_gizmo<ContextMenuGizmo>(
+        m_project_interactor.scene_interactor(),
+        *m_scene_presenter
+    );
+    context_menu_gizmo.add_listener<IShowContextMenuListener>(this);
     QuickSelectGizmo& quick_select_gizmo = m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
         *m_gizmo_manager,
         m_project_interactor.scene_interactor(),
@@ -984,132 +1003,6 @@ void PlaterRenderModule::init_gizmos()
     m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
 
-void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
-{
-    m_add_volumes_menu =
-        parent->emplace_back<Yoga::Menu>("add_volume_menu", Yoga::Position::Bottom);
-
-    m_add_volumes_menu
-        ->append_item(_u8L("Solid Part Volume"), nullptr, Render::Icon::SolidPartVolume)
-        ->callbacks()
-        .action = [this]() { add_volume(Domain::ModelVolumeType::MODEL_PART); };
-    m_add_volumes_menu->append_item(_u8L("Negative Volume"), nullptr, Render::Icon::NegativeVolume)
-        ->callbacks()
-        .action = [this]() { add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME); };
-    m_add_volumes_menu->append_item(_u8L("Modifier Volume"), nullptr, Render::Icon::ModifierVolume)
-        ->callbacks()
-        .action = [this]() { add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER); };
-    m_add_volumes_menu->append_item(_u8L("Support Blocker"), nullptr, Render::Icon::SupportBlocker)
-        ->callbacks()
-        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER); };
-    m_add_volumes_menu
-        ->append_item(_u8L("Support Modifier"), nullptr, Render::Icon::SupportModifier)
-        ->callbacks()
-        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER); };
-}
-
-namespace {
-// open SvgGizmo, when svg volume is just added into scene
-// TODO: solve multiple svgs at once        
-std::optional<Scene::TrafoGuess> get_svg_guess_tr(
-    const std::vector<boost::filesystem::path>& file_paths,
-    const Biz::ProjectInteractor& project_interactor,
-    const Scene::ISceneProvider& scene_provider
-)
-{
-    if (file_paths.empty() ||
-        !boost::algorithm::iends_with(file_paths.front().string(), ".svg"))
-        return {}; // not svg file
-
-    const Biz::Scene::ObjectSelection& selection = 
-        project_interactor.scene_interactor().object_selection();
-    const Domain::Project& project = project_interactor.selected_project();
-    const Scene::Scene& scene = scene_provider.scene();
-    return Scene::guess_volume_transformation(selection.elements, project, scene);
-}
-
-void open_svg_gizmo(
-    const std::optional<Scene::TrafoGuess>& volume_tr,
-    Biz::ProjectInteractor& project_interactor, 
-    const Scene::IGizmoController& gizmo_controller, 
-    const PlaterRenderModule& render_module) {
-    if (!volume_tr.has_value())
-        return;
-    
-    const Biz::Scene::ObjectSelection& selection =
-        project_interactor.scene_interactor().object_selection();
-    if (selection.elements.size() != 1)
-        return;
-
-    const Domain::ElementRef& element = selection.elements.front();
-    const Domain::Project& project = project_interactor.selected_project();
-    const Domain::ModelVolume* volume = nullptr;
-    if (element.has_volume()) {
-        volume = project.find_volume_by_id(element.object_id, element.volume_id);
-    } else {
-        const Domain::ModelObject* object = project.find_object_by_id(element.object_id);
-        if (object != nullptr && object->volumes.size() == 1)
-            volume = object->volumes.front();
-    }
-    if (volume == nullptr)
-        return;
-
-    const Domain::ModelInstance* instance =
-        project.find_instance_by_id(element.object_id, element.instance_id);
-    if (instance == nullptr || instance != volume_tr->instance)
-        return;
-    const Domain::Transform3d& instance_tr = instance->get_matrix();
-    Domain::Transform3d world_relative = instance_tr *
-        volume->get_matrix().inverse() * volume_tr->transformation *
-        instance_tr.inverse();
-
-    project_interactor.scene_interactor().transform_selection(world_relative.matrix());
-    if (gizmo_controller.current_tool_type() != Scene::ToolType::Svg)
-        render_module.command(CommandName::SvgGizmo).execute();    
-}
-} // namepsace
-
-void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
-{
-    IDialogManager::FileCallback callback =
-        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
-    {
-        if (!success || file_paths.empty())
-            return;
-
-        // NOTE: Need to ray cast into scene before import
-        auto svg_transform = get_svg_guess_tr(file_paths, m_project_interactor, *m_scene_presenter);
-        Biz::FileLoadingLogic::import_volumes_into_selected_object(
-            file_paths,
-            type,
-            m_project_interactor.scene_interactor(),
-            &AppServices::instance().dialog_manager()
-        );
-        open_svg_gizmo(svg_transform, m_project_interactor, *m_gizmo_manager, *this);
-        
-#if ENABLED_NODE_LOGGING
-        m_scene_presenter->scene().log_nodes();
-#endif        
-    };
-
-    auto& dlg_manager = AppServices::instance().dialog_manager();
-    dlg_manager.show_file_dialog(
-        FileDialogType::OpenMultiple,
-        _u8L("Import File"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
-        "",
-        Wildcards::generate_wildcards(
-            Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj |
-            Wildcards::TypeFlag::Svg | Wildcards::TypeFlag::Step,
-            Wildcards::TypeFlag::AllImportFiles
-        ),
-        callback
-    );
-}
-
 Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type) const
 {
     switch (tool_type) {
@@ -1167,6 +1060,19 @@ void PlaterRenderModule::on_status_cache_status_code_changed(const Domain::Slici
 {
     // request redraw
     request_render();
+}
+
+void PlaterRenderModule::on_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_position)
+{
+    if (type == ContextMenuType ::Bed) {
+        m_bed_menu->set_open_pos(mouse_position - m_top_bar->get_global_pos());
+        m_bed_menu->open();
+        request_render();
+    } else if (type == ContextMenuType ::Object) {
+        m_object_menu->set_open_pos(mouse_position - m_top_bar->get_global_pos());
+        m_object_menu->open();
+        request_render();
+    }
 }
 
 void PlaterRenderModule::set_sidebars_visible(bool visible)
@@ -1285,6 +1191,15 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 {
     m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
     m_scene_presenter->update_sinking_contours_visibility(e, m_screen_info);
+
+    // Close menus on click inside the scene
+    if (!ImGui::GetIO().WantCaptureMouseUnlessPopupClose
+        && e.button() == Platform::MouseButton::Left
+        && e.type() == Platform::MouseEvent::Type::ButtonUp)
+    {
+        m_bed_menu->close();
+        m_object_menu->close();
+    }
 }
 
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)

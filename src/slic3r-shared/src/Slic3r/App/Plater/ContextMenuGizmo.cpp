@@ -1,0 +1,90 @@
+#include "Slic3r/App/Plater/ContextMenuGizmo.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
+
+namespace Slic3r::App::Plater {
+
+ContextMenuGizmo::ContextMenuGizmo(
+    Biz::Scene::SceneInteractor& scene_interactor,
+    Scene::ISceneProvider& scene_provider
+) :
+    m_scene_interactor(scene_interactor),
+    m_scene_provider(scene_provider)
+{}
+
+Scene::GizmoActivationState
+ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
+{
+    // ignore bed picking when the camera is below the bed
+    const Scene::Camera& camera{m_scene_provider.scene().camera()};
+    const Scene::CameraProjectionType camera_type{camera.cam_projection().type()};
+    const bool pick_disabled{
+        (camera_type == Scene::CameraProjectionType::Perspective) ? camera.position().z() < 0.0 :
+                                                                    camera.forward().z() >= 0.0
+    };
+
+    if (pick_disabled)
+        return Scene::GizmoActivationState::Inactive;
+
+    const Platform::MouseEvent& evt{ctx.mouse_event()};
+    const Platform::MouseEvent::Type type{evt.type()};
+
+    if (evt.button() != Platform::MouseButton::Right) {
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    if (type == Platform::MouseEvent::Type::ButtonDown) {
+        return Scene::GizmoActivationState::Probing;
+    }
+
+    if (type == Platform::MouseEvent::Type::ButtonUp) {
+        Domain::Vec2f pos{evt.x(), evt.y()};
+
+        if (ctx.pick_results().empty()) {
+            invoke_show_context_menu(ContextMenuType::Scene, pos);
+            return Scene::GizmoActivationState::Inactive;
+        }
+
+        Scene::Node* node = ctx.pick_results().front().node;
+        if (const Scene::BedNodeTag* bed_tag{node->tag_of_type<Scene::BedNodeTag>()}) {
+            const Domain::BedRef instance{bed_tag->config_container_id, bed_tag->instance_id};
+
+            if (m_scene_interactor.bed_selection().is_selected(instance)) {
+                invoke_show_context_menu(ContextMenuType::Bed, pos);
+            }
+        } else if (const Scene::SceneNodeTag* tag{node->tag_of_type<Scene::SceneNodeTag>()}) {
+            // ButtonUp id postponed a bit from QuickSelectGizmo, so
+            // we need to postpone its processing here slightly too to correct process selection before
+            auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
+            timer_queue.set_timer(
+                std::chrono::milliseconds(150),
+                [this, pos]()
+                {
+                    const Biz::Scene::ObjectSelection& selection = m_scene_interactor.object_selection();
+                    if (!selection.empty()) {
+                        invoke_show_context_menu(
+                            selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance ?
+                            ContextMenuType::Object :
+                            ContextMenuType::Volume,
+                            pos
+                        );
+                    }
+                }
+            );
+            return Scene::GizmoActivationState::Inactive;
+        }
+    }
+
+    return Scene::GizmoActivationState::Inactive;
+}
+
+void ContextMenuGizmo::invoke_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_position)
+{
+    invoke_listeners<IShowContextMenuListener>([&](IShowContextMenuListener* l)
+                                               { l->on_show_context_menu(type, mouse_position); });
+}
+
+} // namespace Slic3r::App::Plater

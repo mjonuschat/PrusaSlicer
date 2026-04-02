@@ -384,6 +384,13 @@ public:
 
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
 
+    void add_object_to_active_bed(const indexed_triangle_set& its, const std::string& name);
+    void add_volume_to_active_object(
+        const indexed_triangle_set& its,
+        Domain::ModelVolumeType volume_type,
+        const std::string& name
+    );
+
 private:
     void layout_after_project_load(Domain::Project& added_project);
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
