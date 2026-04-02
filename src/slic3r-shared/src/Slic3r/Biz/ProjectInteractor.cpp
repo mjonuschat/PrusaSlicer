@@ -119,8 +119,19 @@ Domain::SelectionId ProjectInteractor::new_project_with_modification(
 
 void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 {
+    auto report_error{
+        [this](const std::string& description)
+        {
+            SPDLOG_ERROR(description);
+            invoke_listeners<IProjectsChangedListener>([&description](IProjectsChangedListener* l)
+            {
+                l->on_project_load_failed(description);
+            });
+        }
+    };
+
     auto on_result{
-        [this, file_path](Domain::Project&& project)
+        [this, file_path, &report_error](Domain::Project&& project)
         {
             if (project.config_containers().empty() && project.model().objects.empty())
                 return;
@@ -128,11 +139,26 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             Domain::SelectionId project_id;
             {
                 InvokeLaterBag bag;
+                auto original_project_id = m_selection.project_id;
                 project_id = add_project(std::move(project), bag);
                 Domain::Project& added_project{m_workbench.project(project_id)};
 
                 for (auto& config_container : added_project.config_containers()) {
-                    m_preset_interactor.load_selected_preset_from_3mf(project_id, config_container->mutable_selected_preset());
+                    auto result = m_preset_interactor.load_selected_preset_from_3mf(
+                        project_id,
+                        config_container->mutable_selected_preset()
+                    );
+                    if (!result.has_value()) {
+                        // clean up project state
+                        select_project(original_project_id);
+                        remove_project(project_id);
+
+                        // invoke error listener
+                        report_error(result.error());
+
+                        // and quit
+                        return;
+                    }
                 }
 
                 if (added_project.config_containers().empty()) {
@@ -173,11 +199,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             description = fmt::format("Loading file failed: {}", e.what());
         } catch (...) {
         }
-        SPDLOG_ERROR(description);
-        invoke_listeners<IProjectsChangedListener>([&description](IProjectsChangedListener* l)
-        {
-            l->on_project_load_failed(description);
-        });
+        report_error(description);
     }};
 
     Platform::PlatformServices::instance()

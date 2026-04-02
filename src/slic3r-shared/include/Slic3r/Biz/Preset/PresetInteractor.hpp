@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include <tl/expected.hpp>
+
 #include "Slic3r/Domain/Workbench.hpp"
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
@@ -123,8 +125,9 @@ public:
      * @param selected_preset Config container preset to load.
      * @note The ID of selected_preset's hw_config may change if it collides with already existing
      * having different values (config changed without changing its ID).
+     * @return Success indication or error message bundled in `tl::expected<void, std::string>`
      */
-    void load_selected_preset_from_3mf(
+    tl::expected<void, std::string> load_selected_preset_from_3mf(
         Domain::SelectionId project_id,
         Domain::Preset::SelectedPreset& selected_preset
     );

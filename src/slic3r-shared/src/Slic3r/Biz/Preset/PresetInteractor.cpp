@@ -6,6 +6,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Uuid.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
@@ -2492,6 +2493,15 @@ const T* find_by_id(const std::vector<T>& data, const std::string& id)
     return it != data.end() ? &*it : nullptr;
 }
 
+void update_features(const Domain::Preset::FeatureDefs& defs, Domain::Preset::FeatureValueMap& features)
+{
+    for (const auto& [name, def] : defs) {
+        if (features.find(name) == features.end()) {
+            features[name] = def.default_value;
+        }
+    }
+}
+
 } // namespace
 
 void append_evaluated_presets_to_runtime(
@@ -2548,7 +2558,7 @@ void append_evaluated_presets_to_runtime(
     }
 }
 
-void PresetInteractor::load_selected_preset_from_3mf(
+tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf(
     Domain::SelectionId project_id,
     Domain::Preset::SelectedPreset& selected_preset
 )
@@ -2558,6 +2568,63 @@ void PresetInteractor::load_selected_preset_from_3mf(
 
     bool runtime_presets_evaluation_required = false;
     const auto& preset_bundle = m_workbench.preset_bundle();
+    // 0. Update features according to up-to-date definitions
+    auto& hw_config = selected_preset.hw_config;
+    const auto vendor_it = preset_bundle.vendor_bundles.find(hw_config.vendor_id);
+    if (vendor_it == preset_bundle.vendor_bundles.end()) {
+        return tl::unexpected(
+            fmt::format(fmt::runtime(_u8L("Unknown vendor: {}")), hw_config.vendor_id)
+        );
+    }
+    const auto& vendor_bundle = vendor_it->second;
+    const auto& vendor_defs = vendor_bundle.vendor_data.defs.at(hw_config.technology);
+
+    const auto printer_it = vendor_defs.printers.find(hw_config.printer_id);
+    if (printer_it == vendor_defs.printers.end()) {
+        return tl::unexpected(
+            fmt::format(
+                fmt::runtime(_u8L("Unknown printer id \"{}\" in vendor: {}")),
+                hw_config.printer_id,
+                hw_config.vendor_id
+            )
+        );
+    }
+    const auto& printer_def = printer_it->second;
+    update_features(printer_def.features, hw_config.features);
+    update_features(vendor_bundle.vendor_data.info.features.printer, hw_config.features);
+
+    for (auto& tool_cfg : hw_config.tools) {
+        const auto tool_it = vendor_defs.tools.find(tool_cfg.id);
+        if (tool_it == vendor_defs.tools.end()) {
+            return tl::unexpected(
+                fmt::format(
+                    fmt::runtime(_u8L("Unknown tool id \"{}\" in vendor: {}")),
+                    tool_cfg.id,
+                    hw_config.vendor_id
+                )
+            );
+        }
+        const auto& tool_def = tool_it->second;
+        update_features(tool_def.features, tool_cfg.features);
+        update_features(vendor_bundle.vendor_data.info.features.tool, tool_cfg.features);
+    }
+
+    for (auto& feeder_cfg : hw_config.feeders | std::views::values) {
+        const auto feeder_it = vendor_defs.feeders.find(feeder_cfg.id);
+        if (feeder_it == vendor_defs.feeders.end()) {
+            return tl::unexpected(
+                fmt::format(
+                    fmt::runtime(_u8L("Unknown tool id \"{}\" in vendor: {}")),
+                    feeder_cfg.id,
+                    hw_config.vendor_id
+                )
+            );
+        }
+        const auto& feeder_def = feeder_it->second;
+        update_features(feeder_def.features, feeder_cfg.features);
+        update_features(vendor_bundle.vendor_data.info.features.feeder, feeder_cfg.features);
+    }
+
     // 1. Reconcile HwPrinterConfig
     // deduplicate existing hw configuration (same_values())
     const auto printer_configs_view = get_printer_configs_view(project_id);
@@ -2700,6 +2767,8 @@ void PresetInteractor::load_selected_preset_from_3mf(
             }
         }
     }
+
+    return {};
 }
 
 PresetInteractor::ConstRefBoolPair<Domain::Preset::HwPrinterConfig>
