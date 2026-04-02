@@ -2,13 +2,18 @@
 
 #include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::App {
 
 class PresetUpdaterUI : public Biz::PresetUpdater::IPresetUpdaterResultListener
 {
 public:
-    PresetUpdaterUI(Biz::PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor);
+    PresetUpdaterUI(
+        Biz::PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor,
+        Biz::Preset::PresetInteractor& preset_interactor,
+        const Biz::Preset::IO::BundlePaths& bundle_paths
+    );
     ~PresetUpdaterUI() = default;
 
     void on_preset_updater_error(const std::string& body) override;
@@ -25,6 +30,8 @@ public:
 
 private:
     Biz::PresetUpdater::PresetUpdaterInteractor& m_preset_updater_interactor;
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::Preset::IO::BundlePaths m_bundle_paths;
 };
 
 } // namespace Slic3r::App

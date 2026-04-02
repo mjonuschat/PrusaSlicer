@@ -22,6 +22,28 @@ namespace Slic3r::Biz::Preset::IO {
 namespace fs = boost::filesystem;
 
 
+void populate_local_bundle(const BundlePaths& bundle_paths)
+{
+    for (const auto& repo_entry : fs::directory_iterator(bundle_paths.app_bundle_path)) {
+        if (!repo_entry.is_directory()) {
+            continue;
+        }
+        for (const auto& vendor_entry : fs::directory_iterator(repo_entry)) {
+            const auto src_path = vendor_entry.path();
+            if (!vendor_entry.is_directory() || !fs::exists(src_path / "vendor.yaml")) {
+                continue;
+            }
+            const auto dest_path =
+                bundle_paths.local_bundle_path / repo_entry.path().filename() / src_path.filename();
+            if (!fs::exists(dest_path / "vendor.yaml")) {
+                SPDLOG_INFO("Populate vendor {}/{}", repo_entry.path().filename().string(), dest_path.filename().string());
+                fs::create_directories(dest_path);
+                fs::copy(src_path, dest_path, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                fs::copy_file(src_path.string() + ".idx", dest_path.string() + ".idx", fs::copy_options::overwrite_existing);
+            }
+        }
+    }
+}
 
 
 Domain::Preset::Bundle load_bundle(const BundlePaths& bundle_paths)
@@ -66,6 +88,8 @@ Domain::Preset::Bundle load_bundle(const BundlePaths& bundle_paths)
 
             bool loaded = false;
             Domain::Preset::VendorBundle vendor_bundle;
+            SPDLOG_INFO("Loading preset bundle vendor dir: {}", vendor_dir.string());
+
             try {
 
                 config_loader.load(vendor_yaml_path.string());

@@ -96,7 +96,9 @@ void init_system()
 #endif
     App::init_common();
     App::init_paths(App::InitParams{});
-    Slic3r::App::Render::TextureManager::set_resource_resolver(std::make_unique<Slic3r::App::ResourceResolver>(resources_dir()));
+    App::Render::TextureManager::set_resource_resolver(
+        std::make_unique<App::ResourceResolver>(resources_dir(), data_dir())
+    );
 
 }
 

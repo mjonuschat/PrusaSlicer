@@ -40,6 +40,7 @@
 
 #include "libslic3r/Utils.hpp"
 
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -156,7 +157,14 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(resources_dir()));
+    Render::TextureManager::set_resource_resolver(
+        std::make_unique<ResourceResolver>(resources_dir(), data_dir())
+    );
+
+    Biz::Scene::BedGeometry::set_resolver([](const std::string& p) -> std::string
+    {
+        return Render::TextureManager::resource_resolver().resolve(p);
+    });
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -250,7 +258,8 @@ bool DesktopApp::OnInit()
     );
 
     // load new presets
-    preset_interactor.load_preset_bundle(Biz::Preset::IO::BundlePaths::make_standard_runtime());
+    auto bundle_paths = Biz::Preset::IO::BundlePaths::make_standard_runtime();
+    preset_interactor.load_preset_bundle(bundle_paths);
 
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
@@ -310,8 +319,11 @@ bool DesktopApp::OnInit()
     if (scrn)
         scrn->Destroy();
 
-    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
-    ));
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
+        m_project_interactor->preset_updater_interactor(),
+        preset_interactor,
+        bundle_paths
+    );
 
     m_prusalink_storage_listener =
         std::make_unique<PrintHost::PrusaLinkStorageListener>(*m_project_interactor.get());

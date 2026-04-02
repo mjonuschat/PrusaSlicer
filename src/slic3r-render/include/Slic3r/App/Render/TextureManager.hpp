@@ -56,7 +56,8 @@ public:
 
     void shutdown();
 
-    static void set_resource_resolver(std::unique_ptr<IResourceResolver> resource);
+    static void set_resource_resolver(std::unique_ptr<IResourceResolver> resource_resolver);
+    static IResourceResolver& resource_resolver();
 
 private:
     // We are storing weak pointers, otherwise TextureManager would be counted as a consumer.

@@ -124,15 +124,34 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
     preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, bundle_paths, Slic3r::VERSION);
 #endif
     if (! preset_bundle_opt) {
+        if (bundle_paths.populate_local_bundle) {
+            IO::populate_local_bundle(bundle_paths);
+        }
         preset_bundle_opt = std::make_optional(IO::load_bundle(bundle_paths));
         Domain::Preset::Bundle& preset_bundle = *preset_bundle_opt;
+        // copy over printer configs from original bundle, so these are not lost on reload
+        if (m_workbench.has_preset_bundle()) {
+            preset_bundle.printer_configs = m_workbench.preset_bundle().printer_configs;
+            for (const auto& hw_config : preset_bundle.printer_configs | std::views::values) {
+                auto& vendor_bundle = preset_bundle.vendor_bundles.at(hw_config.vendor_id);
+                vendor_bundle.printer_configs.push_back(hw_config);
+            }
+        }
 
         // TODO: remove this when config wizard is ready
-        if (preset_bundle.printer_configs.empty()) {
+        {
             HwConfigEvaluator config_eval;
-            for (const auto& vendor : {"PrusaResearch", /*"PrusaResearchSLA"*/}) {
+            for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
                 auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
-                ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
+                ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end() || strcmp(vendor, "PrusaResearch") != 0);
+                if (vendor_bundle_it == preset_bundle.vendor_bundles.end()
+                    || std::ranges::any_of(
+                        preset_bundle.printer_configs | std::views::values,
+                        [&](const auto& hw_config) { return hw_config.vendor_id == vendor; }
+                    ))
+                {
+                    continue;
+                }
                 auto& vendor_bundle = vendor_bundle_it->second;
                 for (const auto& hw_printer_template : vendor_bundle.vendor_data.printer_configs) {
                     auto printer_config = config_eval.create_printer_config(

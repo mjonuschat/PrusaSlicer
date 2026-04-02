@@ -18,6 +18,8 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/Line.hpp
     src/Slic3r/Biz/Algorithms/Line.cpp
+    include/Slic3r/Biz/Algorithms/LruCache.hpp
+    src/Slic3r/Biz/Algorithms/LruCache.cpp
     include/Slic3r/Biz/Algorithms/MultiPoint.hpp
     src/Slic3r/Biz/Algorithms/MultiPoint.cpp
     include/Slic3r/Biz/Algorithms/Point.hpp

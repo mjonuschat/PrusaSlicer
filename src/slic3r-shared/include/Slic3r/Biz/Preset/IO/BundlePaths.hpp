@@ -19,6 +19,8 @@ struct BundlePaths
      */
     std::string local_bundle_path;
 
+    bool populate_local_bundle = false;
+
     /**
      * @brief Path to a user saved presets
      * @note It may be an empty string indicating no user saved presets are available.

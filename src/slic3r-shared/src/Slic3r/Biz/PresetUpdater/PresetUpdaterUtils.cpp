@@ -15,6 +15,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/nowide/cstdio.hpp>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <type_traits>
@@ -22,6 +23,35 @@
 namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PresetUpdater {
+
+boost::filesystem::path local_presets_path()
+{
+    return fs::path(data_dir()) / "presets" / "local";
+}
+
+boost::filesystem::path local_vendor_path(
+    const std::string& repo_id,
+    const std::string& vendor_id,
+    const std::string& suffix
+)
+{
+    return local_presets_path() / repo_id / (vendor_id + suffix);
+}
+
+FileOpResult safe_move(const boost::filesystem::path& source, const boost::filesystem::path& target)
+{
+    std::string src, tgt, error_message;
+    src = source.string();
+    tgt = target.string();
+    auto result = Utils::copy_file(src, tgt, error_message);
+    if (result == Utils::Success) {
+        boost::nowide::remove(src.c_str());
+    } else {
+        return tl::unexpected(error_message);
+    }
+    return {};
+}
+
 
 bool copy_file_wrapper(const fs::path& source, const fs::path& target, PresetUpdaterProcessStatus* process_status)
 {
@@ -208,18 +238,10 @@ void perform_downgrades(
 {
     for (const VendorReconfiguration& downgrade : downgrades) {
         SPDLOG_INFO("Deleting incompatible bundle {}", downgrade.vendor_id);
-        fs::path dir_path = fs::path(data_dir())
-            / "profiles"
-            / "local"
-            / "vendor"
-            / downgrade.vendor_repo_id
-            / downgrade.vendor_id;
-        fs::path idx_path = fs::path(data_dir())
-            / "profiles"
-            / "local"
-            / "vendor"
-            / downgrade.vendor_repo_id
-            / (downgrade.vendor_id + ".idx");
+        fs::path dir_path = local_vendor_path(
+            downgrade.vendor_repo_id,
+            downgrade.vendor_id);
+        fs::path idx_path = local_vendor_path(downgrade.vendor_repo_id, downgrade.vendor_id, ".idx");
         boost::system::error_code ec;
         if (!fs::remove_all(dir_path, ec) || ec) {
             process_status->set_error(
@@ -252,13 +274,12 @@ void perform_update_no_source_manifest(
 {
     boost::system::error_code ec;
 
-    const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
     const fs::path update_sync_path   = fs::path(data_dir()) / "update_sync";
 
-    const fs::path vendor_dest_dir_path = profile_local_path / update.vendor_repo_id / update.vendor_id;
-    const fs::path vendor_dest_idx_path = profile_local_path
-        / update.vendor_repo_id
-        / (update.vendor_id + ".idx");
+    const fs::path vendor_dest_dir_path =
+        local_vendor_path(update.vendor_repo_id, update.vendor_id);
+    const fs::path vendor_dest_idx_path =
+        local_vendor_path(update.vendor_repo_id, update.vendor_id, ".idx");
 
     const fs::path vendor_source_dir_path = update_sync_path / update.vendor_repo_id / update.vendor_id;
     const fs::path vendor_source_idx_path = update_sync_path
@@ -319,14 +340,14 @@ void perform_update_no_source_manifest(
             return;
         }
 
-        fs::rename(source_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(source_path, dest_path);
+        if (!result) {
             process_status->set_error(
                 fmt::format(
                     "Failed to move file {} to {}: {}",
                     source_path.string(),
                     dest_path.string(),
-                    ec.message()
+                    result.error()
                 )
             );
             return;
@@ -344,14 +365,14 @@ void perform_update_no_source_manifest(
     }
 
     // move index
-    fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
-    if (ec) {
+    auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
+    if (!result) {
         process_status->set_error(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
-                ec.message()
+                result.error()
             )
         );
         return;
@@ -373,7 +394,7 @@ void perform_update_with_source_manifest(
 {
     boost::system::error_code ec;
 
-    const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path profile_local_path = local_presets_path();
     const fs::path update_sync_path   = fs::path(data_dir()) / "update_sync";
     
     const fs::path repo_dest_dir_path = profile_local_path / update.vendor_repo_id;
@@ -463,28 +484,28 @@ void perform_update_with_source_manifest(
             return;
         }
         // move file
-        fs::rename(source_path, dest_path, ec);
-        if (ec) {
+        auto result = safe_move(source_path, dest_path);
+        if (!result) {
             process_status->set_error(
                 fmt::format(
                     "Failed to move file {} to {}: {}",
                     source_path.string(),
                     dest_path.string(),
-                    ec.message()
+                    result.error()
                 )
             );
             return;
         }
     }
     // move index
-    fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
-    if (ec) {
+    auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
+    if (!result) {
         process_status->set_error(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
-                ec.message()
+                result.error()
             )
         );
         return;
@@ -537,7 +558,7 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
 )
 {
     PresetUpdaterReconfigurationList results;
-    const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path profile_local_path = local_presets_path();
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
@@ -721,7 +742,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
 {
     // SPDLOG_INFO(__FUNCTION__);
     PresetUpdaterReconfigurationList results;
-    const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path profile_local_path = local_presets_path();
     const fs::path update_sync_path   = fs::path(data_dir()) / "update_sync";
     boost::system::error_code ec;
 
@@ -767,7 +788,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             continue;
         }
         for (const auto& index : index_db) {
-            // the installed bundles are in / "profiles" / "local"
+            // the installed bundles are in / "presets" / "local"
             // the most recent index file should be in / "update_sync"
             // then check installed bundles version and decide if and what type of reconfiguration
 

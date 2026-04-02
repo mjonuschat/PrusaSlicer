@@ -27,6 +27,7 @@ public:
     [[nodiscard]] Project& project(const size_t project_id) { return m_projects.find(project_id)->second; }
     [[nodiscard]] const Project& project(const size_t project_id) const { return m_projects.find(project_id)->second; }
 
+    [[nodiscard]] bool has_preset_bundle() const { return m_preset_bundle != nullptr; }
     [[nodiscard]] const Preset::Bundle& preset_bundle() const { return *m_preset_bundle; }
     [[nodiscard]] Preset::Bundle& preset_bundle() { return  *m_preset_bundle; }
 

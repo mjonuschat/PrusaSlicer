@@ -86,6 +86,8 @@ struct CommandName
     static constexpr const char* SendGcode           = "send-gcode";
     static constexpr const char* ExportGcodeToFlash  = "export-gcode-to-flash";
 
+    static constexpr const char* OnlinePresetUpdate = "online-preset-update";
+
     static constexpr const char* PSWebsite      = "ps-website";
     static constexpr const char* QuickStart     = "quick-start";
     static constexpr const char* Samples        = "samples";

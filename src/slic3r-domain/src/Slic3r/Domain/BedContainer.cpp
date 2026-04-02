@@ -35,7 +35,7 @@ Bed& BedContainer::get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed
     if (use_model_and_texture) {
         std::string bed_model_filename = preset.bed_model();
         std::string bed_texture_filename = preset.bed_texture();
-        std::string assets_path = resources_dir_path + "/presets/" + preset.hw_config.repo_id + "/" + preset.hw_config.vendor_id + "/assets/";
+        std::string assets_path = preset.hw_config.relative_path_to_assets();
         if (!bed_model_filename.empty())
             model_filename = assets_path + bed_model_filename;
         if (!bed_texture_filename.empty())

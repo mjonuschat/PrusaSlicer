@@ -84,6 +84,11 @@ public:
         return m_preset_repo_url;
     }
 
+    void set_preset_repo_url(const std::string& url)
+    {
+        m_preset_repo_url = url;
+    }
+
     std::string preset_repo_repos_url() const
     {
         return m_preset_repo_url + "/v2/repos";

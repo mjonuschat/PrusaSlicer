@@ -195,7 +195,7 @@ bool OnlinePresetUpdaterRepository::get_file_inner(
             boost::nowide::fstream file(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
             file.write(body.c_str(), body.size());
             file.close();
-            fs::rename(tmp_path, target_path);
+            safe_move(tmp_path, target_path);
             res = true;
         })
         .perform_sync(process_status->get_retry_policy());

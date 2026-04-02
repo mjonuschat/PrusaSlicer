@@ -1001,6 +1001,19 @@ void MenuCommandRegistrar::register_file_menu_commands()
 
     register_file_menu_import_commands();
     register_file_menu_export_commands();
+    m_menu_manager
+        .register_menu_separator_item({MenuItemName::FileMenu})
+        .register_menu_item(
+            {MenuItemName::FileMenu, MenuItemName::OnlinePresetUpdate},
+            std::make_unique<UIItemCommand>(
+                CommandName::OnlinePresetUpdate,
+                [this]()
+                {
+                    m_project_interactor.preset_updater_interactor()
+                        .build_update_sync_and_reconfiguration_check();
+                }
+            )
+        );
 }
 
 } // namespace Slic3r::App

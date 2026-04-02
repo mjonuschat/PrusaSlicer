@@ -183,11 +183,6 @@ print_volume_node(Render::Device& device, ScenePresenterProjectContext& ctx, Nod
 static void
 model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
-    Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::model(bed);
-    if (mesh.empty()) {
-        SPDLOG_ERROR("Found empty mesh");
-        return;
-    }
 
     auto& geom_mgr    = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
@@ -196,7 +191,12 @@ model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
     const auto& trimesh = trimesh_mgr.get_or_create(
         id,
         [&]() -> std::unique_ptr<TriangleMesh>
-        { return std::make_unique<TriangleMesh>(std::move(mesh.its)); }
+        {
+            // copy made intentionally
+            Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::model(bed);
+            ASSERT(!mesh.empty());
+            return std::make_unique<TriangleMesh>(std::move(mesh.its));
+        }
     );
     const auto* geom = geom_mgr.get_or_create(
         id,
@@ -227,12 +227,14 @@ axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterProjectContext&
     auto& geom_mgr    = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
-    Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::axis(bed);
     AuxiliaryElementId id{AuxiliaryElementId::Type::BedAxis, bed.id().id};
     const auto& trimesh = trimesh_mgr.get_or_create(
         id,
         [&]() -> std::unique_ptr<TriangleMesh>
-        { return std::make_unique<TriangleMesh>(std::move(mesh.its)); }
+        {
+            Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::axis(bed);
+            return std::make_unique<TriangleMesh>(std::move(mesh.its));
+        }
     );
     const auto* geom = geom_mgr.get_or_create(
         id,
