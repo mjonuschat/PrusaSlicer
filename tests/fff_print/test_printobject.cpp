@@ -76,3 +76,55 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
         }
     }
 }
+
+TEST_CASE("PrintObject: extreme mesh coordinates (regression test for coord_t overflow)", "[PrintObject]") {
+    using Slic3r::Biz::Algorithms::TriangleMesh::make_cube;
+
+    GIVEN("A 20mm cube translated to Y=3000mm (beyond coord_t range when scaled)") {
+        Domain::TriangleMesh cube = make_cube(20.0, 20.0, 20.0);
+
+        const float offset{3000.0f};
+        // Center will be at Y=3010mm, scaled = 3,010,000,000 > int32_t max (2,147,483,647)
+        cube.translate(Vec3f(0.0f, offset, 0.0f));
+
+        Print print;
+        TestConfig config;
+        Domain::Model model;
+        config.print.items.opt("layer_height").set(0.2);
+
+        Domain::ModelObject *object = model.add_object();
+        object->name += "cube.stl";
+
+        using Biz::Algorithms::ModelObject::add_volume;
+        Domain::ModelVolume* volume{add_volume(object, cube)};
+        object->add_instance();
+        volume->set_offset(Vec3d{0.0, -offset, 0.0});
+
+        init_print(std::initializer_list<Domain::TriangleMesh>{}, print, model, config, 0, true);
+        REQUIRE_NOTHROW(print.process());
+
+        THEN("Print has layers (slicing succeeded)") {
+            REQUIRE(!print.objects().empty());
+            const PrintObject* obj = print.objects().front();
+            REQUIRE(obj->layers().size() > 0);
+        }
+
+        AND_THEN("Layers have non-empty slices") {
+            const PrintObject* obj = print.objects().front();
+            size_t non_empty_layers = 0;
+            for (const Layer* layer : obj->layers()) {
+                if (!layer->lslices.empty()) {
+                    non_empty_layers++;
+                }
+            }
+
+            REQUIRE(non_empty_layers == obj->layers().size());
+        }
+
+        AND_THEN("Instance shift is correct (no overflow)") {
+            const PrintObject* obj = print.objects().front();
+            const PrintInstance& inst = obj->instances().front();
+            REQUIRE(inst.shift().y() > 0); // Should be positive, not negative from overflow.
+        }
+    }
+}
