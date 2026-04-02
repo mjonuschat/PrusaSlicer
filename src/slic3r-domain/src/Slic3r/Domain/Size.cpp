@@ -10,9 +10,9 @@ void Size::scale(const Size& scale_to, ScaleMode mode)
         break;
     case ScaleMode::KeepAspectRatio: {
         auto scaled_width = scale_to.height * width / height;
-        bool useHeight      = scaled_width <= scale_to.width;
+        bool use_height     = scaled_width <= scale_to.width;
 
-        if (useHeight) {
+        if (use_height) {
             width  = scaled_width;
             height = scale_to.height;
         } else {

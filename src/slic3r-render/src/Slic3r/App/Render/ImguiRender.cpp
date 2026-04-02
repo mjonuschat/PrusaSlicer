@@ -11,11 +11,13 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Assert.hpp>
-#include <imgui/backends/imgui_impl_opengl3.h>
 
 using Slic3r::Domain::SquareMatrix4f;
 
 namespace Slic3r::App::Render {
+
+// Let's assume common/maximal reasonable HiDPI scale is 200%
+constexpr int ICON_SCALE_FACTOR = 2;
 
 ImguiRender::ImguiRender(Device& device) :
     m_device(device),
@@ -38,13 +40,16 @@ TexturePtr ImguiRender::icon_texture(Icon icon, int max_size)
 {
     return m_device.context().texture_manager().get_or_create_image(
         ImguiIconHelper::icon_path(icon),
-        {max_size}
+        {max_size * ICON_SCALE_FACTOR, false, true}
     );
 }
 
 TexturePtr ImguiRender::image_texture(const std::string& image, int max_size)
 {
-    return m_device.context().texture_manager().get_or_create_image(image, {max_size});
+    return m_device.context().texture_manager().get_or_create_image(
+        image,
+        {max_size * ICON_SCALE_FACTOR, false, true}
+    );
 }
 
 void ImguiRender::new_frame()
