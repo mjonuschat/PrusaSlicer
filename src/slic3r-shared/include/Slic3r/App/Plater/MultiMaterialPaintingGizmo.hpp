@@ -62,6 +62,7 @@ protected:
     std::vector<Domain::ColorRGBA> create_painting_colors() const override;
 
     void on_colors_changed(
+        Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,
         const std::vector<Domain::ColorRGB>& colors
     ) override;

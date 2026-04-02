@@ -139,6 +139,7 @@ void MaterialSettingsButton::on_hw_item_selection_changed(
 }
 
 void MaterialSettingsButton::on_colors_changed(
+    Domain::SelectionId project_id,
     Domain::SelectionId config_container_id,
     const std::vector<Domain::ColorRGB>& colors
 )

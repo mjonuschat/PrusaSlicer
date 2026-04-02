@@ -303,7 +303,7 @@ void ProjectSettingsInteractor::store_and_notify(
 
         invoke_listeners<IColorsChangedListener>(
             [&](auto* listener) {
-                listener->on_colors_changed(config_container_id, rgb_colors);
+                listener->on_colors_changed(proj_id, config_container_id, rgb_colors);
             }
         );
         return;

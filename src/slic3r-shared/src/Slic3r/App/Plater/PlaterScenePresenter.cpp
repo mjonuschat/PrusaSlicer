@@ -310,11 +310,13 @@ void PlaterScenePresenter::on_sla_result_cache_changed(const Domain::SlicingId& 
 }
 
 void PlaterScenePresenter::on_colors_changed(
+    Domain::SelectionId project_id,
     Domain::SelectionId /*config_container_id*/,
     const std::vector<Domain::ColorRGB>& /*colors*/
 )
 {
     m_volume_materials_dirty = true;
+    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::force_bed_thumbnails_generation()
@@ -505,20 +507,6 @@ void PlaterScenePresenter::update_volume_materials()
                     color = select_color(is_model_part, is_selected, true, is_disabled, hover_type);
                 }
 
-                if (!color.has_value() && is_model_part && !is_wipe_tower && inst != nullptr) {
-                    auto cc_it = mi_to_cc_map.find(tag->instance_id);
-                    if (cc_it != mi_to_cc_map.end()) {
-                        const auto& slot_colors = m_project_interactor
-                            .project_settings_interactor().get_colors(cc_it->second);
-                        const auto* obj = proj.find_object_by_id(tag->object_id);
-                        const auto* vol = obj
-                            ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
-                            : nullptr;
-                        if (vol)
-                            color = color_from_extruder_slot(slot_colors, *vol);
-                    }
-                }
-
                 if (!color.has_value())
                     n.remove_material_override();
                 else {
@@ -557,8 +545,25 @@ void PlaterScenePresenter::update_volume_materials()
                     print_volume.xy_data = Domain::Vec4f(-FLT_MAX, -FLT_MAX, FLT_MAX, FLT_MAX);
                 }
 
+                std::optional<ColorRGBA> part_color;
+                if (is_model_part && !is_wipe_tower && inst != nullptr) {
+                    auto cc_it = mi_to_cc_map.find(tag->instance_id);
+                    if (cc_it != mi_to_cc_map.end()) {
+                        const auto& slot_colors = m_project_interactor
+                            .project_settings_interactor().get_colors(cc_it->second);
+                        const auto* obj = proj.find_object_by_id(tag->object_id);
+                        const auto* vol = obj
+                            ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
+                            : nullptr;
+                        if (vol)
+                            part_color = color_from_extruder_slot(slot_colors, *vol);
+                    }
+                }
+
                 Render::Material mat = n.render_component()->material();
                 set_uniforms(print_volume, mat);
+                if (part_color)
+                    mat.set_uniform("uniform_color", *part_color);
                 n.render_component()->replace_material(mat);
                 if (n.has_material_override()) {
                     Render::Material ov_mat = *n.material_override();

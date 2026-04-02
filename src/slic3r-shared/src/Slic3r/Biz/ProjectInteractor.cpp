@@ -441,6 +441,7 @@ void ProjectInteractor::on_slicing_input_removed(const Domain::BedRef& bed_insta
 }
 
 void ProjectInteractor::on_colors_changed(
+    Domain::SelectionId project_id,
     Domain::SelectionId config_container_id,
     const std::vector<Domain::ColorRGB>& /*colors*/
 )

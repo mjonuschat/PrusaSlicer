@@ -19,9 +19,9 @@ namespace Slic3r::Biz::Mock {
 
 struct ColorsChangedListener : public IColorsChangedListener
 {
-    MAKE_MOCK2(
+    MAKE_MOCK3(
         on_colors_changed,
-        void(Domain::SelectionId, const std::vector<Domain::ColorRGB>&)
+        void(Domain::SelectionId, Domain::SelectionId, const std::vector<Domain::ColorRGB>&)
     );
 };
 
@@ -104,8 +104,8 @@ TEST_CASE_METHOD(
         .add_listener<IColorsChangedListener>(&listener);
 
     std::vector<Domain::ColorRGB> received_colors;
-    ALLOW_CALL(listener, on_colors_changed(_, _))
-        .LR_SIDE_EFFECT(received_colors = _2);
+    ALLOW_CALL(listener, on_colors_changed(_, _, _))
+        .LR_SIDE_EFFECT(received_colors = _3);
 
     const Domain::SelectionId project_id = project_interactor.new_project();
     (void)project_id;

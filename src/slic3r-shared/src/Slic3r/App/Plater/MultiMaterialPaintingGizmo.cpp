@@ -200,6 +200,7 @@ std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_color
 }
 
 void MultiMaterialPaintingGizmo::on_colors_changed(
+    Domain::SelectionId project_id,
     Domain::SelectionId /*config_container_id*/,
     const std::vector<Domain::ColorRGB>& /*colors*/
 )
