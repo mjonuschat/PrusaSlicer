@@ -9,6 +9,7 @@
 
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <imgui_internal.h>
 #include <fmt/format.h>
 
@@ -35,6 +36,11 @@ ConfigItemTextField::ConfigItemTextField(
     {
         if (*m_state->def().type == typeid(std::string)) {
             m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{text()}, m_cbi_index);
+        } else if (*m_state->def().type == typeid(std::vector<std::string>)) {
+            std::vector<std::string> new_strings;
+            boost::split(new_strings, text(), boost::is_any_of("\n"));
+            std::erase_if(new_strings, [](const std::string& s) { return s.empty(); });
+            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{new_strings}, m_cbi_index);
         } else if (*m_state->def().type == typeid(double)) {
             m_cbi_container.set_item_value(
                 *m_state,
@@ -64,6 +70,8 @@ ConfigItemTextField::ConfigItemTextField(
                     m_cbi_index
                 );
             }
+        } else {
+            PANIC("Item is used for unexpected parameter type");
         }
     };
 }
@@ -136,6 +144,16 @@ void ConfigItemTextField::update_value(const Domain::ConfigValue& value)
 {
     if (*m_state->def().type == typeid(std::string)) {
         set_text(m_state->value().get<std::string>());
+    } else if (*m_state->def().type == typeid(std::vector<std::string>)) {
+        std::vector<std::string> old_strings = m_state->value().get<std::vector<std::string>>();
+        std::string new_string{};
+        for (const std::string& str : old_strings) {
+            new_string += str + "\n";
+        }
+        if (!new_string.empty()) {
+            new_string.pop_back();
+        }
+        set_text(new_string);
     } else if (*m_state->def().type == typeid(double)) {
         set_text(fmt::format("{:.10g}", m_state->value().get<double>()));
     } else if (*m_state->def().type == typeid(Domain::Percentage)) {
@@ -146,6 +164,8 @@ void ConfigItemTextField::update_value(const Domain::ConfigValue& value)
             value.is_percentage() ? fmt::format("{:.10g} %", value.percentage().value) :
                                     fmt::format("{:.10g}", value.float_value())
         );
+    } else {
+        PANIC("Item is used for unexpected parameter type");
     }
 }
 
