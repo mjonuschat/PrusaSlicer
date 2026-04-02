@@ -22,6 +22,7 @@ class Text;
 namespace Slic3r::Biz {
 class PrintToolConfigBoxInteractor;
 class IConfigBoxSetter;
+class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App {
@@ -35,7 +36,8 @@ class PrintToolSubcategoryItem :
         PrintToolRowItem,
         Biz::PrintToolItem,
         Biz::PrintToolConfigBoxInteractor&,
-        Biz::IConfigBoxSetter&>;
+        Biz::IConfigBoxSetter&,
+        Biz::ProjectInteractor&>;
     using PrintToolRowListView =
         Yoga::ListView<PrintToolRowItem, Biz::PrintToolItem, PrintToolRowListViewFactory>;
 
@@ -44,7 +46,8 @@ public:
         size_t index,
         const Biz::PrintToolItem& data,
         Biz::PrintToolConfigBoxInteractor& cbi,
-        Biz::IConfigBoxSetter& cbi_setter
+        Biz::IConfigBoxSetter& cbi_setter,
+        Biz::ProjectInteractor& project_interactor
     );
 
     void navigate_to_item(const Domain::ConfigItem* config_item) override;

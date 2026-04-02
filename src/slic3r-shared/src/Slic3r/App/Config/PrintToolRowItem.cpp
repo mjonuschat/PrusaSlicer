@@ -7,11 +7,11 @@
 #include <Slic3r/Domain/Config.hpp>
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "Slic3r/App/ConfigRowItem.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 #include "Slic3r/App/Config/PrintToolRowButton.hpp"
-
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfigInteractor.hpp"
 
@@ -34,11 +34,14 @@ PrintToolRowItem::PrintToolRowItem(
     size_t index,
     const Biz::PrintToolItem& data,
     Biz::PrintToolConfigBoxInteractor& cbi,
-    Biz::IConfigBoxSetter& cbi_setter
+    Biz::IConfigBoxSetter& cbi_setter,
+    Biz::ProjectInteractor& project_interactor
 ) :
     Biz::DataObserver<Biz::PrintToolItem>(index, data),
     m_cbi(cbi),
     m_cbi_setter(cbi_setter),
+    m_project_interactor(project_interactor),
+    m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this),
     m_explanation_list_labels(std::make_shared<Biz::ObservableList<ExplanationPart>>()),
     m_explanation_list(std::make_shared<Biz::ObservableList<ExplanationPart>>())
 {
@@ -109,6 +112,17 @@ const ToolRowOverride& PrintToolRowItem::at(size_t index) const
 size_t PrintToolRowItem::size() const
 {
     return m_tool_overrides.size();
+}
+
+void PrintToolRowItem::on_colors_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const std::vector<Domain::ColorRGB>& colors
+)
+{
+    if (m_initialized_type == InitializedType::PrintTool) {
+        update_explanation();
+    }
 }
 
 void PrintToolRowItem::on_data_update()
@@ -274,7 +288,9 @@ void PrintToolRowItem::initialize()
             Biz::_u8L("Default value")
         );
 
-        m_tool_list_view = m_content->emplace_back<ToolRowListView>(ToolRowFactory{m_cbi_setter});
+        m_tool_list_view = m_content->emplace_back<ToolRowListView>(
+            ToolRowFactory{m_cbi_setter, m_project_interactor}
+        );
         m_tool_list_view->set_orientation(Orientation::Vertical);
         m_tool_list_view->set_gap(5);
         m_tool_list_view->set_source_list(this);
@@ -298,7 +314,9 @@ void PrintToolRowItem::update_explanation()
             list_labels.reserve(16);
             list_values.reserve(16);
 
-            list_labels.emplace_back(ExplanationPart{ Biz::_u8(m_state->print_item->def().label), text_color});
+            list_labels.emplace_back(
+                ExplanationPart{Biz::_u8(m_state->print_item->def().label), text_color}
+            );
             list_values.emplace_back(
                 ExplanationPart{
                     ConfigItemUtils::config_item_to_string(
@@ -332,6 +350,11 @@ void PrintToolRowItem::update_explanation()
             list_labels.push_back(function_part);
             list_values.push_back(function_part);
 
+            const std::vector<Domain::ColorRGB> colors =
+                m_project_interactor.project_settings_interactor().get_colors(
+                    m_project_interactor.selected_config_container_id()
+                );
+
             bool inserted = false;
             for (size_t index = 0; index < m_state->tool_overrides.size(); ++index) {
                 const Biz::PrintToolItem::ToolOverride& tool_override =
@@ -348,7 +371,13 @@ void PrintToolRowItem::update_explanation()
                     list_values.emplace_back(comma_part);
                 }
 
-                const ImColor color = ConfigItemUtils::colors.at(index);
+                ImColor color;
+                if (colors.size() > index) {
+                    const Domain::ColorRGB& color_domain = colors[index];
+                    color = {color_domain.r(), color_domain.g(), color_domain.b()};
+                } else {
+                    m_project_interactor.project_settings_interactor().palette_color(index);
+                }
 
                 list_labels.emplace_back(
                     ExplanationPart{Biz::_u8L("Tool") + " " + std::to_string(index + 1), color}

@@ -97,7 +97,8 @@ protected:
         PrintToolSubcategoryListView,
         Biz::PrintToolItem,
         Biz::PrintToolConfigBoxInteractor&,
-        Biz::IConfigBoxSetter&>;
+        Biz::IConfigBoxSetter&,
+        Biz::ProjectInteractor&>;
     using ToolPrintCategoryListView = Yoga::ListView<
         PrintToolSubcategoryListView,
         Biz::PrintToolItem,
@@ -113,7 +114,8 @@ protected:
             Biz::Preset::PresetInteractor&>,
         Yoga::StackLayout>;
 
-    using ToolLabelListView = Yoga::ListView<ToolLabel, bool>;
+    using ToolLabelFactory  = Yoga::ViewFactory<ToolLabel, bool, Biz::ProjectInteractor&>;
+    using ToolLabelListView = Yoga::ListView<ToolLabel, bool, ToolLabelFactory>;
 
     void close_action() override;
 

@@ -153,10 +153,8 @@ void SidebarPrint::add_row(Item* container, const std::string& label, std::uniqu
 
 void SidebarPrint::create_favorite_params()
 {
-    m_favorite_params_layout = m_content_area->emplace_back<PrintToolFavoritesItem>(
-        m_project_interactor.preset_interactor().print_tool_cbi(),
-        m_project_interactor.preset_interactor()
-    );
+    m_favorite_params_layout =
+        m_content_area->emplace_back<PrintToolFavoritesItem>(m_project_interactor);
 }
 
 void SidebarPrint::update_tools_visibility()

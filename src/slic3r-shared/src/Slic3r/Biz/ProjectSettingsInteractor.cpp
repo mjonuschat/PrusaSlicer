@@ -68,13 +68,13 @@ std::vector<Domain::ColorRGB> ProjectSettingsInteractor::get_colors(
         const Domain::ConfigContainer* cc = project.find_config_container(config_container_id);
         if (!cc)
             continue;
-        const auto config = cc->build_print_config();
-        const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-        if (!fdm)
-            return {};
-        const auto hex_colors = fdm->project.items.opt("extruder_colour")
-            .get<std::vector<std::string>>();
-        return hex_colors_to_rgb(hex_colors);
+
+        const Domain::ConfigItem* hex_colors_item =
+            cc->project_settings().items.find("extruder_colour");
+
+        return hex_colors_item ?
+            hex_colors_to_rgb(hex_colors_item->value().get<std::vector<std::string>>()) :
+            std::vector<Domain::ColorRGB>{};
     }
     return {};
 }

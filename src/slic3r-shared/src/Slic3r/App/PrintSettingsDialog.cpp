@@ -169,7 +169,8 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_category_stack_list_view =
         m_content_stack_layout->emplace_back<ToolPrintCategoryListView>(ToolPrintCategoryFactory{
             m_project_interactor.preset_interactor().print_tool_cbi(),
-            m_project_interactor.preset_interactor()
+            m_project_interactor.preset_interactor(),
+            m_project_interactor
         });
     m_category_stack_list_view->set_orientation(Orientation::Vertical);
     m_category_stack_list_view->set_flex_grow(1);
@@ -195,7 +196,8 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_bed_name = m_footer->emplace_back<Text>(std::string{});
     m_bed_name->set_flex_shrink(0);
 
-    m_tool_label_list_view = m_footer->emplace_back<ToolLabelListView>();
+    m_tool_label_list_view =
+        m_footer->emplace_back<ToolLabelListView>(ToolLabelFactory{m_project_interactor});
     m_tool_label_list_view->set_orientation(Orientation::Horizontal);
     m_tool_label_list_view->set_gap(14);
     m_tool_label_list_view->set_source_list(this);
