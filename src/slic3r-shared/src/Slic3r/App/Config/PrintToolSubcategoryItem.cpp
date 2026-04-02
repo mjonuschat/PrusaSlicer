@@ -21,7 +21,8 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
     size_t index,
     const Biz::PrintToolItem& data,
     Biz::PrintToolConfigBoxInteractor& cbi,
-    Biz::IConfigBoxSetter& cbi_setter
+    Biz::IConfigBoxSetter& cbi_setter,
+    Biz::ProjectInteractor& project_interactor
 ) :
     Biz::DataObserver<Biz::PrintToolItem>(index, data),
     m_cbi(cbi),
@@ -74,8 +75,9 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
 
     m_rows_filter_list->set_source_model(m_cbi.observable_list());
 
-    m_rows_list_view =
-        emplace_back<PrintToolRowListView>(PrintToolRowListViewFactory{m_cbi, m_cbi_setter});
+    m_rows_list_view = emplace_back<PrintToolRowListView>(
+        PrintToolRowListViewFactory{m_cbi, m_cbi_setter, project_interactor}
+    );
     m_rows_list_view->set_object_name("PrintToolRowListView");
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);

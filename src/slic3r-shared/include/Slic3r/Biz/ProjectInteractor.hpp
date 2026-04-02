@@ -2,6 +2,8 @@
 
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/IMdb.hpp"
+#include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/SLAObjectCache.hpp"
@@ -51,6 +53,7 @@ class IMessageDialogProvider;
 class ProjectInteractor final :
     public ISelectedBedInstancesChangedListener,
     public ISlicingInputChangedListener,
+    public IColorsChangedListener,
     public UserAccount::IUserAccountListener,
     public AppInstance::IAppInstanceMessageContentListener,
     public Scene::ISceneChangedListener,
@@ -63,6 +66,7 @@ public:
         m_scene_interactor(workbench),
         m_preset_interactor(workbench, m_scene_interactor),
         m_arrange_interactor(m_scene_interactor, workbench),
+        m_project_settings_interactor(workbench, m_null_mdb),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_result_export_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
@@ -76,6 +80,7 @@ public:
         m_scene_interactor.set_preset_visual_getter(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
+        add_listener<ISelectedConfigContainerChangedListener>(&m_project_settings_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_preset_interactor);
         m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
@@ -84,6 +89,8 @@ public:
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_scene_interactor);
+        m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_project_settings_interactor);
+        m_project_settings_interactor.add_listener<IColorsChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
@@ -302,6 +309,16 @@ public:
         return m_arrange_interactor;
     }
 
+    ProjectSettingsInteractor& project_settings_interactor()
+    {
+        return m_project_settings_interactor;
+    }
+
+    const ProjectSettingsInteractor& project_settings_interactor() const
+    {
+        return m_project_settings_interactor;
+    }
+
     Domain::SlicingId selected_bed_slicing_id() const;
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs &instances) override;
@@ -517,6 +534,11 @@ public:
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
+    void on_colors_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const std::vector<Domain::ColorRGB>& colors
+    ) override;
 
     Domain::SelectionId add_project(Domain::Project&& p, InvokeLaterBag& bag);
     void do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag);
@@ -544,6 +566,8 @@ private:
     Scene::SceneInteractor m_scene_interactor;
     Preset::PresetInteractor m_preset_interactor;
     ArrangeInteractor m_arrange_interactor;
+    NullMdb m_null_mdb;
+    ProjectSettingsInteractor m_project_settings_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
     SLAResultCache m_sla_result_cache;

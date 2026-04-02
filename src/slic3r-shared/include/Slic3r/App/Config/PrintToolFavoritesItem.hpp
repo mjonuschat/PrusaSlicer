@@ -16,6 +16,7 @@
 namespace Slic3r::Biz {
 class PrintToolConfigBoxInteractor;
 class IConfigBoxSetter;
+class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App {
@@ -26,20 +27,15 @@ class PrintToolFavoritesItem : public Yoga::Item
         PrintToolRowItem,
         Biz::PrintToolItem,
         Biz::PrintToolConfigBoxInteractor&,
-        Biz::IConfigBoxSetter&>;
+        Biz::IConfigBoxSetter&,
+        Biz::ProjectInteractor&>;
     using PrintToolRowListView =
         Yoga::ListView<PrintToolRowItem, Biz::PrintToolItem, PrintToolRowListViewFactory>;
 
 public:
-    PrintToolFavoritesItem(
-        Biz::PrintToolConfigBoxInteractor& cbi,
-        Biz::IConfigBoxSetter& cbi_setter
-    );
+    PrintToolFavoritesItem(Biz::ProjectInteractor& project_interactor);
 
 private:
-    Biz::PrintToolConfigBoxInteractor& m_cbi;
-    Biz::IConfigBoxSetter& m_cbi_setter;
-
     PrintToolRowListView* m_rows_list_view{nullptr};
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::PrintToolItem>> m_rows_filter_list;
 };

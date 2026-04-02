@@ -334,6 +334,21 @@ void MultiMaterialPaintingDialog::set_second_brush_color_index(size_t color_idx)
     m_second_brush_color_buttons[color_idx]->set_label_font_type(Render::ImguiFontType::Bold);
 }
 
+void MultiMaterialPaintingDialog::update_painting_colors(const std::vector<Domain::ColorRGBA>& colors)
+{
+    const size_t count = std::min(colors.size(), m_first_brush_color_buttons.size());
+    for (size_t i = 0; i < count; ++i) {
+        const Domain::ColorRGBA& clr = colors[i];
+        const Domain::ColorRGBA checked = Color::saturate(clr, 0.75f);
+        const ImColor im_clr{clr.r_uchar(), clr.g_uchar(), clr.b_uchar(), clr.a_uchar()};
+        const ImColor im_checked{checked.r_uchar(), checked.g_uchar(), checked.b_uchar(), checked.a_uchar()};
+        m_first_brush_color_buttons[i]->set_background_color(im_clr);
+        m_first_brush_color_buttons[i]->set_background_color_checked(im_checked);
+        m_second_brush_color_buttons[i]->set_background_color(im_clr);
+        m_second_brush_color_buttons[i]->set_background_color_checked(im_checked);
+    }
+}
+
 void MultiMaterialPaintingDialog::set_tool_type(const PaintOnGizmoBase::ToolType& tool_type)
 {
     switch (tool_type) {

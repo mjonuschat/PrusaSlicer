@@ -293,7 +293,7 @@ ArrangeBed get_arrange_bed(
     const ConfigContainer* config_container{project.find_config_container(bed_ref.config_container_id)};
 
     double brim_width{0.0};
-    const ConfigPack& config{config_container->print_config()};
+    const ConfigPack& config{config_container->build_print_config()};
     if (std::holds_alternative<ConfigPackFDM>(config)) {
         const ConfigPackFDM& fdm_config{std::get<ConfigPackFDM>(config)};
         brim_width = fdm_config.print.items.opt("brim_width").get<double>();

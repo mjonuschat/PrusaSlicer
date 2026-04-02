@@ -2,20 +2,15 @@
 
 #include <Slic3r/Domain/Config.hpp>
 
-#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PrintToolFavoritesItem::PrintToolFavoritesItem(
-    Biz::PrintToolConfigBoxInteractor& cbi,
-    Biz::IConfigBoxSetter& cbi_setter
-) :
-    m_cbi(cbi),
-    m_cbi_setter(cbi_setter),
+PrintToolFavoritesItem::PrintToolFavoritesItem(Biz::ProjectInteractor& project_interactor) :
     m_rows_filter_list(std::make_shared<Biz::ObservableListSortFilter<Biz::PrintToolItem>>())
 {
     set_object_name("PrintToolFavoritesItem");
@@ -23,7 +18,7 @@ PrintToolFavoritesItem::PrintToolFavoritesItem(
     set_flex_shrink(0);
 
     m_rows_filter_list->set_filter_fn(
-        [this](const Biz::PrintToolItem& item) -> bool { return item.is_favorite; }
+        [](const Biz::PrintToolItem& item) -> bool { return item.is_favorite; }
     );
 
     m_rows_filter_list->set_sort_fn(
@@ -38,10 +33,15 @@ PrintToolFavoritesItem::PrintToolFavoritesItem(
         }
     );
 
-    m_rows_filter_list->set_source_model(m_cbi.observable_list());
+    m_rows_filter_list->set_source_model(
+        project_interactor.preset_interactor().print_tool_cbi().observable_list()
+    );
 
-    m_rows_list_view =
-        emplace_back<PrintToolRowListView>(PrintToolRowListViewFactory{m_cbi, m_cbi_setter});
+    m_rows_list_view = emplace_back<PrintToolRowListView>(PrintToolRowListViewFactory{
+        project_interactor.preset_interactor().print_tool_cbi(),
+        project_interactor.preset_interactor(),
+        project_interactor
+    });
     m_rows_list_view->set_object_name("PrintToolRowFavoritesListView");
     m_rows_list_view->set_orientation(Orientation::Vertical);
 

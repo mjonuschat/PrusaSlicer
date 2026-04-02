@@ -6,6 +6,8 @@
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -21,10 +23,13 @@ namespace Slic3r::App {
 ToolRowControl::ToolRowControl(
     size_t index,
     const ToolRowOverride& data,
-    Biz::IConfigBoxSetter& cb_setter
+    Biz::IConfigBoxSetter& cb_setter,
+    Biz::ProjectInteractor& project_interactor
 ) :
     Biz::DataObserver<ToolRowOverride>(index, data),
-    m_cb_setter(cb_setter)
+    m_cb_setter(cb_setter),
+    m_project_interactor(project_interactor),
+    m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -57,6 +62,15 @@ ToolRowControl::ToolRowControl(
     on_data_update();
 }
 
+void ToolRowControl::on_colors_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const std::vector<Domain::ColorRGB>& colors
+)
+{
+    update_color(colors);
+}
+
 void ToolRowControl::on_data_update()
 {
     bool overriden = m_state->overriden;
@@ -71,8 +85,9 @@ void ToolRowControl::on_data_update()
     );
     m_switch_override->set_tooltip_position(Position::Top);
 
-    const ImColor text_color     = m_theme->color_imgui(Platform::Color::Text);
-    const ImColor disabled_color = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
+    const ImColor text_color = m_theme->color_imgui(Platform::Color::Text);
+    const ImColor disabled_color =
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
 
     m_switch_override->set_icon_tint(overriden ? text_color : disabled_color);
     const Domain::ConfigItem* config_item = m_state->override_item;
@@ -110,10 +125,7 @@ void ToolRowControl::on_data_update()
         }
     }
 
-    ImColor color =
-        m_state->extruder_candidate ? ConfigItemUtils::colors.at(m_index) : disabled_color;
-    m_icon->set_tint(color);
-    m_label->set_text_color(color);
+    update_color();
 
     m_default_label->set_visible(!overriden);
     m_in_use_label->set_visible(m_state->extruder_candidate);
@@ -127,6 +139,37 @@ void ToolRowControl::on_data_update()
 void ToolRowControl::on_index_update()
 {
     m_label->set_text(Biz::_u8L("Tool") + " " + std::to_string(m_index + 1));
+}
+
+void ToolRowControl::update_color()
+{
+    update_color(m_project_interactor.project_settings_interactor().get_colors(
+        m_project_interactor.selected_config_container_id()
+    ));
+}
+
+void ToolRowControl::update_color(const std::vector<Domain::ColorRGB> colors)
+{
+    ImColor color;
+    if (m_state->extruder_candidate) {
+        if (m_index < colors.size()) {
+            const Domain::ColorRGB& color_domain = colors.at(m_index);
+            color = {color_domain.r(), color_domain.g(), color_domain.b()};
+        } else {
+            Domain::ColorRGB color_domain;
+            ASSERT(
+                Biz::Algorithms::Color::decode_color(
+                    Biz::ProjectSettingsInteractor::palette_color(m_index),
+                    color_domain
+                )
+            );
+            color = {color_domain.r(), color_domain.g(), color_domain.b()};
+        }
+    } else {
+        color = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
+    }
+    m_icon->set_tint(color);
+    m_label->set_text_color(color);
 }
 
 } // namespace Slic3r::App

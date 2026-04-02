@@ -41,6 +41,9 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->callbacks().second_brush_color_changed = [this](size_t color_idx)
     { m_second_brush_color_idx = color_idx; };
 
+    m_project_interactor.project_settings_interactor()
+        .add_listener<Biz::IColorsChangedListener>(this);
+
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
     { m_tool_type = tool_type; };
 
@@ -78,7 +81,11 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->callbacks().painting_reset = [this]() { this->clear_all_paintings(); };
 }
 
-MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo() = default;
+MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
+{
+    m_project_interactor.project_settings_interactor()
+        .remove_listener<Biz::IColorsChangedListener>(this);
+}
 
 Scene::ToolType MultiMaterialPaintingGizmo::type() const
 {
@@ -173,16 +180,36 @@ void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(double value)
 
 std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_colors() const
 {
-    return {
-        ColorRGBA::RED(),
-        ColorRGBA::GREEN(),
-        ColorRGBA::BLUE(),
-        ColorRGBA::YELLOW(),
-        ColorRGBA::MAGENTA(),
-        ColorRGBA::CYAN(),
-        ColorRGBA::GRAY(),
-        ColorRGBA::BLACK()
-    };
+    const auto& psi = m_project_interactor.project_settings_interactor();
+    const auto rgb_colors = psi.get_colors(m_project_interactor.selected_config_container_id());
+
+    constexpr int TOTAL = 16;
+    std::vector<ColorRGBA> result;
+    result.reserve(TOTAL);
+    for (int i = 0; i < TOTAL; ++i) {
+        if (i < static_cast<int>(rgb_colors.size())) {
+            const auto& c = rgb_colors[i];
+            result.emplace_back(c.r(), c.g(), c.b(), 1.0f);
+        } else {
+            // Padding slots beyond the actual extruder count — not visible to the user.
+            const float shade = 0.3f + 0.7f * (float(i) / (TOTAL - 1));
+            result.emplace_back(shade, shade, shade, 1.0f);
+        }
+    }
+    return result;
+}
+
+void MultiMaterialPaintingGizmo::on_colors_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId /*config_container_id*/,
+    const std::vector<Domain::ColorRGB>& /*colors*/
+)
+{
+    m_painting_colors = this->create_painting_colors();
+    if (m_dialog.get())
+        m_dialog->update_painting_colors(m_painting_colors);
+    for (auto& wrapper : m_triangle_selector_wrappers)
+        wrapper.update_painted_geometry(m_device);
 }
 
 } // namespace Slic3r::App::Plater

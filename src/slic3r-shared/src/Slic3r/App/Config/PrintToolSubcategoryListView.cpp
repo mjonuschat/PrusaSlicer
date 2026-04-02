@@ -17,13 +17,14 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
     size_t index,
     const Biz::PrintToolItem& data,
     Biz::PrintToolConfigBoxInteractor& cbi,
-    Biz::IConfigBoxSetter& cbi_setter
+    Biz::IConfigBoxSetter& cbi_setter,
+    Biz::ProjectInteractor& project_interactor
 ) :
     ListView<
         PrintToolSubcategoryItem,
         Biz::PrintToolItem,
         PrintToolSubcategoryListViewFactory,
-        ScrollArea>(PrintToolSubcategoryListViewFactory{cbi, cbi_setter}),
+        ScrollArea>(PrintToolSubcategoryListViewFactory{cbi, cbi_setter, project_interactor}),
     Biz::DataObserver<Biz::PrintToolItem>(index, data),
     m_cbi(cbi),
     m_cbi_setter(cbi_setter),

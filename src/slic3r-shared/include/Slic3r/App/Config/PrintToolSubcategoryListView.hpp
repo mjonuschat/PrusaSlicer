@@ -27,7 +27,8 @@ using PrintToolSubcategoryListViewFactory = Yoga::ViewFactory<
     PrintToolSubcategoryItem,
     Biz::PrintToolItem,
     Biz::PrintToolConfigBoxInteractor&,
-    Biz::IConfigBoxSetter&>;
+    Biz::IConfigBoxSetter&,
+    Biz::ProjectInteractor&>;
 
 class PrintToolSubcategoryListView :
     public Yoga::ListView<
@@ -43,7 +44,8 @@ public:
         size_t index,
         const Biz::PrintToolItem& data,
         Biz::PrintToolConfigBoxInteractor& cbi,
-        Biz::IConfigBoxSetter& cbi_setter
+        Biz::IConfigBoxSetter& cbi_setter,
+        Biz::ProjectInteractor& project_interactor
     );
 
     void navigate_to_item(const Domain::ConfigItem* config_item) override;

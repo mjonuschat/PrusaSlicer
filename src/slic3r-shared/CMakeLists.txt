@@ -1002,6 +1002,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
 
+        include/Slic3r/Biz/IMdb.hpp
+        include/Slic3r/Biz/IColorsChangedListener.hpp
+        include/Slic3r/Biz/ProjectSettingsInteractor.hpp
+        src/Slic3r/Biz/ProjectSettingsInteractor.cpp
+
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
@@ -1297,6 +1302,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
 
         test/Slic3r/Biz/ArrangeInteractorTests.cpp
+        test/Slic3r/Biz/ProjectSettingsInteractorTests.cpp
 
         test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp

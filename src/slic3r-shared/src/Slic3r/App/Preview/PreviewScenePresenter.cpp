@@ -10,6 +10,23 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include <Slic3r/App/libvgcode/SlaObjectNodeTag.hpp>
 
+namespace {
+
+std::optional<Slic3r::Domain::ColorRGBA> color_from_extruder_slot(
+    const std::vector<Slic3r::Domain::ColorRGB>& slot_colors,
+    const Slic3r::Domain::ModelVolume& vol)
+{
+    const int raw_id = vol.extruder_id();
+    const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
+    if (slot < static_cast<int>(slot_colors.size())) {
+        const auto& c = slot_colors[slot];
+        return Slic3r::Domain::ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
 namespace Slic3r::App::Preview {
 
 PreviewScenePresenter::PreviewScenePresenter(
@@ -187,13 +204,16 @@ void PreviewScenePresenter::add_shells()
     const auto& model = project.model();
     const auto& ccs = project.config_containers();
 
-    // collect all model instances on bed
+    // collect all model instances on bed + map instance_id → config_container_id
     Domain::ModelInstanceList instances_on_bed;
+    std::unordered_map<Domain::SelectionId, Domain::SelectionId> mi_to_cc_map;
     for (const auto& cc : ccs) {
         const auto& bis = cc->bed_instances();
         for (const auto& bi : bis) {
             instances_on_bed.reserve(instances_on_bed.size() + bi->model_instances.size());
             instances_on_bed.insert(instances_on_bed.end(), bi->model_instances.begin(), bi->model_instances.end());
+            for (const auto* mi : bi->model_instances)
+                mi_to_cc_map[mi->id().id] = cc->id().id;
         }
     }
 
@@ -238,8 +258,20 @@ void PreviewScenePresenter::add_shells()
                         const auto* geom = geom_mgr.get_or_create(id, [&]() {
                             return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles()); });
 
-                        auto color_it = Scene::VOLUME_COLORS.find(vol->type());
-                        Domain::ColorRGBA clr = (color_it != Scene::VOLUME_COLORS.end()) ? color_it->second : Domain::ColorRGBA::WHITE();
+                        Domain::ColorRGBA clr = Domain::ColorRGBA::WHITE();
+                        if (vol->is_model_part()) {
+                            auto cc_it = mi_to_cc_map.find(inst->id().id);
+                            if (cc_it != mi_to_cc_map.end()) {
+                                const auto& slot_colors = m_project_interactor
+                                    .project_settings_interactor().get_colors(cc_it->second);
+                                if (auto c = color_from_extruder_slot(slot_colors, *vol))
+                                    clr = *c;
+                            }
+                        } else {
+                            auto color_it = Scene::VOLUME_COLORS.find(vol->type());
+                            if (color_it != Scene::VOLUME_COLORS.end())
+                                clr = color_it->second;
+                        }
                         clr.a(0.5f); // make shells semi-transparent
 
                         auto material = Render::Material{}

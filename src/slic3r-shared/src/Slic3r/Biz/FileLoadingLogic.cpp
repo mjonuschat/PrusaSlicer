@@ -959,6 +959,14 @@ static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider
         mutable_selected_preset =
             Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
 
+        if (const auto& fdm_config_pack = std::get_if<Domain::ConfigPackFDM>(&cc_data.config_pack)) {
+            cc.project_settings() = fdm_config_pack->project;
+        } else if (const auto& sla_config_pack = std::get_if<Domain::ConfigPackSLA>(&cc_data.config_pack)) {
+            // TODO: cc.project_settings() = sla_config_pack->project;
+        } else {
+            PANIC("Unhandled variant of config pack");
+        }
+
         // Always add one bed instance.
         cc.set_bed(Scene::get_or_create_bed(project.bed_container(), cc, resources_dir()));
         cc.add_bed_instance();

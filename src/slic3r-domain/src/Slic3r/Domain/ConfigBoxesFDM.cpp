@@ -956,18 +956,13 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
     def->init_fn = init_with(0);
-        
-    def = defs.add("extruder_colour", typeid(std::string));
-    def->location = Print;
-    def->overrides_in = { Tool };
-    def->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Nozzle;
-    def->category = ConfigItemDef::Category::Print_ExtrusionRetraction;
-    def->order = 1;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->label = L("Extruder Color");
-    def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
+
+    def = defs.add("extruder_colour", typeid(std::vector<std::string>));
+    def->location = Project;
+    def->label = "Extruder Color";
+    def->category = ConfigItemDef::Category::Hidden;
     def->gui_type = ConfigItemDef::GUIType::color;
-    def->init_fn = init_with(""); // Empty string means no color assigned yet.
+    def->init_fn = init_with(std::vector<std::string>{});
 
     def = defs.add("extruder_offset", typeid(std::vector<Vec2d>));
     def->location = Printer;
@@ -1095,10 +1090,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_colour", typeid(std::string));
     def->location = Filament;
     def->label = L("Color");
-    def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_MaterialProperty;
-    def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
+    // TODO: This option is temporarily hidden from the UI, until we handle it properly.
+    // The plan is to make it std::optional<std::string>. Currently it is used as
+    // a fallback, but once it is overridden at project level, it cannot be restored
+    // (there is no UI to do it).
+    //def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_MaterialProperty;
+    def->category = ConfigItemDef::Category::Hidden; //Filament_MaterialTemperatures;
     def->order = 1;
-    def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
+    def->tooltip = L("Leave unused if the filament profile isn't tied to a specific color. "
+                     "Color can still be set at project-level.");
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with("#29B2B2");
 

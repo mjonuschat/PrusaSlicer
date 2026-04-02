@@ -55,6 +55,8 @@ public:
 
     void set_second_brush_color_index(size_t color_idx);
 
+    void update_painting_colors(const std::vector<Domain::ColorRGBA>& colors);
+
 private:
     void update_visibility();
 
