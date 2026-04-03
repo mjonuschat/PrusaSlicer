@@ -11,7 +11,14 @@ Menu::Menu(const std::string& name, Position position)
     set_orientation(Orientation::Vertical);
     set_padding({3.f, 3.f});
     set_gap(3.f);
-    set_flags(flags() | ImGuiWindowFlags_NoFocusOnAppearing);
+
+    // FIXME: This is a hideous way to prevent the one in-dialog menu
+    // to open under its parent. The extra flag is needed for context menus, though.
+    // This needs a better fix, but let's brush it under the carpet for now.
+    if (name == "SavePresetMenu")
+        set_flags(flags());
+    else
+        set_flags(flags() | ImGuiWindowFlags_NoFocusOnAppearing);
 }
 
 MenuItem* Menu::append_item(
