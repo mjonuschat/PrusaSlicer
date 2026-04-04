@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <variant>
+
 namespace Slic3r::App {
 
 enum class MenuItemName
@@ -164,5 +167,38 @@ enum class MenuItemName
     ReloadVolume,
     SplitVolume,
     FixVolumeWithRepairAlgorithm,
+
+    Plugins,
+    PluginRescan
 };
+
+class UniversalMenuItemName: public std::variant<MenuItemName, std::string>
+{
+    using Base = std::variant<MenuItemName, std::string>;
+public:
+    using Base::variant;
+
+    bool operator==(const UniversalMenuItemName& other) const
+    {
+        return static_cast<const Base&>(*this) == static_cast<const Base&>(other);
+    }
+
+    bool matches(MenuItemName name) const
+    {
+        return std::holds_alternative<MenuItemName>(*this) && std::get<MenuItemName>(*this) == name;
+    }
+};
+
+
+
 } // namespace Slic3r::App
+
+template <>
+struct std::hash<Slic3r::App::UniversalMenuItemName>
+{
+    std::size_t operator()(const Slic3r::App::UniversalMenuItemName& item) const noexcept
+    {
+        using Base = std::variant<Slic3r::App::MenuItemName, std::string>;
+        return std::hash<Base>{}(static_cast<const Base&>(item));
+    }
+};

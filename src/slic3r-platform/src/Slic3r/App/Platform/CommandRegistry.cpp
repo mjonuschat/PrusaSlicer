@@ -46,4 +46,14 @@ bool CommandRegistry::has_command(const char* name) const
     return m_commands_by_id.contains(name);
 }
 
+bool CommandRegistry::remove_command(const char* name)
+{
+    auto it = m_commands_by_id.find(name);
+    if (it != m_commands_by_id.end()) {
+        m_commands_by_id.erase(it);
+        return true;
+    }
+    return false;
+}
+
 } // namespace Slic3r::App::Platform

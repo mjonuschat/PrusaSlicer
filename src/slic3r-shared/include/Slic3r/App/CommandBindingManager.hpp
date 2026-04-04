@@ -42,6 +42,8 @@ public:
 
     void bind_tb_item(const char* command_name, Yoga::AbstractButton* ui_item);
 
+    void unbind_ui_item(const Yoga::AbstractButton* ui_item);
+
     void update_ui_items();
 
     Platform::CommandRegistry& main_command_registry()
@@ -74,10 +76,13 @@ public:
 private:
     void bind(const char* command_name, Yoga::AbstractButton* ui_item);
 
+    using UIItemToCommandMap = std::unordered_map<const Yoga::AbstractButton*, std::string>;
+
     Platform::CommandRegistry& m_main_command_registry;
     const Scene::GizmoCommandRegistry* m_gizmos_command_registry{nullptr};
 
     UIItemsPerCommandMap m_ui_items;
+    UIItemToCommandMap m_ui_item_to_command;
 };
 
 } // namespace Slic3r::App

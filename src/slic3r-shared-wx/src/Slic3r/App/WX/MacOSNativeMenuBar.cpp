@@ -41,6 +41,8 @@ MacOSNativeMenuBar::~MacOSNativeMenuBar()
 
 void MacOSNativeMenuBar::build_from_menu_manager()
 {
+    // Note on second run: the m_menu_bar is owned by the main frame,
+    // so it will be deleted when setting this new one to the main frame.
     m_menu_bar = new wxMenuBar();
 
     // Build FileMenu
@@ -54,6 +56,8 @@ void MacOSNativeMenuBar::build_from_menu_manager()
 
     // Build Config Menu
     build_menu_from_name(MenuItemName::Configuration);
+
+    build_menu_from_name(MenuItemName::Plugins);
 
     // Build Help menu (Help button in TopBar)
     build_menu_from_name(MenuItemName::Help);
@@ -139,9 +143,9 @@ void MacOSNativeMenuBar::populate_menu(wxMenu* wx_menu, MenuItem* parent_item)
 
         wxString label = from_u8(MenuBuilder::item_name_translated(item->name()));
 
-        if (item->name() == MenuItemName::RecentProjects) {
+        if (item->name().matches(MenuItemName::RecentProjects))
+        {
             // Recent project is an empty Submenu populated later
-            ASSERT(!m_recent_project_menu, "Recent project menu was added twice");
             m_recent_project_menu = new wxMenu();
             m_recent_project_item = wx_menu->AppendSubMenu(m_recent_project_menu, label);
         } else if (!item->children().empty()) {
@@ -299,6 +303,11 @@ void MacOSNativeMenuBar::on_project_loaded(Domain::SelectionId project_id)
 void MacOSNativeMenuBar::on_project_saved(Domain::SelectionId project_id)
 {
     update_recent_projects();
+}
+
+void MacOSNativeMenuBar::on_menu_updated()
+{
+    build_from_menu_manager();
 }
 
 void MacOSNativeMenuBar::update_recent_projects()

@@ -685,6 +685,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/UIItemCommand.hpp
         include/Slic3r/App/MenuBuilder.hpp
         src/Slic3r/App/MenuBuilder.cpp
+		include/Slic3r/App/IMenuUpdatedListener.hpp
         include/Slic3r/App/MenuManager.hpp
         src/Slic3r/App/MenuManager.cpp
         include/Slic3r/App/CommandBindingManager.hpp
@@ -913,14 +914,20 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Emboss/NSVGUtils.hpp
         include/Slic3r/Biz/Emboss/TextPresetManager.hpp
         include/Slic3r/Biz/Emboss/TextLines.hpp
+		include/Slic3r/Biz/Emboss/ShapeProvider.hpp
         include/Slic3r/Biz/Emboss/SurfaceDrag.hpp
+		include/Slic3r/Biz/Emboss/SvgShapeProvider.hpp
+		include/Slic3r/Biz/Emboss/TextShapeProvider.hpp
         include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp
         src/Slic3r/Biz/Emboss/Emboss.cpp
         src/Slic3r/Biz/Emboss/EmbossJob.cpp
         src/Slic3r/Biz/Emboss/NSVGUtils.cpp
         src/Slic3r/Biz/Emboss/TextPresetManager.cpp
         src/Slic3r/Biz/Emboss/TextLines.cpp
+		src/Slic3r/Biz/Emboss/ShapeProvider.cpp
         src/Slic3r/Biz/Emboss/SurfaceDrag.cpp
+		src/Slic3r/Biz/Emboss/SvgShapeProvider.cpp
+		src/Slic3r/Biz/Emboss/TextShapeProvider.cpp
         src/Slic3r/Biz/Emboss/stbtt_FlattenCurves.cpp
 
         include/Slic3r/Biz/Network/IHttp.hpp
@@ -1147,6 +1154,18 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Undo/BedSelectionStateSerialize.cpp
 		src/Slic3r/App/Undo/ToolStateSerialize.hpp
 		src/Slic3r/App/Undo/ToolStateSerialize.cpp
+
+		include/Slic3r/App/Lua/ProjectApi.hpp
+		src/Slic3r/App/Lua/ProjectApi.cpp
+		include/Slic3r/App/Lua/Plugin.hpp
+		src/Slic3r/App/Lua/Plugin.cpp
+		include/Slic3r/App/Lua/PluginRegistry.hpp
+		src/Slic3r/App/Lua/PluginRegistry.cpp
+		include/Slic3r/App/Lua/PluginSystem.hpp
+		src/Slic3r/App/Lua/PluginSystem.cpp
+		include/Slic3r/App/Lua/PluginDialog.hpp
+		src/Slic3r/App/Lua/PluginDialog.cpp
+		include/Slic3r/App/Lua/IPluginRescanListener.hpp
 )
 
 if (WIN32)
@@ -1277,6 +1296,7 @@ endif()
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render
+		slic3r-biz-lua
         libvgcode
         libslic3r
         libpgcode
@@ -1373,6 +1393,7 @@ if (SLIC3R_DEBUG_PRESET_CACHE)
 endif()
 
 add_target_to_doxygen(slic3r-shared)
+add_target_to_lua_docs(slic3r-shared)
 slic3r_add_tracy(slic3r-shared)
 
 if (SLIC3R_PCH)

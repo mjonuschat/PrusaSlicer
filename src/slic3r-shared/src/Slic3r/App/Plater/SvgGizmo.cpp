@@ -21,6 +21,7 @@
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs
+#include <Slic3r/Biz/Emboss/SvgShapeProvider.hpp>
 #include <Slic3r/Biz/Emboss/NSVGUtils.hpp>
 #include <Slic3r/Biz/Algorithms/BoundingBox.hpp>
 #include <Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp>
@@ -34,13 +35,8 @@ using Slic3r::Biz::_u8L;
 
 namespace {
 using namespace Slic3r;
-
-struct Scale
-{
-    std::optional<float> width;
-    std::optional<float> height;
-    std::optional<float> depth;
-};
+using Slic3r::Biz::Emboss::Scale;
+using Slic3r::Biz::Emboss::SvgShapeProvider;
 
 struct ProjectContext
 {
@@ -59,7 +55,7 @@ struct ProjectContext
 
     Scale volume_scale; // setted in function calc_scale()
 
-    // Is used to edit eboss and send changes to job
+    // Is used to edit emboss and send changes to job
     // Inside volume is current state of shape WRT Volume
     Domain::EmbossShape shape; // copy from m_volume for edit
     // Contain EmbossProjection (with depth and use_surface)
@@ -878,35 +874,8 @@ std::string create_shape_warnings(const Domain::EmbossShape& shape, float min_sc
     return warnings;
 }
 
-// create shape from svg when not created
-class SvgShapeProvider : public Biz::Emboss::ShapeProvider
-{
-    const Scale& m_scale;
-
-public:
-    SvgShapeProvider(const Domain::EmbossShape& shape, const Scale& scale) :
-        ShapeProvider(shape),
-        m_scale(scale)
-    {
-        ASSERT(m_shape.svg_file.has_value());
-        ASSERT(m_shape.svg_file->file_data != nullptr);
-    }
-
-    bool create_shape() override
-    {
-        if (m_shape.shapes_with_ids.empty())
-            Biz::Emboss::read_shape_from_file(m_shape, m_scale.width, m_scale.height);
-        return !m_shape.shapes_with_ids.empty();
-    }
-};
-
-void calc_from_surface(
-    ProjectContext& proj_ctx,
-    const Domain::Project& project,
-    const Domain::ElementRef& ref,
-    PlaterScenePresenter& scene_presenter
-)
-{
+void calc_from_surface(ProjectContext& proj_ctx, const Domain::Project& project,
+    const Domain::ElementRef& ref, PlaterScenePresenter& scene_presenter) {
     Scene::Node& root = scene_presenter.scene().root();
     auto distance_exp = Biz::Emboss::calc_distance(project, ref, root);
     proj_ctx.exist_surface_point =
@@ -1042,11 +1011,13 @@ Biz::Emboss::BaseData create_base_data(
 {
     Domain::SelectionId project_id = project_interactor.selected_project_id();
     return Biz::Emboss::BaseData{
-        .shape_provider = std::make_unique<SvgShapeProvider>(proj_ctx.shape, proj_ctx.volume_scale),
+        .tri_mesh = {
+            .shape_provider = std::make_unique<SvgShapeProvider>(proj_ctx.shape, proj_ctx.volume_scale),
+            .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
+        },
         .project_interactor = project_interactor,
-        .project_id         = project_id,
-        .is_outside         = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-        //.volume_name = get_filename(*proj_ctx.shape.svg_file), -> "do not reset name"
+        .project_id = project_id,
+         //.volume_name = get_filename(*proj_ctx.shape.svg_file), -> "do not reset name"
         .issue_fn = std::move(issue_fn)
     };
 }

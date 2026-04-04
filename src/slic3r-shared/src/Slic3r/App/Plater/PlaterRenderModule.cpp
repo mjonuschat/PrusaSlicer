@@ -1,5 +1,6 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 
+#include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -96,6 +97,7 @@
 #include "Slic3r/App/MenuBuilder.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
+#include "Slic3r/App/Lua/PluginDialog.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -131,11 +133,16 @@ PlaterRenderModule::PlaterRenderModule(
     m_project_interactor(project_interactor),
     m_undo_store(undo_store),
     m_font_manager(std::move(font_manager)),
+    m_menu_manager(m_command_registry),
+    m_command_binding_manager(m_command_registry),
+    m_plugin_system(
+        {resources_dir() + "/lua", data_dir() + "/lua"},
+        project_interactor,
+        *m_font_manager
+    ),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
-    m_thumbnail_image_generator(thumbnail_image_generator),
-    m_menu_manager(m_command_registry),
-    m_command_binding_manager(m_command_registry)
+    m_thumbnail_image_generator(thumbnail_image_generator)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -206,6 +213,11 @@ Scene::IToolGizmo* PlaterRenderModule::tool_gizmo(Scene::ToolType type, Domain::
 std::shared_ptr<Scene::ModelGeometryProvider> PlaterRenderModule::shared_model_geometry_provider()
 {
     return m_scene_presenter->model_geometry_provider();
+}
+
+Lua::PluginSystem& PlaterRenderModule::plugin_system()
+{
+    return m_plugin_system;
 }
 
 void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
@@ -319,6 +331,9 @@ void PlaterRenderModule::on_init(
 
     init_gizmos();
     init_scene();
+
+    m_plugin_system.rescan();
+
     init_scene_layout();
     init_dialog_navigation();
 
@@ -555,7 +570,8 @@ void PlaterRenderModule::init_scene_layout()
         this,
         *m_thumbnail_store,
         *m_render_module_navigator,
-        &m_undo_store
+        &m_undo_store,
+        &m_plugin_system
     );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
@@ -599,7 +615,8 @@ void PlaterRenderModule::init_scene_layout()
         m_sidebar_action_buttons.release(),
         m_history.release(),
         m_number_entry_dialog.release(),
-        m_welcome_dialog.release()
+        m_welcome_dialog.release(),
+        m_plugin_system.init_dialog().release()
     ));
     m_layout->init();
 

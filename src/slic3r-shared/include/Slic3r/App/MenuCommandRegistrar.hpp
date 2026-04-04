@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/ModelVolume.hpp"
 #include "Slic3r/App/Wildcards.hpp"
+
 #include <string>
 
 namespace Slic3r::App::Platform {
@@ -17,6 +18,10 @@ namespace Slic3r::Biz {
 class ClipboardInteractor;
 class ProjectInteractor;
 } // namespace Slic3r::Biz
+
+namespace Slic3r::App::Lua {
+class PluginSystem;
+} // namespace Slic3r::App::Lua
 
 namespace Slic3r::App {
 
@@ -34,18 +39,21 @@ public:
         ThumbnailStore& thumbnail_store
     );
 
-    void register_top_bar_menus();
+    void register_top_bar_menus(Lua::PluginSystem* plugin_system = nullptr);
     void register_context_menus(
         Scene::GeometryDataFactory& data_factory,
         Scene::ISceneProvider* scene_provider
     );
 
+    void update_main_menu_plugin_commands(Lua::PluginSystem& plugin_system);
+
 private:
 
     void register_undo_redo_commands();
-    void register_main_menu_commands();
+    void register_main_menu_commands(Lua::PluginSystem* plugin_system);
     void register_main_menu_edit_commands();
     void register_main_menu_view_commands();
+    void register_main_menu_plugin_commands(Lua::PluginSystem& plugin_system);
     void register_main_menu_config_commands();
     void register_main_menu_help_commands();
 

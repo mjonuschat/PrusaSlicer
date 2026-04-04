@@ -15,6 +15,7 @@ if (MSVC OR APPLE OR EMSCRIPTEN)
 #        -DCMAKE_C_FLAGS=-pthread
 #        -DM_LIBRARY=
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DPNG_SHARED=OFF
         -DPNG_STATIC=ON
         -DPNG_PREFIX=prusaslicer_

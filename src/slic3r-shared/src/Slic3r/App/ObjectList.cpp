@@ -434,8 +434,10 @@ static bool has_overrides(const Domain::ModelObject* object, bool is_sla_config)
 static bool is_simple(const Domain::ModelObject* object, bool is_sla_config)
 {
     return object->instances.size() == 1
-        && object->volumes.size() == 1
-        && !has_overrides(object, is_sla_config);
+        && object->volumes.size() == 1;
+        // In current design we don't have node specific for overrides
+        // TODO: remove it once we know for sure we don't need it
+        //&& !has_overrides(object, is_sla_config);
 }
 
 static bool is_imgui_item_just_selected()

@@ -1,8 +1,6 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
-#include "Slic3r/App/Plater/TextGizmo.hpp"
-#include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/Domain/TemplateUtils.hpp"

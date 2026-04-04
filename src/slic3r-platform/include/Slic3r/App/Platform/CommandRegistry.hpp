@@ -35,6 +35,8 @@ public:
     bool has_command(const char* name) const;
     const CommandsMap& commands() const { return m_commands_by_id; }
 
+    bool remove_command(const char* name);
+
 private:
     CommandsMap m_commands_by_id;
 };

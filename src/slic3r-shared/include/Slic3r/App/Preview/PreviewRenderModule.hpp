@@ -32,6 +32,10 @@ class ThumbnailStoreUpdater;
 class Navigator;
 } // namespace Slic3r::App
 
+namespace Slicer::App::Lua {
+class PluginSystem;
+}
+
 namespace Slic3r::App::Preview {
 
 struct ExtrudersSequence;
@@ -71,7 +75,8 @@ public:
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
         std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
-        Scene::ISharedModelGeometryProvider* model_geometry_provider
+        Scene::ISharedModelGeometryProvider* model_geometry_provider,
+        Lua::PluginSystem* plugin_system
     ) :
         m_workbench(workbench),
         m_project_interactor(project_interactor),
@@ -82,6 +87,7 @@ public:
         m_menu_manager(m_command_registry),
         m_command_binding_manager(m_command_registry),
         m_shared_model_geometry_provider(model_geometry_provider),
+        m_plugin_system(plugin_system),
         m_gcode_view_type_states(m_project_interactor)
     {}
 
@@ -255,9 +261,10 @@ private:
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
+    Lua::PluginSystem* m_plugin_system{nullptr};
+    Biz::ProjectScoped<ProjectGCodeViewTypeStates> m_gcode_view_type_states;
     bool m_active{false};
 
-    Biz::ProjectScoped<ProjectGCodeViewTypeStates> m_gcode_view_type_states;
 
 private:
     void init_gizmos();

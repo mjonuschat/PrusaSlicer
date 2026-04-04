@@ -1,5 +1,6 @@
 #include "Slic3r/App/MenuCommandRegistrar.hpp"
 
+#include "Slic3r/Directories.hpp"
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
@@ -17,6 +18,7 @@
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Localization.hpp"
+#include "Slic3r/App/Lua/ProjectApi.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -133,13 +135,13 @@ private:
 private:
     struct CommandElement
     {
-        std::vector<MenuItemName> path;
+        std::vector<UniversalMenuItemName> path;
         const char* name; // nullptr means separator
         std::function<void()> action{nullptr}; // nullptr means use already registered command
         UIItemCommandExtraOpts extra_opts;
     };
 
-    std::vector<MenuItemName> m_path;
+    std::vector<UniversalMenuItemName> m_path;
     std::vector<CommandElement> m_commands;
 
     MenuManager& m_menu_manager;
@@ -162,10 +164,10 @@ MenuCommandRegistrar::MenuCommandRegistrar(
     m_clipboard_interactor(m_project_interactor.clipboard_interactor())
 {}
 
-void MenuCommandRegistrar::register_top_bar_menus()
+void MenuCommandRegistrar::register_top_bar_menus(Lua::PluginSystem* plugin_system)
 {
     register_undo_redo_commands();
-    register_main_menu_commands();
+    register_main_menu_commands(plugin_system);
     register_file_menu_commands();
 }
 
@@ -1948,10 +1950,13 @@ void MenuCommandRegistrar::register_undo_redo_commands()
         );
 }
 
-void MenuCommandRegistrar::register_main_menu_commands()
+void MenuCommandRegistrar::register_main_menu_commands(Lua::PluginSystem* plugin_system)
 {
     register_main_menu_edit_commands();
     register_main_menu_view_commands();
+    if (plugin_system != nullptr) {
+        register_main_menu_plugin_commands(*plugin_system);
+    }
 
     m_menu_manager
         // Menu -> Separator
@@ -2182,4 +2187,64 @@ void MenuCommandRegistrar::register_file_menu_commands()
         );
 }
 
+void MenuCommandRegistrar::update_main_menu_plugin_commands(Lua::PluginSystem& plugin_system)
+{
+    m_menu_manager.rebuild_submenu(MenuItemName::Plugins, [this, &plugin_system]()
+    {
+        register_main_menu_plugin_commands(plugin_system);
+    });
+}
+
+void MenuCommandRegistrar::register_main_menu_plugin_commands(Lua::PluginSystem& plugin_system)
+{
+    bool any_plugin = false;
+    for (auto& plugin : plugin_system.plugins() | std::views::values) {
+        any_plugin = true;
+        std::vector<UniversalMenuItemName> path;
+        if (plugin.meta().menu.empty()) {
+            path = {
+                MenuItemName::MainMenu,
+                MenuItemName::Plugins,
+                plugin.meta().id,
+            };
+        } else {
+            path = {
+                MenuItemName::MainMenu,
+                MenuItemName::Plugins
+            };
+            for (const auto& menu_item : plugin.meta().menu) {
+                path.emplace_back(menu_item);
+            }
+        }
+        m_menu_manager.register_menu_item(
+            path,
+            std::make_unique<UIItemCommand>(
+                std::string(CommandName::PluginExecutePrefix) + plugin.meta().id,
+                [this, id = plugin.meta().id, &plugin_system]()
+                {
+                    m_navigator.navigate_to_module_type(App::Render::ModuleType::Plater);
+                    plugin_system.execute_plugin(id);
+                }
+            )
+        );
+    }
+    if (any_plugin) {
+        m_menu_manager.register_menu_separator_item({MenuItemName::Plugins});
+    }
+    m_menu_manager.register_menu_item(
+        {MenuItemName::Plugins, MenuItemName::PluginRescan},
+        std::make_unique<UIItemCommand>(
+            CommandName::PluginRescan,
+            [&plugin_system]
+            {
+                // as on Win/Linux this callback is triggered within render loop showing menu items,
+                // we are going to recreate, we need to dispatch this action outside render loop
+                // to prevent rendering disposed menu items
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread([&plugin_system] { plugin_system.rescan(); });
+            }
+        )
+    );
+}
 } // namespace Slic3r::App

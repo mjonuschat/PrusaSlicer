@@ -372,7 +372,8 @@ bool DesktopApp::OnInit()
         thumbnail_store,
         thumbnail_store_updater,
         thumbnail_image_generator,
-        m_plater_module.get()
+        m_plater_module.get(),
+        &m_plater_module->plugin_system()
     );
 
     m_project_interactor->removable_drive_service().add_status_listener(

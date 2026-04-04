@@ -843,7 +843,8 @@ void PreviewRenderModule::init_scene_layout()
         this,
         *m_thumbnail_store,
         *m_render_module_navigator,
-        nullptr
+        nullptr,
+        m_plugin_system
     );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));

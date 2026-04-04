@@ -19,6 +19,7 @@
 
 #include <Slic3r/App/Localization.hpp>
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
@@ -960,6 +961,7 @@ void MainFrame::setup_macos_native_menu_bar()
     );
     m_project_interactor.removable_drive_service().add_status_listener(m_native_menu_bar.get());
 
+    menu_manager.add_listener<IMenuUpdatedListener>(m_native_menu_bar.get());
     m_native_menu_bar->build_from_menu_manager();
 
     this->SetMenuBar(m_native_menu_bar->get_menu_bar());

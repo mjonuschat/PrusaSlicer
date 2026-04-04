@@ -246,6 +246,7 @@ endif()
 enable_testing()
 
 include(DoxygenTarget)
+include(LuaDocsTarget)
 include(Sanitizers)
 
 if (NOT SLIC3R_ASAN AND NOT SLIC3R_UBSAN)

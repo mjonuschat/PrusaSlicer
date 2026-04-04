@@ -29,7 +29,6 @@ using namespace Slic3r;
 
 namespace {
 using namespace Slic3r::Biz::Emboss;
-using ExpectedTM = tl::expected<Domain::TriangleMesh, JobIssue>;
 
 bool check(const CreateVolumeParams& input);
 bool check(const UpdateVolumeParams& input);
@@ -77,7 +76,7 @@ NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
 class CreateVolumeJob : public Job
 {
     DataCreateVolume m_input;
-    ExpectedTM m_result;
+    TriMeshResult m_result;
 
 public:
     explicit CreateVolumeJob(DataCreateVolume&& input);
@@ -109,7 +108,7 @@ Should not be stopped
 class CreateObjectJob : public Job
 {
     DataCreateObject m_input;
-    ExpectedTM m_result;
+    TriMeshResult m_result;
     Domain::Transformation m_transformation;
 
 public:
@@ -168,7 +167,7 @@ Should not be stopped
 class CreateSurfaceVolumeJob : public Job
 {
     CreateSurfaceVolumeData m_input;
-    ExpectedTM m_result;
+    TriMeshResult m_result;
 
 public:
     explicit CreateSurfaceVolumeJob(CreateSurfaceVolumeData&& input);
@@ -187,7 +186,7 @@ struct UpdateSurfaceVolumeData : public UpdateVolumeParams, public SurfaceVolume
 class UpdateSurfaceVolumeJob : public Job
 {
     UpdateSurfaceVolumeData m_input;
-    ExpectedTM m_result;
+    TriMeshResult m_result;
 public:
     // move params to private variable
     explicit UpdateSurfaceVolumeJob(UpdateSurfaceVolumeData&& input);
@@ -202,7 +201,7 @@ Predict that there is only one runnig(not canceled) instance of it
 class UpdateJob : public Job
 {
     UpdateVolumeParams m_input;
-    ExpectedTM m_result;
+    TriMeshResult m_result;
 
 public:
     // move params to private variable
@@ -242,6 +241,16 @@ public:
 ModelSources create_sources(const Domain::ModelVolumePtrs& volumes, std::optional<size_t> text_volume_id = {});
 
 bool queue_job(std::unique_ptr<Job> job);
+
+// <summary>
+/// Try to create mesh from text
+/// </summary>
+/// NOTE: Cache glyphs is changed</param>
+/// <param name="was_canceled">To check if process was canceled</param>
+/// <returns>Triangle mesh model</returns>
+template <typename Fnc>
+TriMeshResult try_create_mesh(TriMeshBaseData& input, const Fnc& was_canceled);
+
 } // namespace
 
 namespace Slic3r::Biz::Emboss {
@@ -272,9 +281,9 @@ const Domain::ModelInstance* get_selected_instance(const Biz::ProjectInteractor&
 bool start_create_volume_job(const Domain::ModelInstance& instance, const Domain::Transform3d& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
 {
     const Domain::ModelObject& object = *instance.get_object();
-    data.shape_provider->create_text_lines(volume_tr, object); // only when needed
+    data.tri_mesh.shape_provider->create_text_lines(volume_tr, object); // only when needed
 
-    bool use_surface = data.shape_provider->get_projection().use_surface;
+    bool use_surface = data.tri_mesh.shape_provider->get_projection().use_surface;
     std::unique_ptr<Job> job;
     if (use_surface) {
         // Model to cut surface from.
@@ -312,7 +321,7 @@ bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coo
 
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume)
 {
-    if (!data.base.shape_provider->get_projection().use_surface) {        
+    if (!data.base.tri_mesh.shape_provider->get_projection().use_surface) {
         // Without cutting model surface
         return queue_job(std::make_unique<UpdateJob>(std::move(data)));
     }
@@ -336,6 +345,21 @@ ProjectTransform create_projection(const Domain::EmbossShape& es, bool is_outsid
     return ProjectTransform(std::move(projectZ), tr);
 }
 
+const Domain::ExPolygons& create_shape(ShapeProvider& input)
+{
+    // IMPROVE: use real size of volume for union delta value
+    // ... need world matrix for volume
+    // ... printer resolution will be fine too
+    input.create_shape_with_union();
+    return input.get_shape().final_shape.expolygons;
+}
+
+TriMeshResult create_mesh(TriMeshBaseData& input)
+{
+    return try_create_mesh(input, []{ return false; });
+}
+
+
 } // namespace Slic3r::Biz::Emboss
 
 // Private implementation for create volume and objects jobs
@@ -354,18 +378,6 @@ static const Domain::ExPolygons& create_shape(ShapeProvider& input, Fnc was_canc
 
 // create sure that emboss object is bigger than source object [in mm]
 constexpr float safe_extension = 1.0f;
-
-// <summary>
-/// Try to create mesh from text
-/// </summary>
-/// <param name="input">Text to convert on mesh
-/// + Shape of characters + Property of font</param>
-/// <param name="font">Font file with cache
-/// NOTE: Cache glyphs is changed</param>
-/// <param name="was_canceled">To check if process was canceled</param>
-/// <returns>Triangle mesh model</returns>
-template <typename Fnc>
-ExpectedTM try_create_mesh(BaseData& input, const Fnc& was_canceled);
 
 /**
 @brief Create default mesh for embossed text
@@ -420,7 +432,7 @@ create_emboss_projection(bool is_outside, float emboss, Domain::Transform3d tr, 
 @return Extruded object from cuted surace
 */
 template <typename Fnc>
-ExpectedTM cut_surface(/*const*/ BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled
+TriMeshResult cut_surface(/*const*/ BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled
 );
 
 auto was_canceled(StopToken& stop)
@@ -447,7 +459,7 @@ CreateVolumeJob::CreateVolumeJob(DataCreateVolume&& input) : m_input(std::move(i
 
 void CreateVolumeJob::process(StopToken& stop)
 {
-    m_result = ::try_create_mesh(m_input.base, was_canceled(stop));
+    m_result = ::try_create_mesh(m_input.base.tri_mesh, was_canceled(stop));
 }
 
 void CreateVolumeJob::finalize()
@@ -476,10 +488,10 @@ CreateObjectJob::CreateObjectJob(DataCreateObject&& input) : m_input(std::move(i
 void CreateObjectJob::process(StopToken& stop)
 {
     auto was_canceled = ::was_canceled(stop);
-    m_result = ::try_create_mesh(m_input.base, was_canceled);
+    m_result = ::try_create_mesh(m_input.base.tri_mesh, was_canceled);
 
     // check point is on build plate:
-    double z = m_input.base.shape_provider->get_projection().depth / 2;
+    double z = m_input.base.tri_mesh.shape_provider->get_projection().depth / 2;
     Domain::Vec3d offset(m_input.bed_coor.x(), m_input.bed_coor.y(), z);
 
     Domain::BoundingBox3d bb3 = m_result.has_value()?
@@ -515,7 +527,7 @@ void CreateObjectJob::finalize()
         object.name                 = m_input.base.volume_name;
         Domain::ModelVolume& volume = *object.volumes.front();
         volume.name                 = m_input.base.volume_name;
-        m_input.base.shape_provider->write(volume);
+        m_input.base.tri_mesh.shape_provider->write(volume);
 
         Domain::ModelInstance& instance = *object.instances.front();
         instance.set_transformation(m_transformation);
@@ -533,7 +545,7 @@ UpdateJob::UpdateJob(UpdateVolumeParams&& input) : m_input(std::move(input))
 
 void UpdateJob::process(StopToken& stop)
 {
-    m_result = ::try_create_mesh(m_input.base, ::was_canceled(stop));
+    m_result = ::try_create_mesh(m_input.base.tri_mesh, ::was_canceled(stop));
 }
 
 void UpdateJob::finalize()
@@ -553,7 +565,7 @@ void UpdateJob::update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&
         return;
 
     // write data from base into volume
-    base.shape_provider->write(volume);
+    base.tri_mesh.shape_provider->write(volume);
     if (volume.name != base.volume_name && !base.volume_name.empty()) {
         volume.name = base.volume_name;
     }
@@ -649,11 +661,11 @@ bool check(const Domain::ObjectID& object_id)
 
 bool check(const BaseData& base)
 {
-    assert(base.shape_provider != nullptr);
-    bool res = base.shape_provider != nullptr;
-    const Domain::EmbossProjection& projection = base.shape_provider->get_projection();
+    assert(base.tri_mesh.shape_provider != nullptr);
+    bool res = base.tri_mesh.shape_provider != nullptr;
+    const Domain::EmbossProjection& projection = base.tri_mesh.shape_provider->get_projection();
     res &= projection.depth > 0;
-    const Domain::EmbossShape& shape = base.shape_provider->get_shape();
+    const Domain::EmbossShape& shape = base.tri_mesh.shape_provider->get_shape();
     res &= shape.scale > 0;
     assert(base.project_id != Domain::INVALID_ID);
     res &= (base.project_id != Domain::INVALID_ID);
@@ -680,8 +692,8 @@ bool check(const CreateVolumeParams& input)
 bool check(const DataCreateVolume& input)
 {
     bool check_fontfile = false;
-    assert(input.base.shape_provider != nullptr);
-    bool res = input.base.shape_provider != nullptr;
+    assert(input.base.tri_mesh.shape_provider != nullptr);
+    bool res = input.base.tri_mesh.shape_provider != nullptr;
     res &= check(input.volume_type);
     return res;
 }
@@ -689,8 +701,8 @@ bool check(const DataCreateVolume& input)
 bool check(const DataCreateObject& input)
 {
     bool check_fontfile = false;
-    assert(input.base.shape_provider != nullptr);
-    bool res = input.base.shape_provider != nullptr;
+    assert(input.base.tri_mesh.shape_provider != nullptr);
+    bool res = input.base.tri_mesh.shape_provider != nullptr;
     return res;
 }
 
@@ -719,8 +731,8 @@ bool check(const CreateSurfaceVolumeData& input)
     res &= check(input.instance_id);
     assert(!input.sources.empty());
     res &= !input.sources.empty();
-    assert(input.base.shape_provider->get_projection().use_surface);
-    res &= input.base.shape_provider->get_projection().use_surface;
+    assert(input.base.tri_mesh.shape_provider->get_projection().use_surface);
+    res &= input.base.tri_mesh.shape_provider->get_projection().use_surface;
     return res;
 }
 
@@ -731,14 +743,11 @@ bool check(const UpdateSurfaceVolumeData& input)
     return check(data_update) && check(surface);
 }
 
+
 template <typename Fnc>
 const Domain::ExPolygons& create_shape(ShapeProvider& input, Fnc was_canceled)
 {
-    // IMPROVE: use real size of volume for union delta value
-    // ... need world matrix for volume
-    // ... printer resolution will be fine too
-    input.create_shape_with_union();
-    return input.get_shape().final_shape.expolygons;
+    return create_shape(input);
 }
 
 // #define STORE_SAMPLING
@@ -772,7 +781,7 @@ std::vector<Domain::BoundingBoxes2crd> create_line_bounds(const Domain::ExPolygo
 }
 
 template <typename Fnc>
-ExpectedTM create_mesh_per_glyph(BaseData& input, Fnc was_canceled)
+TriMeshResult create_mesh_per_glyph(TriMeshBaseData& input, Fnc was_canceled)
 {
     // method use square of coord stored into int64_t
     // Domain::Point::coord_type
@@ -869,11 +878,11 @@ ExpectedTM create_mesh_per_glyph(BaseData& input, Fnc was_canceled)
 }
 
 template <typename Fnc>
-ExpectedTM try_create_mesh(BaseData& input, const Fnc& was_canceled)
+TriMeshResult try_create_mesh(TriMeshBaseData& input, const Fnc& was_canceled)
 {
     if (!input.shape_provider->get_text_lines().empty())
         return create_mesh_per_glyph(input, was_canceled);
-    
+
     const Domain::ExPolygons& shapes = create_shape(*input.shape_provider, was_canceled);
     if (shapes.empty())
         return tl::unexpected{ JobIssue::no_shape };
@@ -965,7 +974,7 @@ void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& instance
             vol->source.is_from_builtin_objects = true; // disallow model reload from disk
             vol->set_transformation(trmat);
 
-            data.shape_provider->write(*vol);
+            data.tri_mesh.shape_provider->write(*vol);
             return vol;
         }
     );
@@ -1008,7 +1017,7 @@ cut_surface_to_its(const Domain::ExPolygons& shapes, const Domain::Transform3d& 
 {
     assert(!sources.empty());
     BoundingBox bb     = Biz::Algorithms::ExPolygon::get_extents(shapes);
-    double shape_scale = input.shape_provider->get_shape().scale;
+    double shape_scale = input.tri_mesh.shape_provider->get_shape().scale;
 
     const ModelSource* biggest = &sources.front();
 
@@ -1096,24 +1105,24 @@ cut_surface_to_its(const Domain::ExPolygons& shapes, const Domain::Transform3d& 
         return {};
 
     // !! Projection needs to transform cut
-    double depth = input.shape_provider->get_projection().depth;
-    OrthoProject3d projection = create_emboss_projection(input.is_outside, depth, emboss_tr, cut);
+    double depth = input.tri_mesh.shape_provider->get_projection().depth;
+    OrthoProject3d projection = create_emboss_projection(input.tri_mesh.is_outside, depth, emboss_tr, cut);
     return cut2model(cut, projection);
 }
 
-ExpectedTM cut_per_glyph_surface(const BaseData& input1, const SurfaceVolumeData& input2, std::function<bool()> was_canceled)
+TriMeshResult cut_per_glyph_surface(const BaseData& input1, const SurfaceVolumeData& input2, std::function<bool()> was_canceled)
 {
     // Precalculate bounding boxes of glyphs
     // Separate lines of text to vector of Bounds
 
-    const Domain::EmbossShape& es = input1.shape_provider->get_shape();
+    const Domain::EmbossShape& es = input1.tri_mesh.shape_provider->get_shape();
     if (was_canceled())
         return tl::unexpected{ JobIssue::canceled };
 
     if (es.shapes_with_ids.empty())
         return tl::unexpected{ JobIssue::no_shape };
 
-    const Biz::Emboss::TextLines& text_lines = input1.shape_provider->get_text_lines();
+    const Biz::Emboss::TextLines& text_lines = input1.tri_mesh.shape_provider->get_text_lines();
     assert(get_count_lines(es.shapes_with_ids) == text_lines.size());
     size_t count_lines             = text_lines.size();
     std::vector<BoundingBoxes> bbs = create_line_bounds(es.shapes_with_ids, count_lines);
@@ -1171,14 +1180,14 @@ ExpectedTM cut_per_glyph_surface(const BaseData& input1, const SurfaceVolumeData
 
 // input can't be const - cache of font
 template <typename Fnc>
-ExpectedTM cut_surface(BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled)
+TriMeshResult cut_surface(BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled)
 {
-    if (!input1.shape_provider->get_text_lines().empty()) {
-        input1.shape_provider->create_shape();
+    if (!input1.tri_mesh.shape_provider->get_text_lines().empty()) {
+        input1.tri_mesh.shape_provider->create_shape();
         return cut_per_glyph_surface(input1, input2, was_canceled);
     }
 
-    const Domain::ExPolygons& shapes = create_shape(*input1.shape_provider, was_canceled);
+    const Domain::ExPolygons& shapes = create_shape(*input1.tri_mesh.shape_provider, was_canceled);
     if (was_canceled())
         return tl::unexpected{JobIssue::canceled};
 

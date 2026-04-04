@@ -16,6 +16,7 @@
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
+#include "Slic3r/App/IMenuUpdatedListener.hpp"
 
 namespace Slic3r::App {
 class MenuManager;
@@ -48,7 +49,8 @@ class MacOSNativeMenuBar :
     public Biz::IStatusCacheChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
-    public Biz::IProjectsChangedListener
+    public Biz::IProjectsChangedListener,
+    public IMenuUpdatedListener
 {
 public:
     /**
@@ -116,6 +118,8 @@ public:
     void on_project_loaded(Domain::SelectionId project_id) override;
     void on_project_saved(Domain::SelectionId project_id) override;
 
+    void on_menu_updated() override;
+
 private:
     void build_menu_from_name(MenuItemName menu_item_name);
     wxMenu* build_menu_from_item(MenuItem* menu_item);
@@ -139,6 +143,8 @@ private:
     wxMenuBar* m_menu_bar{nullptr};
     wxMenu* m_recent_project_menu{nullptr};
     wxMenuItem* m_recent_project_item{nullptr};
+    wxMenu* m_plugins_menu{nullptr};
+    wxMenuItem* m_plugins_item{nullptr};
 
     Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, MacOSNativeMenuBar>
         m_projects_changed_listener_scope;

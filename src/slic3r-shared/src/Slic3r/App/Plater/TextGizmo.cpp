@@ -10,6 +10,7 @@
 
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Emboss/TextShapeProvider.hpp"
 
 #include <boost/nowide/convert.hpp>
 
@@ -932,71 +933,6 @@ void TextGizmo::on_project_activated(size_t new_project_id)
 }
 
 namespace {
-class TextShapeProvider : public Biz::Emboss::ShapeProvider
-{
-public:
-    TextShapeProvider(
-        const Domain::TextConfiguration& text_configuration,
-        const Domain::EmbossProjection& projection,
-        const Biz::Emboss::TextLines& text_lines,
-        Biz::Emboss::FontFileWithCache& font_with_cache
-    ) :
-        ShapeProvider(
-            Domain::EmbossShape{
-                .scale = Biz::Emboss::get_text_shape_scale(
-                    text_configuration.style.prop,
-                    *font_with_cache.font_file
-                ),
-                .projection = projection
-            },
-            text_lines
-        ),
-        m_text_configuration(text_configuration) // copy
-        ,
-        m_font_with_cache(font_with_cache) // copy shared pointers
-    {}
-
-    bool create_shape() override
-    {
-        ASSERT(m_shape.final_shape.expolygons.empty()); // already created
-        std::wstring text                 = boost::nowide::widen(m_text_configuration.text);
-        const Domain::FontProp& font_prop = m_text_configuration.style.prop;
-        m_shape.shapes_with_ids = Biz::Emboss::text2vshapes(m_font_with_cache, text, font_prop);
-        return true;
-    }
-
-    void
-    create_text_lines(const Domain::Transform3d& tr, const Domain::ModelObject& object) override
-    {
-        ASSERT(m_text_lines.empty());
-        if (!m_text_configuration.style.prop.per_glyph)
-            return; // Do not create text lines when not neccessary
-
-        Domain::ModelVolumePtrs vols = Biz::Emboss::prepare_volumes_to_slice(object);
-
-        const Domain::FontFile& ff = *m_font_with_cache.font_file;
-        const Domain::FontProp& fp = m_text_configuration.style.prop;
-        unsigned l   = Biz::Emboss::get_count_lines(m_text_configuration.text); // SHOULD be 1
-        m_text_lines = Biz::Emboss::create_text_lines(tr, vols, ff, fp, l);
-    }
-
-    void write(Domain::ModelVolume& volume) const override
-    {
-        ShapeProvider::write(volume); // write emboss_shape
-        volume.text_configuration = m_text_configuration; // copy
-        ASSERT(volume.emboss_shape.has_value());
-
-        // Fix for object: stored attribute that volume is embossed per glyph
-        if (volume.is_the_only_one_part() && m_text_configuration.style.prop.per_glyph) {
-            volume.text_configuration->style.prop.per_glyph = false;
-        }
-    }
-
-private:
-    // font item is not used for create object
-    Domain::TextConfiguration m_text_configuration;
-    Biz::Emboss::FontFileWithCache m_font_with_cache;
-};
 
 bool is_set_volume_name(const Biz::ProjectInteractor& project_interactor)
 {
@@ -1025,16 +961,18 @@ Biz::Emboss::BaseData create_base_data(
     if (from_surface.has_value() && depth_scale.has_value())
         from_surface = (*from_surface) / (*depth_scale);
     return Biz::Emboss::BaseData{
-        .shape_provider = std::make_unique<TextShapeProvider>(
-            std::move(text_config),
-            preset.projection,
-            text_lines,
-            font_file
-        ),
-        .project_interactor         = project_interactor,
-        .project_id                 = project_interactor.selected_project_id(),
-        .is_outside                 = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-        .per_glyph_surface_distance = from_surface,
+        .tri_mesh = {
+            .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
+                std::move(text_config),
+                preset.projection,
+                text_lines,
+                font_file
+            ),
+            .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
+            .per_glyph_surface_distance = from_surface,
+        },
+        .project_interactor = project_interactor,
+        .project_id = project_interactor.selected_project_id(),
         .volume_name                = is_set_volume_name(project_interactor) ? text : std::string{},
         .issue_fn                   = std::move(issue_fn)
     };

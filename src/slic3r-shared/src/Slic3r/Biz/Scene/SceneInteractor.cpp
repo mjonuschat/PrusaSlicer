@@ -642,7 +642,15 @@ ElementRefs SceneInteractor::new_object_from_mesh(
     auto& obj     = *project.model().add_object();
     Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
-    update_object(obj);
+    if (update_object) {
+        update_object(obj);
+
+        for (auto* v : obj.volumes) {
+            if (v->get_convex_hull_shared_ptr() == nullptr) {
+                Algorithms::ModelVolume::calculate_convex_hull(*v);
+            }
+        }
+    }
 
     ASSERT(Algorithms::ModelObject::are_volumes_sorted(&obj));
 
@@ -668,8 +676,7 @@ ElementRefs SceneInteractor::new_object_from_mesh(
         );
     }
 
-    // TODO: need to send project_id for set selection (for @JanBartipan)
-    set_object_selection({ SelectionMode::Instance, updated });
+    set_object_selection({ SelectionMode::Instance, updated }, project_id);
 
     return updated;
 }

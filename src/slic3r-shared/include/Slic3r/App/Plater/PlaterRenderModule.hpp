@@ -12,6 +12,7 @@
 #include "Slic3r/App/DialogNavigation.hpp"
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
+#include "Slic3r/App/Lua/PluginSystem.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 #include "Slic3r/App/Plater/ContextMenuGizmo.hpp"
@@ -36,6 +37,10 @@ class ToolBarButton;
 class ToolBarSwitchButton;
 class NumberEntryDialog;
 } // namespace Slic3r::App
+
+namespace Slic3r::App::Lua {
+class PluginDialog;
+}
 
 namespace Slic3r::App::Yoga {
 class Menu;
@@ -171,6 +176,8 @@ public:
     std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider() override;
     /**@}*/
 
+    Lua::PluginSystem& plugin_system();
+
 protected:
     void on_init(
         Render::Device& device,
@@ -225,6 +232,12 @@ private:
     Yoga::Menu* m_multi_objects_menu = nullptr;
     Yoga::Menu* m_svg_or_text_menu = nullptr;
 
+    // We need these to outlive the TopBar bellow
+    std::unique_ptr<Biz::Emboss::IFontManager> m_font_manager = nullptr;
+    MenuManager m_menu_manager;
+    CommandBindingManager m_command_binding_manager;
+    Lua::PluginSystem m_plugin_system;
+
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects
@@ -262,8 +275,6 @@ private:
     ToolBarButton* m_toolbar_height_range            = nullptr;
     ToolBarSwitchButton* m_toolbar_preview_switch    = nullptr;
 
-    std::unique_ptr<Biz::Emboss::IFontManager> m_font_manager = nullptr;
-
     TranslationGizmo* m_translation_gizmo                       = nullptr;
     RotationGizmo* m_rotation_gizmo                             = nullptr;
     ScaleGizmo* m_scale_gizmo                                   = nullptr;
@@ -289,8 +300,6 @@ private:
     Navigator* m_render_module_navigator{nullptr};
 
     DialogNavigation m_dialog_navigation;
-    MenuManager m_menu_manager;
-    CommandBindingManager m_command_binding_manager;
 
     std::set<Yoga::Dialog*> m_gizmo_dialogs;
 };

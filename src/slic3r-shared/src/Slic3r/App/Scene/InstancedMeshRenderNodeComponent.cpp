@@ -1,7 +1,3 @@
-//
-// Created by Jan Bartipan on 10.09.2024.
-//
-
 #include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"

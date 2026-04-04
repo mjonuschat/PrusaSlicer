@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 
 namespace Slic3r::Domain {
 
@@ -44,6 +45,12 @@ struct is_std_map<std::unordered_map<Key, T, Hash, KeyEq, Allocator>> : std::tru
 
 template<typename T>
 inline constexpr bool is_std_map_v = is_std_map<T>::value;
+
+template<typename T, typename Variant>
+struct is_in_variant;
+
+template<typename T, typename... Ts>
+struct is_in_variant<T, std::variant<Ts...>> : std::disjunction<std::is_same<T, Ts>...> {};
 
 template<class... Ts>
 struct overloaded : Ts... {

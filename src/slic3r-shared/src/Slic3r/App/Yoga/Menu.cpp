@@ -49,7 +49,7 @@ void Menu::clear()
 
 size_t Menu::menu_item_count() const
 {
-    return m_scroll_area->object_count();
+    return m_items.size();
 }
 
 MenuItem* Menu::item_at(size_t index) const

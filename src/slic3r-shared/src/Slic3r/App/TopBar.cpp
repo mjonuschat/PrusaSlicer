@@ -16,6 +16,7 @@
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
+#include "Slic3r/App/Lua/PluginSystem.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -33,19 +34,32 @@ TopBar::TopBar(
     Platform::AbstractRenderModule* render_module,
     ThumbnailStore& thumbnail_store,
     Navigator& navigator,
-    App::Undo::Store* undo_store
+    App::Undo::Store* undo_store,
+    Lua::PluginSystem* plugin_system
 ) :
     Window("TopBar"),
     m_selected_project_changed_listener_scope(*project_interactor, *this),
     m_projects_changed_listener_scope(*project_interactor, *this),
+    m_plugin_rescan_listener_scope(
+        plugin_system == nullptr ?
+            std::nullopt :
+            std::make_optional<decltype(m_plugin_rescan_listener_scope)::value_type>(
+                *plugin_system,
+                *this
+            )
+    ),
+#ifndef USE_NATIVE_MENU
+    m_menu_updated_listener_scope(render_module->menu_manager(), *this),
+#endif
     m_project_interactor(*project_interactor),
     m_render_module(render_module),
     m_navigator(navigator),
     m_menu_command_registrar(*render_module, *project_interactor, navigator, thumbnail_store),
     m_menu_manager(render_module->menu_manager()),
-    m_undo_store(undo_store)
+    m_undo_store(undo_store),
+    m_plugin_system(plugin_system)
 {
-    m_menu_command_registrar.register_top_bar_menus();
+    m_menu_command_registrar.register_top_bar_menus(plugin_system);
     if (m_undo_store) {
         m_undo_store->add_listener<Undo::IStoreChangedListener>(this);
     }
@@ -242,6 +256,33 @@ void TopBar::on_project_saved(Domain::SelectionId project_id)
     update_recent_projects();
 }
 
+static void unbind_menu(CommandBindingManager& binding_mgr, const Menu* menu)
+{
+    for (size_t i = 0, n = menu->menu_item_count(); i < n; ++i) {
+        auto it = menu->item_at(i);
+        binding_mgr.unbind_ui_item(it);
+        auto* sub = it->submenu();
+        if (sub) {
+            unbind_menu(binding_mgr, sub);
+        }
+    }
+}
+
+void TopBar::on_menu_updated()
+{
+    auto& binding_mgr = m_render_module->command_binding_manager();
+    unbind_menu(binding_mgr, m_main_menu);
+    unbind_menu(binding_mgr, m_file_menu);
+    m_main_menu->clear();
+    m_file_menu->clear();
+    add_menu_btns_items();
+}
+
+void TopBar::on_plugins_scanned(const Lua::PluginRegistry& registry)
+{
+    m_menu_command_registrar.update_main_menu_plugin_commands(*m_plugin_system);
+}
+
 void TopBar::focus_search()
 {
     m_search_bar->focus_search();
@@ -320,11 +361,6 @@ void TopBar::add_show_ui_btn(Item* parent)
 
 void TopBar::add_menu_btns(Item* parent)
 {
-    MenuBuilder menu_builder(
-        m_render_module->menu_manager(),
-        m_render_module->command_binding_manager()
-    );
-
     if (App::MenuItem* main_menu_item =
             m_render_module->menu_manager().menu_item(MenuItemName::MainMenu))
     {
@@ -344,8 +380,6 @@ void TopBar::add_menu_btns(Item* parent)
         m_main_menu =
             m_main_menu_btn->emplace_back<Yoga::Menu>("main_menu", Yoga::Position::Bottom);
         m_main_menu->set_offset(0.f);
-
-        menu_builder.add_menu_items(m_main_menu, main_menu_item);
     }
 
     if (App::MenuItem* file_menu_item =
@@ -366,6 +400,27 @@ void TopBar::add_menu_btns(Item* parent)
         m_file_menu =
             m_file_menu_btn->emplace_back<Yoga::Menu>("file_menu", Yoga::Position::Bottom);
         m_file_menu->set_offset(0.f);
+    }
+
+    add_menu_btns_items();
+}
+
+void TopBar::add_menu_btns_items()
+{
+    MenuBuilder menu_builder(
+        m_render_module->menu_manager(),
+        m_render_module->command_binding_manager()
+    );
+
+    if (App::MenuItem* main_menu_item =
+            m_render_module->menu_manager().menu_item(MenuItemName::MainMenu))
+    {
+        menu_builder.add_menu_items(m_main_menu, main_menu_item);
+    }
+
+    if (App::MenuItem* file_menu_item =
+            m_render_module->menu_manager().menu_item(MenuItemName::FileMenu))
+    {
         menu_builder.add_menu_items(m_file_menu, file_menu_item);
 
         const std::vector<App::MenuItem*> children                     = file_menu_item->children();
@@ -373,7 +428,9 @@ void TopBar::add_menu_btns(Item* parent)
             children.cbegin(),
             children.cend(),
             [](App::MenuItem* menu_item)
-            { return menu_item->name() == MenuItemName::RecentProjects; }
+            {
+                return menu_item->name().matches(MenuItemName::RecentProjects);
+            }
         );
         ASSERT(recent_projects_it != children.cend());
         m_recent_projects_item =
@@ -381,6 +438,7 @@ void TopBar::add_menu_btns(Item* parent)
 
         update_recent_projects();
     }
+
 }
 
 void TopBar::update_recent_projects()

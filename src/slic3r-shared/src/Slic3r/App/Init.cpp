@@ -123,7 +123,7 @@ void init_paths(const InitParams& init_params)
         data_dir_path / "presets" / "local",
         data_dir_path / "presets" / "user",
         data_dir_path / "shapes",
-
+        data_dir_path / "lua",
     };
 
     for (const boost::filesystem::path& sub : sub_datadirs) {

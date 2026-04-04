@@ -11,7 +11,7 @@ namespace Slic3r::App {
 class MenuItem
 {
 public:
-    MenuItem(MenuItemName name, const UIItemCommand* command = nullptr) :
+    MenuItem(const UniversalMenuItemName& name, const UIItemCommand* command = nullptr) :
         m_name(name),
         m_command(command) {};
 
@@ -21,7 +21,7 @@ public:
         m_children.emplace_back(child);
     }
 
-    const MenuItemName name() const
+    const UniversalMenuItemName& name() const
     {
         return m_name;
     }
@@ -38,11 +38,16 @@ public:
 
     bool is_separator() const
     {
-        return m_name == MenuItemName::Separator;
+        return m_name.matches(MenuItemName::Separator);
+    }
+
+    void clear_children()
+    {
+        m_children.clear();
     }
 
 private:
-    MenuItemName m_name;
+    UniversalMenuItemName m_name;
     const UIItemCommand* m_command{nullptr};
     std::vector<MenuItem*> m_children;
 };

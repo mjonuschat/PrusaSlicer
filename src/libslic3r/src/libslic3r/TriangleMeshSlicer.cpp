@@ -2293,7 +2293,6 @@ void slice_mesh_slabs(
         const Vec3f   fa = vertices_transformed[tri[0]];
         const Vec3f   fb = vertices_transformed[tri[1]];
         const Vec3f   fc = vertices_transformed[tri[2]];
-        assert(fa != fb && fa != fc && fb != fc);
         const Point   a = to_2d(fa).cast<coord_t>();
         const Point   b = to_2d(fb).cast<coord_t>();
         const Point   c = to_2d(fc).cast<coord_t>();

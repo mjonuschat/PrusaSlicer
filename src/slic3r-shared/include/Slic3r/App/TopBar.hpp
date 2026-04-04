@@ -11,10 +11,16 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/MenuCommandRegistrar.hpp"
+#include "Slic3r/App/IMenuUpdatedListener.hpp"
+#include "Slic3r/App/Lua/IPluginRescanListener.hpp"
 
 namespace Slic3r::App::Platform {
 class AbstractRenderModule;
 } // namespace Slic3r::App::Platform
+
+namespace Slic3r::App::Lua {
+class PluginSystem;
+} // namespace Slic3r::App::Lua
 
 namespace Slic3r::App {
 
@@ -35,7 +41,9 @@ class TopBar final :
     public Yoga::Window,
     public Biz::ISelectedProjectChangedListener,
     public Undo::IStoreChangedListener,
-    public Biz::IProjectsChangedListener
+    public Biz::IProjectsChangedListener,
+    public IMenuUpdatedListener,
+    public Lua::IPluginRescanListener
 {
 public:
     TopBar(
@@ -43,7 +51,8 @@ public:
         Platform::AbstractRenderModule* render_module,
         ThumbnailStore& thumbnail_store,
         Navigator& navigator,
-        App::Undo::Store* undo_store
+        App::Undo::Store* undo_store,
+        Lua::PluginSystem* plugin_system = nullptr
     );
     ~TopBar();
 
@@ -63,6 +72,9 @@ public:
     void on_project_loaded(Domain::SelectionId project_id) override;
     void on_project_saved(Domain::SelectionId project_id) override;
 
+    void on_menu_updated() override;
+    void on_plugins_scanned(const Lua::PluginRegistry& registry) override;
+
     void focus_search();
 
 private:
@@ -72,6 +84,7 @@ private:
     void add_show_ui_btn(Item* parent);
 
     void add_menu_btns(Item* parent);
+    void add_menu_btns_items();
 
     void update_recent_projects();
 
@@ -88,6 +101,13 @@ private:
     Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, TopBar>
         m_projects_changed_listener_scope;
 
+    std::optional<Biz::ListenerScope<IPluginRescanListener, Lua::PluginSystem, TopBar>>
+        m_plugin_rescan_listener_scope;
+
+#ifndef USE_NATIVE_MENU
+    Biz::ListenerScope<IMenuUpdatedListener, MenuManager, TopBar>
+            m_menu_updated_listener_scope;
+#endif
     ProjectButtonListView* m_list_view{nullptr};
 
     Yoga::LayoutButton* m_main_menu_btn{nullptr};
@@ -117,6 +137,7 @@ private:
     MenuManager& m_menu_manager;
 
     Undo::Store* m_undo_store{nullptr};
+    Lua::PluginSystem* m_plugin_system{nullptr};
 };
 
 } // namespace Slic3r::App

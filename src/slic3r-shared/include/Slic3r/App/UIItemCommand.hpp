@@ -40,6 +40,16 @@ public:
         m_extra_opts(extra_opts)
     {}
 
+    UIItemCommand(
+        std::string name,
+        std::function<void()> execute,
+        UIItemCommandExtraOpts extra_opts = UIItemCommandExtraOpts{}
+    ) :
+        m_name(std::move(name)),
+        m_execute(std::move(execute)),
+        m_extra_opts(extra_opts)
+    {}
+
     const char* name() const override
     {
         return m_name.c_str();

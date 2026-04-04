@@ -1,5 +1,5 @@
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
-
+#include "Slic3r/App/Lua/PluginDialog.hpp"
 #include <Yoga.h>
 
 namespace Slic3r::App::Plater {
@@ -17,7 +17,8 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
     std::unique_ptr<History> history,
     std::unique_ptr<NumberEntryDialog> number_entry_dialog,
-    std::unique_ptr<WelcomeDialog> welcome_dialog
+    std::unique_ptr<WelcomeDialog> welcome_dialog,
+    std::unique_ptr<Lua::PluginDialog> plugin_dialog
 ) :
     AbstractRenderLayout(
         navigator,
@@ -33,14 +34,18 @@ PlaterRenderLayout::PlaterRenderLayout(
     ),
     m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
     m_history(std::move(history)),
-    m_welcome_dialog(std::move(welcome_dialog))
+    m_welcome_dialog(std::move(welcome_dialog)),
+    m_plugin_dialog(std::move(plugin_dialog))
 {}
 
-void PlaterRenderLayout::init() {
+void PlaterRenderLayout::init()
+{
     AbstractRenderLayout::init();
 
     m_layout_main.append(m_welcome_dialog.release());
     m_welcome_dialog->attach_to_center();
+    m_layout_main.append(m_plugin_dialog.release());
+    m_plugin_dialog->attach_to_center();
 }
 
 void PlaterRenderLayout::init_left_column()

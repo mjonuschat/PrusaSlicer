@@ -35,6 +35,8 @@ public:
     void clear_submenu();
     void close_submenu();
 
+    const Menu* submenu() const ;
+
     void set_shortcut_internal(const std::string& shortcut) override;
 
 private:

@@ -20,6 +20,7 @@ add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
 add_subdirectory(slic3r-biz-arrange)
 #add_subdirectory(libseqarrange)
+add_subdirectory(slic3r-biz-lua)
 
 if (SLIC3R_ENABLE_FORMAT_STEP)
     add_subdirectory(occt_wrapper)
@@ -53,3 +54,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/osx/Info.plist.in ${CMAKE_CU
 add_doxygen_target(slic3r-doxygen
     EXTRA_INPUT ../doc/Doxygen.md ../doc/CodeStyle.md
 )
+
+add_lua_docs_target(slic3r-lua-docs)
