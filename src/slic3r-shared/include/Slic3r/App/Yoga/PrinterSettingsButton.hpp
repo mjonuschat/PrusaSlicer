@@ -28,7 +28,9 @@ public:
 protected:
     void checked_updated_internal() override;
     void hovered_updated_internal() override;
-    void update_btns_visibility();
+
+    virtual void update_btns_visibility();
+
     LayoutButton* add_button(Render::Icon icon, const std::string& tooltip);
 
 protected:

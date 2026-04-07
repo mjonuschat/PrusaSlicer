@@ -30,21 +30,19 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     m_on_cog_clicked(on_cog_clicked),
     m_on_bin_clicked(on_bin_clicked)
 {
-    m_texts_wrapper->set_min_size({0,36});
+    m_texts_wrapper->set_min_size({0, 36});
 
     m_attention_icon = emplace<Icon>(1, Render::Icon::ExclamationMark);
     m_attention_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_attention_icon->set_aspect_ratio(1);
-    m_attention_icon->set_margin(Margins(3.f,6.f,3.f,0.f));
-    m_attention_icon->set_visible(false);    
+    m_attention_icon->set_margin(Margins(3.f, 6.f, 3.f, 0.f));
+    m_attention_icon->set_visible(false);
 
     m_bin_btn = add_button(Render::Icon::DeleteBtnIcon, Biz::_u8L("Delete physical printer"));
 
     set_flex_shrink(0);
 
-    callbacks().action = [this]() {
-        m_on_clicked(m_index);
-    };
+    callbacks().action = [this]() { m_on_clicked(m_index); };
 
     set_visible_cog(true);
     on_cog() = [this]() { m_on_cog_clicked(m_index); };
@@ -52,7 +50,7 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     set_visible_bin(true);
     on_bin() = [this]() { m_on_bin_clicked(m_index); };
 
-    m_icon->set_margin(Margins(3.f,6.f,3.f,0.f));
+    m_icon->set_margin(Margins(3.f, 6.f, 3.f, 0.f));
 
     update();
 }
@@ -62,51 +60,68 @@ void PhysicalPrinterSettingsButton::on_data_update()
     update();
 }
 
+void PhysicalPrinterSettingsButton::update_btns_visibility()
+{
+    PrinterSettingsButton::update_btns_visibility();
+
+    m_bin_btn->set_visible(m_is_visible_bin && (hovered() || m_bin_btn->hovered()));
+}
+
 void PhysicalPrinterSettingsButton::update()
 {
     std::string service_name = Biz::PhysicalPrinter::physical_printer_type_to_string(*m_state);
-    std::string model = m_state->hw_config.name;
-    std::string preset_name = fmt::format("{} - {}", service_name, model);
+    std::string model        = m_state->hw_config.name;
+    std::string preset_name  = fmt::format("{} - {}", service_name, model);
     set_preset_name(preset_name);
     set_printer_name(m_state->name);
     m_preset_name->set_visible(true);
 
-    std::visit([this](const auto& arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::ConnectUpload>) {
-            set_preset_name({});
-            m_preset_name->set_visible(false);
-            set_icon(Render::Icon::ConnectUpload);
-            set_visible_cog(false);
-            set_visible_bin(false);
-        } else if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::PrinterUpload>) {
-            set_icon(Render::Icon::PrinterIconMarker);
-            set_visible_cog(true);
-            set_visible_bin(true);
-        } else if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::FileSystemExport>) {
-            set_preset_name({});
-            m_preset_name->set_visible(false);
-            set_icon(arg.prefer_removable ? Render::Icon::ExportToSD : Render::Icon::ExportToLocal);
-            set_visible_cog(false);
-            set_visible_bin(false);
-        }
-    }, m_state->payload);
+    std::visit(
+        [this](const auto& arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::ConnectUpload>) {
+                set_preset_name({});
+                m_preset_name->set_visible(false);
+                set_icon(Render::Icon::ConnectUpload);
+                set_visible_cog(false);
+                set_visible_bin(false);
+            } else if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::PrinterUpload>) {
+                set_icon(Render::Icon::PrinterIconMarker);
+                set_visible_cog(true);
+                set_visible_bin(true);
+            } else if constexpr (
+                std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::FileSystemExport>
+            ) {
+                set_preset_name({});
+                m_preset_name->set_visible(false);
+                set_icon(
+                    arg.prefer_removable ? Render::Icon::ExportToSD : Render::Icon::ExportToLocal
+                );
+                set_visible_cog(false);
+                set_visible_bin(false);
+            }
+        },
+        m_state->payload
+    );
 }
 
 void PhysicalPrinterSettingsButton::update_button_text()
 {
-     update();
+    update();
 }
 
 void PhysicalPrinterSettingsButton::set_icon(Render::Icon icon)
 {
-     m_icon->set_icon(icon);
+    m_icon->set_icon(icon);
 }
 
 void PhysicalPrinterSettingsButton::set_visible_bin(bool is_visible)
 {
-    m_bin_btn->set_visible(is_visible);
-    update_btns_visibility();
+    if (m_is_visible_bin != is_visible) {
+        m_is_visible_bin = is_visible;
+        update_btns_visibility();
+    }
 }
 
 std::function<void()>& PhysicalPrinterSettingsButton::on_bin()

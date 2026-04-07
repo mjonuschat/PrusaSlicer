@@ -60,9 +60,9 @@ MaterialSelectionRow::MaterialSelectionRow(
         Biz::_u8L("Show material settings")
     );
     m_cog_btn->set_self_align(YGAlignCenter);
-    m_cog_btn->set_min_size({24.f, 24.f});
-    m_cog_btn->set_flex_shrink(0);
-    m_cog_btn->set_background_color(IM_COL32_BLACK_TRANS);
+    m_cog_btn->set_width(22.f);
+    m_cog_btn->set_height(22.f);
+    m_cog_btn->set_background_color(Platform::Color::ButtonTransparent);
     update_cog_visibility();
 
     m_cog_btn->callbacks().action = [this, switch_matrial]()
@@ -98,10 +98,7 @@ void MaterialSelectionRow::hovered_updated_internal()
 
 void MaterialSelectionRow::update_cog_visibility()
 {
-    m_cog_btn->set_icon_tint(
-        (hovered() || m_cog_btn->hovered()) ? m_theme->color_imgui(Platform::Color::Button) :
-                                              ImColor(IM_COL32_BLACK_TRANS)
-    );
+    m_cog_btn->set_visible(hovered() || m_cog_btn->hovered());
 }
 
 } // namespace Slic3r::App

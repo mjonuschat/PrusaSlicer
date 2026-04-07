@@ -46,6 +46,8 @@ public:
 protected:
     void on_data_update() override;
 
+    void update_btns_visibility() override;
+
 private:
     FnIndexClicked m_on_clicked;
     FnIndexClicked m_on_cog_clicked;
@@ -55,7 +57,6 @@ private:
     bool                 m_is_visible_bin{ false };
 
     Yoga::Icon*          m_attention_icon{nullptr};
-
 };
 
 } // namespace Slic3r::App

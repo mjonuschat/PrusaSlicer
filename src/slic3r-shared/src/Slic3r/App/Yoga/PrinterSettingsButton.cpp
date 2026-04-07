@@ -21,11 +21,11 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
     m_texts_wrapper->set_flex_grow(1.f);
     m_texts_wrapper->set_justify_content(YGJustifyCenter);
 
-    m_printer_name = m_texts_wrapper->emplace_back<Text>("");
+    m_printer_name = m_texts_wrapper->emplace_back<Text>(std::string{});
     m_printer_name->set_font_type(Render::ImguiFontType::Bold);
     m_printer_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    m_preset_name = m_texts_wrapper->emplace_back<Text>("");
+    m_preset_name = m_texts_wrapper->emplace_back<Text>(std::string{});
     m_preset_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
     m_printers_btn =
@@ -55,14 +55,18 @@ void PrinterSettingsButton::set_printing_state(int state)
 
 void PrinterSettingsButton::set_visible_printer(bool is_visible)
 {
-    m_printers_btn->set_visible(is_visible);
-    update_btns_visibility();
+    if (m_is_visible_printers != is_visible) {
+        m_is_visible_printers = is_visible;
+        update_btns_visibility();
+    }
 }
 
 void PrinterSettingsButton::set_visible_cog(bool is_visible)
 {
-    m_cog_btn->set_visible(is_visible);
-    update_btns_visibility();
+    if (m_is_visible_cog != is_visible) {
+        m_is_visible_cog = is_visible;
+        update_btns_visibility();
+    }
 }
 
 std::function<void()>& PrinterSettingsButton::on_cog()
@@ -92,18 +96,8 @@ void PrinterSettingsButton::hovered_updated_internal()
 
 void PrinterSettingsButton::update_btns_visibility()
 {
-    auto tint_btn_icon = [this](LayoutButton* button)
-    {
-        if (button->is_visible()) {
-            button->set_icon_tint(
-                hovered() || button->hovered() ? ImColor(255, 255, 255) :
-                                                 ImColor(IM_COL32_BLACK_TRANS)
-            );
-        }
-    };
-
-    tint_btn_icon(m_cog_btn);
-    tint_btn_icon(m_printers_btn);
+    m_cog_btn->set_visible(m_is_visible_cog && (hovered() || m_cog_btn->hovered()));
+    m_printers_btn->set_visible(m_is_visible_printers && (hovered() || m_printers_btn->hovered()));
 }
 
 LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::string& tooltip)
@@ -112,7 +106,7 @@ LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::st
     button->set_self_align(YGAlignCenter);
     button->set_min_size({24.f, 24.f});
     button->set_flex_shrink(0);
-    button->set_background_color(IM_COL32_BLACK_TRANS);
+    button->set_background_color(Platform::Color::ButtonTransparent);
     // Extra button is hidden by default.
     // It can be shown in the settings dialog under certain conditions.
     button->set_visible(false);
