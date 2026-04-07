@@ -447,8 +447,13 @@ void TextGizmo::on_activated()
     if (Biz::Emboss::get_selected_text_volume(m_project_interactor).volume == nullptr) {
         // What shows few miliseconds till new item is created?
         m_dialog->set_enable_all_except_font(true);
-
-        add_text_to_scene(Domain::ModelVolumeType::MODEL_PART);
+        if (m_next_volume_type) {
+            add_text_to_scene(*m_next_volume_type);
+            m_next_volume_type = std::nullopt;
+        }
+        else {
+            add_text_to_scene();
+        }
         // after create it is called function on_scene_selection_changed()
         return;
     }
@@ -729,6 +734,11 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
             proj_ctx.exist_surface_point, project, ref, m_scene_presenter);
     }
     activate_preset(dialog(), m_preset_manager, proj_ctx, volume);
+}
+
+void TextGizmo::set_next_volume_type(Domain::ModelVolumeType volume_type)
+{
+    m_next_volume_type = volume_type;
 }
 
 void TextGizmo::on_project_activated(size_t new_project_id)

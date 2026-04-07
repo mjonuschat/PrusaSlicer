@@ -7,7 +7,7 @@
 #include "Slic3r/App/ResultExport/ExportActions.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
-#include "Slic3r/App/Scene/IGizmoController.hpp"
+#include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/EmbossCreate.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
@@ -20,6 +20,7 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -27,6 +28,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
+#include "Slic3r/App/Plater/TextGizmo.hpp"
 
 namespace Slic3r::App {
 
@@ -40,11 +42,22 @@ namespace {
 class CommandBuilder
 {
 public:
+    CommandBuilder(MenuManager& menu_manager, Platform::AbstractRenderModule& render_module) :
+        m_menu_manager(menu_manager),
+        m_render_module(render_module)
+    {}
+
+    ~CommandBuilder()
+    {
+        register_commands();
+    }
+
     CommandBuilder& push_path_level(MenuItemName name)
     {
         m_path.push_back(name);
         return *this;
     }
+
     CommandBuilder& pop_path_level()
     {
         ASSERT(!m_path.empty());
@@ -84,15 +97,19 @@ public:
         return *this;
     }
 
-    void register_commands(
-        MenuManager& menu_manager,
-        Platform::AbstractRenderModule& render_module
-    ) const
+    void register_commands_and_clear_cache()
+    {
+        register_commands();
+        m_commands.clear();
+    }
+
+private:
+    void register_commands() const
     {
         for (const auto& command : m_commands) {
             if (command.name) {
                 if (command.action) {
-                    menu_manager.register_menu_item(
+                    m_menu_manager.register_menu_item(
                         command.path,
                         std::make_unique<UIItemCommand>(
                             command.name,
@@ -101,14 +118,14 @@ public:
                         )
                     );
                 } else {
-                    menu_manager.register_menu_item_from_command(
+                    m_menu_manager.register_menu_item_from_command(
                         command.path,
-                        render_module.command(command.name)
+                        m_render_module.command(command.name)
 
                     );
                 }
             } else {
-                menu_manager.register_menu_separator_item(command.path);
+                m_menu_manager.register_menu_separator_item(command.path);
             }
         }
     }
@@ -121,8 +138,12 @@ private:
         std::function<void()> action{nullptr}; // nullptr means use already registered command
         UIItemCommandExtraOpts extra_opts;
     };
+
     std::vector<MenuItemName> m_path;
     std::vector<CommandElement> m_commands;
+
+    MenuManager& m_menu_manager;
+    Platform::AbstractRenderModule& m_render_module;
 };
 
 } // namespace
@@ -153,16 +174,80 @@ void MenuCommandRegistrar::register_context_menus(
 {
     m_data_factory   = &data_factory;
     m_scene_provider = scene_provider;
+
     register_bed_menu_commands();
     register_object_menu_commands();
+    register_instance_menu_commands();
+    register_svg_or_text_volume_menu_commands();
+    register_volume_menu_commands();
+    register_multi_object_menu_commands();
 }
 
 void MenuCommandRegistrar::register_bed_menu_commands()
 {
     register_bed_menu_add_shape_commands();
 
-    CommandBuilder builder;
+    auto any_selected_bed_has_object = [this]() -> bool
+    {
+        const Biz::Scene::BedInstances beds{get_selected_beds(
+            m_project_interactor.selected_project_id(),
+            m_project_interactor.scene_interactor().bed_selection(),
+            m_project_interactor.workbench()
+        )};
+
+        for (const auto& bed : beds) {
+            if (!bed.get().model_instances.empty())
+                return true;
+        }
+        return false;
+    };
+
+    CommandBuilder builder(m_menu_manager, m_render_module);
     builder.push_path_level(MenuItemName::BedContextMenu)
+        .append_separator()
+        .append_item(
+            MenuItemName::ArrangeBed,
+            CommandName::ArrangeBed,
+            [this]
+            {
+                // arrange result objects
+                Biz::Arrange::Settings settings;
+                settings.scaled_offset = Biz::Algorithms::Scaling::scaled(3.0);
+                settings.mode          = Biz::Arrange::Mode::Local;
+                m_project_interactor.arrange_interactor().arrange(
+                    m_project_interactor.selected_project_id(),
+                    settings
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled = [any_selected_bed_has_object]() { return any_selected_bed_has_object(); }
+            }
+        )
+        .append_item(
+            MenuItemName::SelectAllOnBed,
+            CommandName::SelectAllOnBed,
+            [this]
+            {
+                const Biz::Scene::BedInstances beds{get_selected_beds(
+                    m_project_interactor.selected_project_id(),
+                    m_project_interactor.scene_interactor().bed_selection(),
+                    m_project_interactor.workbench()
+                )};
+
+                Biz::Scene::ObjectSelection new_selection;
+                for (const auto& bed : beds) {
+                    for (const auto& instance : bed.get().model_instances) {
+                        new_selection.elements.push_back(
+                            {instance->get_object()->id().id, instance->id().id}
+                        );
+                    }
+                }
+                m_project_interactor.scene_interactor().set_object_selection(new_selection);
+            },
+            UIItemCommandExtraOpts{
+                .enabled = [any_selected_bed_has_object]() { return any_selected_bed_has_object(); }
+            }
+        )
         .append_separator()
         .append_item(
             MenuItemName::DeleteBed,
@@ -174,15 +259,13 @@ void MenuCommandRegistrar::register_bed_menu_commands()
                 );
             },
             UIItemCommandExtraOpts{
-                .enabled =
-                    [this]()
+                .enabled = [this]()
                 {
                     return m_project_interactor.selected_config_container().bed_instances().size()
                         > 1;
                 }
             }
-        )
-        .register_commands(m_menu_manager, m_render_module);
+        );
 }
 
 static std::string geometry_name(Scene::GeometryDataId geometry_id)
@@ -209,7 +292,7 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
         );
     };
 
-    CommandBuilder builder;
+    CommandBuilder builder(m_menu_manager, m_render_module);
     builder.push_path_level(MenuItemName::BedContextMenu)
         .push_path_level(MenuItemName::AddObjectShape)
         .append_item_from_command(MenuItemName::ObjectShapeLoad, CommandName::ImportGeometry)
@@ -231,17 +314,146 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
         )
         .append_separator()
         .append_item_from_command(MenuItemName::ObjectShapeText, CommandName::CreateObjectAsText)
-        .register_commands(m_menu_manager, m_render_module);
+        .append_item(
+            MenuItemName::ObjectShapeSvg,
+            "add-object-shape-svg",
+            [this]() { load_object(Wildcards::TypeFlag::Svg); },
+            UIItemCommandExtraOpts{
+                .keyboard_shortcuts =
+                    Platform::KeyboardShortcuts{
+                        Platform::KeyboardShortcut{0, Platform::KeyCode::G}
+                    },
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().object_selection().empty(); }
+            }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::ObjectShapeFromGallery,
+            "add-object-shape-gallery",
+            [this]() { load_shape_from_gallery(); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        );
 }
 
 void MenuCommandRegistrar::register_object_menu_commands()
 {
+    CommandBuilder builder(m_menu_manager, m_render_module);
+
+    builder.push_path_level(MenuItemName::ObjectContextMenu)
+        .append_item(
+            MenuItemName::CopyObject,
+            CommandName::CopyModelItems,
+            [this]() {},
+            UIItemCommandExtraOpts{
+                .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::C
+                }},
+                .enabled =
+                    [this]()
+                {
+                    const Biz::Scene::ObjectSelection& object_selection =
+                        m_project_interactor.scene_interactor().object_selection();
+                    return !object_selection.empty() && !object_selection.contains_wipe_tower();
+                }
+            }
+        )
+        .append_item(
+            MenuItemName::PasteObject,
+            CommandName::PasteModelItems,
+            [this]() {},
+            UIItemCommandExtraOpts{
+                .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::V
+                }},
+                .enabled            = [this]() { return false; }
+            }
+        )
+        .append_item_from_command(MenuItemName::DeleteSelectedObject, CommandName::DeleteSelected)
+        .append_separator()
+        .append_item(
+            MenuItemName::SetNumberOfInstances,
+            CommandName::SetNumberOfInstances,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item(
+            MenuItemName::FillBedWithInstances,
+            "fill-bed-with-instances",
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::ExportObject,
+            CommandName::ExportAsStl,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item(
+            MenuItemName::ReplaceObject,
+            CommandName::ReplaceWithStl,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item(
+            MenuItemName::ReloadObject,
+            CommandName::ReloadFromDisk,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .push_path_level(MenuItemName::SplitObject)
+        .append_item(
+            MenuItemName::SplitObjectToObjects,
+            "split-object-to-objects",
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item(
+            MenuItemName::SplitObjectToVolumes,
+            CommandName::SplitToVolumes,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .pop_path_level()
+        .append_item(
+            MenuItemName::ScaleToPrintVolume,
+            "scale-to-print-volume",
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item(
+            MenuItemName::FixObjectWithRepairAlgorithm,
+            CommandName::FixWithRepairAlgorithm,
+            [this]() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        // we need to force a registration of added menu items before call extra function
+        .register_commands_and_clear_cache();
+
     register_object_menu_add_volume_commands();
-    m_menu_manager.register_menu_separator_item({MenuItemName::ObjectMenu});
-    m_menu_manager.register_menu_item_from_command(
-        {MenuItemName::ObjectMenu, MenuItemName::DeleteSelectedObject},
-        m_render_module.command(Platform::CommandName::DeleteSelected)
-    );
+
+    builder.append_separator()
+        .append_item(
+            MenuItemName::InvalidateCutInfo,
+            "invalidate-cut-info",
+            []() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::PrintableObject,
+            CommandName::SetAsPrintable,
+            []() {},
+            UIItemCommandExtraOpts{
+                .enabled = [this]() { return false; },
+                .checked = []() { return true; } // ToDo is_printable_selection();
+            }
+        );
 }
 
 void MenuCommandRegistrar::register_object_menu_add_volume_commands()
@@ -258,9 +470,19 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
         );
     };
 
-    CommandBuilder builder;
+    auto add_volume_text = [this](VolumeType volume_type)
+    {
+        Plater::TextGizmo* text_gizmo = dynamic_cast<Plater::TextGizmo*>(
+            m_render_module.tool_gizmo(Scene::ToolType::TextGizmo, Domain::PrinterTechnology::FFF)
+        );
+        ASSERT(text_gizmo);
+        text_gizmo->set_next_volume_type(volume_type);
+        m_render_module.command(CommandName::TextGizmo).execute();
+    };
 
-    builder.push_path_level(MenuItemName::ObjectMenu)
+    CommandBuilder builder(m_menu_manager, m_render_module);
+
+    builder.push_path_level(MenuItemName::ObjectContextMenu)
         .push_path_level(MenuItemName::AddVolume)
         .push_path_level(MenuItemName::SolidPartVolume)
         .append_item(
@@ -283,6 +505,24 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             MenuItemName::SolidPartVolumeShapeSphere,
             "add-volume-shape-sphere-solid",
             [add_volume_shape]() { add_volume_shape(GeometryId::Sphere, VolumeType::MODEL_PART); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::SolidPartVolumeShapeText,
+            "add-volume-shape-text-solid",
+            [add_volume_text]() { add_volume_text(VolumeType::MODEL_PART); }
+        )
+        .append_item(
+            MenuItemName::SolidPartVolumeShapeSVG,
+            "add-volume-shape-svg-solid",
+            [this]() { load_volume(VolumeType::MODEL_PART, Wildcards::TypeFlag::Svg); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::SolidPartVolumeShapeFromGallery,
+            "add-volume-shape-from-gallery-solid",
+            [this]() { load_shape_from_gallery(VolumeType::MODEL_PART); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::NegativeVolume)
@@ -310,6 +550,24 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [add_volume_shape]()
             { add_volume_shape(GeometryId::Sphere, VolumeType::NEGATIVE_VOLUME); }
         )
+        .append_separator()
+        .append_item(
+            MenuItemName::NegativeVolumeShapeText,
+            "add-volume-shape-text-negative",
+            [add_volume_text]() { add_volume_text(VolumeType::NEGATIVE_VOLUME); }
+        )
+        .append_item(
+            MenuItemName::NegativeVolumeShapeSVG,
+            "add-volume-shape-svg-negative",
+            [this]() { load_volume(VolumeType::NEGATIVE_VOLUME, Wildcards::TypeFlag::Svg); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::NegativeVolumeShapeFromGallery,
+            "add-volume-shape-from-gallery-negative",
+            [this]() { load_shape_from_gallery(VolumeType::NEGATIVE_VOLUME); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
         .pop_path_level()
         .push_path_level(MenuItemName::ModifierVolume)
         .append_item(
@@ -335,6 +593,24 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             "add-volume-shape-sphere-modifier",
             [add_volume_shape]()
             { add_volume_shape(GeometryId::Sphere, VolumeType::PARAMETER_MODIFIER); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::ModifierVolumeShapeText,
+            "add-volume-shape-text-modifier",
+            [add_volume_text]() { add_volume_text(VolumeType::PARAMETER_MODIFIER); }
+        )
+        .append_item(
+            MenuItemName::ModifierVolumeShapeSVG,
+            "add-volume-shape-svg-modifier",
+            [this]() { load_volume(VolumeType::PARAMETER_MODIFIER, Wildcards::TypeFlag::Svg); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::ModifierVolumeShapeFromGallery,
+            "add-volume-shape-from-gallery-modifier",
+            [this]() { load_shape_from_gallery(VolumeType::PARAMETER_MODIFIER); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::SupportBlocker)
@@ -362,6 +638,13 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [add_volume_shape]()
             { add_volume_shape(GeometryId::Sphere, VolumeType::SUPPORT_BLOCKER); }
         )
+        .append_separator()
+        .append_item(
+            MenuItemName::SupportBlockerShapeFromGallery,
+            "add-volume-shape-from-gallery-support-blocker",
+            [this]() { load_shape_from_gallery(VolumeType::SUPPORT_BLOCKER); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
         .pop_path_level()
         .push_path_level(MenuItemName::SupportModifier)
         .append_item(
@@ -387,9 +670,101 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             "add-volume-shape-sphere-support-modifier",
             [add_volume_shape]()
             { add_volume_shape(GeometryId::Sphere, VolumeType::SUPPORT_ENFORCER); }
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::SupportModifierShapeFromGallery,
+            "add-volume-shape-from-gallery-support-modifier",
+            [this]() { load_shape_from_gallery(VolumeType::SUPPORT_ENFORCER); },
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         );
+}
 
-    builder.register_commands(m_menu_manager, m_render_module);
+void MenuCommandRegistrar::register_instance_menu_commands()
+{
+    CommandBuilder builder(m_menu_manager, m_render_module);
+    builder.push_path_level(MenuItemName::InstanceContextMenu)
+        .append_item_from_command(MenuItemName::DeleteSelectedInstance, CommandName::DeleteSelected)
+        .append_separator()
+        .append_item(
+            MenuItemName::SetAsSeparateObject,
+            "set-as-separate-object",
+            []() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .append_item_from_command(MenuItemName::PrintableInstance, CommandName::SetAsPrintable);
+}
+
+void MenuCommandRegistrar::register_svg_or_text_volume_menu_commands()
+{
+    CommandBuilder builder(m_menu_manager, m_render_module);
+    builder.push_path_level(MenuItemName::SvgOrTextContextMenu)
+        .append_item(
+            MenuItemName::EditSvgOrText,
+            "edit-svg-or-text",
+            []() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_item_from_command(
+            MenuItemName::DeleteSelectedSvgOrText,
+            CommandName::DeleteSelected
+        );
+}
+
+void MenuCommandRegistrar::register_volume_menu_commands()
+{
+    CommandBuilder builder(m_menu_manager, m_render_module);
+
+    builder.push_path_level(MenuItemName::VolumeContextMenu)
+        .append_item_from_command(MenuItemName::DeleteSelectedVolume, CommandName::DeleteSelected)
+        .append_item_from_command(MenuItemName::CopyVolume, CommandName::CopyModelItems)
+        .append_separator()
+        .append_item_from_command(MenuItemName::ExportVolume, CommandName::ExportAsStl)
+        .append_item_from_command(MenuItemName::ReplaceVolume, CommandName::ReplaceWithStl)
+        .append_item_from_command(MenuItemName::ReloadVolume, CommandName::ReloadFromDisk)
+        .append_separator()
+        .append_item_from_command(MenuItemName::SplitVolume, CommandName::SplitToVolumes)
+        .append_item_from_command(
+            MenuItemName::FixVolumeWithRepairAlgorithm,
+            CommandName::FixWithRepairAlgorithm
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::ChangeVolumeType,
+            "change-volume-type",
+            []() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        );
+}
+
+void MenuCommandRegistrar::register_multi_object_menu_commands()
+{
+    CommandBuilder builder(m_menu_manager, m_render_module);
+    builder.push_path_level(MenuItemName::MultiObjectsContextMenu)
+        .append_item_from_command(MenuItemName::CopyMultiObjects, CommandName::CopyModelItems)
+        .append_item_from_command(
+            MenuItemName::DeleteSelectedMultiObjects,
+            CommandName::DeleteSelected
+        )
+        .append_separator()
+        .append_item_from_command(
+            MenuItemName::SetMultiObjectsNumberOfInstances,
+            CommandName::SetNumberOfInstances
+        )
+        .append_separator()
+        .append_item_from_command(
+            MenuItemName::FixMultiObjectWithRepairAlgorithm,
+            CommandName::FixWithRepairAlgorithm
+        )
+        .append_item(
+            MenuItemName::MergeMultiObjects,
+            "merge-multi-objects",
+            []() {},
+            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .append_item_from_command(MenuItemName::PrintableMultiObjects, CommandName::SetAsPrintable);
 }
 
 void MenuCommandRegistrar::load_project()
@@ -472,6 +847,43 @@ void MenuCommandRegistrar::save_project_as()
     );
 }
 
+void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
+{
+    IDialogManager::FileCallback callback =
+        [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (success) {
+            m_project_interactor.load_models_to_project(file_paths);
+            if (m_render_module.command(CommandName::SvgGizmo).enabled()) {
+                // open SvgGizmo, when svg volume is selected(was imported)
+                m_render_module.command(CommandName::SvgGizmo).execute();
+            }
+            m_navigator.navigate_to_module_type(App::Render::ModuleType::Plater);
+        }
+    };
+
+    auto& dlg_manager = App::AppServices::instance().dialog_manager();
+    dlg_manager.show_file_dialog(
+        FileDialogType::OpenMultiple,
+        _u8L("Import File"),
+        m_project_interactor.project_dir(
+            m_project_interactor.selected_project_id(),
+            AppServices::instance().app_config().get<std::string>("last_used_directory")
+        ),
+        "",
+        specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
+                                                         Wildcards::TypeFlag::Project3mf
+                                                             | Wildcards::TypeFlag::Stl
+                                                             | Wildcards::TypeFlag::Obj
+                                                             | Wildcards::TypeFlag::Svg
+                                                             | Wildcards::TypeFlag::Step,
+                                                         Wildcards::TypeFlag::AllImportFiles
+                                                     ) :
+                                                     Wildcards::generate_wildcards(specific_type),
+        callback
+    );
+}
+
 namespace {
 // open SvgGizmo, when svg volume is just added into scene
 // TODO: solve multiple svgs at once
@@ -488,10 +900,10 @@ std::optional<Scene::TrafoGuess> get_svg_guess_tr(
     return Scene::guess_volume_transformation(selection.elements, project, scene);
 }
 
-void open_svg_gizmo(
+static void open_svg_gizmo(
     const std::optional<Scene::TrafoGuess>& volume_tr,
     Biz::ProjectInteractor& project_interactor,
-    Platform::AbstractRenderModule* render_module
+    Platform::AbstractRenderModule& render_module
 )
 {
     const Biz::Scene::ObjectSelection& selection =
@@ -521,16 +933,16 @@ void open_svg_gizmo(
         * volume->get_matrix().inverse()
         * volume_tr->transformation
         * instance_tr.inverse();
+    project_interactor.scene_interactor().transform_selection(world_relative.matrix());
 
-    if (Plater::PlaterRenderModule* plater_rm =
-            dynamic_cast<Plater::PlaterRenderModule*>(render_module))
-    {
-        plater_rm->toggle_activate_tool(Scene::ToolType::Svg);
+    if (render_module.command(CommandName::SvgGizmo).enabled()) {
+        render_module.command(CommandName::SvgGizmo).execute();
     }
 }
 } // namespace
 
-void MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type)
+void
+MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeFlag specific_type)
 {
     IDialogManager::FileCallback callback =
         [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
@@ -553,7 +965,7 @@ void MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type)
 
         // open SvgGizmo, when svg volume is selected(was imported)
         if (svg_loading) {
-            open_svg_gizmo(svg_transform, m_project_interactor, &m_render_module);
+            open_svg_gizmo(svg_transform, m_project_interactor, m_render_module);
         }
     };
 
@@ -566,17 +978,20 @@ void MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type)
             AppServices::instance().app_config().get<std::string>("last_used_directory")
         ),
         "",
-        Wildcards::generate_wildcards(
-            Wildcards::TypeFlag::Project3mf
-                | Wildcards::TypeFlag::Stl
-                | Wildcards::TypeFlag::Obj
-                | Wildcards::TypeFlag::Svg
-                | Wildcards::TypeFlag::Step,
-            Wildcards::TypeFlag::AllImportFiles
-        ),
+        specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
+                                                         Wildcards::TypeFlag::Project3mf
+                                                             | Wildcards::TypeFlag::Stl
+                                                             | Wildcards::TypeFlag::Obj
+                                                             | Wildcards::TypeFlag::Svg
+                                                             | Wildcards::TypeFlag::Step,
+                                                         Wildcards::TypeFlag::AllImportFiles
+                                                     ) :
+                                                     Wildcards::generate_wildcards(specific_type),
         callback
     );
 }
+
+void MenuCommandRegistrar::load_shape_from_gallery(Domain::ModelVolumeType type) {}
 
 // Maps UI language to supported website locale codes.
 static std::string current_language_code_safe()
@@ -1260,41 +1675,7 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
             {MenuItemName::FileMenu, MenuItemName::Import, MenuItemName::ImportGeometry},
             std::make_unique<UIItemCommand>(
                 CommandName::ImportGeometry,
-                [this]()
-                {
-                    IDialogManager::FileCallback callback =
-                        [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
-                    {
-                        if (success) {
-                            m_project_interactor.load_models_to_project(file_paths);
-                            // open SvgGizmo, when svg volume is selected(was imported)
-                            m_render_module.command(CommandName::SvgGizmo).execute();
-                            m_navigator.navigate_to_module_type(App::Render::ModuleType::Plater);
-                        }
-                    };
-
-                    auto& dlg_manager = App::AppServices::instance().dialog_manager();
-                    dlg_manager.show_file_dialog(
-                        FileDialogType::OpenMultiple,
-                        _u8L("Import File"),
-                        m_project_interactor.project_dir(
-                            m_project_interactor.selected_project_id(),
-                            AppServices::instance().app_config().get<std::string>(
-                                "last_used_directory"
-                            )
-                        ),
-                        "",
-                        Wildcards::generate_wildcards(
-                            Wildcards::TypeFlag::Project3mf
-                                | Wildcards::TypeFlag::Stl
-                                | Wildcards::TypeFlag::Obj
-                                | Wildcards::TypeFlag::Svg
-                                | Wildcards::TypeFlag::Step,
-                            Wildcards::TypeFlag::AllImportFiles
-                        ),
-                        callback
-                    );
-                },
+                [this]() { load_object(); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),

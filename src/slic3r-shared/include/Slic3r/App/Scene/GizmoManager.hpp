@@ -128,6 +128,8 @@ public:
 
     NodePickResults repick() const override;
 
+    IToolGizmo* find_tool(ToolType tool, Domain::PrinterTechnology pt);
+
 private:
     using PickResultWithRay = std::tuple<NodePickResults, Ray>;
     PickResultWithRay
@@ -136,7 +138,6 @@ private:
     void on_selected_project_changed(size_t index) override;
 
     void prepare_cycle();
-    IToolGizmo* find_tool(ToolType tool, Domain::PrinterTechnology pt);
 
     struct ProjectContext;
     ProjectContext& current_context() { return m_projects.selected(); }

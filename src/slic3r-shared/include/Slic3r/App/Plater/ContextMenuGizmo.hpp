@@ -6,24 +6,27 @@ namespace Slic3r::App::Scene {
 class ISceneProvider;
 } // namespace Slic3r::App::Scene
 
-namespace Slic3r::Biz::Scene {
-class SceneInteractor;
-} // namespace Slic3r::Biz::Scene
+namespace Slic3r::Biz {
+class ProjectInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Plater {
 
 enum class ContextMenuType
 {
-    Scene,
+    Scene, //???
     Bed,
     Object,
+    MultiObjects,
+    Instance,
+    SvgOrText,
     Volume
 };
 
 class IShowContextMenuListener
 {
 public:
-    virtual ~IShowContextMenuListener()                                        = default;
+    virtual ~IShowContextMenuListener()                                                   = default;
     virtual void on_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_position) = 0;
 };
 
@@ -31,7 +34,7 @@ class ContextMenuGizmo : public Scene::IGizmo, public WithListeners<IShowContext
 {
 public:
     ContextMenuGizmo(
-        Biz::Scene::SceneInteractor& m_scene_interactor,
+        Biz::ProjectInteractor& project_interactor,
         Scene::ISceneProvider& scene_provider
     );
 
@@ -41,7 +44,7 @@ private:
     void invoke_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_position);
 
 private:
-    Biz::Scene::SceneInteractor& m_scene_interactor;
+    Biz::ProjectInteractor& m_project_interactor;
     Scene::ISceneProvider& m_scene_provider;
 };
 

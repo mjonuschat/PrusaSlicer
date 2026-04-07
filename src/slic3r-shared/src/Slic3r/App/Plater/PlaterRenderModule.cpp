@@ -167,6 +167,11 @@ void PlaterRenderModule::set_object_list_collapsed(bool collapsed)
     }
 }
 
+Scene::IToolGizmo* PlaterRenderModule::tool_gizmo(Scene::ToolType type, Domain::PrinterTechnology pt)
+{
+    return m_gizmo_manager->find_tool(type, pt);
+}
+
 std::shared_ptr<Scene::ModelGeometryProvider> PlaterRenderModule::shared_model_geometry_provider()
 {
     return m_scene_presenter->model_geometry_provider();
@@ -439,7 +444,7 @@ void PlaterRenderModule::register_commands()
         {Scene::ToolType::PaintOnFuzzySkinGizmo, Platform::KeyCode::H},
         {Scene::ToolType::MultiMaterialPaintingGizmo, Platform::KeyCode::N},
         {Scene::ToolType::TextGizmo, Platform::KeyCode::T},
-        {Scene::ToolType::Svg, Platform::KeyCode::G},
+        {Scene::ToolType::Svg, Platform::KeyCode::G},// !never processed
         {Scene::ToolType::CutGizmo, Platform::KeyCode::C},
         {Scene::ToolType::MeasureGizmo, Platform::KeyCode::U},
         {Scene::ToolType::VariableLayerHeightGizmo, Platform::KeyCode::V},
@@ -467,17 +472,21 @@ void PlaterRenderModule::register_commands()
 
     m_top_bar->register_context_menus(m_gizmo_manager->data_factory(), m_scene_presenter.get());
 
-    MenuBuilder menu_builder(
-        menu_manager(),
-        command_binding_manager()
-    );
+    MenuBuilder menu_builder(menu_manager(), command_binding_manager());
 
-    if (App::MenuItem* main_bed_menu_item = menu_manager().menu_item(MenuItemName::BedContextMenu)) {
-        menu_builder.add_menu_items(m_bed_menu, main_bed_menu_item);
-    }
+    std::map<MenuItemName, Yoga::Menu*> context_menus = {
+        {MenuItemName::BedContextMenu, m_bed_menu},
+        {MenuItemName::ObjectContextMenu, m_object_menu},
+        {MenuItemName::MultiObjectsContextMenu, m_multi_objects_menu},
+        {MenuItemName::InstanceContextMenu, m_instance_menu},
+        {MenuItemName::VolumeContextMenu, m_volume_menu},
+        {MenuItemName::SvgOrTextContextMenu, m_svg_or_text_menu}
+    };
 
-    if (App::MenuItem* main_object_item = menu_manager().menu_item(MenuItemName::ObjectMenu)) {
-        menu_builder.add_menu_items(m_object_menu, main_object_item);
+    for (auto [item_name, menu] : context_menus) {
+        if (App::MenuItem* menu_item = menu_manager().menu_item(item_name)) {
+            menu_builder.add_menu_items(menu, menu_item);
+        }
     }
 }
 
@@ -571,6 +580,14 @@ void PlaterRenderModule::init_scene_layout()
         m_top_bar->emplace_back<Yoga::Menu>("bed_context_menu", Yoga::Position::Bottom);
     m_object_menu =
         m_top_bar->emplace_back<Yoga::Menu>("object_context_menu", Yoga::Position::Bottom);
+    m_volume_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("volume_context_menu", Yoga::Position::Bottom);
+    m_multi_objects_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("multi_objects_context_menu", Yoga::Position::Bottom);
+    m_svg_or_text_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("svg_or_text_context_menu", Yoga::Position::Bottom);
+    m_instance_menu =
+        m_top_bar->emplace_back<Yoga::Menu>("instance_context_menu", Yoga::Position::Bottom);
 
     m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
 
@@ -873,7 +890,7 @@ void PlaterRenderModule::init_gizmos()
         *m_animation_manager);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor, *m_scene_presenter);
     ContextMenuGizmo& context_menu_gizmo = m_gizmo_manager->add_base_gizmo<ContextMenuGizmo>(
-        m_project_interactor.scene_interactor(),
+        m_project_interactor,
         *m_scene_presenter
     );
     context_menu_gizmo.add_listener<IShowContextMenuListener>(this);
@@ -1064,13 +1081,36 @@ void PlaterRenderModule::on_status_cache_status_code_changed(const Domain::Slici
 
 void PlaterRenderModule::on_show_context_menu(ContextMenuType type, Domain::Vec2f mouse_position)
 {
-    if (type == ContextMenuType ::Bed) {
-        m_bed_menu->set_open_pos(mouse_position - m_top_bar->get_global_pos());
-        m_bed_menu->open();
-        request_render();
-    } else if (type == ContextMenuType ::Object) {
-        m_object_menu->set_open_pos(mouse_position - m_top_bar->get_global_pos());
-        m_object_menu->open();
+    Domain::Vec2f pos = mouse_position - m_top_bar->get_global_pos();
+
+    Yoga::Menu* menu{nullptr};
+
+    switch (type) {
+    case ContextMenuType ::Bed:
+        menu = m_bed_menu;
+        break;
+    case ContextMenuType ::Object:
+        menu = m_object_menu;
+        break;
+    case ContextMenuType ::MultiObjects:
+        menu = m_multi_objects_menu;
+        break;
+    case ContextMenuType ::Instance:
+        menu = m_instance_menu;
+        break;
+    case ContextMenuType ::Volume:
+        menu = m_volume_menu;
+        break;
+    case ContextMenuType ::SvgOrText:
+        menu = m_svg_or_text_menu;
+        break;
+    default:
+        break;
+    }
+
+    if (menu) {
+        menu->set_open_pos(pos);
+        menu->open();
         request_render();
     }
 }
@@ -1197,8 +1237,16 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
         && e.button() == Platform::MouseButton::Left
         && e.type() == Platform::MouseEvent::Type::ButtonUp)
     {
-        m_bed_menu->close();
-        m_object_menu->close();
+        for (Yoga::Menu* menu :
+             {m_bed_menu,
+              m_object_menu,
+              m_volume_menu,
+              m_multi_objects_menu,
+              m_svg_or_text_menu,
+              m_instance_menu})
+        {
+            menu->close();
+        }
     }
 }
 

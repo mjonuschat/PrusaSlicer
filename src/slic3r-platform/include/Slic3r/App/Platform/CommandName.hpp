@@ -3,11 +3,13 @@
 namespace Slic3r::App::Platform {
 struct CommandName
 {
-    static constexpr const char* AddObject      = "add-object";
-    static constexpr const char* AddVolume      = "add-volume";
-    static constexpr const char* AddInstance    = "add-instance";
-    static constexpr const char* AddInstanceKp  = "add-instance-kp";
-    static constexpr const char* DeleteSelected = "delete-selected";
+    static constexpr const char* AddObject       = "add-object";
+    static constexpr const char* AddVolume       = "add-volume";
+    static constexpr const char* AddInstance     = "add-instance";
+    static constexpr const char* AddInstanceKp   = "add-instance-kp";
+    static constexpr const char* DeleteSelected  = "delete-selected";
+    static constexpr const char* CopyModelItems  = "copy-selected";
+    static constexpr const char* PasteModelItems = "paste-model-items";
 
     static constexpr const char* NewProject    = "new-project";
     static constexpr const char* OpenProject   = "open-project";
@@ -52,12 +54,12 @@ struct CommandName
     static constexpr const char* ShowToolMarker      = "show-tool-marker";
     static constexpr const char* ShowShell           = "show-tool-shell";
 
-    static constexpr const char* Search           = "search";
-    static constexpr const char* Preferences      = "preferences";
-    static constexpr const char* ShapeGallery     = "shape-gallery";
-    static constexpr const char* ShowLabel        = "show-label";
-    static constexpr const char* FullScreen       = "full-screen";
-    static constexpr const char* Exit             = "exit";
+    static constexpr const char* Search       = "search";
+    static constexpr const char* Preferences  = "preferences";
+    static constexpr const char* ShapeGallery = "shape-gallery";
+    static constexpr const char* ShowLabel    = "show-label";
+    static constexpr const char* FullScreen   = "full-screen";
+    static constexpr const char* Exit         = "exit";
 
     static constexpr const char* Undo  = "undo";
     static constexpr const char* Redo  = "redo";
@@ -76,6 +78,8 @@ struct CommandName
     static constexpr const char* CameraLeftView         = "camera-left-view";
     static constexpr const char* CameraRightView        = "camera-right-view";
 
+    static constexpr const char* ExportAsStl          = "export-as-stl";
+    static constexpr const char* ReplaceWithStl       = "replace-with-stl";
     static constexpr const char* ReloadFromDisk       = "reload-from-disk";
     static constexpr const char* ConfigurationWizard  = "configuration-wizard";
     static constexpr const char* CheckConfigUpdates   = "check-config-updates";
@@ -103,6 +107,13 @@ struct CommandName
     static constexpr const char* TipOfTheDay             = "tip-of-the-day";
     static constexpr const char* KeyboardShortcutsDialog = "keyboard-shortcuts";
 
-    static constexpr const char* DeleteBed = "delete-bed";
+    static constexpr const char* ArrangeBed     = "arrange-bed";
+    static constexpr const char* SelectAllOnBed = "select-all-on-bed";
+    static constexpr const char* DeleteBed      = "delete-bed";
+
+    static constexpr const char* SetNumberOfInstances   = "set-number-of-instances";
+    static constexpr const char* FixWithRepairAlgorithm = "fix-with-repair-algorithm";
+    static constexpr const char* SetAsPrintable         = "set-as-printable";
+    static constexpr const char* SplitToVolumes         = "split-to-volumes";
 };
 } // namespace Slic3r::App::Platform

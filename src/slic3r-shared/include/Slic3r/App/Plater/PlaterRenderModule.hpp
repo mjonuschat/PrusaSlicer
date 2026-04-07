@@ -144,13 +144,14 @@ public:
         return m_gizmo_manager.get();
     }
 
+    Scene::IToolGizmo* tool_gizmo(Scene::ToolType type, Domain::PrinterTechnology pt) override;
+
     /**
      * @name Implementation of Scene::ISharedModelGeometryProvider public interface
      * @{
      */
     std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider() override;
     /**@}*/
-    void toggle_activate_tool(Scene::ToolType tool_type);
 
 protected:
     void on_init(
@@ -184,6 +185,7 @@ private:
     void init_scene_layout();
     void
     render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
+    void toggle_activate_tool(Scene::ToolType tool_type);
     void init_dialog_navigation();
     void update_object_selection();
     void update_current_right_sidebar();
@@ -201,6 +203,11 @@ private:
 
     Yoga::Menu* m_bed_menu = nullptr;
     Yoga::Menu* m_object_menu = nullptr;
+    Yoga::Menu* m_volume_menu = nullptr;
+    Yoga::Menu* m_multi_objects_menu = nullptr;
+    Yoga::Menu* m_svg_or_text_menu = nullptr;
+    Yoga::Menu* m_instance_menu = nullptr;
+
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects

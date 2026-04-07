@@ -21,6 +21,7 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::MainMenu:
         return Biz::_u8L("Menu");
     case MenuItemName::Edit:
+    case MenuItemName::EditSvgOrText:
         return Biz::_u8L("Edit");
     case MenuItemName::SelectAll:
         return Biz::_u8L("Select All");
@@ -33,10 +34,17 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::Redo:
         return Biz::_u8L("Redo");
     case MenuItemName::Copy:
+    case MenuItemName::CopyObject:
+    case MenuItemName::CopyVolume:
+    case MenuItemName::CopyMultiObjects:
         return Biz::_u8L("Copy");
     case MenuItemName::Paste:
+    case MenuItemName::PasteObject:
+    case MenuItemName::PasteVolume:
         return Biz::_u8L("Paste");
     case MenuItemName::ReloadFromDisk:
+    case MenuItemName::ReloadObject:
+    case MenuItemName::ReloadVolume:
         return Biz::_u8L("Reload From Disk");
     case MenuItemName::Search:
         return Biz::_u8L("Search");
@@ -140,9 +148,45 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Export G-code to SD Card / Flash Drive");
     case MenuItemName::OnlinePresetUpdate:
         return Biz::_u8L("Update from Online Presets");
+    case MenuItemName::ArrangeBed:
+        return Biz::_u8L("Arrange Bed");
+    case MenuItemName::SelectAllOnBed:
+        return Biz::_u8L("Select All Objects");
     case MenuItemName::DeleteBed:
     case MenuItemName::DeleteSelectedObject:
+    case MenuItemName::DeleteSelectedInstance:
+    case MenuItemName::DeleteSelectedMultiObjects:
+    case MenuItemName::DeleteSelectedSvgOrText:
+    case MenuItemName::DeleteSelectedVolume:
         return Biz::_u8L("Delete");
+    case MenuItemName::SetNumberOfInstances:
+    case MenuItemName::SetMultiObjectsNumberOfInstances:
+        return Biz::_u8L("Set Number Of Instances");
+    case MenuItemName::FillBedWithInstances:
+        return Biz::_u8L("Fill Bed With Instances");
+    case MenuItemName::ExportObject:
+    case MenuItemName::ExportVolume:
+        return Biz::_u8L("Export as STL/OBJ")+"...";
+    case MenuItemName::ReplaceObject:
+    case MenuItemName::ReplaceVolume:
+        return Biz::_u8L("Replace with STL");
+    case MenuItemName::SplitObject:
+    case MenuItemName::SplitVolume:
+        return Biz::_u8L("Split");
+    case MenuItemName::SplitObjectToObjects:
+        return Biz::_u8L("To Objects");
+    case MenuItemName::SplitObjectToVolumes:
+        return Biz::_u8L("To Parts");
+    case MenuItemName::ScaleToPrintVolume:
+        return Biz::_u8L("Scale To Print Volume");
+    case MenuItemName::FixMultiObjectWithRepairAlgorithm:
+    case MenuItemName::FixObjectWithRepairAlgorithm:
+    case MenuItemName::FixVolumeWithRepairAlgorithm:
+        return Biz::_u8L("Fix by Windows repair algorithm");
+    case MenuItemName::PrintableObject:
+    case MenuItemName::PrintableInstance:
+    case MenuItemName::PrintableMultiObjects:
+        return Biz::_u8L("Printable");
     case MenuItemName::AddObjectShape:
         return Biz::_u8L("Add shape");
     case MenuItemName::ObjectShapeLoad:
@@ -174,7 +218,22 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::SupportModifierShapeSphere:
         return Biz::_u8L("Sphere");
     case MenuItemName::ObjectShapeText:
+    case MenuItemName::SolidPartVolumeShapeText:
+    case MenuItemName::NegativeVolumeShapeText:
+    case MenuItemName::ModifierVolumeShapeText:
         return Biz::_u8L("Text");
+    case MenuItemName::ObjectShapeSvg:
+    case MenuItemName::SolidPartVolumeShapeSVG:
+    case MenuItemName::NegativeVolumeShapeSVG:
+    case MenuItemName::ModifierVolumeShapeSVG:
+        return Biz::_u8L("SVG");
+    case MenuItemName::ObjectShapeFromGallery:
+    case MenuItemName::SolidPartVolumeShapeFromGallery:
+    case MenuItemName::NegativeVolumeShapeFromGallery:
+    case MenuItemName::ModifierVolumeShapeFromGallery:
+    case MenuItemName::SupportBlockerShapeFromGallery:
+    case MenuItemName::SupportModifierShapeFromGallery:
+        return Biz::_u8L("Gallery");
     case MenuItemName::AddVolume:
         return Biz::_u8L("Add volume");
     case MenuItemName::SolidPartVolume:
@@ -187,6 +246,14 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Support blocker");
     case MenuItemName::SupportModifier:
         return Biz::_u8L("Support modifier");
+    case MenuItemName::SetAsSeparateObject:
+        return Biz::_u8L("Separate to Object(s)");
+    case MenuItemName::MergeMultiObjects:
+        return Biz::_u8L("Merge");
+    case MenuItemName::ChangeVolumeType:
+        return Biz::_u8L("Change type");
+    case MenuItemName::InvalidateCutInfo:
+        return Biz::_u8L("Invalidate cut info");
 
     default:
         return std::string();
@@ -234,11 +301,16 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::SupportModifier:
         return Render::Icon::SupportModifier;
 
-    case MenuItemName::Edit:
     case MenuItemName::Import:
+    case MenuItemName::Edit:
     case MenuItemName::DeselectAll:
     case MenuItemName::JumpToValue:
     case MenuItemName::BedContextMenu:
+    case MenuItemName::ObjectContextMenu:
+    case MenuItemName::MultiObjectsContextMenu:
+    case MenuItemName::InstanceContextMenu:
+    case MenuItemName::SvgOrTextContextMenu:
+    case MenuItemName::VolumeContextMenu:
     case MenuItemName::SolidPartVolumeShapeLoad:
     default:
         return Render::Icon::None;

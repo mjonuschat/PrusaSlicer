@@ -8,10 +8,20 @@
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
 
+namespace Slic3r::Domain {
+enum class PrinterTechnology : uint8_t;
+} // namespace Slic3r::Domain
+
 namespace Slic3r::App {
 class Navigator;
 class MenuManager;
 class CommandBindingManager;
+
+namespace Scene {
+class IToolGizmo;
+enum class ToolType : uint8_t;
+} // namespace Scene
+
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Platform {
@@ -66,6 +76,10 @@ public:
     virtual bool is_gizmo_manager_completed() const;
     virtual CommandBindingManager& command_binding_manager() = 0;
     virtual MenuManager& menu_manager()                      = 0;
+    virtual Scene::IToolGizmo* tool_gizmo(Scene::ToolType, Domain::PrinterTechnology)
+    {
+        return nullptr;
+    }
 
 protected:
     /**

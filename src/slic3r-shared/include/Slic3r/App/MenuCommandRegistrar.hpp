@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/ModelVolume.hpp"
+#include "Slic3r/App/Wildcards.hpp"
 #include <string>
 
 namespace Slic3r::App::Platform {
@@ -55,11 +56,25 @@ private:
     void register_object_menu_commands();
     void register_object_menu_add_volume_commands();
 
+    void register_instance_menu_commands();
+    void register_svg_or_text_volume_menu_commands();
+    void register_volume_menu_commands();
+    void register_multi_object_menu_commands();
+
     void load_project();
     void save_project();
     void save_project_as();
 
-    void load_volume(Domain::ModelVolumeType type);
+    void load_object(Wildcards::TypeFlag specific_type = Wildcards::TypeFlag::None);
+
+    void load_volume(
+        Domain::ModelVolumeType type,
+        Wildcards::TypeFlag specific_type = Wildcards::TypeFlag::None
+    );
+
+    void load_shape_from_gallery(
+        Domain::ModelVolumeType type = Domain::ModelVolumeType::MODEL_PART
+    );
 
     struct OpenBrowserParams
     {

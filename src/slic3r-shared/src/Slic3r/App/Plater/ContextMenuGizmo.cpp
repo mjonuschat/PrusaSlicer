@@ -8,10 +8,10 @@
 namespace Slic3r::App::Plater {
 
 ContextMenuGizmo::ContextMenuGizmo(
-    Biz::Scene::SceneInteractor& scene_interactor,
+    Biz::ProjectInteractor& project_interactor,
     Scene::ISceneProvider& scene_provider
 ) :
-    m_scene_interactor(scene_interactor),
+    m_project_interactor(project_interactor),
     m_scene_provider(scene_provider)
 {}
 
@@ -52,7 +52,7 @@ ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
         if (const Scene::BedNodeTag* bed_tag{node->tag_of_type<Scene::BedNodeTag>()}) {
             const Domain::BedRef instance{bed_tag->config_container_id, bed_tag->instance_id};
 
-            if (m_scene_interactor.bed_selection().is_selected(instance)) {
+            if (m_project_interactor.scene_interactor().bed_selection().is_selected(instance)) {
                 invoke_show_context_menu(ContextMenuType::Bed, pos);
             }
         } else if (const Scene::SceneNodeTag* tag{node->tag_of_type<Scene::SceneNodeTag>()}) {
@@ -63,14 +63,41 @@ ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
                 std::chrono::milliseconds(150),
                 [this, pos]()
                 {
-                    const Biz::Scene::ObjectSelection& selection = m_scene_interactor.object_selection();
+                    const Biz::Scene::ObjectSelection& selection =
+                        m_project_interactor.scene_interactor().object_selection();
                     if (!selection.empty()) {
-                        invoke_show_context_menu(
-                            selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance ?
-                            ContextMenuType::Object :
-                            ContextMenuType::Volume,
-                            pos
-                        );
+                        Domain::Project& project = m_project_interactor.selected_project();
+                        if (selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume) {
+                            bool is_svg_or_text = selection.elements.size() == 1;
+                            if (is_svg_or_text) {
+                                Domain::ModelVolume* volume = project.find_volume_by_id(
+                                    selection.elements.front().object_id,
+                                    selection.elements.front().volume_id
+                                );
+                                is_svg_or_text = volume->is_text() || volume->is_svg();
+                            }
+
+                            invoke_show_context_menu(
+                                is_svg_or_text ? ContextMenuType::SvgOrText :
+                                                 ContextMenuType::Volume,
+                                pos
+                            );
+                        } else {
+                            if (selection.only_single_object()) {
+                                Domain::ModelObject* object = project.find_object_by_id(
+                                    selection.elements.front().object_id
+                                );
+                                bool full_object_selected =
+                                    object->instances.size() == selection.elements.size();
+                                invoke_show_context_menu(
+                                    full_object_selected ? ContextMenuType::Object :
+                                                           ContextMenuType::Instance,
+                                    pos
+                                );
+                            } else {
+                                invoke_show_context_menu(ContextMenuType::MultiObjects, pos);
+                            }
+                        }
                     }
                 }
             );

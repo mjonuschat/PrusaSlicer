@@ -76,6 +76,11 @@ public:
      */
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
+    /**
+     *  @brief Set type for the next created text volume
+     */
+    void set_next_volume_type(Domain::ModelVolumeType volume_type);
+
 private:
     /**
      *  @brief  Create new text volume
@@ -105,5 +110,7 @@ private:
 
     TextDialog& dialog() { return *m_dialog.get(); }
     Yoga::Passthrough<TextDialog> m_dialog;
+
+    std::optional<Domain::ModelVolumeType> m_next_volume_type = std::nullopt;
 };
 } // namespace Slic3r::App::Plater
