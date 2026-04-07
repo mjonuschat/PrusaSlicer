@@ -22,7 +22,6 @@ namespace Slic3r::App::Plater {
 
 static constexpr size_t SELECT_ITEM_ID   = 0;
 static constexpr size_t UNSELECT_ITEM_ID = 1;
-static constexpr size_t RESTART_ITEM_ID  = 2;
 
 static const ImColor NEUTRAL_COLOR   = ImColor(255, 255, 255);
 static const ImColor FEATURE_1_COLOR = ImColor(64, 191, 191);
@@ -78,8 +77,7 @@ MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Rule
 
     m_help.init(help_row);
     m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Select"), false);
-    m_help.add_item({{Render::Icon::KeyEsc, shortcut_button_size}}, _u8L("Unselect"), false);
-    m_help.add_item({{Render::Icon::KeyDel, shortcut_button_size}}, _u8L("Restart"), false);
+    m_help.add_item({{Render::Icon::KeyBackspace, shortcut_button_size}}, _u8L("Unselect"), false);
     m_main_panel->set_visible(false);
 }
 
@@ -169,8 +167,6 @@ void MeasureDialog::update(const Measure::MeasurementResult& result, const Measu
     bool second_selected = features.second_selected().has_value();
     m_help.icon(UNSELECT_ITEM_ID)->set_enabled(first_selected);
     m_help.title(UNSELECT_ITEM_ID)->set_enabled(first_selected);
-    m_help.icon(RESTART_ITEM_ID)->set_enabled(first_selected);
-    m_help.title(RESTART_ITEM_ID)->set_enabled(first_selected);
 
     ImColor select_color;
     std::string select_text = _u8L("Select");

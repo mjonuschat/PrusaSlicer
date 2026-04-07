@@ -349,6 +349,10 @@ void SceneInteractor::set_object_selection(
     }
 
     DEBUG_ASSERT(sel.is_valid());
+
+    if (project_context.object_selection == sel) {
+        return;
+    }
     project_context.object_selection = sel;
 
     invoke_listeners<ISceneSelectionChangedListener>(

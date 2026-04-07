@@ -47,16 +47,23 @@ GizmoManager::GizmoManager(
 }
 
 namespace {
-std::vector<IGizmo*> get_gizmos(const std::vector<std::unique_ptr<IGizmo>> &base_gizmos, IGizmo* active_tool) {
+std::vector<IGizmo*> get_active_gizmos(
+    const std::vector<std::unique_ptr<IGizmo>>& base_gizmos,
+    IGizmo* active_tool,
+    bool object_selection_disabled
+)
+{
     std::vector<IGizmo*> gizmos;
-    gizmos.reserve(base_gizmos.size() + ((active_tool==nullptr)? 0:1));
     if (active_tool == nullptr) {
         gizmos.reserve(base_gizmos.size());
     } else {
-        gizmos.reserve(base_gizmos.size()+1);
+        gizmos.reserve(base_gizmos.size() + 1);
         gizmos.push_back(active_tool);
     }
     for (const auto& g : base_gizmos) {
+        if (g->handles_object_selection() && object_selection_disabled) {
+            continue;
+        }
         gizmos.push_back(g.get());
     }
     return gizmos;
@@ -105,21 +112,6 @@ GizmoManager::PickResultWithRay GizmoManager::pick(
         }
     }
 
-    // When a tool gizmo disables object selection, filter out scene object
-    // nodes from pick results. This prevents QuickDragGizmo from starting
-    // object drag and lets PlaterCameraGizmo orbit the camera instead.
-    if (p.object_selection_disabled) {
-        pick_results.erase(
-            std::remove_if(
-                pick_results.begin(),
-                pick_results.end(),
-                [](const NodePickResult& r)
-                { return r.node->tag_of_type<SceneNodeTag>() != nullptr; }
-            ),
-            pick_results.end()
-        );
-    }
-
     return std::make_tuple(pick_results, pick_ray);
 }
 
@@ -137,8 +129,18 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     auto [pick_results, pick_ray] = pick(e, screen_info);
 
     GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
-    if (m_mouse_drag_detector &&
-        m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
+    if (m_mouse_drag_detector
+        && m_mouse_drag_detector->mouse_event(
+            ctx,
+            [&]()
+            {
+                return get_active_gizmos(
+                    m_base_gizmos,
+                    current_context().active_tool,
+                    p.object_selection_disabled
+                );
+            }
+        ))
         return;
 
     // activation by double click

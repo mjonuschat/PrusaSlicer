@@ -17,6 +17,8 @@
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
+
 
 #include <magic_enum/magic_enum_flags.hpp>
 
@@ -147,7 +149,7 @@ bool MeasureGizmo::enabled() const
     const Biz::Scene::ObjectSelection& selection{
         m_project_interactor.scene_interactor().object_selection()
     };
-    return !selection.contains_wipe_tower();
+    return !selection.empty() && !selection.contains_wipe_tower();
 }
 
 Yoga::GizmoWindowPtr MeasureGizmo::release_ui_window()
@@ -197,6 +199,10 @@ std::optional<FeatureItem> MeasureGizmo::detect_current_feature()
 {
     std::optional<FeatureItem> ret;
     if (m_feature_detection_data.has_value()) {
+        auto inst = m_feature_detection_data->hovered_instance;
+        if (inst->measuring == nullptr)
+            return std::nullopt;
+
         const Scene::AabbRaycastNodeComponent*
             raycast_component = dynamic_cast<const Scene::AabbRaycastNodeComponent*>(
                 m_feature_detection_data->node->raycast_component()
@@ -249,16 +255,12 @@ Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext& ctx
     bool is_left_button = (ctx.mouse_event().button() & Platform::MouseButton::Left)
         == Platform::MouseButton::Left;
     auto event_type = ctx.mouse_event().type();
-    if (event_type == Platform::MouseEvent::Type::ButtonDown && is_left_button)
+    const bool button_down{event_type == Platform::MouseEvent::Type::ButtonDown && is_left_button};
+    if (button_down) {
         m_mouse_left_down = true;
+    }
     else if (event_type == Platform::MouseEvent::Type::ButtonUp && is_left_button)
         m_mouse_left_down = false;
-
-    // avoid dragging while the gizmo is active
-    if (m_selection_mode == SelectionMode::Point
-        && m_mouse_left_down
-        && event_type == Platform::MouseEvent::Type::Move)
-        return return_value;
 
     auto& feature_cache = m_current_project->feature_cache;
 
@@ -272,7 +274,18 @@ Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext& ctx
         feature_cache.current.reset();
         update_current_feature_on_scene();
         update_ui_dialog();
-        // return Inactive to allow selection of objects in the scene
+
+        if (button_down) {
+            Biz::Scene::ObjectSelection selection;
+            const SceneNodeTag* tag{hovered_scene_node->tag_of_type<SceneNodeTag>()};
+            ASSERT(tag);
+            if (tag->instance_id != 0) {
+                ASSERT(tag->object_id != 0);
+                selection.elements.push_back(Domain::ElementRef{tag->object_id, tag->instance_id});
+            }
+            m_scene_interactor.set_object_selection(selection);
+            update_feature_detection_data(hovered_scene_node, ctx);
+        }
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -280,7 +293,7 @@ Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext& ctx
 
     if (hovered_feature_node != nullptr) {
         // hovering a feature
-        if (m_mouse_left_down) {
+        if (button_down) {
             const MeasureGizmoNodeTag& tag = *hovered_feature_node->tag_of_type<MeasureGizmoNodeTag>();
             switch (tag.type) {
             case MeasureGizmoElementType::CurrentFeature: {
@@ -472,9 +485,6 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
             std::make_unique<Platform::FuncCommand>(
                 "measure-gizmo-unselect-feature",
                 [this]() {
-                    if (!m_current_project->feature_cache.first_selected().has_value())
-                        return;
-
                     if (m_current_project->feature_cache.second_selected().has_value()) {
                         // remove second selected feature
                         m_current_project->feature_cache.second_selected().reset();
@@ -493,28 +503,8 @@ void MeasureGizmo::register_commands(Platform::CommandRegistry& registry)
                 FuncCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
-                            Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace}
                         }
-                }
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "measure-gizmo-unselect-all_features",
-                [this]() {
-                    m_current_project->feature_cache.second_selected().reset();
-                    remove_feature_from_scene(MeasureGizmoElementType::SecondSelectedFeature);
-                    m_current_project->feature_cache.first_selected().reset();
-                    remove_feature_from_scene(MeasureGizmoElementType::FirstSelectedFeature);
-                    m_current_project->dimensioning_nodes.main->set_enabled(false);
-                    m_current_project->feature_cache.hover_id = HoverID::None;
-
-                    update_measurement();
-                },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcuts = Platform::KeyboardShortcuts{
-                        Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
-                    }
                 }
             )
         );

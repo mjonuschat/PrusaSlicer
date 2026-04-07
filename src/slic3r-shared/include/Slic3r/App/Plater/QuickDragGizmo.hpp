@@ -33,6 +33,7 @@ public:
     bool on_dragging(const Scene::GizmoEventContext& ctx) override;
     void on_drag_finish() override;
     void on_drag_cancel() override;
+    bool handles_object_selection() const override { return true; }
 
 private:
     bool mouse_pos(float screen_x, float screen_y, Domain::Vec3d& out_pos);

@@ -104,6 +104,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::KeyV, "key_v"},
     {Icon::KeyEsc, "key_esc"},
     {Icon::KeyDel, "key_del"},
+    {Icon::KeyBackspace, "key_backspace"},
 
     {Icon::ClippyMarker, "notification_clippy"},
     {Icon::PrusaSlicerIcon, "PrusaSlicer"},

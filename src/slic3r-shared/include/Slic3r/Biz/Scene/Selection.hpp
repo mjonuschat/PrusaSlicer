@@ -50,6 +50,8 @@ struct ObjectSelection
     [[nodiscard]] bool contains_wipe_tower() const;
 
     [[nodiscard]] bool is_valid() const;
+
+    bool operator==(const ObjectSelection& selection) const = default;
 };
 
 enum class BedSelectionMode

@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
+#include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Workbench.hpp"

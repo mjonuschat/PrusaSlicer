@@ -67,6 +67,7 @@ enum class Icon : wchar_t
     KeyV,
     KeyEsc,
     KeyDel,
+    KeyBackspace,
     Calculator,
     CopyForGizmo,
 

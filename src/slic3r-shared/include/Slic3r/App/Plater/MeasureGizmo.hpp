@@ -55,6 +55,8 @@ public:
 
     void register_commands(Platform::CommandRegistry& registry) override;
 
+    bool disable_object_selection() const override { return true; }
+
     void on_scene_selection_changed(
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection

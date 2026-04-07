@@ -1072,6 +1072,7 @@ ToolBarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type)
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
     update_current_right_sidebar();
+    m_command_binding_manager.update_ui_items();
     m_scene_presenter->set_selection_bounding_box_visible(active_tool == nullptr);
     m_command_binding_manager.update_ui_items();
 }
