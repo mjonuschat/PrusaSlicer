@@ -1,6 +1,6 @@
 #include "Slic3r/App/Yoga/ProjectButton.hpp"
 
-#include "Slic3r/App/Yoga/ProjectButtonBackground.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
@@ -28,15 +28,13 @@ ProjectButton::ProjectButton(
     set_allow_overlap(true);
     set_flex_shrink(0);
 
-    m_background = emplace_back<ProjectButtonBackground>();
-    m_background->set_margin(Margins(0, -1));
-    m_background->set_padding(Paddings(30.f, 8.f, 20.f, 5.f));
-    m_background->set_rounding(0.f);
+    m_background = emplace_back<Rectangle>();
+    m_background->set_margin(Margins(0, 5, 0, 0));
+    m_background->set_padding(Paddings(30.f, 8.f, 20.f, 12.f));
+    m_background->set_rounding(5.f);
     m_background->set_gap(7.f);
-    m_background->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
-    m_background->set_inner_rounding(3.f);
-    m_background->set_inner_fill(m_theme->color_imgui(Platform::Color::SceneBg));
-    m_background->set_thichness({0.f, 7.f});
+    m_background->set_flags(ImDrawFlags_RoundCornersTop);
+    update_bg_color();
 
     set_tooltip_position(Position::Bottom);
 
@@ -75,23 +73,12 @@ void ProjectButton::on_selected_project_changed(size_t index)
 
 void ProjectButton::hovered_updated_internal()
 {
-    m_background->set_inner_fill(
-        checked() ? m_theme->color_imgui(Platform::Color::SceneBg) : ImColor(48, 48, 48)
-    );
-    if (checked()) {
-        return;
-    }
-
-    m_background->set_mode(
-        hovered() ? ProjectButtonBackground::Border : ProjectButtonBackground::FilledRect
-    );
+    update_bg_color();
 }
 
 void ProjectButton::checked_updated_internal()
 {
-    m_background->set_mode(
-        checked() ? ProjectButtonBackground::Border : ProjectButtonBackground::FilledRect
-    );
+    update_bg_color();
     m_label->set_text_color(m_theme->color_imgui(
         Platform::Color::Text,
         checked() ? Platform::ColorGroup::Default : Platform::ColorGroup::Disabled
@@ -134,6 +121,19 @@ void ProjectButton::on_data_update()
     };
 
     set_checked(m_project_interactor.selected_project_id() == *m_state);
+}
+
+void ProjectButton::update_bg_color()
+{
+    ImColor bg_color;
+    if (checked()) {
+        bg_color = m_theme->color_imgui(Platform::Color::SceneBg);
+    } else if (hovered()) {
+        bg_color = m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered);
+    } else {
+        bg_color = m_theme->color_imgui(Platform::Color::Transparent);
+    }
+    m_background->set_fill(bg_color);
 }
 
 void ProjectButton::on_view_will_be_removed()

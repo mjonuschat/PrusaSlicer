@@ -112,6 +112,10 @@ TopBar::TopBar(
         wrapper->set_gap(15.f);
         wrapper->set_padding({15.f, 5.f});
     }
+
+    if (m_project_interactor.selected_project_id() != Domain::INVALID_ID) {
+        on_selected_project_changed(m_project_interactor.selected_project_id());
+    }
 }
 
 void TopBar::on_selected_project_changed(size_t index)

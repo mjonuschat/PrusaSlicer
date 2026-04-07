@@ -536,8 +536,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ListView.hpp
         src/Slic3r/App/Yoga/ProjectButton.cpp
         include/Slic3r/App/Yoga/ProjectButton.hpp
-        src/Slic3r/App/Yoga/ProjectButtonBackground.cpp
-        include/Slic3r/App/Yoga/ProjectButtonBackground.hpp
         src/Slic3r/App/TopBar.cpp
         include/Slic3r/App/TopBar.hpp
         src/Slic3r/App/MenuCommandRegistrar.cpp

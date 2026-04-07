@@ -16,7 +16,7 @@ namespace Slic3r::App::Yoga {
 
 class Text;
 class LayoutButton;
-class ProjectButtonBackground;
+class Rectangle;
 
 class ProjectButton :
     public AbstractButton,
@@ -44,10 +44,11 @@ protected:
     void checked_updated_internal() override;
 
     void on_data_update() override;
+    void update_bg_color();
 
 private:
     Biz::ProjectInteractor& m_project_interactor;
-    ProjectButtonBackground* m_background{nullptr};
+    Rectangle* m_background{nullptr};
     Text* m_label{nullptr};
     LayoutButton* m_cross{nullptr};
     Item* m_separator_wrap{nullptr};
