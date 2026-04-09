@@ -16,8 +16,10 @@
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
-#include <Slic3r/Log.hpp>
 #include <Slic3r/App/Theme.hpp>
+#include <Slic3r/App/AppServices.hpp>
+
+#include <Slic3r/Log.hpp>
 
 namespace Slic3r::App::Platform::WX {
 
@@ -403,8 +405,6 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
             io.ClearInputKeys();
         }
     );
-
-    set_theme(std::make_unique<Theme>());
 }
 
 WXRenderCanvas::~WXRenderCanvas()
@@ -653,6 +653,10 @@ void WXRenderCanvas::init_wx_imgui()
             wxTheClipboard->Close();
         }
     };
+
+    // Set our color styles before gizmos initialization
+    // to use them during GizmoDialogs creation
+    AppServices::instance().theme().initialize_imgui_style();
 }
 
 class ScopedGuard

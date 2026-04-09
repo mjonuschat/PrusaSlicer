@@ -20,7 +20,7 @@ LeftBarCtrl::LeftBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
     auto add_btn = [this](Button* btn) -> void {
         m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, m_btn_margin); };
 
-    preferences_btn = new Button(this, { wxEmptyString, "cog", m_action_btn_sz, wxVERTICAL });
+    preferences_btn = new Button(this, { wxEmptyString, "cog_wx", m_action_btn_sz, wxVERTICAL });
     add_btn(preferences_btn);
 
     m_account_btn = new ButtonWithPopup(this, "user", orient, m_login_icon_sz);

@@ -10,14 +10,14 @@
 #include "Slic3r/App/Yoga/Namespace.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/IListObserver.hpp"
-#include "Slic3r/App/Platform/AbstractTheme.hpp"
+#include "Slic3r/App/Theme.hpp"
 
 #include <memory>
 #include <optional>
 
-namespace Slic3r::App::Platform {
-class AbstractTheme;
-} // namespace Slic3r::App::Platform
+namespace Slic3r::App {
+class Theme;
+}
 
 namespace Slic3r::App::Render {
 class ImguiRender;
@@ -121,7 +121,7 @@ public:
      */
     ObjectHeartBeat heartbeat() const;
 
-    static void set_theme(Platform::AbstractTheme* theme);
+    static void set_theme(Theme* theme);
 
 private:
     /**
@@ -147,7 +147,7 @@ protected:
      */
     std::vector<ObjectPtr> m_children;
 
-    static Platform::AbstractTheme* m_theme;
+    static Theme* m_theme;
 
 private:
     static std::unordered_map<std::string, int> m_object_names;

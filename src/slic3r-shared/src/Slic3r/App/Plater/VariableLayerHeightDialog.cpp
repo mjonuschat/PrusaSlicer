@@ -86,7 +86,7 @@ void VariableLayerHeightDialog::add_smart_resolution_section(Item* item)
     Item* auto_calculate_button_row = item->emplace_back<Item>();
     m_auto_calculate_button =
         auto_calculate_button_row->emplace_back<LayoutButton>(_u8L("Auto-calculate"));
-    m_auto_calculate_button->text()->set_margin(BUTTON_TEXT_MARGIN);
+    m_auto_calculate_button->label_object()->set_margin(BUTTON_TEXT_MARGIN);
     m_auto_calculate_button->callbacks().action = [this]()
     { m_callbacks.auto_calculate_clicked(); };
 }
@@ -131,7 +131,7 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
 
     Item* smooth_button_row = item->emplace_back<Item>();
     m_smooth_button         = smooth_button_row->emplace_back<LayoutButton>(_u8L("Smooth"));
-    m_smooth_button->text()->set_margin(BUTTON_TEXT_MARGIN);
+    m_smooth_button->label_object()->set_margin(BUTTON_TEXT_MARGIN);
     m_smooth_button->callbacks().action = [this]() { m_callbacks.smooth_clicked(); };
 }
 

@@ -77,14 +77,23 @@ public:
     ImColor tint() const;
     void set_tint(const ImColor& tint);
 
+    static void set_replace_strings(
+        const std::unordered_map<std::string, std::string>& replace_strings
+    );
+
+    bool preserve_colors() const;
+    void set_preserve_colors(bool preserve_colors);
+
 private:
     void update_draw_sizes();
     void update_texture();
 
 private:
+    static std::unordered_map<std::string, std::string> s_replace_strings;
+
     // Configured
     IconType m_icon_type = IconType::Icon;
-    bool m_auto_resize = true;
+    bool m_auto_resize   = true;
     int m_max_texture_size{0};
     std::shared_ptr<Render::Texture> m_texture;
     Render::Icon m_icon;
@@ -92,6 +101,7 @@ private:
     Vec2f m_source_size{0, 0};
     FillMode m_fill_mode = FillMode::PreservedAspect;
     ImVec4 m_tint{1, 1, 1, 1};
+    bool m_preserve_colors{false};
 
     // Computed
     Vec2f m_cached_size;

@@ -50,7 +50,6 @@ void SavePresetDialog::Item::init_input_name_ctrl(
             wxSize(35 * w_config()->em_unit(), -1),
             style
         );
-        w_config()->UpdateDarkUI(m_text_ctrl);
         m_text_ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_state(); });
 
         input_name_sizer->Add(m_text_ctrl, 1, wxEXPAND, BORDER_W);

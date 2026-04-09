@@ -217,7 +217,6 @@ ScalableButton::ScalableButton( wxWindow *          parent,
     m_has_border(!(style & wxNO_BORDER))
 {
     Create(parent, id, label, pos, size, style);
-    w_config()->UpdateDarkUI(this);
 
     if (!icon_name.empty()) {
         SetBitmap(*get_bmp_bundle(icon_name, width, height));
@@ -246,7 +245,6 @@ ScalableButton::ScalableButton( wxWindow *          parent,
     m_has_border(!(style& wxNO_BORDER))
 {
     Create(parent, id, label, wxDefaultPosition, wxDefaultSize, style);
-    w_config()->UpdateDarkUI(this);
 
     SetBitmap(bitmap.bmp());
 }
@@ -298,7 +296,6 @@ wxSize ScalableButton::GetBitmapSize()
 
 void ScalableButton::sys_color_changed()
 {
-    w_config()->UpdateDarkUI(this, m_has_border);
     if (m_current_icon_name.empty())
         return;
     wxBitmapBundle bmp = *get_bmp_bundle(m_current_icon_name, m_bmp_width, m_bmp_height);

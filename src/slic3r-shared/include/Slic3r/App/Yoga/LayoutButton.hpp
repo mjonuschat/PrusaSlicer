@@ -35,7 +35,8 @@ public:
     Text::WrapMode text_wrap_mode() const;
     void set_text_wrap_mode(Text::WrapMode wrap_mode);
 
-    Text* text() const;
+    Text* label_object() const;
+    Icon* icon_object() const;
 
 private:
     Icon* m_icon = nullptr;

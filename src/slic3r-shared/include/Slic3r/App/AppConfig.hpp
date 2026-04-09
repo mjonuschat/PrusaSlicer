@@ -19,12 +19,12 @@ enum class GraphicsQuality
 class AppSettings : public Domain::ConfigBox
 {
 public:
-    AppSettings();
+    AppSettings(const Domain::ConfigDefinitions& defs_appconfig);
 };
 
 class AppConfig {
 public:
-    AppConfig() = default;
+    AppConfig();
     ~AppConfig() { save(); }
 
     static std::unique_ptr<AppConfig> create_app_config();
@@ -76,6 +76,7 @@ public:
 
 
 private:
+    const Domain::ConfigDefinitions m_defs_appconfig;
     AppSettings m_app_settings;
     AppSettingsAdvanced m_app_settings_advanced;
     std::string m_filename;
@@ -89,7 +90,9 @@ private:
      * @param path The path to the configuration file.
      * @return A tl::expected containing the AppConfig on success, or an error message on failure.
      */
-    static tl::expected<AppConfig, std::string> load_appconfig(const std::string& filename);
+    static tl::expected<std::unique_ptr<AppConfig>, std::string> load_appconfig(
+        const std::string& filename
+    );
 };
 
 } // namespace Slic3r::App

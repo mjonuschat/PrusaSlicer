@@ -19,7 +19,6 @@ LockButton::LockButton( wxWindow *parent,
     m_bmp_lock_open     = ScalableBitmap(this, "lock_open");
     m_bmp_lock_open_f   = ScalableBitmap(this, "lock_open_f");
 
-    w_config()->UpdateDarkUI(this);
     SetBitmap(m_bmp_lock_open.bmp());
     SetBitmapDisabled(m_bmp_lock_open.bmp());
     SetBitmapCurrent(m_bmp_lock_closed_f.bmp());
@@ -47,8 +46,6 @@ void LockButton::SetLock(bool lock)
 
 void LockButton::sys_color_changed()
 {
-    w_config()->UpdateDarkUI(this);
-
     m_bmp_lock_closed.sys_color_changed();
     m_bmp_lock_closed_f.sys_color_changed();
     m_bmp_lock_open.sys_color_changed();

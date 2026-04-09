@@ -176,6 +176,10 @@ MainFrame::MainFrame(
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon());
 
+    WidgetsConfig* config = WidgetsConfig::instance();
+    SetBackgroundColour(config->get_window_default_clr());
+    SetForegroundColour(config->get_label_clr_default());
+
     AppServices::instance().app_config_interactor().add_listener<IAppConfigChangedListener>(this);
 
     localization().add_listener<ILanguageChangedListener>(this);
@@ -370,29 +374,35 @@ void MainFrame::on_language_changed()
 
 void MainFrame::on_app_config_changed(const std::string& key)
 {
-    if (key != "translation_language") {
-        return;
-    }
-    update_left_bar();
-    update_graphics_settings();
+    if (key == "translation_language") {
+        update_left_bar();
+        update_graphics_settings();
 
-    AppConfig& app_config = AppServices::instance().app_config();
-    if (const std::string new_language = app_config.get<std::string>("translation_language");
-        localization().active_language() != new_language)
-    {
-        IDialogManager& dialog_manager = AppServices::instance().dialog_manager();
+        AppConfig& app_config = AppServices::instance().app_config();
+        if (const std::string new_language = app_config.get<std::string>("translation_language");
+            localization().active_language() != new_language)
+        {
+            IDialogManager& dialog_manager = AppServices::instance().dialog_manager();
 
-        // If something was failed during the set new language:
-        std::string message = fmt::format(
-            fmt::runtime(
-                Biz::_u8L(
-                    "The selected language \"{}\" has been saved and will be applied the next time the application starts."
-                )
+            // If something was failed during the set new language:
+            std::string message = fmt::format(
+                fmt::runtime(
+                    Biz::_u8L(
+                        "The selected language \"{}\" has been saved and will be applied the next time the application starts."
+                    )
+                ),
+                localization().language_description(new_language)
+            );
+            // Show info dialog
+            dialog_manager.show_info_dialog(message, Biz::_u8L("PrusaSlicer - Switching language"));
+        }
+    } else if (key == "theme") {
+        AppServices::instance().dialog_manager().show_info_dialog(
+            Biz::_u8L(
+                "The selected theme has been saved and will be applied the next time the application starts."
             ),
-            localization().language_description(new_language)
+            Biz::_u8L("PrusaSlicer - Switching theme")
         );
-        // Show info dialog
-        dialog_manager.show_info_dialog(message, Biz::_u8L("PrusaSlicer - Switching language"));
     }
 }
 
@@ -665,9 +675,7 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
 
 void MainFrame::sys_color_changed()
 {
-#ifdef WIN32
-    w_config()->force_colors_update(!w_config()->dark_mode(), {this});
-#endif
+    w_config()->force_colors_update(w_config()->dark_mode(), {this});
 
     m_left_bar->OnColorsChanged();
 }

@@ -217,16 +217,19 @@ void PopNotificationView::basic_mid_text_layout(const std::string& text)
     m_text->set_flex_shrink(0.f);
 }
 
-void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotificationButtonData>& buttons)
+void PopNotificationView::basic_mid_buttons_layout(
+    const std::vector<PopNotificationButtonData>& buttons
+)
 {
     m_button_line = m_mid_column->emplace_back<Yoga::Item>();
     m_button_line->set_orientation(Yoga::Orientation::Horizontal);
     m_button_line->set_justify_content(YGJustifyFlexStart);
     m_button_line->set_margin({0.f, 0.f, 0.f, 5.f});
     m_button_line->set_flex_shrink(0.f);
-    for (auto& bdata : buttons) {
-        m_buttons.emplace_back(m_button_line->emplace_back<Yoga::LayoutButton>(bdata.text));
-        m_buttons.back()->callbacks().action = [bdata, this]()
+    for (const auto& bdata : buttons) {
+        Yoga::LayoutButton* button =
+            m_buttons.emplace_back(m_button_line->emplace_back<Yoga::LayoutButton>(bdata.text));
+        button->callbacks().action = [bdata, this]()
         {
             ASSERT(bdata.callback);
             Biz::Platform::PlatformServices::instance()
@@ -240,11 +243,10 @@ void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotifica
                     }
                 );
         };
-        m_buttons.back()->set_background_color(button_color());
-        m_buttons.back()->set_margin({0.f, 0.f, 5.f, 0.f});
-        if (m_buttons.back()->text())
-        {
-            m_buttons.back()->text()->set_margin({5.f,2.f, 5.f, 2.f});
+        button->set_background_color(button_color());
+        button->set_margin({0.f, 0.f, 5.f, 0.f});
+        if (button->label_object()) {
+            button->label_object()->set_margin({5.f, 2.f, 5.f, 2.f});
         }
     }
 }
@@ -378,26 +380,27 @@ void PopNotificationView::update_progress(int progress)
     }
 }
 
-ImColor PopNotificationView::text_color()
+ImColor PopNotificationView::text_color() const
 {
     if (m_state->level == PopNotificationLevel::Warning) {
-        return {0.98f, 0.4f, 0.19f};
+        return m_theme->color_imgui(Platform::Color::Warning);
     } else if (m_state->level == PopNotificationLevel::Error) {
-        return {0.79f, 0.17f, 0.17f};
+        return m_theme->color_imgui(Platform::Color::Error);
     }
 
-    return {1.0f, 1.0f, 1.0f};
+    return m_theme->color_imgui(Platform::Color::Text);
 }
 
-ImColor PopNotificationView::button_color()
+Platform::Color PopNotificationView::button_color() const
 {
-    if (m_state->level == PopNotificationLevel::Warning) {
-        return {0.98f, 0.4f, 0.19f};
-    } else if (m_state->level == PopNotificationLevel::Error) {
-        return {0.79f, 0.17f, 0.17f};
+    switch(m_state->level) {
+    case PopNotificationLevel::Warning:
+        return Platform::Color::Warning;
+    case PopNotificationLevel::Error:
+        return Platform::Color::Error;
+    default:
+        return Platform::Color::ButtonTransparent;
     }
-
-    return {0.0f, 0.0f, 0.0f};
 }
 
 void PopNotificationView::on_resized()

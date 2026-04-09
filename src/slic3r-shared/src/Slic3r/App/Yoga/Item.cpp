@@ -154,7 +154,7 @@ static void traverse(Object* object, std::function<void(Object* object)> functio
 
 Render::ImguiRender* Item::m_imgui_render = nullptr;
 
-Platform::AbstractTheme* Object::m_theme = nullptr;
+ Theme* Object::m_theme = nullptr;
 
 std::unordered_map<std::string, int> Object::m_object_names = {};
 
@@ -841,7 +841,7 @@ void Item::set_imgui_render(Render::ImguiRender* imgui_render)
     m_imgui_render = imgui_render;
 }
 
-void Object::set_theme(Platform::AbstractTheme* theme)
+void Object::set_theme(Theme* theme)
 {
     m_theme = theme;
 }

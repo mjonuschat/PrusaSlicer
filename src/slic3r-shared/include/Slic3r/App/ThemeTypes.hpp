@@ -27,7 +27,10 @@ enum class Color
     ModalWindowDimBg,
     Warning,
     Error,
-    SceneBg,
+    SceneBgTop,
+    SceneBgBottom,
+    SceneBgErrorTop,
+    SceneBgErrorBottom,
     Transparent
 };
 

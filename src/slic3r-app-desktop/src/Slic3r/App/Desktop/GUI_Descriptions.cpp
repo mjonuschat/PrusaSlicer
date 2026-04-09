@@ -36,7 +36,6 @@ void FillSizerWithTextColorDescriptions(wxSizer* sizer, wxWindow* parent, wxColo
 		sys_label->SetForegroundColour(color);
 
 		*color_picker = new wxColourPickerCtrl(parent, wxID_ANY, color);
-		WX::w_config()->UpdateDarkUI((*color_picker)->GetPickerCtrl(), true);
 		(*color_picker)->Bind(wxEVT_COLOURPICKER_CHANGED, [color_picker, sys_label](wxCommandEvent&) {
 			sys_label->SetForegroundColour((*color_picker)->GetColour());
 			sys_label->Refresh();
@@ -101,7 +100,6 @@ void FillSizerWithModeColorDescriptions(
 
 		wxColourPickerCtrl** color_picker = clr_pickers[mode];
 		*color_picker = new wxColourPickerCtrl(parent, wxID_ANY, color);
-		WX::w_config()->UpdateDarkUI((*color_picker)->GetPickerCtrl(), true);
 
 		(*color_picker)->Bind(wxEVT_COLOURPICKER_CHANGED, [color_picker, &color, palette_cb, &mode_palette](wxCommandEvent&) {
 			const wxColour new_color = (*color_picker)->GetColour();
@@ -134,7 +132,6 @@ Dialog::Dialog(wxWindow* parent, const std::vector<ButtonEntry> &entries) :
 	wxDialog(parent, wxID_ANY, _L("Buttons And Text Colors Description"), wxDefaultPosition, wxDefaultSize),
 	m_entries(entries)
 {
-	WX::w_config()->UpdateDarkUI(this);
 
 	auto grid_sizer = new wxFlexGridSizer(3, 20, 20);
 
@@ -175,9 +172,6 @@ Dialog::Dialog(wxWindow* parent, const std::vector<ButtonEntry> &entries) :
 
 		EndModal(wxID_OK);
 	});
-
-	WX::w_config()->UpdateDarkUI(btn);
-	WX::w_config()->UpdateDarkUI(static_cast<wxButton*>(FindWindowById(wxID_CANCEL, this)));
 
 	SetSizer(main_sizer);
 	main_sizer->SetSizeHints(this);

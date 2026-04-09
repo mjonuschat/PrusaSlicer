@@ -11,6 +11,8 @@
 
 namespace Slic3r::App::Yoga {
 
+std::unordered_map<std::string, std::string> Icon::s_replace_strings;
+
 Icon::Icon(Render::Icon icon, PreferredSize explicit_max_size) :
     Icon(icon, static_cast<int>(explicit_max_size))
 {}
@@ -142,6 +144,11 @@ void Icon::set_tint(const ImColor& new_tint)
     }
 }
 
+void Icon::set_replace_strings(const std::unordered_map<std::string, std::string>& replace_strings)
+{
+    s_replace_strings = replace_strings;
+}
+
 void Icon::update_draw_sizes()
 {
     if (!m_texture) {
@@ -175,7 +182,12 @@ void Icon::update_texture()
         if (m_icon == Render::Icon::None || m_max_texture_size == 0) {
             m_texture = nullptr;
         } else {
-            m_texture = m_imgui_render->icon_texture(m_icon, m_max_texture_size);
+            m_texture = m_imgui_render->icon_texture(
+                m_icon,
+                m_max_texture_size,
+                m_preserve_colors ? std::unordered_map<std::string, std::string>{} :
+                                    s_replace_strings
+            );
         }
     } else if (m_icon_type == IconType::Image) {
         if (m_image.empty() || m_max_texture_size == 0) {
@@ -189,6 +201,20 @@ void Icon::update_texture()
         // loop before Icon::render, in those cases, let us cache all images that we are
         // creating, all unused ones will be cleared in the next frame.
         m_imgui_render->use_texture(m_texture);
+    }
+}
+
+bool Icon::preserve_colors() const
+{
+    return m_preserve_colors;
+}
+
+void Icon::set_preserve_colors(bool preserve_colors)
+{
+    if (m_preserve_colors != preserve_colors) {
+        m_preserve_colors = preserve_colors;
+        update_texture();
+        set_style_dirty();
     }
 }
 

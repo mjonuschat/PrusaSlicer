@@ -35,6 +35,13 @@ struct ConstNodePickResult
     RaycastResult cast;
 };
 
+struct SceneColors {
+    Domain::ColorRGBA bg_top_color_default;
+    Domain::ColorRGBA bg_bottom_color_default;
+    Domain::ColorRGBA bg_top_color_error;
+    Domain::ColorRGBA bg_bottom_color_error;
+};
+
 using NodePickResults = std::vector<NodePickResult>;
 using ConstNodePickResults = std::vector<ConstNodePickResult>;
 
@@ -320,6 +327,8 @@ public:
     static void set_default_pbr_intensity() { s_graphics_settings.set_default_pbr_intensity(); }
     /** @} */
 
+    static void set_scene_colors(const SceneColors& scene_colors) { s_scene_colors = scene_colors; }
+
     /**
      * @name Lighing-related methods
      * @{
@@ -386,6 +395,7 @@ private:
 
     static GraphicsSettings s_graphics_settings;
     static MinimalSceneRenderCustomizer ms_default_customizer;
+    static SceneColors s_scene_colors;
 };
 
 } // namespace Slic3r::App::Scene

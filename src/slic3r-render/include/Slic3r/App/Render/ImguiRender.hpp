@@ -30,7 +30,8 @@ public:
     /**
      * @note do not forget to register texture with use_texture when rendering them
      */
-    TexturePtr icon_texture(Icon icon, int max_size);
+    TexturePtr
+    icon_texture(Icon icon, int max_size, const std::unordered_map<std::string, std::string>& replace_strings = {});
     /**
      * @note do not forget to register texture with use_texture when rendering them
      */

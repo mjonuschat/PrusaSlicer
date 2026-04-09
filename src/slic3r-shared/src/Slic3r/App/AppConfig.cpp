@@ -1,10 +1,14 @@
 #include "Slic3r/App/AppConfig.hpp"
 
+#include "Slic3r/Domain/ConfigDefUtils.hpp"
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+
+#include "Slic3r/App/Theme.hpp"
+
 #include "Slic3r/Directories.hpp"
-#include "Slic3r/Domain/ConfigDefUtils.hpp"
 #include "Slic3r/Log.hpp"
 
 #include "nlohmann/json.hpp"
@@ -18,15 +22,7 @@ namespace Slic3r::App {
 
     void appconfig_config_init_fn(Domain::ConfigDefinitions& defs);
 
-static const Domain::ConfigDefinitions& get_defs_appconfig()
-{
-    static Domain::ConfigDefinitions defs_appconfig(
-        {Domain::AppConfigLocation{}}, appconfig_config_init_fn
-    );
-    return defs_appconfig;
-}
-
-AppSettings::AppSettings() : ConfigBox(get_defs_appconfig(), Domain::AppConfigLocation{}) {}
+AppSettings::AppSettings(const Domain::ConfigDefinitions& defs_appconfig) : ConfigBox(defs_appconfig, Domain::AppConfigLocation{}) {}
 
 void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
 {
@@ -62,6 +58,21 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Category::Hidden;
     def->init_fn = []() { return Domain::ConfigValue(std::string()); };
+
+    def               = defs.add("theme", typeid(Domain::EnumWrapper));
+    def->location     = Domain::AppConfigLocation{};
+    def->label        = L("Theme");
+    def->category     = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
+    def->gui_type     = GUIType::combobox;
+    def->tooltip      = L("Application theme");
+    def->init_fn      = Domain::init_with(
+        Theme::Style::Dark,
+        {
+            {int(Theme::Style::Dark), "dark", L("Dark")},
+            {int(Theme::Style::Light), "light", L("Light")},
+        }
+    );
 
     def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
     def->location     = Domain::AppConfigLocation{};
@@ -220,40 +231,49 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->init_fn  = []() { return Domain::ConfigValue(false); };
 }
 
-tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
+tl::expected<std::unique_ptr<AppConfig>, std::string> AppConfig::load_appconfig(const std::string& filename)
 {
     namespace fs = boost::filesystem;
-    AppConfig app_config;
+    auto app_config = std::make_unique<AppConfig>();
     try {
         if (fs::exists(fs::path(filename))) {
             boost::nowide::ifstream file_stream(filename);
-            auto json_str = std::string((std::istreambuf_iterator<char>(file_stream)),
-                       std::istreambuf_iterator<char>());
+            auto json_str = std::string(
+                (std::istreambuf_iterator<char>(file_stream)),
+                std::istreambuf_iterator<char>()
+            );
             nlohmann::ordered_json json = nlohmann::json::parse(json_str);
-            std::string loc = Domain::get_location_name(Domain::ConfigLocation(Domain::AppConfigLocation()));
+            std::string loc =
+                Domain::get_location_name(Domain::ConfigLocation(Domain::AppConfigLocation()));
             if (json.contains(loc)) {
-                auto load_issues = Biz::Config::load_box(json[loc], app_config.m_app_settings);
+                auto load_issues = Biz::Config::load_box(json[loc], app_config->m_app_settings);
             }
-            app_config.m_app_settings_advanced = json["app_settings_advanced"].get<AppSettingsAdvanced>();
+            app_config->m_app_settings_advanced =
+                json["app_settings_advanced"].get<AppSettingsAdvanced>();
         }
     } catch (...) {
         return tl::unexpected(L("Unable to read application settings."));
     }
-    return app_config;
+    return std::move(app_config);
 }
+
+AppConfig::AppConfig() :
+    m_defs_appconfig({Domain::AppConfigLocation{}}, appconfig_config_init_fn),
+    m_app_settings(m_defs_appconfig)
+{}
 
 std::unique_ptr<AppConfig> AppConfig::create_app_config()
 {
     std::unique_ptr<AppConfig> app_config;
     const boost::filesystem::path appconfig_filename = boost::filesystem::path(Slic3r::data_dir()) / "shared_runtime" / "PrusaSlicer.json";
     if (auto apc = AppConfig::load_appconfig(appconfig_filename.string()); apc)
-        app_config = std::make_unique<AppConfig>(apc.value());
+         app_config = std::move(apc.value());
     else {
         SPDLOG_ERROR("Failed to parse app config. Creating a new one from default.");
         app_config = std::make_unique<AppConfig>();
     }
     app_config->set_filename(appconfig_filename.string());
-    return std::move(app_config);
+    return app_config;
 }
 
 bool AppConfig::save() const

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <bit>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <png.h>
 #include <nanosvg/nanosvg.h>
@@ -82,19 +83,22 @@ struct RasterizerDeleter {
 };
 
 using NSVGrasterizerPtr = std::unique_ptr<NSVGrasterizer, RasterizerDeleter>;
-using NSVGimagePtr = std::unique_ptr<NSVGimage, ImageDeleter>;
+using NSVGimagePtr      = std::unique_ptr<NSVGimage, ImageDeleter>;
+
 class SvgReadCodec : public IImageLoadCodec
 {
 public:
     SvgReadCodec();
 
     bool matches(const std::string& filename) override;
-    std::vector<Image> load(
-        std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr
-    ) override;
+    std::vector<Image>
+    load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) override;
 
 private:
-    static NSVGimagePtr load_svg(std::istream& input);
+    static NSVGimagePtr load_svg(
+        std::istream& input,
+        const std::unordered_map<std::string, std::string>& replace_strings
+    );
 
 private:
     NSVGrasterizerPtr m_rasterizer;
@@ -244,7 +248,7 @@ std::vector<Image> SvgReadCodec::load(
 )
 {
     std::vector<Image> ret;
-    NSVGimagePtr image = load_svg(is);
+    NSVGimagePtr image = load_svg(is, opts.replace_strings);
 
     if (!image) {
         SPDLOG_ERROR("Failed parsing SVG file");
@@ -311,14 +315,22 @@ std::vector<Image> SvgReadCodec::load(
     return ret;
 }
 
-NSVGimagePtr SvgReadCodec::load_svg(std::istream& input)
+NSVGimagePtr SvgReadCodec::load_svg(
+    std::istream& input,
+    const std::unordered_map<std::string, std::string>& replace_strings
+)
 {
     const char* units = "px";
     const float dpi = 96;
 
     std::stringstream buffer;
     buffer << input.rdbuf();
-    return NSVGimagePtr(nsvgParse(buffer.str().data(), units, dpi));
+
+    std::string svg = buffer.str();
+    for (const auto& [from, to] : replace_strings) {
+        boost::replace_all(svg, from, to);
+    }
+    return NSVGimagePtr(nsvgParse(svg.data(), units, dpi));
 }
 
 SvgReadCodec::SvgReadCodec() : m_rasterizer(nsvgCreateRasterizer()) {}

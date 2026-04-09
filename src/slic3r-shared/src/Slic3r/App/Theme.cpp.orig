@@ -47,10 +47,7 @@ void Theme::set_style(Style style)
 
     if (m_style == Style::Light) {
         Yoga::Icon::set_replace_strings(
-            {{"#FFFFFF", "#0B0B0B"},
-             {"#ffffff", "#0B0B0B"},
-             {"white", "#0B0B0B"},
-             {"#F7F7F7", "#0B0B0B"}}
+            {{"#FFFFFF", "#0B0B0B"}, {"#ffffff", "#0B0B0B"}, {"white", "#0B0B0B"}}
         );
     }
 }
@@ -60,7 +57,7 @@ void Theme::initialize_dark_colors()
     m_colors[Platform::Color::Transparent] = ColorEntry{0, 0, 0, 0};
 
     m_colors[Platform::Color::Text] = ColorEntry{
-        {.90f, .90f, .90f, 1.00f},
+        {1.00f, 1.00f, 1.00f, 1.00f},
         std::make_unique<ImColor>(0.50f, 0.50f, 0.50f, 1.00f) // disabled
     };
     m_colors[Platform::Color::TextLink] = ColorEntry{
@@ -148,13 +145,13 @@ void Theme::initialize_light_colors()
     m_colors[Platform::Color::Transparent] = ColorEntry{0, 0, 0, 0};
 
     m_colors[Platform::Color::Text] = ColorEntry{
-        {0.1f, 0.1f, 0.1f, 1.00f},
-        std::make_unique<ImColor>(0.45f, 0.45f, 0.45f, 1.00f) // disabled
+        {0.05f, 0.05f, 0.05f, 1.00f},
+        std::make_unique<ImColor>(0.55f, 0.55f, 0.55f, 1.00f) // disabled
     };
     // Keep conventional blue for links; orange links are non-standard
     m_colors[Platform::Color::TextLink] = ColorEntry{
         {0.13f, 0.28f, 0.65f, 1.00f},
-        std::make_unique<ImColor>(0.45f, 0.45f, 0.45f, 1.00f) // disabled
+        std::make_unique<ImColor>(0.55f, 0.55f, 0.55f, 1.00f) // disabled
     };
     m_colors[Platform::Color::WindowBg]          = auto_entry_light({235, 235, 235});
     m_colors[Platform::Color::WindowBgAlternate] = auto_entry_light({220, 220, 220});
@@ -177,22 +174,7 @@ void Theme::initialize_light_colors()
         std::make_unique<ImColor>(
             Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
         ),
-        std::make_unique<ImColor>(120, 159, 250), // active - cool blue-grey
-        std::make_unique<ImColor>(Theme::color_imgui(
-            Platform::Color::WindowBgAlternate,
-            Platform::ColorGroup::ActiveDisabled
-        ))
-    };
-
-    m_colors[Platform::Color::ButtonTransparent] = ColorEntry{
-        Theme::color_imgui(Platform::Color::Transparent),
-        std::make_unique<ImColor>(
-            Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Disabled)
-        ),
-        std::make_unique<ImColor>(
-            Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
-        ),
-        std::make_unique<ImColor>(120, 159, 250),
+        std::make_unique<ImColor>(160, 183, 217), // active - cool blue-grey
         std::make_unique<ImColor>(Theme::color_imgui(
             Platform::Color::WindowBgAlternate,
             Platform::ColorGroup::ActiveDisabled
@@ -215,23 +197,43 @@ void Theme::initialize_light_colors()
         std::make_unique<ImColor>(
             Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
         ),
-        std::make_unique<ImColor>(120, 159, 250),
+        std::make_unique<ImColor>(78, 128, 248),
         std::make_unique<ImColor>(
             Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9)
         )
     };
 
-    // Keep Prusa orange as the primary accent; it pops well on white/light grey
-    m_colors[Platform::Color::AccentPrimary]    = ColorEntry{k_prusa_orange};
-    m_colors[Platform::Color::AccentSecondary]  = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
-    m_colors[Platform::Color::Error]            = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
-    m_colors[Platform::Color::Warning]          = ColorEntry{{232, 64, 64}};
-    m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.20f, 0.20f, 0.20f, 0.35f}};
+    m_colors[Platform::Color::ButtonTransparent] = ColorEntry{
+        Theme::color_imgui(Platform::Color::Transparent),
+        std::make_unique<ImColor>(
+            Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Disabled)
+        ),
+        std::make_unique<ImColor>(
+            Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
+        ),
+        std::make_unique<ImColor>(160, 183, 217),
+        std::make_unique<ImColor>(Theme::color_imgui(
+            Platform::Color::WindowBgAlternate,
+            Platform::ColorGroup::ActiveDisabled
+        ))
+    };
 
-    m_colors[Platform::Color::SceneBgTop]         = ColorEntry{{0.75f, 0.75f, 0.75f, 1.0f}};
-    m_colors[Platform::Color::SceneBgBottom]      = ColorEntry{{0.62f, 0.62f, 0.62f, 1.0f}};
-    m_colors[Platform::Color::SceneBgErrorTop]    = ColorEntry{{0.95f, 0.70f, 0.70f, 1.0f}};
-    m_colors[Platform::Color::SceneBgErrorBottom] = ColorEntry{{0.85f, 0.55f, 0.55f, 1.0f}};
+    // Keep Prusa orange as the primary accent; it pops well on white/light grey
+    m_colors[Platform::Color::AccentPrimary]   = ColorEntry{k_prusa_orange};
+    m_colors[Platform::Color::AccentSecondary] = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
+    m_colors[Platform::Color::Error]           = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
+<<<<<<< HEAD
+    m_colors[Platform::Color::Warning]          = ColorEntry{{232, 64, 64}};
+    m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.80f, 0.80f, 0.80f, 0.35f}};
+=======
+
+    m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.20f, 0.20f, 0.20f, 0.35f}};
+>>>>>>> 406d77e5e6 (SPE-3617: Implement Light mode)
+
+    m_colors[Platform::Color::SceneBgTop]         = ColorEntry{{0.62f, 0.62f, 0.62f, 1.0f}};
+    m_colors[Platform::Color::SceneBgBottom]      = ColorEntry{{0.75f, 0.75f, 0.75f, 1.0f}};
+    m_colors[Platform::Color::SceneBgErrorTop]    = ColorEntry{{0.85f, 0.55f, 0.55f, 1.0f}};
+    m_colors[Platform::Color::SceneBgErrorBottom] = ColorEntry{{0.95f, 0.70f, 0.70f, 1.0f}};
 }
 
 const Domain::ColorRGBA& Theme::color(Platform::Color color_id, Platform::ColorGroup group_id) const
@@ -317,15 +319,12 @@ void Theme::initialize_imgui_dark_style()
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg]      = color_imgui(Platform::Color::ModalWindowDimBg);
-    colors[ImGuiCol_InputTextCursor]       = color_imgui(Platform::Color::Text);
 }
 
 void Theme::initialize_imgui_light_style()
 {
     ImGuiStyle* style = &ImGui::GetStyle();
     ImVec4* colors    = style->Colors;
-
-    const ImColor active = color_imgui(Platform::Color::Button, Platform::ColorGroup::Active);
 
     colors[ImGuiCol_Text] = color_imgui(Platform::Color::Text);
     colors[ImGuiCol_TextDisabled] =
@@ -363,14 +362,16 @@ void Theme::initialize_imgui_light_style()
         color_imgui(Platform::Color::Button, Platform::ColorGroup::Active);
     colors[ImGuiCol_Header]        = ImVec4(0.00f, 0.00f, 0.00f, 0.08f);
     colors[ImGuiCol_HeaderHovered] = ImVec4(0.00f, 0.00f, 0.00f, 0.05f);
-    colors[ImGuiCol_HeaderActive]  = active;
-    colors[ImGuiCol_Separator]     = colors[ImGuiCol_Border];
+    colors[ImGuiCol_HeaderActive] =
+        ImVec4(k_prusa_orange.x, k_prusa_orange.y, k_prusa_orange.z, 0.40f);
+    colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
     colors[ImGuiCol_SeparatorHovered] =
-        ImVec4(active.Value.x, active.Value.y, active.Value.z, 0.78f);
+        ImVec4(k_prusa_orange.x, k_prusa_orange.y, k_prusa_orange.z, 0.78f);
     colors[ImGuiCol_SeparatorActive] = k_prusa_orange;
-    colors[ImGuiCol_ResizeGrip] = ImVec4(active.Value.x, active.Value.y, active.Value.z, 0.20f);
+    colors[ImGuiCol_ResizeGrip] =
+        ImVec4(k_prusa_orange.x, k_prusa_orange.y, k_prusa_orange.z, 0.20f);
     colors[ImGuiCol_ResizeGripHovered] =
-        ImVec4(active.Value.x, active.Value.y, active.Value.z, 0.67f);
+        ImVec4(k_prusa_orange.x, k_prusa_orange.y, k_prusa_orange.z, 0.67f);
     colors[ImGuiCol_ResizeGripActive] = k_prusa_orange;
     colors[ImGuiCol_TabHovered]       = colors[ImGuiCol_HeaderHovered];
     colors[ImGuiCol_Tab] = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.80f);
@@ -391,13 +392,13 @@ void Theme::initialize_imgui_light_style()
     colors[ImGuiCol_TableRowBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_TableRowBgAlt]             = ImVec4(0.00f, 0.00f, 0.00f, 0.06f);
     colors[ImGuiCol_TextLink]                  = color_imgui(Platform::Color::TextLink);
-    colors[ImGuiCol_TextSelectedBg] = ImVec4(active.Value.x, active.Value.y, active.Value.z, 0.30f);
-    colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-    colors[ImGuiCol_NavCursor]      = color_imgui(Platform::Color::NavCursor);
+    colors[ImGuiCol_TextSelectedBg] =
+        ImVec4(k_prusa_orange.x, k_prusa_orange.y, k_prusa_orange.z, 0.30f);
+    colors[ImGuiCol_DragDropTarget]        = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+    colors[ImGuiCol_NavCursor]             = color_imgui(Platform::Color::NavCursor);
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.10f, 0.10f, 0.10f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.20f, 0.20f, 0.20f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg]      = color_imgui(Platform::Color::ModalWindowDimBg);
-    colors[ImGuiCol_InputTextCursor]       = color_imgui(Platform::Color::Text);
 }
 
 void Theme::initialize_imgui_style()

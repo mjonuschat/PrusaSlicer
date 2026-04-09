@@ -5,7 +5,8 @@ namespace Slic3r::App::Yoga {
 
 class Circle;
 
-class Slider : public Oval {
+class Slider : public Oval
+{
 public:
     struct Callbacks
     {
@@ -44,19 +45,20 @@ private:
     void update_area_width();
 
 private:
-    Oval* m_area{ nullptr };
-    Circle* m_thumb{ nullptr };
+    Oval* m_area{nullptr};
+    Circle* m_thumb{nullptr};
+    Circle* m_knob{nullptr};
 
     double m_begin_value{0.};
     double m_end_value{0.};
     double m_step{0.};
     double m_value{0.};
 
-    bool m_dragging{ false };
-    bool m_hovered{ false };
+    bool m_dragging{false};
+    bool m_hovered{false};
     bool m_is_set_thumb_size{false};
 
     Callbacks m_callbacks;
 };
 
-} // namespace Slic3r::App::Yoga 
+} // namespace Slic3r::App::Yoga

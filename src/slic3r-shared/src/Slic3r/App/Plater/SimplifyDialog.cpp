@@ -90,7 +90,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
     Item* row = content()->emplace_back<Item>();
     row->set_gap(2 * gap_size());
     m_apply_btn = row->emplace_back<LayoutButton>(_u8L("Apply"));
-    m_apply_btn->set_background_color({43, 43, 43});
+    m_apply_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     m_apply_btn->callbacks().action = [this]() {
         if (m_callbacks.apply) {
             m_callbacks.apply();

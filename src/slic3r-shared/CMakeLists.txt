@@ -249,6 +249,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PrintMetadataSettings.cpp
         include/Slic3r/App/ToolLabel.hpp
         src/Slic3r/App/ToolLabel.cpp
+        include/Slic3r/App/ThemeTypes.hpp
         include/Slic3r/App/Theme.hpp
         src/Slic3r/App/Theme.cpp
         include/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp

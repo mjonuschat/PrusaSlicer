@@ -6,7 +6,6 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/Biz/Platform/IMainWindowHandler.hpp"
-#include "Slic3r/App/Platform/AbstractTheme.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
@@ -102,7 +101,6 @@ private:
 
 protected:
     void set_screen_size(const Render::ScreenInfo& screen_info);
-    void set_theme(std::unique_ptr<AbstractTheme> theme);
 
 protected:
     using MouseEvents = std::vector<MouseEvent>;
@@ -122,7 +120,6 @@ protected:
     Biz::Platform::IMainThreadDispatcher& m_main_thread_dispatcher;
 private:
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
-    std::unique_ptr<AbstractTheme> m_theme;
     AnimationManager m_animation_manager;
     std::optional<float> m_pending_font_size;
     std::optional<float> m_pending_dpi_scale;

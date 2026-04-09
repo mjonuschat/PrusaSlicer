@@ -51,7 +51,7 @@ ProjectButton::ProjectButton(
     m_separator_wrap = emplace_back<Item>();
     m_separator_wrap->set_padding({0.f, 10.f});
     m_separator_wrap->emplace_back<Separator>(Orientation::Vertical)
-        ->set_fill(m_theme->color_imgui(Platform::Color::SceneBg));
+        ->set_fill(m_theme->color_imgui(Platform::Color::SceneBgTop));
 
     on_data_update();
 }
@@ -127,7 +127,7 @@ void ProjectButton::update_bg_color()
 {
     ImColor bg_color;
     if (checked()) {
-        bg_color = m_theme->color_imgui(Platform::Color::SceneBg);
+        bg_color = m_theme->color_imgui(Platform::Color::SceneBgTop);
     } else if (hovered()) {
         bg_color = m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered);
     } else {

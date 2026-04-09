@@ -25,7 +25,7 @@ ConfigItemRammingParams::ConfigItemRammingParams(
     m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
-    set_background_color(ImColor{41, 41, 41});
+    set_background_color(Platform::Color::Button);
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
     set_tooltip(tooltip_text());

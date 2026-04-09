@@ -59,7 +59,7 @@ private:
     std::string m_source_text;
     std::string m_rendered_text;
     Text::WrapMode m_wrap_mode        = Text::WrapMode::NoWrap;
-    ImColor m_text_color              = IM_COL32_WHITE;
+    ImColor m_text_color;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
     float m_font_size;
     ImVec2 m_text_pos;

@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
+#include "Slic3r/App/Yoga/Icon.hpp"
 
 #include "Slic3r/App/SearchBar.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
@@ -296,7 +297,8 @@ void TopBar::add_menu_btns(Item* parent)
             MenuBuilder::item_name_translated(main_menu_item->name()),
             MenuBuilder::item_icon(main_menu_item->name())
         );
-        m_main_menu_btn->set_background_color(IM_COL32_BLACK_TRANS);
+        m_main_menu_btn->icon_object()->set_preserve_colors(true);
+        m_main_menu_btn->set_background_color(Platform::Color::ButtonTransparent);
         m_main_menu_btn->callbacks().action = [this]() { toggle_menu_visibility(m_main_menu); };
         m_main_menu_btn->callbacks().hovered_changed = [this](bool hovered)
         {
@@ -318,7 +320,7 @@ void TopBar::add_menu_btns(Item* parent)
             MenuBuilder::item_name_translated(file_menu_item->name()),
             MenuBuilder::item_icon(file_menu_item->name())
         );
-        m_file_menu_btn->set_background_color(IM_COL32_BLACK_TRANS);
+        m_file_menu_btn->set_background_color(Platform::Color::ButtonTransparent);
         m_file_menu_btn->callbacks().action = [this]() { toggle_menu_visibility(m_file_menu); };
         m_file_menu_btn->callbacks().hovered_changed = [this](bool hovered)
         {

@@ -67,12 +67,12 @@ public:
 
 	WidgetsConfig(const WidgetsConfig& obj) = delete;
 
-	static WidgetsConfig* instance()
-	{
-		if (m_wc_instancePtr == NULL)
-			m_wc_instancePtr = new WidgetsConfig(false, false);		
-		return m_wc_instancePtr;
-	}
+    static WidgetsConfig* instance()
+    {
+        if (m_wc_instancePtr == NULL)
+            m_wc_instancePtr = new WidgetsConfig(false, false);
+        return m_wc_instancePtr;
+    }
 
 	static WidgetsConfig* instance(bool is_dark/* = false*/, bool is_sys_menu/* = false*/)
 	{
@@ -88,10 +88,6 @@ public:
 	void            force_fonts_update(wxWindow* win, bool apply_for_children = false);
 
     void            force_colors_update(const bool is_dark, const std::vector<wxWindow*>& wins);
-#ifdef _MSW_DARK_MODE
-    void            force_menu_update(const bool is_sys_menu_enabled);
-    void            update_scrolls(wxWindow* window);
-#endif //_MSW_DARK_MODE
 
     static unsigned get_colour_approx_luma(const wxColour &colour);
 
@@ -104,14 +100,8 @@ public:
 
     const std::vector<std::string> get_mode_default_palette();
 
-    // update color mode for window
-    void            UpdateDarkUI(wxWindow *window, bool highlited = false, bool just_font = false);
     // update color mode for whole dialog including all children
     void            UpdateDlgDarkUI(wxDialog* dlg, bool just_buttons_update = false);
-    // update color mode for DataViewControl
-    void            UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited = false);
-    // update color mode for panel including all static texts controls
-    void            UpdateAllStaticTextDarkUI(wxWindow* parent);
     void            SetWindowVariantForButton(wxButton* btn);
 
     const std::string       get_html_bg_color(wxWindow* html_parent);

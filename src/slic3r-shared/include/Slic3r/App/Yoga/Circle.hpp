@@ -7,7 +7,7 @@ namespace Slic3r::App::Yoga {
 class Circle : public Yoga::Rectangle
 {
 public:
-    explicit Circle();
+    Circle();
 
 private:
     void render(Vec2f pos, Vec2f size) override;

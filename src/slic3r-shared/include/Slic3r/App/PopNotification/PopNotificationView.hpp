@@ -73,7 +73,7 @@ private:
 
     void update_right_column();
 
-    ImColor text_color();
-    ImColor button_color();
+    ImColor text_color() const;
+    Platform::Color button_color() const;
 };
 } // namespace Slic3r::App::PopNotification

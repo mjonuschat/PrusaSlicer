@@ -1,8 +1,12 @@
-
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include "Slic3r/App/WX/StringConversions.hpp"
-#include "Slic3r/Biz/Algorithms/Color.hpp"
+
 #include "Slic3r/Domain/Color.hpp"
+
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/Theme.hpp"
+#include "Slic3r/App/AppServices.hpp"
 
 #include <wx/window.h>
 #include <wx/toplevel.h>
@@ -19,9 +23,6 @@
 //#include <wx/.h>
 
 
-#ifdef _MSW_DARK_MODE
-#include <wx/msw/dark_mode.h>
-#endif // _MSW_DARK_MODE
 
 using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;
@@ -37,13 +38,8 @@ WidgetsConfig* w_config()
     return WidgetsConfig::instance();
 }
 
-WidgetsConfig::WidgetsConfig(bool is_dark, bool is_sys_menu)
+WidgetsConfig::WidgetsConfig(bool is_dark, bool is_sys_menu) : m_is_dark(is_dark)
 {
-#ifdef _MSW_DARK_MODE
-    NppDarkMode::InitDarkMode(is_dark, is_sys_menu);
-    m_is_dark = is_dark;
-#endif
-
     // initialize label colors and fonts
     init_ui_colours();
     init_fonts();
@@ -109,61 +105,36 @@ void WidgetsConfig::force_fonts_update(wxWindow* win, bool apply_for_children/* 
 
 void WidgetsConfig::init_ui_colours()
 {
-    m_color_label_modified  = get_label_default_clr_modified();
-    m_color_label_sys       = get_label_default_clr_system();
-    m_mode_palette          = get_mode_default_palette();
+    auto to_wx = [](const Domain::ColorRGBA& color) -> wxColour {
+        return {color.r_uchar(), color.g_uchar(), color.b_uchar()};
+    };
 
-    bool is_dark_mode = dark_mode();
+    const Theme& theme = AppServices::instance().theme();
 
-    m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250) : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
-    m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230) : wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
-    m_color_highlight_default       = is_dark_mode ? wxColour(78, 78, 78)    : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
-    m_color_hovered_btn_label       = is_dark_mode ? wxColour(253, 111, 40)  : wxColour(252, 77, 1);
-    m_color_default_btn_label       = is_dark_mode ? wxColour(255, 181, 100) : wxColour(203, 61, 0);
-    m_color_hovered_btn_bg          = is_dark_mode ? wxColour(39, 47, 65)    : wxColour(228, 220, 216);
-    m_color_selected_btn_bg         = is_dark_mode ? wxColour(54, 73, 118)    : wxColour(228, 220, 216);
+    m_color_label_modified = get_label_default_clr_modified();
+    m_color_label_sys      = get_label_default_clr_system();
+    m_mode_palette         = get_mode_default_palette();
 
-    m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)    : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
+    m_color_label_default           = m_is_dark ? wxColour(250, 250, 250) : wxColour(12, 12, 12);
+    m_color_highlight_label_default = m_is_dark ? wxColour(230, 230, 230) : wxColour(12, 12, 12);
+    m_color_highlight_default       = m_is_dark ? wxColour(78, 78, 78) : wxColour(190, 200, 215);
+    m_color_hovered_btn_label       = m_is_dark ? wxColour(253, 111, 40) : wxColour(252, 77, 1);
+    m_color_default_btn_label       = m_is_dark ? wxColour(255, 181, 100) : wxColour(203, 61, 0);
+    m_color_hovered_btn_bg =
+        to_wx(theme.color(Platform::Color::Button, Platform::ColorGroup::Hovered));
+    m_color_selected_btn_bg =
+        to_wx(theme.color(Platform::Color::Button, Platform::ColorGroup::Active));
+
+    m_color_window_default = m_is_dark ? wxColour(43, 43, 43) : wxColour(234, 234, 234);
 }
 
 void WidgetsConfig::force_colors_update(const bool is_dark, const std::vector<wxWindow*>& wins )
 {
     m_is_dark = is_dark;
-#ifdef _MSW_DARK_MODE
-    NppDarkMode::SetDarkMode(m_is_dark);
-    if (WXHWND wxHWND = wxToolTip::GetToolTipCtrl())
-        NppDarkMode::SetDarkExplorerTheme((HWND)wxHWND);
-
-    for (wxWindow* win : wins)
-        NppDarkMode::SetDarkTitleBar(win->GetHWND());
-#endif //_MSW_DARK_MODE
     
     init_ui_colours();
 }
 
-#ifdef _MSW_DARK_MODE
-
-void WidgetsConfig::update_scrolls(wxWindow* window)
-{
-    wxWindowList::compatibility_iterator node = window->GetChildren().GetFirst();
-    while (node)
-    {
-        wxWindow* win = node->GetData();
-        if (dynamic_cast<wxScrollHelper*>(win) ||
-            dynamic_cast<wxTreeCtrl*>(win) ||
-            dynamic_cast<wxTextCtrl*>(win))
-            NppDarkMode::SetDarkExplorerTheme(win->GetHWND());
-
-        update_scrolls(win);
-        node = node->GetNext();
-    }
-}
-
-void WidgetsConfig::force_menu_update(const bool is_sys_menu_enabled)
-{
-    NppDarkMode::SetSystemMenuForApp(is_sys_menu_enabled);
-}
-#endif //_MSW_DARK_MODE
 
 unsigned WidgetsConfig::get_colour_approx_luma(const wxColour& colour)
 {
@@ -309,75 +280,9 @@ const std::string& WidgetsConfig::shortkey_alt_prefix()
     return win == tlw->GetDefaultItem();
 }
 
-void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool just_font/* = false*/)
-{
-    return;
-
-    bool is_focused_button = false;
-    bool is_default_button = false;
-    if (wxButton* btn = dynamic_cast<wxButton*>(window)) {
-        if (!(btn->GetWindowStyle() & wxNO_BORDER)) {
-            btn->SetWindowStyle(btn->GetWindowStyle() | wxNO_BORDER);
-            highlited = true;
-        }
-        // button marking
-        if (!dynamic_cast</*!TopBarItemsCtrl*/wxControl*>(window->GetParent())) // don't marking the button if it is from TopBar
-        {
-            auto mark_button = [this, btn, highlited](const bool mark) {
-                if (btn->GetLabel().IsEmpty())
-                    btn->SetBackgroundColour(mark ? m_color_selected_btn_bg : highlited ? m_color_highlight_default : m_color_window_default);
-                else
-                    btn->SetForegroundColour(mark ? m_color_hovered_btn_label : (is_default(btn) ? m_color_default_btn_label : m_color_label_default));
-                btn->Refresh();
-                btn->Update();
-                };
-
-            // hovering
-            btn->Bind(wxEVT_ENTER_WINDOW, [mark_button](wxMouseEvent& event) { mark_button(true); event.Skip(); });
-            btn->Bind(wxEVT_LEAVE_WINDOW, [mark_button, btn](wxMouseEvent& event) { mark_button(btn->HasFocus()); event.Skip(); });
-            // focusing
-            btn->Bind(wxEVT_SET_FOCUS, [mark_button](wxFocusEvent& event) { mark_button(true); event.Skip(); });
-            btn->Bind(wxEVT_KILL_FOCUS, [mark_button](wxFocusEvent& event) { mark_button(false); event.Skip(); });
-
-            is_focused_button = btn->HasFocus();
-            is_default_button = is_default(btn);
-            if (is_focused_button || is_default_button)
-                mark_button(is_focused_button);
-        }
-    }
-    else if (wxTextCtrl* text = dynamic_cast<wxTextCtrl*>(window)) {
-        if (text->GetBorder() != wxBORDER_SIMPLE && text->GetBorder() != wxBORDER_NONE)
-            text->SetWindowStyle(text->GetWindowStyle() | wxBORDER_SIMPLE);
-    }
-    else if (wxCheckListBox* list = dynamic_cast<wxCheckListBox*>(window)) {
-        list->SetWindowStyle(list->GetWindowStyle() | wxBORDER_SIMPLE);
-        list->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
-#ifdef _WIN32
-        // only Window has OwnerDrawn items
-        for (size_t i = 0; i < list->GetCount(); i++)
-            if (wxOwnerDrawn* item = list->GetItem(i)) {
-                item->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
-                item->SetTextColour(m_color_label_default);
-            }
-#endif // _WIN32
-        return;
-    }
-    else if (dynamic_cast<wxListBox*>(window))
-        window->SetWindowStyle(window->GetWindowStyle() | wxBORDER_SIMPLE);
-
-    if (!just_font)
-        window->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
-    if (!is_focused_button && !is_default_button)
-        window->SetForegroundColour(m_color_label_default);
-}
-
 // recursive function for scaling fonts for all controls in Window
 void WidgetsConfig::update_dark_children_ui(wxWindow* window, bool just_buttons_update/* = false*/)
 {
-    bool is_btn = dynamic_cast<wxButton*>(window) != nullptr;
-    if (!(just_buttons_update && !is_btn))
-        UpdateDarkUI(window, is_btn);
-
     auto children = window->GetChildren();
     for (auto child : children) {
         update_dark_children_ui(child);
@@ -388,32 +293,6 @@ void WidgetsConfig::update_dark_children_ui(wxWindow* window, bool just_buttons_
 void WidgetsConfig::UpdateDlgDarkUI(wxDialog* dlg, bool just_buttons_update/* = false*/)
 {
     update_dark_children_ui(dlg, just_buttons_update);
-}
-
-void WidgetsConfig::UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited/* = false*/)
-{
-    return;
-    UpdateDarkUI(dvc, highlited ? dark_mode() : false);
-#ifdef _MSW_DARK_MODE
-    if (!dvc->HasFlag(wxDV_NO_HEADER))
-        dvc->RefreshHeaderDarkMode(&m_normal_font);
-#endif //_MSW_DARK_MODE
-    if (dvc->HasFlag(wxDV_ROW_LINES))
-        dvc->SetAlternateRowColour(m_color_highlight_default);
-    if (dvc->GetBorder() != wxBORDER_SIMPLE)
-        dvc->SetWindowStyle(dvc->GetWindowStyle() | wxBORDER_SIMPLE);
-}
-
-void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
-{
-    return;
-    UpdateDarkUI(parent);
-
-    auto children = parent->GetChildren();
-    for (auto child : children) {
-        if (dynamic_cast<wxStaticText*>(child))
-            child->SetForegroundColour(m_color_label_default);
-    }
 }
 
 void WidgetsConfig::SetWindowVariantForButton(wxButton* btn)

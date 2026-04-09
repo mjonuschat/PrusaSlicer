@@ -52,12 +52,11 @@ void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info
 void AbstractRenderModule::ensure_initialized(
     Render::Device& device,
     Render::ImguiRender& imgui_render,
-    AbstractTheme& theme,
     AnimationManager& animation_manager
 )
 {
     if (!m_initialized) {
-        on_init(device, imgui_render, theme, animation_manager);
+        on_init(device, imgui_render, animation_manager);
         register_commands();
         bind_commands();
         m_initialized = true;
@@ -72,13 +71,11 @@ bool AbstractRenderModule::is_initialized() const
 void AbstractRenderModule::on_init(
     Render::Device& device,
     Render::ImguiRender& imgui_render,
-    Platform::AbstractTheme& theme,
     Platform::AnimationManager& animation_manager
 )
 {
     m_device            = &device;
     m_imgui_render      = &imgui_render;
-    m_theme             = &theme;
     m_animation_manager = &animation_manager;
 }
 

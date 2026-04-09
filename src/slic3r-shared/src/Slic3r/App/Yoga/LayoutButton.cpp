@@ -105,9 +105,14 @@ void LayoutButton::set_text_wrap_mode(Text::WrapMode wrap_mode)
     m_text->set_wrap_mode(wrap_mode);
 }
 
-Text* LayoutButton::text() const
+Text* LayoutButton::label_object() const
 {
     return m_text;
+}
+
+Icon* LayoutButton::icon_object() const
+{
+    return m_icon;
 }
 
 } // namespace Slic3r::App::Yoga

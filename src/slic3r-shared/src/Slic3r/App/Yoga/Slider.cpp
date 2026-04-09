@@ -19,11 +19,13 @@ Slider::Slider(double begin, double end, double step) :
     m_step(step),
     m_value(m_begin_value)
 {
+    set_object_name("Slider");
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_color(m_theme->color_imgui(Platform::Color::Button));
     set_border_width(1.f);
 
     m_area = emplace_back<Oval>();
+    m_area->set_object_name("SliderArea");
     m_area->set_fill(m_theme->color_imgui(Platform::Color::Button));
     m_area->set_disabled_fill(
         m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled)
@@ -31,15 +33,21 @@ Slider::Slider(double begin, double end, double step) :
     m_area->set_justify_content(YGJustifyFlexEnd);
 
     m_thumb = m_area->emplace_back<Circle>();
-    m_thumb->set_fill(m_theme->color_imgui(Platform::Color::Text));
+    m_thumb->set_object_name("SliderThumb");
+    m_thumb->set_fill(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
     m_thumb->set_disabled_fill(
         m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
     );
-    m_thumb->set_padding(4.f);
+    m_thumb->set_padding(3.f);
     m_thumb->set_min_size({14, 14});
-    Circle* knob = m_thumb->emplace_back<Circle>();
-    knob->set_fill(m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active));
-    knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
+
+    m_knob = m_thumb->emplace_back<Circle>();
+    m_knob->set_fill(m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active));
+    m_knob->set_disabled_fill(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
 }
 
 Slider::Slider() :
@@ -56,7 +64,7 @@ void Slider::set_hovered(bool hovered)
             Platform::Color::Button,
             m_hovered ? Platform::ColorGroup::Hovered : Platform::ColorGroup::Default
         ));
-        m_thumb->set_padding(m_hovered ? 2.f : 4.f);
+        m_thumb->set_padding(m_hovered ? 0 : 3);
     }
 }
 

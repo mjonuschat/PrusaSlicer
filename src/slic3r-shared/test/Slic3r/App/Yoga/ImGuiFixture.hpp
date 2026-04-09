@@ -25,7 +25,7 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
     {
         Slic3r::Biz::Platform::PlatformServices::instance().set_render_request_handler(this);
 
-        m_theme = std::make_unique<Slic3r::App::Theme>();
+        m_theme = std::make_unique<Slic3r::App::Theme>(Slic3r::App::Theme::Style::Dark);
         Slic3r::App::Yoga::Item::set_theme(m_theme.get());
 
         // Setup ImGui context (run once per TEST_CASE)

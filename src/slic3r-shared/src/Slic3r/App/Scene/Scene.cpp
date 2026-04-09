@@ -129,6 +129,8 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_end(
 
 GraphicsSettings Scene::s_graphics_settings;
 
+SceneColors Scene::s_scene_colors;
+
 MinimalSceneRenderCustomizer Scene::ms_default_customizer;
 
 
@@ -367,17 +369,13 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
 
 void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd_buffer) const
 {
-    static const ColorRGBA DEFAULT_BG_DARK_COLOR  = {0.23f, 0.23f, 0.23f, 1.0f};
-    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.35f, 0.35f, 0.35f, 1.0f};
-    static const ColorRGBA ERROR_BG_DARK_COLOR    = {0.60f, 0.20f, 0.20f, 1.0f};
-    static const ColorRGBA ERROR_BG_LIGHT_COLOR   = {1.00f, 0.20f, 0.20f, 1.0f};
-
-    ColorRGBA top_color = m_use_background_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
-    ColorRGBA bottom_color = m_use_background_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;
+    ColorRGBA top_color    = m_use_background_error_color ? s_scene_colors.bg_top_color_error :
+                                                            s_scene_colors.bg_top_color_default;
+    ColorRGBA bottom_color = m_use_background_error_color ? s_scene_colors.bg_bottom_color_error :
+                                                            s_scene_colors.bg_bottom_color_default;
 
     Render::Material material;
-    material
-        .set_shader(device.context().shader_manager().shader("background"))
+    material.set_shader(device.context().shader_manager().shader("background"))
         .set_uniform("top_color", top_color)
         .set_uniform("bottom_color", bottom_color);
 

@@ -5,7 +5,6 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/App/Render/ImguiRender.hpp"
-#include "Slic3r/App/Platform/AbstractTheme.hpp"
 
 #include <imgui_internal.h>
 
@@ -61,6 +60,7 @@ static ImRect align_rectangle(const ImVec2& space, const ImVec2& aligned_size, c
 }
 
 Text::Text(const std::string& text, Render::ImguiFontType font_type) :
+    m_text_color(m_theme->color_imgui(Platform::Color::Text)),
     m_font_type(font_type),
     m_font_size(ImGui::GetFontSize())
 {

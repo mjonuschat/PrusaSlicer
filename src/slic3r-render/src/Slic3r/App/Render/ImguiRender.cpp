@@ -36,11 +36,15 @@ ImFont* ImguiRender::font(Render::ImguiFontType type)
     return m_font_helper->font(type);
 }
 
-TexturePtr ImguiRender::icon_texture(Icon icon, int max_size)
+TexturePtr ImguiRender::icon_texture(
+    Icon icon,
+    int max_size,
+    const std::unordered_map<std::string, std::string>& replace_strings
+)
 {
     return m_device.context().texture_manager().get_or_create_image(
         ImguiIconHelper::icon_path(icon),
-        {max_size * ICON_SCALE_FACTOR, false, true}
+        {max_size * ICON_SCALE_FACTOR, false, true, false, false, replace_strings}
     );
 }
 

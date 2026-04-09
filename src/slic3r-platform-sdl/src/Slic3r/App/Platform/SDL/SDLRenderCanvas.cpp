@@ -10,6 +10,8 @@
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Platform/MouseEvent.hpp>
+#include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/Theme.hpp>
 
 // Eigen headers clash with SDL headers, because of macro Success.
 // Include SDL headers last.
@@ -280,6 +282,10 @@ void SDLRenderCanvas::init_sdl_imgui()
         main_viewport->PlatformHandleRaw = (void*)info.info.cocoa.window;
 #endif // SDL_VIDEO_DRIVER_WINDOWS
     }
+
+    // Set our color styles before gizmos initialization
+    // to use them during GizmoDialogs creation
+    AppServices::instance().theme().initialize_imgui_style();
 }
 
 

@@ -191,8 +191,6 @@ static const Vec2f mouse_help_size{20.f, 20.f};
 static const Vec2f shortcut_help_size{40.f, 20.f};
 
 static constexpr ImColor build_volume_color{192, 154, 247};
-static constexpr ImColor buttons_color{42, 42, 42};
-static constexpr ImColor act_button_color{223, 93, 45};
 
 CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
 {
@@ -255,13 +253,13 @@ void CutDialog::init_action_buttons()
     for (LayoutButton* btn :
          std::initializer_list<LayoutButton*>{m_perform_btn, m_confirm_connectors_btn})
     {
-        btn->set_background_color(act_button_color);
+        btn->set_background_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
         btn->set_label_font_type(Render::ImguiFontType::Bold);
         btn->set_content_padding(2.f * gap_size());
     }
 
     m_cancel_connectors_btn = buttons_wrap->emplace_back<LayoutButton>(_u8L("Cancel"));
-    m_cancel_connectors_btn->set_background_color(buttons_color);
+    m_cancel_connectors_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     m_cancel_connectors_btn->set_content_padding(2.f * gap_size());
     m_cancel_connectors_btn->callbacks().action = [this]()
     {
@@ -611,7 +609,7 @@ void CutDialog::add_connectors_editing_buttons()
     buttons_row->set_justify_content(YGJustifySpaceBetween);
 
     m_add_connectors_btn = buttons_row->emplace_back<LayoutButton>(_u8L("Add connectors"));
-    m_add_connectors_btn->set_background_color(buttons_color);
+    m_add_connectors_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     m_add_connectors_btn->callbacks().action = [this]()
     {
         connectors_editing = true;
@@ -923,7 +921,7 @@ void CutDialog::init_connectors_input_panel()
     Item* flip_btn_wrap = m_connectors_input_panel->emplace_back<Item>();
     LayoutButton* flip_cut_plane_btn =
         flip_btn_wrap->emplace_back<LayoutButton>(_u8L("Flip cut plane"));
-    flip_cut_plane_btn->set_background_color(buttons_color);
+    flip_cut_plane_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     flip_cut_plane_btn->callbacks().action = [this]()
     {
         if (callbacks().flip_cut_plane) {

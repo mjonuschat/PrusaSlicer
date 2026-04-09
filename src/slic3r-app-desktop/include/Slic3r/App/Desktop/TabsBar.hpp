@@ -6,6 +6,8 @@
 #include <wx/panel.h>
 #include <wx/sizer.h>
 
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+
 namespace Slic3r::App::Desktop {
 
 class TabsBarMenus;

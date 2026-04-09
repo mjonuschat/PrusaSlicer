@@ -25,6 +25,7 @@ namespace Slic3r::App::Yoga {
 class Text;
 class LayoutButton;
 class ComboBox;
+class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -98,6 +99,7 @@ private:
     Plater::ScaleWidget* m_scale_widget{nullptr};
     Yoga::LayoutButton* m_add_settings_button{nullptr};
     Yoga::Text* m_no_overrides_label{nullptr};
+    Yoga::ScrollArea* m_scroll_area{nullptr};
 
     Biz::Scene::ObjectSelection m_selection;
 

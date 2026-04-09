@@ -44,8 +44,6 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/Biz/Platform/BlacklistedLibraryCheck.hpp
     src/Slic3r/Biz/Platform/BlacklistedLibraryCheck.cpp
     include/Slic3r/Biz/Platform/IAppConfigProvider.hpp
-    include/Slic3r/App/Platform/AbstractTheme.hpp
-    include/Slic3r/App/Platform/ThemeTypes.hpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

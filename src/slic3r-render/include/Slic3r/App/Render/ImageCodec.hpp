@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Domain/Size.hpp"
@@ -17,6 +18,8 @@ struct ImageLoadOptions
     bool gen_mipmaps{false};
     bool flip_y{false};
     bool compressed{false};
+
+    std::unordered_map<std::string, std::string> replace_strings;
 
     Domain::Size resolve_to_size(const Domain::Size& source_size) const;
 };

@@ -16,7 +16,6 @@ namespace Slic3r::App::WX {
 LongStringsDiffDialog::LongStringsDiffDialog(const wxString& option_name, const wxString& old_value, const wxString& mod_value, const wxString& new_value, const wxString& old_value_header, const wxString& mod_value_header, const wxString& new_value_header) :
     wxDialog(nullptr, wxID_ANY, option_name, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-    w_config()->UpdateDarkUI(this);
     this->SetFont(w_config()->normal_font());
 
     int border                = 10;
@@ -89,7 +88,6 @@ LongStringsDiffDialog::LongStringsDiffDialog(const wxString& option_name, const 
     auto add_value = [grid_sizer, border, this](wxString label, const std::set<wxString>& diff_set, bool is_colored = false)
     {
         wxTextCtrl* text = new wxTextCtrl(this, wxID_ANY, label, wxDefaultPosition, wxSize(400, 400), wxTE_MULTILINE | wxTE_READONLY | wxBORDER_DEFAULT | wxTE_RICH);
-        w_config()->UpdateDarkUI(text);
         text->SetStyle(0, label.Len(), wxTextAttr(is_colored ? wxColour(from_u8(ModelNode::orange())) : wxNullColour, wxNullColour, this->GetFont()));
 
         for (const wxString& str : diff_set) {
@@ -117,7 +115,6 @@ LongStringsDiffDialog::LongStringsDiffDialog(const wxString& option_name, const 
     sizer->Add(grid_sizer, 1, wxEXPAND);
 
     wxStdDialogButtonSizer* buttons = this->CreateStdDialogButtonSizer(wxOK);
-    w_config()->UpdateDarkUI(static_cast<wxButton*>(this->FindWindowById(wxID_OK, this)), true);
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
 

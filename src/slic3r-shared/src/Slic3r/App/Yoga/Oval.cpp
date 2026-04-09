@@ -2,7 +2,9 @@
 
 namespace Slic3r::App::Yoga {
 
-Oval::Oval() : Rectangle() {}
+Oval::Oval() : Rectangle() {
+    set_object_name("Oval");
+}
 
 void Oval::render(Vec2f pos, Vec2f size)
 {

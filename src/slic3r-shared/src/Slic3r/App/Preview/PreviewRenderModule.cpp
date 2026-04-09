@@ -425,15 +425,14 @@ void PreviewRenderModule::set_object_list_collapsed(bool collapsed)
 void PreviewRenderModule::on_init(
     Render::Device& device,
     Render::ImguiRender& imgui_render,
-    Platform::AbstractTheme& theme,
     Platform::AnimationManager& animation_manager
 )
 {
-    AbstractRenderModule::on_init(device, imgui_render, theme, animation_manager);
+    AbstractRenderModule::on_init(device, imgui_render, animation_manager);
     Yoga::Item::set_imgui_render(
         &imgui_render
     ); // Todo: move this somewhere where it is invoked once
-    Yoga::Item::set_theme(&theme);
+    Yoga::Item::set_theme(&AppServices::instance().theme());
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device, *m_animation_manager);
 

@@ -23,6 +23,7 @@
 #include "Slic3r/App/AppConfigInteractor.hpp"
 #include <Slic3r/App/AppConfigProvider.hpp>
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
+#include <Slic3r/App/Theme.hpp>
 
 #include "Slic3r/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
@@ -48,7 +49,8 @@
 #ifdef WIN32
 #include <dbt.h>
 #include <shlobj.h>
-static GUID GUID_DEVINTERFACE_HID = {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
+static GUID GUID_DEVINTERFACE_HID =
+    {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
 #endif // WIN32
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
@@ -93,7 +95,9 @@ void register_win32_device_notification_event()
                 } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
                     PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
                     if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
-                        app_instance->handle_HID_device_attached_event(WX::into_u8(lpdbi->dbcc_name));
+                        app_instance->handle_HID_device_attached_event(
+                            WX::into_u8(lpdbi->dbcc_name)
+                        );
                     }
                 }
                 break;
@@ -103,7 +107,9 @@ void register_win32_device_notification_event()
                 } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
                     PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
                     if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
-                        app_instance->handle_HID_device_detached_event(WX::into_u8(lpdbi->dbcc_name));
+                        app_instance->handle_HID_device_detached_event(
+                            WX::into_u8(lpdbi->dbcc_name)
+                        );
                     }
                 }
                 break;
@@ -147,10 +153,21 @@ void register_win32_device_notification_event()
 
 int run(const Slic3r::App::InitParams& init_params)
 {
+    auto& app_services{AppServices::instance()};
+
+    app_services.set_app_config(AppConfig::create_app_config());
+
 #ifdef __WXGTK__
     // https://github.com/prusa3d/PrusaSlicer/issues/12969
     ::setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", /* replace */ false);
     ::setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", /* replace */ false);
+
+    if (app_services.app_config().get<Theme::Style>("theme") == Theme::Style::Light) {
+        setenv("GTK_THEME", "Adwaita:light", 1);
+    } else {
+        setenv("GTK_THEME", "Adwaita:dark", 1);
+    }
+
 #endif
 
     bool single_instance_app_config =
@@ -162,10 +179,10 @@ int run(const Slic3r::App::InitParams& init_params)
         std::make_unique<ResourceResolver>(resources_dir(), data_dir())
     );
 
-    Biz::Scene::BedGeometry::set_resolver([](const std::string& p) -> std::string
-    {
-        return Render::TextureManager::resource_resolver().resolve(p);
-    });
+    Biz::Scene::BedGeometry::set_resolver(
+        [](const std::string& p) -> std::string
+        { return Render::TextureManager::resource_resolver().resolve(p); }
+    );
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -176,14 +193,25 @@ int run(const Slic3r::App::InitParams& init_params)
 
 bool DesktopApp::OnInit()
 {
-    SetAppearance(wxAppBase::Appearance::Dark);
+    auto& app_services{AppServices::instance()};
+    Theme::Style style = app_services.app_config().get<Theme::Style>("theme");
 
-    std::unique_ptr<AppConfig> app_config = AppConfig::create_app_config();
+    app_services.set_theme(std::make_unique<Theme>(style));
+
+    const AppearanceResult result = SetAppearance(
+        style == Theme::Style::Dark ? wxAppBase::Appearance::Dark : wxAppBase::Appearance::Light
+    );
+
+    if (result == AppearanceResult::Failure) {
+        SPDLOG_WARN("Failure to change wxWidgets appearance");
+    } else if (result == AppearanceResult::CannotChange) {
+        SPDLOG_WARN("wxWidgets appearance cannot be changed");
+    }
 
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
-    const bool is_dark             = true;
+    const bool is_dark             = style == Theme::Style::Dark;
     const bool is_sys_menu         = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
@@ -191,13 +219,16 @@ bool DesktopApp::OnInit()
 
     bool is_editor     = true; // is_editor();
     SplashScreen* scrn = nullptr;
-    const std::string last_crash_reason = app_config->get<std::string>("crash_reason");
-    if (app_config->get<bool>("show_splash_screen")) {
+    const std::string last_crash_reason =
+        app_services.app_config().get<std::string>("crash_reason");
+    if (app_services.app_config().get<bool>("show_splash_screen")) {
         // Detect position (display) to show the splash screen
         // Now this position is equal to the mainframe position
-        wxPoint splashscreen_pos         = wxDefaultPosition;
-        const std::string metrics_string = app_config->get<std::string>("mainframe_window_metrics");
-        if (!metrics_string.empty() && app_config->get<bool>("restore_win_position")) {
+        wxPoint splashscreen_pos = wxDefaultPosition;
+        const std::string metrics_string =
+            app_services.app_config().get<std::string>("mainframe_window_metrics");
+        if (!metrics_string.empty() && app_services.app_config().get<bool>("restore_win_position"))
+        {
             if (auto metrics = WX::WindowMetrics::deserialize(metrics_string);
                 metrics != boost::none)
             {
@@ -206,14 +237,14 @@ bool DesktopApp::OnInit()
         }
 
         // workaround for crash related to the positioning of the window on secondary monitor
-        app_config->record_crash("splashscreen_pos", "show_splash_screen");
+        app_services.app_config().record_crash("splashscreen_pos", "show_splash_screen");
 
         // create splash screen with updated bmp
         scrn = new SplashScreen(is_editor, splashscreen_pos);
 
         // revert "crash_reason" value if application wasn't crashed
         // on set position for splashscreen
-        app_config->resolve_crash(last_crash_reason, "show_splash_screen");
+        app_services.app_config().resolve_crash(last_crash_reason, "show_splash_screen");
 
 #ifndef __linux__
         wxYield();
@@ -226,36 +257,43 @@ bool DesktopApp::OnInit()
     using Platform::WX::WXMainThreadDispatcher;
 
     auto& platform_services{PlatformServices::instance()};
-    auto& app_services{AppServices::instance()};
-
-    app_services.set_app_config(std::move(app_config));
     init_translations();
 
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 
     platform_services.set_secret_store(SecretStoreFactory::create_secret_store());
     // Reset Token store if Account not allowed in app_config
-    if (!app_services.app_config().is_prusa_account_enabled())
-    {
+    if (!app_services.app_config().is_prusa_account_enabled()) {
         Biz::UserAccount::TokenStore::reset();
     }
-    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
+    platform_services.set_job_manager(
+        std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
+    );
 
     platform_services.set_app_config_provider(std::make_unique<AppConfigProvider>());
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>(
-    )};
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{
+        std::make_shared<Plater::ThumbnailImageGenerator>()
+    };
 
-    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
+        m_workbench,
+        platform_services.main_thread_dispatcher(),
+        *thumbnail_image_generator
+    );
 
     auto undo_store_ptr{std::make_unique<Undo::Store>(*m_project_interactor)};
     Undo::Store& undo_store{*undo_store_ptr};
 
     m_project_interactor->set_undo_provider(std::move(undo_store_ptr));
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
-    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
-    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store =
+        std::make_shared<App::ThumbnailStore>(*m_project_interactor);
+    platform_services.set_job_manager(
+        std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
+    );
+    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater =
+        std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
@@ -272,11 +310,14 @@ bool DesktopApp::OnInit()
         std::make_unique<PopNotification::PopNotificationCenter>(*m_project_interactor.get())
     );
     app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
-    platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
-        &app_services.pop_notification_center()
-    );
+    platform_services.job_manager()
+        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+            &app_services.pop_notification_center()
+        );
     m_project_interactor->user_account_interactor()
-        .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
+        .add_listener<Biz::UserAccount::IUserAccountListener>(
+            &app_services.pop_notification_center()
+        );
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
 
@@ -305,8 +346,9 @@ bool DesktopApp::OnInit()
         m_plater_module.get()
     );
 
-    m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
-    ));
+    m_project_interactor->removable_drive_service().add_status_listener(
+        &app_services.pop_notification_center()
+    );
 
     m_project_interactor->set_dialog_provider(&app_services.dialog_manager());
 
@@ -346,7 +388,14 @@ bool DesktopApp::OnInit()
             m_prusalink_storage_listener.get()
         );
 
-    app_services.pop_notification_center().set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, m_main_frame, std::placeholders::_1, std::placeholders::_2));
+    app_services.pop_notification_center().set_switch_left_tab_fn(
+        std::bind(
+            &MainFrame::switch_left_tab,
+            m_main_frame,
+            std::placeholders::_1,
+            std::placeholders::_2
+        )
+    );
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif
@@ -370,7 +419,8 @@ bool DesktopApp::OnInit()
     return true;
 }
 
-DesktopApp::~DesktopApp() {
+DesktopApp::~DesktopApp()
+{
     Biz::Platform::close();
     flush_logs();
 }

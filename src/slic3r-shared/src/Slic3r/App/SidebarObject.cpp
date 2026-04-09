@@ -63,18 +63,13 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
     m_text_object_name->set_flex_shrink(0);
 
-    add_volume_type_selector();
+    m_scroll_area = emplace_back<ScrollArea>();
+    m_scroll_area->set_orientation(Orientation::Vertical);
+    m_scroll_area->set_gap(10);
+    m_scroll_area->set_margin(Margins(0, 0, -11, 0));
+    m_scroll_area->set_padding(Paddings(0, 0, 11, 0));
 
-    m_scale_widget = emplace_back<Plater::ScaleWidget>(m_project_interactor);
-    m_scale_widget->on_activated(m_project_interactor.selected_project_id());
-
-    ScrollArea* scroll_area = emplace_back<ScrollArea>();
-    scroll_area->set_orientation(Orientation::Vertical);
-    scroll_area->set_gap(10);
-    scroll_area->set_margin(Margins(0, 0, -11, 0));
-    scroll_area->set_padding(Paddings(0, 0, 11, 0));
-
-    m_wipe_tower_settings = scroll_area->emplace_back<WipeTowerSettings>(m_project_interactor);
+    m_wipe_tower_settings = m_scroll_area->emplace_back<WipeTowerSettings>(m_project_interactor);
 
     m_config_item_filter = std::make_shared<ConfigItemFilter>();
     m_config_item_filter->set_filter_fn(
@@ -90,8 +85,13 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         }
     );
 
+    m_scale_widget = m_scroll_area->emplace_back<Plater::ScaleWidget>(m_project_interactor);
+    m_scale_widget->on_activated(m_project_interactor.selected_project_id());
+
+    add_volume_type_selector();
+
     m_config_item_list_view =
-        scroll_area->emplace_back<ConfigItemListView>(m_project_interactor.preset_interactor());
+        m_scroll_area->emplace_back<ConfigItemListView>(m_project_interactor.preset_interactor());
     m_config_item_list_view->set_orientation(Orientation::Vertical);
     m_config_item_list_view->set_gap(5);
     m_config_item_list_view->set_flex_shrink(0);
@@ -103,7 +103,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
             .object_observable_list();
     m_config_item_filter->set_source_model(object_settings_observable_list);
 
-    m_add_settings_button = scroll_area->emplace_back<LayoutButton>(std::string{});
+    m_add_settings_button = m_scroll_area->emplace_back<LayoutButton>(std::string{});
     m_add_settings_button->set_self_align(YGAlignCenter);
     m_add_settings_button->callbacks().action = [this]
     {
@@ -117,14 +117,14 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_add_settings_button->set_content_padding({20.f, 5.f});
 
     m_no_overrides_label =
-        scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));
+        m_scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));
     m_no_overrides_label->set_wrap_mode(Text::WrapMode::Wrap);
 
     m_override_group_filter = std::make_shared<ObservableOverrideCategorizer>();
     m_override_group_filter->set_allow_disabled(false);
 
     m_override_group_list_view =
-        scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
+        m_scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
     m_override_group_list_view->set_orientation(Orientation::Vertical);
     m_override_group_list_view->set_gap(5);
     m_override_group_list_view->set_flex_shrink(0);
@@ -183,13 +183,14 @@ void SidebarObject::visible_updated_internal()
 
 void SidebarObject::add_volume_type_selector()
 {
-    m_volume_type_selector = emplace_back<ComboBox>(std::initializer_list<std::string>{
-        volume_type_name(Domain::ModelVolumeType::MODEL_PART),
-        volume_type_name(Domain::ModelVolumeType::NEGATIVE_VOLUME),
-        volume_type_name(Domain::ModelVolumeType::PARAMETER_MODIFIER),
-        volume_type_name(Domain::ModelVolumeType::SUPPORT_BLOCKER),
-        volume_type_name(Domain::ModelVolumeType::SUPPORT_ENFORCER)
-    });
+    m_volume_type_selector =
+        m_scroll_area->emplace_back<ComboBox>(std::initializer_list<std::string>{
+            volume_type_name(Domain::ModelVolumeType::MODEL_PART),
+            volume_type_name(Domain::ModelVolumeType::NEGATIVE_VOLUME),
+            volume_type_name(Domain::ModelVolumeType::PARAMETER_MODIFIER),
+            volume_type_name(Domain::ModelVolumeType::SUPPORT_BLOCKER),
+            volume_type_name(Domain::ModelVolumeType::SUPPORT_ENFORCER)
+        });
     m_volume_type_selector->callbacks().selection_changed = [this](int index)
     {
         m_project_interactor.scene_interactor().set_selected_volume_type(
@@ -199,7 +200,7 @@ void SidebarObject::add_volume_type_selector()
         m_volume_type_selector->set_override_label(std::string());
     };
 
-    m_volume_type_selector_warning = emplace_back<Text>(
+    m_volume_type_selector_warning = m_scroll_area->emplace_back<Text>(
         Biz::_u8L("You can't change a type of the last solid part of the object.")
     );
     m_volume_type_selector_warning->set_text_color(m_theme->color_imgui(Platform::Color::Warning));

@@ -36,8 +36,6 @@ class ImguiRender;
 
 namespace Slic3r::App::Platform {
 
-class AbstractTheme;
-
 /**
  * Provides abstract interface for render module and common infrastructure for rendering
  * and event processing.
@@ -60,7 +58,6 @@ public:
     void ensure_initialized(
         Render::Device& device,
         Render::ImguiRender& imgui_render,
-        AbstractTheme& theme,
         AnimationManager& animation_manager
     );
     bool is_initialized() const;
@@ -99,7 +96,6 @@ protected:
     virtual void on_init(
         Render::Device& device,
         Render::ImguiRender& imgui_render,
-        Platform::AbstractTheme& theme,
         Platform::AnimationManager& animation_manager
     );
 
@@ -119,7 +115,6 @@ protected:
     Render::Device* m_device{nullptr};
     CommandRegistry m_command_registry;
     Render::ImguiRender* m_imgui_render{nullptr};
-    AbstractTheme* m_theme{nullptr};
     AnimationManager* m_animation_manager{nullptr};
 
     Render::ScreenInfo m_screen_info{0, 0, 1};
