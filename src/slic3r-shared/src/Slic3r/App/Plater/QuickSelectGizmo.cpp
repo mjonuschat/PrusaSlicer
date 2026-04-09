@@ -607,6 +607,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             std::optional<size_t> node_id{std::nullopt};
             if (m_pending_click_node) {
                 node_id = m_pending_click_node->id();
+                m_pending_click_node = nullptr;
             }
             // This is the first ButtonUp after ButtonDown, before a possible DoubleClick
             // We need to postpone its processing slightly, because a DoubleClick may follow
@@ -698,7 +699,7 @@ void QuickSelectGizmo::on_mouse_up(std::optional<size_t> node_id, bool modifier_
 {
     const auto& selection = m_scene_interactor.object_selection();
     if (!node_id) {
-        if (!selection.empty()) {
+        if (!selection.empty() && !modifier_pressed) {
             m_selection_handler.clear_selection();
         }
         return;
@@ -775,6 +776,7 @@ void QuickSelectGizmo::clear_timers()
         }
     }
     m_up_timer_ids.clear();
+    m_pending_click_node = nullptr;
 }
 
 } // namespace Slic3r::App::Plater
