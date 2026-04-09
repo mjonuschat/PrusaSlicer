@@ -206,21 +206,21 @@ private:
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
-    Yoga::ToolbarButton* m_button_travels           = nullptr;
-    Yoga::ToolbarButton* m_button_wipes             = nullptr;
-    Yoga::ToolbarButton* m_button_retractions       = nullptr;
-    Yoga::ToolbarButton* m_button_unretractions     = nullptr;
-    Yoga::ToolbarButton* m_button_seams             = nullptr;
-    Yoga::ToolbarButton* m_button_tool_changes      = nullptr;
-    Yoga::ToolbarButton* m_button_color_changes     = nullptr;
-    Yoga::ToolbarButton* m_button_pause_prints      = nullptr;
-    Yoga::ToolbarButton* m_button_custom_gcodes     = nullptr;
-    Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
-    Yoga::ToolbarButton* m_button_tool_marker       = nullptr;
-    Yoga::ToolbarButton* m_button_shells            = nullptr;
-    Yoga::ToolbarButton* m_button_plater_switch     = nullptr;
+    ToolBarButton* m_button_travels           = nullptr;
+    ToolBarButton* m_button_wipes             = nullptr;
+    ToolBarButton* m_button_retractions       = nullptr;
+    ToolBarButton* m_button_unretractions     = nullptr;
+    ToolBarButton* m_button_seams             = nullptr;
+    ToolBarButton* m_button_tool_changes      = nullptr;
+    ToolBarButton* m_button_color_changes     = nullptr;
+    ToolBarButton* m_button_pause_prints      = nullptr;
+    ToolBarButton* m_button_custom_gcodes     = nullptr;
+    ToolBarButton* m_button_center_of_gravity = nullptr;
+    ToolBarButton* m_button_tool_marker       = nullptr;
+    ToolBarButton* m_button_shells            = nullptr;
+    ToolBarButton* m_button_plater_switch     = nullptr;
 
-    Yoga::ToolbarButton* m_button_gcode_inspect = nullptr;
+    ToolBarButton* m_button_gcode_inspect = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

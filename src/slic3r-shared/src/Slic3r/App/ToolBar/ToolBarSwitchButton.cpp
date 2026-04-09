@@ -2,17 +2,19 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/Yoga/ToolbarSwitchButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBarSwitchButton.hpp"
 
-namespace Slic3r::App::Yoga {
+using namespace Slic3r::App::Yoga;
 
-ToolbarSwitchButton::ToolbarSwitchButton(
+namespace Slic3r::App {
+
+ToolBarSwitchButton::ToolBarSwitchButton(
     SwitchPosition switch_position,
     Render::Icon icon,
     const std::string& label,
     const std::string& tooltip
 ) :
-    ToolbarButton(icon, tooltip),
+    ToolBarButton(icon, tooltip),
     m_switch_position(switch_position)
 {
     set_label(label);

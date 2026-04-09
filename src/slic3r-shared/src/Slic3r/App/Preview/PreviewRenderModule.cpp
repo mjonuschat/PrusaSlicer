@@ -9,8 +9,8 @@
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
-#include "Slic3r/App/Yoga/Toolbar.hpp"
-#include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBar.hpp"
+#include "Slic3r/App/ToolBar/ToolBarButton.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
@@ -949,15 +949,15 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
         _u8L("Prepare view"),
-        Yoga::ToolbarSwitchButton::SwitchPosition::Left
+        ToolBarSwitchButton::SwitchPosition::Left
     );
 
-    ToolbarButton* preview_button = m_layout->add_toolbar_item_switch(
+    ToolBarButton* preview_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
         _u8L("Preview"),
         _u8L("Preview view"),
-        Yoga::ToolbarSwitchButton::SwitchPosition::Right
+        ToolBarSwitchButton::SwitchPosition::Right
     );
     preview_button->set_checked(true);
 

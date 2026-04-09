@@ -121,10 +121,11 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
     MenuBuilder menu_builder(*m_menu_manager, *m_command_binding_manager);
     menu_builder.add_menu_item(m_cog_menu, MenuItemName::JumpToValue);
 
-    m_show_estimated_times_item = m_cog_menu->append_item(
-        _u8L("Show estimated print time on hover"),
-        &m_show_estimated_times
-    );
+    m_show_estimated_times_item =
+        m_cog_menu->append_item(_u8L("Show estimated print time on hover"));
+    m_show_estimated_times_item->set_checkable(true);
+    m_show_estimated_times_item->set_checked(m_show_estimated_times);
+
     m_show_estimated_times_item->callbacks().checked_changed = [this](bool checked)
     {
         m_show_estimated_times = checked;
@@ -132,9 +133,11 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
             m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times);
     };
 
-    Yoga::MenuItem* ruler_submenu = m_cog_menu->append_item_as_menu(_u8L("Ruler"));
+    Yoga::MenuItem* ruler_submenu = m_cog_menu->append_item(_u8L("Ruler"));
 
-    m_show_ruler_item = ruler_submenu->append_sub_menu_item(_u8L("Show"), &m_show_ruler);
+    m_show_ruler_item = ruler_submenu->append_sub_menu_item(_u8L("Show"));
+    m_show_ruler_item->set_checkable(true);
+    m_show_ruler_item->set_checked(m_show_ruler);
     m_show_ruler_item->callbacks().checked_changed = [this](bool checked)
     {
         toggle_show_ruler(checked);
@@ -143,8 +146,9 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
         }
     };
 
-    m_show_ruler_background_item =
-        ruler_submenu->append_sub_menu_item(_u8L("Show background"), &m_show_ruler_bg);
+    m_show_ruler_background_item = ruler_submenu->append_sub_menu_item(_u8L("Show background"));
+    m_show_ruler_background_item->set_checkable(true);
+    m_show_ruler_background_item->set_checked(m_show_ruler_bg);
     m_show_ruler_background_item->callbacks().checked_changed = [this](bool checked)
     {
         m_show_ruler_bg = checked;
@@ -166,10 +170,10 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
             process_ticks_changed();
     };
 
-    m_seq_top_layer_only_item = m_cog_menu->append_item(
-        _u8L("Sequential slider applied only to top layer"),
-        &m_seq_top_layer_only
-    );
+    m_seq_top_layer_only_item =
+        m_cog_menu->append_item(_u8L("Sequential slider applied only to top layer"));
+    m_seq_top_layer_only_item->set_checkable(true);
+    m_seq_top_layer_only_item->set_checked(m_seq_top_layer_only);
     m_seq_top_layer_only_item->callbacks().action = [this]()
     {
         m_seq_top_layer_only = m_seq_top_layer_only_item->checked();
@@ -182,7 +186,9 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
 
     bool use_default_colors = m_ticks.use_default_colors();
     m_use_default_colors_menu_item =
-        m_cog_menu->append_item(_u8L("Use default colors").c_str(), &use_default_colors);
+        m_cog_menu->append_item(_u8L("Use default colors").c_str());
+    m_use_default_colors_menu_item->set_checkable(true);
+    m_use_default_colors_menu_item->set_checked(use_default_colors);
     m_use_default_colors_menu_item->callbacks().checked_changed = [this](bool checked)
     {
         set_use_default_colors(checked);
@@ -336,23 +342,23 @@ void DoubleSliderForLayers::set_mode_and_only_extruder(
 
     update_visibility_cog_menu_items();
     m_cog_btn->set_tooltip(
-        //ysFIXME-spe3494
-        //m_mode == CustomGCode::Mode::MultiAsSingle ?
-        //    format(
-        //        _u8L(
-        //            "Jump to height %s\n"
-        //            "Set ruler mode\n"
-        //            "or Set extruder sequence for the entire print"
-        //        ),
-        //        "(Shift + G)"
-        //    ) :
-            format(
-                _u8L(
-                    "Jump to height %s\n"
-                    "or Set ruler mode"
-                ),
-                "(Shift + G)"
-            )
+        // ysFIXME-spe3494
+        // m_mode == CustomGCode::Mode::MultiAsSingle ?
+        // format(
+        // _u8L(
+        // "Jump to height %s\n"
+        // "Set ruler mode\n"
+        // "or Set extruder sequence for the entire print"
+        // ),
+        // "(Shift + G)"
+        // ) :
+        format(
+            _u8L(
+                "Jump to height %s\n"
+                "or Set ruler mode"
+            ),
+            "(Shift + G)"
+        )
     );
 }
 
@@ -1055,9 +1061,9 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
                 process_ticks_changed();
                 break;
             }
-        } else if (m_draw_mode
-                   != DrawMode::
-                       Regular) // if we have non-regular draw mode, all ticks should be marked with error icon
+        } else if (
+            m_draw_mode != DrawMode::Regular
+        ) // if we have non-regular draw mode, all ticks should be marked with error icon
             activate_this_tick = render_button(
                 Render::Icon::ErrorTick,
                 Render::Icon::ErrorTickHovered,
@@ -1066,8 +1072,10 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
                 FocusedItem::Tick,
                 tick_it->tick
             );
-        else if (tick_it->type == CustomGCode::Type::ColorChange
-                 || tick_it->type == CustomGCode::Type::ToolChange)
+        else if (
+            tick_it->type == CustomGCode::Type::ColorChange
+            || tick_it->type == CustomGCode::Type::ToolChange
+        )
         {
             if (m_ticks.is_conflict_tick(*tick_it, m_mode, m_values[tick_it->tick])
                 != ConflictType::None)
@@ -1224,8 +1232,9 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         }
         // very short object or some non-trivial ruler with non-regular step (see https://github.com/prusa3d/PrusaSlicer/issues/7263)
         else {
-            if (step
-                < 1) // step less then 1 px indicates very tall object with non-regular laayer step (probably in vase mode)
+            if (
+                step < 1
+            ) // step less then 1 px indicates very tall object with non-regular laayer step (probably in vase mode)
                 return;
             for (int tick = 1; tick < int(m_values.size()); tick++) {
                 float pos = get_tick_pos(tick);
@@ -1426,14 +1435,14 @@ bool DoubleSliderForLayers::render_button(
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, {m_icon_screen_size, m_icon_screen_size});
 
-    int windows_flag =   ImGuiWindowFlags_NoTitleBar
-                       | ImGuiWindowFlags_NoCollapse
-                       | ImGuiWindowFlags_NoMove
-                       | ImGuiWindowFlags_NoNav
-                       | ImGuiWindowFlags_NoResize
-                       | ImGuiWindowFlags_NoScrollbar
-                       | ImGuiWindowFlags_NoScrollWithMouse
-                       | ImGuiWindowFlags_NoFocusOnAppearing;
+    int windows_flag = ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_NoCollapse
+        | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoNav
+        | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoScrollbar
+        | ImGuiWindowFlags_NoScrollWithMouse
+        | ImGuiWindowFlags_NoFocusOnAppearing;
 
     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.0f);
@@ -1997,8 +2006,8 @@ bool DoubleSliderForLayers::render_yes_no_cancel_popup(const ImVec2& pos)
         std::string cancel_btn = _u8L("Cancel");
         float max_len          = std::max(
             {ImGui::CalcTextSize(yes_btn.c_str()).x,
-                      ImGui::CalcTextSize(no_btn.c_str()).x,
-                      ImGui::CalcTextSize(cancel_btn.c_str()).x}
+             ImGui::CalcTextSize(no_btn.c_str()).x,
+             ImGui::CalcTextSize(cancel_btn.c_str()).x}
         );
         float btn_width = max_len + 2.0f * style.FramePadding.x;
 

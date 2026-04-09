@@ -16,19 +16,12 @@ public:
         Menu* parent,
         const std::string& label,
         Render::Icon icon           = Render::Icon::None,
-        const std::string& shortcut = {},
-        bool has_sub_menu           = false
+        const std::string& shortcut = {}
     );
-    MenuItem(
-        Menu* parent,
-        const std::string& label,
-        const std::string& shortcut = {},
-        bool has_sub_menu           = false
-    );
+    MenuItem(Menu* parent, const std::string& label, const std::string& shortcut = {});
 
     MenuItem* append_sub_menu_item(
         const std::string& label,
-        bool* init_checkable_value  = nullptr,
         Render::Icon icon           = Render::Icon::None,
         const std::string& shortcut = {}
     );
@@ -53,8 +46,8 @@ private:
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};
     Menu* m_sub_menu{nullptr};
-    Text* m_shortcut_text{ nullptr };
-    Icon* m_expander_icon{ nullptr };
+    Text* m_shortcut_text{nullptr};
+    Icon* m_expander_icon{nullptr};
 };
 
 } // namespace Slic3r::App::Yoga

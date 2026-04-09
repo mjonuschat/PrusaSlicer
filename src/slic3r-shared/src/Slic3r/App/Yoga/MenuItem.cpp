@@ -4,33 +4,25 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 
-#include "imgui/imgui_internal.h"
-
 namespace Slic3r::App::Yoga {
 
 MenuItem::MenuItem(
     Menu* parent,
     const std::string& label,
     Render::Icon icon,
-    const std::string& shortcut,
-    bool has_sub_menu
+    const std::string& shortcut
 ) :
     RectangleButton(),
     m_parent_menu(parent)
 {
-    create(label, icon, shortcut, has_sub_menu);
+    create(label, icon, shortcut);
 }
 
-MenuItem::MenuItem(
-    Menu* parent,
-    const std::string& label,
-    const std::string& shortcut,
-    bool has_sub_menu
-) :
+MenuItem::MenuItem(Menu* parent, const std::string& label, const std::string& shortcut) :
     RectangleButton(),
     m_parent_menu(parent)
 {
-    create(label, Render::Icon::None, shortcut, has_sub_menu);
+    create(label, Render::Icon::None, shortcut);
 }
 
 void MenuItem::create(
@@ -62,15 +54,10 @@ void MenuItem::create(
     m_expander_icon->set_aspect_ratio(1.f);
     m_expander_icon->set_width(icon_size);
     m_expander_icon->set_self_align(YGAlignCenter);
-
-    if (has_sub_menu) {
-        add_submenu(label);
-    }
 }
 
 MenuItem* MenuItem::append_sub_menu_item(
     const std::string& label,
-    bool* init_checkable_value,
     Render::Icon icon,
     const std::string& shortcut
 )
@@ -78,7 +65,7 @@ MenuItem* MenuItem::append_sub_menu_item(
     if (!m_sub_menu) {
         add_submenu(label);
     }
-    return m_sub_menu->append_item(label, init_checkable_value, icon, shortcut);
+    return m_sub_menu->append_item(label, icon, shortcut);
 }
 
 void MenuItem::append_sub_menu_separator()
@@ -121,8 +108,6 @@ void MenuItem::hovered_updated_internal()
     if (hovered()) {
         if (m_sub_menu) {
             m_sub_menu->open();
-        } else {
-            m_parent_menu->close_all_submenus();
         }
     }
 }
@@ -130,9 +115,11 @@ void MenuItem::hovered_updated_internal()
 void MenuItem::add_submenu(const std::string& label)
 {
     m_sub_menu = emplace_back<Menu>(label, Position::Right);
+    m_sub_menu->set_flags(m_sub_menu->flags() | ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_ChildWindow);
     m_sub_menu->set_offset(-2.f);
 
     m_expander_icon->set_visible(true);
+    set_content_justify_content(YGJustifyFlexStart);
 }
 
 } // namespace Slic3r::App::Yoga

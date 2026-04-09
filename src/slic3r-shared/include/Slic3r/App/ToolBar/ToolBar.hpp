@@ -8,31 +8,21 @@
 
 #include <vector>
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App {
 
-class ToolbarButton;
+class ToolBarButton;
 
-class Toolbar : public Window
+class ToolBar : public Yoga::Window
 {
 public:
-    struct Callbacks
-    {
-        std::function<void()> hovered_changed{nullptr};
-        std::function<void()> subtoolbar_opened{nullptr};
-    };
+    explicit ToolBar(const std::string& name);
 
-    explicit Toolbar(const std::string& name);
+    std::unique_ptr<ToolBarButton> remove(ToolBarButton* button);
 
-    Callbacks& callbacks();
-
-    void render_body(Vec2f pos, Vec2f size) override;
-
-    std::unique_ptr<ToolbarButton> remove(ToolbarButton* button);
-
-    ToolbarButton* button_at(int index) const;
+    ToolBarButton* button_at(int index) const;
     int button_count() const;
-    std::optional<size_t> index_of(ToolbarButton* button) const;
-    bool contains(ToolbarButton* button) const;
+    std::optional<size_t> index_of(ToolBarButton* button) const;
+    bool contains(ToolBarButton* button) const;
 
     float button_width() const;
     void set_button_width(float button_width);
@@ -52,15 +42,13 @@ public:
 
 private:
     // Hide these methods
-    void append(ObjectPtr child) override;
-    void insert(ObjectPtr child, size_t index) override;
-    ObjectPtr remove(Object* child) override;
+    void append(Yoga::ObjectPtr child) override;
+    void insert(Yoga::ObjectPtr child, size_t index) override;
+    Yoga::ObjectPtr remove(Object* child) override;
 
 private:
-    Callbacks m_callbacks;
-
-    std::vector<ToolbarButton*> m_buttons;
-    ToolbarButton* m_button_more = nullptr;
+    std::vector<ToolBarButton*> m_buttons;
+    ToolBarButton* m_button_more = nullptr;
     float m_button_width         = 0;
     float m_button_height        = 0;
     float m_available_size       = YGUndefined;

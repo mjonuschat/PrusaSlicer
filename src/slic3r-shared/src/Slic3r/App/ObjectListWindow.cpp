@@ -187,11 +187,11 @@ void ObjectListWindow::init_cc_context_menu()
         m_object_list->emplace_back<Yoga::Menu>("cc_context_menu", Yoga::Position::Top);
 
     m_delete_cc_menu_item =
-        m_cc_context_menu->append_item(_u8L("Delete"), nullptr, Render::Icon::DeleteBtnIcon);
+        m_cc_context_menu->append_item(_u8L("Delete"), Render::Icon::DeleteBtnIcon);
     m_delete_cc_menu_item->callbacks().action = [this]()
     { m_project_interactor->remove_config_container(m_selected_config_container_id); };
 
-    m_cc_context_menu->append_item(_u8L("Duplicate"), nullptr, Render::Icon::CopyForGizmo)
+    m_cc_context_menu->append_item(_u8L("Duplicate"), Render::Icon::CopyForGizmo)
         ->callbacks()
         .action = [this]()
     { m_project_interactor->duplicate_config_container(m_selected_config_container_id); };

@@ -3,7 +3,7 @@
 #include "Slic3r/App/Yoga/RootItem.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 #include "Slic3r/App/TopBar.hpp"
-#include "Slic3r/App/Yoga/ToolbarSwitchButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBarSwitchButton.hpp"
 #include "Slic3r/App/ObjectListWindow.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
@@ -16,13 +16,13 @@
 namespace Slic3r::App {
 
 class SidebarStackLayout;
+class ToolBar;
 
 namespace Scene {
 class IToolGizmo;
 } // namespace Scene
 
 namespace Yoga {
-class Toolbar;
 class Dialog;
 class SplitLayout;
 } // namespace Yoga
@@ -58,34 +58,30 @@ public:
 
     void render(Vec2f size);
 
-    Yoga::ToolbarButton* add_toolbar_item(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip
-    );
-    Yoga::ToolbarButton* add_toolbar_item_checkable(
+    ToolBarButton* add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip);
+    ToolBarButton* add_toolbar_item_checkable(
         ToolbarID id,
         Render::Icon icon,
         const std::string& tooltip,
         bool checked = false
     );
-    Yoga::ToolbarButton* add_toolbar_item_gizmo(
+    ToolBarButton* add_toolbar_item_gizmo(
         ToolbarID id,
         Render::Icon icon,
         const std::string& tooltip,
         Scene::IToolGizmo* tool
     );
-    Yoga::ToolbarSwitchButton* add_toolbar_item_switch(
+    ToolBarSwitchButton* add_toolbar_item_switch(
         ToolbarID id,
         Render::Icon icon,
         const std::string& label,
         const std::string& tooltip,
-        Yoga::ToolbarSwitchButton::SwitchPosition switch_position
+        ToolBarSwitchButton::SwitchPosition switch_position
     );
 
-    Yoga::Toolbar* left_toolbar() const;
-    Yoga::Toolbar* middle_toolbar() const;
-    Yoga::Toolbar* right_toolbar() const;
+    ToolBar* left_toolbar() const;
+    ToolBar* middle_toolbar() const;
+    ToolBar* right_toolbar() const;
 
     SidebarStackLayout* sidebar_stack_layout() const;
 
@@ -99,7 +95,7 @@ protected:
     virtual void init_middle_column();
     virtual void init_right_column();
 
-    Yoga::Toolbar* find_toolbar(ToolbarID id) const;
+    ToolBar* find_toolbar(ToolbarID id) const;
 
     void update_cube_view_position();
     void update_left_separator_enable();
@@ -125,9 +121,9 @@ protected:
     // we are moving CubeView between Horizontal and Vertical layouts, wrapper is needed
     Yoga::Item* m_cube_view_wrapper = nullptr;
 
-    Yoga::Toolbar* m_left_toolbar   = nullptr;
-    Yoga::Toolbar* m_middle_toolbar = nullptr;
-    Yoga::Toolbar* m_right_toolbar  = nullptr;
+    ToolBar* m_left_toolbar   = nullptr;
+    ToolBar* m_middle_toolbar = nullptr;
+    ToolBar* m_right_toolbar  = nullptr;
 
     bool m_sidebars_visible = true;
 

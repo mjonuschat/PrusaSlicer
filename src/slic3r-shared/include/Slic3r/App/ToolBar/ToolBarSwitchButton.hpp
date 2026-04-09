@@ -4,12 +4,12 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBarButton.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App {
 
-class ToolbarSwitchButton : public ToolbarButton
+class ToolBarSwitchButton : public ToolBarButton
 {
 public:
     enum class SwitchPosition
@@ -19,7 +19,7 @@ public:
         Right,
     };
 
-    ToolbarSwitchButton(
+    ToolBarSwitchButton(
         SwitchPosition switch_position,
         Render::Icon icon,
         const std::string& label   = {},

@@ -222,11 +222,8 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_save_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8("Save preset"));
 
     m_save_preset_menu = m_save_button->emplace_back<Menu>("SavePresetMenu", Position::Top);
-    MenuItem* save_print_preset_button = m_save_preset_menu->append_item(
-        Biz::_u8L("Print preset"),
-        nullptr,
-        Render::Icon::PrinterIconMarker
-    );
+    MenuItem* save_print_preset_button =
+        m_save_preset_menu->append_item(Biz::_u8L("Print preset"), Render::Icon::PrinterIconMarker);
     save_print_preset_button->callbacks().action = [this]
     {
         m_project_interactor.preset_interactor().save_user_preset(
@@ -324,7 +321,6 @@ void PrintSettingsDialog::update_extruder_size()
         const size_t index         = m_save_preset_menu->object_count() - 1;
         MenuItem* tool_save_button = m_save_preset_menu->append_item(
             fmt::format("{} {} {}", Biz::_u8L("Tool"), index + 1, Biz::_u8L("preset")),
-            nullptr,
             Render::Icon::Funnel
         );
         tool_save_button->callbacks().action = [index, this]

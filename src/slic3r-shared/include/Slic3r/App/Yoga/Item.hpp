@@ -3,7 +3,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #pragma once
-#define DEBUG
 
 #include "yoga/Yoga.h"
 #include "imgui.h"

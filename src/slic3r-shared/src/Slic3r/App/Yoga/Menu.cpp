@@ -11,38 +11,16 @@ Menu::Menu(const std::string& name, Position position)
     set_orientation(Orientation::Vertical);
     set_padding({3.f, 3.f});
     set_gap(3.f);
-
-    // FIXME: This is a hideous way to prevent the one in-dialog menu
-    // to open under its parent. The extra flag is needed for context menus, though.
-    // This needs a better fix, but let's brush it under the carpet for now.
-    if (name == "SavePresetMenu")
-        set_flags(flags());
-    else
-        set_flags(flags() | ImGuiWindowFlags_NoFocusOnAppearing);
-}
-
-MenuItem* Menu::append_item(
-    const std::string& label,
-    bool* init_checkable_value,
-    Render::Icon icon,
-    const std::string& shortcut
-)
-{
-    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut);
-    item->set_content_justify_content(YGJustifyFlexStart);
-    if (init_checkable_value) {
-        item->set_checkable(true);
-        item->set_checked(*init_checkable_value);
-    }
-
-    m_items.push_back(item);
-    return item;
+    set_flags(
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
+    );
 }
 
 MenuItem*
-Menu::append_item_as_menu(const std::string& label, Render::Icon icon, const std::string& shortcut)
+Menu::append_item(const std::string& label, Render::Icon icon, const std::string& shortcut)
 {
-    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut, true);
+    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut);
+
     m_items.push_back(item);
     return item;
 }

@@ -3,9 +3,8 @@
 #include <imgui_internal.h>
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
-#include "Slic3r/App/Yoga/Toolbar.hpp"
-#include "Slic3r/App/Yoga/ToolbarButton.hpp"
-#include "Slic3r/App/Yoga/ToolbarSwitchButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBar.hpp"
+#include "Slic3r/App/ToolBar/ToolBarButton.hpp"
 #include "Slic3r/App/Yoga/SplitLayout.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/AppServices.hpp"
@@ -101,30 +100,30 @@ void AbstractRenderLayout::update_left_separator_enable()
     m_layout_main_bottom->set_separator_enable(0, enabled);
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item(
+ToolBarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip
 )
 {
-    Toolbar* toolbar = find_toolbar(id);
+    ToolBar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
 
     toolbar->set_visible(true);
 
-    ToolbarButton* button = toolbar->emplace_back<ToolbarButton>(icon, tooltip);
+    ToolBarButton* button = toolbar->emplace_back<ToolBarButton>(icon, tooltip);
 
     return button;
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
+ToolBarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
     bool checked
 )
 {
-    ToolbarButton* button = add_toolbar_item(id, icon, tooltip);
+    ToolBarButton* button = add_toolbar_item(id, icon, tooltip);
     ASSERT(button);
 
     button->set_checked(checked);
@@ -133,39 +132,39 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     return button;
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
+ToolBarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
     Scene::IToolGizmo* tool
 )
 {
-    ToolbarButton* button = add_toolbar_item(id, icon, tooltip);
+    ToolBarButton* button = add_toolbar_item(id, icon, tooltip);
     ASSERT(button);
 
     return button;
 }
 
-ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
+ToolBarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     ToolbarID id,
     Render::Icon icon,
     const std::string& label,
     const std::string& tooltip,
-    ToolbarSwitchButton::SwitchPosition switch_position
+    ToolBarSwitchButton::SwitchPosition switch_position
 )
 {
-    Toolbar* toolbar = find_toolbar(id);
+    ToolBar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
 
     toolbar->set_visible(true);
 
-    ToolbarSwitchButton* switch_button =
-        toolbar->emplace_back<ToolbarSwitchButton>(switch_position, icon, label, tooltip);
+    ToolBarSwitchButton* switch_button =
+        toolbar->emplace_back<ToolBarSwitchButton>(switch_position, icon, label, tooltip);
 
     return switch_button;
 }
 
-Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
+ToolBar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
 {
     switch (id) {
     case ToolbarID::Left:
@@ -178,17 +177,17 @@ Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
     return nullptr;
 }
 
-Toolbar* AbstractRenderLayout::right_toolbar() const
+ToolBar* AbstractRenderLayout::right_toolbar() const
 {
     return m_right_toolbar;
 }
 
-Toolbar* AbstractRenderLayout::middle_toolbar() const
+ToolBar* AbstractRenderLayout::middle_toolbar() const
 {
     return m_middle_toolbar;
 }
 
-Toolbar* AbstractRenderLayout::left_toolbar() const
+ToolBar* AbstractRenderLayout::left_toolbar() const
 {
     return m_left_toolbar;
 }
@@ -251,7 +250,7 @@ void AbstractRenderLayout::init_left_column()
 void AbstractRenderLayout::init_middle_column()
 {
     m_layout_center_row = m_layout_main_bottom->emplace_back<Item>();
-    m_layout_center_row->set_min_size({340, YGUndefined});
+    m_layout_center_row->set_min_size({345, YGUndefined});
     m_layout_center_row->set_orientation(Orientation::Horizontal);
     m_layout_center_row->set_gap(5);
     m_layout_main_bottom->set_flex_child(m_layout_center_row, true);
@@ -331,21 +330,21 @@ void AbstractRenderLayout::init_toolbar_row()
     m_layout_middle_toolbar_row->set_justify_content(YGJustify::YGJustifyCenter);
     m_layout_middle_toolbar_row->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
-    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("TopToolbar");
+    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("TopToolbar");
     m_left_toolbar->set_button_width(button_size);
     m_left_toolbar->set_button_height(button_size);
     m_left_toolbar->set_orientation(Orientation::Horizontal);
     m_left_toolbar->set_flex_shrink(0);
     m_left_toolbar->set_visible(false);
 
-    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("MiddleToolbar");
+    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("MiddleToolbar");
     m_middle_toolbar->set_button_width(button_size);
     m_middle_toolbar->set_button_height(button_size);
     m_middle_toolbar->set_orientation(Orientation::Horizontal);
     m_middle_toolbar->set_collapsible(true);
     m_middle_toolbar->set_visible(false);
 
-    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("BottomToolbar");
+    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("BottomToolbar");
     m_right_toolbar->set_button_width(button_size);
     m_right_toolbar->set_button_height(button_size);
     m_right_toolbar->set_orientation(Orientation::Horizontal);

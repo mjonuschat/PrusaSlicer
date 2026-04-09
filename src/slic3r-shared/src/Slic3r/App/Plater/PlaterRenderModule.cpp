@@ -72,10 +72,10 @@
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
-#include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBarButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
-#include "Slic3r/App/Yoga/Toolbar.hpp"
+#include "Slic3r/App/ToolBar/ToolBar.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 #include "Slic3r/App/TopBar.hpp"
@@ -711,12 +711,12 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Height Range"),
         m_height_range_gizmo
     );
-    ToolbarButton* plater_button = m_layout->add_toolbar_item_switch(
+    ToolBarButton* plater_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
         _u8L("Prepare view"),
-        Yoga::ToolbarSwitchButton::SwitchPosition::Left
+        ToolBarSwitchButton::SwitchPosition::Left
     );
     plater_button->set_checked(true);
 
@@ -725,7 +725,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::Preview,
         _u8L("Preview"),
         _u8L("Preview view"),
-        Yoga::ToolbarSwitchButton::SwitchPosition::Right
+        ToolBarSwitchButton::SwitchPosition::Right
     );
 
     this->update_toolbar_visibility();
@@ -1020,7 +1020,7 @@ void PlaterRenderModule::init_gizmos()
     m_command_binding_manager.set_gizmos_command_registry(&m_gizmo_manager->command_registry());
 }
 
-Yoga::ToolbarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type) const
+ToolBarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type) const
 {
     switch (tool_type) {
     case Scene::ToolType::Translation:

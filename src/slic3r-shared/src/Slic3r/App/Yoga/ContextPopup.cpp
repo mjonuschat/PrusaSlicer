@@ -25,15 +25,17 @@ void ContextPopup::style_node()
 {
     if (is_visible()) {
         if (m_open_pos.has_value()) {
-            set_left((*m_open_pos).x());
-            set_top((*m_open_pos).y());
+            set_left(m_open_pos.value().x());
+            set_top(m_open_pos.value().y());
         } else {
             switch (m_position) {
             case Position::Right:
                 set_right(-(m_offset + width()));
                 set_top(
-                    0.f /*parent_item()->height() * 0.5f - height() * 0.5f*/
-                ); // #ysFIXME - WIP: need to improve
+                    m_flags & ImGuiWindowFlags_ChildMenu ?
+                        0 :
+                        parent_item()->height() * 0.5f - height() * 0.5f
+                );
                 break;
             case Position::Left:
                 set_left(-(m_offset + width()));
@@ -46,8 +48,10 @@ void ContextPopup::style_node()
             case Position::Bottom:
                 set_bottom(-(m_offset + height()));
                 set_left(
-                    0.f /*parent_item()->width() * 0.5f - width() * 0.5f*/
-                ); // #ysFIXME - WIP: need to improve
+                    m_flags & ImGuiWindowFlags_ChildMenu ?
+                        0 :
+                        parent_item()->width() * 0.5f - width() * 0.5f
+                );
                 break;
             }
         }
@@ -59,8 +63,6 @@ void ContextPopup::style_node()
 void ContextPopup::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
-
-    render_debug(pos, size);
 
     if (m_force_open_popup_in_render) {
         ImGui::OpenPopup(object_name().c_str());
@@ -76,19 +78,27 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
-    ImGui::OpenPopupOnItemClick(object_name().c_str());
-    if (ImGui::BeginPopup(object_name().c_str(), m_flags)) {
+    bool begin = false;
+    if (m_flags & ImGuiWindowFlags_ChildMenu) {
+        ImGuiID id = ImGui::GetID(object_name().c_str());
+        begin      = ImGui::BeginPopupMenuEx(id, object_name().c_str(), m_flags);
+    } else {
+        begin = ImGui::BeginPopup(object_name().c_str(), m_flags);
+    }
+    if (begin) {
         m_opened = true;
         if (m_request_close) {
             ImGui::CloseCurrentPopup();
             m_request_close = false;
         }
 
-        for (Item* child : std::as_const(m_children_render_order)) {
-            render_node(pos, child);
-        }
+        render_item_end(pos, size);
 
-        ImGui::EndPopup();
+        if (m_flags & ImGuiWindowFlags_ChildMenu) {
+            ImGui::EndMenu();
+        } else {
+            ImGui::EndPopup();
+        }
     } else if (m_opened) {
         m_opened = false;
         if (m_callbacks.closed) {
@@ -121,7 +131,7 @@ std::optional<Vec2f> ContextPopup::open_pos() const
 void ContextPopup::set_open_pos(std::optional<Vec2f> pos)
 {
     if (pos != m_open_pos) {
-        m_open_pos = pos;
+        m_open_pos                   = pos;
         m_force_open_popup_in_render = true;
         invalidate_style();
     }
@@ -155,7 +165,7 @@ void ContextPopup::set_rounding(float rounding)
 
 void ContextPopup::open()
 {
-    m_request_close     = false;
+    m_request_close = false;
     if (!m_force_open_popup_in_render) {
         ImGui::OpenPopup(object_name().c_str());
     }

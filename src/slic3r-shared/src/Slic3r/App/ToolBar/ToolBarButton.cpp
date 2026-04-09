@@ -2,18 +2,20 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/ToolBar/ToolBarButton.hpp"
 
 #include "Slic3r/App/Yoga/Tooltip.hpp"
-#include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
+#include "Slic3r/App/Yoga/ContextPopup.hpp"
 
 #include <imgui_internal.h>
 
-namespace Slic3r::App::Yoga {
+using namespace Slic3r::App::Yoga;
 
-ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip) :
-    LayoutButton("", icon, tooltip)
+namespace Slic3r::App {
+
+ToolBarButton::ToolBarButton(Render::Icon icon, const std::string& tooltip) :
+    LayoutButton(std::string{}, icon, tooltip)
 {
     set_background_color(Platform::Color::ButtonTransparent);
 
@@ -21,7 +23,7 @@ ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip) :
     m_tooltip->set_preferred_position(Position::Bottom);
 }
 
-void ToolbarButton::render(Vec2f pos, Vec2f size)
+void ToolBarButton::render(Vec2f pos, Vec2f size)
 {
     LayoutButton::render(pos, size);
 
@@ -50,7 +52,7 @@ void ToolbarButton::render(Vec2f pos, Vec2f size)
     }
 }
 
-void ToolbarButton::style_node()
+void ToolBarButton::style_node()
 {
     constexpr float gap = 10;
 
@@ -78,29 +80,32 @@ void ToolbarButton::style_node()
     AbstractButton::style_node();
 }
 
-Toolbar* ToolbarButton::get_subtoolbar() const
+Yoga::ContextPopup* ToolBarButton::get_subtoolbar() const
 {
     return m_subtoolbar;
 }
 
-Toolbar* ToolbarButton::get_or_create_subtoolbar()
+Yoga::ContextPopup* ToolBarButton::get_or_create_subtoolbar()
 {
     if (!m_subtoolbar) {
-        m_subtoolbar = emplace_back<Toolbar>("subtoolbar");
-        m_subtoolbar->set_orientation(Orientation::Horizontal);
-        m_subtoolbar->set_position_type(YGPositionType::YGPositionTypeAbsolute);
-        m_subtoolbar->set_button_width(width());
-        m_subtoolbar->set_button_height(height());
-        m_subtoolbar->set_visible(false);
+        m_subtoolbar                  = emplace_back<ContextPopup>("SubToolBar");
+        constexpr const float PADDING = 4.f;
+        m_subtoolbar->set_padding(PADDING);
+        parent_item()->orientation() == Orientation::Horizontal ?
+            m_subtoolbar->set_height(40 + PADDING * 2) :
+            m_subtoolbar->set_width(40 + PADDING * 2);
+        m_subtoolbar->set_position(Position::Bottom);
+
+        m_subtoolbar->callbacks().opened = [this] { set_checked(true); };
+        m_subtoolbar->callbacks().closed = [this] { set_checked(false); };
 
         callbacks().action = [this]
         {
             if (m_subtoolbar) {
-                m_subtoolbar->set_visible(!m_subtoolbar->is_visible());
-
-                Toolbar* parent_toolbar = dynamic_cast<Toolbar*>(parent_item());
-                if (parent_toolbar && parent_toolbar->callbacks().subtoolbar_opened) {
-                    parent_toolbar->callbacks().subtoolbar_opened();
+                if (m_subtoolbar->opened()) {
+                    m_subtoolbar->close();
+                } else {
+                    m_subtoolbar->open();
                 }
             }
         };
@@ -109,4 +114,4 @@ Toolbar* ToolbarButton::get_or_create_subtoolbar()
     return m_subtoolbar;
 }
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

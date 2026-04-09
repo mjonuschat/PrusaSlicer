@@ -319,12 +319,8 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
 
 std::string MenuBuilder::icon_name(MenuItemName menu_item_name)
 {
-    if (Render::Icon icon = item_icon(menu_item_name); icon == Render::Icon::None) {
-        return std::string();
-    } else {
-        return Render::ImguiIconHelper::icon_name(icon);
-    }
-    return std::string();
+    Render::Icon icon = item_icon(menu_item_name);
+    return icon == Render::Icon::None ? std::string{} : Render::ImguiIconHelper::icon_name(icon);
 }
 
 void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* menu_item)
@@ -336,7 +332,6 @@ void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* men
         }
         Yoga::MenuItem* new_yoga_menu_item = yoga_menu_item->append_sub_menu_item(
             item_name_translated(sub_menu_item->name()),
-            nullptr,
             item_icon(sub_menu_item->name())
         );
         if (sub_menu_item->children().empty()) {
@@ -351,7 +346,6 @@ Yoga::MenuItem* MenuBuilder::add_menu_item(Yoga::Menu* menu, App::MenuItem* menu
 {
     Yoga::MenuItem* yoga_menu_item = menu->append_item(
         item_name_translated(menu_item->name()),
-        nullptr,
         item_icon(menu_item->name())
     );
     m_command_binding_manager.bind_menu_item(menu_item->command(), yoga_menu_item);
@@ -367,10 +361,10 @@ void MenuBuilder::add_menu_items(Yoga::Menu* menu, App::MenuItem* root_menu_item
         if (menu_item->is_separator()) {
             menu->append_separator();
         } else if (menu_item->children().empty()) {
-            Yoga::MenuItem* yoga_menu_item = add_menu_item(menu, menu_item);
+            add_menu_item(menu, menu_item);
         } else {
             Yoga::MenuItem* yoga_menu_item_with_submenu =
-                menu->append_item_as_menu(item_name_translated(menu_item->name()));
+                menu->append_item(item_name_translated(menu_item->name()));
             add_submenu(yoga_menu_item_with_submenu, menu_item);
         }
     }

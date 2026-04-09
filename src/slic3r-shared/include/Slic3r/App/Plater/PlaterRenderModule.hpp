@@ -30,12 +30,12 @@ class SidebarPrint;
 class CubeView;
 class TopBar;
 class PreferencesDialog;
+class ToolBarButton;
+class ToolBarSwitchButton;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Yoga {
 class Menu;
-class ToolbarButton;
-class ToolbarSwitchButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::PopNotification {
@@ -193,7 +193,7 @@ private:
 
     void init_gizmos();
 
-    Yoga::ToolbarButton* get_toolbar_button(Scene::ToolType tool_type) const;
+    ToolBarButton* get_toolbar_button(Scene::ToolType tool_type) const;
 
 private:
     const Domain::Workbench& m_workbench;
@@ -222,26 +222,26 @@ private:
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 
-    Yoga::ToolbarButton* m_toolbar_add                     = nullptr;
-    Yoga::ToolbarButton* m_toolbar_delete                  = nullptr;
-    Yoga::ToolbarButton* m_toolbar_add_instance            = nullptr;
-    Yoga::ToolbarButton* m_toolbar_move                    = nullptr;
-    Yoga::ToolbarButton* m_toolbar_rotate                  = nullptr;
-    Yoga::ToolbarButton* m_toolbar_scale                   = nullptr;
-    Yoga::ToolbarButton* m_toolbar_place_on_face           = nullptr;
-    Yoga::ToolbarButton* m_toolbar_simplify                = nullptr;
-    Yoga::ToolbarButton* m_toolbar_arrange                 = nullptr;
-    Yoga::ToolbarButton* m_toolbar_paint_on_supports       = nullptr;
-    Yoga::ToolbarButton* m_toolbar_paint_on_seams          = nullptr;
-    Yoga::ToolbarButton* m_toolbar_paint_on_fuzzy_skin     = nullptr;
-    Yoga::ToolbarButton* m_toolbar_multi_material_painting = nullptr;
-    Yoga::ToolbarButton* m_toolbar_text                    = nullptr;
-    Yoga::ToolbarButton* m_toolbar_svg                     = nullptr;
-    Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
-    Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
-    Yoga::ToolbarButton* m_toolbar_variable_layer_height   = nullptr;
-    Yoga::ToolbarButton* m_toolbar_height_range            = nullptr;
-    Yoga::ToolbarSwitchButton* m_toolbar_preview_switch    = nullptr;
+    ToolBarButton* m_toolbar_add                     = nullptr;
+    ToolBarButton* m_toolbar_delete                  = nullptr;
+    ToolBarButton* m_toolbar_add_instance            = nullptr;
+    ToolBarButton* m_toolbar_move                    = nullptr;
+    ToolBarButton* m_toolbar_rotate                  = nullptr;
+    ToolBarButton* m_toolbar_scale                   = nullptr;
+    ToolBarButton* m_toolbar_place_on_face           = nullptr;
+    ToolBarButton* m_toolbar_simplify                = nullptr;
+    ToolBarButton* m_toolbar_arrange                 = nullptr;
+    ToolBarButton* m_toolbar_paint_on_supports       = nullptr;
+    ToolBarButton* m_toolbar_paint_on_seams          = nullptr;
+    ToolBarButton* m_toolbar_paint_on_fuzzy_skin     = nullptr;
+    ToolBarButton* m_toolbar_multi_material_painting = nullptr;
+    ToolBarButton* m_toolbar_text                    = nullptr;
+    ToolBarButton* m_toolbar_svg                     = nullptr;
+    ToolBarButton* m_toolbar_measure                 = nullptr;
+    ToolBarButton* m_toolbar_cut                     = nullptr;
+    ToolBarButton* m_toolbar_variable_layer_height   = nullptr;
+    ToolBarButton* m_toolbar_height_range            = nullptr;
+    ToolBarSwitchButton* m_toolbar_preview_switch    = nullptr;
 
     std::unique_ptr<Biz::Emboss::IFontManager> m_font_manager = nullptr;
 

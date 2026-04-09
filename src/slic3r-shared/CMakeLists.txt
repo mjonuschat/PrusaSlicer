@@ -473,8 +473,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Navigator.cpp
         include/Slic3r/App/Navigator.hpp
 
-        include/Slic3r/App/Yoga/Toolbar.hpp
-        src/Slic3r/App/Yoga/Toolbar.cpp
         include/Slic3r/App/Yoga/Namespace.hpp
         include/Slic3r/App/Yoga/WindowParams.hpp
         include/Slic3r/App/Yoga/Item.hpp
@@ -487,10 +485,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/LambdaWindow.cpp
         include/Slic3r/App/Yoga/AbstractButton.hpp
         src/Slic3r/App/Yoga/AbstractButton.cpp
-        include/Slic3r/App/Yoga/ToolbarButton.hpp
-        src/Slic3r/App/Yoga/ToolbarButton.cpp
-        include/Slic3r/App/Yoga/ToolbarSwitchButton.hpp
-        src/Slic3r/App/Yoga/ToolbarSwitchButton.cpp
         include/Slic3r/App/Yoga/RectangleButton.hpp
         src/Slic3r/App/Yoga/RectangleButton.cpp
         include/Slic3r/App/Yoga/LayoutButton.hpp
@@ -599,7 +593,14 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/VariableLayerHeightControl.hpp
         src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
         include/Slic3r/App/Yoga/HeightRangeControl.hpp
-		src/Slic3r/App/Yoga/HeightRangeControl.cpp
+        src/Slic3r/App/Yoga/HeightRangeControl.cpp
+
+        include/Slic3r/App/ToolBar/ToolBar.hpp
+        src/Slic3r/App/ToolBar/ToolBar.cpp
+        include/Slic3r/App/ToolBar/ToolBarButton.hpp
+        src/Slic3r/App/ToolBar/ToolBarButton.cpp
+        include/Slic3r/App/ToolBar/ToolBarSwitchButton.hpp
+        src/Slic3r/App/ToolBar/ToolBarSwitchButton.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
