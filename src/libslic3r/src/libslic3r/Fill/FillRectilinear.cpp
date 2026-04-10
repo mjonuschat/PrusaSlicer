@@ -431,9 +431,7 @@ public:
         // assert(aoffset1 < 0);
         assert(aoffset2 <= 0);
         // assert(aoffset2 == 0 || aoffset2 < aoffset1);
-//        bool sticks_removed = 
         remove_sticks(polygons_src);
-        SPDLOG_ERROR("Sticks removed!");
         polygons_outer = aoffset1 == 0 ? Algorithms::ExPolygon::to_polygons(polygons_src) : offset(polygons_src, float(aoffset1), ClipperLib::jtMiter, miterLimit);
         if (aoffset2 < 0)
             polygons_inner = shrink(polygons_outer, float(aoffset1 - aoffset2), ClipperLib::jtMiter, miterLimit);
