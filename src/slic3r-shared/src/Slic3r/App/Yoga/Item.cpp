@@ -552,9 +552,9 @@ bool Item::is_in_window() const
     return m_parent_item ? m_parent_item->is_in_window() : false;
 }
 
-bool Item::enabled()
+bool Item::enabled() const
 {
-    Item* item = this;
+    const Item* item = this;
     while (item) {
         if (!item->m_enabled) {
             return false;

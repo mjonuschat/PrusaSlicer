@@ -1,16 +1,12 @@
 #include "Slic3r/App/Yoga/Toggler.hpp"
 
 #include "Slic3r/App/Yoga/Circle.hpp"
-#include "Slic3r/App/Yoga/AbstractButton.hpp"
 
 namespace Slic3r::App::Yoga {
 
 Toggler::Toggler()
 {
     set_align_items(YGAlignCenter);
-    set_disabled_fill(
-        m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Disabled)
-    );
 
     set_width(20);
     set_height(14);
@@ -18,13 +14,12 @@ Toggler::Toggler()
 
     m_knob = emplace_back<Circle>();
     m_knob->set_height_percent(100);
-    m_knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
-
     m_inner_oval = emplace_back<Oval>();
     m_inner_oval->set_width_percent(100);
     m_inner_oval->set_height_percent(100);
-    m_inner_oval->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
     m_inner_oval->set_visible(false);
+
+    update_color();
 }
 
 void Toggler::update_contents()
@@ -44,29 +39,63 @@ void Toggler::update_contents()
     m_inner_oval->set_visible(m_third_state);
 }
 
-ImColor Toggler::bg_color(bool hovered) const
+void Toggler::update_color()
 {
-    if (hovered) {
-        return ImColor(0.675f, 0.675f, 0.675f, 1.0f);
-    }
+    const ImColor bg_color =
+        m_theme->color_imgui(Platform::Color::RadioButtonBackground, button_bg_color_group());
+    set_fill(bg_color);
+    set_disabled_fill(bg_color);
 
-    return m_checked ? ImColor(0.85f, 0.85f, 0.85f, 1.0f) : ImColor(0.5f, 0.5f, 0.5f, 1.0f);
-}
-
-ImColor Toggler::knob_color() const
-{
-    return m_third_state || m_checked ? ImColor(0.31f, 0.51f, 0.97f, 1.0f) :
-                                        ImColor(0.2f, 0.2f, 0.2f, 1.0f);
-}
-
-void Toggler::style_node()
-{
-    AbstractButton* parent = static_cast<AbstractButton*>(this->parent());
-    set_fill(bg_color(parent->hovered()));
-
-    ImColor inner_color = knob_color();
+    const ImColor inner_color =
+        m_theme->color_imgui(Platform::Color::RadioButton, button_color_group());
     m_knob->set_fill(inner_color);
+    m_knob->set_disabled_fill(inner_color);
     m_inner_oval->set_fill(inner_color);
+    m_inner_oval->set_disabled_fill(inner_color);
+}
+
+Platform::ColorGroup Toggler::button_bg_color_group() const
+{
+    if (enabled()) {
+        if (m_hovered) {
+            return Platform::ColorGroup::Hovered;
+        } else {
+            return m_checked || m_third_state ? Platform::ColorGroup::Active :
+                                                Platform::ColorGroup::Default;
+        }
+    } else {
+        return m_checked || m_third_state ? Platform::ColorGroup::ActiveDisabled :
+                                            Platform::ColorGroup::Disabled;
+    }
+}
+
+Platform::ColorGroup Toggler::button_color_group() const
+{
+    if (enabled()) {
+        return m_checked || m_third_state ? Platform::ColorGroup::Active :
+                                            Platform::ColorGroup::Default;
+    } else {
+        return m_checked || m_third_state ? Platform::ColorGroup::ActiveDisabled :
+                                            Platform::ColorGroup::Disabled;
+    }
+}
+
+void Toggler::enabled_updated_internal()
+{
+    update_color();
+}
+
+bool Toggler::hovered() const
+{
+    return m_hovered;
+}
+
+void Toggler::set_hovered(bool hovered)
+{
+    if (m_hovered != hovered) {
+        m_hovered = hovered;
+        update_color();
+    }
 }
 
 bool Toggler::third_state() const
@@ -78,6 +107,7 @@ void Toggler::set_third_state(bool third_state)
 {
     m_third_state = third_state;
     update_contents();
+    update_color();
 }
 
 void Toggler::set_checked(bool checked)
@@ -85,6 +115,7 @@ void Toggler::set_checked(bool checked)
     m_third_state = false;
     m_checked     = checked;
     update_contents();
+    update_color();
 }
 
 } // namespace Slic3r::App::Yoga

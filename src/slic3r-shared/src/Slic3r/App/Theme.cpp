@@ -51,6 +51,28 @@ Theme::Theme()
         ))
     };
 
+    m_colors[Platform::Color::RadioButtonBackground] = ColorEntry{
+        {127, 127, 127},
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.5)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.2)),
+        std::make_unique<ImColor>(217, 217, 217),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.7))
+    };
+
+    m_colors[Platform::Color::RadioButton] = ColorEntry{
+        Theme::color_imgui(Platform::Color::WindowBgAlternate),
+        std::make_unique<ImColor>(
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.5)
+        ),
+        std::make_unique<ImColor>(
+            Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
+        ),
+        std::make_unique<ImColor>(78, 128, 248),
+        std::make_unique<ImColor>(
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9)
+        )
+    };
+
     m_colors[Platform::Color::ButtonTransparent] = ColorEntry{
         Theme::color_imgui(Platform::Color::Transparent),
         std::make_unique<ImColor>(

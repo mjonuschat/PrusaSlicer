@@ -50,6 +50,11 @@ void ToggleButton::checked_updated_internal()
     update_revert_button();
 }
 
+void ToggleButton::hovered_updated_internal()
+{
+    m_toggler->set_hovered(hovered());
+}
+
 void ToggleButton::set_default(bool default_checked)
 {
     m_default_checked = default_checked;

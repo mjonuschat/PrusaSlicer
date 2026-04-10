@@ -212,4 +212,19 @@ void AbstractButton::visible_updated_internal()
     }
 }
 
+Platform::ColorGroup AbstractButton::button_color_group() const
+{
+    if (enabled()) {
+        if (m_checked) {
+            return Platform::ColorGroup::Active;
+        } else if (m_hovered) {
+            return Platform::ColorGroup::Hovered;
+        } else {
+            return Platform::ColorGroup::Default;
+        }
+    } else {
+        return m_checked ? Platform::ColorGroup::ActiveDisabled : Platform::ColorGroup::Disabled;
+    }
+}
+
 } // namespace Slic3r::App::Yoga

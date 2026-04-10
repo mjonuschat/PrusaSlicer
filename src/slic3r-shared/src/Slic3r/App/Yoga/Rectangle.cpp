@@ -4,8 +4,7 @@
 ///|/
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 
-#include "Slic3r/Assert.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
 

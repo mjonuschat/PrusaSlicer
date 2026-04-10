@@ -8,8 +8,6 @@
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 
-#include "imgui/imgui_internal.h"
-
 namespace Slic3r::App::Yoga {
 
 RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
@@ -22,8 +20,6 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
     set_checkable(true);
 
     m_knob = emplace_back<Circle>();
-    m_knob->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
-    m_knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::WindowBg));
     m_knob->set_border_width(1);
     m_knob->set_min_size({12, 12});
 
@@ -31,6 +27,8 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
     m_label->set_visible(!label.empty());
 
     set_tooltip_position(Position::Bottom);
+
+    update_colors();
 }
 
 Text* RadioButton::label() const
@@ -59,11 +57,24 @@ void RadioButton::checked_updated_internal()
 {
     AbstractButton::checked_updated_internal();
 
-    m_knob->set_fill(m_theme->color_imgui(
-        Platform::Color::Button,
-        checked() ? Platform::ColorGroup::Active : Platform::ColorGroup::Default
-    ));
+    update_colors();
     m_knob->set_border_width(checked() ? 3 : 1);
+}
+
+void RadioButton::enabled_updated_internal()
+{
+    update_colors();
+}
+
+void RadioButton::hovered_updated_internal()
+{
+    update_colors();
+}
+
+void RadioButton::update_colors()
+{
+    m_knob->set_fill(m_theme->color_imgui(Platform::Color::Button, button_color_group()));
+    m_knob->set_disabled_fill(m_theme->color_imgui(Platform::Color::Button, button_color_group()));
 }
 
 } // namespace Slic3r::App::Yoga

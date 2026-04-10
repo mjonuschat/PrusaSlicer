@@ -20,6 +20,8 @@ enum class Color
     AccentSecondary,
     Button,
     ButtonTransparent,
+    RadioButtonBackground,
+    RadioButton,
     Scrollbar,
     NavCursor,
     ModalWindowDimBg,

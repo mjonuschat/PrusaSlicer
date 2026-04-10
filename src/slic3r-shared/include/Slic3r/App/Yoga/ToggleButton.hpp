@@ -37,6 +37,7 @@ public:
 
 protected:
     void checked_updated_internal() override;
+    void hovered_updated_internal() override;
 
 private:
     Toggler* m_toggler{nullptr};

@@ -204,7 +204,7 @@ public:
      */
     virtual bool is_in_window() const;
 
-    bool enabled();
+    bool enabled() const;
     void set_enabled(bool enabled);
 
     /**

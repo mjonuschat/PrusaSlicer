@@ -26,6 +26,9 @@ public:
 
 protected:
     void checked_updated_internal() override;
+    void enabled_updated_internal() override;
+    void hovered_updated_internal() override;
+    void update_colors();
 
 private:
     Circle* m_knob{ nullptr };

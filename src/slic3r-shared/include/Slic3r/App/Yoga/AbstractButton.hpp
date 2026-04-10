@@ -65,6 +65,8 @@ protected:
     void enabled_updated_internal() override;
     void visible_updated_internal() override;
 
+    Platform::ColorGroup button_color_group() const;
+
 private:
     void set_hovered(bool hovered);
     void set_pressed(bool pressed);
