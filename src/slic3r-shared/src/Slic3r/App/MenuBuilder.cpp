@@ -154,7 +154,6 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Select All Objects");
     case MenuItemName::DeleteBed:
     case MenuItemName::DeleteSelectedObject:
-    case MenuItemName::DeleteSelectedInstance:
     case MenuItemName::DeleteSelectedMultiObjects:
     case MenuItemName::DeleteSelectedSvgOrText:
     case MenuItemName::DeleteSelectedVolume:
@@ -184,7 +183,6 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::FixVolumeWithRepairAlgorithm:
         return Biz::_u8L("Fix by Windows repair algorithm");
     case MenuItemName::PrintableObject:
-    case MenuItemName::PrintableInstance:
     case MenuItemName::PrintableMultiObjects:
         return Biz::_u8L("Printable");
     case MenuItemName::AddObjectShape:
@@ -308,7 +306,6 @@ Render::Icon MenuBuilder::item_icon(MenuItemName menu_item_name)
     case MenuItemName::BedContextMenu:
     case MenuItemName::ObjectContextMenu:
     case MenuItemName::MultiObjectsContextMenu:
-    case MenuItemName::InstanceContextMenu:
     case MenuItemName::SvgOrTextContextMenu:
     case MenuItemName::VolumeContextMenu:
     case MenuItemName::SolidPartVolumeShapeLoad:

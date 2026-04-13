@@ -143,12 +143,8 @@ enum class MenuItemName
     SupportModifierShapeSphere,
     SupportModifierShapeFromGallery,
     InvalidateCutInfo,
-    PrintableObject,
-
-    InstanceContextMenu, // for single and multi selected instances from same object
-    DeleteSelectedInstance,
     SetAsSeparateObject,
-    PrintableInstance,
+    PrintableObject,
 
     MultiObjectsContextMenu,
     CopyMultiObjects,

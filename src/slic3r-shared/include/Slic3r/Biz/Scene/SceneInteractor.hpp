@@ -238,6 +238,7 @@ public:
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();
+    bool can_extract_selected_instances() const;
     /**
      * Delete elements (volumes or instances) from the current scene selection.
      *

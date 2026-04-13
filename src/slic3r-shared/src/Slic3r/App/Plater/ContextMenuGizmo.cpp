@@ -83,20 +83,11 @@ ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
                                 pos
                             );
                         } else {
-                            if (selection.only_single_object()) {
-                                Domain::ModelObject* object = project.find_object_by_id(
-                                    selection.elements.front().object_id
-                                );
-                                bool full_object_selected =
-                                    object->instances.size() == selection.elements.size();
-                                invoke_show_context_menu(
-                                    full_object_selected ? ContextMenuType::Object :
-                                                           ContextMenuType::Instance,
-                                    pos
-                                );
-                            } else {
-                                invoke_show_context_menu(ContextMenuType::MultiObjects, pos);
-                            }
+                            invoke_show_context_menu(
+                                selection.only_single_object() ? ContextMenuType::Object :
+                                                                 ContextMenuType::MultiObjects,
+                                pos
+                            );
                         }
                     }
                 }

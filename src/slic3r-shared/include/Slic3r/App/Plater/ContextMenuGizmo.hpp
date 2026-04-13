@@ -18,7 +18,6 @@ enum class ContextMenuType
     Bed,
     Object,
     MultiObjects,
-    Instance,
     SvgOrText,
     Volume
 };

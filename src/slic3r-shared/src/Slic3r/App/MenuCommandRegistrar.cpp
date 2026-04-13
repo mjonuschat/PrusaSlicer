@@ -178,7 +178,6 @@ void MenuCommandRegistrar::register_context_menus(
 
     register_bed_menu_commands();
     register_object_menu_commands();
-    register_instance_menu_commands();
     register_svg_or_text_volume_menu_commands();
     register_volume_menu_commands();
     register_multi_object_menu_commands();
@@ -417,6 +416,16 @@ void MenuCommandRegistrar::register_object_menu_commands()
             "fill-bed-with-instances",
             [this]() {},
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+        )
+        .append_separator()
+        .append_item(
+            MenuItemName::SetAsSeparateObject,
+            "set-as-separate-object",
+            [this]() { m_project_interactor.scene_interactor().extract_selected_instances(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_extract_selected_instances(); }
+            }
         )
         .append_separator()
         .append_item(
@@ -827,22 +836,6 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         );
-}
-
-void MenuCommandRegistrar::register_instance_menu_commands()
-{
-    CommandBuilder builder(m_menu_manager, m_render_module);
-    builder.push_path_level(MenuItemName::InstanceContextMenu)
-        .append_item_from_command(MenuItemName::DeleteSelectedInstance, CommandName::DeleteSelected)
-        .append_separator()
-        .append_item(
-            MenuItemName::SetAsSeparateObject,
-            "set-as-separate-object",
-            []() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
-        )
-        .append_separator()
-        .append_item_from_command(MenuItemName::PrintableInstance, CommandName::SetAsPrintable);
 }
 
 void MenuCommandRegistrar::register_svg_or_text_volume_menu_commands()

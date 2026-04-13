@@ -1034,6 +1034,22 @@ void SceneInteractor::extract_selected_instances()
     );
 }
 
+bool SceneInteractor::can_extract_selected_instances() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (!selection.empty()
+        && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.only_single_object())
+    {
+        Domain::Project& project = m_workbench.project(m_selected_project_id);
+        Domain::ModelObject* object =
+            project.find_object_by_id(selection.elements.front().object_id);
+        ASSERT(object);
+        return object->instances.size() > 1;
+    }
+    return false;
+}
+
 std::optional<std::string> SceneInteractor::delete_selected_elements()
 {
     Domain::Project& project               = m_workbench.project(m_selected_project_id);

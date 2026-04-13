@@ -491,7 +491,6 @@ void PlaterRenderModule::register_commands()
         {MenuItemName::BedContextMenu, m_bed_menu},
         {MenuItemName::ObjectContextMenu, m_object_menu},
         {MenuItemName::MultiObjectsContextMenu, m_multi_objects_menu},
-        {MenuItemName::InstanceContextMenu, m_instance_menu},
         {MenuItemName::VolumeContextMenu, m_volume_menu},
         {MenuItemName::SvgOrTextContextMenu, m_svg_or_text_menu}
     };
@@ -600,8 +599,6 @@ void PlaterRenderModule::init_scene_layout()
         m_top_bar->emplace_back<Yoga::Menu>("multi_objects_context_menu", Yoga::Position::Bottom);
     m_svg_or_text_menu =
         m_top_bar->emplace_back<Yoga::Menu>("svg_or_text_context_menu", Yoga::Position::Bottom);
-    m_instance_menu =
-        m_top_bar->emplace_back<Yoga::Menu>("instance_context_menu", Yoga::Position::Bottom);
 
     m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
 
@@ -1106,9 +1103,6 @@ void PlaterRenderModule::on_show_context_menu(ContextMenuType type, Domain::Vec2
     case ContextMenuType ::MultiObjects:
         menu = m_multi_objects_menu;
         break;
-    case ContextMenuType ::Instance:
-        menu = m_instance_menu;
-        break;
     case ContextMenuType ::Volume:
         menu = m_volume_menu;
         break;
@@ -1253,8 +1247,7 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
               m_object_menu,
               m_volume_menu,
               m_multi_objects_menu,
-              m_svg_or_text_menu,
-              m_instance_menu})
+              m_svg_or_text_menu})
         {
             menu->close();
         }

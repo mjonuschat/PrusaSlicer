@@ -212,7 +212,6 @@ private:
     Yoga::Menu* m_volume_menu = nullptr;
     Yoga::Menu* m_multi_objects_menu = nullptr;
     Yoga::Menu* m_svg_or_text_menu = nullptr;
-    Yoga::Menu* m_instance_menu = nullptr;
 
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
