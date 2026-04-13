@@ -167,7 +167,10 @@ static std::optional<Biz::Scene::OrientedBoundingBox> get_volume_obb(
         workbench.project(project_id).find_object_by_id(element.object_id)
     };
 
-    if (!element.has_instance() || !element.has_volume()) {
+    if (!element.has_instance()) {
+        return std::nullopt;
+    }
+    if (!element.has_volume() && object->volumes.size() != 1) {
         return std::nullopt;
     }
 

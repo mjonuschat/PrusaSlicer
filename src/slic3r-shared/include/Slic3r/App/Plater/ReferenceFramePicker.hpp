@@ -21,7 +21,10 @@ namespace Slic3r::App::Plater {
 class ReferenceFramePicker : public Yoga::Item, public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
-    ReferenceFramePicker(Biz::ProjectInteractor& project_interactor);
+    ReferenceFramePicker(
+        Biz::ProjectInteractor& project_interactor,
+        Biz::Scene::SelectionReferenceFrame preferred_frame
+    );
 
     ~ReferenceFramePicker();
 
@@ -35,13 +38,12 @@ public:
         const Biz::Scene::ObjectSelection&
     ) override;
 
-    Biz::Scene::SelectionReferenceFrame selected_frame() const;
-
     void on_activated();
 
     void on_deactivated();
 private:
     void reload(std::optional<Domain::SelectionId> project_id = std::nullopt);
+    Biz::Scene::SelectionReferenceFrame get_checked_frame() const;
 
     std::function<void()> m_on_change;
     Biz::ProjectInteractor& m_project_interactor;
@@ -53,10 +55,14 @@ private:
 
     struct ProjectContext {
         bool activated{false};
+        int previous_options_count{0};
     };
 
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
     ProjectContexts m_projects;
-
+    Biz::Scene::SelectionReferenceFrame m_preferred_frame{
+        Biz::Scene::SelectionReferenceFrame::Volume
+    };
+    bool m_reloading = false;
 };
 } // namespace Slic3r::App::Plater

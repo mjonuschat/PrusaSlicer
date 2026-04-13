@@ -80,7 +80,10 @@ TranslationDialog::TranslationDialog(
         m_project_interactor
     );
 
-    m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(m_project_interactor);
+    m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
+        m_project_interactor,
+        Biz::Scene::SelectionReferenceFrame::Bed
+    );
 }
 
 TranslationDialog::~TranslationDialog()

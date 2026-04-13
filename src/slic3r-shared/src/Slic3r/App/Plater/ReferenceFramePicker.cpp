@@ -14,10 +14,12 @@ using Biz::Scene::ObjectSelection;
 using App::Yoga::Text;
 
 ReferenceFramePicker::ReferenceFramePicker(
-    Biz::ProjectInteractor& project_interactor
+    Biz::ProjectInteractor& project_interactor,
+    Biz::Scene::SelectionReferenceFrame preferred_frame
 ) :
     m_project_interactor{project_interactor},
-    m_projects{project_interactor}
+    m_projects{project_interactor},
+    m_preferred_frame{preferred_frame}
 {
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
@@ -31,14 +33,35 @@ ReferenceFramePicker::ReferenceFramePicker(
     row->set_justify_content(YGJustify::YGJustifyFlexStart);
     row->set_gap(10);
 
-    m_bed_radio_button = row->emplace_back<RadioButton>(_u8L("Bed"));
-    m_mode_buttons.insert_button(m_bed_radio_button);
-    m_instance_radio_button = row->emplace_back<RadioButton>(_u8L("Object"));
-    m_mode_buttons.insert_button(m_instance_radio_button);
     m_volume_radio_button = row->emplace_back<RadioButton>(_u8L("Part"));
     m_mode_buttons.insert_button(m_volume_radio_button);
+    m_instance_radio_button = row->emplace_back<RadioButton>(_u8L("Object"));
+    m_mode_buttons.insert_button(m_instance_radio_button);
+    m_bed_radio_button = row->emplace_back<RadioButton>(_u8L("Bed"));
+    m_mode_buttons.insert_button(m_bed_radio_button);
+
+    using Frame = Biz::Scene::SelectionReferenceFrame;
+    switch (m_preferred_frame) {
+    case Frame::Volume:
+        m_volume_radio_button->set_checked(true);
+        break;
+    case Frame::Instance:
+        m_instance_radio_button->set_checked(true);
+        break;
+    case Frame::Bed:
+        m_bed_radio_button->set_checked(true);
+        break;
+    default:
+        PANIC("Unknown option");
+    }
+
     m_mode_buttons.callbacks().checked_changed = [&](AbstractButton*, AbstractButton*)
-    { reload(); };
+    {
+        if (!m_reloading) {
+            m_preferred_frame = get_checked_frame();
+            reload();
+        }
+    };
     reload();
 }
 
@@ -62,20 +85,17 @@ void ReferenceFramePicker::on_scene_selection_transformed(
     reload(project_id);
 }
 
-Biz::Scene::SelectionReferenceFrame ReferenceFramePicker::selected_frame() const {
-    return m_project_interactor.scene_interactor().object_selection_reference_frame();
-}
-
 void ReferenceFramePicker::on_activated() {
     m_projects.selected().activated = true;
-    reload();
+    reload(std::nullopt);
 }
 
 void ReferenceFramePicker::on_deactivated() {
     m_projects.selected().activated = false;
 }
 
-void ReferenceFramePicker::reload(std::optional<Domain::SelectionId> project_id)
+void
+ReferenceFramePicker::reload(std::optional<Domain::SelectionId> project_id)
 {
     using Biz::Scene::SelectionReferenceFrame;
 
@@ -94,27 +114,39 @@ void ReferenceFramePicker::reload(std::optional<Domain::SelectionId> project_id)
     };
 
     set_visible(reference_frame_options.size() > 1);
-    m_bed_radio_button->set_visible(reference_frame_options.contains(SelectionReferenceFrame::Bed));
-    m_instance_radio_button->set_visible(reference_frame_options.contains(SelectionReferenceFrame::Instance));
     m_volume_radio_button->set_visible(reference_frame_options.contains(SelectionReferenceFrame::Volume));
+    m_instance_radio_button->set_visible(reference_frame_options.contains(SelectionReferenceFrame::Instance));
+    m_bed_radio_button->set_visible(reference_frame_options.contains(SelectionReferenceFrame::Bed));
 
-    SelectionReferenceFrame prefered_frame{SelectionReferenceFrame::Bed};
-
-    if (m_bed_radio_button->checked()) {
-        ASSERT(prefered_frame == SelectionReferenceFrame::Bed);
-    } else if (m_instance_radio_button->checked()) {
-        prefered_frame = SelectionReferenceFrame::Instance;
-    } else {
-        ASSERT(m_volume_radio_button->checked());
-        prefered_frame = SelectionReferenceFrame::Volume;
-    }
-    scene_interactor.reload_object_selection_reference_frame(prefered_frame);
+    scene_interactor.reload_object_selection_reference_frame(m_preferred_frame);
 
     const SelectionReferenceFrame used_reference_frame{
         scene_interactor.object_selection_reference_frame()
     };
-    m_bed_radio_button->set_checked(used_reference_frame == SelectionReferenceFrame::Bed);
-    m_instance_radio_button->set_checked(used_reference_frame == SelectionReferenceFrame::Instance);
-    m_volume_radio_button->set_checked(used_reference_frame == SelectionReferenceFrame::Volume);
+
+    m_reloading = true;
+    ScopeGuard scope_guard{[&](){m_reloading = false;}};
+    if (used_reference_frame == SelectionReferenceFrame::Volume) {
+        m_volume_radio_button->set_checked(true);
+    }
+    if (used_reference_frame == SelectionReferenceFrame::Instance) {
+        m_instance_radio_button->set_checked(true);
+    }
+    if(used_reference_frame == SelectionReferenceFrame::Bed) {
+        m_bed_radio_button->set_checked(true);
+    }
+}
+
+Biz::Scene::SelectionReferenceFrame ReferenceFramePicker::get_checked_frame() const
+{
+    using Frame = Biz::Scene::SelectionReferenceFrame;
+    if (m_volume_radio_button->checked()) {
+        return Frame::Volume;
+    } else if (m_instance_radio_button->checked()) {
+        return Frame::Instance;
+    } else {
+        ASSERT(m_bed_radio_button->checked());
+        return Frame::Bed;
+    }
 }
 } // namespace Slic3r::App::Plater

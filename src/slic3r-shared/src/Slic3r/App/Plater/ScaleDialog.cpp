@@ -135,7 +135,10 @@ ScaleDialog::ScaleDialog(
         m_project_interactor
     );
 
-    m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(m_project_interactor);
+    m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
+        m_project_interactor,
+        Biz::Scene::SelectionReferenceFrame::Volume
+    );
 
     m_lock = content()->emplace_back<Yoga::ToggleButton>("Uniform scale");
     m_lock->set_checked(true);

@@ -469,6 +469,16 @@ std::set<SelectionReferenceFrame> SceneInteractor::object_selection_reference_fr
     }
     case SelectionState::WholeInstance: {
         ASSERT(!selection.empty());
+        if (selection.elements.size() == 1) {
+            ModelObject* model_object{
+                m_workbench.project(m_selected_project_id)
+                    .find_object_by_id(selection.elements.front().object_id)
+            };
+            ASSERT(model_object);
+            if (model_object->volumes.size() == 1) {
+                return {Bed, Instance, Volume};
+            }
+        }
         return {Bed, Instance};
     }
     default:
@@ -495,7 +505,11 @@ bool SceneInteractor::reload_object_selection_reference_frame(SelectionReference
     if (options.contains(preferred_frame)) {
         it->second.object_selection_reference_frame = preferred_frame;
     } else {
-        it->second.object_selection_reference_frame = SelectionReferenceFrame::Bed;
+        if (options.contains(SelectionReferenceFrame::Instance)) {
+            it->second.object_selection_reference_frame = SelectionReferenceFrame::Instance;
+        } else {
+            it->second.object_selection_reference_frame = SelectionReferenceFrame::Bed;
+        }
     }
 
     const bool changed{previous != it->second.object_selection_reference_frame};
