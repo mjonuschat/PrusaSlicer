@@ -390,6 +390,11 @@ Item::~Item()
     }
 }
 
+Item::Callbacks& Item::item_callbacks()
+{
+    return m_callbacks;
+}
+
 void Item::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
@@ -806,7 +811,11 @@ Vec2f Item::get_available_size() const
     return m_parent_item->get_available_size();
 }
 
-void Item::on_resized() {}
+void Item::on_resized() {
+    if (m_callbacks.size_changed) {
+        m_callbacks.size_changed();
+    }
+}
 
 Vec2f Item::get_global_pos() const
 {
@@ -1181,7 +1190,8 @@ void Item::check_resized()
         on_resized();
     }
 
-    for (Item* child : std::as_const(m_children_items)) {
+    const std::vector<Item*> children_items = m_children_items;
+    for (Item* child : children_items) {
         if (child) {
             child->check_resized();
         }
