@@ -1,6 +1,6 @@
 add_cmake_project(yamlCpp
-        URL "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.zip"
-        URL_HASH SHA256=334e80ab7b52e14c23f94e041c74bab0742f2281aad55f66be2f19f4b7747071
+        URL "https://github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz"
+        URL_HASH SHA256=298593d9c440fd9034b8b193d96318b76d49bc97c6ceadb7b0836edf0b6d7539
         CMAKE_ARGS
           -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )
