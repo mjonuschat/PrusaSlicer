@@ -79,7 +79,9 @@ enum class UndoSnapshotType
     AddBed,
     DeleteBed,
     SelectPrinterPreset,
-    SetPartSettingsValue
+    SetPartSettingsValue,
+    PasteObjects,
+    PasteVolumes
 };
 
 namespace UndoSnapshotSelection {

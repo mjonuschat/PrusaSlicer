@@ -100,6 +100,7 @@ public:
     // Add a new ModelObject to this Model, generate a new ID for this ModelObject.
     ModelObject*  add_object();
     ModelObject*  add_object(const ModelObject& other);
+    ModelObject*  add_object(std::unique_ptr<ModelObject> model_object);
     void          delete_object(size_t idx);
     bool          delete_object(ObjectID id);
     bool          delete_object(ModelObject* object);

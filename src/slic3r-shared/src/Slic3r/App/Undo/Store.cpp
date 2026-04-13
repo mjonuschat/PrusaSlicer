@@ -209,6 +209,10 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Change printable state");
     case Type::ChangeVolumeType:
         return _u8L("Change volume type");
+    case Type::PasteObjects:
+        return _u8L("Paste objects");
+    case Type::PasteVolumes:
+        return _u8L("Paste volumes");
     }
     PANIC("Unknown option");
     return {};

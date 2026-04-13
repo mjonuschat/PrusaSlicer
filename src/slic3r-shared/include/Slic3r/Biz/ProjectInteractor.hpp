@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
+#include "Slic3r/Biz/ClipboardInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/IMdb.hpp"
 #include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
@@ -84,6 +85,7 @@ public:
         m_scene_interactor(workbench),
         m_preset_interactor(workbench, m_scene_interactor),
         m_arrange_interactor(m_scene_interactor, workbench),
+        m_clipboard_interactor(m_scene_interactor, m_arrange_interactor, workbench),
         m_project_settings_interactor(workbench, m_null_mdb),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_result_export_interactor(dispatcher),
@@ -337,6 +339,11 @@ public:
     Biz::ArrangeInteractor& arrange_interactor()
     {
         return m_arrange_interactor;
+    }
+
+    Biz::ClipboardInteractor& clipboard_interactor()
+    {
+        return m_clipboard_interactor;
     }
 
     ProjectSettingsInteractor& project_settings_interactor()
@@ -606,6 +613,7 @@ private:
     Scene::SceneInteractor m_scene_interactor;
     Preset::PresetInteractor m_preset_interactor;
     ArrangeInteractor m_arrange_interactor;
+    ClipboardInteractor m_clipboard_interactor;
     NullMdb m_null_mdb;
     ProjectSettingsInteractor m_project_settings_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;

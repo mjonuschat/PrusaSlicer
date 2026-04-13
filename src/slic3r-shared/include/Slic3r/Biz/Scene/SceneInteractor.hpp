@@ -221,6 +221,11 @@ public:
     void delete_selected_object_last_instance();
     void set_selected_objects_instance_count(int count);
 
+    Domain::ModelObjectPtrs clone_objects_from_project(
+        Domain::SelectionId source_project_id,
+        const std::vector<Domain::ElementRef>& source_elements
+    );
+
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;
     void change_volume_meshes(RefMeshes&& meshes);

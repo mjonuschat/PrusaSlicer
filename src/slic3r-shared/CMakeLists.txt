@@ -1012,6 +1012,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
+        include/Slic3r/Biz/ClipboardInteractor.hpp
+        src/Slic3r/Biz/ClipboardInteractor.cpp
 
         include/Slic3r/Biz/IMdb.hpp
         include/Slic3r/Biz/IColorsChangedListener.hpp
