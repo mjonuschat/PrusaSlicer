@@ -10,7 +10,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
-#include "Slic3r/App/ConfigItemPreview.hpp"
+#include "Slic3r/App/Config/ConfigItemPreview.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -35,12 +35,16 @@ PrintToolRowButton::PrintToolRowButton()
 
     m_compatibility_rule_rect = emplace_back<Rectangle>();
     m_compatibility_rule_rect->set_fill(IM_COL32_BLACK_TRANS);
-    m_compatibility_rule_rect->set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
+    m_compatibility_rule_rect->set_border_color(
+        m_theme->color_imgui(Platform::Color::AccentPrimary)
+    );
     m_compatibility_rule_rect->set_gap(5);
     m_compatibility_rule_rect->set_padding(4);
     m_compatibility_rule_label =
         m_compatibility_rule_rect->emplace_back<Text>(std::string{"conflict resolved"});
-    m_compatibility_rule_label->set_text_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
+    m_compatibility_rule_label->set_text_color(
+        m_theme->color_imgui(Platform::Color::AccentPrimary)
+    );
     m_compatibility_rule_label->set_visible(false);
     m_config_item_preview = m_compatibility_rule_rect->emplace_back<ConfigItemPreview>();
     m_compatibility_rule_rect->set_flex_shrink(0.f);
@@ -64,8 +68,9 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
             ->set_data(*print_tool_item->print_item, print_tool_item->value.first, false);
     } else if (!print_tool_item->shared_context.extruder_candidates.empty()) {
         // Maybe the tool values are same
-        const Domain::ConfigValue& first_value =
-            print_tool_item->tool_value(*print_tool_item->shared_context.extruder_candidates.cbegin());
+        const Domain::ConfigValue& first_value = print_tool_item->tool_value(
+            *print_tool_item->shared_context.extruder_candidates.cbegin()
+        );
         show_preview = std::all_of(
             print_tool_item->shared_context.extruder_candidates.cbegin(),
             print_tool_item->shared_context.extruder_candidates.cend(),
@@ -73,10 +78,9 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
         );
         m_config_item_preview->set_data(*print_tool_item->print_item, first_value, false);
     } else {
-        const std::size_t tool_count = print_tool_item->tool_overrides.size();
-        const Domain::ConfigValue& first_value =
-            print_tool_item->tool_value(0);
-        bool all_same = true;
+        const std::size_t tool_count           = print_tool_item->tool_overrides.size();
+        const Domain::ConfigValue& first_value = print_tool_item->tool_value(0);
+        bool all_same                          = true;
         for (std::size_t extruder_id{}; extruder_id < tool_count; ++extruder_id) {
             if (print_tool_item->tool_value(extruder_id) != first_value) {
                 all_same = false;

@@ -8,7 +8,7 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
-#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/App/Config/ConfigRowItem.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
 using namespace Slic3r::App::Yoga;

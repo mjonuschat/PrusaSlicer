@@ -199,14 +199,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/LogicalPrinterSettingsButton.cpp
         include/Slic3r/App/PrinterAddDialog.hpp
         src/Slic3r/App/PrinterAddDialog.cpp
-        include/Slic3r/App/ConfigSubcategoryListView.hpp
-        src/Slic3r/App/ConfigSubcategoryListView.cpp
-        include/Slic3r/App/ConfigSubcategoryItem.hpp
-        src/Slic3r/App/ConfigSubcategoryItem.cpp
-        include/Slic3r/App/ConfigRowItem.hpp
-        src/Slic3r/App/ConfigRowItem.cpp
-        include/Slic3r/App/ConfigRowItems.hpp
-        src/Slic3r/App/ConfigRowItems.cpp
         include/Slic3r/App/SidebarToolHeadRow.hpp
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp
@@ -229,7 +221,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/WipeTowerSettings.cpp
         include/Slic3r/App/OverrideCategoryButton.hpp
         src/Slic3r/App/OverrideCategoryButton.cpp
-		include/Slic3r/App/RenderModuleHelper.hpp
+        include/Slic3r/App/RenderModuleHelper.hpp
         src/Slic3r/App/RenderModuleHelper.cpp
         include/Slic3r/App/DialogNavigation.hpp
         src/Slic3r/App/DialogNavigation.cpp
@@ -326,6 +318,16 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/OverridableSubcategoryItem.cpp
         src/Slic3r/App/Config/OverridableConfigRowItem.cpp
         include/Slic3r/App/Config/OverridableConfigRowItem.hpp
+        src/Slic3r/App/Config/OverridableConfigRowItems.cpp
+        include/Slic3r/App/Config/OverridableConfigRowItems.hpp
+        include/Slic3r/App/Config/ConfigSubcategoryListView.hpp
+        src/Slic3r/App/Config/ConfigSubcategoryListView.cpp
+        include/Slic3r/App/Config/ConfigSubcategoryItem.hpp
+        src/Slic3r/App/Config/ConfigSubcategoryItem.cpp
+        include/Slic3r/App/Config/ConfigRowItem.hpp
+        src/Slic3r/App/Config/ConfigRowItem.cpp
+        include/Slic3r/App/Config/ConfigRowItems.hpp
+        src/Slic3r/App/Config/ConfigRowItems.cpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp

@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/ConfigSubcategoryListView.hpp"
+#include "Slic3r/App/Config/ConfigSubcategoryListView.hpp"
 
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"

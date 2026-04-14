@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
-#include "Slic3r/App/ConfigSubcategoryListView.hpp"
+#include "Slic3r/App/Config/ConfigSubcategoryListView.hpp"
 
 using namespace Slic3r::App::Yoga;
 

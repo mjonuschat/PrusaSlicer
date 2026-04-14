@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
-#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/App/Config/ConfigRowItem.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 #include "Slic3r/App/Config/PrintToolRowButton.hpp"
 #include <Slic3r/App/AppServices.hpp>

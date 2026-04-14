@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/ConfigItemPreview.hpp"
+#include "Slic3r/App/Config/ConfigItemPreview.hpp"
 
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 
@@ -84,7 +84,6 @@ void ConfigItemPreview::set_data(
     case Domain::ConfigItemDef::GUIType::f_enum_open:
     case Domain::ConfigItemDef::GUIType::i_enum_open:
     case Domain::ConfigItemDef::GUIType::s_enum_open:
-    case Domain::ConfigItemDef::GUIType::combobox:
         m_input_text->set_text(ConfigItemUtils::config_item_to_string(data, value));
         break;
     }

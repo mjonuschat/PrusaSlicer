@@ -169,12 +169,11 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bed_temperature", typeid(int));
     def->location = Filament;
-    def->label = L("Other layers");
-    def->row_group = L("Bed");
+    def->label = L("Bed other layers");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_BedChamberTemperature;
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
-    def->order = 0;
+    def->order = 1;
     def->tooltip = L("Bed temperature for layers after the first one. "
                    "Set this to zero to disable bed temperature control commands in the output.");
     def->sidetext = L("°C");
@@ -186,11 +185,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("chamber_temperature", typeid(int));
     def->location = Filament;
     // TRN: Label of a configuration parameter: Nominal chamber temperature.
-    def->label = L("Nominal");
+    def->label = L("Chamber Nominal temperature");
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_BedChamberTemperature;
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->order = 3;
-    def->row_group = L("Chamber");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("Chamber temperature");
     def->tooltip = L("Required chamber temperature for the print.\nWhen set to zero, "
@@ -203,11 +201,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("chamber_minimal_temperature", typeid(int));
     def->location = Filament;
     // TRN: Label of a configuration parameter: Minimal chamber temperature
-    def->label = L("Minimal");
+    def->label = L("Chamber Minimal temperature");
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_BedChamberTemperature;
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->order = 2;
-    def->row_group = L("Chamber");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("Chamber minimal temperature");
     def->tooltip = L("Minimal chamber temperature that the printer waits for before the print starts. This allows "
@@ -1633,11 +1630,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("first_layer_bed_temperature", typeid(int));
     def->location = Filament;
-    def->label = L("First layer");
+    def->label = L("Bed First layer");
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_BedChamberTemperature;
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
-    def->order = 1;
-    def->row_group = L("Bed");
+    def->order = 0;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("First layer bed temperature");
     def->tooltip = L("Heated build plate temperature for the first layer. Set this to zero to disable "
@@ -1727,9 +1723,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("first_layer_temperature", typeid(int));
     def->location = Filament;
-    def->label = L("First layer");
+    def->label = L("Nozzle First layer");
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_NozzleTemperature;
-    def->row_group = L("Nozzle");
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->order = 0;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
@@ -2548,12 +2543,11 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("max_fan_speed", typeid(int));
     def->location = Filament;
-    def->label = L("Max");
+    def->label = L("Max Fan speed");
     def->full_label = L("Max fan speed");
     def->option_group = ConfigItemDef::OptionGroup::Filament_Cooling_FanControlLimits;
     def->category = ConfigItemDef::Category::Filament_Cooling;
     def->order = 2;
-    def->row_group = L("Fan speed");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This setting represents the maximum speed of your fan.");
     def->sidetext = L("%");
@@ -2644,7 +2638,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("min_fan_speed", typeid(int));
     def->location = Filament;
-    def->label = L("Min");
+    def->label = L("Min fap speed");
     def->full_label = L("Min fan speed");
     def->option_group = ConfigItemDef::OptionGroup::Filament_Cooling_FanControlLimits;
     def->category = ConfigItemDef::Category::Filament_Cooling;
@@ -4271,11 +4265,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("temperature", typeid(int));
     def->location = Filament;
-    def->label = L("Other layers");
+    def->label = L("Nozzle other layers");
     def->option_group = ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_NozzleTemperature;
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->order = 2;
-    def->row_group = L("Nozzle");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Nozzle temperature for layers after the first one. Set this to zero to disable "
                      "temperature control commands in the output G-code.");

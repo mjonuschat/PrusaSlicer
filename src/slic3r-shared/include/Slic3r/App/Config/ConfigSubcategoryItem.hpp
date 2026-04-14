@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
 
-#include "Slic3r/App/ConfigRowItems.hpp"
+#include "Slic3r/App/Config/ConfigRowItems.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"

@@ -12,7 +12,7 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/App/Config/ConfigRowItem.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"
 
 namespace Slic3r::Biz {

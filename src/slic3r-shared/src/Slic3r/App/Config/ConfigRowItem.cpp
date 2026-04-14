@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/App/Config/ConfigRowItem.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
@@ -30,9 +30,9 @@ ConfigRowItem::ConfigRowItem(
     m_cbi_index(cbi_index),
     m_force_label(force_label)
 {
-    set_fill(IM_COL32_BLACK_TRANS);
+    set_fill(m_theme->color_imgui(Platform::Color::Transparent));
     set_border_width(2);
-    set_border_color(IM_COL32_BLACK_TRANS);
+    set_border_color(m_theme->color_imgui(Platform::Color::Transparent));
     set_gap(5.f);
 
     m_left_side = emplace_back<Item>();
@@ -161,7 +161,7 @@ void ConfigRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
     if (m_state == config_item) {
         set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
     } else {
-        set_border_color(IM_COL32_BLACK_TRANS);
+        set_border_color(m_theme->color_imgui(Platform::Color::Transparent));
     }
 }
 

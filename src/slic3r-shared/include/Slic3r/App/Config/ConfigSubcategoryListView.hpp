@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 
-#include "Slic3r/App/ConfigSubcategoryItem.hpp"
+#include "Slic3r/App/Config/ConfigSubcategoryItem.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"
