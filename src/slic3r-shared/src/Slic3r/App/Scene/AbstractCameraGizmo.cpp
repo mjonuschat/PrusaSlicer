@@ -3,6 +3,7 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
+#include "Slic3r/App/Scene/ClickDetector.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -275,11 +276,14 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
 
     const Platform::MouseEvent& event = ctx.mouse_event();
     const auto type                   = event.type();
+    const bool ignore_dragging =
+        event.key_modifiers() == static_cast<Platform::KeyModifiers>(Platform::KeyModifier::Ctrl);
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         bool pan = event.button() == Platform::MouseButton::Right || event.button() == Platform::MouseButton::Middle;
-        if (!pan && any_draggable(ctx))
+        if (!pan && (!ignore_dragging && any_draggable(ctx)))
             return GizmoActivationState::Inactive;
-
+        if (event.key_modifiers() != 0 && !ignore_dragging)
+            return GizmoActivationState::Inactive;
         m_state  = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();
         m_last_y = event.y();
@@ -287,8 +291,17 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         if (m_state == State::Inactive)
             return GizmoActivationState::Inactive;
 
-        float delta_x = (event.x() - m_last_x) / ctx.screen_info().logical_width();
-        float delta_y = (event.y() - m_last_y) / ctx.screen_info().logical_height();
+        float dx      = event.x() - m_last_x;
+        float dy      = event.y() - m_last_y;
+        float delta_x = dx / ctx.screen_info().logical_width();
+        float delta_y = dy / ctx.screen_info().logical_height();
+
+        // limit the activation after reaching 4px+ distance
+        if (!m_was_activated && dx * dx + dy * dy <= ClickDetector::MAX_ALLOWED_DISTANCE_SQ_PX) {
+            return GizmoActivationState::Probing;
+        } else {
+            m_was_activated = true;
+        }
 
         if (m_state == State::Rotating)
             update_rotation(delta_x, delta_y, 0.25);
@@ -310,7 +323,7 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         return GizmoActivationState::Active;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
         m_state = State::Inactive;
-        return only_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
+        return m_was_activated ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else if (type == Platform::MouseEvent::Type::Wheel) {
         update_zoom(event.wheel_delta_y());
         return (m_state == State::Inactive) ? GizmoActivationState::Inactive : GizmoActivationState::Done;
@@ -323,6 +336,7 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
 void AbstractCameraGizmo::on_cycle_prepare()
 {
     m_state = State::Inactive;
+    m_was_activated = false;
 }
 
 #if CAMERA_GIZMO_DEBUG

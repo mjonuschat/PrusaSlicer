@@ -963,7 +963,10 @@ void ArrangeInteractor::arrange(
 
                         for (const auto& [bed_ref, packs] : result->packs) {
                             BedSelection selection;
-                            selection.select_one(bed_ref);
+                            selection.select_one(
+                                bed_ref,
+                                Scene::CameraActionOnBedSelection::CenterOnBed
+                            );
                             offset = apply_arrange_result(
                                 project_id,
                                 selection,

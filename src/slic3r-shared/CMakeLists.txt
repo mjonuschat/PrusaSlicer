@@ -361,6 +361,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/SceneNodeTag.hpp
         include/Slic3r/App/Scene/IRenderLayerObject.hpp
         include/Slic3r/App/Scene/IRenderNodeComponent.hpp
+		include/Slic3r/App/Scene/CameraProjectionParameters.hpp
         include/Slic3r/App/Scene/Camera.hpp
         src/Slic3r/App/Scene/Camera.cpp
         include/Slic3r/App/Scene/CameraHelper.hpp
@@ -409,6 +410,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/GizmoCommandRegistry.cpp
         include/Slic3r/App/Scene/MouseDragDetector.hpp
         src/Slic3r/App/Scene/MouseDragDetector.cpp
+		include/Slic3r/App/Scene/ClickDetector.hpp
+		src/Slic3r/App/Scene/ClickDetector.cpp
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
         src/Slic3r/App/Scene/GeometryDataFactory.cpp
         include/Slic3r/App/Scene/ISceneProvider.hpp

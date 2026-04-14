@@ -110,7 +110,9 @@ TEST_CASE_METHOD(ProjectInteractorFixture, "Project Interactor Listeners", "[Pro
         REQUIRE_CALL(
             selected_bed_instances_changed_listener,
             on_selected_bed_instances_changed(0, _)
-        ).WITH(is_selection_valid(_2));
+        )
+            .WITH(is_selection_valid(_2))
+            .TIMES(AT_LEAST(1));
         project_interactor.new_project();
     }
 
@@ -123,6 +125,7 @@ TEST_CASE_METHOD(ProjectInteractorFixture, "Project Interactor Listeners", "[Pro
             );
         REQUIRE_CALL(selected_bed_instances_changed_listener, on_selected_bed_instances_changed(1, _))
             .WITH(is_selection_valid(_2))
+            .TIMES(AT_LEAST(1))
             .SIDE_EFFECT(
                 auto capStr = std::string("selected_bed_instance( cc: ")
                     + std::to_string(_2.last_selected_bed().config_container_id)

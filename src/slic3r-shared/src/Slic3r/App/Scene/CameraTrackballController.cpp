@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "Slic3r/App/Scene/CameraTrackballController.hpp"
+#include "Slic3r/App/Scene/CameraProjectionParameters.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -13,6 +14,18 @@ using Slic3r::Domain::Vec3d;
 using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
+
+CameraTrackballController::CameraTrackballController(Camera& camera) :
+    m_camera(camera),
+    m_distance{CameraProjectionParameters::REF_Z}
+{
+    set_camera_orientation();
+}
+
+void CameraTrackballController::reset_distance_to_target()
+{
+    m_distance = CameraProjectionParameters::REF_Z;
+}
 
 void CameraTrackballController::add_azimuth_and_zenith(double delta_azimuth, double delta_zenith, bool apply_limits)
 {

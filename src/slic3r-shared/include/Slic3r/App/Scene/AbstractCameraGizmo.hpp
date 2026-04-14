@@ -76,6 +76,7 @@ private:
     ISceneProvider& m_scene_provider;
 
     State m_state{State::Inactive};
+    bool m_was_activated{false};
     float m_last_x{0.0f};
     float m_last_y{0.0f};
     Platform::AnimationManager& m_animation_manager;

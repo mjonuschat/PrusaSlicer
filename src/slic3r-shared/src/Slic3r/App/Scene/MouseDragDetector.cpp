@@ -70,6 +70,7 @@ void MouseDragDetector::rem_listener(IGizmo* gizmo)
         if (drag != nullptr && m_dragging == drag) {
             cancel_drag_event();
             m_dragging = nullptr;
+            m_dragging_gizmo = nullptr;
         }
         m_listeners.erase(it);
     }
@@ -85,10 +86,12 @@ bool MouseDragDetector::on_start(const std::vector<IGizmo*>& gizmos)
         if (it != m_listeners.end() && it->first == gizmo && it->second->on_drag_start(m_start->ctx)) {
             // gizmo consume drag
             m_dragging = it->second;
+            m_dragging_gizmo = gizmo;
             return true;
         }
     }
     m_dragging = nullptr;
+    m_dragging_gizmo = nullptr;
     return false;
 }
 
@@ -106,6 +109,7 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmo
             if (!m_dragging->on_dragging(ctx)) {
                 // stop dragging inside on_drag event
                 m_dragging = nullptr;
+                m_dragging_gizmo = nullptr;
                 return false;
             }
             return true;

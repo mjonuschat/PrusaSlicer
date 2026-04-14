@@ -15,7 +15,7 @@ static constexpr double DEFAULT_ZENITH = 3.0 * M_PI_4;
 class CameraTrackballController
 {
 public:
-    explicit CameraTrackballController(Camera& camera) : m_camera(camera) { set_camera_orientation(); }
+    explicit CameraTrackballController(Camera& camera);
 
     const Domain::Vec3d& target() const { return m_target; }
     void set_target(const Domain::Vec3d& pos)
@@ -30,6 +30,7 @@ public:
         m_distance = std::max(MIN_FOCAL_DISTANCE, value);
         m_camera.look_at(m_target - m_distance * m_camera.forward(), m_target, m_camera.up());
     }
+    void reset_distance_to_target();
 
     const Domain::Vec3d& pivot() const { return m_pivot; }
     void set_pivot(const Domain::Vec3d& pos) { m_pivot = pos; }
@@ -67,7 +68,7 @@ private:
     constexpr static double MIN_FOCAL_DISTANCE = 1e-02;
 
     Domain::Vec3d m_target{ Domain::Vec3d::Zero() };
-    double m_distance{ 400.0 };
+    double m_distance;
     Domain::Vec3d m_pivot{ Domain::Vec3d ::Zero() };
     Eigen::Quaterniond m_view_rotation{ 1.0, 0.0, 0.0, 0.0 };
     double m_azimuth{ DEFAULT_AZIMUTH };

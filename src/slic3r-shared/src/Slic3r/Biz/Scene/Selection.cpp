@@ -162,9 +162,9 @@ bool BedSelection::select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSe
     PANIC("Unknown mode!");
 }
 
-bool BedSelection::toggle(const Domain::BedRef& bed_ref)
+bool BedSelection::toggle(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action)
 {
-    m_camera_action_on_selection = CameraActionOnBedSelection::None;
+    m_camera_action_on_selection = camera_action;
 
     if (m_mode == BedSelectionMode::ConfigContainer) {
         return false;

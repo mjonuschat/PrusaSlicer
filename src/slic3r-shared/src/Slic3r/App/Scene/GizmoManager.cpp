@@ -128,6 +128,10 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     Scene& scene = m_scene_provider.scene();
     auto [pick_results, pick_ray] = pick(e, screen_info);
 
+#if DEBUG_GIZMO_MANAGER
+    update_gizmo_activation_debug_frame_begin();
+#endif
+
     GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector
         && m_mouse_drag_detector->mouse_event(
@@ -140,8 +144,13 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
                     p.object_selection_disabled
                 );
             }
-        ))
+        )) {
+#if DEBUG_GIZMO_MANAGER
+        const auto* g = m_mouse_drag_detector->dragging_gizmo();
+        update_gizmo_activation_debug_data(g, GizmoActivationState::Active);
+#endif
         return;
+    }
 
     // activation by double click
     if (e.type() == Platform::MouseEvent::Type::DoubleClick &&
@@ -159,10 +168,6 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     }
 
     const bool single_active = p.in_cycle_gizmos.size() == 1;
-#if DEBUG_GIZMO_MANAGER
-    SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), p.in_cycle);
-    update_gizmo_activation_debug_frame_begin();
-#endif
 
     auto it = p.in_cycle_gizmos.begin();
     while (it != p.in_cycle_gizmos.end()) {
@@ -170,7 +175,6 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 
         auto ret = g->on_mouse(ctx, single_active);
 #if DEBUG_GIZMO_MANAGER
-        SPDLOG_INFO("- {} with result {}", type_name(*g), ACTIVATION_STATE_NAMES[int(ret)]);
         update_gizmo_activation_debug_data(g, ret);
 #endif
 
@@ -258,11 +262,6 @@ void GizmoManager::prepare_cycle()
         g->on_cycle_prepare();
         p.in_cycle_gizmos.push_back(g.get());
     }
-#if DEBUG_GIZMO_MANAGER
-    SPDLOG_INFO("New cycle, active gizmos:");
-    for (const auto& g : p.in_cycle_gizmos)
-        SPDLOG_INFO("- {}", type_name(*g));
-#endif
 }
 
 void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
@@ -397,7 +396,11 @@ void GizmoManager::render_gizmo_activation_debug()
 {
     if (!m_activation_debug_shown)
         return;
-    if (ImGui::Begin("Gizmo Activation", &m_activation_debug_shown)) {
+
+    ImGui::SetNextWindowSize(ImVec2(0,240), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y), ImGuiCond_Appearing, ImVec2(0, 1));
+
+    if (ImGui::Begin("Gizmo Activation", &m_activation_debug_shown, ImGuiWindowFlags_NoSavedSettings)) {
         // Begin a table with 2 + maxCellsPerRow columns
         if (ImGui::BeginTable("MapDataTable", 1 + NUM_DEBUG_ACTIVATION_LAST_STEPS, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
             // Set fixed width for the first column

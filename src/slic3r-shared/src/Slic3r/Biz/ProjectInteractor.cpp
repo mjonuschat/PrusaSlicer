@@ -173,7 +173,8 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
                     *added_project.config_containers().front()
                 };
                 m_scene_interactor.bed_selection().select_one(
-                    {config_container.id().id, config_container.bed_instances().front()->id().id}
+                    {config_container.id().id, config_container.bed_instances().front()->id().id},
+                    Scene::CameraActionOnBedSelection::CenterOnBed
                 );
 
                 do_select_config_container(added_project.config_containers().front()->id().id);

@@ -304,7 +304,10 @@ void SceneInteractor::on_selected_config_container_changed(Domain::SelectionId p
     ASSERT(!selection.empty());
     if (selection.last_selected_bed().config_container_id != container_id) {
         // Select CC's first bed if not already selected any of CC's
-        selection.select_one({container_id, bed_instances.front()->id().id});
+        selection.select_one(
+            {container_id, bed_instances.front()->id().id},
+            CameraActionOnBedSelection::CenterOnBed
+        );
     }
 }
 
@@ -607,7 +610,12 @@ const BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId pro
 
 BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_id)
 {
-    return const_cast<BedSelection*>(static_cast<const SceneInteractor*>(this)->bed_selection(project_id));
+    ASSERT(project_id != Domain::INVALID_ID);
+    const auto it{m_projects.find(project_id)};
+    if (it == m_projects.end()) {
+        return nullptr;
+    }
+    return &it->second.bed_selection;
 }
 
 void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name) {
@@ -1698,7 +1706,10 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     changes.updated_beds.insert(updated);
 
     if (project_context.bed_selection.empty()) {
-        project_context.bed_selection.select_one(Domain::BedRef{cc->id().id, ret.id().id});
+        project_context.bed_selection.select_one(
+            Domain::BedRef{cc->id().id, ret.id().id},
+            CameraActionOnBedSelection::CenterOnBed
+        );
     }
 
     invoke_listeners<ISceneChangedListener>(
@@ -1878,7 +1889,14 @@ void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
     m_bed_tracking.update_instances_bed_placement(added_project);
     auto updated = m_bed_placement.layout(added_project, BED_GAP);
 
-    bed_selection().select_one(Domain::BedRef({added_project.config_containers().front()->id().id, added_project.config_containers().front()->bed_instances().front()->id().id}));
+    const auto& config_container = added_project.config_containers().front();
+    bed_selection().select_one(
+        Domain::BedRef(
+            {config_container->id().id,
+             config_container->bed_instances().front()->id().id}
+        ),
+        CameraActionOnBedSelection::CenterOnBed
+    );
     auto changes = m_bed_tracking.update_instances_bed_placement(added_project);
 
     Domain::BedRefs bed_refs;
@@ -2005,13 +2023,17 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
                 if (++it == ccs.end())
                     it = ccs.begin();
                 selection.select_one(
-                    {it->get()->id().id, it->get()->bed_instances().front()->id().id}, CameraActionOnBedSelection::CenterOnBed
+                    {it->get()->id().id, it->get()->bed_instances().front()->id().id},
+                    CameraActionOnBedSelection::CenterOnBed
                 );
             }
         } else {
             // ensure one bed instance is selected
             ASSERT(!cc->bed_instances().empty());
-            selection.select_one({cc->id().id, cc->bed_instances().front()->id().id});
+            selection.select_one(
+                {cc->id().id, cc->bed_instances().front()->id().id},
+                CameraActionOnBedSelection::CenterOnBed
+            );
         }
     }
 

@@ -509,7 +509,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
             m_rectangle_selection.activate(rect_sel_type, {evt.x(), evt.y()});
 
         if (m_rectangle_selection.is_active() && !m_rectangle_selection.is_already_processed())
-            return Scene::GizmoActivationState::Active;
+            return Scene::GizmoActivationState::Probing;
         else {
             m_click_start = Clock::now();
             m_processing  = true;
@@ -683,6 +683,12 @@ void QuickSelectGizmo::on_keyboard(Scene::GizmoKeyEventContext& ctx)
             invoke_hover_changed(hover_data);
         }
     }
+}
+
+void QuickSelectGizmo::on_cycle_prepare()
+{
+    m_processing = false;
+    m_rectangle_selection.deactivate();
 }
 
 void QuickSelectGizmo::invoke_hover_changed(const HoverData& hover_data)

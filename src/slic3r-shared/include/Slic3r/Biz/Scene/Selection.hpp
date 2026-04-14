@@ -83,7 +83,7 @@ struct BedSelection
     bool select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action = CameraActionOnBedSelection::None);
 
     /** @brief Add or remove from active selection. */
-    bool toggle(const Domain::BedRef& bed_ref);
+    bool toggle(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action = CameraActionOnBedSelection::None);
 
     bool set_mode(const BedSelectionMode mode);
 

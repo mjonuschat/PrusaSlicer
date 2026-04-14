@@ -21,10 +21,6 @@ bool AnimationManager::update()
             break;
         }
         case AnimationState::Completed:
-        {
-            it = m_animations.erase(it);
-            continue;
-        }
         case AnimationState::Stopped:
         {
             it = m_animations.erase(it);
@@ -34,10 +30,22 @@ bool AnimationManager::update()
         }
         ++it;
     }
+    return is_running();
+}
 
-    return std::any_of(m_animations.begin(), m_animations.end(), [](const auto& a) {
-        return a != nullptr && a->state() == AnimationState::Running;
-    });
+bool AnimationManager::is_running() const
+{
+    return std::ranges::any_of(
+        m_animations,
+        [](const auto& a)
+        {
+            if (a == nullptr) {
+                return false;
+            }
+            const auto state = a->state();
+            return state == AnimationState::Running || state == AnimationState::Ready;
+        }
+    );
 }
 
 AnimationState AnimationManager::state(const AbstractAnimation* anim) const

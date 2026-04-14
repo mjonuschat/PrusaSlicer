@@ -117,6 +117,10 @@ void AbstractRenderCanvas::render()
         set_render_module(m_next_render_module);
         m_next_render_module = nullptr;
     }
+
+    if (m_animation_manager.is_running()) {
+        request_render();
+    }
 }
 
 Render::ImguiRender& AbstractRenderCanvas::imgui_render()

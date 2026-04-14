@@ -25,19 +25,25 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
                                                                     camera.forward().z() >= 0.0
     };
 
-    if (pick_disabled)
+    if (pick_disabled) {
         return Scene::GizmoActivationState::Inactive;
+    }
 
     const Platform::MouseEvent& evt{ctx.mouse_event()};
     const Platform::MouseEvent::Type type{evt.type()};
 
-    if (type != Platform::MouseEvent::Type::ButtonDown) {
+    if (type == Platform::MouseEvent::Type::ButtonDown && evt.button() != Platform::MouseButton::Left)
+    {
         return Scene::GizmoActivationState::Inactive;
     }
 
-    if (evt.button() != Platform::MouseButton::Left && evt.button() != Platform::MouseButton::Right)
-    {
+    switch (m_click_detector.on_mouse(evt)) {
+    case Scene::ClickState::Inactive:
         return Scene::GizmoActivationState::Inactive;
+    case Scene::ClickState::Probing:
+        return Scene::GizmoActivationState::Probing;
+    case Scene::ClickState::Activated:
+        break;
     }
 
     const Scene::BedNodeTag* tag{
@@ -45,32 +51,28 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
                                      ctx.pick_results().front().node->tag_of_type<Scene::BedNodeTag>()
     };
 
+    auto& selection = m_scene_interactor.bed_selection();
     if (tag == nullptr) {
-        Biz::Scene::BedSelection& selection{m_scene_interactor.bed_selection()};
         if (selection.select_one(selection.last_selected_bed())) {
             return Scene::GizmoActivationState::Done;
         }
         return Scene::GizmoActivationState::Inactive;
     }
-
     const Domain::BedRef instance{tag->config_container_id, tag->instance_id};
+    if (selection.is_selected(instance)) {
+        return Scene::GizmoActivationState::Inactive;
+    }
 
     const bool shift_down{
         (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0
     };
 
     if (shift_down) {
-        if (m_scene_interactor.bed_selection().toggle(instance)) {
+        if (selection.toggle(instance, Biz::Scene::CameraActionOnBedSelection::CenterOnBed)) {
             return Scene::GizmoActivationState::Done;
         }
     } else {
-        if (m_scene_interactor.bed_selection().select_one(instance)) {
-            // Center the camera pivot on the bed
-            const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(instance.config_container_id);
-            DEBUG_ASSERT(cc != nullptr);
-            const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
-            m_scene_provider.scene().camera_trackball()
-                .set_pivot(Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset());
+        if (selection.select_one(instance, Biz::Scene::CameraActionOnBedSelection::CenterOnBed)) {
             return Scene::GizmoActivationState::Done;
         }
     }

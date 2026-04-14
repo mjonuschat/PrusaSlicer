@@ -46,6 +46,7 @@ public:
     Type type() const { return m_type; }
 
     bool is_already_processed() const { return m_already_processed; }
+    bool is_defined() const { return m_defined; }
 
     void update(const MousePosition& curr_mouse_pos);
     bool update_selection(SelectionHandler& selection_handler);
@@ -129,7 +130,8 @@ public:
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
 
-    void on_cycle_prepare() override { m_processing = false; }
+    void on_cycle_prepare() override;
+
     bool handles_object_selection() const override { return true; }
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;

@@ -1,4 +1,5 @@
 #include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/App/Scene/CameraProjectionParameters.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
@@ -149,6 +150,11 @@ void Camera::update_projection()
     m_projection = m_projection_getter->projection(m_viewport, m_zoom);
 }
 
+PerspectiveCameraProjection::PerspectiveCameraProjection() :
+    AbstractCameraProjection(CameraProjectionType::Perspective),
+    m_fovy{CameraProjectionParameters::REF_FOVY}
+{}
+
 Domain::SquareMatrix4d PerspectiveCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
     DEBUG_ASSERT(zoom != 0.0);
@@ -171,6 +177,16 @@ double PerspectiveCameraProjection::constant_screen_space_size_scale(
     return cam_object_dist/2 * std::tan(deg2rad(phi_half));
 }
 
+double PerspectiveCameraProjection::min_zoom() const
+{
+    return CameraProjectionParameters::PERSPECTIVE_MIN_ZOOM;
+}
+
+double PerspectiveCameraProjection::max_zoom() const
+{
+    return CameraProjectionParameters::PERSPECTIVE_MAX_ZOOM;
+}
+
 Domain::SquareMatrix4d OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
     ASSERT(zoom != 0.0);
@@ -190,6 +206,16 @@ double OrthographicCameraProjection::constant_screen_space_size_scale(const Came
     // Note: For orhto this is: 2 / (r - l)
     return 0.5/cam.zoom();
 
+}
+
+double OrthographicCameraProjection::min_zoom() const
+{
+    return CameraProjectionParameters::orthographic_min_zoom();
+}
+
+double OrthographicCameraProjection::max_zoom() const
+{
+    return CameraProjectionParameters::orthographic_max_zoom();
 }
 
 } // namespace Slic3r::App::Scene

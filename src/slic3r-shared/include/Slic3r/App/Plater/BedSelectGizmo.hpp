@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ClickDetector.hpp"
 
 namespace Slic3r::App::Scene {
 class ISceneProvider;
@@ -27,6 +28,7 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Scene::ISceneProvider& m_scene_provider;
+    Scene::ClickDetector m_click_detector;
 };
 
 } // namespace Slic3r::App::Plater

@@ -68,6 +68,11 @@ public:
      */
     void cancel_drag_event();
 
+    const IGizmo* dragging_gizmo() const
+    {
+        return m_dragging_gizmo;
+    }
+
 private:
     bool can_start_drag();
     bool on_start(const std::vector<IGizmo*>& gizmos);
@@ -110,6 +115,7 @@ private:
 
     // set on_start, discard on finish OR cancel
     IMouseDrag* m_dragging = nullptr;
+    const IGizmo* m_dragging_gizmo = nullptr;
 
     using Listener  = std::pair<IGizmo*, IMouseDrag*>;
     using Listeners = std::vector<Listener>;

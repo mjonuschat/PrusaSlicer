@@ -27,6 +27,8 @@ public:
      */
     bool update();
 
+    bool is_running() const;
+
     /** Return the state of the given animation.
      * @param anim The animation whose state is required.
      *

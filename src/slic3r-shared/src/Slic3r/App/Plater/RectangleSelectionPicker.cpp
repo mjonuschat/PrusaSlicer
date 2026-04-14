@@ -153,6 +153,10 @@ Domain::Image RectangleSelectionPicker::render(Scene::Scene& scene, const Render
     // render only the part of the scene within the selection rectangle
     //
 
+    auto& gfx_settings = Scene::Scene::graphics_settings();
+    auto orig_shading = gfx_settings.shading_type();
+    Scene::Scene::set_shading_type(Scene::ShadingType::Legacy);
+
     const Scene::Camera& camera = scene.camera();
     const Scene::CameraTrackballController& trackball = scene.camera_trackball();
     const Render::Rect& viewport = camera.viewport();
@@ -203,6 +207,8 @@ Domain::Image RectangleSelectionPicker::render(Scene::Scene& scene, const Render
 
     Scene::MinimalSceneRenderCustomizer render_customizer;
     scene.render(m_device, *cmd_buffer, &render_customizer, &tmp_camera);
+
+    Scene::Scene::set_shading_type(orig_shading);
 
     Domain::Image ret = Domain::Image(Domain::PixelFormat::RGBA8, rect.width, rect.height);
     // extract image from framebuffer
