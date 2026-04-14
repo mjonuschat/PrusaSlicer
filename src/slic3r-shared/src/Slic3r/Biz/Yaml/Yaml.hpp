@@ -13,6 +13,7 @@
 #include <string_view>
 #include <fstream>
 
+#include <boost/nowide/fstream.hpp>
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/transform.hpp>
@@ -890,7 +891,7 @@ template <typename T>
 void write_file(const T& val, const char* filename)
 {
     auto data = write_string(val);
-    std::ofstream file(filename, std::ios::binary | std::ios::out);
+    boost::nowide::ofstream file(filename, std::ios::binary | std::ios::out);
     if (!file.good()) {
         throw SerializationError(fmt::format("Cannot write file {}", filename), filename);
     }
