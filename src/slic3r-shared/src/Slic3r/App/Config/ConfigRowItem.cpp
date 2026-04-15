@@ -21,12 +21,10 @@ ConfigRowItem::ConfigRowItem(
     const Domain::ConfigItem& data,
     Biz::IConfigBoxSetter& cb_setter,
     size_t cbi_index,
-    bool small,
     std::optional<std::string> force_label
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_cb_setter(cb_setter),
-    m_small(small),
     m_cbi_index(cbi_index),
     m_force_label(force_label)
 {
@@ -48,19 +46,8 @@ ConfigRowItem::ConfigRowItem(
     m_sidetext->set_flex_grow(1.f);
     m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    if (m_small) {
-        set_gap(5);
-        set_width(175);
-
-        m_left_side->set_flex_grow(1);
-        m_label->set_width(70);
-        m_label->set_flex_shrink(0);
-    } else {
-        m_label->set_flex_grow(1);
-
-        m_left_side->set_width(m_force_label.has_value() ? 90 : 175);
-        m_left_side->set_max_size({175, YGUndefined});
-    }
+    m_label->set_width(m_force_label.has_value() ? 90 : 175);
+    m_left_side->set_max_size({175, YGUndefined});
 
     on_data_update();
 }
@@ -95,18 +82,9 @@ void ConfigRowItem::on_data_update()
         if (m_state->def().gui_type == Slic3r::Domain::ConfigItemDef::GUIType::spinbox) {
             m_config_item_spin_box = dynamic_cast<ConfigItemSpinBox*>(m_input);
         }
-
-        if (m_small) {
-            m_input->set_min_size({50, YGUndefined});
-            m_input->set_self_align(YGAlignCenter);
-            m_input->set_width(60);
-        }
     }
 
-    if (m_input
-        && !m_small
-        && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width))
-    {
+    if (m_input && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width)) {
         m_input->set_flex_grow(m_state->def().full_width);
         if (m_state->def().full_width) {
             set_orientation(Orientation::Vertical);
@@ -147,6 +125,7 @@ void ConfigRowItem::on_data_update()
 
     m_label->set_text(m_force_label.value_or(Biz::_u8(m_state->def().label)));
     m_sidetext->set_text(Biz::_u8(m_state->def().sidetext));
+    m_sidetext->set_min_width(m_sidetext->text().empty() ? 0 : 50);
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
         std::optional<int> value = m_state->value().get<std::optional<int>>();

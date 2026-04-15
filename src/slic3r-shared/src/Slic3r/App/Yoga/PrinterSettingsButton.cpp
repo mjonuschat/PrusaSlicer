@@ -11,10 +11,12 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
 {
     set_flex_shrink(0);
     set_allow_overlap(true);
+    set_content_justify_content(YGJustifyFlexStart);
 
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
+    m_icon->set_width(64);
 
     m_texts_wrapper = emplace_back<Item>();
     m_texts_wrapper->set_orientation(Orientation::Vertical);
@@ -27,6 +29,10 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
 
     m_preset_name = m_texts_wrapper->emplace_back<Text>(std::string{});
     m_preset_name->set_wrap_mode(Text::WrapMode::WrapElide);
+
+    m_btn_wrapper = emplace_back<Item>();
+    m_btn_wrapper->set_flex_shrink(0);
+    m_btn_wrapper->set_gap(5);
 
     m_printers_btn =
         add_button(Render::Icon::ConfigContainer, Biz::_u8L("Show info about printer"));
@@ -92,6 +98,18 @@ void PrinterSettingsButton::hovered_updated_internal()
 {
     RectangleButton::hovered_updated_internal();
     update_btns_visibility();
+
+    // const float avail_width =
+    //     parent_item() ? parent_item()->width() - parent_item()->padding().horizontal() : width();
+
+    // m_texts_wrapper->set_max_size(
+    //     {avail_width
+    //          - padding().horizontal()
+    //          - 2 * gap()
+    //          - m_icon->width()
+    //          - m_btn_wrapper->width(),
+    //      YGUndefined}
+    // ); // WrapElide with flex_grow is borked, so this is a workaround
 }
 
 void PrinterSettingsButton::update_btns_visibility()
@@ -102,11 +120,11 @@ void PrinterSettingsButton::update_btns_visibility()
 
 LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::string& tooltip)
 {
-    LayoutButton* button = emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+    LayoutButton* button = m_btn_wrapper->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
     button->set_self_align(YGAlignCenter);
     button->set_min_size({24.f, 24.f});
-    button->set_flex_shrink(0);
     button->set_background_color(Platform::Color::ButtonTransparent);
+    button->set_flex_shrink(0);
     // Extra button is hidden by default.
     // It can be shown in the settings dialog under certain conditions.
     button->set_visible(false);

@@ -9,8 +9,6 @@
 
 #include <imgui_internal.h>
 
-#include <cmath>
-
 namespace Slic3r::App::Yoga {
 
 static bool utf8_last_byte_is_ascii_space(std::string_view s)
@@ -31,226 +29,102 @@ static void utf8_remove_last_codepoint(std::string_view& s)
     s.remove_suffix(s.size() - i);
 }
 
-class TextInternal : public Yoga::Item
+static ImRect align_rectangle(const ImVec2& space, const ImVec2& aligned_size, const Align& align)
 {
-public:
-    TextInternal() : m_font_size(GImGui->FontSizeBase)
-    {
-        set_object_name("TextInternal");
+    ImVec2 pos{0.0f, 0.0f};
+
+    switch (align.horizontal) {
+    case AlignH::Left:
+        pos.x = 0.0f;
+        break;
+    case AlignH::Center:
+        pos.x = (space.x - aligned_size.x) * 0.5f;
+        break;
+    case AlignH::Right:
+        pos.x = space.x - aligned_size.x;
+        break;
     }
 
-    void render(Vec2f pos, Vec2f size) override
-    {
-        render_item_begin(pos, size);
-
-        ImGui::SetCursorScreenPos(to_im(pos));
-
-        ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
-        ImGui::PushStyleColor(
-            ImGuiCol_Text,
-            enabled() ? ImVec4(m_text_color) :
-                        ImVec4(m_theme->color_imgui(
-                            Platform::Color::Text,
-                            Platform::ColorGroup::Disabled
-                        ))
-        );
-
-        switch (m_wrap_mode) {
-        case Text::WrapMode::Wrap:
-        case Text::WrapMode::WrapElide:
-            // When text wrapping is applied, the text gets truncated on the right due to its offset from the parent window.
-            // To fix this, we need to increase wrapping_size by ImGui::GetCursorPos().x.
-            // Note: This feels like a hack, but a similar use of PushTextWrapPos can be found in imgui_demo.cpp (line 1281).
-            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width());
-            ImGui::TextUnformatted(m_rendered_text.c_str());
-            ImGui::PopTextWrapPos();
-            break;
-        case Text::WrapMode::NoWrap:
-            ImGui::TextUnformatted(m_rendered_text.c_str());
-            break;
-        }
-
-        ImGui::PopStyleColor();
-        ImGui::PopFont();
-
-        render_item_end(pos, size);
+    switch (align.vertical) {
+    case AlignV::Top:
+        pos.y = 0.0f;
+        break;
+    case AlignV::Center:
+        pos.y = (space.y - aligned_size.y) * 0.5f;
+        break;
+    case AlignV::Bottom:
+        pos.y = space.y - aligned_size.y;
+        break;
     }
 
-    Text::WrapMode wrap_mode() const
-    {
-        return m_wrap_mode;
-    }
+    return ImRect(pos, pos + aligned_size);
+}
 
-    void set_wrap_mode(Text::WrapMode wrap_mode)
-    {
-        if (m_wrap_mode != wrap_mode) {
-            m_wrap_mode = wrap_mode;
-            invalidate_size();
-        }
-    }
-
-    const ImColor& text_color() const
-    {
-        return m_text_color;
-    }
-
-    void set_text_color(const ImColor& text_color)
-    {
-        m_text_color = text_color;
-    }
-
-    Render::ImguiFontType font_type() const
-    {
-        return m_font_type;
-    }
-
-    void set_font_type(Render::ImguiFontType font_type)
-    {
-        if (m_font_type != font_type) {
-            m_font_type = font_type;
-            invalidate_size();
-        }
-    }
-
-    float font_size() const
-    {
-        return m_font_size;
-    }
-
-    void set_font_size(float font_size)
-    {
-        if (!Domain::fuzzy_compare(m_font_size, font_size)) {
-            m_font_size = font_size;
-            invalidate_size();
-        }
-    }
-
-    const std::string& source_text() const
-    {
-        return m_source_text;
-    }
-
-    void set_source_text(const std::string& source_text)
-    {
-        if (m_source_text != source_text) {
-            m_source_text = source_text;
-            invalidate_min_size_calculation();
-            set_style_dirty();
-        }
-    }
-
-    void invalidate_size()
-    {
-        invalidate_min_size_calculation();
-        set_style_dirty();
-    }
-
-protected:
-    float available_width() const
-    {
-        return parent_item()->width() - parent_item()->padding().horizontal();
-    }
-
-    float available_height() const
-    {
-        float avail_height = parent_item()->height() - parent_item()->padding().vertical();
-        return Domain::fuzzy_compare(0.f, avail_height) ? ImGui::GetFontSize() : avail_height;
-    }
-
-    Vec2f get_item_size() override
-    {
-        Vec2f result;
-        ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
-        if (m_wrap_mode == Text::WrapMode::Wrap) {
-            m_rendered_text = m_source_text;
-
-            // While wrapping enforce ONLY Y axis, let as assume the width that is set by parent or
-            // external sources
-            if (std::isnan(width())) {
-                result = Vec2f{0, ImGui::CalcTextSize(m_source_text.c_str()).y};
-            } else {
-                const float target_width = available_width();
-                if (!std::isnan(target_width) && target_width > 0) {
-                    result = Vec2f{
-                        target_width,
-                        from_im(
-                            ImGui::CalcTextSize(m_source_text.c_str(), nullptr, false, target_width)
-                        )
-                            .y()
-                    };
-                }
-            }
-        } else if (m_wrap_mode == Text::WrapMode::WrapElide) {
-            ImVec2 target_size{available_width(), available_height()};
-            if (!std::isnan(target_size.x)
-                && !std::isnan(target_size.y)
-                && target_size.x > 0
-                && target_size.y > 0)
-            {
-                target_size.y = std::max(m_font_size, target_size.y);
-
-                std::string_view elided_text = m_source_text;
-                m_rendered_text              = elided_text;
-                ImVec2 current_size          = ImGui::CalcTextSize(
-                    elided_text.data(),
-                    elided_text.data() + elided_text.size(),
-                    false,
-                    target_size.x
-                );
-                while (current_size.y > target_size.y && !elided_text.empty()) {
-                    utf8_remove_last_codepoint(elided_text);
-                    // also remove trailing whitespaces
-                    while (!elided_text.empty() && utf8_last_byte_is_ascii_space(elided_text)) {
-                        utf8_remove_last_codepoint(elided_text);
-                    }
-
-                    m_rendered_text = std::string(elided_text) + "…";
-                    current_size =
-                        ImGui::CalcTextSize(m_rendered_text.c_str(), nullptr, false, target_size.x);
-                }
-
-                result = from_im(current_size);
-            }
-        } else {
-            m_rendered_text = m_source_text;
-            result          = from_im(ImGui::CalcTextSize(m_source_text.c_str()));
-        }
-        ImGui::PopFont();
-        return result;
-    }
-
-    void on_resized() override
-    {
-        if (m_wrap_mode != Text::WrapMode::NoWrap) {
-            set_min_size(get_item_size());
-        }
-    }
-
-private:
-    std::string m_source_text;
-    std::string m_rendered_text;
-    Text::WrapMode m_wrap_mode        = Text::WrapMode::NoWrap;
-    ImColor m_text_color              = IM_COL32_WHITE;
-    Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
-    float m_font_size                 = 0;
-};
-
-Text::Text(const std::string& text, Render::ImguiFontType font_type)
+Text::Text(const std::string& text, Render::ImguiFontType font_type) :
+    m_font_type(font_type),
+    m_font_size(ImGui::GetFontSize())
 {
     set_object_name("Text");
-    m_content_item = emplace_back<TextInternal>();
-    m_content_item->set_font_type(font_type);
-    m_content_item->set_source_text(text);
+    set_text(text);
+}
+
+void Text::render(Vec2f pos, Vec2f size)
+{
+    render_item_begin(pos, size);
+
+    ImGui::SetCursorScreenPos(to_im(pos) + m_text_pos);
+
+    ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
+    ImGui::PushStyleColor(
+        ImGuiCol_Text,
+        enabled() ?
+            ImVec4(m_text_color) :
+            ImVec4(m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled))
+    );
+
+    switch (m_wrap_mode) {
+    case Text::WrapMode::Wrap:
+    case Text::WrapMode::WrapElide:
+        // When text wrapping is applied, the text gets truncated on the right due to its offset from the parent window.
+        // To fix this, we need to increase wrapping_size by ImGui::GetCursorPos().x.
+        // Note: This feels like a hack, but a similar use of PushTextWrapPos can be found in imgui_demo.cpp (line 1281).
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + size.x());
+        ImGui::TextUnformatted(m_rendered_text.c_str());
+        ImGui::PopTextWrapPos();
+        break;
+    case Text::WrapMode::NoWrap:
+        ImGui::TextUnformatted(m_rendered_text.c_str());
+        break;
+    }
+
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+
+    render_item_end(pos, size);
+}
+
+void Text::style_node()
+{
+    // This is weird, we are getting font size 1
+    if (m_font_size <= 1.f) {
+        m_font_size = ImGui::GetFontSize();
+        invalidate_min_size_calculation();
+    }
+
+    Item::style_node();
 }
 
 const std::string& Text::text() const
 {
-    return m_content_item->source_text();
+    return m_source_text;
 }
 
 void Text::set_text(const std::string& text)
 {
-    m_content_item->set_source_text(text);
+    if (m_source_text != text) {
+        m_source_text = text;
+        invalidate_min_size_calculation();
+    }
 }
 
 const Align& Text::align() const
@@ -262,75 +136,148 @@ void Text::set_align(const Align& align)
 {
     if (m_align != align) {
         m_align = align;
-        switch (m_align.horizontal) {
-        case Slic3r::App::Yoga::AlignH::Left:
-            set_justify_content(YGJustifyFlexStart);
-            break;
-        case Slic3r::App::Yoga::AlignH::Center:
-            set_justify_content(YGJustifyCenter);
-            break;
-        case Slic3r::App::Yoga::AlignH::Right:
-            set_justify_content(YGJustifyFlexEnd);
-            break;
-        }
-
-        switch (m_align.vertical) {
-        case Slic3r::App::Yoga::AlignV::Top:
-            m_content_item->set_self_align(YGAlignFlexStart);
-            break;
-        case Slic3r::App::Yoga::AlignV::Center:
-            m_content_item->set_self_align(YGAlignCenter);
-            break;
-        case Slic3r::App::Yoga::AlignV::Bottom:
-            m_content_item->set_self_align(YGAlignFlexEnd);
-            break;
-        }
+        invalidate_min_size_calculation();
     }
 }
 
 void Text::on_resized()
 {
-    m_content_item->invalidate_size();
+    invalidate_min_size_calculation();
+}
+
+Vec2f Text::get_item_size()
+{
+    Vec2f min_size;
+    ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
+
+    ImVec2 taken_size;
+    if (m_wrap_mode == WrapMode::NoWrap) {
+        m_rendered_text = m_source_text;
+        taken_size      = ImGui::CalcTextSize(m_source_text.c_str());
+        min_size        = from_im(taken_size);
+    } else if (m_wrap_mode == WrapMode::Wrap) {
+        m_rendered_text = m_source_text;
+
+        const float target_width = available_width();
+        // While wrapping enforce ONLY Y axis, let as assume the width that is set by parent or
+        // external sources
+        if (YGFloatIsUndefined(target_width) || target_width <= 0) {
+            // We should log probably something, this is an error state
+            taken_size = {0, ImGui::CalcTextSize(m_source_text.c_str()).y};
+        } else {
+            taken_size = {
+                target_width,
+                from_im(ImGui::CalcTextSize(m_source_text.c_str(), nullptr, false, target_width))
+                    .y()
+            };
+        }
+
+        min_size = Vec2f{0, taken_size.y};
+    } else if (m_wrap_mode == WrapMode::WrapElide) {
+        ImVec2 target_size{available_width(), available_height()};
+        if (!YGFloatIsUndefined(target_size.x)
+            && !YGFloatIsUndefined(target_size.y)
+            && target_size.x > 0
+            && target_size.y > 0)
+        {
+            target_size.y = std::max(m_font_size, target_size.y);
+
+            std::string_view elided_text = m_source_text;
+            m_rendered_text              = elided_text;
+            ImVec2 current_size          = ImGui::CalcTextSize(
+                elided_text.data(),
+                elided_text.data() + elided_text.size(),
+                false,
+                target_size.x
+            );
+            // As long as the text do not fit target_size keep removing characters from the end
+            while ((current_size.y > target_size.y || current_size.x > target_size.x)
+                   && !elided_text.empty())
+            {
+                utf8_remove_last_codepoint(elided_text);
+                // also remove trailing whitespaces
+                while (!elided_text.empty() && utf8_last_byte_is_ascii_space(elided_text)) {
+                    utf8_remove_last_codepoint(elided_text);
+                }
+
+                m_rendered_text = std::string(elided_text) + "…";
+                current_size =
+                    ImGui::CalcTextSize(m_rendered_text.c_str(), nullptr, false, target_size.x);
+            }
+
+            taken_size = current_size;
+        }
+        min_size = Vec2f{0, m_font_size};
+    }
+
+    const ImVec2 space{width(), height()};
+    m_text_pos = align_rectangle(space, taken_size, m_align).GetTL();
+    set_style_dirty();
+
+    ImGui::PopFont();
+
+    return min_size;
+}
+
+float Text::available_width() const
+{
+    return width() - padding().horizontal();
+}
+
+float Text::available_height() const
+{
+    float avail_height = height() - padding().vertical();
+    return Domain::fuzzy_compare(0.f, avail_height) ? m_font_size : avail_height;
 }
 
 Text::WrapMode Text::wrap_mode() const
 {
-    return m_content_item->wrap_mode();
+    return m_wrap_mode;
 }
 
 void Text::set_wrap_mode(WrapMode wrap_mode)
 {
-    m_content_item->set_wrap_mode(wrap_mode);
+    if (m_wrap_mode != wrap_mode) {
+        m_wrap_mode = wrap_mode;
+        invalidate_min_size_calculation();
+    }
 }
 
 const ImColor& Text::text_color() const
 {
-    return m_content_item->text_color();
+    return m_text_color;
 }
 
 void Text::set_text_color(const ImColor& text_color)
 {
-    m_content_item->set_text_color(text_color);
+    m_text_color = text_color;
+    set_style_dirty();
 }
 
 Render::ImguiFontType Text::font_type() const
 {
-    return m_content_item->font_type();
+    return m_font_type;
 }
 
 void Text::set_font_type(Render::ImguiFontType font_type)
 {
-    m_content_item->set_font_type(font_type);
+    if (m_font_type != font_type) {
+        m_font_type = font_type;
+        set_style_dirty();
+    }
 }
 
 float Text::font_size() const
 {
-    return m_content_item->font_size();
+    return m_font_size;
 }
 
 void Text::set_font_size(float font_size)
 {
-    m_content_item->set_font_size(font_size);
+    if (!Domain::fuzzy_compare(m_font_size, font_size)) {
+        m_font_size = font_size;
+        invalidate_min_size_calculation();
+    }
 }
 
 } // namespace Slic3r::App::Yoga

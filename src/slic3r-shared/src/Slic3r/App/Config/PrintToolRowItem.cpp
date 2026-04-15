@@ -235,7 +235,7 @@ void PrintToolRowItem::initialize()
 
         m_config_row_item =
             m_header
-                ->emplace<ConfigRowItem>(0, m_index, *m_state->print_item, m_cbi_setter, 0, false);
+                ->emplace<ConfigRowItem>(0, m_index, *m_state->print_item, m_cbi_setter, 0);
         m_config_row_item->set_flex_grow(1.f);
 
     } else {
@@ -284,7 +284,6 @@ void PrintToolRowItem::initialize()
             *m_state->print_item,
             m_cbi_setter,
             0,
-            false,
             Biz::_u8L("Default value")
         );
 

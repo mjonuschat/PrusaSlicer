@@ -34,6 +34,7 @@ public:
     );
 
     void toggle_favorite_param(const std::string& param);
+    void toggle_favorite_preset_printer(const std::string& id, const std::string& hw_config_id);
 
     void set_item_value(
         const Domain::ConfigItem& item,

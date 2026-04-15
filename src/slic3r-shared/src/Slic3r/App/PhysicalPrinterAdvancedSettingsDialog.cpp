@@ -8,8 +8,6 @@
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
-
-#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 

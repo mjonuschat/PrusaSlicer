@@ -812,6 +812,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintToolConfigBoxInteractor.cpp
         include/Slic3r/Biz/PrintToolConfigObservableList.hpp
         src/Slic3r/Biz/PrintToolConfigObservableList.cpp
+        include/Slic3r/Biz/ObservableListSearcher.hpp
 
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
@@ -1045,6 +1046,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/IAppConfigChangedListener.hpp
         include/Slic3r/App/PresetUpdaterCLI.hpp
         src/Slic3r/App/PresetUpdaterCLI.cpp
+        include/Slic3r/App/AppSettingsAdvanced.hpp
+        src/Slic3r/App/AppSettingsAdvanced.cpp
 
         include/Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp

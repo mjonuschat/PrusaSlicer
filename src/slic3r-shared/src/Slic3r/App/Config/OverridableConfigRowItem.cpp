@@ -31,7 +31,7 @@ OverridableConfigRowItem::OverridableConfigRowItem(
     set_gap(5);
 
     m_config_row_item =
-        emplace_back<ConfigRowItem>(0, *data.config_item, cb_setter, cbi_index, false);
+        emplace_back<ConfigRowItem>(0, *data.config_item, cb_setter, cbi_index);
     m_config_row_item->set_flex_grow(1);
 
     on_data_update();

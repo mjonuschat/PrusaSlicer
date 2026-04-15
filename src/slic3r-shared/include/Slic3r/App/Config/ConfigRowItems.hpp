@@ -33,7 +33,7 @@ class ConfigRowItems :
     public IConfigNavigable
 {
     using ConfigRowListViewFactory =
-        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::IConfigBoxSetter&, size_t, bool>;
+        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::IConfigBoxSetter&, size_t>;
     using ConfigRowListView =
         Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
 

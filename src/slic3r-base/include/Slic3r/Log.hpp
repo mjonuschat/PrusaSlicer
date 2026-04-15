@@ -6,6 +6,7 @@
 #define SPDLOG_ACTIVE_LEVEL 2//SPDLOG_LEVEL_INFO
 #endif
 #include <spdlog/spdlog.h>
+#include <spdlog/stopwatch.h>
 
 namespace Slic3r {
 
@@ -22,5 +23,16 @@ const FileLogConfig& get_file_log_config();
 void set_file_log_config(const FileLogConfig& config);
 
 void flush_logs();
+
+class LogScopeTimer
+{
+public:
+    explicit LogScopeTimer(std::string_view name);
+    ~LogScopeTimer();
+
+private:
+    std::string_view m_name;
+    spdlog::stopwatch m_stopwatch;
+};
 
 }

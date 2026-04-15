@@ -16,11 +16,15 @@
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Yoga/InputText.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
@@ -41,8 +45,46 @@ LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     m_selected_project_changed_listener_scope(project_interactor, *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
+    m_preset_favorite_filter(
+        std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()
+    ),
+    m_preset_searcher(
+        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(
+            [this](const Biz::Preset::PresetItem& item, const std::string& search_text) -> int
+            {
+                int score = 0;
+
+                const std::string& name = m_preset_searcher->processed_string(item.name);
+                if (!name.empty() && name.find(search_text) != std::string::npos) {
+                    score += 10;
+                }
+
+                const std::string& hw_printer_config_name =
+                    m_preset_searcher->processed_string(item.hw_printer_config_name);
+                if (!hw_printer_config_name.empty()
+                    && hw_printer_config_name.find(search_text) != std::string::npos)
+                {
+                    score += 10;
+                }
+
+                return score;
+            }
+        )
+    ),
     m_printer_add_dialog(printer_add_dialog)
 {
+    m_preset_favorite_filter->set_filter_fn(
+        [this](const Biz::Preset::PresetItem& item) -> bool
+        {
+            return m_only_favorites_button->checked() ?
+                AppServices::instance()
+                    .app_config()
+                    .app_settings_advanced()
+                    .printer_favorite_presets.contains({item.id, item.hw_printer_config_id}) :
+                true;
+        }
+    );
+
     m_advanced_dialog = content_item()->emplace_back<PrinterAdvancedSettingsDialog>(
         project_interactor,
         m_navigator,
@@ -139,23 +181,33 @@ void LogicalPrinterSettingsDialog::create_page_list()
     m_page_list->set_gap(5);
     m_page_list->set_padding(10);
 
-    Item* keywords_row = m_page_list->emplace_back<Item>();
-    keywords_row->set_padding({0, 5});
+    Item* search_row = m_page_list->emplace_back<Item>();
+    search_row->set_gap(5);
+    Icon* icon = search_row->emplace_back<Icon>(Render::Icon::Search);
+    icon->set_width(18);
+    icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+    m_input_text_search = search_row->emplace_back<InputText>();
+    m_input_text_search->set_hint(_u8L("Search..."));
+    m_input_text_search->set_flex_grow(1);
+    m_input_text_search->callbacks().text_changed = [this]
+    { m_preset_searcher->set_search_text(m_input_text_search->text()); };
 
-    for (const std::string& keyword : std::initializer_list<std::string>{_u8L("All")}) {
-        LayoutButton* keyword_button = keywords_row->emplace_back<LayoutButton>(keyword);
-        keyword_button->set_checkable(true);
-        keyword_button->set_rounding(5);
-        keyword_button->set_content_padding({10, 5});
-        m_group_keywords.insert_button(keyword_button);
-    }
+    m_only_favorites_button =
+        search_row->emplace_back<LayoutButton>(Biz::_u8L("Only favorites"), Render::Icon::Star);
+    m_only_favorites_button->set_checkable(true);
+    m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
+    {
+        m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+        m_preset_favorite_filter->invalidate();
+    };
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
     scroll_area->set_max_size({YGUndefined, 275});
-    scroll_area->set_margin({ 0.f, 0.f, -10.f,0.f });
-    scroll_area->set_padding({ 0.f, 0.f, 15.f,0.f });
+    scroll_area->set_min_size({0, 275});
+    scroll_area->set_margin({0.f, 0.f, -10.f, 0.f});
+    scroll_area->set_padding({0.f, 0.f, 15.f, 0.f});
 
     // Create the ViewFactory explicitly:
     auto factory = PrinterListViewFactory(
@@ -175,7 +227,9 @@ void LogicalPrinterSettingsDialog::create_page_list()
 
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
             m_navigator.set_opened_dialog(nullptr);
-            m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::SelectPrinterPreset);
+            m_project_interactor.undo_provider().take_snapshot(
+                UndoSnapshotType::SelectPrinterPreset
+            );
         },
         [this](size_t index)
         {
@@ -201,8 +255,11 @@ void LogicalPrinterSettingsDialog::create_page_list()
 
             select_page_settings();
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
-            m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::SelectPrinterPreset);
+            m_project_interactor.undo_provider().take_snapshot(
+                UndoSnapshotType::SelectPrinterPreset
+            );
         },
+        [this](size_t index) { m_preset_favorite_filter->invalidate(); },
         m_project_interactor.preset_interactor()
     );
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
@@ -211,7 +268,9 @@ void LogicalPrinterSettingsDialog::create_page_list()
     m_printer_list_view->set_margin(Margins(0, 0, -10, 0));
     m_printer_list_view->set_gap(8);
     m_printer_list_view->set_orientation(Orientation::Vertical);
-    m_printer_list_view->set_source_list(
+    m_printer_list_view->set_source_list(m_preset_searcher.get());
+    m_preset_searcher->set_source_model(m_preset_favorite_filter.get());
+    m_preset_favorite_filter->set_source_model(
         &m_project_interactor.preset_interactor().printer_presets().items()
     );
 
@@ -243,7 +302,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     m_page_settings->set_gap(5);
     m_page_settings->set_padding(10);
 
-    Item* title_row           = m_page_settings->emplace_back<Item>();
+    Item* title_row = m_page_settings->emplace_back<Item>();
     title_row->set_align_items(YGAlignCenter);
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
     back_button->set_min_size({24.f, 24.f});
@@ -303,8 +362,8 @@ void LogicalPrinterSettingsDialog::create_page_settings()
 
     LayoutButton* button_advanced_setting =
         m_page_settings->emplace_back<LayoutButton>(_u8L("Advanced settings"), Render::Icon::Cog);
-    button_advanced_setting->set_content_padding({ 0.f, 7.f });
-    button_advanced_setting->set_height({ 30.f });
+    button_advanced_setting->set_content_padding({0.f, 7.f});
+    button_advanced_setting->set_height(30.f);
     button_advanced_setting->callbacks().action = [this]
     {
         if (m_advanced_dialog->opened()) {

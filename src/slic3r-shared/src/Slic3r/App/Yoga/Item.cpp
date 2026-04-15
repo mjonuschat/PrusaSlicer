@@ -574,7 +574,7 @@ void Item::set_enabled(bool enabled)
     }
 }
 
-void Item::set_max_size(const Vec2f max_size)
+void Item::set_max_size(const Vec2f& max_size)
 {
     if (m_max_size != max_size) {
         m_max_size = max_size;
@@ -754,6 +754,7 @@ void Item::invalidate_min_size_calculation()
 {
     m_min_size_calculated = false;
     m_min_size            = Vec2f();
+    set_style_dirty();
 }
 
 void Item::update_enabled()
@@ -811,7 +812,8 @@ Vec2f Item::get_available_size() const
     return m_parent_item->get_available_size();
 }
 
-void Item::on_resized() {
+void Item::on_resized()
+{
     if (m_callbacks.size_changed) {
         m_callbacks.size_changed();
     }
@@ -899,11 +901,29 @@ void Item::set_padding(const Paddings& padding)
     }
 }
 
-void Item::set_min_size(const Vec2f min_size)
+void Item::set_min_size(const Vec2f& min_size)
 {
     if (m_min_size != min_size) {
         m_min_size = min_size;
         YGNodeStyleSetMinWidth(m_node, m_min_size.x());
+        YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+        set_style_dirty();
+    }
+}
+
+void Item::set_min_width(float min_width)
+{
+    if (!Domain::fuzzy_compare(m_min_size.x(), min_width)) {
+        m_min_size.x() = min_width;
+        YGNodeStyleSetMinWidth(m_node, m_min_size.x());
+        set_style_dirty();
+    }
+}
+
+void Item::set_min_height(float min_height)
+{
+    if (!Domain::fuzzy_compare(m_min_size.y(), min_height)) {
+        m_min_size.y() = min_height;
         YGNodeStyleSetMinHeight(m_node, m_min_size.y());
         set_style_dirty();
     }

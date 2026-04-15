@@ -211,7 +211,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
 }
 
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
-{ 
+{
     namespace fs = boost::filesystem;
     AppConfig app_config;
     try {
@@ -224,11 +224,12 @@ tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string
             if (json.contains(loc)) {
                 auto load_issues = Biz::Config::load_box(json[loc], app_config.m_app_settings);
             }
+            app_config.m_app_settings_advanced = json["app_settings_advanced"].get<AppSettingsAdvanced>();
         }
     } catch (...) {
         return tl::unexpected(L("Unable to read application settings."));
     }
-    return app_config;   
+    return app_config;
 }
 
 std::unique_ptr<AppConfig> AppConfig::create_app_config()
@@ -251,6 +252,7 @@ bool AppConfig::save() const
         try {
             nlohmann::ordered_json json;
             json[Domain::get_location_name(m_app_settings.location)] = m_app_settings;
+            json["app_settings_advanced"] = m_app_settings_advanced;
             boost::nowide::ofstream out(m_filename);
             out << json.dump(2);
         } catch (...) {
@@ -258,6 +260,16 @@ bool AppConfig::save() const
         }
     }
     return true;
+}
+
+const AppSettingsAdvanced& AppConfig::app_settings_advanced() const
+{
+    return m_app_settings_advanced;
+}
+
+AppSettingsAdvanced& AppConfig::app_settings_advanced()
+{
+    return m_app_settings_advanced;
 }
 
 bool AppConfig::is_printables_enabled() const

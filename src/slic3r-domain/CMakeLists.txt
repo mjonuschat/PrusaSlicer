@@ -168,6 +168,7 @@ add_library(slic3r-domain STATIC
 
     include/Slic3r/Domain/ConfigDefUtils.hpp
     src/Slic3r/Domain/ConfigDefUtils.cpp
+
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

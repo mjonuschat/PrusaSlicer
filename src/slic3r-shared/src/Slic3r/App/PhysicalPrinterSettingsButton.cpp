@@ -40,8 +40,6 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
 
     m_bin_btn = add_button(Render::Icon::DeleteBtnIcon, Biz::_u8L("Delete physical printer"));
 
-    set_flex_shrink(0);
-
     callbacks().action = [this]() { m_on_clicked(m_index); };
 
     set_visible_cog(true);
@@ -50,7 +48,8 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     set_visible_bin(true);
     on_bin() = [this]() { m_on_bin_clicked(m_index); };
 
-    m_icon->set_margin(Margins(3.f, 6.f, 3.f, 0.f));
+    m_icon->set_width(42);
+    m_icon->set_margin(8);
 
     update();
 }

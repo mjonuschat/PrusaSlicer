@@ -141,31 +141,31 @@ public:
     /**
      * @brief on_inserted - Data at index was inserted
      */
-    virtual void on_inserted(const Data& data, size_t index) {};
+    virtual void on_inserted(const Data& data, size_t index) {}
     /**
      * @brief on_will_be_removed - all Data in range [IndexRange.from, IndexRange.to] will be removed
      */
-    virtual void on_will_be_removed(const IndexRange& index_range) {};
+    virtual void on_will_be_removed(const IndexRange& index_range) {}
     /**
      * @brief on_removed - all Data in range [IndexRange.from, IndexRange.to] were removed
      */
-    virtual void on_removed(const IndexRange& index_range) {};
+    virtual void on_removed(const IndexRange& index_range) {}
     /**
      * @brief on_updated - add Data in range [IndexRange.from, IndexRange.to] were updated
      */
-    virtual void on_updated(const IndexRange& index_range) {};
+    virtual void on_updated(const IndexRange& index_range) {}
     /**
      * @param new_size - size which will the model have after reset
      */
-    virtual void on_will_be_reset() {};
+    virtual void on_will_be_reset() {}
     /**
      * @brief on_reset - all Data is invalid, reconstruct List completely
      */
-    virtual void on_reset() {};
+    virtual void on_reset() {}
     /**
      * @brief on_moved - Data from index was moved to to index
      */
-    virtual void on_moved(size_t from, size_t to) {};
+    virtual void on_moved(size_t from, size_t to) {}
 };
 
 } // namespace Slic3r::Biz

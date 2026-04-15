@@ -17,7 +17,7 @@
 
 namespace Slic3r::App::Platform {
 class AbstractTheme;
-}
+} // namespace Slic3r::App::Platform
 
 namespace Slic3r::App::Render {
 class ImguiRender;
@@ -256,8 +256,10 @@ public:
     void set_self_align(YGAlign align);
     void set_margin(const Margins& margin);
     void set_padding(const Paddings& padding);
-    void set_min_size(const Vec2f min_size);
-    void set_max_size(const Vec2f max_size);
+    void set_min_size(const Vec2f& min_size);
+    void set_min_width(float min_width);
+    void set_min_height(float min_height);
+    void set_max_size(const Vec2f& max_size);
     void set_visible(bool visible);
     void set_flex_grow(float flex_grow);
     void set_flex_shrink(float flex_shrink);

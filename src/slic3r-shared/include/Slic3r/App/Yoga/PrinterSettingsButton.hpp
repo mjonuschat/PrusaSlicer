@@ -34,17 +34,18 @@ protected:
     LayoutButton* add_button(Render::Icon icon, const std::string& tooltip);
 
 protected:
-    Icon*           m_icon{nullptr};
-    Item*           m_texts_wrapper{nullptr};
-    Text*           m_preset_name{nullptr};
+    Icon* m_icon{nullptr};
+    Item* m_texts_wrapper{nullptr};
+    Item* m_btn_wrapper{nullptr};
+    Text* m_preset_name{nullptr};
+    LayoutButton* m_cog_btn{nullptr};
 
 private:
-    Text*           m_printer_name{nullptr};
-    LayoutButton*   m_printers_btn{nullptr};
-    LayoutButton*   m_cog_btn{nullptr};
+    Text* m_printer_name{nullptr};
+    LayoutButton* m_printers_btn{nullptr};
 
-    bool            m_is_visible_printers{ false };
-    bool            m_is_visible_cog{ false };
+    bool m_is_visible_printers{false};
+    bool m_is_visible_cog{false};
 };
 
 } // namespace Slic3r::App::Yoga

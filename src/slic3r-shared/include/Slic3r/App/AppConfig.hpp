@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/App/AppSettingsAdvanced.hpp"
+
 #include <string>
 #include "tl/expected.hpp"
-#include "Slic3r/Domain/Config.hpp"
 
 namespace Slic3r::App {
 
@@ -44,6 +46,9 @@ public:
     const AppSettings& get_config_box() const { return m_app_settings; }
     AppSettings* get_config_box_ptr() { return &m_app_settings; }
 
+    const AppSettingsAdvanced& app_settings_advanced() const;
+    AppSettingsAdvanced& app_settings_advanced();
+
     bool is_printables_enabled() const;
     bool is_prusa_account_enabled() const;
 
@@ -72,6 +77,7 @@ public:
 
 private:
     AppSettings m_app_settings;
+    AppSettingsAdvanced m_app_settings_advanced;
     std::string m_filename;
 
     /**

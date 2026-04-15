@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Slic3r/App/ConfigSettingsDialog.hpp"
-#include "Slic3r/Biz/IListObserver.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
+
+#include "Slic3r/App/ConfigSettingsDialog.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;

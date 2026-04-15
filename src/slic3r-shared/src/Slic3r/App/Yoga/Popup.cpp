@@ -59,18 +59,18 @@ void move_window_to_bounds(const Slic3r::Domain::Vec2f& available_size, ImRect& 
     switch (position) {
     case Slic3r::App::Yoga::Position::Left:
         rect.Min.x = target_rect.Min.x - offset - attachee_size.x;
-        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5f;
+        rect.Min.y = std::max(0.f, target_rect.GetCenter().y - attachee_size.y * 0.5f);
         break;
     case Slic3r::App::Yoga::Position::Right:
         rect.Min.x = target_rect.Max.x + offset;
-        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5f;
+        rect.Min.y = std::max(0.f, target_rect.GetCenter().y - attachee_size.y * 0.5f);
         break;
     case Slic3r::App::Yoga::Position::Top:
-        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5f;
+        rect.Min.x = std::max(0.f, target_rect.GetCenter().x - attachee_size.x * 0.5f);
         rect.Min.y = target_rect.Min.y - offset - attachee_size.y;
         break;
     case Slic3r::App::Yoga::Position::Bottom:
-        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5f;
+        rect.Min.x = std::max(0.f, target_rect.GetCenter().x - attachee_size.x * 0.5f);
         rect.Min.y = target_rect.Max.y + offset;
         break;
     }

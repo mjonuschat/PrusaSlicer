@@ -218,11 +218,6 @@ void SearchObservableList::refresh_search()
 
     std::vector<const Domain::ConfigItem*> found_items(scored_items.size());
     for (size_t i = 0; i < found_items.size(); ++i) {
-        SPDLOG_INFO(
-            "item {} score {}",
-            scored_items.begin()->config_item->name(),
-            scored_items.begin()->score
-        );
         found_items[i] = scored_items.begin()->config_item;
         scored_items.erase(scored_items.cbegin());
     }

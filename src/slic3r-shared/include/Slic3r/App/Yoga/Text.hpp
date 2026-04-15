@@ -9,19 +9,24 @@
 
 namespace Slic3r::App::Yoga {
 
-class TextInternal;
-
 class Text : public Item
 {
 public:
     enum class WrapMode
     {
-        NoWrap, ///< No limitations for rendered text
-        Wrap, ///< Text is wrapped by words, limited by width
-        WrapElide ///< Text is wrapped by words, limited by width & height
+        NoWrap, ///< No limitations for rendered text, min_size is defined by text itself
+        Wrap, ///< Text is wrapped by words, limited by width, sets min_height
+        WrapElide ///< Text is wrapped by words, limited by width & height, doesnt set anything
     };
 
-    explicit Text(const std::string& text, Render::ImguiFontType font_type = Render::ImguiFontType::Regular);
+    explicit Text(
+        const std::string& text,
+        Render::ImguiFontType font_type = Render::ImguiFontType::Regular
+    );
+
+    void render(Vec2f pos, Vec2f size) override;
+
+    void style_node() override;
 
     const std::string& text() const;
     void set_text(const std::string& text);
@@ -44,9 +49,20 @@ public:
 protected:
     void on_resized() override;
 
+    Vec2f get_item_size() override;
+
+    float available_width() const;
+    float available_height() const;
+
 private:
-    TextInternal* m_content_item = nullptr;
     Align m_align;
+    std::string m_source_text;
+    std::string m_rendered_text;
+    Text::WrapMode m_wrap_mode        = Text::WrapMode::NoWrap;
+    ImColor m_text_color              = IM_COL32_WHITE;
+    Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
+    float m_font_size;
+    ImVec2 m_text_pos;
 };
 
 } // namespace Slic3r::App::Yoga

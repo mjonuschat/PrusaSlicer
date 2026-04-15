@@ -70,8 +70,7 @@ void ConfigRowItems::on_data_update()
                     m_index,
                     *m_state,
                     m_cbi_container,
-                    m_cbi_index,
-                    false
+                    m_cbi_index
                 );
                 m_single_item->set_flex_grow(1);
             }
@@ -106,7 +105,7 @@ void ConfigRowItems::on_data_update()
                 m_row_items_filter->set_source_model(m_cbi.config_box_list());
 
                 m_row_group_list_view = emplace_back<ConfigRowListView>(
-                    ConfigRowListViewFactory{m_cbi_container, m_cbi_index, true}
+                    ConfigRowListViewFactory{m_cbi_container, m_cbi_index}
                 );
                 m_row_group_list_view->set_align_items(YGAlignCenter);
                 m_row_group_list_view->set_gap(5);

@@ -6,7 +6,7 @@
 
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Yoga/ComboBoxListViewSelection.hpp"
-#include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
+#include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
 #include "Slic3r/App/PrinterNozzleRow.hpp"
 
@@ -14,14 +14,22 @@
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/ObservableListSearcher.hpp"
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
 
+namespace Slic3r::App::Yoga {
+class InputText;
+class StackLayout;
+} // namespace Slic3r::App::Yoga
+
 namespace Slic3r::App {
 class PrinterAddDialog;
 class Navigator;
+class PrinterAdvancedSettingsDialog;
 
 class LogicalPrinterSettingsDialog :
     public Yoga::Dialog,
@@ -56,7 +64,11 @@ private:
     void on_about_to_show() override;
     void update_settings_data();
 
-    void  on_config_container_selection_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id) override;
+    void on_config_container_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
+    ) override;
+
 protected:
     void close_action() override;
 
@@ -64,6 +76,7 @@ private:
     using PrinterListViewFactory = Yoga::ViewFactory<
         LogicalPrinterSettingsButton,
         Biz::Preset::PresetItem,
+        LogicalPrinterSettingsButton::FnIndexClicked,
         LogicalPrinterSettingsButton::FnIndexClicked,
         LogicalPrinterSettingsButton::FnIndexClicked,
         const Biz::Preset::PresetInteractor&>;
@@ -102,14 +115,23 @@ private:
 
     PrinterListView* m_printer_list_view{nullptr};
     Yoga::StackLayout* m_stack_layout{nullptr};
+
+    // PageList attributes
     Yoga::Item* m_page_list{nullptr};
+    Yoga::InputText* m_input_text_search{nullptr};
+    Yoga::LayoutButton* m_only_favorites_button{nullptr};
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>
+        m_preset_favorite_filter;
+    Biz::UnsharedPointer<Biz::ObservableListSearcher<Biz::Preset::PresetItem>> m_preset_searcher;
+
+    // Page settings attributes
     Yoga::Item* m_page_settings{nullptr};
     Yoga::Text* m_text_printer_name{nullptr};
     Yoga::Icon* m_printer_icon{nullptr};
-    Yoga::ButtonGroup m_group_keywords;
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
     Yoga::Text* m_warning{nullptr};
     NozzleListView* m_nozzle_list_view{nullptr};
+
     PrinterAdvancedSettingsDialog* m_advanced_dialog{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
 };

@@ -41,7 +41,6 @@ static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
     }
 }
 
-
 void init_logging()
 {
     // TODO: add optional logging to file here
@@ -52,22 +51,26 @@ void init_logging()
 #endif
     spdlog::set_level(s_current_log_level);
     if (!file_log_config.log_file.empty()) {
-
 #ifdef WIN32
         std::wstring os_specific_path = boost::nowide::widen(file_log_config.log_file);
 #else
         const std::string& os_specific_path = file_log_config.log_file;
 #endif
-        file_logger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(os_specific_path, file_log_config.log_file_size, 1);
-        spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->sinks().push_back(file_logger); });
+        file_logger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+            os_specific_path,
+            file_log_config.log_file_size,
+            1
+        );
+        spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l)
+                          { l->sinks().push_back(file_logger); });
     }
 }
 
-void set_log_level(unsigned level) 
-{ 
-    auto lvl = log_level_to_spdlog(level);
+void set_log_level(unsigned level)
+{
+    auto lvl            = log_level_to_spdlog(level);
     s_current_log_level = lvl;
-    spdlog::set_level(lvl); 
+    spdlog::set_level(lvl);
 }
 
 const FileLogConfig& get_file_log_config()
@@ -84,4 +87,15 @@ void flush_logs()
 {
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> logger) { logger->flush(); });
 }
+
+LogScopeTimer::LogScopeTimer(std::string_view name) : m_name(name) {}
+
+LogScopeTimer::~LogScopeTimer()
+{
+    std::chrono::milliseconds ms = m_stopwatch.elapsed_ms();
+    std::chrono::nanoseconds ns  = ms;
+    std::chrono::microseconds us = ms;
+    SPDLOG_INFO("{} took {} ms ({} us, {} ns)", m_name, ms.count(), us.count(), ns.count());
 }
+
+} // namespace Slic3r
