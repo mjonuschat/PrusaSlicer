@@ -58,6 +58,7 @@ Domain::Preset::HwPrinterConfig from_def(
         .repo_id      = vendor_data.info.repo_id,
         .repo_version = vendor_data.info.version,
         .name         = templ == nullptr || templ->name.empty() ? printer_def.name : templ->name,
+        .short_name   = templ == nullptr || templ->name.empty() ? printer_def.name : templ->name,
         .technology   = printer_def.technology,
         .model        = printer_def.model,
         .tool_count =
@@ -120,7 +121,8 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         printer_config.sheet = from_def(vendor_data, *sheet_def);
     }
 
-    printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
+    printer_config.name       = Domain::Preset::suggest_name(printer_config, vendor_data, false);
+    printer_config.short_name = Domain::Preset::suggest_name(printer_config, vendor_data, true);
 
     return printer_config;
 }

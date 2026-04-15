@@ -167,7 +167,10 @@ load_legacy_preset_metadata(const LegacyPresetMetadata& legacy_preset, const Dom
         }
 
         if (needs_name_update) {
-            hw_config.name = Domain::Preset::suggest_name(hw_config, vendor_bundle.vendor_data);
+            hw_config.name =
+                Domain::Preset::suggest_name(hw_config, vendor_bundle.vendor_data, false);
+            hw_config.short_name =
+                Domain::Preset::suggest_name(hw_config, vendor_bundle.vendor_data, true);
         }
     }
     Domain::Preset::SelectedPresetMetadata ret {.hw_config = hw_config};

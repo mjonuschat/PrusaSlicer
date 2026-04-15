@@ -183,7 +183,9 @@ struct LoadedProjectInteractorFixture : BaseProjectInteractorFixture
 
     LoadedProjectInteractorFixture()
     {
-        project_interactor.preset_interactor().load_preset_bundle(bundle_paths);
+        auto& preset_interactor = project_interactor.preset_interactor();
+        preset_interactor.set_use_hw_config_short_name(false);
+        preset_interactor.load_preset_bundle(bundle_paths);
     }
 
     ~LoadedProjectInteractorFixture() override

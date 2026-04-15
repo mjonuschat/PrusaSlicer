@@ -77,6 +77,7 @@ TEST_CASE("Preset::Bundle Serialization Roundtrip", "[Serialization][Preset]")
         "",
         "",
         "My Printer",
+        "My Printer",
         Domain::PrinterTechnology::FFF,
         {"MP-1", "MP-Base"},
     };

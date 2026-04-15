@@ -35,6 +35,7 @@ STRUCT_DESC_SIMPLE(
     printer_id,
     vendor_id,
     name,
+    short_name,
     technology,
     model,
     tool_count,

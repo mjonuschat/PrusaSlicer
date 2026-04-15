@@ -339,6 +339,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"repo_id", v.repo_id},
         {"repo_version", v.repo_version},
         {"config_name", v.name},
+        {"config_short_name", v.name},
         {"technology", enum_to_json(v.technology)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
@@ -385,6 +386,7 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
              "repo_id",
              "repo_version",
              "config_name",
+             "config_short_name",
              "technology",
              "model",
              "base_model",
@@ -588,6 +590,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         return tl::unexpected{"Invalid config_name: " + name.error()};
     }
     result.name = name.value();
+
+    const auto short_name{parse<std::string>(json.at("config_short_name"))};
+    result.short_name = short_name.has_value() ? short_name.value() : result.name;
 
     const auto technology{parse<std::string>(json.at("technology"))};
     if (!technology) {

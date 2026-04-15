@@ -166,6 +166,7 @@ struct HwPrinterConfig
     std::string repo_id;
     std::string repo_version;
     std::string name;
+    std::string short_name;
     PrinterTechnology technology;
     HwModel model;
     uint8_t tool_count;
@@ -454,7 +455,7 @@ HwPrinterConfig remove_features_with_default(
     const VendorData& vendor_data
 );
 
-std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data);
+std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data, bool brief);
 
 template <typename T>
 std::optional<T> get_feature(const Preset::FeatureValueMap& features, const std::string& key)

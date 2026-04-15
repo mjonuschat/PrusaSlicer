@@ -710,6 +710,15 @@ public:
     ) const;
     /**@}*/
 
+    bool use_hw_config_short_name() const
+    {
+        return m_use_hw_config_short_name;
+    }
+
+    void set_use_hw_config_short_name(bool use_short_name)
+    {
+        m_use_hw_config_short_name = use_short_name;
+    }
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
@@ -883,5 +892,6 @@ private:
     PresetsSwitchStates m_unsaved_changes;
     SelectedPresetIds m_unsaved_changes_selected_ids;
 
+    bool m_use_hw_config_short_name{true};
 };
 } // namespace Slic3r::Biz::Preset

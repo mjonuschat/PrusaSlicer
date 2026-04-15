@@ -244,7 +244,7 @@ HwPrinterConfig remove_features_with_default(
     return ret;
 }
 
-std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data)
+std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data, bool brief)
 {
     auto* printer = vendor_data.find_printer_config_def_by_id(cfg.printer_id);
     ASSERT(printer != nullptr, cfg.printer_id);
@@ -259,21 +259,25 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
             auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
             auto feeder_it = cfg.feeders.find(Address{static_cast<uint8_t>(i)});
             ASSERT(tool != nullptr, t.id);
-            if (first) {
-                first = false;
-                ss << " ";
-            } else {
-                ss << ", ";
+            if (!brief) {
+                if (first) {
+                    first = false;
+                    ss << " ";
+                } else {
+                    ss << ", ";
+                }
             }
 
             if (feeder_it != cfg.feeders.end()) {
                 auto* feeder = vendor_data.find_feeder_config_def_by_id(feeder_it->second.id);
                 ASSERT(feeder != nullptr, feeder_it->second.id);
                 ss << feeder->name;
-                ss << " ";
+                if (!brief)
+                    ss << " ";
             }
-
-            ss << tool->name;
+            if (!brief) {
+                ss << tool->name;
+            }
         }
     }
 
@@ -317,6 +321,9 @@ bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
     if (name != other.name) {
         SPDLOG_INFO("name mismatched {} != {}", name, other.name);
     }
+    if (short_name != other.short_name) {
+        SPDLOG_INFO("short_name mismatched {} != {}", short_name, other.short_name);
+    }
     if (technology != other.technology) {
         SPDLOG_INFO("technology mismatched {} != {}", int(technology), int(other.technology));
     }
@@ -358,6 +365,7 @@ bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
         && repo_id == other.repo_id
         && repo_version == other.repo_version
         && name == other.name
+        && short_name == other.short_name
         && technology == other.technology
         && model == other.model
         && tool_count == other.tool_count

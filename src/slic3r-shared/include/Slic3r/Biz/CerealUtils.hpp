@@ -354,6 +354,7 @@ void serialize(Archive& archive, Slic3r::Domain::Preset::HwPrinterConfig& config
         config.repo_id,
         config.repo_version,
         config.name,
+        config.short_name,
         config.technology,
         config.model,
         config.tool_count,
