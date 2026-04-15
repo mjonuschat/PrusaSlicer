@@ -11,6 +11,7 @@
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ObjectList.hpp"
@@ -33,6 +34,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     CollapsibleWindow(_u8L("Object list"), "ObjectListWindow"),
     m_project_interactor(project_interactor)
 {
+    content()->set_padding(0.f);
     const ObjectList::Mode mode = for_plater ? ObjectList::Mode::Plater : ObjectList::Mode::Preview;
     if (mode == ObjectList::Mode::Plater) {
         m_add_container_button = content()->emplace_back<Yoga::LayoutButton>(
@@ -51,13 +53,10 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
         };
     }
 
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_flex_grow(1.);
-    set_flex_grow(1.f);
-    content()->set_padding(0.f);
+    m_scroll_area = content()->emplace_back<ScrollArea>();
+    m_scroll_area->set_min_size({YGUndefined, 100.f});
 
-    m_object_list = content()->emplace_back<ObjectList>(project_interactor, mode);
-    m_object_list->set_flex_grow(1.f);
+    m_object_list = m_scroll_area->emplace_back<ObjectList>(project_interactor, mode);
     m_object_list->set_flex_shrink(0.f);
     m_object_list->set_horizontal_padding(15.f);
 
@@ -186,7 +185,7 @@ void ObjectListWindow::init_cc_context_menu()
     // Create context menu
 
     m_cc_context_menu =
-        m_object_list->emplace_back<Yoga::Menu>("cc_context_menu", Yoga::Position::Top);
+        content()->emplace_back<Yoga::Menu>("cc_context_menu", Yoga::Position::Top);
 
     m_delete_cc_menu_item =
         m_cc_context_menu->append_item(_u8L("Delete"), Render::Icon::DeleteBtnIcon);
@@ -211,7 +210,7 @@ void ObjectListWindow::init_cc_context_menu()
         ASSERT(config_container_id != Domain::INVALID_ID);
 
         // Workaround till context menu doesn't allow to be shown on click position
-        m_cc_context_menu->set_open_pos(open_pos);
+        m_cc_context_menu->set_open_pos(open_pos-content()->get_global_pos());
 
         // Don't allow to delete last config container
         const size_t containers_cnt =

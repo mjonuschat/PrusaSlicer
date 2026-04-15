@@ -90,7 +90,8 @@ struct BedsTable
             ImGui::EndTable();
     }
 
-    bool begin(size_t cc_id, ImGuiTableFlags table_flags, float state_column_width, float right_padding)
+    bool
+    begin(size_t cc_id, ImGuiTableFlags table_flags, float state_column_width, float right_padding)
     {
         const std::string cc_id_str = std::to_string(cc_id);
         m_was_begin = ImGui::BeginTable(("##BedsTable" + cc_id_str).c_str(), 4, table_flags);
@@ -342,7 +343,7 @@ static size_t visible_volumes_count(const Domain::ModelObject* object)
 static std::set<Render::Icon> get_infos(const Domain::ModelObject* object, bool is_sla_config)
 {
     std::set<Render::Icon> infos;
-    return infos;// temporary hide infos
+    return infos; // temporary hide infos
 
     if (!is_sla_config) {
         for (const Domain::ModelVolume* mv : object->volumes) {
@@ -433,6 +434,15 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
         // update selection on the scene
         propagate_selection();
     }
+
+    ImVec2 end_pos = ImGui::GetCursorScreenPos();
+    Vec2f size_required({min_size().x(), std::max(0.f, end_pos.y - pos.y())});
+
+    if (m_size != size_required) {
+        m_size = size_required;
+        invalidate_min_size_calculation();
+    }
+
     process_dragging_start();
 
     render_item_end(pos, size);
@@ -546,12 +556,13 @@ void ObjectList::process_dragging_start()
 
 void ObjectList::update_selection_from_scene()
 {
-    auto& ctx                                    = selected_project_context();
+    auto& ctx                                          = selected_project_context();
     const Biz::Scene::ObjectSelection& scene_selection = m_scene_interactor->object_selection();
     for (const Domain::ModelObject* object : ctx.model->objects) {
         size_t object_id = object->id().id;
 
-        MultiSelectionStorage& inst_ms = ctx.instances_ms.get_ms<Domain::ModelInstancePtrs>(object_id);
+        MultiSelectionStorage& inst_ms =
+            ctx.instances_ms.get_ms<Domain::ModelInstancePtrs>(object_id);
         inst_ms.UserData = (void*) &object->instances;
 
         MultiSelectionStorage& vol_ms = ctx.volumes_ms.get_ms<Domain::ModelVolumePtrs>(object_id);
@@ -586,14 +597,10 @@ void ObjectList::update_selection_from_scene()
 
 bool ObjectList::render_list(Domain::Vec2f size)
 {
-    ImGui::BeginChild("ObjectListScroll", ImVec2(-FLT_MIN, size.y()));
-
     bool is_changed_selection = render_config_containers();
     is_changed_selection |= render_out_of_beds();
 
     render_drop_target_area();
-
-    ImGui::EndChild();
 
     return is_changed_selection;
 }
@@ -635,9 +642,8 @@ bool ObjectList::tree_node(
         ImMin(window->DC.CurrLineTextBaseOffset, style.FramePadding.y)
     );
 
-    const float text_offset_x = g.FontSize
-        + icon_size.x
-        + padding.x * 3; // Collapsing arrow width + icon width + Spacing
+    const float text_offset_x =
+        g.FontSize + icon_size.x + padding.x * 3; // Collapsing arrow width + icon width + Spacing
     const float text_offset_y = ImMax(
         padding.y,
         window->DC.CurrLineTextBaseOffset
@@ -685,10 +691,8 @@ bool ObjectList::tree_node(
         );
 
     if (tex_id != 0) {
-        ImVec2 icon_pos = ImVec2(
-            pos_end.x + style.ItemInnerSpacing.x,
-            pos_old.y + style.ItemInnerSpacing.y
-        );
+        ImVec2 icon_pos =
+            ImVec2(pos_end.x + style.ItemInnerSpacing.x, pos_old.y + style.ItemInnerSpacing.y);
         ImVec2 icon_pos_end = icon_pos + icon_size;
         draw_list->AddImage(tex_id, icon_pos, icon_pos_end);
     }
@@ -787,13 +791,15 @@ bool ObjectList::render_config_containers()
             add_bed(cc->id().id);
         }
         ImGui::PopStyleVar();
-        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f*GImGui->Style.FramePadding.y));
+        ImGui::Dummy(
+            ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * GImGui->Style.FramePadding.y)
+        );
         ImGui::PopID();
         hit_row.add_item();
 
         if (hit_row.is_mouse_right_licked()) {
             if (callbacks().show_context_menu) {
-                const Vec2f pos = Item::from_im(ImGui::GetIO().MousePos-ImGui::GetCurrentWindow()->Pos);
+                const Vec2f pos = Item::from_im(ImGui::GetIO().MousePos);
                 callbacks().show_context_menu(pos, cc->id().id);
             }
         }
@@ -840,8 +846,9 @@ void ObjectList::render_all_beds_node()
                 continue;
             total_beds_cnt++;
             const std::optional<Biz::Slicing::Status> status{
-                m_project_interactor->status_cache()
-                    .get_status({m_project_interactor->selected_project_id(), bed_inst->id().id})
+                m_project_interactor->status_cache().get_status(
+                    {m_project_interactor->selected_project_id(), bed_inst->id().id}
+                )
             };
             if (status && status->code == Biz::Slicing::StatusCode::Finished)
                 finished_beds_cnt++;
@@ -896,11 +903,14 @@ bool ObjectList::render_out_of_beds()
     render_group_name(L("Out of bed"));
 
     BedsTable table;
-    if (table.begin(size_t(-1), m_table_flags, 2.f*m_horizontal_padding, m_horizontal_padding)) {
+    if (table.begin(size_t(-1), m_table_flags, 2.f * m_horizontal_padding, m_horizontal_padding)) {
         IndentGuard ig(m_inner_padding.x());
         for (const Domain::ModelObject* object : ctx.model->objects) {
-            if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
-                is_changed_selection |= render_object_node(object);
+            if (bed_has_object(
+                    m_scene_interactor->selected_project_unplaced_model_instances(),
+                    object
+                ))
+                is_changed_selection |= render_object_node(object, {ColorRGB::GRAY()});
         }
     }
 
@@ -929,14 +939,18 @@ void ObjectList::render_drop_target_area()
     }
 }
 
-bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_container_id, bool can_be_deleted)
+bool ObjectList::render_bed_node(
+    const Domain::BedInstance* bed,
+    size_t config_container_id,
+    bool can_be_deleted
+)
 {
-    auto& ctx          = selected_project_context();
-    size_t bed_id      = bed->id().id;
-    bool is_sla_config = m_project_interactor->selected_project()
-                             .find_config_container(config_container_id)
-                             ->print_technology()
-        == Domain::PrinterTechnology::SLA;
+    auto& ctx     = selected_project_context();
+    size_t bed_id = bed->id().id;
+
+    Domain::ConfigContainer* config_container =
+        m_project_interactor->selected_project().find_config_container(config_container_id);
+    bool is_sla_config = config_container->print_technology() == Domain::PrinterTechnology::SLA;
 
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
@@ -956,9 +970,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     auto it            = std::find_if(
         ctx.bed_instance_icons.begin(),
         ctx.bed_instance_icons.end(),
-        [&](const Plater::BedThumbnailTexture& tt) {
-            return tt.bed_instance_id == bed_id;
-    });
+        [&](const Plater::BedThumbnailTexture& tt) { return tt.bed_instance_id == bed_id; }
+    );
     if (it != ctx.bed_instance_icons.end())
         tex_id = (ImTextureID) (intptr_t) it->thumbnail.get();
 
@@ -967,7 +980,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
         ImVec2(0.5f * icon_size.x + padding.x, 0.5f * (icon_size.y - text_size.y) + padding.y)
     );
 
-    bool is_empty{ true };
+    bool is_empty{true};
     for (const Domain::ModelObject* object : ctx.model->objects) {
         if (bed_has_object(bed->model_instances, object)) {
             is_empty = false;
@@ -979,14 +992,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     if (is_empty) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
-    bool is_open = tree_node(
-        name_id.c_str(),
-        flags,
-        bed->name(),
-        false,
-        tex_id,
-        icon_size
-    );
+    bool is_open = tree_node(name_id.c_str(), flags, bed->name(), false, tex_id, icon_size);
     ImGui::PopStyleVar();
 
     bool is_changed_selection = false;
@@ -1002,10 +1008,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
 
     if (row_hovered && can_be_deleted) {
         if (render_delete_button(fmt::format("delete_bed_{}", bed_id))) {
-            remove_bed(config_container_id,bed_id);
+            remove_bed(config_container_id, bed_id);
         }
-    } else if (!is_sla_config) {
-        render_extruder_marker(0, {"#E74840"});
     }
 
     if (is_open) {
@@ -1014,10 +1018,13 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
             is_changed_selection |= render_wipe_tower_node(bed);
         }
 
+        const std::vector<Domain::ColorRGB> colors =
+            m_project_interactor->project_settings_interactor().get_colors(config_container_id);
+
         bg.set_next();
         for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(bed->model_instances, object))
-                is_changed_selection |= render_object_node(object, bed, is_sla_config);
+                is_changed_selection |= render_object_node(object, colors, bed, is_sla_config);
         }
         ImGui::TreePop();
     }
@@ -1025,9 +1032,11 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     return is_changed_selection;
 }
 
-bool ObjectList::render_wipe_tower_node(const Domain::BedInstance* bed) {
+bool ObjectList::render_wipe_tower_node(const Domain::BedInstance* bed)
+{
     const Domain::SlicingId wipe_tower_id{
-        m_project_interactor->selected_project_id(), bed->id().id
+        m_project_interactor->selected_project_id(),
+        bed->id().id
     };
     const Domain::ElementRef wipe_tower_ref{wipe_tower_id};
     const bool is_selected{m_scene_interactor->object_selection().is_selected(wipe_tower_ref)};
@@ -1063,6 +1072,7 @@ bool ObjectList::render_wipe_tower_node(const Domain::BedInstance* bed) {
 
 bool ObjectList::render_object_node(
     const Domain::ModelObject* object,
+    const std::vector<Domain::ColorRGB>& extruder_colors,
     const Domain::BedInstance* bed /*= nullptr*/,
     bool is_sla_config /*= false*/
 )
@@ -1081,7 +1091,8 @@ bool ObjectList::render_object_node(
     if (is_simple(object, is_sla_config))
         flags |= ImGuiTreeNodeFlags_Leaf;
 
-    const std::string name = (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
+    const std::string name =
+        (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
     const std::string name_id = "##obj_id" + std::to_string(object_id);
 
     RowBackground bg(is_selected);
@@ -1118,13 +1129,53 @@ bool ObjectList::render_object_node(
     handle_dragging(sel_element);
 
     render_printable_icon(sel_element, object->printable);
-    if (!is_sla_config)
-        render_extruder_marker(1, {"#240E74", "#E74840", "#FAD73B"});
+    if (!is_sla_config) {
+        int obj_extruder_id = !object->object_settings.items.all_items().empty()
+                && object->object_settings.items.find("extruder") ?
+            object->object_settings.items.opt("extruder").get<int>() :
+            0;
+        if (obj_extruder_id > 0) {
+            obj_extruder_id--;
+        }
+
+        std::set<Domain::ColorRGB> volumes_colors;
+        for (Domain::ModelVolume* volume : object->volumes) {
+            if (!volume->volume_settings.overrides.empty()) {
+                if (std::optional<Domain::ConfigItem> conf_extruder_id =
+                        volume->volume_settings.overrides.get("extruder"))
+                {
+                    int vol_extruder_id = conf_extruder_id->get<int>();
+                    if (vol_extruder_id > 0) {
+                        vol_extruder_id--;
+                    }
+                    volumes_colors.emplace(extruder_colors[vol_extruder_id]);
+                    continue;
+                }
+            }
+            volumes_colors.emplace(extruder_colors[obj_extruder_id]);
+        }
+        ASSERT(!volumes_colors.empty());
+
+        if (volumes_colors.size() > 1 || *volumes_colors.begin() != extruder_colors[0]) {
+            // Show extruder marker only if object or its volumes have overrides
+            std::vector<Domain::ColorRGB> colors(volumes_colors.begin(), volumes_colors.end());
+            if (colors.size() == 1) {
+                auto it = std::find(extruder_colors.begin(), extruder_colors.end(), colors[0]);
+                if (it != extruder_colors.end()) {
+                    obj_extruder_id = std::distance(extruder_colors.begin(), it);
+                    render_extruder_marker(colors, obj_extruder_id);
+                }
+            } else {
+                render_extruder_marker(colors);
+            }
+        }
+    }
 
     if (isOpen) {
         bg.set_next();
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
-        is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0, is_sla_config);
+        is_changed_selection |=
+            render_volumes(object, extruder_colors, bed ? bed->id().id : 0, is_sla_config);
         is_changed_selection |= render_instances_node(object, bed);
         if (ctx.show_details)
             render_infos_node(object, is_sla_config);
@@ -1140,10 +1191,11 @@ bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_
     if (!object->is_cut() || object->volumes.size() == 1)
         return false;
 
-    auto& ctx                 = selected_project_context();
-    size_t object_id          = object->id().id;
+    auto& ctx          = selected_project_context();
+    size_t object_id   = object->id().id;
     size_t instance_id = object->instances[0]->id().id;
-    const std::string name_id = "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
+    const std::string name_id =
+        "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
 
     new_row();
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
@@ -1161,7 +1213,9 @@ bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_
         std::set<Domain::ElementRef> selected_items_tmp;
         for (const Domain::ModelVolume* volume : object->volumes) {
             if (volume->is_cut_connector())
-                selected_items_tmp.insert(Domain::ElementRef{object_id, instance_id, volume->id().id});
+                selected_items_tmp.insert(
+                    Domain::ElementRef{object_id, instance_id, volume->id().id}
+                );
         }
         if (ctx.selected_items != selected_items_tmp) {
             ctx.selected_items = selected_items_tmp;
@@ -1172,7 +1226,12 @@ bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_
     return false;
 }
 
-bool ObjectList::render_volumes(const Domain::ModelObject* object, size_t bed_id, bool is_sla_config)
+bool ObjectList::render_volumes(
+    const Domain::ModelObject* object,
+    const std::vector<Domain::ColorRGB>& extruder_colors,
+    size_t bed_id,
+    bool is_sla_config
+)
 {
     auto& ctx = selected_project_context();
     if (visible_volumes_count(object) < 2)
@@ -1206,6 +1265,7 @@ bool ObjectList::render_volumes(const Domain::ModelObject* object, size_t bed_id
             ImGui::SetNextItemSelectionUserData(vol_id);
             render_volume_node(
                 volume,
+                extruder_colors,
                 {object_id, instance_id, volume_id},
                 ms.Contains((ImGuiID) volume_id),
                 is_sla_config
@@ -1242,12 +1302,13 @@ bool ObjectList::render_volumes(const Domain::ModelObject* object, size_t bed_id
 // render edited item as an input text and propagate new name to scene_interactor
 void ObjectList::render_volume_node(
     const Domain::ModelVolume* volume,
+    const std::vector<Domain::ColorRGB>& extruder_colors,
     const Domain::ElementRef& sel_element,
     bool is_selected,
     bool is_sla_config
 )
 {
-    auto& ctx = selected_project_context();
+    auto& ctx               = selected_project_context();
     size_t volume_id        = volume->id().id;
     std::string volume_name = volume->name.empty() ? _u8L("Volume") + " " : volume->name;
 
@@ -1292,16 +1353,25 @@ void ObjectList::render_volume_node(
     if (ImGui::IsMouseHoveringRect(pos, pos + size))
         Imgui::tooltip(volume_icon_tooltip(volume));
 
-    if (has_extruder_overrides)
-        render_extruder_marker(volume->volume_settings.overrides.get("extruder")->get<int>(), {"#707070"});
+    if (has_extruder_overrides) {
+        int extruder_id = volume->volume_settings.overrides.get("extruder")->get<int>();
+        if (extruder_id > 0) {
+            extruder_id--;
+        }
+        render_extruder_marker({extruder_colors[extruder_id]}, extruder_id);
+    }
 }
 
-bool ObjectList::render_instances_node(const Domain::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/)
+bool ObjectList::render_instances_node(
+    const Domain::ModelObject* object,
+    const Domain::BedInstance* bed /*= nullptr*/
+)
 {
     if (object->instances.size() == 1)
         return false;
     std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(
-        bed ? bed->model_instances : m_scene_interactor->selected_project_unplaced_model_instances(),
+        bed ? bed->model_instances :
+              m_scene_interactor->selected_project_unplaced_model_instances(),
         object
     );
     if (instances_on_bed.empty())
@@ -1342,7 +1412,10 @@ bool ObjectList::render_instances_node(const Domain::ModelObject* object, const 
     return is_changed_selection;
 }
 
-bool ObjectList::render_instances(const Domain::ModelObject* object, const std::set<size_t>& instances_on_bed)
+bool ObjectList::render_instances(
+    const Domain::ModelObject* object,
+    const std::set<size_t>& instances_on_bed
+)
 {
     auto& ctx                                  = selected_project_context();
     const Domain::ModelInstancePtrs& instances = object->instances;
@@ -1350,11 +1423,8 @@ bool ObjectList::render_instances(const Domain::ModelObject* object, const std::
 
     MultiSelectionStorage& ms = ctx.instances_ms.at(object_id);
     ImGui::PushID(&ms);
-    ImGuiMultiSelectIO* ms_inst_io = ImGui::BeginMultiSelect(
-        m_multi_selection_flags,
-        ms.Size,
-        instances_on_bed.size()
-    );
+    ImGuiMultiSelectIO* ms_inst_io =
+        ImGui::BeginMultiSelect(m_multi_selection_flags, ms.Size, instances_on_bed.size());
     ms.ApplyRequests(ms_inst_io);
 
     for (size_t inst_id = 0; inst_id < instances.size(); inst_id++) {
@@ -1398,7 +1468,11 @@ bool ObjectList::render_instances(const Domain::ModelObject* object, const std::
     return is_changed_selection;
 }
 
-void ObjectList::render_instance_node(const Domain::ModelObject* object, size_t inst_id, bool is_selected)
+void ObjectList::render_instance_node(
+    const Domain::ModelObject* object,
+    size_t inst_id,
+    bool is_selected
+)
 {
     const Domain::ModelInstance* instance = object->instances[inst_id];
     size_t id                             = instance->id().id;
@@ -1442,7 +1516,9 @@ void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
     ImGui::SameLine();
     // modify cursore position in respect to the cell padding
-    ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() - ImVec2(0.f, GImGui->Style.CellPadding.y));
+    ImGui::SetCursorScreenPos(
+        ImGui::GetCursorScreenPos() - ImVec2(0.f, GImGui->Style.CellPadding.y)
+    );
     // discard horizontal frame padding
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, GImGui->Style.FramePadding.y));
 
@@ -1473,7 +1549,12 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_id, bool is
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_Button));
     ImGui::PushID(
-        Slic3r::format("##print_%1%_%2%_%3%", sel_id.object_id, sel_id.instance_id, sel_id.volume_id)
+        Slic3r::format(
+            "##print_%1%_%2%_%3%",
+            sel_id.object_id,
+            sel_id.instance_id,
+            sel_id.volume_id
+        )
             .c_str()
     ); // Ensure unique ID
     if (button_aligned(1.f, icon_str(icon), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine))
@@ -1493,7 +1574,8 @@ bool ObjectList::render_delete_button(const std::string& id)
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_Button));
     ImGui::PushID(id.c_str()); // Ensure unique ID
 
-    bool pressed = button_aligned(1.f, icon_str(icon), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine);
+    bool pressed =
+        button_aligned(1.f, icon_str(icon), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine);
 
     ImGui::PopID();
     ImGui::PopStyleColor();
@@ -1502,8 +1584,10 @@ bool ObjectList::render_delete_button(const std::string& id)
     return pressed;
 }
 
-
-void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<std::string>& str_colors)
+void ObjectList::render_extruder_marker(
+    const std::vector<Domain::ColorRGB>& colors,
+    std::optional<size_t> extruder_id
+)
 {
     ImGui::TableSetColumnIndex(ciExtruder);
     BoldFontGuard bfg(m_imgui_render);
@@ -1511,16 +1595,17 @@ void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<st
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 1.f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_WindowBg));
 
-    std::vector<ImVec4> colors;
-    colors.reserve(str_colors.size());
-    ColorRGB clr;
-    for (const std::string& str_color : str_colors) {
-        DEBUG_ASSERT(can_decode_color(str_color));
-        decode_color(str_color, clr);
-        colors.push_back({clr.r(), clr.g(), clr.b(), 1.f});
+    std::vector<ImVec4> vec4_colors;
+    vec4_colors.reserve(colors.size());
+    for (const ColorRGB& clr : colors) {
+        vec4_colors.push_back({clr.r(), clr.g(), clr.b(), 1.f});
     }
 
-    colored_circle_marker_aligned(0.5f, str_colors.size() == 1 ? std::to_string(extruder_id) : "", colors);
+    colored_circle_marker_aligned(
+        0.5f,
+        extruder_id ? std::to_string(extruder_id.value() + 1) : "",
+        vec4_colors
+    );
 
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
@@ -1529,9 +1614,11 @@ void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<st
 void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 {
     using Biz::Slicing::StatusCode;
-    const std::optional<Biz::Slicing::Status> status{m_project_interactor->status_cache().get_status(
-        {m_project_interactor->selected_project_id(), bed_instance_id}
-    )};
+    const std::optional<Biz::Slicing::Status> status{
+        m_project_interactor->status_cache().get_status(
+            {m_project_interactor->selected_project_id(), bed_instance_id}
+        )
+    };
     if (!status) {
         return;
     }
@@ -1544,7 +1631,7 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 
     ImGui::TableSetColumnIndex(ciPrintable);
 
-    ImVec4 DARK_BLUE{ 0.32f, 0.48f, 0.84f, 0.65f };
+    ImVec4 DARK_BLUE{0.32f, 0.48f, 0.84f, 0.65f};
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 1.f));
     if (status_code == StatusCode::Finished) {
@@ -1622,42 +1709,44 @@ void ObjectList::invalidate_bed_selection()
 
 namespace {
 // detects svg and text volume and open gizmo for editing them when they are selected in object list
-void open_gizmo_for_volume(const Biz::Scene::ObjectSelection& sels, Biz::ProjectInteractor* project_interactor, Scene::IGizmoController* gizmo_controller) {
-    if (project_interactor == nullptr ||
-        gizmo_controller == nullptr ||
-        sels.elements.size() != 1)
+void open_gizmo_for_volume(
+    const Biz::Scene::ObjectSelection& sels,
+    Biz::ProjectInteractor* project_interactor,
+    Scene::IGizmoController* gizmo_controller
+)
+{
+    if (project_interactor == nullptr || gizmo_controller == nullptr || sels.elements.size() != 1)
         return;
     const Domain::ElementRef& el = sels.elements.front();
-    Domain::ModelVolume* volume = project_interactor->selected_project()
-            .find_volume_by_id(el.object_id, el.volume_id);
+    Domain::ModelVolume* volume =
+        project_interactor->selected_project().find_volume_by_id(el.object_id, el.volume_id);
     if (volume == nullptr)
         return;
     Scene::ToolType tool = gizmo_controller->current_tool_type();
-    auto get_tech = [project_interactor]() {
-        return project_interactor->selected_config_container().print_technology(); };
+    auto get_tech        = [project_interactor]()
+    { return project_interactor->selected_config_container().print_technology(); };
     if (volume->is_svg() && tool != Scene::ToolType::Svg) {
         gizmo_controller->activate_tool(Scene::ToolType::Svg);
-    } else if(volume->is_text() && tool != Scene::ToolType::TextGizmo) {
+    } else if (volume->is_text() && tool != Scene::ToolType::TextGizmo) {
         gizmo_controller->activate_tool(Scene::ToolType::TextGizmo);
     }
 }
-}
+} // namespace
 
 void ObjectList::propagate_selection()
 {
     const auto& ctx = selected_project_context();
     if (ctx.selected_bed_instance_id != 0) {
         m_scene_interactor->bed_selection().select_one(
-            {ctx.selected_container_id, ctx.selected_bed_instance_id}, Biz::Scene::CameraActionOnBedSelection::CenterOnBed
+            {ctx.selected_container_id, ctx.selected_bed_instance_id},
+            Biz::Scene::CameraActionOnBedSelection::CenterOnBed
         );
         return;
     }
 
     Biz::Scene::ObjectSelection sels;
-    sels.elements = std::vector<Domain::ElementRef>(
-        ctx.selected_items.begin(),
-        ctx.selected_items.end()
-    );
+    sels.elements =
+        std::vector<Domain::ElementRef>(ctx.selected_items.begin(), ctx.selected_items.end());
     m_scene_interactor->set_object_selection(sels);
     open_gizmo_for_volume(sels, m_project_interactor, m_gizmo_controller);
 }
@@ -1718,6 +1807,11 @@ ObjectList::ProjectContext& ObjectList::selected_project_context()
 const ObjectList::ProjectContext& ObjectList::selected_project_context() const
 {
     return m_project_contexts->selected();
+}
+
+Yoga::Vec2f ObjectList::get_item_size()
+{
+    return m_size;
 }
 
 void ObjectList::add_bed(size_t config_container_id)

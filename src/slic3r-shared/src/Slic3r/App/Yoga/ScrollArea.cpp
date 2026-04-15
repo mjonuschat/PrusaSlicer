@@ -63,7 +63,11 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
         ImGui::SetCursorScreenPos(to_im(cell_pos + cell_size));
     }
 
-    m_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
+    if (Vec2f new_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
+        m_scroll_max != new_scroll_max)
+    {
+        m_scroll_max = new_scroll_max;
+    }
 
     ImGui::Dummy({});
     ImGui::EndChild();

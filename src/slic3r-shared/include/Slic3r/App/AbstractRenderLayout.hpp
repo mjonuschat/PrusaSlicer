@@ -126,6 +126,8 @@ protected:
     ToolBar* m_right_toolbar  = nullptr;
 
     bool m_sidebars_visible = true;
+    float m_object_list_srcroll_y_delta{ -1 };
+    float m_object_list_srcroll_y_previous_delta{ -1 };
 
     // Inserted from render module
     Yoga::Passthrough<TopBar> m_top_bar;

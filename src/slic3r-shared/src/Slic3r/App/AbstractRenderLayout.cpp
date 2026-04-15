@@ -62,7 +62,7 @@ void AbstractRenderLayout::update_cube_view_position()
     const Location current_location = m_layout_scene_row->index_of(m_cube_view_wrapper).has_value() ?
         Location::SceneRow :
         Location::LeftColumn;
-    const Location target_location  = m_sidebars_visible && m_object_list->collapsed() ?
+    const Location target_location  = m_sidebars_visible && (m_object_list->collapsed() || !m_object_list->is_scrollable()) ?
          Location::LeftColumn :
          Location::SceneRow;
 
@@ -243,6 +243,19 @@ void AbstractRenderLayout::init_left_column()
         update_cube_view_position();
         update_left_separator_enable();
         m_navigator.set_object_list_collapsed(collapsed);
+    };
+    m_object_list->on_scroll_changed = [this](float scroll_y_delta)
+    {
+        // To prevent flickering caused by oscillating delta values,
+        // track and compare with the previous two values
+        if (m_object_list_srcroll_y_delta != scroll_y_delta
+            && m_object_list_srcroll_y_previous_delta != scroll_y_delta)
+        {
+            m_object_list_srcroll_y_previous_delta = m_object_list_srcroll_y_delta;
+            m_object_list_srcroll_y_delta          = scroll_y_delta;
+            update_cube_view_position();
+            update_left_separator_enable();
+        }
     };
     m_layout_left_column->append(m_object_list.release());
 }

@@ -530,7 +530,7 @@ void colored_circle_marker_aligned(
     if (g.LogEnabled)
         LogSetNextTextDecoration("[", "]");
     RenderTextClipped(
-        bb.Min + style.FramePadding,
+        bb.Min + ImVec2(style.FramePadding.x, 0.f),
         bb.Max - style.FramePadding,
         label,
         NULL,
