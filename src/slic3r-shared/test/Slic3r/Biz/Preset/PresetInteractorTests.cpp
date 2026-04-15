@@ -166,7 +166,6 @@ struct BaseProjectInteractorFixture
 
     BaseProjectInteractorFixture()
     {
-        Slic3r::set_log_level(5);
         project_interactor.preset_interactor().set_dialog_manager(&preset_dialog_manager);
     }
 

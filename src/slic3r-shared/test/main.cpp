@@ -2,6 +2,7 @@
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
+#include "Slic3r/Log.hpp"
 
 #if !defined(__has_feature)
 #define __has_feature(x) 0
@@ -20,6 +21,9 @@ using Slic3r::App::Platform::StdMainThreadDispatcher;
 using Slic3r::Biz::SecretStoreDummy;
 
 int main( int argc, char* argv[] ) {
+    Slic3r::init_logging();
+    Slic3r::set_log_level(0);
+
     using Slic3r::Biz::Platform::PlatformServices;
 
     PlatformServices::instance().set_main_thread_dispatcher(

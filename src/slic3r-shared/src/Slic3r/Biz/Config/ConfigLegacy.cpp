@@ -464,10 +464,13 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
     return true;
 }
 
-static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
-                                        Domain::ConfigBox& box,
-                                        const LegacyKeysAndOverrides& legacy,
-                                        int filament_id = -1)
+static void fill_config_box_from_legacy(
+    const Slic3rLegacy::DynamicPrintConfig& cfg,
+    Domain::ConfigBox& box,
+    const LegacyKeysAndOverrides& legacy,
+    int filament_id     = -1,
+    bool fill_overrides = false
+)
 {
 
     for (const std::string& old_key : cfg.keys()) {
@@ -477,8 +480,12 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
 
         const auto [item_ptr, new_is_override]{box.find(new_key)};
-        if (!item_ptr)
+        if (!item_ptr) {
             continue;
+        }
+        if (!fill_overrides && new_is_override && !is_filament_override) {
+            continue;
+        }
 
         const Slic3rLegacy::ConfigOption* opt = cfg.option(old_key);
         ConfigItem& item{*item_ptr};
@@ -525,7 +532,7 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
     Domain::ConfigBox& box)
 {
     LegacyKeysAndOverrides legacy = {};
-    fill_config_box_from_legacy(cfg, box, legacy);
+    fill_config_box_from_legacy(cfg, box, legacy, -1, true);
 }
 
 /**
@@ -657,8 +664,8 @@ ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig&
             fill_config_box_from_legacy(cfg, out.printer, legacy_data);
             fill_config_box_from_legacy(cfg, out.print, legacy_data);
             for (int i = 0; i < extruder_num; ++i) {
-                fill_config_box_from_legacy(cfg, out.tool[i], legacy_data, i);
-                fill_config_box_from_legacy(cfg, out.filament[i], legacy_data, i);
+                fill_config_box_from_legacy(cfg, out.tool[i], legacy_data, i, extruder_num > 1);
+                fill_config_box_from_legacy(cfg, out.filament[i], legacy_data, i, extruder_num > 1);
             }
             fill_config_box_from_legacy(cfg, out.project, legacy_data);
             return out;
