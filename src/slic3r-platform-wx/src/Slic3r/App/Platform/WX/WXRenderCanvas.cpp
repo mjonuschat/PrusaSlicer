@@ -447,6 +447,9 @@ void WXRenderCanvas::init()
     std::string glsl_version_str = "#version "
         + std::to_string(glsl_version.maj())
         + std::to_string(glsl_version.min());
+
+    // FIXME: We should stop using the imgui backend helper so we can
+    // use App::Render instead of direct OpenGL calls where possible.
     ImGui_ImplOpenGL3_Init(glsl_version_str.c_str());
 }
 

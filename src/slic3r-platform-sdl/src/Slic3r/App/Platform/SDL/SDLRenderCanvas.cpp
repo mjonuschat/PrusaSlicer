@@ -22,6 +22,8 @@ namespace Slic3r::App::Platform::SDL
 SDLRenderCanvas::SDLRenderCanvas()
     : AbstractRenderCanvas{}
 {
+    // Note that we purposefully do not use ImGui built-in backend helpers for SDL2.
+    // We want to use App::Render instead of direct OpenGL calls where possible.
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         std::string message = std::string("Platform Error: ") + SDL_GetError();
         throw PlatformError(message);
@@ -76,6 +78,7 @@ SDLRenderCanvas::SDLRenderCanvas()
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures; // Our renderer (ImguiRender) supports dynamic texture creation/updates
 
     io.IniFilename = nullptr;
 
