@@ -65,7 +65,11 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
         ThumbnailImageResults results;
         for (const auto& request : item.requests) {
             ASSERT(!request.params.sizes.empty());
-            const Domain::Project& project = m_workbench->project(request.params.project_id);
+            const Domain::Project* project = m_workbench->find_project_by_id(request.params.project_id);
+            if (project == nullptr) {
+                // The project may have been removed in the meantime.
+                continue;
+            }
             Scene::Scene& scene = m_scene_provider->project_scene(request.params.project_id);
 
             ThumbnailImageResult& result = results.emplace_back(ThumbnailImageResult());
@@ -87,7 +91,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                 };
                 result.images = m_renderer->generate_bed_thumbnails(
                     params,
-                    project,
+                    *project,
                     request.params.bed_instance_id,
                     request.params.bed_instance_with_error,
                     Scene::CameraProjectionType::Orthographic
@@ -103,7 +107,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                 };
                 result.images = m_renderer->generate_gcode_thumbnails(
                     params,
-                    project,
+                    *project,
                     request.params.bed_instance_id,
                     Scene::CameraProjectionType::Orthographic
                 );
@@ -118,7 +122,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                 };
                 result.images = m_renderer->generate_3mf_thumbnails(
                     params,
-                    project,
+                    *project,
                     Scene::CameraProjectionType::Orthographic
                 );
                 break;

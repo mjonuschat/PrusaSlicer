@@ -24,8 +24,11 @@ public:
     [[nodiscard]] ProjectMap& projects() { return m_projects; }
     [[nodiscard]] const ProjectMap& projects() const { return m_projects; }
 
-    [[nodiscard]] Project& project(const size_t project_id) { return m_projects.find(project_id)->second; }
-    [[nodiscard]] const Project& project(const size_t project_id) const { return m_projects.find(project_id)->second; }
+    [[nodiscard]] Project& project(const size_t project_id) { auto it = m_projects.find(project_id); ASSERT(it != m_projects.end()); return it->second; }
+    [[nodiscard]] const Project& project(const size_t project_id) const { auto it = m_projects.find(project_id); ASSERT(it != m_projects.end()); return it->second; }
+
+    [[nodiscard]] Project* find_project_by_id(const size_t project_id) { auto it = m_projects.find(project_id); if (it == m_projects.end()) return nullptr; return &it->second; }
+    [[nodiscard]] const Project* find_project_by_id(const size_t project_id) const { auto it = m_projects.find(project_id); if (it == m_projects.end()) return nullptr; return &it->second; }
 
     [[nodiscard]] bool has_preset_bundle() const { return m_preset_bundle != nullptr; }
     [[nodiscard]] const Preset::Bundle& preset_bundle() const { return *m_preset_bundle; }
