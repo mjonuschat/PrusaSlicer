@@ -116,9 +116,10 @@ public:
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
+    bool is_modal_dialog_opened() const;
 
     void set_opened_preferences(bool opened);
-    bool is_opened_preferences();
+    bool is_opened_preferences() const;
 
     void set_object_list_collapsed(bool collapsed);
 
@@ -212,6 +213,7 @@ private:
     Yoga::Passthrough<DoubleSliderForLayers> m_sla_slider_layers;
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
+    Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
     ToolBarButton* m_button_travels           = nullptr;

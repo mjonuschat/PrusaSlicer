@@ -12,6 +12,7 @@
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
+#include "Slic3r/App/NumberEntryDialog.hpp"
 
 namespace Slic3r::App {
 
@@ -48,7 +49,8 @@ public:
         std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print,
-        std::unique_ptr<SidebarObject> sidebar_object
+        std::unique_ptr<SidebarObject> sidebar_object,
+        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other)            = delete;
@@ -138,6 +140,7 @@ protected:
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
+    Yoga::Passthrough<NumberEntryDialog> m_numbers_entry_dialog;
 };
 
 } // namespace Slic3r::App

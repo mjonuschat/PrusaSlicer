@@ -33,6 +33,7 @@ class TopBar;
 class PreferencesDialog;
 class ToolBarButton;
 class ToolBarSwitchButton;
+class NumberEntryDialog;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Yoga {
@@ -109,14 +110,25 @@ public:
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
+    bool is_modal_dialog_opened() const;
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
 
     void open_search();
     void set_opened_preferences(bool opened);
-    bool is_opened_preferences();
+    bool is_opened_preferences() const;
 
     void set_object_list_collapsed(bool collapsed);
+
+    virtual void get_user_number_and_process(
+        const std::string& message,
+        const std::string& prompt,
+        const std::string& title,
+        int value,
+        int min,
+        int max,
+        std::function<void(int)> on_process
+    ) override;
 
     MenuManager& menu_manager() override
     {
@@ -226,6 +238,7 @@ private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
+    Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
 
     ToolBarButton* m_toolbar_add                     = nullptr;
     ToolBarButton* m_toolbar_delete                  = nullptr;

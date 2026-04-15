@@ -30,7 +30,8 @@ public:
         std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
         std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
         std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
-        std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
+        std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice,
+        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
     );
     ~PreviewRenderLayout();
 

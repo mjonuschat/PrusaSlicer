@@ -242,6 +242,9 @@ void AbstractRenderLayout::init()
 
     m_layout_main.append(m_preferences_dialog.release());
     m_preferences_dialog->attach_to_center();
+
+    m_layout_main.append(m_numbers_entry_dialog.release());
+    m_numbers_entry_dialog->attach_to_center();
 }
 
 void AbstractRenderLayout::init_left_column()
@@ -421,7 +424,8 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print,
-    std::unique_ptr<SidebarObject> sidebar_object
+    std::unique_ptr<SidebarObject> sidebar_object,
+    std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
 ) :
     m_navigator(navigator),
     m_top_bar(std::move(top_bar)),
@@ -431,7 +435,8 @@ AbstractRenderLayout::AbstractRenderLayout(
     m_sidebar_bed(std::move(sidebar_bed)),
     m_sidebar_print(std::move(sidebar_print)),
     m_sidebar_object(std::move(sidebar_object)),
-    m_preferences_dialog(std::move(preferences_dialog))
+    m_preferences_dialog(std::move(preferences_dialog)),
+    m_numbers_entry_dialog(std::move(numbers_entry_dialog))
 {}
 
 AbstractRenderLayout::~AbstractRenderLayout()

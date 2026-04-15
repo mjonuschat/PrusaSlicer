@@ -6,7 +6,7 @@ struct CommandName
     static constexpr const char* AddObject       = "add-object";
     static constexpr const char* AddVolume       = "add-volume";
     static constexpr const char* AddInstance     = "add-instance";
-    static constexpr const char* AddInstanceKp   = "add-instance-kp";
+    static constexpr const char* DelInstance     = "del-instance";
     static constexpr const char* DeleteSelected  = "delete-selected";
     static constexpr const char* CopyModelItems  = "copy-selected";
     static constexpr const char* PasteModelItems = "paste-model-items";

@@ -81,6 +81,7 @@
 #include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
+#include "Slic3r/App/NumberEntryDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
@@ -146,6 +147,14 @@ void PlaterRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
+bool PlaterRenderModule::is_modal_dialog_opened() const
+{
+    // TODO: Refactor this into a more general solution once additional modal dialogs are added
+    const bool is_number_entry_dialog_opened =
+        m_number_entry_dialog.get() && m_number_entry_dialog->opened();
+    return is_opened_preferences() || is_number_entry_dialog_opened;
+}
+
 void PlaterRenderModule::set_opened_preferences(bool opened)
 {
     if (opened) {
@@ -157,7 +166,7 @@ void PlaterRenderModule::set_opened_preferences(bool opened)
     request_render();
 }
 
-bool PlaterRenderModule::is_opened_preferences()
+bool PlaterRenderModule::is_opened_preferences() const
 {
     return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
@@ -166,6 +175,23 @@ void PlaterRenderModule::set_object_list_collapsed(bool collapsed)
 {
     if (m_object_list.get()) {
         m_object_list->set_collapsed(collapsed);
+    }
+}
+
+void PlaterRenderModule::get_user_number_and_process(
+    const std::string& message,
+    const std::string& prompt,
+    const std::string& title,
+    int value,
+    int min,
+    int max,
+    std::function<void(int)> on_process
+)
+{
+    if (m_number_entry_dialog.get()) {
+        m_number_entry_dialog
+            ->get_user_number_and_process(message, prompt, title, value, min, max, on_process);
+        set_opened_dialog(m_number_entry_dialog.get());
     }
 }
 
@@ -359,29 +385,10 @@ void PlaterRenderModule::register_commands()
     {
         const Biz::Scene::ObjectSelection& selection =
             m_project_interactor.scene_interactor().object_selection();
-        if (selection.empty())
-            return false;
-        const size_t obj_id = selection.elements[0].object_id;
-        if (obj_id == 0) {
-            return false;
-        }
-        for (const Domain::ElementRef& el : selection.elements) {
-            if (el.object_id != obj_id) {
-                return false;
-            }
-        }
-        return selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance;
-    };
 
-    auto add_instance = [this]() -> void
-    {
-        m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-#if ENABLED_NODE_LOGGING
-        m_scene_presenter->scene().log_nodes();
-#endif
-        m_project_interactor.undo_provider().take_snapshot(
-            UndoSnapshotType::AddInstance
-        );
+        return !selection.empty()
+            && selection.only_single_object()
+            && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance;
     };
 
     // Toolbar commands
@@ -389,7 +396,16 @@ void PlaterRenderModule::register_commands()
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 CommandName::AddInstance,
-                add_instance,
+                [this]() -> void
+                {
+                    m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+#if ENABLED_NODE_LOGGING
+                    m_scene_presenter->scene().log_nodes();
+#endif
+                    m_project_interactor.undo_provider().take_snapshot(
+                        UndoSnapshotType::AddInstance
+                    );
+                },
                 FuncCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -397,6 +413,42 @@ void PlaterRenderModule::register_commands()
                             Platform::KeyboardShortcut{0, Platform::KeyCode::KpPlus}
                         },
                     .enabled = is_instance_from_same_object_selected
+                }
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                CommandName::DelInstance,
+                [this]() -> void
+                {
+                    m_project_interactor.scene_interactor().delete_selected_object_last_instance();
+#if ENABLED_NODE_LOGGING
+                    m_scene_presenter->scene().log_nodes();
+#endif
+                    m_project_interactor.undo_provider().take_snapshot(
+                        UndoSnapshotType::DelInstance
+                    );
+                },
+                FuncCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Minus},
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::KpMinus}
+                        },
+                    .enabled =
+                        [this]()
+                    {
+                        const Biz::Scene::ObjectSelection& selection =
+                            m_project_interactor.scene_interactor().object_selection();
+
+                        return !selection.empty()
+                            && selection.only_single_object()
+                            && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+                            && m_project_interactor.selected_project()
+                                   .find_object_by_id(selection.elements.front().object_id)
+                                   ->instances.size()
+                            > 1;
+                    }
                 }
             )
         )
@@ -426,12 +478,7 @@ void PlaterRenderModule::register_commands()
         .register_command(
             std::make_unique<UIItemCommand>(
                 CommandName::CreateObjectAsText,
-                [this]()
-                {
-                    m_gizmo_manager->activate_tool(
-                        Scene::ToolType::TextGizmo
-                    );
-                },
+                [this]() { m_gizmo_manager->activate_tool(Scene::ToolType::TextGizmo); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
@@ -527,6 +574,10 @@ void PlaterRenderModule::init_scene_layout()
         *m_render_module_navigator
     );
 
+    m_number_entry_dialog = std::make_unique<NumberEntryDialog>(
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -575,7 +626,8 @@ void PlaterRenderModule::init_scene_layout()
         m_sidebar_print.release(),
         m_sidebar_object.release(),
         m_sidebar_action_buttons.release(),
-        m_history.release()
+        m_history.release(),
+        m_number_entry_dialog.release()
     ));
     m_layout->init();
 
@@ -764,6 +816,7 @@ void PlaterRenderModule::init_dialog_navigation()
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
+    m_dialog_navigation.insert_dialog(m_number_entry_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(
@@ -1267,7 +1320,7 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
-    if (!m_gizmo_manager->on_scene_keyboard_event(e))
+    if (!is_modal_dialog_opened() && !m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 

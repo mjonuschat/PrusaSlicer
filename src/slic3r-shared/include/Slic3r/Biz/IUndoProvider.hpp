@@ -22,6 +22,8 @@ enum class UndoSnapshotType
     Cut,
     AddObject,
     AddInstance,
+    DelInstance,
+    SetNumberOfInstances,
     AddVolume,
     AddVolumeCube,
     AddVolumeCylinder,

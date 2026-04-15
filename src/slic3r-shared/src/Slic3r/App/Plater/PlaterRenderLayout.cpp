@@ -15,7 +15,8 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<SidebarPrint> sidebar_print,
     std::unique_ptr<SidebarObject> sidebar_object,
     std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
-    std::unique_ptr<History> history
+    std::unique_ptr<History> history,
+    std::unique_ptr<NumberEntryDialog> number_entry_dialog
 ) :
     AbstractRenderLayout(
         navigator,
@@ -26,7 +27,8 @@ PlaterRenderLayout::PlaterRenderLayout(
         std::move(pop_notification_list_view),
         std::move(sidebar_bed),
         std::move(sidebar_print),
-        std::move(sidebar_object)
+        std::move(sidebar_object),
+        std::move(number_entry_dialog)
     ),
     m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
     m_history(std::move(history))

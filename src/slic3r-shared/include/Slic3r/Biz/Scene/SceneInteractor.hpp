@@ -200,6 +200,8 @@ public:
     );
 
     void add_instance(const Domain::Vec2d& offset);
+    void delete_selected_object_last_instance();
+    void set_selected_objects_instance_count(int count);
 
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;

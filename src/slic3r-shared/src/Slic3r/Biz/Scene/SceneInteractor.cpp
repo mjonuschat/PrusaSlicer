@@ -776,12 +776,108 @@ void SceneInteractor::add_instance(const Vec2d& offset)
             {
                 l->on_instances_last_bed_updated(
                     {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
-                    );
+                );
             }
-            );
+        );
     }
 
     set_object_selection({SelectionMode::Instance, updated});
+}
+
+void SceneInteractor::delete_selected_object_last_instance()
+{
+    auto& project              = m_workbench.project(m_selected_project_id);
+    const ObjectSelection& sel = object_selection();
+    DEBUG_ASSERT(!sel.elements.empty()
+        && sel.only_single_object()
+        && sel.mode == Slic3r::Biz::Scene::SelectionMode::Instance);
+
+    Domain::ModelObject* object   = project.find_object_by_id(sel.elements[0].object_id);
+
+    BedTrackingChanges changes; 
+    remove_instance_from_bed(project, object->instances.back(), changes);
+
+    Domain::ElementRefs to_remove({ {sel.elements[0].object_id, object->instances.back()->id().id, 0} });
+    object->delete_last_instance();
+    Domain::ElementRefs to_select({ {sel.elements[0].object_id, object->instances.back()->id().id, 0} });
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_instance_removed(m_selected_project_id, to_remove); }
+    );
+
+    for (const auto& bed_ref : changes.updated_beds) {
+        invoke_slicing_input_changed(bed_ref);
+    }
+
+    set_object_selection({SelectionMode::Instance, to_select});
+}
+
+void SceneInteractor::set_selected_objects_instance_count(int count)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    ObjectSelection sel = object_selection();
+    DEBUG_ASSERT(!sel.empty()
+        && sel.mode == Biz::Scene::SelectionMode::Instance
+    );
+
+    std::set<size_t> object_ids;
+    for (const auto& el : sel.elements) {
+        object_ids.emplace(el.object_id);
+    }
+
+    const Vec2d offset{ 10.f,5.f };
+
+    Domain::ElementRefs to_add;
+    Domain::ElementRefs to_remove;
+    BedTrackingChanges changes;
+
+    for (size_t object_id : object_ids) {
+        Domain::ModelObject* object = project.find_object_by_id(object_id);
+        if (int diff = count - static_cast<int>(object->instances.size()); diff == 0)
+            continue;
+        else if (diff > 0) {
+            // increase instances
+            while (diff > 0) {
+                Transform3d trafo = object->instances.back()->get_matrix();
+                trafo.pretranslate(Domain::Vec3d(offset.x(), offset.y(), 0.));
+                Domain::ModelInstance* inst = object->add_instance();
+                inst->set_transformation(Transformation{ trafo });
+                Domain::ElementRef add_el = { object_id, inst->id().id };
+                changes.append(m_bed_tracking.update_instances_bed_placement(project, {add_el}));
+                to_add.emplace_back(add_el);
+                diff--;
+            }
+        } else {
+            // decrease_instances
+            while (diff < 0) {
+                Domain::ModelInstance* last_instance = object->instances.back();
+                Domain::ElementRef del_el = { object_id, last_instance->id().id };
+                to_remove.emplace_back(del_el);
+                remove_instance_from_bed(project, last_instance, changes);
+                object->delete_last_instance();
+                std::erase_if(sel.elements, [del_el](const Domain::ElementRef& el) {return el == del_el; });
+                diff++;
+            }
+        }
+    }
+
+    if (!to_add.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto* l) { l->on_instance_added(m_selected_project_id, to_add); }
+        );
+    }
+
+    if (!to_remove.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto* l) { l->on_instance_removed(m_selected_project_id, to_remove); }
+        );
+    }
+
+    for (const auto& bed_ref : changes.updated_beds) {
+        invoke_slicing_input_changed(bed_ref);
+    }
+
+    set_object_selection(sel);
 }
 
 void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& objects)
@@ -1083,8 +1179,9 @@ void SceneInteractor::extract_selected_instances()
     Domain::ModelObject* old_object = project.find_object_by_id(object_id);
     size_t sel_object_id            = old_object->id().id;
 
+    BedTrackingChanges changes;
     if (old_object->instances.size() == to_remove.size()) {
-        // split old_object instances into separate object
+        // split old_object instances into separate objects
 
         for (int inst_cnt = int(old_object->instances.size()) - 1; inst_cnt > 0; inst_cnt--) {
             // make a copy of the active object
@@ -1097,8 +1194,10 @@ void SceneInteractor::extract_selected_instances()
             }
         }
         // delete no needed instances from old_object
-        for (size_t idx = old_object->instances.size() - 1; idx > 0; idx--)
+        for (size_t idx = old_object->instances.size() - 1; idx > 0; idx--) {
+            remove_instance_from_bed(project, old_object->instances[idx], changes);
             old_object->delete_instance(idx);
+        }
 
         Domain::ElementRef stay_el{sel_object_id, old_object->instances[0]->id().id};
         to_remove.erase(
@@ -1118,11 +1217,24 @@ void SceneInteractor::extract_selected_instances()
 
         // delete no needed instances from both objects
         for (size_t idx = old_object->instances.size() - 1; idx != size_t(-1); idx--) {
-            if (scene_selection.is_selected({sel_object_id, old_object->instances[idx]->id().id}))
+            if (scene_selection.is_selected({ sel_object_id, old_object->instances[idx]->id().id })) {
+                remove_instance_from_bed(project, old_object->instances[idx], changes);
                 old_object->delete_instance(idx);
+            }
             else
                 new_object->delete_instance(idx);
         }
+    }
+
+    if (!changes.updated_instances.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_instances_last_bed_updated(
+                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                );
+            }
+        );
     }
 
     // notify listener on changes

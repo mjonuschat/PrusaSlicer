@@ -93,6 +93,10 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Add an object");
     case Type::AddInstance:
         return _u8L("Add an instance");
+    case Type::DelInstance:
+        return _u8L("Delete an instance");
+    case Type::SetNumberOfInstances:
+        return _u8L("Set number of instances");
     case Type::AddVolume:
         return _u8L("Load a volume");
     case Type::AddVolumeCube:

@@ -24,7 +24,8 @@ public:
         std::unique_ptr<SidebarPrint> sidebar_print,
         std::unique_ptr<SidebarObject> sidebar_object,
         std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
-        std::unique_ptr<History> history
+        std::unique_ptr<History> history,
+        std::unique_ptr<NumberEntryDialog> number_entry_dialog
     );
 
 private:

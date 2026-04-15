@@ -408,8 +408,47 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::SetNumberOfInstances,
             CommandName::SetNumberOfInstances,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            [this]()
+            {
+                size_t init_cnt{1};
+                const auto& selection = m_project_interactor.scene_interactor().object_selection();
+                if (selection.only_single_object()) {
+                    Domain::ModelObject* object =
+                        m_project_interactor.selected_project().find_object_by_id(
+                            selection.elements.front().object_id
+                        );
+                    init_cnt = object->instances.size();
+                }
+
+                m_render_module.get_user_number_and_process(
+                    " ",
+                    Biz::_u8L("Enter the number of copies:"),
+                    Biz::_u8L("Copies of the selected object"),
+                    init_cnt,
+                    1,
+                    1000,
+                    [this](int number)
+                    {
+                        ASSERT(number > 0);
+                        m_project_interactor.scene_interactor().set_selected_objects_instance_count(
+                            number
+                        ); 
+                        m_project_interactor.undo_provider().take_snapshot(
+                            UndoSnapshotType::SetNumberOfInstances
+                        );
+                    }
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled =
+                    [this]()
+                {
+                    const auto& selection =
+                        m_project_interactor.scene_interactor().object_selection();
+                    return !selection.empty()
+                        && selection.mode == Biz::Scene::SelectionMode::Instance;
+                }
+            }
         )
         .append_item(
             MenuItemName::FillBedWithInstances,

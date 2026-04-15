@@ -284,7 +284,7 @@ void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 
 void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
-    if (!m_gizmo_manager->on_scene_keyboard_event(e))
+    if (!is_modal_dialog_opened() && !m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
@@ -392,6 +392,12 @@ void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
+bool PreviewRenderModule::is_modal_dialog_opened() const
+{
+    // TODO: Refactor this into a more general solution once additional modal dialogs are added
+    return is_opened_preferences();
+}
+
 void PreviewRenderModule::set_opened_preferences(bool opened)
 {
     if (opened) {
@@ -403,7 +409,7 @@ void PreviewRenderModule::set_opened_preferences(bool opened)
     request_render();
 }
 
-bool PreviewRenderModule::is_opened_preferences()
+bool PreviewRenderModule::is_opened_preferences() const
 {
     return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
@@ -806,6 +812,10 @@ void PreviewRenderModule::init_scene_layout()
         *m_render_module_navigator
     );
 
+    m_number_entry_dialog = std::make_unique<NumberEntryDialog>(
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -848,7 +858,8 @@ void PreviewRenderModule::init_scene_layout()
         m_slider_layers.release(),
         m_sla_slider_layers.release(),
         m_slider_gcode.release(),
-        m_sidebar_auto_reslice.release()
+        m_sidebar_auto_reslice.release(),
+        m_number_entry_dialog.release()
     ));
     m_layout->init();
 
