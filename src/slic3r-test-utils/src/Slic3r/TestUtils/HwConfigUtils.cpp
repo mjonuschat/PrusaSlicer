@@ -23,6 +23,9 @@ create_dummy_hw_config(uint8_t tool_count, double nozzle_diameter, Domain::Print
             HwToolConfig& tool{result.tools[tool_index]};
             tool.features.insert({"nozzle_diameter", nozzle_diameter});
         }
+        if (result.tools.size() > 1) {
+            result.features.insert({"multi_extruder", true});
+        }
     }
     return result;
 }

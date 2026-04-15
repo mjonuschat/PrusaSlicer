@@ -152,6 +152,7 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
 
     ModelOnBed model_on_bed{std::move(model), std::move(config)};
     model_on_bed.bed_instance.wipe_tower = wipe_towers.at(0);
+    model_on_bed.preset_metadata.hw_config.features.insert({"multi_extruder", true});
     slicing.update_process(
         model_on_bed.model,
         model_on_bed.project_metadata,

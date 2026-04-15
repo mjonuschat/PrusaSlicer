@@ -219,6 +219,21 @@ std::vector<Biz::Slicing::Error> validate_input(
     const Domain::Preset::HwPrinterConfig& hw_config
 )
 {
+    using Biz::Slicing::Error;
+    using Biz::Slicing::ErrorCode;
+
+    const bool multi_extruder{
+        Domain::Preset::get_feature<bool>(hw_config.features, "multi_extruder").value_or(false)
+    };
+    if (!multi_extruder) {
+        if (config.tool.size() != 1) {
+            return {Error{ErrorCode::InconsistentConfig}};
+        }
+        if (!config.tool.front().overrides.empty()) {
+            return {Error{ErrorCode::ToolOverridesInSingleToolPrint}};
+        }
+    }
+
     std::vector<Biz::Slicing::Error> errors;
     if (auto error{check_extruder_offset(model, config)}) {
         errors.push_back(std::move(*error));

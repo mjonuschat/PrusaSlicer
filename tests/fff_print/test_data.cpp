@@ -308,13 +308,14 @@ void init_print(
             bed_instance.model_instances.push_back(instance);
         }
     }
-    print.update(
+    const auto status{print.update(
         model,
         config,
         bed_instance,
         serialized_config,
         config.hw_config
-    );
+    )};
+    ASSERT(!std::holds_alternative<Biz::Print::ApplyStatus::InvalidData>(status));
     print.validate();
     print.set_status_silent();
 }

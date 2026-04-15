@@ -20,6 +20,16 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         return _u8L("The supplied settings will cause an empty print.");
     case ErrorCode::InvalidExtruders:
         return _u8L("Some extruder settings refer to non-existent tools.");
+    case ErrorCode::InconsistentConfig:
+        return _u8L(
+            "The supplied config is internally inconsistent. "
+            "This can happen if the 3mf or presets are corrupted !"
+        );
+    case ErrorCode::ToolOverridesInSingleToolPrint:
+        return _u8L(
+            "There are tool overrides, even though the print is single tool."
+            "This can happen if the 3mf or presets are corrupted !"
+        );
     case ErrorCode::InvalidExtruderOffset:
         return _u8L("The count of extruder offsets does not match the tool count.");
     case ErrorCode::AvoidCrossingPerimetersAndAvoidCurledOverhangs:
