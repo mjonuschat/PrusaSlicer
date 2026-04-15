@@ -93,6 +93,7 @@ enum class ErrorCode
     NoExtrusionInFirstLayer, // _u8L("There is an object with no extrusions in the first layer.")
     NoExtrusions, // _u8L("No extrusions were generated for objects.")
     EmptyPrint, // "The print is empty. The model is not printable with current print settings."
+    InvalidThumbnailRequest,
 
     // SLA
     NoPadGenerated, // _u8L("No pad can be generated for this model with the current configuration")
@@ -101,11 +102,17 @@ enum class ErrorCode
 };
 
 using PlaceholderParserErrorPayload = std::map<std::string, std::string>;
+struct InvalidThumbnailRequestPayload {
+    bool invalid_format{false};
+    bool out_of_range{false};
+    bool invalid_ext{false};
+};
 
 using ErrorPayload = std::variant<
     std::monostate,
-    PlaceholderParserErrorPayload
-    >;
+    PlaceholderParserErrorPayload,
+    InvalidThumbnailRequestPayload
+>;
 
 struct Error {
     ErrorCode code{ErrorCode::None};

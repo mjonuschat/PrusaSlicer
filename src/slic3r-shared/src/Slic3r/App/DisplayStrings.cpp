@@ -162,6 +162,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         return _u8L("No extrusions were generated for objects.");
     case ErrorCode::EmptyPrint:
         return _u8L("The print is empty. The model is not printable with current print settings.");
+    case ErrorCode::InvalidThumbnailRequest:
+        return _u8L("Unable to parse 'thumbnails' config option.");
     case ErrorCode::NoPadGenerated:
         return _u8L("No pad can be generated for this model with the current configuration.");
     case ErrorCode::UnprintableObjects:
@@ -211,6 +213,17 @@ std::string to_display_string(Biz::Slicing::Error error, const Domain::Project& 
             "Please inspect the file for error messages enclosed between\n{}\nand\n{}\nfor all macro processing errors.")),
             partial_msg, start_tag, end_tag);
         }
+    case Biz::Slicing::ErrorCode::InvalidThumbnailRequest: {
+        const auto& payload = std::get<Biz::Slicing::InvalidThumbnailRequestPayload>(error.payload);
+        std::string error_str = to_display_string(error.code);
+        if (payload.invalid_format)
+            error_str += "\n - " + fmt::format(fmt::runtime(_u8L("Invalid input format. Expected vector of dimensions in the following format: \"{}\"")), "XxY/EXT, XxY/EXT, ...");
+        if (payload.out_of_range)
+            error_str += "\n - " + _u8L("Input value is out of range");
+        if (payload.invalid_ext)
+            error_str += "\n - " + _u8L("Some extension in the input is invalid");
+        return error_str;
+    }
     default: return to_display_string(error.code) + item_keys_info + object_info;
     }
 }

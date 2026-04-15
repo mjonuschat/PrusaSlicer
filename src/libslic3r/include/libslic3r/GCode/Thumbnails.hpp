@@ -63,8 +63,6 @@ tl::expected<RequestParsingResult, ThumbnailErrors> parse_request(
     const std::string_view default_extension = "PNG"
 );
 
-std::string get_error_string(const ThumbnailErrors& errors);
-
 template <typename WriteToOutput, typename ThrowIfCanceledCallback>
 void export_thumbnails_to_file(
     Biz::Slicing::ThumbnailImageResult thumbnails,

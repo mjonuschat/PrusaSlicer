@@ -1297,9 +1297,23 @@ Thumbnails request_thumbnails(
     };
 
     if (!request_data.has_value()) {
-        std::string error_str = format("Invalid thumbnails value:");
-        error_str += GCodeThumbnails::get_error_string(request_data.error());
-        throw Slic3r::ExportError(error_str);
+        throw Biz::Slicing::Exception(Biz::Slicing::Error{
+            .code = Biz::Slicing::ErrorCode::InvalidThumbnailRequest, 
+            .payload = Biz::Slicing::InvalidThumbnailRequestPayload{
+                .invalid_format = request_data.error().has(ThumbnailError::InvalidVal),
+                .out_of_range = request_data.error().has(ThumbnailError::OutOfRange),
+                .invalid_ext = request_data.error().has(ThumbnailError::InvalidExt)
+            }}
+        );
+    }
+
+    if (request_data->sizes.empty()) {
+        std::promise<Biz::Slicing::ThumbnailImageResults> promise;
+        promise.set_value(Biz::Slicing::ThumbnailImageResults{});
+        return {
+            .raw_data = promise.get_future(),
+            .formats = request_data->formats
+        };
     }
 
     Biz::Slicing::ThumbnailImageRequest request{

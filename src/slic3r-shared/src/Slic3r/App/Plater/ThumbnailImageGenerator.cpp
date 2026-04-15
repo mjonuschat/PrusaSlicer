@@ -64,6 +64,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
 
         ThumbnailImageResults results;
         for (const auto& request : item.requests) {
+            ASSERT(!request.params.sizes.empty());
             const Domain::Project& project = m_workbench->project(request.params.project_id);
             Scene::Scene& scene = m_scene_provider->project_scene(request.params.project_id);
 

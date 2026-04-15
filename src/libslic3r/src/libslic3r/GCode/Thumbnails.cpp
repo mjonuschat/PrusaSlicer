@@ -194,18 +194,4 @@ tl::expected<RequestParsingResult, ThumbnailErrors> parse_request(
     return result;
 }
 
-std::string get_error_string(const ThumbnailErrors& errors)
-{
-    std::string error_str;
-
-    if (errors.has(ThumbnailError::InvalidVal))
-        error_str += "\n - " + (boost::format("Invalid input format. Expected vector of dimensions in the following format: \"%1%\"") % "XxY/EXT, XxY/EXT, ...").str();
-    if (errors.has(ThumbnailError::OutOfRange))
-        error_str += "\n - Input value is out of range";
-    if (errors.has(ThumbnailError::InvalidExt))
-        error_str += "\n - Some extension in the input is invalid";
-
-    return error_str;
-}
-
 } // namespace Slic3r::GCodeThumbnails
