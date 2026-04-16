@@ -114,6 +114,23 @@ BedContainmentState BedTracking::check_containment_2d(
     return Algorithms::Bed::contains_2d(bed_instance_collision_data, bounding_box, convex_hull);
 }
 
+BedContainmentState BedTracking::check_instance_containment_2d(
+    const Domain::Project& project,
+    const Domain::ModelInstance& instance,
+    const Bed& bed,
+    const BedInstance& bed_instance
+)
+{
+    const Algorithms::Bed::ObjectCollisionData& collision =
+        this->get_instance_collision_data(project, instance);
+    const BoundingBox2d bbox_2d{
+        Algorithms::Point::to_2d(collision.bounding_box.min),
+        Algorithms::Point::to_2d(collision.bounding_box.max),
+        collision.bounding_box.defined
+    };
+    return this->check_containment_2d(bed, bed_instance, bbox_2d, collision.convex_hull_2d);
+}
+
 const Algorithms::Bed::ObjectCollisionData& BedTracking::get_instance_collision_data(const Domain::Project& project,
     const Domain::ModelInstance& inst)
 {

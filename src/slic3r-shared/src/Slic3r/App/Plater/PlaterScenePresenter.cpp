@@ -1285,6 +1285,56 @@ void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId proje
         invoke_bed_visually_changed(project_id);
 }
 
+void PlaterScenePresenter::on_virtual_bed_preview_changed(
+    Domain::SelectionId project_id,
+    const std::optional<Biz::Scene::VirtualBedPreview>& preview
+)
+{
+    auto& scn = project_scene(project_id);
+
+    // Always remove any existing virtual-bed subtree before either rebuilding or hiding.
+    Scene::Node* existing = scn.root().query_first(
+        [](const Scene::Node* n) {
+            const Scene::BedNodeTag* t = n->tag_of_type<Scene::BedNodeTag>();
+            return t != nullptr && t->is_virtual && t->type == Scene::BedElementType::Undefined;
+        },
+        true
+    );
+    if (existing != nullptr)
+        scn.remove_child(existing);
+
+    if (!preview.has_value()) {
+        invoke_bed_visually_changed(project_id);
+        return;
+    }
+
+    const auto& proj = m_workbench.project(project_id);
+    const Domain::ConfigContainer* cc = proj.find_config_container(preview->config_container_id);
+    if (cc == nullptr)
+        return;
+
+    // Transient instance: not owned by the project, lives only for this build call.
+    Domain::BedInstance tmp_instance{cc->bed()};
+    tmp_instance.transformation = Domain::Transformation(preview->transform);
+
+    Scene::NodeBuilder builder(scn);
+    Scene::build_virtual_bed_node(
+        builder,
+        tmp_instance,
+        preview->config_container_id,
+        m_device,
+        m_projects[project_id],
+        Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects)
+    );
+
+    auto root = builder.build();
+    Scene::Node* root_ptr = root.release();
+    scn.add_child(root_ptr);
+
+    update_bed_instances();
+    invoke_bed_visually_changed(project_id);
+}
+
 static void remove_wipe_tower_node(Scene::Scene& scene, Domain::SlicingId slicing_id) {
     Scene::Node* node{scene.root().query_first([&](const Scene::Node* node){
         auto tag{node->tag_of_type<Scene::SceneNodeTag>()};

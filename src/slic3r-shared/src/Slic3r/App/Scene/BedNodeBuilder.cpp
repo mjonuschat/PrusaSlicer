@@ -2,6 +2,8 @@
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedMaterials.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -11,6 +13,7 @@
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 
 #include <numbers>
+#include <optional>
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2f;
@@ -88,7 +91,7 @@ plate_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} plate", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, type})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, type, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform(
                     [&](Transform3d& xform) { xform.translate(z_offset(type) * Vec3d::UnitZ()); }
@@ -118,7 +121,7 @@ grid_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} grid", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Grid})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Grid, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform([](Transform3d& xform)
                            { xform.translate(z_offset(BedElementType::Grid) * Vec3d::UnitZ()); });
@@ -144,7 +147,7 @@ contour_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuil
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} contour", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Contour})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Contour, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform([](Transform3d& xform)
                            { xform.translate(z_offset(BedElementType::Contour) * Vec3d::UnitZ()); });
@@ -170,7 +173,7 @@ print_volume_node(Render::Device& device, ScenePresenterProjectContext& ctx, Nod
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} contour", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::PrintVolume})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::PrintVolume, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform(
                     [](Transform3d& xform)
@@ -209,7 +212,7 @@ model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} model", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Model})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Model, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform([](Transform3d& xform)
                            { xform.translate(z_offset(BedElementType::Model) * Vec3d::UnitZ()); })
@@ -247,7 +250,7 @@ axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterProjectContext&
             Render::Material material = BedMaterials::axis_material(device, axis_id);
 
             bldr.set_debug_name(fmt::format("bed {} axis {}", tag.instance_id, axis_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Axis})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Axis, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 // add collision geometry to let the axis be taken in account by camera frustum tighting,
                 // see: CameraFrustumUpdater::update_camera_frustum
@@ -283,13 +286,13 @@ axes_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} axes main", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain});
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain, tag.is_virtual});
 
             bldr.child(
                 [&](NodeBuilder& in_bldr)
                 {
                     in_bldr.set_debug_name(fmt::format("bed {} axes scaler", tag.instance_id))
-                        .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesScaler});
+                        .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesScaler, tag.is_virtual});
                     for (uint8_t i = 0; i < 3; ++i) {
                         axis_node(i, device, ctx, in_bldr, bed, tag, layer_id);
                     }
@@ -332,7 +335,7 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
         [&](NodeBuilder& bldr)
         {
             bldr.set_debug_name(fmt::format("bed {} label", tag.instance_id))
-                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Label})
+                .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Label, tag.is_virtual})
                 .set_mesh(geom, material, layer_id)
                 .transform([&](Transform3d& xform)
                     { xform.translate(label_position); });
@@ -358,6 +361,14 @@ void build_bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, c
     print_volume_node(device, ctx, builder, bed, tag, layer_id);
     axes_node(device, ctx, builder, bed, tag, layer_id);
     label_node(device, ctx, builder, bed, instance, tag, layer_id);
+}
+
+void build_virtual_bed_node(NodeBuilder& builder, const Domain::BedInstance& instance,
+    std::size_t config_container_id, Render::Device& device,
+    ScenePresenterProjectContext& ctx, RenderLayerId layer_id)
+{
+    BedNodeTag tag{config_container_id, 0, BedElementType::Undefined, /*is_virtual=*/true};
+    build_bed_node(builder, instance, tag, device, ctx, layer_id);
 }
 
 } // namespace Slic3r::App::Scene

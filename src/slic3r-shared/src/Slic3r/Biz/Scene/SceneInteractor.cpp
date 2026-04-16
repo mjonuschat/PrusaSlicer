@@ -1492,6 +1492,90 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     return ret;
 }
 
+void SceneInteractor::show_virtual_bed_preview(Domain::SelectionId config_container_id)
+{
+    auto it = m_projects.find(m_selected_project_id);
+    if (it == m_projects.end())
+        return;
+    SceneInteractorProjectContext& ctx = it->second;
+
+    std::optional<Domain::Transform3d> placement =
+        m_bed_placement.next_bed_placement(ctx.project, config_container_id, BED_GAP);
+    if (!placement) {
+        hide_virtual_bed_preview();
+        return;
+    }
+
+    ctx.virtual_bed_preview = VirtualBedPreview{config_container_id, *placement};
+
+    invoke_listeners<ISceneBedInstanceChangedListener>(
+        [&](auto* l) {
+            l->on_virtual_bed_preview_changed(m_selected_project_id, ctx.virtual_bed_preview);
+        }
+    );
+}
+
+void SceneInteractor::hide_virtual_bed_preview()
+{
+    auto it = m_projects.find(m_selected_project_id);
+    if (it == m_projects.end())
+        return;
+    SceneInteractorProjectContext& ctx = it->second;
+    if (!ctx.virtual_bed_preview)
+        return;
+
+    ctx.virtual_bed_preview.reset();
+    invoke_listeners<ISceneBedInstanceChangedListener>(
+        [&](auto* l) {
+            l->on_virtual_bed_preview_changed(m_selected_project_id, ctx.virtual_bed_preview);
+        }
+    );
+}
+
+const std::optional<VirtualBedPreview>& SceneInteractor::virtual_bed_preview() const
+{
+    static const std::optional<VirtualBedPreview> empty;
+    auto it = m_projects.find(m_selected_project_id);
+    if (it == m_projects.end())
+        return empty;
+    return it->second.virtual_bed_preview;
+}
+
+bool SceneInteractor::virtual_bed_preview_accepts_selection()
+{
+    auto it = m_projects.find(m_selected_project_id);
+    if (it == m_projects.end())
+        return false;
+    const SceneInteractorProjectContext& ctx = it->second;
+    if (!ctx.virtual_bed_preview)
+        return false;
+
+    const Domain::ConfigContainer* cc =
+        ctx.project.find_config_container(ctx.virtual_bed_preview->config_container_id);
+    if (!cc)
+        return false;
+
+    // Synthesize a bed instance at the preview transform; the containment test
+    // uses its transformation offset against the CC's bed contour.
+    Domain::BedInstance probe{cc->bed()};
+    probe.transformation = Domain::Transformation(ctx.virtual_bed_preview->transform);
+
+    for (const Domain::ElementRef& e : ctx.object_selection.elements) {
+        if (!e.has_instance())
+            continue;
+        const Domain::ModelInstance* inst =
+            ctx.project.find_instance_by_id(e.object_id, e.instance_id);
+        if (inst == nullptr)
+            continue;
+        const auto state = m_bed_tracking.check_instance_containment_2d(
+            ctx.project, *inst, cc->bed(), probe
+        );
+        if (state == Algorithms::Bed::BedContainmentState::Inside)
+            return true;
+    }
+    return false;
+}
+
 void SceneInteractor::insert_bed_instance(
     Domain::SelectionId project_id,
     Domain::SelectionId config_container_id,

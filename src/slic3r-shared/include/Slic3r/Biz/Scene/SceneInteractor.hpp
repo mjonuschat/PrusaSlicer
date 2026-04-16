@@ -145,6 +145,15 @@ public:
         Domain::BedRef instance,
         const std::vector<unsigned>& extruder_candidates
     ) {};
+
+    /**
+     * @brief Called when the virtual bed preview for a project is shown, moved, or hidden.
+     * @param preview std::nullopt means the preview should be hidden.
+     */
+    virtual void on_virtual_bed_preview_changed(
+        Domain::SelectionId project_id,
+        const std::optional<VirtualBedPreview>& preview
+    ) {};
 };
 
 struct TransformMemento;
@@ -259,6 +268,42 @@ public:
     void prepare_added_project(Domain::SelectionId project_id);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
+
+    /**
+     * @name Virtual bed preview
+     *
+     * A purely visual preview of a bed that would be appended if the user commits
+     * (e.g. by dropping a dragged object on it). Never part of domain/undo state.
+     * @{
+     */
+    /**
+     * @brief Show a virtual bed preview in the currently selected project at the position
+     *        where the next real bed would be placed in @p config_container_id.
+     *        No-op (and the preview stays hidden) if the position cannot be determined.
+     */
+    void show_virtual_bed_preview(Domain::SelectionId config_container_id);
+
+    /**
+     * @brief Hide the virtual bed preview in the currently selected project, if any.
+     */
+    void hide_virtual_bed_preview();
+
+    /**
+     * @brief Access the virtual bed preview of the currently selected project.
+     */
+    const std::optional<VirtualBedPreview>& virtual_bed_preview() const;
+
+    /**
+     * @brief Check whether any currently-unplaced instance of the scene selection
+     *        would be fully contained in the bed that the virtual preview stands for.
+     *
+     * Uses the shared BedTracking containment logic (no duplication).
+     * @return false if no virtual preview is shown or if no unplaced selected
+     *         instance would land inside the hypothetical new bed.
+     */
+    bool virtual_bed_preview_accepts_selection();
+    /** @} */
+
     void insert_bed_instance(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,

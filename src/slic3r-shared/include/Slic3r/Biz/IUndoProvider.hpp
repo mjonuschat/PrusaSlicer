@@ -9,6 +9,7 @@ enum class UndoSnapshotType
     None,
     InitializeProject,
     QuickDrag,
+    QuickDragAndAddBed,
     Translate,
     SetTranslation,
     Rotate,

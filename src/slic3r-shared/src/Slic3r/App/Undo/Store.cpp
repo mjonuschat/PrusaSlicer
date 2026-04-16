@@ -67,6 +67,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Initialize project");
     case Type::QuickDrag:
         return _u8L("Quick drag");
+    case Type::QuickDragAndAddBed:
+        return _u8L("Quick drag and add a bed");
     case Type::Translate:
         return _u8L("Translate");
     case Type::SetTranslation:

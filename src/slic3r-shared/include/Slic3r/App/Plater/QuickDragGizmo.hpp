@@ -7,6 +7,7 @@
 #include "Slic3r/App/Plater/TranslationDialog.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Platform/TimerQueue.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
@@ -38,6 +39,9 @@ public:
 private:
     bool mouse_pos(float screen_x, float screen_y, Domain::Vec3d& out_pos);
 
+    bool selection_is_off_bed() const;
+    void cancel_virtual_bed_timer();
+
 private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
@@ -46,6 +50,11 @@ private:
     Domain::Vec3d m_initial_world_pos;
     Scene::Plane m_plane{Domain::Vec3d::UnitZ(), 0};
     Biz::Scene::TransformMemento m_xform_memento;
+
+    // Virtual-bed preview state for the current drag.
+    Biz::Platform::TimerQueue::TimerID m_virtual_bed_timer_id;
+    bool m_was_off_bed{false};
+    bool m_dragging{false};
 };
 
 } // namespace Slic3r::App::Plater

@@ -238,6 +238,11 @@ private:
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, Biz::Scene::TransformState state) override;
 
+    void on_virtual_bed_preview_changed(
+        Domain::SelectionId project_id,
+        const std::optional<Biz::Scene::VirtualBedPreview>& preview
+    ) override;
+
     void on_wipe_tower_changed(
         Domain::SlicingId slicing_id,
         const Biz::Print::WipeTowerGeometry& wipe_tower

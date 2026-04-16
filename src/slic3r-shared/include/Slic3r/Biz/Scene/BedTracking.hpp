@@ -114,6 +114,21 @@ public:
         const Domain::Vec2ds& convex_hull
     );
 
+    /**
+     * @brief Check containment of a model instance against the given bed & bed-instance pair,
+     *        using the internal instance-collision cache for the 2D footprint/AABB.
+     *
+     * This is the same logic used by @ref update_instance_bed_placement for normal placement,
+     * exposed so callers can ask hypothetical questions like
+     * "would this instance be Inside a bed located at transform X?".
+     */
+    Algorithms::Bed::BedContainmentState check_instance_containment_2d(
+        const Domain::Project& project,
+        const Domain::ModelInstance& instance,
+        const Domain::Bed& bed,
+        const Domain::BedInstance& bed_instance
+    );
+
 private:
     struct BedCacheEntry
     {

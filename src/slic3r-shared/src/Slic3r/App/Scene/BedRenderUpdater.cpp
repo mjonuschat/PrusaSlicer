@@ -17,6 +17,35 @@ namespace Slic3r::App::Scene {
 
 using Domain::BedRef;
 
+namespace {
+
+void apply_virtual_bed_style(Node& n, Render::Device& device)
+{
+    BedNodeTag* bt = n.tag_of_type<BedNodeTag>();
+    if (bt == nullptr || bt->type == BedElementType::Undefined)
+        return;
+    ASSERT(bt->is_virtual);
+    if (!n.has_render_component())
+        return;
+
+    const Render::Material& primary = n.render_component()->material();
+    std::optional<Render::Material> material;
+    switch (bt->type) {
+    case BedElementType::Model: material = BedMaterials::model_unselected_material(primary); break;
+    case BedElementType::PlateDefault: material = BedMaterials::plate_default_unselected_material(primary); break;
+    case BedElementType::PlateTextured: material = BedMaterials::plate_textured_transparent_material(primary); break;
+    case BedElementType::Grid: material = BedMaterials::grid_unselected_material(primary); break;
+    default:
+        // Everything else shall be hidden for virtual bed.
+        n.set_enabled(false);
+        break;
+    }
+    if (material.has_value())
+        n.set_material_override(*material);
+}
+
+} // namespace
+
 void BedRenderUpdater::update_materials(const BedError& bed_error)
 {
     m_bed_error = bed_error;
@@ -24,6 +53,10 @@ void BedRenderUpdater::update_materials(const BedError& bed_error)
     visit(m_scene_provider.scene().root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr && tag->type != BedElementType::Undefined) {
+            if (tag->is_virtual) {
+                apply_virtual_bed_style(n, m_device);
+                return;
+            }
             ASSERT(m_project != nullptr);
             const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
             ASSERT(cc != nullptr);
@@ -97,6 +130,9 @@ void BedRenderUpdater::update_shadows(const Camera& cam)
     visit(m_scene_provider.scene().root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
+            if (tag->is_virtual) {
+                return;
+            }
             if (tag->type == BedElementType::Model ||
                 tag->type == BedElementType::PlateDefault ||
                 tag->type == BedElementType::PlateTextured) {
@@ -127,6 +163,9 @@ void BedRenderUpdater::update_positions()
     visit(m_scene_provider.scene().root(), [this](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
+            if (tag->is_virtual) {
+                return;
+            }
             if (tag->type == BedElementType::Undefined) {
                 DEBUG_ASSERT(m_project != nullptr);
                 const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
@@ -151,6 +190,9 @@ void BedRenderUpdater::update_elements_state()
             BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
             if (tag == nullptr)
                 return;
+            if (tag->is_virtual) {
+                return;
+            }
             if (tag->type == BedElementType::Undefined) {
                 ++bed_instances_count;
                 return;
@@ -193,7 +235,7 @@ void BedRenderUpdater::update_elements_state()
         m_scene_provider.scene().root(),
         [&](Node& n) {
             BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-            if (tag != nullptr && tag->type == BedElementType::Label)
+            if (tag != nullptr && !tag->is_virtual && tag->type == BedElementType::Label)
                 n.set_enabled(bed_instances_count > 1);
         },
         true
@@ -207,6 +249,9 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
     visit(scene.root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
+            if (tag->is_virtual) {
+                return;
+            }
             if (tag->type == BedElementType::Model)
                 // turn beds' model visibility on/off in dependence of camera position/orientation
                 n.set_enabled(!cam_pointing_upward);
