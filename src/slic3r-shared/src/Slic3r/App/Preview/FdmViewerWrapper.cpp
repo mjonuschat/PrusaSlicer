@@ -124,10 +124,13 @@ void FdmViewerWrapper::set_mode(FdmViewerWrapperMode mode)
     m_slider_layers->enable_editing(m_settings.mode != FdmViewerWrapperMode::GCodeViewer);
     m_legend_params.settings_visible = (m_settings.mode == FdmViewerWrapperMode::GCodeViewer);
     m_legend_params.enabled = (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode);
-    if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
+    if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode) {
         set_pregcode_extrusion_role_colors(*this);
-    else
+        m_viewer.set_view_type(ViewType::FeatureType);
+    }
+    else {
         reset_default_extrusion_roles_colors();
+    }
 }
 
 void FdmViewerWrapper::reset()
