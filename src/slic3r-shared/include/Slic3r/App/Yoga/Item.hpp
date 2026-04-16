@@ -171,8 +171,17 @@ private:
 class Item : public Object
 {
 public:
+    struct Callbacks
+    {
+        std::function<void()> size_changed{
+            nullptr
+        }; ///< Do not use, you probably want to override on_resized instead!
+    };
+
     Item();
     ~Item();
+
+    Callbacks& item_callbacks();
 
     /**
      * @warning invisible Items (and their object) are not rendered
@@ -358,6 +367,8 @@ private:
 protected:
     // I will burn in hell for this
     static Render::ImguiRender* m_imgui_render;
+
+    Callbacks m_callbacks;
 
     Vec2f m_min_size = {};
     Vec2f m_max_size = {YGUndefined, YGUndefined};
