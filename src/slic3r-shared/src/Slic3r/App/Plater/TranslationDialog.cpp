@@ -75,10 +75,7 @@ TranslationDialog::TranslationDialog(
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int)
     { apply_relative_translation(value); };
 
-    content()->emplace_back<PlaceOnBedButton>(
-        m_scene_provider,
-        m_project_interactor
-    );
+    content()->emplace_back<PlaceOnBedButton>(m_project_interactor);
 
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
         m_project_interactor,

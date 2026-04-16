@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Plater/ScaleDialog.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;

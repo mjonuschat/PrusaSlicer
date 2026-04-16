@@ -55,7 +55,6 @@ private:
 
     struct ProjectContext {
         bool activated{false};
-        int previous_options_count{0};
     };
 
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;

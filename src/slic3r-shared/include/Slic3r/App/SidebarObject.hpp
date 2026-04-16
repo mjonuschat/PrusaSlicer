@@ -4,6 +4,8 @@
 ///|/
 #pragma once
 
+#include "Slic3r/App/Plater/ScaleWidget.hpp"
+#include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
@@ -32,6 +34,7 @@ class WipeTowerSettings;
 class SidebarObject :
     public Yoga::Window,
     public Biz::Scene::ISceneSelectionChangedListener,
+    public Scene::IGizmoActiveToolListener,
     public Biz::IListObserver<Biz::OverrideItem>
 {
 public:
@@ -43,6 +46,8 @@ public:
     ) override;
 
     void on_reset() override;
+
+    void active_tool_changed(Scene::IToolGizmo* active_tool) override;
 
 protected:
     void visible_updated_internal() override;
@@ -85,6 +90,7 @@ private:
     Biz::UnsharedPointer<ObservableOverrideCategorizer> m_override_group_filter;
 
     Yoga::Text* m_text_object_name{nullptr};
+    Plater::ScaleWidget* m_scale_widget{nullptr};
     Yoga::LayoutButton* m_add_settings_button{nullptr};
     Yoga::Text* m_no_overrides_label{nullptr};
 

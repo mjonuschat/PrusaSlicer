@@ -27,6 +27,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/ScaleGizmo.cpp
         include/Slic3r/App/Plater/ScaleDialog.hpp
         src/Slic3r/App/Plater/ScaleDialog.cpp
+        include/Slic3r/App/Plater/ScaleWidget.hpp
+        src/Slic3r/App/Plater/ScaleWidget.cpp
         include/Slic3r/App/Plater/TranslationDialog.hpp
         src/Slic3r/App/Plater/TranslationDialog.cpp
         include/Slic3r/App/Plater/ReferenceFramePicker.hpp

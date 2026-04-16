@@ -78,10 +78,7 @@ RotationDialog::RotationDialog(
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
     { add_rotation(Vec3d{deg2rad(value(0)), deg2rad(value(1)), deg2rad(value(2))}); };
 
-    m_place_on_bed_button = content()->emplace_back<PlaceOnBedButton>(
-        m_scene_provider,
-        m_project_interactor
-    );
+    m_place_on_bed_button = content()->emplace_back<PlaceOnBedButton>(m_project_interactor);
 
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
         m_project_interactor,

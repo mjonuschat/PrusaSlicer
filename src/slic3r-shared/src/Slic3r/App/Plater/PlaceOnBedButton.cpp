@@ -1,21 +1,20 @@
 #include "Slic3r/App/Plater/PlaceOnBedButton.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 
 namespace Slic3r::App::Plater {
 using Biz::_u8L;
 
 PlaceOnBedButton::PlaceOnBedButton(
-    App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
     Yoga::LayoutButton{_u8L("Place on bed")},
-    m_scene_provider(scene_provider),
     m_project_interactor(project_interactor),
     m_scene_interactor(project_interactor.scene_interactor())
 {
-    m_scene_provider.add_listener<ISelectionExtentsChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     set_flex_grow(1);
     constexpr ImColor color_primary{223, 93, 45};
@@ -26,14 +25,15 @@ PlaceOnBedButton::PlaceOnBedButton(
 
 PlaceOnBedButton::~PlaceOnBedButton()
 {
-    m_scene_provider.remove_listener<ISelectionExtentsChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
-void PlaceOnBedButton::on_scene_selection_bounding_box_changed(
+void PlaceOnBedButton::on_scene_selection_bounding_box_updated(
     Domain::SelectionId,
-    const std::optional<Biz::Scene::SelectionExtents>&
-) {
+    const Biz::Scene::ObjectSelection&
+)
+{
     reload();
 }
 

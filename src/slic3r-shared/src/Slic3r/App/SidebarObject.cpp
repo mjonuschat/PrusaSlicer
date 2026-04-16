@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/SidebarObject.hpp"
 
+#include "Slic3r/App/Plater/ScaleDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -12,6 +13,7 @@
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
 #include "Slic3r/App/WipeTowerSettings.hpp"
+#include "Slic3r/App/Plater/ScaleWidget.hpp"
 
 #include <fmt/format.h>
 
@@ -42,6 +44,11 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_text_object_name = emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
     m_text_object_name->set_flex_shrink(0);
+
+    m_scale_widget = emplace_back<Plater::ScaleWidget>(
+        m_project_interactor
+    );
+    m_scale_widget->on_activated(m_project_interactor.selected_project_id());
 
     ScrollArea* scroll_area = emplace_back<ScrollArea>();
     scroll_area->set_orientation(Orientation::Vertical);
@@ -137,6 +144,15 @@ void SidebarObject::on_reset()
     // Some of the volumes may have been recreated
     m_selection = m_project_interactor.scene_interactor().object_selection();
     update_enable_modifiers();
+}
+
+void SidebarObject::active_tool_changed(Scene::IToolGizmo* active_tool)
+{
+    if (active_tool == nullptr) {
+        m_scale_widget->on_activated(m_project_interactor.selected_project_id());
+    } else {
+        m_scale_widget->on_deactivated();
+    }
 }
 
 void SidebarObject::visible_updated_internal()

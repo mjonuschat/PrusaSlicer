@@ -29,7 +29,7 @@ struct SelectionExtents
 
     bool is_floating() const
     {
-        return std::abs(m_min_z) > Domain::EPSILON;
+        return std::abs(m_min_z) > 1e-2;
     }
 
     double min_z() const

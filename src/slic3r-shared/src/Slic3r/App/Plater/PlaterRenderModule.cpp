@@ -552,6 +552,7 @@ void PlaterRenderModule::init_scene_layout()
         std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator)
     );
     m_sidebar_object = Passthrough(std::make_unique<SidebarObject>(m_project_interactor));
+    m_gizmo_manager->add_listener<Scene::IGizmoActiveToolListener>(m_sidebar_object.get());
     m_pop_notification_list_view =
         Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
             AppServices::instance().pop_notification_center().observable_list()

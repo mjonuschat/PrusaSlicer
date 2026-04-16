@@ -184,7 +184,7 @@ bool ScaleGizmo::enabled() const
 
 std::unique_ptr<Yoga::GizmoWindow> ScaleGizmo::release_ui_window()
 {
-    auto window{std::make_unique<ScaleDialog>(m_scene_provider, m_project_interactor)};
+    auto window{std::make_unique<ScaleDialog>(m_project_interactor)};
     m_window = window.get();
     return window;
 }
