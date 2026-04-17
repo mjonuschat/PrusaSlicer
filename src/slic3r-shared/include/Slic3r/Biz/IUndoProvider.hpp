@@ -57,6 +57,8 @@ enum class UndoSnapshotType
     AddCylinder,
     AddSphere,
     DeleteSelection,
+    SetAsSeparateObject,
+    SetAsPrintable,
     PaintOnSupportsStroke,
     PaintOnSeamsStroke,
     PaintOnFuzzySkinStroke,

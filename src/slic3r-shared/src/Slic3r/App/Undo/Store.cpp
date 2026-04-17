@@ -164,7 +164,7 @@ static std::string to_string(Biz::UndoSnapshotType type)
     case Type::DeleteSelection:
         return _u8L("Delete selection");
     case Type::PaintOnSupportsStroke:
-        return _u8L("Sypport painting stroke");
+        return _u8L("Support painting stroke");
     case Type::PaintOnSeamsStroke:
         return _u8L("Seam painting stroke");
     case Type::PaintOnFuzzySkinStroke:
@@ -189,6 +189,10 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Select a printer");
     case Type::SetPartSettingsValue:
         return _u8L("Set part settings value");
+    case Type::SetAsSeparateObject:
+        return _u8L("Selected instances to objects");
+    case Type::SetAsPrintable:
+        return _u8L("Change printable state");
     }
     PANIC("Unknown option");
     return {};

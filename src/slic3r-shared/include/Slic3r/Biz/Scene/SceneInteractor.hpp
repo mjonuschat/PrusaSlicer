@@ -75,7 +75,7 @@ public:
     {}
 
     /**
-     * @brief Called whenever instances are transformed.
+     * @brief Called whenever instances are transformed, or its printable state changes.
      * @param project_id Project the instances belong to
      * @param elements List of instances to transform
      * @param state Indicates whether the transform state is final (interactive incremental transform)
@@ -237,6 +237,8 @@ public:
 
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
+    void set_selected_instances_printable(bool is_printable);
+    bool selected_instances_printable() const;
     void extract_selected_instances();
     bool can_extract_selected_instances() const;
     /**

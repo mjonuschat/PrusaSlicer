@@ -54,7 +54,7 @@ bool ObjectSelection::only_single_object() const
     const size_t n = elements.size();
     if (n == 0)
         return false;
-    if (n == 1)
+    if (n == 1 && !contains_wipe_tower())
         return true;
     auto it = elements.cbegin();
     const auto obj_id = it->object_id;

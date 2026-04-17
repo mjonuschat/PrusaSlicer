@@ -132,7 +132,6 @@ void ContextPopup::set_open_pos(std::optional<Vec2f> pos)
 {
     if (pos != m_open_pos) {
         m_open_pos                   = pos;
-        m_force_open_popup_in_render = true;
         invalidate_style();
     }
 }
@@ -173,6 +172,13 @@ void ContextPopup::open()
     if (m_callbacks.opened) {
         m_callbacks.opened();
     }
+}
+
+void ContextPopup::open(Vec2f pos)
+{
+    set_open_pos(pos);
+    m_force_open_popup_in_render = true;
+    open();
 }
 
 void ContextPopup::close()

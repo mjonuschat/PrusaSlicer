@@ -38,6 +38,7 @@ public:
     void set_rounding(float rounding);
 
     void open();
+    void open(Vec2f pos);
     void close();
     bool opened() const;
 

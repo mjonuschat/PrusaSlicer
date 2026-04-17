@@ -437,7 +437,8 @@ ModelInstancesPerBed get_model_instances_per_bed(
         if (!selection.is_selected(bed_ref)) {
             continue;
         }
-        const ModelInstanceList model_instances{bed_instance->model_instances};
+        ModelInstanceList model_instances{bed_instance->model_instances};
+        std::erase_if(model_instances, [](const ModelInstance* inst) {return !inst->printable; });
 
         ConstModelInstanceList arrangeable_model_intances;
         ConstModelInstanceList fixed_model_intances;
@@ -507,6 +508,8 @@ ConstModelInstanceList ArrangeInteractor::get_model_instances(
         const ModelInstanceList& instances{m_scene_interactor.unplaced_model_instances(project_id)};
         result.insert(result.end(), instances.begin(), instances.end());
     }
+
+    std::erase_if(result, [](const ModelInstance* inst) {return !inst->printable; });
 
     return result;
 }
@@ -817,6 +820,7 @@ ConstModelInstanceList get_instances(
             }
         }
     }
+    std::erase_if(result, [](const ModelInstance* inst) { return !inst->printable; });
     return result;
 }
 

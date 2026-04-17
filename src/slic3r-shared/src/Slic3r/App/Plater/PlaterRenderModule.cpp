@@ -1114,8 +1114,7 @@ void PlaterRenderModule::on_show_context_menu(ContextMenuType type, Domain::Vec2
     }
 
     if (menu) {
-        menu->set_open_pos(pos);
-        menu->open();
+        menu->open(pos);
         request_render();
     }
 }

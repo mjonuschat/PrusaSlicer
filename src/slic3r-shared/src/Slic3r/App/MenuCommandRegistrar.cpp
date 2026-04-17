@@ -421,7 +421,13 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::SetAsSeparateObject,
             "set-as-separate-object",
-            [this]() { m_project_interactor.scene_interactor().extract_selected_instances(); },
+            [this]()
+            {
+                m_project_interactor.scene_interactor().extract_selected_instances();
+                m_project_interactor.undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::SetAsSeparateObject
+                );
+            },
             UIItemCommandExtraOpts{
                 .enabled = [this]()
                 { return m_project_interactor.scene_interactor().can_extract_selected_instances(); }
@@ -490,10 +496,23 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::PrintableObject,
             CommandName::SetAsPrintable,
-            []() {},
+            [this]()
+            {
+                if (const UIItemCommand* ui_command = dynamic_cast<const UIItemCommand*>(
+                        &m_render_module.command(CommandName::SetAsPrintable)
+                    ))
+                {
+                    m_project_interactor.scene_interactor().set_selected_instances_printable(
+                        !ui_command->checked()
+                    );
+                    m_project_interactor.undo_provider().take_snapshot(
+                        Biz::UndoSnapshotType::SetAsPrintable
+                    );
+                }
+            },
             UIItemCommandExtraOpts{
-                .enabled = [this]() { return false; },
-                .checked = []() { return true; } // ToDo is_printable_selection();
+                .checked = [this]()
+                { return m_project_interactor.scene_interactor().selected_instances_printable(); },
             }
         );
 }
@@ -552,7 +571,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cylinder, VolumeType::MODEL_PART);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddVolumeCylinder);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddVolumeCylinder
+                );
             }
         )
         .append_item(
@@ -561,7 +582,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Sphere, VolumeType::MODEL_PART);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddVolumeSphere);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddVolumeSphere
+                );
             }
         )
         .append_separator()
@@ -590,7 +613,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_shape_from_gallery(VolumeType::MODEL_PART);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddVolumeGallery);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddVolumeGallery
+                );
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
@@ -602,7 +627,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_volume(VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolume);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolume
+                );
             }
         )
         .append_separator()
@@ -612,7 +639,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cube, VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolumeCube);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolumeCube
+                );
             }
         )
         .append_item(
@@ -621,7 +650,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cylinder, VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolumeCylinder);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolumeCylinder
+                );
             }
         )
         .append_item(
@@ -630,7 +661,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Sphere, VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolumeSphere);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolumeSphere
+                );
             }
         )
         .append_separator()
@@ -640,7 +673,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_text]()
             {
                 add_volume_text(VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolumeText);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolumeText
+                );
             }
         )
         .append_item(
@@ -661,7 +696,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_shape_from_gallery(VolumeType::NEGATIVE_VOLUME);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddNegativeVolumeGallery);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddNegativeVolumeGallery
+                );
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
@@ -685,7 +722,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             {
                 add_volume_shape(GeometryId::Cube, VolumeType::PARAMETER_MODIFIER);
 
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierCube);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierCube
+                );
             }
         )
         .append_item(
@@ -694,7 +733,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cylinder, VolumeType::PARAMETER_MODIFIER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierCylinder);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierCylinder
+                );
             }
         )
         .append_item(
@@ -703,7 +744,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Sphere, VolumeType::PARAMETER_MODIFIER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierSphere);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierSphere
+                );
             }
         )
         .append_separator()
@@ -713,7 +756,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_text]()
             {
                 add_volume_text(VolumeType::PARAMETER_MODIFIER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierText);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierText
+                );
             }
         )
         .append_item(
@@ -722,7 +767,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_volume(VolumeType::PARAMETER_MODIFIER, Wildcards::TypeFlag::Svg);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierSvg);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierSvg
+                );
             }
         )
         .append_separator()
@@ -732,7 +779,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_shape_from_gallery(VolumeType::PARAMETER_MODIFIER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddModifierGallery);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddModifierGallery
+                );
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
@@ -744,7 +793,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_volume(VolumeType::SUPPORT_BLOCKER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportBlocker);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportBlocker
+                );
             }
         )
         .append_separator()
@@ -754,7 +805,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cube, VolumeType::SUPPORT_BLOCKER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportBlockerCube);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportBlockerCube
+                );
             }
         )
         .append_item(
@@ -763,7 +816,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cylinder, VolumeType::SUPPORT_BLOCKER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportBlockerCube);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportBlockerCube
+                );
             }
         )
         .append_item(
@@ -772,7 +827,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Sphere, VolumeType::SUPPORT_BLOCKER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportBlockerSphere);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportBlockerSphere
+                );
             }
         )
         .append_separator()
@@ -782,7 +839,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_shape_from_gallery(VolumeType::SUPPORT_BLOCKER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportBlockerGallery);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportBlockerGallery
+                );
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
@@ -794,7 +853,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_volume(VolumeType::SUPPORT_ENFORCER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportModifier);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportModifier
+                );
             }
         )
         .append_separator()
@@ -804,7 +865,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cube, VolumeType::SUPPORT_ENFORCER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportModifierCube);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportModifierCube
+                );
             }
         )
         .append_item(
@@ -813,7 +876,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Cylinder, VolumeType::SUPPORT_ENFORCER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportModifierCylinder);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportModifierCylinder
+                );
             }
         )
         .append_item(
@@ -822,7 +887,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this, add_volume_shape]()
             {
                 add_volume_shape(GeometryId::Sphere, VolumeType::SUPPORT_ENFORCER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportModifierSphere);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportModifierSphere
+                );
             }
         )
         .append_separator()
@@ -832,7 +899,9 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
             [this]()
             {
                 load_shape_from_gallery(VolumeType::SUPPORT_ENFORCER);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSupportModifierGallery);
+                m_project_interactor.undo_provider().take_snapshot(
+                    UndoSnapshotType::AddSupportModifierGallery
+                );
             },
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         );

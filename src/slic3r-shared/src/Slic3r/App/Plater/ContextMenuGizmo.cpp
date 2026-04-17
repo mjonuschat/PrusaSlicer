@@ -39,8 +39,22 @@ ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         return Scene::GizmoActivationState::Probing;
     }
+    auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
+
+    if (type == Platform::MouseEvent::Type::DoubleClick) {
+        if (timer_queue.is_timer_running(m_timer_id)) {
+            timer_queue.cancel_timer(m_timer_id);
+        }
+        m_double_click_detected = true;
+        return Scene::GizmoActivationState::Done;
+    }
 
     if (type == Platform::MouseEvent::Type::ButtonUp) {
+        if (m_double_click_detected) {
+            m_double_click_detected = false;
+            return Scene::GizmoActivationState::Inactive;
+        }
+
         Domain::Vec2f pos{evt.x(), evt.y()};
 
         if (ctx.pick_results().empty()) {
@@ -55,11 +69,12 @@ ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
             if (m_project_interactor.scene_interactor().bed_selection().is_selected(instance)) {
                 invoke_show_context_menu(ContextMenuType::Bed, pos);
             }
-        } else if (const Scene::SceneNodeTag* tag{node->tag_of_type<Scene::SceneNodeTag>()}) {
+        } else if (const Scene::SceneNodeTag* tag{node->tag_of_type<Scene::SceneNodeTag>()};
+                   tag && !tag->is_wipe_tower())
+        {
             // ButtonUp id postponed a bit from QuickSelectGizmo, so
             // we need to postpone its processing here slightly too to correct process selection before
-            auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
-            timer_queue.set_timer(
+            m_timer_id = timer_queue.set_timer(
                 std::chrono::milliseconds(150),
                 [this, pos]()
                 {

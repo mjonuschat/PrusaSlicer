@@ -208,17 +208,13 @@ void ObjectListWindow::init_cc_context_menu()
         [&](Domain::Vec2f open_pos, Domain::SelectionId config_container_id)
     {
         ASSERT(config_container_id != Domain::INVALID_ID);
-
-        // Workaround till context menu doesn't allow to be shown on click position
-        m_cc_context_menu->set_open_pos(open_pos-content()->get_global_pos());
-
         // Don't allow to delete last config container
         const size_t containers_cnt =
             m_project_interactor->scene_interactor().selected_project_config_containers().size();
         m_delete_cc_menu_item->set_enabled(containers_cnt > 1);
 
         m_selected_config_container_id = config_container_id;
-        m_cc_context_menu->open();
+        m_cc_context_menu->open(open_pos-content()->get_global_pos());
     };
 }
 

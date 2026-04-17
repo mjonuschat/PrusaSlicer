@@ -1128,7 +1128,10 @@ bool ObjectList::render_object_node(
 
     handle_dragging(sel_element);
 
-    render_printable_icon(sel_element, object->printable);
+    render_printable_icon(
+        sel_element, 
+        object->instances.size()==1? object->instances.front()->printable : object->printable
+    );
     if (!is_sla_config) {
         int obj_extruder_id = !object->object_settings.items.all_items().empty()
                 && object->object_settings.items.find("extruder") ?
@@ -1148,7 +1151,9 @@ bool ObjectList::render_object_node(
                     if (vol_extruder_id > 0) {
                         vol_extruder_id--;
                     }
-                    volumes_colors.emplace(extruder_colors[vol_extruder_id]);
+                    if (vol_extruder_id < extruder_colors.size()) {
+                        volumes_colors.emplace(extruder_colors[vol_extruder_id]);
+                    }
                     continue;
                 }
             }

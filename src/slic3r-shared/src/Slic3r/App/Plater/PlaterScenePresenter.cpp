@@ -45,6 +45,13 @@ using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 
+static void update_printable_color(ColorRGBA& inout_color, bool is_printable)
+{
+    if (is_printable)
+        return;
+    inout_color = saturate(inout_color, 0.25f);
+}
+
 namespace {
 template <typename TagT, typename RefT>
 void remove_children(Scene::Scene& scn, const std::vector<RefT>& elements, const std::function<bool(const TagT&, const RefT&)>& predicate)
@@ -77,13 +84,17 @@ void remove_children(Scene::Scene& scn, const std::vector<RefT>& elements, const
 
 std::optional<ColorRGBA> color_from_extruder_slot(
     const std::vector<Domain::ColorRGB>& slot_colors,
-    const Domain::ModelVolume& vol)
+    const Domain::ModelVolume& vol,
+    bool is_printable
+)
 {
     const int raw_id = vol.extruder_id();
-    const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
+    const int slot   = (raw_id <= 0) ? 0 : raw_id - 1;
     if (slot < static_cast<int>(slot_colors.size())) {
         const auto& c = slot_colors[slot];
-        return ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
+        ColorRGBA color{c.r(), c.g(), c.b(), 1.0f};
+        update_printable_color(color, is_printable);
+        return color;
     }
     return std::nullopt;
 }
@@ -393,8 +404,14 @@ static std::unordered_map<Domain::SelectionId, Domain::SelectionId> model_instan
     return ret;
 }
 
-static std::optional<ColorRGBA> select_color(bool is_model_part, bool is_selected, bool is_outside, bool is_disabled,
-    HoverType hover_type)
+static std::optional<ColorRGBA> select_color(
+    bool is_model_part,
+    bool is_selected,
+    bool is_outside,
+    bool is_disabled,
+    bool is_printable,
+    HoverType hover_type
+)
 {
     static const ColorRGBA OUTSIDE_COLOR          = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
     static const ColorRGBA OUTSIDE_SELECTED_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 1.0f);
@@ -421,6 +438,10 @@ static std::optional<ColorRGBA> select_color(bool is_model_part, bool is_selecte
 
     if (ret.has_value() && !is_model_part)
         ret->a(0.65f);
+
+    if (ret) {
+        update_printable_color(*ret, is_printable);
+    }
 
     return ret;
 }
@@ -486,7 +507,7 @@ void PlaterScenePresenter::update_volume_materials()
                         (wipe_tower_bed_instance != nullptr
                          && wipe_tower_bed_instance->wipe_tower_is_outside);
                     color =
-                        select_color(true, is_selected, wipe_tower_is_outside, false, hover_type);
+                        select_color(true, is_selected, wipe_tower_is_outside, false, true, hover_type);
                 } else if (is_on_bed) {
                     bed_inst = find_bed_instance_by_model_instance_id(mi_to_bi_map, inst->id().id);
                     if (bed_inst == nullptr) {
@@ -501,10 +522,11 @@ void PlaterScenePresenter::update_volume_materials()
                         is_selected,
                         is_colliding,
                         is_disabled,
+                        inst->printable,
                         hover_type
                     );
                 } else {
-                    color = select_color(is_model_part, is_selected, true, is_disabled, hover_type);
+                    color = select_color(is_model_part, is_selected, true, is_disabled, inst->printable, hover_type);
                 }
 
                 if (!color.has_value())
@@ -555,8 +577,9 @@ void PlaterScenePresenter::update_volume_materials()
                         const auto* vol = obj
                             ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
                             : nullptr;
-                        if (vol)
-                            part_color = color_from_extruder_slot(slot_colors, *vol);
+                        if (vol) {
+                            part_color = color_from_extruder_slot(slot_colors, *vol, inst->printable);
+                        }
                     }
                 }
 
@@ -662,9 +685,7 @@ void PlaterScenePresenter::build_volume_node(
         if (color_it != Scene::VOLUME_COLORS.end())
             clr = color_it->second;
     }
-
-    if (!inst->printable)
-        clr = saturate(clr, 0.25f);
+    update_printable_color(clr, inst->printable);
 
     auto material =
         Render::Material{}

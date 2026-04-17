@@ -937,7 +937,7 @@ void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string&
 
 void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printable)
 {
-    assert(id.volume_id == 0);
+    ASSERT(id.volume_id == 0);
     Domain::ElementRefs updated;
 
     Domain::Project& project = m_workbench.project(m_selected_project_id);
@@ -954,10 +954,91 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
         updated                                                              = {id};
     }
 
-    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated); 
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l)
+        {
+            l->on_instance_transformed(
+                m_selected_project_id,
+                updated,
+                TransformState::Completed,
+                changes
+            );
+        }
+    );
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
+}
+
+void SceneInteractor::set_selected_instances_printable(bool is_printable)
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+
+    if (!selection.empty() && selection.mode == Biz::Scene::SelectionMode::Instance) {
+        Domain::Project& project = m_workbench.project(m_selected_project_id);
+
+        Domain::ElementRefs updated;
+        for (const Domain::ElementRef& id : selection.elements) {
+            if (id.is_wipe_tower())
+                continue;
+            if (id.instance_id == 0) {
+                auto obj       = project.find_object_by_id(id.object_id);
+                obj->printable = is_printable;
+                updated.reserve(obj->instances.size());
+                for (auto& inst : obj->instances) {
+                    inst->printable = is_printable;
+                    updated.emplace_back(id.object_id, inst->id().id);
+                }
+            } else {
+                project.find_instance_by_id(id.object_id, id.instance_id)->printable = is_printable;
+                updated                                                              = {id};
+            }
+        }
+
+        auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
+
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto* l)
+            {
+                l->on_instance_transformed(
+                    m_selected_project_id,
+                    updated,
+                    TransformState::Completed,
+                    changes
+                );
+            }
+        );
+
+        for (const auto& bed_ref : changes.updated_beds)
+            invoke_slicing_input_changed(bed_ref);
+    }
+}
+
+bool SceneInteractor::selected_instances_printable() const
+{
+    bool is_printable{false};
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (!selection.empty() && selection.mode == Biz::Scene::SelectionMode::Instance) {
+        Domain::Project& project = m_workbench.project(m_selected_project_id);
+        for (const Domain::ElementRef& id : selection.elements) {
+            if (id.is_wipe_tower())
+                continue;
+            if (id.instance_id == 0) {
+                if (project.find_object_by_id(id.object_id)->printable) {
+                    is_printable = true;
+                    break;
+                }
+            } else {
+                if (project.find_instance_by_id(id.object_id, id.instance_id)->printable) {
+                    is_printable = true;
+                    break;
+                }
+            }
+        }
+    }
+    return is_printable;
 }
 
 void SceneInteractor::extract_selected_instances()
@@ -1041,11 +1122,14 @@ bool SceneInteractor::can_extract_selected_instances() const
         && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
         && selection.only_single_object())
     {
-        Domain::Project& project = m_workbench.project(m_selected_project_id);
-        Domain::ModelObject* object =
-            project.find_object_by_id(selection.elements.front().object_id);
-        ASSERT(object);
-        return object->instances.size() > 1;
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.is_wipe_tower())
+                continue;
+            Domain::Project& project    = m_workbench.project(m_selected_project_id);
+            Domain::ModelObject* object = project.find_object_by_id(el.object_id);
+            ASSERT(object);
+            return object->instances.size() > 1;
+        }
     }
     return false;
 }
