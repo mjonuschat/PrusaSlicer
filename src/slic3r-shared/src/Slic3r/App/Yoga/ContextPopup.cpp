@@ -76,6 +76,7 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
     bool begin = false;
@@ -107,7 +108,7 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     }
 
     // Revert current paddings and spacing
-    ImGui::PopStyleVar(4);
+    ImGui::PopStyleVar(5);
 }
 
 float ContextPopup::offset() const
