@@ -2,7 +2,6 @@
 
 #include "Slic3r/App/Yoga/ProjectButton.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
@@ -52,7 +51,7 @@ TopBar::TopBar(
     set_gap(0.f);
     set_flex_shrink(0);
 
-    Rectangle* left_wrapper = emplace_back<Rectangle>();
+    Item* left_wrapper = emplace_back<Item>();
     left_wrapper->set_flex_shrink(0);
     left_wrapper->set_align_items(YGAlignCenter);
 
@@ -89,13 +88,20 @@ TopBar::TopBar(
     m_list_view->set_remap_horizontal_scroll(true);
     m_list_view->set_source_list(&project_interactor->observable_project_list());
 
-    Rectangle* project_actions_wrapper = emplace_back<Rectangle>();
+    Item* project_actions_wrapper = emplace_back<Item>();
     project_actions_wrapper->set_flex_grow(1.);
+    project_actions_wrapper->set_align_items(YGAlignCenter);
+    project_actions_wrapper->set_padding({5, 0});
+    project_actions_wrapper->set_flex_shrink(0);
 
-    // add_new_project_btn(project_actions_wrapper);
-    // add_expander_btn(project_actions_wrapper);
+    LayoutButton* add_new_project_btn = project_actions_wrapper->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::Plus,
+        Biz::_u8L("Add new project")
+    );
+    add_new_project_btn->callbacks().action = [this] { m_project_interactor.new_project(); };
 
-    Rectangle* right_wrapper = emplace_back<Rectangle>();
+    Item* right_wrapper = emplace_back<Item>();
     right_wrapper->set_flex_shrink(0);
     m_search_bar = right_wrapper->emplace_back<SearchBar>(m_project_interactor, m_navigator);
 
@@ -109,20 +115,17 @@ TopBar::TopBar(
              m_show_ui_btn,
              m_main_menu_btn,
              m_file_menu_btn,
+             add_new_project_btn
          })
     {
         if (!btn)
             continue;
-        btn->set_background_color(IM_COL32_BLACK_TRANS);
+        btn->set_background_color(Platform::Color::ButtonTransparent);
         btn->set_tooltip_position(Position::Bottom);
-        btn->set_height(btn == m_main_menu_btn ? 30.f : 24.f);
+        btn->set_height(btn == m_main_menu_btn || btn == add_new_project_btn ? 30.f : 24.f);
     }
 
-    for (Rectangle* wrapper :
-         std::initializer_list<Rectangle*>{left_wrapper, right_wrapper, project_actions_wrapper})
-    {
-        wrapper->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
-        wrapper->set_rounding(0.f);
+    for (Item* wrapper : std::initializer_list<Item*>{left_wrapper, right_wrapper}) {
         wrapper->set_gap(15.f);
         wrapper->set_padding({15.f, 5.f});
     }
@@ -223,7 +226,8 @@ void TopBar::add_undo_btn(Item* parent)
 {
     auto item{parent->emplace_back<Item>()};
     m_undo_btn = item->emplace_back<LayoutButton>("", Render::Icon::TopBarUndo, _u8L("Undo"));
-    m_undo_stack_btn = item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Undo stack"));
+    m_undo_stack_btn =
+        item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Undo stack"));
     m_undo_stack_btn->set_enabled(false);
 
     m_undo_menu = m_undo_stack_btn->emplace_back<Yoga::Menu>("undo_menu", Yoga::Position::Bottom);
@@ -237,7 +241,8 @@ void TopBar::add_redo_btn(Item* parent)
 {
     auto item{parent->emplace_back<Item>()};
     m_redo_btn = item->emplace_back<LayoutButton>("", Render::Icon::TopBarRedo, _u8L("Redo"));
-    m_redo_stack_btn = item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Redo stack"));
+    m_redo_stack_btn =
+        item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Redo stack"));
     m_redo_stack_btn->set_enabled(false);
 
     m_redo_menu = m_redo_stack_btn->emplace_back<Yoga::Menu>("redo_menu", Yoga::Position::Bottom);
