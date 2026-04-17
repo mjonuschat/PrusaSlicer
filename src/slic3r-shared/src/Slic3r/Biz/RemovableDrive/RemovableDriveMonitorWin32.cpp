@@ -1,7 +1,7 @@
 #include "RemovableDriveMonitorWin32.hpp"
 
 #include "Slic3r/Log.hpp"
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include <string>
 #include <algorithm>

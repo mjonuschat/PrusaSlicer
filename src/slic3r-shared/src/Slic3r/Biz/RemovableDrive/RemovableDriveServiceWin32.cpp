@@ -2,8 +2,8 @@
 #include "RemovableDriveMonitorWin32.hpp"
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 #include <fmt/format.h>
-#include <libassert/assert.hpp>
 #include <Windows.h>
 #include <shobjidl.h>
 #include <shldisp.h>

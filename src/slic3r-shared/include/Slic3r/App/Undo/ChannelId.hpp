@@ -2,7 +2,7 @@
 
 #include <compare>
 #include <cstddef>
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Undo {
 

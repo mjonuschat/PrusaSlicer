@@ -2,8 +2,7 @@
 #include "RemovableDriveMonitorLinux.hpp"
 #include "Slic3r/Platform.hpp"
 
-// #include "Slic3r/Log.hpp"
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include <chrono>
 #include <string>

@@ -2,8 +2,8 @@
 #include "RemovableDriveMonitorLinux.hpp"
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 #include <fmt/format.h>
-#include <libassert/assert.hpp>
 #include <boost/process.hpp>
 
 namespace Slic3r::Biz::RemovableDrive {
