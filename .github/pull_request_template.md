@@ -21,7 +21,7 @@
 <!-- Do not delete these lines about rebasing and code review -->
 **🚨 REBASE 🚨** Make sure to rebase the PR on the current master before merging. Squash the commits where it makes sense.
 The job of a reviewer is to:
-- Compile and run the "happy path"
+- Run the "happy path"
 - **Sanity check** the code
 - Ensure that **testing is reasonable** given the problem constraints
 
