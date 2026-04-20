@@ -74,6 +74,14 @@ include(GNUInstallDirs)
 include(CMakeDependentOption)
 include(Utils)
 
+if (UNIX AND NOT APPLE)
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/src/platform/unix/com.prusa3d.PrusaSlicer.desktop.in
+        ${CMAKE_BINARY_DIR}/com.prusa3d.PrusaSlicer.desktop
+        @ONLY
+    )
+endif ()
+
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
