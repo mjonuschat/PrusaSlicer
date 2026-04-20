@@ -109,6 +109,10 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
         listener->on_sla_result_changed(id, {});
     });
     invoke_listener<ISLAObjectListener>([&id](auto* listener) { listener->on_remove_bed(id); });
+
+    invoke_listeners<IWipeTowerGeometryListener>(
+        [&](auto* listener) { listener->on_wipe_tower_geometry_changed(std::nullopt, id); }
+    );
 }
 
 void SlicingInteractor::slice_bed(const SlicingId id)
