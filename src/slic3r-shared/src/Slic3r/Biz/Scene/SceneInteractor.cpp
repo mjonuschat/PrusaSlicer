@@ -2291,6 +2291,10 @@ void SceneInteractor::on_wipe_tower_geometry_changed(
     const Domain::SlicingId slicing_id
 )
 {
+    if (m_workbench.find_project_by_id(slicing_id.project_id) == nullptr) {
+        // The project may have been deleted before the queued callback was executed.
+        return;
+    }
     if (!wipe_tower) {
         remove_wipe_tower(slicing_id);
         return;

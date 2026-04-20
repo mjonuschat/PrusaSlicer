@@ -390,6 +390,11 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
         return;
     }
 
+    if (m_project_interactor.workbench().find_project_by_id(slicing_id.project_id) == nullptr) {
+        // The project may have been deleted before the queued callback was executed.
+        return;
+    }
+
     const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const std::string text{slicing_status_to_string(status.code)};
 
@@ -412,6 +417,11 @@ void PopNotificationCenter::on_status_cache_progress_changed(const Domain::Slici
     }
     const Biz::Slicing::Status status{std::move(*optional_status)};
     if (!status.progress) {
+        return;
+    }
+
+    if (m_project_interactor.workbench().find_project_by_id(slicing_id.project_id) == nullptr) {
+        // The project may have been deleted before the queued callback was executed.
         return;
     }
 
@@ -456,6 +466,11 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
                 && !present_error_codes.contains(payload->error_code);
         }
     );
+
+    if (m_project_interactor.workbench().find_project_by_id(slicing_id.project_id) == nullptr) {
+        // The project may have been deleted before the queued callback was executed.
+        return;
+    }
 
     const std::vector<Error> errors{
         m_project_interactor.status_cache().extract_latest_errors(slicing_id)
@@ -510,6 +525,11 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
                 && !present_warning_codes.contains(payload->warning_code);
         }
     );
+
+    if (m_project_interactor.workbench().find_project_by_id(slicing_id.project_id) == nullptr) {
+        // The project may have been deleted before the queued callback was executed.
+        return;
+    }
 
     const std::vector<Warning> warnings{
         m_project_interactor.status_cache().extract_latest_warnings(slicing_id)
