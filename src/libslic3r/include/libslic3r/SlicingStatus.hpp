@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Percentage.hpp"
 #include "Slic3r/Exception.hpp"
+#include <array>
 #include <ostream>
 #include <variant>
 #include <map>

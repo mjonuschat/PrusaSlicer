@@ -18,6 +18,9 @@ option(SLIC3R_ASAN "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN "Enable UBSan on Clang and GCC" 0)
 option(SLIC3R_REPO_URL "Preset repo URL")
 option(SLIC3R_RELEASE_DEBUG_SYMBOLS "Build release build with debug symbols" ON)
+
+option(SLIC3R_ENABLE_PROFILING "Enable Tracy profiling instrumentation" OFF)
+
 if (NOT EMSCRIPTEN)
     option(SLIC3R_ENABLE_FORMAT_STEP "Support STEP loading (requires OpenCASCADE)" ON)
     option(SLIC3R_BUILD_TESTS "Build unit tests" ON)

@@ -7,6 +7,8 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
+#include <tracy/Tracy.hpp>
+
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
 
@@ -250,6 +252,8 @@ void AbstractCameraGizmo::center_camera_on_selected_bed(bool animated)
 
 GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
+    ZoneScoped;
+
 #if CAMERA_GIZMO_DEBUG
     m_dynamic_geometry.clear();
     {

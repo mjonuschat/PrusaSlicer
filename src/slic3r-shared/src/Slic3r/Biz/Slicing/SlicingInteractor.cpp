@@ -8,6 +8,7 @@
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
+#include <tracy/Tracy.hpp>
 
 namespace Slic3r::Biz::Slicing {
 
@@ -44,6 +45,7 @@ void SlicingInteractor::create_process(
     const SlicingId id
 )
 {
+    ZoneScoped;
     SPDLOG_TRACE("{}: create process", fmt::streamed(id));
     update_status(id, StatusCode::Modified);
     m_processes.emplace(
@@ -69,6 +71,7 @@ void SlicingInteractor::update_process(
     const Domain::BedInstance& bed
 )
 {
+    ZoneScoped;
     const Domain::SelectionId bed_instance_id{bed.id().id};
     const SlicingId id{get_process_id(bed_instance_id)};
     if (m_processes.contains(id)) {
@@ -371,6 +374,8 @@ void SlicingInteractor::process_slicing_queue()
 
 void SlicingInteractor::process_update_requests()
 {
+    ZoneScoped;
+
     if (m_update_requests.empty()) {
         return;
     }

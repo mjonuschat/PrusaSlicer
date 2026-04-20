@@ -21,6 +21,9 @@
 
 #include <Slic3r/Log.hpp>
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyOpenGL.hpp>
+
 namespace Slic3r::App::Platform::WX {
 
 KeyCode get_key_code_from_event(const wxKeyEvent& event)
@@ -676,13 +679,28 @@ private:
     bool& m_flag;
 };
 
+void WXRenderCanvas::repaint()
+{
+    // This is ugly way, that don't break dialogs on OSX
+    render();
+
+    // This would be nicer approach, but it breaks wx modal dialogs on OSX failing with error:
+    //   [General] Suppressing invocation of -[NSApplication runModalSession:].
+    //   -[NSApplication runModalSession:] cannot run inside a transaction begin/commit pair,
+    //   or inside a transaction commit. Consider switching to an asynchronous equivalent.
+    //Refresh(false);
+}
+
 void WXRenderCanvas::render()
 {
+    ZoneScoped;
+
     if (!IsShown())
         return;
     SetCurrent(*m_gl_context);
     if (!m_initialized) {
         init();
+        TracyGpuContext;
         m_initialized = true;
     }
     if (m_in_render)
@@ -693,6 +711,8 @@ void WXRenderCanvas::render()
 
 void WXRenderCanvas::on_paint(wxPaintEvent& event)
 {
+    ZoneScoped;
+
     // This is a dummy, to avoid an endless succession of paint messages.
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
@@ -722,6 +742,8 @@ KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
 
 void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 {
+    ZoneScoped;
+
     if (!m_render_module->is_initialized()) {
         return;
     }
@@ -774,11 +796,13 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
             enqueue_keyboard(platform_event);
         }
     }
-    render();
+    repaint();
 }
 
 void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
 {
+    ZoneScoped;
+
     if (!m_render_module->is_initialized()) {
         return;
     }
@@ -800,6 +824,8 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 {
+    ZoneScoped;
+
     if (!m_render_module->is_initialized()) {
         return;
     }
@@ -821,6 +847,8 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
+    ZoneScoped;
+
     if (!m_render_module->is_initialized()) {
         return;
     }
@@ -900,11 +928,12 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         platform_event{platform_event_type, button, mouse_x, mouse_y, wheel_x, wheel_y, modifiers(evt)};
     enqueue_mouse(platform_event);
 
-    render();
+    repaint();
 }
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
+    ZoneScoped;
     if (!m_render_module->is_initialized()) {
         return;
     }
@@ -912,17 +941,37 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
     m_main_thread_dispatcher.dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     // std::cout << "Idle: render requested: " << render_requested << "\n";
-    if (render_requested)
-        render();
+    if (render_requested) {
+        repaint();
+    }
 }
 
 void WXRenderCanvas::on_render_requested()
 {
+    ZoneScoped;
     wxWakeUpIdle();
 }
 
-void WXRenderCanvas::begin_frame_platform()
+bool WXRenderCanvas::begin_frame_platform()
 {
+    ZoneScoped;
+
+    {
+        ZoneScopedN("begin_frame_platform wait for fence");
+        if (auto& fence = m_frame_fence[m_current_frame_idx]; fence != nullptr) {
+            auto status = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000/30);
+            // handle timeout
+            if (status == GL_TIMEOUT_EXPIRED) {
+                request_render();
+                return false;
+            }
+
+            glDeleteSync(fence);
+            fence = nullptr;
+
+        }
+    }
+
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     GetClientSize(&w, &h);
@@ -945,6 +994,8 @@ void WXRenderCanvas::begin_frame_platform()
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 
     ImGui_ImplWX_UpdateMouseCursor();
+
+    return true;
 }
 
 void WXRenderCanvas::begin_imgui_frame_platform() {}
@@ -953,8 +1004,25 @@ void WXRenderCanvas::end_imgui_frame_platform() {}
 
 void WXRenderCanvas::end_frame_platform()
 {
-    wxGLCanvas::SwapBuffers();
-    wxApp::GetInstance()->WakeUpIdle();
+    ZoneScoped;
+    {
+        // Tells tracy the frame ended here
+        TracyGpuCollect;
+        FrameMark;
+
+        ZoneScopedN("swap_buffers");
+        if (!wxGLCanvas::SwapBuffers()) {
+            SPDLOG_ERROR("Swapping buffers failed!");
+        }
+        m_frame_fence[m_current_frame_idx] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        //assert_no_gl_error();
+        ASSERT(m_frame_fence[m_current_frame_idx] != nullptr);
+        m_current_frame_idx = (m_current_frame_idx + 1) % MAX_INFLIGHT_FRAMES;
+    }
+    {
+        ZoneScopedN("wakeup_idle");
+        wxApp::GetInstance()->WakeUpIdle();
+    }
 }
 
 double WXRenderCanvas::platform_time()
@@ -970,6 +1038,7 @@ Render::Device& WXRenderCanvas::device()
 
 void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function func)
 {
+    ZoneScoped;
     m_main_thread_dispatcher.dispatch_on_main_thread(std::move(func));
     wxApp::GetInstance()->WakeUpIdle();
 }

@@ -9,6 +9,8 @@
 // DEBUG ONLY: for MEASURE_GIZMO_DEBUG
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
+#include <tracy/Tracy.hpp>
+
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
@@ -127,6 +129,7 @@ GizmoManager::PickResultWithRay GizmoManager::pick(
 
 void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
 {
+    ZoneScoped;
     auto& p = current_context();
     if (!p.in_cycle) {
         if (e.is_imgui_captured())
@@ -161,47 +164,53 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 #endif
         return;
     }
-
-    // activation by double click
-    if (e.type() == Platform::MouseEvent::Type::DoubleClick &&
-        e.button() == Platform::MouseButton::Left)
     {
-        auto it = std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(),
-            [&ctx](const IToolGizmoPtr& tool) { return tool->allows_activation_by_double_click(ctx); });
-        if (it != m_tool_gizmos.end()) {
-            ToolType tool_type = (*it)->type();
-            if (tool_type != current_tool_type()) {
-                activate_tool(tool_type);
+        ZoneScopedN("dbl-click");
+        // activation by double click
+        if (e.type() == Platform::MouseEvent::Type::DoubleClick &&
+            e.button() == Platform::MouseButton::Left)
+        {
+            auto it = std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(),
+                [&ctx](const IToolGizmoPtr& tool) { return tool->allows_activation_by_double_click(ctx); });
+            if (it != m_tool_gizmos.end()) {
+                ToolType tool_type = (*it)->type();
+                if (tool_type != current_tool_type()) {
+                    activate_tool(tool_type);
+                }
+                return;
             }
-            return;
         }
     }
 
     const bool single_active = p.in_cycle_gizmos.size() == 1;
 
-    auto it = p.in_cycle_gizmos.begin();
-    while (it != p.in_cycle_gizmos.end()) {
-        auto g = *it;
+    {
+        ZoneScopedN("on_mouse");
 
-        auto ret = g->on_mouse(ctx, single_active);
+        auto it = p.in_cycle_gizmos.begin();
+        while (it != p.in_cycle_gizmos.end()) {
+            auto g = *it;
+
+            auto ret = g->on_mouse(ctx, single_active);
 #if DEBUG_GIZMO_MANAGER
         update_gizmo_activation_debug_data(g, ret);
 #endif
 
-        if (ret == GizmoActivationState::Inactive) {
-            it = p.in_cycle_gizmos.erase(it);
-            continue;
-        } else if (ret == GizmoActivationState::Done) {
-            p.in_cycle_gizmos.clear();
-            break;
-        } else if (ret == GizmoActivationState::Active) {
-            p.in_cycle_gizmos.clear();
-            p.in_cycle_gizmos.push_back(g);
-            if (m_mouse_drag_detector)
-                m_mouse_drag_detector->cancel_drag_event();
-            break;
+            if (ret == GizmoActivationState::Inactive) {
+                it = p.in_cycle_gizmos.erase(it);
+                continue;
+            } else if (ret == GizmoActivationState::Done) {
+                p.in_cycle_gizmos.clear();
+                break;
+            } else if (ret == GizmoActivationState::Active) {
+                p.in_cycle_gizmos.clear();
+                p.in_cycle_gizmos.push_back(g);
+                if (m_mouse_drag_detector)
+                    m_mouse_drag_detector->cancel_drag_event();
+                break;
+            }
+            ++it;
         }
-        ++it;
     }
 
     if (p.in_cycle && p.in_cycle_gizmos.empty())

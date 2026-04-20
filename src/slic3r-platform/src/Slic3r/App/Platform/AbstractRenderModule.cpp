@@ -1,4 +1,5 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include <tracy/Tracy.hpp>
 
 namespace Slic3r::App::Platform {
 
@@ -55,7 +56,9 @@ void AbstractRenderModule::ensure_initialized(
     AnimationManager& animation_manager
 )
 {
-    if (!m_initialized) {
+     ZoneScoped;
+
+   if (!m_initialized) {
         on_init(device, imgui_render, animation_manager);
         register_commands();
         bind_commands();
@@ -74,6 +77,8 @@ void AbstractRenderModule::on_init(
     Platform::AnimationManager& animation_manager
 )
 {
+    ZoneScoped;
+
     m_device            = &device;
     m_imgui_render      = &imgui_render;
     m_animation_manager = &animation_manager;

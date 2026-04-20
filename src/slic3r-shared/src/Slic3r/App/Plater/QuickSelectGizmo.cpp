@@ -14,6 +14,8 @@
 
 #include "Slic3r/Domain/Color.hpp"
 
+#include <tracy/Tracy.hpp>
+
 using Slic3r::Domain::SquareMatrix4f;
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::App::Scene::SceneNodeTag;
@@ -453,6 +455,8 @@ QuickSelectGizmo::~QuickSelectGizmo()
 
 Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
+    ZoneScoped;
+
     using namespace std::chrono_literals;
     const auto& evt = ctx.mouse_event();
     auto type = evt.type();

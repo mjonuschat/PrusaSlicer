@@ -41,3 +41,4 @@ target_include_directories(slic3r-platform-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 
 # Doxygen
 add_target_to_doxygen(slic3r-platform-wx)
+slic3r_add_tracy(slic3r-platform-wx)

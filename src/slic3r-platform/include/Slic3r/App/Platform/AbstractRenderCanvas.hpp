@@ -56,7 +56,11 @@ public:
     void close_application() override {}
 
 protected:
-    virtual void begin_frame_platform() = 0;
+    /**
+     * @brief Do platform specific stuff at the frame beginning
+     * @return Return true if the rendering should continue.
+     */
+    virtual bool begin_frame_platform()       = 0;
     virtual void begin_imgui_frame_platform() = 0;
     virtual void end_imgui_frame_platform() = 0;
     virtual void end_frame_platform() = 0;
@@ -73,17 +77,9 @@ protected:
     void enqueue_mouse(const MouseEvent& e);
     void enqueue_keyboard(const KeyboardEvent& e);
 
-    virtual void emit_mouse(const MouseEvent& e)
-    {
-        if (m_render_module)
-            m_render_module->on_scene_mouse_event(e);
-    }
+    virtual void emit_mouse(const MouseEvent& e);
 
-    virtual void emit_keyboard(const KeyboardEvent& e)
-    {
-        if (m_render_module)
-            m_render_module->on_scene_keyboard_event(e);
-    }
+    virtual void emit_keyboard(const KeyboardEvent& e);
 
     void update_key_modifiers(KeyboardEvent::Type event_type, KeyCode code);
     void update_mouse_position(int x, int y);
@@ -91,7 +87,7 @@ protected:
     bool get_and_reset_render_requested();
 
 private:
-    void begin_frame();
+    bool begin_frame();
     void begin_imgui_frame();
     void end_imgui_frame();
     void end_frame(Render::CommandBuffer& cmd_buffer);

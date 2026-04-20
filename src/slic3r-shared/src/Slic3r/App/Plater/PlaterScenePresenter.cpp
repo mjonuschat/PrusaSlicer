@@ -30,6 +30,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <libslic3r/GCode/WipeTower.hpp>
+#include <tracy/Tracy.hpp>
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
@@ -161,6 +162,8 @@ void PlaterScenePresenter::load_selected_project()
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
+    ZoneScoped;
+
     if (!m_projects.empty()){
         if (m_volume_materials_dirty) {
             update_volume_materials();
@@ -1094,6 +1097,7 @@ bool PlaterScenePresenter::update_bed_instance_error_state(const Domain::Slicing
 
 void PlaterScenePresenter::update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info)
 {
+    ZoneScoped;
     project_context().sinking_contours().update_visibility(e, screen_info, m_workbench.project(m_selected_project_id), scene());
 }
 

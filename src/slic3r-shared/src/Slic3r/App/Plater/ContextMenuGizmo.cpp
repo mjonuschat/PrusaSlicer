@@ -5,6 +5,8 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace Slic3r::App::Plater {
 
 ContextMenuGizmo::ContextMenuGizmo(
@@ -18,6 +20,8 @@ ContextMenuGizmo::ContextMenuGizmo(
 Scene::GizmoActivationState
 ContextMenuGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
+    ZoneScoped;
+
     // ignore bed picking when the camera is below the bed
     const Scene::Camera& camera{m_scene_provider.scene().camera()};
     const Scene::CameraProjectionType camera_type{camera.cam_projection().type()};
