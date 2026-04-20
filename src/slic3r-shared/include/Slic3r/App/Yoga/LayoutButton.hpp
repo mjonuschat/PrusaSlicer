@@ -5,12 +5,12 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Icon;
-class Text;
 
 class LayoutButton : public RectangleButton
 {
@@ -32,6 +32,8 @@ public:
     void set_icon(Render::Icon icon);
     ImColor icon_tint() const;
     void set_icon_tint(const ImColor& tint);
+    Text::WrapMode text_wrap_mode() const;
+    void set_text_wrap_mode(Text::WrapMode wrap_mode);
 
     Text* text() const;
 

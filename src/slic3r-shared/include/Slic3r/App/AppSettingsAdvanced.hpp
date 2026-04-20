@@ -14,10 +14,13 @@ namespace Slic3r::App {
 struct AppSettingsAdvanced
 {
     using PrinterFavoritePresets = std::set<std::pair<std::string, std::string>>;
+    using MaterialFavoritePresets = std::set<std::string>;
 
-    void toggle_favorite_preset(const std::string& id, const std::string& hw_config_id);
+    void toggle_printer_favorite_preset(const std::string& id, const std::string& hw_config_id);
+    void toggle_material_favorite_preset(const std::string& id);
 
     PrinterFavoritePresets printer_favorite_presets;
+    MaterialFavoritePresets material_favorite_presets;
 };
 
 void to_json(

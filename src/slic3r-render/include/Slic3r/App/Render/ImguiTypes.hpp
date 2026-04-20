@@ -209,6 +209,7 @@ enum class Icon : wchar_t
     OpenFolder,
     Shapes,
     RecentProjects,
+    Filter,
 
     // FontIconS
     // DO NOT TOUCH, DO NOT CHANGE ORDER

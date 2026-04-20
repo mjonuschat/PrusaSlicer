@@ -9,8 +9,10 @@
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/MaterialSelectionRow.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
+#include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::Biz {
@@ -20,6 +22,7 @@ class ProjectInteractor;
 namespace Slic3r::App::Yoga {
 class InputText;
 class LayoutButton;
+class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -58,15 +61,26 @@ protected:
     void update_preset_list();
 
 private:
+    struct ProjectContext;
+    ProjectContext& context();
+    const ProjectContext& context() const;
+    void update_current_context();
+
+private:
     using SelectionRowListViewFactory = Yoga::ViewFactory<
         MaterialSelectionRow,
         Biz::Preset::PresetItem,
         MaterialSelectionRow::FnClicked,
+        MaterialSelectionRow::FnIndexClicked,
+        MaterialSelectionRow::FnChecked,
         MaterialSelectionRow::FnClicked,
         size_t&,
         Biz::Preset::PresetInteractor&>;
-    using SelectionRowListView =
-        Yoga::ListView<MaterialSelectionRow, Biz::Preset::PresetItem, SelectionRowListViewFactory>;
+    using SelectionRowListView = Yoga::ListView<
+        MaterialSelectionRow,
+        Biz::Preset::PresetItem,
+        SelectionRowListViewFactory,
+        Yoga::ScrollArea>;
 
     Callbacks m_callbacks;
 
@@ -75,11 +89,26 @@ private:
     Biz::Preset::PresetItemCompoundObservableList& m_material_presets;
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>> m_material_filter;
 
-    size_t m_material_index                              = Domain::INVALID_ID;
+    size_t m_material_index = Domain::INVALID_ID;
+    Yoga::ButtonGroup m_material_type_button_group;
+    std::map<std::string, Yoga::LayoutButton*> m_type_filter_buttons;
     Yoga::InputText* m_input_text_search                 = nullptr;
+    Yoga::LayoutButton* m_only_favorites_button          = nullptr;
     SelectionRowListView* m_selection_row_list_view      = nullptr;
     Biz::Preset::PresetItemObservableList* m_preset_list = nullptr;
     MaterialSettingsDialog* m_material_settings_dialog   = nullptr;
+
+    struct ProjectContext
+    {
+        std::string type_filter = std::string();
+
+        bool operator==(const ProjectContext& other) const
+        {
+            return type_filter == other.type_filter;
+        }
+    } m_current_context;
+
+    std::unique_ptr<Biz::ProjectScoped<ProjectContext>> m_project_contexts;
 };
 
 } // namespace Slic3r::App

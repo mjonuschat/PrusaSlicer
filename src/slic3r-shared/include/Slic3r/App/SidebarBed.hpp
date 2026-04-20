@@ -8,6 +8,7 @@
 
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
@@ -27,8 +28,8 @@ class MaterialListView;
 
 namespace Yoga {
 class Text;
+class AbstractButton;
 class PrinterSettingsButton;
-class MaterialSettingsButton;
 } // namespace Yoga
 
 class SidebarBed :
@@ -62,6 +63,7 @@ private:
         Yoga::MaterialSettingsButton,
         Biz::Preset::PresetItemObservableList,
         std::weak_ptr<Yoga::ButtonGroup>,
+        Yoga::MaterialSettingsButton::FnIndexClicked,
         Biz::ProjectInteractor&>;
     using MaterialListView = Yoga::ListView<
         Yoga::MaterialSettingsButton,

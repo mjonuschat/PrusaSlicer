@@ -41,7 +41,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     set_min_size({YGUndefined, 60});
     set_orientation(Orientation::Vertical);
     set_gap(15.f);
-    set_min_size({ 220, 0 });
+    set_min_size({220, 0});
     set_flex_shrink(0.f);
 
     m_material_button_group = std::make_shared<ButtonGroup>();
@@ -79,6 +79,16 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
 
     m_list_view = emplace_back<MaterialListView>(MaterialListViewFactory{
         std::weak_ptr<ButtonGroup>(m_material_button_group),
+        [this](size_t index)
+        {
+            m_material_selection_dialog->set_material_index(index);
+            m_material_selection_dialog->material_settings_dialog().set_current_tab(index);
+            if (!m_material_selection_dialog->material_settings_dialog().opened()) {
+                m_navigator.set_opened_dialog(
+                    &m_material_selection_dialog->material_settings_dialog()
+                );
+            }
+        },
         m_project_interactor
     });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());

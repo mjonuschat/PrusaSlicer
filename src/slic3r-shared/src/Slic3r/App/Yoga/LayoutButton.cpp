@@ -95,6 +95,16 @@ void LayoutButton::set_icon_tint(const ImColor& tint)
     m_icon->set_tint(tint);
 }
 
+Text::WrapMode LayoutButton::text_wrap_mode() const
+{
+    return m_text->wrap_mode();
+}
+
+void LayoutButton::set_text_wrap_mode(Text::WrapMode wrap_mode)
+{
+    m_text->set_wrap_mode(wrap_mode);
+}
+
 Text* LayoutButton::text() const
 {
     return m_text;

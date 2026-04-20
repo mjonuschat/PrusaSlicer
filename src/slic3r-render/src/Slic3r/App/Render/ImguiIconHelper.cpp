@@ -238,6 +238,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::UndoGizmo, "undo_gizmo"},
     {Icon::VariableLayerHeight, "variable_layer_height"},
     {Icon::HeightRange, "height_range"},
+    {Icon::Filter, "filter"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

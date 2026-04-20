@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/ColorPickerButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -19,6 +20,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     size_t index,
     const Biz::Preset::PresetItemObservableList& state,
     std::weak_ptr<ButtonGroup> button_group,
+    FnIndexClicked on_cog_clicked,
     Biz::ProjectInteractor& project_interactor
 ) :
     RectangleButton(format(_u8L("Material %1% TT"), index + 1)),
@@ -26,6 +28,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this),
     m_button_group(button_group),
+    m_on_cog_clicked(on_cog_clicked),
     m_project_interactor(project_interactor)
 {
     set_checkable(true);
@@ -62,6 +65,30 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_material_name->set_flex_grow(1.f);
     m_material_name->set_self_align(YGAlignCenter);
     m_material_name->set_wrap_mode(Text::WrapMode::WrapElide);
+
+    Item* button_wrap = emplace_back<Item>();
+    button_wrap->set_min_size({20.f, 20.f});
+    button_wrap->set_flex_shrink(0);
+    m_cog_btn = button_wrap->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::Cog,
+        Biz::_u8L("Show material settings")
+    );
+    m_cog_btn->set_self_align(YGAlignCenter);
+    m_cog_btn->set_margin(-2.f);
+    m_cog_btn->set_width(24.f);
+    m_cog_btn->set_height(24.f);
+    m_cog_btn->set_background_color(m_theme->color_imgui(Platform::Color::Transparent));
+    m_cog_btn->callbacks().action = [this]()
+    {
+        if (!this->checked()) {
+            this->set_checked(true);
+        }
+        m_on_cog_clicked(m_index);
+    };
+    update_cog_visibility();
+
+    m_cog_btn->callbacks().hovered_changed = [this](bool) { update_cog_visibility(); };
 
     emplace_back<Separator>(Orientation::Vertical)
         ->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
@@ -170,6 +197,23 @@ void MaterialSettingsButton::on_colors_changed(
 void MaterialSettingsButton::set_material_name(const std::string& name)
 {
     m_material_name->set_text(name);
+}
+
+void MaterialSettingsButton::checked_updated_internal()
+{
+    RectangleButton::checked_updated_internal();
+    update_cog_visibility();
+}
+
+void MaterialSettingsButton::hovered_updated_internal()
+{
+    RectangleButton::hovered_updated_internal();
+    update_cog_visibility();
+}
+
+void MaterialSettingsButton::update_cog_visibility()
+{
+    m_cog_btn->set_visible(this->hovered() || m_cog_btn->hovered());
 }
 
 } // namespace Slic3r::App::Yoga

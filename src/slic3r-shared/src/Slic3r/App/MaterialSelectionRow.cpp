@@ -15,6 +15,8 @@ MaterialSelectionRow::MaterialSelectionRow(
     size_t index,
     const Biz::Preset::PresetItem& data,
     FnClicked on_clicked_extention,
+    FnIndexClicked on_favorite_clicked,
+    FnChecked is_favorite_checked,
     FnClicked on_cog_clicked,
     size_t& material_index,
     Biz::Preset::PresetInteractor& preset_interactor
@@ -23,15 +25,21 @@ MaterialSelectionRow::MaterialSelectionRow(
     LayoutButton(data.name, Render::Icon::Lock),
     m_material_index(material_index),
     m_on_clicked_extention(on_clicked_extention),
+    m_on_favorite_clicked(on_favorite_clicked),
+    m_is_favorite_checked(is_favorite_checked),
     m_on_cog_clicked(on_cog_clicked),
     m_preset_interactor(preset_interactor)
 {
     set_flex_shrink(0);
     set_min_size({30, 30});
+    set_content_padding(5.f);
     set_expand_label(true);
     set_content_justify_content(YGJustifyFlexStart);
     set_content_direction(YGDirectionRTL);
     set_allow_overlap(true);
+
+    set_icon_tint(m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
+    set_text_wrap_mode(Text::WrapMode::WrapElide);
 
     auto switch_matrial = [this]() -> bool
     {
@@ -53,18 +61,22 @@ MaterialSelectionRow::MaterialSelectionRow(
         m_on_clicked_extention();
     };
 
-    m_cog_btn = emplace<LayoutButton>(
-        1,
-        std::string{},
-        Render::Icon::Cog,
-        Biz::_u8L("Show material settings")
-    );
-    m_cog_btn->set_self_align(YGAlignCenter);
-    m_cog_btn->set_width(22.f);
-    m_cog_btn->set_height(22.f);
-    m_cog_btn->set_background_color(Platform::Color::ButtonTransparent);
-    update_cog_visibility();
+    auto add_button = [this](Render::Icon icon, const std::string& tooltip)
+    {
+        Item* button_wrap = emplace<Item>(1);
+        button_wrap->set_min_size({20.f, 20.f});
+        button_wrap->set_flex_shrink(0.f);
+        LayoutButton* btn = button_wrap->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+        btn->set_self_align(YGAlignCenter);
+        btn->set_margin(-2.f);
+        btn->set_width(24.f);
+        btn->set_height(24.f);
+        btn->set_background_color(Platform::Color::ButtonTransparent);
+        btn->callbacks().hovered_changed = [this](bool) { update_buttons_visibility(); };
+        return btn;
+    };
 
+    m_cog_btn = add_button(Render::Icon::Cog, Biz::_u8L("Show material settings"));
     m_cog_btn->callbacks().action = [this, switch_matrial]()
     {
         auto selected_preset = m_preset_interactor.selected_printer_preset();
@@ -76,27 +88,42 @@ MaterialSelectionRow::MaterialSelectionRow(
         m_on_cog_clicked();
     };
 
-    m_cog_btn->callbacks().hovered_changed = [this](bool) { update_cog_visibility(); };
+    m_favorite_btn = add_button(Render::Icon::Star, Biz::_u8L("Add to favorites"));
+    m_favorite_btn->callbacks().action = [this]()
+    {
+        m_on_favorite_clicked(m_index);
+        on_data_update();
+    };
+
+    update_buttons_visibility();
 }
 
 void MaterialSelectionRow::on_data_update()
 {
     set_label(m_state->name);
+    set_icon(
+        m_state->origin == Domain::Preset::PresetOrigin::System ? Render::Icon::Lock :
+                                                                  Render::Icon::None
+    );
+    m_favorite_btn->set_icon(
+        m_is_favorite_checked(m_index) ? Render::Icon::StarSolid : Render::Icon::Star
+    );
+    update_buttons_visibility();
 }
 
 void MaterialSelectionRow::checked_updated_internal()
 {
     RectangleButton::checked_updated_internal();
-    update_cog_visibility();
+    update_buttons_visibility();
 }
 
 void MaterialSelectionRow::hovered_updated_internal()
 {
     RectangleButton::hovered_updated_internal();
-    update_cog_visibility();
+    update_buttons_visibility();
 }
 
-void MaterialSelectionRow::update_cog_visibility()
+void MaterialSelectionRow::update_buttons_visibility()
 {
     m_cog_btn->set_visible(hovered() || m_cog_btn->hovered());
 }

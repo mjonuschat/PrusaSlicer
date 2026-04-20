@@ -40,7 +40,7 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
     m_favorite_button->set_visible(true);
     m_favorite_button->callbacks().action = [this]()
     {
-        AppServices::instance().app_config().app_settings_advanced().toggle_favorite_preset(
+        AppServices::instance().app_config().app_settings_advanced().toggle_printer_favorite_preset(
             m_state->id,
             m_state->hw_printer_config_id
         );

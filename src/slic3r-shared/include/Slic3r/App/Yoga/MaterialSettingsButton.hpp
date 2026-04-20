@@ -22,6 +22,8 @@ namespace Slic3r::App::Yoga {
 class Text;
 class ColorPickerButton;
 class ButtonGroup;
+class LayoutButton;
+class AbstractButton;
 
 class MaterialSettingsButton :
     public RectangleButton,
@@ -31,10 +33,12 @@ class MaterialSettingsButton :
     public Biz::IColorsChangedListener
 {
 public:
+    using FnIndexClicked = std::function<void(size_t)>;
     MaterialSettingsButton(
         size_t index,
         const Biz::Preset::PresetItemObservableList& state,
         std::weak_ptr<ButtonGroup> button_group,
+        FnIndexClicked on_cog_clicked,
         Biz::ProjectInteractor& project_interactor
     );
     ~MaterialSettingsButton();
@@ -55,10 +59,15 @@ public:
 
 protected:
     void on_data_update() override;
+    void checked_updated_internal() override;
+    void hovered_updated_internal() override;
 
     void set_color(const ImColor& color);
     void set_nozzle(const std::string& nozzle);
     void set_material_name(const std::string& name);
+
+private:
+    void update_cog_visibility();
 
 private:
     Biz::ListenerScope<
@@ -75,8 +84,10 @@ private:
 
     ColorPickerButton* m_color_marker{nullptr};
     Text* m_material_name{nullptr};
+    LayoutButton* m_cog_btn{ nullptr };
     Text* m_nozzle{nullptr};
     std::weak_ptr<ButtonGroup> m_button_group;
+    FnIndexClicked m_on_cog_clicked;
     Biz::ProjectInteractor& m_project_interactor;
 };
 
