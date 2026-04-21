@@ -1,5 +1,6 @@
 #include "Slic3r/App/Undo/Stack.hpp"
 
+#include <ranges>
 #include <span>
 
 #include "Slic3r/App/Undo/ConfigContainerListSerialize.hpp"
@@ -7,6 +8,10 @@
 #include "Slic3r/App/Undo/ObjectSelectionSerialize.hpp"
 #include "Slic3r/App/Undo/BedSelectionStateSerialize.hpp"
 #include "Slic3r/App/Undo/SerializedData.hpp"
+
+#if defined(_WIN32)
+    #include <windows.h>
+#endif
 
 
 namespace Slic3r::App::Undo {
@@ -69,6 +74,29 @@ public:
         return m_chunks.empty();
     }
 
+    std::size_t memsize() const
+    {
+        std::size_t result{sizeof(decltype(m_intervals)::value_type) * m_intervals.capacity()};
+        for (const Chunk& chunk : m_chunks) {
+            std::size_t chunk_size{std::visit(
+                Domain::overloaded{
+                    [](const std::string& string) { return string.capacity(); },
+                    [](const TriangleMeshChunk& mesh_chunk)
+                    {
+                        return mesh_chunk.mesh->its.memsize();
+                    },
+                    [](const VersionedChunk& versioned_chunk)
+                    { return versioned_chunk.serialized_data.capacity(); },
+                    [](const ConfigContainerChunk& config_chunk)
+                    { return config_chunk.serialized_data.capacity(); }
+                },
+                chunk
+            )};
+            result += chunk_size;
+        }
+        return result;
+    }
+
 private:
     std::optional<std::size_t> get_chunk_index(std::size_t snapshot_index) const
     {
@@ -89,14 +117,10 @@ private:
 
     void remove_snapshot(std::size_t snapshot_index)
     {
-        const std::optional<std::size_t> chunk_index{get_chunk_index(snapshot_index)};
-        if (!chunk_index) {
-            return;
-        }
-
-        const std::size_t interval_end_index{*chunk_index + 1};
-        for (std::size_t& value : std::span{m_intervals}.subspan(interval_end_index)) {
-            value--;
+        for (std::size_t& boundary : m_intervals) {
+            if (boundary > snapshot_index) {
+                --boundary;
+            }
         }
     }
 
@@ -161,6 +185,8 @@ public:
 
         m_snapshots.push_back(std::move(snapshot));
         m_end_snapshot_index++;
+
+        assert_consistency(m_channels, m_snapshots);
     }
 
     std::vector<SerializedData> get_snapshot_data(const Snapshot& snapshot) const
@@ -208,7 +234,37 @@ public:
         return m_snapshots;
     }
 
+    std::size_t memsize() const
+    {
+        std::size_t result{};
+        for (const Channel& channel : m_channels | std::views::values) {
+            result += channel.memsize();
+        }
+        for (const Snapshot& snapshot : m_snapshots) {
+            for (const SnapshotData& data : snapshot.serialized_data) {
+                result += data.data.capacity();
+            }
+        }
+        return result;
+    }
+
 private:
+    static void assert_consistency(
+        const std::map<ChannelId, Channel>& channels,
+        const std::vector<Snapshot>& snapshots
+    )
+    {
+        for (std::size_t snapshot_index{}; snapshot_index < snapshots.size(); ++snapshot_index) {
+            const Snapshot& snapshot{snapshots[snapshot_index]};
+            for (const SnapshotData& data : snapshot.serialized_data) {
+                for (const ChannelId& id : data.used_channels) {
+                    ASSERT(channels.contains(id));
+                    ASSERT(channels.at(id).get_chunk(snapshot_index));
+                }
+            }
+        }
+    }
+
     std::size_t id_to_index(std::size_t id) const
     {
         const auto it{std::ranges::find_if(
@@ -230,6 +286,8 @@ private:
 
         m_snapshots.erase(m_snapshots.begin() + interval_begin, m_snapshots.begin() + interval_end);
         m_end_snapshot_index -= interval_end - interval_begin;
+
+        assert_consistency(m_channels, m_snapshots);
     }
 
     std::size_t m_end_snapshot_index{};
@@ -245,6 +303,78 @@ Stack& Stack::operator=(Stack&&) noexcept = default;
 Stack::~Stack()                           = default;
 
 constexpr std::size_t snapshot_data_count{5};
+
+// Returns the size of physical memory (RAM) in bytes.
+// http://nadeausoftware.com/articles/2012/09/c_c_tip_how_get_physical_memory_size_system
+static size_t total_physical_memory()
+{
+#if defined(_WIN32) && (defined(__CYGWIN__) || defined(__CYGWIN32__))
+	// Cygwin under Windows. ------------------------------------
+	// New 64-bit MEMORYSTATUSEX isn't available.  Use old 32.bit
+	MEMORYSTATUS status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatus( &status );
+	return (size_t)status.dwTotalPhys;
+#elif defined(_WIN32)
+	// Windows. -------------------------------------------------
+	// Use new 64-bit MEMORYSTATUSEX, not old 32-bit MEMORYSTATUS
+	MEMORYSTATUSEX status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatusEx( &status );
+	return (size_t)status.ullTotalPhys;
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+	// UNIX variants. -------------------------------------------
+	// Prefer sysctl() over sysconf() except sysctl() HW_REALMEM and HW_PHYSMEM
+
+#if defined(CTL_HW) && (defined(HW_MEMSIZE) || defined(HW_PHYSMEM64))
+	int mib[2];
+	mib[0] = CTL_HW;
+#if defined(HW_MEMSIZE)
+	mib[1] = HW_MEMSIZE;            // OSX. ---------------------
+#elif defined(HW_PHYSMEM64)
+	mib[1] = HW_PHYSMEM64;          // NetBSD, OpenBSD. ---------
+#endif
+	int64_t size = 0;               // 64-bit
+	size_t len = sizeof( size );
+	if ( sysctl( mib, 2, &size, &len, NULL, 0 ) == 0 )
+		return (size_t)size;
+	return 0L;			// Failed?
+
+#elif defined(_SC_AIX_REALMEM)
+	// AIX. -----------------------------------------------------
+	return (size_t)sysconf( _SC_AIX_REALMEM ) * (size_t)1024L;
+
+#elif defined(_SC_PHYS_PAGES) && defined(_SC_PAGESIZE)
+	// FreeBSD, Linux, OpenBSD, and Solaris. --------------------
+	return (size_t)sysconf( _SC_PHYS_PAGES ) *
+		(size_t)sysconf( _SC_PAGESIZE );
+
+#elif defined(_SC_PHYS_PAGES) && defined(_SC_PAGE_SIZE)
+	// Legacy. --------------------------------------------------
+	return (size_t)sysconf( _SC_PHYS_PAGES ) *
+		(size_t)sysconf( _SC_PAGE_SIZE );
+
+#elif defined(CTL_HW) && (defined(HW_PHYSMEM) || defined(HW_REALMEM))
+	// DragonFly BSD, FreeBSD, NetBSD, OpenBSD, and OSX. --------
+	int mib[2];
+	mib[0] = CTL_HW;
+#if defined(HW_REALMEM)
+	mib[1] = HW_REALMEM;		// FreeBSD. -----------------
+#elif defined(HW_PYSMEM)
+	mib[1] = HW_PHYSMEM;		// Others. ------------------
+#endif
+	unsigned int size = 0;		// 32-bit
+	size_t len = sizeof( size );
+	if ( sysctl( mib, 2, &size, &len, NULL, 0 ) == 0 )
+		return (size_t)size;
+	return 0L;			// Failed?
+#endif // sysctl and sysconf variants
+
+#else
+	return 0L;			// Unknown OS.
+#endif
+}
+
 
 void Stack::take_snapshot(
     const Domain::Model& model,
@@ -277,7 +407,23 @@ void Stack::take_snapshot(
 
     m_stack->save_snapshot(to_save, type);
     m_one_past_selected_index++;
-    ASSERT(m_one_past_selected_index == snapshots.size());
+
+    const std::size_t mb{1024 * 1024};
+    const std::size_t gb{1024 * mb};
+    const std::size_t ridiculous_itertions_count{1000};
+    std::size_t count{0};
+    std::size_t stack_memsize{m_stack->memsize()};
+    const std::size_t stack_memory_limit{std::min(total_physical_memory() / 10, 1 * gb)};
+    while (stack_memsize > stack_memory_limit && !m_stack->get_snapshots().empty()) {
+        ASSERT(count++ < ridiculous_itertions_count);
+        m_stack->pop_front_n(1);
+        m_one_past_selected_index = snapshots.size();
+        SPDLOG_INFO("Trimming undo stack, original size: {}", stack_memsize);
+        stack_memsize = m_stack->memsize();
+        SPDLOG_INFO("Trimming undo stack, new size: {}", stack_memsize);
+    }
+
+    SPDLOG_TRACE("Undo stack size: {} MB", stack_memsize / static_cast<double>(mb));
     on_change(*this);
 }
 
