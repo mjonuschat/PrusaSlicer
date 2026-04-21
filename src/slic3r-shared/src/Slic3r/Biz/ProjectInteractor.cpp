@@ -946,7 +946,7 @@ void ProjectInteractor::reload_config_containers_after_undo(
         )};
 
         ASSERT(active_it != old_containers.end());
-        ASSERT(new_it != old_containers.end());
+        ASSERT(new_it != new_containers.end());
 
         const bool is_different_printer{
             (*active_it)->selected_preset().hw_config.id

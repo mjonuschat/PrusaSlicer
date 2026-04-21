@@ -238,7 +238,7 @@ bool process_transform(
             size_t num_objects = model.objects.size();
             for (size_t i = 0; i < num_objects; ++i) {
                 ModelObjectPtrs new_objects;
-                ModelProcessing::split(model.objects.front(), &new_objects);
+                Algorithms::ModelObject::split(model.objects.front(), &new_objects);
                 model.delete_object(size_t(0));
             }
         }

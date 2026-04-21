@@ -51,8 +51,6 @@ namespace ModelProcessing
     int     get_repaired_errors_count(const Domain::ModelVolume* volume);
     // Get count of errors in the mesh( or all object's meshes, if volume index isn't defined)
     int     get_repaired_errors_count(const Domain::ModelObject* object, const int vol_idx = -1);
-
-    void    split(Domain::ModelObject* object, std::vector<Domain::ModelObject*>* new_objects);
     void    merge(Domain::ModelObject* object);
 }
 

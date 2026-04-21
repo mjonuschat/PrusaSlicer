@@ -58,6 +58,21 @@ Domain::Vec3d center(const Domain::TriangleMesh& mesh);
 bool is_splittable(const Domain::TriangleMesh& mesh);
 Domain::Polygon convex_hull(const Domain::TriangleMesh& mesh);
 Domain::TriangleMesh convex_hull_3d(const Domain::TriangleMesh& mesh);
+
+/**
+@brief Compare TriangleMeshes by Bounding boxes (mainly for sort)
+From Front(Z) Upper(Y) TopLeft(X) corner.
+1. Seraparate group not overlaped i Z axis
+2. Seraparate group not overlaped i Y axis
+3. Start earlier in X (More on left side)
+@param triangle_mesh1 Compare from
+@param triangle_mesh2 Compare to
+@return True when triangle mesh 1 is closer, upper or lefter than triangle mesh 2 other wise false
+*/
+bool is_front_up_left(
+    const Domain::TriangleMesh& trinagle_mesh1,
+    const Domain::TriangleMesh& triangle_mesh2
+);
 std::vector<Domain::TriangleMesh> split(const Domain::TriangleMesh& mesh);
 // Returns the bbox of the given TriangleMesh transformed by the given transformation
 Domain::BoundingBox3d transformed_bounding_box(

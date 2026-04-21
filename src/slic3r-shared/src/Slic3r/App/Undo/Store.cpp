@@ -197,6 +197,14 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Set part settings value");
     case Type::SetAsSeparateObject:
         return _u8L("Selected instances to objects");
+    case Type::SplitToObjects:
+        return _u8L("Split to objects");
+    case Type::SplitToVolumes:
+        return _u8L("Split to volumes");
+    case Type::MergeToOneObject:
+        return _u8L("Merge to object");
+    case Type::InvalidateCutInfo:
+        return _u8L("Invalidate Cut Info");
     case Type::SetAsPrintable:
         return _u8L("Change printable state");
     case Type::ChangeVolumeType:

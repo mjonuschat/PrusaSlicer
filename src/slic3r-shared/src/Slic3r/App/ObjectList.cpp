@@ -1129,8 +1129,8 @@ bool ObjectList::render_object_node(
     handle_dragging(sel_element);
 
     render_printable_icon(
-        sel_element, 
-        object->instances.size()==1? object->instances.front()->printable : object->printable
+        sel_element,
+        object->instances.size() == 1 ? object->instances.front()->printable : object->printable
     );
     if (!is_sla_config) {
         int obj_extruder_id = !object->object_settings.items.all_items().empty()
@@ -1159,9 +1159,10 @@ bool ObjectList::render_object_node(
             }
             volumes_colors.emplace(extruder_colors[obj_extruder_id]);
         }
-        ASSERT(!volumes_colors.empty());
 
-        if (volumes_colors.size() > 1 || *volumes_colors.begin() != extruder_colors[0]) {
+        if (!volumes_colors.empty()
+            && (volumes_colors.size() > 1 || *volumes_colors.begin() != extruder_colors[0]))
+        {
             // Show extruder marker only if object or its volumes have overrides
             std::vector<Domain::ColorRGB> colors(volumes_colors.begin(), volumes_colors.end());
             if (colors.size() == 1) {
@@ -1460,8 +1461,9 @@ bool ObjectList::render_instances(
                 if (ms.Contains((ImGuiID) instance_id) && !ctx.selected_items.count(sel_element)) {
                     is_changed_selection = true;
                     ctx.selected_items.insert(sel_element);
-                } else if (!ms.Contains((ImGuiID) instance_id)
-                           && ctx.selected_items.count(sel_element))
+                } else if (
+                    !ms.Contains((ImGuiID) instance_id) && ctx.selected_items.count(sel_element)
+                )
                 {
                     is_changed_selection = true;
                     ctx.selected_items.erase(sel_element);
@@ -1798,9 +1800,7 @@ void ObjectList::show_gizmo(const ElementRef& sel_element, const Render::Icon gi
     }();
 
     if (tool != Scene::ToolType::None) {
-        m_gizmo_controller->activate_tool(
-            tool
-        );
+        m_gizmo_controller->activate_tool(tool);
     }
 }
 

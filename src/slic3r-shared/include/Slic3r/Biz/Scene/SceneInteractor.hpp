@@ -261,6 +261,16 @@ public:
     bool selected_instances_printable() const;
     void extract_selected_instances();
     bool can_extract_selected_instances() const;
+
+    bool can_split_selection_to_objects() const;
+    void split_selection_to_objects();
+    bool can_split_selection_to_volumes() const;
+    void split_selection_to_volumes();
+    bool can_merge_selection_into_object() const;
+    void merge_selection_into_object();
+    bool can_invalidate_cut_info() const;
+    void invalidate_cut_info();
+
     /**
      * Delete elements (volumes or instances) from the current scene selection.
      *

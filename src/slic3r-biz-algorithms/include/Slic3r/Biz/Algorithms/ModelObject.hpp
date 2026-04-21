@@ -118,4 +118,16 @@ void scale_to_fit(Domain::ModelObject& model_object, const Domain::Vec3d& size);
  */
 void bake_xy_rotation_into_meshes(Domain::ModelObject& model_object, size_t instance_idx);
 
+/**
+ * Splits the given object.
+ * Appends pointers to the newly created objects to new_objects.
+ */
+void split(Domain::ModelObject* object, std::vector<Domain::ModelObject*>* new_objects);
+
+/**
+ * Merges the given instances into one new object.
+ * Return a pointer to the newly created object
+ */
+Domain::ModelObject* merge(const std::vector<const Domain::ModelInstance*>& new_objects);
+
 } // namespace Slic3r::Biz::Algorithms::ModelObject

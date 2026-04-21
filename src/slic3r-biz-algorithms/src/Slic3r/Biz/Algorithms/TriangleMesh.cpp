@@ -329,6 +329,24 @@ TriangleMesh convex_hull_3d(const TriangleMesh& mesh)
     return result;
 }
 
+bool is_front_up_left(const TriangleMesh &trinagle_mesh1, const TriangleMesh &triangle_mesh2)
+{
+    // stats form t1
+    const Domain::Vec3f &min1 = trinagle_mesh1.stats().min;
+    const Domain::Vec3f &max1 = trinagle_mesh1.stats().max;
+    // stats from t2
+    const Domain::Vec3f &min2 = triangle_mesh2.stats().min;
+    const Domain::Vec3f &max2 = triangle_mesh2.stats().max;
+    // priority Z, Y, X
+    for (int axe = 2; axe > 0; --axe) {
+        if (max1[axe] < min2[axe])
+            return true;
+        if (min1[axe] > max2[axe])
+            return false;
+    }
+    return min1.x() < min2.x();
+}
+
 std::vector<TriangleMesh> split(const TriangleMesh& mesh)
 {
     using Biz::Algorithms::TriangleMesh::construct;

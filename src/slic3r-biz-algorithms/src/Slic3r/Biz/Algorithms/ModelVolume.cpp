@@ -111,34 +111,6 @@ void mirror(Domain::ModelVolume& model_volume, const Domain::Axis axis)
     model_volume.set_mirror(mirror);
 }
 
-/// <summary>
-/// Compare TriangleMeshes by Bounding boxes (mainly for sort)
-/// From Front(Z) Upper(Y) TopLeft(X) corner.
-/// 1. Seraparate group not overlaped i Z axis
-/// 2. Seraparate group not overlaped i Y axis
-/// 3. Start earlier in X (More on left side)
-/// </summary>
-/// <param name="triangle_mesh1">Compare from</param>
-/// <param name="triangle_mesh2">Compare to</param>
-/// <returns>True when triangle mesh 1 is closer, upper or lefter than triangle mesh 2 other wise false</returns>
-static bool is_front_up_left(const Domain::TriangleMesh& trinagle_mesh1, const Domain::TriangleMesh& triangle_mesh2)
-{
-    // stats form t1
-    const Domain::Vec3f& min1 = trinagle_mesh1.stats().min;
-    const Domain::Vec3f& max1 = trinagle_mesh1.stats().max;
-    // stats from t2
-    const Domain::Vec3f& min2 = triangle_mesh2.stats().min;
-    const Domain::Vec3f& max2 = triangle_mesh2.stats().max;
-    // priority Z, Y, X
-    for (int axe = 2; axe > 0; --axe) {
-        if (max1[axe] < min2[axe])
-            return true;
-        if (min1[axe] > max2[axe])
-            return false;
-    }
-    return min1.x() < min2.x();
-}
-
 // Split this volume, append the result to the object owning this volume.
 // Return the number of volumes created from this one.
 // This is useful to assign different materials to different volumes of an object.
@@ -148,7 +120,11 @@ size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
     if (meshes.size() <= 1)
         return 1;
 
-    std::sort(meshes.begin(), meshes.end(), is_front_up_left);
+    std::sort(
+        meshes.begin(),
+        meshes.end(),
+        Slic3r::Biz::Algorithms::TriangleMesh::is_front_up_left
+    );
 
     // splited volume should not be text object
     if (volume->text_configuration.has_value())

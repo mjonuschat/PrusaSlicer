@@ -1287,6 +1287,217 @@ bool SceneInteractor::can_extract_selected_instances() const
     return false;
 }
 
+bool SceneInteractor::can_split_selection_to_objects() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (!selection.empty()
+        && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.only_single_object())
+    {
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.is_wipe_tower())
+                continue;
+            Domain::Project& project    = m_workbench.project(m_selected_project_id);
+            Domain::ModelObject* object = project.find_object_by_id(el.object_id);
+            ASSERT(object);
+            const size_t volumes_cnt = object->volumes.size();
+            return object->is_cut() ?
+                false :
+                volumes_cnt == 1 ?
+                Biz::Algorithms::ModelVolume::is_splittable(*object->volumes[0]) :
+                volumes_cnt == object->parts_count();
+        }
+    }
+    return false;
+}
+
+void SceneInteractor::split_selection_to_objects()
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.empty()
+        || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance
+        || !selection.only_single_object())
+        return;
+
+    for (const Domain::ElementRef& el : selection.elements) {
+        if (el.is_wipe_tower())
+            continue;
+        Domain::ModelObject* object =
+            m_workbench.project(m_selected_project_id).find_object_by_id(el.object_id);
+        Domain::ModelObjectPtrs new_objects;
+        Algorithms::ModelObject::split(object, &new_objects);
+
+        delete_object(object);
+        notify_listener_on_objects(new_objects);
+        break;
+    }
+}
+
+bool SceneInteractor::can_split_selection_to_volumes() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.elements.size() == 1 && !selection.contains_wipe_tower()) {
+        const Domain::ElementRef& el = selection.elements.front();
+        Domain::Project& project     = m_workbench.project(m_selected_project_id);
+
+        Domain::ModelObject* object = project.find_object_by_id(el.object_id);
+        if (object->is_cut()) {
+            return false;
+        }
+
+        Domain::ModelVolume* volume = selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume ?
+            project.find_volume_by_id(el.object_id, el.volume_id) :
+            nullptr;
+        if (!volume) {
+            if (object->volumes.size() != 1) {
+                return false;
+            }
+            volume = object->volumes.front();
+        }
+        ASSERT(volume);
+        return Biz::Algorithms::ModelVolume::is_splittable(*volume);
+    }
+    return false;
+}
+
+void SceneInteractor::split_selection_to_volumes()
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.elements.size() != 1 || selection.contains_wipe_tower())
+        return;
+
+    const Domain::ElementRef& sel_element = selection.elements.front();
+    Domain::Project& project              = m_workbench.project(m_selected_project_id);
+
+    Domain::ModelObject* object = project.find_object_by_id(sel_element.object_id);
+    Domain::SelectionId sel_instance_id =
+        sel_element.instance_id == 0 ? object->instances.front()->id().id : sel_element.instance_id;
+    Domain::SelectionId sel_volume_id =
+        sel_element.volume_id == 0 ? object->volumes.front()->id().id : sel_element.volume_id;
+
+    Domain::ModelVolume* volume = selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume ?
+        project.find_volume_by_id(sel_element.object_id, sel_element.volume_id) :
+        nullptr;
+    if (!volume) {
+        ASSERT(object->volumes.size() == 1);
+        volume = object->volumes.front();
+    }
+    ASSERT(volume);
+
+    Domain::ModelVolumePtrs& volumes = object->volumes;
+    // get volume index in volumes before splitting
+    size_t ivolume =
+        std::distance(volumes.begin(), std::find(volumes.begin(), volumes.end(), volume));
+
+    // Split the volume
+    unsigned int max_extruders{1}; // ToDo get this value from config
+    size_t created_volumes_cnt = Biz::Algorithms::ModelVolume::split(volume, max_extruders);
+
+    // Remove a node associated with this volume, because it's id will be changed after spliting
+    Domain::ElementRefs removed = {Domain::ElementRef(object->id().id, 0, sel_volume_id)};
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_volume_removed(m_selected_project_id, removed); }
+    );
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, removed);
+
+    Domain::ElementRefs added;
+    while (created_volumes_cnt != 0) {
+        added.push_back(
+            {Domain::ElementRef(object->id().id, sel_instance_id, volumes[ivolume++]->id().id)}
+        );
+        created_volumes_cnt--;
+    }
+
+    invoke_listeners<ISceneChangedListener>([&](auto* l)
+                                            { l->on_volume_added(m_selected_project_id, added); });
+
+    changes.append(m_bed_tracking.update_instances_bed_placement(project, added));
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
+
+    set_object_selection({SelectionMode::Volume, added});
+}
+
+bool SceneInteractor::can_merge_selection_into_object() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.elements.size() > 1)
+    {
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (m_workbench.project(m_selected_project_id)
+                    .find_object_by_id(el.object_id)
+                    ->is_cut())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void SceneInteractor::merge_selection_into_object()
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    ASSERT(
+        selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.elements.size() > 1
+    );
+
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+
+    std::vector<const Domain::ModelInstance*> instances;
+    for (const Domain::ElementRef& el : selection.elements) {
+        instances.push_back(project.find_instance_by_id(el.instance_id));
+    }
+    ASSERT(!instances.empty());
+    Domain::ModelObject* new_object = Biz::Algorithms::ModelObject::merge(instances);
+
+    delete_selected_elements();
+    notify_listener_on_objects({new_object});
+}
+
+bool SceneInteractor::can_invalidate_cut_info() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.elements.size() == 1
+        && !selection.contains_wipe_tower())
+    {
+        const Domain::ElementRef& el = selection.elements.front();
+        return m_workbench.project(m_selected_project_id)
+            .find_object_by_id(selection.elements.front().object_id)
+            ->is_cut();
+    }
+    return false;
+}
+
+void SceneInteractor::invalidate_cut_info()
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    ASSERT(
+        selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance
+        && selection.elements.size() == 1
+        && !selection.contains_wipe_tower()
+    );
+
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Domain::Model& model     = project.model();
+
+    Domain::ModelObject* init_object =
+        project.find_object_by_id(selection.elements.front().object_id);
+
+    const Domain::CutId cut_id = init_object->cut_id;
+    // invalidate cut for related objects (which have the same cut_id)
+    for (Domain::ModelObject* object : model.objects) {
+        if (object->cut_id.is_equal(cut_id)) {
+            object->invalidate_cut();
+        }
+    }
+}
+
 std::optional<std::string> SceneInteractor::delete_selected_elements()
 {
     Domain::Project& project               = m_workbench.project(m_selected_project_id);
@@ -1383,7 +1594,6 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
         for (const Domain::ModelInstance* instance : object->instances) {
             new_selection.elements.emplace_back(Domain::ElementRef(object->id().id, instance->id().id));
         }
-
         changes = m_bed_tracking.update_instances_bed_placement(project, to_remove);
     }
 
@@ -1395,6 +1605,10 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
             if (scene_selection.mode == SelectionMode::Instance) {
                 l->on_instance_removed(m_selected_project_id, to_remove);
             } else if (scene_selection.mode == SelectionMode::Volume) {
+                for (Domain::ElementRef& el : to_remove) {
+                    // invalidate instance id to garanty volume removing from all instances
+                    el.instance_id = 0;
+                }
                 l->on_volume_removed(m_selected_project_id, to_remove);
             }
         }

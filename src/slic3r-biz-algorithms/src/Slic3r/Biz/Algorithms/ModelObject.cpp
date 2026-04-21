@@ -475,4 +475,167 @@ void bake_xy_rotation_into_meshes(Domain::ModelObject& model_object, const size_
     model_object.invalidate_bounding_box();
 }
 
+template <typename ObjectSettingsType>
+static ObjectSettingsType create_object_settings_from_volume_settings(
+    const Domain::VolumeSettings& volume_settings
+)
+{
+    ObjectSettingsType object_settings;
+    for (const Domain::ConfigItem& item : volume_settings.items.all_items()) {
+        if (!volume_settings.overrides.find(item.name())
+            || !volume_settings.overrides.get(item.name()).has_value()
+            || object_settings.items.find(item.name()) == nullptr)
+            continue;
+
+        item.visit(
+            [&]<typename T>(const T& item_value)
+            {
+                using ValueType = std::decay_t<T>;
+                object_settings.overrides.template set<ValueType>(item.name(), item_value);
+            }
+        );
+    }
+
+    return object_settings;
+}
+
+void split(Domain::ModelObject* object, Domain::ModelObjectPtrs* new_objects)
+{
+    for (Domain::ModelVolume* volume : object->volumes) {
+        if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
+            continue;
+
+        // splited volume should not be text object
+        if (volume->text_configuration.has_value())
+            volume->text_configuration.reset();
+
+        std::vector<Domain::TriangleMesh> meshes =
+            Slic3r::Biz::Algorithms::TriangleMesh::split(volume->mesh());
+        std::sort(
+            meshes.begin(),
+            meshes.end(),
+            Slic3r::Biz::Algorithms::TriangleMesh::is_front_up_left
+        );
+
+        size_t counter = 1;
+        for (Domain::TriangleMesh& mesh : meshes) {
+            // FIXME: crashes if not satisfied
+            if (mesh.facets_count() < 3 || mesh.has_zero_volume())
+                continue;
+
+            // XXX: this seems to be the only real usage of m_model, maybe refactor this so that it's not needed?
+            Domain::ModelObject* new_object = object->get_model()->add_object();
+            if (meshes.size() == 1) {
+                new_object->name                = volume->name;
+                new_object->object_settings     = object->object_settings.overrides.empty() ?
+                    create_object_settings_from_volume_settings<Domain::ObjectSettings>(
+                        volume->volume_settings
+                    ) :
+                    object->object_settings;
+                new_object->object_settings_sla = object->object_settings_sla.overrides.empty() ?
+                    create_object_settings_from_volume_settings<Domain::SLAObjectSettings>(
+                        volume->volume_settings
+                    ) :
+                    object->object_settings_sla;
+            } else {
+                new_object->name =
+                    object->name + (meshes.size() > 1 ? "_" + std::to_string(counter++) : "");
+                new_object->object_settings     = object->object_settings;
+                new_object->object_settings_sla = object->object_settings_sla;
+            }
+
+            new_object->instances.reserve(object->instances.size());
+            for (const Domain::ModelInstance* model_instance : object->instances)
+                new_object->add_instance(*model_instance);
+
+            Domain::ModelVolume* new_vol =
+                Algorithms::ModelObject::add_volume(new_object, *volume, std::move(mesh));
+
+            // Invalidate extruder value in volume's config,
+            // otherwise there will no way to change extruder for object after splitting,
+            // because volume's extruder value overrides object's extruder value.
+            if (new_vol->volume_settings.overrides.get("extruder").has_value()) {
+                new_vol->volume_settings.overrides.set("extruder", 0);
+            }
+
+            for (Domain::ModelInstance* model_instance : new_object->instances) {
+                const Domain::Vec3d shift =
+                    model_instance->get_transformation().get_matrix_no_offset()
+                    * new_vol->get_offset();
+                model_instance->set_offset(model_instance->get_offset() + shift);
+            }
+
+            new_vol->set_offset(Domain::Vec3d::Zero());
+            // reset the source to disable reload from disk
+            new_vol->source = Domain::ModelVolume::Source();
+            new_objects->emplace_back(new_object);
+        }
+    }
+}
+
+template <typename ObjectSettingsType>
+static void update_volume_settings_from_object_settings(
+    Domain::VolumeSettings& volume_settings,
+    const ObjectSettingsType& object_settings
+)
+{
+    auto update_override_from_item =
+        [](Domain::VolumeSettings& volume_settings, const Domain::ConfigItem& item)
+    {
+        if (!volume_settings.overrides.find(item.name())
+            || volume_settings.overrides.get(item.name()))
+            return;
+        item.visit(
+            [&]<typename T>(const T& item_value)
+            {
+                using ValueType = std::decay_t<T>;
+                volume_settings.overrides.template set<ValueType>(item.name(), item_value);
+            }
+        );
+    };
+
+    for (const Domain::ConfigItem& item : object_settings.items.all_items()) {
+        update_override_from_item(volume_settings, item);
+    }
+
+    for (const Domain::ConfigItem& item : object_settings.overrides.overridden_items()) {
+        update_override_from_item(volume_settings, item);
+    }
+}
+
+Domain::ModelObject* merge(const std::vector<const Domain::ModelInstance*>& instances)
+{
+    Domain::Model* model                  = instances.front()->get_object()->get_model();
+    Domain::ModelObject* new_object       = model->add_object();
+    Domain::ModelInstance* first_instance = new_object->add_instance();
+    first_instance->printable             = false;
+
+    for (const Domain::ModelInstance* instance : instances) {
+        Domain::ModelObject* object = instance->get_object();
+        first_instance->printable |= instance->printable;
+
+        // merge volumes
+        for (const Domain::ModelVolume* volume : object->volumes) {
+            Domain::ModelVolume* new_volume = new_object->add_volume(*volume);
+            new_volume->set_transformation(instance->get_matrix() * new_volume->get_matrix());
+
+            update_volume_settings_from_object_settings<Domain::ObjectSettings>(
+                new_volume->volume_settings,
+                object->object_settings
+            );
+            update_volume_settings_from_object_settings<Domain::SLAObjectSettings>(
+                new_volume->volume_settings,
+                object->object_settings_sla
+            );
+        }
+        Algorithms::ModelObject::sort_volumes(new_object);
+
+        // merge layers
+        for (const auto& range : object->layer_config_ranges)
+            new_object->layer_config_ranges.emplace(range);
+    }
+
+    return new_object;
+}
+
 } // namespace Slic3r::Biz::Algorithms::ModelObject

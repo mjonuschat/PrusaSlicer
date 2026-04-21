@@ -193,7 +193,7 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::ModifierVolumeShapeLoad:
     case MenuItemName::SupportBlockerShapeLoad:
     case MenuItemName::SupportModifierShapeLoad:
-        return Biz::_u8L("Load");
+        return Biz::_u8L("Import");
     case MenuItemName::ObjectShapeCube:
     case MenuItemName::SolidPartVolumeShapeCube:
     case MenuItemName::NegativeVolumeShapeCube:

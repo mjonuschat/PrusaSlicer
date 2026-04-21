@@ -432,7 +432,7 @@ void MenuCommandRegistrar::register_object_menu_commands()
                         ASSERT(number > 0);
                         m_project_interactor.scene_interactor().set_selected_objects_instance_count(
                             number
-                        ); 
+                        );
                         m_project_interactor.undo_provider().take_snapshot(
                             UndoSnapshotType::SetNumberOfInstances
                         );
@@ -457,6 +457,12 @@ void MenuCommandRegistrar::register_object_menu_commands()
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
         .append_separator()
+        // we need to force a registration of added menu items before call extra function
+        .register_commands_and_clear_cache();
+
+    register_object_menu_add_volume_commands();
+
+    builder.append_separator()
         .append_item(
             MenuItemName::SetAsSeparateObject,
             "set-as-separate-object",
@@ -496,14 +502,32 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::SplitObjectToObjects,
             "split-object-to-objects",
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            [this]()
+            {
+                m_project_interactor.scene_interactor().split_selection_to_objects();
+                m_project_interactor.undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::SplitToObjects
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_split_selection_to_objects(); }
+            }
         )
         .append_item(
             MenuItemName::SplitObjectToVolumes,
             CommandName::SplitToVolumes,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            [this]()
+            {
+                m_project_interactor.scene_interactor().split_selection_to_volumes();
+                m_project_interactor.undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::SplitToVolumes
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_split_selection_to_volumes(); }
+            }
         )
         .pop_path_level()
         .append_item(
@@ -519,17 +543,20 @@ void MenuCommandRegistrar::register_object_menu_commands()
             UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         )
         .append_separator()
-        // we need to force a registration of added menu items before call extra function
-        .register_commands_and_clear_cache();
-
-    register_object_menu_add_volume_commands();
-
-    builder.append_separator()
         .append_item(
             MenuItemName::InvalidateCutInfo,
             "invalidate-cut-info",
-            []() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            [this]()
+            {
+                m_project_interactor.scene_interactor().invalidate_cut_info();
+                m_project_interactor.undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::InvalidateCutInfo
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_invalidate_cut_info(); }
+            }
         )
         .append_separator()
         .append_item(
@@ -1003,8 +1030,21 @@ void MenuCommandRegistrar::register_multi_object_menu_commands()
         .append_item(
             MenuItemName::MergeMultiObjects,
             "merge-multi-objects",
-            []() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            [this]()
+            {
+                m_project_interactor.scene_interactor().merge_selection_into_object();
+                m_project_interactor.undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::MergeToOneObject
+                );
+            },
+            UIItemCommandExtraOpts{
+                .enabled =
+                    [this]()
+                {
+                    return m_project_interactor.scene_interactor()
+                        .can_merge_selection_into_object();
+                }
+            }
         )
         .append_separator()
         .append_item_from_command(MenuItemName::PrintableMultiObjects, CommandName::SetAsPrintable);
