@@ -1071,9 +1071,19 @@ ToolBarButton* PlaterRenderModule::get_toolbar_button(Scene::ToolType tool_type)
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
+    const std::set<Scene::ToolType> tools_with_visible_selection_box{
+        Scene::ToolType::ArrangeGizmo,
+        Scene::ToolType::Translation,
+        Scene::ToolType::Rotation,
+        Scene::ToolType::Scale
+    };
+
     update_current_right_sidebar();
     m_command_binding_manager.update_ui_items();
-    m_scene_presenter->set_selection_bounding_box_visible(active_tool == nullptr);
+    const bool selection_box_visible{
+        active_tool == nullptr || tools_with_visible_selection_box.contains(active_tool->type())
+    };
+    m_scene_presenter->set_selection_bounding_box_visible(selection_box_visible);
     m_command_binding_manager.update_ui_items();
 }
 
