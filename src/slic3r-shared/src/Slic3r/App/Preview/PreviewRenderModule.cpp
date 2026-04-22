@@ -602,23 +602,26 @@ void PreviewRenderModule::register_commands()
             )
         );
 
-    m_command_registry
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                CommandName::SwitchToPlater,
-                [this]()
-                { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); },
-                FuncCommandExtraOpts{
-                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+    m_command_registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            CommandName::SwitchToPlater,
+            [this]()
+            { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); },
+            FuncCommandExtraOpts{
+                .keyboard_shortcuts = Platform::KeyboardShortcuts{
+                    Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Num5
-                    }, Platform::KeyboardShortcut{
+                    },
+                    Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::Kp5
-                    }}
+                    },
+                    Platform::KeyboardShortcut{0, Platform::KeyCode::Tab}
                 }
-            )
-        );
+            }
+        )
+    );
 
     // Toolbar commands
     const std::map<const char*, OptionType> tools{

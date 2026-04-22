@@ -469,7 +469,8 @@ void PlaterRenderModule::register_commands()
                             Platform::KeyboardShortcut{
                                 Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                                 Platform::KeyCode::Kp6
-                            }
+                            },
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Tab}
                         }
                 }
             )
