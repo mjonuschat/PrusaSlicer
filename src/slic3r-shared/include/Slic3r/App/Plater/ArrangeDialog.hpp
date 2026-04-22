@@ -24,7 +24,7 @@ enum class ArrangeTaskStatus
 class ArrangeDialog final : public Yoga::GizmoWindow
 {
 public:
-    using OnArrange      = std::function<void(Biz::Arrange::Settings)>;
+    using OnArrange      = std::function<void()>;
     using OnCancel       = std::function<void()>;
     using OnModeSelected = std::function<void(Biz::Arrange::Mode)>;
 
@@ -43,6 +43,8 @@ public:
     Biz::Arrange::Mode get_arrange_mode() const;
     void set_arrange_mode(Biz::Arrange::Mode mode);
 
+    Biz::Arrange::Settings get_settings() const;
+
 private:
     OnArrange m_on_arrange;
     OnCancel m_on_cancel;
@@ -56,8 +58,6 @@ private:
     Yoga::Separator* m_bed_segments_separator{nullptr};
     Yoga::LayoutButton* m_arrange_button{nullptr};
     std::optional<Domain::BedSegments> m_bed_segments;
-
-    Biz::Arrange::Settings get_settings() const;
 };
 
 } // namespace Slic3r::App::Plater

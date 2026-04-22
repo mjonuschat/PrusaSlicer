@@ -59,19 +59,7 @@ ArrangeGizmo::ArrangeGizmo(
     m_workbench{workbench},
     m_dialog(
         std::make_unique<ArrangeDialog>(
-            [this](const Settings& settings)
-            {
-                m_arrange_interactor.arrange(
-                    m_project_interactor.selected_project_id(),
-                    settings,
-                    [this]()
-                    {
-                        m_project_interactor.undo_provider().take_snapshot(
-                            Biz::UndoSnapshotType::Arrange
-                        );
-                    }
-                );
-            },
+            [this]() { arrange(); },
             []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
             [this](const Mode mode)
             {
@@ -147,6 +135,24 @@ void ArrangeGizmo::on_deactivated()
     job_manager.cancel_job("arrange");
 };
 
+void ArrangeGizmo::register_commands(Platform::CommandRegistry& registry) {
+    registry
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "arrange-gizmo-arrange",
+                [this]() {
+                    arrange();
+                },
+                Platform::FuncCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::A}
+                        }
+                }
+            )
+        );
+}
+
 Scene::ToolType ArrangeGizmo::type() const
 {
     return Scene::ToolType::ArrangeGizmo;
@@ -173,6 +179,16 @@ Settings ArrangeGizmo::default_settings() const
 
     settings.bed_segments = bed_segments;
     return settings;
+}
+
+void ArrangeGizmo::arrange()
+{
+    m_arrange_interactor.arrange(
+        m_project_interactor.selected_project_id(),
+        m_dialog->get_settings(),
+        [this]()
+        { m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::Arrange); }
+    );
 }
 
 } // namespace Slic3r::App::Plater

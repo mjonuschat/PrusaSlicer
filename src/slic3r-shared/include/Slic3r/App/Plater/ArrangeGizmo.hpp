@@ -51,6 +51,8 @@ public:
     void on_activated() override;
     void on_deactivated() override;
 
+    void register_commands(Platform::CommandRegistry& registry) override;
+
     Scene::ToolType type() const override;
 
     bool enabled() const override;
@@ -68,5 +70,6 @@ private:
     bool m_active{false};
 
     Biz::Arrange::Settings default_settings() const;
+    void arrange();
 };
 } // namespace Slic3r::App::Plater

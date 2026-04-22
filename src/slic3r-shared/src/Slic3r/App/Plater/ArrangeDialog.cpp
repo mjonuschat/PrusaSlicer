@@ -202,7 +202,7 @@ ArrangeDialog::ArrangeDialog(
 
     m_arrange_button                     = content()->emplace_back<LayoutButton>(_u8L("Arrange"));
     m_arrange_button->callbacks().action = [this]() {
-        m_on_arrange(get_settings());
+        m_on_arrange();
     };
 
     m_arrange_button->set_flex_grow(1);
@@ -236,7 +236,7 @@ void ArrangeDialog::update_status(const ArrangeTaskStatus status)
     } else if (status == ArrangeTaskStatus::Idle) {
         m_arrange_button->set_label(_u8L("Arrange"));
         m_arrange_button->callbacks().action = [this]() {
-            m_on_arrange(get_settings());
+            m_on_arrange();
         };
     } else {
         PANIC("Unknown arrange task status!");
