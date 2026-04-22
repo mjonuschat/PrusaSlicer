@@ -82,6 +82,11 @@ void AbstractRenderModule::on_init(
     m_animation_manager = &animation_manager;
 }
 
+bool AbstractRenderModule::has_command(const char* name) const
+{
+    return m_command_registry.has_command(name);
+}
+
 const ICommand& AbstractRenderModule::command(const char* name) const
 {
     return m_command_registry.command(name);

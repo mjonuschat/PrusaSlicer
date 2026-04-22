@@ -71,6 +71,7 @@ public:
     virtual void set_sidebars_visible(bool visible) {};
 
     virtual const ICommand& command(const char* name) const;
+    bool has_command(const char* name) const;
     const CommandRegistry::CommandsMap& commands() const;
     virtual const CommandRegistry::CommandsMap& gizmo_commands() const = 0;
     virtual bool is_gizmo_manager_completed() const;

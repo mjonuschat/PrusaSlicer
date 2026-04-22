@@ -1065,7 +1065,9 @@ void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
     {
         if (success) {
             m_project_interactor.load_models_to_project(file_paths);
-            if (m_render_module.command(CommandName::SvgGizmo).enabled()) {
+            if (m_render_module.has_command(CommandName::SvgGizmo)
+                && m_render_module.command(CommandName::SvgGizmo).enabled())
+            {
                 // open SvgGizmo, when svg volume is selected(was imported)
                 m_render_module.command(CommandName::SvgGizmo).execute();
             }
