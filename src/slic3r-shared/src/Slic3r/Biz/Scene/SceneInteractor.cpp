@@ -633,11 +633,6 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
-    if (project.file_name().empty()) {
-        const boost::filesystem::path filename_path(vol.name);
-        const std::string stem_name = filename_path.stem().string();
-        project.set_file_name(stem_name);
-    }
 
     for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
