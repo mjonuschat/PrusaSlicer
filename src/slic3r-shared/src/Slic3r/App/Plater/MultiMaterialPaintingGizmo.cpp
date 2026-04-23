@@ -15,6 +15,20 @@ using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Plater {
 
+static std::vector<std::string> create_material_names(
+    const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
+)
+{
+    std::vector<std::string> names;
+    const auto& selected{preset_interactor.selected_printer_preset()};
+    names.reserve(selected.materials.size());
+    for (const auto& material : selected.materials) {
+        names.push_back(std::string{material.short_name()});
+    }
+    return names;
+}
+
+
 MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     Render::Device& device,
     Scene::GeometryDataFactory& data_factory,
@@ -23,9 +37,7 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
 ) :
     PaintOnGizmoBase(device, data_factory, project_interactor, scene_presenter)
 {
-    m_dialog = std::make_unique<MultiMaterialPaintingDialog>(this->create_painting_colors());
-    m_dialog->set_first_brush_color_index(m_first_brush_color_idx);
-    m_dialog->set_second_brush_color_index(m_second_brush_color_idx);
+    m_dialog = std::make_unique<MultiMaterialPaintingDialog>();
     m_dialog->set_tool_type(m_tool_type);
     m_dialog->set_brush_type(m_cursor_type);
     m_dialog->set_brush_radius(m_cursor_radius);
@@ -34,6 +46,7 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->set_height_range(m_height_range_z_range);
     m_dialog->set_clipping_of_view_value(0.);
     m_dialog->set_split_triangles_value(m_triangle_splitting_enabled);
+    update_painting_dialog_tools();
 
     m_dialog->callbacks().first_brush_color_changed = [this](size_t color_idx)
     { m_first_brush_color_idx = color_idx; };
@@ -43,6 +56,8 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
 
     m_project_interactor.project_settings_interactor()
         .add_listener<Biz::IColorsChangedListener>(this);
+    m_project_interactor.preset_interactor()
+        .add_listener<Biz::Preset::IPresetChangedListener>(this);
 
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
     { m_tool_type = tool_type; };
@@ -85,6 +100,8 @@ MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
 {
     m_project_interactor.project_settings_interactor()
         .remove_listener<Biz::IColorsChangedListener>(this);
+    m_project_interactor.preset_interactor()
+        .remove_listener<Biz::Preset::IPresetChangedListener>(this);
 }
 
 Scene::ToolType MultiMaterialPaintingGizmo::type() const
@@ -115,6 +132,63 @@ bool MultiMaterialPaintingGizmo::enabled() const
     return whole_instance
         && slot_count > 1
         && config_container->print_technology() == Domain::PrinterTechnology::FFF;
+}
+
+void MultiMaterialPaintingGizmo::register_commands(Platform::CommandRegistry& registry)
+{
+    registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            "multi-material-painting-gizmo-switch-colors",
+            [this]()
+            {
+                if (m_dialog.get()) {
+                    m_dialog->switch_colors();
+                }
+            },
+            Platform::FuncCommandExtraOpts{
+                .keyboard_shortcuts =
+                    Platform::KeyboardShortcuts{Platform::KeyboardShortcut{0, Platform::KeyCode::X}}
+            }
+        )
+    );
+
+    using Platform::KeyCode;
+
+    const std::vector<std::pair<std::size_t, std::vector<KeyCode>>> shortcuts{
+        {0, {KeyCode::Num1, KeyCode::Kp1}},
+        {1, {KeyCode::Num2, KeyCode::Kp2}},
+        {2, {KeyCode::Num3, KeyCode::Kp3}},
+        {3, {KeyCode::Num4, KeyCode::Kp4}},
+        {4, {KeyCode::Num5, KeyCode::Kp5}},
+        {5, {KeyCode::Num6, KeyCode::Kp6}},
+        {6, {KeyCode::Num7, KeyCode::Kp7}},
+        {7, {KeyCode::Num8, KeyCode::Kp8}},
+    };
+
+    for (const auto& [index, key_codes] : shortcuts) {
+        Platform::KeyboardShortcuts shortcuts{};
+        for (const KeyCode& key_code : key_codes) {
+            shortcuts.push_back(
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    key_code
+                }
+            );
+        }
+        registry.register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "multi-material-painting-gizmo-select-primary-color-" + std::to_string(index),
+                [this, index]()
+                {
+                    m_first_brush_color_idx = index;
+                    if (m_dialog.get()) {
+                        m_dialog->set_first_brush_color_index(m_first_brush_color_idx);
+                    }
+                },
+                Platform::FuncCommandExtraOpts{.keyboard_shortcuts = shortcuts}
+            )
+        );
+    }
 }
 
 std::unique_ptr<Yoga::GizmoWindow> MultiMaterialPaintingGizmo::release_ui_window()
@@ -185,23 +259,51 @@ void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(double value)
 
 std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_colors() const
 {
-    const auto& psi = m_project_interactor.project_settings_interactor();
-    const auto rgb_colors = psi.get_colors(m_project_interactor.selected_config_container_id());
+    const auto& settings_interactor{m_project_interactor.project_settings_interactor()};
+    const auto rgb_colors{
+        settings_interactor.get_colors(m_project_interactor.selected_config_container_id())
+    };
 
-    constexpr int TOTAL = 16;
     std::vector<ColorRGBA> result;
-    result.reserve(TOTAL);
-    for (int i = 0; i < TOTAL; ++i) {
-        if (i < static_cast<int>(rgb_colors.size())) {
-            const auto& c = rgb_colors[i];
-            result.emplace_back(c.r(), c.g(), c.b(), 1.0f);
-        } else {
-            // Padding slots beyond the actual extruder count — not visible to the user.
-            const float shade = 0.3f + 0.7f * (float(i) / (TOTAL - 1));
-            result.emplace_back(shade, shade, shade, 1.0f);
-        }
-    }
+    result.reserve(rgb_colors.size());
+    std::ranges::transform(
+        rgb_colors,
+        std::back_inserter(result),
+        [](const Domain::ColorRGB& color)
+        { return Domain::ColorRGBA{color.r(), color.g(), color.b(), 1.0f}; }
+    );
     return result;
+}
+
+void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
+{
+    if (!m_dialog.get()) {
+        return;
+    }
+
+    const auto& selected{m_project_interactor.preset_interactor().selected_printer_preset()};
+    const std::size_t slot_count{selected.hw_config.material_slot_count()};
+
+    if (slot_count <= 1) {
+        return;
+    }
+
+    const std::vector<Domain::ColorRGBA> colors{this->create_painting_colors()};
+    const bool count_changed{m_painting_colors.size() != colors.size()};
+
+    m_painting_colors = colors;
+
+    if (count_changed) {
+        m_first_brush_color_idx = 0;
+        m_second_brush_color_idx = 1;
+    }
+
+    m_dialog->set_painting_colors(
+        m_painting_colors,
+        create_material_names(m_project_interactor.preset_interactor())
+    );
+    m_dialog->set_first_brush_color_index(m_first_brush_color_idx);
+    m_dialog->set_second_brush_color_index(m_second_brush_color_idx);
 }
 
 void MultiMaterialPaintingGizmo::on_colors_changed(
@@ -210,11 +312,20 @@ void MultiMaterialPaintingGizmo::on_colors_changed(
     const std::vector<Domain::ColorRGB>& /*colors*/
 )
 {
-    m_painting_colors = this->create_painting_colors();
-    if (m_dialog.get())
-        m_dialog->update_painting_colors(m_painting_colors);
-    for (auto& wrapper : m_triangle_selector_wrappers)
+    update_painting_dialog_tools();
+
+    for (auto& wrapper : m_triangle_selector_wrappers) {
         wrapper.update_painted_geometry(m_device);
+    }
+}
+
+void MultiMaterialPaintingGizmo::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    update_painting_dialog_tools();
 }
 
 } // namespace Slic3r::App::Plater

@@ -16,6 +16,7 @@ public:
     struct Callbacks
     {
         std::function<void()> action{nullptr}; ///< Always user action
+        std::function<void()> secondary_action{nullptr}; ///< Always user action
         std::function<void(bool hovered)> hovered_changed{nullptr}; ///< Always user action
         std::function<void(bool pressed)> pressed_changed{nullptr}; ///< Always user action
         std::function<void(bool checked)> checked_changed{nullptr};
@@ -60,6 +61,7 @@ protected:
     virtual void hovered_updated_internal();
     virtual void pressed_updated_internal();
     virtual void action_internal();
+    virtual void secondary_action_internal();
     virtual void set_shortcut_internal(const std::string& shortcut);
 
     void enabled_updated_internal() override;
@@ -84,7 +86,7 @@ private:
 
     std::string m_shortcut;
     Callbacks m_callbacks;
-    ImGuiButtonFlags m_flags  = ImGuiButtonFlags_MouseButtonLeft;
+    ImGuiButtonFlags m_flags  = ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight;
     ImGuiMouseCursor m_cursor = ImGuiMouseCursor_Arrow;
 };
 

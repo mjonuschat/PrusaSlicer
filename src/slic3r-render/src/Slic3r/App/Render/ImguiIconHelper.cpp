@@ -102,6 +102,10 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::KeyC, "key_c"},
     {Icon::KeyH, "key_h"},
     {Icon::KeyV, "key_v"},
+    {Icon::KeyX, "key_x"},
+    {Icon::Key1, "key_1"},
+    {Icon::Key8, "key_8"},
+    {Icon::KeyDots, "key_dots"},
     {Icon::KeyEsc, "key_esc"},
     {Icon::KeyDel, "key_del"},
     {Icon::KeyBackspace, "key_backspace"},
@@ -140,6 +144,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     // Gizmo Multimaterial painting
     {Icon::FillDrip, "fill_drip"},
     {Icon::LineHeight, "line_height"},
+    {Icon::Switch, "switch"},
 
     {Icon::Calculator, "calculator"},
     {Icon::CopyForGizmo, "copy_for_gizmo"},

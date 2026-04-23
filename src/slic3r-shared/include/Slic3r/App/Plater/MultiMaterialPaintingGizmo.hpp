@@ -22,7 +22,10 @@ namespace Slic3r::App::Plater {
 class MultiMaterialPaintingDialog;
 class PlaterScenePresenter;
 
-class MultiMaterialPaintingGizmo : public PaintOnGizmoBase, public Biz::IColorsChangedListener
+class MultiMaterialPaintingGizmo :
+    public PaintOnGizmoBase,
+    public Biz::IColorsChangedListener,
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     MultiMaterialPaintingGizmo() = delete;
@@ -38,6 +41,9 @@ public:
 
     Scene::ToolType type() const override;
     bool enabled() const override;
+
+    void register_commands(Platform::CommandRegistry& registry) override;
+
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
     Domain::TriangleSelector::TriangleStateType get_left_button_state_type() const override;
@@ -61,10 +67,18 @@ protected:
 
     std::vector<Domain::ColorRGBA> create_painting_colors() const override;
 
+    void update_painting_dialog_tools();
+
     void on_colors_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,
         const std::vector<Domain::ColorRGB>& colors
+    ) override;
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
     ) override;
 
 private:

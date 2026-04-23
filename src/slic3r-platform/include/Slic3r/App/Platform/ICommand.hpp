@@ -57,7 +57,7 @@ class FuncCommand final : public ICommand
 {
 public:
     FuncCommand(
-        const char* name,
+        const std::string& name,
         std::function<void()> execute,
         FuncCommandExtraOpts extra_opts = FuncCommandExtraOpts{}
     ) :

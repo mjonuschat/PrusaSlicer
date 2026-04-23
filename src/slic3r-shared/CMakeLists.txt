@@ -93,6 +93,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/HeightRangeRow.cpp
         include/Slic3r/App/Plater/LayerRangeSettingsDialog.hpp
         src/Slic3r/App/Plater/LayerRangeSettingsDialog.cpp
+        include/Slic3r/App/Plater/MMPaintingColorDropdowns.hpp
+        src/Slic3r/App/Plater/MMPaintingColorDropdowns.cpp
+        include/Slic3r/App/Plater/MMPaintingScaleHelpers.hpp
+        src/Slic3r/App/Plater/MMPaintingScaleHelpers.cpp
+        include/Slic3r/App/Plater/MMPaintingUtils.hpp
+        src/Slic3r/App/Plater/MMPaintingUtils.cpp
+        include/Slic3r/App/Plater/MMPaintingColorSelector.hpp
+        src/Slic3r/App/Plater/MMPaintingColorSelector.cpp
 
         include/Slic3r/App/Plater/DialogUtils.hpp
         include/Slic3r/App/Scene/EmbossCreate.hpp
@@ -602,6 +610,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
         include/Slic3r/App/Yoga/HeightRangeControl.hpp
         src/Slic3r/App/Yoga/HeightRangeControl.cpp
+        include/Slic3r/App/Yoga/TwoColorRing.hpp
+        src/Slic3r/App/Yoga/TwoColorRing.cpp
 
         include/Slic3r/App/ToolBar/ToolBar.hpp
         src/Slic3r/App/ToolBar/ToolBar.cpp

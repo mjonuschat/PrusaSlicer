@@ -175,6 +175,8 @@ void Clipper::set_position_by_ratio(double pos, bool keep_normal)
     using namespace Slic3r::Biz::Algorithms::BoundingBox;
     using namespace Slic3r::Biz::Algorithms::ModelObject;
 
+    ASSERT(m_selected_object && m_selected_instance);
+
     const Vec3d& bb_center = center(instance_bounding_box(*m_selected_object, *m_selected_instance))
         + Vec3d(0., 0., m_sla_shift);
 

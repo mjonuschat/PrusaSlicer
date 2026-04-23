@@ -20,7 +20,8 @@ constexpr float dialog_padding = 10;
 
 GizmoWindow::GizmoWindow() : Window("GizmoWindow") {}
 
-GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon) : Window("GizmoWindow")
+GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std::string& shortcut) :
+    Window("GizmoWindow")
 {
     set_orientation(Orientation::Vertical);
     set_gap(0);
@@ -39,18 +40,30 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon) : Window("
     buttons_rect->set_flex_grow(1);
     buttons_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight);
 
-    Icon* header_icon = buttons_rect->emplace_back<Icon>(icon);
-    header_icon->set_margin(Margins{0, 0, 3, 0});
-    header_icon->set_width(20);
-    header_icon->set_height(20);
+    if (icon != Render::Icon::None) {
+        Icon* header_icon = buttons_rect->emplace_back<Icon>(icon);
+        header_icon->set_margin(Margins{0, 0, 3, 0});
+        header_icon->set_width(20);
+        header_icon->set_height(20);
+    } else {
+        buttons_rect->set_padding(Paddings{24, dialog_padding, dialog_padding, dialog_padding});
+    }
 
     Text* title_text = buttons_rect->emplace_back<Text>(title);
     title_text->set_font_type(Render::ImguiFontType::Bold);
 
+    if (shortcut != "") {
+        Text* shortcut_text = buttons_rect->emplace_back<Text>(shortcut);
+        shortcut_text->set_margin({6, 0, 0, 0});
+        shortcut_text->set_text_color(
+            m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+        );
+    }
+
     Item* spacer = buttons_rect->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
-    m_revert_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::DSRevert);
+    m_revert_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::UndoGizmo);
     m_revert_button->set_min_size({24, 24});
     m_revert_button->callbacks().action = [this]
     {

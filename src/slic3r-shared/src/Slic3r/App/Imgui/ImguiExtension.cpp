@@ -608,4 +608,15 @@ void move_window_to_bounds(const ImVec2& available_size, ImRect& window)
     }
 }
 
+static bool is_dark(const ImColor color)
+{
+    float luminance{0.299f * color.Value.x + 0.587f * color.Value.y + 0.114f * color.Value.z};
+    return luminance < 0.5f;
+}
+
+ImColor contrast_color(ImColor color)
+{
+    return is_dark(color) ? ImColor{240, 240, 240} : ImColor{10, 10, 10};
+}
+
 } // namespace Slic3r::App::Imgui

@@ -65,6 +65,10 @@ enum class Icon : wchar_t
     KeyC,
     KeyH,
     KeyV,
+    KeyX,
+    Key1,
+    Key8,
+    KeyDots,
     KeyEsc,
     KeyDel,
     KeyBackspace,
@@ -112,6 +116,7 @@ enum class Icon : wchar_t
     // Gizmo Multimaterial painting
     FillDrip,
     LineHeight,
+    Switch,
 
     // Gizmo Emboss
     NewBtnIcon,

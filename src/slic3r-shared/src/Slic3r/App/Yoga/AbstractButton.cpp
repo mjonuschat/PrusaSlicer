@@ -32,7 +32,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         ImGui::SetNextItemAllowOverlap();
     }
 
-    bool pressed = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
+    ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
     bool hovered = ImGui::IsItemHovered() && ImGui::IsItemVisible();
     bool held    = ImGui::IsItemActive();
 
@@ -50,14 +50,22 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
             ImGui::SetMouseCursor(m_cursor);
         }
 
-        if (pressed) {
-            if (m_checkable) {
-                set_checked(!m_checked);
+        if (hovered) {
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                if (m_checkable) {
+                    set_checked(!m_checked);
+                }
+                if (m_callbacks.action) {
+                    m_callbacks.action();
+                }
+                action_internal();
             }
-            if (m_callbacks.action) {
-                m_callbacks.action();
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+                if (m_callbacks.secondary_action) {
+                    m_callbacks.secondary_action();
+                }
+                secondary_action_internal();
             }
-            action_internal();
         }
     }
 
@@ -195,6 +203,8 @@ void AbstractButton::hovered_updated_internal() {}
 void AbstractButton::pressed_updated_internal() {}
 
 void AbstractButton::action_internal() {}
+
+void AbstractButton::secondary_action_internal() {}
 
 void AbstractButton::set_shortcut_internal(const std::string& shortcut) {}
 

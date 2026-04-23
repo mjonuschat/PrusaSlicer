@@ -21,7 +21,6 @@ void GizmoDialogHelp::add_item(const std::vector<HelpIcon>& icons, const std::st
     ASSERT(m_container);
     ImColor color = ImGui::GetColorU32(is_grayed ? ImGuiCol_TextDisabled : ImGuiCol_Text);
     Item* help_group = m_container->emplace_back<Item>();
-    help_group->set_justify_content(YGJustifyCenter);
     help_group->set_align_items(YGAlignCenter);
     help_group->set_gap(5);
 

@@ -27,7 +27,7 @@ public:
         std::function<void()> revert_requested{nullptr};
     };
 
-    explicit GizmoWindow(const std::string& title, Render::Icon icon);
+    explicit GizmoWindow(const std::string& title, Render::Icon icon, const std::string& shortcut = "");
 
     GizmoCallbacks& gizmo_callbacks();
 
