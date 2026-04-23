@@ -180,6 +180,7 @@ void Popup::open()
         root->open_popup(this);
         m_opened = true;
         YGNodeStyleSetDisplay(m_popup_node, YGDisplayFlex);
+        m_content_item->set_visible(true);
 
         if (m_callbacks.opened) {
             m_callbacks.opened();
@@ -202,6 +203,7 @@ void Popup::close()
         root->close_popup(this);
         m_opened = false;
         YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);
+        m_content_item->set_visible(false);
 
         if (m_callbacks.closed) {
             m_callbacks.closed();

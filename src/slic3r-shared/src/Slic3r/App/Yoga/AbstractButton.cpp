@@ -139,7 +139,7 @@ void AbstractButton::set_hovered(bool hovered)
         m_hovered = hovered;
         hovered_updated_internal();
         if (!m_tooltip->text().empty()) {
-            m_hovered ? m_tooltip->open() : m_tooltip->close();
+            m_hovered&& is_visible() ? m_tooltip -> open() : m_tooltip->close();
         }
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed(m_hovered);

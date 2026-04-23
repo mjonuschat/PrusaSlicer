@@ -103,9 +103,10 @@ void LogicalPrinterSettingsButton::update_favorite_state()
 
 bool LogicalPrinterSettingsButton::is_favorited() const
 {
-    AppSettingsAdvanced& advanced = AppServices::instance().app_config().app_settings_advanced();
-    const std::pair<std::string, std::string> preset_id{m_state->id, m_state->hw_printer_config_id};
-    return advanced.printer_favorite_presets.contains(preset_id);
+    return AppServices::instance()
+        .app_config()
+        .app_settings_advanced()
+        .contains_printer_favorite_preset(m_state->id, m_state->hw_printer_config_id);
 }
 
 } // namespace Slic3r::App

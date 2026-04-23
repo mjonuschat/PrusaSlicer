@@ -368,8 +368,11 @@ void MainFrame::on_language_changed()
     this->Refresh();
 }
 
-void MainFrame::on_app_config_changed()
+void MainFrame::on_app_config_changed(const std::string& key)
 {
+    if (key != "translation_language") {
+        return;
+    }
     update_left_bar();
     update_graphics_settings();
 

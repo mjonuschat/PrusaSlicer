@@ -10,6 +10,7 @@
 #include "Slic3r/App/MaterialSelectionRow.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
@@ -33,7 +34,8 @@ class MaterialSettingsDialog;
 class MaterialSelectionDialog :
     public Yoga::Dialog,
     public Biz::IListSelectionChangedListener,
-    public Biz::IListObserver<Biz::Preset::PresetItemObservableList>
+    public Biz::IListObserver<Biz::Preset::PresetItemObservableList>,
+    public IAppConfigChangedListener
 {
 public:
     struct Callbacks
@@ -54,6 +56,8 @@ public:
     void on_reset() override;
 
     MaterialSettingsDialog& material_settings_dialog();
+
+    void on_app_config_changed(const std::string &key) override;
 
 protected:
     void close_action() override;

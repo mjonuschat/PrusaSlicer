@@ -13,11 +13,11 @@ void AppSettingsAdvanced::toggle_printer_favorite_preset(
     const std::string& hw_config_id
 )
 {
-    const std::pair<std::string, std::string> preset_id{id, hw_config_id};
-    if (printer_favorite_presets.contains(preset_id)) {
-        printer_favorite_presets.erase(preset_id);
+    // const std::pair<std::string, std::string> preset_id{id, hw_config_id};
+    if (printer_favorite_presets.contains(id)) {
+        printer_favorite_presets.erase(id);
     } else {
-        printer_favorite_presets.insert(preset_id);
+        printer_favorite_presets.insert(id);
     }
 }
 
@@ -28,6 +28,19 @@ void AppSettingsAdvanced::toggle_material_favorite_preset(const std::string& id)
     } else {
         material_favorite_presets.insert(id);
     }
+}
+
+bool AppSettingsAdvanced::contains_printer_favorite_preset(
+    const std::string& id,
+    const std::string& hw_config_id
+) const
+{
+    return printer_favorite_presets.contains(id);
+}
+
+bool AppSettingsAdvanced::contains_material_favorite_preset(const std::string& id) const
+{
+    return material_favorite_presets.contains(id);
 }
 
 void to_json(

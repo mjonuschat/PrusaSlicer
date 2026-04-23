@@ -40,7 +40,8 @@ void AppConfigInteractor::set_item_value(
 {
     m_cbi_accessor.set_value(item_name, value);
 
-    invoke_listeners<IAppConfigChangedListener>([](auto* l) { l->on_app_config_changed(); });
+    invoke_listeners<IAppConfigChangedListener>([&](auto* l)
+                                                { l->on_app_config_changed(item_name); });
 }
 
 void AppConfigInteractor::toggle_favorite_param(const std::string& param)

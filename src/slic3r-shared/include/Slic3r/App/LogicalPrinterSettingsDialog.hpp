@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
 #include "Slic3r/App/PrinterNozzleRow.hpp"
+#include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
@@ -35,7 +36,8 @@ class LogicalPrinterSettingsDialog :
     public Yoga::Dialog,
     public Biz::Preset::IPresetChangedListener,
     public Biz::IListSelectionChangedListener,
-    public Biz::ISelectedProjectChangedListener
+    public Biz::ISelectedProjectChangedListener,
+    public IAppConfigChangedListener
 {
 public:
     LogicalPrinterSettingsDialog(
@@ -56,6 +58,8 @@ public:
 
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
     void select_page_settings();
+
+    void on_app_config_changed(const std::string &key) override;
 
 private:
     void create_page_list();

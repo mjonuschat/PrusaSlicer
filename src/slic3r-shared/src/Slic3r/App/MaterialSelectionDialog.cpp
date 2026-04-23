@@ -9,10 +9,11 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/AppConfig.hpp"
-#include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Search.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
@@ -30,7 +31,7 @@ static bool is_favorite(const Biz::Preset::PresetItem& preset_item)
     return AppServices::instance()
         .app_config()
         .app_settings_advanced()
-        .material_favorite_presets.contains(preset_item.id);
+        .contains_material_favorite_preset(preset_item.id);
 }
 
 MaterialSelectionDialog::ProjectContext& MaterialSelectionDialog::context()
@@ -104,8 +105,16 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
     {
         m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+        m_only_favorites_button->set_tooltip(
+            checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
+        );
         m_material_filter->invalidate();
+        AppServices::instance().app_config_interactor().set_item_value(
+            "materials_only_favorites",
+            Domain::ConfigValue{checked}
+        );
     };
+    on_app_config_changed("materials_only_favorites");
 
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -304,6 +313,20 @@ void MaterialSelectionDialog::update_preset_list()
 MaterialSettingsDialog& MaterialSelectionDialog::material_settings_dialog()
 {
     return *m_material_settings_dialog;
+}
+
+void MaterialSelectionDialog::on_app_config_changed(const std::string& key)
+{
+    if (key == "materials_only_favorites") {
+        m_only_favorites_button->set_checked(
+            AppServices::instance()
+                .app_config()
+                .get_config_box()
+                .items.find("printers_only_favorites")
+                ->value()
+                .get<bool>()
+        );
+    }
 }
 
 } // namespace Slic3r::App

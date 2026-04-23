@@ -208,6 +208,16 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
             std::vector<std::string>{"fill_pattern", "fill_density", "brim_width"}
         );
     };
+
+    def           = defs.add("printers_only_favorites", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn  = []() { return Domain::ConfigValue(false); };
+
+    def           = defs.add("materials_only_favorites", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn  = []() { return Domain::ConfigValue(false); };
 }
 
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)

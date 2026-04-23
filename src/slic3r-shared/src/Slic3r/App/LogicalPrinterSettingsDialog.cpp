@@ -22,7 +22,8 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
-#include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 
@@ -80,7 +81,7 @@ LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
                 AppServices::instance()
                     .app_config()
                     .app_settings_advanced()
-                    .printer_favorite_presets.contains({item.id, item.hw_printer_config_id}) :
+                    .contains_printer_favorite_preset(item.id, item.hw_printer_config_id) :
                 true;
         }
     );
@@ -174,6 +175,20 @@ void LogicalPrinterSettingsDialog::select_page_settings()
     m_stack_layout->set_current_index(1);
 }
 
+void LogicalPrinterSettingsDialog::on_app_config_changed(const std::string& key)
+{
+    if (key == "printers_only_favorites") {
+        m_only_favorites_button->set_checked(
+            AppServices::instance()
+                .app_config()
+                .get_config_box()
+                .items.find("printers_only_favorites")
+                ->value()
+                .get<bool>()
+        );
+    }
+}
+
 void LogicalPrinterSettingsDialog::create_page_list()
 {
     m_page_list = m_stack_layout->emplace_back<Item>();
@@ -184,7 +199,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
     Item* search_row = m_page_list->emplace_back<Item>();
     search_row->set_gap(5);
     Icon* icon = search_row->emplace_back<Icon>(Render::Icon::Search);
-    icon->set_width(18);
+    icon->set_width(16);
     icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_input_text_search = search_row->emplace_back<InputText>();
     m_input_text_search->set_hint(_u8L("Search..."));
@@ -192,14 +207,29 @@ void LogicalPrinterSettingsDialog::create_page_list()
     m_input_text_search->callbacks().text_changed = [this]
     { m_preset_searcher->set_search_text(m_input_text_search->text()); };
 
-    m_only_favorites_button =
-        search_row->emplace_back<LayoutButton>(Biz::_u8L("Only favorites"), Render::Icon::Star);
+    m_only_favorites_button = search_row->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::Star,
+        Biz::_u8L("Only favorites")
+    );
+    m_only_favorites_button->set_width(24);
+    m_only_favorites_button->set_height(24);
     m_only_favorites_button->set_checkable(true);
+    m_only_favorites_button->set_self_align(YGAlignCenter);
     m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
     {
         m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+        m_only_favorites_button->set_tooltip(
+            checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
+        );
         m_preset_favorite_filter->invalidate();
+        AppServices::instance().app_config_interactor().set_item_value(
+            "printers_only_favorites",
+            Domain::ConfigValue{checked},
+            0
+        );
     };
+    on_app_config_changed("printers_only_favorites");
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -214,7 +244,8 @@ void LogicalPrinterSettingsDialog::create_page_list()
         [this](size_t index)
         {
             auto& preset_interactor = m_project_interactor.preset_interactor();
-            const auto& item        = preset_interactor.printer_presets().items().at(index);
+            const Biz::Preset::PresetItem& item =
+                m_printer_list_view->item_at(index)->preset_item();
 
             if (!Biz::Preset::PresetSelectionCheck::can_select_printer_preset(
                     preset_interactor,
@@ -234,7 +265,8 @@ void LogicalPrinterSettingsDialog::create_page_list()
         [this](size_t index)
         {
             auto& preset_interactor = m_project_interactor.preset_interactor();
-            const auto& item        = preset_interactor.printer_presets().items().at(index);
+            const Biz::Preset::PresetItem& item =
+                m_printer_list_view->item_at(index)->preset_item();
 
             auto selected_preset = preset_interactor.selected_printer_preset();
             if (selected_preset.hw_config.id == item.hw_printer_config_id

@@ -13,11 +13,17 @@ namespace Slic3r::App {
 
 struct AppSettingsAdvanced
 {
-    using PrinterFavoritePresets = std::set<std::pair<std::string, std::string>>;
+    // This should be set of pairs, but due to hw_printer_config_id being unique each run, we are only storing id
+    // using PrinterFavoritePresets  = std::set<std::pair<std::string, std::string>>;
+    using PrinterFavoritePresets  = std::set<std::string>;
     using MaterialFavoritePresets = std::set<std::string>;
 
     void toggle_printer_favorite_preset(const std::string& id, const std::string& hw_config_id);
     void toggle_material_favorite_preset(const std::string& id);
+
+    bool
+    contains_printer_favorite_preset(const std::string& id, const std::string& hw_config_id) const;
+    bool contains_material_favorite_preset(const std::string& id) const;
 
     PrinterFavoritePresets printer_favorite_presets;
     MaterialFavoritePresets material_favorite_presets;

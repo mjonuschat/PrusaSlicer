@@ -78,7 +78,7 @@ private:
     void complete_and_bind_left_bar();
 
     void on_language_changed() override;
-    void on_app_config_changed() override;
+    void on_app_config_changed(const std::string& key) override;
 
     void on_close(wxCloseEvent& event);
 

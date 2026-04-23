@@ -48,7 +48,7 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     set_visible_bin(true);
     on_bin() = [this]() { m_on_bin_clicked(m_index); };
 
-    m_icon->set_width(42);
+    m_icon->set_width(32);
     m_icon->set_margin(8);
 
     update();
