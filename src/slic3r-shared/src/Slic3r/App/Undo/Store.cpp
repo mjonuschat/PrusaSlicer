@@ -250,6 +250,8 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
         std::move(loaded_snapshot.object_selection)
     );
 
+    m_scene_interactor.update_selection_bounding_box();
+
     ASSERT_VAL(m_gizmo_controller)->activate_tool(loaded_snapshot.selected_tool_gizmo);
 
     update_top_bar(project_id, it->second);

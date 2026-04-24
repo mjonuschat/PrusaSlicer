@@ -1873,6 +1873,9 @@ void SceneInteractor::on_preset_selection_changed(Domain::SelectionId project_id
     }
 
     update_config_container_bed(project_id, config_container_id);
+
+    // When one changes selection, layout() is called and it may reposition instances.
+    update_selection_bounding_box();
 }
 
 void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id, const Domain::ConfigItem& item)
