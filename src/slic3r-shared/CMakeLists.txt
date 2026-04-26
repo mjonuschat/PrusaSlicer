@@ -1208,6 +1208,24 @@ elseif ("${SLIC3R_YAML}" STREQUAL "yaml-cpp")
             src/Slic3r/Biz/Yaml/YamlAdapterYamlCpp.cpp
     )
     set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_YAMLCPP")
+elseif ("${SLIC3R_YAML}" STREQUAL "ryml")
+    # RapidYAML
+    find_package(ryml CONFIG REQUIRED)  # provides target ryml::ryml
+
+    if (TARGET ryml::ryml)
+        set(YAML_LIB ryml::ryml)
+    elseif (TARGET ryml) # rare fallback
+        set(YAML_LIB ryml)
+    else ()
+        message(FATAL_ERROR "Found ryml but no CMake target (expected ryml::ryml).")
+    endif ()
+
+    set(SLIC3R_SHARED_FILES
+        ${SLIC3R_SHARED_FILES}
+        src/Slic3r/Biz/Yaml/YamlAdapterRyml.hpp
+        src/Slic3r/Biz/Yaml/YamlAdapterRyml.cpp
+    )
+    set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_RYML")
 else ()
     message(FATAL_ERROR "No YAML library selected, allowed values are \"libfyaml\", \"yaml-cpp\", passed \"${SLIC}\"")
 endif ()
@@ -1305,6 +1323,10 @@ if (SLIC3R_ENABLE_FORMAT_STEP)
     else ()
         target_link_libraries(slic3r-shared PRIVATE OCCTWrapper)
     endif ()
+endif()
+
+if (SLIC3R_DEBUG_PRESET_CACHE)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_DEBUG_PRESET_CACHE=$<BOOL:${SLIC3R_DEBUG_PRESET_CACHE}>)
 endif()
 
 add_target_to_doxygen(slic3r-shared)

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -74,7 +75,7 @@ inline bool is_material(PresetKind kind)
 }
 
 using FeatureValue = JsonValue;
-using FeatureValueMap = std::map<std::string, FeatureValue>;
+using FeatureValueMap = std::unordered_map<std::string, FeatureValue>;
 
 using Bools = std::vector<bool>;
 using Strings = std::vector<std::string>;
@@ -88,7 +89,7 @@ using PresetValue = std::variant<
     Bools, Doubles, Ints, OptInts, FloatOrPercentages, Vec2ds, Strings,
     bool, double, int, Percentage, Vec2d, std::string
 >;
-using PresetValueMap = std::map<std::string, PresetValue>;
+using PresetValueMap = std::unordered_map<std::string, PresetValue>;
 
 enum class PresetSaveStrategy
 {

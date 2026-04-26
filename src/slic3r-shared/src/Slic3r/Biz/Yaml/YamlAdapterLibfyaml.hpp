@@ -70,11 +70,30 @@ struct YamlAdapterLibfyaml
     static size_t sequence_item_count(const NodeRef& node);
     static NodeRef sequence_item_at(const NodeRef& node, size_t index);
 
+    template<typename Func>
+    static void for_each_sequence_item(const NodeRef& node, Func&& fn)
+    {
+        void* iter = nullptr;
+        fy_node* item;
+        while ((item = fy_node_sequence_iterate(node.node, &iter)) != nullptr)
+            fn(NodeRef{item, node.file});
+    }
+
     static size_t mapping_item_count(const NodeRef& node);
     static NodeRef mapping_value_at(const NodeRef& node, std::string_view name);
     static KeyValuePair mapping_key_value_at(const NodeRef& node, size_t index);
     static NodeRef key(const KeyValuePair& pair, const NodeRef& parent);
     static NodeRef value(const KeyValuePair& pair, const NodeRef& parent);
+
+    template <typename Func>
+    static void for_each_mapping_item(const NodeRef& node, Func&& fn)
+    {
+        void* iter = nullptr;
+        fy_node_pair* pair;
+        while ((pair = fy_node_mapping_iterate(node.node, &iter)) != nullptr) {
+            fn(pair);
+        }
+    }
 
     static Yaml::Details::Mark mark(const NodeRef& node);
 };

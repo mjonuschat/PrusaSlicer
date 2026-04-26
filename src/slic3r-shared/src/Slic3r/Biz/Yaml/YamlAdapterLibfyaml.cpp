@@ -96,10 +96,10 @@ YamlAdapterLibfyaml::NodeRef YamlAdapterLibfyaml::value(const KeyValuePair& pair
 Yaml::Details::Mark YamlAdapterLibfyaml::mark(const NodeRef& node)
 {
     if (node.node == nullptr)
-        return {.file=node.file}
+        return {.file=node.file};
     auto* token = fy_node_get_start_token(node.node);
     auto* mark = fy_token_start_mark(token);
-    return {.file=node.file, .line=mark->line + 1, .column=mark->column + 1}
+    return {.file=node.file, .line=mark->line + 1, .column=mark->column + 1};
 }
 
 }
