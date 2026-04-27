@@ -283,6 +283,7 @@ struct Loaded3MF {
         Domain::ConfigPack config_pack;
         std::vector<Domain::Vec2d> bed_offsets;
         Domain::WipeTowersOnBeds wipe_towers;
+        Domain::CustomGCodesOnBeds custom_gcodes;
     };
 
     Domain::ProjectMetadata metadata;

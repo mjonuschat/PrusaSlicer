@@ -578,8 +578,6 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
     Loaded3MF loaded_3mf;
     loaded_3mf.config_containers_data.emplace_back();
 
-    Domain::CustomGCodesOnBeds custom_gcodes;
-
     auto& config_pack = loaded_3mf.config_containers_data.back().config_pack;
     LegacyPresetMetadata hw_printer;
     if (!Slic3rLegacy::load_3mf_legacy(
@@ -590,7 +588,7 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
             false,
             loaded_3mf.version,
             loaded_3mf.config_containers_data.back().wipe_towers,
-            custom_gcodes
+            loaded_3mf.config_containers_data.back().custom_gcodes
         ))
         throw Loaded3MFException(
             Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed.")
@@ -981,6 +979,10 @@ static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider
             const auto wipe_tower_it{cc_data.wipe_towers.find(bed_idx)};
             if (wipe_tower_it != cc_data.wipe_towers.end()) {
                 cc.bed_instances().back()->wipe_tower = cc_data.wipe_towers.at(bed_idx);
+            }
+            const auto custom_gcode_it{cc_data.custom_gcodes.find(bed_idx)};
+            if (custom_gcode_it != cc_data.custom_gcodes.end()) {
+                cc.bed_instances().back()->custom_gcode = custom_gcode_it->second;
             }
         }
     }
