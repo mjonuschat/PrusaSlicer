@@ -124,7 +124,7 @@ DiffDialog::DiffDialog(
     main_sizer->Add(m_top_info_line, 0, wxEXPAND | wxALL, border);
     if (show_printers()) {
         main_sizer->Add(
-            new wxStaticText(this, wxID_ANY, _L("Printers") + colon_str),
+            new wxStaticText(this, wxID_ANY, _L("Printer Presets") + colon_str),
             0,
             wxEXPAND | wxLEFT | wxRIGHT,
             border
@@ -133,7 +133,7 @@ DiffDialog::DiffDialog(
     }
     if (show_prints()) {
         main_sizer->Add(
-            new wxStaticText(this, wxID_ANY, _L("Prints") + colon_str),
+            new wxStaticText(this, wxID_ANY, _L("Print Presets") + colon_str),
             0,
             wxEXPAND | wxLEFT | wxRIGHT,
             border
@@ -142,7 +142,7 @@ DiffDialog::DiffDialog(
     }
     if (show_tool_prints()) {
         main_sizer->Add(
-            new wxStaticText(this, wxID_ANY, _L("Tools Prints") + colon_str),
+            new wxStaticText(this, wxID_ANY, _L("Tool Print Presets") + colon_str),
             0,
             wxEXPAND | wxLEFT | wxRIGHT,
             border
@@ -151,7 +151,7 @@ DiffDialog::DiffDialog(
     }
     if (show_materials()) {
         main_sizer->Add(
-            new wxStaticText(this, wxID_ANY, _L("Tool Materials") + colon_str),
+            new wxStaticText(this, wxID_ANY, _L("Tool Material Presets") + colon_str),
             0,
             wxEXPAND | wxLEFT | wxRIGHT,
             border

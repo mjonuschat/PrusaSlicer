@@ -1874,7 +1874,7 @@ bool DoubleSliderForLayers::render_custom_gcode_popup(const ImVec2& pos)
 
     std::string msg_text = _u8L("Enter custom G-code used on current layer") + ":";
     std::string win_name =
-        _u8L("Custom G-Code on current layer")
+        _u8L("Custom G-code on current layer")
         + " ("
         + convert_and_format_units(
             m_custom_gcode_popup.z,

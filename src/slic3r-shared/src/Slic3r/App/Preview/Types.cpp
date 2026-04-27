@@ -67,7 +67,7 @@ std::string to_string(OptionType type)
     case OptionType::ToolChanges:     { return _u8L("Tool Changes"); }
     case OptionType::ColorChanges:    { return _u8L("Color Changes"); }
     case OptionType::PausePrints:     { return _u8L("Pause Prints"); }
-    case OptionType::CustomGCodes:    { return _u8L("Custom GCodes"); }
+    case OptionType::CustomGCodes:    { return _u8L("Custom G-codes"); }
     case OptionType::CenterOfGravity: { return _u8L("Center Of Gravity"); }
     case OptionType::ToolMarker:      { return _u8L("Tool Marker"); }
     default:                          { return _u8L("Unknown"); }

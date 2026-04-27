@@ -110,7 +110,6 @@ src/slic3r-shared/src/Slic3r/App/PrintSettingsDialog.cpp
 src/slic3r-shared/src/Slic3r/App/PrinterAdvancedSettingsDialog.cpp
 src/slic3r-shared/src/Slic3r/App/SearchBar.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarBed.cpp
-src/slic3r-shared/src/Slic3r/App/SidebarGraphicsSettings.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarObject.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarPrint.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarToolHeadRow.cpp
@@ -124,7 +123,6 @@ src/slic3r-shared/src/Slic3r/App/Yoga/ProjectButton.cpp
 src/slic3r-shared/src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
 src/slic3r-shared/src/Slic3r/Biz/Config/BedShape.cpp
 src/slic3r-shared/src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp
-src/slic3r-shared/src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp
 src/slic3r-shared/src/Slic3r/Biz/Emboss/TextPresetManager.cpp
 src/slic3r-shared/src/Slic3r/Biz/FileLoadingLogic.cpp
 src/slic3r-shared/src/Slic3r/Biz/Format/3mf.cpp

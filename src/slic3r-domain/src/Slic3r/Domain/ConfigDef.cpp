@@ -251,7 +251,7 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
     case ConfigItemDef::OptionGroup::Filament_Overrides_PrintSpeedOverride:
         return L("Print Speed Override");
     case ConfigItemDef::OptionGroup::Filament_CustomGCode_StartGCode:
-        return L("Start G-Code");
+        return L("Start G-code");
     case ConfigItemDef::OptionGroup::Filament_CustomGCode_EndGCode:
         return L("End G-code");
     case ConfigItemDef::OptionGroup::Filament_CustomGCode_CustomParameters:
@@ -283,7 +283,7 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
     case ConfigItemDef::OptionGroup::Printer_Bed_SizeAndCoordinates:
         return L("Size & Coordinates");
     case ConfigItemDef::OptionGroup::Printer_CustomGCode_StartGCodeOptions:
-        return L("Start GCode options");
+        return L("Start G-code options");
     case ConfigItemDef::OptionGroup::Printer_MachineLimits_General:
         return L("General");
     case ConfigItemDef::OptionGroup::Printer_MachineLimits_MaximumAccelerations:

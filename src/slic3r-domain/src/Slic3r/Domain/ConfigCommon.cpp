@@ -116,7 +116,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->category = ConfigItemDef::Category::Printer_General;
     def->order = 6;
     def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->tooltip = L("Picture sizes to be stored into a .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
+    def->tooltip = L("Picture sizes to be stored in .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
                      "Currently supported extensions are PNG, QOI and JPG.");
     def->init_fn = init_with("");
     def->full_width = true;

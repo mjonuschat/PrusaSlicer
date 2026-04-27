@@ -285,21 +285,29 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
     case WarningCode::CustomGCodeReservedKeywords: {
         auto payload = std::get_if<CustomGCodeReservedKeywordsWarningPayload>(&warning.payload);
         ASSERT(payload != nullptr, "Expected CustomGCodeReservedKeywordsWarningPayload");
-        message =
-            _u8L("In the custom G-code were found reserved keywords:") + "\n"
-            + payload->reports + "\n"
-            + _u8L(
+        message = fmt::format(
+        // TRN {} is list of found reserved keywords
+            fmt::runtime(_u8L(
+                "In the custom G-code were found reserved keywords:\n"
+                "{} \n"
                 "This may cause problems in g-code visualization and printing time estimation."
-            );
+            )),
+            payload->reports
+        );
         break;
     }
 
     case WarningCode::InvalidToolchange: {
         auto payload = std::get_if<InvalidToolchangeWarningPayload>(&warning.payload);
         ASSERT(payload != nullptr, "Expected InvalidToolchangeWarningPayload");
-        message = _u8L("GCode Post-Processor encountered an invalid toolchange, maybe from a custom gcode:")
-            + " " + payload->gcode_line + "\n"
-            + _u8L("Generated M104 lines may be incorrect") + ".";
+        message = fmt::format(
+            // TRN {} is a custom G-code
+            fmt::runtime(_u8L(
+                "G-code Post-Processor encountered an invalid toolchange, maybe from a custom G-code: {}\n"
+                "Generated M104 lines may be incorrect."
+            )),
+            payload->gcode_line
+        );
         break;
     }
 
@@ -353,7 +361,7 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
 
     case WarningCode::GCodeConflict: {
         const auto& detail = std::get<Biz::Slicing::GCodeConflictWarningPayload>(warning.payload);
-        // TRN %3% is name of Object1, %4% is name of Object2
+        // TRN {1} is name of Object1, {2} is name of Object2
         return fmt::format(fmt::runtime(_u8L("Conflicts in G-code paths have been detected at "
             "print height {0:.2f} mm. Please reposition the conflicting objects ({1} <-> {2}) further apart.")),
             detail.height, detail.object_names[0], detail.object_names[1]);
@@ -365,10 +373,10 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
     }
 
     if (!warning.item_keys.empty())
-        message += _u8L("\nSee config keys: ") + boost::join(warning.item_keys, ", ");
+        message += "\n" + _u8L("See config keys") + ": " + boost::join(warning.item_keys, ", ");
 
     if (object != nullptr)
-        message += _u8L("\nObject: ") + object->name;
+        message += "\n" + _u8L("Object") + ": " + object->name;
 
     return message;
 }
