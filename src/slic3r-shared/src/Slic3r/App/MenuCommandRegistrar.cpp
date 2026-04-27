@@ -1392,6 +1392,7 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::A
+
                     }}
                 }
             )
@@ -1412,8 +1413,22 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                         Platform::KeyboardShortcuts{
                             Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
                         },
-                    .enabled = [this]()
-                    { return !m_project_interactor.scene_interactor().object_selection().empty(); }
+                    .enabled =
+                        [this]()
+                    {
+                        const bool is_selection_empty{
+                            m_project_interactor.scene_interactor().object_selection().empty()
+                        };
+
+                        auto plater_render_module{
+                            dynamic_cast<Plater::PlaterRenderModule*>(&m_render_module)
+                        };
+                        if (is_selection_empty || !plater_render_module) {
+                            return false;
+                        }
+                        return plater_render_module->gizmo_controller().current_tool_type()
+                            == Scene::ToolType::None;
+                    }
                 }
             )
         )

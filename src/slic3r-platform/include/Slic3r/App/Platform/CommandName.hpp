@@ -17,7 +17,9 @@ struct CommandName
     static constexpr const char* SaveProjectAs = "save-project-as";
 
     static constexpr const char* SelectAll      = "select-all";
-    static constexpr const char* ClearSelection = "clear-selection"; // DeselectAll
+    static constexpr const char* ClearSelection = "clear-selection";
+
+    static constexpr const char* DeactivateCurrentGizmo = "deactivate-current-gizmo";
 
     static constexpr const char* MoveGizmo                  = "move-gizmo";
     static constexpr const char* RotateGizmo                = "rotate-gizmo";

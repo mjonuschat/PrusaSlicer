@@ -488,6 +488,20 @@ void PlaterRenderModule::register_commands()
                     .enabled = [this]() { return !m_text_gizmo->enabled(); }
                 }
             )
+        )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::DeactivateCurrentGizmo,
+                [this]() { m_gizmo_manager->deactivate_current_tool(); },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts =
+                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+                        },
+                    .enabled = [this]()
+                    { return m_gizmo_manager->current_tool_type() != Scene::ToolType::None; }
+                }
+            )
         );
 
     const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
