@@ -332,13 +332,17 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     }
 
     if (var_contexts.empty())
-        return PresetEvaluator::merged_same_presets(ret);
+        return PresetEvaluator::merged_same_presets(std::move(ret));
 
     // resolve variants
     PresetEvaluator::EvalPresetContexts product;
-    for (const auto& ctx : ret) {
-        for (const auto& var_ctx : var_contexts) {
-            PresetEvaluator::EvalPresetContext context = ctx;
+    product.reserve(ret.size() * var_contexts.size());
+    for (size_t ci = 0; ci < ret.size(); ++ci) {
+        for (size_t vi = 0; vi < var_contexts.size(); ++vi) {
+            const auto& var_ctx = var_contexts[vi];
+            const bool last_var = (vi + 1 == var_contexts.size());
+            PresetEvaluator::EvalPresetContext context =
+                last_var ? std::move(ret[ci]) : ret[ci];
             if (!var_ctx.id.empty())
                 context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
             if (!var_ctx.name.empty())
@@ -358,7 +362,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         }
     }
 
-    return PresetEvaluator::merged_same_presets(product);
+    return PresetEvaluator::merged_same_presets(std::move(product));
 }
 
 struct BoolCaster

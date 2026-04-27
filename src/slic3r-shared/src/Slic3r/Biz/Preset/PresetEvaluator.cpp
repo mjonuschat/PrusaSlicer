@@ -420,15 +420,15 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     };
 }
 
-PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const EvalPresetContexts& presets)
+PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(EvalPresetContexts presets)
 {
     EvalPresetContexts ret;
 
-    for (const auto& p : presets) {
+    for (auto& p : presets) {
         const bool is_unique =
             std::ranges::none_of(ret, [&p](const auto& other) { return p.has_same_values(other); });
         if (is_unique) {
-            ret.emplace_back(p);
+            ret.emplace_back(std::move(p));
         }
     }
     return ret;

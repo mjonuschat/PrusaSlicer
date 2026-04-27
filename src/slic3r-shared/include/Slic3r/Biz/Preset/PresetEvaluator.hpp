@@ -68,7 +68,7 @@ private:
         const EvalPresetContext& context
     );
 
-    static EvalPresetContexts merged_same_presets(const EvalPresetContexts& presets);
+    static EvalPresetContexts merged_same_presets(EvalPresetContexts presets);
 
 private:
     const Domain::Preset::PresetCollection& m_presets;
