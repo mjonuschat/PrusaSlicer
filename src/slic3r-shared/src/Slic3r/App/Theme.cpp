@@ -91,7 +91,7 @@ Theme::Theme()
     m_colors[Platform::Color::AccentPrimary]   = ColorEntry{{223, 93, 45}};
     m_colors[Platform::Color::AccentSecondary] = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
     m_colors[Platform::Color::Error]           = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
-
+    m_colors[Platform::Color::Warning]          = ColorEntry{{232, 64, 64}};
     m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.80f, 0.80f, 0.80f, 0.35f}};
 
     m_colors[Platform::Color::SceneBg] = ColorEntry{{88, 88, 88}};

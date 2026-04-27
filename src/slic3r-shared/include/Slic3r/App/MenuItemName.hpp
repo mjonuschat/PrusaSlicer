@@ -167,6 +167,5 @@ enum class MenuItemName
     ReloadVolume,
     SplitVolume,
     FixVolumeWithRepairAlgorithm,
-    ChangeVolumeType,
 };
 } // namespace Slic3r::App

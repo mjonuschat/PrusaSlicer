@@ -199,6 +199,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Selected instances to objects");
     case Type::SetAsPrintable:
         return _u8L("Change printable state");
+    case Type::ChangeVolumeType:
+        return _u8L("Change volume type");
     }
     PANIC("Unknown option");
     return {};

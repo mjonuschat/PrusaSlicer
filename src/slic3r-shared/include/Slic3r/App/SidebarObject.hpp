@@ -24,6 +24,7 @@ class ObjectSettingsObservableList;
 namespace Slic3r::App::Yoga {
 class Text;
 class LayoutButton;
+class ComboBox;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -53,6 +54,8 @@ protected:
     void visible_updated_internal() override;
 
 private:
+    void add_volume_type_selector();
+    void update_volume_type_selector();
     void update_object_name();
     void update_enable_modifiers();
 
@@ -90,6 +93,8 @@ private:
     Biz::UnsharedPointer<ObservableOverrideCategorizer> m_override_group_filter;
 
     Yoga::Text* m_text_object_name{nullptr};
+    Yoga::ComboBox* m_volume_type_selector{ nullptr };
+    Yoga::Text* m_volume_type_selector_warning{ nullptr };
     Plater::ScaleWidget* m_scale_widget{nullptr};
     Yoga::LayoutButton* m_add_settings_button{nullptr};
     Yoga::Text* m_no_overrides_label{nullptr};

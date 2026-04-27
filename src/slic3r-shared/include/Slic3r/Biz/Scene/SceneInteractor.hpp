@@ -123,6 +123,12 @@ public:
     )
     {}
 
+    virtual void on_volume_type_changed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    )
+    {}
+
     virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Print::WipeTowerGeometry& wipe_tower) {}
     virtual void on_wipe_tower_moved(Domain::SlicingId slicing_id) {}
     virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
@@ -198,6 +204,9 @@ public:
         Domain::SelectionId project_id,
         Domain::SelectionId instance_id,
         const VolumeFactory& factory
+    );
+    void set_selected_volume_type(
+        Domain::ModelVolumeType volume_type
     );
 
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;

@@ -11,6 +11,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
 #include "Slic3r/App/WipeTowerSettings.hpp"
 #include "Slic3r/App/Plater/ScaleWidget.hpp"
@@ -18,9 +19,26 @@
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
-using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
+
+static std::string volume_type_name(Domain::ModelVolumeType type)
+{
+    switch (type) {
+    case Domain::ModelVolumeType::MODEL_PART:
+        return Biz::_u8L("Solid part");
+    case Domain::ModelVolumeType::NEGATIVE_VOLUME:
+        return Biz::_u8L("Negative volume");
+    case Domain::ModelVolumeType::PARAMETER_MODIFIER:
+        return Biz::_u8L("Modifier");
+    case Domain::ModelVolumeType::SUPPORT_BLOCKER:
+        return Biz::_u8L("Support blocker");
+    case Domain::ModelVolumeType::SUPPORT_ENFORCER:
+        return Biz::_u8L("Support modifier");
+    default:
+        return "";
+    }
+}
 
 SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     Window("SidebarObject"),
@@ -45,9 +63,9 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
     m_text_object_name->set_flex_shrink(0);
 
-    m_scale_widget = emplace_back<Plater::ScaleWidget>(
-        m_project_interactor
-    );
+    add_volume_type_selector();
+
+    m_scale_widget = emplace_back<Plater::ScaleWidget>(m_project_interactor);
     m_scale_widget->on_activated(m_project_interactor.selected_project_id());
 
     ScrollArea* scroll_area = emplace_back<ScrollArea>();
@@ -132,10 +150,11 @@ void SidebarObject::on_scene_selection_changed(
 
     m_selection = selection;
     update_object_name();
+    update_volume_type_selector();
     update_enable_modifiers();
     m_add_settings_button->set_label(
-        m_selection.mode == Biz::Scene::SelectionMode::Instance ? _u8L("Add object settings") :
-                                                                  _u8L("Add volume settings")
+        m_selection.mode == Biz::Scene::SelectionMode::Instance ? Biz::_u8L("Add object settings") :
+                                                                  Biz::_u8L("Add volume settings")
     );
 }
 
@@ -160,6 +179,83 @@ void SidebarObject::visible_updated_internal()
     if (!is_visible()) {
         m_override_settings_dialog->close();
     }
+}
+
+void SidebarObject::add_volume_type_selector()
+{
+    m_volume_type_selector = emplace_back<ComboBox>(std::initializer_list<std::string>{
+        volume_type_name(Domain::ModelVolumeType::MODEL_PART),
+        volume_type_name(Domain::ModelVolumeType::NEGATIVE_VOLUME),
+        volume_type_name(Domain::ModelVolumeType::PARAMETER_MODIFIER),
+        volume_type_name(Domain::ModelVolumeType::SUPPORT_BLOCKER),
+        volume_type_name(Domain::ModelVolumeType::SUPPORT_ENFORCER)
+    });
+    m_volume_type_selector->callbacks().selection_changed = [this](int index)
+    {
+        m_project_interactor.scene_interactor().set_selected_volume_type(
+            static_cast<Domain::ModelVolumeType>(index)
+        );
+        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::ChangeVolumeType);
+        m_volume_type_selector->set_override_label(std::string());
+    };
+
+    m_volume_type_selector_warning = emplace_back<Text>(
+        Biz::_u8L("You can't change a type of the last solid part of the object.")
+    );
+    m_volume_type_selector_warning->set_text_color(m_theme->color_imgui(Platform::Color::Warning));
+    m_volume_type_selector_warning->set_wrap_mode(Text::WrapMode::Wrap);
+}
+
+void SidebarObject::update_volume_type_selector()
+{
+    bool show_warning{false};
+    if (m_selection.mode == Biz::Scene::SelectionMode::Volume && !m_selection.empty()) {
+        Domain::ModelObject* object = m_project_interactor.selected_project().find_object_by_id(
+            m_selection.elements.front().object_id
+        );
+        ASSERT(object);
+        const size_t solid_parts_count = object->parts_count();
+        size_t selected_solid_parts_cnt{0};
+
+        std::optional<Domain::ModelVolumeType> sel_type = std::nullopt;
+        for (const Domain::ElementRef& el : m_selection.elements) {
+            Domain::ModelVolume* volume = m_project_interactor.selected_project().find_volume_by_id(
+                el.object_id,
+                el.volume_id
+            );
+            ASSERT(volume);
+            if (volume->is_model_part()) {
+                selected_solid_parts_cnt++;
+            }
+
+            if (!sel_type) {
+                sel_type = volume->type();
+            } else if (
+                sel_type.value() != Domain::ModelVolumeType::INVALID
+                && sel_type.value() != volume->type()
+            )
+            {
+                sel_type = Domain::ModelVolumeType::INVALID;
+            }
+        }
+
+        if (selected_solid_parts_cnt == solid_parts_count) {
+            show_warning = true;
+        }
+        ASSERT(sel_type);
+
+        if (sel_type.value() != Domain::ModelVolumeType::INVALID) {
+            m_volume_type_selector->set_current_index(static_cast<int>(sel_type.value()));
+        }
+        m_volume_type_selector->set_override_label(
+            sel_type.value() == Domain::ModelVolumeType::INVALID ? Biz::_u8L("Mixed") :
+                                                                   std::string()
+        );
+    }
+
+    m_volume_type_selector->set_visible(m_selection.mode == Biz::Scene::SelectionMode::Volume);
+    m_volume_type_selector->set_enabled(!show_warning);
+    m_volume_type_selector_warning->set_visible(show_warning);
 }
 
 void SidebarObject::update_object_name()

@@ -978,13 +978,6 @@ void MenuCommandRegistrar::register_volume_menu_commands()
         .append_item_from_command(
             MenuItemName::FixVolumeWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm
-        )
-        .append_separator()
-        .append_item(
-            MenuItemName::ChangeVolumeType,
-            "change-volume-type",
-            []() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
         );
 }
 

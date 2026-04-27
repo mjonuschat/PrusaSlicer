@@ -233,6 +233,10 @@ private:
     void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
     void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state,
         const Biz::BedTrackingChanges& bed_tracking_changes) override;
+    void on_volume_type_changed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    ) override;
 
     void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;

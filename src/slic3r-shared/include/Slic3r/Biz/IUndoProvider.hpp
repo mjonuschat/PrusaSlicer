@@ -62,6 +62,7 @@ enum class UndoSnapshotType
     DeleteSelection,
     SetAsSeparateObject,
     SetAsPrintable,
+    ChangeVolumeType,
     PaintOnSupportsStroke,
     PaintOnSeamsStroke,
     PaintOnFuzzySkinStroke,

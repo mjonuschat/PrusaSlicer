@@ -248,8 +248,6 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Separate to Object(s)");
     case MenuItemName::MergeMultiObjects:
         return Biz::_u8L("Merge");
-    case MenuItemName::ChangeVolumeType:
-        return Biz::_u8L("Change type");
     case MenuItemName::InvalidateCutInfo:
         return Biz::_u8L("Invalidate cut info");
 

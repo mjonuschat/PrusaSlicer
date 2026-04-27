@@ -1237,6 +1237,62 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     sinking_contours.set_selection(elements);
 }
 
+void PlaterScenePresenter::on_volume_type_changed(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& volumes
+)
+{
+    auto& scn        = scene();
+    const auto& proj = m_workbench.project(project_id);
+
+    Scene::visit(
+        scn.root(),
+        [&](Scene::Node& n)
+        {
+            const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
+            if (t == nullptr || t->volume_id == 0)
+                return;
+            for (const Domain::ElementRef& volume_el : volumes) {
+                if (volume_el.volume_id != t->volume_id) {
+                    continue;
+                }
+
+                const Domain::ModelVolume* model_volume =
+                    proj.find_volume_by_id(volume_el.object_id, volume_el.volume_id);
+                if (t->volume_type != model_volume->type()) {
+                    const Domain::ModelInstance* inst =
+                        proj.find_instance_by_id(volume_el.object_id, t->instance_id);
+                    SceneNodeTag new_tag(
+                        t->object_id,
+                        t->volume_id,
+                        t->instance_id,
+                        model_volume->type(),
+                        t->wipe_tower_id
+                    );
+                    n.set_tag(new_tag);
+
+                    ColorRGBA clr = ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
+                    auto color_it = Scene::VOLUME_COLORS.find(model_volume->type());
+                    if (color_it != Scene::VOLUME_COLORS.end())
+                        clr = color_it->second;
+
+                    auto material =
+                        Render::Material{}
+                            .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                            .set_uniform("uniform_color", clr)
+                            .set_transparent(clr.is_transparent());
+                    n.render_component()->replace_material(material);
+                }
+                return;
+            }
+        },
+        true
+    );
+
+    m_volume_materials_dirty = true;
+    invoke_bed_visually_changed(project_id);
+}
+
 void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
     auto& scn        = scene();

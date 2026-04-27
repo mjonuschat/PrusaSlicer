@@ -155,7 +155,7 @@ WarningPanel::WarningPanel(const std::string& warning_text, bool has_extantion)
 
     auto tune_text = [](Text* text)
     {
-        text->set_text_color(ImColor{232, 64, 64});
+        text->set_text_color(m_theme->color_imgui(Platform::Color::Warning));
         text->set_min_size(Vec2f{200.f, YGUndefined});
         text->set_wrap_mode(Text::WrapMode::Wrap);
     };

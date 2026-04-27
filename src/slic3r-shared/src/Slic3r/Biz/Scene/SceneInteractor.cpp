@@ -741,6 +741,34 @@ void SceneInteractor::add_volume(
         invoke_slicing_input_changed(bed_ref);
 }
 
+void SceneInteractor::set_selected_volume_type(Domain::ModelVolumeType volume_type)
+{
+    const ObjectSelection& selection = object_selection();
+    ASSERT(selection.mode == Biz::Scene::SelectionMode::Volume && !selection.empty());
+
+    auto& project                      = m_workbench.project(m_selected_project_id);
+    const Domain::ElementRefs& volumes = selection.elements;
+
+    Domain::ModelObject* object = project.find_object_by_id(volumes.front().object_id);
+    ASSERT(object);
+
+    for (const Domain::ElementRef& el : volumes) {
+        Domain::ModelVolume* volume = project.find_volume_by_id(el.object_id, el.volume_id);
+        ASSERT(volume);
+        volume->set_type(volume_type);
+    }
+    ASSERT(object->parts_count() > 0);
+    Algorithms::ModelObject::sort_volumes(object);
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_volume_type_changed(m_selected_project_id, volumes); }
+    );
+
+    const BedTrackingChanges changes = update_elements_bed_placement(volumes, true);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
+}
+
 void SceneInteractor::add_instance(const Vec2d& offset)
 {
     auto& project              = m_workbench.project(m_selected_project_id);
@@ -2787,6 +2815,10 @@ void SceneInteractor::set_state(
                     volumes_diff.changed,
                     TransformState::Completed,
                     changes
+                );
+                l->on_volume_type_changed(
+                    m_selected_project_id,
+                    volumes_diff.changed
                 );
             }
         }
