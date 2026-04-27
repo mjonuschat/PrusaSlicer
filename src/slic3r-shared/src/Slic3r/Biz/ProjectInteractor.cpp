@@ -770,6 +770,12 @@ void ProjectInteractor::remove_config_container(Domain::SelectionId config_conta
     auto it = std::find_if(ccs.begin(), ccs.end(), [config_container_id](const auto& cc_ptr) { return cc_ptr->id().id == config_container_id; });
     ASSERT(it != ccs.end());
 
+    auto to_select_it = it;
+    if (++to_select_it == ccs.end()) {
+        to_select_it = ccs.begin();
+    }
+    select_config_container((*to_select_it)->id().id);
+
     // Remove all beds from container before its will be erased
     Domain::ConfigContainer* cc_ptr = it->get();
     while (!cc_ptr->bed_instances().empty()) {
@@ -781,10 +787,6 @@ void ProjectInteractor::remove_config_container(Domain::SelectionId config_conta
     }
 
     it = ccs.erase(it);
-    if (it == ccs.end())
-        it = ccs.begin();
-    select_config_container((*it)->id().id);
-
     scene_interactor().on_removed_config_container(project);
 }
 
