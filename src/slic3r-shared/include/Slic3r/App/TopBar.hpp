@@ -90,6 +90,7 @@ private:
     Yoga::LayoutButton* m_redo_btn{nullptr};
     Yoga::LayoutButton* m_redo_stack_btn{nullptr};
     Yoga::LayoutButton* m_show_ui_btn{nullptr};
+    Item* m_undo_redo_wrapper{nullptr};
 
     Yoga::Menu* m_main_menu{nullptr};
     Yoga::Menu* m_file_menu{nullptr};

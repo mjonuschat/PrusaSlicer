@@ -334,9 +334,6 @@ protected:
 
     void update_children_render_order();
 
-    size_t get_node_count() const;
-    ImVec2 get_node_pos() const;
-
     void render_item_begin(Vec2f pos, Vec2f size);
     void render_item_end(Vec2f pos, Vec2f size);
     void render_node(Vec2f pos, Item* child);

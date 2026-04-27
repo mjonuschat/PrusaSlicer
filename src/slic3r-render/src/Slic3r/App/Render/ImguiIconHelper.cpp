@@ -193,6 +193,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Output, "output"},
     {Icon::Notes, "notes"},
     {Icon::CaretLeft, "caret_left"},
+    {Icon::CaretRight, "caret_right"},
     {Icon::CaretUp, "caret_up"},
     {Icon::CaretDown, "caret_down"},
     {Icon::Search, "search_gray"},
@@ -238,6 +239,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::UndoGizmo, "undo_gizmo"},
     {Icon::VariableLayerHeight, "variable_layer_height"},
     {Icon::HeightRange, "height_range"},
+    {Icon::ArrowRight, "arrow_right"},
     {Icon::Filter, "filter"},
 };
 

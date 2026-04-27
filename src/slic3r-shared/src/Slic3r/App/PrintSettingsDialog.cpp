@@ -317,8 +317,8 @@ void PrintSettingsDialog::update_extruder_size()
         )
             .value_or(false);
     const size_t extruder_count = is_multi_extruder ? m_extruders.size() : 0;
-    while (is_multi_extruder && extruder_count > m_save_preset_menu->object_count() - 1) {
-        const size_t index         = m_save_preset_menu->object_count() - 1;
+    while (is_multi_extruder && extruder_count > m_save_preset_menu->menu_item_count() - 1) {
+        const size_t index         = m_save_preset_menu->menu_item_count() - 1;
         MenuItem* tool_save_button = m_save_preset_menu->append_item(
             fmt::format("{} {} {}", Biz::_u8L("Tool"), index + 1, Biz::_u8L("preset")),
             Render::Icon::Funnel
@@ -331,8 +331,8 @@ void PrintSettingsDialog::update_extruder_size()
             );
         };
     }
-    while (extruder_count < m_save_preset_menu->object_count() - 1) {
-        m_save_preset_menu->remove_item(m_save_preset_menu->object_count() - 1);
+    while (extruder_count < m_save_preset_menu->menu_item_count() - 1) {
+        m_save_preset_menu->remove_item(m_save_preset_menu->menu_item_count() - 1);
     }
 }
 

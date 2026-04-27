@@ -6,6 +6,7 @@
 namespace Slic3r::App::Yoga {
 
 class MenuItem;
+class ScrollArea;
 
 class Menu : public ContextPopup
 {
@@ -20,11 +21,14 @@ public:
     );
     void remove_item(size_t index);
     void clear();
+    size_t menu_item_count() const;
+
     void append_separator();
     void close_all_submenus() const;
 
 private:
     std::vector<MenuItem*> m_items;
+    ScrollArea* m_scroll_area{nullptr};
 };
 
 } // namespace Slic3r::App::Yoga

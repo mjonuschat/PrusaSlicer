@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/Popup.hpp"
 
 #include "Slic3r/App/Yoga/RootItem.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -13,39 +14,6 @@
 #include <list>
 
 namespace {
-
-void move_window_to_bounds(const Slic3r::Domain::Vec2f& available_size, ImRect& window)
-{
-    {
-        // clamp window size to available_size
-        const ImVec2 window_size = window.GetSize();
-        if (window_size.x > available_size.x()) {
-            window.Max.x -= window_size.x - available_size.x();
-        }
-        if (window_size.y > available_size.y()) {
-            window.Max.y -= window_size.y - available_size.y();
-        }
-    }
-
-    // Move window to range [0,0]-[available_size.x, available_size.y]
-
-    // left
-    if (window.Min.x < 0) {
-        window.TranslateX(abs(window.Min.x));
-    }
-    // right
-    if (window.Max.x > available_size.x()) {
-        window.TranslateX(available_size.x() - window.Max.x);
-    }
-    // top
-    if (window.Min.y < 0) {
-        window.TranslateY(abs(window.Min.y));
-    }
-    // bottom
-    if (window.Max.y > available_size.y()) {
-        window.TranslateY(available_size.y() - window.Max.y);
-    }
-}
 
 [[nodiscard]] std::pair<bool, ImRect> try_to_place_popup(
     const ImRect& size_rect,
@@ -290,7 +258,7 @@ void Popup::resize(const Vec2f& size)
         popup_rect.Max = popup_rect.Min + ImVec2(m_content_item->width(), m_content_item->height());
     }
 
-    move_window_to_bounds(size, popup_rect);
+    Imgui::move_window_to_bounds({size.x(), size.y()}, popup_rect);
 
     if (m_attached_type != AttachedType::FreeStanding) {
         if (!Domain::fuzzy_compare(m_content_item->left(), popup_rect.Min.x)) {

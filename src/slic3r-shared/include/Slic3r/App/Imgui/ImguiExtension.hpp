@@ -1,3 +1,4 @@
+// TODO: cleanup this file and create ImguiUtils from it
 #pragma once
 
 #include <imgui/imgui.h>
@@ -88,5 +89,7 @@ void text_with_bg_aligned(float align_x, const std::string& label, ImVec4 color 
 bool button_aligned(float align_x, const std::string& label, const ImVec2& size_arg = ImVec2(0, 0), ImGuiButtonFlags flags= ImGuiButtonFlags_None);
 
 void colored_circle_marker_aligned(float align_x, const std::string& label_str, const std::vector<ImVec4>& colors, const ImVec2& size_arg = ImVec2(0, 0));
+
+void move_window_to_bounds(const ImVec2& available_size, ImRect& window);
 
 } // namespace Slic3r::App::Imgui

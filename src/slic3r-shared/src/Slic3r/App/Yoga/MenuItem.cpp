@@ -41,12 +41,16 @@ void MenuItem::create(
 )
 {
     set_background_color(Platform::Color::ButtonTransparent);
+    set_flex_shrink(0);
+    set_align_content(YGAlignCenter);
 
     float icon_size = 16;
 
     m_icon = emplace_back<Icon>(icon);
     m_icon->set_aspect_ratio(1);
     m_icon->set_width(icon_size);
+    m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+    m_icon->set_self_align(YGAlignFlexEnd);
 
     m_label = emplace_back<Text>(label);
     m_label->set_flex_grow(1.f);
@@ -61,7 +65,7 @@ void MenuItem::create(
     m_expander_icon->set_visible(false);
     m_expander_icon->set_aspect_ratio(1.f);
     m_expander_icon->set_width(icon_size);
-    m_expander_icon->set_self_align(YGAlignCenter);
+    m_expander_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
 }
 
 MenuItem* MenuItem::append_sub_menu_item(
@@ -123,8 +127,10 @@ void MenuItem::hovered_updated_internal()
 void MenuItem::add_submenu(const std::string& label)
 {
     m_sub_menu = emplace_back<Menu>(label, Position::Right);
-    m_sub_menu->set_flags(m_sub_menu->flags() | ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_ChildWindow);
-    m_sub_menu->set_offset(-2.f);
+    m_sub_menu->set_flags(
+        m_sub_menu->flags() | ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_ChildWindow
+    );
+    m_sub_menu->set_offset(0);
 
     m_expander_icon->set_visible(true);
     set_content_justify_content(YGJustifyFlexStart);

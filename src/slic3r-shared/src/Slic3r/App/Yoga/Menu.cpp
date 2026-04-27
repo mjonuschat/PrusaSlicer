@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -10,10 +11,12 @@ Menu::Menu(const std::string& name, Position position)
     set_position(position);
     set_orientation(Orientation::Vertical);
     set_padding({3.f, 3.f});
-    set_gap(3.f);
-    set_flags(
-        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
-    );
+    set_flags(ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    set_flex_shrink(0);
+    m_scroll_area = emplace_back<ScrollArea>();
+    m_scroll_area->set_orientation(Orientation::Vertical);
+    m_scroll_area->set_gap(3.f);
+    m_scroll_area->set_padding(Paddings{0, 0, 13, 0});
 }
 
 MenuItem* Menu::append_item(
@@ -23,7 +26,8 @@ MenuItem* Menu::append_item(
     bool action_closes_parent
 )
 {
-    MenuItem* item = emplace_back<MenuItem>(this, label, icon, shortcut, action_closes_parent);
+    MenuItem* item =
+        m_scroll_area->emplace_back<MenuItem>(this, label, icon, shortcut, action_closes_parent);
 
     m_items.push_back(item);
     return item;
@@ -31,21 +35,26 @@ MenuItem* Menu::append_item(
 
 void Menu::remove_item(size_t index)
 {
-    remove(m_items.at(index));
+    m_scroll_area->remove(m_items.at(index));
     m_items.erase(m_items.cbegin() + index);
 }
 
 void Menu::clear()
 {
     for (MenuItem* item : m_items) {
-        remove_later(item);
+        m_scroll_area->remove_later(item);
     }
     m_items.clear();
 }
 
+size_t Menu::menu_item_count() const
+{
+    return m_scroll_area->object_count();
+}
+
 void Menu::append_separator()
 {
-    emplace_back<Separator>();
+    m_scroll_area->emplace_back<Separator>();
 }
 
 void Menu::close_all_submenus() const

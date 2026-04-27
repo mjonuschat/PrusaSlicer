@@ -162,6 +162,7 @@ enum class Icon : wchar_t
     Output,
     Notes,
     CaretLeft,
+    CaretRight,
     CaretUp,
     CaretDown,
     Search,
@@ -210,6 +211,7 @@ enum class Icon : wchar_t
     Shapes,
     RecentProjects,
     Filter,
+    ArrowRight,
 
     // FontIconS
     // DO NOT TOUCH, DO NOT CHANGE ORDER

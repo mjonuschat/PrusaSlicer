@@ -575,4 +575,37 @@ ImVec2 calc_text_size(
     );
 }
 
+void move_window_to_bounds(const ImVec2& available_size, ImRect& window)
+{
+    {
+        // clamp window size to available_size
+        const ImVec2 window_size = window.GetSize();
+        if (window_size.x > available_size.x) {
+            window.Max.x -= window_size.x - available_size.x;
+        }
+        if (window_size.y > available_size.y) {
+            window.Max.y -= window_size.y - available_size.y;
+        }
+    }
+
+    // Move window to range [0,0]-[available_size.x, available_size.y]
+
+    // left
+    if (window.Min.x < 0) {
+        window.TranslateX(abs(window.Min.x));
+    }
+    // right
+    if (window.Max.x > available_size.x) {
+        window.TranslateX(available_size.x - window.Max.x);
+    }
+    // top
+    if (window.Min.y < 0) {
+        window.TranslateY(abs(window.Min.y));
+    }
+    // bottom
+    if (window.Max.y > available_size.y) {
+        window.TranslateY(available_size.y - window.Max.y);
+    }
+}
+
 } // namespace Slic3r::App::Imgui

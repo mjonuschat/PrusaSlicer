@@ -809,7 +809,9 @@ void Item::visible_updated_internal() {}
 
 Vec2f Item::get_available_size() const
 {
-    return m_parent_item->get_available_size();
+    Item* root = dynamic_cast<Item*>(root_item());
+    ASSERT(root, "Item is not inside a valid tree with RootItem");
+    return root->get_available_size();
 }
 
 void Item::on_resized()
@@ -1101,18 +1103,6 @@ void Item::style_node()
             object->style_node();
         }
     }
-}
-
-size_t Item::get_node_count() const
-{
-    ASSERT(m_node);
-    return YGNodeGetChildCount(m_node);
-}
-
-ImVec2 Item::get_node_pos() const
-{
-    ASSERT(m_node);
-    return {YGNodeLayoutGetLeft(m_node), YGNodeLayoutGetTop(m_node)};
 }
 
 void Item::render_item_begin(Vec2f pos, Vec2f size) {}

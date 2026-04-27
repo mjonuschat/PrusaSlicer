@@ -51,13 +51,13 @@ private:
 private:
     Callbacks m_callbacks;
 
-    float m_offset           = 10;
-    Position m_position      = Position::Right;
-    float m_rounding         = 5;
+    float m_offset      = 10;
+    Position m_position = Position::Right;
+    float m_rounding    = 5;
 
     ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
-    bool m_request_close = false;
-    bool m_opened        = false;
+    bool m_request_close     = false;
+    bool m_opened            = false;
 
     std::optional<Vec2f> m_open_pos   = std::nullopt;
     bool m_force_open_popup_in_render = false;

@@ -73,9 +73,11 @@ TopBar::TopBar(
 #endif // !USE_NATIVE_MENU
 
     add_save_project_btn(left_wrapper);
+    m_undo_redo_wrapper = left_wrapper->emplace_back<Item>();
+    m_undo_redo_wrapper->set_min_size({96, 0});
     if (m_undo_store) {
-        add_undo_btn(left_wrapper);
-        add_redo_btn(left_wrapper);
+        add_undo_btn(m_undo_redo_wrapper);
+        add_redo_btn(m_undo_redo_wrapper);
     }
     add_show_ui_btn(left_wrapper);
 
@@ -126,7 +128,7 @@ TopBar::TopBar(
     }
 
     for (Item* wrapper : std::initializer_list<Item*>{left_wrapper, right_wrapper}) {
-        wrapper->set_gap(15.f);
+        wrapper->set_gap(7.f);
         wrapper->set_padding({15.f, 5.f});
     }
 
@@ -166,7 +168,7 @@ static void append_snapshot(
     ProjectInteractor& project_interactor
 )
 {
-    const Render::Icon icon{selected ? Render::Icon::StarSolid : Render::Icon::None};
+    const Render::Icon icon{selected ? Render::Icon::ArrowRight : Render::Icon::None};
     Yoga::MenuItem* menu_item{menu.append_item(name, icon, "", false)};
     menu_item->set_enabled(!selected);
     menu_item->callbacks().action = [snapshot_id, &project_interactor]()
@@ -183,12 +185,12 @@ void TopBar::on_undo_store_changed(
         return;
     }
 
-    const bool undo_enalbed{m_render_module->command(CommandName::Undo).enabled()};
-    const bool redo_enalbed{m_render_module->command(CommandName::Redo).enabled()};
-    m_undo_btn->set_enabled(undo_enalbed);
-    m_undo_stack_btn->set_enabled(undo_enalbed);
-    m_redo_btn->set_enabled(redo_enalbed);
-    m_redo_stack_btn->set_enabled(redo_enalbed);
+    const bool undo_enabled{m_render_module->command(CommandName::Undo).enabled()};
+    const bool redo_enabled{m_render_module->command(CommandName::Redo).enabled()};
+    m_undo_btn->set_enabled(undo_enabled);
+    m_undo_stack_btn->set_enabled(undo_enabled);
+    m_redo_btn->set_enabled(redo_enabled);
+    m_redo_stack_btn->set_enabled(redo_enabled);
 
     m_undo_menu->clear();
     m_redo_menu->clear();
@@ -225,12 +227,17 @@ static void toggle_menu_visibility(Menu* menu)
 void TopBar::add_undo_btn(Item* parent)
 {
     auto item{parent->emplace_back<Item>()};
-    m_undo_btn = item->emplace_back<LayoutButton>("", Render::Icon::TopBarUndo, _u8L("Undo"));
-    m_undo_stack_btn =
-        item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Undo stack"));
+    m_undo_btn =
+        item->emplace_back<LayoutButton>(std::string{}, Render::Icon::TopBarUndo, _u8L("Undo"));
+    m_undo_stack_btn = item->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::CaretDown,
+        _u8L("Undo stack")
+    );
     m_undo_stack_btn->set_enabled(false);
 
     m_undo_menu = m_undo_stack_btn->emplace_back<Yoga::Menu>("undo_menu", Yoga::Position::Bottom);
+    m_undo_menu->set_max_size({YGUndefined, 550});
 
     m_undo_stack_btn->callbacks().action = [this]() { toggle_menu_visibility(m_undo_menu); };
 
@@ -240,12 +247,17 @@ void TopBar::add_undo_btn(Item* parent)
 void TopBar::add_redo_btn(Item* parent)
 {
     auto item{parent->emplace_back<Item>()};
-    m_redo_btn = item->emplace_back<LayoutButton>("", Render::Icon::TopBarRedo, _u8L("Redo"));
-    m_redo_stack_btn =
-        item->emplace_back<LayoutButton>("", Render::Icon::CaretDown, _u8L("Redo stack"));
+    m_redo_btn =
+        item->emplace_back<LayoutButton>(std::string{}, Render::Icon::TopBarRedo, _u8L("Redo"));
+    m_redo_stack_btn = item->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::CaretDown,
+        _u8L("Redo stack")
+    );
     m_redo_stack_btn->set_enabled(false);
 
     m_redo_menu = m_redo_stack_btn->emplace_back<Yoga::Menu>("redo_menu", Yoga::Position::Bottom);
+    m_redo_menu->set_max_size({YGUndefined, 550});
 
     m_redo_stack_btn->callbacks().action = [this]() { toggle_menu_visibility(m_redo_menu); };
 

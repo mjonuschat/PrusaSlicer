@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Yoga/ContextPopup.hpp"
 
-#include <Slic3r/App/Yoga/Window.hpp>
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <imgui_internal.h>
 
@@ -23,38 +23,87 @@ ContextPopup::Callbacks& ContextPopup::callbacks()
 
 void ContextPopup::style_node()
 {
-    if (is_visible()) {
+    if (m_opened && is_visible()) {
+        const ImVec2 size = to_im(get_available_size());
+
         if (m_open_pos.has_value()) {
-            set_left(m_open_pos.value().x());
-            set_top(m_open_pos.value().y());
+            // Absolute positioning
+            ImRect popup_rect(
+                m_open_pos->x(),
+                m_open_pos->y(),
+                m_open_pos->x() + width(),
+                m_open_pos->y() + height()
+            );
+
+            Imgui::move_window_to_bounds(size, popup_rect);
+
+            set_left(popup_rect.Min.x);
+            set_top(popup_rect.Min.y);
         } else {
+            // Relative positioning according to the parent_item and m_position
+            const float parent_w = parent_item()->width();
+            const float parent_h = parent_item()->height();
+            const float popup_w  = width();
+            const float popup_h  = height();
+
+            bool is_left = true;
+            bool is_top  = true;
+
+            ImVec2 local_pos;
+
             switch (m_position) {
             case Position::Right:
-                set_right(-(m_offset + width()));
-                set_top(
-                    m_flags & ImGuiWindowFlags_ChildMenu ?
-                        0 :
-                        parent_item()->height() * 0.5f - height() * 0.5f
-                );
+                is_left = false;
+                is_top  = true;
+
+                local_pos.x = parent_w + m_offset;
+                local_pos.y =
+                    m_flags & ImGuiWindowFlags_ChildMenu ? 0.0f : parent_h * 0.5f - popup_h * 0.5f;
                 break;
             case Position::Left:
-                set_left(-(m_offset + width()));
-                set_top(parent_item()->height() * 0.5f - height() * 0.5f);
+                is_left = true;
+                is_top  = true;
+
+                local_pos.x = -(m_offset + popup_w);
+                local_pos.y = parent_h * 0.5f - popup_h * 0.5f;
                 break;
             case Position::Top:
-                set_top(-(m_offset + height()));
-                set_left(parent_item()->width() * 0.5f - width() * 0.5f);
+                is_left = true;
+                is_top  = true;
+
+                local_pos.x = parent_w * 0.5f - popup_w * 0.5f;
+                local_pos.y = -(m_offset + popup_h);
                 break;
             case Position::Bottom:
-                set_bottom(-(m_offset + height()));
-                set_left(
-                    m_flags & ImGuiWindowFlags_ChildMenu ?
-                        0 :
-                        parent_item()->width() * 0.5f - width() * 0.5f
-                );
+                is_left = true;
+                is_top  = false;
+
+                local_pos.x =
+                    m_flags & ImGuiWindowFlags_ChildMenu ? 0.0f : parent_w * 0.5f - popup_w * 0.5f;
+                local_pos.y = parent_h + m_offset;
                 break;
             }
+
+            const ImVec2 parent_pos = to_im(parent_item()->get_global_pos());
+            ImRect target_rect{
+                parent_pos + local_pos,
+                parent_pos + local_pos + ImVec2{popup_w, popup_h}
+            };
+            Imgui::move_window_to_bounds(size, target_rect);
+
+            if (is_left) {
+                set_left(target_rect.Min.x - parent_pos.x);
+            } else {
+                set_right(parent_pos.x + parent_w - target_rect.Max.x);
+            }
+
+            if (is_top) {
+                set_top(target_rect.Min.y - parent_pos.y);
+            } else {
+                set_bottom(parent_pos.y + parent_h - target_rect.Max.y);
+            }
         }
+        set_max_size(max_size().cwiseMin(Vec2f{size.x, size.y}));
     }
 
     Item::style_node();
@@ -81,6 +130,15 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
 
     bool begin = false;
     if (m_flags & ImGuiWindowFlags_ChildMenu) {
+        // Ugly positioning hack, ImGui is forcing position if we are using
+        // child menu. Pivot positioning forces our supplied position.
+        ImVec2 pivot{1.0f, 1.0f};
+        ImVec2 p = to_im(pos);
+        ImVec2 s = to_im(size);
+
+        ImGui::SetNextWindowSize(s, ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(p.x + s.x, p.y + s.y), ImGuiCond_Always, pivot);
+
         ImGuiID id = ImGui::GetID(object_name().c_str());
         begin      = ImGui::BeginPopupMenuEx(id, object_name().c_str(), m_flags);
     } else {
@@ -120,7 +178,7 @@ void ContextPopup::set_offset(float offset)
 {
     if (!Domain::fuzzy_compare(m_offset, offset)) {
         m_offset = offset;
-        set_style_dirty();
+        invalidate_style();
     }
 }
 
@@ -132,7 +190,7 @@ std::optional<Vec2f> ContextPopup::open_pos() const
 void ContextPopup::set_open_pos(std::optional<Vec2f> pos)
 {
     if (pos != m_open_pos) {
-        m_open_pos                   = pos;
+        m_open_pos = pos;
         invalidate_style();
     }
 }
