@@ -256,7 +256,7 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
     case WarningCode::StabilityIssues: {
         auto payload = std::get_if<StabilityWarningPayload>(&warning.payload);
         ASSERT(payload != nullptr, "Expected StabilityWarningPayload for StabilityIssues warning");
-        message = _u8L("Detected print stability issues:\n") + payload->recommendations;
+        message = _u8L("Detected print stability issues") + ":\n" + payload->recommendations;
         break;
     }
 
@@ -265,20 +265,20 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
         ASSERT(payload != nullptr, "Expected EmptyLayersWarningPayload for EmptyLayers warning");
         size_t shown = std::min(payload->ranges.size(), size_t(3));
         for (size_t i = 0; i < shown; ++i) {
-            message += _u8L("Empty layers between") + " "
-                + fmt::format("{:.2f}", payload->ranges[i].first)
-                + " " + _u8L("and") + " "
-                + fmt::format("{:.2f}", payload->ranges[i].second)
-                + ".\n";
+            message += fmt::format(
+                           fmt::runtime(_u8L("Empty layers between {0:.2f} and {1:.2f}.")),
+                           payload->ranges[i].first,
+                           payload->ranges[i].second
+                       )
+                + "\n";
         }
         if (shown < payload->ranges.size()) {
             message += _u8L("(Some lines not shown)") + std::string("\n");
         }
-        message += "\n" +_u8L(
-            "Make sure the object is printable. "
-            "This is usually caused by negligibly small extrusions or by a faulty model. "
-            "Try to repair the model or change its orientation on the bed."
-        );
+        message += "\n"
+            + _u8L("Make sure the object is printable. "
+                   "This is usually caused by negligibly small extrusions or by a faulty model. "
+                   "Try to repair the model or change its orientation on the bed.");
         break;
     }
 

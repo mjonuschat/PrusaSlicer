@@ -960,7 +960,7 @@ void PreviewRenderModule::init_scene_layout()
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
-        _u8L("Prepare view"),
+        _u8L("Prepare Mode"),
         ToolBarSwitchButton::SwitchPosition::Left
     );
 
@@ -968,7 +968,7 @@ void PreviewRenderModule::init_scene_layout()
         ToolbarID::Right,
         Render::Icon::Preview,
         _u8L("Preview"),
-        _u8L("Preview view"),
+        _u8L("Preview Mode"),
         ToolBarSwitchButton::SwitchPosition::Right
     );
     preview_button->set_checked(true);

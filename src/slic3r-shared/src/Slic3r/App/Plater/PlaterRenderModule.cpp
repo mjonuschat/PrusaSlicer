@@ -779,7 +779,7 @@ void PlaterRenderModule::init_scene_layout()
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
-        _u8L("Prepare view"),
+        _u8L("Prepare Mode"),
         ToolBarSwitchButton::SwitchPosition::Left
     );
     plater_button->set_checked(true);
@@ -788,7 +788,7 @@ void PlaterRenderModule::init_scene_layout()
         ToolbarID::Right,
         Render::Icon::Preview,
         _u8L("Preview"),
-        _u8L("Preview view"),
+        _u8L("Preview Mode"),
         ToolBarSwitchButton::SwitchPosition::Right
     );
 

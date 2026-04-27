@@ -278,7 +278,7 @@ bool DesktopApp::OnInit()
     m_project_interactor->user_account_interactor()
         .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
     if (scrn && is_editor)
-        scrn->SetText(WX::_L("Preparing Plater") + dots);
+        scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
 
     auto font_manager = std::make_unique<Biz::WX::FontManager>(data_dir());
 
@@ -293,7 +293,7 @@ bool DesktopApp::OnInit()
     );
 
     if (scrn && is_editor)
-        scrn->SetText(WX::_L("Preparing Preview") + dots);
+        scrn->SetText(WX::_L("Initializing Preview Mode") + dots);
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
         m_workbench,
