@@ -71,6 +71,13 @@ void ObjectSettingsInteractor::on_preset_selection_changed(
     }
 }
 
+void ObjectSettingsInteractor::on_model_reloaded(Domain::SelectionId project_id)
+{
+    if (m_project_id == project_id) {
+        update_sources();
+    }
+}
+
 void ObjectSettingsInteractor::on_instances_last_bed_updated(
     const Domain::ElementRefs& updated_instances
 )

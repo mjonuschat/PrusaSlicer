@@ -65,6 +65,9 @@ public:
         Preset::PresetItemType type
     ) override;
 
+    void on_model_reloaded(Domain::SelectionId project_id) override;
+
+
     void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) override;
 
 private:
