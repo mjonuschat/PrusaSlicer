@@ -1,3 +1,4 @@
+#include <iostream>
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
@@ -7,7 +8,8 @@
 #include "Slic3r/TestUtils/TestTempDir.hpp"
 
 #include <mutex>
-#include "boost/nowide/fstream.hpp"
+#include <boost/nowide/fstream.hpp>
+#include <boost/variant/get.hpp>
 
 TEST_CASE("PresetLoader preset-filament-common.yaml", "[preset]")
 {

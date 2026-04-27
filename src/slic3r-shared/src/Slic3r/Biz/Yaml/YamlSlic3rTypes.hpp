@@ -84,8 +84,6 @@ struct TypeTraits<Slic3r::Domain::Vec2d>
 
     static Result<Vec2d> parse(const YamlAdapter::NodeRef& node)
     {
-        namespace qi = boost::spirit::qi;
-
         Vec2d ret;
 
         auto node_value = get_node_scalar(node);
@@ -96,15 +94,11 @@ struct TypeTraits<Slic3r::Domain::Vec2d>
         if (pos == std::string::npos)
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value '{}'", value)));
 
-        auto it = std::cbegin(value);
-        // parse first coordinate
-        if (!qi::parse(it, std::cbegin(value) + pos, qi::double_, ret.x())
-            || it != std::cbegin(value) + pos)
+        auto r1 = fast_float::from_chars(value.data(), value.data() + pos, ret.x());
+        if (r1.ec != std::errc{} || r1.ptr != value.data() + pos)
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
-        // skip the 'x' marker
-        ++it;
-        // parse second coordinate
-        if (!qi::parse(it, std::cend(value), qi::double_, ret.y()) || it != std::cend(value))
+        auto r2 = fast_float::from_chars(value.data() + pos + 1, value.data() + value.size(), ret.y());
+        if (r2.ec != std::errc{} || r2.ptr != value.data() + value.size())
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
 
         return ret;
@@ -123,8 +117,6 @@ struct TypeTraits<Slic3r::Domain::Percentage>
 
     static Result<Percentage> parse(const YamlAdapter::NodeRef& node)
     {
-        namespace qi = boost::spirit::qi;
-
         Percentage ret;
 
         auto node_value = get_node_scalar(node);
@@ -137,7 +129,8 @@ struct TypeTraits<Slic3r::Domain::Percentage>
             return std::isspace(c);
         });
         if (valid) {
-            valid = qi::parse(value.cbegin(), value.cbegin() + pos, qi::double_, ret.value);
+            auto r = fast_float::from_chars(value.data(), value.data() + pos, ret.value);
+            valid  = (r.ec == std::errc{} && r.ptr == value.data() + pos);
         }
 
         if (!valid)
@@ -302,7 +295,7 @@ struct TypeTraits<Domain::Preset::PresetValue>
                 Domain::Preset::Ints,
                 Domain::Preset::OptInts,
                 Domain::Preset::FloatOrPercentages,
-                Domain::Preset::Vec2ds,
+                Domain::Vec2ds,
                 Domain::Preset::Strings
             >(node);
 

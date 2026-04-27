@@ -23,7 +23,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/tuple.hpp>
-#include <boost/spirit/include/qi.hpp>
+#include <charconv>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <magic_enum/magic_enum.hpp>
@@ -33,10 +33,13 @@
 
 #if defined(SLIC3R_YAML_LIBFYAML)
 #include "YamlAdapterLibfyaml.hpp"
+#include "fast_float.h"
 #elif defined(SLIC3R_YAML_YAMLCPP)
 #include "YamlAdapterYamlCpp.hpp"
+#include "fast_float.h"
 #elif defined(SLIC3R_YAML_RYML)
 #include "YamlAdapterRyml.hpp"
+#include <c4/charconv.hpp>  // provides fast_float::from_chars
 #else
 #error "No YAML library selected"
 #endif
@@ -261,17 +264,22 @@ struct TypeTraits<bool>
     }
 };
 
-template <typename T, typename P>
-Result<T> parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
+template <typename T>
+Result<T> parse_with_from_chars(const YamlAdapter::NodeRef& node)
 {
     auto value = get_node_scalar(node);
     if (!value.has_value())
         return ResultError{value.error()};
     T ret;
-    namespace qi = boost::spirit::qi;
-    auto it      = std::cbegin(*value);
-    if (!qi::parse(it, std::cend(*value), parser, ret) || it != std::cend(*value))
-        return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    if constexpr (std::is_floating_point_v<T>) {
+        auto r = fast_float::from_chars(value->data(), value->data() + value->size(), ret);
+        if (r.ec != std::errc{} || r.ptr != value->data() + value->size())
+            return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    } else {
+        auto [pend, ec] = std::from_chars(value->data(), value->data() + value->size(), ret);
+        if (ec != std::errc{} || pend != value->data() + value->size())
+            return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    }
     return ret;
 }
 
@@ -281,31 +289,31 @@ YamlAdapter::NodeRef serialize_via_to_string(T val)
     return YamlAdapter::create_scalar_node(std::to_string(val));
 }
 
-#define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)                     \
+#define TYPE_TRAITS_WITH_FROM_CHARS_PARSE(T)                    \
 template <>                                                     \
 struct TypeTraits<T>                                            \
 {                                                               \
     static Result<T> parse(const YamlAdapter::NodeRef& node)    \
     {                                                           \
-        return parse_with_spirit<T>(node, P);                   \
+        return parse_with_from_chars<T>(node);                  \
     }                                                           \
-    static std::optional<YamlAdapter::NodeRef> serialize(T val)                \
+    static std::optional<YamlAdapter::NodeRef> serialize(T val) \
     {                                                           \
         return serialize_via_to_string(val);                    \
     }                                                           \
 };
 
-TYPE_TRAITS_WITH_SPIRIT_PARSE(float, boost::spirit::qi::float_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(double, boost::spirit::qi::double_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint8_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint16_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint32_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint64_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int8_t, boost::spirit::qi::int_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int16_t, boost::spirit::qi::int_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int32_t, boost::spirit::qi::int_);
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(float)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(double)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint8_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint16_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint32_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint64_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int8_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int16_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int32_t)
 
-#undef TYPE_TRAITS_WITH_SPIRIT_PARSE
+#undef TYPE_TRAITS_WITH_FROM_CHARS_PARSE
 
 template <>
 struct TypeTraits<std::string>
