@@ -2479,8 +2479,11 @@ void SceneInteractor::transform_selection(
 
     const BedTrackingChanges changes = update_elements_bed_placement(
         proj.object_selection.elements,
-        selection.mode == SelectionMode::Volume || memento.forced_volume_mode
+        selection.mode == SelectionMode::Volume || memento.forced_volume_mode,
+        true
     );
+
+    memento.changes.append(changes);
 
     {
         ZoneScopedN("invoke_listeners");
@@ -2731,7 +2734,11 @@ void SceneInteractor::finalize_transform_selection(
             }
         }
 
-        changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode);
+        changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode, false);
+    } else if (!canceled) {
+        for (const auto& bed_ref : memento.changes.updated_beds) {
+            invoke_slicing_input_changed(bed_ref);
+        }
     }
 
     update_selection_bounding_box();
@@ -3159,7 +3166,11 @@ void SceneInteractor::set_state(
     }
 }
 
-BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)
+BedTrackingChanges SceneInteractor::update_elements_bed_placement(
+    const Domain::ElementRefs& elements,
+    bool volume_mode,
+    bool postpone_slicing_invalidation
+)
 {
     ZoneScoped;
 
@@ -3189,8 +3200,10 @@ BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::
 
     this->update_wipe_tower_containment(proj, elements, changes);
 
-    for (const BedRef& bed_ref : changes.updated_beds) {
-        invoke_slicing_input_changed(bed_ref);
+    if (!postpone_slicing_invalidation) {
+        for (const BedRef& bed_ref : changes.updated_beds) {
+            invoke_slicing_input_changed(bed_ref);
+        }
     }
 
     return changes;

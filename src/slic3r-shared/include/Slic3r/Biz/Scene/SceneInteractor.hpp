@@ -520,7 +520,11 @@ private:
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
     void notify_listener_on_objects(const Domain::Project& project);
 
-    BedTrackingChanges update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode);
+    BedTrackingChanges update_elements_bed_placement(
+        const Domain::ElementRefs& elements,
+        bool volume_mode,
+        bool postpone_slicing_invalidation = false
+    );
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
     void normalize_object_selection(ObjectSelection& object_selection) const;
@@ -568,11 +572,13 @@ struct TransformMemento
 
     Elements elements;
     bool forced_volume_mode {false};
+    BedTrackingChanges changes;
 
     void reset()
     {
         elements.clear();
         forced_volume_mode = false;
+        changes = {};
     }
 };
 
