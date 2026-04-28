@@ -30,8 +30,10 @@ SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
         } else {
             slicing_interactor.disable_auto_slicing();
         }
+        m_app_config.set("auto_reslice", checked);
     };
     m_auto_reslice_chb->set_margin({ 0.f, -5.f });
+    m_auto_reslice_chb->set_checked(m_app_config.get<bool>("auto_reslice"));
 }
 
 bool SidebarAutoReslice::is_enabled() const

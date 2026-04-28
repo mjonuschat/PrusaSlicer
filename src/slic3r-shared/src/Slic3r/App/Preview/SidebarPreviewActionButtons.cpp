@@ -165,13 +165,9 @@ void SidebarPreviewActionButtons::update_buttons()
         { m_project_interactor->slicing_interactor().slice_bed(slicing_id); };
     } break;
     default: {
-        m_primary_button->set_label("Plater");
-        m_primary_button->set_tooltip("Back to Plater");
-        m_primary_button->set_background_color(Platform::Color::AccentSecondary);
-        m_primary_button->set_enabled(true);
-        m_primary_button->callbacks().action = [this]() { navigate_to_other(); };
-
-        m_navigation_button->set_visible(false);
+        m_primary_button->set_label("Slice");
+        m_primary_button->set_tooltip("Slice");
+        m_primary_button->set_enabled(false);
     } break;
     }
 }

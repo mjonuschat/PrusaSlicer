@@ -131,7 +131,9 @@ void Theme::initialize_dark_colors()
         ))
     };
 
-    m_colors[Platform::Color::AccentPrimary]    = ColorEntry{{223, 93, 45}};
+    m_colors[Platform::Color::AccentPrimary] = auto_entry({223, 93, 45});
+    m_colors[Platform::Color::AccentPrimary].color_disabled =
+        std::make_unique<ImColor>(200, 150, 130);
     m_colors[Platform::Color::AccentSecondary]  = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
     m_colors[Platform::Color::Error]            = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
     m_colors[Platform::Color::Warning]          = ColorEntry{{232, 64, 64}};

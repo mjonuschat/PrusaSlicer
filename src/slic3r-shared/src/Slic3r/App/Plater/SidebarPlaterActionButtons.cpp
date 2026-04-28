@@ -47,10 +47,6 @@ void SidebarPlaterActionButtons::on_init(Biz::ProjectInteractor* project_interac
     layout_bottom->set_orientation(Orientation::Horizontal);
     layout_bottom->set_gap(15.f);
 
-    auto navigation_button{get_navigation_button()};
-    m_navigation_button = navigation_button.get();
-    layout_bottom->append(std::move(navigation_button));
-
     m_button_slice = layout_bottom->emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);
     m_button_slice->set_background_color(Platform::Color::AccentPrimary);
@@ -140,22 +136,20 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         return bed_status.status == StatusCode::InvalidData;
     })};
 
-    const bool any_modified{std::ranges::any_of(statuses, [](const auto& bed_status) {
-        return bed_status.status == StatusCode::Modified;
-    })};
-
     const bool any_running{std::ranges::any_of(statuses, [](const auto& bed_status) {
         return bed_status.status == StatusCode::Running;
     })};
 
-    m_button_slice->callbacks().action = []() {
-    };
+    const bool all_empty{std::ranges::all_of(statuses, [](const auto& bed_status) {
+        return bed_status.status == StatusCode::Empty;
+    })};
+
+    m_button_slice->callbacks().action = []() {};
     m_button_slice->set_enabled(true);
 
     std::string label;
     std::string tooltip;
     Render::Icon icon = Render::Icon::None;
-    m_navigation_button->set_visible(true);
     ImColor button_color = m_theme->color_imgui(Platform::Color::AccentPrimary);
 
     if (any_invalid) {
@@ -179,7 +173,21 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         m_button_slice->callbacks().action = [error_mesage, label]() {
             AppServices::instance().dialog_manager().show_error_dialog(error_mesage, label);
         };
-    } else if (any_modified) {
+    } else if (any_running) {
+        label = _u8L("Cancel");
+
+        m_button_slice->callbacks().action = [this, statuses]()
+        {
+            for (const BedStatus& bed_status : statuses) {
+                if (bed_status.status == StatusCode::Running) {
+                    m_project_interactor->slicing_interactor().stop_slicing_bed(
+                        bed_status.slicing_id
+                    );
+                }
+            }
+            navigate_to_other();
+        };
+    } else {
         for (const BedStatus& bed_status : statuses) {
             if (bed_status.status == StatusCode::Modified) {
                 std::string bed_warning;
@@ -196,7 +204,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             icon = Render::Icon::WarningMarkerWhite;
         }
 
-        label = _u8L("Slice");
+        label = statuses.size() <= 1 ? _u8L("Slice") : _u8L("Slice all");
 
         m_button_slice->callbacks().action = [this, statuses]() {
             for (const BedStatus& bed_status : statuses) {
@@ -206,23 +214,14 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             }
             navigate_to_other();
         };
-    } else if (any_running) {
-        label                              = _u8L("Cancel");
-        m_button_slice->callbacks().action = [this, statuses]() {
-            for (const BedStatus& bed_status : statuses) {
-                if (bed_status.status == StatusCode::Running) {
-                    m_project_interactor->slicing_interactor().stop_slicing_bed(bed_status.slicing_id);
-                }
-            }
-            navigate_to_other();
-        };
-    } else {
-        m_navigation_button->set_visible(false);
-        label                              = _u8L("Preview");
-        m_button_slice->callbacks().action = [this]() {
-            navigate_to_other();
-        };
-        button_color = m_theme->color_imgui(Platform::Color::AccentSecondary);
+
+        if (all_empty) {
+            m_button_slice->set_enabled(false);
+            button_color = m_theme->color_imgui(
+                Platform::Color::AccentPrimary,
+                Platform::ColorGroup::Disabled
+            );
+        }
     }
 
     m_button_slice->set_icon(icon);
