@@ -15,7 +15,7 @@ using KeySet = std::set<std::string>;
 
 namespace Details {
 
-Domain::Expr::ExprAst and_chain_exprs(const Domain::Preset::Expressions& exprs);
+Domain::Expr::ExprAst and_chain_exprs(const std::vector<std::string>& exprs);
 Domain::Preset::PresetValueMap
 config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_omit);
 

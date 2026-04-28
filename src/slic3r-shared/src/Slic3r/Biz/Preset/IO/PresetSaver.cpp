@@ -3,19 +3,20 @@
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp"
+#include "Slic3r/Biz/Expr/Parser.hpp"
 
 #include "boost/filesystem/operations.hpp"
 
 namespace Slic3r::Biz::Preset::IO::Details {
 
-Domain::Expr::ExprAst and_chain_exprs(const Domain::Preset::Expressions& exprs)
+Domain::Expr::ExprAst and_chain_exprs(const std::vector<std::string>& exprs)
 {
     ASSERT(!exprs.empty());
 
-    Domain::Expr::ExprAst ret = exprs[0];
+    Domain::Expr::ExprAst ret = Biz::Expr::Parser().parse(exprs[0]);
 
     for (size_t i = 1; i < exprs.size(); ++i) {
-        ret = Domain::Expr::Binary{Domain::Expr::BinaryOp::And, ret, exprs[i]};
+        ret = Domain::Expr::Binary{Domain::Expr::BinaryOp::And, ret, Biz::Expr::Parser().parse(exprs[i])};
     }
 
     return ret;

@@ -7,8 +7,6 @@
 
 namespace Slic3r::Biz::Preset {
 
-bool expr_string_equals(const Domain::Preset::Expressions& lhs, const Domain::Preset::Expressions& rhs);
-
 class PresetCollectionEvaluator;
 
 class PresetEvaluator

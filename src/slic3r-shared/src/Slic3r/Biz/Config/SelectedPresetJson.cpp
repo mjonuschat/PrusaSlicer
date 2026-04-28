@@ -26,7 +26,7 @@ void from_json(const nlohmann::ordered_json& j, EvaluatedPresetMetadata& v)
     v.name       = j["name"].get<std::string>();
     v.id         = j["id"].get<std::string>();
     v.root_id    = j["root_id"].get<std::string>();
-    v.conditions = j["conditions"].get<Expressions>();
+    v.conditions = j["conditions"].get<std::vector<std::string>>();
 }
 
 void to_json(nlohmann::ordered_json& j, const EvaluatedPresetMetadata& v)

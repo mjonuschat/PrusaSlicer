@@ -396,13 +396,13 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     const EvalPresetContext& context
 )
 {
-    Domain::Preset::Expressions conditions;
+    std::vector<std::string> conditions;
     if (!context.conditions.empty()) {
         std::ranges::transform(context.conditions, std::back_inserter(conditions),
             [](const std::string* p) { return *p; });
 
         // remove duplicates
-        auto to_remove = std::ranges::unique(conditions, Domain::Expr::equals_to);
+        auto to_remove = std::ranges::unique(conditions);
         conditions.erase(std::ranges::begin(to_remove), std::ranges::end(to_remove));
     }
 
