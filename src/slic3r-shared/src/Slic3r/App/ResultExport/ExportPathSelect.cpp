@@ -2,12 +2,10 @@
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Wildcards.hpp"
-#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -60,8 +58,6 @@ std::string gen_wildcards(const std::string& extension, Technology tech, bool bg
         if (!bgcode_allowed) {
              return Wildcards::generate_wildcards(Wildcards::TypeFlag::GCode, Wildcards::TypeFlag::GCode);
         }
-        // TODO use last used extension as default
-
         // If bgcode is written in output options, use it as default selected wildcard
         if (extension == ".bgcode" || extension == ".BGCODE") {
             return Wildcards::generate_wildcards(Wildcards::TypeFlag::BinaryGCode | Wildcards::TypeFlag::GCode, Wildcards::TypeFlag::BinaryGCode);
@@ -82,6 +78,61 @@ std::string gen_wildcards(const std::string& extension, Technology tech, bool bg
 
 }
 
+ExportNameData get_export_name_data(const Biz::ProjectInteractor& project_interactor)
+{
+    ExportNameData name_data;
+    try {
+        name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
+    } catch (const Slic3r::PlaceholderParserError& e) {
+        SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
+
+        std::string what_short = shorten_error(e.what());
+        AppServices::instance().pop_notification_center().upsert_notifcation(
+            {PopNotification::PopNotificationType::Custom,
+             PopNotification::PopNotificationLevel::Error,
+             0s,
+             PopNotification::PopNotificationLayoutHeaderText("Failed to parse output filename", what_short)},
+            [](const PopNotification::PopNotificationPayload&,
+               const PopNotification::PopNotificationPayload&) { return false; }
+        );
+        // Retrieves some filename since parsing failed.
+        name_data = Biz::ExportNameParser::error_state_export_name(project_interactor);
+    }
+
+    bool bgcode_allowed = true;
+    const auto& cbox = project_interactor.preset_interactor().selected_printer_preset().printer.config_box();
+    if (const auto* item = cbox.find("binary_gcode").item; item) {
+        bgcode_allowed = item->get<bool>();
+    }
+
+    std::string default_extension = project_interactor.output_extension(
+        project_interactor.selected_project_id(),
+        AppServices::instance().app_config().get<std::string>("last_used_extension")
+    );
+
+    if (!default_extension.empty()) {
+        std::string ext_lower = default_extension;
+        std::transform(ext_lower.begin(), ext_lower.end(), ext_lower.begin(),
+            [](unsigned char c){ return std::tolower(c); });
+
+        bool is_valid = false;
+        if (name_data.technology == Technology::Fdm) {
+            is_valid = (ext_lower == ".gcode" || (bgcode_allowed && ext_lower == ".bgcode"));
+        } else if (name_data.technology == Technology::Sla) {
+            is_valid = (ext_lower == ".sl1" || ext_lower == ".sl1s");
+        }
+
+        if (is_valid) {
+            name_data.preferred_extension = default_extension; 
+            boost::filesystem::path p(name_data.filename);
+            p.replace_extension(default_extension);
+            name_data.filename = p.string();
+        }
+    }
+
+    return name_data;
+}
+
 void show_modal_dialog(
     const Biz::ProjectInteractor& project_interactor,
     bool default_path_at_removable,
@@ -95,79 +146,33 @@ void show_modal_dialog(
         AppServices::instance().app_config().get<std::string>("last_used_directory")
     );
 
-    
+    ExportNameData name_data = get_export_name_data(project_interactor);
 
-    ExportNameData name_data;
-    try {
-        name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
-     } catch (const Slic3r::PlaceholderParserError& e) {
-         SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
+    bool bgcode_allowed = true;
+    const auto& cbox = project_interactor.preset_interactor().selected_printer_preset().printer.config_box();
+    if (const auto* item = cbox.find("binary_gcode").item; item) {
+        bgcode_allowed = item->get<bool>();
+    }
 
-         std::string what_short = shorten_error(e.what());
-         AppServices::instance().pop_notification_center().upsert_notifcation(
-             {PopNotification::PopNotificationType::Custom,
-              PopNotification::PopNotificationLevel::Error,
-              0s,
-              PopNotification::PopNotificationLayoutHeaderText("Failed to parse output filename",what_short)},
-             [](const PopNotification::PopNotificationPayload&,
-                const PopNotification::PopNotificationPayload&) { return false; }
-         );
-         // Retrieves some filename since parsing failed.
-         name_data = Biz::ExportNameParser::error_state_export_name(project_interactor);
-     }
+    std::string wildcards = wildcards_overide.empty() ?
+        gen_wildcards(name_data.preferred_extension, name_data.technology, bgcode_allowed) :
+        wildcards_overide;
 
-     bool bgcode_allowed = true;
-     const auto& cbox = project_interactor.preset_interactor().selected_printer_preset().printer.config_box();
-     if (const auto* item = cbox.find("binary_gcode").item; item)
-     {
-         bgcode_allowed = item->get<bool>();
-     }
+    std::string filename = name_data.filename;
 
-     // Replaced preferred extension with last used extension - if usable.
-     std::string default_extension = project_interactor.output_extension(
-         project_interactor.selected_project_id(),
-         AppServices::instance().app_config().get<std::string>("last_used_extension")
-     ); 
-
-     if (!default_extension.empty()) {
-         std::string ext_lower = default_extension;
-         std::transform(ext_lower.begin(), ext_lower.end(), ext_lower.begin(),
-             [](unsigned char c){ return std::tolower(c); });
-
-         bool is_valid = false;
-         if (name_data.technology == Technology::Fdm) {
-             is_valid = (ext_lower == ".gcode" || (bgcode_allowed && ext_lower == ".bgcode"));
-         } else if (name_data.technology == Technology::Sla) {
-             is_valid = (ext_lower == ".sl1" || ext_lower == ".sl1s");
-         }
-
-         if (is_valid) {
-             name_data.preferred_extension = default_extension;
-             boost::filesystem::path p(name_data.filename);
-             p.replace_extension(default_extension);
-             name_data.filename = p.string();
-         }
-     }
-
-     std::string wildcards = wildcards_overide.empty() ?
-         gen_wildcards(name_data.preferred_extension, name_data.technology, bgcode_allowed) :
-         wildcards_overide;
-
-     std::string filename = name_data.filename;
-
-     Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread(
-         [default_folder, filename, wildcards, callback]()
-         {
-             AppServices::instance().dialog_manager().show_file_dialog(
-                 FileDialogType::Save,
-                 "Export as",
-                 default_folder,
-                 filename,
-                 wildcards,
-                 callback
-             );
-         }
-     );
+    Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread(
+        [default_folder, filename, wildcards, callback]()
+        {
+            AppServices::instance().dialog_manager().show_file_dialog(
+                FileDialogType::Save,
+                "Export as",
+                default_folder,
+                filename,
+                wildcards,
+                callback
+            );
+        }
+    );
 }
 
 void
