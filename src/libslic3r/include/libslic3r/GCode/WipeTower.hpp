@@ -29,7 +29,6 @@ class WipeTower
 {
 public:
     static const std::string never_skip_tag() { return "_GCODE_WIPE_TOWER_NEVER_SKIP_TAG"; }
-	static std::pair<double, double> get_wipe_tower_cone_base(double width, double height, double depth, double angle_deg);
 	static std::vector<std::vector<float>> extract_wipe_volumes(const PrintConfigView& config);
 
     struct Extrusion
@@ -159,6 +158,8 @@ public:
 	std::vector<std::pair<float, float>> get_z_and_depth_pairs() const;
     float get_brim_width() const { return m_wipe_tower_brim_width_real; }
 	float get_wipe_tower_height() const { return m_wipe_tower_height; }
+	float get_wipe_tower_cone_radius() const { return m_wipe_tower_cone_radius; }
+	float get_wipe_tower_cone_x_scale() const { return m_wipe_tower_cone_x_scale; }
 
 
 
@@ -262,6 +263,8 @@ public:
     };
 
 private:
+	static std::pair<double, double> get_wipe_tower_cone_base(double width, double height, double depth, double angle_deg);
+
 	enum wipe_shape // A fill-in direction
 	{
 		SHAPE_NORMAL = 1,
@@ -283,6 +286,8 @@ private:
 	float  m_wipe_tower_depth 	= 0.f; 	// Depth of the wipe tower
 	float  m_wipe_tower_height  = 0.f;
 	float  m_wipe_tower_cone_angle = 0.f;
+	float  m_wipe_tower_cone_radius = 0.f;
+	float  m_wipe_tower_cone_x_scale = 0.f;
     float  m_wipe_tower_brim_width      = 0.f; 	// Width of brim (mm) from config
     float  m_wipe_tower_brim_width_real = 0.f; 	// Width of brim (mm) after generation
     float  m_internal_rotation  = 0.f;

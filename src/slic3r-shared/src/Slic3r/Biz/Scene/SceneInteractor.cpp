@@ -33,6 +33,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/Biz/Arrange/Arrange.hpp"
 
 #include <algorithm>
 #include <boost/filesystem/path.hpp>
@@ -2245,6 +2246,8 @@ void SceneInteractor::update_config_container_bed(Domain::SelectionId project_id
                 }
             );
         }
+
+        SPDLOG_CRITICAL("Update wt!");
     }
 }
 
@@ -2260,7 +2263,38 @@ void SceneInteractor::on_preset_selection_changed(Domain::SelectionId project_id
     update_selection_bounding_box();
 }
 
-void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id, const Domain::ConfigItem& item)
+static std::vector<Domain::SelectionId> get_bed_ids(
+    const Domain::Workbench& workbench,
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id
+)
+{
+    const Domain::Project* project{workbench.find_project_by_id(project_id)};
+    if (!project) {
+        return {};
+    }
+    const Domain::ConfigContainer* config_container{
+        project->find_config_container(config_container_id)
+    };
+    if (!config_container) {
+        return {};
+    }
+    std::vector<Domain::SelectionId> result;
+    result.reserve(config_container->bed_instances().size());
+
+    std::ranges::transform(
+        config_container->bed_instances(),
+        std::back_inserter(result),
+        [](const std::unique_ptr<BedInstance>& instance) { return instance->id().id; }
+    );
+    return result;
+}
+
+void SceneInteractor::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
 {
     const std::vector<std::string> bed_related_keys{
         "bed_shape",
@@ -2270,6 +2304,15 @@ void SceneInteractor::on_preset_value_changed(Domain::SelectionId project_id, Do
     };
     if (std::ranges::find(bed_related_keys, item.def().name) != bed_related_keys.end()) {
         update_config_container_bed(project_id, config_container_id);
+        for (const Domain::SelectionId& bed_id :
+             get_bed_ids(m_workbench, project_id, config_container_id))
+        {
+            const Print::WipeTowerGeometry* geometry{wipe_tower_geometry(bed_id)};
+            if (!geometry) {
+                continue;
+            }
+            resolve_wipe_tower_outside_bed(*geometry, {project_id, bed_id});
+        }
     }
 }
 
@@ -2538,96 +2581,34 @@ static WipeTowerCollisionData get_wipe_tower_collision_data(
     const BedInstance& bed_instance
 )
 {
-    const constexpr size_t CONE_BASE_RADIUS_RESOLUTION = 32;
-
-    const auto scaled_d = [](const double v)
-    { return static_cast<double>(Algorithms::Scaling::scaled(v)); };
-
-    const Vec2d position{
-        bed_instance.wipe_tower.position + bed_instance.transformation.get_offset().head<2>()
-    };
-    const double rotation_angle{
-        Slic3r::deg2rad(bed_instance.wipe_tower.rotation)
-        + get_xy_rotation(bed_instance.transformation)
+    const Domain::ExPolygon footprint_scaled{
+        wipe_tower_geometry.get_outline(bed_instance.wipe_tower)
     };
 
-    const double block_width{wipe_tower_geometry.width};
-    double block_depth{wipe_tower_geometry.fallback_depth};
-
-    const double scaled_width =
-        scaled_d(wipe_tower_geometry.width + 2 * wipe_tower_geometry.brim_width);
-    double scaled_depth =
-        scaled_d(wipe_tower_geometry.fallback_depth + 2 * wipe_tower_geometry.brim_width);
-    double height{wipe_tower_geometry.fallback_height};
-
-    if (!wipe_tower_geometry.depths.empty()) {
-        block_depth = wipe_tower_geometry.depths.front().depth;
-        scaled_depth =
-            scaled_d(wipe_tower_geometry.depths.front().depth + 2 * wipe_tower_geometry.brim_width);
-        height = wipe_tower_geometry.depths.back().z;
-    }
-
-    const Vec2d center{block_width / 2., block_depth / 2.};
-    const Point scaled_center{Algorithms::Scaling::scaled(center)};
-
-    // Rectangle with brim.
-    const Polygon rectangle_base{Algorithms::Polygon::translated(
-        Algorithms::PolygonUtils::create_rect(scaled_width, scaled_depth),
-        scaled_center
-    )};
-
-    Polygons footprint_polygons = {rectangle_base};
-
-    // Stabilization cone.
-    const auto [cone_r, cone_scale_x] = WipeTower::get_wipe_tower_cone_base(
-        block_width,
-        height,
-        block_depth,
-        wipe_tower_geometry.cone_angle
-    );
-    if (cone_r > 0.) {
-        const double brim = wipe_tower_geometry.brim_width;
-        footprint_polygons.push_back(
-            Algorithms::PolygonUtils::create_ellipse(
-                scaled_d(cone_r / cone_scale_x + brim),
-                scaled_d(cone_r + brim),
-                CONE_BASE_RADIUS_RESOLUTION,
-                scaled_center
-            )
-        );
-    }
-
-    // Convex hull for convex beds, Clipper union for non-convex beds.
-    const Domain::BedType bed_type = bed_instance.bed.get().type();
+    const Domain::BedType bed_type{bed_instance.bed.get().type()};
     Vec2ds footprint_unscaled;
     if (bed_type == Domain::BedType::Rectangle
         || bed_type == Domain::BedType::Circle
         || bed_type == Domain::BedType::Convex)
     {
-        Points footprint_points;
-        for (const Polygon& polygon : footprint_polygons) {
-            footprint_points
-                .insert(footprint_points.end(), polygon.points.begin(), polygon.points.end());
-        }
-
-        const Polygon convex_hull = Algorithms::Geometry::convex_hull(std::move(footprint_points));
-        footprint_unscaled        = Algorithms::Point::unscaled(convex_hull.points);
+        const Polygon convex_hull{Algorithms::Geometry::convex_hull({footprint_scaled})};
+        footprint_unscaled = Algorithms::Point::unscaled(convex_hull.points);
     } else {
-        const Polygons footprint_union = Algorithms::ClipperUtils::union_(footprint_polygons);
-        footprint_unscaled = Algorithms::Point::unscaled(footprint_union.front().points);
+        ASSERT(footprint_scaled.holes.empty());
+        footprint_unscaled = Algorithms::Point::unscaled(footprint_scaled.contour.points);
     }
 
-    const Rotation2Dd rotation{rotation_angle};
-
+    const Vec2d position{
+        bed_instance.wipe_tower.position + bed_instance.transformation.get_offset().head<2>()
+    };
     BoundingBox2d bounding_box;
     Vec2ds footprint_transformed;
     footprint_transformed.reserve(footprint_unscaled.size());
     for (const Vec2d& point : footprint_unscaled) {
-        const Vec2d transformed_point = rotation * point + position;
+        const Vec2d transformed_point{point + position};
         footprint_transformed.push_back(transformed_point);
         bounding_box = Algorithms::BoundingBox::merge(bounding_box, transformed_point);
     }
-
     return {bounding_box, std::move(footprint_transformed)};
 }
 
@@ -2825,6 +2806,7 @@ void SceneInteractor::change_wipe_tower(
         return;
     }
     SceneInteractorProjectContext& context{project_it->second};
+    const bool was_present{context.wipe_tower_geometries.contains(slicing_id.bed_instance_id)};
     context.wipe_tower_geometries[slicing_id.bed_instance_id] = wipe_tower;
 
     // Recheck bed containment, the changed geometry (brim, cone) may have resized the footprint.
@@ -2836,9 +2818,63 @@ void SceneInteractor::change_wipe_tower(
         update_selection_bounding_box();
     }
 
+    if (!was_present) {
+        resolve_wipe_tower_outside_bed(wipe_tower, slicing_id);
+    }
+
     invoke_listeners<ISceneChangedListener>(
         [&](auto listener) { listener->on_wipe_tower_changed(slicing_id, wipe_tower); }
     );
+}
+
+void SceneInteractor::resolve_wipe_tower_outside_bed(
+    const WipeTowerGeometry& wipe_tower,
+    Domain::SlicingId slicing_id
+)
+{
+    const auto& project_it{m_projects.find(m_selected_project_id)};
+    if (project_it == m_projects.end()) {
+        return;
+    }
+    SceneInteractorProjectContext& context{project_it->second};
+    BedInstance* bed_instance{context.project.find_bed_instance_by_id(slicing_id.bed_instance_id)};
+    if (!bed_instance) {
+        return;
+    }
+
+    const WipeTowerCollisionData collision_data{
+        get_wipe_tower_collision_data(wipe_tower, *bed_instance)
+    };
+    const BedContainmentState containment_state{m_bed_tracking.check_containment_2d(
+        bed_instance->bed.get(),
+        *bed_instance,
+        collision_data.bounding_box,
+        collision_data.footprint_2d
+    )};
+
+    if (containment_state == BedContainmentState::Inside) {
+        return;
+    }
+
+    const Domain::Vec2d wipe_tower_center{wipe_tower.get_center(bed_instance->wipe_tower)};
+    const Domain::Vec2d bed_center{bed_instance->bed.get().center()};
+    const Domain::Vec2d offset_to_center{bed_center - wipe_tower_center};
+    const Domain::Vec2d wipe_tower_position{bed_instance->wipe_tower.position + offset_to_center};
+
+    Domain::Transform3d transformation{bed_instance->transformation.get_matrix()};
+    transformation.translate(
+        Domain::Vec3d{wipe_tower_position.x(), wipe_tower_position.y(), 0.0}
+    );
+    transformation.rotate(
+        Eigen::AngleAxisd(
+            Slic3r::deg2rad(bed_instance->wipe_tower.rotation),
+            Eigen::Vector3d::UnitZ()
+        )
+    );
+    set_wipe_tower_transformation(Domain::Transformation{transformation}, *bed_instance);
+    bed_instance->wipe_tower_is_outside = false;
+    invoke_listeners<ISceneChangedListener>([&](auto listener)
+                                            { listener->on_wipe_tower_moved(slicing_id); });
 }
 
 void SceneInteractor::update_custom_gcode(

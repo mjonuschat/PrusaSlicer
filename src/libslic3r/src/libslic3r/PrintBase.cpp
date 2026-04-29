@@ -16,6 +16,7 @@
 #include "libslic3r/I18N_private.hpp"
 #include "libslic3r/libslic3r_version.h"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonUtils.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -167,18 +168,16 @@ Domain::ExPolygon Print::WipeTowerGeometry::get_outline(
     const Domain::ModelWipeTower& model_wipe_tower
 ) const
 {
-    const double height{get_height()};
-
-    const double cone_base_radius{
-        height * std::tan(Slic3r::deg2rad(cone_angle / 2.0)) + brim_width
-    };
-
     const double depth{depths.empty() ? fallback_depth : depths.front().depth};
 
-    Domain::Polygon recangle{get_rectangle(width + 2 * brim_width, depth + 2 * brim_width)};
-    Domain::Polygon circle{get_circle(cone_base_radius, 200)};
+    const Domain::Polygon recangle{get_rectangle(width + 2 * brim_width, depth + 2 * brim_width)};
+    const Domain::Polygon ellipse{Algorithms::PolygonUtils::create_ellipse(
+        scaled<double>(cone_radius / cone_x_scale + brim_width),
+        scaled<double>(cone_radius + brim_width),
+        200
+    )};
 
-    Domain::ExPolygons outline{union_ex({recangle, circle})};
+    Domain::ExPolygons outline{union_ex({recangle, ellipse})};
     ASSERT(outline.size() == 1);
 
     outline.front().translate(scaled(Vec2d{width / 2.0, depth / 2.0}));
@@ -210,6 +209,19 @@ Domain::BoundingBox3d Print::WipeTowerGeometry::get_bounding_box(
         bb_3d,
         Domain::Vec3d{model_wipe_tower.position.x(), model_wipe_tower.position.y(), 0.0}
     );
+}
+
+Domain::Vec2d Print::WipeTowerGeometry::get_center(
+    const Domain::ModelWipeTower& model_wipe_tower
+) const
+{
+    const Vec2d position{model_wipe_tower.position};
+
+    const double depth{depths.empty() ? fallback_depth : depths.front().depth};
+    Vec2d center{position + Vec2d{width / 2.0, depth / 2.0}};
+    Eigen::Rotation2Dd rotation{Slic3r::deg2rad(model_wipe_tower.rotation)};
+    center = rotation * (center - position) + position;
+    return center;
 }
 
 } // namespace Slic3r

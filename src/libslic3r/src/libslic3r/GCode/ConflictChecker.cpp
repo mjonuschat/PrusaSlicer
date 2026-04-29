@@ -233,10 +233,10 @@ static std::vector<LayerPaths> getFakeExtrusionPathsFromWipeTower(const WipeTowe
     float width = wtd.width;
     float depth = wtd.depth;
     float height = wtd.height;
-    float cone_angle = wtd.cone_angle;
     const auto& z_and_depth_pairs = wtd.z_and_depth_pairs;
 
-    const auto [cone_base_R, cone_scale_x] = WipeTower::get_wipe_tower_cone_base(width, height, depth, cone_angle);
+    const auto& cone_base_R = wtd.cone_radius;
+    const auto& cone_scale_x = wtd.cone_x_scale;
 
     std::vector<LayerPaths> paths;
     for (float hh = 0.f; hh < h; hh += lh) {

@@ -1374,7 +1374,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
     // This block creates the stabilization cone.
     // First define a lambda to draw the rectangle with stabilization.
     auto supported_rectangle = [this, &writer, spacing](const box_coordinates& wt_box, double feedrate, bool infill_cone) -> Polygon {
-        const auto [R, support_scale] = get_wipe_tower_cone_base(m_wipe_tower_width, m_wipe_tower_height, m_wipe_tower_depth, m_wipe_tower_cone_angle);
+        const auto& support_scale = m_wipe_tower_cone_x_scale;
 
         double z = m_no_sparse_layers ? (m_current_height + m_layer_info->height) : m_layer_info->z; // the former should actually work in both cases, but let's stay on the safe side (the 2.6.0 is close)
 
@@ -1636,6 +1636,17 @@ void WipeTower::plan_tower()
 				m_plan[i].depth = this_layer_depth;
 		}
 	}
+
+    m_wipe_tower_cone_radius  = 0.0;
+    m_wipe_tower_cone_x_scale = 0.0;
+    if (m_wipe_tower_depth > 0 && m_wipe_tower_height > 0) {
+        std::tie(m_wipe_tower_cone_radius, m_wipe_tower_cone_x_scale) = get_wipe_tower_cone_base(
+            m_wipe_tower_width,
+            m_wipe_tower_height,
+            m_wipe_tower_depth,
+            m_wipe_tower_cone_angle
+        );
+    }
 }
 
 void WipeTower::save_on_last_wipe()

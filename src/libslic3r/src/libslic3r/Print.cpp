@@ -1156,8 +1156,9 @@ Biz::Print::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_
         }
     );
     result.width = wipe_tower_data.width;
-    result.cone_angle = wipe_tower_data.cone_angle;
     result.brim_width = wipe_tower_data.brim_width;
+    result.cone_radius = wipe_tower_data.cone_radius;
+    result.cone_x_scale = wipe_tower_data.cone_x_scale;
 
     return result;
 }
@@ -1570,12 +1571,8 @@ Points Print::first_layer_wipe_tower_corners() const
 
         // Now the stabilization cone.
         Vec2d center = (pts[0] + pts[2])/2.;
-        const auto [cone_R, cone_x_scale] = WipeTower::get_wipe_tower_cone_base(
-            m_config.get<double>("wipe_tower_width"),
-            wipe_tower_data.height,
-            wipe_tower_data.depth,
-            m_config.get<double>("wipe_tower_cone_angle")
-        );
+        const auto& cone_R = m_wipe_tower_data->cone_radius;
+        const auto& cone_x_scale = m_wipe_tower_data->cone_x_scale;
         double r = cone_R + wipe_tower_data.brim_width;
         for (double alpha = 0.; alpha<2*M_PI; alpha += M_PI/20.)
             pts.emplace_back(center + r*Vec2d(std::cos(alpha)/cone_x_scale, std::sin(alpha)));
@@ -1922,7 +1919,8 @@ std::optional<WipeTowerData> Print::generate_wipe_tower_data()
     result.width = wipe_tower.width();
 
     result.first_layer_height = config().get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
-    result.cone_angle = config().get<double>("wipe_tower_cone_angle");
+    result.cone_x_scale = wipe_tower.get_wipe_tower_cone_x_scale();
+    result.cone_radius = wipe_tower.get_wipe_tower_cone_radius();
 
     return result;
 }

@@ -753,20 +753,14 @@ void build_wipe_tower_cone(
     Scene::NodeBuilder& builder,
     Scene::GeometryDataFactory& data_factory,
     const Render::Material& material,
-    double apex_angle,
+    double radius,
+    double scale_x,
     const Vec3d& sizes, // x = width, y = depth, z = height
     double brim_width,
     Domain::SlicingId slicing_id
 )
 {
-    if (apex_angle <= 0) {
-        return;
-    }
-
-    const auto [radius, scale_x]{
-        WipeTower::get_wipe_tower_cone_base(sizes.x(), sizes.z(), sizes.y(), apex_angle)
-    };
-    if (radius <= 0.0) {
+    if (radius <= 0) {
         return;
     }
 
@@ -887,7 +881,8 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
                 builder,
                 m_data_factory,
                 material,
-                wipe_tower.cone_angle,
+                wipe_tower.cone_radius,
+                wipe_tower.cone_x_scale,
                 Vec3d(width, depth, height),
                 wipe_tower.brim_width,
                 slicing_id
@@ -957,7 +952,8 @@ void PlaterScenePresenter::build_wipe_tower_node(
                 builder,
                 m_data_factory,
                 material,
-                wipe_tower.cone_angle,
+                wipe_tower.cone_radius,
+                wipe_tower.cone_x_scale,
                 Vec3d(wipe_tower.width, depth, wipe_tower.depths.back().z),
                 wipe_tower.brim_width,
                 slicing_id

@@ -455,6 +455,11 @@ public:
         const Domain::SlicingId slicing_id
     );
 
+    void resolve_wipe_tower_outside_bed(
+        const Print::WipeTowerGeometry& wipe_tower,
+        Domain::SlicingId slicing_id
+    );
+
     const Print::WipeTowerGeometry* wipe_tower_geometry(std::size_t bed_instance_id) const;
 
     void update_custom_gcode(

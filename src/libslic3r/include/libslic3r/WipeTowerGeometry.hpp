@@ -17,7 +17,8 @@ struct WipeTowerGeometry
     double fallback_depth{};
     double fallback_height{};
     double width{};
-    double cone_angle{};
+    double cone_radius{};
+    double cone_x_scale{};
     double brim_width{};
 
     [[nodiscard]] double get_height() const;
@@ -27,6 +28,10 @@ struct WipeTowerGeometry
     ) const;
 
     [[nodiscard]] Domain::BoundingBox3d get_bounding_box(
+        const Domain::ModelWipeTower& model_wipe_tower
+    ) const;
+
+    [[nodiscard]] Domain::Vec2d get_center(
         const Domain::ModelWipeTower& model_wipe_tower
     ) const;
 };

@@ -334,6 +334,7 @@ void SidebarObject::update_enable_modifiers()
     m_config_item_list_view->set_visible(enable);
     m_override_group_list_view->set_visible(enable);
     m_no_overrides_label->set_visible(!wipe_tower_selected && !enable);
+    m_scale_widget->set_visible(!wipe_tower_selected);
 
     if (!enable) {
         m_override_settings_dialog->close();
