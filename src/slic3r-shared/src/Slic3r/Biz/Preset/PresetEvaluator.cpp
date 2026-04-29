@@ -1,6 +1,5 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include <fmt/ranges.h>
-#include "Slic3r/Biz/Expr/Simplify.hpp"
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "Slic3r/Uuid.hpp"
@@ -399,8 +398,8 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
 {
     Domain::Preset::Expressions conditions;
     if (!context.conditions.empty()) {
-        // simplify
-        std::ranges::transform(context.conditions, std::back_inserter(conditions), Expr::simplify);
+        std::ranges::transform(context.conditions, std::back_inserter(conditions),
+            [](const std::string* p) { return *p; });
 
         // remove duplicates
         auto to_remove = std::ranges::unique(conditions, Domain::Expr::equals_to);
@@ -438,9 +437,8 @@ void PresetEvaluator::build_named_presets()
 {
     m_preset_ids.clear();
     for (const auto& [kind, presets] : m_presets)
-        for (const auto& p : presets) {
+        for (const auto& p : presets)
             collect_preset_ids(kind, p, {&p});
-        }
 }
 
 void PresetEvaluator::collect_preset_ids(

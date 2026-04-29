@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
+#include "Slic3r/Biz/Expr/Simplify.hpp"
 
 #include "boost/filesystem/path.hpp"
 
@@ -45,6 +46,7 @@ Domain::Preset::RootPresetNode transform_for_saving(
     }
 
     main.condition = SourceLocatedExpr{Details::and_chain_exprs(source.conditions)};
+    main.simplified_condition = Domain::Expr::to_string(Expr::simplify(*main.condition.value()));
     main.id = source.id;
     main.name = source.name;
     main.features = source.features;

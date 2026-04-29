@@ -46,7 +46,7 @@ private:
         std::optional<Domain::Preset::ConditionMatchMode> match_mode{
             Domain::Preset::ConditionMatchMode::FirstMatch
         };
-        Domain::Preset::Expressions conditions;
+        std::vector<const std::string*> conditions;
         Domain::Preset::PresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;

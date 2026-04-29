@@ -28,6 +28,7 @@ struct PresetNode
     std::vector<std::string> inherits;
     std::vector<std::string> unconditional_inherits;
     std::optional<SourceLocatedExpr> condition;
+    std::optional<std::string> simplified_condition;
     std::optional<ConditionMatchMode> match_mode;
     PresetValueMap values;
     FeatureValueMap features;

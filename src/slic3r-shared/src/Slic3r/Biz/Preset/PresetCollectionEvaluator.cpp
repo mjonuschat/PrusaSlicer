@@ -258,7 +258,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
              );
         }
         if (node.condition.has_value())
-            context.conditions.push_back(*node.condition.value());
+            context.conditions.push_back(&node.simplified_condition.value());
         context.last_node_location = node.source_location;
         override_preset_values(context.values, unconditional_inherited_values);
         override_preset_values(context.values, node.values);
