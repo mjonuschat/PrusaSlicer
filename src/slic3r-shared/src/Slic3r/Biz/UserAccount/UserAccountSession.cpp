@@ -17,17 +17,18 @@ UserAccountSession::UserAccountSession(Platform::IMainThreadDispatcher& dispatch
 
 void UserAccountSession::set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, long long expires_in)
 {
-    // TODO: Add checks for empty tokens
-
-    if (!access_token.empty()) {
+    if (access_token.empty()) {
+        SPDLOG_WARN("{} access_token empty!", __func__);
+    } else if (access_token.length() >= 10) {
+        std::string_view sv{access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
-            __FUNCTION__,
-            access_token.substr(0, 5),
-            access_token.substr(access_token.size() - 5)
+            __func__,
+            sv.substr(0, 5),
+            sv.substr(sv.length() - 5)
         );
     } else {
-        SPDLOG_INFO("{} access_token empty!", __FUNCTION__);
+        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
     }
 
     {
@@ -296,15 +297,18 @@ void UserAccountSession::token_success_callback(const std::string& body)
         return;
     }
 
-    if (!access_token.empty()) {
+    if (access_token.empty()) {
+        SPDLOG_WARN("{} access_token empty!", __func__);
+    } else if (access_token.length() >= 10) {
+        std::string_view sv{access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
-            __FUNCTION__,
-            access_token.substr(0, 5),
-            access_token.substr(access_token.size() - 5)
+            __func__,
+            sv.substr(0, 5),
+            sv.substr(sv.length() - 5)
         );
     } else {
-        SPDLOG_INFO("{} access_token empty!", __FUNCTION__);
+        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
     }
 
     {

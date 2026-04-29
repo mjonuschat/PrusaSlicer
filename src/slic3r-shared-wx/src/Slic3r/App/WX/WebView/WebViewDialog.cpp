@@ -409,7 +409,7 @@ void WebViewDialog::run_script(const wxString& javascript)
     if (!m_web_view)
         return;
 
-    SPDLOG_INFO("RunScript {}\n", into_u8(javascript));
+    //SPDLOG_INFO("RunScript {}\n", into_u8(javascript));
     m_web_view->RunScriptAsync(javascript);
 }
 

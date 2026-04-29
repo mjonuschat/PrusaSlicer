@@ -192,7 +192,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webvi
         return {};
     }
 
-    SPDLOG_INFO("Printables Request: {}", event_string);
+    //SPDLOG_INFO("Printables Request: {}", event_string);
     if (m_events.find(event_string) == m_events.end())
     {
         SPDLOG_WARN("There is Printables Request that has no handling function. Event: {}", event_string);

@@ -33,15 +33,18 @@ void UserAccountCommunicationTokenBase::init()
     } else {
         set_refresh_time((int) remain_time);
     }
-    if (!stored_data.access_token.empty()) {
+    if (stored_data.access_token.empty()) {
+        SPDLOG_WARN("{} access_token empty!", __func__);
+    } else if (stored_data.access_token.length() >= 10) {
+        std::string_view sv{stored_data.access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
-            __FUNCTION__,
-            stored_data.access_token.substr(0, 5),
-            stored_data.access_token.substr(stored_data.access_token.size() - 5)
+            __func__,
+            sv.substr(0, 5),
+            sv.substr(sv.length() - 5)
         );
     } else {
-        SPDLOG_INFO("{} access_token empty!", __FUNCTION__);
+        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
     }
 
     bool has_token = !stored_data.refresh_token.empty();
@@ -245,8 +248,12 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
     }
 
     std::string at_print = m_session.get_access_token();
-    if (!at_print.empty())
-        at_print = at_print.substr(0, 5) + "..." + at_print.substr(at_print.size() - 5);
+    if (at_print.length() >= 10) {
+        std::string_view sv{at_print};
+        at_print = at_print.substr(0,5) + "..." + at_print.substr(at_print.size()-5);
+    } else if (!at_print.empty()) {
+        at_print = "[too short to mask safely]";
+    }
     SPDLOG_INFO("{} access_token: {}", __FUNCTION__, (username.empty() ? "" : at_print));
 
     TokenStore::StoreData stored_data{

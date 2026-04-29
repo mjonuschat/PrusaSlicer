@@ -13,9 +13,14 @@ bool save_tokens(const StoreData& secrets)
 {
 #ifdef SLIC3R_HAS_WEBKIT
     std::string at = secrets.access_token;
-    if (!at.empty())
+    if (at.length() >= 10) {
+        std::string_view sv{at};
         at = at.substr(0,5) + "..." + at.substr(at.size()-5);
+    } else if (!at.empty()) {
+        at = "[too short to mask safely]";
+    }
     SPDLOG_INFO( "{} access_token: {}", __FUNCTION__ , at);
+
     std::string tokens;
     tokens = secrets.access_token
         + "|" + secrets.refresh_token
