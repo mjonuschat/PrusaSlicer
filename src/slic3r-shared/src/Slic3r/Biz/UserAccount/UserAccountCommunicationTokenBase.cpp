@@ -35,7 +35,7 @@ void UserAccountCommunicationTokenBase::init()
     }
     if (stored_data.access_token.empty()) {
         SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (stored_data.access_token.length() >= 10) {
+    } else if (stored_data.access_token.length() >= 20) {
         std::string_view sv{stored_data.access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
@@ -248,8 +248,7 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
     }
 
     std::string at_print = m_session.get_access_token();
-    if (at_print.length() >= 10) {
-        std::string_view sv{at_print};
+    if (at_print.length() >= 20) {
         at_print = at_print.substr(0,5) + "..." + at_print.substr(at_print.size()-5);
     } else if (!at_print.empty()) {
         at_print = "[too short to mask safely]";

@@ -19,7 +19,7 @@ void UserAccountSession::set_tokens(const std::string& access_token, const std::
 {
     if (access_token.empty()) {
         SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (access_token.length() >= 10) {
+    } else if (access_token.length() >= 20) {
         std::string_view sv{access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
@@ -299,7 +299,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
 
     if (access_token.empty()) {
         SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (access_token.length() >= 10) {
+    } else if (access_token.length() >= 20) {
         std::string_view sv{access_token};
         SPDLOG_INFO(
             "{} access_token: {} ... {}",
