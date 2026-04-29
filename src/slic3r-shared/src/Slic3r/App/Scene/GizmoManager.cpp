@@ -317,8 +317,8 @@ void GizmoManager::activate_tool(ToolType tool)
     );
 
     IToolGizmo* original_tool{p.active_tool};
-    deactivate_current_tool();
     if (next_tool != original_tool) {
+        deactivate_current_tool();
         p.active_tool = next_tool;
         p.active_tool->on_activated();
         invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });

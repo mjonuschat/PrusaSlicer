@@ -149,19 +149,6 @@ ToolBarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     return button;
 }
 
-ToolBarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip,
-    Scene::IToolGizmo* tool
-)
-{
-    ToolBarButton* button = add_toolbar_item(id, icon, tooltip);
-    ASSERT(button);
-
-    return button;
-}
-
 ToolBarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     ToolbarID id,
     Render::Icon icon,

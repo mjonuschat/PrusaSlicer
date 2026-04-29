@@ -67,12 +67,6 @@ public:
         const std::string& tooltip,
         bool checked = false
     );
-    ToolBarButton* add_toolbar_item_gizmo(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip,
-        Scene::IToolGizmo* tool
-    );
     ToolBarSwitchButton* add_toolbar_item_switch(
         ToolbarID id,
         Render::Icon icon,

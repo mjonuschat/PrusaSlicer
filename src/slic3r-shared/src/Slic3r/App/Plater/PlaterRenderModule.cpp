@@ -531,7 +531,11 @@ void PlaterRenderModule::register_commands()
                 tool_type_to_command_name(type),
                 [this, type]()
                 {
-                    m_gizmo_manager->activate_tool(type);
+                    if (m_gizmo_manager->current_tool_type() == type) {
+                        m_gizmo_manager->deactivate_current_tool();
+                    } else {
+                        m_gizmo_manager->activate_tool(type);
+                    }
                 },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
@@ -683,113 +687,98 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Add instance")
     );
 
-    m_toolbar_move = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_move = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Move,
-        _u8L("Move"),
-        m_translation_gizmo
+        _u8L("Move")
     );
 
-    m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_rotate = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Rotate,
-        _u8L("Rotate"),
-        m_rotation_gizmo
+        _u8L("Rotate")
     );
 
-    m_toolbar_scale = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_scale = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Scale,
-        _u8L("Scale"),
-        m_scale_gizmo
+        _u8L("Scale")
     );
 
-    m_toolbar_place_on_face = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_place_on_face = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PlaceOnFace,
-        _u8L("Place On Face"),
-        m_place_on_face_gizmo
+        _u8L("Place On Face")
     );
 
-    m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_arrange = m_layout->add_toolbar_item(
         ToolbarID::Left,
         Render::Icon::Layout,
-        _u8L("Arrange"),
-        m_arrange_gizmo
+        _u8L("Arrange")
     );
 
-    m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_simplify = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Simplify,
-        _u8L("Simplify"),
-        m_simplify_gizmo
+        _u8L("Simplify")
     );
 
-    m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_paint_on_supports = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,
-        _u8L("Paint-on supports"),
-        m_paint_on_supports_gizmo
+        _u8L("Paint-on supports")
     );
 
-    m_toolbar_paint_on_seams = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_paint_on_seams = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintSeams,
-        _u8L("Paint-on seams"),
-        m_paint_on_seams_gizmo
+        _u8L("Paint-on seams")
     );
 
-    m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintFuzzySkin,
-        _u8L("Paint-on fuzzy skin"),
-        m_paint_on_fuzzy_skin_gizmo
+        _u8L("Paint-on fuzzy skin")
     );
 
-    m_toolbar_multi_material_painting = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_multi_material_painting = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintMultiMaterial,
-        _u8L("Multimaterial painting"),
-        m_multi_material_painting_gizmo
+        _u8L("Multimaterial painting")
     );
 
-    m_toolbar_text = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_text = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Text,
-        _u8L("Emboss text"),
-        m_text_gizmo
+        _u8L("Emboss text")
     );
 
-    m_toolbar_svg = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_svg = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Svg,
-        _u8L("Scalable vector graphics(SVG)"),
-        m_svg_gizmo
+        _u8L("Scalable vector graphics(SVG)")
     );
 
     m_toolbar_cut =
         m_layout
-            ->add_toolbar_item_gizmo(ToolbarID::Middle, Render::Icon::Cut, "Cut", m_cut_gizmo);
+            ->add_toolbar_item(ToolbarID::Middle, Render::Icon::Cut, "Cut");
 
-    m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_measure = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Ruler,
-        _u8L("Measure"),
-        m_measure_gizmo
+        _u8L("Measure")
     );
 
-    m_toolbar_variable_layer_height = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_variable_layer_height = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::VariableLayerHeight,
-        _u8L("Variable Layer Height"),
-        m_variable_layer_height_gizmo
+        _u8L("Variable Layer Height")
     );
 
-    m_toolbar_height_range = m_layout->add_toolbar_item_gizmo(
+    m_toolbar_height_range = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::HeightRange,
-        _u8L("Height Range"),
-        m_height_range_gizmo
+        _u8L("Height Range")
     );
     ToolBarButton* plater_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
