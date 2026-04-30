@@ -1,25 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 23.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
-<g id="notes">
-	<g>
-		<path fill="#808080" d="M11,2l0,12l-9,0L2,2H11 M11,1H2C1.45,1,1,1.45,1,2V14c0,0.55,0.45,1,1,1H11c0.55,0,1-0.45,1-1V2
-			C12,1.45,11.55,1,11,1L11,1z"/>
-	</g>
-	<path fill="#ED6B21" d="M14,3L14,3c-0.55,0-1,0.45-1,1v10c0,0.55,0.45,1,1,1h0c0.55,0,1-0.45,1-1V4C15,3.45,14.55,3,14,3z"/>
-	<polygon fill="#ED6B21" points="15,4 13,4 14,1 	"/>
-	<g>
-		<line fill="none" stroke="#808080" stroke-linecap="round" stroke-miterlimit="10" x1="3" y1="4" x2="10" y2="4"/>
-	</g>
-	<g>
-		<line fill="none" stroke="#808080" stroke-linecap="round" stroke-miterlimit="10" x1="3" y1="6" x2="10" y2="6"/>
-	</g>
-	<g>
-		<line fill="none" stroke="#808080" stroke-linecap="round" stroke-miterlimit="10" x1="3" y1="8" x2="10" y2="8"/>
-	</g>
-	<g>
-		<line fill="none" stroke="#808080" stroke-linecap="round" stroke-miterlimit="10" x1="3" y1="10" x2="7" y2="10"/>
-	</g>
-</g>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M13 2V14H3V2H13ZM13.0909 1H2.90909C2.40909 1 2 1.45 2 2V14C2 14.55 2.40909 15 2.90909 15H13.0909C13.5909 15 14 14.55 14 14V2C14 1.45 13.5909 1 13.0909 1Z" fill="#F7F7F7"/>
+  <rect x="4" y="4" width="8" height="1" rx="0.5" fill="#F7F7F7"/>
+  <rect x="4" y="7" width="8" height="1" rx="0.5" fill="#F7F7F7"/>
+  <rect x="4" y="10" width="5" height="1" rx="0.5" fill="#F7F7F7"/>
 </svg>

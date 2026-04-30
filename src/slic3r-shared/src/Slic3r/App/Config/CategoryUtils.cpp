@@ -13,63 +13,81 @@ Render::Icon category_render_icon(
     Render::Icon icon = Render::Icon::None;
 
     // Disabled icons for now until Design team delivers new one
-    // switch (category) {
-    // case Domain::ConfigItemDef::Category::General:
-    // case Domain::ConfigItemDef::Category::Bed:
-    //     icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker :
-    //                                                   Render::Icon::PrinterSlaIconMarker;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Material:
-    //     icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::FilamentIconMarker :
-    //                                                   Render::Icon::MaterialIconMarker;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Advanced:
-    //     icon = Render::Icon::Cogs;
-    //     break;
-    // case Domain::ConfigItemDef::Category::LayersAndPerimeters:
-    //     icon = Render::Icon::Layers;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Infill:
-    //     icon = Render::Icon::Infill;
-    //     break;
-    // case Domain::ConfigItemDef::Category::SkirtAndBrim:
-    //     icon = Render::Icon::SkirtBrim;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Speed:
-    //     icon = Render::Icon::Time;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Extruders:
-    // case Domain::ConfigItemDef::Category::MultipleExtruders:
-    //     icon = Render::Icon::Funnel;
-    //     break;
-    // case Domain::ConfigItemDef::Category::OutputOptions:
-    //     icon = Render::Icon::Output;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Notes:
-    // case Domain::ConfigItemDef::Category::MaterialPrintingProfile:
-    //     icon = Render::Icon::Notes;
-    //     break;
-    // case Domain::ConfigItemDef::Category::CustomGcode:
-    // case Domain::ConfigItemDef::Category::MachineLimits:
-    //     icon = Render::Icon::Cog;
-    //     break;
-    // case Domain::ConfigItemDef::Category::SupportMaterial:
-    // case Domain::ConfigItemDef::Category::Supports:
-    //     icon = Render::Icon::Support;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Cooling:
-    //     icon = Render::Icon::Fan;
-    //     break;
-    // case Domain::ConfigItemDef::Category::SingleExtruderMMSetup:
-    //     icon = Render::Icon::PrinterIconMarker;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Hollowing:
-    //     icon = Render::Icon::Hollowing;
-    //     break;
-    // case Domain::ConfigItemDef::Category::Pad:
-    //     icon = Render::Icon::Pad;
-    //     break;
-    // }
+    switch (category) {
+    case Domain::ConfigItemDef::Category::Print_LayersSurfaces:
+        icon = Render::Icon::Layers;
+        break;
+    case Domain::ConfigItemDef::Category::Print_WallsPerimeters:
+        icon = Render::Icon::WallsPerimeters;
+        break;
+    case Domain::ConfigItemDef::Category::Print_Infill:
+        icon = Render::Icon::Infill;
+        break;
+    case Domain::ConfigItemDef::Category::Print_BedAdhesion:
+        icon = Render::Icon::BedAdhesion;
+        break;
+    case Domain::ConfigItemDef::Category::Print_Supports:
+        icon = Render::Icon::Support;
+        break;
+    case Domain::ConfigItemDef::Category::Print_Speed:
+        icon = Render::Icon::Time;
+        break;
+    case Domain::ConfigItemDef::Category::Print_MotionDynamics:
+        icon = Render::Icon::Motions;
+        break;
+    case Domain::ConfigItemDef::Category::Print_ExtrusionRetraction:
+        icon = Render::Icon::ExtrusionRetraction;
+        break;
+    case Domain::ConfigItemDef::Category::Print_MultiMaterial:
+    case Domain::ConfigItemDef::Category::Filament_MultiMaterial:
+        icon = Render::Icon::MultiMaterial;
+        break;
+    case Domain::ConfigItemDef::Category::Print_PrecisionSlicing:
+        icon = Render::Icon::Precision;
+        break;
+    case Domain::ConfigItemDef::Category::Print_CustomGCode:
+    case Domain::ConfigItemDef::Category::Filament_CustomGCode:
+    case Domain::ConfigItemDef::Category::Printer_CustomGCode:
+        icon = Render::Icon::CustomGCode;
+        break;
+    case Domain::ConfigItemDef::Category::Print_OutputOptions:
+        icon = Render::Icon::Output;
+        break;
+    case Domain::ConfigItemDef::Category::Print_Notes:
+    case Domain::ConfigItemDef::Category::Filament_Notes:
+    case Domain::ConfigItemDef::Category::Printer_Notes:
+        icon = Render::Icon::Notes;
+        break;
+    case Domain::ConfigItemDef::Category::Filament_MaterialTemperatures:
+        icon = Render::Icon::Temperature;
+        break;
+    case Domain::ConfigItemDef::Category::Filament_ExtrusionCalibration:
+        icon = Render::Icon::ExtrusionCalibration;
+        break;
+    case Domain::ConfigItemDef::Category::Filament_Cooling:
+        icon = Render::Icon::Fan;
+        break;
+    case Domain::ConfigItemDef::Category::Filament_Overrides:
+        icon = Render::Icon::Vector;
+        break;
+    case Domain::ConfigItemDef::Category::Printer_General:
+        icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker :
+                                                      Render::Icon::PrinterSlaIconMarker;
+        ;
+        break;
+    case Domain::ConfigItemDef::Category::Printer_Bed:
+        icon = Render::Icon::Bed;
+        break;
+    case Domain::ConfigItemDef::Category::Printer_MachineLimits:
+        icon = Render::Icon::MachineLimits;
+        break;
+    case Domain::ConfigItemDef::Category::Printer_MultipleExtruders:
+        icon = Render::Icon::MultipleExtruders;
+        break;
+    case Domain::ConfigItemDef::Category::Printer_SingleExtruderMMSetup:
+        icon = Render::Icon::SingleExtruder;
+        break;
+    }
 
     return icon;
 }

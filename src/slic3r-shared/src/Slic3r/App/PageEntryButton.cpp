@@ -24,7 +24,7 @@ PageEntryButton::PageEntryButton(
     set_rounding(0);
     set_content_justify_content(YGJustifyFlexStart);
 
-    set_content_padding({5, 10});
+    set_content_padding({10, 10, 5, 10});
 
     set_background_color(
         IM_COL32_BLACK_TRANS,
