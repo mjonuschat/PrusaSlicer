@@ -120,6 +120,17 @@ void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBr
     project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(dlg.get());
 }
 
+void DialogManager::show_upload_webview_dialog(std::unique_ptr<App::Browser::AbstractUploadBrowserLogic>&& logic, Biz::ProjectInteractor* project_interactor, const UploadCallback& callback)
+{
+    App::Browser::AbstractUploadBrowserLogic* logic_ptr = logic.get();
+    std::unique_ptr<WebView::AbstractWebViewDialog> dlg = WebView::new_web_view_dialog(std::move(logic));
+    project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(dlg.get());
+    dlg->ShowModal();
+    project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(dlg.get());
+    callback(logic_ptr->success(), logic_ptr->result_data());
+}
+
+
 void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)
 {
     MessageDialog dlg(wxTheApp->GetTopWindow(), from_u8(text), from_u8(title), wxYES_NO);

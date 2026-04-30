@@ -54,4 +54,21 @@ bool config_from_json(const std::string& json, PhysicalPrinter::PhysicalPrinterC
     return true;
 }
 
+std::string filename_from_json(const std::string& json_str) 
+{
+    try {
+        nlohmann::json j = nlohmann::json::parse(json_str);
+
+        if (j.contains("filename") && j["filename"].is_string()) {
+            return j["filename"].get<std::string>();
+        } else {
+            SPDLOG_ERROR("Could not find filename in Connect message.");
+        }
+    } catch (const nlohmann::json::exception& e) {
+        SPDLOG_ERROR("Could not parse Connect message: {}", e.what());
+    }
+
+    return {};
+}
+
 } //namespace Slic3r::Biz::UserAccount

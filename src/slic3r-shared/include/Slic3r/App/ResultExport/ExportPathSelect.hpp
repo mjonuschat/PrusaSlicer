@@ -11,11 +11,17 @@ class ProjectInteractor;
 
 namespace Slic3r::App::ExportPathSelect {
 
+void validate_bgcode_extension(
+    const boost::filesystem::path& file_path,
+    bool bgcode_allowed,
+    const std::function<void(const boost::filesystem::path&)>& on_proceed,
+    const std::function<void()>& on_retry);
+
 /**
  * @brief Shows modal dialog "Save file as". Returns true if user confirmed selection.
  */
 void
-show_modal_dialog(
+show_export_modal_dialog(
     const Biz::ProjectInteractor& project_interactor,
     bool default_path_at_removable,
     const std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>& callback,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
+#include "Slic3r/App/Browser/AbstractUploadBrowserLogic.hpp"
 #include "Slic3r/App/Browser/AbstractConnectRequestHandler.hpp"
 
 namespace Slic3r::Biz {
@@ -8,7 +8,7 @@ class ProjectInteractor;
 }
 namespace Slic3r::App::Browser {
 
-class BrowserLogicConnectSelect final : public AbstractBrowserLogic, public AbstractConnectRequestHandler
+class BrowserLogicConnectSelect final : public AbstractUploadBrowserLogic, public AbstractConnectRequestHandler
 {
 public:
     BrowserLogicConnectSelect(Biz::ProjectInteractor& project_interactor);
