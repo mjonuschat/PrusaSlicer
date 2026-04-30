@@ -16,6 +16,7 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 
 #include "Slic3r/Assert.hpp"
+#include "libslic3r/ExtruderCandidates.hpp"
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -910,7 +911,7 @@ bool ObjectList::render_out_of_beds()
                     m_scene_interactor->selected_project_unplaced_model_instances(),
                     object
                 ))
-                is_changed_selection |= render_object_node(object, {ColorRGB::GRAY()});
+                is_changed_selection |= render_object_node(object);
         }
     }
 
@@ -1017,14 +1018,11 @@ bool ObjectList::render_bed_node(
             bg.set_next();
             is_changed_selection |= render_wipe_tower_node(bed);
         }
-
-        const std::vector<Domain::ColorRGB> colors =
-            m_project_interactor->project_settings_interactor().get_colors(config_container_id);
-
         bg.set_next();
         for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(bed->model_instances, object))
-                is_changed_selection |= render_object_node(object, colors, bed, is_sla_config);
+                is_changed_selection |=
+                    render_object_node(object, config_container_id, bed, is_sla_config);
         }
         ImGui::TreePop();
     }
@@ -1072,7 +1070,7 @@ bool ObjectList::render_wipe_tower_node(const Domain::BedInstance* bed)
 
 bool ObjectList::render_object_node(
     const Domain::ModelObject* object,
-    const std::vector<Domain::ColorRGB>& extruder_colors,
+    std::optional<size_t> config_container_id,
     const Domain::BedInstance* bed /*= nullptr*/,
     bool is_sla_config /*= false*/
 )
@@ -1132,56 +1130,16 @@ bool ObjectList::render_object_node(
         sel_element,
         object->instances.size() == 1 ? object->instances.front()->printable : object->printable
     );
+
     if (!is_sla_config) {
-        int obj_extruder_id = !object->object_settings.items.all_items().empty()
-                && object->object_settings.items.find("extruder") ?
-            object->object_settings.items.opt("extruder").get<int>() :
-            0;
-        if (obj_extruder_id > 0) {
-            obj_extruder_id--;
-        }
-
-        std::set<Domain::ColorRGB> volumes_colors;
-        for (Domain::ModelVolume* volume : object->volumes) {
-            if (!volume->volume_settings.overrides.empty()) {
-                if (std::optional<Domain::ConfigItem> conf_extruder_id =
-                        volume->volume_settings.overrides.get("extruder"))
-                {
-                    int vol_extruder_id = conf_extruder_id->get<int>();
-                    if (vol_extruder_id > 0) {
-                        vol_extruder_id--;
-                    }
-                    if (vol_extruder_id < extruder_colors.size()) {
-                        volumes_colors.emplace(extruder_colors[vol_extruder_id]);
-                    }
-                    continue;
-                }
-            }
-            volumes_colors.emplace(extruder_colors[obj_extruder_id]);
-        }
-
-        if (!volumes_colors.empty()
-            && (volumes_colors.size() > 1 || *volumes_colors.begin() != extruder_colors[0]))
-        {
-            // Show extruder marker only if object or its volumes have overrides
-            std::vector<Domain::ColorRGB> colors(volumes_colors.begin(), volumes_colors.end());
-            if (colors.size() == 1) {
-                auto it = std::find(extruder_colors.begin(), extruder_colors.end(), colors[0]);
-                if (it != extruder_colors.end()) {
-                    obj_extruder_id = std::distance(extruder_colors.begin(), it);
-                    render_extruder_marker(colors, obj_extruder_id);
-                }
-            } else {
-                render_extruder_marker(colors);
-            }
-        }
+        render_extruder_marker(config_container_id, object);
     }
 
     if (isOpen) {
         bg.set_next();
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |=
-            render_volumes(object, extruder_colors, bed ? bed->id().id : 0, is_sla_config);
+            render_volumes(object, bed ? bed->id().id : 0, is_sla_config, config_container_id);
         is_changed_selection |= render_instances_node(object, bed);
         if (ctx.show_details)
             render_infos_node(object, is_sla_config);
@@ -1234,9 +1192,9 @@ bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_
 
 bool ObjectList::render_volumes(
     const Domain::ModelObject* object,
-    const std::vector<Domain::ColorRGB>& extruder_colors,
     size_t bed_id,
-    bool is_sla_config
+    bool is_sla_config,
+    std::optional<size_t> config_container_id
 )
 {
     auto& ctx = selected_project_context();
@@ -1271,10 +1229,10 @@ bool ObjectList::render_volumes(
             ImGui::SetNextItemSelectionUserData(vol_id);
             render_volume_node(
                 volume,
-                extruder_colors,
                 {object_id, instance_id, volume_id},
                 ms.Contains((ImGuiID) volume_id),
-                is_sla_config
+                is_sla_config,
+                config_container_id
             );
         }
 
@@ -1308,10 +1266,10 @@ bool ObjectList::render_volumes(
 // render edited item as an input text and propagate new name to scene_interactor
 void ObjectList::render_volume_node(
     const Domain::ModelVolume* volume,
-    const std::vector<Domain::ColorRGB>& extruder_colors,
     const Domain::ElementRef& sel_element,
     bool is_selected,
-    bool is_sla_config
+    bool is_sla_config,
+    std::optional<size_t> config_container_id
 )
 {
     auto& ctx               = selected_project_context();
@@ -1322,11 +1280,8 @@ void ObjectList::render_volume_node(
         ctx.edited_node_id = 0; // Exit edit mode
 
     NewRowWithSelectable row;
-    ImVec2 pos                  = ImGui::GetCursorScreenPos();
-    bool has_config_overrides   = !volume->volume_settings.overrides.empty();
-    bool has_extruder_overrides = !is_sla_config
-        && has_config_overrides
-        && volume->volume_settings.overrides.get("extruder").has_value();
+    ImVec2 pos                = ImGui::GetCursorScreenPos();
+    bool has_config_overrides = !volume->volume_settings.overrides.empty();
 
     if (ctx.edited_node_id == volume_id) {
         if (selectable(
@@ -1359,12 +1314,8 @@ void ObjectList::render_volume_node(
     if (ImGui::IsMouseHoveringRect(pos, pos + size))
         Imgui::tooltip(volume_icon_tooltip(volume));
 
-    if (has_extruder_overrides) {
-        int extruder_id = volume->volume_settings.overrides.get("extruder")->get<int>();
-        if (extruder_id > 0) {
-            extruder_id--;
-        }
-        render_extruder_marker({extruder_colors[extruder_id]}, extruder_id);
+    if (!is_sla_config) {
+        render_extruder_marker(config_container_id, nullptr, volume);
     }
 }
 
@@ -1592,30 +1543,70 @@ bool ObjectList::render_delete_button(const std::string& id)
 }
 
 void ObjectList::render_extruder_marker(
-    const std::vector<Domain::ColorRGB>& colors,
-    std::optional<size_t> extruder_id
+    std::optional<size_t> config_container_id,
+    const Domain::ModelObject* object,
+    const Domain::ModelVolume* volume
 )
 {
-    ImGui::TableSetColumnIndex(ciExtruder);
-    BoldFontGuard bfg(m_imgui_render);
+    if (config_container_id) {
+        if (volume) {
+            const Domain::VolumeSettings& volume_settings = volume->volume_settings;
+            bool has_extruder_overrides = volume_settings.overrides.get("extruder").has_value();
+            const bool show_extruder_makter =
+                (volume->is_modifier() && has_extruder_overrides) || volume->is_model_part();
+            if (!show_extruder_makter) {
+                return;
+            }
+        }
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_WindowBg));
+        const std::vector<Domain::ColorRGB> extruder_colors =
+            m_project_interactor->project_settings_interactor().get_colors(
+                config_container_id.value()
+            );
+        const Domain::ConfigContainer* config_container =
+            m_project_interactor->selected_project().find_config_container(
+                config_container_id.value()
+            );
+        Domain::ConfigPackFDM config_pack_fdm =
+            std::get<Domain::ConfigPackFDM>(config_container->build_print_config());
 
-    std::vector<ImVec4> vec4_colors;
-    vec4_colors.reserve(colors.size());
-    for (const ColorRGB& clr : colors) {
-        vec4_colors.push_back({clr.r(), clr.g(), clr.b(), 1.f});
+        std::set<unsigned> extruder_candidates;
+        if (object) {
+            extruder_candidates =
+                Biz::Slicing::get_object_extruder_candidates(*object, config_pack_fdm);
+        } else if (volume) {
+            extruder_candidates = Biz::Slicing::get_volume_extruder_candidates(
+                volume->volume_settings,
+                volume->get_object()->object_settings,
+                config_pack_fdm.print
+            );
+        }
+        ASSERT(!extruder_candidates.empty());
+
+        ImGui::TableSetColumnIndex(ciExtruder);
+        BoldFontGuard bfg(m_imgui_render);
+
+        std::vector<ImVec4> vec4_colors;
+        vec4_colors.reserve(extruder_candidates.size());
+        for (const auto& extruder : extruder_candidates) {
+            DEBUG_ASSERT(extruder < extruder_colors.size());
+            if (extruder >= extruder_colors.size())
+                return;
+            const ColorRGB& clr = extruder_colors[extruder];
+            vec4_colors.push_back({clr.r(), clr.g(), clr.b(), 1.f});
+        }
+        std::string extruder_marker_text = extruder_candidates.size() == 1 ?
+            std::to_string(*extruder_candidates.begin() + 1) :
+            std::string();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 1.f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_WindowBg));
+
+        colored_circle_marker_aligned(0.5f, extruder_marker_text, vec4_colors);
+
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
     }
-
-    colored_circle_marker_aligned(
-        0.5f,
-        extruder_id ? std::to_string(extruder_id.value() + 1) : "",
-        vec4_colors
-    );
-
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar();
 }
 
 void ObjectList::render_slicing_state_marker(size_t bed_instance_id)

@@ -12,7 +12,6 @@ Render::Icon category_render_icon(
 {
     Render::Icon icon = Render::Icon::None;
 
-    // Disabled icons for now until Design team delivers new one
     switch (category) {
     case Domain::ConfigItemDef::Category::Print_LayersSurfaces:
         icon = Render::Icon::Layers;
@@ -73,7 +72,6 @@ Render::Icon category_render_icon(
     case Domain::ConfigItemDef::Category::Printer_General:
         icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker :
                                                       Render::Icon::PrinterSlaIconMarker;
-        ;
         break;
     case Domain::ConfigItemDef::Category::Printer_Bed:
         icon = Render::Icon::Bed;
