@@ -82,12 +82,15 @@ bool need_simplify(const indexed_triangle_set& its) {
 }
 
 std::string create_button_name(const Domain::ModelVolume& volume) {
-    return _u8L("Simplify") + " \"" + volume.name + "\"";
+    // TRN: Text of notification button - Simplify "object_name"
+    return fmt::format(fmt::runtime(_u8L("Simplify \"{}\"")), volume.get_object()->name);
 }
 
 std::string create_list_text(const Domain::ModelVolume& volume) {
     std::string count = fmt::to_string(float(volume.mesh().its.indices.size() / size_t(100000)) / 10.f);
-    return fmt::format("{}({}M {})", volume.name, count, _u8L("Triangles"));
+    return fmt::format("- {} ({}M {})",  volume.get_object()->name, count, 
+        // TRN: In simplify notification text saying how many million triangles an object has.
+        _u8L("triangles"));
 }
 
 using namespace Slic3r::App::PopNotification;
@@ -96,17 +99,14 @@ std::string create_message(const SimplifyNotification::Items& items)
 {
     if (items.size() == 1)
         return _u8L(
-            "Triangle mesh with more than 1M triangles could be slow to process.\n"
-            "It is highly recommended to reduce the amount of triangles."
+            "This mesh exceeds 1M triangles and may cause processing slowdowns."
         );
     std::string message =
         _u8L(
-            "Application keeps multiple huge meshes.\n"
-            "It is highly recommended to reduce the amount of triangles for"
-        )
-        + ":";
+            "These meshes exceed 1M triangles and may cause processing slowdowns."
+        ) + "\n";
     for (const SimplifyNotification::Item& item : items)
-        message += "\n \t" + item.list_text;
+        message += "\n" + item.list_text;
     return message;
 }
 
@@ -145,7 +145,8 @@ void recreate_notification(
         .type = PopNotificationType::SimplifySuggestion,
         .level = PopNotificationLevel::Regular,
         .timeout = 0s,
-        .layout = PopNotificationLayoutTextButtons {
+        .layout = PopNotificationLayoutHeaderTextButtons {
+            .header = _u8L("Reduce Triangle Count"),
             .text = create_message(items),
             .buttons = { PopNotificationButtonData {
                 .text = item.button_name,
