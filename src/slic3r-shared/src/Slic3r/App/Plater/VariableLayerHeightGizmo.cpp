@@ -171,12 +171,28 @@ VariableLayerHeightGizmo::VariableLayerHeightGizmo(
     { m_lock_high_detail = lock_high_detail; };
 
     m_dialog->callbacks().auto_calculate_clicked = [this]()
-    { this->generate_adaptive_layer_height_profile(); };
+    {
+        this->generate_adaptive_layer_height_profile();
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::VariableLayerHeightAdaptive
+        );
+    };
 
     m_dialog->callbacks().smooth_clicked = [this]()
-    { this->perform_layer_height_profile_smoothing(); };
+    {
+        this->perform_layer_height_profile_smoothing();
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::VariableLayerHeightSmooth
+        );
+    };
 
-    m_dialog->callbacks().reset_clicked = [this]() { this->perform_layer_height_profile_reset(); };
+    m_dialog->callbacks().reset_clicked = [this]()
+    {
+        this->perform_layer_height_profile_reset();
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::VariableLayerHeightReset
+        );
+    };
 
     m_dialog->callbacks().layer_profile_mouse_move =
         [this](const std::optional<float> cursor_normalized_position)
@@ -338,8 +354,9 @@ void VariableLayerHeightGizmo::on_activated()
     this->init_main_nodes();
     this->init_mesh_nodes();
 
-    scene.add_listener<ISceneChangedListener>(this);
+    scene.add_listener<App::Scene::ISceneChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
+    m_scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
 }
 
 void VariableLayerHeightGizmo::on_deactivated()
@@ -359,8 +376,9 @@ void VariableLayerHeightGizmo::on_deactivated()
     m_visible_volumes_nodes.clear();
     m_material_wrapper.reset();
 
-    scene.remove_listener<ISceneChangedListener>(this);
+    scene.remove_listener<App::Scene::ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
 }
 
 void VariableLayerHeightGizmo::on_project_activated(size_t new_project_id)
@@ -407,6 +425,15 @@ void VariableLayerHeightGizmo::on_thumbnail_render_end()
     }
 
     this->hide_visible_volumes();
+}
+
+void VariableLayerHeightGizmo::on_model_reloaded(SelectionId project_id)
+{
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+
+    this->rebuild_gizmo_state();
 }
 
 Scene::GizmoActivationState
@@ -892,6 +919,9 @@ bool VariableLayerHeightGizmo::process_gizmo_event(const GizmoEvent& event)
         m_baseline_layer_height_profile.clear();
 
         this->apply_layer_height_profile_to_model();
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::VariableLayerHeightStroke
+        );
         this->update_variable_layer_height_texture();
         this->set_cursor_z(std::nullopt);
         this->refresh_mesh_nodes_material();
@@ -939,6 +969,63 @@ VariableLayerHeightGizmo::VolumeHitPoint VariableLayerHeightGizmo::perform_rayca
     }
 
     return closest_hit;
+}
+
+void VariableLayerHeightGizmo::rebuild_gizmo_state()
+{
+    using MeshManager = PlaterScenePresenter::MeshManager;
+
+    const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const ObjectSelection& object_selection = scene_interactor.object_selection();
+    const ConfigContainer& config_container = m_project_interactor.selected_config_container();
+    const MeshManager& mesh_manager         = m_scene_presenter.model_triangle_mesh_manager();
+    Project& project                        = m_project_interactor.selected_project();
+    Scene::Scene& scene                     = m_scene_presenter.scene();
+
+    // Restore the originally visible nodes.
+    this->restore_visible_volumes();
+
+    // Remove all the scene nodes created by this gizmo.
+    if (m_main_node != nullptr) {
+        scene.remove_child(m_main_node);
+        m_main_node = nullptr;
+        m_mesh_node = nullptr;
+    }
+
+    m_visible_volumes_nodes.clear();
+    m_material_wrapper.reset();
+
+    if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
+        m_gizmo_controller->deactivate_current_tool();
+        return;
+    }
+
+    std::optional<SelectedObjectData> selected_object_data =
+        collect_selected_object_data(object_selection, project, mesh_manager);
+    if (!selected_object_data) {
+        m_gizmo_controller->deactivate_current_tool();
+        return;
+    }
+
+    m_selected_object_data  = std::move(*selected_object_data);
+    m_visible_volumes_nodes = collect_visible_volumes_nodes(project, scene);
+    m_layer_height_params   = compute_layer_height_params(
+        object_selection,
+        project,
+        config_container,
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+    );
+
+    m_mouse_button_down = Button::None;
+    m_mouse_dragging    = false;
+
+    this->perform_layer_height_profile_clamping();
+    this->set_dialog_layer_heights_profile_parameters();
+    this->update_side_panel_layer_height_profile();
+    this->update_side_panel_height_ranges();
+    this->hide_visible_volumes();
+    this->init_main_nodes();
+    this->init_mesh_nodes();
 }
 
 } // namespace Slic3r::App::Plater

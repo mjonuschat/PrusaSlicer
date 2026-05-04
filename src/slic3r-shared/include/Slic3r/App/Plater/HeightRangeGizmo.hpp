@@ -37,6 +37,7 @@ class HeightRangeGizmo :
     public Scene::IToolGizmo,
     public Scene::ISceneChangedListener,
     public Scene::IThumbnailRenderListener,
+    public Biz::Scene::ISceneChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
@@ -78,6 +79,8 @@ public:
 
     void on_thumbnail_render_begin() override;
     void on_thumbnail_render_end() override;
+
+    void on_model_reloaded(Domain::SelectionId project_id) override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
@@ -180,6 +183,8 @@ private:
     void paste_height_range_overrides();
 
     void apply_layer_config_ranges_to_model();
+
+    void rebuild_gizmo_state();
 };
 
 } // namespace Slic3r::App::Plater

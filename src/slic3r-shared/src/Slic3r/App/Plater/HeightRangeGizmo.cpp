@@ -280,8 +280,9 @@ void HeightRangeGizmo::on_activated()
     this->init_main_nodes();
     this->hide_non_selected_volumes();
 
-    scene.add_listener<ISceneChangedListener>(this);
+    scene.add_listener<App::Scene::ISceneChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
+    m_scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
 }
 
 void HeightRangeGizmo::on_deactivated()
@@ -303,8 +304,9 @@ void HeightRangeGizmo::on_deactivated()
     m_non_selected_volumes_nodes.clear();
     m_has_variable_layer_height_profile = false;
 
-    scene.remove_listener<ISceneChangedListener>(this);
+    scene.remove_listener<App::Scene::ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
 }
 
 void HeightRangeGizmo::on_project_activated(size_t new_project_id)
@@ -342,6 +344,15 @@ void HeightRangeGizmo::on_thumbnail_render_end()
     // After rendering a thumbnail, restore planes.
     m_planes_wrapper.set_enabled(true);
     this->hide_non_selected_volumes();
+}
+
+void HeightRangeGizmo::on_model_reloaded(SelectionId project_id)
+{
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+
+    this->rebuild_gizmo_state();
 }
 
 void HeightRangeGizmo::on_node_added(Node* node)
@@ -732,6 +743,7 @@ void HeightRangeGizmo::perform_height_range_addition()
     m_layer_config_ranges.try_emplace(new_height_range.value());
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeAdd);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -755,6 +767,7 @@ void HeightRangeGizmo::perform_height_range_deletion(const LayerHeightRange& ran
     m_layer_config_ranges.erase(range_to_delete_it);
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeDelete);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -819,6 +832,7 @@ void HeightRangeGizmo::perform_height_range_value_change(
     m_selected_layer_height_range = new_range;
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeValueChange);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -845,6 +859,7 @@ void HeightRangeGizmo::perform_override_change()
     ASSERT(selected_range_it != m_layer_config_ranges.end());
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeOverrideChange);
 
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
@@ -859,6 +874,7 @@ void HeightRangeGizmo::perform_height_ranges_restart()
     m_selected_layer_height_range.reset();
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeRestart);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -882,6 +898,7 @@ void HeightRangeGizmo::perform_single_height_range_restart(const LayerHeightRang
     }
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeRestart);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -916,6 +933,9 @@ void HeightRangeGizmo::add_layer_height_override()
     settings.overrides.set("layer_height", m_layer_height_params.layer_height);
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(
+        UndoSnapshotType::HeightRangeLayerHeightOverride
+    );
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -962,6 +982,7 @@ void HeightRangeGizmo::paste_height_range_overrides()
     }
 
     this->apply_layer_config_ranges_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangePaste);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
@@ -989,6 +1010,55 @@ void HeightRangeGizmo::apply_layer_config_ranges_to_model()
     { object.layer_config_ranges = m_layer_config_ranges; };
 
     m_scene_interactor.modify_layer_config_ranges(object_ref, modifier);
+}
+
+void HeightRangeGizmo::rebuild_gizmo_state()
+{
+    const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const ObjectSelection& object_selection = scene_interactor.object_selection();
+    const ConfigContainer& config_container = m_project_interactor.selected_config_container();
+    Project& project                        = m_project_interactor.selected_project();
+    Scene::Scene& scene                     = m_scene_presenter.scene();
+
+    this->restore_non_selected_volumes();
+
+    m_dialog->clear_selection();
+    m_dialog->set_selected_height_range_config_box(nullptr);
+
+    m_planes_wrapper.release(scene);
+    m_drag_state.reset();
+    m_hovered_plane.reset();
+    m_layer_config_ranges.clear();
+    m_selected_layer_height_range.reset();
+    m_selected_object_data = {};
+    m_non_selected_volumes_nodes.clear();
+    m_has_variable_layer_height_profile = false;
+
+    if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
+        this->on_deactivated();
+        return;
+    }
+
+    m_non_selected_volumes_nodes = collect_non_selected_volumes_nodes(scene, object_selection);
+    m_selected_object_data       = collect_selected_object_data(object_selection, project);
+    m_layer_height_params        = compute_layer_height_params(
+        object_selection,
+        project,
+        config_container,
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+    );
+    m_layer_config_ranges               = m_selected_object_data.model_object->layer_config_ranges;
+    m_has_variable_layer_height_profile = is_valid_layer_height_profile(
+        m_selected_object_data.model_object->layer_height_profile.get(),
+        m_layer_height_params.object_print_z_uncompensated_height
+    );
+
+    this->set_dialog_layer_heights_profile_parameters();
+    this->update_side_panel_layer_height_profile();
+    this->update_side_panel_height_ranges();
+    this->update_layer_height_title();
+    this->init_main_nodes();
+    this->hide_non_selected_volumes();
 }
 
 } // namespace Slic3r::App::Plater

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Scene/IThumbnailRenderListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/ModelInstance.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
 #include "Slic3r/Domain/ModelVolume.hpp"
@@ -32,7 +33,8 @@ class PlaterScenePresenter;
 class VariableLayerHeightGizmo :
     public Scene::IToolGizmo,
     public Scene::ISceneChangedListener,
-    public Scene::IThumbnailRenderListener
+    public Scene::IThumbnailRenderListener,
+    public Biz::Scene::ISceneChangedListener
 {
 public:
     struct SelectedObjectData
@@ -79,6 +81,8 @@ public:
 
     void on_thumbnail_render_begin() override;
     void on_thumbnail_render_end() override;
+
+    void on_model_reloaded(Domain::SelectionId project_id) override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
@@ -187,6 +191,8 @@ private:
 
     VolumeHitPoint
     perform_raycast(const Domain::Vec2d& mouse_position, const Scene::Camera& camera) const;
+
+    void rebuild_gizmo_state();
 };
 
 } // namespace Slic3r::App::Plater

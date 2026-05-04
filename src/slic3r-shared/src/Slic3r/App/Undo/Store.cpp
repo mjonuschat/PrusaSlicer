@@ -213,6 +213,28 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Paste objects");
     case Type::PasteVolumes:
         return _u8L("Paste volumes");
+    case Type::VariableLayerHeightStroke:
+        return _u8L("Variable layer height stroke");
+    case Type::VariableLayerHeightSmooth:
+        return _u8L("Variable layer height smooth");
+    case Type::VariableLayerHeightReset:
+        return _u8L("Variable layer height reset");
+    case Type::VariableLayerHeightAdaptive:
+        return _u8L("Variable layer height adaptive");
+    case Type::HeightRangeAdd:
+        return _u8L("Add a height range");
+    case Type::HeightRangeDelete:
+        return _u8L("Delete a height range");
+    case Type::HeightRangeValueChange:
+        return _u8L("Change height range value");
+    case Type::HeightRangeOverrideChange:
+        return _u8L("Change height range override");
+    case Type::HeightRangeRestart:
+        return _u8L("Reset height ranges");
+    case Type::HeightRangePaste:
+        return _u8L("Paste height range settings");
+    case Type::HeightRangeLayerHeightOverride:
+        return _u8L("Add layer height override");
     }
     PANIC("Unknown option");
     return {};
