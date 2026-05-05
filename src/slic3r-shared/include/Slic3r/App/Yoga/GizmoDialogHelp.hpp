@@ -14,6 +14,8 @@ class Item;
 class Icon;
 class Text;
 
+// Todo: This class should be moved to Slic3r::App
+// Todo: KeyIcon component should be introduced instead of HelpIcon svg icon
 class GizmoDialogHelp
 {
 public:

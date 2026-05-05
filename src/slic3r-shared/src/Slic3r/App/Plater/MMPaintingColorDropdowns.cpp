@@ -111,6 +111,7 @@ void ColorMenuItem::render(Yoga::Vec2f pos, Yoga::Vec2f size)
 
 ColorDropdown::ColorDropdown(Render::Icon icon, const ImColor& color, float spacing)
 {
+    set_object_name("ColorDropdown");
     set_gap(spacing);
     set_align_items(YGAlignCenter);
     emplace_icon(this, icon, {16_px, 16_px}, color);

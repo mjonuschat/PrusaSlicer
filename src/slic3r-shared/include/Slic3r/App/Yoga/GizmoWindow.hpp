@@ -18,6 +18,7 @@ class Separator;
 class InputTextWithSpin;
 class SliderWithInput;
 
+// Todo: This class should be moved to Slic3r::App
 class GizmoWindow : public Window
 {
 public:

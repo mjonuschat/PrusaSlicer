@@ -328,8 +328,24 @@ ImColor adjust_brightness(ImColor color, float factor)
     // Convert color from RGB to HSV
     ImGui::ColorConvertRGBtoHSV(color.Value.x, color.Value.y, color.Value.z, h, s, v);
 
-    // Adjust brightness (value)
-    v *= factor;
+    if (factor < 1.0f) {
+        // Darken: original behavior.
+        v *= factor;
+    } else {
+        // Brighten: increase V first, (it may clip above 1.0 resulting in no change).
+        float adjusted_v = v * factor;
+
+        if (adjusted_v <= 1.0f) {
+            v = adjusted_v;
+        } else {
+            // V clipped, so continue brightening by reducing saturation.
+            v = 1.0f;
+
+            float diff = adjusted_v - 1.0f;
+            s           = std::clamp(s * (1.0f - diff), 0.0f, 1.0f);
+        }
+    }
+
     v = std::clamp(v, 0.0f, 1.0f);
 
     // Convert back to RGB

@@ -1,10 +1,12 @@
 #pragma once
 
-#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
-#include "Slic3r/App/Yoga/TwoColorRing.hpp"
-#include "Slic3r/App/Plater/MMPaintingScaleHelpers.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
+
+namespace Slic3r::App::Yoga {
+class Circle;
+class TwoColorRing;
+}
 
 namespace Slic3r::App::Plater {
 
@@ -18,10 +20,6 @@ public:
         ImColor mouse_right_color
     );
 
-    void action_internal() override;
-
-    void secondary_action_internal() override;
-
     std::function<void(SelectedColor)> on_color_selected{[](SelectedColor) {}};
 
     void select_color(SelectedColor color);
@@ -32,12 +30,24 @@ public:
 
     void clear_color(SelectedColor color);
 
+protected:
+    void hovered_updated_internal() override;
+
+    void action_internal() override;
+
+    void secondary_action_internal() override;
+
 private:
     void update_highlight_circle();
+    void update_inner_circle();
 
+private:
+    ImColor m_inner_color;
+    ImColor m_inner_color_hovered;
     ImColor m_mouse_left_color;
     ImColor m_mouse_right_color;
     Yoga::TwoColorRing* m_highlight_circle{nullptr};
+    Yoga::Circle* m_color_circle{nullptr};
     SelectedColor m_selected_color{SelectedColor::None};
 };
 

@@ -1,6 +1,10 @@
 #include "Slic3r/App/Plater/MMPaintingColorSelector.hpp"
+
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/TwoColorRing.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Plater/MMPaintingScaleHelpers.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -10,6 +14,8 @@ ColorButton::ColorButton(
     ImColor mouse_left_color,
     ImColor mouse_right_color
 ) :
+    m_inner_color(color.r_uchar(), color.g_uchar(), color.b_uchar(), color.a_uchar()),
+    m_inner_color_hovered(Imgui::adjust_brightness(m_inner_color, 1.4f)),
     m_mouse_left_color{mouse_left_color},
     m_mouse_right_color{mouse_right_color}
 {
@@ -17,12 +23,11 @@ ColorButton::ColorButton(
 
     set_width(size);
     set_height(size);
+    set_object_name("ColorButton");
 
     set_position_type(YGPositionType::YGPositionTypeRelative);
     set_align_items(YGAlignCenter);
     set_justify_content(YGJustifyCenter);
-
-    const ImColor imgui_color{color.r_uchar(), color.g_uchar(), color.b_uchar(), color.a_uchar()};
 
     m_highlight_circle = emplace_back<Yoga::TwoColorRing>();
     m_highlight_circle->set_flex_grow(1);
@@ -30,15 +35,20 @@ ColorButton::ColorButton(
     m_highlight_circle->set_justify_content(YGJustifyCenter);
     m_highlight_circle->set_padding(std::round(7_px));
 
-    auto color_circle{m_highlight_circle->emplace_back<Yoga::Circle>()};
-    color_circle->set_flex_grow(1);
-    color_circle->set_align_items(YGAlignFlexStart);
-    color_circle->set_justify_content(YGJustifyCenter);
-    color_circle->set_fill(imgui_color);
+    m_color_circle = m_highlight_circle->emplace_back<Yoga::Circle>();
+    m_color_circle->set_flex_grow(1);
+    m_color_circle->set_align_items(YGAlignFlexStart);
+    m_color_circle->set_justify_content(YGJustifyCenter);
+    update_inner_circle();
 
-    auto text{color_circle->emplace_back<Yoga::Text>(label)};
+    auto text{m_color_circle->emplace_back<Yoga::Text>(label)};
     text->set_font_type(Render::ImguiFontType::Bold);
-    text->set_text_color(Imgui::contrast_color(imgui_color));
+    text->set_text_color(Imgui::contrast_color(m_inner_color));
+}
+
+void ColorButton::hovered_updated_internal()
+{
+    update_inner_circle();
 }
 
 void ColorButton::action_internal()
@@ -49,6 +59,11 @@ void ColorButton::action_internal()
 void ColorButton::secondary_action_internal()
 {
     on_color_selected(SelectedColor::Secondary);
+}
+
+void ColorButton::update_inner_circle()
+{
+    m_color_circle->set_fill(hovered() ? m_inner_color_hovered : m_inner_color);
 }
 
 void ColorButton::select_color(SelectedColor color)
@@ -130,7 +145,9 @@ ColorSelector::ColorSelector(ImColor mouse_left_color, ImColor mouse_right_color
     m_mouse_left_color{mouse_left_color},
     m_mouse_right_color{mouse_right_color}
 {
+    set_object_name("ColorSelector");
     set_flex_wrap(YGWrap::YGWrapWrap);
+    set_gap(3);
 }
 
 void ColorSelector::set_colors(const std::vector<Domain::ColorRGBA>& colors)

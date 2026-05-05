@@ -81,15 +81,15 @@ private:
     ColorSelector* m_color_selector{nullptr};
     ColorDropdowns* m_color_dropdowns{nullptr};
 
-    Yoga::AbstractButton* m_brush_button        = nullptr;
-    Yoga::AbstractButton* m_smart_fill_button   = nullptr;
-    Yoga::AbstractButton* m_bucket_fill_button  = nullptr;
-    Yoga::AbstractButton* m_height_range_button = nullptr;
+    Yoga::LayoutButton* m_brush_button        = nullptr;
+    Yoga::LayoutButton* m_smart_fill_button   = nullptr;
+    Yoga::LayoutButton* m_bucket_fill_button  = nullptr;
+    Yoga::LayoutButton* m_height_range_button = nullptr;
     Yoga::ButtonGroup m_tool_type_group;
 
-    Yoga::AbstractButton* m_sphere_brush_button   = nullptr;
-    Yoga::AbstractButton* m_circle_brush_button   = nullptr;
-    Yoga::AbstractButton* m_triangle_brush_button = nullptr;
+    Yoga::LayoutButton* m_sphere_brush_button   = nullptr;
+    Yoga::LayoutButton* m_circle_brush_button   = nullptr;
+    Yoga::LayoutButton* m_triangle_brush_button = nullptr;
     Yoga::ButtonGroup m_brush_shape_group;
 
     std::vector<Yoga::LayoutButton*> m_first_brush_color_buttons;

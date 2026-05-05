@@ -112,10 +112,24 @@ void ButtonGroup::on_button_action(AbstractButton* button)
     }
 }
 
-void ButtonGroup::on_button_pressed(AbstractButton* button, bool pressed)
+void ButtonGroup::on_button_secondary_action(AbstractButton* button)
 {
-    if (m_callbacks.pressed) {
-        m_callbacks.pressed(button, pressed);
+    if (m_callbacks.secondary_action) {
+        m_callbacks.secondary_action(button);
+    }
+}
+
+void ButtonGroup::on_button_primary_pressed(AbstractButton* button, bool pressed)
+{
+    if (m_callbacks.pressed_primary) {
+        m_callbacks.pressed_primary(button, pressed);
+    }
+}
+
+void ButtonGroup::on_button_secondary_pressed(AbstractButton* button, bool pressed)
+{
+    if (m_callbacks.pressed_secondary) {
+        m_callbacks.pressed_secondary(button, pressed);
     }
 }
 
@@ -160,15 +174,16 @@ void ButtonGroup::on_button_checked(AbstractButton* button)
 
 void ButtonGroup::set_button_callbacks(AbstractButton* button)
 {
-    button->callbacks().action          = [this, button]() { on_button_action(button); };
-    button->callbacks().checked_changed = [this, button](bool checked)
+    button->callbacks().action           = [this, button]() { on_button_action(button); };
+    button->callbacks().secondary_action = [this, button]() { on_button_secondary_action(button); };
+    button->callbacks().checked_changed  = [this, button](bool checked)
     {
         // Intentionally ignored checked state.
         // The button cannot be unchecked if it is already checked.
         on_button_checked(button);
     };
-    button->callbacks().pressed_changed = [this, button](bool pressed)
-    { on_button_pressed(button, pressed); };
+    button->callbacks().pressed_primary_changed = [this, button](bool pressed)
+    { on_button_primary_pressed(button, pressed); };
 }
 
 void ButtonGroup::unset_button_callbacks(AbstractButton* button)

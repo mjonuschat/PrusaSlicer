@@ -12,13 +12,16 @@ namespace Slic3r::App::Yoga {
 class AbstractButton : public Item
 {
 public:
-    // parameters for action functions is a bounding box of item
+    /**
+     * @brief The Callbacks class - All actions are always consumed user-side
+     */
     struct Callbacks
     {
-        std::function<void()> action{nullptr}; ///< Always user action
-        std::function<void()> secondary_action{nullptr}; ///< Always user action
-        std::function<void(bool hovered)> hovered_changed{nullptr}; ///< Always user action
-        std::function<void(bool pressed)> pressed_changed{nullptr}; ///< Always user action
+        std::function<void()> action{nullptr};
+        std::function<void()> secondary_action{nullptr};
+        std::function<void(bool hovered)> hovered_changed{nullptr};
+        std::function<void(bool pressed)> pressed_primary_changed{nullptr};
+        std::function<void(bool pressed)> pressed_secondary_changed{nullptr};
         std::function<void(bool checked)> checked_changed{nullptr};
         std::function<bool()> enabled{nullptr};
     };
@@ -48,18 +51,23 @@ public:
 
     bool pressed() const;
 
-    ImGuiButtonFlags flags() const;
-
     bool allow_overlap() const;
     void set_allow_overlap(bool allow_overlap);
 
     ImGuiMouseCursor cursor() const;
     void set_cursor(ImGuiMouseCursor cursor);
 
+    ImGuiMouseButton primary_button() const;
+    void set_primary_button(ImGuiMouseButton primary_button);
+
+    ImGuiMouseButton secondary_button() const;
+    void set_secondary_button(ImGuiMouseButton secondary_button);
+
 protected:
     virtual void checked_updated_internal();
     virtual void hovered_updated_internal();
-    virtual void pressed_updated_internal();
+    virtual void pressed_primary_updated_internal();
+    virtual void pressed_secondary_updated_internal();
     virtual void action_internal();
     virtual void secondary_action_internal();
     virtual void set_shortcut_internal(const std::string& shortcut);
@@ -71,23 +79,30 @@ protected:
 
 private:
     void set_hovered(bool hovered);
-    void set_pressed(bool pressed);
+    void set_pressed_primary(bool pressed);
+    void set_pressed_secondary(bool pressed);
+    void update_flags();
 
 protected:
     Tooltip* m_tooltip = nullptr;
 
 private:
-    bool m_has_arrow     = false;
-    bool m_checkable     = false;
-    bool m_checked       = false;
-    bool m_hovered       = false;
-    bool m_pressed       = false;
-    bool m_allow_overlap = false;
+    bool m_has_arrow         = false;
+    bool m_checkable         = false;
+    bool m_checked           = false;
+    bool m_hovered           = false;
+    bool m_pressed_primary   = false;
+    bool m_pressed_secondary = false;
+    bool m_allow_overlap     = false;
 
     std::string m_shortcut;
     Callbacks m_callbacks;
-    ImGuiButtonFlags m_flags  = ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight;
-    ImGuiMouseCursor m_cursor = ImGuiMouseCursor_Arrow;
+    ImGuiButtonFlags m_flags = ImGuiButtonFlags_MouseButtonLeft
+        | ImGuiButtonFlags_MouseButtonRight
+        | ImGuiButtonFlags_EnableNav;
+    ImGuiMouseButton m_primary_button   = ImGuiMouseButton_Left;
+    ImGuiMouseButton m_secondary_button = ImGuiMouseButton_Right;
+    ImGuiMouseCursor m_cursor           = ImGuiMouseCursor_Arrow;
 };
 
 } // namespace Slic3r::App::Yoga

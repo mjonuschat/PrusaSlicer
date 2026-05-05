@@ -32,40 +32,41 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         ImGui::SetNextItemAllowOverlap();
     }
 
-    ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
+    bool pressed = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
     bool hovered = ImGui::IsItemHovered() && ImGui::IsItemVisible();
     bool held    = ImGui::IsItemActive();
 
-    ImRect bb(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+    bool primary_pressed   = pressed && ImGui::IsMouseReleased(m_primary_button);
+    bool secondary_pressed = pressed && ImGui::IsMouseReleased(m_secondary_button);
 
-    ImGui::RenderNavCursor(bb, ImGui::GetItemID());
+    bool primary_held   = held && ImGui::IsMouseDown(m_primary_button);
+    bool secondary_held = held && ImGui::IsMouseDown(m_secondary_button);
 
     ImGui::PopID();
 
     if (enabled()) {
         set_hovered(hovered);
-        set_pressed(held);
+        set_pressed_primary(primary_held);
+        set_pressed_secondary(secondary_held);
 
         if (m_hovered || held) {
             ImGui::SetMouseCursor(m_cursor);
         }
 
-        if (hovered) {
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-                if (m_checkable) {
-                    set_checked(!m_checked);
-                }
-                if (m_callbacks.action) {
-                    m_callbacks.action();
-                }
-                action_internal();
+        if (primary_pressed) {
+            if (m_checkable) {
+                set_checked(!m_checked);
             }
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-                if (m_callbacks.secondary_action) {
-                    m_callbacks.secondary_action();
-                }
-                secondary_action_internal();
+            if (m_callbacks.action) {
+                m_callbacks.action();
             }
+            action_internal();
+        }
+        if (secondary_pressed) {
+            if (m_callbacks.secondary_action) {
+                m_callbacks.secondary_action();
+            }
+            secondary_action_internal();
         }
     }
 
@@ -157,17 +158,72 @@ void AbstractButton::set_hovered(bool hovered)
 
 bool AbstractButton::pressed() const
 {
-    return m_pressed;
+    return m_pressed_primary;
 }
 
-void AbstractButton::set_pressed(bool pressed)
+void AbstractButton::set_pressed_primary(bool pressed)
 {
-    if (m_pressed != pressed) {
-        m_pressed = pressed;
-        pressed_updated_internal();
-        if (m_callbacks.pressed_changed) {
-            m_callbacks.pressed_changed(m_pressed);
+    if (m_pressed_primary != pressed) {
+        m_pressed_primary = pressed;
+        pressed_primary_updated_internal();
+        if (m_callbacks.pressed_primary_changed) {
+            m_callbacks.pressed_primary_changed(pressed);
         }
+    }
+}
+
+void AbstractButton::set_pressed_secondary(bool pressed)
+{
+    if (m_pressed_secondary != pressed) {
+        m_pressed_secondary = pressed;
+        pressed_secondary_updated_internal();
+        if (m_callbacks.pressed_secondary_changed) {
+            m_callbacks.pressed_secondary_changed(pressed);
+        }
+    }
+}
+
+void AbstractButton::update_flags()
+{
+    auto convert = [](ImGuiMouseButton button) -> ImGuiButtonFlags
+    {
+        switch (button) {
+        case ImGuiMouseButton_Right:
+            return ImGuiButtonFlags_MouseButtonRight;
+        case ImGuiMouseButton_Middle:
+            return ImGuiButtonFlags_MouseButtonMiddle;
+        case ImGuiMouseButton_Left:
+        default:
+            return ImGuiButtonFlags_MouseButtonLeft;
+        }
+    };
+
+    m_flags = ImGuiButtonFlags_EnableNav | convert(m_primary_button) | convert(m_secondary_button);
+}
+
+ImGuiMouseButton AbstractButton::primary_button() const
+{
+    return m_primary_button;
+}
+
+void AbstractButton::set_primary_button(ImGuiMouseButton primary_button)
+{
+    if (m_pressed_primary != primary_button) {
+        m_primary_button = primary_button;
+        update_flags();
+    }
+}
+
+ImGuiMouseButton AbstractButton::secondary_button() const
+{
+    return m_secondary_button;
+}
+
+void AbstractButton::set_secondary_button(ImGuiMouseButton secondary_button)
+{
+    if (m_secondary_button != secondary_button) {
+        m_secondary_button = secondary_button;
+        update_flags();
     }
 }
 
@@ -179,11 +235,6 @@ ImGuiMouseCursor AbstractButton::cursor() const
 void AbstractButton::set_cursor(ImGuiMouseCursor cursor)
 {
     m_cursor = cursor;
-}
-
-ImGuiButtonFlags AbstractButton::flags() const
-{
-    return m_flags;
 }
 
 bool AbstractButton::allow_overlap() const
@@ -200,7 +251,9 @@ void AbstractButton::checked_updated_internal() {}
 
 void AbstractButton::hovered_updated_internal() {}
 
-void AbstractButton::pressed_updated_internal() {}
+void AbstractButton::pressed_primary_updated_internal() {}
+
+void AbstractButton::pressed_secondary_updated_internal() {}
 
 void AbstractButton::action_internal() {}
 

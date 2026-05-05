@@ -38,7 +38,7 @@ SearchPopup::SearchPopup(
 
     m_button_group->set_always_checked(true);
 
-    m_button_group->callbacks().pressed = [this](AbstractButton* button, bool pressed)
+    m_button_group->callbacks().pressed_primary = [this](AbstractButton* button, bool pressed)
     {
         if (pressed) {
             m_navigator.navigate_to_item(dynamic_cast<SearchResultRow*>(button)->state());

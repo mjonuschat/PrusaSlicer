@@ -89,7 +89,7 @@ public:
     }
 
 protected:
-    void pressed_updated_internal() override
+    void pressed_primary_updated_internal() override
     {
         hovered_updated_internal();
     }

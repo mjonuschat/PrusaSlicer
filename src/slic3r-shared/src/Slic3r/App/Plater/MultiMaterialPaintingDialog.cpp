@@ -5,7 +5,6 @@
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -13,6 +12,8 @@
 #include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorDropdowns.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorSelector.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
@@ -29,51 +30,31 @@ static const ImColor mouse_left_color{115, 151, 236};
 static const ImColor mouse_right_color{175, 119, 255};
 const float spacing{5_px};
 const float prefered_icon_size{36_px};
+const Vec2f component_max_size{400, YGUndefined};
 
-Yoga::ItemPtr label(const std::string& text)
+ItemPtr label(const std::string& text)
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     result->set_flex_grow(1);
     result->set_orientation(Orientation::Horizontal);
     result->set_align_items(YGAlignCenter);
     result->set_justify_content(YGJustifyFlexStart);
-    result->emplace_back<Yoga::Text>(text);
+    result->emplace_back<Text>(text);
     return result;
 }
 
-void apply_icon_button_style(Yoga::Item& item)
+void apply_icon_button_style(Item& item)
 {
     item.set_align_items(YGAlignStretch);
-    item.set_min_size({14_px, 14_px});
+    item.set_min_size({18_px, 18_px});
     item.set_max_size({prefered_icon_size, prefered_icon_size});
     item.set_flex_grow(1);
     item.set_aspect_ratio(1);
 }
 
-class IconButton : public RectangleButton
+ItemPtr icons_row()
 {
-public:
-    IconButton(Render::Icon icon, const std::string& tooltip)
-    {
-        m_icon = emplace_back<Icon>(icon);
-        m_icon->set_aspect_ratio(1);
-        m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-        m_icon->set_width(14_px);
-        m_icon->set_height(14_px);
-
-        apply_icon_button_style(*this);
-        set_content_align_items(YGAlignCenter);
-        set_checkable(true);
-        set_content_padding(0);
-        set_tooltip(tooltip);
-    }
-
-    Icon* m_icon = nullptr;
-};
-
-Yoga::ItemPtr icons_row()
-{
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     result->set_orientation(Orientation::Horizontal);
     result->set_height(prefered_icon_size);
     result->set_align_items(YGAlignCenter);
@@ -82,9 +63,24 @@ Yoga::ItemPtr icons_row()
     return result;
 }
 
-Yoga::ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
+ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    auto emplace_flex_button =
+        [](Item* container, Render::Icon icon, const std::string& tooltip) -> LayoutButton*
+    {
+        LayoutButton* flex_button =
+            container->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+        flex_button->icon_object()->set_width(14_px);
+        flex_button->icon_object()->set_height(14_px);
+        apply_icon_button_style(*flex_button);
+        flex_button->set_checkable(true);
+        flex_button->set_content_padding(0);
+        flex_button->set_content_align_items(YGAlignCenter);
+
+        return flex_button;
+    };
+
+    ItemPtr result{std::make_unique<Item>()};
     result->set_gap(4 * spacing);
     auto labels{result->emplace_back<Item>()};
     labels->set_orientation(Orientation::Vertical);
@@ -104,13 +100,13 @@ Yoga::ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
 
     Item* tools_row{Plater::append(icons, icons_row())};
 
-    m_brush_button = tools_row->emplace_back<IconButton>(Render::Icon::PaintBrush, _u8L("Brush"));
+    m_brush_button = emplace_flex_button(tools_row, Render::Icon::PaintBrush, _u8L("Brush"));
     m_smart_fill_button =
-        tools_row->emplace_back<IconButton>(Render::Icon::WandMagicSparkles, _u8L("Smart fill"));
+        emplace_flex_button(tools_row, Render::Icon::WandMagicSparkles, _u8L("Smart fill"));
     m_bucket_fill_button =
-        tools_row->emplace_back<IconButton>(Render::Icon::FillDrip, _u8L("Bucket fill"));
+        emplace_flex_button(tools_row, Render::Icon::FillDrip, _u8L("Bucket fill"));
     m_height_range_button =
-        tools_row->emplace_back<IconButton>(Render::Icon::LineHeight, _u8L("Height range fill"));
+        emplace_flex_button(tools_row, Render::Icon::LineHeight, _u8L("Height range fill"));
 
     m_tool_type_group.set_buttons(
         {m_brush_button, m_smart_fill_button, m_bucket_fill_button, m_height_range_button}
@@ -135,11 +131,11 @@ Yoga::ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
     m_brush_shape_row = Plater::append(icons, icons_row());
 
     m_sphere_brush_button =
-        m_brush_shape_row->emplace_back<IconButton>(Render::Icon::Sphere, _u8L("Sphere"));
+        emplace_flex_button(m_brush_shape_row, Render::Icon::Sphere, _u8L("Sphere"));
     m_circle_brush_button =
-        m_brush_shape_row->emplace_back<IconButton>(Render::Icon::Circle, _u8L("Circle"));
+        emplace_flex_button(m_brush_shape_row, Render::Icon::Circle, _u8L("Circle"));
     m_triangle_brush_button =
-        m_brush_shape_row->emplace_back<IconButton>(Render::Icon::Triangle, _u8L("Trianle"));
+        emplace_flex_button(m_brush_shape_row, Render::Icon::Triangle, _u8L("Trianle"));
     m_brush_shape_group.set_buttons(
         {m_sphere_brush_button, m_circle_brush_button, m_triangle_brush_button}
     );
@@ -166,105 +162,90 @@ Yoga::ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
     return result;
 }
 
-Yoga::ItemPtr MultiMaterialPaintingDialog::brush_size_picker()
+ItemPtr MultiMaterialPaintingDialog::brush_size_picker()
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     m_brush_radius_row = result.get();
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
 
-    auto label{result->emplace_back<Yoga::Text>(_u8L("Brush size"))};
+    auto label{result->emplace_back<Text>(_u8L("Brush size"))};
     label->set_font_type(Render::ImguiFontType::Bold);
 
     m_brush_radius_slider = result->emplace_back<SliderWithInput>(_u8L("mm"));
     m_brush_radius_slider->set_begin_value(MultiMaterialPaintingGizmo::CursorRadiusMin);
     m_brush_radius_slider->set_end_value(MultiMaterialPaintingGizmo::CursorRadiusMax);
     m_brush_radius_slider->set_step(0.01);
+    m_brush_radius_slider->set_max_size(component_max_size);
 
     m_brush_radius_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.brush_radius_changed(value); };
     return result;
 }
 
-Yoga::ItemPtr MultiMaterialPaintingDialog::smart_fill_angle_picker()
+ItemPtr MultiMaterialPaintingDialog::smart_fill_angle_picker()
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     m_smart_fill_angle_row = result.get();
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
 
-    auto label{result->emplace_back<Yoga::Text>(_u8L("Smart fill angle"))};
+    auto label{result->emplace_back<Text>(_u8L("Smart fill angle"))};
     label->set_font_type(Render::ImguiFontType::Bold);
 
     m_smart_fill_angle_slider = result->emplace_back<SliderWithInput>(_u8L("°"));
     m_smart_fill_angle_slider->set_begin_value(MultiMaterialPaintingGizmo::SmartFillAngleMin);
     m_smart_fill_angle_slider->set_end_value(MultiMaterialPaintingGizmo::SmartFillAngleMax);
     m_smart_fill_angle_slider->set_step(MultiMaterialPaintingGizmo::SmartFillAngleStep);
+    m_smart_fill_angle_slider->set_max_size(component_max_size);
     m_smart_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.smart_fill_angle_changed(value); };
     return result;
 }
 
-Yoga::ItemPtr MultiMaterialPaintingDialog::bucket_fill_angle_picker()
+ItemPtr MultiMaterialPaintingDialog::bucket_fill_angle_picker()
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     m_bucket_fill_angle_row = result.get();
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
 
-    auto label{result->emplace_back<Yoga::Text>(_u8L("Bucket fill angle"))};
+    auto label{result->emplace_back<Text>(_u8L("Bucket fill angle"))};
     label->set_font_type(Render::ImguiFontType::Bold);
 
     m_bucket_fill_angle_slider = result->emplace_back<SliderWithInput>(_u8L("°"));
     m_bucket_fill_angle_slider->set_begin_value(MultiMaterialPaintingGizmo::SmartFillAngleMin);
     m_bucket_fill_angle_slider->set_end_value(MultiMaterialPaintingGizmo::SmartFillAngleMax);
     m_bucket_fill_angle_slider->set_step(MultiMaterialPaintingGizmo::SmartFillAngleStep);
+    m_bucket_fill_angle_slider->set_max_size(component_max_size);
     m_bucket_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.bucket_fill_angle_changed(value); };
     return result;
 }
 
-Yoga::ItemPtr MultiMaterialPaintingDialog::height_range_picker()
+ItemPtr MultiMaterialPaintingDialog::height_range_picker()
 {
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     m_height_range_row = result.get();
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
 
-    auto label{result->emplace_back<Yoga::Text>(_u8L("Heiht range"))};
+    auto label{result->emplace_back<Text>(_u8L("Height range"))};
     label->set_font_type(Render::ImguiFontType::Bold);
 
     m_height_range_slider = result->emplace_back<SliderWithInput>(_u8L("mm"));
     m_height_range_slider->set_begin_value(MultiMaterialPaintingGizmo::HeightRangeZRangeMin);
     m_height_range_slider->set_end_value(MultiMaterialPaintingGizmo::HeightRangeZRangeMax);
     m_height_range_slider->set_step(MultiMaterialPaintingGizmo::HeightRangeZRangeStep);
+    m_height_range_slider->set_max_size(component_max_size);
     m_height_range_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.height_range_changed(value); };
     return result;
 }
 
-static ItemPtr numbers_help()
+static ItemPtr help()
 {
-    GizmoDialogHelp numbers_help;
-    auto result{std::make_unique<Yoga::Item>()};
-    auto numbers{result->emplace_back<Item>()};
-    numbers->set_gap(5_px);
-    numbers->set_align_items(YGAlignCenter);
-    numbers_help.init(numbers);
-
-    const std::vector<Yoga::GizmoDialogHelp::HelpIcon> help_icons{
-        {Render::Icon::KeyShift, {37_px, 14_px}},
-        {Render::Icon::Key1, {16_px, 14_px}}
-    };
-    numbers_help.add_item(help_icons, "/");
-    numbers_help.add_item({{Render::Icon::KeyDots, {18_px, 14_px}}}, "/");
-    numbers_help.add_item({{Render::Icon::Key8, {16_px, 14_px}}}, "Set 1. color");
-    return result;
-}
-
-static Yoga::ItemPtr help()
-{
-    Yoga::ItemPtr result{std::make_unique<Yoga::Item>()};
+    ItemPtr result{std::make_unique<Item>()};
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
     GizmoDialogHelp help;
@@ -277,8 +258,6 @@ static Yoga::ItemPtr help()
         _u8L("Remove painted color")
     );
     help.add_item({{Render::Icon::KeyX, {17_px, 14_px}}}, _u8L("Swap colors"));
-
-    append(result.get(), numbers_help());
 
     help.add_item(
         {{Render::Icon::KeyAlt, {27_px, 14_px}}, {Render::Icon::MouseWheel, icon_size}},
@@ -295,12 +274,12 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1);
 
-    auto scroll_area{content()->emplace_back<Yoga::ScrollArea>("ScrollPanels")};
+    auto scroll_area{content()->emplace_back<ScrollArea>("ScrollPanels")};
     scroll_area->set_gap(0);
     scroll_area->set_orientation(Orientation::Vertical);
     scroll_area->set_flex_grow(1);
-    scroll_area->set_padding(0);
-    scroll_area->set_max_size({400, YGUndefined});
+    scroll_area->set_padding(Paddings{10, 10, 15, 10});
+    content()->set_padding(0);
 
     revert_button()->set_visible(true);
     revert_button()->callbacks().action = [this]() { m_callbacks.painting_reset(); };
@@ -317,6 +296,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
         mouse_left_color,
         mouse_right_color
     );
+    m_color_dropdowns->set_max_size(component_max_size);
     m_color_selector =
         selector_section->emplace_back<ColorSelector>(mouse_left_color, mouse_right_color);
 
@@ -365,9 +345,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     view_clipper_section->set_gap(2 * spacing);
     view_clipper_section->set_gap(spacing);
     view_clipper_section->set_flex_shrink(0);
-    auto view_clipper_label{
-        view_clipper_section->emplace_back<Yoga::Text>(_u8L("Clipping of view"))
-    };
+    auto view_clipper_label{view_clipper_section->emplace_back<Text>(_u8L("Clipping of view"))};
 
     auto view_clipper_slider_row{view_clipper_section->emplace_back<Item>()};
     view_clipper_slider_row->set_gap(spacing);
@@ -391,6 +369,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     m_clipping_of_view_slider->set_begin_value(0.);
     m_clipping_of_view_slider->set_end_value(1.);
     m_clipping_of_view_slider->set_step(0.01);
+    m_clipping_of_view_slider->set_max_size(component_max_size);
     m_clipping_of_view_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.clipping_of_view_value_changed(value); };
 
@@ -402,10 +381,10 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     m_split_triangles_section->set_align_items(YGAlignFlexEnd);
     m_split_triangles_section->set_gap(2 * spacing);
     m_split_triangles_section->set_flex_shrink(0);
-    m_split_triangles_toggle = m_split_triangles_section->emplace_back<Yoga::ToggleButton>();
+    m_split_triangles_toggle = m_split_triangles_section->emplace_back<ToggleButton>();
     m_split_triangles_toggle->callbacks().checked_changed = [this](bool checked)
     { m_callbacks.split_triangles_value_changed(checked); };
-    m_split_triangles_section->emplace_back<Yoga::Text>(_u8L("Split triangles"));
+    m_split_triangles_section->emplace_back<Text>(_u8L("Split triangles"));
 
     m_split_triangles_separator = add_separator(scroll_area);
 
