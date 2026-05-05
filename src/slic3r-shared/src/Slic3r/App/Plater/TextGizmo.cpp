@@ -701,11 +701,32 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         .angle = Biz::Emboss::calc_rotation(project, ref)
     };
 
+    const auto& presets = m_preset_manager.get_presets();
+
     // use one of the current font descriptor
     Domain::FontDescriptor& fd = preset.emboss_style.descriptor;
-    auto descriptor = m_font_manager.get_current_descriptor(fd);
-    if (descriptor.has_value() &&
-        fd.path != descriptor->path) {
+    auto descriptor            = m_font_manager.get_current_descriptor(fd);
+    if (!descriptor.has_value()) {
+        // Inform user about using unavailable font
+        switch (descriptor.error()) {
+        case Biz::Emboss::IFontManager::ConversionError::AnotherOS:
+            proj_ctx.warning_tooltip =
+                _u8L("The font was created on another platform and cannot be used here.");
+            break;
+        case Biz::Emboss::IFontManager::ConversionError::NotOkWxFont:
+            proj_ctx.warning_tooltip = _u8L("The font could not be loaded.");
+            break;
+        default:
+            PANIC("Unhandled ConversionError value. A new enum case may have been added.");
+            break;
+        }
+        if (!proj_ctx.warning_tooltip.empty()) {
+            proj_ctx.warning_tooltip +=
+                "\n" + _u8L("The first available preset will be used instead.");
+        }
+        ASSERT(!presets.empty());
+        preset = presets.front();
+    } else if (fd.path != descriptor->path) {
         // inform user about using different font descriptor
         proj_ctx.warning_tooltip = _u8L("Autofixed font descriptor");
         fd.path = descriptor->path;
@@ -720,7 +741,6 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
             preset.projection.use_surface = false;
     }
 
-    const auto& presets = m_preset_manager.get_presets();
     auto preset_it = std::find_if(presets.begin(), presets.end(),
         [&name = fd.name](const Biz::Emboss::TextPresetManager::Preset& preset_) {
             return preset_.emboss_style.descriptor.name == name;

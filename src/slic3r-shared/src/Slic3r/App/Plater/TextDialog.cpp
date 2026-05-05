@@ -60,6 +60,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         Render::Icon::WarningMarker,
         "Some warning tooltips"
     );
+    m_editor_warning->set_min_size({24.f, 24.f});
     m_editor_warning->set_self_align(YGAlignFlexEnd);
     m_editor_warning->set_flex_shrink(0.f);
     m_editor_warning->set_visible(false);
