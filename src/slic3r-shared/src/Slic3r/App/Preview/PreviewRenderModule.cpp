@@ -336,6 +336,11 @@ void PreviewRenderModule::on_status_cache_status_code_changed(const Domain::Slic
         }*/
     m_object_list->update_sliced_info();
 
+    const auto status{m_project_interactor.status_cache().get_status(id)};
+    if (status && status->code == Slicing::StatusCode::Modified) {
+        m_fdm_viewer.set_mode(FdmViewerWrapperMode::EditorPreGCode);
+    }
+
     // request redraw
     request_render();
 }
