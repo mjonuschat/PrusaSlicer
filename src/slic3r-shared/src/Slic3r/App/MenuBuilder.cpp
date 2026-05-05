@@ -188,12 +188,13 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::AddObjectShape:
         return Biz::_u8L("Add shape");
     case MenuItemName::ObjectShapeLoad:
+        return Biz::_u8L("Import");
     case MenuItemName::SolidPartVolumeShapeLoad:
     case MenuItemName::NegativeVolumeShapeLoad:
     case MenuItemName::ModifierVolumeShapeLoad:
     case MenuItemName::SupportBlockerShapeLoad:
     case MenuItemName::SupportModifierShapeLoad:
-        return Biz::_u8L("Import");
+        return Biz::_u8L("Load");
     case MenuItemName::ObjectShapeCube:
     case MenuItemName::SolidPartVolumeShapeCube:
     case MenuItemName::NegativeVolumeShapeCube:

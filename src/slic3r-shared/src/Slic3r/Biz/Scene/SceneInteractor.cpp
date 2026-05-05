@@ -3310,30 +3310,6 @@ SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const
     }
 }
 
-// code is borrowed from:
-// #include <arrange-wrapper/SceneBuilder.hpp>
-static Domain::BoundingBox3d instance_no_offset_bounding_box(const Domain::ModelInstance& mi)
-{
-    using Slic3r::Biz::Algorithms::BoundingBox::merge;
-
-    Domain::BoundingBox3d bb;
-    const Domain::Transform3d inst_matrix = mi.get_transformation().get_matrix_no_offset();
-
-    for (Domain::ModelVolume* v : mi.get_object()->volumes) {
-        if (v->is_model_part()) {
-            bb = merge(
-                bb,
-                Slic3r::Biz::Algorithms::ModelVolume::transformed_bounding_box(
-                    *v,
-                    inst_matrix * v->get_matrix()
-                )
-            );
-        }
-    }
-
-    return bb;
-}
-
 void SceneInteractor::add_volume_to_active_object(
     const indexed_triangle_set& its,
     Domain::ModelVolumeType volume_type,
@@ -3348,8 +3324,9 @@ void SceneInteractor::add_volume_to_active_object(
     const Domain::ModelInstance* instance =
         project.find_instance_by_id(element.object_id, element.instance_id);
 
-    using namespace Biz::Algorithms::BoundingBox;
-    Domain::BoundingBox3d inst_bbox = instance_no_offset_bounding_box(*instance);
+    using namespace Biz::Algorithms;
+    Domain::BoundingBox3d inst_bbox =
+        ModelObject::instance_bounding_box(*instance->get_object(), *instance, true);
 
     const Domain::ConfigContainer* cc =
         project.find_config_container(bed_selection().last_selected_bed().config_container_id);
@@ -3369,9 +3346,10 @@ void SceneInteractor::add_volume_to_active_object(
     Domain::Transform3d xform  = Domain::Transform3d::Identity();
     Domain::BoundingBox3d bbox = mesh.bounding_box();
     if (bbox.defined) {
-        using namespace Biz::Algorithms::BoundingBox;
-        xform.translate(-center(bbox));
-        xform.translate(Domain::Vec3d(inst_bbox.max.x(), inst_bbox.max.y(), sizes(bbox).z() * 0.5));
+        xform.translate(-BoundingBox::center(bbox));
+        xform.translate(
+            Domain::Vec3d(inst_bbox.max.x(), inst_bbox.max.y(), BoundingBox::sizes(bbox).z() * 0.5)
+        );
     }
 
     add_volume_from_mesh(std::move(mesh), volume_type, name, xform.matrix());

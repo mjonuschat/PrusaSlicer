@@ -1019,6 +1019,7 @@ void import_files_and_add_to_scene(
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
+        using namespace Biz::Algorithms;
         if (file_data.mesh) {
             auto mesh = file_data.mesh;
             scene_interactor.new_object_from_mesh(std::move(mesh.value()), file_data.file_name);
@@ -1031,19 +1032,22 @@ void import_files_and_add_to_scene(
                 // add a default instance and center object around origin
                 Biz::Algorithms::ModelObject::center_around_origin(*multi_part_object);
                 multi_part_object->add_instance();
-                bbox = Biz::Algorithms::ModelObject::raw_bounding_box(*multi_part_object);
+                bbox = ModelObject::raw_bounding_box(*multi_part_object);
+            } else {
+                for (const Domain::ModelObject* object : model.objects) {
+                    Domain::BoundingBox3d bb = ModelObject::bounding_box_exact(*object);
+                    bbox                     = BoundingBox::merge(bbox, bb);
+                }
             }
             scene_interactor.add_new_objects(model.objects);
         }
 
-        if (bbox.defined) {
-            Transform3d xform = Transform3d::Identity();
-            using namespace Biz::Algorithms::BoundingBox;
-            xform.translate(-center(bbox));
-            xform.translate(Vec3d(0., 0., sizes(bbox).z() / 2.));
-            xform.translate(Vec3d{bed_center.x(), bed_center.y(), 0});
-            scene_interactor.transform_selection(xform.matrix());
-        }
+        ASSERT(bbox.defined);
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(-BoundingBox::center(bbox));
+        xform.translate(Vec3d(0., 0., BoundingBox::sizes(bbox).z() / 2.));
+        xform.translate(Vec3d{bed_center.x(), bed_center.y(), 0});
+        scene_interactor.transform_selection(xform.matrix());
     }
 }
 
