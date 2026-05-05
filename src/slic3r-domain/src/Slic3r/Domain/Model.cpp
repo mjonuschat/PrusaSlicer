@@ -144,6 +144,13 @@ ModelObject* Model::add_object(const ModelObject& other)
     return new_object;
 }
 
+ModelObject* Model::add_object(std::unique_ptr<ModelObject> model_object)
+{
+    model_object->set_model(this);
+    this->objects.push_back(model_object.release());
+    return this->objects.back();
+}
+
 void Model::delete_object(size_t idx)
 {
     ModelObjectPtrs::iterator i = this->objects.begin() + idx;

@@ -3,6 +3,8 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Utils.hpp"
 
+#include <set>
+
 namespace Slic3r::Domain {
 
 ModelObject* ModelObject::new_copy(const ModelObject& rhs)
@@ -40,6 +42,45 @@ ModelObject* ModelObject::new_clone(const ModelObject& rhs)
     obj->assign_clone(rhs);
     assert(obj->id().valid() && obj->id() != rhs.id());
     return obj;
+}
+
+std::unique_ptr<ModelObject>
+ModelObject::new_clone(const ModelObject& rhs, const std::vector<size_t>& instance_ids_to_clone)
+{
+    const std::set<size_t> ids_to_clone(instance_ids_to_clone.begin(), instance_ids_to_clone.end());
+
+    std::unique_ptr<ModelObject> new_object(new ModelObject(-1));
+    new_object->name                 = rhs.name;
+    new_object->input_file           = rhs.input_file;
+    new_object->object_settings      = rhs.object_settings;
+    new_object->object_settings_sla  = rhs.object_settings_sla;
+    new_object->sla_support_points   = rhs.sla_support_points;
+    new_object->sla_points_status    = rhs.sla_points_status;
+    new_object->sla_drain_holes      = rhs.sla_drain_holes;
+    new_object->layer_config_ranges  = rhs.layer_config_ranges;
+    new_object->layer_height_profile = rhs.layer_height_profile;
+    new_object->printable            = rhs.printable;
+    new_object->origin_translation   = rhs.origin_translation;
+    new_object->cut_id               = rhs.cut_id;
+    new_object->copy_transformation_caches(rhs);
+
+    new_object->volumes.reserve(rhs.volumes.size());
+    for (ModelVolume* volume : rhs.volumes) {
+        new_object->volumes.emplace_back(new ModelVolume(*volume));
+        new_object->volumes.back()->set_model_object(new_object.get());
+    }
+
+    for (const ModelInstance* instance : rhs.instances) {
+        if (ids_to_clone.contains(instance->id().id)) {
+            new_object->instances.emplace_back(new ModelInstance(*instance));
+            new_object->instances.back()->set_model_object(new_object.get());
+        }
+    }
+
+    new_object->assign_new_unique_ids_recursive();
+    assert(new_object->id().valid() && new_object->id() != rhs.id());
+
+    return new_object;
 }
 
 ModelObject ModelObject::make_clone(const ModelObject& rhs)

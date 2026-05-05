@@ -14,6 +14,7 @@ class ISceneProvider;
 } // namespace Slic3r::App::Scene
 
 namespace Slic3r::Biz {
+class ClipboardInteractor;
 class ProjectInteractor;
 } // namespace Slic3r::Biz
 
@@ -93,6 +94,7 @@ private:
     ThumbnailStore& m_thumbnail_store;
     Scene::GeometryDataFactory* m_data_factory{nullptr};
     Scene::ISceneProvider* m_scene_provider{nullptr};
+    Biz::ClipboardInteractor& m_clipboard_interactor;
 };
 
 } // namespace Slic3r::App

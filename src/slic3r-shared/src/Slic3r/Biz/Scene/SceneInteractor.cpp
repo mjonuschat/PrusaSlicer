@@ -38,6 +38,8 @@
 #include <boost/filesystem/path.hpp>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
+#include <map>
+#include <set>
 #include <vector>
 #include <unordered_set>
 
@@ -57,12 +59,14 @@ using Slic3r::Domain::ElementRefs;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelObjectPtrs;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::Point;
 using Slic3r::Domain::Points;
 using Slic3r::Domain::Polygon;
 using Slic3r::Domain::Polygons;
 using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
@@ -815,6 +819,41 @@ void SceneInteractor::add_instance(const Vec2d& offset)
     set_object_selection({SelectionMode::Instance, updated});
 }
 
+ModelObjectPtrs SceneInteractor::clone_objects_from_project(
+    SelectionId source_project_id,
+    const std::vector<ElementRef>& source_elements
+)
+{
+    const Project& source_project = m_workbench.project(source_project_id);
+    Project& selected_project     = m_workbench.project(m_selected_project_id);
+
+    std::map<size_t, std::vector<size_t>> instances_per_object;
+    for (const ElementRef& source_element : source_elements) {
+        instances_per_object[source_element.object_id].push_back(source_element.instance_id);
+    }
+
+    ModelObjectPtrs new_objects;
+    for (const auto& [object_id, instance_ids] : instances_per_object) {
+        const ModelObject* source_model_object = source_project.find_object_by_id(object_id);
+        if (source_model_object == nullptr) {
+            continue;
+        }
+
+        std::unique_ptr<ModelObject> new_model_object =
+            ModelObject::new_clone(*source_model_object, instance_ids);
+        ASSERT(!new_model_object->instances.empty());
+
+        Algorithms::ModelObject::sort_volumes(new_model_object.get());
+        ModelObject* added_model_object =
+            selected_project.model().add_object(std::move(new_model_object));
+        new_objects.push_back(added_model_object);
+    }
+
+    this->notify_listener_on_objects(new_objects);
+
+    return new_objects;
+}
+
 void SceneInteractor::delete_selected_object_last_instance()
 {
     auto& project              = m_workbench.project(m_selected_project_id);
@@ -825,7 +864,7 @@ void SceneInteractor::delete_selected_object_last_instance()
 
     Domain::ModelObject* object   = project.find_object_by_id(sel.elements[0].object_id);
 
-    BedTrackingChanges changes; 
+    BedTrackingChanges changes;
     remove_instance_from_bed(project, object->instances.back(), changes);
 
     Domain::ElementRefs to_remove({ {sel.elements[0].object_id, object->instances.back()->id().id, 0} });
@@ -1099,7 +1138,7 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
         updated                                                              = {id};
     }
 
-    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated); 
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
 
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l)

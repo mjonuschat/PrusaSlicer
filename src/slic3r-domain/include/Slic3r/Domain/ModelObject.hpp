@@ -88,6 +88,8 @@ public:
     static ModelObject      make_copy(ModelObject&& rhs);
     static ModelObject*     new_clone(const ModelObject& rhs);
     static ModelObject      make_clone(const ModelObject& rhs);
+    static std::unique_ptr<ModelObject>
+    new_clone(const ModelObject& rhs, const std::vector<size_t>& instance_ids_to_clone);
 
     ModelObject&            assign_copy(const ModelObject& rhs);
     ModelObject&            assign_copy(ModelObject&& rhs);

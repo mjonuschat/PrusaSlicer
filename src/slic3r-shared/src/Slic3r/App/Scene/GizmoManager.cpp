@@ -112,6 +112,16 @@ GizmoManager::PickResultWithRay GizmoManager::pick(
         }
     }
 
+    // When volumes overlap exactly (equal distance), prefer the most recently added volume (higher node ID).
+    std::ranges::sort(
+        pick_results,
+        [](const NodePickResult& a, const NodePickResult& b)
+        {
+            return a.cast.distance < b.cast.distance
+                || (a.cast.distance == b.cast.distance && a.node->id() > b.node->id());
+        }
+    );
+
     return std::make_tuple(pick_results, pick_ray);
 }
 

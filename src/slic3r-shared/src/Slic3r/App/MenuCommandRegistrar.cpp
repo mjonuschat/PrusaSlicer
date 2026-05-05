@@ -158,7 +158,8 @@ MenuCommandRegistrar::MenuCommandRegistrar(
     m_menu_manager(m_render_module.menu_manager()),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
-    m_thumbnail_store(thumbnail_store)
+    m_thumbnail_store(thumbnail_store),
+    m_clipboard_interactor(m_project_interactor.clipboard_interactor())
 {}
 
 void MenuCommandRegistrar::register_top_bar_menus()
@@ -376,31 +377,25 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::CopyObject,
             CommandName::CopyModelItems,
-            [this]() {},
+            [this]() { m_clipboard_interactor.copy(m_project_interactor.selected_project_id()); },
             UIItemCommandExtraOpts{
                 .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                     Platform::KeyCode::C
                 }},
-                .enabled =
-                    [this]()
-                {
-                    const Biz::Scene::ObjectSelection& object_selection =
-                        m_project_interactor.scene_interactor().object_selection();
-                    return !object_selection.empty() && !object_selection.contains_wipe_tower();
-                }
+                .enabled            = [this]() { return m_clipboard_interactor.can_copy(); }
             }
         )
         .append_item(
             MenuItemName::PasteObject,
             CommandName::PasteModelItems,
-            [this]() {},
+            [this]() { m_clipboard_interactor.paste(m_project_interactor.selected_project_id()); },
             UIItemCommandExtraOpts{
                 .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                     Platform::KeyCode::V
                 }},
-                .enabled            = [this]() { return false; }
+                .enabled            = [this]() { return m_clipboard_interactor.can_paste(); }
             }
         )
         .append_item_from_command(MenuItemName::DeleteSelectedObject, CommandName::DeleteSelected)
@@ -1557,6 +1552,7 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                 }
             )
         )
+#endif // SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Edit -> Separator
         .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Edit})
         // Menu -> Edit -> Copy
@@ -1565,14 +1561,13 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
             std::make_unique<UIItemCommand>(
                 CommandName::Copy,
                 [this]()
-                {
-                    // TODO: Implement copy functionality
-                },
+                { m_clipboard_interactor.copy(m_project_interactor.selected_project_id()); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::C
-                    }}
+                    }},
+                    .enabled            = [this]() { return m_clipboard_interactor.can_copy(); }
                 }
             )
         )
@@ -1582,17 +1577,17 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
             std::make_unique<UIItemCommand>(
                 CommandName::Paste,
                 [this]()
-                {
-                    // TODO: Implement paste functionality
-                },
+                { m_clipboard_interactor.paste(m_project_interactor.selected_project_id()); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::V
-                    }}
+                    }},
+                    .enabled            = [this]() { return m_clipboard_interactor.can_paste(); }
                 }
             )
         )
+#ifdef SHOW_NOT_IMPLEMENTED_ITEMS
         // Menu -> Edit -> Separator
         .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Edit})
         // Menu -> Edit -> Reload From Disk
