@@ -1402,7 +1402,8 @@ void write(
         const Domain::ConfigPack config_pack{config_container->build_print_config()};
         if (auto config_pack_fdm{std::get_if<Domain::ConfigPackFDM>(&config_pack)}) {
             const bool enabled{config_pack_fdm->print.items.opt("wipe_tower").get<bool>()};
-            has_wipe_tower = config_pack_fdm->tool.size() > 1 && enabled;
+            has_wipe_tower =
+                config_container->selected_preset().hw_config.material_slot_count() > 1 && enabled;
         }
 
         for (const auto& bed_instance : config_container->bed_instances()) {
@@ -1417,6 +1418,23 @@ void write(
                 beds_json.back()["wipe_tower"]["rotation_angle"] = bed_instance->wipe_tower.rotation;
             } else
                 beds_json.back()["wipe_tower"] = nullptr;
+
+            if (bed_instance->custom_gcode && !bed_instance->custom_gcode.value().gcodes.empty()) {
+                const Domain::CustomGCode::Info& custom_gcode = bed_instance->custom_gcode.value();
+                beds_json.back()["custom_gcode"]["mode"] = static_cast<int>(custom_gcode.mode);
+                std::vector<nlohmann::json> gcodes_json;
+                for (const Domain::CustomGCode::Item& gcode : custom_gcode.gcodes) {
+                    gcodes_json.emplace_back();
+                    gcodes_json.back()["gcode"]["type"] = static_cast<int>(gcode.type);
+                    gcodes_json.back()["gcode"]["print_z"] = gcode.print_z;
+                    gcodes_json.back()["gcode"]["extruder"] = gcode.extruder;
+                    gcodes_json.back()["gcode"]["color"] = gcode.color;
+                    gcodes_json.back()["gcode"]["extra"] = gcode.extra;
+                }
+                beds_json.back()["custom_gcode"]["gcodes"] = gcodes_json;
+            } else
+                beds_json.back()["custom_gcode"] = nullptr;
+
         }
         cc_json["beds"] = beds_json;
 
@@ -1482,12 +1500,52 @@ void load(
                 config_containers_data.back().config_pack = res.value().config;
         }
         if (config_container.contains("beds")) {
+            int bed_idx{ 0 };
             for (const nlohmann::ordered_json& bed : config_container["beds"]) {
                 double x = 0.;
                 double y = 0.;
                 from_json(bed, "position_x", x, collected_issues);
                 from_json(bed, "position_y", y, collected_issues);
                 config_containers_data.back().bed_offsets.emplace_back(x, y);
+
+                if (bed.contains("wipe_tower")) {
+                    const nlohmann::ordered_json& wipe_tower = bed.at("wipe_tower");
+                    double wt_x = 0.;
+                    double wt_y = 0.;
+                    double wt_rotation = 0.;
+                    from_json(wipe_tower, "x", wt_x, collected_issues);
+                    from_json(wipe_tower, "y", wt_y, collected_issues);
+                    from_json(wipe_tower, "rotation_angle", wt_rotation, collected_issues);
+                    Domain::ModelWipeTower wt;
+                    wt.position = Domain::Vec2d(wt_x, wt_y);
+                    wt.rotation = wt_rotation;
+                    config_containers_data.back().wipe_towers[bed_idx] = wt;
+                }
+
+                if (bed.contains("custom_gcode")) {
+                    const nlohmann::ordered_json& custom_gcode = bed.at("custom_gcode");
+                    Domain::CustomGCode::Info custom_gcode_info;
+                    size_t tmp_val;
+                    from_json(custom_gcode, "mode", tmp_val, collected_issues);
+                    custom_gcode_info.mode = static_cast<Domain::CustomGCode::Mode>(tmp_val);
+                    if (custom_gcode.contains("gcodes")) {
+                        for (const nlohmann::ordered_json& g : custom_gcode.at("gcodes")) {
+                            const nlohmann::ordered_json& gcode = g.at("gcode");
+                            Domain::CustomGCode::Item gcode_item;
+                            from_json(gcode, "type", tmp_val, collected_issues);
+                            gcode_item.type = static_cast<Domain::CustomGCode::Type>(tmp_val);
+                            from_json(gcode, "extruder", tmp_val, collected_issues);
+                            gcode_item.extruder = static_cast<int>(tmp_val);
+                            from_json(gcode, "print_z", gcode_item.print_z, collected_issues);
+                            from_json(gcode, "color", gcode_item.color, collected_issues);
+                            from_json(gcode, "extra", gcode_item.extra, collected_issues);
+
+                            custom_gcode_info.gcodes.emplace_back(gcode_item);
+                        }
+                    }
+                    config_containers_data.back().custom_gcodes[bed_idx] = custom_gcode_info;
+                }
+                bed_idx++;
             }
         }
     }    
