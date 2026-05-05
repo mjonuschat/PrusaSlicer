@@ -625,7 +625,7 @@ void DoubleSliderForLayers::register_commands(
 
 bool DoubleSliderForLayers::is_wipe_tower_layer(int tick) const
 {
-    if (!m_ticks.is_wipe_tower || tick >= (int) m_values.size())
+    if (!m_ticks.is_wipe_tower || tick >= (int) m_values.size() - 1)
         return false;
     if (tick == 0 || (tick == (int) m_values.size() - 1 && m_values[tick] > m_values[tick - 1]))
         return false;

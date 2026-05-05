@@ -83,23 +83,23 @@ private:
     bool render_wipe_tower_node(const Domain::BedInstance* bed);
     bool render_object_node(
         const Domain::ModelObject* object,
-        const std::vector<Domain::ColorRGB>& extruder_colors,
-        const Domain::BedInstance* bed = nullptr,
-        bool is_sla_config             = false
+        std::optional<size_t> config_container_id = std::nullopt,
+        const Domain::BedInstance* bed            = nullptr,
+        bool is_sla_config                        = false
     );
     bool render_connectors_node(const Domain::ModelObject* object, size_t bed_id);
     bool render_volumes(
         const Domain::ModelObject* object,
-        const std::vector<Domain::ColorRGB>& extruder_colors,
         size_t bed_id,
-        bool is_sla_config
+        bool is_sla_config,
+        std::optional<size_t> config_container_id
     );
     void render_volume_node(
         const Domain::ModelVolume* volume,
-        const std::vector<Domain::ColorRGB>& extruder_colors,
         const Domain::ElementRef& sel_element,
         bool is_selected,
-        bool is_sla_config
+        bool is_sla_config,
+        std::optional<size_t> config_container_id
     );
     bool render_instances_node(const Domain::ModelObject* object, const Domain::BedInstance* bed);
     bool
@@ -111,8 +111,9 @@ private:
     void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
     bool render_delete_button(const std::string& id);
     void render_extruder_marker(
-        const std::vector<Domain::ColorRGB>& colors,
-        std::optional<size_t> extruder_id = std::nullopt
+        std::optional<size_t> config_container_id,
+        const Domain::ModelObject* object = nullptr,
+        const Domain::ModelVolume* volume = nullptr
     );
     void render_slicing_state_marker(size_t bed_instance_id);
     void render_infos_selectable(

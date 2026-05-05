@@ -18,8 +18,8 @@ get_painting_extruders(const Domain::ModelObject& model_object, const unsigned i
             };
 
             assert(volume_used_facet_states.size() == used_facet_states.size());
-            for (size_t state_idx = 1; state_idx
-                 < std::min(volume_used_facet_states.size(), used_facet_states.size());
+            for (size_t state_idx = 1;
+                 state_idx < std::min(volume_used_facet_states.size(), used_facet_states.size());
                  ++state_idx)
             {
                 used_facet_states[state_idx] |= volume_used_facet_states[state_idx];
@@ -43,12 +43,17 @@ get_painting_extruders(const Domain::ModelObject& model_object, const unsigned i
 static std::set<unsigned> get_extra_support_extruders(
     const Domain::ObjectSettings& object_settings,
     const Domain::PrintSettings& print_settings
-) {
+)
+{
     const auto support_material{print_settings.items.opt("support_material").get<bool>()};
     const bool raft{print_settings.items.opt("raft_layers").get<int>() > 0};
 
-    std::optional<Domain::ConfigItem> object_support_material_opt{object_settings.overrides.get("support_material")};
-    const bool object_support_material{object_support_material_opt && (*object_support_material_opt).get<bool>()};
+    std::optional<Domain::ConfigItem> object_support_material_opt{
+        object_settings.overrides.get("support_material")
+    };
+    const bool object_support_material{
+        object_support_material_opt && (*object_support_material_opt).get<bool>()
+    };
     if (!support_material && !object_support_material && !raft) {
         return {};
     }
@@ -76,7 +81,7 @@ static std::set<unsigned> get_extra_support_extruders(
     return result;
 }
 
-static std::set<unsigned> get_extruder_candidates(
+std::set<unsigned> get_volume_extruder_candidates(
     const Domain::VolumeSettings& volume_settings,
     const Domain::ObjectSettings& object_settings,
     const Domain::PrintSettings& print_settings
@@ -95,16 +100,12 @@ static std::set<unsigned> get_extruder_candidates(
     for (const std::string& key :
          {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"})
     {
-        const std::optional<Domain::ConfigItem> volume_extruder{
-            volume_settings.overrides.get(key)
-        };
+        const std::optional<Domain::ConfigItem> volume_extruder{volume_settings.overrides.get(key)};
         if (volume_extruder && volume_extruder->get<int>() > 0) {
             result.insert(static_cast<unsigned>(volume_extruder->get<int>() - 1));
             continue;
         }
-        const std::optional<Domain::ConfigItem> object_extruder{
-            object_settings.overrides.get(key)
-        };
+        const std::optional<Domain::ConfigItem> object_extruder{object_settings.overrides.get(key)};
         if (object_extruder && object_extruder->get<int>() > 0) {
             result.insert(static_cast<unsigned>(object_extruder->get<int>() - 1));
             continue;
@@ -122,6 +123,44 @@ static std::set<unsigned> get_extruder_candidates(
     return result;
 }
 
+std::set<unsigned>
+get_object_extruder_candidates(const Domain::ModelObject& object, const Domain::ConfigPackFDM& config)
+{
+    const Domain::PrintSettings& print_settings{config.print};
+
+    std::set<unsigned> extruders;
+    const Domain::ObjectSettings& object_settings{object.object_settings};
+
+    for (const auto& pair : object.layer_config_ranges) {
+        const Domain::VolumeSettings& volume_settings{pair.second};
+        extruders.merge(get_volume_extruder_candidates(volume_settings, object_settings, print_settings));
+    }
+
+    for (const Domain::ModelVolume* volume : object.volumes) {
+        using Domain::ModelVolumeType::MODEL_PART;
+        using Domain::ModelVolumeType::PARAMETER_MODIFIER;
+        if (volume->type() != MODEL_PART && volume->type() != PARAMETER_MODIFIER) {
+            continue;
+        }
+        extruders.merge(
+            get_volume_extruder_candidates(volume->volume_settings, object.object_settings, config.print)
+        );
+    }
+    const std::vector<unsigned> painting_extruders{
+        get_painting_extruders(object, config.filament.size())
+    };
+    for (unsigned extruder : painting_extruders) {
+        extruders.insert(extruder - 1);
+    }
+
+    std::set<unsigned> support_extruders{
+        get_extra_support_extruders(object_settings, config.print)
+    };
+    extruders.merge(support_extruders);
+
+    return extruders;
+}
+
 std::vector<unsigned> get_extruder_candidates(
     const Domain::Model& model,
     const Domain::ConfigPackFDM& config,
@@ -129,7 +168,6 @@ std::vector<unsigned> get_extruder_candidates(
 )
 {
     ASSERT(config.tool.size() > 0);
-    const Domain::PrintSettings& print_settings{config.print};
     std::set<unsigned> extruders;
 
     if (bed.custom_gcode) {
@@ -142,36 +180,7 @@ std::vector<unsigned> get_extruder_candidates(
     }
 
     for (const Domain::ModelObject* object : model.objects) {
-        const Domain::ObjectSettings& object_settings{object->object_settings};
-
-        for (const auto& pair : object->layer_config_ranges) {
-            const Domain::VolumeSettings& volume_settings{pair.second};
-            extruders.merge(
-                get_extruder_candidates(volume_settings, object_settings, print_settings)
-            );
-        }
-
-        for (const Domain::ModelVolume* volume : object->volumes) {
-            using Domain::ModelVolumeType::MODEL_PART;
-            using Domain::ModelVolumeType::PARAMETER_MODIFIER;
-            if (volume->type() != MODEL_PART && volume->type() != PARAMETER_MODIFIER) {
-                continue;
-            }
-            extruders.merge(
-                get_extruder_candidates(volume->volume_settings, object_settings, print_settings)
-            );
-        }
-        const std::vector<unsigned> painting_extruders{
-            get_painting_extruders(*object, config.filament.size())
-        };
-        for (unsigned extruder : painting_extruders) {
-            extruders.insert(extruder - 1);
-        }
-
-        std::set<unsigned> support_extruders{
-            get_extra_support_extruders(object_settings, config.print)
-        };
-        extruders.merge(support_extruders);
+        extruders.merge(get_object_extruder_candidates(*object, config));
     }
 
     const bool can_have_wipe_tower{
