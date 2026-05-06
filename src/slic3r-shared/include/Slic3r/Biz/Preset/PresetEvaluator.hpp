@@ -4,8 +4,11 @@
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Biz/Expr/Eval.hpp"
+#include <boost/unordered/unordered_flat_map.hpp>
 
 namespace Slic3r::Biz::Preset {
+
+using EvalPresetValueMap = boost::unordered_flat_map<std::string, Domain::Preset::PresetValue>;
 
 class PresetCollectionEvaluator;
 
@@ -45,7 +48,7 @@ private:
             Domain::Preset::ConditionMatchMode::FirstMatch
         };
         std::vector<const std::string*> conditions;
-        Domain::Preset::PresetValueMap values;
+        EvalPresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;
         std::optional<std::string> user_file;

@@ -28,7 +28,8 @@ namespace Slic3r::Biz::Preset {
 namespace {
     using namespace Domain::Preset;
 
-    void override_preset_values(PresetValueMap& dest, const PresetValueMap& overrides)
+    template<typename DestMap, typename SrcMap>
+    void override_preset_values(DestMap& dest, const SrcMap& overrides)
     {
         for (const auto& [key, value] : overrides) {
             if (key.starts_with("custom_parameters_")) {

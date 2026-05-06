@@ -298,7 +298,7 @@ template <typename ConfigType>
     requires std::is_base_of_v<Domain::ConfigBox, ConfigType>
 ConfigType config_values(
     const Domain::Preset::HwPrinterConfig& hw_config,
-    const Domain::Preset::PresetValueMap& values
+    const EvalPresetValueMap& values
 )
 {
     // Constructing ConfigType from ConfigDefinitions iterates all definitions and is
@@ -350,7 +350,7 @@ ConfigType config_values(
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
     const Domain::Preset::HwPrinterConfig& hw_config,
-    const Domain::Preset::PresetValueMap& values
+    const EvalPresetValueMap& values
 )
 {
     if (hw_config.technology == Domain::PrinterTechnology::FFF) {
