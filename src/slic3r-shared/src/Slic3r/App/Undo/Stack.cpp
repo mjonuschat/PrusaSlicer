@@ -8,6 +8,7 @@
 #include "Slic3r/App/Undo/ObjectSelectionSerialize.hpp"
 #include "Slic3r/App/Undo/BedSelectionStateSerialize.hpp"
 #include "Slic3r/App/Undo/SerializedData.hpp"
+#include "Slic3r/App/Undo/ToolStateSerialize.hpp"
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -302,7 +303,7 @@ Stack::Stack(Stack&&) noexcept            = default;
 Stack& Stack::operator=(Stack&&) noexcept = default;
 Stack::~Stack()                           = default;
 
-constexpr std::size_t snapshot_data_count{5};
+constexpr std::size_t snapshot_data_count{6};
 
 // Returns the size of physical memory (RAM) in bytes.
 // http://nadeausoftware.com/articles/2012/09/c_c_tip_how_get_physical_memory_size_system
@@ -375,13 +376,13 @@ static size_t total_physical_memory()
 #endif
 }
 
-
 void Stack::take_snapshot(
     const Domain::Model& model,
     const Biz::Scene::ObjectSelection& object_selection,
     Scene::ToolType selected_tool_gizmo,
     const Domain::Project::ConfigContainerList& config_containers,
     const BedSelectionState& bed_selection_state,
+    const ToolsState& tools_state,
     Biz::UndoSnapshotType type
 )
 {
@@ -404,6 +405,7 @@ void Stack::take_snapshot(
     to_save.at(2) = SerializedData{{}, std::to_string(static_cast<int>(selected_tool_gizmo))};
     to_save.at(3) = serialize_config_container_list(config_containers);
     to_save.at(4) = serialize_bed_selection_state(bed_selection_state);
+    to_save.at(5) = serialize_tools_state(tools_state);
 
     m_stack->save_snapshot(to_save, type);
     m_one_past_selected_index++;
@@ -453,6 +455,7 @@ LoadedSnapshot Stack::load_and_select_snapshot(
         preset_interactor
     );
     result.bed_selection_state = load_serialized_bed_selection_state(to_load.at(4));
+    result.tools_state         = load_serialized_tools_state(to_load.at(5));
 
     const std::vector<Snapshot>& snapshots{m_stack->get_snapshots()};
     const auto it{std::ranges::find_if(

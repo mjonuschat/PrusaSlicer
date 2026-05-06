@@ -482,6 +482,30 @@ void HeightRangeGizmo::register_commands(Platform::CommandRegistry& registry)
         );
 }
 
+std::optional<Undo::ToolState> HeightRangeGizmo::get_tool_state() const
+{
+    return Undo::HeightRangeGizmoState{m_selected_layer_height_range};
+}
+
+void HeightRangeGizmo::set_tool_state(const Undo::ToolState& tool_state)
+{
+    ASSERT(std::holds_alternative<Undo::HeightRangeGizmoState>(tool_state));
+    const Undo::HeightRangeGizmoState& gizmo_state =
+        std::get<Undo::HeightRangeGizmoState>(tool_state);
+
+    if (!gizmo_state.selected_height_range.has_value()) {
+        if (m_selected_layer_height_range.has_value()) {
+            this->perform_height_range_deselection();
+        }
+
+        return;
+    }
+
+    const LayerHeightRange& height_range = gizmo_state.selected_height_range.value();
+    ASSERT(m_layer_config_ranges.find(height_range) != m_layer_config_ranges.end());
+    this->perform_height_range_selection(height_range);
+}
+
 void HeightRangeGizmo::hide_non_selected_volumes()
 {
     for (Node* node : m_non_selected_volumes_nodes) {
@@ -743,12 +767,11 @@ void HeightRangeGizmo::perform_height_range_addition()
     m_layer_config_ranges.try_emplace(new_height_range.value());
 
     this->apply_layer_config_ranges_to_model();
-    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeAdd);
     this->update_layer_height_profile();
     this->update_side_panel_layer_height_profile();
     this->update_side_panel_height_ranges();
-
     this->perform_height_range_selection(new_height_range.value());
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeAdd);
 }
 
 void HeightRangeGizmo::perform_height_range_deletion(const LayerHeightRange& range_to_delete)
@@ -822,14 +845,14 @@ void HeightRangeGizmo::perform_height_range_value_change(
         std::clamp(max_z.value_or(selected_range_it->first.second), 0., object_max_z)
     };
 
-    if (m_selected_layer_height_range.value() != new_range) {
-        VolumeSettings volume_settings = std::move(selected_range_it->second);
-        m_layer_config_ranges.erase(selected_range_it);
-        m_layer_config_ranges[new_range] = std::move(volume_settings);
+    if (m_selected_layer_height_range.value() == new_range) {
+        return;
     }
 
-    m_layer_config_ranges[new_range];
-    m_selected_layer_height_range = new_range;
+    VolumeSettings volume_settings = std::move(selected_range_it->second);
+    m_layer_config_ranges.erase(selected_range_it);
+    m_layer_config_ranges[new_range] = std::move(volume_settings);
+    m_selected_layer_height_range    = new_range;
 
     this->apply_layer_config_ranges_to_model();
     m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::HeightRangeValueChange);

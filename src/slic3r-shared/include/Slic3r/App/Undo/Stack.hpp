@@ -3,13 +3,14 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Undo/BedSelectionState.hpp"
 #include "Slic3r/App/Undo/ChannelId.hpp"
+#include "Slic3r/App/Undo/ToolState.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Biz::Preset {
-    class PresetInteractor;
-}
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App::Undo {
 
@@ -41,6 +42,7 @@ struct LoadedSnapshot
     Scene::ToolType selected_tool_gizmo;
     Domain::Project::ConfigContainerList config_containers;
     BedSelectionState bed_selection_state;
+    ToolsState tools_state;
 };
 
 class Stack
@@ -57,6 +59,7 @@ public:
         Scene::ToolType selected_tool_gizmo,
         const Domain::Project::ConfigContainerList& config_containers,
         const BedSelectionState& bed_selection_state,
+        const ToolsState& tools_state,
         Biz::UndoSnapshotType type
     );
 

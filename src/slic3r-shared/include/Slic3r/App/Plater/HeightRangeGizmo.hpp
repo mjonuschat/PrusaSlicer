@@ -86,6 +86,9 @@ public:
     void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
     void register_commands(Platform::CommandRegistry& registry) override;
 
+    std::optional<App::Undo::ToolState> get_tool_state() const override;
+    void set_tool_state(const App::Undo::ToolState& state) override;
+
 private:
     struct ConfigBoxSetterImpl;
 

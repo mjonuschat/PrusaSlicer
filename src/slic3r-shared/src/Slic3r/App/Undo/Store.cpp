@@ -291,6 +291,7 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
     m_scene_interactor.update_selection_bounding_box();
 
     ASSERT_VAL(m_gizmo_controller)->activate_tool(loaded_snapshot.selected_tool_gizmo);
+    m_gizmo_controller->set_tools_state(loaded_snapshot.tools_state);
 
     update_top_bar(project_id, it->second);
 }
@@ -314,12 +315,17 @@ void Store::take_snapshot(Biz::UndoSnapshotType snapshot_type)
                              Scene::ToolType::None,
     };
 
+    const ToolsState tools_state{
+        m_gizmo_controller ? m_gizmo_controller->tools_state() : ToolsState{},
+    };
+
     it->second.take_snapshot(
         project.model(),
         m_scene_interactor.object_selection(project_id),
         tool_type,
         project.config_containers(),
         BedSelectionState{*m_scene_interactor.bed_selection(project_id)},
+        tools_state,
         snapshot_type
     );
 

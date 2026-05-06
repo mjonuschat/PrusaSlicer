@@ -1103,6 +1103,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Undo/BedSelectionState.cpp
         include/Slic3r/App/Undo/Stack.hpp
         src/Slic3r/App/Undo/Stack.cpp
+		include/Slic3r/App/Undo/ToolState.hpp
 
         src/Slic3r/App/Undo/ModelSerialize.hpp
         src/Slic3r/App/Undo/ModelSerialize.cpp
@@ -1112,6 +1113,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Undo/ConfigContainerListSerialize.cpp
         src/Slic3r/App/Undo/BedSelectionStateSerialize.hpp
         src/Slic3r/App/Undo/BedSelectionStateSerialize.cpp
+		src/Slic3r/App/Undo/ToolStateSerialize.hpp
+		src/Slic3r/App/Undo/ToolStateSerialize.cpp
 )
 
 if (WIN32)
