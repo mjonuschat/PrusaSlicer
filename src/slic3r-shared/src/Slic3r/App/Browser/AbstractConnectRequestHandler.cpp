@@ -111,13 +111,14 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_actio
         AppServices::instance().app_config().get<Theme::Style>("theme") == Theme::Style::Light ?
         "LIGHT" :
         "DARK";
-    std::string language = "en"; // GUI::wxGetApp().current_language_code();
-    // language = language.SubString(0, 1);
+    std::string lang_app_conf =
+        AppServices::instance().app_config().get<std::string>("translation_language");
+
     const std::string init_options = format(
         "{\"accessToken\": \"%4%\",\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}",
         /*SLIC3R_VERSION*/ "2.9.2",
         theme,
-        language,
+        lang_app_conf,
         m_project_interactor.user_account_interactor().access_token()
     );
     std::string script = format("window._prusaConnect_v2.init(%1%)", init_options);

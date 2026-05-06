@@ -597,15 +597,16 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
         AppServices::instance().app_config().get<Theme::Style>("theme") == Theme::Style::Light ?
         "light" :
         "dark";
-    std::string language = "en"; // GUI::wxGetApp().current_language_code();
-    if (language.size() > 2)
-        language = language.substr(0, 2);
+    std::string lang_app_conf =
+        AppServices::instance().app_config().get<std::string>("translation_language");
+    if (lang_app_conf.size() > 2)
+        lang_app_conf = lang_app_conf.substr(0, 2);
 
     // Replace lang and theme if already in url
     bool lang_found = false;
     std::regex lang_regex(R"((lang=)[^&#]*)");
     if (std::regex_search(url_string, lang_regex)) {
-        url_string = std::regex_replace(url_string, lang_regex, "$1" + language);
+        url_string = std::regex_replace(url_string, lang_regex, "$1" + lang_app_conf);
         lang_found = true;
     }
     bool theme_found = false;
@@ -621,8 +622,8 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
     std::string new_params = lang_found ?
         "theme=" + theme :
         theme_found ?
-        "lang=" + language :
-        "lang=" + language + "&theme=" + theme;
+        "lang=" + lang_app_conf :
+        "lang=" + lang_app_conf + "&theme=" + theme;
 
     // Regex to capture query and optional fragment
     std::regex query_regex(R"((\?.*?)(#.*)?$)");
