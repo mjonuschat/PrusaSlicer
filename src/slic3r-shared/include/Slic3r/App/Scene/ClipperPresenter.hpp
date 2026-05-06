@@ -95,8 +95,8 @@ private:
     Scene* m_scene{nullptr};
     Render::Device* m_device{nullptr};
 
-    ModelGeometryManager m_model_geometry_manager;
-    ModelTriangleMeshManager m_model_triangle_mesh_manager;
+    ModelGeometryManager m_model_geometry_manager{"clipper_presenter_geometry_manager"};
+    ModelTriangleMeshManager m_model_triangle_mesh_manager{"clipper_presenter_geometry_manager"};
 
     std::vector<MeshClipperContourId> m_ignored_ids;
 

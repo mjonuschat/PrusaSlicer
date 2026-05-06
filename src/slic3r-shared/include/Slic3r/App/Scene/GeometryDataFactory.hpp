@@ -33,7 +33,11 @@ public:
     using MeshManager = TriangleMeshManager<GeometryDataId>;
     using GeometryManager = Render::GeometryManager<GeometryDataId>;
 
-    explicit GeometryDataFactory(Render::Device& device) : m_device(device) {}
+    explicit GeometryDataFactory(Render::Device& device, std::string debug_name) :
+        m_device{device},
+        m_triangle_mesh_manager{debug_name + "_mesh"},
+        m_geometry_manager{debug_name + "_geometry"}
+    {}
 
     /**
      * @brief Get or create a triangle mesh.

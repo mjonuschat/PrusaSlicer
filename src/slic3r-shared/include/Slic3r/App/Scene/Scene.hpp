@@ -384,8 +384,8 @@ private:
     Camera m_camera;
     CameraTrackballController m_camera_trackball;
     NodeIdLookUp m_nodes_by_id;
-    Render::GeometryManager<std::string> m_geometry_manager;
-    TriangleMeshManager<std::string> m_trimesh_manager;
+    Render::GeometryManager<std::string> m_geometry_manager{"scene_geometry"};
+    TriangleMeshManager<std::string> m_trimesh_manager{"scene_mesh"};
 
     Lighting m_lighting;
     bool m_background_enabled{true};

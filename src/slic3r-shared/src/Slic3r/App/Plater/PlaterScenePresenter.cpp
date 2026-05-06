@@ -112,7 +112,7 @@ PlaterScenePresenter::PlaterScenePresenter(
     m_device(device),
     m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor()),
     m_animation_manager(animation_manager),
-    m_data_factory(device)
+    m_data_factory(device, "plater_scene_presenter")
 {
     load_selected_project();
 
@@ -619,7 +619,8 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(m_selected_project_id);
-        std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider = std::make_shared<Scene::ModelGeometryProvider>();
+        std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider =
+            std::make_shared<Scene::ModelGeometryProvider>("plater");
         project_context().set_model_geometry_provider(shared_model_geometry_provider);
         // a new camera has been created, add the camera update listeners
         auto& camera = project_context().scene().camera();
@@ -654,6 +655,7 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId
     if (selection.camera_action_on_selection() == Biz::Scene::CameraActionOnBedSelection::CenterOnBed)
         center_camera_on_selected_bed(true);
 }
+
 
 void PlaterScenePresenter::build_volume_node(
     Scene::NodeBuilder& builder,
@@ -701,6 +703,34 @@ void PlaterScenePresenter::build_volume_node(
         // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
         // and for sla printers it should be set in dependence of the resin type
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
+}
+
+void
+PlaterScenePresenter::clear_orphan_volumes_from_managers(Domain::SelectionId project_id)
+{
+    auto& ctx         = m_projects[project_id];
+    auto& geom_mgr    = ctx.model_geometry_manager();
+    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
+
+    std::set<size_t> volume_ids;
+    visit(
+        ctx.scene().root(),
+        [&volume_ids](const Scene::Node& node)
+        {
+            if (const auto* tag{node.tag_of_type<SceneNodeTag>()};
+                tag != nullptr && tag->volume_id != 0)
+            {
+                volume_ids.insert(tag->volume_id);
+            }
+        },
+        false
+    );
+
+    const auto predicate = [&](Scene::AuxiliaryElementId id, const auto&)
+    { return id.type == Scene::AuxiliaryElementId::Type::Volume && !volume_ids.contains(id.id); };
+
+    trimesh_mgr.release_if(predicate);
+    geom_mgr.release_if(predicate);
 }
 
 const double wipe_tower_brim_height{0.2};
@@ -1101,6 +1131,7 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
         { return tag.object_id == el.object_id && tag.instance_id == el.instance_id; }
     );
 
+    clear_orphan_volumes_from_managers(project_id);
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), instances);
 }
@@ -1195,6 +1226,7 @@ void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, con
         }
     );
 
+    clear_orphan_volumes_from_managers(project_id);
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), volumes);
 }

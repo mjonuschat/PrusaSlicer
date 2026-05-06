@@ -29,6 +29,11 @@ public:
         return m_shared_triangles ? m_shared_triangles->its : m_triangles;
     }
 
+    std::size_t memsize() const
+    {
+        return triangles().memsize() + m_aabb_mesh->memsize();
+    }
+
 private:
     // Note: we may merge m_triangles and m_shared_triangles into single field,
     // but this will require using Slic3r::TriangleMesh for both cases

@@ -290,10 +290,10 @@ private:
     using ProjectContextsPtr = std::unique_ptr<ProjectContexts>;
     ProjectContextsPtr m_project_contexts;
 
-    ModelGeometryManager m_model_geometry_manager;
-    ModelTriangleMeshManager m_model_triangle_mesh_manager;
-    ConnectorGeometryManager m_connector_geometry_manager;
-    ConnectorTriangleMeshManager m_connector_triangle_mesh_manager;
+    ModelGeometryManager m_model_geometry_manager{"cut_gizmo_geometry"};
+    ModelTriangleMeshManager m_model_triangle_mesh_manager{"cut_gizmo_mesh"};
+    ConnectorGeometryManager m_connector_geometry_manager{"cut_gizmo_connector_geometry"};
+    ConnectorTriangleMeshManager m_connector_triangle_mesh_manager{"cut_gizmo_connector_mesh"};
 
     Scene::Node* m_main_node{nullptr};
     Scene::Node* m_handles_node{nullptr};

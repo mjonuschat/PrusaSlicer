@@ -261,6 +261,8 @@ private:
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
         std::optional<Domain::ColorRGBA> color = std::nullopt);
 
+    void clear_orphan_volumes_from_managers(Domain::SelectionId project_id);
+
     void build_unknown_wipe_tower_node(
         Scene::NodeBuilder& builder,
         const Biz::Print::WipeTowerGeometry& wipe_tower,

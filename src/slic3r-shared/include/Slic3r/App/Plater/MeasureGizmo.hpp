@@ -192,8 +192,8 @@ private:
         Scene::Node* main_node{nullptr};
         Scene::Node* features_node{nullptr};
         DimensioningNodes dimensioning_nodes;
-        GeometryManager geometry_manager;
-        TriangleMeshManager triangle_mesh_manager;
+        GeometryManager geometry_manager{"measure_gizmo_geometry"};
+        TriangleMeshManager triangle_mesh_manager{"measure_gizmo_mesh"};
         Measure::SceneSelectionCache scene_selection_cache;
         Measure::FeatureCache feature_cache;
     };

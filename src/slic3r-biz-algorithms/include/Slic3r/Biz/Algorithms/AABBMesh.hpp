@@ -144,6 +144,8 @@ public:
 
     const VertexFaceIndex &vertex_face_index() const { return m_vfidx; }
     const std::vector<Domain::Index3> &face_neighbor_index() const { return m_fnidx; }
+
+    std::size_t memsize() const;
 };
 
 

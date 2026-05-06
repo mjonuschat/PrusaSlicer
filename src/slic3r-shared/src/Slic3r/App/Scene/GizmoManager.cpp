@@ -39,7 +39,7 @@ GizmoManager::GizmoManager(
     m_projects(project_interactor),
     m_scene_provider(scene_provider),
     m_project_interactor(project_interactor),
-    m_data_factory(device),
+    m_data_factory(device, "gizmo_manager"),
     m_mouse_drag_detector(std::move(mouse_drag_detector)),
     m_command_registry(*this)
 {

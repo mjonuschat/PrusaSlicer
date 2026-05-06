@@ -121,6 +121,10 @@ public:
         this->build(std::move(copy));
 	}
 
+    std::size_t memsize() const {
+        return m_nodes.capacity() * sizeof(Node);
+    }
+
 private:
 	// Build a balanced tree by splitting the input sequence by an axis aligned plane at a dimension.
 	template<typename SourceNode>

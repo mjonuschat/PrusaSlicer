@@ -42,7 +42,10 @@ using Slic3r::Domain::Vec2f;
 
 namespace Slic3r::App::libvgcode {
 
-SlaViewer::SlaViewer() {}
+SlaViewer::SlaViewer() :
+    m_model_geometry_manager{"sla_viewer_geometry"},
+    m_model_triangle_mesh_manager{"sla_viewer_mesh"}
+{}
 
 void SlaViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {

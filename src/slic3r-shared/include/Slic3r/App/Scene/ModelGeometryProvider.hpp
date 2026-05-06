@@ -8,7 +8,12 @@ namespace Slic3r::App::Scene {
 
 struct ModelGeometryProvider
 {
-    using GeometryManager = Render::GeometryManager<AuxiliaryElementId>;
+    ModelGeometryProvider(std::string name) :
+        geometry_manager{name + "_geometry"},
+        triangle_mesh_manager{name + "_mesh"}
+    {}
+
+    using GeometryManager     = Render::GeometryManager<AuxiliaryElementId>;
     using TriangleMeshManager = App::Scene::TriangleMeshManager<AuxiliaryElementId>;
 
     GeometryManager geometry_manager;

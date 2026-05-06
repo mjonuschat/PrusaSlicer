@@ -84,6 +84,10 @@ public:
         closest = closest_vec3d;
         return dist;
     }
+
+    std::size_t memsize() const {
+        return m_tree.memsize();
+    }
 };
 
 template<class M> void AABBMesh::init(const M &mesh, bool calculate_epsilon)
@@ -172,6 +176,11 @@ Vec3d AABBMesh::normal_by_face_id(int face_id) const {
     return TriMesh::its_unnormalized_normal(*m_tm, face_id).cast<double>().normalized();
 }
 
+std::size_t AABBMesh::memsize() const {
+    return m_aabb->memsize() +
+    m_vfidx.memsize() +
+    m_fnidx.capacity() * sizeof(Domain::Index3);
+}
 
 AABBMesh::hit_result
 AABBMesh::query_ray_hit(const Vec3d &s, const Vec3d &dir) const

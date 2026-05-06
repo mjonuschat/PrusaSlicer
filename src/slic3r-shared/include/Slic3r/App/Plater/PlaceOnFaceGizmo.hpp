@@ -87,8 +87,8 @@ private:
     std::array<Domain::Vec3d, 2> plane_to_world_coordinates(size_t plane_id) const;
     std::array<Domain::Vec3d, 2> plane_to_world_coordinates(const Domain::Vec3d& direction, const Domain::Vec3d& point) const;
 
-    ModelGeometryManager m_model_geometry_manager;
-    ModelTriangleMeshManager m_model_triangle_mesh_manager;
+    ModelGeometryManager m_model_geometry_manager{"place_on_face_geometry"};
+    ModelTriangleMeshManager m_model_triangle_mesh_manager{"place_on_face_mesh"};
 
     Scene::Node* m_main_node{nullptr};
     bool m_is_active{false};

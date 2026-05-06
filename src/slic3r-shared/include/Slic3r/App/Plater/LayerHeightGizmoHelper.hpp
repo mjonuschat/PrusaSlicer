@@ -284,8 +284,8 @@ private:
     using PlaneGeometryManager     = Render::GeometryManager<HeightRangePlaneNodeTag::PlaneType>;
     using PlaneTriangleMeshManager = Scene::TriangleMeshManager<HeightRangePlaneNodeTag::PlaneType>;
 
-    PlaneGeometryManager m_geometry_manager;
-    PlaneTriangleMeshManager m_triangle_mesh_manager;
+    PlaneGeometryManager m_geometry_manager{"height_range_planes_wrapper_geometry"};
+    PlaneTriangleMeshManager m_triangle_mesh_manager{"height_range_planes_wrapper_mesh"};
 
     Scene::Node* m_main_node      = nullptr;
     Scene::Node* m_min_plane_node = nullptr;

@@ -37,7 +37,7 @@ public:
     bool is_empty() const { return m_model_geometry_manager.is_empty(); }
 
 private:
-    ModelGeometryManager m_model_geometry_manager;
+    ModelGeometryManager m_model_geometry_manager{"sinking_contours"};
     Domain::ElementRefs m_selection;
     bool m_highlight_enabled{ true };
 };

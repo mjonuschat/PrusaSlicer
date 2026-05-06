@@ -131,6 +131,13 @@ public:
         return {begin(vertex_id), end(vertex_id)};
     }
 
+    std::size_t memsize() const {
+        std::size_t result{};
+        result += m_vertex_to_face_start.capacity() * sizeof(std::size_t);
+        result += m_vertex_faces_all.capacity() * sizeof(std::size_t);
+        return result;
+    }
+
 private:
     std::vector<size_t> m_vertex_to_face_start;
     std::vector<size_t> m_vertex_faces_all;
