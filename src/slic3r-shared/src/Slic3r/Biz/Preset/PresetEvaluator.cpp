@@ -301,7 +301,11 @@ ConfigType config_values(
     const Domain::Preset::PresetValueMap& values
 )
 {
-    ConfigType config;
+    // Constructing ConfigType from ConfigDefinitions iterates all definitions and is
+    // expensive. Use a prototype constructed once per type; cloning it is a cheap
+    // vector copy that avoids the definition scan on every preset.
+    static const ConfigType s_proto;
+    ConfigType config = s_proto;
     for (const auto& [k, v] : values) {
         const auto q = config.find(k);
         if (q.item == nullptr) {
