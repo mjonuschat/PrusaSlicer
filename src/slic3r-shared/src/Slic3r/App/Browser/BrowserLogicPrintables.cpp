@@ -1,6 +1,8 @@
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
 
 #include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/AppConfig.hpp>
+#include <Slic3r/App/Theme.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicPrintablesToConnect.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
@@ -588,9 +590,14 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
     // 3) url has query with just one of lang or theme -> query is modified and missing value is added
     // 4) url has query of query and fragment without lang and theme -> query with lang and theme is added to the end of query
 
+    
+
     std::string url_string = url;
-    std::string theme      = "dark"; // wxGetApp().dark_mode() ? "dark" : "light";
-    std::string language   = "en"; // GUI::wxGetApp().current_language_code();
+    std::string theme =
+        AppServices::instance().app_config().get<Theme::Style>("theme") == Theme::Style::Light ?
+        "light" :
+        "dark";
+    std::string language = "en"; // GUI::wxGetApp().current_language_code();
     if (language.size() > 2)
         language = language.substr(0, 2);
 

@@ -1,5 +1,8 @@
 #include "Slic3r/App/Browser/AbstractConnectRequestHandler.hpp"
 
+#include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/AppConfig.hpp>
+#include <Slic3r/App/Theme.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
@@ -104,12 +107,21 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_actio
         return {};
     }
 
-    const std::string dark_mode = "DARK";//wxGetApp().dark_mode() ? "DARK" : "LIGHT";
-    std::string language = "en";//GUI::wxGetApp().current_language_code();
-    //language = language.SubString(0, 1);
-    const std::string init_options = format("{\"accessToken\": \"%4%\",\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}", /*SLIC3R_VERSION*/ "2.9.2", dark_mode, language, m_project_interactor.user_account_interactor().access_token());  
+    const std::string theme =
+        AppServices::instance().app_config().get<Theme::Style>("theme") == Theme::Style::Light ?
+        "LIGHT" :
+        "DARK";
+    std::string language = "en"; // GUI::wxGetApp().current_language_code();
+    // language = language.SubString(0, 1);
+    const std::string init_options = format(
+        "{\"accessToken\": \"%4%\",\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}",
+        /*SLIC3R_VERSION*/ "2.9.2",
+        theme,
+        language,
+        m_project_interactor.user_account_interactor().access_token()
+    );
     std::string script = format("window._prusaConnect_v2.init(%1%)", init_options);
-    return {{BrowserLogicCommandType::RunScript, script}};    
+    return {{BrowserLogicCommandType::RunScript, script}};
 }
 std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::on_connect_action_request_open_in_browser(const std::string& message_data) 
 {
