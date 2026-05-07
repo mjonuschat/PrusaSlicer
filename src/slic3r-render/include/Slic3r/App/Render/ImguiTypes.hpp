@@ -259,6 +259,7 @@ enum class Icon : wchar_t
     EditGCodeHovered     = 0xE025,
     RemoveTick           = 0xE026,
     RemoveTickHovered    = 0xE027,
+    PhysicalPrinterIcon  = 0xE028,
 };
 
 } // namespace Slic3r::App::Render

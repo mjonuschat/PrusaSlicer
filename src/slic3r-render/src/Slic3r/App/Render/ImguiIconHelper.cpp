@@ -66,6 +66,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::EditGCodeHovered, "edit_gcode_f"},
     {Icon::RemoveTick, "colorchange_del"},
     {Icon::RemoveTickHovered, "colorchange_del_f"},
+    {Icon::PhysicalPrinterIcon, "printer_physical"},
     // sidebar icons
     {Icon::SavePrint, "save_print"},
     {Icon::SavePrintToFlash, "save_print_to_flash"},

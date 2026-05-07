@@ -52,7 +52,7 @@ PhysicalPrinterConfig connect_upload_generic()
     return {
         ConnectUpload{},
         {},
-        _u8L("Connect"),
+        _u8L("Prusa Connect"),
         boost::uuids::to_string(boost::uuids::random_generator()()),
     };
 }

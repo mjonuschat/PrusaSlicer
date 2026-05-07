@@ -86,7 +86,7 @@ void PhysicalPrinterSettingsButton::update()
                 set_visible_cog(false);
                 set_visible_bin(false);
             } else if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::PrinterUpload>) {
-                set_icon(Render::Icon::PrinterIconMarker);
+                set_icon(Render::Icon::PhysicalPrinterIcon);
                 set_visible_cog(true);
                 set_visible_bin(true);
             } else if constexpr (
