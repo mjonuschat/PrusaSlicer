@@ -55,6 +55,38 @@ TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Object] heartbeat")
     REQUIRE(object2_heartbeat.expired());
 }
 
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Object] children order and access")
+{
+    RootItem item;
+
+    Object* a = item.emplace_back<Object>();
+    Object* b = item.emplace_back<Object>();
+    Object* c = item.emplace_back<Object>();
+
+    std::vector<Object*> children = item.objects();
+    REQUIRE(children.size() == 3);
+    REQUIRE(children[0] == a);
+    REQUIRE(children[1] == b);
+    REQUIRE(children[2] == c);
+
+    REQUIRE(item.get_object(0) == a);
+    REQUIRE(item.get_object(1) == b);
+    REQUIRE(item.get_object(2) == c);
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Object] index_of")
+{
+    RootItem item;
+
+    Object* a = item.emplace_back<Object>();
+    Object* b = item.emplace_back<Object>();
+    Object stranger;
+
+    REQUIRE(item.index_of(a) == std::optional<size_t>(0));
+    REQUIRE(item.index_of(b) == std::optional<size_t>(1));
+    REQUIRE(item.index_of(&stranger) == std::nullopt);
+}
+
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Object] object count")
 {
     RootItem item;

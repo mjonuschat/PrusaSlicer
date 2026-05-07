@@ -1346,12 +1346,16 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Yoga/LayoutTests.cpp
         test/Slic3r/App/Yoga/ItemTreeTests.cpp
         test/Slic3r/App/Yoga/ImGuiFixture.hpp
+        test/Slic3r/App/Yoga/YogaComponentFixture.hpp
         test/Slic3r/App/Yoga/ButtonGroupTests.cpp
+        test/Slic3r/App/Yoga/AbstractButtonTests.cpp
+        test/Slic3r/App/Yoga/InputTextTests.cpp
         test/Slic3r/App/Yoga/ValidatorTests.cpp
         test/Slic3r/App/Yoga/TestRootItem.hpp
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
         test/Slic3r/App/Yoga/SplitLayoutTests.cpp
         test/Slic3r/App/Yoga/ObjectTests.cpp
+        test/Slic3r/App/Yoga/EventTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/ExportGcodeTests.cpp
@@ -1359,6 +1363,8 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/Scene/VirtualBedPreviewTests.cpp
         test/Slic3r/Biz/WeakerPointerTests.cpp
         test/Slic3r/Biz/ObservableListSortFilterTests.cpp
+        test/Slic3r/Biz/ObservableListTransformerTests.cpp
+        test/Slic3r/Biz/ObservableListSearcherTests.cpp
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp

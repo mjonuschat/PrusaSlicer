@@ -96,6 +96,10 @@ unsigned int LoopEvents::process_events()
 
 void MoveEvent::affected(const ChangeList& change_list)
 {
+    if (!is_valid()) {
+        return;
+    }
+
     for (const Change& change : change_list) {
         if (!m_item->parent() || change.parent != m_item->parent()) {
             return;
@@ -108,7 +112,7 @@ void MoveEvent::affected(const ChangeList& change_list)
             }
             break;
         case Change::AffectedResult::Removed:
-            if (m_new_index < change.new_index) {
+            if (m_new_index > change.new_index) {
                 m_new_index--;
             }
             break;

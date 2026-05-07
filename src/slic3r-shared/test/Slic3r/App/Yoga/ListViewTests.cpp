@@ -43,10 +43,8 @@ public:
         return m_state->foo;
     }
 
-    bool updated() const
-    {
-        return m_updated;
-    }
+    bool updated() const { return m_updated; }
+    size_t index() const { return m_index; }
 
     static size_t constructed;
 
@@ -444,6 +442,73 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView reset reuse, remove")
         tree.process_loop_events();
 
         REQUIRE(list.size() == 3);
+        compare_list_view(list, view);
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::append")
+{
+    Slic3r::Biz::ObservableList<DummyState> list;
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+        view->set_source_list(&list);
+
+        list.append({1});
+        list.append({2});
+        list.append({3});
+
+        REQUIRE(view->object_count() == 3);
+        compare_list_view(list, view);
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView switch source list")
+{
+    Slic3r::Biz::ObservableList<DummyState> list1;
+    Slic3r::Biz::ObservableList<DummyState> list2;
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+
+        list1.reset({{1}, {2}, {3}});
+        view->set_source_list(&list1);
+        REQUIRE(view->object_count() == 3);
+        compare_list_view(list1, view);
+
+        list2.reset({{4}, {5}});
+        view->set_source_list(&list2);
+        tree.process_loop_events();
+
+        REQUIRE(view->object_count() == 2);
+        compare_list_view(list2, view);
+
+        list1.append({6});
+        REQUIRE(view->object_count() == 2);
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView index correctness after insert at middle")
+{
+    Slic3r::Biz::ObservableList<DummyState> list;
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+        view->set_source_list(&list);
+
+        list.reset({{1}, {2}, {3}});
+        list.insert({9}, 1);
+
+        REQUIRE(view->object_count() == 4);
+        for (size_t i = 0; i < view->object_count(); ++i) {
+            REQUIRE(dynamic_cast<DummyItem*>(view->get_item(i))->index() == i);
+        }
         compare_list_view(list, view);
     }
 }
