@@ -80,7 +80,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_show_webview_event(b
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_loaded_webview_event(const std::string& url)
 {
     //SPDLOG_INFO("{} {}", __FUNCTION__, url);
-    std::vector<BrowserLogicCommand> result;
+std::vector<BrowserLogicCommand> result;
     if (url.find("/web/" + m_loading_html) != std::string::npos && m_load_default_url) {
         m_load_default_url = false;
         emplace_load_default_url_commands(result);
@@ -91,6 +91,11 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_loaded_webview_event
         emplace_define_css_commands(result);
     } else {
         m_styles_defined = false;
+    }
+
+    if (m_refreshing_token) {
+        result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
+        m_refreshing_token = false;
     }
 
     result.emplace_back(BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse, std::string());
@@ -147,7 +152,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_secret_to
 {    
     std::vector<BrowserLogicCommand> result;
     result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
-    
+    m_refreshing_token = false; 
+
     std::string token;
     try {
         nlohmann::json j = nlohmann::json::parse(body);
@@ -455,91 +461,93 @@ void BrowserLogicPrintables::emplace_define_css_commands(std::vector<BrowserLogi
 
     std::string script = R"(
         // Loading overlay and Notification style
-        var style = document.createElement('style');
-        style.innerHTML = `
-        body {}
-        .slic3r-loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(127 127 127 / 50%);
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        if (!document.getElementById('slic3r-custom-css')) {
+            var style = document.createElement('style');
+            style.id = 'slic3r-custom-css';
+            style.innerHTML = `
+            body {}
+            .slic3r-loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(127 127 127 / 50%);
+                z-index: 50;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .slic3r-loading-anim {
+                width: 60px;
+                aspect-ratio: 4;
+                --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+                background:
+                        var(--_g) 0%   50%,
+                        var(--_g) 50%  50%,
+                        var(--_g) 100% 50%;
+                background-size: calc(100%/3) 100%;
+                animation: slic3r-loading-anim 1s infinite linear;
+            }
+            @keyframes slic3r-loading-anim {
+                33%{background-size:calc(100%/3) 0%  ,calc(100%/3) 100%,calc(100%/3) 100%}
+                50%{background-size:calc(100%/3) 100%,calc(100%/3) 0%  ,calc(100%/3) 100%}
+                66%{background-size:calc(100%/3) 100%,calc(100%/3) 100%,calc(100%/3) 0%  }
+            }
+            .notification-popup {
+                position: fixed;
+                right: 10px;
+                bottom: 10px;
+                background-color: #333333; /* Dark background */
+                padding: 10px;
+                border-radius: 6px; /* Slightly rounded corners */
+                color: #ffffff; /* White text */
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* Add a subtle shadow */
+                min-width: 350px; 
+                max-width: 350px;
+                min-height: 50px;
+            }
+            .notification-popup div {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                padding-right: 20px; /* Add padding to make text truncate earlier */
+            }
+            .notification-popup b {
+                color: #ffa500;
+            }
+            .notification-popup a:hover {
+                text-decoration: underline; /* Underline on hover */
+            }
+            .notification-popup .close-button {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 2px solid #ffa500; /* Orange border for the button */
+                border-radius: 4px;
+                text-align: center;
+                font-size: 16px;
+                line-height: 16px;
+                cursor: pointer;
+                padding-top: 1px; 
+            }
+            .notification-popup .close-button:hover {
+                background-color: #ffa500; /* Orange background on hover */
+                color: #333333; /* Dark color for the "X" on hover */
+            }
+            .notification-popup .close-button:before {
+                content: 'X';
+                color: #ffa500; /* Orange "X" */
+                font-weight: bold;
+            }
+            `;
+            document.head.appendChild(style); 
         }
-        .slic3r-loading-anim {
-            width: 60px;
-            aspect-ratio: 4;
-            --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
-            background:
-                    var(--_g) 0%   50%,
-                    var(--_g) 50%  50%,
-                    var(--_g) 100% 50%;
-            background-size: calc(100%/3) 100%;
-            animation: slic3r-loading-anim 1s infinite linear;
-        }
-        @keyframes slic3r-loading-anim {
-            33%{background-size:calc(100%/3) 0%  ,calc(100%/3) 100%,calc(100%/3) 100%}
-            50%{background-size:calc(100%/3) 100%,calc(100%/3) 0%  ,calc(100%/3) 100%}
-            66%{background-size:calc(100%/3) 100%,calc(100%/3) 100%,calc(100%/3) 0%  }
-        }
-        .notification-popup {
-            position: fixed;
-            right: 10px;
-            bottom: 10px;
-            background-color: #333333; /* Dark background */
-            padding: 10px;
-            border-radius: 6px; /* Slightly rounded corners */
-            color: #ffffff; /* White text */
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* Add a subtle shadow */
-            min-width: 350px; 
-            max-width: 350px;
-            min-height: 50px;
-        }
-        .notification-popup div {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: 20px; /* Add padding to make text truncate earlier */
-        }
-        .notification-popup b {
-            color: #ffa500;
-        }
-        .notification-popup a:hover {
-            text-decoration: underline; /* Underline on hover */
-        }
-        .notification-popup .close-button {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ffa500; /* Orange border for the button */
-            border-radius: 4px;
-            text-align: center;
-            font-size: 16px;
-            line-height: 16px;
-            cursor: pointer;
-            padding-top: 1px; 
-        }
-        .notification-popup .close-button:hover {
-            background-color: #ffa500; /* Orange background on hover */
-            color: #333333; /* Dark color for the "X" on hover */
-        }
-        .notification-popup .close-button:before {
-            content: 'X';
-            color: #ffa500; /* Orange "X" */
-            font-weight: bold;
-        }
-        `;
-        document.head.appendChild(style); 
-
         (function() {
             const listenerKey = 'custom-click-listener';
             if (!document[listenerKey]) {
