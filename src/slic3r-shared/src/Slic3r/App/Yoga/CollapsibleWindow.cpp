@@ -18,8 +18,10 @@ CollapsibleWindow::CollapsibleWindow(const std::string& label, const std::string
     set_orientation(Orientation::Vertical);
     set_padding(0.f);
     m_header_row = emplace_back<Item>();
-    m_header_row->set_padding({20.f, 10.f});
+    m_header_row->set_padding({20.f, 0.f});
+    m_header_row->set_height(48.f);
     m_header_row->set_gap(5);
+    m_header_row->set_align_items(YGAlignCenter);
     m_header_row->set_flex_shrink(0.f);
 
     m_label = m_header_row->emplace_back<Text>(label);

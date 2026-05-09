@@ -56,6 +56,7 @@ public:
         std::function<void(Domain::Vec2f mouse_pos, Domain::SelectionId config_container_id)>
             show_context_menu;
     };
+
     Callbacks& callbacks();
 
     ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode);
@@ -189,6 +190,8 @@ private:
     ImGuiMultiSelectFlags m_multi_selection_flags;
     ImGuiTreeNodeFlags m_node_flags;
     ImGuiTableFlags m_table_flags;
+    float m_state_column_width{0.f};
+    float m_progress_column_width{0.f};
     DeferredActionList m_deferred_actions;
 
     Callbacks m_callbacks;

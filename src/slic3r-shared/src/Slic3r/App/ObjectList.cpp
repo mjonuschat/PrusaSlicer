@@ -91,11 +91,21 @@ struct BedsTable
             ImGui::EndTable();
     }
 
-    bool
-    begin(size_t cc_id, ImGuiTableFlags table_flags, float state_column_width, float right_padding)
+    bool begin(
+        size_t cc_id,
+        size_t bed_id,
+        ImGuiTableFlags table_flags,
+        float state_column_width,
+        float right_padding
+    )
     {
-        const std::string cc_id_str = std::to_string(cc_id);
-        m_was_begin = ImGui::BeginTable(("##BedsTable" + cc_id_str).c_str(), 4, table_flags);
+        const std::string cc_id_str  = std::to_string(cc_id);
+        const std::string bed_id_str = std::to_string(cc_id);
+        m_was_begin                  = ImGui::BeginTable(
+            ("##BedsTable" + cc_id_str + "_" + bed_id_str).c_str(),
+            4,
+            table_flags
+        );
         if (m_was_begin) {
             ImGui::TableSetupColumn(
                 ("##tree" + cc_id_str).c_str(),
@@ -107,9 +117,51 @@ struct BedsTable
                 state_column_width
             );
             ImGui::TableSetupColumn(
+                ("##delete_bed" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthFixed,
+                1.5f * GImGui->FontSize
+            );
+            ImGui::TableSetupColumn(
+                ("##dummy_cell_as_padding" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthFixed,
+                right_padding
+            );
+        }
+        return m_was_begin;
+    }
+
+private:
+    bool m_was_begin{false};
+};
+
+struct ObjectsTable
+{
+    ObjectsTable() = default;
+
+    ~ObjectsTable()
+    {
+        if (m_was_begin)
+            ImGui::EndTable();
+    }
+
+    bool begin(size_t cc_id, ImGuiTableFlags table_flags, float right_padding)
+    {
+        const std::string cc_id_str = std::to_string(cc_id);
+        m_was_begin = ImGui::BeginTable(("##ObjectsTable" + cc_id_str).c_str(), 4, table_flags);
+        if (m_was_begin) {
+            ImGui::TableSetupColumn(
+                ("##tree" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthStretch
+            );
+            ImGui::TableSetupColumn(
+                ("##state" + cc_id_str).c_str(),
+                ImGuiTableColumnFlags_WidthFixed,
+                1.5f * GImGui->FontSize
+            );
+            ImGui::TableSetupColumn(
                 ("##extruder" + cc_id_str).c_str(),
                 ImGuiTableColumnFlags_WidthFixed,
-                2.f * GImGui->FontSize
+                1.5f * GImGui->FontSize
             );
             ImGui::TableSetupColumn(
                 ("##dummy_cell_as_padding" + cc_id_str).c_str(),
@@ -420,6 +472,21 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
     m_scene_interactor = &m_project_interactor->scene_interactor();
     ctx.model          = &m_project_interactor->selected_project().model();
     ASSERT(ctx.model && m_scene_interactor);
+
+    m_state_column_width = 2.f * m_horizontal_padding;
+    for (const std::string& state :
+        std::initializer_list<std::string>{
+            _u8L("SLICED"),
+            _u8L("UPDATING"),
+            _u8L("STOPPING"),
+            _u8L("SLICING"),
+            _u8L("INVALID")
+        })
+    {
+        m_state_column_width = std::max(m_state_column_width, ImGui::CalcTextSize(state.c_str()).x);
+    }
+
+    m_progress_column_width = 2.f*ImGui::CalcTextSize(_u8L("SLICED").c_str()).x;
 
     render_item_begin(pos, size);
     ImGui::SetCursorScreenPos(to_im(pos));
@@ -762,16 +829,6 @@ bool ObjectList::render_config_containers()
     auto& ctx                 = selected_project_context();
     bool is_changed_selection = false;
 
-    float state_column_width = 2.f * m_horizontal_padding;
-    for (const std::string& state : std::initializer_list<std::string>{
-             _u8L("SLICED"),
-             _u8L("UPDATING"),
-             _u8L("STOPPING"),
-             _u8L("SLICING"),
-             _u8L("INVALID")
-         })
-        state_column_width = std::max(state_column_width, ImGui::CalcTextSize(state.c_str()).x);
-
     size_t beds_cnt{0};
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
         RowHitBox hit_row;
@@ -806,17 +863,11 @@ bool ObjectList::render_config_containers()
         }
         hit_row.highlight_on_hover();
 
-        BedsTable table;
-        if (table.begin(cc->id().id, m_table_flags, state_column_width, m_horizontal_padding)) {
-            IndentGuard ig(m_inner_padding.x());
-
-            const bool can_delete_a_bed = cc->bed_instances().size() > 1;
-            for (auto& bed_inst : cc->bed_instances()) {
-                if (!bed_inst->model_instances.empty())
-                    beds_cnt++;
-                is_changed_selection |=
-                    render_bed_node(bed_inst.get(), cc->id().id, can_delete_a_bed);
-            }
+        const bool can_delete_a_bed = cc->bed_instances().size() > 1;
+        for (auto& bed_inst : cc->bed_instances()) {
+            if (!bed_inst->model_instances.empty())
+                beds_cnt++;
+            is_changed_selection |= render_bed_node(bed_inst.get(), cc->id().id, can_delete_a_bed);
         }
     }
 
@@ -831,10 +882,8 @@ void ObjectList::render_group_name(const std::string& name)
     IndentGuard ig(m_inner_padding.x());
     BoldFontGuard bfg(m_imgui_render);
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", name.c_str());
-    ImGui::PopStyleColor();
 }
 
 void ObjectList::render_all_beds_node()
@@ -857,10 +906,14 @@ void ObjectList::render_all_beds_node()
     }
     DEBUG_ASSERT(total_beds_cnt != 0);
 
-    ImVec2 progress_bar_sz(75.f, ImGui::GetFontSize() + 4.f);
+    ImVec2 progress_bar_sz(-1.f, ImGui::GetFontSize() + 4.f);
     if (ImGui::BeginTable("##AllBeds", 3, m_table_flags)) {
         ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##progress", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+        ImGui::TableSetupColumn(
+            "##progress",
+            ImGuiTableColumnFlags_WidthFixed,
+            m_progress_column_width
+        );
         ImGui::TableSetupColumn(
             "##dummy_cell_as_padding_AllBeds",
             ImGuiTableColumnFlags_WidthFixed,
@@ -904,7 +957,14 @@ bool ObjectList::render_out_of_beds()
     render_group_name(L("Out of bed"));
 
     BedsTable table;
-    if (table.begin(size_t(-1), m_table_flags, 2.f * m_horizontal_padding, m_horizontal_padding)) {
+    if (table.begin(
+            size_t(-1),
+            size_t(-1),
+            m_table_flags,
+            2.f * m_horizontal_padding,
+            m_horizontal_padding
+        ))
+    {
         IndentGuard ig(m_inner_padding.x());
         for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(
@@ -921,8 +981,6 @@ bool ObjectList::render_out_of_beds()
 void ObjectList::render_drop_target_area()
 {
     auto& ctx = selected_project_context();
-    if (m_mode != Mode::Plater)
-        return;
 
     // Make the entire window a valid drop target
     const float drop_area_height = 50.f;
@@ -961,70 +1019,97 @@ bool ObjectList::render_bed_node(
     const ImVec2 text_size = ImGui::CalcTextSize(bed->name().c_str());
     const ImVec2 padding   = style.ItemInnerSpacing;
 
+    bool is_open{false};
+
     const bool is_active{
         m_scene_interactor->bed_selection().is_selected(Domain::BedRef{config_container_id, bed_id})
     };
     RowBackground bg(is_active);
-    new_row(icon_size.y + 2.f * padding.y);
-
-    ImTextureID tex_id = 0;
-    auto it            = std::find_if(
-        ctx.bed_instance_icons.begin(),
-        ctx.bed_instance_icons.end(),
-        [&](const Plater::BedThumbnailTexture& tt) { return tt.bed_instance_id == bed_id; }
-    );
-    if (it != ctx.bed_instance_icons.end())
-        tex_id = (ImTextureID) (intptr_t) it->thumbnail.get();
-
-    ImGui::PushStyleVar(
-        ImGuiStyleVar_FramePadding,
-        ImVec2(0.5f * icon_size.x + padding.x, 0.5f * (icon_size.y - text_size.y) + padding.y)
-    );
-
-    bool is_empty{true};
-    for (const Domain::ModelObject* object : ctx.model->objects) {
-        if (bed_has_object(bed->model_instances, object)) {
-            is_empty = false;
-            break;
-        }
-    }
-    ImGuiTreeNodeFlags flags =
-        m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap;
-    if (is_empty) {
-        flags |= ImGuiTreeNodeFlags_Leaf;
-    }
-    bool is_open = tree_node(name_id.c_str(), flags, bed->name(), false, tex_id, icon_size);
-    ImGui::PopStyleVar();
-
     bool is_changed_selection = false;
-    // check bed selection
-    if (!ctx.is_dragging && is_imgui_item_just_selected()) {
-        ctx.selected_container_id    = config_container_id;
-        ctx.selected_bed_instance_id = bed_id;
-        is_changed_selection         = true;
-    }
 
-    render_slicing_state_marker(bed_id);
-    const bool row_hovered = hovered_current_row();
+    {
+        BedsTable table;
+        if (table.begin(
+                config_container_id,
+                bed_id,
+                m_table_flags,
+                m_state_column_width,
+                m_horizontal_padding
+            ))
+        {
+            IndentGuard ig(0.75 * m_inner_padding.x());
 
-    if (row_hovered && can_be_deleted) {
-        if (render_delete_button(fmt::format("delete_bed_{}", bed_id))) {
-            remove_bed(config_container_id, bed_id);
+            new_row(icon_size.y + 2.f * padding.y);
+
+            ImTextureID tex_id = 0;
+            auto it            = std::find_if(
+                ctx.bed_instance_icons.begin(),
+                ctx.bed_instance_icons.end(),
+                [&](const Plater::BedThumbnailTexture& tt) { return tt.bed_instance_id == bed_id; }
+            );
+            if (it != ctx.bed_instance_icons.end())
+                tex_id = (ImTextureID) (intptr_t) it->thumbnail.get();
+
+            ImGui::PushStyleVar(
+                ImGuiStyleVar_FramePadding,
+                ImVec2(
+                    0.5f * icon_size.x + padding.x,
+                    0.5f * (icon_size.y - text_size.y) + padding.y
+                )
+            );
+
+            bool is_empty{true};
+            for (const Domain::ModelObject* object : ctx.model->objects) {
+                if (bed_has_object(bed->model_instances, object)) {
+                    is_empty = false;
+                    break;
+                }
+            }
+            ImGuiTreeNodeFlags flags =
+                m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap;
+            if (is_empty) {
+                flags |= ImGuiTreeNodeFlags_Leaf;
+            }
+            is_open = tree_node(name_id.c_str(), flags, bed->name(), false, tex_id, icon_size);
+            ImGui::PopStyleVar();
+            if (is_open) {
+                ImGui::TreePop();
+            }
+
+            // check bed selection
+            if (!ctx.is_dragging && is_imgui_item_just_selected()) {
+                ctx.selected_container_id    = config_container_id;
+                ctx.selected_bed_instance_id = bed_id;
+                is_changed_selection         = true;
+            }
+
+            render_slicing_state_marker(bed_id);
+            const bool row_hovered = hovered_current_row();
+
+            if (row_hovered && can_be_deleted) {
+                if (render_delete_button(fmt::format("delete_bed_{}", bed_id))) {
+                    remove_bed(config_container_id, bed_id);
+                }
+            }
         }
     }
 
     if (is_open) {
-        if (m_scene_interactor->wipe_tower_geometry(bed->id().id) != nullptr) {
+        ObjectsTable objects_table;
+        if (objects_table.begin(config_container_id, m_table_flags, m_horizontal_padding)) {
+            IndentGuard ig(1.5 * m_inner_padding.x());
+            if (m_scene_interactor->wipe_tower_geometry(bed->id().id) != nullptr) {
+                bg.set_next();
+                is_changed_selection |= render_wipe_tower_node(bed);
+            }
             bg.set_next();
-            is_changed_selection |= render_wipe_tower_node(bed);
+
+            for (const Domain::ModelObject* object : ctx.model->objects) {
+                if (bed_has_object(bed->model_instances, object))
+                    is_changed_selection |=
+                        render_object_node(object, config_container_id, bed, is_sla_config);
+            }
         }
-        bg.set_next();
-        for (const Domain::ModelObject* object : ctx.model->objects) {
-            if (bed_has_object(bed->model_instances, object))
-                is_changed_selection |=
-                    render_object_node(object, config_container_id, bed, is_sla_config);
-        }
-        ImGui::TreePop();
     }
 
     return is_changed_selection;
