@@ -620,7 +620,11 @@ void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::
     do_result_export_inner(id, std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
+void ProjectInteractor::do_result_upload_connect(
+    const Domain::SlicingId id,
+    const std::string& connect_msg,
+    const std::string& filename_override /* = std::string()*/
+)
 {
     PhysicalPrinter::PhysicalPrinterConfig config;
     config.host = Network::ServiceConfig::instance().connect_url();
@@ -634,6 +638,11 @@ void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, con
         SPDLOG_ERROR("Upload to Connect has failed - failed to read Connect message.");
         return;
     }
+
+    if (!filename_override.empty()) {
+        filename = filename_override;
+    }
+
     set_output_extension(id.project_id, boost::filesystem::path(filename).extension().string());
     PrintHost::PrintHostJobData data{
         std::monostate{},

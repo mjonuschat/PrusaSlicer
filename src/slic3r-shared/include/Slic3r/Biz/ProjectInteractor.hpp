@@ -394,8 +394,13 @@ public:
     /**
      * @brief Same as do_result_upload, but does parse connect_msg first.
      * Uploads to PrintHostType::PrusaConnect.
+     * @param filename_override is used f.e. when bgcode is not allowed in profiles, but user still writes .bgcode to filename and then agrees to change it back to .gcode
      */
-    void do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg);
+    void do_result_upload_connect(
+        const Domain::SlicingId id,
+        const std::string& connect_msg,
+        const std::string& filename_override = std::string()
+    );
 
     /**
      * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.

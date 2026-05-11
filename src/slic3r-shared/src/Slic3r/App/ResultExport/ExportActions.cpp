@@ -87,7 +87,7 @@ std::function<void()> send_gcode_to_connect(Biz::ProjectInteractor& project_inte
                     boost::filesystem::path(filename),
                     bgcode_allowed,
                     [pi_raw, data](const boost::filesystem::path& safe_path) {
-                        pi_raw->do_result_upload_connect(pi_raw->selected_bed_slicing_id(), data);
+                        pi_raw->do_result_upload_connect(pi_raw->selected_bed_slicing_id(), data, safe_path.string());
                     },
                     [pi_raw]() {
                         // Re-trigger the dialog on retry
