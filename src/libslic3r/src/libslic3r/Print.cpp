@@ -244,6 +244,20 @@ std::vector<Biz::Slicing::Error> validate_input(
     return errors;
 }
 
+static bool is_any_printable(const std::vector<Domain::ModelObject*>& objects)
+{
+    for (const Domain::ModelObject* object : objects) {
+        if (object->printable) {
+            for (const Domain::ModelInstance* instance : object->instances) {
+                if (instance->printable) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -298,7 +312,7 @@ Biz::Print::ApplyStatus::Status Print::update(
             bed.custom_gcode,
             extruder_candidates
         );
-        if (model.objects.empty()) {
+        if (!is_any_printable(model.objects)) {
             result = ApplyStatus::Empty{};
             return;
         }
