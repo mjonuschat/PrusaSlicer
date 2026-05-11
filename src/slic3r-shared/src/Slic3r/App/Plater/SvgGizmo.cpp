@@ -98,7 +98,7 @@ namespace {
     void calc_from_surface(ProjectContext& proj_ctx, const Domain::Project& project,
         const Domain::ElementRef& ref, PlaterScenePresenter& scene_presenter);
 } // namespace
-Yoga::GizmoWindowPtr SvgGizmo::release_ui_window() {
+GizmoWindowPtr SvgGizmo::release_ui_window() {
     auto dialog_ptr = std::make_unique<SvgDialog>();
     // Keep finger crossed that dialog will be alive as long as gizmo,
     // Need refactor from author of Yoga::Passthrough

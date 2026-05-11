@@ -7,7 +7,7 @@
 
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 class GizmoWindow;
 }
 
@@ -217,7 +217,7 @@ public:
     virtual bool enabled() const;
     /**@}*/
 
-    virtual std::unique_ptr<Yoga::GizmoWindow> release_ui_window();
+    virtual std::unique_ptr<Plater::GizmoWindow> release_ui_window();
 
     /**
      * @name IGizmoController providing

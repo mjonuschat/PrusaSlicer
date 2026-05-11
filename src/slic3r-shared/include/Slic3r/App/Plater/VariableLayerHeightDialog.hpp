@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.hpp"
+#include "Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/VariableLayerHeightControl.hpp"
@@ -12,7 +12,7 @@ class LayoutButton;
 
 namespace Slic3r::App::Plater {
 
-class VariableLayerHeightDialog : public Yoga::GizmoWindowWithLeftSidePanel
+class VariableLayerHeightDialog : public GizmoWindowWithLeftSidePanel
 {
 public:
     struct Callbacks

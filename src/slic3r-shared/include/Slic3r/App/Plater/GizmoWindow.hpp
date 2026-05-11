@@ -5,11 +5,10 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Window.hpp"
-#include "Slic3r/App/Yoga/GizmoDialogHelp.hpp"
+#include "Slic3r/App/Plater/GizmoHelpFactory.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
 namespace Slic3r::App::Yoga {
-
 class Item;
 class Icon;
 class Text;
@@ -17,9 +16,14 @@ class LayoutButton;
 class Separator;
 class InputTextWithSpin;
 class SliderWithInput;
+class ScrollArea;
+} // namespace Slic3r::App::Yoga
 
-// Todo: This class should be moved to Slic3r::App
-class GizmoWindow : public Window
+namespace Slic3r::App::Plater {
+
+class WarningPanel;
+
+class GizmoWindow : public Yoga::Window
 {
 public:
     struct GizmoCallbacks
@@ -28,19 +32,22 @@ public:
         std::function<void()> revert_requested{nullptr};
     };
 
-    explicit GizmoWindow(const std::string& title, Render::Icon icon, const std::string& shortcut = "");
+    explicit GizmoWindow(
+        const std::string& title,
+        Render::Icon icon,
+        const std::string& shortcut = std::string{}
+    );
 
     GizmoCallbacks& gizmo_callbacks();
 
 protected:
-    explicit GizmoWindow();
-
     /*
      * @brief Add the separator into the specified item rather than into Dialog::context()
      */
-    Separator* add_separator(Item* item);
+    Yoga::Separator* add_separator(Item* item);
 
     float gap_size() const;
+    float preffered_max_width() const;
     Item* add_new_row(
         const std::string& title,
         Yoga::ItemPtr controls,
@@ -49,8 +56,10 @@ protected:
 
     Item* content() const;
 
-    LayoutButton* close_button() const;
-    LayoutButton* revert_button() const;
+    Yoga::LayoutButton* close_button() const;
+    Yoga::LayoutButton* revert_button() const;
+    Yoga::Item* top_bar() const;
+    Yoga::Item* bottom_bar() const;
 
     /**
      * @brief Adds a revert button to the given parent item.
@@ -59,7 +68,7 @@ protected:
      * @param tooltip Tooltip text for the revert button.
      * @return Pointer to the created LayoutButton.
      */
-    LayoutButton* add_revert_btn(Item* parent, const std::string& tooltip);
+    Yoga::LayoutButton* add_revert_btn(Item* parent, const std::string& tooltip);
 
     /**
      * @brief Adds a wrapper item with flex-shrink enabled.
@@ -144,30 +153,36 @@ protected:
      */
     Item* add_row_with_slider(
         Item* parent,
-        SliderWithInput** slider,
+        Yoga::SliderWithInput** slider,
         const std::string& name,
         const std::string& unit,
         const std::string& revert_tooltip
     );
 
+    void set_warning(const std::string& title, const std::string& text);
+    void set_warning(const std::string& title, const std::vector<std::string>& errors);
+    void clear_warning();
+
 protected:
-    GizmoCallbacks m_gizmo_callback;
-
-    GizmoDialogHelp m_help;
-
-    LayoutButton* m_close_button  = nullptr;
-    LayoutButton* m_revert_button = nullptr;
-    Item* m_content               = nullptr;
-    Item* m_top_row               = nullptr;
-    Item* m_tab_container         = nullptr;
-    size_t m_current_tab_index    = 0;
-
-    std::vector<LayoutButton*> m_tab_buttons;
-    ButtonGroup m_tab_button_group;
+    GizmoHelpFactory m_help_factory;
 
     float m_label_width = 85.f;
+
+private:
+    GizmoCallbacks m_gizmo_callback;
+
+    Yoga::LayoutButton* m_close_button  = nullptr;
+    Yoga::LayoutButton* m_revert_button = nullptr;
+    Yoga::Item* m_top_bar               = nullptr;
+    Yoga::Item* m_bottom_bar            = nullptr;
+    WarningPanel* m_warning_panel       = nullptr;
+    Yoga::ScrollArea* m_content         = nullptr;
+    size_t m_current_tab_index          = 0;
+
+    std::vector<Yoga::LayoutButton*> m_tab_buttons;
+    Yoga::ButtonGroup m_tab_button_group;
 };
 
 using GizmoWindowPtr = std::unique_ptr<GizmoWindow>;
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App::Plater

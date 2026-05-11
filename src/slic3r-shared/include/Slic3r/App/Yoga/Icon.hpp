@@ -107,6 +107,7 @@ private:
     Vec2f m_cached_size;
     ImVec2 m_draw_size;
     ImVec2 m_offset;
+    bool m_texture_has_replaced_strings{false};
 };
 
 } // namespace Slic3r::App::Yoga

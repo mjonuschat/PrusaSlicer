@@ -597,7 +597,7 @@ void RotationGizmo::on_scene_selection_changed(
     }
 }
 
-std::unique_ptr<Yoga::GizmoWindow> RotationGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> RotationGizmo::release_ui_window()
 {
     auto window{std::make_unique<RotationDialog>(m_scene_presenter, m_project_interactor)};
     m_window = window.get();

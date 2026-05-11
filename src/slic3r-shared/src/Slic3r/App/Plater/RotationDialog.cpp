@@ -20,7 +20,7 @@ RotationDialog::RotationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    Yoga::GizmoWindow{_u8L("Rotation"), Render::Icon::Rotate},
+    GizmoWindow{_u8L("Rotation"), Render::Icon::Rotate},
     m_scene_provider{scene_provider},
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
@@ -30,19 +30,13 @@ RotationDialog::RotationDialog(
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
-    content()->set_padding({20, 20});
-    content()->set_orientation(Orientation::Vertical);
-
-    const double gap{10.0};
-    content()->set_gap(gap);
-
     auto revert_row{content()->emplace_back<Yoga::Item>()};
     revert_row->set_justify_content(YGJustifyFlexEnd);
     revert_row->set_height(0);
     m_revert_button = revert_row->emplace_back<Yoga::LayoutButton>(
-        "",
+        std::string{},
         Render::Icon::RevertButton,
-        "Revert rotation"
+        Biz::_u8L("Revert rotation")
     );
     m_revert_button->set_min_size({25.0, 25.0});
 

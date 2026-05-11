@@ -3,8 +3,6 @@
 #include "Slic3r/App/Plater/PaintOnSeamsGizmo.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -77,6 +75,7 @@ PaintOnSeamsDialog::PaintOnSeamsDialog() :
     this->add_new_row(_u8L("Clipping of view"), m_clipping_of_view_slider.release());
 
     Item* clipping_of_view_reset_direction_row = this->content()->emplace_back<Item>();
+    clipping_of_view_reset_direction_row->set_flex_shrink(0);
     m_clipping_of_view_reset_direction_button =
         clipping_of_view_reset_direction_row->emplace_back<LayoutButton>(_u8L("Reset direction"));
     m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
@@ -85,6 +84,7 @@ PaintOnSeamsDialog::PaintOnSeamsDialog() :
     this->add_separator(this->content());
 
     Item* painting_reset_row = this->content()->emplace_back<Item>();
+    painting_reset_row->set_flex_shrink(0);
     m_painting_reset_button =
         painting_reset_row->emplace_back<LayoutButton>(_u8L("Remove all selection"));
     m_painting_reset_button->callbacks().action = [this]() { m_callbacks.painting_reset(); };
@@ -92,6 +92,7 @@ PaintOnSeamsDialog::PaintOnSeamsDialog() :
     this->add_separator(this->content());
 
     Item* help_row = this->content()->emplace_back<Item>();
+    help_row->set_flex_shrink(0);
     help_row->set_min_size({0, 50});
     help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
     help_row->set_align_content(YGAlign::YGAlignCenter);
@@ -99,13 +100,10 @@ PaintOnSeamsDialog::PaintOnSeamsDialog() :
     help_row->set_gap(15);
     help_row->set_flex_wrap(YGWrapWrap);
 
-    m_help.init(help_row);
-    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Paint"));
-    m_help.add_item({{Render::Icon::MouseRight}}, _u8L("Block"));
-    m_help.add_item(
-        {{Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft}},
-        _u8L("Remove")
-    );
+    m_help_factory.init(help_row);
+    m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Paint"));
+    m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight}}, _u8L("Block"));
+    m_help_factory.add_item({{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Remove"));
 }
 
 void PaintOnSeamsDialog::set_brush_radius(const double brush_radius)

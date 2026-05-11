@@ -11,7 +11,6 @@
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
-#include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 
 #include <Slic3r/App/AppServices.hpp>
@@ -133,14 +132,14 @@ ConfigItemBedShape::ConfigItemBedShape(
     const BedShape::ParamAttributes& size_atribs =
         BedShape::attributes(BedShape::Parameter::RectSize);
     Item* m_size_row = add_row(rect_ui_item, Biz::_u8(size_atribs.name));
-    m_size_x   = add_input(m_size_row, "x", size_atribs, is_imperial_units, callback);
-    m_size_y   = add_input(m_size_row, "y", size_atribs, is_imperial_units, callback);
+    m_size_x         = add_input(m_size_row, "x", size_atribs, is_imperial_units, callback);
+    m_size_y         = add_input(m_size_row, "y", size_atribs, is_imperial_units, callback);
 
     const BedShape::ParamAttributes& origin_atribs =
         BedShape::attributes(BedShape::Parameter::RectOrigin);
     Item* m_origin_row = add_row(rect_ui_item, Biz::_u8(origin_atribs.name));
-    m_origin_x   = add_input(m_origin_row, "x", origin_atribs, is_imperial_units, callback);
-    m_origin_y   = add_input(m_origin_row, "y", origin_atribs, is_imperial_units, callback);
+    m_origin_x         = add_input(m_origin_row, "x", origin_atribs, is_imperial_units, callback);
+    m_origin_y         = add_input(m_origin_row, "y", origin_atribs, is_imperial_units, callback);
 
     Item* circle_ui_item = m_ui_layout->emplace_back<Item>();
     circle_ui_item->set_orientation(Orientation::Vertical);
@@ -149,7 +148,7 @@ ConfigItemBedShape::ConfigItemBedShape(
     const BedShape::ParamAttributes& diam_atribs =
         BedShape::attributes(BedShape::Parameter::Diameter);
     Item* m_diameter_row = add_row(circle_ui_item, Biz::_u8(diam_atribs.name));
-    m_diameter     = add_input(m_diameter_row, "", diam_atribs, is_imperial_units, callback);
+    m_diameter           = add_input(m_diameter_row, "", diam_atribs, is_imperial_units, callback);
 
     Item* custom_ui_item = m_ui_layout->emplace_back<Item>();
     custom_ui_item->set_orientation(Orientation::Vertical);
@@ -162,7 +161,6 @@ ConfigItemBedShape::ConfigItemBedShape(
     m_custom_row->set_justify_content(YGJustifyCenter);
     m_load_btn =
         m_custom_row->emplace_back<LayoutButton>(Biz::_u8L("Load shape from STL") + " ...");
-    m_load_btn->set_background_color(ImColor{41, 41, 41});
 
     m_load_btn->callbacks().action = [this]()
     {
@@ -332,20 +330,17 @@ void ConfigItemBedShape::update_shape()
 
 void ConfigItemBedShape::create_preview()
 {
-    ImColor preview_color{42, 42, 42};
-    ImColor shape_color{150, 150, 150};
+    const ImColor shape_color{150, 150, 150};
 
     Rectangle* preview_bg = emplace_back<Rectangle>();
-    preview_bg->set_fill(preview_color);
+    preview_bg->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     preview_bg->set_height(300.f);
     preview_bg->set_padding(15.f);
     preview_bg->set_justify_content(YGJustifyCenter);
 
-    m_shape_preview = preview_bg->emplace_back<Yoga::BedShapePreview>();
-    m_shape_preview->set_fill(preview_color);
+    m_shape_preview = preview_bg->emplace_back<BedShapePreview>();
     m_shape_preview->set_shape_fill(shape_color);
     m_shape_preview->set_flex_grow(1.);
-    m_shape_preview->set_border_width(1);
 }
 
 void ConfigItemBedShape::update_preview()

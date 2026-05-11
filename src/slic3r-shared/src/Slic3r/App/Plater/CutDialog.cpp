@@ -5,15 +5,13 @@
 
 #include "Slic3r/App/Plater/CutDialog.hpp"
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
-#include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/RadioButton.hpp"
-#include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
@@ -28,6 +26,7 @@
 #include <fmt/format.h>
 
 using namespace Slic3r::Biz;
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Yoga {
 
@@ -131,51 +130,6 @@ void PartProcessingItem::set_enabled_toggler(bool enabled)
     m_part_toggler->set_enabled(enabled);
 }
 
-WarningPanel::WarningPanel(const std::string& warning_text, bool has_extantion)
-{
-    set_rounding(0.f);
-    set_margin({-10.f, -10.f});
-    set_flex_shrink(0.f);
-    set_fill(ImColor{232, 64, 64, 32});
-
-    auto tune_wrap = [](Item* wrap)
-    {
-        wrap->set_padding(10.f);
-        wrap->set_flex_shrink(0.f);
-    };
-
-    Item* icon_wrap = emplace_back<Item>();
-    tune_wrap(icon_wrap);
-    icon_wrap->emplace_back<Icon>(Render::Icon::ExclamationRed)->set_width(16.f);
-
-    Item* text_wrap = emplace_back<Item>();
-    tune_wrap(text_wrap);
-    text_wrap->set_orientation(Orientation::Vertical);
-    text_wrap->set_gap(5.f);
-
-    auto tune_text = [](Text* text)
-    {
-        text->set_text_color(m_theme->color_imgui(Platform::Color::Warning));
-        text->set_min_size(Vec2f{200.f, YGUndefined});
-        text->set_wrap_mode(Text::WrapMode::Wrap);
-    };
-
-    m_label = text_wrap->emplace_back<Text>(warning_text);
-    m_label->set_font_type(Render::ImguiFontType::Bold);
-    tune_text(m_label);
-
-    if (has_extantion) {
-        m_extention = text_wrap->emplace_back<Text>("");
-        tune_text(m_extention);
-    }
-}
-
-void WarningPanel::set_extention(const std::string& extention)
-{
-    ASSERT(m_extention);
-    m_extention->set_text(extention);
-}
-
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
@@ -207,22 +161,12 @@ CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
         }
     };
 
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_flex_grow(1);
+    content()->set_padding({content()->padding().left, 0.f});
 
     init_connectors_header();
 
-    m_scroll_area = content()->emplace_back<ScrollArea>("ScrollPanels");
-    m_scroll_area->set_gap(gap_size());
-    m_scroll_area->set_orientation(Orientation::Vertical);
-    m_scroll_area->set_flex_grow(1);
-    m_scroll_area->set_padding(content()->padding());
-    content()->set_padding(0.f);
-
     init_connectors_input_panel();
     init_cut_plane_input_panel();
-
-    init_warning_rows();
 
     add_separator(content());
     init_action_buttons();
@@ -230,12 +174,11 @@ CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
 
 void CutDialog::init_action_buttons()
 {
-    Item* buttons_wrap = content()->emplace_back<Item>();
-    buttons_wrap->set_justify_content(YGJustifySpaceBetween);
-    buttons_wrap->set_flex_shrink(0);
-    buttons_wrap->set_padding(2 * gap_size());
+    bottom_bar()->set_justify_content(YGJustifySpaceBetween);
+    bottom_bar()->set_flex_shrink(0);
+    bottom_bar()->set_padding(gap_size());
 
-    m_perform_btn = buttons_wrap->emplace_back<LayoutButton>(_u8L("Perform cut"));
+    m_perform_btn = bottom_bar()->emplace_back<LayoutButton>(_u8L("Perform cut"));
     m_perform_btn->callbacks().action = [this]()
     {
         if (callbacks().perform) {
@@ -243,7 +186,7 @@ void CutDialog::init_action_buttons()
         }
     };
 
-    m_confirm_connectors_btn = buttons_wrap->emplace_back<LayoutButton>(
+    m_confirm_connectors_btn = bottom_bar()->emplace_back<LayoutButton>(
         _u8L("Confirm"),
         Render::Icon::None,
         _u8L("Confirm connectors")
@@ -255,12 +198,12 @@ void CutDialog::init_action_buttons()
     {
         btn->set_background_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
         btn->set_label_font_type(Render::ImguiFontType::Bold);
-        btn->set_content_padding(2.f * gap_size());
+        btn->set_content_padding(gap_size());
     }
 
-    m_cancel_connectors_btn = buttons_wrap->emplace_back<LayoutButton>(_u8L("Cancel"));
+    m_cancel_connectors_btn = bottom_bar()->emplace_back<LayoutButton>(_u8L("Cancel"));
     m_cancel_connectors_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
-    m_cancel_connectors_btn->set_content_padding(2.f * gap_size());
+    m_cancel_connectors_btn->set_content_padding(gap_size());
     m_cancel_connectors_btn->callbacks().action = [this]()
     {
         connectors_editing = false;
@@ -276,12 +219,12 @@ void CutDialog::init_action_buttons()
 
 void CutDialog::init_cut_plane_input_panel()
 {
-    m_cut_plane_input_panel = m_scroll_area->emplace_back<Item>();
+    m_cut_plane_input_panel = content()->emplace_back<Item>();
     m_cut_plane_input_panel->set_orientation(Orientation::Vertical);
     m_cut_plane_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
     m_cut_plane_input_panel->set_flex_grow(1.f);
     m_cut_plane_input_panel->set_flex_shrink(0.f);
-    m_cut_plane_input_panel->set_gap(2. * gap_size());
+    m_cut_plane_input_panel->set_gap(gap_size());
 
     m_mode_row        = add_row(_u8L("Mode"), m_cut_plane_input_panel);
     m_planar_mode_btn = add_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
@@ -350,19 +293,6 @@ void CutDialog::init_cut_plane_input_panel()
     m_cut_plane_input_panel->emplace_back<Item>()->set_flex_grow(1);
 }
 
-void CutDialog::init_warning_rows()
-{
-    m_connectors_warning =
-        m_scroll_area->emplace_back<WarningPanel>(_u8L("Invalid connectors"), true);
-    m_keep_object_warning = m_scroll_area->emplace_back<WarningPanel>(
-        _u8L("Select at least one object to keep after cutting.")
-    );
-    m_cut_plane_warning =
-        m_scroll_area->emplace_back<WarningPanel>(_u8L("Cut plane is placed out of object"));
-    m_groove_warning =
-        m_scroll_area->emplace_back<WarningPanel>(_u8L("Cut plane with groove is invalid"));
-}
-
 void CutDialog::add_cut_plane_help_panel()
 {
     add_separator(m_cut_plane_input_panel);
@@ -372,9 +302,9 @@ void CutDialog::add_cut_plane_help_panel()
     help_area->set_justify_content(YGJustify::YGJustifyFlexStart);
     help_area->set_padding(5);
 
-    Yoga::GizmoDialogHelp help;
+    GizmoHelpFactory help;
     help.init(help_area);
-    help.add_item({{Render::Icon::KeyShift, shortcut_help_size}}, _u8L("Hold to draw a cut line"));
+    help.add_item({{"SHIFT"}}, _u8L("Hold to draw a cut line"));
 }
 
 void CutDialog::add_angles_row(
@@ -557,7 +487,7 @@ void CutDialog::add_cut_settings()
 
     Item* parts_wrap_item = m_cut_plane_input_panel->emplace_back<Item>();
     parts_wrap_item->set_orientation(Orientation::Vertical);
-    parts_wrap_item->set_gap(2 * gap_size());
+    parts_wrap_item->set_gap(gap_size());
 
     // create PartProcessingRow
 
@@ -601,7 +531,7 @@ void CutDialog::add_connectors_editing_buttons()
 {
     m_connectors_editing_buttons = m_cut_plane_input_panel->emplace_back<Item>();
     m_connectors_editing_buttons->set_orientation(Orientation::Vertical);
-    m_connectors_editing_buttons->set_gap(2.f * gap_size());
+    m_connectors_editing_buttons->set_gap(gap_size());
 
     add_separator(m_connectors_editing_buttons);
 
@@ -639,42 +569,46 @@ void CutDialog::update_state(OutState state)
     m_confirm_connectors_btn->set_visible(connectors_editing);
     m_cancel_connectors_btn->set_visible(connectors_editing);
 
+    m_warnings.clear();
+
     if (connectors_warnig) {
-        std::string out;
         if (state.connectors_outside_cut_contour > size_t(0)) {
-            out += fmt::vformat(
-                       _L_PLURAL_u8(
-                           "{} connector is out of cut contour",
-                           "{} connectors are out of cut contour",
-                           state.connectors_outside_cut_contour
-                       ),
-                       fmt::make_format_args(state.connectors_outside_cut_contour)
-                   )
-                + "\n";
+            m_warnings.emplace_back(
+                fmt::vformat(
+                    _L_PLURAL_u8(
+                        "{} connector is out of cut contour",
+                        "{} connectors are out of cut contour",
+                        state.connectors_outside_cut_contour
+                    ),
+                    fmt::make_format_args(state.connectors_outside_cut_contour)
+                )
+            );
         }
         if (state.connectors_outside_object > size_t(0)) {
-            out += fmt::vformat(
-                       _L_PLURAL_u8(
-                           "{} connector is out of object",
-                           "{} connectors are out of object",
-                           state.connectors_outside_object
-                       ),
-                       fmt::make_format_args(state.connectors_outside_object)
-                   )
-                + "\n";
+            m_warnings.emplace_back(
+                fmt::vformat(
+                    _L_PLURAL_u8(
+                        "{} connector is out of object",
+                        "{} connectors are out of object",
+                        state.connectors_outside_object
+                    ),
+                    fmt::make_format_args(state.connectors_outside_object)
+                )
+            );
         }
         if (state.connectors_overlap) {
-            out += _u8L("Some connectors are overlapped");
+            m_warnings.emplace_back(_u8L("Some connectors are overlapped"));
         }
-
-        if (out.back() == '\n')
-            out.pop_back();
-        m_connectors_warning->set_extention(out);
     }
-    m_connectors_warning->set_visible(connectors_warnig);
 
-    m_cut_plane_warning->set_visible(state.plane_outside_object);
-    m_groove_warning->set_visible(state.invalid_groove);
+    if (state.invalid_groove) {
+        m_warnings.emplace_back(_u8L("Cut plane with groove is invalid"));
+    }
+    if (state.plane_outside_object) {
+        m_warnings.emplace_back(_u8L("Cut plane is placed out of object"));
+    }
+
+    update_warnings();
 
     m_part_A->set_enabled_toggler(!state.has_connectors);
     m_part_B->set_enabled_toggler(!state.has_connectors);
@@ -689,7 +623,7 @@ void CutDialog::update_panels_visibility()
     m_cut_plane_input_panel->set_visible(!connectors_editing);
     m_groove_input_panel->set_visible(!is_planar_cut_mode);
 
-    m_connectors_header->set_visible(connectors_editing);
+    top_bar()->set_visible(connectors_editing);
     m_confirm_connectors_btn->set_visible(connectors_editing);
     m_cancel_connectors_btn->set_visible(connectors_editing);
     m_perform_btn->set_visible(!connectors_editing);
@@ -697,9 +631,28 @@ void CutDialog::update_panels_visibility()
 
 void CutDialog::update_keep_object_warning()
 {
+    const std::string warning_text = _u8L("Select at least one object to keep after cutting.");
+
     bool has_warning = !keep_upper && !keep_lower;
     m_perform_btn->set_enabled(!has_warning);
-    m_keep_object_warning->set_visible(has_warning);
+
+    if (has_warning && (m_warnings.empty() || m_warnings.front() != warning_text)) {
+        // Warning is on and not yet preset in the warning list
+        m_warnings.insert(m_warnings.begin(), warning_text);
+    } else if (!has_warning && !m_warnings.empty() && m_warnings.front() == warning_text) {
+        m_warnings.erase(m_warnings.cbegin());
+    }
+
+    update_warnings();
+}
+
+void CutDialog::update_warnings()
+{
+    if (m_warnings.empty()) {
+        clear_warning();
+    } else {
+        set_warning(_u8L("Cut tool issues"), m_warnings);
+    }
 }
 
 void CutDialog::confirm_connectors()
@@ -713,21 +666,19 @@ void CutDialog::confirm_connectors()
 
 void CutDialog::init_connectors_header()
 {
-    m_connectors_header = content()->emplace_back<Item>();
-    m_connectors_header->set_gap(2.f * gap_size());
-    m_connectors_header->set_padding(gap_size());
-    m_connectors_header->set_align_items(YGAlignCenter);
-    m_connectors_header->set_flex_shrink(0);
-    LayoutButton* back_btn =
-        m_connectors_header->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
+    top_bar()->set_gap(gap_size());
+    top_bar()->set_padding(5.f);
+    top_bar()->set_align_items(YGAlignCenter);
+    top_bar()->set_flex_shrink(0);
+    LayoutButton* back_btn = top_bar()->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
     back_btn->callbacks().action = [this]() { confirm_connectors(); };
     back_btn->set_height(24.f);
-    m_connectors_header
+    top_bar()
         ->emplace_back<Text>(_u8L("Connectors")) //->set_align_items()
         ->set_font_type(Render::ImguiFontType::Bold);
 
     // Proces reset button in taskbar
-    m_remove_connectors_btn = add_revert_btn(m_connectors_header, _u8L("Remove connectors"));
+    m_remove_connectors_btn = add_revert_btn(top_bar(), _u8L("Remove connectors"));
     m_remove_connectors_btn->callbacks().action = [this]()
     {
         if (callbacks().reset_connectors) {
@@ -739,10 +690,10 @@ void CutDialog::init_connectors_header()
 
 void CutDialog::init_connectors_input_panel()
 {
-    m_connectors_input_panel = m_scroll_area->emplace_back<Item>();
+    m_connectors_input_panel = content()->emplace_back<Item>();
     m_connectors_input_panel->set_orientation(Orientation::Vertical);
     m_connectors_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
-    m_connectors_input_panel->set_gap(2.f * gap_size());
+    m_connectors_input_panel->set_gap(gap_size());
     m_connectors_input_panel->set_flex_grow(1.f);
     m_connectors_input_panel->set_flex_shrink(0.f);
 
@@ -946,22 +897,25 @@ void CutDialog::add_connectors_help_panel()
     help_area->set_align_items(YGAlignFlexStart);
     help_area->set_gap(10);
 
-    Yoga::GizmoDialogHelp help;
+    GizmoHelpFactory help;
     help.init(help_area);
-    help.add_item({{Render::Icon::MouseLeft, mouse_help_size}}, _u8L("Add connector"));
-    help.add_item({{Render::Icon::MouseRight, mouse_help_size}}, _u8L("Remove connector"));
     help.add_item(
-        {{Render::Icon::KeyShift, shortcut_help_size}, {Render::Icon::MouseLeft, mouse_help_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
+        _u8L("Add connector")
+    );
+    help.add_item(
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, mouse_help_size}},
+        _u8L("Remove connector")
+    );
+    help.add_item(
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
         _u8L("Select multiple")
     );
     help.add_item(
-        {{Render::Icon::KeyAlt, Vec2f{40.f, 16.f}}, {Render::Icon::MouseLeft, mouse_help_size}},
+        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
         _u8L("Remove from selection")
     );
-    help.add_item(
-        {{Render::Icon::KeyCtrl, shortcut_help_size}, {Render::Icon::KeyA, mouse_help_size}},
-        _u8L("Select all")
-    );
+    help.add_item({{"CTRL"}, {"A"}}, _u8L("Select all"));
 }
 
 Item* CutDialog::add_row(const std::string& title, Yoga::Item* parent)

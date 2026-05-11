@@ -34,7 +34,7 @@ public:
     Scene::ToolType type() const override { return Scene::ToolType::Translation; }
     bool enabled() const override;
 
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<GizmoWindow> release_ui_window() override;
 
 private:
     Render::Device& m_device;

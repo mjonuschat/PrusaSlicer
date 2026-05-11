@@ -140,6 +140,9 @@ void Icon::set_tint(const ImColor& new_tint)
 {
     if (ImU32(tint()) != ImU32(new_tint)) {
         m_tint = new_tint;
+        if (m_tint != ImVec4(1, 1, 1, 1)) {
+            update_texture();
+        }
         set_style_dirty();
     }
 }
@@ -185,8 +188,9 @@ void Icon::update_texture()
             m_texture = m_imgui_render->icon_texture(
                 m_icon,
                 m_max_texture_size,
-                m_preserve_colors ? std::unordered_map<std::string, std::string>{} :
-                                    s_replace_strings
+                m_preserve_colors || m_tint != ImVec4{1, 1, 1, 1} ?
+                    std::unordered_map<std::string, std::string>{} :
+                    s_replace_strings
             );
         }
     } else if (m_icon_type == IconType::Image) {

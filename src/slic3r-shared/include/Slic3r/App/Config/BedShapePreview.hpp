@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r::App::Yoga {
+#include "Slic3r/App/Yoga/Item.hpp"
 
-class BedShapePreview : public Yoga::Rectangle
+namespace Slic3r::App {
+
+class BedShapePreview : public Yoga::Item
 {
 public:
     explicit BedShapePreview();
@@ -20,11 +21,14 @@ public:
     void set_shape_fill(const ImColor& fill);
 
 private:
-    void render(Vec2f pos, Vec2f size) override;
+    void render(Domain::Vec2f pos, Domain::Vec2f size) override;
 
 private:
-
-    ImColor m_shape_fill = IM_COL32_WHITE;
+    ImColor m_shape_fill           = IM_COL32_WHITE;
+    ImColor m_fill                 = IM_COL32_WHITE;
+    ImColor m_border_fill          = IM_COL32_WHITE;
+    ImColor m_disabled_fill        = IM_COL32_WHITE;
+    ImColor m_disabled_border_fill = IM_COL32_WHITE;
 
     std::vector<Domain::Vec2d> m_points;
     std::vector<Domain::Vec2d> m_triangles;
@@ -32,4 +36,4 @@ private:
     Domain::Vec2d m_orig_pos{Domain::Vec2d::Zero()};
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

@@ -29,7 +29,7 @@ SimplifyDialog::Callbacks& SimplifyDialog::callbacks()
 SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::Simplify)
 {
     content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(2 * gap_size());
+    content()->set_gap(gap_size());
 
     m_mesh_name = Passthrough{std::make_unique<Text>("")};
     add_text_row(_u8L("Mesh name") + ":", m_mesh_name.release());
@@ -41,6 +41,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
 
     m_detail_level_btn = Passthrough{std::make_unique<RadioButton>(_u8L("Level of detail"))};
     m_detail_level     = Passthrough{std::make_unique<ComboBox>("Detail level")};
+    m_detail_level->set_max_size({preffered_max_width(), YGUndefined});
     m_detail_level->set_items( // Order must match enum class Detail
         {_u8L("Extra high"), _u8L("High"), _u8L("Medium"), _u8L("Low"), _u8L("Extra low")}
     );
@@ -59,6 +60,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
         )
     )};
     m_decimate_ratio     = Passthrough{std::make_unique<SliderWithInput>()};
+    m_decimate_ratio->set_max_size({preffered_max_width(), YGUndefined});
     m_decimate_ratio->set_begin_value(0.);
     m_decimate_ratio->set_end_value(100.);
     m_decimate_ratio->set_input_width(40.f);
@@ -88,7 +90,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
     };
 
     Item* row = content()->emplace_back<Item>();
-    row->set_gap(2 * gap_size());
+    row->set_gap(gap_size());
     m_apply_btn = row->emplace_back<LayoutButton>(_u8L("Apply"));
     m_apply_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     m_apply_btn->callbacks().action = [this]() {
@@ -167,8 +169,8 @@ void SimplifyDialog::set_enable_close_button(bool enable)
     );
     close_button()->callbacks().action = [this]
     {
-        if (m_gizmo_callback.close_requested) {
-            m_gizmo_callback.close_requested();
+        if (gizmo_callbacks().close_requested) {
+            gizmo_callbacks().close_requested();
         }
         if (m_callbacks.close) {
             m_callbacks.close();
@@ -190,7 +192,7 @@ void SimplifyDialog::set_progress(int progress)
 void SimplifyDialog::add_text_row(const std::string& title, std::unique_ptr<Yoga::Text> text_item)
 {
     Item* row = content()->emplace_back<Item>();
-    row->set_gap(2 * gap_size());
+    row->set_gap(gap_size());
 
     Text* text = row->emplace_back<Text>(title);
     text->set_width(80);
@@ -210,7 +212,7 @@ void SimplifyDialog::add_radio_row(
 )
 {
     Item* row = content()->emplace_back<Item>();
-    row->set_gap(2 * gap_size());
+    row->set_gap(gap_size());
 
     radio->set_width(100);
     radio->set_flex_shrink(0);
@@ -225,7 +227,7 @@ void SimplifyDialog::add_radio_row(
 
     if (!unit.empty()) {
         box->emplace_back<Text>(unit)->set_self_align(YGAlignCenter);
-        box->set_gap(2 * gap_size());
+        box->set_gap(gap_size());
     }
 }
 } // namespace Slic3r::App::Plater

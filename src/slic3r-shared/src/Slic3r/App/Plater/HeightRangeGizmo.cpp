@@ -241,7 +241,7 @@ bool HeightRangeGizmo::enabled() const
     return whole_instance && is_fdm;
 }
 
-std::unique_ptr<GizmoWindow> HeightRangeGizmo::release_ui_window()
+GizmoWindowPtr HeightRangeGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

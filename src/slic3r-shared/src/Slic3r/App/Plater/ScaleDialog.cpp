@@ -7,10 +7,8 @@ namespace Slic3r::App::Plater {
 using Biz::_u8L;
 
 ScaleDialog::ScaleDialog(Biz::ProjectInteractor& project_interactor) :
-    Yoga::GizmoWindow{_u8L("Scale"), Render::Icon::Scale}
+    GizmoWindow{_u8L("Scale"), Render::Icon::Scale}
 {
-    content()->set_padding({20, 20});
-    content()->set_orientation(Yoga::Orientation::Vertical);
     m_scale_widget = content()->emplace_back<ScaleWidget>(project_interactor);
 }
 

@@ -42,7 +42,7 @@ public:
 
     Scene::ToolType type() const override;
     bool enabled() const override;
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<GizmoWindow> release_ui_window() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_transient_mouse(Scene::GizmoEventContext& ctx) override;

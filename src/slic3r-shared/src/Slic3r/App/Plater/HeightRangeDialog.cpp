@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Plater/LayerRangeSettingsDialog.hpp"
-#include "Slic3r/App/Yoga/GizmoDialogHelp.hpp"
+#include "Slic3r/App/Plater/GizmoHelpFactory.hpp"
 #include "Slic3r/App/Yoga/HeightRangeControl.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
@@ -39,26 +39,12 @@ namespace Slic3r::App::Plater {
 const constexpr float HEIGHT_RANGE_INPUT_HEIGHT = 26.f;
 static const Paddings HEIGHT_RANGE_PADDING      = {0.f, 10.f, 0.f, 10.f};
 
-const constexpr ImColor HEIGHT_RANGE_UNSELECTED_COLOR = ImColor(42, 42, 42, 255);
-const constexpr ImColor HEIGHT_RANGE_MODIFIER_COLOR   = ImColor(184, 184, 184, 255);
-const constexpr float HEIGHT_RANGE_INPUT_ROUNDING     = 3.f;
+const constexpr float HEIGHT_RANGE_INPUT_ROUNDING = 3.f;
 
 const constexpr std::array ALWAYS_VISIBLE_MODIFIER_CATEGORIES = {
     ConfigItemDef::Category::Print_LayersSurfaces,
     ConfigItemDef::Category::Print_Infill,
 };
-
-#ifdef __APPLE__
-constexpr Render::Icon CtrlIcon = Render::Icon::KeyCmd;
-
-static const Vec2f CTRL_HELP_SIZE = {39.f, 20.f};
-#else
-constexpr Render::Icon CtrlIcon = Render::Icon::KeyCtrl;
-
-static const Vec2f CTRL_HELP_SIZE = {46.f, 20.f};
-#endif
-
-static const Vec2f KEY_HELP_SIZE = {20.f, 20.f};
 
 static std::string format_trimmed(const double value, const int precision)
 {
@@ -80,22 +66,15 @@ HeightRangeDialog::HeightRangeDialog(IConfigBoxSetter* config_box_setter) :
     this->content()->set_orientation(Orientation::Vertical);
     this->content()->set_flex_grow(1);
 
-    m_content_scroll_area = this->content()->emplace_back<ScrollArea>();
-    m_content_scroll_area->set_gap(2.f * this->gap_size());
-    m_content_scroll_area->set_orientation(Orientation::Vertical);
-    m_content_scroll_area->set_flex_grow(1);
-    m_content_scroll_area->set_padding(this->content()->padding());
-    this->content()->set_padding(0.f);
+    this->add_background_deselection_catcher(content());
 
-    this->add_background_deselection_catcher(m_content_scroll_area);
+    this->add_height_range_section(content());
+    this->add_height_range_editor_section(content());
+    this->add_overrides_section(content());
+    this->add_modifier_button_section(content());
 
-    this->add_height_range_section(m_content_scroll_area);
-    this->add_height_range_editor_section(m_content_scroll_area);
-    this->add_overrides_section(m_content_scroll_area);
-    this->add_modifier_button_section(m_content_scroll_area);
-
-    this->add_separator(m_content_scroll_area);
-    this->add_help_section(m_content_scroll_area);
+    this->add_separator(content());
+    this->add_help_section(content());
 
     this->init_layer_height_profile_control();
 
@@ -119,7 +98,7 @@ HeightRangeDialog::Callbacks& HeightRangeDialog::callbacks()
  */
 void HeightRangeDialog::add_background_deselection_catcher(Item* parent)
 {
-    LambdaItem* background_btn = parent->emplace_back<LambdaItem>(
+    Yoga::LambdaItem* background_btn = parent->emplace_back<LambdaItem>(
         [this](const Vec2f&, const Vec2f&)
         {
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)
@@ -168,7 +147,7 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
 {
     m_height_range_editor_section = parent->emplace_back<Item>();
     m_height_range_editor_section->set_orientation(Orientation::Vertical);
-    m_height_range_editor_section->set_gap(2.f * this->gap_size());
+    m_height_range_editor_section->set_gap(gap_size());
     m_height_range_editor_section->set_visible(false);
     m_height_range_editor_section->set_flex_shrink(0);
 
@@ -177,7 +156,7 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
     Item* height_range_editor_content = m_height_range_editor_section->emplace_back<Item>();
     height_range_editor_content->set_padding({0.f, 10.f, 0.f, 10.f});
     height_range_editor_content->set_orientation(Orientation::Vertical);
-    height_range_editor_content->set_gap(2 * this->gap_size());
+    height_range_editor_content->set_gap(gap_size());
 
     Item* title_row = height_range_editor_content->emplace_back<Item>();
     Text* title     = title_row->emplace_back<Text>(_u8L("Range"));
@@ -190,7 +169,7 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
 
     Rectangle* min_z_wrapper = height_range_row->emplace_back<Rectangle>();
     min_z_wrapper->set_orientation(Orientation::Horizontal);
-    min_z_wrapper->set_fill(HEIGHT_RANGE_UNSELECTED_COLOR);
+    min_z_wrapper->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     min_z_wrapper->set_rounding(HEIGHT_RANGE_INPUT_ROUNDING);
     min_z_wrapper->set_padding({8.f, 4.f, 8.f, 4.f});
     min_z_wrapper->set_align_items(YGAlignCenter);
@@ -219,7 +198,7 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
 
     Rectangle* max_z_wrapper = height_range_row->emplace_back<Rectangle>();
     max_z_wrapper->set_orientation(Orientation::Horizontal);
-    max_z_wrapper->set_fill(HEIGHT_RANGE_UNSELECTED_COLOR);
+    max_z_wrapper->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     max_z_wrapper->set_rounding(HEIGHT_RANGE_INPUT_ROUNDING);
     max_z_wrapper->set_padding({8.f, 4.f, 8.f, 4.f});
     max_z_wrapper->set_align_items(YGAlignCenter);
@@ -255,7 +234,7 @@ void HeightRangeDialog::add_overrides_section(Item* parent)
 {
     m_overrides_section = parent->emplace_back<Item>();
     m_overrides_section->set_orientation(Orientation::Vertical);
-    m_overrides_section->set_gap(2.f * this->gap_size());
+    m_overrides_section->set_gap(gap_size());
     m_overrides_section->set_visible(false);
     m_overrides_section->set_flex_shrink(0);
 }
@@ -264,7 +243,7 @@ void HeightRangeDialog::add_modifier_button_section(Item* parent)
 {
     m_add_modifier_button_section = parent->emplace_back<Item>();
     m_add_modifier_button_section->set_orientation(Orientation::Vertical);
-    m_add_modifier_button_section->set_gap(2.f * this->gap_size());
+    m_add_modifier_button_section->set_gap(gap_size());
     m_add_modifier_button_section->set_visible(false);
     m_add_modifier_button_section->set_flex_shrink(0);
 
@@ -277,8 +256,7 @@ void HeightRangeDialog::add_modifier_button_section(Item* parent)
     add_modifier_button->set_content_direction(YGDirectionRTL);
     add_modifier_button->set_expand_label(true);
     add_modifier_button->set_label_font_type(Render::ImguiFontType::Bold);
-    add_modifier_button->set_label_color(HEIGHT_RANGE_MODIFIER_COLOR);
-    add_modifier_button->set_background_color(IM_COL32_BLACK_TRANS);
+    add_modifier_button->set_background_color(Platform::Color::ButtonTransparent);
     add_modifier_button->set_content_padding({1.f, 10.f, 4.f, 10.f});
     add_modifier_button->callbacks().action = [this]()
     {
@@ -308,8 +286,7 @@ void HeightRangeDialog::add_override_category_section(
     add_override_button->set_content_direction(YGDirectionRTL);
     add_override_button->set_expand_label(true);
     add_override_button->set_label_font_type(Render::ImguiFontType::Bold);
-    add_override_button->set_label_color(HEIGHT_RANGE_MODIFIER_COLOR);
-    add_override_button->set_background_color(IM_COL32_BLACK_TRANS);
+    add_override_button->set_background_color(Platform::Color::ButtonTransparent);
     add_override_button->set_content_padding({1.f, 10.f, 4.f, 10.f});
     add_override_button->callbacks().action = [this, category]()
     { m_layer_range_settings_dialog->open_at_category(category); };
@@ -320,7 +297,7 @@ void HeightRangeDialog::add_override_category_section(
 
     Item* override_items_container = parent->emplace_back<Item>();
     override_items_container->set_orientation(Orientation::Vertical);
-    override_items_container->set_gap(this->gap_size());
+    override_items_container->set_gap(5.f);
 
     for (const ConfigItemRef& item_ref : config_items) {
         const ConfigItem& config_item = item_ref.get();
@@ -333,7 +310,7 @@ void HeightRangeDialog::add_override_category_section(
         Item* override_row = override_items_container->emplace_back<Item>();
         override_row->set_orientation(Orientation::Horizontal);
         override_row->set_padding({5.f, 0.f, 0.f, 0.f});
-        override_row->set_gap(this->gap_size());
+        override_row->set_gap(5.f);
         override_row->set_flex_shrink(0);
         override_row->set_align_items(YGAlignCenter);
 
@@ -341,7 +318,6 @@ void HeightRangeDialog::add_override_category_section(
             Biz::_u8(config_item.def().label) :
             Biz::_u8(config_item.def().full_label);
         Text* config_item_title             = override_row->emplace_back<Text>(config_item_name);
-        config_item_title->set_text_color(HEIGHT_RANGE_MODIFIER_COLOR);
         config_item_title->set_width(120);
         config_item_title->set_max_size({120, YGUndefined});
         config_item_title->set_wrap_mode(Text::WrapMode::Wrap);
@@ -364,7 +340,6 @@ void HeightRangeDialog::add_override_category_section(
         control->set_state(*override_item);
 
         Text* sidetext = override_row->emplace_back<Text>(Biz::_u8(config_item.def().sidetext));
-        sidetext->set_text_color(HEIGHT_RANGE_MODIFIER_COLOR);
         sidetext->set_flex_shrink(0);
 
         Item* remove_button_spacer = override_row->emplace_back<Item>();
@@ -388,27 +363,21 @@ void HeightRangeDialog::add_help_section(Item* parent)
     help_section->set_orientation(Orientation::Vertical);
     help_section->set_min_size({0, 50});
     help_section->set_align_items(YGAlignFlexStart);
-    help_section->set_gap(2.f * this->gap_size());
+    help_section->set_gap(gap_size());
     help_section->set_flex_shrink(0);
 
-    GizmoDialogHelp help;
+    GizmoHelpFactory help;
     help.init(help_section);
-    help.add_item({{Render::Icon::KeyH, KEY_HELP_SIZE}}, _u8L("Add layer height override"));
-    help.add_item(
-        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::KeyC, KEY_HELP_SIZE}},
-        _u8L("Copy settings overrides")
-    );
-    help.add_item(
-        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::KeyV, KEY_HELP_SIZE}},
-        _u8L("Paste settings overrides")
-    );
+    help.add_item({{"H"}}, _u8L("Add layer height override"));
+    help.add_item({{"CTRL"}, {"C"}}, _u8L("Copy settings overrides"));
+    help.add_item({{"CTRL"}, {"V"}}, _u8L("Paste settings overrides"));
 }
 
 void HeightRangeDialog::init_layer_height_profile_control()
 {
-    this->side_panel_content()->set_orientation(Orientation::Vertical);
+    this->side_panel()->set_orientation(Orientation::Vertical);
 
-    m_layer_height_profile_control = this->side_panel_content()->emplace_back<HeightRangeControl>();
+    m_layer_height_profile_control = this->side_panel()->emplace_back<HeightRangeControl>();
     m_layer_height_profile_control->set_flex_grow(1);
 
     m_layer_height_profile_control->callbacks().height_range_clicked =
@@ -480,7 +449,7 @@ void HeightRangeDialog::init_layer_height_profile_control()
 
 void HeightRangeDialog::set_layer_height_title(const double layer_height)
 {
-    this->set_side_panel_header_title(format_trimmed(layer_height, 3));
+    side_panel_header_title()->set_text(format_trimmed(layer_height, 3));
 }
 
 void HeightRangeDialog::set_layer_height_profile(const ZHeightPairs& layer_height_profile)
@@ -670,17 +639,17 @@ void HeightRangeDialog::select_range(const std::optional<LayerHeightRange>& rang
             find_height_range_row_index(m_selected_height_range.value());
 
         if (old_index.has_value()) {
-            m_height_range_rows[old_index.value()]->set_selected(false);
+            m_height_range_rows[old_index.value()]->set_checked(false);
         }
     }
 
     m_selected_height_range = range_to_select;
     m_selected_row_index    = range_to_select.has_value() ?
-           find_height_range_row_index(range_to_select.value()) :
-           std::nullopt;
+        find_height_range_row_index(range_to_select.value()) :
+        std::nullopt;
 
     if (m_selected_row_index.has_value()) {
-        m_height_range_rows[m_selected_row_index.value()]->set_selected(true);
+        m_height_range_rows[m_selected_row_index.value()]->set_checked(true);
         m_height_range_editor_section->set_visible(true);
         m_overrides_section->set_visible(true);
         m_add_modifier_button_section->set_visible(true);

@@ -152,7 +152,7 @@ bool MeasureGizmo::enabled() const
     return !selection.empty() && !selection.contains_wipe_tower();
 }
 
-Yoga::GizmoWindowPtr MeasureGizmo::release_ui_window()
+GizmoWindowPtr MeasureGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

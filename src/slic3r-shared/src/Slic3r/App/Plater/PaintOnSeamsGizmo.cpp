@@ -54,7 +54,7 @@ Scene::ToolType PaintOnSeamsGizmo::type() const
     return Scene::ToolType::PaintOnSeamsGizmo;
 }
 
-std::unique_ptr<Yoga::GizmoWindow> PaintOnSeamsGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> PaintOnSeamsGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

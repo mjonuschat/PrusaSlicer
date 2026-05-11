@@ -191,7 +191,7 @@ void MultiMaterialPaintingGizmo::register_commands(Platform::CommandRegistry& re
     }
 }
 
-std::unique_ptr<Yoga::GizmoWindow> MultiMaterialPaintingGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> MultiMaterialPaintingGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

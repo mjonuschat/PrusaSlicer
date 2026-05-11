@@ -2,15 +2,17 @@
 
 #include "Slic3r/App/Plater/PaintOnGizmoBase.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
-#include "Slic3r/App/Yoga/RectangleButton.hpp"
-#include "Slic3r/App/Yoga/SliderWithInput.hpp"
-#include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
+#include "Slic3r/App/Yoga/SliderWithInput.hpp"
+
+namespace Slic3r::App::Yoga {
+class ToggleButton;
+}
 
 namespace Slic3r::App::Plater {
 
-class PaintOnSupportsDialog : public Yoga::GizmoWindow
+class PaintOnSupportsDialog : public GizmoWindow
 {
 public:
     PaintOnSupportsDialog();

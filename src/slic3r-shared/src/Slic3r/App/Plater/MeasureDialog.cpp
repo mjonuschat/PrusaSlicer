@@ -19,11 +19,6 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Plater::Measure;
 
 namespace Slic3r::App::Plater {
-
-static constexpr size_t SELECT_ITEM_ID   = 0;
-static constexpr size_t UNSELECT_ITEM_ID = 1;
-
-static const ImColor NEUTRAL_COLOR   = ImColor(255, 255, 255);
 static const ImColor FEATURE_1_COLOR = ImColor(64, 191, 191);
 static const ImColor FEATURE_2_COLOR = ImColor(191, 64, 191);
 
@@ -44,13 +39,16 @@ MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Rule
     m_helper_panel->set_gap(gap_size());
 
     m_extra_help.init(m_helper_panel);
-    m_extra_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Select Objects"), false);
+    m_extra_help.add_item(
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}},
+        _u8L("Select Objects")
+    );
 
     // Create main panel
 
     m_main_panel = content()->emplace_back<Item>();
     m_main_panel->set_orientation(Orientation::Vertical);
-    m_main_panel->set_align_content(YGAlign::YGAlignFlexStart);
+    // m_main_panel->set_align_items(YGAlign::YGAlignFlexStart);
     m_main_panel->set_gap(gap_size());
 
     add_measure_rows();
@@ -70,21 +68,41 @@ MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Rule
     Item* help_row = m_main_panel->emplace_back<Item>();
     help_row->set_min_size({0, 50});
     help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
-    help_row->set_align_content(YGAlign::YGAlignCenter);
+    help_row->set_align_items(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
     help_row->set_gap(15);
     help_row->set_flex_wrap(YGWrapWrap);
 
-    m_help.init(help_row);
-    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Select"), false);
-    m_help.add_item({{Render::Icon::KeyBackspace, shortcut_button_size}}, _u8L("Unselect"), false);
+    {
+        Item* help_section = help_row->emplace_back<Item>();
+        help_section->set_align_items(YGAlignCenter);
+        help_section->set_gap(5);
+        m_help_select_icon = help_section->emplace_back<Icon>(Render::Icon::MouseLeft);
+        m_help_select_icon->set_width(25);
+        m_help_select_icon->set_height(25);
+        m_help_select_icon->set_aspect_ratio(1);
+        m_help_select_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+        m_help_select_text = help_section->emplace_back<Text>(_u8L("Select"));
+        m_help_select_text->set_align({AlignH::Center, AlignV::Center});
+    }
+    {
+        Item* help_section = help_row->emplace_back<Item>();
+        help_section->set_align_items(YGAlignCenter);
+        help_section->set_gap(5);
+        m_help_unselect_icon = help_section->emplace_back<Icon>(Render::Icon::KeyBackspace);
+        m_help_unselect_icon->set_width(shortcut_button_size.x());
+        m_help_unselect_icon->set_height(shortcut_button_size.y());
+        m_help_unselect_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+        m_help_unselect_text = help_section->emplace_back<Text>(_u8L("Unselect"));
+        m_help_unselect_text->set_align({AlignH::Center, AlignV::Center});
+    }
     m_main_panel->set_visible(false);
 }
 
 void MeasureDialog::SpotDescription::reset()
 {
-    m_name->set_text("");
-    m_value->set_text("");
+    m_name->set_text(std::string{});
+    m_value->set_text(std::string{});
 }
 
 void MeasureDialog::SpotDescription::set_from(const FeatureItem& feature)
@@ -100,7 +118,7 @@ void MeasureDialog::SpotDescription::set_from(const FeatureItem& feature)
                 auto [center, radius, normal] = feature.parent->circle();
                 if (feature.feature.point().isApprox(center)) {
                     m_name->set_text(_u8L("Center of circle"));
-                    m_value->set_text("");
+                    m_value->set_text(std::string{});
                     break;
                 }
             } else {
@@ -125,7 +143,7 @@ void MeasureDialog::SpotDescription::set_from(const FeatureItem& feature)
             }
         } else
             m_name->set_text(_u8L("Vertex"));
-        m_value->set_text("");
+        m_value->set_text(std::string{});
         break;
     }
     case SurfaceFeatureType::Edge: {
@@ -142,10 +160,12 @@ void MeasureDialog::SpotDescription::set_from(const FeatureItem& feature)
     }
     case SurfaceFeatureType::Plane: {
         m_name->set_text(_u8L("Plane"));
-        m_value->set_text("");
+        m_value->set_text(std::string{});
         break;
     }
     }
+    m_name->set_visible(!m_name->text().empty());
+    m_value->set_visible(!m_value->text().empty());
 }
 
 MeasureDialog::SpotDescription& MeasureDialog::spot1()
@@ -158,15 +178,18 @@ MeasureDialog::SpotDescription& MeasureDialog::spot2()
     return *m_spot2;
 }
 
-void MeasureDialog::update(const Measure::MeasurementResult& result, const Measure::FeatureCache& features)
+void MeasureDialog::update(
+    const Measure::MeasurementResult& result,
+    const Measure::FeatureCache& features
+)
 {
     if (!m_main_panel->is_visible())
         return;
 
     bool first_selected  = features.first_selected().has_value();
     bool second_selected = features.second_selected().has_value();
-    m_help.icon(UNSELECT_ITEM_ID)->set_enabled(first_selected);
-    m_help.title(UNSELECT_ITEM_ID)->set_enabled(first_selected);
+    m_help_unselect_icon->set_enabled(first_selected);
+    m_help_unselect_text->set_enabled(first_selected);
 
     ImColor select_color;
     std::string select_text = _u8L("Select");
@@ -179,27 +202,26 @@ void MeasureDialog::update(const Measure::MeasurementResult& result, const Measu
     } else if (features.hover_id == HoverID::FirstCircleCenterFeature) {
         select_color = FEATURE_1_COLOR;
         select_text  = (!first_selected || !features.first_selected()->parent.has_value()) ?
-             _u8L("Select") :
-             _u8L("Unselect");
+            _u8L("Select") :
+            _u8L("Unselect");
     } else if (features.hover_id == HoverID::SecondCircleCenterFeature) {
         select_color = FEATURE_2_COLOR;
         select_text  = (!second_selected || !features.second_selected()->parent.has_value()) ?
-             _u8L("Select") :
-             _u8L("Unselect");
+            _u8L("Select") :
+            _u8L("Unselect");
     } else if (first_selected)
         select_color = FEATURE_2_COLOR;
     else
         select_color = FEATURE_1_COLOR;
 
-    set_help_item_color(SELECT_ITEM_ID, select_color);
-    set_help_item_title(SELECT_ITEM_ID, select_text);
+    m_help_select_icon->set_tint(select_color);
+    m_help_select_text->set_text_color(select_color);
 
-    set_help_item_color(
-        UNSELECT_ITEM_ID,
-        m_help.icon(UNSELECT_ITEM_ID)->enabled() ?
-            (second_selected ? FEATURE_2_COLOR : FEATURE_1_COLOR) :
-            NEUTRAL_COLOR
-    );
+    const ImColor unselect_color = m_help_unselect_icon->enabled() ?
+        (second_selected ? FEATURE_2_COLOR : FEATURE_1_COLOR) :
+        m_theme->color_imgui(Platform::Color::Text);
+    m_help_unselect_text->set_text_color(unselect_color);
+    m_help_unselect_icon->set_tint(unselect_color);
 
     set_measure(result);
 }
@@ -231,22 +253,27 @@ void MeasureDialog::add_measure_rows()
         row_item.value->set_flex_grow(1);
 
         row_item.copy_btn = value_item->emplace_back<LayoutButton>("", Render::Icon::CopyForGizmo);
-        row_item.copy_btn->set_background_color(IM_COL32_BLACK_TRANS);
-        row_item.copy_btn->callbacks().action = [this, i]() {
-            ImGui::SetClipboardText(m_measure_rows[i].clipboard_text.c_str());
-        };
+        row_item.copy_btn->set_background_color(Platform::Color::Transparent);
+        row_item.copy_btn->callbacks().action = [this, i]()
+        { ImGui::SetClipboardText(m_measure_rows[i].clipboard_text.c_str()); };
     }
 }
 
-void MeasureDialog::add_spot_row(const ImColor& marker_color, const std::string& title, Yoga::ItemPtr controls)
+void MeasureDialog::add_spot_row(
+    const ImColor& marker_color,
+    const std::string& title,
+    Yoga::ItemPtr controls
+)
 {
     Item* row = m_main_panel->emplace_back<Item>();
     row->set_gap(gap_size());
-    row->set_padding({content()->padding().left, 0});
+    row->set_flex_shrink(0);
 
     Item* label_with_marker = row->emplace_back<Item>();
     label_with_marker->set_gap(gap_size());
     label_with_marker->set_width_percent(35);
+    label_with_marker->set_align_items(YGAlignCenter);
+    label_with_marker->set_flex_shrink(0);
 
     Circle* marker = label_with_marker->emplace_back<Circle>();
     marker->set_height(16);
@@ -309,28 +336,20 @@ void MeasureDialog::set_measure_row(size_t id, const std::string& name, const st
     MeasureRowItem& row = m_measure_rows[id];
     row.name->set_text(name);
     row.value->set_text(value);
+    row.name->set_visible(!name.empty());
+    row.value->set_visible(!value.empty());
     row.row->set_visible(true);
-}
-
-void MeasureDialog::set_help_item_color(size_t help_item_id, const ImColor& color)
-{
-    m_help.icon(help_item_id)->set_tint(color);
-    m_help.title(help_item_id)->set_text_color(color);
-}
-
-void MeasureDialog::set_help_item_title(size_t help_item_id, const std::string& title)
-{
-    m_help.title(help_item_id)->set_text(title);
 }
 
 MeasureDialog::SpotDescription::SpotDescription() : Item()
 {
     set_orientation(Yoga::Orientation::Vertical);
-    set_gap(0);
-    m_name = emplace_back<Text>("");
+    set_flex_shrink(0);
+    m_name = emplace_back<Text>(std::string{});
     m_name->set_font_type(Render::ImguiFontType::Bold);
-    m_value = emplace_back<Text>("");
-    m_value->set_flex_grow(1);
+    m_value = emplace_back<Text>(std::string{});
+    m_name->set_visible(false);
+    m_value->set_visible(false);
 }
 
 } // namespace Slic3r::App::Plater

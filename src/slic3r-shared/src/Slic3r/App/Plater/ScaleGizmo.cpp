@@ -182,7 +182,7 @@ bool ScaleGizmo::enabled() const
     return !selection.empty() && !selection.contains_wipe_tower();
 }
 
-std::unique_ptr<Yoga::GizmoWindow> ScaleGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> ScaleGizmo::release_ui_window()
 {
     auto window{std::make_unique<ScaleDialog>(m_project_interactor)};
     m_window = window.get();

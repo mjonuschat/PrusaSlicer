@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
@@ -45,7 +45,7 @@ class ScrollArea;
 
 namespace Slic3r::App::Plater {
 
-class TextDialog : public Yoga::GizmoWindow
+class TextDialog : public GizmoWindow
 {
 public:
     TextDialog();
@@ -127,8 +127,6 @@ private:
     );
 
 private:
-    Yoga::ScrollArea* m_scroll_area{ nullptr };
-
     Yoga::InputTextField* m_editor{nullptr};
     Yoga::LayoutButton* m_editor_warning{nullptr};
 

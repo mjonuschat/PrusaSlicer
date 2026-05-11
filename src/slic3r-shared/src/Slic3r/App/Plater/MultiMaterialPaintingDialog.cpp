@@ -248,19 +248,25 @@ static ItemPtr help()
     ItemPtr result{std::make_unique<Item>()};
     result->set_orientation(Orientation::Vertical);
     result->set_gap(2 * spacing);
-    GizmoDialogHelp help;
+    GizmoHelpFactory help;
     help.init(result.get());
     Domain::Vec2f icon_size{16_px, 16_px};
-    help.add_item({{Render::Icon::MouseLeft, icon_size}}, _u8L("Paint 1. color"));
-    help.add_item({{Render::Icon::MouseRight, icon_size}}, _u8L("Paint 2. color"));
     help.add_item(
-        {{Render::Icon::KeyShift, {37_px, 14_px}}, {Render::Icon::MouseLeft, icon_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size}},
+        _u8L("Paint 1. color")
+    );
+    help.add_item(
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, icon_size}},
+        _u8L("Paint 2. color")
+    );
+    help.add_item(
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size}},
         _u8L("Remove painted color")
     );
-    help.add_item({{Render::Icon::KeyX, {17_px, 14_px}}}, _u8L("Swap colors"));
+    help.add_item({{"X"}}, _u8L("Swap colors"));
 
     help.add_item(
-        {{Render::Icon::KeyAlt, {27_px, 14_px}}, {Render::Icon::MouseWheel, icon_size}},
+        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseWheel, icon_size}},
         _u8L("Brush size")
     );
     return result;
@@ -274,18 +280,11 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1);
 
-    auto scroll_area{content()->emplace_back<ScrollArea>("ScrollPanels")};
-    scroll_area->set_gap(0);
-    scroll_area->set_orientation(Orientation::Vertical);
-    scroll_area->set_flex_grow(1);
-    scroll_area->set_padding(Paddings{10, 10, 15, 10});
-    content()->set_padding(0);
-
     revert_button()->set_visible(true);
     revert_button()->callbacks().action = [this]() { m_callbacks.painting_reset(); };
     revert_button()->set_tooltip(_u8L("Reset painting"));
 
-    auto selector_section{scroll_area->emplace_back<Item>()};
+    auto selector_section{content()->emplace_back<Item>()};
     selector_section->set_padding(padding);
     selector_section->set_orientation(Orientation::Vertical);
     selector_section->set_gap(3 * spacing);
@@ -323,9 +322,9 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
         on_color_selected(color, index);
     };
 
-    add_separator(scroll_area);
+    add_separator(content());
 
-    auto brush_section{scroll_area->emplace_back<Item>()};
+    auto brush_section{content()->emplace_back<Item>()};
     brush_section->set_padding(padding);
     brush_section->set_orientation(Orientation::Vertical);
     brush_section->set_gap(padding);
@@ -337,9 +336,9 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     Plater::append(brush_section, bucket_fill_angle_picker());
     Plater::append(brush_section, height_range_picker());
 
-    add_separator(scroll_area);
+    add_separator(content());
 
-    auto view_clipper_section{scroll_area->emplace_back<Item>()};
+    auto view_clipper_section{content()->emplace_back<Item>()};
     view_clipper_section->set_padding(padding);
     view_clipper_section->set_orientation(Orientation::Vertical);
     view_clipper_section->set_gap(2 * spacing);
@@ -373,9 +372,9 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     m_clipping_of_view_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.clipping_of_view_value_changed(value); };
 
-    add_separator(scroll_area);
+    add_separator(content());
 
-    m_split_triangles_section = scroll_area->emplace_back<Item>();
+    m_split_triangles_section = content()->emplace_back<Item>();
     m_split_triangles_section->set_padding(padding);
     m_split_triangles_section->set_orientation(Orientation::Horizontal);
     m_split_triangles_section->set_align_items(YGAlignFlexEnd);
@@ -386,9 +385,9 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     { m_callbacks.split_triangles_value_changed(checked); };
     m_split_triangles_section->emplace_back<Text>(_u8L("Split triangles"));
 
-    m_split_triangles_separator = add_separator(scroll_area);
+    m_split_triangles_separator = add_separator(content());
 
-    auto help_section{scroll_area->emplace_back<Item>()};
+    auto help_section{content()->emplace_back<Item>()};
     help_section->set_padding(padding);
     help_section->set_flex_shrink(0);
     Plater::append(help_section, help());

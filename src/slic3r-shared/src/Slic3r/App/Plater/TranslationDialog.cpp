@@ -28,7 +28,7 @@ TranslationDialog::TranslationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    Yoga::GizmoWindow{_u8L("Translation"), Render::Icon::Move},
+    GizmoWindow{_u8L("Translation"), Render::Icon::Move},
     m_scene_provider(scene_provider),
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
@@ -39,10 +39,6 @@ TranslationDialog::TranslationDialog(
     );
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
-
-    content()->set_padding({20, 20});
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(10.0);
 
     m_absolute_input_row = content()->emplace_back<Yoga::Item>();
     m_absolute_input_row->set_orientation(Orientation::Vertical);

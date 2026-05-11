@@ -2,16 +2,19 @@
 
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
-#include "Slic3r/Assert.hpp"
-
 #include <imgui/imgui_internal.h>
 
 static const ImColor RED{255, 0, 0};
 static const ImColor GREEN{0, 255, 0};
 
-namespace Slic3r::App::Yoga {
+using namespace Slic3r::App::Yoga;
 
-BedShapePreview::BedShapePreview() : Rectangle() {}
+namespace Slic3r::App {
+
+BedShapePreview::BedShapePreview()
+{
+    set_object_name("BedShapePreview");
+}
 
 void BedShapePreview::set_shape(
     const std::vector<Domain::Vec2d>& points,
@@ -19,9 +22,15 @@ void BedShapePreview::set_shape(
     const Domain::Vec2d& orig_pos
 )
 {
-    m_points   = points;
+    m_points    = points;
     m_triangles = triangles;
-    m_orig_pos = orig_pos;
+    m_orig_pos  = orig_pos;
+    m_fill      = m_theme->color_imgui(Platform::Color::WindowBgAlternate);
+    m_disabled_fill =
+        m_theme->color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Disabled);
+    m_border_fill = m_theme->color_imgui(Platform::Color::Text);
+    m_disabled_border_fill =
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
 }
 
 const ImColor& BedShapePreview::shape_fill() const
@@ -36,13 +45,14 @@ void BedShapePreview::set_shape_fill(const ImColor& fill)
 
 void BedShapePreview::render(Vec2f pos, Vec2f size)
 {
+    render_item_begin(pos, size);
+
     ImDrawList* dl = ImGui::GetWindowDrawList();
     if (m_points.empty() || size.x() <= 0 || size.y() <= 0)
         return;
 
-    const ImColor fill_color =
-        enabled() ? fill() : (disabled_fill().has_value() ? disabled_fill().value() : fill());
-    const ImColor border_fill_color = enabled() ? border_color() : border_color_disabled();
+    const ImColor fill_color        = enabled() ? m_fill : m_disabled_fill;
+    const ImColor border_fill_color = enabled() ? m_border_fill : m_disabled_border_fill;
 
     using namespace Slic3r::Biz::Algorithms::BoundingBox;
 
@@ -56,7 +66,7 @@ void BedShapePreview::render(Vec2f pos, Vec2f size)
     BoundingBoxf bb = construct(m_points);
     bb              = merge(bb, m_orig_pos); // ensure origin visible
 
-    Domain::Vec2d bb_size = sizes(bb);
+    Domain::Vec2d bb_size    = sizes(bb);
     Domain::Vec2d bed_center = center(bb);
 
     double scale = std::min(size.x() / bb_size.x(), size.y() / bb_size.y());
@@ -141,6 +151,8 @@ void BedShapePreview::render(Vec2f pos, Vec2f size)
 
     dl->AddCircleFilled(origin, 3.0f, border_fill_color);
     dl->AddText(ImVec2(origin.x + 3, origin.y + 3), border_fill_color, "(0,0)");
+
+    render_item_end(pos, size);
 }
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

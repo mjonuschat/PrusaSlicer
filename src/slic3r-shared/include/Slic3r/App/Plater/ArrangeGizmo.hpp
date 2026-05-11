@@ -57,7 +57,7 @@ public:
 
     bool enabled() const override;
 
-    Yoga::GizmoWindowPtr release_ui_window() override;
+    GizmoWindowPtr release_ui_window() override;
 
 private:
     Biz::ArrangeInteractor& m_arrange_interactor;

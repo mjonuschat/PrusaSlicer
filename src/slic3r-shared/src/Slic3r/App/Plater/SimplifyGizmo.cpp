@@ -604,7 +604,7 @@ bool SimplifyGizmo::enabled() const
     return !selection.empty() && !selection.contains_wipe_tower();
 }
 
-Yoga::GizmoWindowPtr SimplifyGizmo::release_ui_window()
+GizmoWindowPtr SimplifyGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

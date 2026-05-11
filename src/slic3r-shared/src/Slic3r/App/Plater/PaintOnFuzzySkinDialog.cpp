@@ -22,9 +22,6 @@ PaintOnFuzzySkinDialog::Callbacks& PaintOnFuzzySkinDialog::callbacks()
 PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
     GizmoWindow(_u8L("Paint-on fuzzy skin"), Render::Icon::PaintFuzzySkin)
 {
-    this->content()->set_orientation(Orientation::Vertical);
-    this->content()->set_gap(this->gap_size());
-
     const Vec2f tool_type_button_size{50.f, 50.f};
     std::unique_ptr<Item> tool_type_buttons = std::make_unique<Item>();
     tool_type_buttons->set_gap(this->gap_size());
@@ -118,6 +115,7 @@ PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
     m_brush_radius_row = this->add_new_row(_u8L("Brush size"), m_brush_radius_slider.release());
 
     m_split_triangles_toggle = this->content()->emplace_back<ToggleButton>(_u8L("Split triangles"));
+    m_split_triangles_toggle->set_flex_shrink(0);
     m_split_triangles_toggle->callbacks().checked_changed = [this](bool checked)
     { m_callbacks.split_triangles_value_changed(checked); };
 
@@ -143,6 +141,7 @@ PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
     this->add_new_row(_u8L("Clipping of view"), m_clipping_of_view_slider.release());
 
     Item* clipping_of_view_reset_direction_row = this->content()->emplace_back<Item>();
+    clipping_of_view_reset_direction_row->set_flex_shrink(0);
     m_clipping_of_view_reset_direction_button =
         clipping_of_view_reset_direction_row->emplace_back<LayoutButton>(_u8L("Reset direction"));
     m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
@@ -151,6 +150,7 @@ PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
     this->add_separator(this->content());
 
     Item* painting_reset_row = this->content()->emplace_back<Item>();
+    painting_reset_row->set_flex_shrink(0);
     m_painting_reset_button =
         painting_reset_row->emplace_back<LayoutButton>(_u8L("Remove all selection"));
     m_painting_reset_button->callbacks().action = [this]() { m_callbacks.painting_reset(); };
@@ -165,10 +165,10 @@ PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
     help_row->set_gap(15);
     help_row->set_flex_wrap(YGWrapWrap);
 
-    m_help.init(help_row);
-    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Add"));
-    m_help.add_item(
-        {{Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft}},
+    m_help_factory.init(help_row);
+    m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Add"));
+    m_help_factory.add_item(
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}},
         _u8L("Remove")
     );
 }

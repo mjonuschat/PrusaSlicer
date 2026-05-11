@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Scene/IGizmo.hpp"
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -18,7 +18,7 @@ bool IToolGizmo::enabled() const
     return true;
 }
 
-std::unique_ptr<Yoga::GizmoWindow> IToolGizmo::release_ui_window()
+std::unique_ptr<Plater::GizmoWindow> IToolGizmo::release_ui_window()
 {
     return nullptr;
 }

@@ -50,7 +50,8 @@ void Theme::set_style(Style style)
             {{"#FFFFFF", "#0B0B0B"},
              {"#ffffff", "#0B0B0B"},
              {"white", "#0B0B0B"},
-             {"#F7F7F7", "#0B0B0B"}}
+             {"#F7F7F7", "#0B0B0B"},
+             {"#f7f7f7", "#0B0B0B"}}
         );
     }
 }

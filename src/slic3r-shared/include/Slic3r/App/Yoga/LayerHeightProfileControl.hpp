@@ -52,6 +52,7 @@ protected:
     std::optional<size_t> selected_range_index() const;
     std::optional<size_t> hovered_range_index() const;
     bool is_external_hover() const;
+    void update_overlaps();
 
     float project_layer_height(float layer_height, float out_range_min, float out_range_max) const;
     float project_layer_z(float layer_z, float out_range_min, float out_range_max) const;
@@ -85,9 +86,19 @@ private:
     Domain::ZHeightPairs m_layer_height_profile;
 
     HeightRangeEntries m_height_ranges;
+    std::vector<std::pair<float, float>> m_overlaps;
     std::optional<size_t> m_selected_range_index;
     std::optional<size_t> m_hovered_range_index;
     bool m_external_hover = false;
+
+    ImColor m_layer_height_profile_color;
+    ImColor m_layer_height_baseline_color;
+    ImColor m_height_range_color_even;
+    ImColor m_height_range_color_odd;
+    ImColor m_height_range_color_selected;
+    ImColor m_height_range_color_hovered;
+    ImColor m_height_range_color_overlap_fill;
+    ImColor m_height_range_color_overlap_border;
 };
 
 } // namespace Slic3r::App::Yoga

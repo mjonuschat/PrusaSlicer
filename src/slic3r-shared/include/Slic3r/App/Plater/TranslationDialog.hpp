@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Plater/ReferenceFramePicker.hpp"
 #include "Slic3r/App/Plater/TripleInput.hpp"
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -23,7 +23,7 @@ namespace Slic3r::App::Yoga {
 namespace Slic3r::App::Plater {
 
 class TranslationDialog final :
-    public Yoga::GizmoWindow,
+    public GizmoWindow,
     public App::Plater::ISelectionExtentsChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::ISelectedProjectChangedListener,

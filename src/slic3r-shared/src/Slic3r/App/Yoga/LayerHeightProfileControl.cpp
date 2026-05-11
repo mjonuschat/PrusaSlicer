@@ -1,5 +1,7 @@
 #include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
 
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+
 #include <cmath>
 #include <imgui/imgui.h>
 #include <ranges>
@@ -12,18 +14,23 @@ namespace Slic3r::App::Yoga {
 
 const constexpr float LAYER_HEIGHT_BASELINE_THICKNESS = 2.f;
 const constexpr float LAYER_HEIGHT_PROFILE_THICKNESS  = 2.f;
-const constexpr ImColor LAYER_HEIGHT_PROFILE_COLOR    = ImColor(175, 119, 255, 255);
-const constexpr ImColor LAYER_HEIGHT_BASELINE_COLOR   = ImColor(0, 0, 0, 255);
-
-const constexpr ImColor HEIGHT_RANGE_COLOR_EVEN     = ImColor(32, 41, 62, 255);
-const constexpr ImColor HEIGHT_RANGE_COLOR_ODD      = ImColor(39, 47, 65, 255);
-const constexpr ImColor HEIGHT_RANGE_COLOR_SELECTED = ImColor(54, 73, 118, 255);
-const constexpr ImColor HEIGHT_RANGE_COLOR_HOVERED  = ImColor(54, 73, 118, 255);
 
 LayerHeightProfileControl::LayerHeightProfileControl() : Item()
 {
-    this->set_object_name("LayerHeightProfileControl");
-    this->set_flex_grow(1.f);
+    set_object_name("LayerHeightProfileControl");
+    set_flex_grow(1.f);
+
+    const ImColor range_color = m_theme->color_imgui(Platform::Color::AccentSecondary);
+
+    m_layer_height_profile_color              = ImColor(175, 119, 255, 255);
+    m_layer_height_baseline_color             = m_theme->color_imgui(Platform::Color::Transparent);
+    m_height_range_color_even                 = Imgui::adjust_brightness(range_color, 0.65);
+    m_height_range_color_odd                  = Imgui::adjust_brightness(range_color, 0.5);
+    m_height_range_color_selected             = range_color;
+    m_height_range_color_hovered              = Imgui::adjust_brightness(range_color, 1.2);
+    m_height_range_color_overlap_fill         = m_theme->color_imgui(Platform::Color::Warning);
+    m_height_range_color_overlap_fill.Value.w = 0.5; // 50% transparent
+    m_height_range_color_overlap_border       = m_theme->color_imgui(Platform::Color::Warning);
 }
 
 void LayerHeightProfileControl::set_object_max_z(const float object_max_z)
@@ -104,6 +111,8 @@ void LayerHeightProfileControl::update_height_range(
     if (layer_height.has_value()) {
         m_height_ranges[range_index].layer_height = layer_height.value();
     }
+
+    update_overlaps();
 }
 
 float LayerHeightProfileControl::object_max_z() const
@@ -139,6 +148,26 @@ std::optional<size_t> LayerHeightProfileControl::hovered_range_index() const
 bool LayerHeightProfileControl::is_external_hover() const
 {
     return m_external_hover;
+}
+
+void LayerHeightProfileControl::update_overlaps()
+{
+    m_overlaps.clear();
+    for (size_t i = 0; i + 1 < m_height_ranges.size(); ++i) {
+        for (size_t j = i + 1; j < m_height_ranges.size(); ++j) {
+            const HeightRangeEntry& a = m_height_ranges[i];
+            const HeightRangeEntry& b = m_height_ranges[j];
+
+            const float min_z = std::max<float>(a.min_z, b.min_z);
+            const float max_z = std::min<float>(a.max_z, b.max_z);
+
+            if (min_z < max_z) {
+                m_overlaps.emplace_back(min_z, max_z);
+            }
+        }
+    }
+
+    std::sort(m_overlaps.begin(), m_overlaps.end());
 }
 
 float LayerHeightProfileControl::project_layer_height(
@@ -191,7 +220,7 @@ void LayerHeightProfileControl::render_baseline(const Vec2f& pos, const Vec2f& s
     draw_list.AddLine(
         ImVec2(baseline_pos_x, pos.y()),
         ImVec2(baseline_pos_x, pos.y() + size.y()),
-        LAYER_HEIGHT_BASELINE_COLOR,
+        m_layer_height_baseline_color,
         LAYER_HEIGHT_BASELINE_THICKNESS
     );
 }
@@ -228,7 +257,7 @@ LayerHeightProfileControl::render_layer_height_profile(const Vec2f& pos, const V
     draw_list.AddPolyline(
         profile_points.data(),
         static_cast<int>(profile_points.size()),
-        LAYER_HEIGHT_PROFILE_COLOR,
+        m_layer_height_profile_color,
         ImDrawFlags_None,
         LAYER_HEIGHT_PROFILE_THICKNESS
     );
@@ -250,19 +279,23 @@ void LayerHeightProfileControl::render_height_ranges(const Vec2f& pos, const Vec
     ASSERT(!has_selected || m_selected_range_index.value() < m_height_ranges.size());
 
     ImDrawList& draw_list = *ImGui::GetWindowDrawList();
+
     const auto draw_range = [&](const size_t range_idx, const ImColor range_color)
     {
         const HeightRangeEntry& height_range = m_height_ranges[range_idx];
-        const float top_y                    = this->project_layer_z(
+
+        const float top_y = this->project_layer_z(
             static_cast<float>(height_range.max_z),
             pos.y(),
             pos.y() + size.y()
         );
+
         const float bottom_y = this->project_layer_z(
             static_cast<float>(height_range.min_z),
             pos.y(),
             pos.y() + size.y()
         );
+
         draw_list.AddRectFilled(
             ImVec2(pos.x(), top_y),
             ImVec2(pos.x() + size.x(), bottom_y),
@@ -277,17 +310,35 @@ void LayerHeightProfileControl::render_height_ranges(const Vec2f& pos, const Vec
             continue;
         }
 
-        draw_range(i, (i % 2 == 0) ? HEIGHT_RANGE_COLOR_EVEN : HEIGHT_RANGE_COLOR_ODD);
+        draw_range(i, (i % 2 == 0) ? m_height_range_color_even : m_height_range_color_odd);
     }
 
     if (has_hovered
         && (!has_selected || m_hovered_range_index.value() != m_selected_range_index.value()))
     {
-        draw_range(m_hovered_range_index.value(), HEIGHT_RANGE_COLOR_HOVERED);
+        draw_range(m_hovered_range_index.value(), m_height_range_color_hovered);
     }
 
     if (has_selected) {
-        draw_range(m_selected_range_index.value(), HEIGHT_RANGE_COLOR_SELECTED);
+        draw_range(m_selected_range_index.value(), m_height_range_color_selected);
+    }
+
+    // Draw overlaps
+    for (size_t i = 0; i < m_overlaps.size();) {
+        auto [min_z, max_z] = m_overlaps[i++];
+
+        while (i < m_overlaps.size() && m_overlaps[i].first <= max_z) {
+            max_z = std::max(max_z, m_overlaps[i++].second);
+        }
+
+        const float top_y    = this->project_layer_z(max_z, pos.y(), pos.y() + size.y());
+        const float bottom_y = this->project_layer_z(min_z, pos.y(), pos.y() + size.y());
+
+        const ImVec2 rect_min(pos.x(), top_y);
+        const ImVec2 rect_max(pos.x() + size.x(), bottom_y);
+
+        draw_list.AddRectFilled(rect_min, rect_max, m_height_range_color_overlap_fill);
+        draw_list.AddRect(rect_min, rect_max, m_height_range_color_overlap_border, 0.0f, 0, 2.0f);
     }
 }
 

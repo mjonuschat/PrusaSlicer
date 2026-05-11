@@ -26,8 +26,6 @@ constexpr double SURFACE_DISTANCE_STEP = 0.01;
 
 namespace Slic3r::App::Plater {
 
-bool set_debug = false;
-
 TextDialog::Callbacks& TextDialog::callbacks()
 {
     return m_callbacks;
@@ -35,18 +33,7 @@ TextDialog::Callbacks& TextDialog::callbacks()
 
 TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 {
-    content()->set_debug_border(set_debug);
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_flex_grow(1);
-
-    m_scroll_area = content()->emplace_back<ScrollArea>("ScrollPanels");
-    m_scroll_area->set_gap(gap_size());
-    m_scroll_area->set_orientation(Orientation::Vertical);
-    m_scroll_area->set_flex_grow(1);
-    m_scroll_area->set_padding(content()->padding());
-    content()->set_padding(0.f);
-
-    m_editor = m_scroll_area->emplace_back<InputTextField>();
+    m_editor = content()->emplace_back<InputTextField>();
     m_editor->set_height(100); // set multi-line mode
     m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
     m_editor->set_flex_shrink(0.f);
@@ -74,7 +61,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         if (m_callbacks.font_selection_changed)
             m_callbacks.font_selection_changed(font);
     };
-    add_row(_u8L("Font"), m_font.release(), m_scroll_area, _u8L("Revert font changes."));
+    add_row(_u8L("Font"), m_font.release(), content(), _u8L("Revert font changes."));
 
     m_style                                = Passthrough{std::make_unique<ComboBox>("Font style")};
     m_style->callbacks().selection_changed = [this](int index) {
@@ -82,7 +69,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         if (m_callbacks.font_selection_changed && font_index < m_fonts.size())
             m_callbacks.font_selection_changed(m_fonts[font_index]);
     };
-    add_row(_u8L("Style"), m_style.release(), m_scroll_area, _u8L("Revert style changes."));
+    add_row(_u8L("Style"), m_style.release(), content(), _u8L("Revert style changes."));
 
     m_height = Passthrough{
         std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(0.1, 100.), 0.1, 1.)
@@ -94,7 +81,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         if (m_callbacks.height_changed)
             m_callbacks.height_changed(height);
     };
-    add_row(_u8L("Height"), m_height.release(), m_scroll_area, _u8L("Revert text size."), "mm");
+    add_row(_u8L("Height"), m_height.release(), content(), _u8L("Revert text size."), "mm");
 
     m_depth = Passthrough{
         std::make_unique<InputTextWithSpin>(std::make_unique<DoubleValidator>(0.1, 100.), 0.1, 1.)
@@ -106,9 +93,9 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         if (m_callbacks.depth_changed)
             m_callbacks.depth_changed(depth);
     };
-    add_row(_u8L("Depth"), m_depth.release(), m_scroll_area, _u8L("Revert embossed depth."), "mm");
+    add_row(_u8L("Depth"), m_depth.release(), content(), _u8L("Revert embossed depth."), "mm");
 
-    m_advanced = m_scroll_area->emplace_back<ToggleButton>(_u8L("Advanced"));
+    m_advanced = content()->emplace_back<ToggleButton>(_u8L("Advanced"));
     m_advanced->set_flex_shrink(0.f);
     m_advanced->callbacks().checked_changed = [this](bool checked) {
         m_advanced_panel->set_visible(checked);
@@ -116,14 +103,14 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 
     add_advanced_panel();
 
-    add_separator(m_scroll_area);
+    add_separator(content());
 
     m_preset = Passthrough{std::make_unique<ComboBox>("Font preset")};
     m_preset->callbacks().selection_changed = [this](int index) {
         if (m_callbacks.preset_selection_changed)
             m_callbacks.preset_selection_changed(index);
     };
-    add_row(_u8L("Preset"), m_preset.release(), m_scroll_area);
+    add_row(_u8L("Preset"), m_preset.release(), content());
 
     std::unique_ptr<Item> buttons = std::make_unique<Item>();
     buttons->set_gap(gap_size());
@@ -164,7 +151,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     };
 
     // add_row("", std::move(buttons), nullptr, false);
-    add_row({}, std::move(buttons), m_scroll_area);
+    add_row({}, std::move(buttons), content());
 
     for (LayoutButton* btn :
          {m_save_as_new_btn, m_save_btn, m_rename_btn, m_delete_btn, m_lock_offset_btn})
@@ -181,14 +168,13 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 
 void TextDialog::add_advanced_panel()
 {
-    m_advanced_panel = m_scroll_area->emplace_back<Item>();
+    m_advanced_panel = content()->emplace_back<Item>();
     m_advanced_panel->set_flex_grow(1.f);
     m_advanced_panel->set_flex_shrink(0.f);
-    m_advanced_panel->set_debug_border(set_debug);
 
     m_advanced_panel->set_visible(false);
     m_advanced_panel->set_orientation(Orientation::Vertical);
-    m_advanced_panel->set_padding({ m_scroll_area->padding().left, 0});
+    m_advanced_panel->set_padding({ content()->padding().left, 0});
     m_advanced_panel->set_gap(gap_size());
 
     m_use_surface = Passthrough{std::make_unique<ToggleButton>(_u8L("Use Surface"))};
@@ -332,7 +318,6 @@ otherwise, the whole text has the same orthogonal projection.")
     m_set_on_face_camera_btn = m_advanced_panel->emplace_back<LayoutButton>(
         _u8L("Set text to face camera")
     );
-    m_set_on_face_camera_btn->set_background_color({43, 43, 43});
     m_set_on_face_camera_btn->callbacks().action = [this]() {
         if (m_callbacks.set_on_face_camera)
             m_callbacks.set_on_face_camera();
@@ -370,13 +355,12 @@ size_t to_operation_index(Domain::ModelVolumeType type) {
 
 void TextDialog::add_part_specific_panel()
 {
-    m_part_specific_panel = m_scroll_area->emplace_back<Item>();
+    m_part_specific_panel = content()->emplace_back<Item>();
     m_part_specific_panel->set_flex_grow(1.f);
     m_part_specific_panel->set_flex_shrink(0.f);
-    m_part_specific_panel->set_debug_border(set_debug);
     m_part_specific_panel->set_orientation(Orientation::Vertical);
     m_part_specific_panel->set_gap(gap_size());
-    m_part_specific_panel->set_padding({0.f, m_scroll_area->padding().vertical()});
+    m_part_specific_panel->set_padding({0.f, content()->padding().vertical()});
     add_separator(m_part_specific_panel);
     m_operation = Passthrough(std::make_unique<ComboBox>(get_operation_names()));
     m_operation->callbacks().selection_changed = [this](int index) {
@@ -402,13 +386,11 @@ Item* TextDialog::add_row(
 {
     Item* row = parent->emplace_back<Item>();
     row->set_flex_shrink(0);
-    row->set_debug_border(set_debug);
     row->set_gap(3);
 
     Text* text = row->emplace_back<Text>(title);
     text->set_width_percent(25);
     text->set_self_align(YGAlignCenter);
-    text->set_debug_border(set_debug);
 
     Item* revert_space = row->emplace_back<Item>();
     revert_space->set_justify_content(YGJustifyFlexEnd);
@@ -427,11 +409,9 @@ Item* TextDialog::add_row(
     }
 
     Item* box = row->emplace_back<Item>();
-    box->set_debug_border(set_debug);
     box->set_width_percent(65);
     box->set_gap(gap_size());
     control->set_flex_grow(1);
-    control->set_debug_border(set_debug);
     box->append(std::move(control));
 
     if (!unit.empty()) {
@@ -682,8 +662,9 @@ void TextDialog::set_rotation_lock(bool lock)
 
 void TextDialog::set_enable_all_except_font(bool enable)
 {
+    // TODO: Completely rewrite please, this is disgusting, eww
     Item* font_row = m_font->parent_item()->parent_item();
-    for (auto row : m_scroll_area->items()) {
+    for (auto row : content()->items()) {
         if (row != font_row)
             row->set_enabled(enable);
     }

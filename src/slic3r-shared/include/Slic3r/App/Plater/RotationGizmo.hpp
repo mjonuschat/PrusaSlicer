@@ -60,7 +60,7 @@ public:
         const Biz::Scene::ObjectSelection& selection
     ) override;
 
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<GizmoWindow> release_ui_window() override;
 
 private:
     void on_stop_dragging();

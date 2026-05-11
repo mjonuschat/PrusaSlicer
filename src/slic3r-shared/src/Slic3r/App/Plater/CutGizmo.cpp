@@ -4,6 +4,7 @@
 ///|/
 
 #include "Slic3r/App/Plater/CutGizmo.hpp"
+
 #include "Slic3r/App/Plater/CutDialog.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
@@ -717,7 +718,7 @@ bool CutGizmo::enabled() const
     return selection.state() == Biz::Scene::SelectionState::WholeInstance;
 }
 
-Yoga::GizmoWindowPtr CutGizmo::release_ui_window()
+GizmoWindowPtr CutGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

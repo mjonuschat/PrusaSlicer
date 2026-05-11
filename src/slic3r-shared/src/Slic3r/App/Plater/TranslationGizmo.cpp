@@ -295,7 +295,7 @@ bool TranslationGizmo::enabled() const {
     return !m_scene_interactor.object_selection().empty();
 }
 
-std::unique_ptr<Yoga::GizmoWindow> TranslationGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> TranslationGizmo::release_ui_window()
 {
     auto window{std::make_unique<TranslationDialog>(
         m_scene_provider,

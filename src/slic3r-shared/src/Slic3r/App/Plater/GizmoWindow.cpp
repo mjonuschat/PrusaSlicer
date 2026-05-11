@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -13,27 +13,33 @@
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Plater/WarningPanel.hpp"
 
-namespace Slic3r::App::Yoga {
+using namespace Slic3r::App::Yoga;
 
-constexpr float dialog_padding = 10;
+namespace Slic3r::App::Plater {
 
-GizmoWindow::GizmoWindow() : Window("GizmoWindow") {}
+constexpr float dialog_padding = 20;
 
 GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std::string& shortcut) :
     Window("GizmoWindow")
 {
-    set_orientation(Orientation::Vertical);
+    set_orientation(Orientation::Horizontal);
     set_gap(0);
     set_padding(0);
     set_flex_grow(1);
     set_flags(ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 
-    Item* m_top_row = emplace_back<Item>();
-    m_top_row->set_max_size({YGUndefined, 40});
-    m_top_row->set_flex_shrink(0);
+    Item* column = emplace_back<Item>();
+    column->set_orientation(Orientation::Vertical);
+    column->set_flex_grow(1);
 
-    Rectangle* buttons_rect = m_top_row->emplace_back<Rectangle>();
+    Item* top_row = column->emplace_back<Item>();
+    top_row->set_max_size({YGUndefined, 40});
+    top_row->set_flex_shrink(0);
+
+    Rectangle* buttons_rect = top_row->emplace_back<Rectangle>();
     buttons_rect->set_align_items(YGAlignCenter);
     buttons_rect->set_padding(dialog_padding);
     buttons_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
@@ -45,6 +51,7 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
         header_icon->set_margin(Margins{0, 0, 3, 0});
         header_icon->set_width(20);
         header_icon->set_height(20);
+        header_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     } else {
         buttons_rect->set_padding(Paddings{24, dialog_padding, dialog_padding, dialog_padding});
     }
@@ -52,7 +59,7 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
     Text* title_text = buttons_rect->emplace_back<Text>(title);
     title_text->set_font_type(Render::ImguiFontType::Bold);
 
-    if (shortcut != "") {
+    if (!shortcut.empty()) {
         Text* shortcut_text = buttons_rect->emplace_back<Text>(shortcut);
         shortcut_text->set_margin({6, 0, 0, 0});
         shortcut_text->set_text_color(
@@ -63,8 +70,10 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
     Item* spacer = buttons_rect->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
-    m_revert_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::UndoGizmo);
-    m_revert_button->set_min_size({24, 24});
+    m_revert_button =
+        buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::UndoGizmo);
+    m_revert_button->set_width(24);
+    m_revert_button->set_height(24);
     m_revert_button->callbacks().action = [this]
     {
         if (m_gizmo_callback.revert_requested) {
@@ -74,8 +83,10 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
     m_revert_button->set_visible(false);
     m_revert_button->set_margin(Margins(10.f, 0.f));
 
-    m_close_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
-    m_close_button->set_min_size({20, 20});
+    m_close_button =
+        buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::PrintIdle);
+    m_close_button->set_width(20);
+    m_close_button->set_height(20);
     m_close_button->callbacks().action = [this]
     {
         if (m_gizmo_callback.close_requested) {
@@ -83,8 +94,21 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
         }
     };
 
-    m_content = emplace_back<Item>();
-    m_content->set_padding(dialog_padding);
+    m_top_bar = column->emplace_back<Item>();
+
+    m_content = column->emplace_back<ScrollArea>();
+    m_content->set_padding(
+        Paddings{dialog_padding, dialog_padding * 0.5, dialog_padding, dialog_padding * 0.5}
+    );
+    m_content->set_flex_grow(1);
+    m_content->set_gap(gap_size());
+    m_content->set_orientation(Orientation::Vertical);
+
+    m_warning_panel = column->emplace_back<WarningPanel>();
+    m_warning_panel->set_flex_shrink(0);
+    m_warning_panel->set_visible(false);
+
+    m_bottom_bar = column->emplace_back<Item>();
 }
 
 GizmoWindow::GizmoCallbacks& GizmoWindow::gizmo_callbacks()
@@ -117,7 +141,12 @@ Separator* GizmoWindow::add_separator(Item* item)
 
 float GizmoWindow::gap_size() const
 {
-    return 5.0f;
+    return 10.f;
+}
+
+float GizmoWindow::preffered_max_width() const
+{
+    return 400.f;
 }
 
 Item*
@@ -125,7 +154,7 @@ GizmoWindow::add_new_row(const std::string& title, Yoga::ItemPtr controls, YGAli
 {
     Item* row = content()->emplace_back<Item>();
     row->set_gap(gap_size());
-    row->set_padding({10, 0});
+    row->set_flex_shrink(0);
     Text* text = row->emplace_back<Text>(title);
     text->set_self_align(label_align);
     text->set_width(100);
@@ -138,6 +167,16 @@ GizmoWindow::add_new_row(const std::string& title, Yoga::ItemPtr controls, YGAli
 Item* GizmoWindow::content() const
 {
     return m_content;
+}
+
+Item* GizmoWindow::top_bar() const
+{
+    return m_top_bar;
+}
+
+Item* GizmoWindow::bottom_bar() const
+{
+    return m_bottom_bar;
 }
 
 LayoutButton* GizmoWindow::close_button() const
@@ -165,7 +204,7 @@ LayoutButton* GizmoWindow::add_revert_btn(Item* parent, const std::string& toolt
     revert_space->set_min_size(Vec2f(24.f, 24.f));
     revert_space->set_justify_content(YGJustifyFlexEnd);
     LayoutButton* revert_btn =
-        revert_space->emplace_back<LayoutButton>("", Render::Icon::DSRevert, tooltip);
+        revert_space->emplace_back<LayoutButton>(std::string{}, Render::Icon::DSRevert, tooltip);
     revert_btn->set_min_size(Vec2f(20.f, 20.f));
     revert_btn->set_self_align(YGAlignCenter);
     return revert_btn;
@@ -226,8 +265,11 @@ Item* GizmoWindow::add_row_with_spin_double(
     Item* row           = add_labeled_row(parent, title);
     Item* wrap_row_item = add_flex_shrinked_wrap(row);
 
-    (*input) =
-        wrap_row_item->emplace_back<InputTextWithSpin>(std::make_unique<DoubleValidator>(min, max), step, step_fast);
+    (*input) = wrap_row_item->emplace_back<InputTextWithSpin>(
+        std::make_unique<DoubleValidator>(min, max),
+        step,
+        step_fast
+    );
 
     wrap_row_item->emplace_back<Text>(unit)->set_self_align(YGAlignCenter);
 
@@ -260,4 +302,21 @@ Item* GizmoWindow::add_row_with_slider(
     return line_wrap;
 }
 
-} // namespace Slic3r::App::Yoga
+void GizmoWindow::set_warning(const std::string& title, const std::string& text)
+{
+    m_warning_panel->set_warning(title, text);
+    m_warning_panel->set_visible(true);
+}
+
+void GizmoWindow::set_warning(const std::string& title, const std::vector<std::string>& errors)
+{
+    m_warning_panel->set_warning(title, errors);
+    m_warning_panel->set_visible(true);
+}
+
+void GizmoWindow::clear_warning()
+{
+    m_warning_panel->set_visible(false);
+}
+
+} // namespace Slic3r::App::Plater

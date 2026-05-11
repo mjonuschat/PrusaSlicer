@@ -66,7 +66,7 @@ Scene::ToolType PaintOnFuzzySkinGizmo::type() const
     return Scene::ToolType::PaintOnFuzzySkinGizmo;
 }
 
-std::unique_ptr<Yoga::GizmoWindow> PaintOnFuzzySkinGizmo::release_ui_window()
+std::unique_ptr<GizmoWindow> PaintOnFuzzySkinGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

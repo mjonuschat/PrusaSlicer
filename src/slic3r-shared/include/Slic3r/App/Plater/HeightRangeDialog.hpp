@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Plater/HeightRangeRow.hpp"
-#include "Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.hpp"
+#include "Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
@@ -26,7 +26,7 @@ namespace Slic3r::App::Plater {
 
 class LayerRangeSettingsDialog;
 
-class HeightRangeDialog : public Yoga::GizmoWindowWithLeftSidePanel
+class HeightRangeDialog : public GizmoWindowWithLeftSidePanel
 {
 public:
     struct Callbacks
@@ -93,8 +93,6 @@ private:
     Yoga::HeightRangeControl* m_layer_height_profile_control = nullptr;
     LayerRangeSettingsDialog* m_layer_range_settings_dialog  = nullptr;
     Domain::ConfigBox* m_current_range_settings              = nullptr;
-
-    Yoga::ScrollArea* m_content_scroll_area = nullptr;
 
     Yoga::Item* m_height_range_list_container = nullptr;
     std::vector<HeightRangeRow*> m_height_range_rows;

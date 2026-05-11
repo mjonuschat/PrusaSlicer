@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Plater/PaintOnGizmoBase.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
@@ -14,7 +14,7 @@ namespace Slic3r::App::Plater {
 class ColorSelector;
 class ColorDropdowns;
 
-class MultiMaterialPaintingDialog : public Yoga::GizmoWindow
+class MultiMaterialPaintingDialog : public GizmoWindow
 {
 public:
     explicit MultiMaterialPaintingDialog();

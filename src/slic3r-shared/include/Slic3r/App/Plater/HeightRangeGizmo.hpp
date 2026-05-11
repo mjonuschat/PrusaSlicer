@@ -61,7 +61,7 @@ public:
     Scene::ToolType type() const override;
     bool disable_object_selection() const override;
     bool enabled() const override;
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<Plater::GizmoWindow> release_ui_window() override;
 
     void on_activated() override;
     void on_deactivated() override;

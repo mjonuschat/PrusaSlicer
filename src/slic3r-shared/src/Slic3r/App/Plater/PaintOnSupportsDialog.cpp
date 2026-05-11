@@ -3,7 +3,6 @@
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -22,12 +21,12 @@ PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
 PaintOnSupportsDialog::PaintOnSupportsDialog() :
     GizmoWindow(_u8L("Paint-on supports"), Render::Icon::PaintSupports)
 {
-    this->content()->set_orientation(Orientation::Vertical);
-    this->content()->set_gap(this->gap_size());
+    content()->set_orientation(Orientation::Vertical);
+    content()->set_gap(gap_size());
 
     const Vec2f tool_type_button_size{50.f, 50.f};
     std::unique_ptr<Item> tool_type_buttons = std::make_unique<Item>();
-    tool_type_buttons->set_gap(this->gap_size());
+    tool_type_buttons->set_gap(5.f);
 
     m_brush_button =
         tool_type_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::PaintBrush);
@@ -65,7 +64,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
 
     const Vec2f brush_shape_button_size{50.f, 50.f};
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
-    brush_shape_buttons->set_gap(this->gap_size());
+    brush_shape_buttons->set_gap(5.f);
 
     m_sphere_brush_button =
         brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Sphere);
@@ -118,6 +117,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     m_brush_radius_row = this->add_new_row(_u8L("Brush size"), m_brush_radius_slider.release());
 
     m_split_triangles_toggle = this->content()->emplace_back<ToggleButton>(_u8L("Split triangles"));
+    m_split_triangles_toggle->set_flex_shrink(0);
     m_split_triangles_toggle->callbacks().checked_changed = [this](bool checked)
     { m_callbacks.split_triangles_value_changed(checked); };
 
@@ -150,7 +150,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     this->add_new_row(_u8L("Show overhangs"), m_highlight_overhangs_angle_slider.release());
 
     std::unique_ptr<Item> overhangs_buttons = std::make_unique<Item>();
-    overhangs_buttons->set_gap(this->gap_size());
+    overhangs_buttons->set_gap(5.f);
 
     m_overhangs_enforce_button = overhangs_buttons->emplace_back<LayoutButton>(_u8L("Enforce"));
     m_overhangs_enforce_button->callbacks().action = [this]()
@@ -162,6 +162,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
 
     m_paint_on_overhangs_only_toggle =
         this->content()->emplace_back<ToggleButton>(_u8L("Paint on overhangs only"));
+    m_paint_on_overhangs_only_toggle->set_flex_shrink(0);
     m_paint_on_overhangs_only_toggle->callbacks().checked_changed = [this](bool checked)
     { m_callbacks.paint_on_overhangs_only_value_changed(checked); };
 
@@ -177,7 +178,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     this->add_new_row(_u8L("Clipping of view"), m_clipping_of_view_slider.release());
 
     std::unique_ptr<Item> clipping_of_view_buttons = std::make_unique<Item>();
-    clipping_of_view_buttons->set_gap(this->gap_size());
+    clipping_of_view_buttons->set_gap(5.f);
 
     m_clipping_of_view_reset_direction_button =
         clipping_of_view_buttons->emplace_back<LayoutButton>(_u8L("Reset direction"));
@@ -188,6 +189,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     this->add_separator(this->content());
 
     Item* automatic_painting_row = this->content()->emplace_back<Item>();
+    automatic_painting_row->set_flex_shrink(0);
     m_automatic_painting_button =
         automatic_painting_row->emplace_back<LayoutButton>(_u8L("Automatic painting"));
     m_automatic_painting_button->callbacks().action = [this]()
@@ -196,6 +198,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     this->add_separator(this->content());
 
     Item* painting_reset_row = this->content()->emplace_back<Item>();
+    painting_reset_row->set_flex_shrink(0);
     m_painting_reset_button =
         painting_reset_row->emplace_back<LayoutButton>(_u8L("Remove all selection"));
     m_painting_reset_button->callbacks().action = [this]() { m_callbacks.painting_reset(); };
@@ -203,6 +206,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     this->add_separator(this->content());
 
     Item* help_row = this->content()->emplace_back<Item>();
+    help_row->set_flex_shrink(0);
     help_row->set_min_size({0, 50});
     help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
     help_row->set_align_content(YGAlign::YGAlignCenter);
@@ -210,11 +214,11 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     help_row->set_gap(15);
     help_row->set_flex_wrap(YGWrapWrap);
 
-    m_help.init(help_row);
-    m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Paint"));
-    m_help.add_item({{Render::Icon::MouseRight}}, _u8L("Block"));
-    m_help.add_item(
-        {{Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft}},
+    m_help_factory.init(help_row);
+    m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Paint"));
+    m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight}}, _u8L("Block"));
+    m_help_factory.add_item(
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}},
         _u8L("Remove")
     );
 }

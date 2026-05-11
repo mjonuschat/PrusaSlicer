@@ -11,12 +11,13 @@
 
 namespace Slic3r::App {
 
+class BedShapePreview;
+
 namespace Yoga {
 class ComboBox;
 class InputTextField;
 class LayoutButton;
 class Rectangle;
-class BedShapePreview;
 class StackLayout;
 } // namespace Yoga
 
@@ -58,7 +59,7 @@ private:
 
     Yoga::StackLayout* m_ui_layout{ nullptr };
 
-    Yoga::BedShapePreview* m_shape_preview{nullptr};
+    BedShapePreview* m_shape_preview{nullptr};
 };
 
 } // namespace Slic3r::App

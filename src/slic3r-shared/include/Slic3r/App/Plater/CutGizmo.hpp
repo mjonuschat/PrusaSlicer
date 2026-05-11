@@ -103,7 +103,7 @@ public:
 
     Scene::ToolType type() const override;
     bool enabled() const override;
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<GizmoWindow> release_ui_window() override;
     /**@}*/
 
 private:

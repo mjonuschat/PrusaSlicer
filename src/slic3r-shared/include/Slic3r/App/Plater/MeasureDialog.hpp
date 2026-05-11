@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Plater/Measure.hpp"
 #include "Slic3r/App/Plater/MeasureGizmoHelper.hpp"
 
@@ -15,7 +15,7 @@ class LayoutButton;
 
 namespace Slic3r::App::Plater {
 
-class MeasureDialog : public Yoga::GizmoWindow
+class MeasureDialog : public GizmoWindow
 {
 public:
     MeasureDialog();
@@ -49,8 +49,6 @@ private:
     void add_spot_row(const ImColor& marker, const std::string& title, Yoga::ItemPtr controls);
     void set_measure(const Measure::MeasurementResult& result);
     void set_measure_row(size_t id, const std::string& name, const std::string& value);
-    void set_help_item_color(size_t help_item_id, const ImColor& color);
-    void set_help_item_title(size_t help_item_id, const std::string& title);
 
 private:
     struct MeasureRowItem
@@ -69,7 +67,11 @@ private:
 
     Yoga::Item* m_helper_panel = nullptr;
     Yoga::Item* m_main_panel   = nullptr;
-    Yoga::GizmoDialogHelp m_extra_help;
+    GizmoHelpFactory m_extra_help;
+    Yoga::Icon* m_help_select_icon   = nullptr;
+    Yoga::Text* m_help_select_text   = nullptr;
+    Yoga::Icon* m_help_unselect_icon = nullptr;
+    Yoga::Text* m_help_unselect_text = nullptr;
 };
 
 } // namespace Slic3r::App::Plater

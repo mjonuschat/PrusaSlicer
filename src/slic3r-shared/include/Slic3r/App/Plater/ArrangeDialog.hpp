@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/Biz/Arrange/Settings.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -21,7 +21,7 @@ enum class ArrangeTaskStatus
     Running
 };
 
-class ArrangeDialog final : public Yoga::GizmoWindow
+class ArrangeDialog final : public GizmoWindow
 {
 public:
     using OnArrange      = std::function<void()>;

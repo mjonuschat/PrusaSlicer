@@ -36,7 +36,7 @@ public:
     ~PaintOnFuzzySkinGizmo() override;
 
     Scene::ToolType type() const override;
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    std::unique_ptr<GizmoWindow> release_ui_window() override;
 
     Domain::TriangleSelector::TriangleStateType get_left_button_state_type() const override;
     Domain::TriangleSelector::TriangleStateType get_right_button_state_type() const override;

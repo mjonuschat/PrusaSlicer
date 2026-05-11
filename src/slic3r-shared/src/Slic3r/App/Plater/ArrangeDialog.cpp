@@ -1,17 +1,18 @@
+#include "Slic3r/App/Plater/ArrangeDialog.hpp"
+
+#include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
+
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include "Slic3r/App/Yoga/SegmentedControl.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
-#include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
-#include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/Biz/Algorithms/Scaling.hpp"
-#include "Slic3r/Biz/I18N/I18N.hpp"
-#include "Slic3r/Domain/BedRef.hpp"
-#include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/App/Plater/ArrangeDialog.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -89,9 +90,13 @@ public:
         for (std::size_t row_index{}; row_index < 3; ++row_index) {
             Item* row = emplace_back<Item>();
             for (std::size_t column_index{}; column_index < 3; ++column_index) {
-                const std::optional<PivotPoint> pivot_point{get_pivot_point(row_index, column_index)};
+                const std::optional<PivotPoint> pivot_point{
+                    get_pivot_point(row_index, column_index)
+                };
                 if (pivot_point) {
-                    LayoutButton* button{row->emplace_back<LayoutButton>("", get_icon(*pivot_point))};
+                    LayoutButton* button{
+                        row->emplace_back<LayoutButton>("", get_icon(*pivot_point))
+                    };
                     button->set_rounding(0.0);
                     button->set_content_padding(0.0);
                     button->set_background_color(IM_COL32_BLACK_TRANS);
@@ -128,7 +133,7 @@ ArrangeDialog::ArrangeDialog(
     OnModeSelected on_mode_selected,
     const Settings& settings
 ) :
-    Yoga::GizmoWindow{Biz::_u8L("Arrange"), Render::Icon::Layout},
+    GizmoWindow{Biz::_u8L("Arrange"), Render::Icon::Layout},
     m_on_arrange{on_arrange},
     m_on_cancel{on_cancel}
 {
@@ -150,11 +155,12 @@ ArrangeDialog::ArrangeDialog(
         },
     };
 
-    auto mode{
-        std::make_unique<SegmentedControl>(segments, gap_size(), [on_mode_selected](std::size_t index) {
-            on_mode_selected(static_cast<Biz::Arrange::Mode>(index));
-        })
-    };
+    auto mode{std::make_unique<SegmentedControl>(
+        segments,
+        gap_size(),
+        [on_mode_selected](std::size_t index)
+        { on_mode_selected(static_cast<Biz::Arrange::Mode>(index)); }
+    )};
     m_mode = mode.get();
     GizmoWindow::add_new_row(_u8L("Mode"), std::move(mode));
 
@@ -164,6 +170,7 @@ ArrangeDialog::ArrangeDialog(
     offset_slider->set_begin_value(0.0);
     offset_slider->set_end_value(100.0);
     offset_slider->set_step(1.0);
+    offset_slider->set_max_size({preffered_max_width(), YGUndefined});
 
     m_offset_slider = offset_slider.get();
     GizmoWindow::add_new_row(_u8L("Spacing"), std::move(offset_slider));
@@ -173,6 +180,7 @@ ArrangeDialog::ArrangeDialog(
     bed_offset_slider->set_begin_value(0.0);
     bed_offset_slider->set_end_value(100.0);
     bed_offset_slider->set_step(1.0);
+    bed_offset_slider->set_max_size({preffered_max_width(), YGUndefined});
 
     m_bed_offset_slider = bed_offset_slider.get();
     GizmoWindow::add_new_row(_u8L("Bed spacing"), std::move(bed_offset_slider));
@@ -185,25 +193,27 @@ ArrangeDialog::ArrangeDialog(
     m_mode_slider = geometry_handling_control->emplace_back<Slider>(0.0, 2.0, 1.0);
     m_mode_slider->set_flex_grow(1.0);
     geometry_handling_control->emplace_back<Text>("accurate");
-    add_new_row("Performance", std::move(geometry_handling_control));
+    geometry_handling_control->set_max_size({preffered_max_width(), YGUndefined});
+    add_new_row(_u8L("Performance"), std::move(geometry_handling_control));
 
     add_separator(content());
 
     auto pivot_picker{std::make_unique<PivotPicker>()};
     m_pivot_picker = pivot_picker.get();
-    m_bed_segments_row = add_new_row("Alignment", std::move(pivot_picker), YGAlign::YGAlignFlexStart);
+    m_bed_segments_row =
+        add_new_row(_u8L("Alignment"), std::move(pivot_picker), YGAlign::YGAlignFlexStart);
     m_bed_segments_separator = add_separator(content());
     set_bed_segments(settings.bed_segments);
 
-    m_enable_rotations_toggle = content()->emplace_back<ToggleButton>("Enable rotations");
+    m_enable_rotations_toggle = content()->emplace_back<ToggleButton>(_u8L("Enable rotations"));
     m_enable_rotations_toggle->set_checked(settings.allow_rotations);
 
     add_separator(content());
 
-    m_arrange_button                     = content()->emplace_back<LayoutButton>(_u8L("Arrange"));
-    m_arrange_button->callbacks().action = [this]() {
-        m_on_arrange();
-    };
+    m_arrange_button = bottom_bar()->emplace_back<LayoutButton>("Arrange");
+    m_arrange_button->set_padding(5);
+    m_arrange_button->set_height(40);
+    m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
 
     m_arrange_button->set_flex_grow(1);
 
@@ -230,14 +240,10 @@ void ArrangeDialog::update_status(const ArrangeTaskStatus status)
     using namespace Biz;
     if (status == ArrangeTaskStatus::Running) {
         m_arrange_button->set_label(_u8L("Cancel"));
-        m_arrange_button->callbacks().action = [this]() {
-            m_on_cancel();
-        };
+        m_arrange_button->callbacks().action = [this]() { m_on_cancel(); };
     } else if (status == ArrangeTaskStatus::Idle) {
         m_arrange_button->set_label(_u8L("Arrange"));
-        m_arrange_button->callbacks().action = [this]() {
-            m_on_arrange();
-        };
+        m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
     } else {
         PANIC("Unknown arrange task status!");
     }

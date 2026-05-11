@@ -78,14 +78,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/MultiMaterialPaintingGizmo.cpp
         include/Slic3r/App/Plater/MultiMaterialPaintingDialog.hpp
         src/Slic3r/App/Plater/MultiMaterialPaintingDialog.cpp
-		include/Slic3r/App/Plater/LayerHeightGizmoHelper.hpp
-		src/Slic3r/App/Plater/LayerHeightGizmoHelper.cpp
+        include/Slic3r/App/Plater/LayerHeightGizmoHelper.hpp
+        src/Slic3r/App/Plater/LayerHeightGizmoHelper.cpp
         include/Slic3r/App/Plater/VariableLayerHeightGizmo.hpp
-		src/Slic3r/App/Plater/VariableLayerHeightGizmo.cpp
+        src/Slic3r/App/Plater/VariableLayerHeightGizmo.cpp
         include/Slic3r/App/Plater/VariableLayerHeightDialog.hpp
         src/Slic3r/App/Plater/VariableLayerHeightDialog.cpp
-		include/Slic3r/App/Plater/HeightRangeNodeTag.hpp
-		include/Slic3r/App/Plater/HeightRangeGizmo.hpp
+        include/Slic3r/App/Plater/HeightRangeNodeTag.hpp
+        include/Slic3r/App/Plater/HeightRangeGizmo.hpp
         src/Slic3r/App/Plater/HeightRangeGizmo.cpp
         include/Slic3r/App/Plater/HeightRangeDialog.hpp
         src/Slic3r/App/Plater/HeightRangeDialog.cpp
@@ -101,6 +101,18 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/MMPaintingUtils.cpp
         include/Slic3r/App/Plater/MMPaintingColorSelector.hpp
         src/Slic3r/App/Plater/MMPaintingColorSelector.cpp
+        include/Slic3r/App/Plater/HeightRangeButton.hpp
+        src/Slic3r/App/Plater/HeightRangeButton.cpp
+        src/Slic3r/App/Plater/WarningPanel.cpp
+        include/Slic3r/App/Plater/WarningPanel.hpp
+        include/Slic3r/App/Plater/GizmoWindow.hpp
+        src/Slic3r/App/Plater/GizmoWindow.cpp
+        include/Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.hpp
+        src/Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.cpp
+        include/Slic3r/App/Plater/GizmoHelpFactory.hpp
+        src/Slic3r/App/Plater/GizmoHelpFactory.cpp
+        include/Slic3r/App/Plater/KeyIcon.hpp
+        src/Slic3r/App/Plater/KeyIcon.cpp
 
         include/Slic3r/App/Plater/DialogUtils.hpp
         include/Slic3r/App/Scene/EmbossCreate.hpp
@@ -518,12 +530,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Text.cpp
         include/Slic3r/App/Yoga/Dialog.hpp
         src/Slic3r/App/Yoga/Dialog.cpp
-        include/Slic3r/App/Yoga/GizmoWindow.hpp
-        src/Slic3r/App/Yoga/GizmoWindow.cpp
-        include/Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.hpp
-        src/Slic3r/App/Yoga/GizmoWindowWithLeftSidePanel.cpp
-        include/Slic3r/App/Yoga/GizmoDialogHelp.hpp
-        src/Slic3r/App/Yoga/GizmoDialogHelp.cpp
         src/Slic3r/App/Yoga/Separator.cpp
         include/Slic3r/App/Yoga/Separator.hpp
         src/Slic3r/App/Yoga/Oval.cpp

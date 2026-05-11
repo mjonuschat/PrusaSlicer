@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
@@ -67,23 +67,11 @@ private:
     Action m_act{Action::Keep}; //?
 };
 
-class WarningPanel : public Rectangle
-{
-public:
-    explicit WarningPanel(const std::string& warning_text, bool has_extantion = false);
-
-    void set_extention(const std::string& extention);
-
-private:
-    Yoga::Text* m_label{nullptr};
-    Yoga::Text* m_extention{nullptr};
-};
-
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
 
-class CutDialog : public Yoga::GizmoWindow
+class CutDialog : public GizmoWindow
 {
 public:
     CutDialog();
@@ -171,7 +159,6 @@ private:
     void init_connectors_header();
     void init_connectors_input_panel();
     void init_cut_plane_input_panel();
-    void init_warning_rows();
     void add_connectors_help_panel();
     void add_cut_plane_help_panel();
     void add_groove_input_panel();
@@ -179,6 +166,7 @@ private:
     void add_connectors_editing_buttons();
     void update_panels_visibility();
     void update_keep_object_warning();
+    void update_warnings();
 
     void confirm_connectors();
 
@@ -203,9 +191,6 @@ private:
     );
 
 private:
-    Yoga::ScrollArea* m_scroll_area{nullptr};
-
-    Yoga::Item* m_connectors_header{nullptr};
     Yoga::Item* m_connectors_input_panel{nullptr};
     Yoga::LayoutButton* m_add_connectors_btn{nullptr};
     Yoga::LayoutButton* m_remove_connectors_btn{nullptr};
@@ -249,11 +234,6 @@ private:
     Yoga::PartProcessingItem* m_part_A{nullptr};
     Yoga::PartProcessingItem* m_part_B{nullptr};
 
-    Yoga::WarningPanel* m_connectors_warning{nullptr};
-    Yoga::WarningPanel* m_keep_object_warning{nullptr};
-    Yoga::WarningPanel* m_cut_plane_warning{nullptr};
-    Yoga::WarningPanel* m_groove_warning{nullptr};
-
     Yoga::LayoutButton* m_perform_btn{nullptr};
     Yoga::LayoutButton* m_confirm_connectors_btn{nullptr};
     Yoga::LayoutButton* m_cancel_connectors_btn{nullptr};
@@ -272,6 +252,7 @@ private:
     // vector of Text items used for mm/inch units
     // Will be updated on units sweetching
     std::vector<Yoga::Text*> m_units;
+    std::vector<std::string> m_warnings;
 
     bool m_imperial_units{false};
 };

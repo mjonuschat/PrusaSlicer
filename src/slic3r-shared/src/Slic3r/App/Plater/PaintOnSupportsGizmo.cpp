@@ -97,7 +97,7 @@ Scene::ToolType PaintOnSupportsGizmo::type() const
     return Scene::ToolType::PaintOnSupportsGizmo;
 }
 
-Yoga::GizmoWindowPtr PaintOnSupportsGizmo::release_ui_window()
+GizmoWindowPtr PaintOnSupportsGizmo::release_ui_window()
 {
     return m_dialog.release();
 }

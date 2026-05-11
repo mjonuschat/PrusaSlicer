@@ -339,7 +339,7 @@ TextGizmo::TextGizmo(
 
 TextGizmo::~TextGizmo() = default;
 Scene::ToolType TextGizmo::type() const { return Scene::ToolType::TextGizmo; }
-Yoga::GizmoWindowPtr TextGizmo::release_ui_window(){
+GizmoWindowPtr TextGizmo::release_ui_window(){
     return m_dialog.release();
 }
 bool TextGizmo::enabled() const {

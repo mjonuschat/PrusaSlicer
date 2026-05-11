@@ -3,7 +3,7 @@
 #include "Slic3r/App/Plater/PlaceOnBedButton.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/ReferenceFramePicker.hpp"
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
 namespace Slic3r::Biz {
@@ -14,7 +14,7 @@ namespace Slic3r::App::Plater {
 class TripleInput;
 
 class RotationDialog final :
-    public Yoga::GizmoWindow,
+    public GizmoWindow,
     public App::Plater::ISelectionExtentsChangedListener,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener

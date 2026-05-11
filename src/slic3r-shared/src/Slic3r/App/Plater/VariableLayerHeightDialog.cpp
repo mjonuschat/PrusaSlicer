@@ -18,28 +18,11 @@ namespace Slic3r::App::Plater {
 
 static const Margins BUTTON_TEXT_MARGIN         = {10.f, 2.f, 10.f, 2.f};
 
-#ifdef __APPLE__
-constexpr Render::Icon CtrlIcon = Render::Icon::KeyCmd;
-constexpr Render::Icon AltIcon  = Render::Icon::KeyOpt;
-
-static const Vec2f CTRL_HELP_SIZE = {39.f, 20.f};
-static const Vec2f ALT_HELP_SIZE  = {38.f, 20.f};
-#else
-constexpr Render::Icon CtrlIcon = Render::Icon::KeyCtrl;
-constexpr Render::Icon AltIcon  = Render::Icon::KeyAlt;
-
-static const Vec2f CTRL_HELP_SIZE = {46.f, 20.f};
-static const Vec2f ALT_HELP_SIZE  = {35.f, 20.f};
-#endif
-
-static const Vec2f SHIFT_HELP_SIZE = {48.f, 20.f};
-static const Vec2f MOUSE_HELP_SIZE = {20.f, 20.f};
-
 VariableLayerHeightDialog::VariableLayerHeightDialog() :
     GizmoWindowWithLeftSidePanel(_u8L("Variable layer height"), Render::Icon::VariableLayerHeight)
 {
     this->content()->set_orientation(Orientation::Vertical);
-    this->content()->set_gap(2.f * this->gap_size());
+    this->content()->set_gap(gap_size());
     this->revert_button()->set_visible(true);
     this->gizmo_callbacks().revert_requested = [this]() { m_callbacks.reset_clicked(); };
 
@@ -60,11 +43,13 @@ VariableLayerHeightDialog::Callbacks& VariableLayerHeightDialog::callbacks()
 void VariableLayerHeightDialog::add_smart_resolution_section(Item* item)
 {
     Item* section_title_row = item->emplace_back<Item>();
+    section_title_row->set_flex_shrink(0);
     Text* section_title     = section_title_row->emplace_back<Text>(_u8L("Smart resolution"));
     section_title->set_font_type(Render::ImguiFontType::Bold);
 
     Item* smart_resolution_slider_row = item->emplace_back<Item>();
-    smart_resolution_slider_row->set_gap(2.f * this->gap_size());
+    smart_resolution_slider_row->set_flex_shrink(0);
+    smart_resolution_slider_row->set_gap(gap_size());
 
     Text* smart_resolution_slider_quality_label =
         smart_resolution_slider_row->emplace_back<Text>(_u8L("Quality"));
@@ -84,6 +69,7 @@ void VariableLayerHeightDialog::add_smart_resolution_section(Item* item)
     smart_resolution_slider_speed_label->set_self_align(YGAlignCenter);
 
     Item* auto_calculate_button_row = item->emplace_back<Item>();
+    auto_calculate_button_row->set_flex_shrink(0);
     m_auto_calculate_button =
         auto_calculate_button_row->emplace_back<LayoutButton>(_u8L("Auto-calculate"));
     m_auto_calculate_button->label_object()->set_margin(BUTTON_TEXT_MARGIN);
@@ -94,11 +80,13 @@ void VariableLayerHeightDialog::add_smart_resolution_section(Item* item)
 void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
 {
     Item* section_title_row = item->emplace_back<Item>();
+    section_title_row->set_flex_shrink(0);
     Text* section_title     = section_title_row->emplace_back<Text>(_u8L("Blend Distance"));
     section_title->set_font_type(Render::ImguiFontType::Bold);
 
     Item* blend_distance_slider_row = item->emplace_back<Item>();
-    blend_distance_slider_row->set_gap(2.f * this->gap_size());
+    blend_distance_slider_row->set_flex_shrink(0);
+    blend_distance_slider_row->set_gap(gap_size());
 
     Text* blend_distance_slider_low_label =
         blend_distance_slider_row->emplace_back<Text>(_u8L("Low"));
@@ -118,8 +106,9 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
     blend_distance_slider_high_label->set_self_align(YGAlignCenter);
 
     Item* lock_high_detail_toggle_row = item->emplace_back<Item>();
+    lock_high_detail_toggle_row->set_flex_shrink(0);
     lock_high_detail_toggle_row->set_align_content(YGAlignFlexStart);
-    lock_high_detail_toggle_row->set_gap(2.f * this->gap_size());
+    lock_high_detail_toggle_row->set_gap(gap_size());
 
     m_lock_high_detail_toggle = lock_high_detail_toggle_row->emplace_back<ToggleButton>();
     m_lock_high_detail_toggle->callbacks().checked_changed = [this](bool checked)
@@ -130,6 +119,7 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
     lock_high_detail_toggle_label->set_self_align(YGAlignCenter);
 
     Item* smooth_button_row = item->emplace_back<Item>();
+    smooth_button_row->set_flex_shrink(0);
     m_smooth_button         = smooth_button_row->emplace_back<LayoutButton>(_u8L("Smooth"));
     m_smooth_button->label_object()->set_margin(BUTTON_TEXT_MARGIN);
     m_smooth_button->callbacks().action = [this]() { m_callbacks.smooth_clicked(); };
@@ -141,26 +131,27 @@ void VariableLayerHeightDialog::add_help_section(Item* item)
     help_section->set_orientation(Orientation::Vertical);
     help_section->set_min_size({0, 50});
     help_section->set_align_items(YGAlignFlexStart);
-    help_section->set_gap(2.f * this->gap_size());
+    help_section->set_gap(gap_size());
+    help_section->set_flex_shrink(0);
 
-    GizmoDialogHelp help;
+    GizmoHelpFactory help;
     help.init(help_section);
-    help.add_item({{Render::Icon::MouseLeft, MOUSE_HELP_SIZE}}, _u8L("Thinner layers"));
-    help.add_item({{Render::Icon::MouseRight, MOUSE_HELP_SIZE}}, _u8L("Thicker layers"));
+    help.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Thinner layers"));
+    help.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight}}, _u8L("Thicker layers"));
     help.add_item(
-        {{Render::Icon::KeyShift, SHIFT_HELP_SIZE}, {Render::Icon::MouseLeft, MOUSE_HELP_SIZE}},
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}},
         _u8L("Restore default height")
     );
     help.add_item(
-        {{Render::Icon::KeyShift, SHIFT_HELP_SIZE}, {Render::Icon::MouseRight, MOUSE_HELP_SIZE}},
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight}},
         _u8L("Manual blend")
     );
     help.add_item(
-        {{CtrlIcon, CTRL_HELP_SIZE}, {Render::Icon::MouseWheel, MOUSE_HELP_SIZE}},
+        {{"CTRL"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseWheel}},
         _u8L("Adjust brush size")
     );
     help.add_item(
-        {{AltIcon, ALT_HELP_SIZE}, {Render::Icon::MouseLeft, MOUSE_HELP_SIZE}},
+        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}},
         _u8L("Edit height range")
     );
 }
@@ -168,7 +159,7 @@ void VariableLayerHeightDialog::add_help_section(Item* item)
 void VariableLayerHeightDialog::init_layer_height_profile_control()
 {
     m_layer_height_profile_control =
-        this->side_panel_content()->emplace_back<VariableLayerHeightControl>();
+        this->side_panel()->emplace_back<VariableLayerHeightControl>();
 
     m_layer_height_profile_control->callbacks().on_mouse_move =
         [this](std::optional<float> cursor_normalized_position)
@@ -237,7 +228,7 @@ void VariableLayerHeightDialog::set_lock_high_detail(const bool lock_high_detail
 
 void VariableLayerHeightDialog::set_layer_height_title(const double layer_height)
 {
-    this->set_side_panel_header_title(fmt::format("{:.3f}", layer_height));
+    side_panel_header_title()->set_text(fmt::format("{:.3f}", layer_height));
 }
 
 void VariableLayerHeightDialog::set_layer_height_profile(const ZHeightPairs& layer_height_profile)

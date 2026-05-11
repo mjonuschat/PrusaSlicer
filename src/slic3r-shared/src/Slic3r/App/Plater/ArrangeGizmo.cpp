@@ -163,7 +163,7 @@ bool ArrangeGizmo::enabled() const
     return true;
 }
 
-Yoga::GizmoWindowPtr ArrangeGizmo::release_ui_window()
+GizmoWindowPtr ArrangeGizmo::release_ui_window()
 {
     return m_dialog.release();
 }
