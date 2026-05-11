@@ -123,9 +123,19 @@ std::set<unsigned> get_volume_extruder_candidates(
     return result;
 }
 
-std::set<unsigned>
-get_object_extruder_candidates(const Domain::ModelObject& object, const Domain::ConfigPackFDM& config)
+std::set<unsigned> get_object_extruder_candidates(
+    const Domain::ModelObject& object,
+    const Domain::ConfigPackFDM& config
+)
 {
+    const bool all_instances_not_printable{std::ranges::all_of(
+        object.instances,
+        [](const Domain::ModelInstance* model_instance) { return !model_instance->printable; }
+    )};
+    if (all_instances_not_printable) {
+        return {};
+    }
+
     const Domain::PrintSettings& print_settings{config.print};
 
     std::set<unsigned> extruders;

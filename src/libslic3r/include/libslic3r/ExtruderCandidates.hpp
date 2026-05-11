@@ -16,8 +16,10 @@ std::set<unsigned> get_volume_extruder_candidates(
     const Domain::PrintSettings& print_settings
 );
 
-std::set<unsigned>
-get_object_extruder_candidates(const Domain::ModelObject& object, const Domain::ConfigPackFDM& config);
+std::set<unsigned> get_object_extruder_candidates(
+    const Domain::ModelObject& object,
+    const Domain::ConfigPackFDM& config
+);
 
 /* @brief Returns a list of extruder candidates (first extruder is 0).
  *

@@ -1666,7 +1666,9 @@ void ObjectList::render_extruder_marker(
                 config_pack_fdm.print
             );
         }
-        ASSERT(!extruder_candidates.empty());
+        if (extruder_candidates.empty()) {
+            return;
+        }
 
         ImGui::TableSetColumnIndex(ciExtruder);
         BoldFontGuard bfg(m_imgui_render);

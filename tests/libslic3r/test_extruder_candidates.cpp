@@ -10,6 +10,7 @@
 using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::VolumeSettings;
 using Slic3r::Biz::Algorithms::TriangleMesh::make_cube;
 using Slic3r::Biz::Algorithms::ModelObject::add_volume;
@@ -26,11 +27,20 @@ using CustomGCodeMode = Slic3r::Domain::CustomGCode::Mode;
 const Slic3r::Domain::Bed bed;
 const BedInstance bed_instance{bed};
 
-TEST_CASE("Extruder candidates return expected extruders for extruders set in print settings", "[ExtruderCandidates]") {
+struct ExtruderCandidatesTestFixture {
     Model model;
     ModelObject* object{model.add_object()};
-    add_volume(object, make_cube(10, 10, 10));
+    ModelVolume* volume{add_volume(object, make_cube(10, 10, 10))};
+    ModelInstance* instance{object->add_instance()};
     TestConfig config{5};
+};
+
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates return expected extruders for extruders set in print settings",
+    "[ExtruderCandidates]"
+)
+{
     config.print.items.opt("perimeter_extruder").set(2);
 
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
@@ -42,14 +52,15 @@ TEST_CASE("Extruder candidates return expected extruders for extruders set in pr
     CHECK(extruders == std::vector<unsigned>{1, 2, 3});
 }
 
-TEST_CASE("Extruder candidates return expected extruders for various object and volume settings", "[ExtruderCandidates]") {
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates return expected extruders for various object and volume settings",
+    "[ExtruderCandidates]"
+)
+{
     // It does not matter if the volumes are parts or modifiers, so there is no need
     // for a special "modifiers" test.
 
-    Model model;
-    ModelObject* object{model.add_object()};
-    ModelVolume* volume{add_volume(object, make_cube(10, 10, 10))};
-    TestConfig config{5};
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0});
 
@@ -63,6 +74,7 @@ TEST_CASE("Extruder candidates return expected extruders for various object and 
 
     ModelObject* another_object{model.add_object()};
     ModelVolume* another_volume{add_volume(another_object, make_cube(10, 10, 10))};
+    another_object->add_instance();
 
     extruders = get_extruder_candidates(model, config, bed_instance);
     CHECK(extruders == std::vector<unsigned>{0, 2});
@@ -82,12 +94,30 @@ TEST_CASE("Extruder candidates return expected extruders for various object and 
     CHECK(extruders == std::vector<unsigned>{2, 4});
 }
 
-TEST_CASE("Extruder candidates return expected extruders with layer config ranges", "[ExtruderCandidates]") {
-    Model model;
-    ModelObject* object{model.add_object()};
-    add_volume(object, make_cube(10, 10, 10));
-    TestConfig config{5};
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates ignore un-printable instances",
+    "[ExtruderCandidates]"
+)
+{
+    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    CHECK(extruders == std::vector<unsigned>{0});
 
+    object->object_settings.items.opt("extruder").set(2);
+    extruders = get_extruder_candidates(model, config, bed_instance);
+    CHECK(extruders == std::vector<unsigned>{1});
+
+    object->instances.front()->printable = false;
+    extruders = get_extruder_candidates(model, config, bed_instance);
+    CHECK(extruders == std::vector<unsigned>{});
+}
+
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates return expected extruders with layer config ranges",
+    "[ExtruderCandidates]"
+)
+{
     const std::pair<double, double> range{0.0, 1.0};
     VolumeSettings range_settings;
     object->layer_config_ranges.insert({range, std::move(range_settings)});
@@ -101,12 +131,12 @@ TEST_CASE("Extruder candidates return expected extruders with layer config range
     CHECK(extruders == std::vector<unsigned>{0, 2});
 }
 
-TEST_CASE("Extruder candidates return expected extruders with supports enabled", "[ExtruderCandidates]") {
-    Model model;
-    ModelObject* object{model.add_object()};
-    add_volume(object, make_cube(10, 10, 10));
-    TestConfig config{5};
-
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates return expected extruders with supports enabled",
+    "[ExtruderCandidates]"
+)
+{
     object->object_settings.items.opt("extruder").set(3);
     object->object_settings.overrides.set("support_material", true);
 
@@ -122,12 +152,12 @@ TEST_CASE("Extruder candidates return expected extruders with supports enabled",
     CHECK(extruders == std::vector<unsigned>{2, 3, 4});
 }
 
-TEST_CASE("Extruder candidates return expected extruders with multi material painting", "[ExtruderCandidates]") {
-    Model model;
-    ModelObject* object{model.add_object()};
-    ModelVolume* volume{add_volume(object, make_cube(10, 10, 10))};
-    TestConfig config{5};
-
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates return expected extruders with multi material painting",
+    "[ExtruderCandidates]"
+)
+{
     TriangleSelector selector{volume->mesh()};
     selector.set_facet(0, Slic3r::Domain::TriangleSelector::TriangleStateType::Extruder2);
     selector.set_facet(1, Slic3r::Domain::TriangleSelector::TriangleStateType::Extruder3);
@@ -137,16 +167,12 @@ TEST_CASE("Extruder candidates return expected extruders with multi material pai
     CHECK(extruders == std::vector<unsigned>{0, 1, 2});
 }
 
-TEST_CASE(
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
     "Extruder candidates return expected extruders with custom gcodes",
     "[ExtruderCandidates]"
 )
 {
-    Model model;
-    ModelObject* object{model.add_object()};
-    add_volume(object, make_cube(10, 10, 10));
-    TestConfig config{5};
-
     object->object_settings.items.opt("extruder").set(3);
     BedInstance instance{bed};
     instance.custom_gcode = CustomGCodeInfo{
