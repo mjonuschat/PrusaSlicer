@@ -441,12 +441,13 @@ std::string BrowserLogicPrintables::script_show_loading_overlay() const
 {
     return R"(
         function slic3r_showLoadingOverlay() {
-            const body = document.getElementsByTagName('body')[0];
+            if (document.getElementById('slic3r-loading-overlay')) return;
+            
             const overlayDiv = document.createElement('div');
-            overlayDiv.className = 'slic3r-loading-overlay'
+            overlayDiv.className = 'slic3r-loading-overlay';
             overlayDiv.id = 'slic3r-loading-overlay';
             overlayDiv.innerHTML = '<div class="slic3r-loading-anim"></div>';
-            body.appendChild(overlayDiv);
+            document.body.appendChild(overlayDiv);
         }
         slic3r_showLoadingOverlay();
     )";
