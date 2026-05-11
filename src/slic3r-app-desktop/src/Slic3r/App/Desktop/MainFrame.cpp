@@ -374,10 +374,11 @@ void MainFrame::on_language_changed()
 
 void MainFrame::on_app_config_changed(const std::string& key)
 {
-    if (key == "translation_language") {
-        update_left_bar();
+    update_left_bar();
+    if (key == "graphics_quality") {
         update_graphics_settings();
-
+    }
+    else if (key == "translation_language") {
         AppConfig& app_config = AppServices::instance().app_config();
         if (const std::string new_language = app_config.get<std::string>("translation_language");
             localization().active_language() != new_language)
