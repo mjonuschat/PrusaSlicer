@@ -5,6 +5,7 @@
 #include "Renderbuffer.hpp"
 
 #include <vector>
+#include <cstdint>
 
 namespace Slic3r::App::Render {
 

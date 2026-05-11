@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_set>
 #include <stack>
+#include <cstdint>
 
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Types.hpp"
