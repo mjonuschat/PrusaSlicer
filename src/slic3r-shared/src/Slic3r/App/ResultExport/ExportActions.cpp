@@ -6,6 +6,7 @@
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
 namespace Slic3r::App::ExportActions {
 
@@ -31,7 +32,7 @@ make_export(Biz::ProjectInteractor& project_interactor, bool to_flash)
 {
     auto call_do_export{[pi_raw = &project_interactor, to_flash]()
                         {
-                            ExportPathSelect::show_modal_dialog(
+                            ExportPathSelect::show_export_modal_dialog(
                                 *pi_raw,
                                 to_flash,
                                 [=](bool result,
@@ -71,9 +72,34 @@ std::function<void()> send_gcode_to_connect(Biz::ProjectInteractor& project_inte
     auto send_to_connect{
         [pi_raw = &project_interactor]()
         {
-            AppServices::instance().dialog_manager().show_webview_dialog(
+            bool bgcode_allowed = true;
+            const auto& cbox = pi_raw->preset_interactor().selected_printer_preset().printer.config_box();
+            if (const auto* item = cbox.find("binary_gcode").item; item) {
+                bgcode_allowed = item->get<bool>();
+            }
+
+            auto wrapped_callback = [pi_raw, bgcode_allowed](bool result, const std::string& data) {
+                if (!result || data.empty()) {
+                    return;
+                }
+                std::string filename = Biz::UserAccount::ConnectUtils::filename_from_json(data);
+                ExportPathSelect::validate_bgcode_extension(
+                    boost::filesystem::path(filename),
+                    bgcode_allowed,
+                    [pi_raw, data](const boost::filesystem::path& safe_path) {
+                        pi_raw->do_result_upload_connect(pi_raw->selected_bed_slicing_id(), data, safe_path.string());
+                    },
+                    [pi_raw]() {
+                        // Re-trigger the dialog on retry
+                        send_gcode_to_connect(*pi_raw)(); 
+                    }
+                );
+            };
+
+            AppServices::instance().dialog_manager().show_upload_webview_dialog(
                 std::make_unique<Browser::BrowserLogicConnectSelect>(*pi_raw),
-                pi_raw
+                pi_raw,
+                wrapped_callback
             );
         }
     };

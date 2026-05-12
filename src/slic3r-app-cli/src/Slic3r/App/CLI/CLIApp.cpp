@@ -56,6 +56,13 @@ public:
     ) override
     {}
 
+    void show_upload_webview_dialog(
+        std::unique_ptr<Browser::AbstractUploadBrowserLogic>&& logic,
+        Slic3r::Biz::ProjectInteractor* project_interactor,
+        const UploadCallback& callback
+    ) override
+    {}
+
     void show_yesno_dialog(
         const std::string& title,
         const std::string& text,

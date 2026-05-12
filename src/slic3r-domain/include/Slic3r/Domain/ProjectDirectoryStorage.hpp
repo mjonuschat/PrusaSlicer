@@ -11,6 +11,7 @@ struct ProjectDirectoryStorage {
 private:
     boost::filesystem::path m_output_dir_path; 
     boost::filesystem::path m_project_dir_path;
+    std::string m_output_extension;
 
     boost::filesystem::path validate_dir_path(const boost::filesystem::path& path) const {
         boost::filesystem::path final_path = path;
@@ -57,12 +58,26 @@ public:
 
     void set_output_dir(const boost::filesystem::path& path) {
         auto p = validate_dir_path(path);
-        if (!p.empty()) m_output_dir_path = std::move(p);
+        if (!p.empty()) {
+            m_output_dir_path = std::move(p);
+        }
     }
     
     void set_project_dir(const boost::filesystem::path& path) {
         auto p = validate_dir_path(path);
-        if (!p.empty()) m_project_dir_path = std::move(p);
+        if (!p.empty()) {
+            m_project_dir_path = std::move(p);
+        }
+    }
+
+    void set_output_extension(const std::string& extension)
+    {
+        m_output_extension = extension;
+    }
+
+    std::string output_extension(const std::string& app_config_val) const
+    {
+        return m_output_extension.empty() ? app_config_val : m_output_extension;
     }
 };
 }

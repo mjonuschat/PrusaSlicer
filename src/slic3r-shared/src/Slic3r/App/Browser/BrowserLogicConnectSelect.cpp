@@ -1,14 +1,17 @@
 #include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
 
+#include "Slic3r/App/ResultExport/ExportPathSelect.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+
 #include "Slic3r/Assert.hpp"
+#include <nlohmann/json.hpp>
 
 namespace Slic3r::App::Browser {
 
 BrowserLogicConnectSelect::BrowserLogicConnectSelect(Biz::ProjectInteractor& project_interactor) :
-    AbstractBrowserLogic(
+    AbstractUploadBrowserLogic(
         Biz::Network::ServiceConfig::instance().connect_select_printer_url(),
         {"_prusaSlicer"},
         "connect_loading",
@@ -36,13 +39,23 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_se
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_print(const std::string& message_data)
 {
-    m_project_interactor.do_result_upload_connect(m_project_interactor.selected_bed_slicing_id(), message_data);
+    m_success = true;
+    m_result = message_data; 
     return {{BrowserLogicCommandType::EndModalOK, {}}};
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_webapp_ready(const std::string& message_data)
 {
-    std::string placeholder_script = "window._prusaConnect_v2.requestCompatiblePrinter({\"printerUuid\": \"\"})";
+    const auto filename_data = ExportPathSelect::get_export_name_data(m_project_interactor);
+    nlohmann::json payload = {
+        {"printerUuid", ""},
+        {"filename", filename_data.filename}
+    };
+    std::string placeholder_script = fmt::format(
+        "window._prusaConnect_v2.requestCompatiblePrinter({})", 
+        payload.dump()
+    );
+
     return {{BrowserLogicCommandType::RunScript, placeholder_script}};
     /*
     if (Preset::printer_technology(wxGetApp().preset_bundle->printers.get_selected_preset().config) == ptFFF) {

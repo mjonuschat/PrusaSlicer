@@ -596,6 +596,7 @@ void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, Physi
 void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     set_output_dir(id.project_id, dest_path);
+    set_output_extension(id.project_id, dest_path.extension().string());
     PhysicalPrinter::PhysicalPrinterConfig config;
     config.payload = PhysicalPrinter::FileSystemExport{};
     PrintHost::PrintHostJobData data{
@@ -608,6 +609,7 @@ void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost
 
 void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::string& filename)
 {
+    set_output_extension(id.project_id, boost::filesystem::path(filename).extension().string());
     PhysicalPrinter::PhysicalPrinterConfig config {m_physical_printer_interactor.selected_physical_printer_data()};
     boost::filesystem::path dest_path(filename);
     PrintHost::PrintHostJobData data{
@@ -618,7 +620,11 @@ void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::
     do_result_export_inner(id, std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
+void ProjectInteractor::do_result_upload_connect(
+    const Domain::SlicingId id,
+    const std::string& connect_msg,
+    const std::string& filename_override /* = std::string()*/
+)
 {
     PhysicalPrinter::PhysicalPrinterConfig config;
     config.host = Network::ServiceConfig::instance().connect_url();
@@ -632,6 +638,12 @@ void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, con
         SPDLOG_ERROR("Upload to Connect has failed - failed to read Connect message.");
         return;
     }
+
+    if (!filename_override.empty()) {
+        filename = filename_override;
+    }
+
+    set_output_extension(id.project_id, boost::filesystem::path(filename).extension().string());
     PrintHost::PrintHostJobData data{
         std::monostate{},
         filename,
@@ -700,6 +712,22 @@ void ProjectInteractor::set_output_dir(Domain::SelectionId project_id, const boo
     ASSERT(it != m_workbench.projects().end());
 
     it->second.directory_storage().set_output_dir(path);
+}
+
+std::string ProjectInteractor::output_extension(Domain::SelectionId project_id, const std::string& app_config_val) const
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    return it->second.directory_storage().output_extension(app_config_val);
+}
+
+void ProjectInteractor::set_output_extension(Domain::SelectionId project_id, const std::string& extension)
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    it->second.directory_storage().set_output_extension(extension);
 }
 
 void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::path> paths)

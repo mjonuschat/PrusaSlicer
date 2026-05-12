@@ -348,6 +348,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Browser/BrowserLogicCommand.hpp
         include/Slic3r/App/Browser/AbstractBrowserLogicCommandHandler.hpp
         include/Slic3r/App/Browser/AbstractBrowserLogic.hpp
+        include/Slic3r/App/Browser/AbstractUploadBrowserLogic.hpp
         include/Slic3r/App/Browser/BrowserLogicLogIn.hpp
         src/Slic3r/App/Browser/BrowserLogicLogIn.cpp
         include/Slic3r/App/Browser/BrowserLogicConnectSelect.hpp

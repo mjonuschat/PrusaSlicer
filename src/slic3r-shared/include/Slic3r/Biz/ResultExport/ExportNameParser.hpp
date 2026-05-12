@@ -18,7 +18,7 @@ struct ExportNameData
 {
     Technology technology;
     std::string filename;
-    std::string preffered_extension;
+    std::string preferred_extension;
 };
     
 /**

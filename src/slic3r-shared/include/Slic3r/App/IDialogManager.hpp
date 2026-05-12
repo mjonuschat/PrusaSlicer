@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
+#include "Slic3r/App/Browser/AbstractUploadBrowserLogic.hpp"
 #include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
 #include "Slic3r/Assert.hpp"
@@ -37,6 +37,9 @@ class IDialogManager :
 public:
     using FileCallback =
         std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>;
+
+    using UploadCallback =
+        std::function<void(bool result, const std::string filename)>;
 
     struct ButtonWithCallback {
         std::string text;
@@ -77,6 +80,12 @@ public:
     virtual void show_webview_dialog(
         std::unique_ptr<Browser::AbstractBrowserLogic>&& logic,
         Slic3r::Biz::ProjectInteractor* project_interactor
+    ) = 0;
+
+    virtual void show_upload_webview_dialog(
+        std::unique_ptr<Browser::AbstractUploadBrowserLogic>&& logic,
+        Slic3r::Biz::ProjectInteractor* project_interactor,
+        const UploadCallback& callback
     ) = 0;
 
     virtual void show_diff_dialog(
