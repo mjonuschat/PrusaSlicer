@@ -357,7 +357,8 @@ void load(Archive& ar, Slic3r::Domain::ModelObject& model_object)
        model_object.m_raw_mesh_bounding_box,
        model_object.m_raw_mesh_bounding_box_valid,
        model_object.cut_connectors,
-       model_object.cut_id);
+       model_object.cut_id,
+       model_object.layer_config_ranges);
 
     load_separate_chunk(ar, model_object.layer_height_profile);
 }
@@ -396,7 +397,8 @@ void save(Archive& ar, const Slic3r::Domain::ModelObject& model_object)
        model_object.m_raw_mesh_bounding_box,
        model_object.m_raw_mesh_bounding_box_valid,
        model_object.cut_connectors,
-       model_object.cut_id);
+       model_object.cut_id,
+       model_object.layer_config_ranges);
 
     save_separate_chunk_with_version(
         ar,

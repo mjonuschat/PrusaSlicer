@@ -213,6 +213,28 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Paste objects");
     case Type::PasteVolumes:
         return _u8L("Paste volumes");
+    case Type::VariableLayerHeightStroke:
+        return _u8L("Variable layer height stroke");
+    case Type::VariableLayerHeightSmooth:
+        return _u8L("Variable layer height smooth");
+    case Type::VariableLayerHeightReset:
+        return _u8L("Variable layer height reset");
+    case Type::VariableLayerHeightAdaptive:
+        return _u8L("Variable layer height adaptive");
+    case Type::HeightRangeAdd:
+        return _u8L("Add a height range");
+    case Type::HeightRangeDelete:
+        return _u8L("Delete a height range");
+    case Type::HeightRangeValueChange:
+        return _u8L("Change height range value");
+    case Type::HeightRangeOverrideChange:
+        return _u8L("Change height range override");
+    case Type::HeightRangeRestart:
+        return _u8L("Reset height ranges");
+    case Type::HeightRangePaste:
+        return _u8L("Paste height range settings");
+    case Type::HeightRangeLayerHeightOverride:
+        return _u8L("Add layer height override");
     }
     PANIC("Unknown option");
     return {};
@@ -269,6 +291,7 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
     m_scene_interactor.update_selection_bounding_box();
 
     ASSERT_VAL(m_gizmo_controller)->activate_tool(loaded_snapshot.selected_tool_gizmo);
+    m_gizmo_controller->set_tools_state(loaded_snapshot.tools_state);
 
     update_top_bar(project_id, it->second);
 }
@@ -292,12 +315,17 @@ void Store::take_snapshot(Biz::UndoSnapshotType snapshot_type)
                              Scene::ToolType::None,
     };
 
+    const ToolsState tools_state{
+        m_gizmo_controller ? m_gizmo_controller->tools_state() : ToolsState{},
+    };
+
     it->second.take_snapshot(
         project.model(),
         m_scene_interactor.object_selection(project_id),
         tool_type,
         project.config_containers(),
         BedSelectionState{*m_scene_interactor.bed_selection(project_id)},
+        tools_state,
         snapshot_type
     );
 

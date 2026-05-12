@@ -874,8 +874,6 @@ bool PaintOnGizmoBase::process_gizmo_event(
          || gizmo_event.type == PaintOnGizmoEvent::Type::RightUp)
         && m_button_down != Button::None)
     {
-        // TODO: Undo/redo isn't implemented yet, resolve it later.
-
         this->apply_painting_to_model();
 
         m_button_down      = Button::None;

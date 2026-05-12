@@ -224,6 +224,14 @@ public:
      * @{
      */
     virtual void provide_gizmo_controller(IGizmoController& controller) {}
+
+    virtual std::optional<Undo::ToolState> get_tool_state() const
+    {
+        return std::nullopt;
+    }
+
+    virtual void set_tool_state(const Undo::ToolState&) {}
+
     /**@}*/
 };
 

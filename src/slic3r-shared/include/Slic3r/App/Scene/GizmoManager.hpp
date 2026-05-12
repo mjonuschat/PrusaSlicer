@@ -91,6 +91,9 @@ public:
     void activate_tool(ToolType tool) override;
 
     ToolType current_tool_type() const override;
+
+    Undo::ToolsState tools_state() const override;
+    void set_tools_state(const Undo::ToolsState& tools_state) override;
     /**@}*/
 
     bool is_tool_active_in_current_project(const IToolGizmo& tool) const;

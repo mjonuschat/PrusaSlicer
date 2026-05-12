@@ -81,7 +81,18 @@ enum class UndoSnapshotType
     SelectPrinterPreset,
     SetPartSettingsValue,
     PasteObjects,
-    PasteVolumes
+    PasteVolumes,
+    VariableLayerHeightStroke,
+    VariableLayerHeightSmooth,
+    VariableLayerHeightReset,
+    VariableLayerHeightAdaptive,
+    HeightRangeAdd,
+    HeightRangeDelete,
+    HeightRangeValueChange,
+    HeightRangeOverrideChange,
+    HeightRangeRestart,
+    HeightRangePaste,
+    HeightRangeLayerHeightOverride
 };
 
 namespace UndoSnapshotSelection {

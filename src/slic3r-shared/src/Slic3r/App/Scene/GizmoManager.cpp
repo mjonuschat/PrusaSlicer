@@ -5,6 +5,7 @@
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
+#include "Slic3r/Domain/TemplateUtils.hpp"
 // DEBUG ONLY: for MEASURE_GIZMO_DEBUG
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
@@ -345,6 +346,42 @@ ToolType GizmoManager::current_tool_type() const
 {
     const auto& ctx = m_projects.project(m_project_interactor.selected_project_id());
     return (ctx.active_tool != nullptr) ? ctx.active_tool->type() : ToolType::None;
+}
+
+Undo::ToolsState GizmoManager::tools_state() const
+{
+    Undo::ToolsState tools_state;
+    for (const IToolGizmoPtr& tool_gizmo : m_tool_gizmos) {
+        std::optional<Undo::ToolState> tool_state = tool_gizmo->get_tool_state();
+        if (tool_state.has_value()) {
+            tools_state.push_back(std::move(*tool_state));
+        }
+    }
+
+    return tools_state;
+}
+
+static ToolType tool_state_to_tool_type(const Undo::ToolState& tool_state)
+{
+    return std::visit(
+        Domain::overloaded{
+            [](const Undo::HeightRangeGizmoState& state) { return ToolType::HeightRangeGizmo; },
+            [](const Undo::CutGizmoState&) { return ToolType::CutGizmo; },
+        },
+        tool_state
+    );
+}
+
+void GizmoManager::set_tools_state(const Undo::ToolsState& tools_state)
+{
+    for (const Undo::ToolState& tool_state : tools_state) {
+        IToolGizmo* tool_gizmo = find_tool(
+            tool_state_to_tool_type(tool_state),
+            m_project_interactor.selected_config_container().print_technology()
+        );
+        ASSERT(tool_gizmo != nullptr);
+        tool_gizmo->set_tool_state(Undo::ToolState{tool_state});
+    }
 }
 
 bool GizmoManager::is_tool_active_in_current_project(const IToolGizmo& tool) const
