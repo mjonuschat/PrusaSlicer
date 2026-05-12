@@ -59,7 +59,6 @@ ModelObject::new_clone(const ModelObject& rhs, const std::vector<size_t>& instan
     new_object->sla_drain_holes      = rhs.sla_drain_holes;
     new_object->layer_config_ranges  = rhs.layer_config_ranges;
     new_object->layer_height_profile = rhs.layer_height_profile;
-    new_object->printable            = rhs.printable;
     new_object->origin_translation   = rhs.origin_translation;
     new_object->cut_id               = rhs.cut_id;
     new_object->copy_transformation_caches(rhs);
@@ -107,7 +106,6 @@ ModelObject& ModelObject::assign_copy(const ModelObject& rhs)
     this->sla_drain_holes      = rhs.sla_drain_holes;
     this->layer_config_ranges  = rhs.layer_config_ranges;
     this->layer_height_profile = rhs.layer_height_profile;
-    this->printable            = rhs.printable;
     this->origin_translation   = rhs.origin_translation;
     this->cut_id               = rhs.cut_id;
     this->copy_transformation_caches(rhs);
@@ -144,7 +142,6 @@ ModelObject& ModelObject::assign_copy(ModelObject&& rhs)
     this->sla_drain_holes      = std::move(rhs.sla_drain_holes);
     this->layer_config_ranges  = std::move(rhs.layer_config_ranges);
     this->layer_height_profile = std::move(rhs.layer_height_profile);
-    this->printable            = std::move(rhs.printable);
     this->origin_translation   = std::move(rhs.origin_translation);
     this->copy_transformation_caches(rhs);
 

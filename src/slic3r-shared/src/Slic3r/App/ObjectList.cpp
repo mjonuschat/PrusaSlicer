@@ -475,18 +475,18 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
 
     m_state_column_width = 2.f * m_horizontal_padding;
     for (const std::string& state :
-        std::initializer_list<std::string>{
-            _u8L("SLICED"),
-            _u8L("UPDATING"),
-            _u8L("STOPPING"),
-            _u8L("SLICING"),
-            _u8L("INVALID")
-        })
+         std::initializer_list<std::string>{
+             _u8L("SLICED"),
+             _u8L("UPDATING"),
+             _u8L("STOPPING"),
+             _u8L("SLICING"),
+             _u8L("INVALID")
+         })
     {
         m_state_column_width = std::max(m_state_column_width, ImGui::CalcTextSize(state.c_str()).x);
     }
 
-    m_progress_column_width = 2.f*ImGui::CalcTextSize(_u8L("SLICED").c_str()).x;
+    m_progress_column_width = 2.f * ImGui::CalcTextSize(_u8L("SLICED").c_str()).x;
 
     render_item_begin(pos, size);
     ImGui::SetCursorScreenPos(to_im(pos));
@@ -1211,10 +1211,14 @@ bool ObjectList::render_object_node(
 
     handle_dragging(sel_element);
 
-    render_printable_icon(
-        sel_element,
-        object->instances.size() == 1 ? object->instances.front()->printable : object->printable
-    );
+    bool is_printable{false};
+    for (const Domain::ModelInstance* instance : object->instances) {
+        if (instance->printable) {
+            is_printable = true;
+            break;
+        }
+    }
+    render_printable_icon(sel_element, is_printable);
 
     if (!is_sla_config) {
         render_extruder_marker(config_container_id, object);

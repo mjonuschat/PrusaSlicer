@@ -67,7 +67,7 @@ bool ModelInstance::is_left_handed() const { return m_transformation.is_left_han
 
 bool ModelInstance::is_printable() const
 {
-    return this->object->printable && this->printable && (this->print_volume_state == ModelInstancePVS_Inside);
+    return this->printable && (this->print_volume_state == ModelInstancePVS_Inside);
 }
 
 bool ModelInstance::operator==(const ModelInstance& rhs) const

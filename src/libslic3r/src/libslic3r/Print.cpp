@@ -247,11 +247,9 @@ std::vector<Biz::Slicing::Error> validate_input(
 static bool is_any_printable(const std::vector<Domain::ModelObject*>& objects)
 {
     for (const Domain::ModelObject* object : objects) {
-        if (object->printable) {
-            for (const Domain::ModelInstance* instance : object->instances) {
-                if (instance->printable) {
-                    return true;
-                }
+        for (const Domain::ModelInstance* instance : object->instances) {
+            if (instance->printable) {
+                return true;
             }
         }
     }

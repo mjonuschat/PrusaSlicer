@@ -1128,7 +1128,6 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
     Domain::Project& project = m_workbench.project(m_selected_project_id);
     if (id.instance_id == 0) {
         auto obj       = project.find_object_by_id(id.object_id);
-        obj->printable = is_printable;
         updated.reserve(obj->instances.size());
         for (auto& inst : obj->instances) {
             inst->printable = is_printable;
@@ -1169,8 +1168,7 @@ void SceneInteractor::set_selected_instances_printable(bool is_printable)
             if (id.is_wipe_tower())
                 continue;
             if (id.instance_id == 0) {
-                auto obj       = project.find_object_by_id(id.object_id);
-                obj->printable = is_printable;
+                auto obj = project.find_object_by_id(id.object_id);
                 updated.reserve(obj->instances.size());
                 for (auto& inst : obj->instances) {
                     inst->printable = is_printable;
@@ -1211,9 +1209,16 @@ bool SceneInteractor::selected_instances_printable() const
             if (id.is_wipe_tower())
                 continue;
             if (id.instance_id == 0) {
-                if (project.find_object_by_id(id.object_id)->printable) {
-                    is_printable = true;
-                    break;
+                if (const Domain::ModelObject* obj = project.find_object_by_id(id.object_id)) {
+                    for (const Domain::ModelInstance* instance : obj->instances) {
+                        if (instance->printable) {
+                            is_printable = true;
+                            break;
+                        }
+                    }
+                    if (is_printable) {
+                        break;
+                    }
                 }
             } else {
                 if (project.find_instance_by_id(id.object_id, id.instance_id)->printable) {

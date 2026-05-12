@@ -58,8 +58,6 @@ public:
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
     LayerHeightProfile      layer_height_profile;
-    // Whether or not this object is printable
-    bool                    printable { true };
 
     // This vector holds the position of selected support points for SLA. The data are
     // saved in mesh coordinates to allow using them for several instances.
