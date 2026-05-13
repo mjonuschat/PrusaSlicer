@@ -60,6 +60,7 @@
 #include <boost/format.hpp>
 #include <Slic3r/Log.hpp>
 #include <boost/regex.hpp>
+#include <ranges>
 
 #include "libslic3r/ModelUtils.hpp"
 
@@ -76,6 +77,7 @@ using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
 using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
+using Slic3r::Domain::VolumeSettings;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -165,6 +167,15 @@ static std::optional<Biz::Slicing::Error> check_extruders(
                 result.push_back("extruder");
             }
         }
+
+        for (const VolumeSettings& height_range_settings :
+             object->layer_config_ranges | std::views::values)
+        {
+            const auto height_range_extruder{height_range_settings.overrides.get("extruder")};
+            if (height_range_extruder && !in_range(*height_range_extruder, 0, slot_count)) {
+                result.push_back("extruder");
+            }
+        }
     }
 
     for (const char* key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"}) {
@@ -180,6 +191,15 @@ static std::optional<Biz::Slicing::Error> check_extruders(
             for (const Domain::ModelVolume* volume : object->volumes) {
                 const auto volume_extruder{volume->volume_settings.overrides.get(key)};
                 if (volume_extruder && !in_range(*volume_extruder, 1, slot_count)) {
+                    result.push_back(key);
+                }
+            }
+
+            for (const VolumeSettings& height_range_settings :
+                 object->layer_config_ranges | std::views::values)
+            {
+                const auto height_range_extruder{height_range_settings.overrides.get(key)};
+                if (height_range_extruder && !in_range(*height_range_extruder, 1, slot_count)) {
                     result.push_back(key);
                 }
             }
