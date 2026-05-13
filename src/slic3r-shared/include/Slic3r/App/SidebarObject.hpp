@@ -37,7 +37,8 @@ class SidebarObject :
     public Yoga::Window,
     public Biz::Scene::ISceneSelectionChangedListener,
     public Scene::IGizmoActiveToolListener,
-    public Biz::IListObserver<Biz::OverrideItem>
+    public Biz::IListObserver<Biz::OverrideItem>,
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     explicit SidebarObject(Biz::ProjectInteractor& project_interactor);
@@ -82,12 +83,19 @@ private:
         m_scene_selection_changed_listener_scope;
 
     Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        SidebarObject>
+        m_preset_changed_listener_scope;
+
+    Biz::ListenerScope<
         Biz::IListObserver<Biz::OverrideItem>,
         Biz::ObjectSettingsObservableList,
         SidebarObject>
         m_osi_observer_scope;
 
-    ConfigItemListView* m_config_item_list_view{nullptr};
+    Item* m_extruder_picker{nullptr};
+    Item* m_scale_section{nullptr};
     OverrideGroupListView* m_override_group_list_view{nullptr};
 
     Biz::UnsharedPointer<ConfigItemFilter> m_config_item_filter;

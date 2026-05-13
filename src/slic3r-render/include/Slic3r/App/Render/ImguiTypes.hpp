@@ -39,6 +39,8 @@ enum class Icon : wchar_t
     PrusaSlicerIcon,
     Lock,
     Unlock,
+    LightLockClosed,
+    LightLockOpened,
     DSRevert,
     DSSettings,
 

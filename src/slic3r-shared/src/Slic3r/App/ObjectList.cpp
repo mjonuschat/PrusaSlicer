@@ -1667,7 +1667,6 @@ void ObjectList::render_extruder_marker(
         std::vector<ImVec4> vec4_colors;
         vec4_colors.reserve(extruder_candidates.size());
         for (const auto& extruder : extruder_candidates) {
-            DEBUG_ASSERT(extruder < extruder_colors.size());
             if (extruder >= extruder_colors.size())
                 return;
             const ColorRGB& clr = extruder_colors[extruder];

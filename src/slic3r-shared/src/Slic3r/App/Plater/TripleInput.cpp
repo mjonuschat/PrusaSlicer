@@ -3,6 +3,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include <fmt/format.h>
+#include "Slic3r/App/ScaleHelpers.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -13,12 +14,34 @@ using Yoga::ItemPtr;
 using Yoga::Orientation;
 using Yoga::Text;
 
+class InputWithLabel : public Yoga::Rectangle {
+public:
+    InputWithLabel(const std::string& label, const ImColor& color)
+    {
+        set_min_width(42_px);
+        set_align_items(YGAlignCenter);
+        set_fill(m_theme->color_imgui(Platform::Color::Button));
+        set_padding({2_px, 0, 2_px, 0});
+        auto label_container{emplace_back<Item>()};
+        label_container->set_justify_content(YGJustifyCenter);
+        m_label = label_container->emplace_back<Text>(label);
+        m_label->set_text_color(color);
+        label_container->set_flex_grow(0.2);
+        input   = emplace_back<InputTextField>();
+        input->set_flex_grow(1);
+    }
+
+    InputTextField* input;
+private:
+    Text* m_label;
+};
+
 static ItemPtr
 small_label(const std::string& label)
 {
     auto label_item{std::make_unique<Item>()};
     label_item->set_orientation(Orientation::Horizontal);
-    label_item->set_width(30);
+    label_item->set_width(20_px);
     label_item->set_height_percent(100);
     label_item->set_align_items(YGAlignCenter);
     label_item->set_justify_content(YGJustifyFlexStart);
@@ -26,66 +49,42 @@ small_label(const std::string& label)
     return label_item;
 }
 
-static std::pair<InputTextField*, DoubleValidator*>
-emplace_coordinate_input(Item* item, const std::string& suffix)
+static std::pair<InputWithLabel*, DoubleValidator*>
+emplace_coordinate_input(Item* item, const std::string& label, const ImColor& color)
 {
     auto validator{std::make_unique<DoubleValidator>()};
     validator->set_precision(2);
     DoubleValidator* validator_ptr{validator.get()};
 
-    auto* input{item->emplace_back<InputTextField>(
-        ""
-    )};
-    input->set_validator(std::move(validator));
-    input->set_flex_grow(1);
-    input->set_default(0);
+    auto* input_with_label{item->emplace_back<InputWithLabel>(label, color)};
+    input_with_label->input->set_validator(std::move(validator));
+    input_with_label->set_flex_grow(1);
+    input_with_label->input->set_default(0);
 
-    return {input, validator_ptr};
+    return {input_with_label, validator_ptr};
 }
 
-TripleInput::TripleInput(const std::string& suffix) {
-    this->set_width_percent(100);
-    this->set_orientation(Yoga::Orientation::Vertical);
-    this->set_gap(4);
-
-    const std::array<Header, 3> header{
-        Header{"X", ImColor{220, 63, 63}},
-        Header{"Y", ImColor{101, 201, 0}},
-        Header{"Z", ImColor{64, 200, 232}}
+TripleInput::TripleInput(
+    const std::string& suffix,
+    const std::optional<ImColor>& color_override
+)
+{
+    const std::array<std::pair<std::string, ImColor>, 3> labels{
+        std::pair{"X", color_override.value_or(ImColor{220, 63, 63})},
+        std::pair{"Y", color_override.value_or(ImColor{101, 201, 0})},
+        std::pair{"Z", color_override.value_or(ImColor{64, 200, 232})}
     };
 
-    auto header_row{this->emplace_back<Item>()};
-    header_row->set_width_percent(100);
-    header_row->set_gap(10);
+    set_gap(5_px);
     for (int i{}; i < 3; ++i) {
-        const Header& label{header[i]};
-        m_header[i] = header_row->emplace_back<Text>(label.text);
-        m_header[i]->set_height_percent(100);
-        m_header[i]->set_align_items(YGAlignCenter);
-        m_header[i]->set_justify_content(YGJustifyCenter);
-        m_header[i]->set_text_color(label.color);
-        m_header[i]->set_flex_grow(1);
+        const auto& [label, color]{labels[i]};
+        std::tie(m_input[i], m_validator[i]) = emplace_coordinate_input(this, label, color);
     }
-    if (header.empty()) {
-        header_row->set_visible(false);
-    } else {
-        header_row->append(small_label(""));
-        ASSERT(header.size() == 3);
-    }
-
-    auto input_row{this->emplace_back<Item>()};
-    input_row->set_gap(10);
-    input_row->set_width_percent(100);
-    std::tie(m_input[0], m_validator[0]) = emplace_coordinate_input(input_row, suffix);
-    std::tie(m_input[1], m_validator[1]) = emplace_coordinate_input(input_row, suffix);
-    std::tie(m_input[2], m_validator[2]) = emplace_coordinate_input(input_row, suffix);
-    input_row->append(small_label(suffix));
+    append(small_label(suffix));
 
     for (int i{}; i < 3; ++i) {
-        InputTextField* input{m_input[i]};
-        input->callbacks().text_edited = [this, i]() {
-            on_change(get_value(), i);
-        };
+        InputTextField* input{m_input[i]->input};
+        input->callbacks().text_edited = [this, i]() { on_change(get_value(), i); };
     }
 }
 
@@ -99,15 +98,14 @@ Domain::Vec3d TripleInput::get_value() const {
 
 void TripleInput::set_value(const Domain::Vec3d& value)
 {
-    m_input[0]->set_text(fmt::format("{:.2f}", value.x()));
-    m_input[1]->set_text(fmt::format("{:.2f}", value.y()));
-    m_input[2]->set_text(fmt::format("{:.2f}", value.z()));
+    m_input[0]->input->set_text(fmt::format("{:.2f}", value.x()));
+    m_input[1]->input->set_text(fmt::format("{:.2f}", value.y()));
+    m_input[2]->input->set_text(fmt::format("{:.2f}", value.z()));
 }
 
 void TripleInput::set_visible(const std::array<bool, 3>& is_visible) {
     for (int i{}; i < 3; ++i) {
         m_input[i]->set_visible(is_visible[i]);
-        m_header[i]->set_visible(is_visible[i]);
     }
 }
 

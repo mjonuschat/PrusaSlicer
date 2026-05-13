@@ -49,7 +49,6 @@ private:
     App::Plater::PlaterScenePresenter& m_scene_provider;
     Biz::ProjectInteractor& m_project_interactor;
     TripleInput* m_relative_input;
-    Yoga::LayoutButton* m_revert_button{nullptr};
     PlaceOnBedButton* m_place_on_bed_button{nullptr};
     ReferenceFramePicker* m_reference_frame_picker;
 

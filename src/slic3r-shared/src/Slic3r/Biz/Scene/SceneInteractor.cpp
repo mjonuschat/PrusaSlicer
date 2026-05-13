@@ -1471,10 +1471,10 @@ bool SceneInteractor::can_merge_selection_into_object() const
         && selection.elements.size() > 1)
     {
         for (const Domain::ElementRef& el : selection.elements) {
-            if (m_workbench.project(m_selected_project_id)
-                    .find_object_by_id(el.object_id)
-                    ->is_cut())
-            {
+            const Domain::ModelObject* object{
+                m_workbench.project(m_selected_project_id).find_object_by_id(el.object_id)
+            };
+            if (!object || object->is_cut()) {
                 return false;
             }
         }

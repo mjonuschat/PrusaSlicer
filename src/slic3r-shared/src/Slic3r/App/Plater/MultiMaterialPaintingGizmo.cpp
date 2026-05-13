@@ -15,20 +15,6 @@ using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Plater {
 
-static std::vector<std::string> create_material_names(
-    const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
-)
-{
-    std::vector<std::string> names;
-    const auto& selected{preset_interactor.selected_printer_preset()};
-    names.reserve(selected.materials.size());
-    for (const auto& material : selected.materials) {
-        names.push_back(std::string{material.short_name()});
-    }
-    return names;
-}
-
-
 MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     Render::Device& device,
     Scene::GeometryDataFactory& data_factory,
@@ -37,7 +23,7 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
 ) :
     PaintOnGizmoBase(device, data_factory, project_interactor, scene_presenter)
 {
-    m_dialog = std::make_unique<MultiMaterialPaintingDialog>();
+    m_dialog = std::make_unique<MultiMaterialPaintingDialog>(project_interactor);
     m_dialog->set_tool_type(m_tool_type);
     m_dialog->set_brush_type(m_cursor_type);
     m_dialog->set_brush_radius(m_cursor_radius);
@@ -288,7 +274,8 @@ void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
         return;
     }
 
-    const std::vector<Domain::ColorRGBA> colors{this->create_painting_colors()};
+    const std::vector<Domain::ColorRGBA> colors{create_painting_colors()};
+
     const bool count_changed{m_painting_colors.size() != colors.size()};
 
     m_painting_colors = colors;
@@ -298,10 +285,7 @@ void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
         m_second_brush_color_idx = 1;
     }
 
-    m_dialog->set_painting_colors(
-        m_painting_colors,
-        create_material_names(m_project_interactor.preset_interactor())
-    );
+    m_dialog->set_painting_colors(m_painting_colors);
     m_dialog->set_first_brush_color_index(m_first_brush_color_idx);
     m_dialog->set_second_brush_color_index(m_second_brush_color_idx);
 }

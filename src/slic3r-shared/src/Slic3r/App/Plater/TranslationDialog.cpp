@@ -8,6 +8,7 @@
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -28,7 +29,7 @@ TranslationDialog::TranslationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    GizmoWindow{_u8L("Translation"), Render::Icon::Move},
+    GizmoWindow{_u8L("Move"), Render::Icon::None, "M"},
     m_scene_provider(scene_provider),
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
@@ -40,8 +41,13 @@ TranslationDialog::TranslationDialog(
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
+    content()->set_padding({20_px, 20_px});
+    content()->set_orientation(Yoga::Orientation::Vertical);
+    content()->set_gap(20_px);
+
     m_absolute_input_row = content()->emplace_back<Yoga::Item>();
     m_absolute_input_row->set_orientation(Orientation::Vertical);
+    m_absolute_input_row->set_gap(10_px);
     auto absolute_text{m_absolute_input_row->emplace_back<Text>("Translation")};
     absolute_text->set_font_type(Render::ImguiFontType::Bold);
     m_absolute_input = m_absolute_input_row->emplace_back<TripleInput>(_u8L("mm"));
@@ -65,14 +71,17 @@ TranslationDialog::TranslationDialog(
 
     m_relative_input_row = content()->emplace_back<Yoga::Item>();
     m_relative_input_row->set_orientation(Orientation::Vertical);
+    m_relative_input_row->set_gap(10_px);
     auto relative_text{m_relative_input_row->emplace_back<Text>("Relative translation")};
     relative_text->set_font_type(Render::ImguiFontType::Bold);
     m_relative_input = m_relative_input_row->emplace_back<TripleInput>(_u8L("mm"));
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int)
     { apply_relative_translation(value); };
 
-    content()->emplace_back<PlaceOnBedButton>(m_project_interactor);
+    auto place_on_bed_button{content()->emplace_back<PlaceOnBedButton>(m_project_interactor)};
+    place_on_bed_button->set_margin({0, -10_px, 0, 0});
 
+    add_separator(content());
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
         m_project_interactor,
         Biz::Scene::SelectionReferenceFrame::Bed

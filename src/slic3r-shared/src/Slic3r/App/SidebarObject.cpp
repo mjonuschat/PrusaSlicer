@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/SidebarObject.hpp"
 
+#include "Slic3r/App/ColorDropdown.hpp"
 #include "Slic3r/App/Plater/ScaleDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -15,6 +16,8 @@
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
 #include "Slic3r/App/WipeTowerSettings.hpp"
 #include "Slic3r/App/Plater/ScaleWidget.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 
 #include <fmt/format.h>
 
@@ -40,10 +43,127 @@ static std::string volume_type_name(Domain::ModelVolumeType type)
     }
 }
 
+static void add_separator(Item* item, float padding)
+{
+    auto* separator = item->emplace_back<Separator>(Orientation::Horizontal);
+    separator->set_margin(Margins(-padding, 0.f, -padding, 0.f));
+}
+
+class ExtruderDropdown :
+    public Yoga::ColorDropdown,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::ISelectedProjectChangedListener
+{
+public:
+    ExtruderDropdown(Biz::ProjectInteractor& project_interactor) :
+        Yoga::ColorDropdown{project_interactor, true, true},
+        m_project_interactor{project_interactor}
+    {
+        m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(
+            this);
+        m_project_interactor.scene_interactor()
+            .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+        m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+
+        on_color_selected = [this](std::size_t index)
+        {
+            Domain::Project& project{m_project_interactor.selected_project()};
+            for (const Domain::ElementRef& element :
+                 m_project_interactor.scene_interactor().object_selection().elements)
+            {
+                const Domain::ModelObject* model_object{
+                    project.find_object_by_id(element.object_id)
+                };
+                if (!model_object) {
+                    continue;
+                }
+                const Domain::ConfigItem& item{model_object->object_settings.items.opt("extruder")};
+                m_project_interactor.preset_interactor().set_item_value(
+                    item,
+                    Domain::ConfigValue{static_cast<int>(index)}
+                );
+            }
+        };
+    }
+
+    ~ExtruderDropdown()
+    {
+        m_project_interactor.preset_interactor()
+            .remove_listener<Biz::Preset::IPresetChangedListener>(this);
+        m_project_interactor.scene_interactor()
+            .remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+        m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+    }
+
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override
+    {
+        if (!std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+            return;
+        }
+        const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
+        if (location != Domain::FDMConfigLocation::Object) {
+            return;
+        }
+        if (item.name() != "extruder") {
+            return;
+        }
+
+        reload(project_id);
+    }
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override
+    {
+        if (project_id != m_project_interactor.selected_project_id()) {
+            return;
+        }
+        reload(project_id);
+    }
+
+    void on_selected_project_changed(size_t project_id) override
+    {
+        if (project_id != m_project_interactor.selected_project_id()) {
+            return;
+        }
+        reload(project_id);
+    }
+
+    void reload(std::size_t project_id) {
+        const Domain::Project& project{m_project_interactor.workbench().project(project_id)};
+        const Biz::Scene::ObjectSelection& selection{
+            m_project_interactor.scene_interactor().object_selection(project_id)
+        };
+        std::set<int> extruder_ids;
+        for (const Domain::ElementRef& element : selection.elements) {
+            const Domain::ModelObject* object{project.find_object_by_id(element.object_id)};
+            if (!object) {
+                continue;
+            }
+            extruder_ids.insert(object->object_settings.items.opt("extruder").get<int>());
+        }
+
+        if (extruder_ids.size() == 1) {
+            set_current_index(*extruder_ids.begin());
+        } else {
+            set_current_index(std::nullopt);
+        }
+    }
+
+private:
+    Biz::ProjectInteractor& m_project_interactor;
+};
+
 SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     Window("SidebarObject"),
     m_project_interactor(project_interactor),
     m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_osi_observer_scope(
         *project_interactor.preset_interactor()
              .object_settings_interactor()
@@ -57,19 +177,26 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     set_orientation(Orientation::Vertical);
     set_min_size({YGUndefined, 60});
     set_flex_grow(1);
-    set_gap(10);
+    set_padding(0);
 
-    m_text_object_name = emplace_back<Text>("Unkown");
+    const float gap{15_px};
+
+    auto title{emplace_back<Item>()};
+    title->set_flex_shrink(0);
+    title->set_padding({20_px, gap, 0, 0});
+    m_text_object_name = title->emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
-    m_text_object_name->set_flex_shrink(0);
+    m_text_object_name->set_font_size(15_px);
 
-    m_scroll_area = emplace_back<ScrollArea>();
+    m_scroll_area = emplace_back<ScrollArea>("ScrollPanels");
     m_scroll_area->set_orientation(Orientation::Vertical);
-    m_scroll_area->set_gap(10);
-    m_scroll_area->set_margin(Margins(0, 0, -11, 0));
-    m_scroll_area->set_padding(Paddings(0, 0, 11, 0));
+    m_scroll_area->set_flex_grow(1);
+    const float padding{20_px};
+    m_scroll_area->set_padding(padding);
+    m_scroll_area->set_gap(gap);
 
     m_wipe_tower_settings = m_scroll_area->emplace_back<WipeTowerSettings>(m_project_interactor);
+    m_wipe_tower_settings->set_flex_shrink(0);
 
     m_config_item_filter = std::make_shared<ConfigItemFilter>();
     m_config_item_filter->set_filter_fn(
@@ -85,17 +212,32 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         }
     );
 
-    m_scale_widget = m_scroll_area->emplace_back<Plater::ScaleWidget>(m_project_interactor);
+    m_extruder_picker = m_scroll_area->emplace_back<Item>();
+    m_extruder_picker->set_flex_shrink(0);
+    m_extruder_picker->set_orientation(Orientation::Vertical);
+    m_extruder_picker->set_gap(gap);
+    m_extruder_picker->emplace_back<ExtruderDropdown>(m_project_interactor);
+    add_separator(m_extruder_picker, padding);
+
+    m_scale_section = m_scroll_area->emplace_back<Item>();
+    m_scale_section->set_flex_shrink(0);
+    m_scale_section->set_orientation(Orientation::Vertical);
+    m_scale_section->set_gap(gap);
+
+    auto reference_frame_picker{std::make_unique<Plater::ReferenceFramePicker>(
+        project_interactor,
+        Biz::Scene::SelectionReferenceFrame::Volume
+    )};
+    m_scale_widget = m_scale_section->emplace_back<Plater::ScaleWidget>(m_project_interactor, nullptr, reference_frame_picker.get());
     m_scale_widget->on_activated(m_project_interactor.selected_project_id());
+    m_scale_widget->set_flex_shrink(0);
+
+    add_separator(m_scale_section, padding);
+
+    m_scale_section->append(std::move(reference_frame_picker));
+    add_separator(m_scale_section, padding);
 
     add_volume_type_selector();
-
-    m_config_item_list_view =
-        m_scroll_area->emplace_back<ConfigItemListView>(m_project_interactor.preset_interactor());
-    m_config_item_list_view->set_orientation(Orientation::Vertical);
-    m_config_item_list_view->set_gap(5);
-    m_config_item_list_view->set_flex_shrink(0);
-    m_config_item_list_view->set_source_list(m_config_item_filter.get());
 
     std::weak_ptr<Biz::ObjectSettingsObservableList> object_settings_observable_list =
         m_project_interactor.preset_interactor()
@@ -331,10 +473,12 @@ void SidebarObject::update_enable_modifiers()
     m_wipe_tower_settings->set_visible(wipe_tower_selected && m_selection.elements.size() == 1);
     m_add_settings_button->set_visible(!wipe_tower_selected);
     m_add_settings_button->set_enabled(enable);
-    m_config_item_list_view->set_visible(enable);
+    m_extruder_picker->set_visible(
+        enable && m_selection.mode == Biz::Scene::SelectionMode::Instance
+    );
     m_override_group_list_view->set_visible(enable);
     m_no_overrides_label->set_visible(!wipe_tower_selected && !enable);
-    m_scale_widget->set_visible(!wipe_tower_selected);
+    m_scale_section->set_visible(!wipe_tower_selected);
 
     if (!enable) {
         m_override_settings_dialog->close();

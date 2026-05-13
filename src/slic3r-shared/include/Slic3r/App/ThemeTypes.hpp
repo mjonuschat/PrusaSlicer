@@ -31,7 +31,7 @@ enum class Color
     SceneBgBottom,
     SceneBgErrorTop,
     SceneBgErrorBottom,
-    Transparent
+    Transparent,
 };
 
 /**

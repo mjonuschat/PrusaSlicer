@@ -1,7 +1,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "imgui.h"
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App {
 
 float px(float value);
 

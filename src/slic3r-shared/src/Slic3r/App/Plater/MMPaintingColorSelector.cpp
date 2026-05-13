@@ -4,7 +4,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/TwoColorRing.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/Plater/MMPaintingScaleHelpers.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 
 namespace Slic3r::App::Plater {
 

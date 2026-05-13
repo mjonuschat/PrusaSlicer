@@ -1,8 +1,8 @@
 #include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/App/Plater/MMPaintingScaleHelpers.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 #include "imgui.h"
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App {
 
 constexpr float imgui_scale_factor{18.0f / 14.0f};
 

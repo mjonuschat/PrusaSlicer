@@ -8,7 +8,7 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/Plater/MMPaintingScaleHelpers.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorDropdowns.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorSelector.hpp"
@@ -20,6 +20,14 @@ using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::Algorithms;
 
 namespace Slic3r::App::Plater {
+
+static Yoga::Item* append(Yoga::Item* parent, Yoga::ItemPtr item)
+{
+    auto item_ptr{item.get()};
+    parent->append(std::move(item));
+    return item_ptr;
+}
+
 
 MultiMaterialPaintingDialog::Callbacks& MultiMaterialPaintingDialog::callbacks()
 {
@@ -272,13 +280,16 @@ static ItemPtr help()
     return result;
 }
 
-MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
+MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
+    Biz::ProjectInteractor& project_interactor
+) :
     GizmoWindow(_u8L("Painting"), Render::Icon::None, _u8L("N"))
 {
     const float padding{4 * spacing};
 
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1);
+    content()->set_padding(0);
 
     revert_button()->set_visible(true);
     revert_button()->callbacks().action = [this]() { m_callbacks.painting_reset(); };
@@ -291,6 +302,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog() :
     selector_section->set_flex_shrink(0);
 
     m_color_dropdowns = selector_section->emplace_back<ColorDropdowns>(
+        project_interactor,
         spacing,
         mouse_left_color,
         mouse_right_color
@@ -442,12 +454,10 @@ void MultiMaterialPaintingDialog::set_split_triangles_value(const bool split_tri
 }
 
 void MultiMaterialPaintingDialog::set_painting_colors(
-    const std::vector<Domain::ColorRGBA>& colors,
-    const std::vector<std::string>& names
+    const std::vector<Domain::ColorRGBA>& colors
 )
 {
     m_color_selector->set_colors(colors);
-    m_color_dropdowns->set_items(names, colors);
 }
 
 void MultiMaterialPaintingDialog::switch_colors()

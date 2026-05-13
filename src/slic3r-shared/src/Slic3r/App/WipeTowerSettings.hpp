@@ -15,7 +15,7 @@ public:
 
 private:
     void reload();
-    const Domain::ModelWipeTower& get_wipe_tower() const;
+    const Domain::BedInstance& get_bed_instance() const;
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     const Domain::Workbench& m_workbench;

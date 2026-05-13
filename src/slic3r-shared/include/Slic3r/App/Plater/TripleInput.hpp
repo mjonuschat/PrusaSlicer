@@ -11,15 +11,12 @@ namespace Slic3r::App::Yoga {
 
 namespace Slic3r::App::Plater {
 
+class InputWithLabel;
+
 class TripleInput : public Yoga::Item
 {
 public:
-    struct Header {
-        std::string text;
-        ImColor color;
-    };
-
-    TripleInput(const std::string& suffix);
+    TripleInput(const std::string& suffix, const std::optional<ImColor>& color_override = {});
     std::function<void(const Domain::Vec3d&, int)> on_change = [](const Domain::Vec3d&, int index) {};
 
     Domain::Vec3d get_value() const;
@@ -27,8 +24,7 @@ public:
     void set_visible(const std::array<bool, 3>& is_visible);
 
 private:
-    std::array<Yoga::InputTextField*, 3> m_input;
+    std::array<InputWithLabel*, 3> m_input;
     std::array<Yoga::DoubleValidator*, 3> m_validator;
-    std::array<Yoga::Text*, 3> m_header;
 };
 } // namespace Slic3r::App::Plater

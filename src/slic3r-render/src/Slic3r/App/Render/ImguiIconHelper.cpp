@@ -56,6 +56,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::AllBeds, "all_beds"},
     {Icon::Lock, "lock_closed"},
     {Icon::Unlock, "lock_open"},
+    {Icon::LightLockClosed, "light_lock_closed"},
+    {Icon::LightLockOpened, "light_lock_opened"},
     {Icon::DSRevert, "undo_r"},
     {Icon::DSSettings, "cog_"},
     {Icon::ErrorTick, "error_tick"},

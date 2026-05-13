@@ -17,7 +17,7 @@ class ColorDropdowns;
 class MultiMaterialPaintingDialog : public GizmoWindow
 {
 public:
-    explicit MultiMaterialPaintingDialog();
+    explicit MultiMaterialPaintingDialog(Biz::ProjectInteractor& project_interactor);
 
     struct Callbacks
     {
@@ -60,8 +60,7 @@ public:
     void set_second_brush_color_index(size_t color_idx);
 
     void set_painting_colors(
-        const std::vector<Domain::ColorRGBA>& colors,
-        const std::vector<std::string>& names
+        const std::vector<Domain::ColorRGBA>& colors
     );
 
     void switch_colors();

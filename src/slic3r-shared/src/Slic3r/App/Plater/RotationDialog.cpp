@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -20,7 +21,7 @@ RotationDialog::RotationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    GizmoWindow{_u8L("Rotation"), Render::Icon::Rotate},
+    GizmoWindow{_u8L("Rotate"), Render::Icon::None, "R"},
     m_scene_provider{scene_provider},
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
@@ -30,17 +31,11 @@ RotationDialog::RotationDialog(
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
-    auto revert_row{content()->emplace_back<Yoga::Item>()};
-    revert_row->set_justify_content(YGJustifyFlexEnd);
-    revert_row->set_height(0);
-    m_revert_button = revert_row->emplace_back<Yoga::LayoutButton>(
-        std::string{},
-        Render::Icon::RevertButton,
-        Biz::_u8L("Revert rotation")
-    );
-    m_revert_button->set_min_size({25.0, 25.0});
+    content()->set_padding({20_px, 20_px});
+    content()->set_orientation(Yoga::Orientation::Vertical);
+    content()->set_gap(20_px);
 
-    m_revert_button->callbacks().action = [this]()
+    revert_button()->callbacks().action = [this]()
     {
         ProjectContext& project_context{m_projects.selected()};
         if (project_context.reset_rotation_candidates.empty()) {
@@ -65,14 +60,20 @@ RotationDialog::RotationDialog(
         );
     };
 
-    auto title = content()->emplace_back<Text>("Relative rotation");
+    auto rotation_section{content()->emplace_back<Yoga::Item>()};
+    rotation_section->set_orientation(Orientation::Vertical);
+    rotation_section->set_gap(10_px);
+
+    auto title{rotation_section->emplace_back<Text>("Relative rotation")};
     title->set_font_type(Render::ImguiFontType::Bold);
 
-    m_relative_input = content()->emplace_back<TripleInput>(_u8L("°"));
+    m_relative_input = rotation_section->emplace_back<TripleInput>(_u8L("°"));
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
     { add_rotation(Vec3d{deg2rad(value(0)), deg2rad(value(1)), deg2rad(value(2))}); };
 
-    m_place_on_bed_button = content()->emplace_back<PlaceOnBedButton>(m_project_interactor);
+    m_place_on_bed_button = rotation_section->emplace_back<PlaceOnBedButton>(m_project_interactor);
+
+    add_separator(content());
 
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(
         m_project_interactor,
@@ -135,9 +136,9 @@ void RotationDialog::reload(std::optional<Domain::SelectionId> project_id) {
     project_context.reset_rotation_candidates = get_reset_rotation_candidates();
 
     if (project_context.reset_rotation_candidates.empty()) {
-        m_revert_button->set_visible(false);
+        revert_button()->set_visible(false);
     } else {
-        m_revert_button->set_visible(true);
+        revert_button()->set_visible(true);
     }
 
     if (m_project_interactor.scene_interactor().object_selection().contains_wipe_tower()) {

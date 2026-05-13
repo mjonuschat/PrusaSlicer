@@ -4,6 +4,7 @@
 #include "Slic3r/App/Plater/TripleInput.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
+#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/Math.hpp"
 
 namespace Slic3r::App::Plater {
@@ -138,7 +139,34 @@ static std::optional<Domain::Vec3d> get_current_relative_scale(
     return first_volume_scale;
 }
 
-ScaleWidget::ScaleWidget(Biz::ProjectInteractor& project_interactor) :
+void ScaleWidget::reset_scale()
+{
+    ProjectContext& project_context{m_projects.selected()};
+    if (project_context.reset_scale_candidates.empty()) {
+        return;
+    }
+    const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
+        m_project_interactor.scene_interactor().selection_bounding_box()
+    };
+    const bool was_floating{selection_bounding_box && selection_bounding_box->is_floating()};
+    m_project_interactor.scene_interactor().set_element_transforms(
+        project_context.reset_scale_candidates
+    );
+    if (selection_bounding_box && !was_floating) {
+        Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
+        relative_transform_world.col(3).z() =
+            -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
+        m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
+    }
+
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::RevertScale);
+}
+
+ScaleWidget::ScaleWidget(
+    Biz::ProjectInteractor& project_interactor,
+    Yoga::LayoutButton* revert_button,
+    ReferenceFramePicker* reference_frame_picker
+) :
     m_project_interactor{project_interactor},
     m_projects{project_interactor}
 {
@@ -147,47 +175,66 @@ ScaleWidget::ScaleWidget(Biz::ProjectInteractor& project_interactor) :
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     set_orientation(Orientation::Vertical);
+    const float spacing{5_px};
+    set_gap(4 * spacing);
 
-    const double gap{10.0};
-    set_gap(gap);
 
-    auto revert_row{emplace_back<Yoga::Item>()};
-    revert_row->set_justify_content(YGJustifyFlexEnd);
-    revert_row->set_height(0);
-    m_revert_button = revert_row->emplace_back<Yoga::LayoutButton>(
-        "",
-        Render::Icon::RevertButton,
-        "Revert scale"
-    );
-    m_revert_button->set_min_size({25.0, 25.0});
-    m_revert_button->callbacks().action = [this]()
-    {
-        ProjectContext& project_context{m_projects.selected()};
-        if (project_context.reset_scale_candidates.empty()) {
-            return;
-        }
-        const std::optional<Biz::Scene::SelectionExtents> selection_bounding_box{
-            m_project_interactor.scene_interactor().selection_bounding_box()
-        };
-        const bool was_floating{selection_bounding_box && selection_bounding_box->is_floating()};
-        m_project_interactor.scene_interactor().set_element_transforms(
-            project_context.reset_scale_candidates
+    auto scaling_section{emplace_back<Item>()};
+    scaling_section->set_gap(spacing);
+    scaling_section->set_orientation(Orientation::Vertical);
+
+    auto title_row{scaling_section->emplace_back<Item>()};
+    title_row->set_gap(2_px);
+    title_row->set_align_items(YGAlignCenter);
+    auto title{title_row->emplace_back<Text>(_u8L("Size"))};
+    title->set_font_type(Render::ImguiFontType::Bold);
+    title->set_margin({0_px, 0_px, 0_px, spacing});
+    title->set_flex_grow(1);
+
+    const float icon_size{22_px};
+
+    if (!revert_button) {
+        m_revert_button = title_row->emplace_back<Yoga::LayoutButton>(
+            "",
+            Render::Icon::UndoGizmo,
+            _u8L("Revert scale")
         );
-        if (selection_bounding_box && !was_floating) {
-            Domain::SquareMatrix4d relative_transform_world{Domain::SquareMatrix4d::Identity()};
-            relative_transform_world.col(3).z() =
-                -m_project_interactor.scene_interactor().selection_bounding_box()->min_z();
-            m_project_interactor.scene_interactor().transform_selection(relative_transform_world);
-        }
+        m_revert_button->set_width(icon_size);
+        m_revert_button->set_height(icon_size);
+        m_revert_button->set_content_padding(5_px);
+        m_revert_button->set_background_color(Platform::Color::ButtonTransparent);
+    } else {
+        m_revert_button = revert_button;
+    }
+    m_revert_button->callbacks().action = [this]() { reset_scale(); };
 
-        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::RevertScale);
+    m_lock = title_row->emplace_back<Yoga::LayoutButton>(
+        "",
+        Render::Icon::LightLockClosed,
+        _u8L("Uniform scaling")
+    );
+    m_lock->set_width(icon_size);
+    m_lock->set_height(icon_size);
+    m_lock->set_checkable(true);
+    m_lock->set_checked(true);
+    m_lock->set_background_color(
+        m_theme->color_imgui(Platform::Color::ButtonTransparent),
+        m_theme->color_imgui(Platform::Color::WindowBgAlternate)
+    );
+    m_lock->set_background_color_checked(
+        m_theme->color_imgui(Platform::Color::ButtonTransparent),
+        m_theme->color_imgui(Platform::Color::WindowBgAlternate)
+    );
+    m_lock->callbacks().checked_changed = [this](bool checked)
+    {
+        if (checked) {
+            m_lock->set_icon(Render::Icon::LightLockClosed);
+        } else {
+            m_lock->set_icon(Render::Icon::LightLockOpened);
+        }
     };
 
-    auto title = emplace_back<Text>("Size");
-    title->set_font_type(Render::ImguiFontType::Bold);
-
-    m_absolute_input = emplace_back<TripleInput>(_u8L("mm"));
-
+    m_absolute_input = scaling_section->emplace_back<TripleInput>(_u8L("mm"));
     m_absolute_input->on_change = [this](const Domain::Vec3d& value, int index)
     {
         const std::optional<Vec3d> current_dimensions{
@@ -205,14 +252,11 @@ ScaleWidget::ScaleWidget(Biz::ProjectInteractor& project_interactor) :
         reload();
     };
 
-    m_absolute_percent_input_item = emplace_back<Yoga::Item>();
+    m_absolute_percent_input_item = scaling_section->emplace_back<Yoga::Item>();
     m_absolute_percent_input_item->set_orientation(Orientation::Vertical);
-    m_absolute_percent_input_item->set_gap(gap);
-    // I wanted to align-items: flex-end; to align the button. Does not work.
-    auto* header_item{m_absolute_percent_input_item->emplace_back<Yoga::Item>()};
-    auto* percentage_text{header_item->emplace_back<Yoga::Text>(_u8L("Scale"))};
-    percentage_text->set_font_type(Render::ImguiFontType::Bold);
-    m_absolute_percent_input = m_absolute_percent_input_item->emplace_back<TripleInput>(_u8L("%"));
+    m_absolute_percent_input = m_absolute_percent_input_item->emplace_back<TripleInput>(
+        "%",
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
     m_absolute_percent_input->on_change = [this](const Domain::Vec3d& value, int index)
     {
         const std::optional<Vec3d> current_scale{get_current_relative_scale(m_project_interactor)};
@@ -227,12 +271,12 @@ ScaleWidget::ScaleWidget(Biz::ProjectInteractor& project_interactor) :
         reload();
     };
 
-    m_relative_input_item = emplace_back<Yoga::Item>();
+    m_relative_input_item = scaling_section->emplace_back<Yoga::Item>();
     m_relative_input_item->set_orientation(Orientation::Vertical);
-    m_relative_input_item->set_gap(gap);
-    auto* unaligned_text{m_relative_input_item->emplace_back<Yoga::Text>(_u8L("Relative scale"))};
-    unaligned_text->set_font_type(Render::ImguiFontType::Bold);
-    m_relative_input            = m_relative_input_item->emplace_back<TripleInput>(_u8L("%"));
+    m_relative_input = m_relative_input_item->emplace_back<TripleInput>(
+        _u8L("%"),
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
     m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
     {
         const Vec3d scale_by{
@@ -241,15 +285,9 @@ ScaleWidget::ScaleWidget(Biz::ProjectInteractor& project_interactor) :
         apply_relative_scale(scale_by);
     };
 
-    m_place_on_bed_button = emplace_back<PlaceOnBedButton>(m_project_interactor);
+    m_place_on_bed_button = scaling_section->emplace_back<PlaceOnBedButton>(m_project_interactor);
 
-    m_reference_frame_picker = emplace_back<ReferenceFramePicker>(
-        m_project_interactor,
-        Biz::Scene::SelectionReferenceFrame::Volume
-    );
-
-    m_lock = emplace_back<Yoga::ToggleButton>("Uniform scale");
-    m_lock->set_checked(true);
+    m_reference_frame_picker = reference_frame_picker;
 }
 
 ScaleWidget::~ScaleWidget()
