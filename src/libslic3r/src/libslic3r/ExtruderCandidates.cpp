@@ -60,7 +60,7 @@ static std::set<unsigned> get_extra_support_extruders(
 
     std::set<unsigned> result;
 
-    for (const std::string& key :
+    for (const std::string key :
          {"support_material_extruder", "support_material_interface_extruder"})
     {
         const std::optional<Domain::ConfigItem> object_supports_extruder_item{
@@ -97,7 +97,7 @@ std::set<unsigned> get_volume_extruder_candidates(
         volume_default_extruder_item ? std::optional{volume_default_extruder_item->get<int>()} :
                                        std::nullopt
     };
-    for (const std::string& key :
+    for (const std::string key :
          {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"})
     {
         const std::optional<Domain::ConfigItem> volume_extruder{volume_settings.overrides.get(key)};
@@ -201,7 +201,7 @@ std::vector<unsigned> get_extruder_candidates(
 
     if (can_have_wipe_tower) {
         const int wipe_tower_extruder{config.print.items.opt("wipe_tower_extruder").get<int>()};
-        if (wipe_tower_extruder > 0 && wipe_tower_extruder < config.filament.size() + 1) {
+        if (wipe_tower_extruder > 0 && static_cast<size_t>(wipe_tower_extruder) < config.filament.size() + 1) {
             extruders.insert(static_cast<unsigned>(wipe_tower_extruder - 1));
         }
     }

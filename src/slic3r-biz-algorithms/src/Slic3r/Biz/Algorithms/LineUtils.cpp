@@ -255,8 +255,8 @@ void LineUtils::draw(Biz::Algorithms::SVG::SVG &       svg,
         svg.draw_text(middle, name, color);
     }
     if (side_points) {
-        std::string name_a = (use_name) ? "A" : (std::string("A_") + name);            
-        std::string name_b = (use_name) ? "B" : (std::string("B_") + name);
+        std::string name_a = use_name ? (std::string("A_") + name): "A";
+        std::string name_b = use_name ? (std::string("B_") + name) : "B";
         svg.draw_text(line.a, name_a.c_str(), color_a);
         svg.draw_text(line.b, name_b.c_str(), color_b);
     }

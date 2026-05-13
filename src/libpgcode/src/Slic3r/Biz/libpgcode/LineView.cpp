@@ -253,7 +253,7 @@ void LineView::apply_deletions(const std::vector<LineShift>& deletions)
             ++next_del_idx;
         } else {
             m_line_indices[new_line_idx] = new_content_idx;
-            for (int j= m_line_indices[old_line_idx]; j<(old_line_idx+1< m_line_indices.size() ? m_line_indices[old_line_idx + 1] : m_content.size()); ++j) {
+            for (size_t j = m_line_indices[old_line_idx]; j < (old_line_idx+1 < m_line_indices.size() ? m_line_indices[old_line_idx + 1] : m_content.size()); ++j) {
                 m_content[new_content_idx] = m_content[j];
                 ++new_content_idx;
             }
@@ -275,12 +275,12 @@ void LineView::reindex_insertions(std::vector<LineShift>& insertions, const std:
     int next_deletion_idx = 0;
 
     for (LineShift& insertion : insertions) {
-        while (next_deletion_idx < deletions.size() && deletions[next_deletion_idx].orig_line_idx < insertion.orig_line_idx)
+        while (static_cast<size_t>(next_deletion_idx) < deletions.size() && deletions[next_deletion_idx].orig_line_idx < insertion.orig_line_idx)
             ++next_deletion_idx;        
         insertion.orig_line_idx -= next_deletion_idx;
     }
     // If two insertions ended up on the same line, merge them together.
-    for (int i=1; i<insertions.size(); ++i) {
+    for (size_t i = 1; i < insertions.size(); ++i) {
         if (insertions[i].orig_line_idx == insertions[i-1].orig_line_idx) {
             for (const std::string* s : insertions[i].lines)
                 insertions[i-1].lines.emplace_back(s);

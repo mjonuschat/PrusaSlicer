@@ -161,7 +161,7 @@ size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
         object->volumes[ivolume]->volume_settings.overrides.set("extruder", extruder_counter++);
         object->volumes[ivolume]->discard_splittable();
         ++idx;
-        if (extruder_counter == max_extruders)
+        if (static_cast<unsigned int>(extruder_counter) == max_extruders)
             extruder_counter = 0;
     }
 

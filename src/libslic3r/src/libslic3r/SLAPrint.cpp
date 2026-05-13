@@ -504,10 +504,10 @@ std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
 std::vector<Step> all_steps()
 {
     std::set<Step> result;
-    for (int i{}; i < slapsCount; ++i) {
+    for (size_t i{}; i < slapsCount; ++i) {
         result.insert(static_cast<SLAPrintStep>(i));
     }
-    for (int i{}; i < slaposCount; ++i) {
+    for (size_t i{}; i < slaposCount; ++i) {
         result.insert(static_cast<SLAPrintObjectStep>(i));
     }
     return std::vector<Step>{result.begin(), result.end()};
@@ -1146,7 +1146,7 @@ void SLAPrint::process()
     } bench;
 #endif
 
-    std::array<double, slaposCount + slapsCount> step_times {};
+    std::array<double, static_cast<int>(slaposCount) + static_cast<int>(slapsCount)> step_times {};
 
     auto apply_steps_on_objects =
         [this, &st, &printsteps, &step_times, &bench]
@@ -1193,7 +1193,7 @@ void SLAPrint::process()
             bench.start();
             printsteps.execute(currentstep);
             bench.stop();
-            step_times[slaposCount + currentstep] += bench.getElapsedSec();
+            step_times[static_cast<int>(slaposCount) + static_cast<int>(currentstep)] += bench.getElapsedSec();
             throw_if_canceled();
             set_done(currentstep);
         }

@@ -23,7 +23,7 @@ std::string print_host_type_to_string(PrintHostType type) {
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
 static const std::string& L(const std::string& s) { return s; }
-static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
+[[maybe_unused]] static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
 void physical_printer_init_fn(ConfigDefinitions& defs);
 

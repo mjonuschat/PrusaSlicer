@@ -135,20 +135,6 @@ void PrintObjectBase::status_update_warnings(PrintBase *print, int step, PrintSt
     print->status_update_warnings(step, warning_level, message, this);
 }
 
-static Domain::Polygon get_circle(double radius, std::size_t vertex_count) {
-    double angle_step{2.0 * std::numbers::pi / vertex_count};
-
-    Domain::Points points;
-    for (std::size_t i{}; i < vertex_count; ++i) {
-        const double angle{i * angle_step};
-        points.push_back(scaled(Vec2d{
-            std::cos(angle) * radius,
-            std::sin(angle) * radius,
-        }));
-    }
-    return Domain::Polygon{points};
-}
-
 static Domain::Polygon get_rectangle(double width, double height)
 {
     return Domain::Polygon{

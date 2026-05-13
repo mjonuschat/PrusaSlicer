@@ -22,7 +22,7 @@ std::vector<uint8_t> load_from_file(const std::string& filename)
         rewind(f);
         if (file_size > 0) {
             size_t read = fread(ret.data(), 1, file_size, f);
-            if (read != file_size)
+            if (read != static_cast<size_t>(file_size))
                 ret.clear();
         }
         fclose(f);

@@ -640,7 +640,7 @@ void apply_mm_segmentation(PrintObject &print_object, ThrowOnCancel throw_on_can
                 // Split LayerRegions by by_extruder regions.
                 // layer_range.painted_regions are sorted by extruder ID and parent PrintObject region ID.
                 auto it_painted_region_begin = layer_range.painted_regions.cbegin();
-                for (int parent_layer_region_idx = 0; parent_layer_region_idx < layer.region_count(); ++parent_layer_region_idx) {
+                for (int parent_layer_region_idx = 0; parent_layer_region_idx < static_cast<int>(layer.region_count()); ++parent_layer_region_idx) {
                     if (it_painted_region_begin == layer_range.painted_regions.cend())
                         continue;
 
@@ -735,7 +735,7 @@ void apply_mm_segmentation(PrintObject &print_object, ThrowOnCancel throw_on_can
                 }
 
                 // Re-create Surfaces of LayerRegions.
-                for (int region_id = 0; region_id < layer.region_count(); ++region_id) {
+                for (int region_id = 0; region_id < static_cast<int>(layer.region_count()); ++region_id) {
                     ByRegion &src = by_region[region_id];
                     if (src.needs_merge) {
                         // Multiple regions were merged into one.
@@ -782,7 +782,7 @@ void apply_fuzzy_skin_segmentation(PrintObject &print_object, ThrowOnCancel thro
             // layer_range.fuzzy_skin_painted_regions are sorted by parent PrintObject region ID.
             std::vector<ByRegion> by_region(layer.region_count());
             auto                  it_fuzzy_skin_region_begin = layer_range.fuzzy_skin_painted_regions.cbegin();
-            for (int parent_layer_region_idx = 0; parent_layer_region_idx < layer.region_count(); ++parent_layer_region_idx) {
+            for (int parent_layer_region_idx = 0; parent_layer_region_idx < static_cast<int>(layer.region_count()); ++parent_layer_region_idx) {
                 if (it_fuzzy_skin_region_begin == layer_range.fuzzy_skin_painted_regions.cend())
                     continue;
 
@@ -843,7 +843,7 @@ void apply_fuzzy_skin_segmentation(PrintObject &print_object, ThrowOnCancel thro
             }
 
             // Re-create Surfaces of LayerRegions.
-            for (int region_id = 0; region_id < layer.region_count(); ++region_id) {
+            for (int region_id = 0; region_id < static_cast<int>(layer.region_count()); ++region_id) {
                 ByRegion &src = by_region[region_id];
                 if (src.needs_merge) {
                     // Multiple regions were merged into one.

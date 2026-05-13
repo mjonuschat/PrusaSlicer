@@ -107,7 +107,7 @@ void Texture::set_object_name(const std::string& object_name)
     int max_label_length = 0;
     glGetIntegerv(GL_MAX_LABEL_LENGTH, reinterpret_cast<GLint*>(&max_label_length));
     glCheck();
-    if (object_name.size() > max_label_length) {
+    if (int(object_name.size()) > max_label_length) {
         object_name_gl.resize(max_label_length);
     }
     m_device.get_internal_as<GL::GLDeviceInternal>().bind_texture(0, *this);

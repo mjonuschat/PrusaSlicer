@@ -684,8 +684,7 @@ libpgcode::ProcessorResult PrePreview::generate_result() const {
                 custom_color_gcodes.emplace_back(code);
             }
         }
-        const bool sorted{std::is_sorted(custom_color_gcodes.begin(), custom_color_gcodes.end())};
-        DEBUG_ASSERT(sorted);
+        DEBUG_ASSERT(std::is_sorted(custom_color_gcodes.begin(), custom_color_gcodes.end()));
     }
 
     std::size_t layer_id{0};
@@ -708,8 +707,8 @@ libpgcode::ProcessorResult PrePreview::generate_result() const {
             // custom_color_gcode.empty => begin() == end()
             if (it != custom_color_gcodes.begin()) {
                 const auto custom_gcode_it{std::prev(it)};
-                const std::ptrdiff_t custom_gcode_index{
-                    std::distance(custom_color_gcodes.begin(), custom_gcode_it)
+                const size_t custom_gcode_index{
+                    size_t(custom_gcode_it - custom_color_gcodes.begin())
                 };
                 ASSERT(custom_gcode_it->extruder > 0);
                 if (custom_gcode_it->extruder - 1 == extruder_id) {
