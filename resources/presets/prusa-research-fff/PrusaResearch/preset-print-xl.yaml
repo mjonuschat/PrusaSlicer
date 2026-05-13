@@ -408,6 +408,7 @@ variants:
     retract_length: 0.8
     retract_lift: 0.3
     retract_speed: 35
+    retract_before_travel: 1.5
 ---
 id: '*XL_common_toolchange_retract*'
 kind: print

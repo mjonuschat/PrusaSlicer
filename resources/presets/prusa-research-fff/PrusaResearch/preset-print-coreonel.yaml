@@ -305,7 +305,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
         - name: 0.15mm SPEED @COREONEL 0.4HF
           id: QOVs9H5fSDS3egTZLppzHw
@@ -368,7 +368,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
         - name: 0.20mm SPEED @COREONEL 0.4HF
           id: Hps1HXzjQG6wlIbGGBqCWQ
@@ -441,7 +441,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
         - name: 0.25mm SPEED @COREONEL 0.4HF
           id: TSCppzf0SHewuAG0qCtQtw

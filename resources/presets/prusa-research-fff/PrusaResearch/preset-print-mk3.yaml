@@ -19,6 +19,7 @@ variants:
     retract_speed: 35
     deretract_speed: 0
     retract_length: 0.8
+    retract_before_travel: 1.5
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25

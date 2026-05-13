@@ -306,7 +306,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
             
         - name: 0.15mm SPEED @COREONE 0.4HF
@@ -370,7 +370,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
         - name: 0.20mm SPEED @COREONE 0.4HF
           id: YSXMsWkrTImk0HnsXd1JNg
@@ -443,7 +443,7 @@ variants:
             default_acceleration: 3000
             overhang_speed_2: 50
             overhang_speed_3: 60%
-            over_bridge_speed: 0
+            over_bridge_speed: 60%
             support_material_threshold: 35
         - name: 0.25mm SPEED @COREONE 0.4HF
           id: FXaY5DLFTA2HXEgevfpUyw

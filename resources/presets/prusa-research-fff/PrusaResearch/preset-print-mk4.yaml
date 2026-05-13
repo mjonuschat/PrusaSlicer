@@ -16,6 +16,7 @@ variants:
     travel_slope: 1
     travel_max_lift: 1.5
     wipe: 0
+    retract_before_travel: 1.5
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25

@@ -8,3 +8,9 @@ values:
   filament_cost: '19.99'
   filament_vendor: Filament PM
   filament_spool_weight: 230
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: wNOe3u4vSWyh30QcHgw6Pg
+  values:
+    first_layer_temperature: 255
+    temperature: 255

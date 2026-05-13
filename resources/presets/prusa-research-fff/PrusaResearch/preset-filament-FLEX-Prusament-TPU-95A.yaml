@@ -13,11 +13,11 @@ values:
   filament_density: 1.23
   filament_spool_weight: 278
   filament_vendor: Prusa Polymers
-  bridge_fan_speed: 40
+  bridge_fan_speed: 55
   disable_fan_first_layers: 4
   full_fan_speed_layer: 6
-  min_fan_speed: 40
-  max_fan_speed: 40
+  min_fan_speed: 55
+  max_fan_speed: 55
   cooling: false
   slowdown_below_layer_time: 15
   retract_speed: null
@@ -28,6 +28,7 @@ values:
   wipe: null
   travel_ramping_lift: false
   filament_notes: MBL160
+  extrusion_multiplier: 1.1
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
@@ -35,9 +36,9 @@ variants:
   values:
     chamber_minimal_temperature: 0
     chamber_temperature: 30
-    bridge_fan_speed: 25
-    min_fan_speed: 25
-    max_fan_speed: 35
+    bridge_fan_speed: 65
+    min_fan_speed: 65
+    max_fan_speed: 65
     idle_temperature: 150
     first_layer_temperature: 225
     temperature: 225
@@ -74,9 +75,9 @@ variants:
     filament_minimal_purge_on_wipe_tower: 35
     first_layer_temperature: 225
     temperature: 225
-    bridge_fan_speed: 50
-    min_fan_speed: 50
-    max_fan_speed: 50
+    bridge_fan_speed: 55
+    min_fan_speed: 55
+    max_fan_speed: 55
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
@@ -130,9 +131,9 @@ variants:
 - condition: printer.model=~/(MK4S|MK3.9S)/
   id: g2+3MFA9QvC7VfOXI1BJug
   values:
-    bridge_fan_speed: 30
-    min_fan_speed: 25
-    max_fan_speed: 45
+    bridge_fan_speed: 50
+    min_fan_speed: 50
+    max_fan_speed: 50
   variants:
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4

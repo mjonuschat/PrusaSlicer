@@ -105,6 +105,7 @@ variants:
     machine_max_jerk_x: [8, 8]
     machine_max_jerk_y: [8, 8]
     machine_max_jerk_z: [2, 2]
+    machine_max_junction_deviation: [0.01, 0.01]
     machine_min_extruding_rate: [0, 0]
     machine_min_travel_rate: [0, 0]
     max_print_height: 220

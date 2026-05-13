@@ -8,3 +8,9 @@ values:
   filament_cost: '19.99'
   filament_vendor: Made for Prusa
   filament_spool_weight: 230
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: Zwmd6ZDOQzmSKUyoQ+PwAw
+  values:
+    first_layer_temperature: 250
+    temperature: 250

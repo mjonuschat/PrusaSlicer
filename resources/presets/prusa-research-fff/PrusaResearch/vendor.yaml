@@ -1,7 +1,7 @@
 kind: vendor
 id: PrusaResearch
 name: Prusa Research FFF
-version: 0.1.0
+version: 1.0.0
 features:
   printer:
     supports_high_flow_nozzle:
@@ -689,7 +689,7 @@ kind: printer_config
 id: xl-5t
 name: XL 5T
 printer: xl
-legacy_printer_model: [XL5, XL5IS]
+legacy_printer_model: [XL5IS, XL5]
 tool_count: 5
 tools:
 - tool: '0.4'

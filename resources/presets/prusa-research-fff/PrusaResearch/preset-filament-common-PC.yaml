@@ -84,7 +84,7 @@ variants:
     id: i7HArB3STxWdKaFMOsJyqQ
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.14
       filament_infill_max_crossing_speed: 100
   # C1 0.3
@@ -93,7 +93,7 @@ variants:
     id: HbMAqoGKRuyxfliMkJADJg
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 100
   # C1 0.4
@@ -102,7 +102,7 @@ variants:
     id: ue/qoq1ZT7K9J4f6U5jcHQ
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -139,7 +139,7 @@ variants:
     id: 9R72UZNUStCdPzzI4rh0wQ
     values:
       filament_max_volumetric_speed: 15
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 14
       fan_below_layer_time: 35
       pressure_advance_value: 0.025
       filament_infill_max_crossing_speed: 120
@@ -157,7 +157,7 @@ variants:
     id: AmDT8GzuRIO6tJ2UWKV12w
     values:
       filament_max_volumetric_speed: 18
-      slowdown_below_layer_time: 25
+      slowdown_below_layer_time: 20
       fan_below_layer_time: 35
       max_fan_speed: 30
       bridge_fan_speed: 30
@@ -293,7 +293,7 @@ variants:
     id: F0zf7bMDQy6rhX8g0sk+7Q
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.14
       temperature: 240
       filament_infill_max_crossing_speed: 100
@@ -303,7 +303,7 @@ variants:
     id: /CWUoXsxSm6YStPNtHzAYw
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 100
   # MK4 0.4
@@ -312,7 +312,7 @@ variants:
     id: Rc6StMyPTl24PRG7HelPxQ
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -330,7 +330,7 @@ variants:
     id: lpLMgQd9TkiuLrNJwmAymw
     values:
       filament_max_volumetric_speed: 14
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.035
       filament_infill_max_crossing_speed: 100
     variants:
@@ -349,7 +349,7 @@ variants:
     id: WiknSa+2QlG1VferwSQLlg
     values:
       filament_max_volumetric_speed: 15
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 14
       fan_below_layer_time: 30
       pressure_advance_value: 0.025
       filament_infill_max_crossing_speed: 120
@@ -404,7 +404,7 @@ variants:
     id: eHsCNeh8TN2ZyJNKCv34sQ
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.14
       filament_infill_max_crossing_speed: 100
   # MK4S 0.3
@@ -413,7 +413,7 @@ variants:
     id: WPffLs5xTxyAgXl4okcCrQ
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 100
   # MK4S 0.4
@@ -422,7 +422,7 @@ variants:
     id: Hu9JrCBESXifBq4iO4PIeQ
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -440,7 +440,7 @@ variants:
     id: g2sGG+hWSbyU79Jgdm/hUQ
     values:
       filament_max_volumetric_speed: 12
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 10
       pressure_advance_value: 0.035
       filament_infill_max_crossing_speed: 100
     variants:
@@ -459,7 +459,7 @@ variants:
     id: N2EDi0xxRIKOh/xK3jIzGg
     values:
       filament_max_volumetric_speed: 15
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 14
       fan_below_layer_time: 30
       bridge_fan_speed: 20
       pressure_advance_value: 0.025

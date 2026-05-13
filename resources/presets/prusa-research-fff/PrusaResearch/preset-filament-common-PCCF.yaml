@@ -36,7 +36,7 @@ variants:
     id: /Z3C2sVqSs6+nLNmv9+Pfw
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -54,7 +54,7 @@ variants:
     id: rdFgkXo5R9eX9zDGx1cEMg
     values:
       filament_max_volumetric_speed: 10
-      slowdown_below_layer_time: 10
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.035
       filament_infill_max_crossing_speed: 100
     variants:
@@ -73,7 +73,7 @@ variants:
     id: 4GEwiIVBSAGZoswBSaps3Q
     values:
       filament_max_volumetric_speed: 13
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       fan_below_layer_time: 18
       pressure_advance_value: 0.025
       filament_infill_max_crossing_speed: 120
@@ -91,7 +91,7 @@ variants:
     id: GGkxEgPLStC61qD1/2NPRg
     values:
       filament_max_volumetric_speed: 18
-      slowdown_below_layer_time: 25
+      slowdown_below_layer_time: 20
       fan_below_layer_time: 25
       max_fan_speed: 30
       bridge_fan_speed: 30
@@ -118,7 +118,7 @@ variants:
     id: 1SGtk6n4REKJVW5hYqwdlQ
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -135,7 +135,7 @@ variants:
     id: GJFdRiMGSMG7pqnhQxeSJA
     values:
       filament_max_volumetric_speed: 10
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.035
       filament_infill_max_crossing_speed: 100
     variants:
@@ -153,7 +153,7 @@ variants:
     id: nKGFjKjeQc6n9dkUosHgsQ
     values:
       filament_max_volumetric_speed: 13
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.025
       filament_infill_max_crossing_speed: 110
     variants:
@@ -192,7 +192,7 @@ variants:
     id: ui6dWrPXR4KaMrlc+pGt9Q
     values:
       filament_max_volumetric_speed: 9
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 100
     variants:
@@ -203,7 +203,7 @@ variants:
       values:
         filament_max_volumetric_speed: 9
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M572 S0.05 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        start_filament_gcode: M142 S36 ; set heatbreak target temp
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
     name: '*PCCF* @MK4 0.5'
@@ -229,7 +229,7 @@ variants:
     id: nXcDSrzNTnyQ/z0UfKo2Sg
     values:
       filament_max_volumetric_speed: 13
-      slowdown_below_layer_time: 20
+      slowdown_below_layer_time: 15
       fan_below_layer_time: 30
       pressure_advance_value: 0.025
       filament_infill_max_crossing_speed: 120

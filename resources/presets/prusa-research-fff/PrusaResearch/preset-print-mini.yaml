@@ -19,6 +19,7 @@ variants:
     retract_speed: 70
     deretract_speed: 40
     retract_length: 2.5
+    retract_before_travel: 1.5
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25
@@ -27,6 +28,7 @@ variants:
       max_layer_height: 0.15
       min_layer_height: 0.05
       retract_lift: 0.15
+      retract_before_travel: 1
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
     id: p9RuWxfLRx2bfXM8c0I+Ww
