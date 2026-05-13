@@ -162,6 +162,7 @@ struct HwPrinterConfig
 {
     std::string id;
     std::string printer_id;
+    std::optional<std::string> legacy_printer_model;
     std::string vendor_id;
     std::string repo_id;
     std::string repo_version;

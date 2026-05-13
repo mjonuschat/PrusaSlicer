@@ -365,6 +365,17 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues conf
     PANIC("Unsupported printer technology");
 }
 
+void update_printer_preset_from_hw_config(
+    const Domain::Preset::HwPrinterConfig& hw_config,
+    Domain::ConfigBox& printer_preset
+)
+{
+    const auto it = printer_preset.find("printer_model");
+    ASSERT(it.item != nullptr);
+    it.item->set(hw_config.legacy_printer_model.value_or(hw_config.printer_id));
+}
+
+
 } // namespace
 
 bool PresetEvaluator::EvalPresetContext::has_same_values(const EvalPresetContext& rhs) const
@@ -505,6 +516,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             printer_kind,
             printer_preset
         );
+        update_printer_preset_from_hw_config(hw_config, ep.preset.config_box());
 
         // 2. Print preset
         PresetKind print_kind = Domain::Preset::print_kind(hw_config.technology);

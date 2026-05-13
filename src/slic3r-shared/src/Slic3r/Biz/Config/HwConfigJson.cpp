@@ -349,7 +349,8 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"sheet", v.sheet},
     };
 
-
+    if (v.legacy_printer_model.has_value())
+        j["legacy_printer_model"] = v.legacy_printer_model.value();
     if (v.visual.bed_model.has_value())
         j["bed_model"] = v.visual.bed_model.value();
     if (v.visual.bed_texture.has_value())
@@ -567,6 +568,14 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         return tl::unexpected{"Invalid printer_id: " + printer_id.error()};
     }
     result.printer_id = printer_id.value();
+
+    if (json.contains("legacy_printer_model")) {
+        auto legacy_printer_model = parse<std::string>(json.at("legacy_printer_model"));
+        if (!legacy_printer_model) {
+            return tl::unexpected{"Invalid legacy_printer_model"};
+        }
+        result.legacy_printer_model = legacy_printer_model.value();
+    }
 
     const auto vendor_id{parse<std::string>(json.at("vendor_id"))};
     if (!vendor_id) {

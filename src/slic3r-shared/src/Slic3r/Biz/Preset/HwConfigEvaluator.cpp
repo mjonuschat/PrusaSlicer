@@ -66,6 +66,13 @@ Domain::Preset::HwPrinterConfig from_def(
         .features = features,
         .visual   = visual
     };
+    if (templ != nullptr && !templ->legacy_printer_model.empty()) {
+        printer_config.legacy_printer_model = templ->legacy_printer_model.front();
+    }
+    else if (!printer_def.legacy_printer_model.empty()) {
+        printer_config.legacy_printer_model = printer_def.legacy_printer_model.front();
+    }
+
     return printer_config;
 }
 
@@ -173,6 +180,9 @@ Domain::Preset::HwPrinterConfig from_def(
     auto config = from_def(vendor_data, printer_def, nullptr);
     if (config.technology == Domain::PrinterTechnology::FFF) {
         config.tools.resize(config.tool_count, {});
+    }
+    if (!printer_def.legacy_printer_model.empty()) {
+        config.legacy_printer_model = printer_def.legacy_printer_model.front();
     }
     return config;
 }

@@ -73,6 +73,7 @@ TEST_CASE("Preset::Bundle Serialization Roundtrip", "[Serialization][Preset]")
     original.printer_configs["MyPrinterConfig"] = Domain::Preset::HwPrinterConfig{
         "MyPrinterConfig",
         "",
+        std::nullopt,
         "",
         "",
         "",
