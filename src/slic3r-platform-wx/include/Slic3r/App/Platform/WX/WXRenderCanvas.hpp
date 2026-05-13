@@ -67,6 +67,20 @@ private:
     static constexpr size_t MAX_INFLIGHT_FRAMES{1};
     GLsync m_frame_fence[MAX_INFLIGHT_FRAMES] = {nullptr};
     size_t m_current_frame_idx{0};
+
+    size_t m_timeout_fps{30};
+
+#if DEBUG_RENDER_TIMING
+    struct FrameTiming
+    {
+        double request_time;
+        double render_start_time;
+        double render_end_time;
+    };
+
+    std::optional<FrameTiming> m_current_frame_timing;
+    std::vector<FrameTiming> m_frame_timings;
+#endif
 };
 
 } // namespace Slic3r::App::Platform::WX

@@ -950,16 +950,27 @@ void WXRenderCanvas::on_render_requested()
 {
     ZoneScoped;
     wxWakeUpIdle();
+#if DEBUG_RENDER_TIMING
+    if (!m_current_frame_timing.has_value()) {
+        m_current_frame_timing = FrameTiming{.request_time=platform_time()};
+    }
+#endif
 }
 
 bool WXRenderCanvas::begin_frame_platform()
 {
     ZoneScoped;
-
+#if DEBUG_RENDER_TIMING
+    if (!m_current_frame_timing.has_value()) {
+        m_current_frame_timing = FrameTiming{.request_time=platform_time()};
+    }
+    m_current_frame_timing->render_start_time = platform_time();
+#endif
     {
         ZoneScopedN("begin_frame_platform wait for fence");
         if (auto& fence = m_frame_fence[m_current_frame_idx]; fence != nullptr) {
-            auto status = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000/30);
+            auto status =
+                glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000 / m_timeout_fps);
             // handle timeout
             if (status == GL_TIMEOUT_EXPIRED) {
                 request_render();
@@ -1000,7 +1011,31 @@ bool WXRenderCanvas::begin_frame_platform()
 
 void WXRenderCanvas::begin_imgui_frame_platform() {}
 
-void WXRenderCanvas::end_imgui_frame_platform() {}
+void WXRenderCanvas::end_imgui_frame_platform()
+{
+#if DEBUG_RENDER_TIMING
+    ImGui::Begin("render_timing");
+    int n = m_timeout_fps;
+    if (ImGui::InputInt("Timeout FPS", &n)) {
+        m_timeout_fps = std::clamp<size_t>(n, 1, 1000);
+    }
+
+    if (!m_frame_timings.empty()) {
+        const auto& timing = m_frame_timings.back();
+        double request_to_render_end = (timing.render_end_time - timing.request_time) * 1000;
+        ImGui::InputDouble("request-to-swap time (ms)", &request_to_render_end);
+        double render_time = (timing.render_end_time - timing.render_start_time) * 1000;
+        double render_time_ratio = 100 * render_time / request_to_render_end;
+        ImGui::InputDouble("render time at CPU  (%)", &render_time_ratio);
+        bool f = m_pending_frame;
+        ImGui::Checkbox("Pending frame", &f);
+        int n = m_render_request_count;
+        ImGui::InputInt("Render request count", &n);
+    }
+    ImGui::End();
+#endif
+
+}
 
 void WXRenderCanvas::end_frame_platform()
 {
@@ -1023,6 +1058,17 @@ void WXRenderCanvas::end_frame_platform()
         ZoneScopedN("wakeup_idle");
         wxApp::GetInstance()->WakeUpIdle();
     }
+#if DEBUG_RENDER_TIMING
+    ASSERT(m_current_frame_timing.has_value());
+    m_current_frame_timing->render_end_time = platform_time();
+
+    if (m_frame_timings.empty()) {
+        m_frame_timings.push_back(m_current_frame_timing.value());
+    } else {
+        m_frame_timings[0] = m_current_frame_timing.value();
+    }
+    m_current_frame_timing = std::nullopt;
+#endif
 }
 
 double WXRenderCanvas::platform_time()

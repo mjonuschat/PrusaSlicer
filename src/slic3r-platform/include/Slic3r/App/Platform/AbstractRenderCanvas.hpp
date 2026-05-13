@@ -17,6 +17,10 @@
 #define USE_NATIVE_MENU
 #endif
 
+#ifndef DEBUG_RENDER_TIMING
+#define DEBUG_RENDER_TIMING 0
+#endif //DEBUG_RENDER_TIMING
+
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
@@ -114,13 +118,14 @@ protected:
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;
     Biz::Platform::IMainThreadDispatcher& m_main_thread_dispatcher;
+    size_t m_render_request_count{0};
+
 private:
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
     AnimationManager m_animation_manager;
     std::optional<float> m_pending_font_size;
     std::optional<float> m_pending_dpi_scale;
     double m_last_time{0};
-    size_t m_render_request_count{0};
 };
 
 } // namespace Slic3r::App::Platform
