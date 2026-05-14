@@ -365,7 +365,7 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
                 load_shape_from_gallery();
                 m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddObject);
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         );
 }
 
@@ -448,8 +448,8 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::FillBedWithInstances,
             "fill-bed-with-instances",
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_separator()
         // we need to force a registration of added menu items before call extra function
@@ -477,20 +477,20 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ExportObject,
             CommandName::ExportAsStl,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_item(
             MenuItemName::ReplaceObject,
             CommandName::ReplaceWithStl,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_item(
             MenuItemName::ReloadObject,
             CommandName::ReloadFromDisk,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_separator()
         .push_path_level(MenuItemName::SplitObject)
@@ -528,14 +528,14 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ScaleToPrintVolume,
             "scale-to-print-volume",
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_item(
             MenuItemName::FixObjectWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm,
-            [this]() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            []() {},
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_separator()
         .append_item(
@@ -678,7 +678,7 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
                     UndoSnapshotType::AddVolumeGallery
                 );
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::NegativeVolume)
@@ -761,7 +761,7 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
                     UndoSnapshotType::AddNegativeVolumeGallery
                 );
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::ModifierVolume)
@@ -844,7 +844,7 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
                     UndoSnapshotType::AddModifierGallery
                 );
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::SupportBlocker)
@@ -904,7 +904,7 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
                     UndoSnapshotType::AddSupportBlockerGallery
                 );
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .pop_path_level()
         .push_path_level(MenuItemName::SupportModifier)
@@ -964,7 +964,7 @@ void MenuCommandRegistrar::register_object_menu_add_volume_commands()
                     UndoSnapshotType::AddSupportModifierGallery
                 );
             },
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         );
 }
 
@@ -976,7 +976,7 @@ void MenuCommandRegistrar::register_svg_or_text_volume_menu_commands()
             MenuItemName::EditSvgOrText,
             "edit-svg-or-text",
             []() {},
-            UIItemCommandExtraOpts{.enabled = [this]() { return false; }}
+            UIItemCommandExtraOpts{.enabled = []() { return false; }}
         )
         .append_item_from_command(
             MenuItemName::DeleteSelectedSvgOrText,

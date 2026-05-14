@@ -116,7 +116,6 @@ struct Configuration
 
     // unified place to calculate wanted count
     void fix_count_by_ratio(size_t triangle_count);
-    bool operator==(const Configuration& rhs) const;
 };
 
 using SelectedVolumeIds = std::set<Domain::ObjectID>;
