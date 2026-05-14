@@ -1,4 +1,5 @@
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "Slic3r/Log.hpp"
 
@@ -7,14 +8,16 @@
 namespace Slic3r::Biz::UserAccount {
 UserAccountInteractor::UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher) :
     m_dispatcher{dispatcher},
-    m_communication{dispatcher}
+    m_communication{dispatcher},
+    m_connect_message_handler{dispatcher}
 {
     m_communication.add_session_listener(this);
 }
 
-void UserAccountInteractor::init()
+void UserAccountInteractor::init(ProjectInteractor* project_interactor)
 {
     m_communication.init();
+    m_connect_message_handler.add_listener<IUserAccountListener>(project_interactor);
 }
 
 UserAccountInteractor::~UserAccountInteractor()
@@ -218,6 +221,21 @@ void UserAccountInteractor::on_user_id(const std::string& body)
         [was_logged, public_username](auto* listener)
         { listener->on_user_account_id_success(was_logged, public_username); }
     );
+}
+
+void UserAccountInteractor::on_select_printer_from_connect_browser(const std::string& message_body)
+{
+    m_connect_message_handler.handle_select_printer_message(m_communication, message_body);
+}
+
+void UserAccountInteractor::do_select_printer_from_connect(ProjectInteractor& project_interactor, const std::string& printer_json)
+{
+    m_connect_message_handler.do_select_printer_from_connect(project_interactor, printer_json);
+}
+
+std::string UserAccountInteractor::uuid_for_upload(const ProjectInteractor& project_interactor)
+{
+    return m_connect_message_handler.uuid_for_upload(project_interactor);
 }
 
 } // namespace Slic3r::Biz::UserAccount

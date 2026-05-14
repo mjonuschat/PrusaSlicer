@@ -21,7 +21,7 @@ public:
 
     std::string connect_printer_list_url() const
     {
-        return m_connect_url + "/slicer/v1/printers";
+        return m_connect_url + "/slicer/v2/printers";
     }
 
     std::string connect_select_printer_url() const

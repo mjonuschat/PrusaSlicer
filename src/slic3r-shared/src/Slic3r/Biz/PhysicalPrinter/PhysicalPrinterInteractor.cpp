@@ -1,5 +1,7 @@
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
+
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include "Slic3r/Log.hpp"
@@ -44,9 +46,14 @@ PhysicalPrinterConfig settings_to_printer(const Domain::PhysicalPrinterSettings&
 }
 } // namespace
 
-PhysicalPrinterInteractor::PhysicalPrinterInteractor(Platform::IMainThreadDispatcher& dispatcher, Preset::PresetInteractor& preset_interactor) :
+PhysicalPrinterInteractor::PhysicalPrinterInteractor(
+    Platform::IMainThreadDispatcher& dispatcher,
+    Preset::PresetInteractor& preset_interactor,
+    UserAccount::UserAccountInteractor& user_account_interactor
+) :
     m_dispatcher(dispatcher),
     m_preset_interactor(preset_interactor),
+    m_user_account_interactor(user_account_interactor),
     m_cbi(m_cbi_accessor, &m_storage.dummy_settings())
 {
     read_storage();
@@ -106,10 +113,21 @@ void PhysicalPrinterInteractor::add_printer_settings(
     m_storage.add_printer_settings(std::move(settings), filename);
 }
 
+bool PhysicalPrinterInteractor::can_be_selected(const std::string& uuid)
+{
+    auto index = index_of(uuid);
+    const auto& printer = m_observable_list.at(index);
+    if (std::holds_alternative<ConnectUpload>(printer.payload)) {
+        return m_user_account_interactor.is_logged_in();
+    }
+    return true;
+}
+
 void PhysicalPrinterInteractor::select_uuid(const std::string& uuid)
 {
     m_selected_uuid = uuid;
     m_selected_index = index_of(uuid);
+    m_container_to_printer_uuid_map[m_current_container] = m_selected_uuid;
     const auto& current_printer = m_observable_list.at(m_selected_index);
 
     if (std::holds_alternative<PrinterUpload>(current_printer.payload)) {
@@ -127,7 +145,26 @@ void PhysicalPrinterInteractor::select_uuid(const std::string& uuid)
 
 void PhysicalPrinterInteractor::select_default()
 {
+    if (m_observable_list.size() == 0) {
+        return;
+    }
     select_uuid(m_observable_list.at(0).uuid);
+}
+
+void PhysicalPrinterInteractor::select_connect_upload(bool prefer_physical_printer)
+{
+    if (m_selected_index != 0 && prefer_physical_printer) {
+        return;
+    }
+
+    // Note: This implementation works only in case there is single connect upload item
+    for (size_t i = 0; i < m_observable_list.size(); ++i) {
+        if (std::holds_alternative<ConnectUpload>(m_observable_list.at(i).payload)) {
+            select_uuid(m_observable_list.at(i).uuid);
+            return;
+        }
+    }
+    DEBUG_ASSERT(false, "ConnectUpload missing in list of physical printers");
 }
 
 void PhysicalPrinterInteractor::remove_uuid(const std::string& uuid)
@@ -246,12 +283,33 @@ bool PhysicalPrinterInteractor::is_printer_compatible(const std::string& uuid, c
     
     const auto& printer = m_observable_list.at(index_of(uuid));
 
+    if (std::holds_alternative<ConnectUpload>(printer.payload)) {
+        return true;
+    }
+
     if (std::holds_alternative<PrinterUpload>(printer.payload)) {
-        const auto& configbox = m_storage.all_settings().at(printer.uuid);
-        return configbox.find("physical_printer_preset_base_model").item->get<std::string>() == config.model.base_model;
+        return is_physical_printer_compatible(printer, config);
     }
     
     return false;
+}
+
+void PhysicalPrinterInteractor::on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id)
+{
+    m_current_container = ContainerKey{project_id, container_id};
+    
+    bool hw_compatible = is_printer_compatible(m_selected_uuid, m_preset_interactor.current_printer_config());
+    if (auto it = m_container_to_printer_uuid_map.find(m_current_container); it != m_container_to_printer_uuid_map.end()) {
+        if (can_be_selected(it->second)) {
+            select_uuid(it->second);
+            return;
+        }
+    } else if (can_be_selected(m_selected_uuid) && hw_compatible) {
+        m_container_to_printer_uuid_map.emplace(m_current_container, m_selected_uuid);
+        return;
+    }
+
+    select_default();
 }
 
 } // namespace Slic3r::Biz::PhysicalPrinter

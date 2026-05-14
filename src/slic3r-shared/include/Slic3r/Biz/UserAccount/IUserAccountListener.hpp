@@ -21,5 +21,6 @@ public:
         std::function<void(void)> cancel_callback
     ) {};
     virtual void on_printables_secret_token(const std::string& body) {};
+    virtual void on_select_printer_from_connect(const std::string& printer_json) {};
 };
 } // namespace Slic3r::Biz::UserAccount

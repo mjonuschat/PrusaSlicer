@@ -22,6 +22,7 @@ enum class UserAccountActionID {
     Avatar,
     ConnectDataFromUuid,
     PrintablesSecretToken,
+    ConnectPrinterStates
 };
 
 struct ActionQueueData

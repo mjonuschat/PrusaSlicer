@@ -186,13 +186,12 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectPage::logout()
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_connect_action_select_printer(const std::string& message_data)
 {
-   //wxGetApp().handle_connect_request_printer_select(message_data);
-    return {};
+    m_project_interactor.user_account_interactor().on_select_printer_from_connect_browser(message_data);
+    return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_connect_action_print(const std::string& message_data)
 {
-    // wxGetApp().handle_connect_request_printer_select(message_data);
     return {};
 }
 

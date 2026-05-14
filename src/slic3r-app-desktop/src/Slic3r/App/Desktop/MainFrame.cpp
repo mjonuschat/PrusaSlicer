@@ -549,6 +549,7 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::Printers), std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->InsertNewPage(0, webview_panel, WX::_L("Printers"), "lb_printers");
+    webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_printers_page_added = true;
 }
 

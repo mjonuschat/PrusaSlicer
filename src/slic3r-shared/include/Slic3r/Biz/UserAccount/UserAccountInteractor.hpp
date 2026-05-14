@@ -9,6 +9,9 @@
 
 #include <functional>
 
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
 namespace Slic3r::Biz::UserAccount {
 /**
  * @brief Hub for all communication with UserAccount.
@@ -28,7 +31,7 @@ public:
      * @brief Reads tokens from store, starts communication in bg thread.
      * Moved to delayed init function prevent possible race conditions.
      */
-    void init();
+    void init(ProjectInteractor* project_interactor);
 
     /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
@@ -107,6 +110,12 @@ public:
     std::string access_token() const;
 
     void request_printables_secret_token();
+
+    void on_select_printer_from_connect_browser(const std::string& message_body);
+
+    void do_select_printer_from_connect(ProjectInteractor& project_interactor, const std::string& printer_json); 
+
+    std::string uuid_for_upload(const ProjectInteractor& project_interactor);
 
 private:
     void on_user_id(const std::string& body);

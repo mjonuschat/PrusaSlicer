@@ -167,6 +167,11 @@ void MaterialSettingsButton::on_hw_item_selection_changed(
     {
         const auto& hw_config =
             m_project_interactor.preset_interactor().selected_printer_preset().hw_config;
+
+        if (m_index >= hw_config.material_slot_count()) {
+            return;
+        }
+
         auto mat_it = Domain::Preset::MaterialIterator::from_slot_index(hw_config, m_index);
         const auto tool_index = mat_it.tool_index();
         const Biz::Preset::ToolConfigItemObservableList& tool_config_item_ol =

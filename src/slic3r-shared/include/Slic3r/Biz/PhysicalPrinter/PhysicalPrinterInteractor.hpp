@@ -8,6 +8,8 @@
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/ObservableList.hpp"
+#include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 #include <vector>
 #include <string>
@@ -20,22 +22,33 @@ namespace Slic3r::Biz::Preset {
 class PresetInteractor;
 }
 
+namespace Slic3r::Biz::UserAccount {
+class UserAccountInteractor;
+}
+
 namespace Slic3r::Biz::PhysicalPrinter {
 
 class PhysicalPrinterInteractor : 
     public WithListeners<IPhysicalPrinterChangedListener>,
-    public Biz::IConfigBoxSetter
+    public Biz::IConfigBoxSetter,
+    public ISelectedConfigContainerChangedListener
 {
 public:
-    PhysicalPrinterInteractor(Platform::IMainThreadDispatcher& dispatcher, Preset::PresetInteractor& preset_interactor);
+    PhysicalPrinterInteractor(
+        Platform::IMainThreadDispatcher& dispatcher,
+        Preset::PresetInteractor& preset_interactor,
+        UserAccount::UserAccountInteractor& user_account_interactor
+    );
     ~PhysicalPrinterInteractor();
 
     ObservableList<PhysicalPrinterConfig>&  observable_list();
 
     const ObservableList<PhysicalPrinterConfig>&  observable_list() const;
 
+    bool can_be_selected(const std::string& uuid);
     void select_uuid(const std::string& uuid);
     void select_default();
+    void select_connect_upload(bool prefer_physical_printer);
     void remove_uuid(const std::string& uuid);
     std::string selected_uuid() const
     {
@@ -70,6 +83,8 @@ public:
 
     bool is_printer_compatible(const std::string& uuid, const Domain::Preset::HwPrinterConfig& config);
 
+    void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id);
+
 private:
     void read_storage();
      
@@ -80,11 +95,15 @@ private:
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;
     Preset::PresetInteractor& m_preset_interactor;
+    UserAccount::UserAccountInteractor& m_user_account_interactor;
+    ConfigBoxInteractor::SetAccessor m_cbi_accessor;
     PhysicalPrinterStorage m_storage;
+    ConfigBoxInteractor m_cbi;
     ObservableList<PhysicalPrinterConfig> m_observable_list;
 
-    ConfigBoxInteractor::SetAccessor m_cbi_accessor;
-    ConfigBoxInteractor m_cbi;
+    using ContainerKey = std::pair<Domain::SelectionId, Domain::SelectionId>;
+    ContainerKey m_current_container {0,0};
+    std::map<ContainerKey, std::string> m_container_to_printer_uuid_map;    
 
     std::string m_selected_uuid;
     size_t      m_selected_index;
