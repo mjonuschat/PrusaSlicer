@@ -6,10 +6,6 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
-#include "Slic3r/Directories.hpp"
-
-#include "Slic3r/Log.hpp"
-
 namespace Slic3r::App::PopNotification {
 
 constexpr int TotalWidth = 400;
@@ -65,7 +61,8 @@ void PopNotificationView::layout()
             [this](const PopNotificationLayoutHeaderTextButtons&)
             { layout_type_header_text_buttons(); },
             [this](const PopNotificationLayoutTextProgress&) { layout_type_text_progress(); },
-            [this](const PopNotificationLayoutHeaderTextProgress&) { layout_type_header_text_progress(); }
+            [this](const PopNotificationLayoutHeaderTextProgress&)
+            { layout_type_header_text_progress(); }
         },
         m_state->layout
     );
@@ -90,33 +87,39 @@ void PopNotificationView::on_data_update()
         return;
     }
 
-    std::visit(Domain::overloaded{
-        [this](const PopNotificationLayoutText& d) {
-            update_text(d.text);
+    std::visit(
+        Domain::overloaded{
+            [this](const PopNotificationLayoutText& d) { update_text(d.text); },
+            [this](const PopNotificationLayoutHeaderText& d)
+            {
+                update_header(d.header);
+                update_text(d.text);
+            },
+            [this](const PopNotificationLayoutTextButtons& d)
+            {
+                update_text(d.text);
+                update_buttons(d.buttons);
+            },
+            [this](const PopNotificationLayoutHeaderTextButtons& d)
+            {
+                update_header(d.header);
+                update_text(d.text);
+                update_buttons(d.buttons);
+            },
+            [this](const PopNotificationLayoutTextProgress& d)
+            {
+                update_text(d.text);
+                update_progress(d.progress);
+            },
+            [this](const PopNotificationLayoutHeaderTextProgress& d)
+            {
+                update_header(d.header);
+                update_text(d.text);
+                update_progress(d.progress);
+            }
         },
-        [this](const PopNotificationLayoutHeaderText& d) {
-            update_header(d.header);
-            update_text(d.text);
-        },
-        [this](const PopNotificationLayoutTextButtons& d) {
-            update_text(d.text);
-            update_buttons(d.buttons);
-        },
-        [this](const PopNotificationLayoutHeaderTextButtons& d) {
-            update_header(d.header);
-            update_text(d.text);
-            update_buttons(d.buttons);
-        },
-        [this](const PopNotificationLayoutTextProgress& d) {
-            update_text(d.text);
-            update_progress(d.progress);
-        }, 
-        [this](const PopNotificationLayoutHeaderTextProgress& d) {
-            update_header(d.header);
-            update_text(d.text);
-            update_progress(d.progress);
-        }
-    }, m_state->layout);
+        m_state->layout
+    );
 }
 
 void PopNotificationView::basic_layout(Render::Icon icon_override)
@@ -172,7 +175,7 @@ void PopNotificationView::basic_right_layout()
 {
     if (m_state->level != PopNotificationLevel::ProgressNoClose) {
         m_close_button = m_right_column->emplace_back<Yoga::LayoutButton>(
-            "",
+            std::string{},
             Render::Icon::NotificationCloseGray
         );
         m_close_button->set_min_size({20, 20});
@@ -250,7 +253,6 @@ void PopNotificationView::basic_mid_buttons_layout(
 
 void PopNotificationView::basic_mid_progress_layout(int progress)
 {
-
     m_progress_bar = m_mid_column->emplace_back<Yoga::ProgressBar>();
     m_progress_bar->set_show_overlay(true);
     m_progress_bar->set_flex_grow(1.f);
@@ -259,7 +261,8 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
     m_progress_bar->set_margin({0.f, 5.f, 0.f, 0.f});
     m_progress_bar->set_flex_shrink(0.f);
 
-    m_progress_percent_text = m_mid_column->emplace_back<Yoga::Text>(std::to_string(progress) + "%");
+    m_progress_percent_text =
+        m_mid_column->emplace_back<Yoga::Text>(std::to_string(progress) + "%");
     m_progress_percent_text->set_margin({0.f, 0.f, 0.f, 0.f});
     m_progress_percent_text->set_flex_shrink(0.f);
 }
@@ -316,7 +319,8 @@ void PopNotificationView::layout_type_text_progress()
 
 void PopNotificationView::layout_type_header_text_progress()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextProgress>(&m_state->layout);
+    const auto* layout_data =
+        std::get_if<PopNotificationLayoutHeaderTextProgress>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     basic_mid_layout();
@@ -343,7 +347,9 @@ void PopNotificationView::update_buttons(const std::vector<PopNotificationButton
 {
     for (size_t i = 0; i < buttons.size(); i++) {
         if (m_buttons.size() <= i) {
-            m_buttons.emplace_back(m_button_line->emplace_back<Yoga::LayoutButton>(buttons[i].text));
+            m_buttons.emplace_back(
+                m_button_line->emplace_back<Yoga::LayoutButton>(buttons[i].text)
+            );
         }
         if (m_buttons[i]->label() != buttons[i].text) {
             m_buttons[i]->set_label(buttons[i].text);
@@ -390,13 +396,13 @@ ImColor PopNotificationView::text_color() const
 
 Platform::Color PopNotificationView::button_color() const
 {
-    switch(m_state->level) {
+    switch (m_state->level) {
     case PopNotificationLevel::Warning:
         return Platform::Color::Warning;
     case PopNotificationLevel::Error:
         return Platform::Color::Error;
     default:
-        return Platform::Color::ButtonTransparent;
+        return Platform::Color::Button;
     }
 }
 
