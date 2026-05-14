@@ -319,7 +319,6 @@ struct VendorInfo
     std::string name;
     std::string version;
     VendorFeatures features;
-
 };
 
 struct VendorData

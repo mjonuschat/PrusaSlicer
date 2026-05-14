@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <functional>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -168,6 +169,9 @@ Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::
 
 template <typename T>
 YamlAdapter::NodeRef serialize_struct(const typename Details::StructTraits<T>::Type& val);
+
+template <typename T>
+using LoaderFunc = std::function<void(T&&)>;
 
 namespace Details {
 inline std::string node_type_value(const NodeType type)
@@ -643,14 +647,21 @@ template <typename T>
 Result<bool> try_parse_discriminated_struct(
     const YamlAdapter::NodeRef& node,
     std::string_view value,
-    std::tuple<const char*, std::function<void(T&&)>> loader
+    std::tuple<const char*, LoaderFunc<T>> loader
 )
 {
     if (value == std::get<0>(loader)) {
-        Result<T> s = parse_struct<T>(node);
-        if (!s.has_value())
-            return unexpected{s.error()};
-        std::get<1>(loader)(std::move(*s));
+        auto loader_load = std::get<1>(loader);
+
+        // allow skipping sections by passing nullptr loader
+        // so only some needed gets parsed
+        if (loader_load != nullptr) {
+            Result<T> s = parse_struct<T>(node);
+            if (!s.has_value()) {
+                return unexpected{s.error()};
+            }
+            loader_load(std::move(*s));
+        }
         return true;
     }
     return false;
@@ -833,7 +844,7 @@ template <typename... Ts>
 void parse_structs_by_discriminant(
     const YamlAdapter::NodeRef& node,
     const char* discriminator_field_name,
-    const std::tuple<const char*, std::function<void(Ts&&)>>&... loaders
+    const std::tuple<const char*, LoaderFunc<Ts>>&... loaders
 )
 {
     auto discr_node  = YamlAdapter::mapping_value_at(node, discriminator_field_name);
@@ -870,7 +881,7 @@ template <typename... Ts>
 void parse_structs_by_discriminant(
     const YamlAdapter::Document& doc,
     const char* discriminator_field_name,
-    const std::tuple<const char*, std::function<void(Ts&&)>>&... loaders
+    const std::tuple<const char*, LoaderFunc<Ts>>&... loaders
 )
 {
     parse_discriminated_structs(doc.root(), discriminator_field_name, loaders...);

@@ -9,6 +9,7 @@ class HwConfigLoader
 public:
     HwConfigLoader();
     Domain::Preset::VendorData& load(const std::string& filename);
+    static Domain::Preset::VendorInfo load_info_only(const std::string& filename);
 
     const Domain::Preset::VendorData& result() const { return m_result; }
     Domain::Preset::VendorData& result() { return m_result; }

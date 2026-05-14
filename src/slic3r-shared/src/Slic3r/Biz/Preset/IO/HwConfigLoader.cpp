@@ -208,6 +208,50 @@ Domain::Preset::VendorData& HwConfigLoader::load(const std::string& filename)
     return m_result;
 }
 
+Domain::Preset::VendorInfo HwConfigLoader::load_info_only(const std::string& filename)
+{
+    VendorInfo result;
+
+    // clang-format off
+    Yaml::parse_all_documents_in_file(
+        filename.c_str(),
+        [&result](const auto& doc) {
+            Yaml::parse_structs_by_discriminant(
+                doc.root(),
+            "kind",
+                std::make_tuple(
+                    "printer",
+                    Yaml::LoaderFunc<HwPrinterConfigDef>{}
+                ),
+            std::make_tuple(
+                "tool",
+                Yaml::LoaderFunc<HwToolConfigDef>{}
+            ),
+            std::make_tuple(
+                "feeder",
+                Yaml::LoaderFunc<FeatureDef>{}
+            ),
+            std::make_tuple(
+                "sheet",
+                Yaml::LoaderFunc<HwSheetConfigDef>{}
+            ),
+            std::make_tuple(
+                "printer_config",
+                Yaml::LoaderFunc<HwPrinterConfigTemplate>{}
+            ),
+            std::make_tuple(
+                "vendor",
+                std::function{[&result](VendorInfo&& v) {
+                    result = v;
+                }}
+            )
+        );
+    });
+    // clang-format on
+
+    return result;
+}
+
 Domain::Preset::HwPrinterConfigs load_vendor_user_configs(
     const std::string& dir_path,
     const Domain::Preset::VendorData& vendor_data
