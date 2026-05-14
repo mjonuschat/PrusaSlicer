@@ -270,6 +270,8 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             cbi_index
         );
         break;
+    default:
+        PANIC("Unhandled GUIType", item.def().gui_type);
     }
 
     return item_control;

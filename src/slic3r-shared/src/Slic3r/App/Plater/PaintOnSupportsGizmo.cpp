@@ -153,7 +153,6 @@ void PaintOnSupportsGizmo::select_facets_by_angle(const float threshold_deg)
 
     for (const PaintableVolume& paintable_volume : m_paintable_volumes) {
         const size_t volume_idx             = &paintable_volume - &m_paintable_volumes.front();
-        const ModelObject& model_object     = paintable_volume.model_object;
         const ModelInstance& model_instance = paintable_volume.model_instance;
         const ModelVolume& model_volume     = paintable_volume.model_volume;
         TriangleSelectorRenderWrapper& triangle_selector_wrappers =

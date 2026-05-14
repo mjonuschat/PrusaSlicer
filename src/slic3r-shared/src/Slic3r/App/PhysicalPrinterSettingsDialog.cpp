@@ -225,16 +225,11 @@ void PhysicalPrinterSettingsDialog::on_printer_data_changed()
         button->update_button_text();
     }
 
-    const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer =
-        m_physical_printer_interactor.selected_physical_printer_data();
 }
 
-void PhysicalPrinterSettingsDialog::on_selected_physical_printer_changed() 
+void PhysicalPrinterSettingsDialog::on_selected_physical_printer_changed()
 {
     check_printer_button(m_physical_printer_interactor.selected_uuid());
-
-    const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer =
-        m_physical_printer_interactor.selected_physical_printer_data();
 }
 
 void PhysicalPrinterSettingsDialog::on_about_to_show()

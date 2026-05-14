@@ -85,6 +85,13 @@ Render::Icon category_render_icon(
     case Domain::ConfigItemDef::Category::Printer_SingleExtruderMMSetup:
         icon = Render::Icon::SingleExtruder;
         break;
+    case Domain::ConfigItemDef::Category::AppConfig_General: [[fallthrough]];
+    case Domain::ConfigItemDef::Category::AppConfig_Services: [[fallthrough]];
+    case Domain::ConfigItemDef::Category::PhysicalPrinter_General :
+        // No icon assigned on purpose.
+        break;
+    default:
+        PANIC("Unhandled Category value", category);
     }
 
     return icon;

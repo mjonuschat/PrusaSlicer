@@ -16,7 +16,7 @@ void MultiSelectionStorage::ApplyRequests(ImGuiMultiSelectIO* ms_io)
     }
     else {
         // And chech is something was changed at the End
-        is_changed = last_size != Size || (Size == 1 && last_single_selected_id != _Storage.Data.begin()->key);
+        is_changed = last_size != static_cast<size_t>(Size) || (Size == 1 && last_single_selected_id != _Storage.Data.begin()->key);
     }
 
     is_started = !is_started;

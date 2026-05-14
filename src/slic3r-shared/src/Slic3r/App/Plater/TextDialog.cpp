@@ -54,7 +54,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 
     m_font                                = Passthrough{std::make_unique<ComboBox>("Font name")};
     m_font->callbacks().selection_changed = [this](int index) {
-        if (index >= m_fonts.size())
+        if (index < 0 || static_cast<size_t>(index) >= m_fonts.size())
             return; // should not happend
         const Domain::FontDescriptor& font = m_fonts[index];
         set_font(font, false);

@@ -938,12 +938,5 @@ void Configuration::fix_count_by_ratio(size_t triangle_count)
         );
 }
 
-bool Configuration::operator==(const Configuration& rhs) const {
-    return 
-        use_count == rhs.use_count && 
-        decimate_ratio == rhs.decimate_ratio &&
-        wanted_count == rhs.wanted_count && 
-        max_error == rhs.max_error ;
-}
 } // namespace
 } // namespace Slic3r::App::Plater

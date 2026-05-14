@@ -70,7 +70,7 @@ static InputTextField* add_input(
     wrap->set_align_items(YGAlignCenter);
 
     if (!label_text.empty()) {
-        Text* label = wrap->emplace_back<Text>(label_text + ":");
+        wrap->emplace_back<Text>(label_text + ":");
     }
 
     InputTextField* ret_input = wrap->emplace_back<InputTextField>();

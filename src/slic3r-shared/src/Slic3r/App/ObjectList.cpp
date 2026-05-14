@@ -262,6 +262,8 @@ static std::string icon_str(const Domain::ModelVolume* volume)
             return icon_str(Render::Icon::TextNegativeVolume);
         case Domain::ModelVolumeType::PARAMETER_MODIFIER:
             return icon_str(Render::Icon::TextModifierVolume);
+        default:
+            break;
         }
         return "";
     }
@@ -273,6 +275,8 @@ static std::string icon_str(const Domain::ModelVolume* volume)
             return icon_str(Render::Icon::SvgNegativeVolume);
         case Domain::ModelVolumeType::PARAMETER_MODIFIER:
             return icon_str(Render::Icon::SvgModifierVolume);
+        default:
+            break;
         }
         return "";
     }
@@ -362,20 +366,6 @@ static bool is_whole_object_selected(
                 cnt++;
         return cnt == object->instances.size();
     }
-    return false;
-}
-
-static bool is_volume_selected(
-    const Domain::ElementRef& sel_element,
-    const Slic3r::Biz::Scene::ObjectSelection& selection
-)
-{
-    if (selection.mode == Biz::Scene::SelectionMode::Volume) {
-        for (const Domain::ElementRef& el : selection.elements)
-            if (el.object_id == sel_element.object_id && el.volume_id == sel_element.volume_id)
-                return true;
-    }
-
     return false;
 }
 
@@ -725,14 +715,10 @@ bool ObjectList::tree_node(
     // render rect over the triangle
     ImDrawList* draw_list = ImGui::GetCurrentWindow()->DrawList;
 
-    ImGuiID active_id = ImGui::GetActiveID();
-
     // first layer
     draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_WindowBg));
     if (row_color != ImGuiCol_COUNT)
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(row_color));
-
-    ImGuiID edit_name_input_id = ImGui::GetID("##edit");
 
     // second layer
     if (ImGui::IsItemActive() && ImGui::IsItemHovered())
@@ -826,7 +812,6 @@ struct RowHitBox
 
 bool ObjectList::render_config_containers()
 {
-    auto& ctx                 = selected_project_context();
     bool is_changed_selection = false;
 
     size_t beds_cnt{0};
@@ -990,7 +975,7 @@ void ObjectList::render_drop_target_area()
     ); // Creates an invisible instances drop target
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MULTI_INSTANCES")) {
-            IM_ASSERT(payload->DataSize == sizeof(int));
+            ASSERT(payload->DataSize == sizeof(int));
             ask_extract_selected_instances();
             ctx.selected_items.clear(); // Clear selection after drop
         }
@@ -1557,7 +1542,7 @@ void ObjectList::render_infos_node(const Domain::ModelObject* object, bool is_sl
 void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& sel_element)
 {
     static char buffer[128] = "";
-    strncpy(buffer, init_name, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "%s", init_name);
 
     // put the editor item on the same line and without item spacing
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
@@ -1812,8 +1797,6 @@ void open_gizmo_for_volume(
     if (volume == nullptr)
         return;
     Scene::ToolType tool = gizmo_controller->current_tool_type();
-    auto get_tech        = [project_interactor]()
-    { return project_interactor->selected_config_container().print_technology(); };
     if (volume->is_svg() && tool != Scene::ToolType::Svg) {
         gizmo_controller->activate_tool(Scene::ToolType::Svg);
     } else if (volume->is_text() && tool != Scene::ToolType::TextGizmo) {

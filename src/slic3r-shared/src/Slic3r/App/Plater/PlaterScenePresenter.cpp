@@ -964,7 +964,7 @@ void PlaterScenePresenter::build_wipe_tower_node(
                 slicing_id
             );
 
-            for (int i{1}; i < wipe_tower.depths.size(); ++i) {
+            for (size_t i{1}; i < wipe_tower.depths.size(); ++i) {
                 const double next_z{wipe_tower.depths[i].z};
                 const auto [z, depth]{wipe_tower.depths[i - 1]};
                 build_wipe_tower_cube(
@@ -1288,8 +1288,6 @@ void PlaterScenePresenter::on_volume_type_changed(
                 const Domain::ModelVolume* model_volume =
                     proj.find_volume_by_id(volume_el.object_id, volume_el.volume_id);
                 if (t->volume_type != model_volume->type()) {
-                    const Domain::ModelInstance* inst =
-                        proj.find_instance_by_id(volume_el.object_id, t->instance_id);
                     SceneNodeTag new_tag(
                         t->object_id,
                         t->volume_id,
