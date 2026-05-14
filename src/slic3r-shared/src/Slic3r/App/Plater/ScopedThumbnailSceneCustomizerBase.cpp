@@ -190,8 +190,12 @@ void ScopedThumbnailSceneCustomizerBase::disable_volumes_override_material()
     Scene::visit(m_scene.root(),
         [this](Scene::Node& n) {
             const auto* tag = n.tag_of_type<SceneNodeTag>();
-            if (tag != nullptr && n.has_material_override()) {
-                m_cache.materials.push_back(std::make_pair(&n, *n.material_override()));
+            if (tag) {
+                std::optional<Render::Material> material_override = std::nullopt;
+                if (n.has_material_override()) {
+                    material_override = *n.material_override();
+                }
+                m_cache.materials.push_back(std::make_pair(&n, material_override));
                 n.remove_material_override();
             }
         }
@@ -208,7 +212,8 @@ void ScopedThumbnailSceneCustomizerBase::override_non_printable_volumes_material
                 if (model_inst != nullptr && !model_inst->printable) {
                     Render::Material material = n.render_component()->material();
                     material.set_uniform("uniform_color", Domain::ColorRGBA::GRAY());
-                    m_cache.materials.push_back(std::make_pair(&n, std::nullopt));
+                    // Caching is not needed here.
+                    // All volume overrides are already cached in disable_volumes_override_material().
                     n.set_material_override(material);
                 }
             }
