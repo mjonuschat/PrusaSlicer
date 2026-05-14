@@ -340,7 +340,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
             ))
         {
             const ImVec2 im_size = to_im(size);
-            for (size_t index = 0; index < m_items.size(); ++index) {
+            for (int index = 0; index < int(m_items.size()); ++index) {
                 ImGui::PushID(index);
                 ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.f, 0.5f));
                 if (ImGui::Selectable(

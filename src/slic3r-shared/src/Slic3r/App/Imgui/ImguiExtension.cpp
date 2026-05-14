@@ -262,7 +262,6 @@ void toggle_button(const std::string& label, bool* on, bool right_align)
 
     // see: https://github.com/ocornut/imgui/issues/1537#issuecomment-355569554 for reference
 
-    const ImGuiStyle& style  = ImGui::GetStyle();
     float txt_height         = ImGui::GetTextLineHeight();
     float switch_height      = 0.8f * txt_height;
     float switch_width       = switch_height * 2.0f;
@@ -532,7 +531,7 @@ void colored_circle_marker_aligned(
     float a_min       = 0.5f * float(IM_PI); // 0.f;
     float a_delta     = TWO_PI / colors_cnt;
 
-    for (int i = 0; i < colors_cnt; i++) {
+    for (size_t i = 0; i < colors_cnt; i++) {
         if (colors_cnt != 1)
             window->DrawList->_Path.push_back(center);
         window->DrawList->PathArcTo(center, radius, a_min, a_min + a_delta, 24 / colors_cnt);

@@ -104,7 +104,7 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
     for (const auto& [job_name, progress] : status) {
         ASSERT(!job_name.empty());
 
-        bool found = false;
+        [[maybe_unused]] bool found = false;
         for (const auto& pair : m_job_status_functions) {
             if (job_name.starts_with(pair.first)) {
                 found = true;
@@ -1050,7 +1050,7 @@ void PopNotificationCenter::on_project_load_failed(const std::string& error)
 std::optional<int>
 get_instance_index(const Domain::ModelObject& model_object, const Domain::SelectionId instance_id)
 {
-    for (int index = 0; index < model_object.instances.size(); ++index) {
+    for (int index = 0; index < int(model_object.instances.size()); ++index) {
         const Domain::ModelInstance* model_instance{model_object.instances[index]};
         ASSERT(model_instance);
         if (model_instance->id().id == instance_id) {

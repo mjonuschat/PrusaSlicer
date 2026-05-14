@@ -33,7 +33,7 @@ bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn err
     http->set_post_body(m_upload_data.source_path);
     http->on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO("MKS: File uploaded: HTTP {}: {}", status, body);
-            int err_code;
+            int err_code = 0;
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
                 err_code            = json.value("err", 0);

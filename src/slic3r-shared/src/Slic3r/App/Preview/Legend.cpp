@@ -901,7 +901,6 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                 std::string label = item.get_label();
                 ImGui::Text("%s", label.c_str());
                 if (item.color_1.has_value()) {
-                    const ImGuiStyle& style = ImGui::GetStyle();
                     ImGui::SameLine();
                     ImVec2 pos              = ImGui::GetCursorScreenPos();
                     ImGui::RenderFrame(

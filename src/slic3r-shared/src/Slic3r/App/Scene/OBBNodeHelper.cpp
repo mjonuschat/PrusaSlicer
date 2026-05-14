@@ -131,7 +131,7 @@ void build_obb_node(NodeBuilder& builder, Render::GeometryManager<AuxiliaryEleme
 void update_obb_node(Node& node, const Biz::Scene::OrientedBoundingBox& obb, double edge_coverage_percent,
     std::optional<Domain::ColorRGB> color)
 {
-    AABBNodeTag* tag = node.tag_of_type<AABBNodeTag>();
+    [[maybe_unused]] AABBNodeTag* tag = node.tag_of_type<AABBNodeTag>();
     DEBUG_ASSERT(tag != nullptr);
     DEBUG_ASSERT(node.children().size() == magic_enum::enum_count<CornerTag>());
     DEBUG_ASSERT(node.children().front()->has_render_component());

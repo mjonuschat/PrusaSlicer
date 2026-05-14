@@ -361,9 +361,6 @@ static void view_manipulate(const Domain::SquareMatrix4f& view, float length, co
     gContext.drawlist->AddRectFilled(position, position + size, backgroundColor);
 
     Domain::SquareMatrix4f view_inverse = view.inverse();
-    Domain::Vec3f cam_pos = view_inverse.block<3, 1>(0, 3);
-    Domain::Vec3f cam_dir = view_inverse.block<3, 1>(0, 2);
-    Domain::Vec3f cam_target = cam_pos - cam_dir * length;
 
     // view/projection matrices
     float distance = 3.0f;
@@ -425,8 +422,8 @@ static void view_manipulate(const Domain::SquareMatrix4f& view, float length, co
 
             // back face culling
             // Threshold for orthographic camera is needed to avoid unwanted culling of faces
-            if (gContext.is_orthographic && view_space_face_plan.w() > 0.5f ||
-               !gContext.is_orthographic && view_space_face_plan.w() > 0.0f)
+            if ((gContext.is_orthographic && view_space_face_plan.w() > 0.5f) ||
+               (!gContext.is_orthographic && view_space_face_plan.w() > 0.0f))
                 continue;
 
             Domain::Vec4f face_plan = build_plan(n * 0.5f, n);

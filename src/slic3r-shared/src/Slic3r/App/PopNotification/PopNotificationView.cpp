@@ -137,9 +137,6 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     m_mid_column->set_flex_grow(1.f);
     m_mid_column->set_self_align(YGAlignStretch);
 
-    int left_width  = m_left_column->min_size().x();
-    int right_width = m_right_column->min_size().x();
-
     m_update_right_on_resize = true;
 
     // m_right_column->set_debug_border(true);

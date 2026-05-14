@@ -195,7 +195,7 @@ DEF_TYPE_NAMES(
 void to_json_def(json& j, const EnumValueDefs& eds)
 {
     std::vector<std::string> enum_values;
-    for (const auto evd : eds) {
+    for (const auto& evd : eds) {
         enum_values.push_back(evd.str_serialized);
     }
     j = enum_values;
