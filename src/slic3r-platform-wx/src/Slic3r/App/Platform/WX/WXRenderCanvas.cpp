@@ -941,7 +941,8 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
     m_main_thread_dispatcher.dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     // std::cout << "Idle: render requested: " << render_requested << "\n";
-    if (render_requested) {
+    if (render_requested || m_pending_frame) {
+        m_pending_frame = false;
         repaint();
     }
 }
@@ -973,10 +974,11 @@ bool WXRenderCanvas::begin_frame_platform()
                 glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000 / m_timeout_fps);
             // handle timeout
             if (status == GL_TIMEOUT_EXPIRED) {
-                request_render();
+                m_pending_frame = true;
+                on_render_requested();
                 return false;
             }
-
+            m_pending_frame = false;
             glDeleteSync(fence);
             fence = nullptr;
 

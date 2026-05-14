@@ -63,6 +63,7 @@ private:
 
     bool m_initialized{false};
     bool m_in_render{false};
+    bool m_pending_frame{false};
 
     static constexpr size_t MAX_INFLIGHT_FRAMES{1};
     GLsync m_frame_fence[MAX_INFLIGHT_FRAMES] = {nullptr};
