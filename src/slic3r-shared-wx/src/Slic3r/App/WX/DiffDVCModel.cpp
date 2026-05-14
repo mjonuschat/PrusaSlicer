@@ -540,14 +540,6 @@ void DiffDVCModel::Clear()
         Delete(wxDataViewItem(m_preset_nodes.back().get()));
 }
 
-static std::string get_pure_opt_key(std::string opt_key)
-{
-    const int pos = opt_key.find("#");
-    if (pos > 0)
-        boost::erase_tail(opt_key, opt_key.size() - pos);
-    return opt_key;
-}
-
 wxDataViewItem DiffDVCModel::GetItemByName(const wxString& name)
 {
     // add items

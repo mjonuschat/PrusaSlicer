@@ -26,7 +26,6 @@ bool eject_inner(const boost::filesystem::path& path)
     // wait for command to finish
     std::error_code ec;
     child.wait(ec);
-    bool success = false;
     if (ec) {
         // The wait call can fail, as it did in https://github.com/prusa3d/PrusaSlicer/issues/5507
         // It can happen even in cases where the eject is sucessful, but better report it as failed.

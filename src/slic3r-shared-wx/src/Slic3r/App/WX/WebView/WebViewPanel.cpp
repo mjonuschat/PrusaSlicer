@@ -165,7 +165,7 @@ void WebViewPanel::on_user_account_id_success(bool is_refresh, const std::string
 {
     if (!m_web_view)
         return;
-    bool b = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh, into_u8(m_web_view->GetCurrentURL())));
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh, into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
@@ -173,7 +173,7 @@ void WebViewPanel::on_user_account_logged_out()
 {
     if (!m_web_view)
         return;
-    bool b = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
@@ -181,13 +181,13 @@ void WebViewPanel::on_user_account_will_refresh()
 {
     if (!m_web_view)
         return;
-    bool b = process_logic_command_vector(m_logic->on_user_account_will_refresh());
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_user_account_will_refresh());
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewPanel::on_printables_secret_token(const std::string& body) 
 {
-    bool b = process_logic_command_vector(m_logic->on_printables_secret_token(body));
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_printables_secret_token(body));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
@@ -266,7 +266,7 @@ void WebViewPanel::on_show(wxShowEvent& evt)
         late_create();
         return;
     }
-    bool b = process_logic_command_vector(std::move(m_logic->on_show_webview_event(evt.IsShown())));
+    [[maybe_unused]] bool b = process_logic_command_vector(std::move(m_logic->on_show_webview_event(evt.IsShown())));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
@@ -304,13 +304,13 @@ void WebViewPanel::on_loaded(wxWebViewEvent& evt)
 
 void WebViewPanel::on_page_will_load()
 {
-    bool b = process_logic_command_vector(std::move(m_logic->on_page_will_load_webview_event()));
+    [[maybe_unused]] bool b = process_logic_command_vector(std::move(m_logic->on_page_will_load_webview_event()));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewPanel::on_created(wxWebViewEvent& evt)
 {
-    bool b = process_logic_command_vector(m_logic->on_webview_created());
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_webview_created());
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 

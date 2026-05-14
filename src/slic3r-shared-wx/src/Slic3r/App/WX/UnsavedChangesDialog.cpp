@@ -322,7 +322,6 @@ void UnsavedChangesDialog::show_current_diffs()
     auto it = std::next(m_diffs_per_kind.begin(), step - 1);
     update_tree(it->first, it->second);
 
-    size_t tool_id = 0;
     update_transfer_button(it->first);
 
     if (m_back_btn) {

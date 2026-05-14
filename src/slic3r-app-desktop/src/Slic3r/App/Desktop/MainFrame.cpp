@@ -543,7 +543,7 @@ void MainFrame::init_preferences_button()
 }
 
 // !!! temporary function just for testing
-static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
+/*static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
 {
     wxPanel* test_panel = new wxPanel(parent, id);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
@@ -557,7 +557,7 @@ static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
     text->SetFont(w_config()->bold_font());
     test_sizer->Add(text, 1, wxALIGN_CENTER_VERTICAL);
     return test_panel;
-}
+}*/
 
 void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
@@ -660,7 +660,7 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
 {
     ASSERT(m_left_bar);
 
-    int page_index = get_tab_index_by_id(m_left_bar, id);
+    size_t page_index = get_tab_index_by_id(m_left_bar, id);
     if (page_index == size_t(-1) || page_index >= m_left_bar->GetPageCount()) {
         // This could happen. F.e. notification trying to switch to disabled Printables.
         return;
@@ -891,14 +891,14 @@ void MainFrame::persist_window_geometry(wxTopLevelWindow* window, bool default_m
 {
     const std::string name = into_u8(window->GetName());
 
-    window->Bind(wxEVT_CLOSE_WINDOW, [=](wxCloseEvent& event) {
+    window->Bind(wxEVT_CLOSE_WINDOW, [this, name, window](wxCloseEvent& event) {
         window_pos_save(window, name);
         event.Skip();
         });
 
     window_pos_restore(window, name, default_maximized);
 
-    on_window_geometry(window, [=]() {
+    on_window_geometry(window, [this, window]() {
         window_pos_sanitize(window);
         });
 }
