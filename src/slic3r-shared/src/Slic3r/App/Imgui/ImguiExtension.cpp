@@ -341,7 +341,7 @@ ImColor adjust_brightness(ImColor color, float factor)
             v = 1.0f;
 
             float diff = adjusted_v - 1.0f;
-            s           = std::clamp(s * (1.0f - diff), 0.0f, 1.0f);
+            s          = std::clamp(s * (1.0f - diff), 0.0f, 1.0f);
         }
     }
 
@@ -621,6 +621,11 @@ void move_window_to_bounds(const ImVec2& available_size, ImRect& window)
     if (window.Max.y > available_size.y) {
         window.TranslateY(available_size.y - window.Max.y);
     }
+
+    window.Min.x = std::round(window.Min.x);
+    window.Min.y = std::round(window.Min.y);
+    window.Max.x = std::round(window.Max.x);
+    window.Max.y = std::round(window.Max.y);
 }
 
 static bool is_dark(const ImColor color)
