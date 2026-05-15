@@ -625,6 +625,7 @@ TEST_CASE("Preset updater")
     fs::remove_all(resources_repo_path);
     fs::remove_all(data_dir);
     fs::remove_all(server_runtime_path);
-    fs::remove_all(server_runtime_path.parent_path()); 
+    fs::remove_all(server_runtime_path.parent_path());
     fs::remove_all(temp_dir_path);
+    Slic3r::set_temp_dir({});
 }

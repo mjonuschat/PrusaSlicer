@@ -1238,6 +1238,13 @@ slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 
+# MSVC's LTCG inflates object files to the point where the COFF static library
+# format's 4 GB size limit is exceeded. Disable LTO for this target until
+# slic3r-shared is split into smaller libraries.
+if (MSVC)
+    set_target_properties(slic3r-shared PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE FALSE)
+endif()
+
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render

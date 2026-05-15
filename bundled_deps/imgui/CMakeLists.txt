@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8.12)
+# increased minimum version for IPO/LTO support
+cmake_minimum_required(VERSION 3.13)
 project(imgui)
 
 add_library(imgui STATIC

@@ -218,6 +218,18 @@ enable_testing()
 
 include(DoxygenTarget)
 include(Sanitizers)
+
+if (NOT SLIC3R_ASAN AND NOT SLIC3R_UBSAN)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT _ipo_supported OUTPUT _ipo_output LANGUAGES CXX C)
+    if (_ipo_supported)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        message(STATUS "LTO/IPO enabled for Release builds")
+    else()
+        message(STATUS "LTO/IPO not supported by this toolchain: ${_ipo_output}")
+    endif()
+endif()
+
 include(Localization)
 include(GlobalDependencies)
 
