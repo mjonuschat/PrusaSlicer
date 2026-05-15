@@ -364,7 +364,7 @@ void UnsavedChangesDialog::update_transfer_button(PresetSwitchKindId kind_id)
     case PresetKind::FdmMaterial:
     case PresetKind::SlaMaterial: {
         size_t tool_id = kind_id.id.value_or(0);
-        if (m_is_enabled_transfer = m_preset_names_new.materials.size() > tool_id) {
+        if ((m_is_enabled_transfer = (m_preset_names_new.materials.size() > tool_id))) {
             is_keep = m_preset_names.materials[tool_id] == m_preset_names_new.materials[tool_id];
         }
         break;

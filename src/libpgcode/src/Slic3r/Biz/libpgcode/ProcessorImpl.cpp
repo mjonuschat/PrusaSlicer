@@ -124,7 +124,7 @@ ProcessorResult ProcessorImpl::finalize()
             }
         }
         // Now move all the vertices into place:
-        int orig_idx = moves.size() - 1;
+        int orig_idx = int(moves.size()) - 1;
         moves.resize(moves.size() + mod_moves.size());
         for (int i = int(moves.size()) - 1; i >= 0; --i) {
             moves[i] = moves[orig_idx];

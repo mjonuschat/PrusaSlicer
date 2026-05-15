@@ -73,7 +73,7 @@ YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::mapping_value_at(const NodeRef& 
         auto key = name;
 #endif
         return {.node = (*node.node)[key], .file = node.file};
-    } catch (YAML::KeyNotFound& e) {
+    } catch (YAML::KeyNotFound&) {
         return {.node = std::nullopt, .file = node.file};
     }
 }

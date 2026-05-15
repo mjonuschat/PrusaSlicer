@@ -956,7 +956,7 @@ void PrintObject::detect_surfaces_type()
 
                         Polygons top_polygons = to_polygons(std::move(top));
                         top.clear();
-                        surfaces_append(top, opening_ex(diff_ex(top_polygons, bottom), SCALED_EPSILON), stTop);
+                        surfaces_append(top, opening_ex(diff_ex(top_polygons, bottom), float(SCALED_EPSILON)), stTop);
                     }
 
         #ifdef SLIC3R_DEBUG_SLICE_PROCESSING

@@ -211,10 +211,6 @@ bool DesktopApp::OnInit()
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
-    const bool is_dark             = style == Theme::Style::Dark;
-    const bool is_sys_menu         = true;
-    WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
-
     const wxString dots = WX::from_u8("...");
 
     bool is_editor     = true; // is_editor();

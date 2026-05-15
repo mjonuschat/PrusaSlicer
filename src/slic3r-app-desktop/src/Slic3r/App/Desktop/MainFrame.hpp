@@ -71,7 +71,6 @@ public:
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
     void init_printer_page(Biz::ProjectInteractor& project_interactor);
-    void init_projects_page();
     void init_slicing_page();
     void init_printables_page(Biz::ProjectInteractor& project_interactor);
     void init_preferences_button();

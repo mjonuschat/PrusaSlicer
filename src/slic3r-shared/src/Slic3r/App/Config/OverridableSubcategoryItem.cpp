@@ -127,7 +127,7 @@ void OverridableSubcategoryItem::on_data_update()
 void OverridableSubcategoryItem::on_index_update()
 {
     ImColor color = m_theme->color_imgui(Platform::Color::WindowBg);
-    set_fill(m_index % 2 == 0 ? color : Imgui::adjust_brightness(color, 0.9));
+    set_fill(m_index % 2 == 0 ? color : Imgui::adjust_brightness(color, 0.9f));
 }
 
 } // namespace Slic3r::App

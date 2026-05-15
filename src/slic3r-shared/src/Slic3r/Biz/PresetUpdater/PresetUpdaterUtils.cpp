@@ -800,7 +800,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             if (fs::exists(update_sync_index_path, ec) && !ec) {
                 try {
                     update_sync_index.load(update_sync_index_path);
-                } catch (const std::runtime_error& err) {
+                } catch (const std::runtime_error&) {
                     process_status->set_warning(
                         "Failed to load index " + update_sync_index_path.string()
                     );
