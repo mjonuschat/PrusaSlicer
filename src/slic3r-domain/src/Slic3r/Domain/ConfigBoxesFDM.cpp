@@ -2874,15 +2874,27 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->height = 6;
     def->init_fn = init_with(std::vector<std::string>{});
 
-    def               = defs.add("pressure_advance_enable", typeid(bool));
+    def               = defs.add("pressure_advance", typeid(EnumWrapper));
     def->location     = Filament;
-    def->label        = L("Enable pressure advance");
+    def->label        = L("Pressure advance");
     def->option_group = ConfigItemDef::OptionGroup::Filament_ExtrusionCalibration_PressureAdvance;
     def->category     = ConfigItemDef::Category::Filament_ExtrusionCalibration;
-    def->order = 0;
-    def->gui_type     = ConfigItemDef::GUIType::checkbox;
-    def->tooltip = L("Enables emitting of the pressure advance value into g-code for this filament.");
-    def->init_fn = init_with(false);
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::combobox;
+    def->tooltip      = L(
+        "Controls how the pressure advance value is emitted into g-code for this filament. "
+             "'Disabled' does not emit any pressure advance command, leaving the printer to use the pressure advance value set in the filament's start g-code (or the firmware default). "
+             "'Enabled' emits the configured pressure advance value. "
+             "'Automatic Calibration' emits the configured pressure advance value and then triggers the firmware's automatic pressure advance calibration."
+    );
+    def->init_fn = init_with(
+        PressureAdvance::Disabled,
+        {{int(PressureAdvance::Disabled), "disabled", L("Disabled")},
+         {int(PressureAdvance::Enabled), "enabled", L("Enabled")},
+         {int(PressureAdvance::AutomaticCalibration),
+          "automatic_calibration",
+          L("Automatic Calibration")}}
+    );
 
     def               = defs.add("pressure_advance_value", typeid(double));
     def->location     = Filament;

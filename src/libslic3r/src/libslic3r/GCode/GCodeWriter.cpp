@@ -673,6 +673,16 @@ std::string GCodeWriter::set_pressure_advance(const double pressure_advance, con
     return gcode.str();
 }
 
+std::string GCodeWriter::emit_automatic_pressure_advance_calibration() const
+{
+    const GCodeFlavor gcode_flavor = this->config.gcode_flavor;
+    if (gcode_flavor == gcfPrusaFirmwareBuddy) {
+        return "M573 R\n";
+    }
+
+    return "";
+}
+
 void GCodeFormatter::emit_axis(const char axis, const double v, size_t digits) {
     assert(digits <= 9);
     static constexpr const std::array<int, 10> pow_10{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};

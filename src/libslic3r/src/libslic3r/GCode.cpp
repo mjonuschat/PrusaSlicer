@@ -104,6 +104,8 @@ using namespace std::literals::string_view_literals;
 
 using namespace Slic3r::Biz;
 
+using Slic3r::Domain::PressureAdvance;
+
 namespace Slic3r {
     using Biz::libpgcode::ProcessorResult;
     using Biz::GCodeReader::GCodeReader;
@@ -4013,11 +4015,17 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
             check_add_eol(gcode);
         }
 
-        if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
+        const PressureAdvance pressure_advance =
+            config.get<std::vector<PressureAdvance>>("pressure_advance").at(extruder_id);
+        if (pressure_advance != PressureAdvance::Disabled) {
             gcode += m_writer.set_pressure_advance(
                 config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
                 this->m_print->config().full_config().hw_config().vendor_id
             );
+
+            if (pressure_advance == PressureAdvance::AutomaticCalibration) {
+                gcode += m_writer.emit_automatic_pressure_advance_calibration();
+            }
         }
 
         gcode += m_writer.toolchange(extruder_id);
@@ -4105,11 +4113,17 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         check_add_eol(gcode);
     }
 
-    if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
+    const PressureAdvance pressure_advance =
+        config.get<std::vector<PressureAdvance>>("pressure_advance").at(extruder_id);
+    if (pressure_advance != PressureAdvance::Disabled) {
         gcode += m_writer.set_pressure_advance(
             config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
             this->m_print->config().full_config().hw_config().vendor_id
         );
+
+        if (pressure_advance == PressureAdvance::AutomaticCalibration) {
+            gcode += m_writer.emit_automatic_pressure_advance_calibration();
+        }
     }
 
     // Set the new extruder to the operating temperature.
