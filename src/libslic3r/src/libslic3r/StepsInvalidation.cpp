@@ -131,10 +131,10 @@ std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
 std::vector<Step> all_steps()
 {
     std::set<Step> result;
-    for (int i{}; i < psCount; ++i) {
+    for (size_t i{}; i < psCount; ++i) {
         result.insert(static_cast<PrintStep>(i));
     }
-    for (int i{}; i < posCount; ++i) {
+    for (size_t i{}; i < posCount; ++i) {
         result.insert(static_cast<PrintObjectStep>(i));
     }
     return std::vector<Step>{result.begin(), result.end()};

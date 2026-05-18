@@ -470,8 +470,6 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
         constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
         int current_layer = INITIAL_LAYER;
         for (auto& [n, mat]  : nodes) {
-            const bool first_iteration = current_layer == INITIAL_LAYER;
-
             // did we start next layer
             if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
                 if (customizer) {
@@ -541,8 +539,6 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, const Camera& 
     constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
     int current_layer = INITIAL_LAYER;
     for (auto& [n, mat]  : nodes) {
-        const bool first_iteration = current_layer == INITIAL_LAYER;
-
         // did we start next layer
         if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
             if (customizer) {
@@ -698,8 +694,6 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera,
         constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
         int current_layer = INITIAL_LAYER;
         for (auto& [n, mat]  : nodes) {
-            const bool first_iteration = current_layer == INITIAL_LAYER;
-
             // did we start next layer
             if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
                 if (customizer) {

@@ -6419,14 +6419,6 @@ const CustomGcodeSpecificConfigDef custom_gcode_specific_config_def;
 
 uint64_t ModelConfig::s_last_timestamp = 1;
 
-static Points to_points(const std::vector<Vec2d> &dpts)
-{
-    Points pts; pts.reserve(dpts.size());
-    for (auto &v : dpts)
-        pts.emplace_back( coord_t(scale_legacy_(v.x())), coord_t(scale_legacy_(v.y())) );
-    return pts;    
-}
-
 std::string get_sla_suptree_prefix(const DynamicPrintConfig &config)
 {
     const auto *suptreetype = config.option<ConfigOptionEnum<sla::SupportTreeType>>("support_tree_type");

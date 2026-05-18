@@ -50,7 +50,7 @@ static std::optional<std::size_t> get_undo_stack_index(
         snapshot_variant
     )};
 
-    if (index_to_load < 0 || index_to_load >= snapshots.size()) {
+    if (index_to_load < 0 || index_to_load >= int(snapshots.size())) {
         return std::nullopt;
     }
     return static_cast<std::size_t>(index_to_load);

@@ -16,7 +16,6 @@ Domain::Bed& get_or_create_bed(
         system_preset_bed_shape_getter
 )
 {
-    size_t old_bed_count = bed_container.beds_count();
     auto item = config_container.selected_preset().printer.config_box().find("bed_shape");
     ASSERT(item.item != nullptr);
     Domain::Vec2ds bed_shape = item.item->value().get<Domain::Vec2ds>();

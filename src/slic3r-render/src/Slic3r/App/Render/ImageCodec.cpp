@@ -198,7 +198,7 @@ std::vector<Image> PngReadCodec::load(
     Image::Data out_pixels(image_width * image_height * pixel_stride, 0);
 
     auto readbuf = static_cast<png_bytep>(out_pixels.data());
-    for (size_t r = 0; r < image_height; ++r) {
+    for (size_t r = 0; r < static_cast<size_t>(image_height); ++r) {
         size_t r_idx = opts.flip_y ? image_height - r - 1 : r;
         png_read_row(png_info_struct.png, readbuf + r_idx * image_width * pixel_stride, nullptr);
     }

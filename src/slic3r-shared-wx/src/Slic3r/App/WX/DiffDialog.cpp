@@ -596,7 +596,7 @@ static void append_diff_key_in_tree(
         return;
     }
 
-    wxDataViewItem item = tree->model->AddPreset(kind, kind_preset_name);
+    tree->model->AddPreset(kind, kind_preset_name);
 
     for (const std::string& key : diff_keys) {
         const Domain::ConfigItem& item_left = *config_left->find(key).item;

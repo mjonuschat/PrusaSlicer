@@ -112,6 +112,7 @@ bool is_valid(const Image& image)
 
 void blit(Image& destination, const Image& source, int x, int y)
 {
+    ASSERT(x >= 0 && y >= 0);
     ASSERT(destination.format() == source.format());
 
     const int x1               = std::min(destination.width(), x + source.width());
@@ -119,7 +120,7 @@ void blit(Image& destination, const Image& source, int x, int y)
     const size_t pixel_bytes   = pixel_format_bytes_per_pixel(destination.format());
     const size_t blit_row_size = (x1 - x) * pixel_bytes;
 
-    for (size_t yi = y; yi < y1; yi++) {
+    for (int yi = y; yi < y1; yi++) {
         const size_t dest_index = (yi * destination.width() + x) * pixel_bytes;
         const size_t src_index  = ((yi - y) * source.width()) * pixel_bytes;
         std::memcpy(&destination.pixels[dest_index], &source.pixels[src_index], blit_row_size);

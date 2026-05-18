@@ -134,7 +134,7 @@ bool in_range(const Domain::ConfigItem& extruder_item, int min, int max)
 
 static std::optional<Biz::Slicing::Error>
 check_extruder_offset(const Domain::Model& model, const Domain::ConfigPackFDM& config) {
-    const int tool_count{static_cast<int>(config.tool.size())};
+    const size_t tool_count{config.tool.size()};
     const auto extruder_offset{config.printer.items.opt("extruder_offset").get<std::vector<Vec2d>>()};
     if (extruder_offset.size() != tool_count) {
         using Biz::Slicing::Error;

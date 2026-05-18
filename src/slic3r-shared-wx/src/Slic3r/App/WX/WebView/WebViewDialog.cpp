@@ -150,7 +150,7 @@ WebViewDialog::WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>
     m_url->SetLabelText(url);
 #endif
 
-    bool b = process_logic_command_vector(m_logic->on_webview_created());
+    [[maybe_unused]] bool b = process_logic_command_vector(m_logic->on_webview_created());
     DEBUG_ASSERT(b, "Cant veto in non event callback function.");
 }
 
@@ -263,7 +263,7 @@ void WebViewDialog::on_script_message(wxWebViewEvent& evt)
 
 void WebViewDialog::on_show(wxShowEvent& evt)
 {
-    bool b = process_logic_command_vector(std::move(m_logic->on_show_webview_event(evt.IsShown())));
+    [[maybe_unused]] bool b = process_logic_command_vector(std::move(m_logic->on_show_webview_event(evt.IsShown())));
     DEBUG_ASSERT(b, "Can't veto wxShowEvent.");
 }
 
@@ -445,19 +445,19 @@ void WebViewDialog::do_reload()
 
 void WebViewDialog::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
-    bool r = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh, into_u8(m_web_view->GetCurrentURL())));
+    [[maybe_unused]] bool r = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh, into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewDialog::on_user_account_logged_out()
 {
-    bool r = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
+    [[maybe_unused]] bool r = process_logic_command_vector(m_logic->on_user_account_logged_out(into_u8(m_web_view->GetCurrentURL())));
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
 }
 
 void WebViewDialog::on_user_account_will_refresh()
 {
-    bool r = process_logic_command_vector(m_logic->on_user_account_will_refresh());
+    [[maybe_unused]] bool r = process_logic_command_vector(m_logic->on_user_account_will_refresh());
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
 }
 

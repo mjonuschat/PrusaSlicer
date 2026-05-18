@@ -24,12 +24,12 @@ LayerHeightProfileControl::LayerHeightProfileControl() : Item()
 
     m_layer_height_profile_color              = ImColor(175, 119, 255, 255);
     m_layer_height_baseline_color             = m_theme->color_imgui(Platform::Color::Transparent);
-    m_height_range_color_even                 = Imgui::adjust_brightness(range_color, 0.65);
-    m_height_range_color_odd                  = Imgui::adjust_brightness(range_color, 0.5);
+    m_height_range_color_even                 = Imgui::adjust_brightness(range_color, 0.65f);
+    m_height_range_color_odd                  = Imgui::adjust_brightness(range_color, 0.5f);
     m_height_range_color_selected             = range_color;
-    m_height_range_color_hovered              = Imgui::adjust_brightness(range_color, 1.2);
+    m_height_range_color_hovered              = Imgui::adjust_brightness(range_color, 1.2f);
     m_height_range_color_overlap_fill         = m_theme->color_imgui(Platform::Color::Warning);
-    m_height_range_color_overlap_fill.Value.w = 0.5; // 50% transparent
+    m_height_range_color_overlap_fill.Value.w = 0.5f; // 50% transparent
     m_height_range_color_overlap_border       = m_theme->color_imgui(Platform::Color::Warning);
 }
 

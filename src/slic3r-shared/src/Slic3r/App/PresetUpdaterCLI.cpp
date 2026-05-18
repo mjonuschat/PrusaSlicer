@@ -83,11 +83,11 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", reconfigurations},{"warnings", warnings}};
-            printf(j.dump(4).c_str());
+            printf("%s", j.dump(4).c_str());
             printf("\n");
         } else {
             nlohmann::json j = {{"result", reconfigurations}};
-            printf(j.dump(4).c_str());
+            printf("%s", j.dump(4).c_str());
             printf("\n");
         }
         m_has_result = true;
@@ -100,7 +100,7 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_perfomed(
 {
     if (!warnings.empty()) {
         nlohmann::json j = {{"warnings", warnings}};
-        printf(j.dump(4).c_str());
+        printf("%s", j.dump(4).c_str());
         printf("\n");
     }
     m_has_result = true;
@@ -140,11 +140,11 @@ void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", descriptor},{"warnings", warnings}};
-            printf(j.dump(4).c_str());
+            printf("%s", j.dump(4).c_str());
             printf("\n");
         } else {
             nlohmann::json j = {{"result", descriptor}};
-            printf(j.dump(4).c_str());
+            printf("%s", j.dump(4).c_str());
             printf("\n");
         }
         m_has_result = true;

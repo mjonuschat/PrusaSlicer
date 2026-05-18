@@ -238,7 +238,7 @@ const char* VALID_OBJECT_TYPES[] =
     "model"
 };
 
-const char* INVALID_OBJECT_TYPES[] =
+[[maybe_unused]] const char* INVALID_OBJECT_TYPES[] =
 {
     "solidsupport",
     "support",
@@ -354,15 +354,6 @@ bool is_valid_object_type(const std::string& type)
     }
 
     return false;
-}
-
-static double sum_values(const std::vector<double>& values)
-{
-    double result{};
-    for (double value : values) {
-        result += value;
-    }
-    return result;
 }
 
 static double max_of_values(const std::vector<double>& values, double min)
@@ -4152,7 +4143,6 @@ bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive&
 
     pt::ptree tree;
 
-    size_t bed_idx = 0;
     for (const auto& [bed_idx, wipe_tower] : wipe_towers) {
         pt::ptree& main_tree = tree.add("wipe_tower_information", "");
 

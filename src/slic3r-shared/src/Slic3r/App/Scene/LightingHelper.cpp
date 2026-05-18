@@ -86,7 +86,6 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
     static int item_selected_idx = 0;
 
     static bool reset_size = false;
-    ImGuiContext& g        = *GImGui;
     ImGuiWindow* wnd       = ImGui::FindWindowByName("Graphics settings");
     if (reset_size && wnd != nullptr) {
         // to avoid imgui 'animation' when the window content changes size
@@ -292,7 +291,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                             ImGui::Text("Kernel size");
                             ImGui::TableSetColumnIndex(1);
 
-                            const std::vector<int> k_sizes = {
+                            const std::vector<size_t> k_sizes = {
                                 4,
                                 8,
                                 16,
@@ -307,18 +306,18 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                                 k_sizes.begin(),
                                 k_sizes.end(),
                                 std::back_inserter(k_sizes_str),
-                                [](int size) { return std::to_string(size); }
+                                [](size_t size) { return std::to_string(size); }
                             );
 
                             auto k_it = std::find(k_sizes.begin(), k_sizes.end(), k_size);
                             DEBUG_ASSERT(k_it != k_sizes.end());
-                            int sel_k_size = int(std::distance(k_sizes.begin(), k_it));
+                            size_t sel_k_size = size_t(std::distance(k_sizes.begin(), k_it));
 
                             const char* k_preview_value = k_sizes_str[sel_k_size].c_str();
 
                             ImGui::SetNextItemWidth(items_width);
                             if (ImGui::BeginCombo("##k_sizes", k_preview_value)) {
-                                for (int i = 0; i < int(k_sizes_str.size()); i++) {
+                                for (size_t i = 0; i < k_sizes_str.size(); i++) {
                                     bool is_selected = (sel_k_size == i);
                                     if (ImGui::Selectable(k_sizes_str[i].c_str(), is_selected))
                                         sel_k_size = i;
@@ -341,7 +340,7 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                             ImGui::Text("Noise size");
                             ImGui::TableSetColumnIndex(1);
 
-                            const std::vector<int> n_sizes = {
+                            const std::vector<size_t> n_sizes = {
                                 4,
                                 8,
                                 16,
@@ -353,19 +352,19 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                                 n_sizes.begin(),
                                 n_sizes.end(),
                                 std::back_inserter(n_sizes_str),
-                                [](int size)
+                                [](size_t size)
                                 { return std::to_string(size) + "x" + std::to_string(size); }
                             );
 
                             auto n_it = std::find(n_sizes.begin(), n_sizes.end(), n_size);
                             DEBUG_ASSERT(n_it != n_sizes.end());
-                            int sel_n_size = int(std::distance(n_sizes.begin(), n_it));
+                            size_t sel_n_size = size_t(std::distance(n_sizes.begin(), n_it));
 
                             const char* n_preview_value = n_sizes_str[sel_n_size].c_str();
 
                             ImGui::SetNextItemWidth(items_width);
                             if (ImGui::BeginCombo("##n_sizes", n_preview_value)) {
-                                for (int i = 0; i < int(n_sizes_str.size()); i++) {
+                                for (size_t i = 0; i < n_sizes_str.size(); i++) {
                                     bool is_selected = (sel_n_size == i);
                                     if (ImGui::Selectable(n_sizes_str[i].c_str(), is_selected))
                                         sel_n_size = i;
@@ -724,11 +723,9 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                                     sel = i;
                                     if (systems[sel] == "World") {
                                         l.direction = scene.camera().model().matrix().block<3, 3>(0, 0).cast<float>() * l.direction;
-                                        float nn = l.direction.norm();
                                         DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                                     } else if (systems[sel] == "Camera") {
                                         l.direction = scene.camera().view().matrix().block<3, 3>(0, 0).cast<float>() * l.direction;
-                                        float nn = l.direction.norm();
                                         DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                                     }
                                 }

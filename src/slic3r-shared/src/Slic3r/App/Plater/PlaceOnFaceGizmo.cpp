@@ -177,8 +177,6 @@ void PlaceOnFaceGizmo::recreate_planes_and_nodes()
     ASSERT(element.volume_id == 0); // Whole object is selected
 
     Domain::ModelObject* new_object = project.find_object_by_id(element.object_id);
-    const Domain::ModelInstance* new_inst =
-        project.find_instance_by_id(element.object_id, element.instance_id);
     size_t first_vol_id = new_object->volumes.front()->id().id;
     
     auto& scene = m_scene_presenter.scene();

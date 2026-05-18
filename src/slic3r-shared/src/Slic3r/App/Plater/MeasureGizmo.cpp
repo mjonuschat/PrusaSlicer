@@ -448,8 +448,7 @@ void MeasureGizmo::on_project_activated(size_t new_project_id)
     update_measurement();
     update_ui_dialog();
 
-    m_selection_mode = ImGui::GetIO().KeyShift ? m_selection_mode = SelectionMode::Point :
-                                                 SelectionMode::Feature;
+    m_selection_mode = ImGui::GetIO().KeyShift ? SelectionMode::Point : SelectionMode::Feature;
     m_dialog->show_measure(!m_current_project->scene_selection_cache.volumes.empty());
 }
 

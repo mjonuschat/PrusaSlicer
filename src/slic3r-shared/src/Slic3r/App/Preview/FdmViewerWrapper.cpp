@@ -445,7 +445,6 @@ void FdmViewerWrapper::update_legend_type_selector()
     }
 
     int selection = int(m_viewer.view_type());
-    int old_selection = selection;
     if (!has_layers_times &&
         std::find(layer_times_ids.begin(), layer_times_ids.end(), selection) != layer_times_ids.end())
         selection = int(ViewType::FeatureType);

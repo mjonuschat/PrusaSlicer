@@ -8,6 +8,8 @@
 #include "DistributedBeadingStrategy.hpp"
 #include "libslic3r/Arachne/BeadingStrategy/BeadingStrategy.hpp"
 
+#include "Slic3r/Assert.hpp"
+
 namespace Slic3r::Arachne
 {
 
@@ -28,6 +30,7 @@ DistributedBeadingStrategy::DistributedBeadingStrategy(const coord_t optimal_wid
 
 std::vector<float> DistributedBeadingStrategy::calc_normalized_weights(const coord_t to_be_divided, const coord_t bead_count) const
 {
+    ASSERT(bead_count >= 0);
     const float middle = static_cast<float>(bead_count - 1) / 2.f;
 
     const auto calc_weight = [middle, &self = std::as_const(*this)](const size_t bead_idx) -> float {
@@ -36,7 +39,7 @@ std::vector<float> DistributedBeadingStrategy::calc_normalized_weights(const coo
     };
 
     std::vector<float> weights(bead_count);
-    for (size_t bead_idx = 0; bead_idx < bead_count; ++bead_idx) {
+    for (size_t bead_idx = 0; bead_idx < static_cast<size_t>(bead_count); ++bead_idx) {
         weights[bead_idx] = calc_weight(bead_idx);
     }
 
@@ -85,9 +88,9 @@ DistributedBeadingStrategy::Beading DistributedBeadingStrategy::compute(const co
 
     if (bead_count > 2) {
         coord_t accumulated_width = 0;
-        for (size_t bead_idx = 0; bead_idx < bead_count; ++bead_idx) {
+        for (size_t bead_idx = 0; bead_idx < static_cast<size_t>(bead_count); ++bead_idx) {
             const coord_t splitup_left_over_weight = static_cast<coord_t>(static_cast<float>(to_be_divided) * normalized_weights[bead_idx]);
-            const coord_t width                    = (bead_idx == bead_count - 1) ? thickness - accumulated_width :
+            const coord_t width                    = (bead_idx == static_cast<size_t>(bead_count) - 1) ? thickness - accumulated_width :
                                                                                     std::max(0, optimal_width + splitup_left_over_weight);
 
             // Be aware that toolpath_locations is computed by dividing the width by 2, so toolpath_locations

@@ -216,9 +216,7 @@ private:
 					// This is a match.  Record result in neighbors list.
 					match_neighbors(edge, *link->next);
 					// Delete the matched edge from the list.
-					HashEdge *temp = link->next;
 					link->next = link->next->next;
-					// pool.destroy(temp);
 #ifndef NDEBUG
 					++ this->freed;
 #endif /* NDEBUG */
@@ -484,7 +482,7 @@ void stl_check_facets_nearby(stl_file *stl, float tolerance)
 	assert(stl->stats.connected_facets_2_edge <= stl->stats.connected_facets_1_edge);
 	assert(stl->stats.connected_facets_1_edge <= stl->stats.number_of_facets);
 
-  	if (stl->stats.connected_facets_3_edge == stl->stats.number_of_facets)
+  	if (stl->stats.connected_facets_3_edge == int(stl->stats.number_of_facets))
     	// No need to check any further.  All facets are connected.
     	return;
 
@@ -533,7 +531,7 @@ void stl_remove_unconnected_facets(stl_file *stl)
 		  	for (int i = 0; i < 3; ++ i)
 		    	if (neighbors.neighbor[i] != -1) {
 			    	int &other_face_idx = stl->neighbors_start[neighbors.neighbor[i]].neighbor[(neighbors.which_vertex_not[i] + 1) % 3];
-			  		if (other_face_idx != stl->stats.number_of_facets) {
+			  		if (other_face_idx != int(stl->stats.number_of_facets)) {
 			  			SPDLOG_INFO("in remove_facet: neighbor = {} numfacets = {} this is wrong", other_face_idx, stl->stats.number_of_facets);
 			    		return;
 			  		}

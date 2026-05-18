@@ -97,23 +97,23 @@ void Theme::initialize_dark_colors()
 
     m_colors[Platform::Color::RadioButtonBackground] = ColorEntry{
         {127, 127, 127},
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.5)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.2)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.5f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.2f)),
         std::make_unique<ImColor>(217, 217, 217),
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.7))
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.7f))
     };
 
     m_colors[Platform::Color::RadioButton] = ColorEntry{
         Theme::color_imgui(Platform::Color::WindowBgAlternate),
         std::make_unique<ImColor>(
-            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.5)
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.5f)
         ),
         std::make_unique<ImColor>(
             Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
         ),
         std::make_unique<ImColor>(78, 128, 248),
         std::make_unique<ImColor>(
-            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9)
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9f)
         )
     };
 
@@ -204,23 +204,23 @@ void Theme::initialize_light_colors()
 
     m_colors[Platform::Color::RadioButtonBackground] = ColorEntry{
         {127, 127, 127},
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.5)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.2)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.5f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.2f)),
         std::make_unique<ImColor>(217, 217, 217),
-        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.7))
+        std::make_unique<ImColor>(Imgui::adjust_brightness({127, 127, 127}, 1.7f))
     };
 
     m_colors[Platform::Color::RadioButton] = ColorEntry{
         Theme::color_imgui(Platform::Color::WindowBgAlternate),
         std::make_unique<ImColor>(
-            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.5)
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.5f)
         ),
         std::make_unique<ImColor>(
             Theme::color_imgui(Platform::Color::WindowBgAlternate, Platform::ColorGroup::Hovered)
         ),
         std::make_unique<ImColor>(120, 159, 250),
         std::make_unique<ImColor>(
-            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9)
+            Imgui::adjust_brightness(Theme::color_imgui(Platform::Color::WindowBgAlternate), 1.9f)
         )
     };
 
@@ -421,10 +421,10 @@ Theme::ColorEntry Theme::auto_entry(const ImColor& color) const
 {
     return {
         color,
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.8)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.2)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.5)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.7)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.8f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.2f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.5f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.7f)),
     };
 }
 
@@ -433,10 +433,10 @@ Theme::ColorEntry Theme::auto_entry_light(const ImColor& color) const
     // On light backgrounds the hover/active states must be darker, not brighter.
     return {
         color,
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.12)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.92)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.80)),
-        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.86)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 1.12f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.92f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.80f)),
+        std::make_unique<ImColor>(Imgui::adjust_brightness(color, 0.86f)),
     };
 }
 

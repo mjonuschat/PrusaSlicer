@@ -430,8 +430,6 @@ void Control::draw_thumb(const ImVec2& center, bool mark/* = false*/)
     bool is_hovered = ImGui::IsMouseHoveringRect({ center.x - thumb_radius, center.y - thumb_radius }, { center.x + thumb_radius, center.y + thumb_radius });
     float radius = is_hovered ? 1.1f * thumb_radius : thumb_radius;
 
-    float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
-
     ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, border_color(), 16);
     ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.65f * radius, fg_color(), 16);
 

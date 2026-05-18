@@ -208,7 +208,7 @@ ImGuiMouseButton AbstractButton::primary_button() const
 
 void AbstractButton::set_primary_button(ImGuiMouseButton primary_button)
 {
-    if (m_pressed_primary != primary_button) {
+    if (m_primary_button != primary_button) {
         m_primary_button = primary_button;
         update_flags();
     }

@@ -863,8 +863,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             m_hovered_handle            = Handle(tag.handle_type, tag.primary_axis);
             m_is_plane_hovered          = false;
             m_translation_ray.direction = context().rotation_m * axis_type_dir(tag.primary_axis);
-        } else if (const Scene::Node* node =
-                       ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
+        } else if (ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>() != nullptr)
         {
             m_is_plane_hovered          = true;
             m_translation_ray.direction = context().rotation_m * Vec3d::UnitZ();
@@ -984,7 +983,7 @@ CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_activ
     const auto& pick_ray           = ctx.pick_ray();
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        if (const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
+        if (ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>() != nullptr)
         {
             if (event_button == Platform::MouseButton::Right) {
                 select_hovered_connector(true);
@@ -1647,7 +1646,7 @@ void CutGizmo::update_cut_plane_trafo()
 
 void CutGizmo::update_handles_material_and_enability(Handle hovered_handle)
 {
-    const bool disabled_handles = m_dragging && m_is_plane_hovered || m_dialog->connectors_editing;
+    const bool disabled_handles = (m_dragging && m_is_plane_hovered) || m_dialog->connectors_editing;
     m_handles_node->set_enabled(!disabled_handles);
     if (disabled_handles)
         return;
@@ -1751,7 +1750,6 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
     const Transform3d trafo = translation_transform(m_plane_center) * context().rotation_m;
 
     const double size = get_half_size(get_handle_mean_size(m_bounding_box));
-    Vec3d scale       = Vec3d(0.75 * size, 0.75 * size, size);
 
     Scene::visit(
         *m_handles_node,
@@ -2092,7 +2090,7 @@ bool CutGizmo::is_valid_groove() const
 
         bool intersection = false;
         for (const auto& solid_mesh : m_solid_meshes) {
-            if (intersection = solid_mesh.intersects_line(beg, end - beg, inst_trafo)) {
+            if ((intersection = solid_mesh.intersects_line(beg, end - beg, inst_trafo))) {
                 break;
             }
         }
@@ -2459,7 +2457,6 @@ Vec3d CutGizmo::get_world_pos(Domain::Vec3d pos)
     Vec3d inst_offset     = context().selected_instance->get_transformation().get_offset();
 
     // recalculate hit to object's local position
-    Vec3d pos_world = pos;
     pos += inst_offset;
     pos[Z] += sla_shift;
 

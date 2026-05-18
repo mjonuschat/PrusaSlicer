@@ -1171,6 +1171,18 @@ if(SLIC3R_BUILD_TESTS)
     )
 endif()
 
+# Silence this one warning in the one legacy file.
+if (NOT MSVC)
+    set_source_files_properties(
+        "src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp"
+        "src/Slic3r/Biz/Config/Legacy/Config.cpp"
+        "src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp"
+        "src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp"
+        PROPERTIES COMPILE_FLAGS "-Wno-overloaded-virtual"
+    )
+endif()
+
+
 find_package(NanoSVG REQUIRED)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)

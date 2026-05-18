@@ -12,7 +12,7 @@ namespace Slic3r::Domain {
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
 static const std::string& L(const std::string& s) { return s; }
-static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
+[[maybe_unused]] static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
 void sla_config_init_fn(ConfigDefinitions& defs);
 

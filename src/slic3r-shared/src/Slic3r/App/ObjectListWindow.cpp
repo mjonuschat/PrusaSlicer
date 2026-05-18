@@ -101,12 +101,12 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
             return row;
         };
 
-        Item* used_material_row = add_row(_u8L("Used material"), &m_used_material);
+        add_row(_u8L("Used material"), &m_used_material);
         m_material_cost_row = add_row(_u8L("Cost"), &m_material_cost);
         m_material_cost_row->set_visible(false);
         m_first_layer_time_row = add_row(_u8L("First layer"), &m_first_layer_time);
         m_first_layer_time_row->set_visible(false);
-        Item* estimated_time_row = add_row(_u8L("Printing time"), &m_estimated_time);
+        add_row(_u8L("Printing time"), &m_estimated_time);
     }
 }
 

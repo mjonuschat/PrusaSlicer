@@ -78,8 +78,10 @@ void ConfigItemExtruderSelection::update_size()
             }
         }
 
-        if (!mixed() && m_state->value().get<int>() > slot_count) {
-            new_items.push_back(std::to_string(m_state->value().get<int>()));
+        int state_value = m_state->value().get<int>();
+        ASSERT(state_value >= 0);
+        if (!mixed() && size_t(state_value) > slot_count) {
+            new_items.push_back(std::to_string(state_value));
             set_items(new_items);
             set_current_index(slot_count + 1);
         } else {

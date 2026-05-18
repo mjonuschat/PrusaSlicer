@@ -1231,7 +1231,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
         const char *line_end    = gcode.c_str() + line->line_end;
         if (line_start > pos) {
             if (line_waiting_for_split != nullptr &&
-                line_waiting_for_split->move_segments.front().line_start == (pos - gcode.c_str()) &&
+                line_waiting_for_split->move_segments.front().line_start == static_cast<size_t>(pos - gcode.c_str()) &&
                 line_waiting_for_split->move_segments.back().line_end == line->line_start) {
                 assert(!line_waiting_for_split->move_segments.empty());
 

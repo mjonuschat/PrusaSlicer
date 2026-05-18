@@ -36,8 +36,8 @@ inline GLenum type(IndexType type)
         GL_UNSIGNED_INT,
     };
 
-    const int idx = static_cast<int>(type);
-    ASSERT(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
+    const size_t idx = static_cast<size_t>(type);
+    ASSERT(idx < sizeof(translation_table) / sizeof(translation_table[0]));
 
     return translation_table[idx];
 }
@@ -54,8 +54,8 @@ inline GLenum type(PrimitiveType type)
         GL_TRIANGLES
     };
 
-    const int idx = static_cast<int>(type);
-    ASSERT(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
+    const size_t idx = static_cast<size_t>(type);
+    ASSERT(idx < sizeof(translation_table) / sizeof(translation_table[0]));
 
     return translation_table[idx];
 }

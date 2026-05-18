@@ -499,7 +499,6 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     m_left_bar = LeftBar::Create(this, &m_tabs_bar_menus);
 
     init_printer_page(project_interactor);
-    //init_projects_page();
     init_slicing_page();
     init_printables_page(project_interactor);
     init_preferences_button();
@@ -542,23 +541,6 @@ void MainFrame::init_preferences_button()
     );
 }
 
-// !!! temporary function just for testing
-static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
-{
-    wxPanel* test_panel = new wxPanel(parent, id);
-    wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
-    test_panel->SetSizer(main_sizer);
-    main_sizer->SetSizeHints(test_panel);
-
-    wxBoxSizer* test_sizer = new wxBoxSizer(wxHORIZONTAL);
-    main_sizer->Add(test_sizer, 1, wxALIGN_CENTER_HORIZONTAL);
-
-    wxStaticText* text = new wxStaticText(test_panel, wxID_ANY, info_text);
-    text->SetFont(w_config()->bold_font());
-    test_sizer->Add(text, 1, wxALIGN_CENTER_VERTICAL);
-    return test_panel;
-}
-
 void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
     if (!AppServices::instance().app_config().is_prusa_account_enabled()) {
@@ -570,13 +552,6 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->InsertNewPage(0, webview_panel, WX::_L("Printers"), "lb_printers");
     m_printers_page_added = true;
-}
-
-void MainFrame::init_projects_page()
-{
-    PANIC();
-    //wxPanel* projects_page = tmp_panel(m_left_bar, static_cast<int>(LeftBarTabs::Projects), from_u8("Here will be shown all projects"));
-    //m_left_bar->AddNewPage(projects_page, WX::_L("Projects"), "lb_projects");
 }
 
 void MainFrame::init_slicing_page()
@@ -660,7 +635,7 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
 {
     ASSERT(m_left_bar);
 
-    int page_index = get_tab_index_by_id(m_left_bar, id);
+    size_t page_index = get_tab_index_by_id(m_left_bar, id);
     if (page_index == size_t(-1) || page_index >= m_left_bar->GetPageCount()) {
         // This could happen. F.e. notification trying to switch to disabled Printables.
         return;
@@ -891,14 +866,14 @@ void MainFrame::persist_window_geometry(wxTopLevelWindow* window, bool default_m
 {
     const std::string name = into_u8(window->GetName());
 
-    window->Bind(wxEVT_CLOSE_WINDOW, [=](wxCloseEvent& event) {
+    window->Bind(wxEVT_CLOSE_WINDOW, [this, name, window](wxCloseEvent& event) {
         window_pos_save(window, name);
         event.Skip();
         });
 
     window_pos_restore(window, name, default_maximized);
 
-    on_window_geometry(window, [=]() {
+    on_window_geometry(window, [this, window]() {
         window_pos_sanitize(window);
         });
 }

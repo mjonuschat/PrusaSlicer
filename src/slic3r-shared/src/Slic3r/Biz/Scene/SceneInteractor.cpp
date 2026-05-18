@@ -102,13 +102,6 @@ using Domain::Transformation;
 using Domain::TriangleMesh;
 
 namespace {
-Transformation transform_product(const Transformation& orig_xform, const SceneInteractor::Transform& delta)
-{
-    Transform3d xform = orig_xform.get_matrix();
-    xform             = delta * xform.matrix();
-    return Transformation{xform};
-}
-
 Transformation transform_product(const SceneInteractor::Transform& orig_xform, const SceneInteractor::Transform& delta)
 {
     DEBUG_ASSERT(fabs(delta.determinant()) > 1e-9);
@@ -637,7 +630,7 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
 {
     auto& project = m_workbench.project(project_id);
     auto& obj     = *project.model().add_object();
-    auto& vol     = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
+    Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
     update_object(obj);
 
@@ -713,7 +706,6 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
 
 void SceneInteractor::add_volume_into_selected_object(const Domain::ModelVolume& volume)
 {
-    auto& project = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
     ASSERT(sel.mode == SelectionMode::Volume || sel.only_single_object());
     add_volume(m_selected_project_id, sel.elements[0].instance_id,
@@ -1264,7 +1256,7 @@ void SceneInteractor::extract_selected_instances()
             Domain::ModelObject* new_object = model.add_object(*old_object);
             new_objects.emplace_back(new_object);
             // delete no needed instances from new_object
-            for (size_t idx = old_object->instances.size() - 1; idx != size_t(-1); idx--) {
+            for (int idx = int(old_object->instances.size() - 1); idx >= 0; idx--) {
                 if (inst_cnt != idx)
                     new_object->delete_instance(idx);
             }
@@ -1519,7 +1511,6 @@ bool SceneInteractor::can_invalidate_cut_info() const
         && selection.elements.size() == 1
         && !selection.contains_wipe_tower())
     {
-        const Domain::ElementRef& el = selection.elements.front();
         return m_workbench.project(m_selected_project_id)
             .find_object_by_id(selection.elements.front().object_id)
             ->is_cut();

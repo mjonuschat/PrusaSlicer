@@ -382,7 +382,6 @@ bool SvgGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
     if (!proj_ctx.exist_surface_point) {
         m_proj_ctxs->selected().exist_surface_point = true;
         // enable from surface distance in dialog
-        const Domain::Project& project = m_project_interactor.selected_project();
         const Domain::ModelVolume* volume_ptr = get_selected_svg_volume(
             m_project_interactor.selected_project(),
             m_project_interactor.scene_interactor().object_selection());

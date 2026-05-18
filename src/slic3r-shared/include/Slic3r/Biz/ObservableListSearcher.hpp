@@ -206,7 +206,7 @@ public:
                 if (!score) {
                     continue;
                 }
-                if (scored_items.size() < m_max_found_items) {
+                if (int(scored_items.size()) < m_max_found_items) {
                     ScoreItem score_item{item, score};
                     auto pos = std::ranges::lower_bound(scored_items, score_item, cmp);
                     scored_items.insert(pos, score_item);

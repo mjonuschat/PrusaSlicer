@@ -112,8 +112,8 @@ GLenum type(BlendFactor type)
         GL_ONE_MINUS_DST_ALPHA
     };
 
-    const int idx = static_cast<int>(type);
-    ASSERT(idx >= 0 && idx < sizeof(translation_table)/sizeof(translation_table[0]));
+    const size_t idx = static_cast<size_t>(type);
+    ASSERT(idx < sizeof(translation_table)/sizeof(translation_table[0]));
     return translation_table[idx];
 }
 
@@ -127,8 +127,8 @@ GLenum type(BlendEquation type)
         GL_MAX
     };
 
-    const int idx = static_cast<int>(type);
-    ASSERT(idx >= 0 && idx < sizeof(translation_table)/sizeof(translation_table[0]));
+    const size_t idx = static_cast<size_t>(type);
+    ASSERT(idx < sizeof(translation_table)/sizeof(translation_table[0]));
     return translation_table[idx];
 }
 

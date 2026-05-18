@@ -18,7 +18,7 @@ WarningPanel::WarningPanel()
 {
     const ImColor warning_color = m_theme->color_imgui(Platform::Color::Warning);
     ImColor warning_color_fill  = warning_color;
-    warning_color_fill.Value.w  = 0.15; // 15%
+    warning_color_fill.Value.w  = 0.15f; // 15%
     set_fill(warning_color_fill);
     set_rounding(0);
 

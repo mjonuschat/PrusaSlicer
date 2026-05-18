@@ -905,7 +905,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     int default_color_idx =
         m_mode == CustomGCode::Mode::MultiAsSingle ? std::max(m_ticks.only_extruder_id - 1, 0) : 0;
     ColorRGBA rgba;
-    bool res = decode_color(m_ticks.colors[default_color_idx], rgba);
+    [[maybe_unused]] bool res = decode_color(m_ticks.colors[default_color_idx], rgba);
     DEBUG_ASSERT(res);
     ImU32 band_clr = Imgui::to_ImU32(rgba);
     draw_main_band(band_clr);
@@ -938,7 +938,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
 
                 if (!clr_str.empty()) {
                     ColorRGBA rgba;
-                    bool res = decode_color(clr_str, rgba);
+                    [[maybe_unused]] bool res = decode_color(clr_str, rgba);
                     DEBUG_ASSERT(res);
                     ImU32 band_clr = Imgui::to_ImU32(rgba);
                     if (tick_it->tick == 0)

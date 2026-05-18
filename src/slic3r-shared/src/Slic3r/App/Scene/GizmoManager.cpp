@@ -87,7 +87,6 @@ GizmoManager::PickResultWithRay GizmoManager::pick(
     const Render::ScreenInfo& screen_info
 ) const
 {
-    auto& p = current_context();
     Scene& scene = m_scene_provider.scene();
 
     NodePickResults pick_results;

@@ -22,7 +22,7 @@ void TwoColorRing::render(Vec2f pos, Vec2f size)
     };
     if (radius > 0.0f) {
         const ImColor transparent{m_theme->color_imgui(Platform::Color::Transparent)};
-        constexpr float quarter_pi{std::numbers::pi / 4.0};
+        constexpr float quarter_pi{float(std::numbers::pi / 4.0)};
 
         ImColor first_color{transparent};
         ImColor second_color{transparent};
