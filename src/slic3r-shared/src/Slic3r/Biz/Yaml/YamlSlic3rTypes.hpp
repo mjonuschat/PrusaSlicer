@@ -5,6 +5,7 @@
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Biz/Expr/Parser.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
+#include "Slic3r/Biz/Expr/Simplify.hpp"
 
 namespace Slic3r::Biz::Yaml::Details {
 
@@ -74,6 +75,33 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocated<T>>
     static std::optional<YamlAdapter::NodeRef> serialize(const SourceLocated& v)
     {
         return TypeTraits<T>::serialize(v.value);
+    }
+};
+
+template <>
+struct TypeTraits<Slic3r::Domain::Preset::ParsedExpr>
+{
+    using Expr          = Domain::Expr::ExprAst;
+    using SourceLocated = Slic3r::Domain::Preset::SourceLocated<Domain::Expr::ExprAst>;
+
+    static Result<Slic3r::Domain::Preset::ParsedExpr> parse(const YamlAdapter::NodeRef& node)
+    {
+        auto data = TypeTraits<SourceLocated>::parse(node);
+        if (!data.has_value())
+            return ResultError(data.error());
+
+        data.value().value = Slic3r::Biz::Expr::simplify(data.value().value);
+
+        std::string expr_str = Domain::Expr::to_string(data.value().value);
+
+        return Slic3r::Domain::Preset::ParsedExpr{std::move(data.value()), std::move(expr_str)};
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(
+        const Slic3r::Domain::Preset::ParsedExpr& v
+    )
+    {
+        return TypeTraits<SourceLocated>::serialize(v.expr);
     }
 };
 

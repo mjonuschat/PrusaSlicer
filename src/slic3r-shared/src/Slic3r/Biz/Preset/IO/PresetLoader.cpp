@@ -1,7 +1,6 @@
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
-#include "Slic3r/Biz/Expr/Simplify.hpp"
 
 #include <boost/filesystem/directory.hpp>
 
@@ -9,16 +8,6 @@
 #include "Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp"
 
 namespace Slic3r::Biz::Preset::IO {
-
-namespace {
-void populate_simplified_conditions(Domain::Preset::PresetNode& node)
-{
-    if (node.condition.has_value())
-        node.simplified_condition = Domain::Expr::to_string(Expr::simplify(*node.condition.value()));
-    for (auto& v : node.variants)
-        populate_simplified_conditions(v);
-}
-} // namespace
 
 namespace Details {
 
@@ -63,7 +52,6 @@ void PresetLoader::load(const std::string& file_name, std::mutex& mutex, PresetO
 {
     Yaml::parse_all_documents_in_file(file_name.c_str(), [this, &mutex, &file_name, origin](const auto& doc) {
         auto preset = Yaml::parse_struct_unwrap<RootPresetNode>(doc);
-        populate_simplified_conditions(preset);
         std::lock_guard guard(mutex);
         preset.origin = origin;
         if (origin == PresetOrigin::User) {
@@ -78,7 +66,6 @@ void PresetLoader::load_from_string(std::string_view source, PresetOrigin origin
 {
     Yaml::parse_all_documents_in_string(source, [this, origin](const auto& doc) {
         auto preset = Yaml::parse_struct_unwrap<RootPresetNode>(doc);
-        populate_simplified_conditions(preset);
         preset.origin = origin;
         Details::collect_names(m_preset_names, preset, preset.kind, origin);
         m_presets[preset.kind].emplace_back(std::move(preset));

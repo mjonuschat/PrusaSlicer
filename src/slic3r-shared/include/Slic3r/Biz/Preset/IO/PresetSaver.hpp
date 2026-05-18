@@ -45,8 +45,10 @@ Domain::Preset::RootPresetNode transform_for_saving(
         main.unconditional_inherits = {std::get<std::string>(it->second)};
     }
 
-    main.condition = SourceLocatedExpr{Details::and_chain_exprs(source.conditions)};
-    main.simplified_condition = Domain::Expr::to_string(Expr::simplify(*main.condition.value()));
+    main.condition = Domain::Preset::ParsedExpr{
+        SourceLocatedExpr{Expr::simplify(Details::and_chain_exprs(source.conditions))}
+    };
+    main.condition.value().expr_str = Domain::Expr::to_string(*main.condition.value().expr);
     main.id = source.id;
     main.name = source.name;
     main.features = source.features;

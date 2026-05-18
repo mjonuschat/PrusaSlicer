@@ -47,7 +47,7 @@ TEST_CASE("PresetLoader preset-filament-common.yaml", "[preset]")
 
 
     const auto& pla_v0 = pla_preset.variants[0];
-    REQUIRE(boost::get<Slic3r::Domain::Expr::VarRef>(*pla_v0.condition.value()).name == "printer.planetary_gearbox");
+    REQUIRE(boost::get<Slic3r::Domain::Expr::VarRef>(*pla_v0.condition.value().expr).name == "printer.planetary_gearbox");
 
     auto fcfs_it = pla_v0.values.find("filament_cooling_final_speed");
     REQUIRE((fcfs_it != pla_v0.values.end()));

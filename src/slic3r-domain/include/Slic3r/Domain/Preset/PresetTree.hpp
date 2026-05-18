@@ -6,7 +6,7 @@
 #include <set>
 
 #include "Slic3r/Domain/Preset/Types.hpp"
-#include "Slic3r/Domain/Preset/SourceLocatedExpr.hpp"
+#include "Slic3r/Domain/Preset/ParsedExpr.hpp"
 
 namespace Slic3r::Domain::Preset {
 
@@ -28,8 +28,7 @@ struct PresetNode
     std::optional<std::string> name;
     std::vector<std::string> inherits;
     std::vector<std::string> unconditional_inherits;
-    std::optional<SourceLocatedExpr> condition;
-    std::optional<std::string> simplified_condition;
+    std::optional<ParsedExpr> condition;
     std::optional<ConditionMatchMode> match_mode;
     PresetValueMap values;
     FeatureValueMap features;

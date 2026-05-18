@@ -194,7 +194,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 
     if (!skip_condition_eval
         && node.condition.has_value()
-        && !eval_condition(overrides, expr_combine, node.condition.value()))
+        && !eval_condition(overrides, expr_combine, node.condition.value().expr))
         return {};
 
     PresetEvaluator::EvalPresetContexts ret = parent_contexts;
@@ -259,7 +259,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
              );
         }
         if (node.condition.has_value())
-            context.conditions.push_back(&node.simplified_condition.value());
+            context.conditions.push_back(&node.condition.value().expr_str);
         context.last_node_location = node.source_location;
         override_preset_values(context.values, unconditional_inherited_values);
         override_preset_values(context.values, node.values);
@@ -296,7 +296,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 0);
 
             // Condition is not met, continue with next variant
-            if (!eval_condition(overrides, expr_combine, var.condition.value()))
+            if (!eval_condition(overrides, expr_combine, var.condition.value().expr))
                 continue;
         } else if (conditional_variants > 0) {
             // if there was at least one condition case met before
