@@ -91,6 +91,26 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Arrange");
     case Type::Cut:
         return _u8L("Cut");
+    case Type::CutPlaneMove:
+        return _u8L("Move cut plane");
+    case Type::CutChangeMode:
+        return _u8L("Change cut mode");
+    case Type::CutAddConnector:
+        return _u8L("Add connector");
+    case Type::CutRemoveConnector:
+        return _u8L("Remove connector");
+    case Type::CutMoveConnector:
+        return _u8L("Move connector");
+    case Type::CutResetConnectors:
+        return _u8L("Reset connectors");
+    case Type::CutFlipPlane:
+        return _u8L("Flip cut plane");
+    case Type::CutChangeConnectorType:
+        return _u8L("Change connector type");
+    case Type::CutChangeConnectorStyle:
+        return _u8L("Change connector style");
+    case Type::CutChangeConnectorShape:
+        return _u8L("Change connector shape");
     case Type::AddObject:
         return _u8L("Add an object");
     case Type::AddInstance:

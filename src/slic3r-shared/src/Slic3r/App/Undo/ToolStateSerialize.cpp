@@ -1,4 +1,5 @@
 #include "Slic3r/App/Undo/ToolStateSerialize.hpp"
+#include "Slic3r/Biz/CerealUtils.hpp"
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/cereal.hpp>
@@ -10,8 +11,36 @@
 namespace cereal {
 
 template <class Archive>
-void serialize(Archive&, Slic3r::App::Undo::CutGizmoState& tool_state)
-{}
+void serialize(Archive& ar, Slic3r::Biz::Cut::Groove& groove)
+{
+    ar(groove.depth,
+       groove.width,
+       groove.flaps_angle,
+       groove.angle,
+       groove.depth_init,
+       groove.width_init,
+       groove.flaps_angle_init,
+       groove.angle_init,
+       groove.depth_tolerance,
+       groove.width_tolerance);
+}
+
+template <class Archive, Slic3r::Domain::BoundingBoxConcept BoxType>
+void serialize(Archive& archive, BoxType& box)
+{
+    archive(box.min, box.max, box.defined);
+}
+
+template <class Archive>
+void serialize(Archive& ar, Slic3r::App::Undo::CutGizmoState& tool_state)
+{
+    ar(tool_state.bounding_box,
+       tool_state.is_planar_mode,
+       tool_state.connectors_editing,
+       tool_state.center_offset,
+       tool_state.rotation_m,
+       tool_state.groove);
+}
 
 template <class Archive>
 void serialize(Archive& ar, Slic3r::App::Undo::HeightRangeGizmoState& tool_state)

@@ -16,6 +16,7 @@
 #include "Slic3r/App/Plater/CutNodeTag.hpp"
 
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Undo/ToolState.hpp"
 
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
@@ -105,6 +106,9 @@ public:
     bool enabled() const override;
     std::unique_ptr<GizmoWindow> release_ui_window() override;
     /**@}*/
+
+    std::optional<App::Undo::ToolState> get_tool_state() const override;
+    void set_tool_state(const App::Undo::ToolState& state) override;
 
 private:
     void init_scene_nodes();
@@ -223,6 +227,8 @@ private:
     on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active);
     void update_cut_line_node();
 
+    void take_snapshot(Biz::UndoSnapshotType snapshot_type);
+
     struct ProjectContext;
     // selected project context
     ProjectContext& context();
@@ -264,25 +270,14 @@ private:
         const Domain::ModelInstance* selected_instance{nullptr};
         size_t instance_idx{size_t(-1)};
 
-        Vec3d center_offset{Vec3d::Zero()};
-        Domain::Transform3d rotation_m{Domain::Transform3d::Identity()};
-
-        bool connectors_editing{false};
-        bool is_planar_mode{true};
-        Biz::Cut::Groove groove;
+        Undo::CutGizmoState state;
 
         void invalidate()
         {
             selected_object   = nullptr;
             selected_instance = nullptr;
             instance_idx      = size_t(-1);
-
-            center_offset = Vec3d::Zero();
-            rotation_m    = Domain::Transform3d::Identity();
-
-            connectors_editing = false;
-            is_planar_mode     = true;
-            groove             = Biz::Cut::Groove();
+            state             = {};
         };
     };
 
@@ -322,16 +317,15 @@ private:
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
     bool m_is_looking_forward_on_cut_plane{true};
 
-    // Used as a guard to suppress cut-plane recreation during dialog value
-    // initialization, which would otherwise trigger a recreation on each change.
-    bool m_is_cut_plane_recreation_suppressed{false};
+    // Used as a guard to suppress snapshot creation and cut-plane
+    // recreation while initializing dialog values. Without this guard,
+    // each value change would trigger redundant updates.
+    bool m_ignore_dialog_events{false};
 
     Transform3d m_start_dragging_m{Transform3d::Identity()};
 
     // data to check position of the cut palne center on gizmo activation
     Vec3d m_bb_center{Vec3d::Zero()};
-
-    BoundingBoxf3 m_bounding_box;
 
     double m_handle_radius{0.0};
     double m_handle_connection_len{0.0};

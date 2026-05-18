@@ -226,10 +226,10 @@ void CutDialog::init_cut_plane_input_panel()
     m_cut_plane_input_panel->set_flex_shrink(0.f);
     m_cut_plane_input_panel->set_gap(gap_size());
 
-    m_mode_row        = add_row(_u8L("Mode"), m_cut_plane_input_panel);
-    m_planar_mode_btn = add_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
-    LayoutButton* dovetail_mode_btn = add_button(m_mode_row, Render::Icon::Dove, _u8L("Dovetail"));
-    m_mode_group.set_buttons({m_planar_mode_btn, dovetail_mode_btn});
+    m_mode_row          = add_row(_u8L("Mode"), m_cut_plane_input_panel);
+    m_planar_mode_btn   = add_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
+    m_dovetail_mode_btn = add_button(m_mode_row, Render::Icon::Dove, _u8L("Dovetail"));
+    m_mode_group.set_buttons({m_planar_mode_btn, m_dovetail_mode_btn});
     m_mode_group.callbacks().action = [this](AbstractButton* btn)
     {
         set_planar_mode(btn == m_planar_mode_btn);
@@ -713,7 +713,7 @@ void CutDialog::init_connectors_input_panel()
         set_connector_type(type);
 
         if (callbacks().connector_attributes_changed) {
-            callbacks().connector_attributes_changed();
+            callbacks().connector_attributes_changed(Biz::UndoSnapshotType::CutChangeConnectorType);
         }
     };
 
@@ -729,7 +729,9 @@ void CutDialog::init_connectors_input_panel()
                                  Domain::CutConnectorStyle::Frustum
         );
         if (callbacks().connector_attributes_changed) {
-            callbacks().connector_attributes_changed();
+            callbacks().connector_attributes_changed(
+                Biz::UndoSnapshotType::CutChangeConnectorStyle
+            );
         }
     };
 
@@ -751,7 +753,9 @@ void CutDialog::init_connectors_input_panel()
                                       Domain::CutConnectorShape::Hexagon
         );
         if (callbacks().connector_attributes_changed) {
-            callbacks().connector_attributes_changed();
+            callbacks().connector_attributes_changed(
+                Biz::UndoSnapshotType::CutChangeConnectorShape
+            );
         }
     };
 
@@ -962,7 +966,11 @@ void CutDialog::set_cut_z_position(double cut_z_position)
 void CutDialog::set_planar_mode(bool is_planar)
 {
     is_planar_cut_mode = is_planar;
-    m_planar_mode_btn->set_checked(is_planar);
+    if (is_planar_cut_mode) {
+        m_planar_mode_btn->set_checked(true);
+    } else {
+        m_dovetail_mode_btn->set_checked(true);
+    }
 
     // disable connectors panel
     connectors_editing = false;

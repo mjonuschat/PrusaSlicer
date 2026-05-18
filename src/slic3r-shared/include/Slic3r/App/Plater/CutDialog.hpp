@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
+#include "Slic3r/Biz/IUndoProvider.hpp"
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -105,7 +106,7 @@ public:
         std::function<void(bool connectors_editing)> connectors_editing_changed{nullptr};
 
         std::function<void()> snap_settings_changed{nullptr};
-        std::function<void()> connector_attributes_changed{nullptr};
+        std::function<void(Biz::UndoSnapshotType undo_snapshot_type)> connector_attributes_changed{nullptr};
         std::function<void()> connector_transformations_changed{nullptr};
     };
 
@@ -217,6 +218,7 @@ private:
     Yoga::Item* m_cut_plane_input_panel{nullptr};
     Yoga::ButtonGroup m_mode_group;
     Yoga::LayoutButton* m_planar_mode_btn{nullptr};
+    Yoga::LayoutButton* m_dovetail_mode_btn{nullptr};
     Yoga::Text* m_build_volume_x{nullptr};
     Yoga::Text* m_build_volume_y{nullptr};
     Yoga::Text* m_build_volume_z{nullptr};

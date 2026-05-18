@@ -211,6 +211,8 @@ bool DesktopApp::OnInit()
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
+    WX::WidgetsConfig::instance(style == Theme::Style::Dark, true);
+
     const wxString dots = WX::from_u8("...");
 
     bool is_editor     = true; // is_editor();

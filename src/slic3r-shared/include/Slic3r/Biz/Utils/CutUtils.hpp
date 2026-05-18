@@ -41,6 +41,8 @@ public:
         double angle_init{ 0. };      // angle in radians
         double depth_tolerance{ 0.1 };
         double width_tolerance{ 0.1 };
+
+        bool operator==(const Groove& other) const = default;
     };
 
     struct Part
