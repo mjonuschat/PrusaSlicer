@@ -16,13 +16,22 @@
 
 namespace Slic3r {
 // Limits for inputs
-template<typename T> struct MinMax { T min; T max; };
-template<typename T>
-static bool apply(std::optional<T>& val, const MinMax<T>& limit) {
-    if (!val.has_value()) return false;
+template <typename T>
+struct MinMax
+{
+    T min;
+    T max;
+};
+
+template <typename T>
+static bool apply(std::optional<T>& val, const MinMax<T>& limit)
+{
+    if (!val.has_value())
+        return false;
     return apply<T>(*val, limit);
 }
-template<typename T>
+
+template <typename T>
 static bool apply(T& val, const MinMax<T>& limit)
 {
     if (val > limit.max) {
@@ -35,7 +44,7 @@ static bool apply(T& val, const MinMax<T>& limit)
     }
     return false;
 }
-}
+} // namespace Slic3r
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -52,7 +61,7 @@ public:
 
     struct Callbacks
     {
-        std::function<void(const std::string&)> text_changed{ nullptr };
+        std::function<void(const std::string&)> text_changed{nullptr};
         std::function<void(const Domain::FontDescriptor&)> font_selection_changed{nullptr};
 
         std::function<void(double height_in_mm)> height_changed{nullptr};
@@ -76,7 +85,7 @@ public:
         std::function<void()> rename_preset{nullptr};
         std::function<void()> delete_preset{nullptr};
 
-        std::function<void(Domain::ModelVolumeType type)> operation_selection_changed{ nullptr };
+        std::function<void(Domain::ModelVolumeType type)> operation_selection_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -94,14 +103,22 @@ public:
     void set_use_surface(bool checked, bool default_checked);
     void set_per_glyph(bool checked, bool default_checked);
 
-    void set_align(const Domain::FontProp::Align& align, const Domain::FontProp::Align& align_default);
+    void
+    set_align(const Domain::FontProp::Align& align, const Domain::FontProp::Align& align_default);
 
     void set_char_gap(double char_gap_in_mm, double default_char_gap_in_mm);
     void set_line_gap(double line_gap_in_mm, double default_line_gap_in_mm);
     void set_boldness(double boldness_in_mm, double default_boldness_in_mm);
     void set_skew_ratio(double value, double default_value);
-    void set_surface_distance(double maximal_value_in_mm, double surface_distance_in_mm, double default_surface_distance_in_mm);
-    void set_rotation(const std::optional<float>& angle_in_rad, const std::optional<float>& default_angle_in_rad);
+    void set_surface_distance(
+        double maximal_value_in_mm,
+        double surface_distance_in_mm,
+        double default_surface_distance_in_mm
+    );
+    void set_rotation(
+        const std::optional<float>& angle_in_rad,
+        const std::optional<float>& default_angle_in_rad
+    );
     void set_rotation_lock(bool lock);
 
     void set_enable_use_surface(bool enable);
@@ -114,29 +131,23 @@ public:
     void show_part_specific_panel(bool show);
 
     void set_enable_all_except_font(bool enable);
+
 private:
     void add_advanced_panel();
     void add_part_specific_panel();
-
-    Yoga::Item* add_row(
-        const std::string& title,
-        Yoga::ItemPtr control,
-        Yoga::Item* parent,
-        const std::string& revert_button_tooltip = std::string(),
-        const std::string& unit                  = std::string()
-    );
 
 private:
     Yoga::InputTextField* m_editor{nullptr};
     Yoga::LayoutButton* m_editor_warning{nullptr};
 
-    Yoga::Passthrough<Yoga::ComboBox> m_font;
+    Yoga::Item* m_font_row{nullptr};
+    Yoga::ComboBox* m_font{nullptr};
     // current OS enumerated fonts with styles(italic/bold) sorted alphanumericaly
     Domain::FontList m_fonts;
-    Yoga::Passthrough<Yoga::ComboBox> m_style;
+    Yoga::ComboBox* m_style{nullptr};
 
-    Yoga::Passthrough<Yoga::InputTextWithSpin> m_height;
-    Yoga::Passthrough<Yoga::InputTextWithSpin> m_depth;
+    Yoga::InputTextWithSpin* m_height{nullptr};
+    Yoga::InputTextWithSpin* m_depth{nullptr};
 
     // vector of Text items used for mm/inch units
     // Will be updated on units sweetching
@@ -145,30 +156,34 @@ private:
     Yoga::ToggleButton* m_advanced{nullptr};
 
     Yoga::Item* m_advanced_panel{nullptr};
-    Yoga::Passthrough<Yoga::ToggleButton> m_use_surface;
-    Yoga::Passthrough<Yoga::ToggleButton> m_per_glyph;
-    Yoga::Passthrough<Yoga::AlignmentButtons> m_align;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_char_gap;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_line_gap;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_boldness;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_skew_ratio;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_surface_distance;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_rotation;
+    Yoga::Item* m_use_surface_row{nullptr};
+    Yoga::ToggleButton* m_use_surface{nullptr};
+    Yoga::Item* m_per_glyph_row{nullptr};
+    Yoga::ToggleButton* m_per_glyph{nullptr};
+    Yoga::AlignmentButtons* m_align{nullptr};
+    Yoga::SliderWithInput* m_char_gap{nullptr};
+    Yoga::Item* m_line_gap_row{nullptr};
+    Yoga::SliderWithInput* m_line_gap{nullptr};
+    Yoga::SliderWithInput* m_boldness{nullptr};
+    Yoga::SliderWithInput* m_skew_ratio{nullptr};
+    Yoga::Item* m_surface_distance_row{nullptr};
+    Yoga::SliderWithInput* m_surface_distance{nullptr};
+    Yoga::SliderWithInput* m_rotation{nullptr};
     Yoga::LayoutButton* m_lock_offset_btn{nullptr};
 
     Yoga::LayoutButton* m_set_on_face_camera_btn{nullptr};
 
-    Yoga::Passthrough<Yoga::ComboBox> m_preset;
+    Yoga::ComboBox* m_preset{nullptr};
     Yoga::LayoutButton* m_save_as_new_btn{nullptr};
     Yoga::LayoutButton* m_save_btn{nullptr};
     Yoga::LayoutButton* m_rename_btn{nullptr};
     Yoga::LayoutButton* m_delete_btn{nullptr};
 
     Yoga::Item* m_part_specific_panel{nullptr};
-    Yoga::Passthrough<Yoga::ComboBox> m_operation;
+    Yoga::ComboBox* m_operation{nullptr};
 
-    bool m_use_inches{ false }; // use milimeters
-    bool m_use_radians{ false }; // use degrees
+    bool m_use_inches{false}; // use milimeters
+    bool m_use_radians{false}; // use degrees
 
     Callbacks m_callbacks;
 };

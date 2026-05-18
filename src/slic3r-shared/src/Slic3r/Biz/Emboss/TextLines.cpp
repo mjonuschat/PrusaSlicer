@@ -464,15 +464,19 @@ void TextLinesModel::set_visible(const bool visible)
     }
 }
 
-SelectedText get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
-    if (selection.elements.size() != 1)
+SelectedText get_selected_text_volume(
+    const Domain::Project& project,
+    const Domain::ElementRefs& selected_elements
+)
+{
+    if (selected_elements.size() != 1)
         return {}; // multiple volumes selected
 
-    const Domain::ElementRef& selected = selection.elements.front();
+    const Domain::ElementRef& selected = selected_elements.front();
     SelectedText result;
     if (selected.has_volume()) {
         result = SelectedText{
-            .volume = project.find_volume_by_id(selected.object_id, selected.volume_id),
+            .volume      = project.find_volume_by_id(selected.object_id, selected.volume_id),
             .instance_id = selected.instance_id
         };
     } else {
@@ -483,7 +487,7 @@ SelectedText get_selected_text_volume(const Domain::Project& project, const Biz:
         if (object_ptr->volumes.size() != 1)
             return {};
         result = SelectedText{
-            .volume = object_ptr->volumes.front(),
+            .volume      = object_ptr->volumes.front(),
             .instance_id = selected.instance_id
         };
     }
@@ -501,7 +505,7 @@ SelectedText get_selected_text_volume(const Biz::ProjectInteractor& project_inte
     const Domain::Project& project = project_interactor.selected_project();
     const Biz::Scene::ObjectSelection &selection = 
         project_interactor.scene_interactor().object_selection();
-    return get_selected_text_volume(project, selection);
+    return get_selected_text_volume(project, selection.elements);
 }
 
 

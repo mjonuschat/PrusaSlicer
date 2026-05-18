@@ -6,25 +6,31 @@
 #include "Slic3r/App/Plater/SvgDialog.hpp"
 #include "Slic3r/App/Plater/DialogUtils.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
+#include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
+
+#include "Slic3r/Domain/EmbossShape.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include <fmt/format.h>
+#include <boost/filesystem.hpp>
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
 namespace {
-// Constants 
+// Constants
 constexpr double SURFACE_DISTANCE_STEP = 0.01;
-constexpr double ANGLE_DEG_STEP = .1;
-constexpr double ANGLE_RAD_STEP = .01;
-}
+constexpr double ANGLE_DEG_STEP        = .1;
+constexpr double ANGLE_RAD_STEP        = .01;
+} // namespace
 
 namespace Slic3r::App::Plater {
 const double SvgDialog::MIN_DEPTH{1e-3};
-const double SvgDialog::MAX_DEPTH{1e2}; 
+const double SvgDialog::MAX_DEPTH{1e2};
 const double SvgDialog::MIN_HEIGHT{1e-3};
 const double SvgDialog::MAX_HEIGHT{1e3};
 const double SvgDialog::MIN_WIDTH{1e-3};
@@ -32,50 +38,98 @@ const double SvgDialog::MAX_WIDTH{1e3};
 
 SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
 {
-    content()->set_debug_border(m_set_debug);
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(gap_size());
+    Paddings padding = content()->padding();
+    Vec2f btns_sz(20.f, 20.f);
 
-    m_filename = content()->emplace_back<Text>("File");
-    auto suffix = m_filename->emplace_back<Text>(".svg");
-    suffix->set_text_color(ImColor(0.4f, 0.4f, 0.4f, 1.0f )); // COL_GREY_LIGHT
-    m_reload = m_filename->emplace_back<LayoutButton>("", Render::Icon::Reload, "Reload");
-    m_reload->set_min_size(Vec2f{ 15.f,15.f });
-    m_reload->callbacks().action = [this]() {
-        if (m_callbacks.reload_file) m_callbacks.reload_file(); };
-    
-    auto options = m_filename->emplace_back<ComboBox>(std::initializer_list<std::string>{
-            _u8L("Change file") + " ..",
-            _u8L("Forget the filepath"),
-            _u8L("Bake"),
-            _u8L("Save as") + " .." });
-    options->callbacks().selection_changed = [this, options](int index){
-            switch (index) { // call action
-            case 0: if (m_callbacks.change_file)     m_callbacks.change_file();     break;
-            case 1: if (m_callbacks.forgot_filepath) m_callbacks.forgot_filepath(); break;
-            case 2: if (m_callbacks.bake)            m_callbacks.bake();            break;
-            case 3: if (m_callbacks.save_as)         m_callbacks.save_as();         break;
-            }
-            options->set_editable(true);
-            options->set_current_label("");
-            options->set_editable(false);
-        };
-    options->set_editable(true);
-    options->set_current_label("");
-    options->set_editable(false);
-    options->set_min_size(Vec2f{ 20.f, 20.f });
-    options->set_flags(ImGuiComboFlags_PopupAlignLeft | ImGuiComboFlags_NoPreview);
+    top_bar()->set_gap(gap_size());
+    top_bar()->set_padding({padding.left, 5.f});
+    top_bar()->set_align_items(YGAlignCenter);
+    top_bar()->set_flex_shrink(0.f);
 
-    m_warning = m_filename->emplace_back<LayoutButton>("", Render::Icon::WarningMarker, "Some warning");
+    padding.top = 0.f;
+    content()->set_padding(padding);
+    content()->set_gap(2.f * gap_size());
+
+    Item* filename_wrap = top_bar()->emplace_back<Item>();
+    filename_wrap->set_flex_grow(1.f);
+    m_filename = filename_wrap->emplace_back<Text>(std::string{});
+    m_filename->set_flex_grow(1.f);
+    m_filename->set_wrap_mode(Text::WrapMode::WrapElide);
+    m_reload =
+        top_bar()->emplace_back<LayoutButton>(std::string(), Render::Icon::Reload, _u8L("Reload"));
+    m_reload->set_min_size(btns_sz);
+    m_reload->callbacks().action = [this]()
+    {
+        if (m_callbacks.reload_file)
+            m_callbacks.reload_file();
+    };
+
+    LayoutButton* options_btn = top_bar()->emplace_back<LayoutButton>(
+        std::string(),
+        Render::Icon::CaretDown,
+        _u8L("Options")
+    );
+    options_btn->set_min_size(btns_sz);
+    options_btn->callbacks().action = [this]() { m_options_menu->open(); };
+
+    m_options_menu = options_btn->emplace_back<Menu>("Options Menu", Position::Bottom);
+    m_options_menu->append_item(_u8L("Change file") + " ...")->callbacks().action = [this]()
+    {
+        if (m_callbacks.change_file)
+            m_callbacks.change_file();
+    };
+    m_options_menu->append_item(_u8L("Forget the filepath"))->callbacks().action = [this]()
+    {
+        if (m_callbacks.forgot_filepath)
+            m_callbacks.forgot_filepath();
+    };
+    m_options_menu->append_item(_u8L("Bake"))->callbacks().action = [this]()
+    {
+        if (m_callbacks.bake)
+            m_callbacks.bake();
+    };
+    m_options_menu->append_item(_u8L("Save as") + " ...")->callbacks().action = [this]()
+    {
+        if (m_callbacks.save_as)
+            m_callbacks.save_as();
+    };
+
+    m_warning =
+        filename_wrap->emplace_back<LayoutButton>("", Render::Icon::WarningMarker, "Some warning");
     m_warning->set_self_align(YGAlignFlexStart);
-    m_warning->set_min_size(Vec2f{ 20.f,20.f });
+    m_warning->set_min_size(Vec2f{20.f, 20.f});
     m_warning->set_visible(false);
 
     add_separator(content());
 
-    add_row_with_spin_double(
+    // TEMPORARY workaround >> This part of code have to be changed after fix the SPE-3734
+    Rectangle* preview_bg = content()->emplace_back<Rectangle>();
+    preview_bg->set_orientation(Orientation::Vertical);
+    preview_bg->set_flex_shrink(0.f);
+    preview_bg->set_flex_grow(0.5f);
+    preview_bg->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
+    preview_bg->set_padding(10.f);
+    preview_bg->set_justify_content(YGJustifyCenter);
+    preview_bg->set_align_items(YGAlignCenter);
+
+    m_preview = preview_bg->emplace_back<Icon>(Render::Icon::None);
+    m_preview->set_min_size(Vec2f{20.f, 20.f});
+    m_preview->set_width(
+        240.f - padding.horizontal() // from m_layout_right_column->set_min_size({240, YGUndefined});
+    );
+    m_preview->set_tint(ImColor(0, 0, 0));
+    m_preview->set_flex_grow(1.f);
+    m_preview->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+    // << 
+
+    Item* settings_panet = add_non_shrinked_wrap(content(), Orientation::Vertical, gap_size());
+
+    auto add_dummy_item = [btns_sz](Item* parent)
+    { parent->emplace_back<Item>()->set_min_size(btns_sz); };
+
+    Item* depth_wrap = add_row_with_spin_double(
         _u8L("Depth"),
-        content(),
+        settings_panet,
         &m_depth,
         _u8L("mm"),
         "", // no revert button
@@ -89,11 +143,12 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
         if (m_callbacks.depth_changed)
             m_callbacks.depth_changed(std::stod(m_depth->text()));
     };
-    std::string no_revert;
+    add_dummy_item(depth_wrap);
+    add_dummy_item(depth_wrap);
 
-    add_row_with_spin_double(
+    Item* width_wrap = add_row_with_spin_double(
         _u8L("Width"),
-        content(),
+        settings_panet,
         &m_width,
         _u8L("mm"),
         _u8L("Revert width"),
@@ -107,10 +162,11 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
         if (m_callbacks.size_changed)
             m_callbacks.size_changed(Domain::Vec2d{std::stod(m_width->text()), 0.});
     };
+    add_dummy_item(width_wrap);
 
     auto height = add_row_with_spin_double(
         _u8L("Height"),
-        content(),
+        settings_panet,
         &m_height,
         _u8L("mm"),
         _u8L("Revert height"),
@@ -125,33 +181,41 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
             m_callbacks.size_changed(Domain::Vec2d{0., std::stod(m_height->text())});
     };
 
-    m_lock_size_btn = height->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
-    m_lock_size_btn->set_min_size(Vec2f{ 20.f,20.f });
+    m_lock_size_btn = height->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::Lock
+    ); // Note: for tooltip need externaly set value
+    m_lock_size_btn->set_min_size(btns_sz);
     m_lock_size_btn->set_self_align(YGAlignCenter);
-    m_lock_size_btn->callbacks().checked_changed = [this](bool checked) {
+    m_lock_size_btn->callbacks().checked_changed = [this](bool checked)
+    {
         if (m_callbacks.unlock_size)
             m_callbacks.unlock_size(checked);
         m_lock_size_btn->set_icon(checked ? Render::Icon::Unlock : Render::Icon::Lock);
-        m_lock_size_btn->set_tooltip(checked ? 
-            _u8L("Keep current aspect ration.") : 
-            _u8L("Free size changing."));
+        m_lock_size_btn->set_tooltip(
+            checked ? _u8L("Keep current aspect ration.") : _u8L("Free size changing.")
+        );
     };
-    m_lock_size_btn->set_checkable(false); m_lock_size_btn->set_checkable(true); // set valid tooltip    
+    m_lock_size_btn->set_checkable(false);
+    m_lock_size_btn->set_checkable(true); // set valid tooltip
 
-    m_use_surface = Passthrough{ std::make_unique<ToggleButton>() };
-    m_use_surface->set_tooltip(
-        _u8L("If checked,\n\
-model surface under the text's shape is shift in the embossing direction,\n\
-otherwise text is flat and you have to deal with distance from surface.")
-);
-    m_use_surface->callbacks().checked_changed = [this](bool checked) {
+    Item* surface_panel = add_non_shrinked_wrap(content(), Orientation::Vertical, gap_size());
+
+    m_use_surface_row = add_labeled_row(surface_panel, _u8L("Use Surface"));
+    m_use_surface     = m_use_surface_row->emplace_back<ToggleButton>();
+    m_use_surface->set_tooltip(_u8L(
+        "If checked,\n"
+        "model surface under the text's shape is shift in the embossing direction,\n"
+        "otherwise text is flat and you have to deal with distance from surface."
+    ));
+    m_use_surface->callbacks().checked_changed = [this](bool checked)
+    {
         if (m_callbacks.use_surface_checked)
             m_callbacks.use_surface_checked(checked);
-        };
-    add_row(_u8L("Use Surface"), m_use_surface.release(), content(), no_revert);
+    };
 
     add_row_with_slider(
-        content(),
+        surface_panel,
         &m_surface_distance,
         _u8L("From surface"),
         _u8L("mm"),
@@ -183,10 +247,14 @@ otherwise text is flat and you have to deal with distance from surface.")
             m_callbacks.rotation_changed(value);
     };
 
-    m_lock_rotation_btn = rotation_row->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
-    m_lock_rotation_btn->set_min_size(Vec2f{ 20.f,20.f });
+    m_lock_rotation_btn = rotation_row->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::Lock
+    ); // Note: for tooltip need externaly set value
+    m_lock_rotation_btn->set_min_size(btns_sz);
     m_lock_rotation_btn->set_self_align(YGAlignCenter);
-    m_lock_rotation_btn->callbacks().checked_changed = [this](bool checked) {
+    m_lock_rotation_btn->callbacks().checked_changed = [this](bool checked)
+    {
         if (m_callbacks.unlock_rotation)
             m_callbacks.unlock_rotation(checked);
         m_lock_rotation_btn->set_icon(checked ? Render::Icon::Unlock : Render::Icon::Lock);
@@ -195,43 +263,48 @@ otherwise text is flat and you have to deal with distance from surface.")
                       _u8L("Free move above surface (can rotate around emboss axe).")
         );
     };
-    m_lock_rotation_btn->set_checkable(false); m_lock_rotation_btn->set_checkable(true); // set valid tooltip
+    m_lock_rotation_btn->set_checkable(false);
+    m_lock_rotation_btn->set_checkable(true); // set valid tooltip
 
-    m_mirror_x = Passthrough{ std::make_unique<LayoutButton>("", Render::Icon::ReflectionX) };
-    m_mirror_x->set_min_size(Vec2f{ 30.f, 20.f });
-    m_mirror_x->callbacks().action = [this]() {
+    Item* mirror_row = add_labeled_row(content(), _u8L("Mirror"));
+    m_mirror_x       = mirror_row->emplace_back<LayoutButton>("", Render::Icon::ReflectionX);
+    m_mirror_x->set_min_size(Vec2f{30.f, 20.f});
+    m_mirror_x->callbacks().action = [this]()
+    {
         if (m_callbacks.mirror_x)
             m_callbacks.mirror_x();
     };
-    Item* mirror_row = add_row(_u8L("Mirror"), m_mirror_x.release(), content(), no_revert);
     m_mirror_y = mirror_row->emplace_back<LayoutButton>("", Render::Icon::ReflectionY);
-    m_mirror_y->set_min_size(Vec2f{ 30.f, 20.f });
-    m_mirror_y->callbacks().action = [this]() {
+    m_mirror_y->set_min_size(Vec2f{30.f, 20.f});
+    m_mirror_y->callbacks().action = [this]()
+    {
         if (m_callbacks.mirror_y)
             m_callbacks.mirror_y();
     };
     mirror_row->set_visible(false); // Temporary hide mirror until mirror in PS will be ready
-    
-    m_face_the_camera_btn = content()->emplace_back<LayoutButton>(
-        _u8L("Face the camera")
-    );
-    m_face_the_camera_btn->set_background_color({ 43, 43, 43 });
-    m_face_the_camera_btn->callbacks().action = [this]() {
+
+    m_face_the_camera_btn = content()->emplace_back<LayoutButton>(_u8L("Face the camera"));
+    m_face_the_camera_btn->set_flex_shrink(0.f);
+    m_face_the_camera_btn->callbacks().action = [this]()
+    {
         if (m_callbacks.face_the_camera)
             m_callbacks.face_the_camera();
     };
-
-    add_separator(content());
 
     // operation
     add_part_specific_panel();
 
     // update limits
-    update_units(true); update_units(false);
-    update_angle(false); update_angle(true);
+    update_units(true);
+    update_units(false);
+    update_angle(false);
+    update_angle(true);
 }
 
-SvgDialog::Callbacks& SvgDialog::callbacks() { return m_callbacks; }
+SvgDialog::Callbacks& SvgDialog::callbacks()
+{
+    return m_callbacks;
+}
 
 void SvgDialog::set_warning(const std::string& warning)
 {
@@ -245,18 +318,49 @@ static double round_1(double value)
     return std::round(value * 10.0) / 10.0;
 };
 
-void SvgDialog::set_filename(const std::string& filename) { m_filename->set_text(filename); }
-void SvgDialog::set_enable_reload_from_disk(bool enable) { m_reload->set_visible(enable); }
-void SvgDialog::set_size(const Domain::Vec2d& size, const Domain::Vec2d& size_original) {
+namespace {
+
+std::string get_filename(const Domain::EmbossShape::SvgFile& svg)
+{
+    if (svg.path.empty() && svg.path_in_3mf.empty()) {
+        return std::string("--" + _u8L("unknown") + "--");
+    }
+
+    const std::string& path = svg.path.empty() ? svg.path_in_3mf : svg.path;
+    return boost::filesystem::path(path).filename().string();
+}
+
+} // namespace
+
+void SvgDialog::set_shape(const Domain::EmbossShape& shape)
+{
+    m_filename->set_text(get_filename(*shape.svg_file));
+    if (shape.svg_file) {
+        m_preview->set_image(shape.svg_file->path);
+    }
+}
+
+void SvgDialog::set_enable_reload_from_disk(bool enable)
+{
+    m_reload->set_visible(enable);
+}
+
+void SvgDialog::set_size(const Domain::Vec2d& size, const Domain::Vec2d& size_original)
+{
     m_width->set_text(fmt::format("{:.1f}", size.x()));
     m_width->set_default(round_1(size_original.x()));
     m_height->set_text(fmt::format("{:.1f}", size.y()));
     m_height->set_default(round_1(size_original.y()));
 }
-void SvgDialog::set_size_lock(bool lock) { m_lock_size_btn->set_checked(lock); }
+
+void SvgDialog::set_size_lock(bool lock)
+{
+    m_lock_size_btn->set_checked(lock);
+}
 
 namespace {
-std::vector<std::string> get_operation_names() {
+std::vector<std::string> get_operation_names()
+{
     // NOTE: odred must match to function to_type
     return {
         _u8L("Join with object"), // index 0
@@ -265,101 +369,57 @@ std::vector<std::string> get_operation_names() {
     };
 }
 
-Domain::ModelVolumeType to_type(size_t operation_index) {
+Domain::ModelVolumeType to_type(size_t operation_index)
+{
     switch (operation_index) {
-    case 0: return Domain::ModelVolumeType::MODEL_PART;
-    case 1: return Domain::ModelVolumeType::NEGATIVE_VOLUME;
-    case 2: return Domain::ModelVolumeType::PARAMETER_MODIFIER;
+    case 0:
+        return Domain::ModelVolumeType::MODEL_PART;
+    case 1:
+        return Domain::ModelVolumeType::NEGATIVE_VOLUME;
+    case 2:
+        return Domain::ModelVolumeType::PARAMETER_MODIFIER;
     // should not appear
-    default:return Domain::ModelVolumeType::MODEL_PART;
+    default:
+        return Domain::ModelVolumeType::MODEL_PART;
     }
 }
-int to_operation_index(Domain::ModelVolumeType type) {
+
+int to_operation_index(Domain::ModelVolumeType type)
+{
     switch (type) {
-    case Domain::ModelVolumeType::MODEL_PART: return 0;
-    case Domain::ModelVolumeType::NEGATIVE_VOLUME: return 1;
-    case Domain::ModelVolumeType::PARAMETER_MODIFIER: return 2;
+    case Domain::ModelVolumeType::MODEL_PART:
+        return 0;
+    case Domain::ModelVolumeType::NEGATIVE_VOLUME:
+        return 1;
+    case Domain::ModelVolumeType::PARAMETER_MODIFIER:
+        return 2;
     // should not appear
-    default: return 0;
+    default:
+        return 0;
     }
 }
-}
+} // namespace
 
 void SvgDialog::add_part_specific_panel()
 {
-    m_part_specific_panel = content()->emplace_back<Item>();
-    m_part_specific_panel->set_debug_border(m_set_debug);
-    m_part_specific_panel->set_orientation(Orientation::Vertical);
-    m_part_specific_panel->set_gap(gap_size());
+    m_part_specific_panel =
+        add_non_shrinked_wrap(content(), Orientation::Vertical, content()->gap());
     add_separator(m_part_specific_panel);
-    m_operation = Passthrough(std::make_unique<ComboBox>(get_operation_names()));
-    m_operation->callbacks().selection_changed = [this](int index) {
+
+    add_row_with_combo_box(_u8L("Operation"), m_part_specific_panel, &m_operation);
+    m_operation->set_items(get_operation_names());
+    m_operation->callbacks().selection_changed = [this](int index)
+    {
         if (m_callbacks.operation_selection_changed)
             m_callbacks.operation_selection_changed(to_type(index));
     };
-    add_row(_u8L("Operation"), m_operation.release(), m_part_specific_panel);
 
     m_part_specific_panel->set_visible(false);
 }
 
-void SvgDialog::set_operation(Domain::ModelVolumeType type){
-    m_operation->set_current_index(to_operation_index(type));
-}
-
-Item* SvgDialog::add_row(
-    const std::string& title,
-    Yoga::ItemPtr control,
-    Yoga::Item* parent,
-    const std::string& revert_tooltip,
-    const std::string& unit
-)
+void SvgDialog::set_operation(Domain::ModelVolumeType type)
 {
-    Item* row = parent->emplace_back<Item>();
-    row->set_debug_border(m_set_debug);
-    row->set_gap(3);
-
-    Text* text = row->emplace_back<Text>(title);
-    text->set_width_percent(25);
-    text->set_self_align(YGAlignCenter);
-    text->set_debug_border(m_set_debug);
-
-    if (!revert_tooltip.empty()) {
-        Item* revert_space = row->emplace_back<Item>();
-        revert_space->set_justify_content(YGJustifyFlexEnd);
-        LayoutButton* revert = revert_space->emplace_back<LayoutButton>(
-            "",
-            Render::Icon::DSRevert,
-            revert_tooltip
-        );
-        revert->set_self_align(YGAlignCenter);
-        revert->set_min_size(Vec2f{ 20.f,20.f });
-        revert->set_visible(false);
-        // set revert button fot control
-        if (RevertableControl* revertable_control = dynamic_cast<RevertableControl*>(control.get()))
-            revertable_control->set_revert_button(revert);
-    }
-
-    Item* box = row->emplace_back<Item>();
-    box->set_debug_border(m_set_debug);
-    box->set_width_percent(65);
-    box->set_gap(gap_size());
-    control->set_flex_grow(1);
-    control->set_debug_border(m_set_debug);
-    box->append(std::move(control));
-
-    if (!unit.empty()) {
-        Text* unit_text{nullptr};
-        unit_text = box->emplace_back<Text>(unit);
-        if (unit == "mm") {
-            // Means that unit will be changed in respect to the "use_inches" app_config option
-            // so, add it to the m_units vector
-            m_units.emplace_back(unit_text);
-        }
-        unit_text->set_self_align(YGAlignCenter);
-        return box;
-    }
-
-    return row;
+    m_operation->set_current_index(to_operation_index(type));
 }
 
 void SvgDialog::show_part_specific_panel(bool show)
@@ -372,7 +432,7 @@ void SvgDialog::update_units(bool use_inch)
     if (use_inch == m_use_inch)
         return;
 
-    m_use_inch = use_inch;
+    m_use_inch            = use_inch;
     std::string unit_text = use_inch ? _u8L("in") : _u8L("mm");
     for (Text* unit : m_units) {
         unit->set_text(unit_text);
@@ -381,11 +441,12 @@ void SvgDialog::update_units(bool use_inch)
     if (use_inch) {
         set_spin_limits(m_depth, .005, 4., .005, .05);
     } else {
-        set_spin_limits(m_depth, .1, 100., .1, 1.);    
+        set_spin_limits(m_depth, .1, 100., .1, 1.);
     }
 }
 
-void SvgDialog::update_angle(bool use_deg) {
+void SvgDialog::update_angle(bool use_deg)
+{
     if (m_use_deg == use_deg)
         return; // already setted
     m_use_deg = use_deg;
@@ -416,7 +477,8 @@ void SvgDialog::set_surface_distance(double distance_in_mm, double max_distance_
     }
 
     // use N steps from zero to be able set to zero
-    max_distance_in_mm = std::ceil(max_distance_in_mm / SURFACE_DISTANCE_STEP) * SURFACE_DISTANCE_STEP;
+    max_distance_in_mm =
+        std::ceil(max_distance_in_mm / SURFACE_DISTANCE_STEP) * SURFACE_DISTANCE_STEP;
 
     m_surface_distance->set_begin_value(-max_distance_in_mm);
     m_surface_distance->set_end_value(max_distance_in_mm);
@@ -427,7 +489,7 @@ void SvgDialog::set_surface_distance(double distance_in_mm, double max_distance_
 void SvgDialog::set_rotation(double angle_in_rad)
 {
     if (m_use_deg)
-        angle_in_rad *= RAD_TO_DEG;    
+        angle_in_rad *= RAD_TO_DEG;
     m_rotation->set_value(angle_in_rad);
     m_rotation->set_default(0.); // To show revert button
 }
@@ -437,16 +499,9 @@ void SvgDialog::set_rotation_lock(bool lock)
     m_lock_rotation_btn->set_checked(lock);
 }
 
-namespace {
-void enable_row_with_control(Item* control, bool enable)
-{
-    control->parent_item()->parent_item()->set_enabled(enable);
-}
-} // namespace
-
 void SvgDialog::set_enable_use_surface(bool enable)
 {
-    enable_row_with_control(m_use_surface.get(), enable);
+    m_use_surface_row->set_enabled(enable);
 }
 
 void SvgDialog::set_enable_surface_distance(bool enable)

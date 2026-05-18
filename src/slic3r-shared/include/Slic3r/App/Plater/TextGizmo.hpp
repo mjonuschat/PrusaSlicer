@@ -32,6 +32,7 @@ class TextDialog;
 class TextGizmo :
     public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::Scene::ISceneChangedListener,
     public Scene::IMouseDrag, // surface dragging
     public Scene::IThumbnailRenderListener
 {
@@ -82,7 +83,15 @@ public:
     /**
      * @name Implementation of ISceneSelectionChangedListener interface
      */
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+
+    void on_volume_mesh_changed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    ) override;
 
     /**
      *  @brief Set type for the next created text volume
@@ -100,6 +109,10 @@ private:
     bool add_text_to_scene(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
+    void update_from_selected_elements(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& selected_elements
+    );
     void close();
     void rotate(double absolut_angle_in_rad); // callback on_rotation_change
 

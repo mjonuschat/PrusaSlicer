@@ -20,9 +20,10 @@ class SvgDialog;
 /**
  *  @brief   Tool for emboss scalable vector graphics '*.svg' files
  */
-class SvgGizmo : 
+class SvgGizmo :
     public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::Scene::ISceneChangedListener,
     public Scene::IMouseDrag // surface dragging
 {
 public:
@@ -64,11 +65,23 @@ public:
     /**
      * @name Implementation of ISceneSelectionChangedListener interface
      */
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+
+    void on_volume_mesh_changed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    ) override;
 
 private:
     // Call every time when param of emboss change
     bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
+    void update_from_selected_elements(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& selected_elements
+    );
     void close();
 
     PlaterScenePresenter& m_scene_presenter;
@@ -80,7 +93,12 @@ private:
     // m_projects use pimpl to hide ProjectContext into cpp file
     std::unique_ptr<Biz::ProjectScoped<ProjectContext>> m_proj_ctxs;
 
-    SvgDialog& dialog() { ASSERT(m_dialog != nullptr); return *m_dialog; }
+    SvgDialog& dialog()
+    {
+        ASSERT(m_dialog != nullptr);
+        return *m_dialog;
+    }
+
     SvgDialog* m_dialog = nullptr;
 };
 } // namespace Slic3r::App::Plater

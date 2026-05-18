@@ -11,6 +11,8 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
+#include "Slic3r/App/Yoga/ComboBox.hpp"
+#include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
@@ -52,6 +54,7 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
         header_icon->set_width(20);
         header_icon->set_height(20);
         header_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+        header_icon->set_flex_shrink(0.f);
     } else {
         buttons_rect->set_padding(Paddings{24, dialog_padding, dialog_padding, dialog_padding});
     }
@@ -198,6 +201,15 @@ Item* GizmoWindow::add_flex_shrinked_wrap(Item* parent)
     return wrap;
 }
 
+Item* GizmoWindow::add_non_shrinked_wrap(Item* parent, Orientation orientation, float gap)
+{
+    Item* wrap = parent->emplace_back<Item>();
+    wrap->set_orientation(orientation);
+    wrap->set_flex_shrink(0.f);
+    wrap->set_gap(gap);
+    return wrap;
+}
+
 LayoutButton* GizmoWindow::add_revert_btn(Item* parent, const std::string& tooltip)
 {
     Item* revert_space = parent->emplace_back<Item>();
@@ -214,6 +226,7 @@ Item* GizmoWindow::add_labeled_row(Item* parent, const std::string& label)
 {
     Item* labeled_row = parent->emplace_back<Item>();
     labeled_row->set_gap(10);
+    labeled_row->set_flex_shrink(0.f);
 
     Text* text = labeled_row->emplace_back<Text>(label);
     text->set_width(m_label_width);
@@ -289,17 +302,59 @@ Item* GizmoWindow::add_row_with_slider(
     const std::string& revert_tooltip
 )
 {
-    Text* header = parent->emplace_back<Text>(name);
+    Item* wrap = add_non_shrinked_wrap(parent, Orientation::Vertical, gap_size());
+
+    Text* header = wrap->emplace_back<Text>(name);
     header->set_font_type(Render::ImguiFontType::Bold);
     header->set_margin(Margins(0, 5, 0, 0));
 
-    Item* line_wrap = parent->emplace_back<Item>();
+    Item* line_wrap = wrap->emplace_back<Item>();
+    line_wrap->set_flex_shrink(0.f);
 
     (*slider) = line_wrap->emplace_back<SliderWithInput>(unit);
 
     (*slider)->set_flex_grow(1.f);
     (*slider)->set_revert_button(add_revert_btn(line_wrap, revert_tooltip));
     return line_wrap;
+}
+
+Item* GizmoWindow::add_row_with_combo_box(
+    const std::string& title,
+    Item* parent,
+    ComboBox** combo,
+    const std::string& revert_tooltip
+)
+{
+    Item* row           = add_labeled_row(parent, title);
+    Item* wrap_row_item = add_flex_shrinked_wrap(row);
+
+    (*combo) = wrap_row_item->emplace_back<ComboBox>(title);
+
+    if (!revert_tooltip.empty()) {
+        (*combo)->set_revert_button(add_revert_btn(wrap_row_item, revert_tooltip));
+    }
+    (*combo)->set_flex_grow(1.f);
+
+    return row;
+}
+
+Item* GizmoWindow::add_row_with_toggle_button(
+    const std::string& title,
+    Item* parent,
+    Yoga::ToggleButton** toggle,
+    const std::string& revert_tooltip
+)
+{
+    Item* row           = add_labeled_row(parent, title);
+    Item* wrap_row_item = add_flex_shrinked_wrap(row);
+
+    (*toggle) = wrap_row_item->emplace_back<ToggleButton>();
+
+    if (!revert_tooltip.empty()) {
+        (*toggle)->set_revert_button(add_revert_btn(wrap_row_item, revert_tooltip));
+    }
+
+    return row;
 }
 
 void GizmoWindow::set_warning(const std::string& title, const std::string& text)

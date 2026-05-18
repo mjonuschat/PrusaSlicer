@@ -1010,9 +1010,10 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         {
             l->on_volume_removed(project_id, removed_ids);
             l->on_volume_added(project_id, updated_ids);
+            l->on_volume_mesh_changed(project_id, updated_ids);
         }
     );
-    
+
     set_object_selection({SelectionMode::Volume, updated_ids});
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated_ids);
     for (const auto& bed_ref : changes.updated_beds)
