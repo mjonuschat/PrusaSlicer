@@ -1847,6 +1847,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
          {int(GCodeFlavor::gcfMakerWare), "makerware", L("MakerWare (MakerBot)")},
          {int(GCodeFlavor::gcfMarlinLegacy), "marlin", L("Marlin (legacy)")},
          {int(GCodeFlavor::gcfMarlinFirmware), "marlin2", L("Marlin 2")},
+         {int(GCodeFlavor::gcfPrusaFirmwareBuddy), "prusabuddy", L("Prusa Firmware (Buddy)")},
          {int(GCodeFlavor::gcfKlipper), "klipper", L("Klipper")},
          {int(GCodeFlavor::gcfSailfish), "sailfish", L("Sailfish (MakerBot)")},
          {int(GCodeFlavor::gcfMach3), "mach3", L("Mach3/LinuxCNC")},

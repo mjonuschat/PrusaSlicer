@@ -61,7 +61,7 @@ enum class ErrorCode
     LayerExceedsHeight, // format(_u8L("While the object %1% itself fits the build volume, its last layer exceeds the maximum build volume height."), print_object.model_object()->name) + " " + _u8L("You might want to reduce the size of your model or change current print settings and retry.")
     VariableLayerHeightAndOrganicSupports, // _u8L("Variable layer height is not supported with Organic supports.")
     WipeTowerDifferentExtruderDiameters, // _u8L("The wipe tower is only supported if all extruders use filaments of the same diameter.")
-    WipeTowerGCodeFlavor, // _u8L("The Wipe Tower is currently only supported for the Marlin, Klipper, RepRap/Sprinter, RepRapFirmware and Repetier G-code flavors.")
+    WipeTowerGCodeFlavor, // _u8L("The Wipe Tower is currently only supported for the Marlin, PrusaBuddy, Klipper, RepRap/Sprinter, RepRapFirmware and Repetier G-code flavors.")
     WipeTowerAbsoluteDistances, // _u8L("The Wipe Tower is currently only supported with the relative extruder addressing (use_relative_e_distances=1).")
     WipeTowerOozePreventionSingleExtruderMultiMaterial, // _u8L("Ooze prevention is only supported with the wipe tower when 'single_extruder_multi_material' is off.")
     WipeTowerVolumetricE, // _u8L("The Wipe Tower currently does not support volumetric E (use_volumetric_e=0).")

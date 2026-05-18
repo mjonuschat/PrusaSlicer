@@ -736,6 +736,7 @@ DONE:;
             && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepetier
             && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinLegacy
             && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinFirmware
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfPrusaFirmwareBuddy
             && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfKlipper)
         {
             errors.push_back(Error{ErrorCode::WipeTowerGCodeFlavor, {"gcode_flavor"}});
@@ -1070,7 +1071,8 @@ DONE:;
         if (m_config.get<bool>("use_relative_e_distances")) {
             // See GH issues #6336 #5073
             if ((m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy
-                 || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware)
+                 || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware
+                 || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfPrusaFirmwareBuddy)
                 && !before_layer_gcode_resets_extruder
                 && !layer_gcode_resets_extruder)
             {

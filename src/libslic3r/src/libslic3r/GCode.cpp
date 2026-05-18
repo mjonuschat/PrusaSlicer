@@ -632,12 +632,14 @@ namespace DoExport {
             processor_config.extra_loading_move = float(config.get<double>("extra_loading_move"));
         }
 
-        if ((processor_config.flavor == GCodeFlavor::gcfMarlinLegacy ||
-             processor_config.flavor == GCodeFlavor::gcfMarlinFirmware ||
-             processor_config.flavor == GCodeFlavor::gcfRepRapFirmware ||
-             processor_config.flavor == GCodeFlavor::gcfKlipper) &&
-            config.get<Domain::MachineLimitsUsage>("machine_limits_usage") != Domain::MachineLimitsUsage::Ignore) {
-
+        if ((processor_config.flavor == GCodeFlavor::gcfMarlinLegacy
+             || processor_config.flavor == GCodeFlavor::gcfMarlinFirmware
+             || processor_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+             || processor_config.flavor == GCodeFlavor::gcfRepRapFirmware
+             || processor_config.flavor == GCodeFlavor::gcfKlipper)
+            && config.get<Domain::MachineLimitsUsage>("machine_limits_usage")
+                != Domain::MachineLimitsUsage::Ignore)
+        {
             processor_config.machine_limits = convert(config);
 
             if (processor_config.flavor == GCodeFlavor::gcfMarlinLegacy || processor_config.flavor == GCodeFlavor::gcfKlipper) {
@@ -654,9 +656,15 @@ namespace DoExport {
             processor_config.machine_limits.usage = MachineLimitsUsageType::Ignore;
 
         // No Klipper here, it does not support silent mode.
-        if (processor_config.flavor == GCodeFlavor::gcfMarlinLegacy || processor_config.flavor == GCodeFlavor::gcfMarlinFirmware) {
-            if (config.get<bool>("silent_mode") && processor_config.machine_limits.max_acceleration_x.size() > 1)
+        if (processor_config.flavor == GCodeFlavor::gcfMarlinLegacy
+            || processor_config.flavor == GCodeFlavor::gcfMarlinFirmware
+            || processor_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        {
+            if (config.get<bool>("silent_mode")
+                && processor_config.machine_limits.max_acceleration_x.size() > 1)
+            {
                 processor_config.stealth_time_estimator_enabled = true;
+            }
         }
 
         // Filament load / unload times are not specific to a firmware flavor. Let anybody use it if they find it useful.
@@ -1387,7 +1395,11 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
                 bbox_prime = BB::inflated(bbox_prime, 0.5f);
                 bool overlap = bbox_prime.overlap(bbox_print);
 
-                if (print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) {
+                const GCodeFlavor flavor = print.config().get<GCodeFlavor>("gcode_flavor");
+                if (flavor == GCodeFlavor::gcfMarlinLegacy
+                    || flavor == GCodeFlavor::gcfMarlinFirmware
+                    || flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+                {
                     file.write(this->retract_and_wipe(retract_speed, travel_speed));
                     file.write("M300 S800 P500\n"); // Beep for 500ms, tone 800Hz.
                     if (overlap) {
@@ -1861,8 +1873,13 @@ static bool custom_gcode_sets_temperature(const std::string &gcode, const int mc
 void GCodeGenerator::print_machine_envelope(GCodeOutputStream &file, const Print &print)
 {
     const GCodeFlavor flavor = print.config().get<GCodeFlavor>("gcode_flavor");
-    if ( (flavor == GCodeFlavor::gcfMarlinLegacy || flavor == GCodeFlavor::gcfMarlinFirmware || flavor == GCodeFlavor::gcfRepRapFirmware)
-     && print.config().get<Domain::MachineLimitsUsage>("machine_limits_usage") == Domain::MachineLimitsUsage::EmitToGCode) {
+    if ((flavor == GCodeFlavor::gcfMarlinLegacy
+         || flavor == GCodeFlavor::gcfMarlinFirmware
+         || flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+         || flavor == GCodeFlavor::gcfRepRapFirmware)
+        && print.config().get<Domain::MachineLimitsUsage>("machine_limits_usage")
+            == Domain::MachineLimitsUsage::EmitToGCode)
+    {
         int factor = flavor == GCodeFlavor::gcfRepRapFirmware ? 60 : 1; // RRF M203 and M566 are in mm/min
         file.write_format("M201 X%d Y%d Z%d E%d ; sets maximum accelerations, mm/sec^2\n",
             int(print.config().get<std::vector<double>>("machine_max_acceleration_x").front() + 0.5),
@@ -1877,24 +1894,27 @@ void GCodeGenerator::print_machine_envelope(GCodeOutputStream &file, const Print
             factor == 60 ? "mm / min" : "mm / sec");
 
         // Now M204 - acceleration. This one is quite hairy...
-        if (flavor == GCodeFlavor::gcfRepRapFirmware)
+        if (flavor == GCodeFlavor::gcfRepRapFirmware) {
             // Uses M204 P[print] T[travel]
             file.write_format("M204 P%d T%d ; sets acceleration (P, T), mm/sec^2\n",
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_extruding").front() + 0.5),
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_travel").front() + 0.5));
-        else if (flavor == GCodeFlavor::gcfMarlinLegacy)
+        } else if (flavor == GCodeFlavor::gcfMarlinLegacy) {
             // Legacy Marlin uses M204 S[print] T[retract]
             file.write_format("M204 S%d T%d ; sets acceleration (S) and retract acceleration (R), mm/sec^2\n",
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_extruding").front() + 0.5),
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_retracting").front() + 0.5));
-        else if (flavor == GCodeFlavor::gcfMarlinFirmware)
+        } else if (flavor == GCodeFlavor::gcfMarlinFirmware
+                   || flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        {
             // New Marlin uses M204 P[print] R[retract] T[travel]
             file.write_format("M204 P%d R%d T%d ; sets acceleration (P, T) and retract acceleration (R), mm/sec^2\n",
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_extruding").front() + 0.5),
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_retracting").front() + 0.5),
                 int(print.config().get<std::vector<double>>("machine_max_acceleration_travel").front() + 0.5));
-        else
+        } else {
             assert(false);
+        }
 
         assert(is_decimal_separator_point());
         file.write_format(flavor == GCodeFlavor::gcfRepRapFirmware
@@ -1905,7 +1925,9 @@ void GCodeGenerator::print_machine_envelope(GCodeOutputStream &file, const Print
             print.config().get<std::vector<double>>("machine_max_jerk_z").front() * factor,
             print.config().get<std::vector<double>>("machine_max_jerk_e").front() * factor);
 
-        if (flavor == GCodeFlavor::gcfMarlinFirmware) {
+        if (flavor == GCodeFlavor::gcfMarlinFirmware
+            || flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        {
             // New Marlin uses M205 J[mm] for junction deviation (only apply if it is > 0)
             file.write_format(writer().set_junction_deviation(print.config().get<std::vector<double>>("machine_max_junction_deviation").front()).c_str());
         }

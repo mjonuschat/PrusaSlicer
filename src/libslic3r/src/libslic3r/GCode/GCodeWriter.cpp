@@ -39,6 +39,7 @@ using Slic3r::Domain::GCodeFlavor::gcfTeacup;
 using Slic3r::Domain::GCodeFlavor::gcfMakerWare;
 using Slic3r::Domain::GCodeFlavor::gcfMarlinLegacy;
 using Slic3r::Domain::GCodeFlavor::gcfMarlinFirmware;
+using Slic3r::Domain::GCodeFlavor::gcfPrusaFirmwareBuddy;
 using Slic3r::Domain::GCodeFlavor::gcfKlipper;
 using Slic3r::Domain::GCodeFlavor::gcfSailfish;
 using Slic3r::Domain::GCodeFlavor::gcfMach3;
@@ -89,14 +90,15 @@ std::string GCodeWriter::preamble()
         gcode << "G21 ; set units to millimeters\n";
         gcode << "G90 ; use absolute coordinates\n";
     }
-    if (FLAVOR_IS(gcfRepRapSprinter) ||
-        FLAVOR_IS(gcfRepRapFirmware) ||
-        FLAVOR_IS(gcfMarlinLegacy) ||
-        FLAVOR_IS(gcfMarlinFirmware) ||
-        FLAVOR_IS(gcfKlipper) ||
-        FLAVOR_IS(gcfTeacup) ||
-        FLAVOR_IS(gcfRepetier) ||
-        FLAVOR_IS(gcfSmoothie))
+    if (FLAVOR_IS(gcfRepRapSprinter)
+        || FLAVOR_IS(gcfRepRapFirmware)
+        || FLAVOR_IS(gcfMarlinLegacy)
+        || FLAVOR_IS(gcfMarlinFirmware)
+        || FLAVOR_IS(gcfPrusaFirmwareBuddy)
+        || FLAVOR_IS(gcfKlipper)
+        || FLAVOR_IS(gcfTeacup)
+        || FLAVOR_IS(gcfRepetier)
+        || FLAVOR_IS(gcfSmoothie))
     {
         if (this->config.use_relative_e_distances) {
             gcode << "M83 ; use relative distances for extrusion\n";
@@ -232,14 +234,18 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
         return {};
     
     last_value = acceleration;
-    
+
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfRepetier))
+    if (FLAVOR_IS(gcfRepetier)) {
         gcode << (separate_travel ? "M202 X" : "M201 X") << acceleration << " Y" << acceleration;
-    else if (FLAVOR_IS(gcfRepRapFirmware) || FLAVOR_IS(gcfMarlinFirmware))
+    } else if (FLAVOR_IS(gcfRepRapFirmware)
+               || FLAVOR_IS(gcfMarlinFirmware)
+               || FLAVOR_IS(gcfPrusaFirmwareBuddy))
+    {
         gcode << (separate_travel ? "M204 T" : "M204 P") << acceleration;
-    else
+    } else {
         gcode << "M204 S" << acceleration;
+    }
 
     if (this->config.gcode_comments) gcode << " ; adjust acceleration";
     gcode << "\n";
@@ -250,7 +256,10 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
 std::string GCodeWriter::set_junction_deviation(const double junction_deviation)
 {
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfMarlinFirmware) && junction_deviation > 0. && config.max_junction_deviation > 0.) {
+    if ((FLAVOR_IS(gcfMarlinFirmware) || FLAVOR_IS(gcfPrusaFirmwareBuddy))
+        && junction_deviation > 0.
+        && config.max_junction_deviation > 0.)
+    {
         // Clamp the junction deviation to the allowed maximum.
         gcode << "M205 J";
         if (junction_deviation <= config.max_junction_deviation) {
@@ -633,12 +642,19 @@ std::string GCodeWriter::set_pressure_advance(const double pressure_advance, con
 
     std::ostringstream gcode;
     switch (gcode_flavor) {
+    case gcfPrusaFirmwareBuddy:
+        gcode << "M572 S" << pressure_advance << "\n";
+        break;
     case gcfMarlinFirmware: {
+        // Prusa printers used to share gcfMarlinFirmware before the dedicated
+        // gcfPrusaFirmwareBuddy flavor was introduced. Keep emitting M572 for them so that older
+        // profiles that still use gcfMarlinFirmware don't break.
         if (vendor_id == "PrusaResearch") {
             gcode << "M572 S" << pressure_advance << "\n";
         } else {
             gcode << "M900 K" << pressure_advance << "\n";
         }
+
         break;
     }
     case gcfMarlinLegacy:

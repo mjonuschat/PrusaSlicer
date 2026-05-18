@@ -68,8 +68,10 @@ float convert(float value, UnitsType value_units, UnitsType desired_units)
 bool supports_separate_travel_acceleration(GCodeFlavor flavor)
 {
     return (
-        flavor == GCodeFlavor::gcfRepetier || flavor == GCodeFlavor::gcfMarlinFirmware ||
-        flavor == GCodeFlavor::gcfRepRapFirmware
+        flavor == GCodeFlavor::gcfRepetier
+        || flavor == GCodeFlavor::gcfMarlinFirmware
+        || flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+        || flavor == GCodeFlavor::gcfRepRapFirmware
     );
 }
 

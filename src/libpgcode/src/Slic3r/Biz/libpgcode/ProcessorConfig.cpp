@@ -359,6 +359,7 @@ GCodeFlavor flavor_from_string(std::string_view str)
     else if (str == "makerware"sv)      { return GCodeFlavor::gcfMakerWare; }
     else if (str == "marlin"sv)         { return GCodeFlavor::gcfMarlinLegacy; }
     else if (str == "marlin2"sv)        { return GCodeFlavor::gcfMarlinFirmware; }
+    else if (str == "prusabuddy"sv)     { return GCodeFlavor::gcfPrusaFirmwareBuddy; }
     else if (str == "klipper"sv)        { return GCodeFlavor::gcfKlipper; }
     else if (str == "sailfish"sv)       { return GCodeFlavor::gcfSailfish; }
     else if (str == "smoothie"sv)       { return GCodeFlavor::gcfSmoothie; }
@@ -536,6 +537,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
     if (machine_limits.usage != MachineLimitsUsageType::Ignore &&
         (ret.flavor == GCodeFlavor::gcfMarlinLegacy ||
          ret.flavor == GCodeFlavor::gcfMarlinFirmware ||
+         ret.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy ||
          ret.flavor == GCodeFlavor::gcfRepRapFirmware ||
          ret.flavor == GCodeFlavor::gcfKlipper)) {
         ret.machine_limits = std::move(machine_limits);
@@ -567,9 +569,14 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
     }
 
     // No Klipper here, it does not support silent mode.
-    if (has_silent_mode && (ret.flavor == GCodeFlavor::gcfMarlinLegacy || ret.flavor == GCodeFlavor::gcfMarlinFirmware) &&
-        ret.machine_limits.max_acceleration_x.size() > 1) 
+    if (has_silent_mode
+        && (ret.flavor == GCodeFlavor::gcfMarlinLegacy
+            || ret.flavor == GCodeFlavor::gcfMarlinFirmware
+            || ret.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        && ret.machine_limits.max_acceleration_x.size() > 1)
+    {
         ret.stealth_time_estimator_enabled = true;
+    }
 
     if (boost::algorithm::contains(printer_notes, "PRINTER_VENDOR_PRUSA3D") &&
         boost::algorithm::contains(printer_notes, "PRINTER_MODEL_XL"))
