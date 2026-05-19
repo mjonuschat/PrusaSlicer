@@ -4,6 +4,7 @@
 #include <functional>
 #include <cstddef>
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -22,7 +23,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/tuple.hpp>
-#include <boost/spirit/include/qi.hpp>
+#include <charconv>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <magic_enum/magic_enum.hpp>
@@ -32,8 +33,13 @@
 
 #if defined(SLIC3R_YAML_LIBFYAML)
 #include "YamlAdapterLibfyaml.hpp"
+#include "fast_float.h"
 #elif defined(SLIC3R_YAML_YAMLCPP)
 #include "YamlAdapterYamlCpp.hpp"
+#include "fast_float.h"
+#elif defined(SLIC3R_YAML_RYML)
+#include "YamlAdapterRyml.hpp"
+#include <c4/charconv.hpp>  // provides fast_float::from_chars
 #else
 #error "No YAML library selected"
 #endif
@@ -44,6 +50,8 @@ namespace Slic3r::Biz::Yaml {
 using YamlAdapter = Libfyaml::YamlAdapterLibfyaml;
 #elif defined(SLIC3R_YAML_YAMLCPP)
 using YamlAdapter = YamlCpp::YamlAdapterYamlCpp;
+#elif defined(SLIC3R_YAML_RYML)
+using YamlAdapter = Ryml::YamlAdapterRyml;
 #else
 #error "No YAML library selected"
 #endif
@@ -84,24 +92,31 @@ void parse_all_documents_in_string(
 
 namespace Details {
 
+// Only called at actual throw sites — NOT in ParseErrorDesc constructor.
 inline std::string describe_node(const YamlAdapter::NodeRef& node)
 {
     auto mark = YamlAdapter::mark(node);
-    return fmt::format("[file: {}:{}:{}]", node.file, mark.line, mark.column);
+    return fmt::format("[file: {}:{}:{}]", mark.file, mark.line, mark.column);
+}
+
+inline std::string format_error(const Details::Mark& mark, std::string_view message)
+{
+    return fmt::format("[file: {}:{}:{}]: {}", mark.file, mark.line, mark.column, message);
 }
 
 } // namespace Details
 
+// ParseErrorDesc stores the raw Mark (file is a string_view into ParserData::file,
+// valid for the entire parsing call stack) and defers fmt::format to the throw site.
+// This avoids ~13 fmt::format calls per PresetValue probe that are immediately discarded.
 struct ParseErrorDesc
 {
-    const Details::Mark mark;
-    const std::string node_description;
-    const std::string message;
+    Details::Mark mark;
+    std::string   message;
 
-    ParseErrorDesc(const YamlAdapter::NodeRef& node, std::string message) :
-        mark(YamlAdapter::mark(node)),
-        node_description(Details::describe_node(node)),
-        message(std::move(message))
+    ParseErrorDesc(const YamlAdapter::NodeRef& node, std::string message)
+        : mark{YamlAdapter::mark(node)}
+        , message{std::move(message)}
     {}
 };
 
@@ -116,7 +131,7 @@ struct ParseError : std::runtime_error
     {}
 
     explicit ParseError(const ParseErrorDesc& desc) :
-        std::runtime_error(desc.node_description + ": " + desc.message)
+        std::runtime_error(Details::format_error(desc.mark, desc.message))
     {}
 
     ParseError(const ParseError&) = default;
@@ -249,17 +264,22 @@ struct TypeTraits<bool>
     }
 };
 
-template <typename T, typename P>
-Result<T> parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
+template <typename T>
+Result<T> parse_with_from_chars(const YamlAdapter::NodeRef& node)
 {
     auto value = get_node_scalar(node);
     if (!value.has_value())
         return ResultError{value.error()};
     T ret;
-    namespace qi = boost::spirit::qi;
-    auto it      = std::cbegin(*value);
-    if (!qi::parse(it, std::cend(*value), parser, ret) || it != std::cend(*value))
-        return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    if constexpr (std::is_floating_point_v<T>) {
+        auto r = fast_float::from_chars(value->data(), value->data() + value->size(), ret);
+        if (r.ec != std::errc{} || r.ptr != value->data() + value->size())
+            return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    } else {
+        auto [pend, ec] = std::from_chars(value->data(), value->data() + value->size(), ret);
+        if (ec != std::errc{} || pend != value->data() + value->size())
+            return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(), *value)}};
+    }
     return ret;
 }
 
@@ -269,31 +289,31 @@ YamlAdapter::NodeRef serialize_via_to_string(T val)
     return YamlAdapter::create_scalar_node(std::to_string(val));
 }
 
-#define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)                     \
+#define TYPE_TRAITS_WITH_FROM_CHARS_PARSE(T)                    \
 template <>                                                     \
 struct TypeTraits<T>                                            \
 {                                                               \
     static Result<T> parse(const YamlAdapter::NodeRef& node)    \
     {                                                           \
-        return parse_with_spirit<T>(node, P);                   \
+        return parse_with_from_chars<T>(node);                  \
     }                                                           \
-    static std::optional<YamlAdapter::NodeRef> serialize(T val)                \
+    static std::optional<YamlAdapter::NodeRef> serialize(T val) \
     {                                                           \
         return serialize_via_to_string(val);                    \
     }                                                           \
 };
 
-TYPE_TRAITS_WITH_SPIRIT_PARSE(float, boost::spirit::qi::float_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(double, boost::spirit::qi::double_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint8_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint16_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint32_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(uint64_t, boost::spirit::qi::uint_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int8_t, boost::spirit::qi::int_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int16_t, boost::spirit::qi::int_);
-TYPE_TRAITS_WITH_SPIRIT_PARSE(int32_t, boost::spirit::qi::int_);
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(float)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(double)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint8_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint16_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint32_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(uint64_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int8_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int16_t)
+TYPE_TRAITS_WITH_FROM_CHARS_PARSE(int32_t)
 
-#undef TYPE_TRAITS_WITH_SPIRIT_PARSE
+#undef TYPE_TRAITS_WITH_FROM_CHARS_PARSE
 
 template <>
 struct TypeTraits<std::string>
@@ -350,15 +370,16 @@ struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
     static Result<std::vector<T>> parse(const YamlAdapter::NodeRef& node)
     {
         YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Sequence));
-        const size_t n = YamlAdapter::sequence_item_count(node);
         std::vector<T> ret;
-        ret.reserve(n);
-        for (size_t i = 0; i < n; ++i) {
-            Result<T> element = TypeTraits<T>::parse(YamlAdapter::sequence_item_at(node, i));
-            if (!element.has_value())
-                return ResultError{element.error()};
-            ret.push_back(*element);
-        }
+        ret.reserve(YamlAdapter::sequence_item_count(node));
+        std::optional<ParseErrorDesc> parse_error;
+        YamlAdapter::for_each_sequence_item(node, [&](const YamlAdapter::NodeRef& item) {
+            if (parse_error) return;
+            Result<T> element = TypeTraits<T>::parse(item);
+            if (!element.has_value()) { parse_error.emplace(element.error()); return; }
+            ret.push_back(std::move(*element));
+        });
+        if (parse_error) return ResultError{std::move(*parse_error)};
         return ret;
     }
 
@@ -380,21 +401,30 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
     static Result<std::map<K, V>> parse(const YamlAdapter::NodeRef& node)
     {
         YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Mapping));
-        const size_t n = YamlAdapter::mapping_item_count(node);
         std::map<K, V> ret;
-        for (size_t i = 0; i < n; ++i) {
-            auto kv_pair    = YamlAdapter::mapping_key_value_at(node, i);
-            auto key_node   = YamlAdapter::key(kv_pair, node);
-            auto value_node = YamlAdapter::value(kv_pair, node);
-
-            Result<K> key = TypeTraits<K>::parse(key_node);
-            if (!key.has_value())
-                return ResultError{key.error()};
-            Result<V> value = TypeTraits<V>::parse(value_node);
-            if (!value.has_value())
-                return ResultError{value.error()};
-            ret.emplace(std::move(*key), std::move(*value));
-        }
+        std::optional<ParseErrorDesc> parse_error;
+        YamlAdapter::for_each_mapping_item(
+            node,
+            [&](const YamlAdapter::KeyValuePair& kv_pair)
+            {
+                if (parse_error)
+                    return;
+                auto key_node   = YamlAdapter::key(kv_pair, node);
+                auto value_node = YamlAdapter::value(kv_pair, node);
+                Result<K> key   = TypeTraits<K>::parse(key_node);
+                if (!key.has_value()) {
+                    parse_error.emplace(key.error());
+                    return;
+                }
+                Result<V> value = TypeTraits<V>::parse(value_node);
+                if (!value.has_value()) {
+                    parse_error.emplace(value.error());
+                    return;
+                }
+                ret.emplace(std::move(*key), std::move(*value));
+            }
+        );
+        if (parse_error) return ResultError{std::move(*parse_error)};
         return ret;
     }
 
@@ -404,6 +434,52 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
         for (const auto& [k, v] : val) {
             auto kn = TypeTraits<K>::serialize(k);
             auto vn = TypeTraits<V>::serialize(v);
+            ASSERT(kn.has_value() && vn.has_value());
+            YamlAdapter::mapping_append(node, kn.value(), vn.value());
+        }
+        return node;
+    }
+};
+
+// unordered_map: O(1) average insert instead of O(log N) tree insert.
+// Serialises with sorted keys so YAML output remains deterministic (important
+// for diffs of user presets).
+template <typename K, typename V>
+struct TypeTraits<std::unordered_map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && HasTypeTraits<V>::value>>
+{
+    static Result<std::unordered_map<K, V>> parse(const YamlAdapter::NodeRef& node)
+    {
+        YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Mapping));
+        std::unordered_map<K, V> ret;
+        ret.reserve(YamlAdapter::mapping_item_count(node));
+        std::optional<ParseErrorDesc> parse_error;
+        YamlAdapter::for_each_mapping_item(node, [&](const YamlAdapter::KeyValuePair& kv_pair) {
+            if (parse_error) return;
+            auto key_node   = YamlAdapter::key(kv_pair, node);
+            auto value_node = YamlAdapter::value(kv_pair, node);
+            Result<K> key = TypeTraits<K>::parse(key_node);
+            if (!key.has_value()) { parse_error.emplace(key.error()); return; }
+            Result<V> value = TypeTraits<V>::parse(value_node);
+            if (!value.has_value()) { parse_error.emplace(value.error()); return; }
+            ret.emplace(std::move(*key), std::move(*value));
+        });
+        if (parse_error) return ResultError{std::move(*parse_error)};
+        return ret;
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const std::unordered_map<K, V>& val)
+    {
+        // Collect and sort keys so YAML output is deterministic across runs.
+        std::vector<const K*> keys;
+        keys.reserve(val.size());
+        for (const auto& [k, _] : val)
+            keys.push_back(&k);
+        std::sort(keys.begin(), keys.end(), [](const K* a, const K* b) { return *a < *b; });
+
+        auto node = YamlAdapter::create_mapping_node();
+        for (const K* k : keys) {
+            auto kn = TypeTraits<K>::serialize(*k);
+            auto vn = TypeTraits<V>::serialize(val.at(*k));
             ASSERT(kn.has_value() && vn.has_value());
             YamlAdapter::mapping_append(node, kn.value(), vn.value());
         }
@@ -827,8 +903,9 @@ template <typename T>
 typename Details::StructTraits<T>::Type parse_struct_unwrap(const YamlAdapter::Document& doc)
 {
     auto ret = parse_struct<T>(doc);
-    if (!ret.has_value())
+    if (!ret.has_value()) {
         throw ParseError(ret.error());
+    }
     return ret.value();
 }
 

@@ -37,7 +37,9 @@ T safe_get(const Value& v, const char* op_name)
 
 struct Evaluator : boost::static_visitor<Value>
 {
-    Evaluator(const ValueMap& vars, const FuncMap& funcs) : m_vars(vars), m_functions(funcs) {}
+    Evaluator(const ValueMap& base_vars, const ValueMap& extra_vars, const FuncMap& funcs)
+        : m_base_vars(base_vars), m_extra_vars(extra_vars), m_functions(funcs)
+    {}
 
     Value operator()(const std::string& v) const
     {
@@ -122,8 +124,11 @@ struct Evaluator : boost::static_visitor<Value>
 
     Value operator()(const VarRef& v) const
     {
-        auto it = m_vars.find(v.name);
-        if (it == m_vars.end())
+        auto it = m_extra_vars.find(v.name);
+        if (it != m_extra_vars.end())
+            return it->second;
+        it = m_base_vars.find(v.name);
+        if (it == m_base_vars.end())
             throw EvalError(fmt::format("Unknown variable '{}'", v.name));
         return it->second;
     }
@@ -140,7 +145,8 @@ struct Evaluator : boost::static_visitor<Value>
     }
 
 private:
-    const ValueMap& m_vars;
+    const ValueMap& m_base_vars;
+    const ValueMap& m_extra_vars;
     const FuncMap& m_functions;
 };
 
@@ -162,18 +168,16 @@ std::string to_string(const Value& v)
 
 Value Eval::eval(const Expr& expr, const ValueMap& extra_vars) const
 {
-    ValueMap vars = m_vars;
-    for (const auto& [k, v] : extra_vars)
-        vars[k] = v;
-
-    Evaluator evaluator(vars, m_functions);
+    Evaluator evaluator(m_vars, extra_vars, m_functions);
     auto ret = boost::apply_visitor(evaluator, expr);
 
     if (m_debug_output != nullptr) {
         m_debug_output(fmt::format("Evaluating expression: '{}'  with result {}", to_string(expr), to_string(ret)));
         m_debug_output(fmt::format("Variables:"));
-        for (const auto& [k, v] : vars)
+        for (const auto& [k, v] : m_vars)
             m_debug_output(fmt::format("\t{}: {}", k, to_string(v)));
+        for (const auto& [k, v] : extra_vars)
+            m_debug_output(fmt::format("\t{} (extra): {}", k, to_string(v)));
     }
 
     return ret;

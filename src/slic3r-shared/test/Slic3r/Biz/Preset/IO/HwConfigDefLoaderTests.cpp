@@ -1,3 +1,4 @@
+#include <iostream>
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"

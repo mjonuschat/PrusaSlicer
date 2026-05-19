@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
+#include "Slic3r/Biz/Expr/Simplify.hpp"
 
 #include "boost/filesystem/path.hpp"
 
@@ -14,7 +15,7 @@ using KeySet = std::set<std::string>;
 
 namespace Details {
 
-Domain::Expr::ExprAst and_chain_exprs(const Domain::Preset::Expressions& exprs);
+Domain::Expr::ExprAst and_chain_exprs(const std::vector<std::string>& exprs);
 Domain::Preset::PresetValueMap
 config_box_to_values(const Domain::ConfigBox& cfg, const KeySet& items_to_omit);
 
@@ -44,7 +45,10 @@ Domain::Preset::RootPresetNode transform_for_saving(
         main.unconditional_inherits = {std::get<std::string>(it->second)};
     }
 
-    main.condition = SourceLocatedExpr{Details::and_chain_exprs(source.conditions)};
+    main.condition = Domain::Preset::ParsedExpr{
+        SourceLocatedExpr{Expr::simplify(Details::and_chain_exprs(source.conditions))}
+    };
+    main.condition.value().expr_str = Domain::Expr::to_string(*main.condition.value().expr);
     main.id = source.id;
     main.name = source.name;
     main.features = source.features;

@@ -3,6 +3,7 @@
 #include <vector>
 #include <optional>
 #include <map>
+#include <unordered_map>
 #include <utility>
 
 namespace Slic3r::Domain {
@@ -35,6 +36,10 @@ struct is_std_map : std::false_type
 
 template<typename Key, typename T, typename Compare, typename Allocator>
 struct is_std_map<std::map<Key, T, Compare, Allocator>> : std::true_type
+{};
+
+template<typename Key, typename T, typename Hash, typename KeyEq, typename Allocator>
+struct is_std_map<std::unordered_map<Key, T, Hash, KeyEq, Allocator>> : std::true_type
 {};
 
 template<typename T>

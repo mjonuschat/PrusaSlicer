@@ -13,8 +13,6 @@
 
 namespace Slic3r::Domain::Preset {
 
-using Expressions = std::vector<Expr::ExprAst>;
-
 template <typename T>
 concept ConfigBoxLike = std::is_base_of_v<ConfigBox, T>;
 
@@ -27,7 +25,7 @@ struct EvaluatedPresetMetadata
     std::string root_id;
     std::string id;
     std::string name;
-    Expressions conditions;
+    std::vector<std::string> conditions;
 };
 
 template <ConfigBoxLike ConfigFdmType, ConfigBoxLikeOrMonostate ConfigSlaType>
@@ -45,7 +43,7 @@ struct EvaluatedPreset
     std::string name;
     PresetValues values;
     FeatureValueMap features;
-    Expressions conditions;
+    std::vector<std::string> conditions;
     SourceLocation last_node_location;
 
     bool has_same_values(const EvaluatedPreset& rhs) const

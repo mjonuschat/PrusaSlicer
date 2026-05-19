@@ -483,6 +483,12 @@ void serialize(Archive& archive, Slic3r::Domain::Preset::SourceLocated<T>& locat
 }
 
 template <class Archive>
+void serialize(Archive& archive, Slic3r::Domain::Preset::ParsedExpr& parsed_expr)
+{
+    archive(parsed_expr.expr, parsed_expr.expr_str);
+}
+
+template <class Archive>
 void serialize(Archive& archive, Slic3r::Domain::EmbossProjection& value)
 {
     archive(value.depth, value.use_surface);

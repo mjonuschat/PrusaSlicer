@@ -47,7 +47,8 @@ else ()
     message(STATUS "Disabling sentry")
 endif ()
 
-set(SLIC3R_YAML yaml-cpp CACHE STRING "YAML library to use (allowed: libfyaml, yaml-cpp)")
+set(SLIC3R_YAML ryml CACHE STRING "YAML library to use (allowed: libfyaml, yaml-cpp, ryml)")
+option(SLIC3R_DEBUG_PRESET_CACHE "In Debug build cache loading of preset bundle" ON)
 
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules/)

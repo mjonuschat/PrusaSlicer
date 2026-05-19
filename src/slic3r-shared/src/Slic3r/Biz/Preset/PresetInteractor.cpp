@@ -119,7 +119,7 @@ void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bu
 void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
 {
     std::optional<Domain::Preset::Bundle> preset_bundle_opt;
-#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL
+#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL && SLIC3R_DEBUG_PRESET_CACHE
     namespace fs = boost::filesystem;
     const std::string bundle_cache_filename = fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
     preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, bundle_paths, Slic3r::VERSION);
@@ -171,7 +171,7 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
         for (const auto& vendor_id : preset_bundle.vendor_bundles | std::views::keys) {
             update_vendor_presets(mut, preset_bundle, vendor_id);
         }
-#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL
+#if !defined(NDEBUG) && !DEBUG_CONDITION_EVAL && SLIC3R_DEBUG_PRESET_CACHE
         IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, bundle_paths, Slic3r::VERSION);
 #endif
     }

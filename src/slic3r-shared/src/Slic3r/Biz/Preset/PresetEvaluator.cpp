@@ -1,6 +1,5 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include <fmt/ranges.h>
-#include "Slic3r/Biz/Expr/Simplify.hpp"
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "Slic3r/Uuid.hpp"
@@ -299,10 +298,14 @@ template <typename ConfigType>
     requires std::is_base_of_v<Domain::ConfigBox, ConfigType>
 ConfigType config_values(
     const Domain::Preset::HwPrinterConfig& hw_config,
-    const Domain::Preset::PresetValueMap& values
+    const EvalPresetValueMap& values
 )
 {
-    ConfigType config;
+    // Constructing ConfigType from ConfigDefinitions iterates all definitions and is
+    // expensive. Use a prototype constructed once per type; cloning it is a cheap
+    // vector copy that avoids the definition scan on every preset.
+    static const ConfigType s_proto;
+    ConfigType config = s_proto;
     for (const auto& [k, v] : values) {
         const auto q = config.find(k);
         if (q.item == nullptr) {
@@ -347,7 +350,7 @@ ConfigType config_values(
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
     const Domain::Preset::HwPrinterConfig& hw_config,
-    const Domain::Preset::PresetValueMap& values
+    const EvalPresetValueMap& values
 )
 {
     if (hw_config.technology == Domain::PrinterTechnology::FFF) {
@@ -397,13 +400,13 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     const EvalPresetContext& context
 )
 {
-    Domain::Preset::Expressions conditions;
+    std::vector<std::string> conditions;
     if (!context.conditions.empty()) {
-        // simplify
-        std::ranges::transform(context.conditions, std::back_inserter(conditions), Expr::simplify);
+        std::ranges::transform(context.conditions, std::back_inserter(conditions),
+            [](const std::string* p) { return *p; });
 
         // remove duplicates
-        auto to_remove = std::ranges::unique(conditions, Domain::Expr::equals_to);
+        auto to_remove = std::ranges::unique(conditions);
         conditions.erase(std::ranges::begin(to_remove), std::ranges::end(to_remove));
     }
 
@@ -420,15 +423,15 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     };
 }
 
-PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const EvalPresetContexts& presets)
+PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(EvalPresetContexts presets)
 {
     EvalPresetContexts ret;
 
-    for (const auto& p : presets) {
+    for (auto& p : presets) {
         const bool is_unique =
             std::ranges::none_of(ret, [&p](const auto& other) { return p.has_same_values(other); });
         if (is_unique) {
-            ret.emplace_back(p);
+            ret.emplace_back(std::move(p));
         }
     }
     return ret;
@@ -438,9 +441,8 @@ void PresetEvaluator::build_named_presets()
 {
     m_preset_ids.clear();
     for (const auto& [kind, presets] : m_presets)
-        for (const auto& p : presets) {
+        for (const auto& p : presets)
             collect_preset_ids(kind, p, {&p});
-        }
 }
 
 void PresetEvaluator::collect_preset_ids(

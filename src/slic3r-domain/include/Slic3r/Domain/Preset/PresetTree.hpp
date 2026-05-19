@@ -1,11 +1,12 @@
 #pragma once
 
 #include <optional>
+#include <unordered_map>
 #include <vector>
 #include <set>
 
 #include "Slic3r/Domain/Preset/Types.hpp"
-#include "Slic3r/Domain/Preset/SourceLocatedExpr.hpp"
+#include "Slic3r/Domain/Preset/ParsedExpr.hpp"
 
 namespace Slic3r::Domain::Preset {
 
@@ -27,7 +28,7 @@ struct PresetNode
     std::optional<std::string> name;
     std::vector<std::string> inherits;
     std::vector<std::string> unconditional_inherits;
-    std::optional<SourceLocatedExpr> condition;
+    std::optional<ParsedExpr> condition;
     std::optional<ConditionMatchMode> match_mode;
     PresetValueMap values;
     FeatureValueMap features;
@@ -49,7 +50,7 @@ using Presets = std::vector<RootPresetNode>;
 using PresetCollection = std::map<PresetKind, Presets>;
 
 using PresetNodePath = std::vector<const PresetNode*>;
-using IdentifiedPresets = std::map<std::string, PresetNodePath>;
+using IdentifiedPresets = std::unordered_map<std::string, PresetNodePath>;
 using IdentifiedPresetsCollection = std::map<PresetKind, IdentifiedPresets>;
 
 struct PresetName

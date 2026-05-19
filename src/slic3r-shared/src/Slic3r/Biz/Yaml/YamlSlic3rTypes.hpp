@@ -5,6 +5,7 @@
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Biz/Expr/Parser.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
+#include "Slic3r/Biz/Expr/Simplify.hpp"
 
 namespace Slic3r::Biz::Yaml::Details {
 
@@ -42,7 +43,7 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocation>
     static Result<SourceLocation> parse(const YamlAdapter::NodeRef& node)
     {
         auto mark = YamlAdapter::mark(node);
-        return Slic3r::Domain::Preset::SourceLocation{std::string{node.file}, mark.line, mark.column};
+        return Slic3r::Domain::Preset::SourceLocation{std::string{mark.file}, mark.line, mark.column};
     }
 
     static std::optional<YamlAdapter::NodeRef> serialize(const SourceLocation&)
@@ -78,14 +79,39 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocated<T>>
 };
 
 template <>
+struct TypeTraits<Slic3r::Domain::Preset::ParsedExpr>
+{
+    using Expr          = Domain::Expr::ExprAst;
+    using SourceLocated = Slic3r::Domain::Preset::SourceLocated<Domain::Expr::ExprAst>;
+
+    static Result<Slic3r::Domain::Preset::ParsedExpr> parse(const YamlAdapter::NodeRef& node)
+    {
+        auto data = TypeTraits<SourceLocated>::parse(node);
+        if (!data.has_value())
+            return ResultError(data.error());
+
+        data.value().value = Slic3r::Biz::Expr::simplify(data.value().value);
+
+        std::string expr_str = Domain::Expr::to_string(data.value().value);
+
+        return Slic3r::Domain::Preset::ParsedExpr{std::move(data.value()), std::move(expr_str)};
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(
+        const Slic3r::Domain::Preset::ParsedExpr& v
+    )
+    {
+        return TypeTraits<SourceLocated>::serialize(v.expr);
+    }
+};
+
+template <>
 struct TypeTraits<Slic3r::Domain::Vec2d>
 {
     using Vec2d = Slic3r::Domain::Vec2d;
 
     static Result<Vec2d> parse(const YamlAdapter::NodeRef& node)
     {
-        namespace qi = boost::spirit::qi;
-
         Vec2d ret;
 
         auto node_value = get_node_scalar(node);
@@ -96,15 +122,11 @@ struct TypeTraits<Slic3r::Domain::Vec2d>
         if (pos == std::string::npos)
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value '{}'", value)));
 
-        auto it = std::cbegin(value);
-        // parse first coordinate
-        if (!qi::parse(it, std::cbegin(value) + pos, qi::double_, ret.x())
-            || it != std::cbegin(value) + pos)
+        auto r1 = fast_float::from_chars(value.data(), value.data() + pos, ret.x());
+        if (r1.ec != std::errc{} || r1.ptr != value.data() + pos)
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
-        // skip the 'x' marker
-        ++it;
-        // parse second coordinate
-        if (!qi::parse(it, std::cend(value), qi::double_, ret.y()) || it != std::cend(value))
+        auto r2 = fast_float::from_chars(value.data() + pos + 1, value.data() + value.size(), ret.y());
+        if (r2.ec != std::errc{} || r2.ptr != value.data() + value.size())
             return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
 
         return ret;
@@ -123,8 +145,6 @@ struct TypeTraits<Slic3r::Domain::Percentage>
 
     static Result<Percentage> parse(const YamlAdapter::NodeRef& node)
     {
-        namespace qi = boost::spirit::qi;
-
         Percentage ret;
 
         auto node_value = get_node_scalar(node);
@@ -137,7 +157,8 @@ struct TypeTraits<Slic3r::Domain::Percentage>
             return std::isspace(c);
         });
         if (valid) {
-            valid = qi::parse(value.cbegin(), value.cbegin() + pos, qi::double_, ret.value);
+            auto r = fast_float::from_chars(value.data(), value.data() + pos, ret.value);
+            valid  = (r.ec == std::errc{} && r.ptr == value.data() + pos);
         }
 
         if (!valid)
@@ -190,15 +211,15 @@ struct TypeTraits<Domain::JsonArray>
     {
         YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Sequence));
         JsonArray ret;
-        const size_t n = YamlAdapter::sequence_item_count(node);
-        ret.reserve(n);
-        for (size_t i = 0; i < n; ++i) {
-            auto node_ref = YamlAdapter::sequence_item_at(node, i);
-            auto parsed_value = parse_json_value(node_ref);
-            if (!parsed_value.has_value())
-                return unexpected{parsed_value.error()};
-            ret.push_back(parsed_value.value());
-        }
+        ret.reserve(YamlAdapter::sequence_item_count(node));
+        std::optional<ParseErrorDesc> parse_error;
+        YamlAdapter::for_each_sequence_item(node, [&](const YamlAdapter::NodeRef& item) {
+            if (parse_error) return;
+            auto parsed_value = parse_json_value(item);
+            if (!parsed_value.has_value()) { parse_error.emplace(parsed_value.error()); return; }
+            ret.push_back(std::move(parsed_value.value()));
+        });
+        if (parse_error) return ResultError{std::move(*parse_error)};
         return ret;
     }
 
@@ -223,18 +244,16 @@ struct TypeTraits<Domain::JsonObject>
     {
         YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Mapping));
         JsonObject ret;
-        const size_t n = YamlAdapter::mapping_item_count(node);
-        for (size_t i = 0; i < n; ++i) {
-            auto key_value_pair = YamlAdapter::mapping_key_value_at(node, i);
-            YamlAdapter::NodeRef value_ref = YamlAdapter::value(key_value_pair, node);
-            auto parsed_value = parse_json_value(value_ref);
-            if (!parsed_value.has_value())
-                return unexpected{parsed_value.error()};
-            auto parsed_key = TypeTraits<std::string>::parse(YamlAdapter::key(key_value_pair, node));
-            if (!parsed_key.has_value())
-                return unexpected{parsed_key.error()};
-            ret.emplace(std::make_pair(parsed_key.value(), parsed_value.value()));
-        }
+        std::optional<ParseErrorDesc> parse_error;
+        YamlAdapter::for_each_mapping_item(node, [&](const YamlAdapter::KeyValuePair& kv_pair) {
+            if (parse_error) return;
+            auto parsed_value = parse_json_value(YamlAdapter::value(kv_pair, node));
+            if (!parsed_value.has_value()) { parse_error.emplace(parsed_value.error()); return; }
+            auto parsed_key = TypeTraits<std::string>::parse(YamlAdapter::key(kv_pair, node));
+            if (!parsed_key.has_value()) { parse_error.emplace(parsed_key.error()); return; }
+            ret.emplace(std::move(*parsed_key), std::move(parsed_value.value()));
+        });
+        if (parse_error) return ResultError{std::move(*parse_error)};
         return ret;
     }
 
@@ -267,5 +286,72 @@ struct TypeTraits<Domain::JsonValue>
     }
 };
 
+
+// ---------------------------------------------------------------------------
+// PresetValue — node-type dispatch
+//
+// The generic parse_variant<PresetValue, all-14-types> tries alternatives left
+// to right, creating (and discarding) a ParseErrorDesc on each mismatch.
+// For a scalar string value that means 13 wasted constructions per entry.
+//
+// This specialisation checks the YAML node type first (one cheap call) and
+// then only attempts the alternatives that can actually match:
+//   Sequence node → try the seven vector types only
+//   Scalar  node  → null → monostate; otherwise try the six scalar types
+//   Mapping node  → error (no mapping alternative in PresetValue)
+//
+// Combined with lazy ParseErrorDesc, the remaining failed probes (≤5 for a
+// scalar string) no longer pay the fmt::format cost either.
+// ---------------------------------------------------------------------------
+template <>
+struct TypeTraits<Domain::Preset::PresetValue>
+{
+    using PresetValue = Domain::Preset::PresetValue;
+    static_assert(std::variant_size_v<PresetValue> == 14,
+        "PresetValue alternatives changed — update the Sequence/Scalar dispatch below");
+
+    static Result<PresetValue> parse(const YamlAdapter::NodeRef& node)
+    {
+        if (node.is_null())
+            return std::monostate{};
+
+        switch (YamlAdapter::node_type(node)) {
+        case NodeType::Sequence:
+            return parse_variant<PresetValue,
+                Domain::Preset::Bools,
+                Domain::Preset::Doubles,
+                Domain::Preset::Ints,
+                Domain::Preset::OptInts,
+                Domain::Preset::FloatOrPercentages,
+                Domain::Vec2ds,
+                Domain::Preset::Strings
+            >(node);
+
+        case NodeType::Scalar:
+            return parse_variant<PresetValue,
+                bool, double, int,
+                Domain::Percentage,
+                Domain::Vec2d,
+                std::string
+            >(node);
+
+        case NodeType::Mapping:
+            return ResultError{ParseErrorDesc{
+                node, "preset value cannot be a YAML mapping"
+            }};
+        }
+        return ResultError{ParseErrorDesc{node, "unknown node type"}};
+    }
+
+    static std::optional<YamlAdapter::NodeRef> serialize(const PresetValue& val)
+    {
+        return std::visit(
+            []<typename T>(const T& v) -> std::optional<YamlAdapter::NodeRef> {
+                return TypeTraits<std::decay_t<T>>::serialize(v);
+            },
+            val
+        );
+    }
+};
 
 } // namespace Slic3r::Biz::Yaml::Details

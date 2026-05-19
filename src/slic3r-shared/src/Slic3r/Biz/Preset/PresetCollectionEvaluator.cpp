@@ -28,7 +28,8 @@ namespace Slic3r::Biz::Preset {
 namespace {
     using namespace Domain::Preset;
 
-    void override_preset_values(PresetValueMap& dest, const PresetValueMap& overrides)
+    template<typename DestMap, typename SrcMap>
+    void override_preset_values(DestMap& dest, const SrcMap& overrides)
     {
         for (const auto& [key, value] : overrides) {
             if (key.starts_with("custom_parameters_")) {
@@ -193,7 +194,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 
     if (!skip_condition_eval
         && node.condition.has_value()
-        && !eval_condition(overrides, expr_combine, node.condition.value()))
+        && !eval_condition(overrides, expr_combine, node.condition.value().expr))
         return {};
 
     PresetEvaluator::EvalPresetContexts ret = parent_contexts;
@@ -258,7 +259,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
              );
         }
         if (node.condition.has_value())
-            context.conditions.push_back(*node.condition.value());
+            context.conditions.push_back(&node.condition.value().expr_str);
         context.last_node_location = node.source_location;
         override_preset_values(context.values, unconditional_inherited_values);
         override_preset_values(context.values, node.values);
@@ -295,7 +296,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 0);
 
             // Condition is not met, continue with next variant
-            if (!eval_condition(overrides, expr_combine, var.condition.value()))
+            if (!eval_condition(overrides, expr_combine, var.condition.value().expr))
                 continue;
         } else if (conditional_variants > 0) {
             // if there was at least one condition case met before
@@ -332,13 +333,17 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     }
 
     if (var_contexts.empty())
-        return PresetEvaluator::merged_same_presets(ret);
+        return PresetEvaluator::merged_same_presets(std::move(ret));
 
     // resolve variants
     PresetEvaluator::EvalPresetContexts product;
-    for (const auto& ctx : ret) {
-        for (const auto& var_ctx : var_contexts) {
-            PresetEvaluator::EvalPresetContext context = ctx;
+    product.reserve(ret.size() * var_contexts.size());
+    for (size_t ci = 0; ci < ret.size(); ++ci) {
+        for (size_t vi = 0; vi < var_contexts.size(); ++vi) {
+            const auto& var_ctx = var_contexts[vi];
+            const bool last_var = (vi + 1 == var_contexts.size());
+            PresetEvaluator::EvalPresetContext context =
+                last_var ? std::move(ret[ci]) : ret[ci];
             if (!var_ctx.id.empty())
                 context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
             if (!var_ctx.name.empty())
@@ -358,7 +363,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         }
     }
 
-    return PresetEvaluator::merged_same_presets(product);
+    return PresetEvaluator::merged_same_presets(std::move(product));
 }
 
 struct BoolCaster

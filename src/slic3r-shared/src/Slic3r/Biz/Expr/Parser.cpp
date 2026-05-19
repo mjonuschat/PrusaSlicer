@@ -234,7 +234,10 @@ struct SourceLocation
 
 ExprAst Parser::parse(std::string_view source)
 {
-    ExprParser<std::string_view::const_iterator> parser;
+    // Grammar construction is expensive; the object is stateless across parses
+    // and qi::phrase_parse never modifies it, so a single static instance is safe
+    // even under TBB parallelism (C++11 guarantees thread-safe static init).
+    static ExprParser<std::string_view::const_iterator> parser;
     ExprAst expr;
     auto start = source.begin();
     bool success = qi::phrase_parse(start, source.end(), parser, ascii::space, expr);
