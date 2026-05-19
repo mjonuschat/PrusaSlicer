@@ -132,7 +132,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
     };
 
     auto on_result{
-        [this, file_path, &report_error](Domain::Project&& project)
+        [this, file_path, report_error](Domain::Project&& project)
         {
             if (project.config_containers().empty() && project.model().objects.empty())
                 return;
@@ -190,7 +190,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         }
     };
 
-    auto on_error{[&](std::exception_ptr eptr)
+    auto on_error{[report_error](std::exception_ptr eptr)
     {
         std::string description = "Unknown error";
         try {
