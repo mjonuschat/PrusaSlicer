@@ -158,7 +158,8 @@ bool BedSelection::select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSe
             return false;
         }
         m_selected_config_container = bed_ref.config_container_id;
-        m_last_selected_bed         = bed_ref;
+        m_selected_beds = {bed_ref};
+        m_last_selected_bed = bed_ref;
         on_change(*this);
         return true;
     }
