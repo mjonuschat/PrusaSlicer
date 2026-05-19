@@ -154,7 +154,9 @@ static void traverse(Object* object, std::function<void(Object* object)> functio
 
 Render::ImguiRender* Item::m_imgui_render = nullptr;
 
- Theme* Object::m_theme = nullptr;
+YGConfigRef Object::m_config = YGConfigNew();
+
+Theme* Object::m_theme = nullptr;
 
 std::unordered_map<std::string, int> Object::m_object_names = {};
 
@@ -376,7 +378,7 @@ std::optional<size_t> Object::index_of(Object* item) const
 
 Item::Item()
 {
-    m_node = YGNodeNew();
+    m_node = YGNodeNewWithConfig(m_config);
 
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
     YGNodeStyleSetDirection(m_node, m_direction);
@@ -845,6 +847,34 @@ void Object::set_theme(Theme* theme)
 {
     m_theme = theme;
 }
+
+void Object::set_scale_factor(float scale_factor)
+{
+    YGConfigSetPointScaleFactor(m_config, scale_factor);
+}
+
+float Object::scale_factor()
+{
+    return YGConfigGetPointScaleFactor(m_config);
+}
+
+float Object::pixel_round(float value)
+{
+    const auto scale = YGConfigGetPointScaleFactor(m_config);
+    return YGRoundValueToPixelGrid(value, scale, false, false);
+}
+
+ImVec2 Object::pixel_round(const ImVec2& value)
+{
+    return {pixel_round(value.x), pixel_round(value.y)};
+}
+
+Vec2f Object::pixel_round(const Vec2f& value)
+{
+    return {pixel_round(value.x()), pixel_round(value.y())};
+}
+
+
 
 void Item::update_children_render_order()
 {

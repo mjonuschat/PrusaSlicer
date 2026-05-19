@@ -127,6 +127,12 @@ public:
 
     static void set_theme(Theme* theme);
 
+    static void set_scale_factor(float scale_factor);
+    static float scale_factor();
+    static float pixel_round(float value);
+    static Vec2f pixel_round(const Vec2f& value);
+    static ImVec2 pixel_round(const ImVec2& value);
+
 private:
     /**
      * @note intentionally private, please use append/prepend/insert
@@ -152,6 +158,7 @@ protected:
     std::vector<ObjectPtr> m_children;
 
     static Theme* m_theme;
+    static YGConfigRef m_config;
 
 private:
     static std::unordered_map<std::string, int> m_object_names;

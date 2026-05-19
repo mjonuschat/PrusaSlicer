@@ -80,6 +80,15 @@ TexturePtr TextureManager::get_or_create_image(
         tex->set_data(img.format(), level, img.width(), img.height(), img.pixels.data(), img.pixels.size());
     }
 
+    tex->set_filtering(
+        images.size() > 1 ? TextureMinFilter::MipMapLinearLinear : TextureMinFilter::Linear,
+        TextureMagFilter::Linear
+    );
+
+    tex->set_wrap_s(TextureWrap::ClampToBorder);
+    tex->set_wrap_r(TextureWrap::ClampToBorder);
+    tex->set_wrap_t(TextureWrap::ClampToBorder);
+
     m_image_sizes[filename] = size;
 
     Size scaled_size = opts.resolve_to_size(size);

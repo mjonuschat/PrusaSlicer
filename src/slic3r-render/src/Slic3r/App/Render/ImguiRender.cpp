@@ -16,8 +16,13 @@ using Slic3r::Domain::SquareMatrix4f;
 
 namespace Slic3r::App::Render {
 
-// Let's assume common/maximal reasonable HiDPI scale is 200%
-constexpr int ICON_SCALE_FACTOR = 2;
+namespace {
+template <typename T>
+T physical_pixel(T logical_pixel, float scale)
+{
+    return std::round(logical_pixel * scale);
+}
+}
 
 ImguiRender::ImguiRender(Device& device) :
     m_device(device),
@@ -44,7 +49,7 @@ TexturePtr ImguiRender::icon_texture(
 {
     return m_device.context().texture_manager().get_or_create_image(
         ImguiIconHelper::icon_path(icon),
-        {max_size * ICON_SCALE_FACTOR, false, true, false, false, replace_strings}
+        {physical_pixel(max_size, m_scale_factor), false, true, false, false, replace_strings}
     );
 }
 
@@ -52,7 +57,7 @@ TexturePtr ImguiRender::image_texture(const std::string& image, int max_size)
 {
     return m_device.context().texture_manager().get_or_create_image(
         image,
-        {max_size * ICON_SCALE_FACTOR, false, true}
+        {physical_pixel(max_size, m_scale_factor), false, true}
     );
 }
 
@@ -65,6 +70,11 @@ void ImguiRender::new_frame()
 void ImguiRender::use_texture(TexturePtr texture)
 {
     m_in_use_textures.push_back(texture);
+}
+
+void ImguiRender::set_scale_factor(float scale)
+{
+    m_scale_factor = scale;
 }
 
 void ImguiRender::init()

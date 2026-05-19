@@ -1370,6 +1370,8 @@ void PlaterRenderModule::on_screen_resized()
     // m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
     auto viewport = Render::Rect::from(0, 0, m_screen_info);
     m_scene_presenter->screen_resized(viewport);
+    Yoga::Object::set_scale_factor(m_screen_info.scale());
+    m_imgui_render->set_scale_factor(m_screen_info.scale());
 }
 
 void PlaterRenderModule::on_selected_project_changed(size_t index)

@@ -46,12 +46,12 @@ void Icon::render(Vec2f pos, Vec2f size)
         update_draw_sizes();
     }
 
-    ImGui::SetCursorScreenPos(to_im(pos));
+    ImGui::SetCursorScreenPos(pixel_round(to_im(pos)));
     if (m_texture) {
         constexpr ImVec2 uv0{0, 0};
         constexpr ImVec2 uv1{1, 1};
 
-        ImGui::SetCursorScreenPos(to_im(pos) + m_offset);
+        ImGui::SetCursorScreenPos(pixel_round(to_im(pos) + m_offset));
         render_image(
             m_texture,
             m_draw_size,
@@ -170,8 +170,8 @@ void Icon::update_draw_sizes()
         m_draw_size.x = size.width;
         m_draw_size.y = size.height;
         if (m_fill_mode == FillMode::PreservedAspectCentered) {
-            m_offset.x = (m_cached_size.x() - size.width) * 0.5f;
-            m_offset.y = (m_cached_size.y() - size.height) * 0.5f;
+            m_offset.x = pixel_round((m_cached_size.x() - size.width) * 0.5f);
+            m_offset.y = pixel_round((m_cached_size.y() - size.height) * 0.5f);
         } else { // FillMode::PreservedAspect
             m_offset.x = 0;
             m_offset.y = 0;

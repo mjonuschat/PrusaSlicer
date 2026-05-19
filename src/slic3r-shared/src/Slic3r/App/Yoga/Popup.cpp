@@ -54,7 +54,7 @@ namespace Slic3r::App::Yoga {
 
 Popup::Popup()
 {
-    m_popup_node = YGNodeNew();
+    m_popup_node = YGNodeNewWithConfig(m_config);
     YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);
 }
 

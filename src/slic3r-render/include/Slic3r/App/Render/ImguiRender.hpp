@@ -47,6 +47,8 @@ public:
      */
     void use_texture(TexturePtr texture);
 
+    void set_scale_factor(float scale);
+
 private:
     void init();
     void setup_state(CommandBuffer& buffer, const ImDrawData* draw_data);
@@ -66,6 +68,7 @@ private:
     Shader* m_shader{nullptr};
     std::list<TexturePtr> m_in_use_textures;
     ImGuiTextureMap m_imgui_dynamic_textures;
+    float m_scale_factor{1};
 };
 
 } // namespace Slic3r::App::Render

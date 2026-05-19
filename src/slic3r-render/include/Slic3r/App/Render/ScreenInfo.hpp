@@ -39,6 +39,8 @@ public:
 
     float mouse_to_screen(float mouse_coord) const { return logical_to_physical(mouse_coord); }
 
+    float scale() const { return m_scale; }
+
     bool operator==(const ScreenInfo& rhs) const
     {
         return m_width == rhs.m_width && m_height == rhs.m_height && m_scale == rhs.m_scale;
