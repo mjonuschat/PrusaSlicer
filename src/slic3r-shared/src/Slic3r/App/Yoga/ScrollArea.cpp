@@ -57,10 +57,13 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
     }
 
     if (!m_children_render_order.empty()) {
-        Item* last_child = m_children_render_order.back();
-        Vec2f cell_pos   = pos + Vec2f(last_child->left(), last_child->top());
-        Vec2f cell_size  = Vec2f(last_child->width(), last_child->height());
-        ImGui::SetCursorScreenPos(to_im(cell_pos + cell_size));
+        Vec2f content_max = {};
+        for (Item* child : m_children_render_order) {
+            content_max.x() = std::max(content_max.x(), child->left() + child->width());
+            content_max.y() = std::max(content_max.y(), child->top() + child->height());
+        }
+        Vec2f padding_end = Vec2f(padding().right, padding().bottom);
+        ImGui::SetCursorScreenPos(to_im(pos + content_max + padding_end));
     }
 
     if (Vec2f new_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
