@@ -170,13 +170,7 @@ public:
 		// Print height of this layer.
 		float print_z,
 		// Layer height, used to calculate extrusion the rate.
-		float layer_height,
-		// Maximum number of tool changes on this layer or the layers below.
-		size_t max_tool_changes,
-		// Is this the first layer of the print? In that case print the brim first. (OBSOLETE)
-		bool /*is_first_layer*/,
-		// Is this the last layer of the waste tower?
-		bool is_last_layer)
+		float layer_height)
 	{
 		m_z_pos 				= print_z;
 		m_layer_height			= layer_height;

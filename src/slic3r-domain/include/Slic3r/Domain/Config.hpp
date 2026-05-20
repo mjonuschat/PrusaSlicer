@@ -125,7 +125,7 @@ public:
 
     std::size_t size() const;
 
-    const bool empty() const;
+    bool empty() const;
 
     std::optional<ConfigItem> get(const std::string& key) const;
 

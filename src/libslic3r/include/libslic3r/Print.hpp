@@ -335,8 +335,8 @@ public:
     const Domain::Vec3crd&       size() const			{ return m_size; }
     const PrintObjectConfigView&     config() const         { return m_config; }
     void                         set_config(const PrintObjectConfigView& config) { m_config = config; }
-    auto                         layers() const         { return SpanOfConstPtrs<Layer>(const_cast<const Layer* const* const>(m_layers.data()), m_layers.size()); }
-    auto                         support_layers() const { return SpanOfConstPtrs<SupportLayer>(const_cast<const SupportLayer* const* const>(m_support_layers.data()), m_support_layers.size()); }
+    auto                         layers() const         { return SpanOfConstPtrs<Layer>(const_cast<const Layer* const*>(m_layers.data()), m_layers.size()); }
+    auto                         support_layers() const { return SpanOfConstPtrs<SupportLayer>(const_cast<const SupportLayer* const*>(m_support_layers.data()), m_support_layers.size()); }
     const Domain::Transform3d&   trafo() const          { return m_trafo; }
     // Trafo with the center_offset() applied after the transformation, to center the object in XY before slicing.
     Domain::Transform3d          trafo_centered() const;
@@ -652,7 +652,7 @@ public:
     }
 
     void set_config(const PrintConfigView& config) { m_config = config; }
-    SpanOfConstPtrs<PrintObject> objects() const { return SpanOfConstPtrs<PrintObject>(const_cast<const PrintObject* const* const>(m_objects.data()), m_objects.size()); }
+    SpanOfConstPtrs<PrintObject> objects() const { return SpanOfConstPtrs<PrintObject>(const_cast<const PrintObject* const*>(m_objects.data()), m_objects.size()); }
     PrintObject*                get_object(size_t idx) { return const_cast<PrintObject*>(m_objects[idx]); }
     const PrintObject*          get_object(size_t idx) const { return m_objects[idx]; }
     const PrintObject* get_print_object_by_model_object_id(Domain::ObjectID object_id) const {

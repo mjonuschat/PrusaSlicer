@@ -32,7 +32,7 @@ public:
 	ColorRGB operator + (const ColorRGB& other) const;
 	ColorRGB operator * (float value) const;
 
-	const float* const data() const { return m_data.data(); }
+	const float* data() const { return m_data.data(); }
 
 	float r() const { return m_data[0]; }
 	float g() const { return m_data[1]; }
@@ -90,7 +90,7 @@ public:
 	ColorRGBA operator + (const ColorRGBA& other) const;
 	ColorRGBA operator * (float value) const;
 
-	const float* const data() const { return m_data.data(); }
+	const float* data() const { return m_data.data(); }
 
 	float r() const { return m_data[0]; }
 	float g() const { return m_data[1]; }

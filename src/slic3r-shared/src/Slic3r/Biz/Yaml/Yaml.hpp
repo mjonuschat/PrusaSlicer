@@ -604,9 +604,8 @@ void validate_field(const typename Field::Type& field_value)
 template <typename S, typename Field, typename = void>
 std::optional<ParseErrorDesc> parse_field(S& s, const YamlAdapter::NodeRef& node)
 {
-    using FT          = typename Field::Type;
-    auto* raw_storage = reinterpret_cast<char*>(&s) + Field::offset;
-    FT& typed_storage = *reinterpret_cast<FT*>(raw_storage);
+    using FT       = typename Field::Type;
+    FT& typed_storage = s.*Field::member_ptr;
     auto val          = parse_field<Field>(node);
     if (!val.has_value())
         return val.error();
@@ -690,9 +689,8 @@ private:
         if (F::name != nullptr) {
             auto key = YamlAdapter::create_scalar_node(F::name);
 
-            using FT                = typename F::Type;
-            const auto* raw_storage = reinterpret_cast<const char*>(&s) + F::offset;
-            const FT& typed_storage = *reinterpret_cast<const FT*>(raw_storage);
+            using FT                  = typename F::Type;
+            const FT& typed_storage = s.*F::member_ptr;
 
             if (!F::has_implicit_value(typed_storage)) {
                 auto value = TypeTraits<FT>::serialize(typed_storage);
@@ -1041,7 +1039,7 @@ struct BOOST_PP_CAT(Field_, BOOST_PP_TUPLE_ELEM(0, elem)) {                     
         BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(0, elem)),                                       \
         BOOST_PP_TUPLE_ELEM(1, elem)                                                            \
     );                                                                                          \
-    static constexpr size_t offset = offsetof(data, BOOST_PP_TUPLE_ELEM(0,elem));               \
+    static constexpr auto member_ptr = &data::BOOST_PP_TUPLE_ELEM(0,elem);                       \
     BOOST_PP_IF(                                                                                \
         BOOST_PP_NOT(BOOST_PP_IS_EMPTY(BOOST_PP_TUPLE_ELEM(2, elem))),                          \
         static Type implicit_value() { return BOOST_PP_TUPLE_ELEM(2, elem); }                   \

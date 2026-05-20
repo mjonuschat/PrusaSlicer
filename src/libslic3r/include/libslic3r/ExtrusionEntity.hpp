@@ -94,9 +94,10 @@ class ExtrusionEntityReference final
 {
 public:
     ExtrusionEntityReference() = delete;
-    ExtrusionEntityReference(const ExtrusionEntity &extrusion_entity, bool flipped) : 
+    ExtrusionEntityReference(const ExtrusionEntity &extrusion_entity, bool flipped) :
         m_extrusion_entity(&extrusion_entity), m_flipped(flipped) {}
-    ExtrusionEntityReference operator=(const ExtrusionEntityReference &rhs) 
+    ExtrusionEntityReference(const ExtrusionEntityReference&) = default;
+    ExtrusionEntityReference operator=(const ExtrusionEntityReference &rhs)
         { m_extrusion_entity = rhs.m_extrusion_entity; m_flipped = rhs.m_flipped; return *this; }
 
     const ExtrusionEntity& extrusion_entity() const { return *m_extrusion_entity; }

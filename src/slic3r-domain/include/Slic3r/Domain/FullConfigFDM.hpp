@@ -29,18 +29,32 @@ public:
         Preset::HwToolConfig tool_config;
 
         Preset::HwPrinterConfig hw_config{
-            .id         = generate_uuid(),
-            .technology = PrinterTechnology::FFF,
-            .tool_count = 1,
-            .tools      = {1, Preset::HwToolConfig{}},
-            .feeders    = {
+            .id                   = generate_uuid(),
+            .printer_id           = {},
+            .legacy_printer_model = {},
+            .vendor_id            = {},
+            .repo_id              = {},
+            .repo_version         = {},
+            .name                 = {},
+            .short_name           = {},
+            .technology           = PrinterTechnology::FFF,
+            .model                = {},
+            .tool_count           = 1,
+            .features             = {},
+            .visual               = {},
+            .tools                = {1, Preset::HwToolConfig{}},
+            .feeders              = {
                 {Preset::Address{0},
                     Preset::HwFeederConfig{
                         .id         = generate_uuid(),
                         .type       = Preset::FeederType::Manual,
-                        .slot_count = 1
+                        .model      = {},
+                        .slot_count = 1,
+                        .features   = {}
                  }}
-            }
+            },
+            .materials = {},
+            .sheet     = {}
         };
 
         return {ConfigPackFDM{}, {0}, hw_config};

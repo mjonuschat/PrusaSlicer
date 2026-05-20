@@ -188,11 +188,11 @@ struct YamlAdapterRyml
     {
         if (node.synthetic) {
             for (const auto& child : std::get<Details::SerializeSeq>(node.synthetic->data).items) {
-                fn(NodeRef{.synthetic = child});
+                fn(NodeRef{.node = {}, .synthetic = child});
             }
         } else {
             for (const ryml::ConstNodeRef child : node.node->children()) {
-                fn(NodeRef{.node = child, .parser_data = node.parser_data});
+                fn(NodeRef{.node = child, .parser_data = node.parser_data, .synthetic = {}});
             }
         }
     }

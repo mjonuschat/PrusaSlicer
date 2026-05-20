@@ -151,9 +151,9 @@ struct EnumWrapper
 
     const std::type_info* type() const;
 
-    const int value() const;
+    int value() const;
 
-    const size_t index_of_value(int value) const;
+    size_t index_of_value(int value) const;
 
     const EnumValueDefs& def() const;
 

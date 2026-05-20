@@ -744,7 +744,7 @@ std::vector<WipeTower::ToolChangeResult> WipeTower::prime(
 	// If false, the last priming are will be large enough to wipe the last extruder sufficiently.
     bool 						/*last_wipe_inside_wipe_tower*/)
 {
-	this->set_layer(first_layer_height, first_layer_height, tools.size(), true, false);
+	this->set_layer(first_layer_height, first_layer_height);
 	m_current_tool 		= tools.front();
     
     // The Prusa i3 MK2 has a working space of [0, -2.2] to [250, 210].
@@ -1652,7 +1652,7 @@ void WipeTower::plan_tower()
 void WipeTower::save_on_last_wipe()
 {
     for (m_layer_info=m_plan.begin();m_layer_info<m_plan.end();++m_layer_info) {
-        set_layer(m_layer_info->z, m_layer_info->height, 0, m_layer_info->z == m_plan.front().z, m_layer_info->z == m_plan.back().z);
+        set_layer(m_layer_info->z, m_layer_info->height);
         if (m_layer_info->tool_changes.size()==0)   // we have no way to save anything on an empty layer
             continue;
 
@@ -1747,7 +1747,7 @@ void WipeTower::generate(std::vector<std::vector<WipeTower::ToolChangeResult>> &
 	for (const WipeTower::WipeTowerInfo& layer : m_plan)
 	{
         std::vector<WipeTower::ToolChangeResult> layer_result;
-        set_layer(layer.z, layer.height, 0, false/*layer.z == m_plan.front().z*/, layer.z == m_plan.back().z);
+        set_layer(layer.z, layer.height);
         m_internal_rotation += 180.f;
 
         if (m_layer_info->depth < m_wipe_tower_depth - m_perimeter_width)

@@ -68,14 +68,14 @@ public:
 	}
 
 	// Index of a segment preceding idx.
-	const size_t 		 segment_idx_prev(size_t idx) const {
+	size_t 		 segment_idx_prev(size_t idx) const {
 		assert(idx < this->num_segments());
 		assert(idx > 0 || ! m_open);
 		return (idx == 0 ? this->size() : idx) - 1;
 	}
 
 	// Index of a segment preceding idx.
-	const size_t 		 segment_idx_next(size_t idx) const {
+	size_t 		 segment_idx_next(size_t idx) const {
 		assert(idx < this->num_segments());
 		++ idx;
 		return m_begin + idx == m_end ? 0 : idx;
@@ -177,9 +177,9 @@ public:
 	bool signed_distance(const Point &pt, coord_t search_radius, double &result_min_dist) const;
 
 	const BoundingBox& 	bbox() const { return m_bbox; }
-	const coord_t 		resolution() const { return m_resolution; }
-	const size_t		rows() const { return m_rows; }
-	const size_t		cols() const { return m_cols; }
+	coord_t 		resolution() const { return m_resolution; }
+	size_t			rows() const { return m_rows; }
+	size_t			cols() const { return m_cols; }
 
 	// For supports: Contours enclosing the rasterized edges.
 	Polygons 			contours_simplified(coord_t offset, bool fill_holes) const;

@@ -93,9 +93,9 @@ void EnumWrapper::set_index(size_t index)
 
 const std::type_info* EnumWrapper::type() const { return m_type; }
 
-const int EnumWrapper::value() const { return m_value; }
+int EnumWrapper::value() const { return m_value; }
 
-const size_t EnumWrapper::index_of_value(int value) const
+size_t EnumWrapper::index_of_value(int value) const
 {
     EnumValueDefs::const_iterator it = std::find_if(
         m_def->cbegin(),

@@ -1803,7 +1803,7 @@ namespace client
         // This function is called during the actual parsing process to skip whitespaces.
         // Also it throws if it encounters valid or invalid UTF-8 sequence.
         template <typename Iterator, typename Context , typename Skipper, typename Attribute>
-        bool parse(Iterator &first, Iterator const &last, Context &context, Skipper const &skipper, Attribute& attr) const
+        bool parse(Iterator &first, Iterator const &last, Context&, Skipper const &skipper, Attribute& attr) const
         { 
             // The skipper shall always be empty, any white space will be accepted.
             // skip_over(first, last, skipper);

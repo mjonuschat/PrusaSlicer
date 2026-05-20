@@ -216,7 +216,7 @@ std::size_t ConfigOverrides::size() const {
     return m_used_overrides.size();
 }
 
-const bool ConfigOverrides::empty() const
+bool ConfigOverrides::empty() const
 {
     return m_used_overrides.empty();
 }
