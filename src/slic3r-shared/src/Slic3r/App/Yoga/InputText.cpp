@@ -127,6 +127,10 @@ void InputText::render(Vec2f pos, Vec2f size)
             ImGui::SetKeyboardFocusHere();
         }
 
+        const bool is_disabled = !enabled();
+        if (is_disabled) {
+            ImGui::BeginDisabled(true);
+        }
         if (!activated && !m_override_label.empty()) {
             // We are overriding hint label
             ImGui::PushStyleColor(ImGuiCol_TextDisabled, text_color);
@@ -136,7 +140,7 @@ void InputText::render(Vec2f pos, Vec2f size)
                 m_override_label.c_str(),
                 &empty,
                 to_im(size),
-                (m_flags | (enabled() ? 0 : ImGuiInputTextFlags_ReadOnly)),
+                m_flags,
                 {},
                 nullptr
             );
@@ -147,10 +151,13 @@ void InputText::render(Vec2f pos, Vec2f size)
                 m_hint.c_str(),
                 &m_text,
                 to_im(size),
-                (m_flags | (enabled() ? 0 : ImGuiInputTextFlags_ReadOnly)),
+                m_flags,
                 {},
                 nullptr
             );
+        }
+        if (is_disabled) {
+            ImGui::EndDisabled();
         }
 
         bool hovered = ImGui::IsItemHovered();
