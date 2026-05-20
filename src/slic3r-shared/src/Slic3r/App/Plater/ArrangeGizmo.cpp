@@ -41,6 +41,19 @@ std::optional<BedSegments> get_bed_segments(const Project& project, const BedSel
     const Bed& bed{config_container->bed()};
     return bed.segments();
 }
+
+std::optional<Domain::Vec2d>
+get_auxiliary_travel_anchor(const Project& project, const BedSelection& selection)
+{
+    const ConfigContainer* config_container{
+        project.find_config_container(selection.config_container_id())
+    };
+    if (!config_container) {
+        return std::nullopt;
+    }
+    const Bed& bed{config_container->bed()};
+    return bed.auxiliary_travel_anchor();
+}
 } // namespace
 
 ArrangeGizmo::ArrangeGizmo(
@@ -93,11 +106,18 @@ Scene::GizmoActivationState ArrangeGizmo::on_mouse(Scene::GizmoEventContext& ctx
     return Scene::GizmoActivationState::Inactive;
 };
 
-void ArrangeGizmo::on_selected_bed_instances_changed(SelectionId project_id, const BedSelection& bed_selection)
+void ArrangeGizmo::on_selected_bed_instances_changed(
+    SelectionId project_id,
+    const BedSelection& bed_selection
+)
 {
     const Project& project{m_workbench.project(project_id)};
     const std::optional<BedSegments> bed_segments{get_bed_segments(project, bed_selection)};
+    const std::optional<Domain::Vec2d> auxiliary_travel_anchor{
+        get_auxiliary_travel_anchor(project, bed_selection)
+    };
     m_dialog->set_bed_segments(bed_segments);
+    m_dialog->set_auxiliary_travel_anchor(auxiliary_travel_anchor);
 };
 
 void ArrangeGizmo::on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status)

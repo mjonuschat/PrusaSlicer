@@ -35,7 +35,11 @@ public:
         const Biz::Arrange::Settings& settings
     );
 
+    void update_segments_visibility();
+
     void set_bed_segments(const std::optional<Domain::BedSegments>& bed_segments);
+
+    void set_auxiliary_travel_anchor(const std::optional<Domain::Vec2d>& auxiliary_travel_anchor);
 
     void update_status(const ArrangeTaskStatus status);
 
@@ -58,6 +62,7 @@ private:
     Yoga::Separator* m_bed_segments_separator{nullptr};
     Yoga::LayoutButton* m_arrange_button{nullptr};
     std::optional<Domain::BedSegments> m_bed_segments;
+    std::optional<Domain::Vec2d> m_auxiliary_travel_anchor;
 };
 
 } // namespace Slic3r::App::Plater

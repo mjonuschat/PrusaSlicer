@@ -58,6 +58,22 @@ Bed& BedContainer::get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed
     const std::optional<BedSegments> segments =
         (bed_segments != BedSegments{1, 1}) ? std::optional{bed_segments} : std::nullopt;
 
+    Vec2d auxiliary_travel_anchor{-1, -1};
+    if (auto auxiliary_travel_anchor_x{
+        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_x")
+    }) {
+        auxiliary_travel_anchor.x() = *auxiliary_travel_anchor_x;
+    }
+    if (auto auxiliary_travel_anchor_y{
+        Preset::get_feature<double>(preset.hw_config.features, "auxiliary_travel_anchor_y")
+    }) {
+        auxiliary_travel_anchor.y() = *auxiliary_travel_anchor_y;
+    }
+    const std::optional<Vec2d> travel_anchor{
+        (auxiliary_travel_anchor.array() >= 0).all() ? std::optional{auxiliary_travel_anchor} :
+                                                       std::nullopt
+    };
+
     auto item = config_box.find("max_print_height");
     float bed_max_print_height = (item.item != nullptr) ? float(item.item->value().get<double>()) : 0.0f;
 
@@ -73,6 +89,7 @@ Bed& BedContainer::get_or_create_bed(BedType bed_type, const Domain::Vec2ds& bed
         .contour_mesh = contour_mesh,
         .max_print_height = bed_max_print_height,
         .segments = segments,
+        .auxiliary_travel_anchor = travel_anchor,
         .model_filename = custom_bed_model_filename.empty() ? model_filename : custom_bed_model_filename,
         .texture_filename = custom_bed_texture_filename.empty() ? texture_filename : custom_bed_texture_filename
     };

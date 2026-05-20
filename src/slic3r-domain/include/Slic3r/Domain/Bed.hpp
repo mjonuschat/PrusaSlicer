@@ -40,6 +40,7 @@ struct BedCreationData
     indexed_triangle_set contour_mesh;
     float max_print_height{ 0.0f };
     std::optional<BedSegments> segments;
+    std::optional<Vec2d> auxiliary_travel_anchor;
     std::string model_filename;
     std::string texture_filename;
 };
@@ -84,6 +85,11 @@ public:
         return m_segments;
     }
 
+    [[nodiscard]] std::optional<Vec2d> auxiliary_travel_anchor() const
+    {
+        return m_auxiliary_travel_anchor;
+    }
+
     [[nodiscard]] const indexed_triangle_set& contour_mesh() const
     {
         return m_contour_mesh;
@@ -111,6 +117,7 @@ private:
     indexed_triangle_set m_contour_mesh;
     float m_max_print_height{0.0f};
     std::optional<BedSegments> m_segments;
+    std::optional<Vec2d> m_auxiliary_travel_anchor;
     std::string m_model_filename;
     std::string m_texture_filename;
 

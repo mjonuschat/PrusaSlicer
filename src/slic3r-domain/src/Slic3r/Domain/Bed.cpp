@@ -31,13 +31,14 @@ static bool check_model(const std::string& filename)
 Bed Bed::create(const BedCreationData& data)
 {
     Bed ret;
-    ret.m_type             = data.type;
-    ret.m_contour          = data.contour;
-    ret.m_contour_mesh     = data.contour_mesh;
-    ret.m_max_print_height = data.max_print_height;
-    ret.m_segments         = data.segments;
-    ret.m_model_filename   = data.model_filename;
-    ret.m_texture_filename = data.texture_filename;
+    ret.m_type                    = data.type;
+    ret.m_contour                 = data.contour;
+    ret.m_contour_mesh            = data.contour_mesh;
+    ret.m_max_print_height        = data.max_print_height;
+    ret.m_segments                = data.segments;
+    ret.m_auxiliary_travel_anchor = data.auxiliary_travel_anchor;
+    ret.m_model_filename          = data.model_filename;
+    ret.m_texture_filename        = data.texture_filename;
 
     Vec2d min = {DBL_MAX, DBL_MAX};
     Vec2d max = {-DBL_MAX, -DBL_MAX};
@@ -107,6 +108,9 @@ bool Bed::matches(const Bed& rhs) const
         return false;
 
     if (m_segments != rhs.m_segments)
+        return false;
+
+    if (m_auxiliary_travel_anchor != rhs.m_auxiliary_travel_anchor)
         return false;
 
     if (m_model_filename != rhs.m_model_filename)
