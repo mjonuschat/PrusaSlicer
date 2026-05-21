@@ -1398,6 +1398,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/ProjectSettingsInteractorTests.cpp
 
         test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
+        test/Slic3r/Biz/PresetUpdater/SemverTests.cpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
 

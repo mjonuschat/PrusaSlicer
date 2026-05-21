@@ -1,12 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "slic3r/Config/Version.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp"
 
 
 TEST_CASE("Check parsing and comparing of config versions", "[Version]") {
-    using namespace Slic3r;
 
-    GUI::Config::Version v;
+    Slic3r::Biz::PresetUpdater::Version v;
+    using Slic3r::Semver;
 
     v.config_version     = *Semver::parse("1.1.2");
     v.min_slic3r_version = *Semver::parse("1.38.0");
