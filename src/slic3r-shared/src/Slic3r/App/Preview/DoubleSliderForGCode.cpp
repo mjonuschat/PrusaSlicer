@@ -16,7 +16,8 @@ DoubleSliderForGcode::DoubleSliderForGcode() :
         Yoga::Orientation::Horizontal
     )
 {
-    set_min_size({100, SLIDER_GCODE_HEIGHT});
+    set_min_width(100);
+    set_min_height(SLIDER_GCODE_HEIGHT);
     set_flex_shrink(0);
     m_ctrl->callbacks().value_changed       = [this]() { process_thumb_move(); };
     m_ctrl->callbacks().request_extra_frame = [this]() { process_request_extra_frames(); };

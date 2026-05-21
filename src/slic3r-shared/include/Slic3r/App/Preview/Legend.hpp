@@ -23,7 +23,7 @@ public:
 
     Legend(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper);
 
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
     void set_detail_view(bool detail);
     void set_show_time_estimate(bool show);

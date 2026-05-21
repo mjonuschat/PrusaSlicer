@@ -83,7 +83,7 @@ protected:
     Item* add_non_shrinked_wrap(
         Item* parent,
         Yoga::Orientation orientation,
-        float gap
+        const Yoga::Unit& gap
     );
 
     /**

@@ -38,7 +38,7 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
     set_flex_grow(1);
     set_gap(0);
     set_flex_grow(1);
-    set_min_size({0, 100});
+    set_min_height(100);
 
     m_category_filter->set_filter_fn(
         [this](const Biz::PrintToolItem& tool_print_item)

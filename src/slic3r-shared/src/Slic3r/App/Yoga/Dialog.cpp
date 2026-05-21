@@ -22,7 +22,7 @@ Dialog::Dialog(const std::string& name)
     window->set_flags(ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 
     m_top_row = window->emplace_back<Item>();
-    m_top_row->set_max_size({YGUndefined, 40});
+    m_top_row->set_max_height(40);
     m_top_row->set_flex_shrink(0);
 
     m_tab_container = m_top_row->emplace_back<Item>();
@@ -55,7 +55,8 @@ Dialog::Dialog(const std::string& name)
     buttons_rect->set_rounding(0);
 
     m_close_button = buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::PrintIdle);
-    m_close_button->set_min_size({20, 20});
+    m_close_button->set_min_width(20);
+    m_close_button->set_min_height(20);
     m_close_button->callbacks().action = [this] {
         close_action();
     };

@@ -55,7 +55,6 @@ public:
     bool select_language();
 
     // set language, font and all other ui settings for canvas
-    void update_canvas_ui_settings();
     void update_graphics_settings();
 
 #ifdef WIN32

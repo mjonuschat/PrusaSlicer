@@ -75,7 +75,7 @@ TopBar::TopBar(
 
     add_save_project_btn(left_wrapper);
     m_undo_redo_wrapper = left_wrapper->emplace_back<Item>();
-    m_undo_redo_wrapper->set_min_size({96, 0});
+    m_undo_redo_wrapper->set_min_width(96);
     if (m_undo_store) {
         add_undo_btn(m_undo_redo_wrapper);
         add_redo_btn(m_undo_redo_wrapper);
@@ -238,7 +238,7 @@ void TopBar::add_undo_btn(Item* parent)
     m_undo_stack_btn->set_enabled(false);
 
     m_undo_menu = m_undo_stack_btn->emplace_back<Yoga::Menu>("undo_menu", Yoga::Position::Bottom);
-    m_undo_menu->set_max_size({YGUndefined, 550});
+    m_undo_menu->set_max_height(550);
 
     m_undo_stack_btn->callbacks().action = [this]() { toggle_menu_visibility(m_undo_menu); };
 
@@ -258,7 +258,7 @@ void TopBar::add_redo_btn(Item* parent)
     m_redo_stack_btn->set_enabled(false);
 
     m_redo_menu = m_redo_stack_btn->emplace_back<Yoga::Menu>("redo_menu", Yoga::Position::Bottom);
-    m_redo_menu->set_max_size({YGUndefined, 550});
+    m_redo_menu->set_max_height(550);
 
     m_redo_stack_btn->callbacks().action = [this]() { toggle_menu_visibility(m_redo_menu); };
 

@@ -29,6 +29,8 @@ RootItem::~RootItem()
     }
 }
 
+void RootItem::render(const Vec2f& pos, const Vec2f& size) {}
+
 template <class F>
 void RootItem::for_each_popup_reconcile(F&& fn)
 {
@@ -69,13 +71,14 @@ void RootItem::for_each_popup_reconcile(F&& fn)
     }
 }
 
-void RootItem::render(Vec2f pos, Vec2f size)
+void RootItem::root_render(const SizeInfo& size_info)
 {
-    ASSERT(!parent());
-
-    if (size.isZero()) {
+    if (size_info.viewport_size_y == 0 || size_info.viewport_size_y == 0) {
         return;
     }
+
+    m_size_info = size_info;
+    const Vec2f size{size_info.viewport_size_x, size_info.viewport_size_y};
 
     if (!m_popups_to_be_added.empty()) {
         std::copy(
@@ -86,19 +89,17 @@ void RootItem::render(Vec2f pos, Vec2f size)
         m_popups_to_be_added.clear();
     }
 
-    m_size = size;
-
     style_node();
     m_style_dirty = false;
-    resize(size);
+    calculate_size();
     if (m_style_dirty) {
         style_node();
-        resize(size);
+        calculate_size();
     }
 
-    render_item_begin(pos, size);
+    render_item_begin({}, size);
 
-    render_item_end(pos, size);
+    render_item_end({}, size);
 
     for_each_popup_reconcile([&](Popup& popup) { popup.render({}, size); });
 
@@ -123,65 +124,39 @@ void RootItem::push_event(EventPtr event)
     m_loop_events.insert_event(std::move(event));
 }
 
-Vec2f RootItem::get_available_size() const
-{
-    return m_size;
-}
-
 void RootItem::render_debug_overlay()
 {
 #ifdef DEBUG
-    // In Debug if m_debug_item is set, draw a rect around the item and show debug info
     if (m_debug_item) {
-        const Vec2f global_pos = m_debug_item->get_global_pos();
-        const Vec2f size       = Vec2f(m_debug_item->width(), m_debug_item->height());
-
-        ImRect rect(to_im(global_pos), to_im(global_pos + size));
-        ImDrawList* draw_list = ImGui::GetForegroundDrawList();
-        draw_list->AddRect(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128));
-
-        std::string text;
-        if (!m_debug_item->object_name().empty()) {
-            text += m_debug_item->object_name() + " ";
-        }
-        text += fmt::format(
-            "{}x{}px at pos [{}]:[{}]",
-            size.x(),
-            size.y(),
-            global_pos.x(),
-            global_pos.y()
-        );
-
-        ImVec2 text_size = ImGui::CalcTextSize(text.c_str());
-        ImVec2 pad       = ImVec2(6.0f, 4.0f); // padding around the text
-
-        // use main viewport pos+size for absolute coords
-        const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImVec2 bottom_left            = ImVec2(viewport->Pos.x, viewport->Pos.y + viewport->Size.y);
-
-        // rectangle covering the text at bottom-left
-        ImVec2 rect_min = ImVec2(bottom_left.x, bottom_left.y - text_size.y - pad.y * 2.0f);
-        ImVec2 rect_max = ImVec2(bottom_left.x + text_size.x + pad.x * 2.0f, bottom_left.y);
-
-        draw_list->AddRectFilled(rect_min, rect_max, IM_COL32(0, 0, 0, 200));
-        draw_list->AddText(
-            ImVec2(rect_min.x + pad.x, rect_min.y + pad.y),
-            IM_COL32(255, 0, 0, 255),
-            text.c_str()
-        );
+        m_debug_item->render_debug_overlay(ImGui::GetForegroundDrawList());
         m_debug_item = nullptr;
     }
 #endif
 }
 
-void RootItem::resize(Vec2f size)
+void RootItem::calculate_size()
 {
-    YGNodeCalculateLayout(m_node, size.x(), size.y(), YGDirectionLTR);
+    // Force whole tree to update its EvaluatedUnits
+    resize(m_size_info);
+    for_each_popup_reconcile(
+        [&](Popup& popup)
+        {
+            if (popup.content_item())
+                popup.content_item()->resize(m_size_info);
+        }
+    );
 
-    for_each_popup_reconcile([&](Popup& popup) { popup.resize(size); });
+    // Calculate layout for root node
+    YGNodeCalculateLayout(
+        node(),
+        static_cast<float>(m_size_info.viewport_size_x),
+        static_cast<float>(m_size_info.viewport_size_y),
+        YGDirectionLTR
+    );
+    // Calculate layout for popup nodes
+    for_each_popup_reconcile([&](Popup& popup) { popup.resize(m_size_info); });
 
     check_resized();
-
     for_each_popup_reconcile([&](Popup& popup) { popup.check_resized(); });
 }
 

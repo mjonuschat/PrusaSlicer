@@ -17,7 +17,8 @@ static LayoutButton* add_button(Item* parent, Render::Icon icon, const std::stri
 {
     LayoutButton* btn = parent->emplace_back<LayoutButton>("", icon, tooltip);
     btn->set_checkable(true);
-    btn->set_min_size(Vec2f(24.f, 24.f));
+    btn->set_min_width(24.f);
+    btn->set_min_height(24.f);
     return btn;
 }
 

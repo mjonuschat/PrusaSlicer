@@ -102,6 +102,18 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
           "Note: Language selection will be applied on the next application start.");
     def->init_fn = Domain::init_with("en");
 
+    def = defs.add("font_size", typeid(int));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::spinbox;
+    def->label = L("Application font size");
+    def->tooltip = L("Base font size of text in points.");
+    def->sidetext = "pt";
+    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
+    def->min = 8;
+    def->max = 20;
+    def->init_fn = []() { return Domain::ConfigValue{13}; };
+
 #ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
     def->location = Domain::AppConfigLocation{};

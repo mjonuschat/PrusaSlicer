@@ -8,7 +8,8 @@
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
@@ -20,10 +21,6 @@ using Domain::ElementRef;
 using Domain::ElementRefs;
 using Domain::SquareMatrix4d;
 using Domain::Vec3d;
-using Yoga::ItemPtr;
-using Yoga::Margins;
-using Yoga::Orientation;
-using Yoga::Text;
 
 TranslationDialog::TranslationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
@@ -41,13 +38,13 @@ TranslationDialog::TranslationDialog(
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
-    content()->set_padding({20_px, 20_px});
+    content()->set_padding({20_fpx, 20_fpx});
     content()->set_orientation(Yoga::Orientation::Vertical);
-    content()->set_gap(20_px);
+    content()->set_gap(20_fpx);
 
     m_absolute_input_row = content()->emplace_back<Yoga::Item>();
     m_absolute_input_row->set_orientation(Orientation::Vertical);
-    m_absolute_input_row->set_gap(10_px);
+    m_absolute_input_row->set_gap(10_fpx);
     auto absolute_text{m_absolute_input_row->emplace_back<Text>("Translation")};
     absolute_text->set_font_type(Render::ImguiFontType::Bold);
     m_absolute_input = m_absolute_input_row->emplace_back<TripleInput>(_u8L("mm"));
@@ -71,7 +68,7 @@ TranslationDialog::TranslationDialog(
 
     m_relative_input_row = content()->emplace_back<Yoga::Item>();
     m_relative_input_row->set_orientation(Orientation::Vertical);
-    m_relative_input_row->set_gap(10_px);
+    m_relative_input_row->set_gap(10_fpx);
     auto relative_text{m_relative_input_row->emplace_back<Text>("Relative translation")};
     relative_text->set_font_type(Render::ImguiFontType::Bold);
     m_relative_input = m_relative_input_row->emplace_back<TripleInput>(_u8L("mm"));
@@ -79,7 +76,7 @@ TranslationDialog::TranslationDialog(
     { apply_relative_translation(value); };
 
     auto place_on_bed_button{content()->emplace_back<PlaceOnBedButton>(m_project_interactor)};
-    place_on_bed_button->set_margin({0, -10_px, 0, 0});
+    place_on_bed_button->set_margin({0, -10_fpx, 0, 0});
 
     add_separator(content());
     m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(

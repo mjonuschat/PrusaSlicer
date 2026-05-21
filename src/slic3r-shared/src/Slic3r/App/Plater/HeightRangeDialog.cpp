@@ -141,7 +141,8 @@ void HeightRangeDialog::add_height_range_section(Item* parent)
 
     LayoutButton* add_range_button =
         add_range_row->emplace_back<LayoutButton>("", Render::Icon::PlusHeightRange);
-    add_range_button->set_min_size({22.f, 22.f});
+    add_range_button->set_width(22);
+    add_range_button->set_height(22);
     add_range_button->callbacks().action = [this]() { m_callbacks.add_range_clicked(); };
 
     add_range_row->set_padding({0.f, 0.f, 0.f, 5.f});
@@ -187,7 +188,8 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
     min_z_wrapper->set_flex_grow(1);
 
     Icon* min_z_icon = min_z_wrapper->emplace_back<Icon>(Render::Icon::ArrowUpFromLine);
-    min_z_icon->set_min_size({16.f, 16.f});
+    min_z_icon->set_width(16.f);
+    min_z_icon->set_height(16.f);
 
     m_min_z_input = min_z_wrapper->emplace_back<InputText>("");
     m_min_z_input->set_flex_grow(1);
@@ -216,7 +218,8 @@ void HeightRangeDialog::add_height_range_editor_section(Item* parent)
     max_z_wrapper->set_flex_grow(1);
 
     Icon* max_z_icon = max_z_wrapper->emplace_back<Icon>(Render::Icon::ArrowUpToLine);
-    max_z_icon->set_min_size({16.f, 16.f});
+    max_z_icon->set_width(16);
+    max_z_icon->set_height(16);
 
     m_max_z_input = max_z_wrapper->emplace_back<InputText>("");
     m_max_z_input->set_flex_grow(1);
@@ -328,7 +331,7 @@ void HeightRangeDialog::add_override_category_section(
             Biz::_u8(config_item.def().full_label);
         Text* config_item_title             = override_row->emplace_back<Text>(config_item_name);
         config_item_title->set_width(120);
-        config_item_title->set_max_size({120, YGUndefined});
+        config_item_title->set_max_width(120);
         config_item_title->set_wrap_mode(Text::WrapMode::Wrap);
 
         ConfigItemControl* control = ConfigItemControl::config_item_control_factory(
@@ -340,8 +343,7 @@ void HeightRangeDialog::add_override_category_section(
             0
         );
         if (Item* control_item = dynamic_cast<Item*>(control)) {
-            control_item->set_min_size({100, control_item->min_size().y()});
-            control_item->set_max_size({100, YGUndefined});
+            control_item->set_width(100);
             control_item->set_flex_shrink(0);
         }
 
@@ -359,7 +361,8 @@ void HeightRangeDialog::add_override_category_section(
             Render::Icon::Minus,
             _u8L("Remove override")
         );
-        remove_override_button->set_min_size({22.f, 22.f});
+        remove_override_button->set_width(22);
+        remove_override_button->set_height(22);
         remove_override_button->set_flex_shrink(0);
         remove_override_button->callbacks().action = [this, key = config_item.name()]()
         { m_callbacks.override_removed(key); };
@@ -370,7 +373,7 @@ void HeightRangeDialog::add_help_section(Item* parent)
 {
     Item* help_section = parent->emplace_back<Item>();
     help_section->set_orientation(Orientation::Vertical);
-    help_section->set_min_size({0, 50});
+    help_section->set_min_height(50);
     help_section->set_align_items(YGAlignFlexStart);
     help_section->set_gap(gap_size());
     help_section->set_flex_shrink(0);

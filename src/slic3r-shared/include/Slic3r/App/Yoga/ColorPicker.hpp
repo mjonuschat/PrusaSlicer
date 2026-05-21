@@ -18,7 +18,7 @@ public:
         std::function<void(const ImColor& color)> color_edited{nullptr};
     };
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     Callbacks& callbacks();
 

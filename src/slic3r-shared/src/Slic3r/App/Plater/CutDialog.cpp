@@ -131,9 +131,6 @@ CutDialog::Callbacks& CutDialog::callbacks()
     return m_callbacks;
 }
 
-static const Vec2f mouse_help_size{20.f, 20.f};
-static const Vec2f shortcut_help_size{40.f, 20.f};
-
 static constexpr ImColor build_volume_color{192, 154, 247};
 
 CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Cut)
@@ -902,22 +899,24 @@ void CutDialog::add_connectors_help_panel()
     help_area->set_align_items(YGAlignFlexStart);
     help_area->set_gap(gap_size());
 
+    const Unit mouse_help_size{20.f};
+
     GizmoHelpFactory help;
     help.init(help_area);
     help.add_item(
-        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
         _u8L("Add connector")
     );
     help.add_item(
-        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, mouse_help_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, mouse_help_size, mouse_help_size}},
         _u8L("Remove connector")
     );
     help.add_item(
-        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
         _u8L("Select multiple")
     );
     help.add_item(
-        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size}},
+        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
         _u8L("Remove from selection")
     );
     help.add_item({{"CTRL"}, {"A"}}, _u8L("Select all"));

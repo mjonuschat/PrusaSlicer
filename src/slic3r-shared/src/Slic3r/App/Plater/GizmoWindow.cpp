@@ -38,7 +38,7 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
     column->set_flex_grow(1);
 
     Item* top_row = column->emplace_back<Item>();
-    top_row->set_max_size({YGUndefined, 40});
+    top_row->set_max_height(40);
     top_row->set_flex_shrink(0);
 
     Rectangle* buttons_rect = top_row->emplace_back<Rectangle>();
@@ -127,10 +127,12 @@ Separator* GizmoWindow::add_separator(Item* item)
     float margin_end{0.f};
     Item* parent_item = item;
     while (parent_item != this) {
-        margin_begin += item->orientation() == Orientation::Vertical ? parent_item->padding().left :
-                                                                       parent_item->padding().top;
-        margin_end += item->orientation() == Orientation::Vertical ? parent_item->padding().right :
-                                                                     parent_item->padding().bottom;
+        margin_begin += item->orientation() == Orientation::Vertical ?
+            parent_item->padding().left :
+            parent_item->padding().top;
+        margin_end += item->orientation() == Orientation::Vertical ?
+            parent_item->padding().right :
+            parent_item->padding().bottom;
         parent_item = parent_item->parent_item();
     }
 
@@ -201,7 +203,7 @@ Item* GizmoWindow::add_flex_shrinked_wrap(Item* parent)
     return wrap;
 }
 
-Item* GizmoWindow::add_non_shrinked_wrap(Item* parent, Orientation orientation, float gap)
+Item* GizmoWindow::add_non_shrinked_wrap(Item* parent, Orientation orientation, const Yoga::Unit& gap)
 {
     Item* wrap = parent->emplace_back<Item>();
     wrap->set_orientation(orientation);
@@ -213,11 +215,13 @@ Item* GizmoWindow::add_non_shrinked_wrap(Item* parent, Orientation orientation, 
 LayoutButton* GizmoWindow::add_revert_btn(Item* parent, const std::string& tooltip)
 {
     Item* revert_space = parent->emplace_back<Item>();
-    revert_space->set_min_size(Vec2f(24.f, 24.f));
+    revert_space->set_min_width(24);
+    revert_space->set_min_height(24);
     revert_space->set_justify_content(YGJustifyFlexEnd);
     LayoutButton* revert_btn =
         revert_space->emplace_back<LayoutButton>(std::string{}, Render::Icon::DSRevert, tooltip);
-    revert_btn->set_min_size(Vec2f(20.f, 20.f));
+    revert_btn->set_min_width(20);
+    revert_btn->set_min_height(20);
     revert_btn->set_self_align(YGAlignCenter);
     return revert_btn;
 }
@@ -380,7 +384,8 @@ GizmoWindow::add_icon_button(Item* parent, Render::Icon icon, const std::string&
 {
     LayoutButton* button = parent->emplace_back<LayoutButton>(std::string(), icon, tooltip);
     button->set_checkable(true);
-    button->set_min_size({40.f, 40.f});
+    button->set_min_width(40);
+    button->set_min_height(40);
     button->set_content_padding(8.f);
     return button;
 }

@@ -35,7 +35,7 @@ SidebarActionButtons::SidebarActionButtons(
     m_navigator_tooltip = m_type == RMType::Plater ? "Show Preview" : "Back to Plater";
     m_navigate_to_type  = m_type == RMType::Plater ? RMType::Preview : RMType::Plater;
 
-    set_min_size({220, 0});
+    set_min_width(220);
     set_flex_shrink(0);
 }
 
@@ -134,7 +134,8 @@ std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button(
     };
     result->set_background_color(m_theme->color_imgui(Platform::Color::AccentSecondary));
     result->set_label_font_type(Render::ImguiFontType::Bold);
-    result->set_min_size({navig_btn_width, button_height});
+    result->set_min_width(navig_btn_width);
+    result->set_min_height(button_height);
 
     result->callbacks().action = [this]() { navigate_to_other(); };
     return result;

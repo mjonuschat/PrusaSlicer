@@ -13,7 +13,7 @@ class Rectangle : public Item
 public:
     explicit Rectangle();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     const ImColor& fill() const;
     std::optional<ImColor> disabled_fill() const;

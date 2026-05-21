@@ -236,7 +236,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_scene_presenter->scene().camera_trackball()
     );
 
-    m_layout->render({m_screen_info.logical_width(), m_screen_info.logical_height()});
+    m_layout->render();
 
     if (m_cube_view->require_render())
         request_render();
@@ -530,6 +530,9 @@ void PreviewRenderModule::on_screen_resized()
     m_scene_presenter->screen_resized(viewport);
     Yoga::Object::set_scale_factor(m_screen_info.scale());
     m_imgui_render->set_scale_factor(m_screen_info.scale());
+    if (m_layout) {
+        m_layout->set_size_info_from_screen(m_screen_info);
+    }
 }
 
 void PreviewRenderModule::register_commands()

@@ -23,7 +23,7 @@ ToolBarButton::ToolBarButton(Render::Icon icon, const std::string& tooltip) :
     m_tooltip->set_preferred_position(Position::Bottom);
 }
 
-void ToolBarButton::render(Vec2f pos, Vec2f size)
+void ToolBarButton::render(const Vec2f& pos, const Vec2f& size)
 {
     LayoutButton::render(pos, size);
 

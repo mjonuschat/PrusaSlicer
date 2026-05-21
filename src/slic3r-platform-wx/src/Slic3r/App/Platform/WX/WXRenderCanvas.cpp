@@ -18,6 +18,7 @@
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Theme.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/AppConfig.hpp>
 
 #include <Slic3r/Log.hpp>
 
@@ -988,8 +989,7 @@ bool WXRenderCanvas::begin_frame_platform()
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     GetClientSize(&w, &h);
-    // double scale_factor = wxWindow::GetContentScaleFactor();
-    double scale_factor = wxWindow::GetDPIScaleFactor();
+    const float scale_factor = wxWindow::GetDPIScaleFactor();
 #if WIN32
     size_t display_w = w;
     size_t display_h = h;
@@ -1000,11 +1000,23 @@ bool WXRenderCanvas::begin_frame_platform()
     size_t display_h = ToPhys(h);
 #endif
     ImGuiIO& io    = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float) w, (float) h);
+    io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
     // SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor,
     // display_w, display_h);
-    set_screen_size({display_w, display_h, float(scale_factor)});
-    io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
+
+    const float font_size_pt = AppServices::instance().app_config().get<int>("font_size");
+    const float font_size_px = font_size_pt * 1.3333f;
+
+    ImGuiStyle& style   = ImGui::GetStyle();
+    style.FontScaleDpi  = 1; // We are scaling whole canvas, no need for ImGui scaling
+    style.FontScaleMain = 1; // We are scaling whole canvas, no need for ImGui scaling
+    style.FontSizeBase  = font_size_px;
+
+    set_screen_size(
+        {display_w, display_h, scale_factor, GetDPI().x, font_size_px}
+    );
+    io.DisplayFramebufferScale =
+        ImVec2(scale_factor, scale_factor);
 
     ImGui_ImplWX_UpdateMouseCursor();
 

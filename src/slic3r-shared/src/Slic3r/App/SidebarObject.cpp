@@ -16,7 +16,6 @@
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
 #include "Slic3r/App/WipeTowerSettings.hpp"
 #include "Slic3r/App/Plater/ScaleWidget.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 
 #include <fmt/format.h>
@@ -43,7 +42,7 @@ static std::string volume_type_name(Domain::ModelVolumeType type)
     }
 }
 
-static void add_separator(Item* item, float padding)
+static void add_separator(Item* item, const Unit& padding)
 {
     auto* separator = item->emplace_back<Separator>(Orientation::Horizontal);
     separator->set_margin(Margins(-padding, 0.f, -padding, 0.f));
@@ -175,23 +174,23 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_override_settings_dialog = emplace_back<OverrideSettingsDialog>(m_project_interactor);
 
     set_orientation(Orientation::Vertical);
-    set_min_size({YGUndefined, 60});
+    set_min_height(60);
     set_flex_grow(1);
     set_padding(0);
 
-    const float gap{15_px};
+    const Unit gap{0.8_rem};
 
     auto title{emplace_back<Item>()};
     title->set_flex_shrink(0);
-    title->set_padding({20_px, gap, 0, 0});
+    title->set_padding({1.25_rem, gap, 0, 0});
     m_text_object_name = title->emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
-    m_text_object_name->set_font_size(15_px);
+    m_text_object_name->set_font_size(15_fpx);
 
     m_scroll_area = emplace_back<ScrollArea>("ScrollPanels");
     m_scroll_area->set_orientation(Orientation::Vertical);
     m_scroll_area->set_flex_grow(1);
-    const float padding{20_px};
+    const Unit padding{1.25_rem};
     m_scroll_area->set_padding(padding);
     m_scroll_area->set_gap(gap);
 
@@ -256,7 +255,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         }
     };
     m_add_settings_button->set_flex_shrink(0);
-    m_add_settings_button->set_content_padding({20.f, 5.f});
+    m_add_settings_button->set_content_padding({1.25_rem, 0.25_rem});
 
     m_no_overrides_label =
         m_scroll_area->emplace_back<Text>(Biz::_u8L("No settings can be added for this selection"));
@@ -268,7 +267,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_override_group_list_view =
         m_scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
     m_override_group_list_view->set_orientation(Orientation::Vertical);
-    m_override_group_list_view->set_gap(5);
+    m_override_group_list_view->set_gap(0.25_rem);
     m_override_group_list_view->set_flex_shrink(0);
     m_override_group_list_view->set_source_list(m_override_group_filter.get());
 

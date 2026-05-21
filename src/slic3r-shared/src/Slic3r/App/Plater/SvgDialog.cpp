@@ -35,11 +35,11 @@ const double SvgDialog::MIN_HEIGHT{1e-3};
 const double SvgDialog::MAX_HEIGHT{1e3};
 const double SvgDialog::MIN_WIDTH{1e-3};
 const double SvgDialog::MAX_WIDTH{1e3};
+constexpr float ButtonSize = 20;
 
 SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
 {
-    Paddings padding = content()->padding();
-    Vec2f btns_sz(20.f, 20.f);
+    Paddings padding = content()->padding().source;
 
     top_bar()->set_gap(gap_size());
     top_bar()->set_padding({padding.left, 5.f});
@@ -57,7 +57,8 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
     m_filename->set_wrap_mode(Text::WrapMode::WrapElide);
     m_reload =
         top_bar()->emplace_back<LayoutButton>(std::string(), Render::Icon::Reload, _u8L("Reload"));
-    m_reload->set_min_size(btns_sz);
+    m_reload->set_min_width(ButtonSize);
+    m_reload->set_min_height(ButtonSize);
     m_reload->callbacks().action = [this]()
     {
         if (m_callbacks.reload_file)
@@ -69,7 +70,8 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
         Render::Icon::CaretDown,
         _u8L("Options")
     );
-    options_btn->set_min_size(btns_sz);
+    options_btn->set_min_width(ButtonSize);
+    options_btn->set_min_height(ButtonSize);
     options_btn->callbacks().action = [this]() { m_options_menu->open(); };
 
     m_options_menu = options_btn->emplace_back<Menu>("Options Menu", Position::Bottom);
@@ -97,7 +99,8 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
     m_warning =
         filename_wrap->emplace_back<LayoutButton>("", Render::Icon::WarningMarker, "Some warning");
     m_warning->set_self_align(YGAlignFlexStart);
-    m_warning->set_min_size(Vec2f{20.f, 20.f});
+    m_warning->set_min_width(20);
+    m_warning->set_min_height(20);
     m_warning->set_visible(false);
 
     add_separator(content());
@@ -113,19 +116,25 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
     preview_bg->set_align_items(YGAlignCenter);
 
     m_preview = preview_bg->emplace_back<Icon>(Render::Icon::None);
-    m_preview->set_min_size(Vec2f{20.f, 20.f});
+    m_preview->set_min_width(20);
+    m_preview->set_min_height(20);
+    // Todo: cleanup
     m_preview->set_width(
-        240.f - padding.horizontal() // from m_layout_right_column->set_min_size({240, YGUndefined});
+        Yoga::Unit{240.f - padding.horizontal().value}
+        // from m_layout_right_column->set_min_size({240, YGUndefined});
     );
     m_preview->set_tint(ImColor(0, 0, 0));
     m_preview->set_flex_grow(1.f);
     m_preview->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-    // << 
+    // <<
 
     Item* settings_panet = add_non_shrinked_wrap(content(), Orientation::Vertical, gap_size());
 
-    auto add_dummy_item = [btns_sz](Item* parent)
-    { parent->emplace_back<Item>()->set_min_size(btns_sz); };
+    auto add_dummy_item = [](Item* parent)
+    {
+        parent->emplace_back<Item>()->set_min_width(ButtonSize);
+        parent->emplace_back<Item>()->set_min_height(ButtonSize);
+    };
 
     Item* depth_wrap = add_row_with_spin_double(
         _u8L("Depth"),
@@ -185,7 +194,8 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
         "",
         Render::Icon::Lock
     ); // Note: for tooltip need externaly set value
-    m_lock_size_btn->set_min_size(btns_sz);
+    m_lock_size_btn->set_min_width(ButtonSize);
+    m_lock_size_btn->set_min_height(ButtonSize);
     m_lock_size_btn->set_self_align(YGAlignCenter);
     m_lock_size_btn->callbacks().checked_changed = [this](bool checked)
     {
@@ -251,7 +261,8 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
         "",
         Render::Icon::Lock
     ); // Note: for tooltip need externaly set value
-    m_lock_rotation_btn->set_min_size(btns_sz);
+    m_lock_rotation_btn->set_min_width(ButtonSize);
+    m_lock_rotation_btn->set_min_height(ButtonSize);
     m_lock_rotation_btn->set_self_align(YGAlignCenter);
     m_lock_rotation_btn->callbacks().checked_changed = [this](bool checked)
     {
@@ -268,14 +279,16 @@ SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
 
     Item* mirror_row = add_labeled_row(content(), _u8L("Mirror"));
     m_mirror_x       = mirror_row->emplace_back<LayoutButton>("", Render::Icon::ReflectionX);
-    m_mirror_x->set_min_size(Vec2f{30.f, 20.f});
+    m_mirror_x->set_min_width(30);
+    m_mirror_x->set_min_height(20);
     m_mirror_x->callbacks().action = [this]()
     {
         if (m_callbacks.mirror_x)
             m_callbacks.mirror_x();
     };
     m_mirror_y = mirror_row->emplace_back<LayoutButton>("", Render::Icon::ReflectionY);
-    m_mirror_y->set_min_size(Vec2f{30.f, 20.f});
+    m_mirror_y->set_min_width(30);
+    m_mirror_y->set_min_height(20);
     m_mirror_y->callbacks().action = [this]()
     {
         if (m_callbacks.mirror_y)

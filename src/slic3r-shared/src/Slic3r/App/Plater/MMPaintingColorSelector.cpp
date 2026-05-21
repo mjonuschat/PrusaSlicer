@@ -4,7 +4,8 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/TwoColorRing.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
@@ -19,7 +20,7 @@ ColorButton::ColorButton(
     m_mouse_left_color{mouse_left_color},
     m_mouse_right_color{mouse_right_color}
 {
-    const float size{std::round(30_px)};
+    const Unit size{30_fpx};
 
     set_width(size);
     set_height(size);
@@ -33,7 +34,7 @@ ColorButton::ColorButton(
     m_highlight_circle->set_flex_grow(1);
     m_highlight_circle->set_align_items(YGAlignCenter);
     m_highlight_circle->set_justify_content(YGJustifyCenter);
-    m_highlight_circle->set_padding(std::round(7_px));
+    m_highlight_circle->set_padding(7_fpx);
 
     m_color_circle = m_highlight_circle->emplace_back<Yoga::Circle>();
     m_color_circle->set_flex_grow(1);

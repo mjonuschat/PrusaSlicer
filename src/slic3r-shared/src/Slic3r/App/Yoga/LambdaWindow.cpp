@@ -16,6 +16,6 @@ LambdaWindow::LambdaWindow(RenderPosFn render_fn, const std::string& prefix)
 
 LambdaWindow::~LambdaWindow() { delete m_lambda_item; }
 
-void LambdaWindow::render_body(Vec2f pos, Vec2f size) {}
+void LambdaWindow::render_body(const Vec2f& pos, const Vec2f& size) {}
 
 } // namespace Slic3r::App::Yoga

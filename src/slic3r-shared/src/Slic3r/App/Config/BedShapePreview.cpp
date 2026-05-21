@@ -43,7 +43,7 @@ void BedShapePreview::set_shape_fill(const ImColor& fill)
     m_shape_fill = fill;
 }
 
-void BedShapePreview::render(Vec2f pos, Vec2f size)
+void BedShapePreview::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

@@ -27,18 +27,18 @@ public:
     float alpha() const;
     void set_alpha(float alpha);
 
-    void render(Vec2f pos, Vec2f size) override final;
+    void render(const Vec2f& pos, const Vec2f& size) override final;
     /**
      * @brief render_body by default will render all Window children
      * but you can override it and process the children yourself
      */
-    virtual void render_body(Vec2f pos, Vec2f size);
+    virtual void render_body(const Vec2f& pos, const Vec2f& size);
 
     bool is_in_window() const override;
 
     bool position_by_yoga() const;
     void set_position_by_yoga(bool position_by_yoga);
-    void request_position(Vec2f position);
+    void request_position(const Vec2f& position);
     void bring_to_front();
 
     Callbacks& callbacks();

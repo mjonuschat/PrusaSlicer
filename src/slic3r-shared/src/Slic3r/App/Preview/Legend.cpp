@@ -988,7 +988,7 @@ LegendCallbacks& Legend::callbacks()
     return m_callback;
 }
 
-void Legend::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+void Legend::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     render_item_begin(pos, size);
 
@@ -1005,7 +1005,7 @@ void Legend::render(Yoga::Vec2f pos, Yoga::Vec2f size)
             legend_coarse(*m_viewer, *m_wrapper);
 
         ImVec2 end_pos = ImGui::GetCursorScreenPos();
-        Vec2f size({min_size().x(), std::max(0.f, end_pos.y - pos.y())});
+        Vec2f size(min_width().value, std::max(0.f, end_pos.y - pos.y()));
 
         if (m_size != size) {
             m_size = size;

@@ -13,7 +13,7 @@ class ScrollArea : public Item
 public:
     explicit ScrollArea(const std::string& name = "ScrollArea");
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     ImGuiChildFlags child_flags() const;
     void set_child_flags(ImGuiChildFlags child_flags);

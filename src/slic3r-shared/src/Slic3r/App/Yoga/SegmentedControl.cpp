@@ -17,7 +17,8 @@ SegmentedControl::SegmentedControl(
         LayoutButton* button{emplace_back<LayoutButton>("", segment.icon, segment.tooltip)};
 
         button->set_checkable(true);
-        button->set_min_size({50.f, 50.f});
+        button->set_min_width(50.f);
+        button->set_min_height(50.f);
         button->set_content_padding(15);
         m_group.insert_button(button);
         m_group.callbacks().checked_changed =

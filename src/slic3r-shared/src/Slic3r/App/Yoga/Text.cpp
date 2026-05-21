@@ -6,6 +6,8 @@
 
 #include "Slic3r/App/Render/ImguiRender.hpp"
 
+#include "Slic3r/Log.hpp"
+
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
@@ -61,20 +63,19 @@ static ImRect align_rectangle(const ImVec2& space, const ImVec2& aligned_size, c
 
 Text::Text(const std::string& text, Render::ImguiFontType font_type) :
     m_text_color(m_theme->color_imgui(Platform::Color::Text)),
-    m_font_type(font_type),
-    m_font_size(ImGui::GetFontSize())
+    m_font_type(font_type)
 {
     set_object_name("Text");
     set_text(text);
 }
 
-void Text::render(Vec2f pos, Vec2f size)
+void Text::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 
     ImGui::SetCursorScreenPos(to_im(pos) + m_text_pos);
 
-    ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
+    ImGui::PushFont(m_imgui_render->font(m_font_type), used_font_size());
     ImGui::PushStyleColor(
         ImGuiCol_Text,
         enabled() ?
@@ -101,17 +102,6 @@ void Text::render(Vec2f pos, Vec2f size)
     ImGui::PopFont();
 
     render_item_end(pos, size);
-}
-
-void Text::style_node()
-{
-    // This is weird, we are getting font size 1
-    if (m_font_size <= 1.f) {
-        m_font_size = ImGui::GetFontSize();
-        invalidate_min_size_calculation();
-    }
-
-    Item::style_node();
 }
 
 const std::string& Text::text() const
@@ -148,7 +138,7 @@ void Text::on_resized()
 Vec2f Text::get_item_size()
 {
     Vec2f min_size;
-    ImGui::PushFont(m_imgui_render ? m_imgui_render->font(m_font_type) : nullptr, m_font_size);
+    ImGui::PushFont(m_imgui_render ? m_imgui_render->font(m_font_type) : nullptr, used_font_size());
 
     ImVec2 taken_size;
     if (m_wrap_mode == WrapMode::NoWrap) {
@@ -180,7 +170,7 @@ Vec2f Text::get_item_size()
             && target_size.x > 0
             && target_size.y > 0)
         {
-            target_size.y = std::max(m_font_size, target_size.y);
+            target_size.y = std::max(used_font_size(), target_size.y);
 
             std::string_view elided_text = m_source_text;
             m_rendered_text              = elided_text;
@@ -207,7 +197,7 @@ Vec2f Text::get_item_size()
 
             taken_size = current_size;
         }
-        min_size = Vec2f{0, m_font_size};
+        min_size = Vec2f{0, used_font_size()};
     }
 
     const ImVec2 space{width(), height()};
@@ -221,13 +211,25 @@ Vec2f Text::get_item_size()
 
 float Text::available_width() const
 {
-    return width() - padding().horizontal();
+    return width() - padding().result_horizontal();
 }
 
 float Text::available_height() const
 {
-    float avail_height = height() - padding().vertical();
-    return Domain::fuzzy_compare(0.f, avail_height) ? m_font_size : avail_height;
+    const float avail_height = height() - padding().result_vertical();
+    return Domain::fuzzy_compare(0.f, avail_height) ? used_font_size() : avail_height;
+}
+
+float Text::used_font_size() const
+{
+    return m_font_size.has_value() ? m_font_size.value().result : ImGui::GetFontSize();
+}
+
+void Text::size_info_changed(const SizeInfo& size_info)
+{
+    if (m_font_size.has_value()) {
+        m_font_size.value().evaluate(size_info);
+    }
 }
 
 Text::WrapMode Text::wrap_mode() const
@@ -267,15 +269,15 @@ void Text::set_font_type(Render::ImguiFontType font_type)
     }
 }
 
-float Text::font_size() const
+Unit Text::font_size() const
 {
-    return m_font_size;
+    return m_font_size.has_value() ? m_font_size.value().source : 1_rem;
 }
 
-void Text::set_font_size(float font_size)
+void Text::set_font_size(const Unit& font_size)
 {
-    if (!Domain::fuzzy_compare(m_font_size, font_size)) {
-        m_font_size = font_size;
+    if (!m_font_size.has_value() || m_font_size.value().source != font_size) {
+        m_font_size = EvaluatedUnit{font_size};
         invalidate_min_size_calculation();
     }
 }

@@ -66,7 +66,7 @@ MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Rule
     add_separator(m_main_panel);
 
     Item* help_row = m_main_panel->emplace_back<Item>();
-    help_row->set_min_size({0, 50});
+    help_row->set_min_height(50);
     help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
     help_row->set_align_items(YGAlign::YGAlignCenter);
     help_row->set_padding(5);

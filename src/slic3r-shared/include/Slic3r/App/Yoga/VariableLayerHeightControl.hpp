@@ -48,7 +48,7 @@ public:
     void set_cursor_normalized_position(float normalized_position);
     void reset_cursor_position();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
 private:
     void render_cursor(const Vec2f& pos, const Vec2f& size) const;

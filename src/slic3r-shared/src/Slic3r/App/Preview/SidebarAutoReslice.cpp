@@ -12,7 +12,7 @@ using Biz::Slicing::SlicingInteractor;
 SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
     Window("SidebarAutoReslice")
 {
-    set_min_size({220, 0});
+    set_min_width(220);
 
     Item* row = emplace_back<Yoga::Item>();
     row->set_orientation(Yoga::Orientation::Horizontal);

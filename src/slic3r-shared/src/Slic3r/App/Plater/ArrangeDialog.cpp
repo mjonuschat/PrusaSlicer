@@ -98,7 +98,7 @@ public:
                         row->emplace_back<LayoutButton>("", get_icon(*pivot_point))
                     };
                     button->set_rounding(0.0);
-                    button->set_content_padding(0.0);
+                    button->set_content_padding(Yoga::Paddings{0.f});
                     button->set_background_color(IM_COL32_BLACK_TRANS);
                     button->set_checkable(true);
                     button->set_width(button_size);
@@ -170,7 +170,7 @@ ArrangeDialog::ArrangeDialog(
     offset_slider->set_begin_value(0.0);
     offset_slider->set_end_value(100.0);
     offset_slider->set_step(1.0);
-    offset_slider->set_max_size({preffered_max_width(), YGUndefined});
+    offset_slider->set_max_width(preffered_max_width());
 
     m_offset_slider = offset_slider.get();
     GizmoWindow::add_new_row(_u8L("Spacing"), std::move(offset_slider));
@@ -180,7 +180,7 @@ ArrangeDialog::ArrangeDialog(
     bed_offset_slider->set_begin_value(0.0);
     bed_offset_slider->set_end_value(100.0);
     bed_offset_slider->set_step(1.0);
-    bed_offset_slider->set_max_size({preffered_max_width(), YGUndefined});
+    bed_offset_slider->set_max_width(preffered_max_width());
 
     m_bed_offset_slider = bed_offset_slider.get();
     GizmoWindow::add_new_row(_u8L("Bed spacing"), std::move(bed_offset_slider));
@@ -193,7 +193,7 @@ ArrangeDialog::ArrangeDialog(
     m_mode_slider = geometry_handling_control->emplace_back<Slider>(0.0, 2.0, 1.0);
     m_mode_slider->set_flex_grow(1.0);
     geometry_handling_control->emplace_back<Text>("accurate");
-    geometry_handling_control->set_max_size({preffered_max_width(), YGUndefined});
+    geometry_handling_control->set_max_width(preffered_max_width());
     add_new_row(_u8L("Performance"), std::move(geometry_handling_control));
 
     add_separator(content());
@@ -211,7 +211,7 @@ ArrangeDialog::ArrangeDialog(
     add_separator(content());
 
     m_arrange_button = bottom_bar()->emplace_back<LayoutButton>("Arrange");
-    m_arrange_button->set_padding(5);
+    m_arrange_button->set_padding(Yoga::Paddings{5});
     m_arrange_button->set_height(40);
     m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
 

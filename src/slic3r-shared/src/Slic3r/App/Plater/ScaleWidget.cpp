@@ -4,8 +4,9 @@
 #include "Slic3r/App/Plater/TripleInput.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/Math.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
@@ -14,8 +15,6 @@ using Domain::BoundingBox3d;
 using Domain::SquareMatrix3d;
 using Domain::SquareMatrix4d;
 using Domain::Vec3d;
-using Yoga::Orientation;
-using Yoga::Text;
 
 static Domain::Vec3d get_relative_scale(const Domain::SquareMatrix3d& matrix)
 {
@@ -175,7 +174,7 @@ ScaleWidget::ScaleWidget(
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     set_orientation(Orientation::Vertical);
-    const float spacing{5_px};
+    const Unit spacing{5_fpx};
     set_gap(4 * spacing);
 
 
@@ -184,14 +183,14 @@ ScaleWidget::ScaleWidget(
     scaling_section->set_orientation(Orientation::Vertical);
 
     auto title_row{scaling_section->emplace_back<Item>()};
-    title_row->set_gap(2_px);
+    title_row->set_gap(2_fpx);
     title_row->set_align_items(YGAlignCenter);
     auto title{title_row->emplace_back<Text>(_u8L("Size"))};
     title->set_font_type(Render::ImguiFontType::Bold);
-    title->set_margin({0_px, 0_px, 0_px, spacing});
+    title->set_margin({0_fpx, 0_fpx, 0_fpx, spacing});
     title->set_flex_grow(1);
 
-    const float icon_size{22_px};
+    const Unit icon_size{22_fpx};
 
     if (!revert_button) {
         m_revert_button = title_row->emplace_back<Yoga::LayoutButton>(
@@ -201,7 +200,7 @@ ScaleWidget::ScaleWidget(
         );
         m_revert_button->set_width(icon_size);
         m_revert_button->set_height(icon_size);
-        m_revert_button->set_content_padding(5_px);
+        m_revert_button->set_content_padding(5_fpx);
         m_revert_button->set_background_color(Platform::Color::ButtonTransparent);
     } else {
         m_revert_button = revert_button;

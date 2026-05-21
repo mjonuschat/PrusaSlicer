@@ -27,7 +27,7 @@ ConfigItemTextFields::ConfigItemTextFields(
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
-    set_min_size({200, 0});
+    set_min_width(200);
 
     on_data_update();
 }

@@ -8,7 +8,6 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorDropdowns.hpp"
 #include "Slic3r/App/Plater/MMPaintingColorSelector.hpp"
@@ -36,9 +35,8 @@ MultiMaterialPaintingDialog::Callbacks& MultiMaterialPaintingDialog::callbacks()
 
 static const ImColor mouse_left_color{115, 151, 236};
 static const ImColor mouse_right_color{175, 119, 255};
-const float spacing{5_px};
-const float prefered_icon_size{36_px};
-const Vec2f component_max_size{400, YGUndefined};
+const Unit spacing{5_fpx};
+const Unit prefered_icon_size{36_fpx};
 
 ItemPtr label(const std::string& text)
 {
@@ -54,8 +52,10 @@ ItemPtr label(const std::string& text)
 void apply_icon_button_style(Item& item)
 {
     item.set_align_items(YGAlignStretch);
-    item.set_min_size({18_px, 18_px});
-    item.set_max_size({prefered_icon_size, prefered_icon_size});
+    item.set_min_width(18_fpx);
+    item.set_min_height(18_fpx);
+    item.set_max_width(prefered_icon_size);
+    item.set_max_height(prefered_icon_size);
     item.set_flex_grow(1);
     item.set_aspect_ratio(1);
 }
@@ -78,8 +78,8 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
     {
         LayoutButton* flex_button =
             container->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
-        flex_button->icon_object()->set_width(14_px);
-        flex_button->icon_object()->set_height(14_px);
+        flex_button->icon_object()->set_width(14_fpx);
+        flex_button->icon_object()->set_height(14_fpx);
         apply_icon_button_style(*flex_button);
         flex_button->set_checkable(true);
         flex_button->set_content_padding(0);
@@ -184,7 +184,7 @@ ItemPtr MultiMaterialPaintingDialog::brush_size_picker()
     m_brush_radius_slider->set_begin_value(MultiMaterialPaintingGizmo::CursorRadiusMin);
     m_brush_radius_slider->set_end_value(MultiMaterialPaintingGizmo::CursorRadiusMax);
     m_brush_radius_slider->set_step(0.01);
-    m_brush_radius_slider->set_max_size(component_max_size);
+    m_brush_radius_slider->set_max_width(preffered_max_width());
 
     m_brush_radius_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.brush_radius_changed(value); };
@@ -205,7 +205,7 @@ ItemPtr MultiMaterialPaintingDialog::smart_fill_angle_picker()
     m_smart_fill_angle_slider->set_begin_value(MultiMaterialPaintingGizmo::SmartFillAngleMin);
     m_smart_fill_angle_slider->set_end_value(MultiMaterialPaintingGizmo::SmartFillAngleMax);
     m_smart_fill_angle_slider->set_step(MultiMaterialPaintingGizmo::SmartFillAngleStep);
-    m_smart_fill_angle_slider->set_max_size(component_max_size);
+    m_smart_fill_angle_slider->set_max_width(preffered_max_width());
     m_smart_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.smart_fill_angle_changed(value); };
     return result;
@@ -225,7 +225,7 @@ ItemPtr MultiMaterialPaintingDialog::bucket_fill_angle_picker()
     m_bucket_fill_angle_slider->set_begin_value(MultiMaterialPaintingGizmo::SmartFillAngleMin);
     m_bucket_fill_angle_slider->set_end_value(MultiMaterialPaintingGizmo::SmartFillAngleMax);
     m_bucket_fill_angle_slider->set_step(MultiMaterialPaintingGizmo::SmartFillAngleStep);
-    m_bucket_fill_angle_slider->set_max_size(component_max_size);
+    m_bucket_fill_angle_slider->set_max_width(preffered_max_width());
     m_bucket_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.bucket_fill_angle_changed(value); };
     return result;
@@ -245,7 +245,7 @@ ItemPtr MultiMaterialPaintingDialog::height_range_picker()
     m_height_range_slider->set_begin_value(MultiMaterialPaintingGizmo::HeightRangeZRangeMin);
     m_height_range_slider->set_end_value(MultiMaterialPaintingGizmo::HeightRangeZRangeMax);
     m_height_range_slider->set_step(MultiMaterialPaintingGizmo::HeightRangeZRangeStep);
-    m_height_range_slider->set_max_size(component_max_size);
+    m_height_range_slider->set_max_width(preffered_max_width());
     m_height_range_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.height_range_changed(value); };
     return result;
@@ -258,23 +258,23 @@ static ItemPtr help()
     result->set_gap(2 * spacing);
     GizmoHelpFactory help;
     help.init(result.get());
-    Domain::Vec2f icon_size{16_px, 16_px};
+    const Unit icon_size{16_fpx};
     help.add_item(
-        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size, icon_size}},
         _u8L("Paint 1. color")
     );
     help.add_item(
-        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, icon_size}},
+        {GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight, icon_size, icon_size}},
         _u8L("Paint 2. color")
     );
     help.add_item(
-        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size}},
+        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, icon_size, icon_size}},
         _u8L("Remove painted color")
     );
     help.add_item({{"X"}}, _u8L("Swap colors"));
 
     help.add_item(
-        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseWheel, icon_size}},
+        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseWheel, icon_size, icon_size}},
         _u8L("Brush size")
     );
     return result;
@@ -285,7 +285,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
 ) :
     GizmoWindow(_u8L("Painting"), Render::Icon::None, _u8L("N"))
 {
-    const float padding{4 * spacing};
+    const Paddings padding{4 * spacing};
 
     content()->set_orientation(Orientation::Vertical);
     content()->set_flex_grow(1);
@@ -307,7 +307,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
         mouse_left_color,
         mouse_right_color
     );
-    m_color_dropdowns->set_max_size(component_max_size);
+    m_color_dropdowns->set_max_width(preffered_max_width());
     m_color_selector =
         selector_section->emplace_back<ColorSelector>(mouse_left_color, mouse_right_color);
 
@@ -339,7 +339,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
     auto brush_section{content()->emplace_back<Item>()};
     brush_section->set_padding(padding);
     brush_section->set_orientation(Orientation::Vertical);
-    brush_section->set_gap(padding);
+    brush_section->set_gap(padding.left);
     brush_section->set_flex_shrink(0);
 
     Plater::append(brush_section, brush_properties_picker());
@@ -371,7 +371,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
         _u8L("Reset clipping direction")
     );
     m_clipping_of_view_reset_direction_button->set_height_percent(80);
-    m_clipping_of_view_reset_direction_button->set_content_padding(3_px);
+    m_clipping_of_view_reset_direction_button->set_content_padding(3_fpx);
     m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
     { m_callbacks.clipping_of_view_reset_direction(); };
 
@@ -380,7 +380,7 @@ MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
     m_clipping_of_view_slider->set_begin_value(0.);
     m_clipping_of_view_slider->set_end_value(1.);
     m_clipping_of_view_slider->set_step(0.01);
-    m_clipping_of_view_slider->set_max_size(component_max_size);
+    m_clipping_of_view_slider->set_max_width(preffered_max_width());
     m_clipping_of_view_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.clipping_of_view_value_changed(value); };
 

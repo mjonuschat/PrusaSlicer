@@ -10,7 +10,7 @@ Circle::Circle() : Rectangle()
     set_aspect_ratio(1.f);
 }
 
-void Circle::render(Vec2f pos, Vec2f size)
+void Circle::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

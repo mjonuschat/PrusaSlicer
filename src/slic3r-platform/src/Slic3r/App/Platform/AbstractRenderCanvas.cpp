@@ -76,20 +76,6 @@ void AbstractRenderCanvas::render()
     if (m_animation_manager.update())
         request_render();
 
-    if (m_pending_font_size.has_value())
-    {
-        ImGuiStyle& style  = ImGui::GetStyle();
-        style.FontSizeBase = m_pending_font_size.value();
-        m_pending_font_size.reset();
-    }
-
-    if (m_pending_dpi_scale.has_value())
-    {
-        ImGuiStyle& style  = ImGui::GetStyle();
-        style.FontScaleDpi = m_pending_dpi_scale.value();
-        m_pending_dpi_scale.reset();
-    }
-
     std::unique_ptr<Render::CommandBuffer> cmd_buffer = device().create_command_buffer();
 
     assert_no_gl_error();
@@ -134,12 +120,6 @@ Render::ImguiRender& AbstractRenderCanvas::imgui_render()
 AbstractRenderCanvas::AbstractRenderCanvas() :
     m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
 {}
-
-void AbstractRenderCanvas::set_default_font_size(float font_size, float dpi_scale)
-{
-    m_pending_font_size = font_size;
-    m_pending_dpi_scale = dpi_scale;
-}
 
 bool AbstractRenderCanvas::begin_frame()
 {

@@ -16,7 +16,7 @@ ColorPicker::ColorPicker(const std::string& name)
     set_object_name(name.empty() ? "ColorPicker" : name);
 }
 
-void ColorPicker::render(Vec2f pos, Vec2f size)
+void ColorPicker::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

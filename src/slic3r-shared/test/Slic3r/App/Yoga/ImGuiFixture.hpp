@@ -21,6 +21,12 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
 {
     ImGuiFixture()
     {
+        default_size_info.dpi              = 96;
+        default_size_info.dpi_scale_factor = 1.0f;
+        default_size_info.viewport_size_x  = 1280;
+        default_size_info.viewport_size_y  = 720;
+        default_size_info.root_font_size   = 18;
+
         Slic3r::Biz::Platform::PlatformServices::instance().set_render_request_handler(this);
 
         m_theme = std::make_unique<Slic3r::App::Theme>(Slic3r::App::Theme::Style::Dark);
@@ -71,17 +77,11 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
         ImGui::PushID(Catch::getResultCapture().getCurrentTestName().c_str());
     }
 
-    void set_root_item(Slic3r::App::Yoga::RootItem* root_item)
-    {
-        m_root_item = root_item;
-    }
-
     /** @brief Advance one frame and render the RootItem. Call once as warm-up before injecting events. */
     void render()
     {
-        ASSERT(m_root_item);
         next_frame();
-        m_root_item->render({0.f, 0.f}, {1280.f, 720.f});
+        root.root_render(default_size_info);
     }
 
     void mouse_move(float x, float y)
@@ -144,7 +144,8 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
 
     ImGuiContext* ctx;
     std::unique_ptr<Slic3r::App::Theme> m_theme;
-    Slic3r::App::Yoga::RootItem* m_root_item = nullptr;
+    Slic3r::App::Yoga::SizeInfo default_size_info;
+    Slic3r::App::Yoga::RootItem root;
 
     void request_render() override {}
 };

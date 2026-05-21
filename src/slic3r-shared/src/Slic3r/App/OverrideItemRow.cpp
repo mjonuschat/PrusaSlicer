@@ -32,7 +32,7 @@ OverrideItemRow::OverrideItemRow(
 
     m_label = emplace_back<Text>(std::string());
     m_label->set_width(120);
-    m_label->set_max_size({120, YGUndefined});
+    m_label->set_max_width(120);
     m_label->set_wrap_mode(Text::WrapMode::Wrap);
 
     m_sidetext = emplace_back<Text>(std::string());
@@ -84,8 +84,7 @@ void OverrideItemRow::on_data_update()
         );
         m_control_item = dynamic_cast<Item*>(m_control);
         ASSERT(m_control_item, "ConfigItem has to derive from Yoga::Item");
-        m_control_item->set_min_size({100, m_control_item->min_size().y()});
-        m_control_item->set_max_size({100, YGUndefined});
+        m_control_item->set_width(100);
         m_control_item->set_flex_shrink(0);
     }
 

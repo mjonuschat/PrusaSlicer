@@ -6,14 +6,12 @@
 
 #include <imgui_internal.h>
 
-#include <utility>
-
 namespace Slic3r::App::Yoga {
 
 Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.Alpha)
 {
     set_object_name(window_name.empty() ? "Window" : window_name);
-    set_padding(20.f);
+    set_padding(1.15_rem);
 }
 
 float Window::rounding() const
@@ -55,7 +53,7 @@ void Window::set_alpha(float alpha)
     }
 }
 
-void Window::render(Vec2f pos, Vec2f size)
+void Window::render(const Vec2f& pos, const Vec2f& size)
 {
     // Process begin of popup modal if needed
     bool is_begin_popup_modal{false};
@@ -142,7 +140,7 @@ void Window::render(Vec2f pos, Vec2f size)
     }
 }
 
-void Window::render_body(Vec2f pos, Vec2f size) {}
+void Window::render_body(const Vec2f& pos, const Vec2f& size) {}
 
 bool Window::is_in_window() const
 {
@@ -184,7 +182,7 @@ void Window::set_position_by_yoga(bool position_by_yoga)
     m_position_by_yoga = position_by_yoga;
 }
 
-void Window::request_position(Vec2f position)
+void Window::request_position(const Vec2f& position)
 {
     m_requested_position = position;
 }

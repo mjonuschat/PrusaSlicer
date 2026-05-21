@@ -31,7 +31,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_project_interactor(project_interactor)
 {
     set_checkable(true);
-    set_height(25);
+    set_height(1.5_rem);
     set_flex_shrink(0);
     set_allow_overlap(true);
 
@@ -66,7 +66,8 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_material_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
     Item* button_wrap = emplace_back<Item>();
-    button_wrap->set_min_size({20.f, 20.f});
+    button_wrap->set_min_width(20.f);
+    button_wrap->set_min_height(20.f);
     button_wrap->set_flex_shrink(0);
     m_cog_btn = button_wrap->emplace_back<LayoutButton>(
         std::string{},

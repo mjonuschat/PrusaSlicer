@@ -234,8 +234,8 @@ void LogicalPrinterSettingsDialog::create_page_list()
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
-    scroll_area->set_max_size({YGUndefined, 275});
-    scroll_area->set_min_size({0, 275});
+    scroll_area->set_max_height(275);
+    scroll_area->set_min_height(275);
     scroll_area->set_margin({0.f, 0.f, -10.f, 0.f});
     scroll_area->set_padding({0.f, 0.f, 15.f, 0.f});
 
@@ -337,7 +337,8 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     Item* title_row = m_page_settings->emplace_back<Item>();
     title_row->set_align_items(YGAlignCenter);
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
-    back_button->set_min_size({24.f, 24.f});
+    back_button->set_width(24);
+    back_button->set_height(24);
     back_button->set_content_padding(3.f);
     back_button->callbacks().action = [this]()
     {

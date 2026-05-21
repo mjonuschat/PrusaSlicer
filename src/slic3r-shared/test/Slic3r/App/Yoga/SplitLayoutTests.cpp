@@ -20,14 +20,12 @@ using Catch::Matchers::WithinRel;
 
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] one item")
 {
-    RootItem item;
-
-    SplitLayout* split = item.emplace_back<SplitLayout>();
+    SplitLayout* split = root.emplace_back<SplitLayout>();
 
     Item* left = split->emplace_back<Item>();
-    left->set_min_size({30, YGUndefined});
+    left->set_min_width(30);
 
-    item.render({}, {100, 50});
+    render();
 
     REQUIRE_THAT(left->width(), WithinRel(30, 0.0001));
     REQUIRE(split->object_count() == 1);
@@ -35,27 +33,23 @@ TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] one item")
 
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] two items")
 {
-    RootItem item;
-
-    SplitLayout* split = item.emplace_back<SplitLayout>();
+    SplitLayout* split = root.emplace_back<SplitLayout>();
 
     Item* left = split->emplace_back<Item>();
-    left->set_min_size({30, YGUndefined});
+    left->set_min_width(30);
 
     Item* right = split->emplace_back<Item>();
     split->set_flex_child(right, true);
 
-    item.render({}, {100, 50});
-    item.render({}, {100, 50});
+    render();
+    render();
 
     REQUIRE(split->object_count() == 3);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] dynamic")
 {
-    RootItem item;
-
-    SplitLayout* split = item.emplace_back<SplitLayout>();
+    SplitLayout* split = root.emplace_back<SplitLayout>();
 
     Item* left = split->emplace_back<Item>();
 

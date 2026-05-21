@@ -5,7 +5,8 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include "Slic3r/Math.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
@@ -31,9 +32,9 @@ RotationDialog::RotationDialog(
     m_project_interactor.scene_interactor()
         .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
-    content()->set_padding({20_px, 20_px});
+    content()->set_padding({20_fpx, 20_fpx});
     content()->set_orientation(Yoga::Orientation::Vertical);
-    content()->set_gap(20_px);
+    content()->set_gap(20_fpx);
 
     revert_button()->callbacks().action = [this]()
     {
@@ -62,7 +63,7 @@ RotationDialog::RotationDialog(
 
     auto rotation_section{content()->emplace_back<Yoga::Item>()};
     rotation_section->set_orientation(Orientation::Vertical);
-    rotation_section->set_gap(10_px);
+    rotation_section->set_gap(10_fpx);
 
     auto title{rotation_section->emplace_back<Text>("Relative rotation")};
     title->set_font_type(Render::ImguiFontType::Bold);

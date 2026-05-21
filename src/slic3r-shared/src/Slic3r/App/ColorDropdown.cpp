@@ -1,6 +1,5 @@
 #include "Slic3r/App/ColorDropdown.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/ImGuiUtils.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -22,10 +21,10 @@ ColorMenuItem::ColorMenuItem(
 ) :
     m_dropdown_indicator(dropdown_indicator)
 {
-    set_min_size({0, 24_px});
+    set_min_height(24_fpx);
     set_width_percent(100);
     set_content_padding(
-        m_dropdown_indicator ? Yoga::Paddings{8_px, 3_px, 24_px, 3_px} : Yoga::Paddings{8_px, 3_px}
+        m_dropdown_indicator ? Yoga::Paddings{8_fpx, 3_fpx, 24_fpx, 3_fpx} : Yoga::Paddings{8_fpx, 3_fpx}
     );
     set_content_align_items(YGAlignCenter);
     set_content_justify_content(YGJustifyFlexStart);
@@ -59,16 +58,16 @@ void ColorMenuItem::set_entry(
     m_label = label;
     const ImColor imgui_color{color.r_uchar(), color.g_uchar(), color.b_uchar(), color.a_uchar()};
     if (hollow) {
-        m_swatch->set_width(std::round(10_px));
-        m_swatch->set_height(std::round(10_px));
-        const float margin{std::round(3_px)};
+        m_swatch->set_width(10_fpx);
+        m_swatch->set_height(10_fpx);
+        const Unit margin{3_fpx};
         m_swatch->set_margin({margin, margin, margin, margin});
         m_swatch->set_fill(m_theme->color_imgui(Platform::Color::Transparent));
-        m_swatch->set_border_width(1_px);
+        m_swatch->set_border_width(1);
         m_swatch->set_border_color(imgui_color);
     } else {
-        m_swatch->set_width(index ? std::round(16_px) : std::round(14_px));
-        m_swatch->set_height(index ? std::round(16_px) : std::round(14_px));
+        m_swatch->set_width(index ? 16_fpx : 14_fpx);
+        m_swatch->set_height(index ? 16_fpx : 14_fpx);
         m_swatch->set_margin(0);
         m_swatch->set_fill(imgui_color);
         m_swatch->set_padding(0);
@@ -82,7 +81,12 @@ void ColorMenuItem::set_entry(
     text->set_text(index ? *index : "");
 }
 
-void ColorMenuItem::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+static float fpx(float value) {
+    constexpr float imgui_scale_factor{18.0f / 14.0f};
+    return value * imgui_scale_factor;
+}
+
+void ColorMenuItem::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     Yoga::RectangleButton::render(pos, size);
 
@@ -91,8 +95,8 @@ void ColorMenuItem::render(Yoga::Vec2f pos, Yoga::Vec2f size)
     const ImVec2 swatch_pos{to_im(m_swatch->get_global_pos())};
     const float swatch_right{swatch_pos.x + m_swatch->width()};
 
-    const float text_left{swatch_right + 6_px};
-    const float right_padding{4_px};
+    const float text_left{swatch_right + fpx(6)};
+    const float right_padding{fpx(4)};
     float text_right{bb.Max.x - right_padding};
 
     if (!m_dropdown_indicator) {
@@ -209,9 +213,9 @@ ColorDropdown::ColorDropdown(Biz::ProjectInteractor& project_interactor, bool wi
     m_popup = m_trigger->emplace_back<Yoga::ContextPopup>("MMPaintingColorDropdownPopup");
     m_popup->set_orientation(Yoga::Orientation::Vertical);
     m_popup->set_width_percent(100);
-    m_popup->set_padding({2_px, 2_px});
-    m_popup->set_gap(2_px);
-    m_popup->set_offset(2_px);
+    m_popup->set_padding({2_fpx, 2_fpx});
+    m_popup->set_gap(2_fpx);
+    m_popup->set_offset(2);
     m_popup->set_position(Yoga::Position::Bottom);
 
     m_trigger->callbacks().action = [this]()

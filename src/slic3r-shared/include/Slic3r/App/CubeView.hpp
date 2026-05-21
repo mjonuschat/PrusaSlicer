@@ -16,7 +16,7 @@ public:
         m_trackball = &trackball;
     }
 
-    void render_body(Domain::Vec2f pos, Domain::Vec2f size) override;
+    void render_body(const Domain::Vec2f& pos, const Domain::Vec2f& size) override;
     bool require_render() const { return m_require_render; }
 
 private:

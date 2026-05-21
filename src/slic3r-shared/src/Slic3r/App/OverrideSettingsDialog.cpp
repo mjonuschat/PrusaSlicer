@@ -91,7 +91,7 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     m_override_config_list_view->set_margin(Margins(0, 0, -10, 0));
     m_override_config_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_override_config_list_view->set_source_list(m_category_filter.get());
-    m_override_config_list_view->set_max_size({YGUndefined, 350});
+    m_override_config_list_view->set_max_height(350);
 
     m_category_filter->set_source_model(
         preset_interactor.object_settings_interactor().object_observable_list()

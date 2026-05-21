@@ -40,7 +40,7 @@ OverridableSubcategoryListView::OverridableSubcategoryListView(
     set_flex_grow(1);
     set_gap(5);
     set_flex_grow(1);
-    set_min_size({0, 100});
+    set_min_height(100);
 
     m_category_filter->set_filter_fn(
         [this](const Biz::OverrideItem& override_item)

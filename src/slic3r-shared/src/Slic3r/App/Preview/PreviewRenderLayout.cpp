@@ -71,7 +71,7 @@ void PreviewRenderLayout::init_middle_column()
     // Workaround: Preview have double slider for layers which takes some size
     // SplitLayout unfortunately doesnt take in account all the min sizes
     // of their children.
-    m_layout_center_row->set_min_size({465, 0});
+    m_layout_center_row->set_min_width(465);
 
     m_layout_middle_column->append(m_double_slider_gcode.release());
 

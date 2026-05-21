@@ -128,7 +128,6 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
                 font.SetPointSize(font_sz);
                 w_config()->update_fonts(font, w_config()->em_unit());
                 w_config()->force_fonts_update(main_frame, true);
-                main_frame->update_canvas_ui_settings();
             }
 
             test_panel->Layout();
@@ -266,7 +265,6 @@ MainFrame::MainFrame(
         {
             event.Skip();
             m_left_bar->Rescale();
-            update_canvas_ui_settings();
 
             if (IsMaximized()) {
                 // When maximized, the OS does not send a real WM_SIZE on DPI change,
@@ -706,13 +704,6 @@ bool MainFrame::select_language()
         MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
     }
     return false;
-}
-
-void MainFrame::update_canvas_ui_settings()
-{
-    // Ignored DPI scaling for now
-    // TODO: Revisit before 3.0
-    m_canvas->set_default_font_size(18, 1);
 }
 
 static Scene::ShadingType shading_type(App::GraphicsQuality graphics_quality)

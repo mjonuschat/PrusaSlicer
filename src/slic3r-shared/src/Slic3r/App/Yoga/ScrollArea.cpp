@@ -13,8 +13,10 @@ ScrollArea::ScrollArea(const std::string& name) : Item()
     set_object_name(name);
 }
 
-void ScrollArea::render(Vec2f pos, Vec2f size)
+void ScrollArea::render(const Vec2f& p, const Vec2f& size)
 {
+    Vec2f pos = p;
+
     render_item_begin(pos, size);
 
     render_debug(pos, size);
@@ -43,8 +45,8 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
         && index_of(m_requested_item_scroll).has_value()
         && !m_requested_item_scroll->is_node_dirty())
     {
-        ImGui::SetScrollX(m_requested_item_scroll->x());
-        ImGui::SetScrollY(pos.y() = m_requested_item_scroll->y());
+        ImGui::SetScrollX(m_requested_item_scroll->left());
+        ImGui::SetScrollY(pos.y() = m_requested_item_scroll->top());
 
         m_requested_item_scroll = nullptr;
     }

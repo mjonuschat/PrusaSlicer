@@ -96,8 +96,10 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
     for (Yoga::LayoutButton* btn :
          std::initializer_list<Yoga::LayoutButton*>{m_revert_btn, m_lock_btn, m_cog_btn})
     {
-        btn->set_min_size(btns_size);
-        btn->set_max_size(btns_size);
+        btn->set_min_width(btns_size.x());
+        btn->set_min_height(btns_size.y());
+        btn->set_max_width(btns_size.x());
+        btn->set_max_height(btns_size.y());
     }
 
     m_ctrl->show_label_on_mouse_move(true);
@@ -513,7 +515,7 @@ void DoubleSliderForLayers::toggle_show_ruler(bool show)
 {
     m_show_ruler        = show;
     const float x_ratio = m_show_ruler ? 7.2f : 6.f;
-    m_ctrl->set_min_size({x_ratio * ImGui::GetStyle().FontSizeBase, 0});
+    m_ctrl->set_min_width(x_ratio * ImGui::GetStyle().FontSizeBase);
     m_ctrl->update_draw_options(m_scale, m_show_ruler);
     update_thumbs_border_color();
 }

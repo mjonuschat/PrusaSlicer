@@ -41,8 +41,9 @@ public:
 
     Window* content_item() const;
 
-    void render(Vec2f pos, Vec2f size) override;
-    void resize(const Vec2f& size);
+    void render(const Vec2f& pos, const Vec2f& size) override;
+    void resize(const SizeInfo &size_info) override;
+
     void check_resized();
 
     float offset() const;
@@ -87,6 +88,8 @@ private:
     Position m_preferred_position = Position::Right;
     float m_offset = 10;
     Vec2f m_last_size;
+    Vec2f m_last_attached_pos;
+    SizeInfo m_last_size_info;
 
     // hack
     bool m_resized = false;

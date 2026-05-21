@@ -62,7 +62,7 @@ void ToolBar::set_button_width(const float button_width)
     if (!Domain::fuzzy_compare(m_button_width, button_width)) {
         m_button_width = button_width;
         for (ToolBarButton* button : std::as_const(m_buttons)) {
-            if (m_orientation == Orientation::Horizontal && !button->label().empty()) {
+            if (orientation() == Orientation::Horizontal && !button->label().empty()) {
                 continue;
             }
             button->set_width(button_width);
@@ -81,7 +81,7 @@ void ToolBar::set_button_height(float button_height)
     if (!Domain::fuzzy_compare(m_button_height, button_height)) {
         m_button_height = button_height;
         for (ToolBarButton* button : std::as_const(m_buttons)) {
-            if (m_orientation == Orientation::Vertical && !button->label().empty()) {
+            if (orientation() == Orientation::Vertical && !button->label().empty()) {
                 continue;
             }
             button->set_height(button_height);
@@ -100,11 +100,11 @@ void ToolBar::insert(ObjectPtr child, size_t index)
     ToolBarButton* button = dynamic_cast<ToolBarButton*>(child.get());
     ASSERT(button);
 
-    if (m_button_width > 0 && (m_orientation != Orientation::Horizontal || button->label().empty()))
+    if (m_button_width > 0 && (orientation() != Orientation::Horizontal || button->label().empty()))
     {
         button->set_width(m_button_width);
     }
-    if (m_button_height > 0 && (m_orientation != Orientation::Vertical || button->label().empty()))
+    if (m_button_height > 0 && (orientation() != Orientation::Vertical || button->label().empty()))
     {
         button->set_height(m_button_height);
     }
@@ -156,29 +156,29 @@ void ToolBar::style_node()
         && height() > 0)
     {
         // Compute available size
-        float available_size = m_orientation == Orientation::Horizontal ? parent_item()->width() :
+        float available_size = orientation() == Orientation::Horizontal ? parent_item()->width() :
                                                                           parent_item()->height();
         for (Item* node : parent_item()->items()) {
             if (node != this) {
                 available_size -=
-                    m_orientation == Orientation::Horizontal ? node->width() : node->height();
+                    orientation() == Orientation::Horizontal ? node->width() : node->height();
             }
             if (node != *parent_item()->items().rbegin()) {
-                available_size -= parent_item()->gap();
+                available_size -= parent_item()->gap().value;
             }
-            available_size -= m_orientation == Orientation::Horizontal ?
-                node->margin().horizontal() :
-                node->margin().vertical();
+            available_size -= orientation() == Orientation::Horizontal ?
+                node->margin().result_horizontal() :
+                node->margin().result_vertical();
         }
 
-        available_size -= m_orientation == Orientation::Horizontal ? m_padding.horizontal() :
-                                                                     m_padding.vertical();
+        available_size -= orientation() == Orientation::Horizontal ? padding().result_horizontal() :
+                                                                     padding().result_vertical();
 
         // Decide which buttons will be included
 
         // Assume button size
         const float button_size =
-            m_orientation == Orientation::Horizontal ? m_button_width : m_button_height;
+            orientation() == Orientation::Horizontal ? m_button_width : m_button_height;
         // Take away size from collapsed button
         available_size -= button_size;
 
@@ -202,7 +202,7 @@ void ToolBar::style_node()
             }
 
             if (button != *m_buttons.rbegin()) {
-                available_size -= m_gap;
+                available_size -= gap().value;
             }
         }
 

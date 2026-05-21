@@ -42,8 +42,6 @@ public:
 
     ~AbstractRenderCanvas() override = default;
 
-    void set_default_font_size(float font_size, float dpi_scale);
-
     virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
     void set_next_render_module(AbstractRenderModule* render_module);
@@ -123,8 +121,6 @@ protected:
 private:
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
     AnimationManager m_animation_manager;
-    std::optional<float> m_pending_font_size;
-    std::optional<float> m_pending_dpi_scale;
     double m_last_time{0};
 };
 

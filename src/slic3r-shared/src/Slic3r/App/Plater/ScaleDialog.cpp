@@ -1,7 +1,8 @@
 #include "Slic3r/App/Plater/ScaleDialog.hpp"
 #include "Slic3r/App/Plater/ScaleWidget.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
@@ -10,9 +11,9 @@ using Biz::_u8L;
 ScaleDialog::ScaleDialog(Biz::ProjectInteractor& project_interactor) :
     GizmoWindow{_u8L("Scale"), Render::Icon::None, "S"}
 {
-    content()->set_padding({20_px, 20_px});
+    content()->set_padding({20_fpx, 20_fpx});
     content()->set_orientation(Yoga::Orientation::Vertical);
-    content()->set_gap(20_px);
+    content()->set_gap(20_fpx);
 
     auto reference_frame_picker{std::make_unique<ReferenceFramePicker>(
         project_interactor,

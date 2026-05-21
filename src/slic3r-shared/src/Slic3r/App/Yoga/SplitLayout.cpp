@@ -38,7 +38,7 @@ public:
         m_rectangle->set_fill(IM_COL32_WHITE);
     }
 
-    void render(Vec2f pos, Vec2f size) override
+    void render(const Vec2f& pos, const Vec2f& size) override
     {
         AbstractButton::render(pos, size);
 
@@ -61,13 +61,13 @@ public:
     {
         Item::set_orientation(orientation);
         if (orientation == Orientation::Horizontal) {
-            set_max_size({5, YGUndefined});
-            set_min_size({5, 0});
+            set_max_width(5);
+            set_min_width(5);
             m_rectangle->set_width(1);
             m_rectangle->set_height(75);
         } else {
-            set_max_size({YGUndefined, 5});
-            set_min_size({0, 5});
+            set_max_height(5);
+            set_min_height(5);
             m_rectangle->set_height(1);
             m_rectangle->set_width(75);
         }
@@ -126,11 +126,11 @@ public:
     {
         Item::set_orientation(orientation);
         if (orientation == Orientation::Horizontal) {
-            set_max_size({5, YGUndefined});
-            set_min_size({5, 0});
+            set_max_width(5);
+            set_min_width(5);
         } else {
-            set_max_size({YGUndefined, 5});
-            set_min_size({0, 5});
+            set_max_height(5);
+            set_min_height(5);
         }
     }
 
@@ -262,22 +262,22 @@ void SplitLayout::on_separator_moved(SeparatorButton* button, float requested_po
     ASSERT(other_item);
 
     // Resolve both of them
-    if (m_orientation == Orientation::Horizontal) {
+    if (orientation() == Orientation::Horizontal) {
         // compute delta from requested_pos
         // requested_pos represents position of right edge of the moving_item
         float delta = requested_pos - (moving_item->left() + moving_item->width());
 
         const float allowed_delta_moving = std::clamp(
                                                moving_item->width() + delta,
-                                               moving_item->min_size().x(),
-                                               moving_item->max_size().x()
+                                               moving_item->min_width().value,
+                                               moving_item->max_width().value
                                            )
             - moving_item->width();
 
         const float allowed_delta_other = std::clamp(
                                               other_item->width() - delta,
-                                              other_item->min_size().x(),
-                                              other_item->max_size().x()
+                                              other_item->min_width().value,
+                                              other_item->max_width().value
                                           )
             - other_item->width();
 
@@ -300,15 +300,15 @@ void SplitLayout::on_separator_moved(SeparatorButton* button, float requested_po
 
         const float allowed_delta_moving = std::clamp(
                                                moving_item->height() + delta,
-                                               moving_item->min_size().y(),
-                                               moving_item->max_size().y()
+                                               moving_item->min_heigth().value,
+                                               moving_item->max_height().value
                                            )
             - moving_item->height();
 
         const float allowed_delta_other = std::clamp(
                                               other_item->height() - delta,
-                                              other_item->min_size().y(),
-                                              other_item->max_size().y()
+                                              other_item->min_heigth().value,
+                                              other_item->max_height().value
                                           )
             - other_item->height();
 
@@ -384,23 +384,23 @@ void SplitLayout::on_resized()
 
     auto min_item_size = [&](Item* item) -> float
     {
-        return m_orientation == Orientation::Horizontal ? item->min_size().x() :
-                                                          item->min_size().y();
+        return orientation() == Orientation::Horizontal ? item->min_width().value :
+                                                          item->min_heigth().value;
     };
     auto item_size = [&](Item* item) -> float
     {
         if (m_flex_children.contains(item)) {
             return min_item_size(item);
         } else {
-            return m_orientation == Orientation::Horizontal ? item->width() : item->height();
+            return orientation() == Orientation::Horizontal ? item->width() : item->height();
         }
     };
     auto set_item_size = [this](Item* item, float size) -> void
-    { m_orientation == Orientation::Horizontal ? item->set_width(size) : item->set_height(size); };
+    { orientation() == Orientation::Horizontal ? item->set_width(size) : item->set_height(size); };
 
-    const float avail_size = m_orientation == Orientation::Horizontal ?
-        width() - padding().horizontal() :
-        height() - padding().vertical();
+    const float avail_size = orientation() == Orientation::Horizontal ?
+        width() - padding().result_horizontal() :
+        height() - padding().result_vertical();
     float set_size         = std::accumulate(
         m_children_render_order.cbegin(),
         m_children_render_order.cend(),
@@ -430,7 +430,7 @@ void SplitLayout::on_resized()
         }
     }
 
-    YGNodeCalculateLayout(m_node, width(), height(), m_direction);
+    YGNodeCalculateLayout(node(), width(), height(), direction());
 
     for (Item* flex_child : std::as_const(m_flex_children)) {
         if (orientation() == Orientation::Horizontal) {
@@ -444,7 +444,7 @@ void SplitLayout::on_resized()
         }
     }
 
-    YGNodeCalculateLayout(m_node, width(), height(), m_direction);
+    YGNodeCalculateLayout(node(), width(), height(), direction());
 }
 
 Item* SplitLayout::SeparatorItem::item() const

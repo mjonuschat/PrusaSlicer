@@ -16,7 +16,7 @@ public:
     explicit Slider(double begin, double end, double step = 1.);
     explicit Slider();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     Callbacks& callbacks();
 

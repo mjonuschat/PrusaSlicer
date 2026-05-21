@@ -26,7 +26,8 @@ HeightRangeRow::HeightRangeRow(const HeightRangeEntry& height_range) : m_height_
     { m_callbacks.hovered(hovered); };
 
     m_undo_button = emplace_back<LayoutButton>("", Render::Icon::UndoGizmo);
-    m_undo_button->set_min_size(Vec2f(22, 22));
+    m_undo_button->set_width(22);
+    m_undo_button->set_height(22);
     m_undo_button->set_self_align(YGAlignCenter);
     m_undo_button->set_flex_shrink(0);
     m_undo_button->set_background_color(Platform::Color::ButtonTransparent);
@@ -38,7 +39,8 @@ HeightRangeRow::HeightRangeRow(const HeightRangeEntry& height_range) : m_height_
     };
 
     m_delete_button = emplace_back<LayoutButton>("", Render::Icon::Minus);
-    m_delete_button->set_min_size(Vec2f(22, 22));
+    m_delete_button->set_width(22);
+    m_delete_button->set_height(22);
     m_delete_button->set_self_align(YGAlignCenter);
     m_delete_button->set_flex_shrink(0);
     m_delete_button->set_background_color(Platform::Color::ButtonTransparent);

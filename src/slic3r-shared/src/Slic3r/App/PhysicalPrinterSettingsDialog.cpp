@@ -183,7 +183,7 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_printer_list_view->set_margin(Margins(0, 0, -10, 0));
     m_printer_list_view->set_gap(8);
-    m_printer_list_view->set_max_size({YGUndefined, 275});
+    m_printer_list_view->set_max_height(275);
     m_printer_list_view->set_orientation(Orientation::Vertical);
     m_printer_list_view->set_source_list(&m_filtered_printers);
 

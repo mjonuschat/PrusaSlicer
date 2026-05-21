@@ -41,7 +41,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
 
     m_detail_level_btn = Passthrough{std::make_unique<RadioButton>(_u8L("Level of detail"))};
     m_detail_level     = Passthrough{std::make_unique<ComboBox>("Detail level")};
-    m_detail_level->set_max_size({preffered_max_width(), YGUndefined});
+    m_detail_level->set_max_width(preffered_max_width());
     m_detail_level->set_items( // Order must match enum class Detail
         {_u8L("Extra high"), _u8L("High"), _u8L("Medium"), _u8L("Low"), _u8L("Extra low")}
     );
@@ -60,7 +60,7 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
         )
     )};
     m_decimate_ratio     = Passthrough{std::make_unique<SliderWithInput>()};
-    m_decimate_ratio->set_max_size({preffered_max_width(), YGUndefined});
+    m_decimate_ratio->set_max_width(preffered_max_width());
     m_decimate_ratio->set_begin_value(0.);
     m_decimate_ratio->set_end_value(100.);
     m_decimate_ratio->set_input_width(40.f);

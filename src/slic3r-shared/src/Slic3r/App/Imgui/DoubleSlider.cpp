@@ -109,7 +109,7 @@ Control::Control(
     m_border_color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
 }
 
-void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
+void Control::render(const Domain::Vec2f& pos, const Domain::Vec2f& size)
 {
     m_pos = to_im(pos);
     m_size = to_im(size);

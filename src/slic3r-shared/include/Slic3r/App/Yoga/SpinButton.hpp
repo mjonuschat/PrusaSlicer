@@ -15,7 +15,7 @@ class SpinButton : public AbstractButton
 public:
     explicit SpinButton(ImGuiDir dir);
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
     Vec2f get_item_size() override;
 
 private:

@@ -37,7 +37,7 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_flex_grow(1);
     set_gap(0);
     set_flex_grow(1);
-    set_min_size({0, 100});
+    set_min_height(100);
 
     m_category_filter->set_filter_fn([this](const Domain::ConfigItem& config_item)
                                      { return config_item.def().category == m_category; });

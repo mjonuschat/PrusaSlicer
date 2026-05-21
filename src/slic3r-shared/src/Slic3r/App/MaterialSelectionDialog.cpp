@@ -180,8 +180,8 @@ MaterialSelectionDialog::MaterialSelectionDialog(
 
     Item* scroll_area = content()->emplace_back<Item>();
     scroll_area->set_orientation(Orientation::Vertical);
-    scroll_area->set_min_size({0, 200});
-    scroll_area->set_max_size({YGUndefined, 300});
+    scroll_area->set_min_height(200);
+    scroll_area->set_max_height(300);
 
     m_selection_row_list_view =
         scroll_area->emplace_back<SelectionRowListView>(SelectionRowListViewFactory{

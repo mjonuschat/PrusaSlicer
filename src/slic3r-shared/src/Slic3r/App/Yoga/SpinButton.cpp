@@ -17,7 +17,7 @@ SpinButton::SpinButton(ImGuiDir dir) :
     ASSERT(m_dir != ImGuiDir_None && m_dir != ImGuiDir_COUNT);
 }
 
-void SpinButton::render(Vec2f pos, Vec2f size)
+void SpinButton::render(const Vec2f& pos, const Vec2f& size)
 {
     AbstractButton::render(pos, size);
 

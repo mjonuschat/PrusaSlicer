@@ -124,7 +124,7 @@ PrintSettingsDialog::PrintSettingsDialog(
         left_column->emplace_back<PageListView>(std::move(factory_category));
     m_category_page_list_view->set_object_name("CategoryPageListView");
     m_category_page_list_view->set_orientation(Orientation::Vertical);
-    m_category_page_list_view->set_min_size({125, 0});
+    m_category_page_list_view->set_min_width(125);
     m_category_page_list_view->set_flex_shrink(0);
     m_category_page_list_view->set_source_list(m_tool_print_transformer.get());
     m_category_page_list_view->set_flex_grow(1);
@@ -155,7 +155,7 @@ PrintSettingsDialog::PrintSettingsDialog(
         left_column->emplace_back<PageListView>(std::move(factory_extruder));
     m_extruder_page_list_view->set_object_name("ExtruderPageListView");
     m_extruder_page_list_view->set_orientation(Orientation::Vertical);
-    m_extruder_page_list_view->set_min_size({125, 0});
+    m_extruder_page_list_view->set_min_width(125);
     m_extruder_page_list_view->set_flex_shrink(0);
     m_extruder_page_list_view->set_flex_grow(1);
     m_extruder_page_list_view->set_source_list(m_extruder_menu_transformer.get());

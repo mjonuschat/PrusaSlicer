@@ -122,7 +122,8 @@ LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::st
 {
     LayoutButton* button = m_btn_wrapper->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
     button->set_self_align(YGAlignCenter);
-    button->set_min_size({24.f, 24.f});
+    button->set_min_width(24.f);
+    button->set_min_height(24.f);
     button->set_background_color(Platform::Color::ButtonTransparent);
     button->set_flex_shrink(0);
     // Extra button is hidden by default.

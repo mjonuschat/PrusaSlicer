@@ -79,7 +79,7 @@ InputText::InputText(const std::string& name)
     set_object_name(name.empty() ? "InputText" : name);
 }
 
-void InputText::render(Vec2f pos, Vec2f size)
+void InputText::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 
@@ -94,12 +94,12 @@ void InputText::render(Vec2f pos, Vec2f size)
         if (m_resizable) {
             ImGui::SetNextWindowSizeConstraints(
                 ImVec2(
-                    YGFloatIsUndefined(m_min_size.x()) ? 0 : m_min_size.x(),
-                    YGFloatIsUndefined(m_min_size.y()) ? 0 : m_min_size.y()
+                    YGFloatIsUndefined(min_width().value) ? 0 : min_width().value,
+                    YGFloatIsUndefined(min_heigth().value) ? 0 : min_heigth().value
                 ),
                 ImVec2(
-                    YGFloatIsUndefined(m_max_size.x()) ? FLT_MAX : m_max_size.x(),
-                    YGFloatIsUndefined(m_max_size.y()) ? FLT_MAX : m_max_size.y()
+                    YGFloatIsUndefined(max_width().value) ? FLT_MAX : max_width().value,
+                    YGFloatIsUndefined(max_height().value) ? FLT_MAX : max_height().value
                 )
             );
             const std::string child_id = object_name() + "_child";

@@ -62,7 +62,7 @@ void LayerRangeSettingsDialog::init_categories_page()
     ScrollArea* categories_scroll = m_stack_layout->emplace_back<ScrollArea>();
     categories_scroll->set_orientation(Orientation::Vertical);
     categories_scroll->set_gap(5);
-    categories_scroll->set_max_size({YGUndefined, 350});
+    categories_scroll->set_max_height(350);
 
     for (const auto& [category, category_name] : category_names) {
         LayoutButton* button = categories_scroll->emplace_back<LayoutButton>(
@@ -103,7 +103,7 @@ void LayerRangeSettingsDialog::init_settings_page()
     m_settings_scroll = options_page->emplace_back<ScrollArea>();
     m_settings_scroll->set_orientation(Orientation::Vertical);
     m_settings_scroll->set_gap(5);
-    m_settings_scroll->set_max_size({YGUndefined, 350});
+    m_settings_scroll->set_max_height(350);
 }
 
 void LayerRangeSettingsDialog::set_config_box(const ConfigBox* config_box)
@@ -160,7 +160,7 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
             Biz::_u8(item.def().full_label.empty() ? item.def().label : item.def().full_label);
         Text* label_text = setting_row->emplace_back<Text>(setting_label);
         label_text->set_width(120);
-        label_text->set_max_size({120, YGUndefined});
+        label_text->set_max_width(120);
         label_text->set_wrap_mode(Text::WrapMode::Wrap);
 
         ConfigItemControl* control = ConfigItemControl::config_item_control_factory(
@@ -173,8 +173,7 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         );
 
         if (Item* control_item = dynamic_cast<Item*>(control); control_item != nullptr) {
-            control_item->set_min_size({100, control_item->min_size().y()});
-            control_item->set_max_size({100, YGUndefined});
+            control_item->set_width(100);
             control_item->set_flex_shrink(0);
         }
 

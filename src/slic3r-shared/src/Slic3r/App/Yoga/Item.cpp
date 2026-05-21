@@ -12,124 +12,12 @@
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include <imgui_internal.h>
+#include <fmt/format.h>
+#include <cmath>
 #include <string>
 #include <stack>
 
 namespace Slic3r::App::Yoga {
-
-static std::string yoga_position_to_string(YGPositionType position_type)
-{
-    std::string result = "'";
-
-    switch (position_type) {
-    case YGPositionTypeStatic:
-        result += "static";
-        break;
-    case YGPositionTypeAbsolute:
-        result += "absolute";
-        break;
-    case YGPositionTypeRelative:
-        result += "relative";
-        break;
-    }
-
-    result += "'";
-
-    return result;
-}
-
-static std::string yoga_flex_direction(YGFlexDirection flex_direction)
-{
-    std::string result = "'";
-
-    switch (flex_direction) {
-    case YGFlexDirectionColumn:
-        result += "column";
-        break;
-    case YGFlexDirectionColumnReverse:
-        result += "column-reverse";
-        break;
-    case YGFlexDirectionRow:
-        result += "row";
-        break;
-    case YGFlexDirectionRowReverse:
-        result += "row-reverse";
-        break;
-    }
-
-    result += "'";
-
-    return result;
-}
-
-static std::string yoga_align_to_string(YGAlign align)
-{
-    std::string result = "'";
-
-    switch (align) {
-    case YGAlignAuto:
-        result += "auto";
-        break;
-    case YGAlignCenter:
-        result += "center";
-        break;
-    case YGAlignFlexEnd:
-        result += "flex-end";
-        break;
-    case YGAlignFlexStart:
-        result += "flex-start";
-        break;
-    case YGAlignSpaceAround:
-        result += "space-around";
-        break;
-    case YGAlignSpaceBetween:
-        result += "space-between";
-        break;
-    case YGAlignSpaceEvenly:
-        result += "space-evenly";
-        break;
-    case YGAlignBaseline:
-        result += "baseline";
-        break;
-    case YGAlignStretch:
-        result += "stretch";
-        break;
-    }
-
-    result += "'";
-
-    return result;
-}
-
-static std::string yoga_justify_to_string(YGJustify justify)
-{
-    std::string result = "'";
-
-    switch (justify) {
-    case YGJustifyCenter:
-        result += "center";
-        break;
-    case YGJustifyFlexEnd:
-        result += "flex-end";
-        break;
-    case YGJustifyFlexStart:
-        result += "flex-start";
-        break;
-    case YGJustifySpaceAround:
-        result += "space-around";
-        break;
-    case YGJustifySpaceBetween:
-        result += "space-between";
-        break;
-    case YGJustifySpaceEvenly:
-        result += "space-evenly";
-        break;
-    }
-
-    result += "'";
-
-    return result;
-}
 
 /**
  * @brief utility function to traverse tree from object ana run function on every visited object
@@ -191,7 +79,9 @@ void Object::set_object_name(const std::string& object_name)
     }
 }
 
-void Object::render(Vec2f pos, Vec2f size) {}
+void Object::resize(const SizeInfo& size_info) {}
+
+void Object::render(const Vec2f& pos, const Vec2f& size) {}
 
 void Object::style_node()
 {
@@ -378,11 +268,11 @@ std::optional<size_t> Object::index_of(Object* item) const
 
 Item::Item()
 {
-    m_node = YGNodeNewWithConfig(m_config);
+    m_node = YGNodeNew();
 
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
     YGNodeStyleSetDirection(m_node, m_direction);
-    YGNodeStyleSetFlexShrink(m_node, m_flex_shrink);
+    YGNodeStyleSetFlexShrink(m_node, m_flex_shrink.result);
 }
 
 Item::~Item()
@@ -397,7 +287,77 @@ Item::Callbacks& Item::item_callbacks()
     return m_callbacks;
 }
 
-void Item::render(Vec2f pos, Vec2f size)
+void Item::resize(const SizeInfo& size_info)
+{
+    if (size_info != m_size_info) {
+        m_size_info           = size_info;
+        m_min_size_calculated = false;
+
+        if (m_width.has_value() && std::holds_alternative<EvaluatedUnit>(*m_width)) {
+            auto& eu = std::get<EvaluatedUnit>(*m_width);
+            eu.evaluate(size_info);
+            YGNodeStyleSetWidth(m_node, eu.result);
+        }
+        if (m_height.has_value() && std::holds_alternative<EvaluatedUnit>(*m_height)) {
+            auto& eu = std::get<EvaluatedUnit>(*m_height);
+            eu.evaluate(size_info);
+            YGNodeStyleSetHeight(m_node, eu.result);
+        }
+        if (m_left.has_value()) {
+            m_left->evaluate(size_info);
+            YGNodeStyleSetPosition(m_node, YGEdgeLeft, m_left->result);
+        }
+        if (m_right.has_value()) {
+            m_right->evaluate(size_info);
+            YGNodeStyleSetPosition(m_node, YGEdgeRight, m_right->result);
+        }
+        if (m_top.has_value()) {
+            m_top->evaluate(size_info);
+            YGNodeStyleSetPosition(m_node, YGEdgeTop, m_top->result);
+        }
+        if (m_bottom.has_value()) {
+            m_bottom->evaluate(size_info);
+            YGNodeStyleSetPosition(m_node, YGEdgeBottom, m_bottom->result);
+        }
+
+        m_min_width.evaluate(size_info);
+        YGNodeStyleSetMinWidth(m_node, m_min_width.result);
+        m_max_width.evaluate(size_info);
+        YGNodeStyleSetMaxWidth(m_node, m_max_width.result);
+        m_min_height.evaluate(size_info);
+        YGNodeStyleSetMinHeight(m_node, m_min_height.result);
+        m_max_height.evaluate(size_info);
+        YGNodeStyleSetMaxHeight(m_node, m_max_height.result);
+
+        m_flex_grow.evaluate(size_info);
+        YGNodeStyleSetFlexGrow(m_node, m_flex_grow.result);
+        m_flex_shrink.evaluate(size_info);
+        YGNodeStyleSetFlexShrink(m_node, m_flex_shrink.result);
+
+        m_gap.evaluate(size_info);
+        YGNodeStyleSetGap(m_node, YGGutterAll, m_gap.result);
+
+        m_margins.evaluate(size_info);
+        YGNodeStyleSetMargin(m_node, YGEdgeLeft, m_margins.left);
+        YGNodeStyleSetMargin(m_node, YGEdgeRight, m_margins.right);
+        YGNodeStyleSetMargin(m_node, YGEdgeTop, m_margins.top);
+        YGNodeStyleSetMargin(m_node, YGEdgeBottom, m_margins.bottom);
+
+        m_paddings.evaluate(size_info);
+        YGNodeStyleSetPadding(m_node, YGEdgeLeft, m_paddings.left);
+        YGNodeStyleSetPadding(m_node, YGEdgeRight, m_paddings.right);
+        YGNodeStyleSetPadding(m_node, YGEdgeTop, m_paddings.top);
+        YGNodeStyleSetPadding(m_node, YGEdgeBottom, m_paddings.bottom);
+
+        size_info_changed(size_info);
+
+        set_style_dirty();
+    }
+
+    std::ranges::for_each(m_children, [&](ObjectPtr& child) { child->resize(size_info); });
+}
+
+void Item::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 
@@ -407,16 +367,6 @@ void Item::render(Vec2f pos, Vec2f size)
 YGNodeRef Item::node() const
 {
     return m_node;
-}
-
-float Item::x() const
-{
-    return YGNodeLayoutGetLeft(m_node);
-}
-
-float Item::y() const
-{
-    return YGNodeLayoutGetTop(m_node);
 }
 
 float Item::z() const
@@ -454,14 +404,24 @@ float Item::bottom() const
     return YGNodeLayoutGetBottom(m_node);
 }
 
-const Vec2f& Item::min_size() const
+const Unit& Item::min_width() const
 {
-    return m_min_size;
+    return m_min_width.source;
 }
 
-const Vec2f& Item::max_size() const
+const Unit& Item::min_heigth() const
 {
-    return m_max_size;
+    return m_min_height.source;
+}
+
+const Unit& Item::max_width() const
+{
+    return m_max_width.source;
+}
+
+const Unit& Item::max_height() const
+{
+    return m_max_height.source;
 }
 
 bool Item::is_visible() const
@@ -479,14 +439,14 @@ bool Item::debug_border() const
     return m_debug_border;
 }
 
-float Item::flex_grow() const
+const Unit& Item::flex_grow() const
 {
-    return m_flex_grow;
+    return m_flex_grow.source;
 }
 
-float Item::flex_shrink() const
+const Unit& Item::flex_shrink() const
 {
-    return m_flex_shrink;
+    return m_flex_shrink.source;
 }
 
 YGDirection Item::direction() const
@@ -519,19 +479,19 @@ YGAlign Item::align_content() const
     return m_align_content;
 }
 
-const Margins& Item::margin() const
+const EvaluatedMargins& Item::margin() const
 {
-    return m_margin;
+    return m_margins;
 }
 
-const Paddings& Item::padding() const
+const EvaluatedPaddings& Item::padding() const
 {
-    return m_padding;
+    return m_paddings;
 }
 
-float Item::gap() const
+const Unit& Item::gap() const
 {
-    return m_gap;
+    return m_gap.source;
 }
 
 Orientation Item::orientation() const
@@ -576,16 +536,6 @@ void Item::set_enabled(bool enabled)
     }
 }
 
-void Item::set_max_size(const Vec2f& max_size)
-{
-    if (m_max_size != max_size) {
-        m_max_size = max_size;
-        YGNodeStyleSetMaxWidth(m_node, m_max_size.x());
-        YGNodeStyleSetMaxHeight(m_node, m_max_size.y());
-        set_style_dirty();
-    }
-}
-
 void Item::set_visible(bool visible)
 {
     if (m_visible != visible) {
@@ -596,58 +546,100 @@ void Item::set_visible(bool visible)
     }
 }
 
-void Item::set_width(float width)
+void Item::set_width(const Unit& width)
 {
-    YGNodeStyleSetWidth(m_node, width);
-    set_style_dirty();
+    if (!m_width.has_value()
+        || !std::holds_alternative<EvaluatedUnit>(m_width.value())
+        || std::get<EvaluatedUnit>(m_width.value()).source != width)
+    {
+        EvaluatedUnit new_width{width};
+        new_width.evaluate(m_size_info);
+        YGNodeStyleSetWidth(m_node, new_width.result);
+        m_width = std::move(new_width);
+        set_style_dirty();
+    }
 }
 
-void Item::set_height(float height)
+void Item::set_height(const Unit& height)
 {
-    YGNodeStyleSetHeight(m_node, height);
-    set_style_dirty();
+    if (!m_height.has_value()
+        || !std::holds_alternative<EvaluatedUnit>(m_height.value())
+        || std::get<EvaluatedUnit>(m_height.value()).source != height)
+    {
+        EvaluatedUnit new_height{height};
+        new_height.evaluate(m_size_info);
+        YGNodeStyleSetHeight(m_node, new_height.result);
+        m_height = std::move(new_height);
+        set_style_dirty();
+    }
 }
 
 void Item::set_width_percent(float width_percent)
 {
-    YGNodeStyleSetWidthPercent(m_node, width_percent);
-    set_style_dirty();
+    if (!m_width.has_value()
+        || !std::holds_alternative<float>(m_width.value())
+        || !Domain::fuzzy_compare(std::get<float>(m_width.value()), width_percent))
+    {
+        m_width = width_percent;
+        YGNodeStyleSetWidthPercent(m_node, width_percent);
+        set_style_dirty();
+    }
 }
 
 void Item::set_height_percent(float height_percent)
 {
-    YGNodeStyleSetHeightPercent(m_node, height_percent);
-    set_style_dirty();
+    if (!m_height.has_value()
+        || !std::holds_alternative<float>(m_height.value())
+        || !Domain::fuzzy_compare(std::get<float>(m_height.value()), height_percent))
+    {
+        m_height = height_percent;
+        YGNodeStyleSetHeightPercent(m_node, height_percent);
+        set_style_dirty();
+    }
 }
 
-void Item::set_left(float left)
+void Item::set_left(const Unit& left)
 {
-    YGNodeStyleSetPosition(m_node, YGEdgeLeft, left);
-    set_style_dirty();
+    if (!m_left.has_value() || m_left.value().source != left) {
+        EvaluatedUnit new_left{left};
+        new_left.evaluate(m_size_info);
+        YGNodeStyleSetPosition(m_node, YGEdgeLeft, new_left.result);
+        m_left = new_left;
+        set_style_dirty();
+    }
 }
 
-void Item::set_right(float right)
+void Item::set_right(const Unit& right)
 {
-    YGNodeStyleSetPosition(m_node, YGEdgeRight, right);
-    set_style_dirty();
+    if (!m_right.has_value() || m_right.value().source != right) {
+        EvaluatedUnit new_right{right};
+        new_right.evaluate(m_size_info);
+        YGNodeStyleSetPosition(m_node, YGEdgeRight, new_right.result);
+        m_right = new_right;
+        set_style_dirty();
+    }
 }
 
-void Item::set_top(float top)
+void Item::set_top(const Unit& top)
 {
-    YGNodeStyleSetPosition(m_node, YGEdgeTop, top);
-    set_style_dirty();
+    if (!m_top.has_value() || m_top.value().source != top) {
+        EvaluatedUnit new_top{top};
+        new_top.evaluate(m_size_info);
+        YGNodeStyleSetPosition(m_node, YGEdgeTop, new_top.result);
+        m_top = new_top;
+        set_style_dirty();
+    }
 }
 
-void Item::set_bottom(float bottom)
+void Item::set_bottom(const Unit& bottom)
 {
-    YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom);
-    set_style_dirty();
-}
-
-void Item::set_flex(float flex)
-{
-    YGNodeStyleSetFlex(m_node, flex);
-    set_style_dirty();
+    if (!m_bottom.has_value() || m_bottom.value().source != bottom) {
+        EvaluatedUnit new_bottom{bottom};
+        new_bottom.evaluate(m_size_info);
+        YGNodeStyleSetPosition(m_node, YGEdgeBottom, new_bottom.result);
+        m_bottom = new_bottom;
+        set_style_dirty();
+    }
 }
 
 void Item::set_flex_wrap(YGWrap wrap)
@@ -683,79 +675,9 @@ void Item::set_debug_border(bool show_debug_border)
     m_debug_border = show_debug_border;
 }
 
-std::string Item::debug_dump_tree() const
-{
-    std::string dump;
-
-    dump += "<Node style={{";
-
-    dump += "minWidth: " + std::to_string(YGNodeStyleGetMinWidth(m_node).value) + ", ";
-    dump += "minHeight: " + std::to_string(YGNodeStyleGetMinHeight(m_node).value) + ", ";
-    // if (m_max_size.x() != YGUndefined) {
-    // dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", "
-    // }
-    // if (m_max_size.y() != YGUndefined) {
-    // dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
-    // }
-    if (m_padding.left > 0)
-        dump += "paddingLeft: "
-            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value)
-            + ", ";
-    if (m_padding.right > 0)
-        dump += "paddingRight: "
-            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeRight).value)
-            + ", ";
-    if (m_padding.left > 0)
-        dump +=
-            "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) + ", ";
-    if (m_padding.bottom > 0)
-        dump += "paddingBottom: "
-            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeBottom).value)
-            + ", ";
-    if (m_margin.left > 0)
-        dump +=
-            "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) + ", ";
-    if (m_margin.right > 0)
-        dump += "marginRight: "
-            + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value)
-            + ", ";
-    if (m_margin.top > 0)
-        dump +=
-            "marginTop: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeTop).value) + ", ";
-    if (m_margin.bottom > 0)
-        dump += "marginBottom: "
-            + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeBottom).value)
-            + ", ";
-
-    dump += "flexGrow: " + std::to_string(YGNodeStyleGetFlexGrow(m_node)) + ", ";
-    // if (m_aspect_ratio != YGUndefined) {
-    // dump += "aspectRatio: " + std::to_string(YGNodeStyleGetAspectRatio(m_node)) + ", ";
-    // }
-    dump += "alignSelf: " + yoga_align_to_string(m_self_align) + ", ";
-    dump += "flexDirection: " + yoga_flex_direction(m_flex_direction) + ", ";
-    dump += "gap: " + std::to_string(YGNodeStyleGetGap(m_node, YGGutterAll)) + ", ";
-    dump += "positionType: " + yoga_position_to_string(m_position_type) + ", ";
-    dump += "justifyContent: " + yoga_justify_to_string(m_justify_content) + ", ";
-    dump += "alignItems: " + yoga_align_to_string(m_align_items) + ", ";
-    dump += "alignContent: " + yoga_align_to_string(m_align_content) + ", ";
-
-    dump += "}}>\n";
-
-    for (const Item* child : m_children_items) {
-        if (child) {
-            dump += child->debug_dump_tree();
-        }
-    }
-
-    dump += "</Node>\n";
-
-    return dump;
-}
-
 void Item::invalidate_min_size_calculation()
 {
     m_min_size_calculated = false;
-    m_min_size            = Vec2f();
     set_style_dirty();
 }
 
@@ -778,6 +700,8 @@ void Item::update_visible()
         }
     }
 }
+
+void Item::size_info_changed(const SizeInfo& info_size) {}
 
 ImVec2 Item::to_im(const Vec2f& val)
 {
@@ -808,13 +732,6 @@ Vec2f Item::get_item_size()
 void Item::enabled_updated_internal() {}
 
 void Item::visible_updated_internal() {}
-
-Vec2f Item::get_available_size() const
-{
-    Item* root = dynamic_cast<Item*>(root_item());
-    ASSERT(root, "Item is not inside a valid tree with RootItem");
-    return root->get_available_size();
-}
 
 void Item::on_resized()
 {
@@ -874,8 +791,6 @@ Vec2f Object::pixel_round(const Vec2f& value)
     return {pixel_round(value.x()), pixel_round(value.y())};
 }
 
-
-
 void Item::update_children_render_order()
 {
     m_children_render_order.clear();
@@ -911,70 +826,66 @@ void Item::set_self_align(YGAlign align)
 
 void Item::set_margin(const Margins& margin)
 {
-    if (m_margin != margin) {
-        m_margin = margin;
-        YGNodeStyleSetMargin(m_node, YGEdgeLeft, m_margin.left);
-        YGNodeStyleSetMargin(m_node, YGEdgeRight, m_margin.right);
-        YGNodeStyleSetMargin(m_node, YGEdgeTop, m_margin.top);
-        YGNodeStyleSetMargin(m_node, YGEdgeBottom, m_margin.bottom);
+    if (m_margins.source != margin) {
+        m_margins.source = margin;
+        m_margins.evaluate(m_size_info);
+        YGNodeStyleSetMargin(m_node, YGEdgeLeft, m_margins.left);
+        YGNodeStyleSetMargin(m_node, YGEdgeRight, m_margins.right);
+        YGNodeStyleSetMargin(m_node, YGEdgeTop, m_margins.top);
+        YGNodeStyleSetMargin(m_node, YGEdgeBottom, m_margins.bottom);
         set_style_dirty();
     }
 }
 
 void Item::set_padding(const Paddings& padding)
 {
-    if (m_padding != padding) {
-        m_padding = padding;
-        YGNodeStyleSetPadding(m_node, YGEdgeLeft, m_padding.left);
-        YGNodeStyleSetPadding(m_node, YGEdgeRight, m_padding.right);
-        YGNodeStyleSetPadding(m_node, YGEdgeTop, m_padding.top);
-        YGNodeStyleSetPadding(m_node, YGEdgeBottom, m_padding.bottom);
+    if (m_paddings.source != padding) {
+        m_paddings.source = padding;
+        m_paddings.evaluate(m_size_info);
+        YGNodeStyleSetPadding(m_node, YGEdgeLeft, m_paddings.left);
+        YGNodeStyleSetPadding(m_node, YGEdgeRight, m_paddings.right);
+        YGNodeStyleSetPadding(m_node, YGEdgeTop, m_paddings.top);
+        YGNodeStyleSetPadding(m_node, YGEdgeBottom, m_paddings.bottom);
         set_style_dirty();
     }
 }
 
-void Item::set_min_size(const Vec2f& min_size)
+void Item::set_min_width(const Unit& min_width)
 {
-    if (m_min_size != min_size) {
-        m_min_size = min_size;
-        YGNodeStyleSetMinWidth(m_node, m_min_size.x());
-        YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+    if (min_width != m_min_width.source) {
+        m_min_width.source = min_width;
+        m_min_width.evaluate(m_size_info);
+        YGNodeStyleSetMinWidth(m_node, m_min_width.result);
         set_style_dirty();
     }
 }
 
-void Item::set_min_width(float min_width)
+void Item::set_max_width(const Unit& max_width)
 {
-    if (!Domain::fuzzy_compare(m_min_size.x(), min_width)) {
-        m_min_size.x() = min_width;
-        YGNodeStyleSetMinWidth(m_node, m_min_size.x());
+    if (max_width != m_max_width.source) {
+        m_max_width.source = max_width;
+        m_max_width.evaluate(m_size_info);
+        YGNodeStyleSetMaxWidth(m_node, m_max_width.result);
         set_style_dirty();
     }
 }
 
-void Item::set_min_height(float min_height)
+void Item::set_min_height(const Unit& min_height)
 {
-    if (!Domain::fuzzy_compare(m_min_size.y(), min_height)) {
-        m_min_size.y() = min_height;
-        YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+    if (min_height != m_min_height.source) {
+        m_min_height.source = min_height;
+        m_min_height.evaluate(m_size_info);
+        YGNodeStyleSetMinHeight(m_node, m_min_height.result);
         set_style_dirty();
     }
 }
 
-void Item::set_flex_grow(float flex_grow)
+void Item::set_max_height(const Unit& max_height)
 {
-    if (!Domain::fuzzy_compare(m_flex_grow, flex_grow)) {
-        m_flex_grow = flex_grow;
-        YGNodeStyleSetFlexGrow(m_node, m_flex_grow);
-        set_style_dirty();
-    }
-}
-
-void Item::set_flex_shrink(float flex_shrink)
-{
-    if (!Domain::fuzzy_compare(m_flex_shrink, flex_shrink)) {
-        m_flex_shrink = flex_shrink;
-        YGNodeStyleSetFlexShrink(m_node, m_flex_shrink);
+    if (max_height != m_max_height.source) {
+        m_max_height.source = max_height;
+        m_max_height.evaluate(m_size_info);
+        YGNodeStyleSetMaxHeight(m_node, m_max_height.result);
         set_style_dirty();
     }
 }
@@ -1035,11 +946,32 @@ void Item::set_orientation(Orientation orientation)
     }
 }
 
-void Item::set_gap(float gap)
+void Item::set_flex_grow(const Unit& flex_grow)
 {
-    if (m_gap != gap) {
-        m_gap = gap;
-        YGNodeStyleSetGap(m_node, YGGutter::YGGutterAll, m_gap);
+    if (flex_grow != m_flex_grow.source) {
+        m_flex_grow.source = flex_grow;
+        m_flex_grow.evaluate(m_size_info);
+        YGNodeStyleSetFlexGrow(m_node, m_flex_grow.result);
+        set_style_dirty();
+    }
+}
+
+void Item::set_flex_shrink(const Unit& flex_shrink)
+{
+    if (flex_shrink != m_flex_shrink.source) {
+        m_flex_shrink.source = flex_shrink;
+        m_flex_shrink.evaluate(m_size_info);
+        YGNodeStyleSetFlexShrink(m_node, m_flex_shrink.result);
+        set_style_dirty();
+    }
+}
+
+void Item::set_gap(const Unit& gap)
+{
+    if (m_gap.source != gap) {
+        m_gap.source = gap;
+        m_gap.evaluate(m_size_info);
+        YGNodeStyleSetGap(m_node, YGGutter::YGGutterAll, m_gap.result);
         set_style_dirty();
     }
 }
@@ -1123,9 +1055,9 @@ void Item::style_node()
         if (!m_min_size_calculated) {
             m_min_size_calculated = true;
             Vec2f sz              = get_item_size();
-            m_min_size            = m_min_size.cwiseMax(sz);
-            YGNodeStyleSetMinWidth(m_node, m_min_size.x());
-            YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+            sz                    = sz.cwiseMax(Vec2f{m_min_width.result, m_min_height.result});
+            YGNodeStyleSetMinWidth(m_node, sz.x());
+            YGNodeStyleSetMinHeight(m_node, sz.y());
         }
     } else {
         // Otherwise style all our children
@@ -1165,7 +1097,336 @@ void Item::render_node(Vec2f pos, Item* child)
 
 #ifdef DEBUG
 Item* Item::m_debug_item = nullptr;
+
+static std::string_view unit_type_string(Unit::Type type)
+{
+    switch (type) {
+    case Unit::Type::Pixel:
+        return "px";
+    case Unit::Type::FigmaPixel:
+        return "fpx";
+    case Unit::Type::Point:
+        return "pt";
+    case Unit::Type::Rem:
+        return "rem";
+    case Unit::Type::ViewportWidth:
+        return "vw";
+    case Unit::Type::ViewportHeight:
+        return "vh";
+    case Unit::Type::ViewportMin:
+        return "vmin";
+    case Unit::Type::ViewportMax:
+        return "vmax";
+    }
+    return "?";
+}
+
+static std::string fmt_side(const Unit& src, float result)
+{
+    if (std::isnan(src.value) || std::isnan(result)) {
+        return "(unset)";
+    } else if (src.type == Unit::Type::Pixel) {
+        return fmt::format("{:.4g}px", src.value);
+    } else {
+        return fmt::format("{:.4g}{}={:.4g}", src.value, unit_type_string(src.type), result);
+    }
+}
+
+static std::string fmt_eu(const EvaluatedUnit& eu)
+{
+    return fmt_side(eu.source, eu.result);
+}
 #endif
+
+void Item::render_debug_overlay(ImDrawList* draw_list) const
+{
+#ifdef DEBUG
+    ImGui::PushFont(ImGui::GetFont(), 16);
+
+    constexpr ImU32 c_header  = IM_COL32(255, 180, 60, 255);
+    constexpr ImU32 c_text    = IM_COL32(220, 220, 220, 255);
+    constexpr ImU32 c_margin  = IM_COL32(246, 178, 107, 230);
+    constexpr ImU32 c_padding = IM_COL32(147, 196, 125, 230);
+    constexpr ImU32 c_content = IM_COL32(180, 220, 255, 255);
+    constexpr ImU32 c_border  = IM_COL32(255, 60, 60, 220);
+    constexpr ImU32 f_margin  = IM_COL32(246, 178, 107, 90);
+    constexpr ImU32 f_padding = IM_COL32(147, 196, 125, 90);
+    constexpr ImU32 f_content = IM_COL32(97, 150, 218, 70);
+
+    const Vec2f gpos = get_global_pos();
+    const float w    = width();
+    const float h    = height();
+
+    draw_list->AddRect(to_im(gpos), to_im(gpos + Vec2f(w, h)), c_border, 0.f, 0, 1.5f);
+
+    const float ml = m_margins.left;
+    const float mt = m_margins.top;
+    const float mr = m_margins.right;
+    const float mb = m_margins.bottom;
+
+    const float pl = m_paddings.left;
+    const float pt = m_paddings.top;
+    const float pr = m_paddings.right;
+    const float pb = m_paddings.bottom;
+
+    const Sides& ms = m_margins.source;
+    const Sides& ps = m_paddings.source;
+
+    using Line = std::pair<std::string, ImU32>;
+
+    std::vector<Line> lines;
+    lines.reserve(7);
+
+    {
+        std::string header = object_name().empty() ? "" : object_name() + "  ";
+        header += fmt::format("{}x{}px  at [{}, {}]", w, h, gpos.x(), gpos.y());
+        lines.emplace_back(std::move(header), c_header);
+    }
+
+    lines.emplace_back(
+        fmt::format(
+            "dpi:{}  scale:{:.4g}x  vp:{}x{}  rem:{:.4g}px",
+            m_size_info.dpi,
+            m_size_info.dpi_scale_factor,
+            m_size_info.viewport_size_x,
+            m_size_info.viewport_size_y,
+            m_size_info.root_font_size
+        ),
+        c_text
+    );
+
+    if (m_min_width.result > 0 || m_min_height.result > 0) {
+        lines.emplace_back(
+            "min_w: " + fmt_eu(m_min_width) + " min_h: " + fmt_eu(m_min_height),
+            c_text
+        );
+    }
+    if (!YGFloatIsUndefined(m_max_width.result) || !YGFloatIsUndefined(m_max_height.result)) {
+        lines.emplace_back(
+            "max_w: " + fmt_eu(m_max_width) + " max_h: " + fmt_eu(m_max_height),
+            c_text
+        );
+    }
+
+    auto fmt_yoga_size = [](const Item::YogaSize& yoga_size) -> std::string
+    {
+        if (std::holds_alternative<EvaluatedUnit>(yoga_size)) {
+            return fmt_eu(std::get<EvaluatedUnit>(yoga_size));
+        } else {
+            return fmt::format("{:.4g}%", std::get<float>(yoga_size));
+        }
+    };
+
+    if (m_width.has_value()) {
+        lines.emplace_back("explicit width: " + fmt_yoga_size(m_width.value()), c_text);
+    }
+    if (m_height.has_value()) {
+        lines.emplace_back("explicit height: " + fmt_yoga_size(m_height.value()), c_text);
+    }
+
+    lines.emplace_back(
+        fmt::format(
+            "grow:{:.4g}  shrink:{:.4g}  gap:{}",
+            m_flex_grow.result,
+            m_flex_shrink.result,
+            fmt_eu(m_gap)
+        ),
+        c_text
+    );
+
+    const ImVec2 pad = {6.f, 4.f};
+    const float lh   = ImGui::GetFontSize() + 2.f;
+
+    auto for_each_text_line = [](const std::string& text, auto&& fn)
+    {
+        for (size_t start = 0;;) {
+            const size_t end  = text.find('\n', start);
+            const char* begin = text.c_str() + start;
+            const char* stop =
+                end == std::string::npos ? text.c_str() + text.size() : text.c_str() + end;
+
+            fn(begin, stop);
+
+            if (end == std::string::npos)
+                break;
+
+            start = end + 1;
+        }
+    };
+
+    int total_text_lines = 0;
+    float text_w         = 0.f;
+
+    for (const auto& [text, col] : lines) {
+        for_each_text_line(
+            text,
+            [&](const char* begin, const char* end)
+            {
+                text_w = std::max(text_w, ImGui::CalcTextSize(begin, end).x);
+                ++total_text_lines;
+            }
+        );
+    }
+
+    const float ratio = h > 0.f ? w / h : 1.f;
+
+    float dw = 220.f;
+    float dh = 220.f / ratio;
+
+    if (dh > 130.f) {
+        dh = 130.f;
+        dw = 130.f * ratio;
+    }
+
+    dw = std::max(dw, 80.f);
+    dh = std::max(dh, 55.f);
+
+    const float sx = w > 0.f ? dw / w : 1.f;
+    const float sy = h > 0.f ? dh / h : 1.f;
+
+    auto scaled_x = [sx](float value) { return value > 0.f ? std::max(3.f, value * sx) : 0.f; };
+
+    auto scaled_y = [sy](float value) { return value > 0.f ? std::max(3.f, value * sy) : 0.f; };
+
+    const float dml = scaled_x(ml);
+    const float dmt = scaled_y(mt);
+    const float dmr = scaled_x(mr);
+    const float dmb = scaled_y(mb);
+
+    const float dpl = scaled_x(pl);
+    const float dpt = scaled_y(pt);
+    const float dpr = scaled_x(pr);
+    const float dpb = scaled_y(pb);
+
+    auto label_width = [](const Unit& src, float result)
+    {
+        if (!(result > 0.f))
+            return 0.f;
+
+        const std::string text = fmt_side(src, result);
+        return ImGui::CalcTextSize(text.c_str()).x;
+    };
+
+    const float max_label_w = std::max(
+        {label_width(ms.left, ml),
+         label_width(ms.top, mt),
+         label_width(ms.right, mr),
+         label_width(ms.bottom, mb),
+         label_width(ps.left, pl),
+         label_width(ps.top, pt),
+         label_width(ps.right, pr),
+         label_width(ps.bottom, pb)}
+    );
+
+    const float fh        = ImGui::GetFontSize();
+    const float label_gap = 2.f;
+
+    const float diagram_extra_x      = max_label_w + label_gap;
+    const float diagram_extra_top    = mt > 0.f ? fh + label_gap : 0.f;
+    const float diagram_extra_bottom = mb > 0.f ? fh + label_gap : 0.f;
+
+    const float diagram_w = dw + diagram_extra_x * 2.f;
+    const float diagram_h = dh + diagram_extra_top + diagram_extra_bottom;
+
+    const float pw = std::max(text_w, diagram_w) + pad.x * 2.f;
+    const float ph = static_cast<float>(total_text_lines) * lh + diagram_h + pad.y * 2.f;
+
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    const ImVec2 pmin       = {vp->Pos.x, vp->Pos.y + vp->Size.y - ph};
+    const ImVec2 pmax       = {vp->Pos.x + pw, vp->Pos.y + vp->Size.y};
+
+    draw_list->AddRectFilled(pmin, pmax, IM_COL32(0, 0, 0, 160));
+    draw_list->AddRect(pmin, pmax, IM_COL32(255, 100, 0, 180));
+
+    float y = pmin.y + pad.y;
+
+    for (const auto& [text, col] : lines) {
+        for_each_text_line(
+            text,
+            [&](const char* begin, const char* end)
+            {
+                draw_list->AddText({pmin.x + pad.x, y}, col, begin, end);
+                y += lh;
+            }
+        );
+    }
+
+    const float ox = pmin.x + (pw - dw) * .5f;
+
+    const ImVec2 mar_min = {ox, y + diagram_extra_top};
+    const ImVec2 mar_max = {ox + dw, mar_min.y + dh};
+
+    const ImVec2 bdr_min = {mar_min.x + dml, mar_min.y + dmt};
+    const ImVec2 bdr_max = {mar_max.x - dmr, mar_max.y - dmb};
+
+    const ImVec2 cnt_min = {bdr_min.x + dpl, bdr_min.y + dpt};
+    const ImVec2 cnt_max = {bdr_max.x - dpr, bdr_max.y - dpb};
+
+    if (dml > 0.f || dmt > 0.f || dmr > 0.f || dmb > 0.f) {
+        draw_list->AddRectFilled({mar_min.x, mar_min.y}, {mar_max.x, bdr_min.y}, f_margin);
+        draw_list->AddRectFilled({mar_min.x, bdr_max.y}, {mar_max.x, mar_max.y}, f_margin);
+        draw_list->AddRectFilled({mar_min.x, bdr_min.y}, {bdr_min.x, bdr_max.y}, f_margin);
+        draw_list->AddRectFilled({bdr_max.x, bdr_min.y}, {mar_max.x, bdr_max.y}, f_margin);
+        draw_list->AddRect(mar_min, mar_max, c_margin);
+    }
+
+    if (dpl > 0.f || dpt > 0.f || dpr > 0.f || dpb > 0.f) {
+        draw_list->AddRectFilled({bdr_min.x, bdr_min.y}, {bdr_max.x, cnt_min.y}, f_padding);
+        draw_list->AddRectFilled({bdr_min.x, cnt_max.y}, {bdr_max.x, bdr_max.y}, f_padding);
+        draw_list->AddRectFilled({bdr_min.x, cnt_min.y}, {cnt_min.x, cnt_max.y}, f_padding);
+        draw_list->AddRectFilled({cnt_max.x, cnt_min.y}, {bdr_max.x, cnt_max.y}, f_padding);
+    }
+
+    if (cnt_min.x < cnt_max.x && cnt_min.y < cnt_max.y)
+        draw_list->AddRectFilled(cnt_min, cnt_max, f_content);
+
+    draw_list->AddRect(bdr_min, bdr_max, c_border, 0.f, 0, 1.5f);
+
+    const float bdr_cx = (bdr_min.x + bdr_max.x) * .5f;
+    const float bdr_cy = (bdr_min.y + bdr_max.y) * .5f;
+
+    auto add_label = [&](const Unit& src, float result, ImU32 col, ImVec2 pos, ImVec2 align)
+    {
+        if (!(result > 0.f))
+            return;
+
+        const std::string text = fmt_side(src, result);
+        const ImVec2 size      = ImGui::CalcTextSize(text.c_str());
+
+        draw_list->AddText({pos.x - size.x * align.x, pos.y - size.y * align.y}, col, text.c_str());
+    };
+
+    ImGui::PushFont(ImGui::GetFont(), 12);
+    // Margin: outside border box, adjacent to border edge.
+    add_label(ms.top, mt, c_margin, {bdr_cx, bdr_min.y - fh - label_gap}, {.5f, 0.f});
+    add_label(ms.bottom, mb, c_margin, {bdr_cx, bdr_max.y + label_gap}, {.5f, 0.f});
+    add_label(ms.left, ml, c_margin, {bdr_min.x - label_gap, bdr_cy}, {1.f, .5f});
+    add_label(ms.right, mr, c_margin, {bdr_max.x + label_gap, bdr_cy}, {0.f, .5f});
+
+    // Padding: inside border box, adjacent to border edge.
+    add_label(ps.top, pt, c_padding, {bdr_cx, bdr_min.y + label_gap}, {.5f, 0.f});
+    add_label(ps.bottom, pb, c_padding, {bdr_cx, bdr_max.y - fh - label_gap}, {.5f, 0.f});
+    add_label(ps.left, pl, c_padding, {bdr_min.x + label_gap, bdr_cy}, {0.f, .5f});
+    add_label(ps.right, pr, c_padding, {bdr_max.x - label_gap, bdr_cy}, {1.f, .5f});
+    ImGui::PopFont();
+
+    if (cnt_min.x < cnt_max.x && cnt_min.y < cnt_max.y) {
+        const std::string content_size =
+            fmt::format("{:.4g}x{:.4g}", std::max(0.f, w - pl - pr), std::max(0.f, h - pt - pb));
+        const ImVec2 size = ImGui::CalcTextSize(content_size.c_str());
+
+        if (cnt_max.x - cnt_min.x >= size.x + 4.f && cnt_max.y - cnt_min.y >= size.y) {
+            draw_list->AddText(
+                {(cnt_min.x + cnt_max.x - size.x) * .5f, (cnt_min.y + cnt_max.y - size.y) * .5f},
+                c_content,
+                content_size.c_str()
+            );
+        }
+    }
+
+    ImGui::PopFont();
+#endif
+}
 
 void Item::render_debug(Vec2f pos, Vec2f size)
 {

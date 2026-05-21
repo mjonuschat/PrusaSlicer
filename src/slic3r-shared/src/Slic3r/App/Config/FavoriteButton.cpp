@@ -8,7 +8,8 @@ namespace Slic3r::App {
 FavoriteButton::FavoriteButton() : LayoutButton(std::string(), Render::Icon::Star)
 {
     set_margin(Yoga::Margins(0.f, 12.f, 0.f, 0.f));
-    set_min_size(Domain::Vec2f{16, 16});
+    set_min_width(16);
+    set_min_height(16);
     set_content_padding(0.f);
     set_background_color(Platform::Color::ButtonTransparent);
     set_background_color_checked(m_theme->color_imgui(Platform::Color::Transparent));

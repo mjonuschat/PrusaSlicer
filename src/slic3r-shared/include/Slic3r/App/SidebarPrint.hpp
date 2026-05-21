@@ -48,7 +48,6 @@ public:
 
 private:
     void add_separator();
-    void add_row(Item* container, const std::string& label, std::unique_ptr<Yoga::Item> control);
 
     void create_favorite_params();
 

@@ -50,7 +50,8 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
         Render::Icon::WarningMarker,
         "Some warning tooltips"
     );
-    m_editor_warning->set_min_size({24.f, 24.f});
+    m_editor_warning->set_min_width(24);
+    m_editor_warning->set_min_height(24);
     m_editor_warning->set_self_align(YGAlignFlexEnd);
     m_editor_warning->set_flex_shrink(0.f);
     m_editor_warning->set_visible(false);
@@ -191,7 +192,8 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     for (LayoutButton* btn :
          {m_save_as_new_btn, m_save_btn, m_rename_btn, m_delete_btn, m_lock_offset_btn})
     {
-        btn->set_min_size(Vec2f(24.f, 24.f));
+        btn->set_min_width(24);
+        btn->set_min_height(24);
     }
 
     add_part_specific_panel();

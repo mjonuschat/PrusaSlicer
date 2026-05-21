@@ -137,7 +137,7 @@ void PrinterAddDialog::create_add_logical_printer_page()
     );
     m_page_list_view = layout_logic_row->emplace_back<PageListView>(std::move(factory));
     m_page_list_view->set_orientation(Orientation::Vertical);
-    m_page_list_view->set_min_size({125, 0});
+    m_page_list_view->set_min_width(125);
     m_page_list_view->set_source_list(m_list_vendors.get());
     dynamic_cast<AbstractButton*>(m_page_list_view->get_item(0))->set_checked(true);
 

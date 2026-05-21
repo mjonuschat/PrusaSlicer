@@ -8,7 +8,7 @@ class Oval : public Rectangle {
 public:
     Oval();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 };
 
 } // namespace Slic3r::App::Yoga

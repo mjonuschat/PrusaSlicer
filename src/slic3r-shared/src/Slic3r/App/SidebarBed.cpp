@@ -38,10 +38,9 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_material_selection_dialog =
         emplace_back<MaterialSelectionDialog>(project_interactor, m_navigator);
 
-    set_min_size({YGUndefined, 60});
     set_orientation(Orientation::Vertical);
-    set_gap(15.f);
-    set_min_size({220, 0});
+    set_gap(1_rem);
+    set_min_width(220);
     set_flex_shrink(0.f);
 
     m_material_button_group = std::make_shared<ButtonGroup>();
@@ -93,7 +92,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());
     m_list_view->set_orientation(Orientation::Vertical);
-    m_list_view->set_gap(5);
+    m_list_view->set_gap(0.25_rem);
 
     m_material_selection_dialog->attach_to_item(this, Position::Left);
     m_material_selection_dialog->callbacks().closed = [this]()

@@ -10,12 +10,12 @@ static constexpr float SIZE = 80.0f;
 
 CubeView::CubeView() : Window("CubeView") {
     set_flags(flags() | ImGuiWindowFlags_NoBackground);
-    set_min_size({SIZE, SIZE});
-    set_max_size({SIZE, SIZE});
+    set_width(SIZE);
+    set_height(SIZE);
     set_aspect_ratio(1.0);
 }
 
-void CubeView::render_body(Domain::Vec2f pos, Domain::Vec2f size)
+void CubeView::render_body(const Domain::Vec2f& pos, const Domain::Vec2f& size)
 {
     DEBUG_ASSERT(m_camera != nullptr);
     DEBUG_ASSERT(m_trackball != nullptr);

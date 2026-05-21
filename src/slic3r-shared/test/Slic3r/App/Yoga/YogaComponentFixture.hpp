@@ -25,10 +25,7 @@ struct YogaComponentFixture : public ImGuiFixture
             | ImGuiWindowFlags_NoFocusOnAppearing
             | ImGuiWindowFlags_NoScrollWithMouse
         );
-        set_root_item(&root);
         render(); // warm-up: register the Window with ImGui so hover detection works from the first frame
     }
-
-    Slic3r::App::Yoga::RootItem root;
     Slic3r::App::Yoga::Window* window = nullptr;
 };

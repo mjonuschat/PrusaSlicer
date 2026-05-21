@@ -31,7 +31,7 @@ GCodeDisplay::GCodeDisplay(libvgcode::FdmViewer* viewer, GCodeWindowData* data) 
     set_object_name("GCodeDisplay");
 }
 
-void GCodeDisplay::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+void GCodeDisplay::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     render_item_begin(pos, size);
 

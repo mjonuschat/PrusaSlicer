@@ -4,7 +4,7 @@
 
 namespace Slic3r::App::Yoga {
 
-void TwoColorRing::render(Vec2f pos, Vec2f size)
+void TwoColorRing::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

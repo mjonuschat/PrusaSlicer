@@ -4,7 +4,6 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/ColorDropdown.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
 #include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
@@ -14,6 +13,8 @@
 #include <string>
 #include <vector>
 
+using namespace Slic3r::App::Yoga;
+
 namespace Slic3r::App::Plater {
 
 using Biz::_u8L;
@@ -21,13 +22,14 @@ using Biz::_u8L;
 static Yoga::Item* emplace_icon(
     Yoga::Item* parent,
     Render::Icon icon,
-    const ImVec2& size,
+    const Unit& width,
+    const Unit& height,
     ImColor color
 )
 {
     Yoga::Icon* result{parent->emplace_back<Yoga::Icon>(icon)};
-    result->set_width(size.x);
-    result->set_height(size.y);
+    result->set_width(width);
+    result->set_height(height);
     result->set_fill_mode(Yoga::Icon::FillMode::PreservedAspectCentered);
     result->set_tint(color);
     return result;
@@ -38,7 +40,7 @@ class ColorDropdowns : public Yoga::Item
 public:
     ColorDropdowns(
         Biz::ProjectInteractor& project_interactor,
-        float spacing,
+        const Unit& spacing,
         ImColor mouse_left_color,
         ImColor mouse_right_color
     )
@@ -55,7 +57,7 @@ public:
         emplace_icon(
             primary_dropdown_row,
             Render::Icon::MouseLeft,
-            {16_px, 16_px},
+            16_fpx, 16_fpx,
             mouse_left_color
         );
         m_primary_dropdown = primary_dropdown_row->emplace_back<Yoga::ColorDropdown>(
@@ -72,7 +74,7 @@ public:
         emplace_icon(
             secondary_dropdown_row,
             Render::Icon::MouseRight,
-            {16_px, 16_px},
+            16_fpx, 16_fpx,
             mouse_right_color
         );
         m_secondary_dropdown = secondary_dropdown_row->emplace_back<Yoga::ColorDropdown>(
@@ -91,9 +93,9 @@ public:
             Render::Icon::Switch,
             _u8L("Switch colors")
         )};
-        switch_button->set_content_padding(3_px);
-        switch_button->set_width(22_px);
-        switch_button->set_height(22_px);
+        switch_button->set_content_padding(3_fpx);
+        switch_button->set_width(22_fpx);
+        switch_button->set_height(22_fpx);
         switch_button->set_margin(Yoga::Margins{spacing, 0, 0, 0});
 
         switch_button->callbacks().action = [this]()

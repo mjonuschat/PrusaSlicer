@@ -129,7 +129,7 @@ void VariableLayerHeightDialog::add_help_section(Item* item)
 {
     Item* help_section = item->emplace_back<Item>();
     help_section->set_orientation(Orientation::Vertical);
-    help_section->set_min_size({0, 50});
+    help_section->set_min_height(50);
     help_section->set_align_items(YGAlignFlexStart);
     help_section->set_gap(gap_size());
     help_section->set_flex_shrink(0);

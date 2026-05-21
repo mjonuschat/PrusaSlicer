@@ -46,7 +46,7 @@ public:
             bool use_lower_thumb = true);
     ~Control() = default;
 
-    void render(Domain::Vec2f pos, Domain::Vec2f size) override final;
+    void render(const Domain::Vec2f& pos, const Domain::Vec2f& size) override final;
 
     Callbacks& callbacks() { return m_callbacks; }
 
@@ -217,9 +217,12 @@ public:
 
         const bool is_horizontal = orientation == Yoga::Orientation::Horizontal;
 
-        m_ctrl =
-            emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
-        m_ctrl->set_min_size({is_horizontal ? 0 : 105, is_horizontal ? 50 : 0});
+        m_ctrl = emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
+        if (is_horizontal) {
+            set_min_height(50);
+        } else {
+            set_min_width(125);
+        }
         m_ctrl->set_get_label_cb([this](int pos) { return label(pos); });
         m_ctrl->set_flex_grow(1.);
     }

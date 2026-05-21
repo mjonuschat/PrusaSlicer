@@ -19,7 +19,7 @@ std::unique_ptr<LayoutButton> SidebarPreviewActionButtons::get_primary_button()
     auto result{std::make_unique<LayoutButton>("Plater", Render::Icon::None, "Back to Plater")};
     result->set_label_font_type(Render::ImguiFontType::Bold);
     result->set_background_color(Platform::Color::AccentSecondary);
-    result->set_min_size({0, button_height});
+    result->set_min_height(button_height);
     result->set_flex_grow(1);
     result->callbacks().action = [this]() { navigate_to_other(); };
     return result;
@@ -50,7 +50,7 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
 
     auto layout_bottom = m_buttons_layout->emplace_back<Item>();
     layout_bottom->set_orientation(Orientation::Horizontal);
-    layout_bottom->set_gap(15.0f);
+    layout_bottom->set_gap(1_rem);
 
     auto navigation_button = get_navigation_button();
     m_navigation_button = navigation_button.get();
@@ -177,11 +177,6 @@ void SidebarPreviewActionButtons::update_buttons()
         m_primary_button->set_enabled(false);
     } break;
     }
-}
-
-void SidebarPreviewActionButtons::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
-{
-    SidebarActionButtons::render_body(pos, size);
 }
 
 } // namespace Slic3r::App::Preview

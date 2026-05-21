@@ -94,8 +94,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/LayerRangeSettingsDialog.hpp
         src/Slic3r/App/Plater/LayerRangeSettingsDialog.cpp
         include/Slic3r/App/Plater/MMPaintingColorDropdowns.hpp
-        include/Slic3r/App/ScaleHelpers.hpp
-        src/Slic3r/App/ScaleHelpers.cpp
         include/Slic3r/App/Plater/MMPaintingUtils.hpp
         include/Slic3r/App/Plater/MMPaintingColorSelector.hpp
         src/Slic3r/App/Plater/MMPaintingColorSelector.cpp
@@ -505,6 +503,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Navigator.hpp
 
         include/Slic3r/App/Yoga/Namespace.hpp
+        src/Slic3r/App/Yoga/Namespace.cpp
         include/Slic3r/App/Yoga/WindowParams.hpp
         include/Slic3r/App/Yoga/Item.hpp
         src/Slic3r/App/Yoga/Item.cpp
@@ -1354,6 +1353,8 @@ if(SLIC3R_BUILD_TESTS)
 
         test/Slic3r/App/Yoga/ListViewTests.cpp
         test/Slic3r/App/Yoga/LayoutTests.cpp
+        test/Slic3r/App/Yoga/DPITests.cpp
+        test/Slic3r/App/Yoga/DPILayoutTests.cpp
         test/Slic3r/App/Yoga/ItemTreeTests.cpp
         test/Slic3r/App/Yoga/ImGuiFixture.hpp
         test/Slic3r/App/Yoga/YogaComponentFixture.hpp
@@ -1366,6 +1367,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
         test/Slic3r/App/Yoga/SplitLayoutTests.cpp
         test/Slic3r/App/Yoga/ScrollAreaTests.cpp
+        test/Slic3r/App/Yoga/PopupTests.cpp
         test/Slic3r/App/Yoga/ObjectTests.cpp
         test/Slic3r/App/Yoga/EventTests.cpp
         test/Slic3r/App/Yoga/ComboBoxTests.cpp

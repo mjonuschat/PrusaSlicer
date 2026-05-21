@@ -37,7 +37,7 @@ void VariableLayerHeightControl::reset_cursor_position()
     m_cursor_normalized_position.reset();
 }
 
-void VariableLayerHeightControl::render(const Vec2f pos, const Vec2f size)
+void VariableLayerHeightControl::render(const Vec2f& pos, const Vec2f& size)
 {
     if (size.x() <= 0.f || size.y() <= 0.f) {
         return;

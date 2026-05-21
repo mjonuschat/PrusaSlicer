@@ -47,6 +47,11 @@ void AbstractRenderLayout::load_column_sizes()
     }
 }
 
+void AbstractRenderLayout::on_app_config_changed(const std::string &key)
+{
+
+}
+
 void AbstractRenderLayout::update_cube_view_position()
 {
     // When sidebars are visible and object list is collapsed
@@ -60,16 +65,16 @@ void AbstractRenderLayout::update_cube_view_position()
 
     auto does_cube_fits = [this]() -> bool
     {
-        const float item_size = m_cube_view->height() + m_cube_view->margin().vertical();
+        const float item_size = m_cube_view->height() + m_cube_view->margin().result_vertical();
         float available_size =
-            m_layout_left_column->height() - m_layout_left_column->padding().vertical();
+            m_layout_left_column->height() - m_layout_left_column->padding().result_vertical();
         for (Item* child : m_layout_left_column->items()) {
             // ignore Objects and CubeViewWrapper (that one flexes)
             if (!child || m_cube_view_wrapper == child) {
                 continue;
             }
-            available_size -= (child->height() + child->margin().vertical());
-            available_size -= m_layout_left_column->gap(); // Always count gap
+            available_size -= (child->height() + child->margin().result_vertical());
+            available_size -= m_layout_left_column->gap().value; // Always count gap
         }
 
         return item_size <= available_size;
@@ -237,7 +242,7 @@ void AbstractRenderLayout::init()
 void AbstractRenderLayout::init_left_column()
 {
     m_layout_left_column = m_layout_main_bottom->emplace_back<Item>();
-    m_layout_left_column->set_min_size({280.f, 0.f});
+    m_layout_left_column->set_min_width(280.f);
     m_layout_left_column->set_justify_content(YGJustifyFlexStart);
     m_layout_left_column->set_width(
         AppServices::instance().app_config().get<double>("layout_main_left_column_width")
@@ -268,7 +273,7 @@ void AbstractRenderLayout::init_left_column()
 void AbstractRenderLayout::init_middle_column()
 {
     m_layout_center_row = m_layout_main_bottom->emplace_back<Item>();
-    m_layout_center_row->set_min_size({345, YGUndefined});
+    m_layout_center_row->set_min_width(345);
     m_layout_center_row->set_orientation(Orientation::Horizontal);
     m_layout_center_row->set_gap(5);
     m_layout_main_bottom->set_flex_child(m_layout_center_row, true);
@@ -298,7 +303,7 @@ void AbstractRenderLayout::init_middle_column()
 
     m_layout_scene_row->append(m_pop_notification_list_view.release());
     m_pop_notification_list_view->set_orientation(Orientation::Vertical);
-    m_pop_notification_list_view->set_max_size({400.f, YGUndefined});
+    m_pop_notification_list_view->set_max_width(400.f);
     m_pop_notification_list_view->set_flex_grow(1);
     m_pop_notification_list_view->set_margin(10.);
     m_pop_notification_list_view->set_self_align(YGAlignFlexEnd);
@@ -315,7 +320,7 @@ void AbstractRenderLayout::init_right_column()
     m_layout_right_column->set_width(
         AppServices::instance().app_config().get<double>("layout_main_right_column_width")
     );
-    m_layout_right_column->set_min_size({240, YGUndefined});
+    m_layout_right_column->set_min_width(240);
 
     m_layout_sidebar_stack_layout = m_layout_right_column->emplace_back<SidebarStackLayout>();
     m_layout_sidebar_stack_layout->set_orientation(Orientation::Vertical);
@@ -431,10 +436,21 @@ AbstractRenderLayout::~AbstractRenderLayout()
     save_column_sizes();
 }
 
-void AbstractRenderLayout::render(Vec2f size)
+void AbstractRenderLayout::set_size_info_from_screen(const Render::ScreenInfo& screen_info)
+{
+    m_info.dpi_scale_factor = screen_info.scale();
+    m_info.dpi              = screen_info.dpi() > 0
+                          ? screen_info.dpi()
+                          : static_cast<int>(96.f * m_info.dpi_scale_factor);
+    m_info.viewport_size_x  = static_cast<int>(screen_info.logical_width());
+    m_info.viewport_size_y  = static_cast<int>(screen_info.logical_height());
+    m_info.root_font_size = screen_info.root_font_size();
+}
+
+void AbstractRenderLayout::render()
 {
     SetOurStyleVars our_vars;
-    m_layout_main.render({}, size);
+    m_layout_main.root_render(m_info);
 }
 
 } // namespace Slic3r::App

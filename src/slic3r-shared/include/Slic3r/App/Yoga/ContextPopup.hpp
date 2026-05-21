@@ -23,7 +23,7 @@ public:
 
     void style_node() override;
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     float offset() const;
     void set_offset(float offset);

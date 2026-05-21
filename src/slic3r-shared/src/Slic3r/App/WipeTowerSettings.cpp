@@ -3,7 +3,8 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include "Slic3r/Math.hpp"
-#include "Slic3r/App/ScaleHelpers.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 WipeTowerSettings::WipeTowerSettings(Biz::ProjectInteractor& project_interactor) :
@@ -13,7 +14,7 @@ WipeTowerSettings::WipeTowerSettings(Biz::ProjectInteractor& project_interactor)
     m_scene_changed_listener_scope{m_scene_interactor, *this}
 {
     set_orientation(Yoga::Orientation::Vertical);
-    set_gap(5_px);
+    set_gap(5_fpx);
 
     auto position_label{emplace_back<Yoga::Text>("Position")};
     position_label->set_font_type(Render::ImguiFontType::Bold);

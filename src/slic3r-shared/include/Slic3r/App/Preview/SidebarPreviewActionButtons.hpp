@@ -19,8 +19,6 @@ public:
     SidebarPreviewActionButtons(Navigator* render_module_navigator);
     ~SidebarPreviewActionButtons();
 
-    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
-
     void on_init(Biz::ProjectInteractor* project_interactor) override;
 
     void on_selected_bed_instances_changed(

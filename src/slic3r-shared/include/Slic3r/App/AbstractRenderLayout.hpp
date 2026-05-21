@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/RootItem.hpp"
-#include "Slic3r/App/Yoga/AbstractButton.hpp"
 #include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/ToolBar/ToolBarSwitchButton.hpp"
 #include "Slic3r/App/ObjectListWindow.hpp"
@@ -9,10 +8,12 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
+#include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/NumberEntryDialog.hpp"
+#include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 namespace Slic3r::App {
 
@@ -35,7 +36,7 @@ enum class ToolbarID
     Right
 };
 
-class AbstractRenderLayout
+class AbstractRenderLayout : public IAppConfigChangedListener
 {
 public:
     using Vec2f = Yoga::Vec2f;
@@ -58,7 +59,9 @@ public:
 
     virtual void init();
 
-    void render(Vec2f size);
+    void render();
+
+    void set_size_info_from_screen(const Render::ScreenInfo& screen_info);
 
     ToolBarButton* add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip);
     ToolBarButton* add_toolbar_item_checkable(
@@ -85,6 +88,8 @@ public:
 
     void save_column_sizes();
     void load_column_sizes();
+
+    void on_app_config_changed(const std::string& key) override;
 
 protected:
     virtual void init_left_column();
@@ -124,6 +129,7 @@ protected:
     bool m_sidebars_visible = true;
     float m_object_list_srcroll_y_delta{ -1 };
     float m_object_list_srcroll_y_previous_delta{ -1 };
+    Yoga::SizeInfo m_info;
 
     // Inserted from render module
     Yoga::Passthrough<TopBar> m_top_bar;

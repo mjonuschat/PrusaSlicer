@@ -129,7 +129,7 @@ void RectangleButton::set_background_color_border(
     update_colors();
 }
 
-const Paddings& RectangleButton::content_padding()
+const EvaluatedPaddings& RectangleButton::content_padding()
 {
     return m_background->padding();
 }
@@ -166,7 +166,7 @@ void RectangleButton::set_content_align_items(YGAlign align)
 
 YGDirection RectangleButton::content_direction() const
 {
-    return m_direction;
+    return direction();
 }
 
 void RectangleButton::set_content_direction(YGDirection direction)

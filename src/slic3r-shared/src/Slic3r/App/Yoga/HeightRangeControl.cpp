@@ -20,7 +20,7 @@ HeightRangeControl::Callbacks& HeightRangeControl::callbacks()
     return m_callbacks;
 }
 
-void HeightRangeControl::render(const Vec2f pos, const Vec2f size)
+void HeightRangeControl::render(const Vec2f& pos, const Vec2f& size)
 {
     if (size.x() <= 0.f || size.y() <= 0.f) {
         return;

@@ -30,7 +30,7 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     m_on_cog_clicked(on_cog_clicked),
     m_on_bin_clicked(on_bin_clicked)
 {
-    m_texts_wrapper->set_min_size({0, 36});
+    m_texts_wrapper->set_min_height(36);
 
     m_attention_icon = emplace<Icon>(1, Render::Icon::ExclamationMark);
     m_attention_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);

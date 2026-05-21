@@ -14,10 +14,11 @@
 
 #include <memory>
 #include <optional>
+#include <variant>
 
 namespace Slic3r::App {
 class Theme;
-}
+} // namespace Slic3r::App
 
 namespace Slic3r::App::Render {
 class ImguiRender;
@@ -51,11 +52,13 @@ public:
     const std::string& object_name() const;
     void set_object_name(const std::string& object_name);
 
+    virtual void resize(const SizeInfo& size_info);
+
     /**
      * @note Layout style cannot be changed inside render
      * @note You have to call render() of your children as well
      */
-    virtual void render(Vec2f pos, Vec2f size);
+    virtual void render(const Vec2f& pos, const Vec2f& size);
 
     /**
      * @brief Layout aware & dynamic code should be put here
@@ -142,6 +145,8 @@ private:
 protected:
     Object* root_item() const;
 
+    SizeInfo m_size_info;
+
     virtual void root_item_about_to_update();
     virtual void root_item_updated();
 
@@ -159,11 +164,6 @@ protected:
 private:
     static std::unordered_map<std::string, int> m_object_names;
 
-    // Nikita: I'M SORRY!! Due to my poor hastened decisions I literally got into corner and this is
-    // the only way right now how to actually be sure if this damn object is still alive.
-    // This will be rewritten once Dialogs are properly implemented!
-    //
-    // There should be a registered C++ offender list and I should be on it.
     Biz::UnsharedPointer<int> m_heartbeat;
 
     Object* m_parent = nullptr;
@@ -174,6 +174,12 @@ private:
 
 /**
  * @brief The Item class is an Object Item in a tree that can be styled using Yoga
+ *
+ * When sizing elements keep in mind Pixel values are not physical pixels but
+ * logical, Yoga::Item are expected to be scaled by outside layer (e.g. WxRenderCanvas)
+ * and the scale is then passed into Yoga tree using Yoga::SizeInfo.
+ * Moreover we allow user to set Root Font Size and therefore using rem units
+ * for margins/paddings and gaps would be much more suited than px.
  */
 class Item : public Object
 {
@@ -190,10 +196,12 @@ public:
 
     Callbacks& item_callbacks();
 
+    void resize(const SizeInfo& size_info) override;
+
     /**
      * @warning invisible Items (and their object) are not rendered
      */
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     /**
      * @warning invisible Items (and their object) are not styled
@@ -214,38 +222,36 @@ public:
     bool enabled() const;
     void set_enabled(bool enabled);
 
-    /**
-     * @return position that is relative to Item parent
-     * @note resize has to be called for parent Item
-     */
-    float x() const;
-    /**
-     * @return position that is relative to Item parent
-     * @note resize has to be called for parent Item
-     */
-    float y() const;
-    /**
-     * @note resize has to be called for parent Item
-     */
     float width() const;
-    /**
-     * @note resize has to be called for parent Item
-     */
     float height() const;
     /**
      * @note z layer only works between siblings
      */
     float z() const;
+    /**
+     * @return position that is relative to Item parent
+     */
     float left() const;
+    /**
+     * @return position that is relative to Item parent
+     */
     float right() const;
+    /**
+     * @return position that is relative to Item parent
+     */
     float top() const;
+    /**
+     * @return position that is relative to Item parent
+     */
     float bottom() const;
-    const Vec2f& min_size() const;
-    const Vec2f& max_size() const;
+    const Unit& min_width() const;
+    const Unit& min_heigth() const;
+    const Unit& max_width() const;
+    const Unit& max_height() const;
     bool is_visible() const;
     bool is_self_visible() const;
-    float flex_grow() const;
-    float flex_shrink() const;
+    const Unit& flex_grow() const;
+    const Unit& flex_shrink() const;
     YGDirection direction() const;
     float aspect_ratio() const;
     YGPositionType position_type() const;
@@ -253,9 +259,9 @@ public:
     YGJustify justify_content() const;
     YGAlign align_items() const;
     YGAlign align_content() const;
-    const Margins& margin() const;
-    const Paddings& padding() const;
-    float gap() const;
+    const EvaluatedMargins& margin() const;
+    const EvaluatedPaddings& padding() const;
+    const Unit& gap() const;
     Orientation orientation() const;
     YGWrap flex_wrap() const;
     bool is_node_dirty() const;
@@ -263,30 +269,29 @@ public:
     void set_self_align(YGAlign align);
     void set_margin(const Margins& margin);
     void set_padding(const Paddings& padding);
-    void set_min_size(const Vec2f& min_size);
-    void set_min_width(float min_width);
-    void set_min_height(float min_height);
-    void set_max_size(const Vec2f& max_size);
+    void set_min_width(const Unit& min_width);
+    void set_min_height(const Unit& min_height);
+    void set_max_width(const Unit& max_width);
+    void set_max_height(const Unit& max_height);
     void set_visible(bool visible);
-    void set_flex_grow(float flex_grow);
-    void set_flex_shrink(float flex_shrink);
+    void set_flex_grow(const Unit& flex_grow);
+    void set_flex_shrink(const Unit& flex_shrink);
     void set_direction(YGDirection direction);
     void set_aspect_ratio(float aspect_ratio);
     void set_position_type(YGPositionType position_type);
     void set_align_items(YGAlign align_items);
     void set_orientation(Orientation orientation);
-    void set_gap(float gap);
+    void set_gap(const Unit& gap);
     void set_justify_content(YGJustify justify_content);
     void set_align_content(YGAlign align_content);
-    void set_width(float width);
-    void set_height(float height);
+    void set_width(const Unit& width);
+    void set_height(const Unit& height);
     void set_width_percent(float width_percent);
     void set_height_percent(float height_percent);
-    void set_left(float left);
-    void set_right(float right);
-    void set_top(float top);
-    void set_bottom(float bottom);
-    void set_flex(float flex);
+    void set_left(const Unit& left);
+    void set_right(const Unit& right);
+    void set_top(const Unit& top);
+    void set_bottom(const Unit& bottom);
     void set_flex_wrap(YGWrap wrap);
     /**
      * @note z layer only works between siblings
@@ -314,7 +319,6 @@ public:
     static void set_imgui_render(Render::ImguiRender* imgui_render);
 
     void set_debug_border(bool show_debug_border);
-    virtual std::string debug_dump_tree() const;
 
     Vec2f get_global_pos() const;
 
@@ -325,6 +329,8 @@ public:
      */
     Item* parent_item() const;
 
+    void render_debug_overlay(ImDrawList* draw_list) const;
+
 protected:
     static ImVec2 to_im(const Vec2f& val);
     static Vec2f from_im(const ImVec2& val);
@@ -334,8 +340,6 @@ protected:
 
     virtual void enabled_updated_internal();
     virtual void visible_updated_internal();
-
-    virtual Vec2f get_available_size() const;
 
     virtual void on_resized();
 
@@ -366,50 +370,66 @@ protected:
      */
     void invalidate_min_size_calculation();
 
-private:
-    void update_enabled();
-    void update_visible();
-
 protected:
-    // I will burn in hell for this
+    // Todo: Cleanup this when slic3r-yoga will be introduced
     static Render::ImguiRender* m_imgui_render;
 
-    Callbacks m_callbacks;
-
-    Vec2f m_min_size = {};
-    Vec2f m_max_size = {YGUndefined, YGUndefined};
-    YGNodeRef m_node = nullptr;
-
-    bool m_min_size_calculated = false;
-
-    YGAlign m_self_align        = YGAlign::YGAlignAuto;
-    YGAlign m_align_items       = YGAlign::YGAlignStretch;
-    YGAlign m_align_content     = YGAlign::YGAlignFlexStart;
-    YGJustify m_justify_content = YGJustify::YGJustifyFlexStart;
-    Margins m_margin;
-    Paddings m_padding;
-    float m_flex_grow              = 0;
-    float m_flex_shrink            = 1;
-    float m_aspect_ratio           = YGUndefined;
-    float m_gap                    = 0;
-    YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;
-    bool m_debug_border            = false;
-    float m_z                      = 0;
-    float m_last_width             = 0;
-    float m_last_height            = 0;
-
-    Orientation m_orientation        = Orientation::Horizontal;
-    YGFlexDirection m_flex_direction = YGFlexDirectionRow;
-    YGDirection m_direction          = YGDirectionLTR;
-
     std::vector<Item*> m_children_render_order;
-    std::vector<Item*> m_removed_children;
+
+    float m_last_width  = 0;
+    float m_last_height = 0;
 
 #ifdef DEBUG
     static Item* m_debug_item;
 #endif
 
 private:
+    void update_enabled();
+    void update_visible();
+
+    virtual void size_info_changed(const SizeInfo& info_size);
+
+private:
+    using YogaSize = std::variant<EvaluatedUnit, float>;
+
+    YGNodeRef m_node = nullptr;
+
+    Callbacks m_callbacks;
+
+    bool m_min_size_calculated = false;
+    bool m_debug_border        = false;
+
+    // Set attributes
+    YGAlign m_self_align             = YGAlign::YGAlignAuto;
+    YGAlign m_align_items            = YGAlign::YGAlignStretch;
+    YGAlign m_align_content          = YGAlign::YGAlignFlexStart;
+    YGJustify m_justify_content      = YGJustify::YGJustifyFlexStart;
+    YGPositionType m_position_type   = YGPositionType::YGPositionTypeRelative;
+    Orientation m_orientation        = Orientation::Horizontal;
+    YGFlexDirection m_flex_direction = YGFlexDirectionRow;
+    YGDirection m_direction          = YGDirectionLTR;
+
+    float m_aspect_ratio = YGUndefined;
+
+    float m_z           = 0;
+
+    // Evaluated units
+    std::optional<EvaluatedUnit> m_left;
+    std::optional<EvaluatedUnit> m_right;
+    std::optional<EvaluatedUnit> m_top;
+    std::optional<EvaluatedUnit> m_bottom;
+    std::optional<YogaSize> m_width;
+    std::optional<YogaSize> m_height;
+    EvaluatedUnit m_min_width;
+    EvaluatedUnit m_max_width{YGUndefined};
+    EvaluatedUnit m_min_height;
+    EvaluatedUnit m_max_height{YGUndefined};
+    EvaluatedUnit m_flex_grow;
+    EvaluatedUnit m_flex_shrink{1};
+    EvaluatedUnit m_gap;
+    EvaluatedMargins m_margins;
+    EvaluatedPaddings m_paddings;
+
     /**
      * @warning SPARSE field, objects which are not items are in this vector as well
      */

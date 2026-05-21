@@ -21,7 +21,8 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
 
     m_knob = emplace_back<Circle>();
     m_knob->set_border_width(1);
-    m_knob->set_min_size({12, 12});
+    m_knob->set_min_width(12);
+    m_knob->set_min_height(12);
 
     m_label = emplace_back<Text>(label);
     m_label->set_visible(!label.empty());

@@ -18,7 +18,7 @@ class ToolBarButton : public Yoga::LayoutButton
 public:
     ToolBarButton(Render::Icon icon, const std::string& tooltip = {});
 
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
     void style_node() override;
 

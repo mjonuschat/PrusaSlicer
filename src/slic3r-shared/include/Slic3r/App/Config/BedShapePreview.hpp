@@ -21,7 +21,7 @@ public:
     void set_shape_fill(const ImColor& fill);
 
 private:
-    void render(Domain::Vec2f pos, Domain::Vec2f size) override;
+    void render(const Domain::Vec2f& pos, const Domain::Vec2f& size) override;
 
 private:
     ImColor m_shape_fill           = IM_COL32_WHITE;

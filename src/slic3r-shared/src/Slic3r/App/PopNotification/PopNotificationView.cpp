@@ -126,7 +126,8 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
 {
     set_margin(5.); // space between notifications
 
-    set_max_size({TotalWidth, MaxHeight});
+    set_max_width(TotalWidth);
+    set_max_height(MaxHeight);
 
     set_orientation(Yoga::Orientation::Horizontal);
     set_justify_content(YGJustifyFlexStart); // razeni itemu uvnitr
@@ -161,13 +162,15 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
         icon = Render::Icon::WarningMarker;
     }
     if (icon == Render::Icon::None) {
-        m_left_column->set_min_size({0, MinHeight});
+        m_left_column->set_min_height(MinHeight);
         return;
     }
 
-    m_left_column->set_min_size({25, MinHeight});
+    m_left_column->set_min_width(25);
+    m_left_column->set_min_height(MinHeight);
     m_left_icon = m_left_column->emplace_back<Yoga::Icon>(icon);
-    m_left_icon->set_min_size({20, 20});
+    m_left_icon->set_min_width(20);
+    m_left_icon->set_min_height(20);
     m_left_icon->set_margin({0.f, 10.f, 10.f, 0.f});
 }
 
@@ -178,8 +181,10 @@ void PopNotificationView::basic_right_layout()
             std::string{},
             Render::Icon::NotificationCloseGray
         );
-        m_close_button->set_min_size({20, 20});
-        m_close_button->set_max_size({20, 20});
+        m_close_button->set_min_width(20);
+        m_close_button->set_min_height(20);
+        m_close_button->set_max_width(20);
+        m_close_button->set_max_height(20);
         m_close_button->callbacks().action = [this]()
         {
             // This code is called from render function -> removing notification now might trigger destroying object that is rendering right now.
@@ -257,7 +262,8 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
     m_progress_bar->set_show_overlay(true);
     m_progress_bar->set_flex_grow(1.f);
     m_progress_bar->set_progress(progress);
-    m_progress_bar->set_min_size({m_mid_column->min_size().x(), 3});
+    m_progress_bar->set_min_width(m_mid_column->min_width());
+    m_progress_bar->set_min_height(3);
     m_progress_bar->set_margin({0.f, 5.f, 0.f, 0.f});
     m_progress_bar->set_flex_shrink(0.f);
 

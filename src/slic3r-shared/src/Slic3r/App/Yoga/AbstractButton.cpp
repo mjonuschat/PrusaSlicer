@@ -21,7 +21,7 @@ AbstractButton::AbstractButton(const std::string& tooltip, const std::string& na
     set_object_name(name.empty() ? "Button" : name);
 }
 
-void AbstractButton::render(Vec2f pos, Vec2f size)
+void AbstractButton::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

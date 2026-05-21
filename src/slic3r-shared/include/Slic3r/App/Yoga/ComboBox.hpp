@@ -49,7 +49,7 @@ public:
 
     ~ComboBox();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     Callbacks& callbacks();
 

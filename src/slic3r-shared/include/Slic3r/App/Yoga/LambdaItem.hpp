@@ -12,7 +12,7 @@ class LambdaItem : public Item {
 public:
     LambdaItem(RenderPosFn render_fn);
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
 private:
     RenderPosFn m_render_fn;

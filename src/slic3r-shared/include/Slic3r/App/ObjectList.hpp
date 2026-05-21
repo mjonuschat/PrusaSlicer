@@ -66,7 +66,7 @@ public:
     void set_gizmo_controller(Scene::IGizmoController* controller);
 
 private:
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
     void process_dragging_start();
     void update_selection_from_scene();

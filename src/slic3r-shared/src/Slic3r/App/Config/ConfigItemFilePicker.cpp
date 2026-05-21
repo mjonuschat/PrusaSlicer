@@ -62,7 +62,8 @@ ConfigItemFilePicker::ConfigItemFilePicker(
     { hovered ? m_tooltip->open() : m_tooltip->close(); };
 
     m_load_btn = emplace_back<LayoutButton>("", Render::Icon::TobBarLoad);
-    m_load_btn->set_min_size(btn_size);
+    m_load_btn->set_min_width(btn_size.x());
+    m_load_btn->set_min_height(btn_size.y());
     m_load_btn->callbacks().action = [this]()
     {
         IDialogManager::FileCallback callback =
@@ -94,7 +95,8 @@ ConfigItemFilePicker::ConfigItemFilePicker(
     };
 
     m_remove_btn = emplace_back<LayoutButton>("", Render::Icon::DeleteBtnIcon);
-    m_remove_btn->set_min_size(btn_size);
+    m_remove_btn->set_min_width(btn_size.x());
+    m_remove_btn->set_min_height(btn_size.y());
     m_remove_btn->callbacks().action = [this]()
     {
         m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{""}, m_cbi_index);

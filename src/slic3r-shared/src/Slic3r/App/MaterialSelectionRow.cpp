@@ -31,7 +31,8 @@ MaterialSelectionRow::MaterialSelectionRow(
     m_preset_interactor(preset_interactor)
 {
     set_flex_shrink(0);
-    set_min_size({30, 30});
+    set_min_width(30);
+    set_min_height(30);
     set_content_padding(5.f);
     set_expand_label(true);
     set_content_justify_content(YGJustifyFlexStart);
@@ -64,7 +65,8 @@ MaterialSelectionRow::MaterialSelectionRow(
     auto add_button = [this](Render::Icon icon, const std::string& tooltip)
     {
         Item* button_wrap = emplace<Item>(1);
-        button_wrap->set_min_size({20.f, 20.f});
+        button_wrap->set_min_width(20);
+        button_wrap->set_min_height(20);
         button_wrap->set_flex_shrink(0.f);
         LayoutButton* btn = button_wrap->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
         btn->set_self_align(YGAlignCenter);

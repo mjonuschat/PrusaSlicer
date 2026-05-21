@@ -19,7 +19,7 @@ public:
     RootItem();
     ~RootItem();
 
-    void render(Vec2f pos, Vec2f size) override;
+    void root_render(const SizeInfo& size_info);
 
     void set_style_dirty() override;
 
@@ -28,20 +28,22 @@ public:
     void open_popup(Popup* popup);
     void close_popup(Popup* popup);
 
-    /**
-     * @brief Yoga recalculate whole tree
-     * @note should be called only top-level item
-     */
-    void resize(Vec2f size);
-
     void push_event(EventPtr event) override;
 
     template <class F>
     void for_each_popup_reconcile(F&& fn);
 
-
 protected:
-    Vec2f get_available_size() const override;
+    /**
+     * @note intentionally hidden, use RootItem::root_render
+     */
+    void render(const Vec2f& pos, const Vec2f& size) override;
+
+    /**
+     * @brief Yoga recalculate whole tree
+     * @note should be called only top-level item
+     */
+    void calculate_size();
 
     void render_debug_overlay();
 
@@ -50,7 +52,7 @@ protected:
 
     bool m_style_dirty = true;
 
-    Vec2f m_size;
+    SizeInfo m_size_info;
 
     using Popups = std::list<Popup*>;
     Popups m_popups;

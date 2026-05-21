@@ -361,7 +361,6 @@ bool DesktopApp::OnInit()
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     m_gl_context                         = canvas.release_context();
     platform_services.set_render_request_handler(&canvas);
-    m_main_frame->update_canvas_ui_settings();
 
     m_navigator.on_init(*m_plater_module, *m_preview_module, canvas, m_project_interactor.get());
 

@@ -54,7 +54,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     }
 
     m_scroll_area = content()->emplace_back<ScrollArea>();
-    m_scroll_area->set_min_size({YGUndefined, 100.f});
+    m_scroll_area->set_min_height(100);
 
     m_object_list = m_scroll_area->emplace_back<ObjectList>(project_interactor, mode);
     m_object_list->set_flex_shrink(0.f);

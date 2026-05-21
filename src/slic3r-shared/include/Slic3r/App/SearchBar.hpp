@@ -25,7 +25,7 @@ class SearchBar : public Yoga::Item
 public:
     explicit SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
 
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
     void focus_search();
 

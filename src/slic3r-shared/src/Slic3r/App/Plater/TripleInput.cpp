@@ -3,25 +3,19 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include <fmt/format.h>
-#include "Slic3r/App/ScaleHelpers.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
-
-using Yoga::InputTextField;
-using Yoga::Item;
-using Yoga::DoubleValidator;
-using Yoga::ItemPtr;
-using Yoga::Orientation;
-using Yoga::Text;
 
 class InputWithLabel : public Yoga::Rectangle {
 public:
     InputWithLabel(const std::string& label, const ImColor& color)
     {
-        set_min_width(42_px);
+        set_min_width(42_fpx);
         set_align_items(YGAlignCenter);
         set_fill(m_theme->color_imgui(Platform::Color::Button));
-        set_padding({2_px, 0, 2_px, 0});
+        set_padding({2_fpx, 0, 2_fpx, 0});
         auto label_container{emplace_back<Item>()};
         label_container->set_justify_content(YGJustifyCenter);
         m_label = label_container->emplace_back<Text>(label);
@@ -41,7 +35,7 @@ small_label(const std::string& label)
 {
     auto label_item{std::make_unique<Item>()};
     label_item->set_orientation(Orientation::Horizontal);
-    label_item->set_width(20_px);
+    label_item->set_width(20_fpx);
     label_item->set_height_percent(100);
     label_item->set_align_items(YGAlignCenter);
     label_item->set_justify_content(YGJustifyFlexStart);
@@ -75,7 +69,7 @@ TripleInput::TripleInput(
         std::pair{"Z", color_override.value_or(ImColor{64, 200, 232})}
     };
 
-    set_gap(5_px);
+    set_gap(5_fpx);
     for (int i{}; i < 3; ++i) {
         const auto& [label, color]{labels[i]};
         std::tie(m_input[i], m_validator[i]) = emplace_coordinate_input(this, label, color);

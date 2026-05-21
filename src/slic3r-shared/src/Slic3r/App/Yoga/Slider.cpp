@@ -41,7 +41,8 @@ Slider::Slider(double begin, double end, double step) :
         m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
     );
     m_thumb->set_padding(3.f);
-    m_thumb->set_min_size({14, 14});
+    m_thumb->set_min_width(14);
+    m_thumb->set_min_height(14);
 
     m_knob = m_thumb->emplace_back<Circle>();
     m_knob->set_fill(m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Active));
@@ -95,7 +96,7 @@ void Slider::update_area_width()
     }
 }
 
-void Slider::render(Vec2f pos, Vec2f size)
+void Slider::render(const Vec2f& pos, const Vec2f& size)
 {
     // Fix for thumb position after firts show
     if (!m_is_set_thumb_size && m_thumb->width() > 0) {

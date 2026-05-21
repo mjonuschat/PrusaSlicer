@@ -184,21 +184,28 @@ Window* Popup::content_item() const
     return m_content_item;
 }
 
-void Popup::render(Vec2f pos, Vec2f size)
+void Popup::render(const Vec2f& pos, const Vec2f& size)
 {
     if (!m_opened || !m_content_item) {
         return;
     }
 
-    if (!Domain::fuzzy_compare(m_last_size.x(), size.x())
-        || !Domain::fuzzy_compare(m_last_size.y(), size.y()))
-    {
-        resize(size);
+    bool needs_resize = !Domain::fuzzy_compare(m_last_size.x(), size.x())
+        || !Domain::fuzzy_compare(m_last_size.y(), size.y());
+
+    if (!needs_resize && m_attached_type == AttachedType::Item) {
+        const Vec2f current_pos = m_attached_to->get_global_pos();
+        needs_resize = !Domain::fuzzy_compare(current_pos.x(), m_last_attached_pos.x())
+            || !Domain::fuzzy_compare(current_pos.y(), m_last_attached_pos.y());
+    }
+
+    if (needs_resize) {
+        resize(m_last_size_info);
     }
 
     m_content_item->render(
-        {m_content_item->x(), m_content_item->y()},
-        {m_content_item->width(), m_content_item->height()}
+        Vec2f(m_content_item->left(), m_content_item->top()),
+        Vec2f(m_content_item->width(), m_content_item->height())
     );
 }
 
@@ -207,10 +214,11 @@ void Popup::check_resized()
     m_content_item->check_resized();
 }
 
-void Popup::resize(const Vec2f& size)
+void Popup::resize(const SizeInfo &size_info)
 {
-    m_last_size = size;
-    YGNodeCalculateLayout(m_popup_node, size.x(), size.y(), YGDirectionLTR);
+    m_last_size_info = size_info;
+    m_last_size = Vec2f{size_info.viewport_size_x, size_info.viewport_size_y};
+    YGNodeCalculateLayout(m_popup_node, size_info.viewport_size_x, size_info.viewport_size_y, YGDirectionLTR);
 
     // Free standing windows have all handling implemented in Window class
     if (m_attached_type == AttachedType::FreeStanding) {
@@ -220,7 +228,8 @@ void Popup::resize(const Vec2f& size)
     ImRect popup_rect;
     if (m_attached_type == AttachedType::Item) {
         const Vec2f attachee_global_pos = m_attached_to->get_global_pos();
-        const ImRect size_rect(0, 0, size.x(), size.y());
+        m_last_attached_pos             = attachee_global_pos;
+        const ImRect size_rect(0, 0, size_info.viewport_size_x, size_info.viewport_size_y);
         const ImVec2 target_pos{attachee_global_pos.x(), attachee_global_pos.y()};
         const ImRect target_rect{
             target_pos,
@@ -253,12 +262,12 @@ void Popup::resize(const Vec2f& size)
         }
         popup_rect = placed.first ? placed.second : preferred_rect;
     } else if (m_attached_type == AttachedType::Center) {
-        popup_rect.Min.x = size.x() * 0.5f - m_content_item->width() * 0.5f;
-        popup_rect.Min.y = size.y() * 0.5f - m_content_item->height() * 0.5f;
+        popup_rect.Min.x = m_last_size.x() * 0.5f - m_content_item->width() * 0.5f;
+        popup_rect.Min.y = m_last_size.y() * 0.5f - m_content_item->height() * 0.5f;
         popup_rect.Max = popup_rect.Min + ImVec2(m_content_item->width(), m_content_item->height());
     }
 
-    Imgui::move_window_to_bounds({size.x(), size.y()}, popup_rect);
+    Imgui::move_window_to_bounds({m_last_size.x(), m_last_size.y()}, popup_rect);
 
     if (m_attached_type != AttachedType::FreeStanding) {
         if (!Domain::fuzzy_compare(m_content_item->left(), popup_rect.Min.x)) {
@@ -269,7 +278,7 @@ void Popup::resize(const Vec2f& size)
         }
     }
 
-    YGNodeCalculateLayout(m_popup_node, size.x(), size.y(), YGDirectionLTR);
+    YGNodeCalculateLayout(m_popup_node, m_last_size.x(), m_last_size.y(), YGDirectionLTR);
 
     // resolve size change
 }
@@ -299,7 +308,9 @@ void Popup::set_offset(float offset)
 
 void Popup::open_at(const Vec2f& pos)
 {
-    m_content_item->request_position(pos);
+    ASSERT(m_attached_type == AttachedType::FreeStanding, "open_at requires FreeStanding mode");
+    m_content_item->set_left(pos.x());
+    m_content_item->set_top(pos.y());
     open();
 }
 

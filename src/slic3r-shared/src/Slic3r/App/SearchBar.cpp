@@ -80,7 +80,7 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
     label->set_font_type(Render::ImguiFontType::Italic);
 }
 
-void SearchBar::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+void SearchBar::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     Item::render(pos, size);
 

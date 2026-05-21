@@ -13,7 +13,7 @@ Rectangle::Rectangle() : Item()
     set_object_name("Rectangle");
 }
 
-void Rectangle::render(Vec2f pos, Vec2f size)
+void Rectangle::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

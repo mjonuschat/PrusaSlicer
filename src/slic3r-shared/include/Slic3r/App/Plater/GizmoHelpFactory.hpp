@@ -24,7 +24,8 @@ public:
     struct HelpIcon
     {
         Render::Icon icon{Render::Icon::None};
-        Domain::Vec2f min_size{25.f, 25.f};
+        Yoga::Unit min_width{25.f};
+        Yoga::Unit min_height{25.f};
     };
 
     /**

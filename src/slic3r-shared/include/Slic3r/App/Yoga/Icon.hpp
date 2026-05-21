@@ -60,7 +60,7 @@ public:
     /// \note auto_resize = true
     Icon(Render::Icon icon);
 
-    void render(Vec2f pos, Vec2f size) override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     IconType icon_type() const;
     Render::Icon icon() const;

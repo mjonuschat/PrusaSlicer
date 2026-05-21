@@ -49,7 +49,7 @@ public:
     float background_border_width() const;
     void set_background_border_width(float width);
 
-    const Paddings& content_padding();
+    const EvaluatedPaddings& content_padding();
     void set_content_padding(const Paddings& padding);
 
     Orientation content_orientation() const;

@@ -37,8 +37,8 @@ void GizmoHelpFactory::add_item(const std::vector<HelpItem>& icons, const std::s
             ASSERT(help_icon.icon != Render::Icon::None);
 
             Icon* icon = help_group->emplace_back<Icon>(help_icon.icon);
-            icon->set_width(help_icon.min_size.x());
-            icon->set_height(help_icon.min_size.y());
+            icon->set_width(help_icon.min_width);
+            icon->set_height(help_icon.min_height);
             icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
             icon->set_tint(color);
         }

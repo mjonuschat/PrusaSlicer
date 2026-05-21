@@ -29,7 +29,7 @@ public:
         std::optional<std::string> index = std::nullopt
     );
 
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
 private:
     Circle* m_swatch{nullptr};

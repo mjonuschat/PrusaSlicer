@@ -39,7 +39,6 @@ ConfigRowItem::ConfigRowItem(
     m_label->set_height(40);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
     m_label->set_align({AlignH::Left, AlignV::Center});
-    m_label->set_padding(Paddings(0, 0, 5, 0));
 
     m_sidetext = emplace_back<Text>(Biz::_u8(m_state->def().sidetext));
     m_sidetext->set_self_align(YGAlignCenter);
@@ -47,7 +46,7 @@ ConfigRowItem::ConfigRowItem(
     m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
     m_label->set_width(m_force_label.has_value() ? 90 : 175);
-    m_left_side->set_max_size({175, YGUndefined});
+    m_left_side->set_max_width(175);
 
     on_data_update();
 }
@@ -125,7 +124,7 @@ void ConfigRowItem::on_data_update()
 
     m_label->set_text(m_force_label.value_or(Biz::_u8(m_state->def().label)));
     m_sidetext->set_text(Biz::_u8(m_state->def().sidetext));
-    m_sidetext->set_min_width(m_sidetext->text().empty() ? 0 : 50);
+    m_sidetext->set_min_width(m_sidetext->text().empty() ? 0 : 30);
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
         std::optional<int> value = m_state->value().get<std::optional<int>>();

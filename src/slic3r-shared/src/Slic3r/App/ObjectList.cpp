@@ -457,7 +457,7 @@ ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::M
     init(project_interactor, mode);
 }
 
-void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+void ObjectList::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     auto& ctx          = selected_project_context();
     m_scene_interactor = &m_project_interactor->scene_interactor();
@@ -495,7 +495,7 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
     }
 
     ImVec2 end_pos = ImGui::GetCursorScreenPos();
-    Vec2f size_required({min_size().x(), std::max(0.f, end_pos.y - pos.y())});
+    Vec2f size_required({min_width().value, std::max(0.f, end_pos.y - pos.y())});
 
     if (m_size != size_required) {
         m_size = size_required;

@@ -24,7 +24,7 @@ ContextPopup::Callbacks& ContextPopup::callbacks()
 void ContextPopup::style_node()
 {
     if (m_opened && is_visible()) {
-        const ImVec2 size = to_im(get_available_size());
+        const ImVec2 size(m_size_info.viewport_size_x, m_size_info.viewport_size_y);
 
         if (m_open_pos.has_value()) {
             // Absolute positioning
@@ -103,13 +103,14 @@ void ContextPopup::style_node()
                 set_bottom(parent_pos.y + parent_h - target_rect.Max.y);
             }
         }
-        set_max_size(max_size().cwiseMin(Vec2f{size.x, size.y}));
+        set_max_width(size.x);
+        set_max_height(size.y);
     }
 
     Item::style_node();
 }
 
-void ContextPopup::render(Vec2f pos, Vec2f size)
+void ContextPopup::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 

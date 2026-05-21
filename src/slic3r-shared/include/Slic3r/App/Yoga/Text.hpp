@@ -24,9 +24,7 @@ public:
         Render::ImguiFontType font_type = Render::ImguiFontType::Regular
     );
 
-    void render(Vec2f pos, Vec2f size) override;
-
-    void style_node() override;
+    void render(const Vec2f& pos, const Vec2f& size) override;
 
     const std::string& text() const;
     void set_text(const std::string& text);
@@ -37,8 +35,11 @@ public:
     Render::ImguiFontType font_type() const;
     void set_font_type(Render::ImguiFontType font_type);
 
-    float font_size() const;
-    void set_font_size(float font_size);
+    Unit font_size() const;
+    /**
+     * @brief Sets explicit font size (in pixels) otherwise Root font size is used
+     */
+    void set_font_size(const Unit& font_size);
 
     WrapMode wrap_mode() const;
     void set_wrap_mode(WrapMode wrap_mode);
@@ -54,14 +55,19 @@ protected:
     float available_width() const;
     float available_height() const;
 
+    float used_font_size() const;
+
+private:
+    void size_info_changed(const SizeInfo& size_info) override;
+
 private:
     Align m_align;
     std::string m_source_text;
     std::string m_rendered_text;
-    Text::WrapMode m_wrap_mode        = Text::WrapMode::NoWrap;
+    Text::WrapMode m_wrap_mode = Text::WrapMode::NoWrap;
     ImColor m_text_color;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
-    float m_font_size;
+    std::optional<EvaluatedUnit> m_font_size;
     ImVec2 m_text_pos;
 };
 

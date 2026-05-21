@@ -40,9 +40,9 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_print_settings_dialog = emplace_back<PrintSettingsDialog>(project_interactor, m_navigator);
 
     set_orientation(Orientation::Vertical);
-    set_gap(5);
+    set_gap(0.25_rem);
 
-    Paddings pad = padding();
+    Paddings pad = padding().source;
     pad.right    = 0;
     set_padding(pad);
 
@@ -51,8 +51,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_content_area = emplace_back<ScrollArea>();
     m_content_area->set_orientation(Orientation::Vertical);
     m_content_area->set_flex_grow(1);
-    m_content_area->set_padding(Paddings(0, 0, 14, 0));
-    m_content_area->set_gap(5);
+    m_content_area->set_padding(Paddings(0, 0, 1_rem, 0));
+    m_content_area->set_gap(0.25_rem);
 
     m_print_settings_dialog->attach_to_item(this, Position::Left, 20);
     m_print_settings_dialog->callbacks().closed = [this]()
@@ -117,7 +117,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
             Biz::ProjectInteractor&>{m_project_interactor}
     );
     m_tool_head_list_view->set_orientation(Orientation::Vertical);
-    m_tool_head_list_view->set_gap(5);
+    m_tool_head_list_view->set_gap(0.25_rem);
     m_tool_head_list_view->set_flex_shrink(0);
     m_tool_head_list_view->set_source_list(
         &m_project_interactor.preset_interactor().tool_presets()
@@ -133,22 +133,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
 void SidebarPrint::add_separator()
 {
     Separator* separator = m_content_area->emplace_back<Separator>();
-    separator->set_margin(Margins(-m_padding.left, gap(), -m_padding.right, gap()));
-}
-
-void SidebarPrint::add_row(Item* container, const std::string& label, std::unique_ptr<Item> control)
-{
-    Item* row = container->emplace_back<Item>();
-    row->set_flex_shrink(0);
-    row->set_gap(5);
-
-    Text* text = row->emplace_back<Text>(label);
-    text->set_width_percent(30);
-    text->set_self_align(YGAlign::YGAlignCenter);
-
-    control->set_width_percent(70);
-
-    row->append(std::move(control));
+    separator->set_margin(Margins(-padding().left, gap(), -padding().right, gap()));
 }
 
 void SidebarPrint::create_favorite_params()
