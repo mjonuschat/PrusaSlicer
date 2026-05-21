@@ -29,5 +29,7 @@ public:
 
 private:
     std::map<Domain::SlicingId, Slicing::FDMResult> m_results;
+
+    std::size_t memsize() const;
 };
 } // namespace Slic2r::Biz::FDMResultCache

@@ -526,6 +526,16 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
         [project_id](auto* l) { l->on_project_will_be_removed(project_id); }
     );
 
+    for (const std::unique_ptr<Domain::ConfigContainer>& config_container :
+         it->second.config_containers())
+    {
+        for (const std::unique_ptr<Domain::BedInstance>& bed_instance :
+             config_container->bed_instances())
+        {
+            m_slicing_interactor.remove_bed(bed_instance->id().id);
+        }
+    }
+
     it = projects.erase(it);
 
     invoke_listeners<IProjectsChangedListener>(
