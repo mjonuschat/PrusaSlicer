@@ -1364,6 +1364,9 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Yoga/ScrollAreaTests.cpp
         test/Slic3r/App/Yoga/ObjectTests.cpp
         test/Slic3r/App/Yoga/EventTests.cpp
+        test/Slic3r/App/Yoga/ComboBoxTests.cpp
+        test/Slic3r/App/Yoga/ComboBoxListViewTests.cpp
+        test/Slic3r/App/Yoga/ComboBoxListViewSelectionTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/ExportGcodeTests.cpp

@@ -155,9 +155,9 @@ public:
      */
     virtual void on_updated(const IndexRange& index_range) {}
     /**
-     * @param new_size - size which will the model have after reset
+     * @param new_size (optional) - size which will the model have after reset
      */
-    virtual void on_will_be_reset() {}
+    virtual void on_will_be_reset(std::optional<size_t> new_size = std::nullopt) {}
     /**
      * @brief on_reset - all Data is invalid, reconstruct List completely
      */

@@ -336,11 +336,11 @@ void ComboBox::render(Vec2f pos, Vec2f size)
                 m_validator.get(),
                 m_callbacks,
                 new_hovered,
-                m_imgui_render->font(m_label_font_type)
+                m_imgui_render ? m_imgui_render->font(m_label_font_type) : nullptr
             ))
         {
             const ImVec2 im_size = to_im(size);
-            for (int index = 0; index < int(m_items.size()); ++index) {
+            for (int index = 0; index < static_cast<int>(m_items.size()); ++index) {
                 ImGui::PushID(index);
                 ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.f, 0.5f));
                 if (ImGui::Selectable(

@@ -67,7 +67,7 @@ void PrinterNozzleRow::on_index_update()
     m_text_index->set_text(std::to_string(m_index + 1));
 }
 
-void PrinterNozzleRow::on_view_will_be_removed()
+void PrinterNozzleRow::on_view_will_be_reset()
 {
     m_combo_box->set_source_list(nullptr);
 }

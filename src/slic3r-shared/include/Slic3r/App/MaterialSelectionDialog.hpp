@@ -52,7 +52,7 @@ public:
 
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
 
-    void on_will_be_reset() override;
+    void on_will_be_reset(std::optional<size_t> new_size = std::nullopt) override;
     void on_reset() override;
 
     MaterialSettingsDialog& material_settings_dialog();

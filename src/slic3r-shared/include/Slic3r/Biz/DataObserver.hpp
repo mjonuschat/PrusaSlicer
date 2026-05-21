@@ -42,6 +42,8 @@ public:
 
     virtual void on_view_will_be_removed() {}
 
+    virtual void on_view_will_be_reset() {}
+
 protected:
     virtual void on_data_update() {}
 

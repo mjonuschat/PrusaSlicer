@@ -29,6 +29,7 @@ public:
             m_source_selection_list->template add_listener<Biz::IListSelectionChangedListener>(
                 this
             );
+            ComboBoxListView<Data>::on_reset();
             on_list_selection_changed(m_source_selection_list->selected_index());
         } else {
             ComboBoxListView<Data>::set_source_list(nullptr);

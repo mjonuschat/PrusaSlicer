@@ -77,7 +77,7 @@ void SidebarToolHeadRow::on_data_update()
     }
 }
 
-void SidebarToolHeadRow::on_view_will_be_removed()
+void SidebarToolHeadRow::on_view_will_be_reset()
 {
     if (m_last_preset_item_observable_list) {
         m_combo_box->set_source_list(nullptr);

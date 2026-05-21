@@ -34,7 +34,7 @@ public:
         Biz::ProjectInteractor& project_interactor
     );
 
-    void on_view_will_be_removed() override;
+    void on_view_will_be_reset() override;
 
 protected:
     void on_data_update() override;

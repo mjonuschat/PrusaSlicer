@@ -16,7 +16,7 @@ CurrentPresetLabel::CurrentPresetLabel(
     m_observable_list_scope(observable_list, *this)
 {}
 
-void CurrentPresetLabel::on_will_be_reset()
+void CurrentPresetLabel::on_will_be_reset(std::optional<size_t> new_size)
 {
     if (m_created) {
         m_observable_list.at(m_current_list)

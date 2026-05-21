@@ -93,9 +93,8 @@ public:
 
     void on_reset() override
     {
-        if (!m_list_items.empty()) {
-            on_removed({0, m_list_items.size() - 1});
-        }
+        m_list_items.clear();
+        m_items.clear();
 
         if (m_source_list.is_valid()) {
             for (size_t index = 0; index < m_source_list->size(); ++index) {

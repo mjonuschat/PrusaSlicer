@@ -57,6 +57,8 @@ public:
         const std::vector<Domain::ColorRGB>& colors
     ) override;
 
+    void on_view_will_be_removed() override;
+
 protected:
     void on_data_update() override;
     void checked_updated_internal() override;
@@ -71,12 +73,6 @@ private:
 
 private:
     Biz::ListenerScope<
-        Biz::Preset::IPresetChangedListener,
-        Biz::Preset::PresetInteractor,
-        MaterialSettingsButton>
-        m_preset_changed_listener_scope;
-
-    Biz::ListenerScope<
         Biz::IColorsChangedListener,
         Biz::ProjectSettingsInteractor,
         MaterialSettingsButton>
@@ -84,7 +80,7 @@ private:
 
     ColorPickerButton* m_color_marker{nullptr};
     Text* m_material_name{nullptr};
-    LayoutButton* m_cog_btn{ nullptr };
+    LayoutButton* m_cog_btn{nullptr};
     Text* m_nozzle{nullptr};
     std::weak_ptr<ButtonGroup> m_button_group;
     FnIndexClicked m_on_cog_clicked;

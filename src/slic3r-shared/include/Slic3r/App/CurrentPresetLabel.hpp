@@ -19,7 +19,7 @@ class CurrentPresetLabel :
 public:
     CurrentPresetLabel(Biz::Preset::PresetItemCompoundObservableList& observable_list);
 
-    void on_will_be_reset() override;
+    void on_will_be_reset(std::optional<size_t> new_size = std::nullopt) override;
     void on_reset() override;
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
 

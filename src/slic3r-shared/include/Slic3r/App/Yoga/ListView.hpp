@@ -106,11 +106,20 @@ public:
         }
     }
 
-    void on_will_be_reset() override
+    void on_will_be_reset(std::optional<size_t> new_size = std::nullopt) override
     {
-        // Todo: probably rename
-        // notify all views that we were reset
-        std::ranges::for_each(m_items, [](View* view) { view->on_view_will_be_removed(); });
+        std::ranges::for_each(m_items, [](View* view) { view->on_view_will_be_reset(); });
+
+        if (new_size.value_or(0) > m_items.size()) {
+            // new size is defined and it is higher than current size NOP
+            return;
+        }
+
+        std::ranges::for_each_n(
+            m_items.begin() + new_size.value_or(0),
+            m_items.size() - new_size.value_or(0),
+            [](View* view) { view->on_view_will_be_removed(); }
+        );
     }
 
     void on_reset() override

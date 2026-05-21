@@ -267,7 +267,7 @@ void MaterialSelectionDialog::on_list_selection_changed(Domain::SelectionId new_
     }
 }
 
-void MaterialSelectionDialog::on_will_be_reset()
+void MaterialSelectionDialog::on_will_be_reset(std::optional<size_t> new_size)
 {
     if (m_preset_list) {
         m_preset_list->remove_listener<Biz::IListSelectionChangedListener>(this);

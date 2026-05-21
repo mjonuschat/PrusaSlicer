@@ -20,7 +20,9 @@ struct IBatchObservableListNotifier
  * @tparam T Item type
  */
 template <typename T>
-class BatchObservableList : public IObservableList<T>, protected Details::IBatchObservableListNotifier
+class BatchObservableList :
+    public IObservableList<T>,
+    protected Details::IBatchObservableListNotifier
 {
 public:
     using Items = std::vector<T>;
@@ -69,32 +71,27 @@ public:
 
     void set_items(const Items& data)
     {
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l) {
-            l->on_will_be_reset();
-        });
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l)
+                                                                        { l->on_will_be_reset(data.size()); });
         m_items = data;
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
-            l->on_reset();
-        });
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l)
+                                                                        { l->on_reset(); });
     }
 
     void set_items(Items&& data)
     {
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l) {
-            l->on_will_be_reset();
-        });
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l)
+                                                                        { l->on_will_be_reset(data.size()); });
         m_items = data;
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
-            l->on_reset();
-        });
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l)
+                                                                        { l->on_reset(); });
     }
 
 private:
     void notify_item_changed_at(size_t index) override
     {
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([index](IListObserver<T>* l) {
-            l->on_updated(index);
-        });
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([index](IListObserver<T>* l)
+                                                                        { l->on_updated(index); });
     }
 
 protected:

@@ -25,7 +25,6 @@ MaterialSettingsButton::MaterialSettingsButton(
 ) :
     RectangleButton(format(_u8L("Material %1% TT"), index + 1)),
     Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, state),
-    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this),
     m_button_group(button_group),
     m_on_cog_clicked(on_cog_clicked),
@@ -99,6 +98,8 @@ MaterialSettingsButton::MaterialSettingsButton(
     on_data_update();
 
     m_button_group.lock()->insert_button(this);
+
+    project_interactor.preset_interactor().add_listener<Preset::IPresetChangedListener>(this);
 }
 
 MaterialSettingsButton::~MaterialSettingsButton()
@@ -192,6 +193,11 @@ void MaterialSettingsButton::on_colors_changed(
 
     const Domain::ColorRGB& color = colors[m_index];
     set_color({color.r(), color.g(), color.b()});
+}
+
+void MaterialSettingsButton::on_view_will_be_removed()
+{
+    m_project_interactor.preset_interactor().remove_listener<Preset::IPresetChangedListener>(this);
 }
 
 void MaterialSettingsButton::set_material_name(const std::string& name)
