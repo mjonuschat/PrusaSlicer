@@ -1,5 +1,6 @@
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 
+#include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 #include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -110,7 +111,13 @@ void SidebarPreviewActionButtons::update_buttons()
         m_primary_button->set_label(Biz::_u8L("Cancel"));
         m_primary_button->set_enabled(true);
         m_primary_button->callbacks().action = [this, slicing_id]()
-        { m_project_interactor->slicing_interactor().stop_slicing_bed(slicing_id); };
+        {
+            m_project_interactor->slicing_interactor().stop_slicing_bed(slicing_id);
+            const auto auto_reslice{AppServices::instance().app_config().get<bool>("auto_reslice")};
+            if (auto_reslice) {
+                navigate_to_other();
+            }
+        };
     } break;
     case StatusCode::InvalidData: {
         ASSERT(!status.errors.empty());
