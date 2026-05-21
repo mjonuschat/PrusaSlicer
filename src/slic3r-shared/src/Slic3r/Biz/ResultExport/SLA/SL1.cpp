@@ -137,7 +137,7 @@ static std::string serialize(const double value)
     return ss.str();
 }
 
-void fill_iniconf(ConfMap &m, const SLAPrintConfigView &cfg, const Slicing::Sla::PrintStatistics &stats) {
+void fill_iniconf(ConfMap &m, const SLAPrintConfigView &cfg, const Domain::SLA::PrintStatistics &stats) {
     using Domain::SLAMaterialSpeed;
     using Domain::SLAMaterialSpeed::slamsSlow;
     using Domain::SLAMaterialSpeed::slamsFast;
@@ -203,7 +203,7 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
         boost::filesystem::path(zipper.get_filename()).stem().string() :
         data.project_name;
 
-    const Slicing::Sla::PrintStatistics& stats = *data.print_statistics;
+    const auto& stats = *data.print_statistics;
 
     const Biz::Print::SerializedConfig& serialized_config{data.serialized_config};
     const SLAPrintConfigView full_config{data.print_config};

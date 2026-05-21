@@ -345,15 +345,15 @@ public:
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const Biz::Print::SerializedConfig& serialized_config,
-        const Domain::Preset::HwPrinterConfig& hw_config
+        const Domain::Preset::SelectedPresetMetadata& metadata,
+        const MetadataSerializeFn& serializer
     ) override;
 
     SLASlicingSync::InvalidatedSteps apply(
         const Domain::Model& model,
         const Domain::ConfigPackSLA& config_pack,
-        const Biz::Print::SerializedConfig& serialized_config,
-        const Domain::Preset::HwPrinterConfig& hw_config,
+        const Domain::Preset::SelectedPresetMetadata& metadata,
+        const MetadataSerializeFn& serializer,
         std::vector<std::string>* warnings = nullptr
     );
 
@@ -388,7 +388,13 @@ public:
     }
 
     const SLAPrintConfigView& print_config() const { return m_print_config; }
-    const Biz::Print::SerializedConfig& serialized_config() const { return m_serialized_config; }
+
+    Biz::Print::SerializedConfig build_serialized_config(
+        const Domain::SLA::PrintStatistics& print_statistics
+    ) const
+    {
+        return m_metadata_serializer(print_statistics);
+    }
 
     // Extracted value from the configuration objects
     Domain::Vec3d               relative_correction() const;
@@ -451,10 +457,10 @@ public:
     OnSlaObject                     m_on_sla_object;
 
     SLAPrintConfigView m_print_config;
-    Domain::Preset::HwPrinterConfig m_hw_config;
-    Biz::Print::SerializedConfig m_serialized_config;
+    Domain::Preset::SelectedPresetMetadata m_metadata;
+    MetadataSerializeFn m_metadata_serializer;
 
-    ::Slic3r::Biz::Slicing::Sla::PrintStatistics m_print_statistics;
+    ::Slic3r::Domain::SLA::PrintStatistics m_print_statistics;
 
     PrintObjects                    m_objects;
 

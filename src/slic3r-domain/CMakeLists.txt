@@ -30,6 +30,8 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/ExPolygon.hpp
     src/Slic3r/Domain/ExPolygon.cpp
     include/Slic3r/Domain/PrinterTechnology.hpp
+    include/Slic3r/Domain/PrintStatistics.hpp
+    include/Slic3r/Domain/SLA/PrintStatistics.hpp
 
     include/Slic3r/Domain/Expr/ExprAst.hpp
     src/Slic3r/Domain/Expr/ExprAst.cpp

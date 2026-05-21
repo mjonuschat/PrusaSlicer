@@ -764,18 +764,22 @@ PrintSteps get_custom_gcode_invalidated_steps(
 
 PlaceholderParser init_placeholder_parser(
     const ParserConfig& new_config,
-    const std::optional<ModelWipeTower>& wipe_tower
+    const std::optional<ModelWipeTower>& wipe_tower,
+    const Domain::Preset::SelectedPresetMetadata& metadata
 )
 {
     PlaceholderParser parser{new_config};
-    // Set the profile aliases for the PrintBase::output_filename()
-    //parser.set("print_preset", new_config.get<std::string>("print_settings_id"));
-    //parser.set("filament_preset", new_config.get<std::string>("filament_settings_id"));
-    //parser.set("printer_preset", new_config.get<std::string>("printer_settings_id"));
-    //parser.set(
-    //    "physical_printer_preset",
-    //    new_config.get<std::string>("physical_printer_settings_id")
-    //);
+
+    // set preset IDs to be compatible with legacy printers
+    parser.set("printer_settings_id", metadata.printer.name);
+    parser.set("print_settings_id", metadata.print.name);
+    {
+        std::vector<std::string> names;
+        for (const auto& mm : metadata.materials) {
+            names.push_back(mm.name);
+        }
+        parser.set("filament_settings_id", names);
+    }
 
     if (wipe_tower) {
         parser.set("wipe_tower_x", wipe_tower->position.x());
@@ -1404,7 +1408,8 @@ InvalidatedSteps sync_hw_config(
 Biz::Print::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
-    const Biz::Print::SerializedConfig& serialized_config,
+    const Domain::Preset::SelectedPresetMetadata& metadata,
+    const MetadataSerializeFn& serializer,
     const Domain::ModelWipeTower& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     const std::vector<unsigned>& extruder_candidates
@@ -1465,12 +1470,13 @@ Biz::Print::ApplyStatus::Status Print::apply(
 
     m_extruder_candidates = extruder_candidates;
     m_shrinkage_compensation = shrinkage_compensation;
-    m_serialized_config = serialized_config;
+    m_metadata_serializer = serializer;
     m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
         Biz::Parser::IO::get_parser_config(*new_full_config_ptr),
-        wipe_tower
+        wipe_tower,
+        metadata
     );
 
     InvalidatedSteps wipe_tower_invalidated_steps;

@@ -155,7 +155,7 @@ void ObjectListWindow::update_sliced_info()
     if (!sla_result || !sla_result->get().export_data->print_statistics)
         return;
 
-    const Biz::Slicing::Sla::PrintStatistics& print_statistics = *sla_result->get().export_data->print_statistics;
+    const Domain::SLA::PrintStatistics& print_statistics = *sla_result->get().export_data->print_statistics;
 
     float used_material_total = print_statistics.objects_used_material + print_statistics.support_used_material;
 

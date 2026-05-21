@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/GCode.hpp"
 #include "test_data.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 using namespace Slic3r;
 using namespace Test;
@@ -157,7 +158,16 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
     }
 
     Print print;
-    print.update(two_cubes, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
+    auto preset_metadata = create_dummy_selected_preset_metadata(create_dummy_hw_config());
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
+    print.update(
+        two_cubes,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    );
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
@@ -195,7 +205,16 @@ TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     }
 
     Print print;
-    print.update(two_cubes, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
+    auto preset_metadata = create_dummy_selected_preset_metadata(create_dummy_hw_config());
+    auto metadata        = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
+    print.update(
+        two_cubes,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    );
     print.validate();
     const std::string gcode{Test::gcode(print)};
 

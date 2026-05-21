@@ -260,8 +260,8 @@ Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const Biz::Print::SerializedConfig& serialized_config,
-    const Domain::Preset::HwPrinterConfig& hw_config
+    const Domain::Preset::SelectedPresetMetadata& metadata,
+    const MetadataSerializeFn& serializer
 )
 {
     namespace ApplyStatus = Biz::Print::ApplyStatus;
@@ -288,14 +288,18 @@ Biz::Print::ApplyStatus::Status Print::update(
             m_on_extruder_candidates(extruder_candidates);
         }
 
-        std::vector<Biz::Slicing::Error> errors{validate_input(model, config_fdm, hw_config)};
+        std::vector<Biz::Slicing::Error> errors{
+            validate_input(model, config_fdm, metadata.hw_config)
+        };
         if (!errors.empty()) {
             m_invalid = true;
             result = ApplyStatus::InvalidData{std::move(errors)};
             return;
         }
 
-        const auto slicing_input{prepare_slicing_input(config_fdm, extruder_candidates, hw_config)};
+        const auto slicing_input{
+            prepare_slicing_input(config_fdm, extruder_candidates, metadata.hw_config)
+        };
         if (!slicing_input.has_value()) {
             m_invalid = true;
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
@@ -305,7 +309,8 @@ Biz::Print::ApplyStatus::Status Print::update(
         result = this->apply(
             model,
             slicing_input.value(),
-            serialized_config,
+            metadata,
+            serializer,
             bed.wipe_tower,
             bed.custom_gcode,
             extruder_candidates
@@ -1303,7 +1308,11 @@ Biz::libpgcode::ProcessorResult Print::process_gcode()
 
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
-    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, m_serialized_config)};
+
+    // TODO: provide stats stored in result.print_statistics here
+    auto serialized_config = m_metadata_serializer(Domain::BasicPrintStatistics{});
+
+    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, serialized_config)};
 
     result.sequential_collision_detected = m_sequential_collision_detected;
 

@@ -91,6 +91,57 @@ bool is_thread_active(const StatusCode status) {
         || status == StatusCode::Updating;
 }
 
+Domain::GCodeMetadata build_gcode_metadata(
+    const Domain::ProjectMetadata& project_metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const ConfigPack& config
+)
+{
+    Domain::GCodeMetadata metadata{
+        .general =
+            {
+                .producer         = SLIC3R_APP_NAME,
+                .producer_version = SLIC3R_VERSION,
+                .time             = Utils::iso_ext_utc_timestamp(),
+            },
+        .config =
+            {.printer = preset_metadata.hw_config,
+             .presets =
+                 {
+                     .vendor    = preset_metadata.hw_config.vendor_id,
+                     .repo_id   = preset_metadata.hw_config.repo_id,
+                     .version   = preset_metadata.hw_config.repo_version,
+                     .printer   = preset_metadata.printer,
+                     .print     = preset_metadata.print,
+                     .tools     = preset_metadata.tools,
+                     .materials = preset_metadata.materials,
+                 }},
+        .presets = config,
+        .project = project_metadata,
+        .stats   = {},
+    };
+    return metadata;
+}
+
+PrintBase::MetadataSerializeFn build_metadata_serializer(
+    const Domain::GCodeMetadata& metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const ConfigPack& config
+)
+{
+    return [=](const PrintBase::UniversalPrintStatistics& gcode_stats) -> Print::SerializedConfig
+    {
+        // TODO: update captured `metadata.stats` with `gcode_stats`
+
+        const Print::SerializedConfig serialized_config{
+            .json = beautify_json(metadata, 2, 14),
+            .ini  = Biz::serialize_as_legacy_config(config, preset_metadata.hw_config)
+        };
+
+        return serialized_config;
+    };
+}
+
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Domain::Model& model,
@@ -199,35 +250,15 @@ void BackgroundProcess::update(
 
     this->m_on_status({StatusCode::Updating});
 
-    Domain::GCodeMetadata metadata{
-        .general = {
-            .producer = SLIC3R_APP_NAME,
-            .producer_version = SLIC3R_VERSION,
-            .time = Utils::iso_ext_utc_timestamp(),
-        },
-        .config = {
-            .printer = preset_metadata.hw_config,
-            .presets = {
-                .vendor = preset_metadata.hw_config.vendor_id,
-                .repo_id =  preset_metadata.hw_config.repo_id,
-                .version = preset_metadata.hw_config.repo_version,
-                .printer =  preset_metadata.printer,
-                .print =  preset_metadata.print,
-                .tools = preset_metadata.tools,
-                .materials = preset_metadata.materials,
-            }
-        },
-        .presets = config,
-        .project = project_metadata,
-        .stats = {},
-    };
+    Domain::GCodeMetadata metadata{build_gcode_metadata(project_metadata, preset_metadata, config)};
 
-    const Print::SerializedConfig serialized_config{
-        .json = beautify_json(metadata, 2, 14),
-        .ini  = Biz::serialize_as_legacy_config(config, preset_metadata.hw_config)
-    };
-
-    apply_status = this->m_print->update(model, config, bed, serialized_config, preset_metadata.hw_config);
+    apply_status = this->m_print->update(
+        model,
+        config,
+        bed,
+        preset_metadata,
+        build_metadata_serializer(metadata, preset_metadata, config)
+    );
 }
 
 void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)

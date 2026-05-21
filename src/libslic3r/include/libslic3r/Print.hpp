@@ -590,14 +590,15 @@ public:
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const Biz::Print::SerializedConfig& serialized_config,
-        const Domain::Preset::HwPrinterConfig& hw_config
+        const Domain::Preset::SelectedPresetMetadata& metadata,
+        const MetadataSerializeFn& serializer
     ) override;
 
     Biz::Print::ApplyStatus::Status apply(
         const Domain::Model& model,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
-        const Biz::Print::SerializedConfig& serialized_config,
+        const Domain::Preset::SelectedPresetMetadata& metadata,
+        const MetadataSerializeFn& serializer,
         const Domain::ModelWipeTower& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         const std::vector<unsigned>& extruder_candidates
@@ -716,7 +717,7 @@ public:
     OnExtruderCandidates m_on_extruder_candidates;
 
     PrintConfigView m_config;
-    Biz::Print::SerializedConfig m_serialized_config;
+    MetadataSerializeFn m_metadata_serializer;
 
     PrintObjectPtrs m_objects;
     PrintRegionPtrs m_print_regions;

@@ -12,6 +12,7 @@
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 #include <cstdlib>
 #include <string>
@@ -250,6 +251,19 @@ static bool verbose_gcode()
     return s == "1" || s == "on" || s == "yes";
 }
 
+Domain::Preset::SelectedPresetMetadata create_dummy_selected_preset_metadata(
+    const Domain::Preset::HwPrinterConfig& hw_config
+)
+{
+    Domain::Preset::SelectedPresetMetadata preset_metadata{
+        .hw_config = hw_config,
+        .tools     = std::vector<Domain::Preset::EvaluatedPresetMetadata>{hw_config.tool_count},
+        .materials =
+            std::vector<Domain::Preset::EvaluatedPresetMetadata>{hw_config.material_slot_count()}
+    };
+    return preset_metadata;
+}
+
 void init_print(
     std::vector<TriangleMesh>&& meshes,
     Slic3r::Print& print,
@@ -297,10 +311,11 @@ void init_print(
         }
     }
 
-    const Biz::Print::SerializedConfig serialized_config{
-        .json = Biz::beautify_json(Domain::as_boxes(config_in), 2),
-        .ini = Biz::serialize_as_legacy_config(config_in, config_in.hw_config)
-    };
+    const auto& hw_config = config_in.hw_config;
+    Domain::Preset::SelectedPresetMetadata preset_metadata =
+        create_dummy_selected_preset_metadata(hw_config);
+    auto gcode_metadata = Slicing::build_gcode_metadata({}, preset_metadata, config_in);
+
     Domain::Bed model_bed;
     Domain::BedInstance bed_instance{model_bed};
     for (const Domain::ModelObject* object : model.objects) {
@@ -312,8 +327,8 @@ void init_print(
         model,
         config,
         bed_instance,
-        serialized_config,
-        config.hw_config
+        preset_metadata,
+        Slicing::build_metadata_serializer(gcode_metadata, preset_metadata, config_in)
     )};
     ASSERT(!std::holds_alternative<Biz::Print::ApplyStatus::InvalidData>(status));
     print.validate();

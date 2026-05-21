@@ -34,6 +34,18 @@ private:
 
 bool is_thread_active(const StatusCode status);
 
+Domain::GCodeMetadata build_gcode_metadata(
+    const Domain::ProjectMetadata& project_metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const Domain::ConfigPack& config
+);
+
+PrintBase::MetadataSerializeFn build_metadata_serializer(
+    const Domain::GCodeMetadata& metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const Domain::ConfigPack& config
+);
+
 using FDMResult = libpgcode::ProcessorResult;
 
 class IProcessCallbacks {

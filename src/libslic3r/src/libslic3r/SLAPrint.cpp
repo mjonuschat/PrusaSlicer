@@ -876,8 +876,8 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const Biz::Print::SerializedConfig& serialized_config,
-    const Domain::Preset::HwPrinterConfig& hw_config
+    const Domain::Preset::SelectedPresetMetadata& metadata,
+    const MetadataSerializeFn& serializer
 )
 {
     namespace ApplyStatus = Biz::Print::ApplyStatus;
@@ -898,7 +898,8 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
             }
         };
 
-        invalidated_steps = this->apply(model, std::get<ConfigPackSLA>(config), serialized_config, hw_config);
+        invalidated_steps =
+            this->apply(model, std::get<ConfigPackSLA>(config), metadata, serializer);
     });
     const bool changed{!invalidated_steps.empty()};
     if (!changed) {
@@ -940,8 +941,8 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
 InvalidatedSteps SLAPrint::apply(
     const Domain::Model& model,
     const Domain::ConfigPackSLA& config_pack,
-    const Biz::Print::SerializedConfig& serialized_config,
-    const Domain::Preset::HwPrinterConfig& hw_config,
+    const Domain::Preset::SelectedPresetMetadata& metadata,
+    const MetadataSerializeFn& serializer,
     std::vector<std::string>* warnings
 )
 {
@@ -952,8 +953,8 @@ InvalidatedSteps SLAPrint::apply(
 
     const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack)};
     const SLAPrintConfigView new_print_config{new_full_config_ptr};
-    m_hw_config         = hw_config;
-    m_serialized_config = serialized_config;
+    m_metadata = metadata;
+    m_metadata_serializer = serializer;
 
 
     // Grab the lock for the Print / PrintObject milestones.
@@ -994,8 +995,7 @@ InvalidatedSteps SLAPrint::apply(
 }
 
 namespace {
-using namespace Slic3r::Biz::Slicing; //Sla::PrintStatistics
-ParserConfig to_config(const Sla::PrintStatistics& stats)
+ParserConfig to_config(const Domain::SLA::PrintStatistics& stats)
 {
     ParserConfig config;
     const std::string print_time = Slic3r::short_time(get_time_dhms(float(stats.estimated_print_time)));

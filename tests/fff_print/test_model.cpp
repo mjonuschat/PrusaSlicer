@@ -9,6 +9,7 @@
 #include <boost/filesystem.hpp>
 
 #include "test_data.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Test;
@@ -70,14 +71,18 @@ SCENARIO("Model construction", "[Model]") {
                     }
                 }
 
+                auto preset_metadata =
+                    create_dummy_selected_preset_metadata(create_dummy_hw_config());
+                auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
                 print.update(
                     model,
                     config,
                     bed_instance,
-                    SerializedConfig{},
-                    create_dummy_hw_config()
+                    preset_metadata,
+                    Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
                 );
-                print.process();
+			    print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
                 CHECK(result.const_gcode()->str().size() > 0);
 			}

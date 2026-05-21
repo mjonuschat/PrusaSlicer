@@ -10,6 +10,7 @@
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include "test_data.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Test;
@@ -82,12 +83,16 @@ void update(Print& print, Domain::Model& model, const TestConfig& config)
             bed_instance.model_instances.push_back(instance);
         }
     }
+    auto preset_metadata = create_dummy_selected_preset_metadata(
+        create_dummy_hw_config(config.tool.size())
+    );
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
     print.update(
         model,
         config,
         bed_instance,
-        SerializedConfig{},
-        create_dummy_hw_config(config.tool.size())
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
     );
 }
 } // namespace
@@ -353,11 +358,19 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     auto full_config_result{prepare_slicing_input(config, {}, config.hw_config)};
     REQUIRE(full_config_result.has_value());
     auto& full_config{*full_config_result};
-    Biz::Print::SerializedConfig serialized_config{};
+    auto preset_metadata =
+        create_dummy_selected_preset_metadata(create_dummy_hw_config(config.tool.size()));
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
 
-    auto apply_status{
-        print.apply(model, full_config, serialized_config, Domain::ModelWipeTower{}, std::nullopt, {0})
-    };
+    auto apply_status{print.apply(
+        model,
+        full_config,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config),
+        Domain::ModelWipeTower{},
+        std::nullopt,
+        {0}
+    )};
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Unchanged>(apply_status));
 
     std::vector<ConfigBox*> boxes{&config.print, &config.printer, &config.project};
@@ -387,7 +400,15 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     REQUIRE(full_config_result.has_value());
     full_config = *full_config_result;
 
-    apply_status = print.apply(model, full_config, serialized_config, Domain::ModelWipeTower{}, std::nullopt, {0});
+    apply_status = print.apply(
+        model,
+        full_config,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config),
+        Domain::ModelWipeTower{},
+        std::nullopt,
+        {0}
+    );
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
 }
 
@@ -472,11 +493,16 @@ void apply_and_check(
     const auto slicing_input{prepare_slicing_input(context.config, {}, hw_config)};
     REQUIRE(slicing_input);
     const auto full_config{*slicing_input};
+    auto preset_metadata =
+        create_dummy_selected_preset_metadata(hw_config);
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, context.config);
+
 
     const auto apply_status{context.print.apply(
         context.model,
         full_config,
-        serialized_config,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, context.config),
         Domain::ModelWipeTower{},
         std::nullopt,
         {0}
@@ -580,8 +606,10 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     Domain::Bed bed{};
     Domain::BedInstance bed_instance{bed};
     bed_instance.model_instances = {model.objects.front()->instances.front()};
-    Biz::Print::SerializedConfig serialized_config{};
     HwPrinterConfig hw_config{create_dummy_hw_config(config.tool.size())};
+    auto preset_metadata =
+        create_dummy_selected_preset_metadata(hw_config);
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
 
     // Can be <1, 3> on print, object and volume.
     config.print.items.opt("infill_extruder").set(4);
@@ -595,7 +623,13 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     config.print.items.opt("support_material_extruder").set(4);
     model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 4);
 
-    Status status{print.update(model, config, bed_instance, serialized_config, hw_config)};
+    Status status{print.update(
+        model,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    )};
     REQUIRE(std::holds_alternative<InvalidData>(status));
     const auto errors{std::get<InvalidData>(status).errors};
     REQUIRE(errors.size() == 1);
@@ -625,7 +659,13 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     config.print.items.opt("support_material_extruder").set(0);
     model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 2);
 
-    status = print.update(model, config, bed_instance, serialized_config, hw_config);
+    status = print.update(
+        model,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    );
     REQUIRE(std::holds_alternative<Changed>(status));
 }
 
@@ -688,7 +728,18 @@ struct SLAApplyTestFixture
                 bed_instance.model_instances.push_back(instance);
             }
         }
-        print.update(model, config, bed_instance, SerializedConfig{}, create_dummy_hw_config());
+        auto preset_metadata = create_dummy_selected_preset_metadata(
+            create_dummy_hw_config(1, 0, Domain::PrinterTechnology::SLA)
+        );
+        auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
+        print.update(
+            model,
+            config,
+            bed_instance,
+            preset_metadata,
+            Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+        );
     }
 };
 
@@ -700,19 +751,22 @@ void apply_and_check(
 {
     ThumbnailGenerator thumbnail_generator{};
     Biz::Print::SerializedConfig serialized_config{};
-    HwPrinterConfig hw_config{create_dummy_hw_config()};
+    HwPrinterConfig hw_config{create_dummy_hw_config(1, 0, Domain::PrinterTechnology::SLA)};
 
     context.print.slice(SlicingId{0, 0}, thumbnail_generator);
     REQUIRE(is_exclusively_undone(context.print, {}));
 
     modify_config(context.config);
 
+    auto preset_metadata = create_dummy_selected_preset_metadata(hw_config);
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, context.config);
+
     const auto apply_status{context.print.update(
         context.model,
         context.config,
         context.bed_instance,
-        serialized_config,
-        hw_config
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, context.config)
     )};
     REQUIRE(is_exclusively_undone(context.print, expected_undone));
 }

@@ -15,6 +15,7 @@
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include "test_data.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 #include "boost/algorithm/string.hpp"
 
@@ -192,12 +193,16 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
         }
     }
     Print print;
+    auto preset_metadata = Test::create_dummy_selected_preset_metadata(
+        Test::create_dummy_hw_config(config.tool.size())
+    );
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
     auto status{print.update(
         model,
         config,
         bed_instance,
-        SerializedConfig{},
-        Test::create_dummy_hw_config(config.tool.size())
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
     )};
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(status));
     print.validate();

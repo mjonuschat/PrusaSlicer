@@ -158,6 +158,9 @@ std::string slice(
     bool ensure_on_bed = true
 );
 
+Domain::Preset::SelectedPresetMetadata create_dummy_selected_preset_metadata(
+    const Domain::Preset::HwPrinterConfig& hw_config
+);
 bool contains(const std::string &data, const std::string &pattern);
 bool contains_regex(const std::string &data, const std::string &pattern);
 

@@ -17,9 +17,12 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
+#include "Slic3r/Domain/PrintStatistics.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
+#include "Slic3r/Domain/SLA/PrintStatistics.hpp"
 
 #include "libslic3r/SlicingStatus.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
@@ -27,6 +30,7 @@
 #include "libslic3r/WipeTowerGeometry.hpp"
 
 namespace Slic3r {
+class PrintConfigView;
 
 class CanceledException : public std::exception {
 public:
@@ -427,14 +431,20 @@ using Status = std::variant<InvalidData, Unchanged, Changed, Empty>;
 
 using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;
 
+
+
+
 class IPrint {
 public:
+    using UniversalPrintStatistics = std::variant<Domain::PrintStatistics, Domain::SLA::PrintStatistics>;
+    using MetadataSerializeFn = std::function<SerializedConfig(const UniversalPrintStatistics&)>;
+
     virtual ApplyStatus::Status update(
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const SerializedConfig& serialized_config,
-        const Domain::Preset::HwPrinterConfig& hw_config
+        const Domain::Preset::SelectedPresetMetadata& metadata,
+        const MetadataSerializeFn& serializer
     ) = 0;
     virtual void slice(Domain::SlicingId, Slicing::IThumbnailImageGenerator&) = 0;
     virtual bool empty() const = 0;

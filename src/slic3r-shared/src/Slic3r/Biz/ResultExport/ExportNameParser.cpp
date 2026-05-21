@@ -162,7 +162,7 @@ ExportNameData parse_sla_export_name(
     const Biz::SLAResultRef sla_result = sla_result_opt.value();
 
     parser.set("input_filename_base", project_name);
-    const std::optional<Slicing::Sla::PrintStatistics> print_statistics = sla_result.get().export_data->print_statistics;
+    const std::optional<Domain::SLA::PrintStatistics> print_statistics = sla_result.get().export_data->print_statistics;
     if (!print_statistics) {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve SLA print statistics.");
         return result;

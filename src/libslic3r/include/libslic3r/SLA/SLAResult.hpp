@@ -7,6 +7,7 @@
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/SLA/PrintStatistics.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
@@ -15,26 +16,6 @@
 namespace Slic3r::Biz::Slicing {
 
 namespace Sla {
-/**
-@brief Statistic data about slicing
-Estimated print time, material consumed, etc.
-*/
-struct PrintStatistics
-{
-    double estimated_print_time = 0.;
-    double estimated_print_time_tolerance = 0.;
-    double objects_used_material = 0.;
-    double support_used_material = 0.;
-    size_t slow_layers_count = 0;
-    size_t fast_layers_count = 0;
-    double total_cost = 0.;
-    double total_weight = 0.;
-    std::vector<double> layers_times_running_total;
-    std::vector<double> layers_areas;
-
-    int count_faded_layers = 0;
-    bool hollowing_enable = false; // exist object with enabled hollowing
-};
 
 using FileData = std::vector<uint8_t>;
 using FilesData = std::vector<FileData>;
@@ -110,7 +91,7 @@ struct SLAResultData
 {
     Print::SerializedConfig serialized_config;
     SLAPrintConfigView print_config;
-    std::optional<Sla::PrintStatistics> print_statistics;
+    std::optional<Domain::SLA::PrintStatistics> print_statistics;
     Sla::OutputFiles files; // count files == slices.size()
     Domain::Images thumbnails;
     std::string project_name; // upload_job.upload_data.upload_path.filename()

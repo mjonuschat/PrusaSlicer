@@ -1307,9 +1307,9 @@ struct LayerInfo {
 };
 using LayersInfo = std::vector<LayerInfo>;
 
-Sla::PrintStatistics create_stats(const LayersInfo& infos, bool is_prusa_print)
+Domain::SLA::PrintStatistics create_stats(const LayersInfo& infos, bool is_prusa_print)
 {
-    Sla::PrintStatistics print_statistics;
+    Domain::SLA::PrintStatistics print_statistics;
     double scaling_sq = Slic3r::sqr(SCALING_FACTOR);
     size_t i = 0;
     for (const auto& [time, area, is_fast, models_volume, supports_volume] : infos) {
@@ -1550,7 +1550,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
     .export_data = std::make_shared<SLAResultData>(SLAResultData{
-        .serialized_config = m_print->serialized_config(),
+        .serialized_config = m_print->build_serialized_config(print_statistics),
         .print_config      = config,
         .print_statistics  = print_statistics,
     }),
