@@ -314,7 +314,9 @@ Item* GizmoWindow::add_row_with_slider(
     (*slider) = line_wrap->emplace_back<SliderWithInput>(unit);
 
     (*slider)->set_flex_grow(1.f);
-    (*slider)->set_revert_button(add_revert_btn(line_wrap, revert_tooltip));
+    if (!revert_tooltip.empty()) {
+        (*slider)->set_revert_button(add_revert_btn(line_wrap, revert_tooltip));
+    }
     return line_wrap;
 }
 
@@ -355,6 +357,32 @@ Item* GizmoWindow::add_row_with_toggle_button(
     }
 
     return row;
+}
+
+Item* GizmoWindow::add_row_with_button(
+    Item* parent,
+    LayoutButton** button,
+    const std::string& label,
+    const std::string& tooltip,
+    Render::Icon icon
+)
+{
+    Item* row = parent->emplace_back<Item>();
+    row->set_gap(gap_size());
+    row->set_flex_shrink(0.f);
+    (*button) = row->emplace_back<LayoutButton>(label, icon, tooltip);
+    (*button)->set_content_padding({10.f, 5.f});
+    return row;
+}
+
+Yoga::LayoutButton*
+GizmoWindow::add_icon_button(Item* parent, Render::Icon icon, const std::string& tooltip)
+{
+    LayoutButton* button = parent->emplace_back<LayoutButton>(std::string(), icon, tooltip);
+    button->set_checkable(true);
+    button->set_min_size({40.f, 40.f});
+    button->set_content_padding(8.f);
+    return button;
 }
 
 void GizmoWindow::set_warning(const std::string& title, const std::string& text)

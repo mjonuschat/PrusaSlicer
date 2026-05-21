@@ -21,26 +21,23 @@ PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
 PaintOnSupportsDialog::PaintOnSupportsDialog() :
     GizmoWindow(_u8L("Paint-on supports"), Render::Icon::PaintSupports)
 {
-    content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(gap_size());
+    content()->set_padding(20.f);
+    content()->set_gap(2.f * gap_size());
 
-    const Vec2f tool_type_button_size{50.f, 50.f};
+    revert_button()->set_visible(true);
+    revert_button()->callbacks().action = [this]()
+    {
+        if (m_callbacks.painting_reset) {
+            m_callbacks.painting_reset();
+        }
+    };
+    revert_button()->set_tooltip(_u8L("Remove all selection"));
+
     std::unique_ptr<Item> tool_type_buttons = std::make_unique<Item>();
     tool_type_buttons->set_gap(5.f);
 
-    m_brush_button =
-        tool_type_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::PaintBrush);
-    m_brush_button->set_checkable(true);
-    m_brush_button->set_min_size(tool_type_button_size);
-    m_brush_button->set_content_padding(15);
-
-    m_smart_fill_button = tool_type_buttons->emplace_back<LayoutButton>(
-        std::string{},
-        Render::Icon::WandMagicSparkles
-    );
-    m_smart_fill_button->set_checkable(true);
-    m_smart_fill_button->set_min_size(tool_type_button_size);
-    m_smart_fill_button->set_content_padding(15);
+    m_brush_button      = add_icon_button(tool_type_buttons.get(), Render::Icon::PaintBrush);
+    m_smart_fill_button = add_icon_button(tool_type_buttons.get(), Render::Icon::WandMagicSparkles);
 
     this->add_new_row(_u8L("Tool"), std::move(tool_type_buttons));
     m_tool_type_group.set_buttons({m_brush_button, m_smart_fill_button});
@@ -60,31 +57,14 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
         m_callbacks.tool_type_changed(m_selected_tool_type);
     };
 
-    this->add_separator(this->content());
-
-    const Vec2f brush_shape_button_size{50.f, 50.f};
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
     brush_shape_buttons->set_gap(5.f);
 
-    m_sphere_brush_button =
-        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Sphere);
-    m_sphere_brush_button->set_checkable(true);
-    m_sphere_brush_button->set_min_size(brush_shape_button_size);
-    m_sphere_brush_button->set_content_padding(15);
+    m_sphere_brush_button   = add_icon_button(brush_shape_buttons.get(), Render::Icon::Sphere);
+    m_circle_brush_button   = add_icon_button(brush_shape_buttons.get(), Render::Icon::Circle);
+    m_triangle_brush_button = add_icon_button(brush_shape_buttons.get(), Render::Icon::Triangle);
 
-    m_circle_brush_button =
-        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Circle);
-    m_circle_brush_button->set_checkable(true);
-    m_circle_brush_button->set_min_size(brush_shape_button_size);
-    m_circle_brush_button->set_content_padding(15);
-
-    m_triangle_brush_button =
-        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Triangle);
-    m_triangle_brush_button->set_checkable(true);
-    m_triangle_brush_button->set_min_size(brush_shape_button_size);
-    m_triangle_brush_button->set_content_padding(15);
-
-    m_brush_shape_row = this->add_new_row(_u8L("Brush shape"), std::move(brush_shape_buttons));
+    m_brush_shape_row = this->add_new_row(_u8L("Shape"), std::move(brush_shape_buttons));
     m_brush_shape_group.set_buttons(
         {m_sphere_brush_button, m_circle_brush_button, m_triangle_brush_button}
     );
@@ -105,38 +85,60 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
         m_callbacks.brush_shape_changed(m_selected_brush_type);
     };
 
-    constexpr float slider_text_size = 50;
-
-    m_brush_radius_slider = Passthrough(std::make_unique<SliderWithInput>());
+    m_brush_radius_row =
+        add_row_with_slider(content(), &m_brush_radius_slider, _u8L("Brush size"), _u8L("mm"))
+            ->parent_item();
     m_brush_radius_slider->set_begin_value(PaintOnSupportsGizmo::CursorRadiusMin);
     m_brush_radius_slider->set_end_value(PaintOnSupportsGizmo::CursorRadiusMax);
     m_brush_radius_slider->set_step(0.01);
-    m_brush_radius_slider->set_input_width(slider_text_size);
     m_brush_radius_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.brush_radius_changed(value); };
-    m_brush_radius_row = this->add_new_row(_u8L("Brush size"), m_brush_radius_slider.release());
 
-    m_split_triangles_toggle = this->content()->emplace_back<ToggleButton>(_u8L("Split triangles"));
-    m_split_triangles_toggle->set_flex_shrink(0);
-    m_split_triangles_toggle->callbacks().checked_changed = [this](bool checked)
-    { m_callbacks.split_triangles_value_changed(checked); };
-
-    m_smart_fill_angle_slider = Passthrough(std::make_unique<SliderWithInput>());
+    m_smart_fill_angle_row =
+        this->add_row_with_slider(content(), &m_smart_fill_angle_slider, _u8L("Smart fill angle"))
+            ->parent_item();
     m_smart_fill_angle_slider->set_begin_value(PaintOnSupportsGizmo::SmartFillAngleMin);
     m_smart_fill_angle_slider->set_end_value(PaintOnSupportsGizmo::SmartFillAngleMax);
     m_smart_fill_angle_slider->set_step(PaintOnSupportsGizmo::SmartFillAngleStep);
-    m_smart_fill_angle_slider->set_input_width(slider_text_size);
     m_smart_fill_angle_slider->callbacks().value_changed = [this](double value)
     { m_callbacks.smart_fill_angle_changed(value); };
-    m_smart_fill_angle_row =
-        this->add_new_row(_u8L("Smart fill angle"), m_smart_fill_angle_slider.release());
 
     this->add_separator(this->content());
 
-    m_highlight_overhangs_angle_slider = Passthrough(std::make_unique<SliderWithInput>());
+    Item* clipping_row = add_row_with_slider(
+        content(),
+        &m_clipping_of_view_slider,
+        _u8L("Clipping of view"),
+        std::string(),
+        std::string()
+    );
+    clipping_row->set_gap(gap_size());
+    m_clipping_of_view_slider->set_begin_value(0.);
+    m_clipping_of_view_slider->set_end_value(1.);
+    m_clipping_of_view_slider->set_step(0.01);
+    m_clipping_of_view_slider->callbacks().value_changed = [this](double value)
+    { m_callbacks.clipping_of_view_value_changed(value); };
+
+    m_clipping_of_view_reset_direction_button = clipping_row->emplace<LayoutButton>(
+        0,
+        std::string(),
+        Render::Icon::ArrowUpToLine,
+        _u8L("Reset clipping direction")
+    );
+    m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
+    { m_callbacks.clipping_of_view_reset_direction(); };
+
+    this->add_separator(this->content());
+
+    add_row_with_slider(
+        content(),
+        &m_highlight_overhangs_angle_slider,
+        _u8L("Show overhangs"),
+        _u8L("°"),
+        std::string()
+    );
     m_highlight_overhangs_angle_slider->set_validator(std::make_unique<IntValidator>(0, 90));
     m_highlight_overhangs_angle_slider->set_step(1.);
-    m_highlight_overhangs_angle_slider->set_input_width(slider_text_size);
     m_highlight_overhangs_angle_slider->callbacks().value_changed = [this](double value)
     {
         m_callbacks.highlight_overhangs_angle_changed(value);
@@ -147,18 +149,15 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
             m_overhangs_enforce_button->set_enabled(true);
         }
     };
-    this->add_new_row(_u8L("Show overhangs"), m_highlight_overhangs_angle_slider.release());
 
-    std::unique_ptr<Item> overhangs_buttons = std::make_unique<Item>();
-    overhangs_buttons->set_gap(5.f);
-
-    m_overhangs_enforce_button = overhangs_buttons->emplace_back<LayoutButton>(_u8L("Enforce"));
+    add_row_with_button(content(), &m_overhangs_enforce_button, _u8L("Enforce"));
     m_overhangs_enforce_button->callbacks().action = [this]()
     {
         m_callbacks.overhangs_enforced();
         this->set_highlight_overhangs_angle(0.);
     };
-    this->add_new_row(std::string{}, std::move(overhangs_buttons));
+
+    this->add_separator(this->content());
 
     m_paint_on_overhangs_only_toggle =
         this->content()->emplace_back<ToggleButton>(_u8L("Paint on overhangs only"));
@@ -166,55 +165,20 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() :
     m_paint_on_overhangs_only_toggle->callbacks().checked_changed = [this](bool checked)
     { m_callbacks.paint_on_overhangs_only_value_changed(checked); };
 
-    this->add_separator(this->content());
-
-    m_clipping_of_view_slider = Passthrough(std::make_unique<SliderWithInput>());
-    m_clipping_of_view_slider->set_begin_value(0.);
-    m_clipping_of_view_slider->set_end_value(1.);
-    m_clipping_of_view_slider->set_step(0.01);
-    m_clipping_of_view_slider->set_input_width(slider_text_size);
-    m_clipping_of_view_slider->callbacks().value_changed = [this](double value)
-    { m_callbacks.clipping_of_view_value_changed(value); };
-    this->add_new_row(_u8L("Clipping of view"), m_clipping_of_view_slider.release());
-
-    std::unique_ptr<Item> clipping_of_view_buttons = std::make_unique<Item>();
-    clipping_of_view_buttons->set_gap(5.f);
-
-    m_clipping_of_view_reset_direction_button =
-        clipping_of_view_buttons->emplace_back<LayoutButton>(_u8L("Reset direction"));
-    m_clipping_of_view_reset_direction_button->callbacks().action = [this]()
-    { m_callbacks.clipping_of_view_reset_direction(); };
-    this->add_new_row(std::string{}, std::move(clipping_of_view_buttons));
+    m_split_triangles_toggle = this->content()->emplace_back<ToggleButton>(_u8L("Split triangles"));
+    m_split_triangles_toggle->set_flex_shrink(0);
+    m_split_triangles_toggle->callbacks().checked_changed = [this](bool checked)
+    { m_callbacks.split_triangles_value_changed(checked); };
 
     this->add_separator(this->content());
 
-    Item* automatic_painting_row = this->content()->emplace_back<Item>();
-    automatic_painting_row->set_flex_shrink(0);
-    m_automatic_painting_button =
-        automatic_painting_row->emplace_back<LayoutButton>(_u8L("Automatic painting"));
+    add_row_with_button(content(), &m_automatic_painting_button, _u8L("Automatic painting"));
     m_automatic_painting_button->callbacks().action = [this]()
     { m_callbacks.automatic_painting(); };
 
     this->add_separator(this->content());
 
-    Item* painting_reset_row = this->content()->emplace_back<Item>();
-    painting_reset_row->set_flex_shrink(0);
-    m_painting_reset_button =
-        painting_reset_row->emplace_back<LayoutButton>(_u8L("Remove all selection"));
-    m_painting_reset_button->callbacks().action = [this]() { m_callbacks.painting_reset(); };
-
-    this->add_separator(this->content());
-
-    Item* help_row = this->content()->emplace_back<Item>();
-    help_row->set_flex_shrink(0);
-    help_row->set_min_size({0, 50});
-    help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
-    help_row->set_align_content(YGAlign::YGAlignCenter);
-    help_row->set_padding(5);
-    help_row->set_gap(15);
-    help_row->set_flex_wrap(YGWrapWrap);
-
-    m_help_factory.init(help_row);
+    m_help_factory.init(add_non_shrinked_wrap(content(), Orientation::Vertical, gap_size()));
     m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft}}, _u8L("Paint"));
     m_help_factory.add_item({GizmoHelpFactory::HelpIcon{Render::Icon::MouseRight}}, _u8L("Block"));
     m_help_factory.add_item(

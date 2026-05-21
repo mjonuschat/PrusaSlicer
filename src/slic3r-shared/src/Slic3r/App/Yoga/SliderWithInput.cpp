@@ -24,8 +24,10 @@ SliderWithInput::SliderWithInput() : Item()
 SliderWithInput::SliderWithInput(const std::string& unit) : Item()
 {
     Create();
-    m_unit->set_visible(true);
-    set_unit(unit);
+    if (!unit.empty()) {
+        m_unit->set_visible(true);
+        set_unit(unit);
+    }
 }
 
 void SliderWithInput::Create()

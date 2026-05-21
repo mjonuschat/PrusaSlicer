@@ -30,15 +30,6 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Yoga {
 
-static LayoutButton* add_button(Item* parent, Render::Icon icon, const std::string& tooltip)
-{
-    LayoutButton* btn = parent->emplace_back<LayoutButton>("", icon, tooltip);
-    btn->set_checkable(true);
-    btn->set_min_size(Vec2f(40.f, 40.f));
-    btn->set_content_padding(8.f);
-    return btn;
-}
-
 Slic3r::App::Yoga::PartProcessingItem::PartProcessingItem(
     const std::string& part_name,
     ImColor color
@@ -233,8 +224,8 @@ void CutDialog::init_cut_plane_input_panel()
         add_non_shrinked_wrap(m_cut_plane_input_panel, Orientation::Vertical, gap_size());
 
     m_mode_row          = add_row(_u8L("Mode"), cut_plane_settings_panel);
-    m_planar_mode_btn   = add_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
-    m_dovetail_mode_btn = add_button(m_mode_row, Render::Icon::Dove, _u8L("Dovetail"));
+    m_planar_mode_btn   = add_icon_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
+    m_dovetail_mode_btn = add_icon_button(m_mode_row, Render::Icon::Dove, _u8L("Dovetail"));
     m_mode_group.set_buttons({m_planar_mode_btn, m_dovetail_mode_btn});
     m_mode_group.callbacks().action = [this](AbstractButton* btn)
     {
@@ -542,10 +533,11 @@ void CutDialog::add_connectors_editing_buttons()
 
     add_separator(m_connectors_editing_buttons);
 
-    Item* buttons_row = m_connectors_editing_buttons->emplace_back<Item>();
-    buttons_row->set_justify_content(YGJustifySpaceBetween);
-
-    m_add_connectors_btn = buttons_row->emplace_back<LayoutButton>(_u8L("Add connectors"));
+    add_row_with_button(
+        m_connectors_editing_buttons,
+        &m_add_connectors_btn,
+        _u8L("Add connectors")
+    );
     m_add_connectors_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
     m_add_connectors_btn->callbacks().action = [this]()
     {
@@ -705,9 +697,9 @@ void CutDialog::init_connectors_input_panel()
 
     m_type_row = add_row(_u8L("Type"), connector_attributes_panel);
 
-    m_plug_btn  = add_button(m_type_row, Render::Icon::PlugMarker, _u8L("Plug"));
-    m_dowel_btn = add_button(m_type_row, Render::Icon::DowelMarker, _u8L("Dowel"));
-    m_snap_btn  = add_button(m_type_row, Render::Icon::SnapMarker, _u8L("Snap"));
+    m_plug_btn  = add_icon_button(m_type_row, Render::Icon::PlugMarker, _u8L("Plug"));
+    m_dowel_btn = add_icon_button(m_type_row, Render::Icon::DowelMarker, _u8L("Dowel"));
+    m_snap_btn  = add_icon_button(m_type_row, Render::Icon::SnapMarker, _u8L("Snap"));
 
     m_connector_type_group.set_buttons({m_plug_btn, m_dowel_btn, m_snap_btn});
     m_connector_type_group.set_always_checked(false);
@@ -724,8 +716,8 @@ void CutDialog::init_connectors_input_panel()
     };
 
     m_style_row   = add_row(_u8L("Style"), connector_attributes_panel);
-    m_prism_btn   = add_button(m_style_row, Render::Icon::Prism, _u8L("Prism"));
-    m_frustum_btn = add_button(m_style_row, Render::Icon::Frustum, _u8L("Frustum"));
+    m_prism_btn   = add_icon_button(m_style_row, Render::Icon::Prism, _u8L("Prism"));
+    m_frustum_btn = add_icon_button(m_style_row, Render::Icon::Frustum, _u8L("Frustum"));
     m_connector_style_group.set_buttons({m_prism_btn, m_frustum_btn});
     m_connector_style_group.set_always_checked(false);
     m_connector_style_group.callbacks().action = [this](AbstractButton* btn)
@@ -742,10 +734,10 @@ void CutDialog::init_connectors_input_panel()
     };
 
     m_shape_row    = add_row(_u8L("Shape"), connector_attributes_panel);
-    m_triangle_btn = add_button(m_shape_row, Render::Icon::Triangle, _u8L("Triangle"));
-    m_square_btn   = add_button(m_shape_row, Render::Icon::Square, _u8L("Square"));
-    m_hexagon_btn  = add_button(m_shape_row, Render::Icon::Hexagon, _u8L("Hexagon"));
-    m_circle_btn   = add_button(m_shape_row, Render::Icon::Circle, _u8L("Circle"));
+    m_triangle_btn = add_icon_button(m_shape_row, Render::Icon::Triangle, _u8L("Triangle"));
+    m_square_btn   = add_icon_button(m_shape_row, Render::Icon::Square, _u8L("Square"));
+    m_hexagon_btn  = add_icon_button(m_shape_row, Render::Icon::Hexagon, _u8L("Hexagon"));
+    m_circle_btn   = add_icon_button(m_shape_row, Render::Icon::Circle, _u8L("Circle"));
     m_connector_shape_group.set_buttons(
         {m_triangle_btn, m_square_btn, m_hexagon_btn, m_circle_btn}
     );
@@ -882,10 +874,8 @@ void CutDialog::init_connectors_input_panel()
 
     add_separator(m_connectors_input_panel);
 
-    Item* flip_btn_wrap = m_connectors_input_panel->emplace_back<Item>();
-    LayoutButton* flip_cut_plane_btn =
-        flip_btn_wrap->emplace_back<LayoutButton>(_u8L("Flip cut plane"));
-    flip_cut_plane_btn->set_background_color(m_theme->color_imgui(Platform::Color::Button));
+    LayoutButton* flip_cut_plane_btn{nullptr};
+    add_row_with_button(m_connectors_input_panel, &flip_cut_plane_btn, _u8L("Flip cut plane"));
     flip_cut_plane_btn->callbacks().action = [this]()
     {
         if (callbacks().flip_cut_plane) {

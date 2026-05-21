@@ -163,8 +163,8 @@ protected:
         Item* parent,
         Yoga::SliderWithInput** slider,
         const std::string& name,
-        const std::string& unit,
-        const std::string& revert_tooltip
+        const std::string& unit = std::string(),
+        const std::string& revert_tooltip = std::string()
     );
 
     /**
@@ -202,6 +202,35 @@ protected:
         Yoga::ToggleButton** toggle,
         const std::string& revert_tooltip = std::string()
     );
+
+    /**
+     * @brief Adds row with LayoutButtom aligned to the left
+     *
+     * @param parent Parent UI item
+     * @param button Output pointer to the created button
+     * @param label Button label
+     * @param tooltip Button tooltip
+     * @param icon Button icon
+     * 
+     * @return Pointer to the created row item
+     */
+    Item* add_row_with_button(
+        Item* parent,
+        Yoga::LayoutButton** button,
+        const std::string& label,
+        const std::string& tooltip = std::string(),
+        Render::Icon icon          = Render::Icon::None
+    );
+
+    /**
+     * @brief Adds square icon button
+     *
+     * @param parent Parent UI item
+     * @param icon Button icon
+     * @parem tooltip Button Tooltip
+     */
+    Yoga::LayoutButton*
+    add_icon_button(Item* parent, Render::Icon icon, const std::string& tooltip = std::string());
 
     void set_warning(const std::string& title, const std::string& text);
     void set_warning(const std::string& title, const std::vector<std::string>& errors);

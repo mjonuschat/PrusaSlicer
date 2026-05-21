@@ -58,14 +58,13 @@ private:
     Yoga::LayoutButton* m_triangle_brush_button = nullptr;
     Yoga::ButtonGroup m_brush_shape_group;
 
-    Yoga::Passthrough<Yoga::SliderWithInput> m_brush_radius_slider;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_smart_fill_angle_slider;
-    Yoga::Passthrough<Yoga::SliderWithInput> m_clipping_of_view_slider;
+    Yoga::SliderWithInput* m_brush_radius_slider     = nullptr;
+    Yoga::SliderWithInput* m_smart_fill_angle_slider = nullptr;
+    Yoga::SliderWithInput* m_clipping_of_view_slider = nullptr;
 
     Yoga::ToggleButton* m_split_triangles_toggle = nullptr;
 
     Yoga::LayoutButton* m_clipping_of_view_reset_direction_button = nullptr;
-    Yoga::LayoutButton* m_painting_reset_button                   = nullptr;
 
     Yoga::Item* m_brush_shape_row      = nullptr;
     Yoga::Item* m_brush_radius_row     = nullptr;
