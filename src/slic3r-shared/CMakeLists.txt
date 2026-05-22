@@ -1361,6 +1361,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Yoga/TestRootItem.hpp
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
         test/Slic3r/App/Yoga/SplitLayoutTests.cpp
+        test/Slic3r/App/Yoga/ScrollAreaTests.cpp
         test/Slic3r/App/Yoga/ObjectTests.cpp
         test/Slic3r/App/Yoga/EventTests.cpp
 

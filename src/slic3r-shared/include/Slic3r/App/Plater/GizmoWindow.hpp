@@ -13,9 +13,11 @@ class Item;
 class Icon;
 class Text;
 class LayoutButton;
+class ToggleButton;
 class Separator;
 class InputTextWithSpin;
 class SliderWithInput;
+class ComboBox;
 class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
@@ -77,6 +79,12 @@ protected:
      * @return Pointer to the created Item.
      */
     Item* add_flex_shrinked_wrap(Item* parent);
+
+    Item* add_non_shrinked_wrap(
+        Item* parent,
+        Yoga::Orientation orientation,
+        float gap
+    );
 
     /**
      * @brief Creates a row item with a bold text label.
@@ -157,6 +165,42 @@ protected:
         const std::string& name,
         const std::string& unit,
         const std::string& revert_tooltip
+    );
+
+    /**
+     * @brief Adds a row with a combobox.
+     *
+     * Optionally adds a revert button if @p revert_tooltip is not empty.
+     *
+     * @param title          Row title.
+     * @param parent         Parent UI item.
+     * @param combo          Output pointer to the created ComboBox control.
+     * @param revert_tooltip Tooltip for the revert button (if empty, button is not created).
+     * @return Pointer to the created row Item.
+     */
+    Item* add_row_with_combo_box(
+        const std::string& title,
+        Item* parent,
+        Yoga::ComboBox** combo,
+        const std::string& revert_tooltip = std::string()
+    );
+
+    /**
+     * @brief Adds a row with a toggle.
+     *
+     * Optionally adds a revert button if @p revert_tooltip is not empty.
+     *
+     * @param title          Row title.
+     * @param parent         Parent UI item.
+     * @param toggle         Output pointer to the created ToggleButton control.
+     * @param revert_tooltip Tooltip for the revert button (if empty, button is not created).
+     * @return Pointer to the created row Item.
+     */
+    Item* add_row_with_toggle_button(
+        const std::string& title,
+        Item* parent,
+        Yoga::ToggleButton** toggle,
+        const std::string& revert_tooltip = std::string()
     );
 
     void set_warning(const std::string& title, const std::string& text);

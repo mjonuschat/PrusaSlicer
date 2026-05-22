@@ -123,7 +123,23 @@ public:
     )
     {}
 
+    /**
+     * @brief Called whenever volumes type is changed.
+     * @param project_id Project the instances belong to
+     * @param volumes List of volumes with changed type
+     */
     virtual void on_volume_type_changed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    )
+    {}
+
+    /**
+     * @brief Called whenever volumes mesh is changed.
+     * @param project_id Project the instances belong to
+     * @param volumes List of volumes with changed mesh
+     */
+    virtual void on_volume_mesh_changed(
         Domain::SelectionId project_id,
         const Domain::ElementRefs& volumes
     )

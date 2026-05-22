@@ -13,19 +13,27 @@
 #include "Slic3r/Domain/ModelVolume.hpp" // ModelVolumeType
 #include <vector>
 
+namespace Slic3r::Domain {
+struct EmbossShape;
+} // namespace Slic3r::Domain
+
+namespace Slic3r::App::Yoga {
+class Menu;
+} // namespace Slic3r::App::Yoga
+
 namespace Slic3r::App::Plater {
 
 class SvgDialog : public GizmoWindow
 {
 public:
     // embossing depth input limits [in mm] prevent negative and zero value
-    static const double MIN_DEPTH; 
+    static const double MIN_DEPTH;
     static const double MAX_DEPTH;
     // height limits for embossed object [in mm] prevent negative and zero value
     static const double MIN_HEIGHT;
     static const double MAX_HEIGHT;
     // width limits for embossed object [in mm] prevent negative and zero value
-    static const double MIN_WIDTH; 
+    static const double MIN_WIDTH;
     static const double MAX_WIDTH;
 
     SvgDialog();
@@ -33,29 +41,29 @@ public:
     struct Callbacks
     {
         std::function<void(double value)> depth_changed{nullptr};
-        std::function<void(const Domain::Vec2d& size)> size_changed{ nullptr };
-        std::function<void(bool unlocked)> unlock_size{ nullptr };
+        std::function<void(const Domain::Vec2d& size)> size_changed{nullptr};
+        std::function<void(bool unlocked)> unlock_size{nullptr};
         std::function<void(bool checked)> use_surface_checked{nullptr};
         std::function<void(double distance_in_mm)> surface_distance_changed{nullptr};
         std::function<void(double angle_in_rad)> rotation_changed{nullptr};
         std::function<void(bool unlocked)> unlock_rotation{nullptr};
-        std::function<void()> mirror_x{ nullptr };
-        std::function<void()> mirror_y{ nullptr };
+        std::function<void()> mirror_x{nullptr};
+        std::function<void()> mirror_y{nullptr};
         std::function<void()> face_the_camera{nullptr};
 
-        std::function<void()> reload_file{ nullptr };
-        std::function<void()> change_file{ nullptr };
-        std::function<void()> forgot_filepath{ nullptr };
-        std::function<void()> bake{ nullptr };
-        std::function<void()> save_as{ nullptr };
+        std::function<void()> reload_file{nullptr};
+        std::function<void()> change_file{nullptr};
+        std::function<void()> forgot_filepath{nullptr};
+        std::function<void()> bake{nullptr};
+        std::function<void()> save_as{nullptr};
 
-        std::function<void(Domain::ModelVolumeType type)> operation_selection_changed{ nullptr };
+        std::function<void(Domain::ModelVolumeType type)> operation_selection_changed{nullptr};
     };
 
     Callbacks& callbacks();
 
     void set_warning(const std::string& warning);
-    void set_filename(const std::string& filename);
+    void set_shape(const Domain::EmbossShape& shape);
     void set_enable_reload_from_disk(bool enable);
 
     void update_units(bool use_inch);
@@ -75,32 +83,28 @@ public:
 
     void set_operation(Domain::ModelVolumeType type);
     void show_part_specific_panel(bool show);
+
 private:
     void add_part_specific_panel();
 
-    Yoga::Item* add_row(
-        const std::string& title,
-        Yoga::ItemPtr control,
-        Yoga::Item* parent,
-        const std::string& revert_button_tooltip = std::string(),
-        const std::string& unit                  = std::string()
-    );
-
 private:
+    Yoga::Icon* m_preview{nullptr};
     Yoga::LayoutButton* m_warning{nullptr};
-    Yoga::Text* m_filename{ nullptr };
-    Yoga::LayoutButton* m_reload{ nullptr };
-    Yoga::InputTextWithSpin* m_depth{ nullptr };
-    Yoga::InputTextWithSpin* m_width{ nullptr };
-    Yoga::InputTextWithSpin* m_height{ nullptr };
-    Yoga::LayoutButton* m_lock_size_btn{ nullptr };
-    Yoga::Passthrough<Yoga::ToggleButton> m_use_surface;
-    Yoga::SliderWithInput* m_surface_distance{ nullptr };
-    Yoga::SliderWithInput* m_rotation{ nullptr };
+    Yoga::Text* m_filename{nullptr};
+    Yoga::LayoutButton* m_reload{nullptr};
+    Yoga::Menu* m_options_menu{nullptr};
+    Yoga::InputTextWithSpin* m_depth{nullptr};
+    Yoga::InputTextWithSpin* m_width{nullptr};
+    Yoga::InputTextWithSpin* m_height{nullptr};
+    Yoga::LayoutButton* m_lock_size_btn{nullptr};
+    Item* m_use_surface_row{nullptr};
+    Yoga::ToggleButton* m_use_surface;
+    Yoga::SliderWithInput* m_surface_distance{nullptr};
+    Yoga::SliderWithInput* m_rotation{nullptr};
     Yoga::LayoutButton* m_lock_rotation_btn{nullptr};
 
-    Yoga::Passthrough<Yoga::LayoutButton> m_mirror_x{ nullptr };
-    Yoga::LayoutButton* m_mirror_y{ nullptr };
+    Yoga::LayoutButton* m_mirror_x{nullptr};
+    Yoga::LayoutButton* m_mirror_y{nullptr};
 
     // vector of Text items used for mm/inch units
     // Will be updated on units switch
@@ -109,10 +113,10 @@ private:
     Yoga::LayoutButton* m_face_the_camera_btn{nullptr};
 
     Yoga::Item* m_part_specific_panel{nullptr};
-    Yoga::Passthrough<Yoga::ComboBox> m_operation;
+    Yoga::ComboBox* m_operation{nullptr};
 
     bool m_use_inch = false;
-    bool m_use_deg = true;
+    bool m_use_deg  = true;
 
     Callbacks m_callbacks;
 

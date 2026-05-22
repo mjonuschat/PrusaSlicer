@@ -49,7 +49,6 @@ Slic3r::App::Yoga::PartProcessingItem::PartProcessingItem(
 
     Item* group_item = this->emplace_back<Item>();
     group_item->set_gap(10.f);
-    group_item->set_padding(5.f);
     group_item->set_orientation(Orientation::Vertical);
     group_item->set_flex_grow(1.f);
 
@@ -146,7 +145,7 @@ static const Vec2f shortcut_help_size{40.f, 20.f};
 
 static constexpr ImColor build_volume_color{192, 154, 247};
 
-CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
+CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Cut)
 {
     LayoutButton* reset_cut_btn = revert_button();
     reset_cut_btn->set_tooltip(_u8L("Reset cutting plane and remove connectors"));
@@ -162,11 +161,15 @@ CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
     };
 
     content()->set_padding({content()->padding().left, 0.f});
+    content()->set_gap(2.f * gap_size());
 
     init_connectors_header();
 
     init_connectors_input_panel();
     init_cut_plane_input_panel();
+
+    // empty item - stretch spacer
+    content()->emplace_back<Item>()->set_flex_grow(1);
 
     add_separator(content());
     init_action_buttons();
@@ -224,9 +227,12 @@ void CutDialog::init_cut_plane_input_panel()
     m_cut_plane_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
     m_cut_plane_input_panel->set_flex_grow(1.f);
     m_cut_plane_input_panel->set_flex_shrink(0.f);
-    m_cut_plane_input_panel->set_gap(gap_size());
+    m_cut_plane_input_panel->set_gap(content()->gap());
 
-    m_mode_row          = add_row(_u8L("Mode"), m_cut_plane_input_panel);
+    Item* cut_plane_settings_panel =
+        add_non_shrinked_wrap(m_cut_plane_input_panel, Orientation::Vertical, gap_size());
+
+    m_mode_row          = add_row(_u8L("Mode"), cut_plane_settings_panel);
     m_planar_mode_btn   = add_button(m_mode_row, Render::Icon::DividingLine, _u8L("Planar"));
     m_dovetail_mode_btn = add_button(m_mode_row, Render::Icon::Dove, _u8L("Dovetail"));
     m_mode_group.set_buttons({m_planar_mode_btn, m_dovetail_mode_btn});
@@ -238,7 +244,7 @@ void CutDialog::init_cut_plane_input_panel()
         }
     };
 
-    Item* cut_position_row = add_row(_u8L("Cut position"), m_cut_plane_input_panel);
+    Item* cut_position_row = add_row(_u8L("Cut position"), cut_plane_settings_panel);
     cut_position_row->emplace_back<Text>("Z")->set_text_color(ImColor{64, 200, 232});
     m_cut_position = cut_position_row->emplace_back<InputTextField>();
     m_cut_position->set_width(50);
@@ -263,16 +269,35 @@ void CutDialog::init_cut_plane_input_panel()
         add_revert_btn(cut_position_row, _u8L("Reset cutting plane"));
     m_cut_position->set_revert_button(revert_cut_position_btn);
 
+    Item* cut_into_row = add_row(_u8L("Cut into") + ":", cut_plane_settings_panel);
+    m_cut_into_row     = cut_into_row->parent_item();
+
+    m_cut_into_combo = cut_into_row->emplace_back<ComboBox>("Cut into");
+    m_cut_into_combo->set_flex_grow(1);
+    // TRN CutGizmo: ComboBox "Cut into" ...
+    m_cut_into_combo->set_items({_u8L("Objects"), _u8L("Parts")});
+    m_cut_into_combo->callbacks().selection_changed = [this](int index)
+    {
+        keep_as_parts = index == 1;
+        m_part_A->set_as_part(keep_as_parts);
+        m_part_B->set_as_part(keep_as_parts);
+
+        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+    };
+
     add_groove_input_panel();
     add_cut_settings();
     add_connectors_editing_buttons();
 
     add_separator(m_cut_plane_input_panel);
 
-    m_cut_plane_input_panel->emplace_back<Text>(_u8L("Build Volume"))
+    Item* build_volume_panel =
+        add_non_shrinked_wrap(m_cut_plane_input_panel, Orientation::Vertical, gap_size());
+
+    build_volume_panel->emplace_back<Text>(_u8L("Build Volume"))
         ->set_font_type(Render::ImguiFontType::Bold);
 
-    Item* build_volume = m_cut_plane_input_panel->emplace_back<Item>();
+    Item* build_volume = build_volume_panel->emplace_back<Item>();
     build_volume->set_justify_content(YGJustifySpaceBetween);
 
     for (Text** build_volume_axes :
@@ -298,9 +323,7 @@ void CutDialog::add_cut_plane_help_panel()
     add_separator(m_cut_plane_input_panel);
 
     Item* help_area = m_cut_plane_input_panel->emplace_back<Item>();
-    help_area->set_min_size({0, 50});
     help_area->set_justify_content(YGJustify::YGJustifyFlexStart);
-    help_area->set_padding(5);
 
     GizmoHelpFactory help;
     help.init(help_area);
@@ -467,27 +490,11 @@ void CutDialog::add_groove_input_panel()
 
 void CutDialog::add_cut_settings()
 {
-    Item* cut_into_row = add_row(_u8L("Cut into") + ":", m_cut_plane_input_panel);
-    m_cut_into_row     = cut_into_row->parent_item();
-
-    m_cut_into_combo = cut_into_row->emplace_back<ComboBox>("Cut into");
-    m_cut_into_combo->set_flex_grow(1);
-    // TRN CutGizmo: RadioButton Cut into ...
-    m_cut_into_combo->set_items({_u8L("Objects"), _u8L("Parts")});
-    m_cut_into_combo->callbacks().selection_changed = [this](int index)
-    {
-        keep_as_parts = index == 1;
-        m_part_A->set_as_part(keep_as_parts);
-        m_part_B->set_as_part(keep_as_parts);
-
-        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
-    };
-
     add_separator(m_cut_plane_input_panel);
 
     Item* parts_wrap_item = m_cut_plane_input_panel->emplace_back<Item>();
     parts_wrap_item->set_orientation(Orientation::Vertical);
-    parts_wrap_item->set_gap(gap_size());
+    parts_wrap_item->set_gap(content()->gap());
 
     // create PartProcessingRow
 
@@ -531,7 +538,7 @@ void CutDialog::add_connectors_editing_buttons()
 {
     m_connectors_editing_buttons = m_cut_plane_input_panel->emplace_back<Item>();
     m_connectors_editing_buttons->set_orientation(Orientation::Vertical);
-    m_connectors_editing_buttons->set_gap(gap_size());
+    m_connectors_editing_buttons->set_gap(content()->gap());
 
     add_separator(m_connectors_editing_buttons);
 
@@ -690,14 +697,13 @@ void CutDialog::init_connectors_header()
 
 void CutDialog::init_connectors_input_panel()
 {
-    m_connectors_input_panel = content()->emplace_back<Item>();
-    m_connectors_input_panel->set_orientation(Orientation::Vertical);
-    m_connectors_input_panel->set_align_content(YGAlign::YGAlignFlexStart);
-    m_connectors_input_panel->set_gap(gap_size());
-    m_connectors_input_panel->set_flex_grow(1.f);
-    m_connectors_input_panel->set_flex_shrink(0.f);
+    m_connectors_input_panel =
+        add_non_shrinked_wrap(content(), Orientation::Vertical, content()->gap());
 
-    m_type_row = add_row(_u8L("Type"), m_connectors_input_panel);
+    Item* connector_attributes_panel =
+        add_non_shrinked_wrap(m_connectors_input_panel, Orientation::Vertical, gap_size());
+
+    m_type_row = add_row(_u8L("Type"), connector_attributes_panel);
 
     m_plug_btn  = add_button(m_type_row, Render::Icon::PlugMarker, _u8L("Plug"));
     m_dowel_btn = add_button(m_type_row, Render::Icon::DowelMarker, _u8L("Dowel"));
@@ -717,7 +723,7 @@ void CutDialog::init_connectors_input_panel()
         }
     };
 
-    m_style_row   = add_row(_u8L("Style"), m_connectors_input_panel);
+    m_style_row   = add_row(_u8L("Style"), connector_attributes_panel);
     m_prism_btn   = add_button(m_style_row, Render::Icon::Prism, _u8L("Prism"));
     m_frustum_btn = add_button(m_style_row, Render::Icon::Frustum, _u8L("Frustum"));
     m_connector_style_group.set_buttons({m_prism_btn, m_frustum_btn});
@@ -735,7 +741,7 @@ void CutDialog::init_connectors_input_panel()
         }
     };
 
-    m_shape_row    = add_row(_u8L("Shape"), m_connectors_input_panel);
+    m_shape_row    = add_row(_u8L("Shape"), connector_attributes_panel);
     m_triangle_btn = add_button(m_shape_row, Render::Icon::Triangle, _u8L("Triangle"));
     m_square_btn   = add_button(m_shape_row, Render::Icon::Square, _u8L("Square"));
     m_hexagon_btn  = add_button(m_shape_row, Render::Icon::Hexagon, _u8L("Hexagon"));
@@ -761,8 +767,11 @@ void CutDialog::init_connectors_input_panel()
 
     add_separator(m_connectors_input_panel);
 
+    Item* connector_trafos_panel =
+        add_non_shrinked_wrap(m_connectors_input_panel, Orientation::Vertical, gap_size());
+
     add_row_with_slider(
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_connector_depth_value,
         _u8L("Depth"),
         _u8L("mm"),
@@ -776,7 +785,7 @@ void CutDialog::init_connectors_input_panel()
     };
 
     add_row_with_slider(
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_connector_size_value,
         _u8L("Size"),
         _u8L("mm"),
@@ -790,7 +799,7 @@ void CutDialog::init_connectors_input_panel()
     };
 
     add_tolerances_row(
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_connector_depth_tolerance,
         _u8L("Depth tolerance"),
         &m_connector_size_tolerance,
@@ -814,7 +823,7 @@ void CutDialog::init_connectors_input_panel()
 
     add_row_with_spin_int(
         _u8L("Rotation"),
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_connector_rotation,
         std::string("°"),
         _u8L("Revert connector Z rotation"),
@@ -832,7 +841,7 @@ void CutDialog::init_connectors_input_panel()
 
     m_snap_bulge_row = add_row_with_spin_int(
         _u8L("Bulge"),
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_snap_bulge_proportion,
         std::string("%"),
         _u8L("Revert bulge proportion related to radius"),
@@ -849,7 +858,7 @@ void CutDialog::init_connectors_input_panel()
 
     m_snap_space_row = add_row_with_spin_int(
         _u8L("Space"),
-        m_connectors_input_panel,
+        connector_trafos_panel,
         &m_snap_space_proportion,
         std::string("%"),
         _u8L("Revert space proportion related to radius"),
@@ -887,9 +896,6 @@ void CutDialog::init_connectors_input_panel()
 
     add_connectors_help_panel();
 
-    // empty item - stretch spacer
-    m_connectors_input_panel->emplace_back<Item>()->set_flex_grow(1);
-
     m_connectors_input_panel->set_visible(false);
 }
 
@@ -897,9 +903,9 @@ void CutDialog::add_connectors_help_panel()
 {
     Item* help_area = m_connectors_input_panel->emplace_back<Item>();
     help_area->set_orientation(Orientation::Vertical);
-    help_area->set_min_size({0, 50});
+    help_area->set_flex_grow(1.f);
     help_area->set_align_items(YGAlignFlexStart);
-    help_area->set_gap(10);
+    help_area->set_gap(gap_size());
 
     GizmoHelpFactory help;
     help.init(help_area);
