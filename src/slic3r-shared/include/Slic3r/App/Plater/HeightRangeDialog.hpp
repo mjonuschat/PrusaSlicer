@@ -85,6 +85,7 @@ public:
 
     void select_range(const Domain::LayerHeightRange& range_to_select);
     void clear_selection();
+    void clear_overrides();
 
     void highlight_range(const std::optional<Domain::LayerHeightRange>& range_to_highlight);
 

@@ -56,6 +56,45 @@ void ConfigPackFDM::resize_tool_parity_items(int extruder_count, bool ensure_dow
 
 ConfigPackFDM::ConfigPackFDM() : ConfigPackFDM{1} {}
 
+bool ConfigPackFDM::operator==(const ConfigPackFDM& other) const
+{
+    return printer == other.printer
+        && print == other.print
+        && tool == other.tool
+        && filament == other.filament
+        && project == other.project;
+}
+
+const PrinterSettings& ConfigPackFDM::get_printer() const
+{
+    return printer;
+}
+
+const PrintSettings& ConfigPackFDM::get_print() const
+{
+    return print;
+}
+
+const ToolPrintSettings& ConfigPackFDM::get_tool(size_t index) const
+{
+    return tool.at(index);
+}
+
+const FilamentSettings& ConfigPackFDM::get_filament(size_t index) const
+{
+    return filament.at(index);
+}
+
+const size_t ConfigPackFDM::tool_size() const
+{
+    return tool.size();
+}
+
+const size_t ConfigPackFDM::filament_size() const
+{
+    return filament.size();
+}
+
 FindResult ConfigPackFDM::contains(const std::string& key, size_t slot)
 {
     ASSERT(slot < tool.size());

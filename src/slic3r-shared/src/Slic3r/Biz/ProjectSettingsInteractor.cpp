@@ -3,7 +3,7 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Preset/SelectedPresetConfigPack.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Assert.hpp"
@@ -90,13 +90,12 @@ void ProjectSettingsInteractor::set_color_from_user(
         if (!cc)
             continue;
 
-        auto config = cc->build_print_config();
-        auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-        if (!fdm)
+        if (cc->print_technology() != Domain::PrinterTechnology::FFF) {
             return;
+        }
 
-        auto colors = fdm->project.items.opt("extruder_colour")
-            .get<std::vector<std::string>>();
+        auto colors =
+            cc->project_settings().items.opt("extruder_colour").get<std::vector<std::string>>();
 
         if (slot < 0 || slot >= static_cast<int>(colors.size()))
             return;
@@ -122,19 +121,18 @@ void ProjectSettingsInteractor::set_colors_from_connect(
         if (!cc)
             continue;
 
-        auto config = cc->build_print_config();
-        auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-        if (!fdm)
+        if (cc->print_technology() != Domain::PrinterTechnology::FFF) {
             return;
+        }
 
-        auto colors = fdm->project.items.opt("extruder_colour")
-            .get<std::vector<std::string>>();
+        auto colors =
+            cc->project_settings().items.opt("extruder_colour").get<std::vector<std::string>>();
 
         const size_t count = std::min(colors.size(), incoming_colors.size());
         for (size_t i = 0; i < count; ++i) {
             if (incoming_colors[i].empty())
                 continue;
-            colors[i]  = incoming_colors[i];
+            colors[i] = incoming_colors[i];
         }
 
         store_and_notify(config_container_id, std::move(colors));
@@ -226,15 +224,15 @@ std::string ProjectSettingsInteractor::preset_color(
     if (!cc)
         return {};
 
-    const auto config = cc->build_print_config();
-    const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-    if (!fdm)
+    if (cc->print_technology() != Domain::PrinterTechnology::FFF) {
+        return 0;
+    }
+    Domain::Preset::SelectedPresetConfigPack preset_config_pack(cc->selected_preset());
+
+    if (slot < 0 || slot >= static_cast<int>(preset_config_pack.filament_size()))
         return {};
 
-    if (slot < 0 || slot >= static_cast<int>(fdm->filament.size()))
-        return {};
-
-    return fdm->filament[slot].items.opt("filament_colour").get<std::string>();
+    return preset_config_pack.get_filament(slot).items.opt("filament_colour").get<std::string>();
 }
 
 int ProjectSettingsInteractor::extruder_count(
@@ -247,12 +245,12 @@ int ProjectSettingsInteractor::extruder_count(
     if (!cc)
         return 0;
 
-    const auto config = cc->build_print_config();
-    const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-    if (!fdm)
+    if (cc->print_technology() != Domain::PrinterTechnology::FFF) {
         return 0;
+    }
+    Domain::Preset::SelectedPresetConfigPack preset_config_pack(cc->selected_preset());
 
-    return static_cast<int>(fdm->filament.size());
+    return static_cast<int>(preset_config_pack.filament_size());
 }
 
 void ProjectSettingsInteractor::load_and_reconcile(
@@ -265,15 +263,16 @@ void ProjectSettingsInteractor::load_and_reconcile(
     if (!cc)
         return;
 
-    const Domain::ConfigPack config = cc->build_print_config();
-    const auto* fdm = std::get_if<Domain::ConfigPackFDM>(&config);
-    if (!fdm)
+    if (cc->print_technology() != Domain::PrinterTechnology::FFF) {
         return;
+    }
 
-    auto colors = fdm->project.items.opt("extruder_colour")
-        .get<std::vector<std::string>>();
+    auto colors =
+        cc->project_settings().items.opt("extruder_colour").get<std::vector<std::string>>();
 
-    colors.resize(fdm->filament.size());
+    Domain::Preset::SelectedPresetConfigPack preset_config_pack(cc->selected_preset());
+
+    colors.resize(preset_config_pack.filament_size());
     for (size_t slot = 0; slot < colors.size(); ++slot) {
         if (colors[slot].empty()) {
             colors[slot] = resolve_auto_color(project_id, config_container_id, slot);
@@ -296,15 +295,13 @@ void ProjectSettingsInteractor::store_and_notify(
         if (!cc)
             continue;
 
-        cc->project_settings().items.opt("extruder_colour")
-            .set(colors);
+        cc->project_settings().items.opt("extruder_colour").set(colors);
 
         const auto rgb_colors = hex_colors_to_rgb(colors);
 
         invoke_listeners<IColorsChangedListener>(
-            [&](auto* listener) {
-                listener->on_colors_changed(proj_id, config_container_id, rgb_colors);
-            }
+            [&](auto* listener)
+            { listener->on_colors_changed(proj_id, config_container_id, rgb_colors); }
         );
         return;
     }

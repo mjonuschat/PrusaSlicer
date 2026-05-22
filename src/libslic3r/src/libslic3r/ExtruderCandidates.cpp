@@ -97,8 +97,7 @@ std::set<unsigned> get_volume_extruder_candidates(
         volume_default_extruder_item ? std::optional{volume_default_extruder_item->get<int>()} :
                                        std::nullopt
     };
-    for (const std::string key :
-         {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"})
+    for (const std::string key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"})
     {
         const std::optional<Domain::ConfigItem> volume_extruder{volume_settings.overrides.get(key)};
         if (volume_extruder && volume_extruder->get<int>() > 0) {
@@ -125,7 +124,7 @@ std::set<unsigned> get_volume_extruder_candidates(
 
 std::set<unsigned> get_object_extruder_candidates(
     const Domain::ModelObject& object,
-    const Domain::ConfigPackFDM& config
+    const Domain::IConfigPackFDMViewer& config
 )
 {
     const bool all_instances_not_printable{std::ranges::all_of(
@@ -136,14 +135,16 @@ std::set<unsigned> get_object_extruder_candidates(
         return {};
     }
 
-    const Domain::PrintSettings& print_settings{config.print};
+    const Domain::PrintSettings& print_settings{config.get_print()};
 
     std::set<unsigned> extruders;
     const Domain::ObjectSettings& object_settings{object.object_settings};
 
     for (const auto& pair : object.layer_config_ranges) {
         const Domain::VolumeSettings& volume_settings{pair.second};
-        extruders.merge(get_volume_extruder_candidates(volume_settings, object_settings, print_settings));
+        extruders.merge(
+            get_volume_extruder_candidates(volume_settings, object_settings, print_settings)
+        );
     }
 
     for (const Domain::ModelVolume* volume : object.volumes) {
@@ -152,19 +153,21 @@ std::set<unsigned> get_object_extruder_candidates(
         if (volume->type() != MODEL_PART && volume->type() != PARAMETER_MODIFIER) {
             continue;
         }
-        extruders.merge(
-            get_volume_extruder_candidates(volume->volume_settings, object.object_settings, config.print)
-        );
+        extruders.merge(get_volume_extruder_candidates(
+            volume->volume_settings,
+            object.object_settings,
+            config.get_print()
+        ));
     }
     const std::vector<unsigned> painting_extruders{
-        get_painting_extruders(object, config.filament.size())
+        get_painting_extruders(object, config.filament_size())
     };
     for (unsigned extruder : painting_extruders) {
         extruders.insert(extruder - 1);
     }
 
     std::set<unsigned> support_extruders{
-        get_extra_support_extruders(object_settings, config.print)
+        get_extra_support_extruders(object_settings, config.get_print())
     };
     extruders.merge(support_extruders);
 
@@ -173,11 +176,11 @@ std::set<unsigned> get_object_extruder_candidates(
 
 std::vector<unsigned> get_extruder_candidates(
     const Domain::Model& model,
-    const Domain::ConfigPackFDM& config,
+    const Domain::IConfigPackFDMViewer& config,
     const Domain::BedInstance& bed
 )
 {
-    ASSERT(config.tool.size() > 0);
+    ASSERT(config.tool_size() > 0);
     std::set<unsigned> extruders;
 
     if (bed.custom_gcode) {
@@ -194,21 +197,25 @@ std::vector<unsigned> get_extruder_candidates(
     }
 
     const bool can_have_wipe_tower{
-        !config.print.items.opt("spiral_vase").get<bool>()
-        && config.print.items.opt("wipe_tower").get<bool>()
+        !config.get_print().items.opt("spiral_vase").get<bool>()
+        && config.get_print().items.opt("wipe_tower").get<bool>()
         && extruders.size() > 1
     };
 
     if (can_have_wipe_tower) {
-        const int wipe_tower_extruder{config.print.items.opt("wipe_tower_extruder").get<int>()};
-        if (wipe_tower_extruder > 0 && static_cast<size_t>(wipe_tower_extruder) < config.filament.size() + 1) {
+        const int wipe_tower_extruder{
+            config.get_print().items.opt("wipe_tower_extruder").get<int>()
+        };
+        if (wipe_tower_extruder > 0
+            && static_cast<size_t>(wipe_tower_extruder) < config.filament_size() + 1)
+        {
             extruders.insert(static_cast<unsigned>(wipe_tower_extruder - 1));
         }
     }
 
     std::vector<unsigned> result;
     for (unsigned extruder : extruders) {
-        if (extruder < config.filament.size()) {
+        if (extruder < config.filament_size()) {
             result.push_back(extruder);
         }
     }

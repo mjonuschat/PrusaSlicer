@@ -293,6 +293,7 @@ void HeightRangeGizmo::on_deactivated()
 
     m_dialog->clear_selection();
     m_dialog->set_selected_height_range_config_box(nullptr);
+    m_dialog->clear_overrides();
 
     m_planes_wrapper.release(scene);
     m_drag_state.reset();

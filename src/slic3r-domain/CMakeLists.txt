@@ -171,6 +171,9 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/ConfigDefUtils.hpp
     src/Slic3r/Domain/ConfigDefUtils.cpp
     include/Slic3r/Domain/Preset/ParsedExpr.hpp
+    include/Slic3r/Domain/IConfigPackFDMViewer.hpp
+    include/Slic3r/Domain/Preset/SelectedPresetConfigPack.hpp
+    src/Slic3r/Domain/Preset/SelectedPresetConfigPack.cpp
 
 )
 

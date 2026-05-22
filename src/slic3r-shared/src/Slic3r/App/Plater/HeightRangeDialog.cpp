@@ -86,6 +86,15 @@ HeightRangeDialog::HeightRangeDialog(IConfigBoxSetter* config_box_setter) :
     m_layer_range_settings_dialog->attach_to_item(this, Position::Left);
 }
 
+void HeightRangeDialog::clear_overrides()
+{
+    // Todo: This whole systems has to be rewriten to fully support observable lists
+    while (m_overrides_section->object_count()) {
+        m_overrides_section->remove(m_overrides_section->get_object(0));
+    }
+    m_layer_range_settings_dialog->clear_settings();
+}
+
 HeightRangeDialog::Callbacks& HeightRangeDialog::callbacks()
 {
     return m_callbacks;

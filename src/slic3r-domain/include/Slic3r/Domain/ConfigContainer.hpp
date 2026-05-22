@@ -31,7 +31,6 @@ public:
     {
         return m_preset;
     }
-
     ConfigPack build_print_config() const;
 
     Domain::ProjectSettings& project_settings()

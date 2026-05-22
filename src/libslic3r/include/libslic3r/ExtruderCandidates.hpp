@@ -2,8 +2,8 @@
 
 #include <vector>
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/IConfigPackFDMViewer.hpp"
 
 namespace Slic3r::Biz::Slicing {
 
@@ -18,7 +18,7 @@ std::set<unsigned> get_volume_extruder_candidates(
 
 std::set<unsigned> get_object_extruder_candidates(
     const Domain::ModelObject& object,
-    const Domain::ConfigPackFDM& config
+    const Domain::IConfigPackFDMViewer& config
 );
 
 /* @brief Returns a list of extruder candidates (first extruder is 0).
@@ -28,7 +28,7 @@ std::set<unsigned> get_object_extruder_candidates(
  */
 std::vector<unsigned> get_extruder_candidates(
     const Domain::Model& model,
-    const Domain::ConfigPackFDM& config,
+    const Domain::IConfigPackFDMViewer& config,
     const Domain::BedInstance& bed
 );
 

@@ -21,6 +21,9 @@ class Text;
 
 namespace Slic3r::App::Plater {
 
+/**
+ * @deprecated this class will be replaced by OverrideSettingsDialog
+ */
 class LayerRangeSettingsDialog : public Yoga::Dialog
 {
 public:
@@ -28,6 +31,7 @@ public:
 
     void set_config_box(const Domain::ConfigBox* config_box);
     void open_at_category(Domain::ConfigItemDef::Category category);
+    void clear_settings();
 
 private:
     void on_about_to_show() override;
@@ -36,7 +40,6 @@ private:
     void init_settings_page();
     void select_category(Domain::ConfigItemDef::Category category);
     void create_settings_page_for_category(Domain::ConfigItemDef::Category category);
-    void clear_settings();
 
     Biz::IConfigBoxSetter* m_config_box_setter{nullptr};
     const Domain::ConfigBox* m_config_box{nullptr};

@@ -1,11 +1,12 @@
 #pragma once
 
+#include "Slic3r/Domain/IConfigPackFDMViewer.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 namespace Slic3r::Domain {
 
-struct ConfigPackFDM
+struct ConfigPackFDM : public IConfigPackFDMViewer
 {
     explicit ConfigPackFDM(const int extruder_count);
     ConfigPackFDM();
@@ -16,7 +17,14 @@ struct ConfigPackFDM
     std::vector<Domain::FilamentSettings> filament;
     Domain::ProjectSettings project;
 
-    bool operator==(const ConfigPackFDM&) const = default;
+    bool operator==(const ConfigPackFDM& other) const;
+
+    const PrinterSettings& get_printer() const override;
+    const PrintSettings& get_print() const override;
+    const ToolPrintSettings& get_tool(size_t index) const override;
+    const FilamentSettings& get_filament(size_t index) const override;
+    const size_t tool_size() const override;
+    const size_t filament_size() const override;
 
     FindResult contains(const std::string& key, size_t slot);
     ConstFindResult contains(const std::string& key, size_t slot) const;
