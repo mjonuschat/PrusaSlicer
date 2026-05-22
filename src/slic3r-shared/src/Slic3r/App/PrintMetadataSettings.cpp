@@ -28,12 +28,12 @@ PrintMetadataSettings::PrintMetadataSettings(
     set_padding(10);
 
     std::unique_ptr<InputTextField> input_id{std::make_unique<InputTextField>()};
-    input_id->set_flags(ImGuiInputTextFlags_ReadOnly);
+    input_id->set_input_flags(ImGuiInputTextFlags_ReadOnly);
     m_input_id = input_id.get();
     add_new_row(Biz::_u8L("Tool print preset UUID"), std::move(input_id));
 
     std::unique_ptr<InputTextField> input_name{std::make_unique<InputTextField>()};
-    input_name->set_flags(ImGuiInputTextFlags_ReadOnly);
+    input_name->set_input_flags(ImGuiInputTextFlags_ReadOnly);
     m_input_name = input_name.get();
     add_new_row(Biz::_u8L("Tool print preset name"), std::move(input_name));
 

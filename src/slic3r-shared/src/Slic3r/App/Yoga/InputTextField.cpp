@@ -54,12 +54,12 @@ void InputTextField::set_text(const std::string& text)
     text_updated_internal();
 }
 
-ImGuiInputTextFlags InputTextField::flags() const
+ImGuiInputTextFlags InputTextField::input_flags() const
 {
     return m_input_text->flags();
 }
 
-void InputTextField::set_flags(ImGuiInputTextFlags flags)
+void InputTextField::set_input_flags(ImGuiInputTextFlags flags)
 {
     m_input_text->set_flags(flags);
 }

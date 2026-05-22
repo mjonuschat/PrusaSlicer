@@ -24,8 +24,8 @@ public:
     const std::string& text() const;
     void set_text(const std::string& text);
 
-    ImGuiInputTextFlags flags() const;
-    void set_flags(ImGuiInputTextFlags flags);
+    ImGuiInputTextFlags input_flags() const;
+    void set_input_flags(ImGuiInputTextFlags flags);
 
     const std::string& hint() const;
     void set_hint(const std::string& hint);

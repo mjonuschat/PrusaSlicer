@@ -37,7 +37,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 
     m_editor = content()->emplace_back<InputTextField>();
     m_editor->set_height(100); // set multi-line mode
-    m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
+    m_editor->set_input_flags(m_editor->input_flags() | ImGuiInputTextFlags_Multiline);
     m_editor->set_flex_shrink(0.f);
     m_editor->callbacks().text_changed = [this]()
     {

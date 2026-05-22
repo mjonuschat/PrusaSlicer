@@ -34,7 +34,7 @@ void SliderWithInput::Create()
     set_align_items(YGAlignCenter);
 
     m_input = emplace_back<InputTextField>("SliderInputTextField");
-    m_input->set_flags(ImGuiInputTextFlags_CharsDecimal);
+    m_input->set_input_flags(ImGuiInputTextFlags_CharsDecimal);
     m_input->callbacks().text_edited = [this]() {
         const std::string& input_value = m_input->text();
 
