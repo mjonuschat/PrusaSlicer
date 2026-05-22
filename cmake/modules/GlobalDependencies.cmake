@@ -68,3 +68,4 @@ else()
 endif()
 
 find_package(fmt REQUIRED)
+slic3r_remap_configs(fmt::fmt RelWithDebInfo Release)
