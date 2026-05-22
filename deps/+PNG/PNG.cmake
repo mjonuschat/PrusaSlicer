@@ -27,6 +27,7 @@ if (MSVC OR APPLE OR EMSCRIPTEN)
         -DPNG_PREFIX=prusaslicer_
         -DPNG_TESTS=OFF
         -DPNG_EXECUTABLES=OFF
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${_disable_neon_extension}
 )
 
