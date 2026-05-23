@@ -40,7 +40,8 @@ PrintToolFavoritesItem::PrintToolFavoritesItem(Biz::ProjectInteractor& project_i
     m_rows_list_view = emplace_back<PrintToolRowListView>(PrintToolRowListViewFactory{
         project_interactor.preset_interactor().print_tool_cbi(),
         project_interactor.preset_interactor(),
-        project_interactor
+        project_interactor,
+        {.show_favorites = false}
     });
     m_rows_list_view->set_object_name("PrintToolRowFavoritesListView");
     m_rows_list_view->set_orientation(Orientation::Vertical);

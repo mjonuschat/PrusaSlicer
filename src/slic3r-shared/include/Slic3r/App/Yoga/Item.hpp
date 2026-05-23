@@ -15,10 +15,6 @@
 #include <memory>
 #include <optional>
 
-#ifndef DEBUG
-#define DEBUG
-#endif
-
 namespace Slic3r::App {
 class Theme;
 }

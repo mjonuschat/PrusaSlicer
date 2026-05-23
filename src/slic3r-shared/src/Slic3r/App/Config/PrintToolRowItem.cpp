@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/Config/PrintToolRowItem.hpp"
+#include "Slic3r/App/Config/FavoriteButton.hpp"
 
 #include <Slic3r/Domain/Config.hpp>
 
@@ -35,7 +36,8 @@ PrintToolRowItem::PrintToolRowItem(
     const Biz::PrintToolItem& data,
     Biz::PrintToolConfigBoxInteractor& cbi,
     Biz::IConfigBoxSetter& cbi_setter,
-    Biz::ProjectInteractor& project_interactor
+    Biz::ProjectInteractor& project_interactor,
+    const PrintToolRowItemDisplayOptions& options
 ) :
     Biz::DataObserver<Biz::PrintToolItem>(index, data),
     m_cbi(cbi),
@@ -57,25 +59,10 @@ PrintToolRowItem::PrintToolRowItem(
     m_header->set_align_items(YGAlignFlexStart);
     m_header->set_gap(3.f);
 
-    m_favorite_button = m_header->emplace_back<LayoutButton>("", Render::Icon::Star);
-    m_favorite_button->set_margin(Margins(0.f, 12.f, 0.f, 0.f));
-    m_favorite_button->set_min_size(Vec2f{16, 16});
-    m_favorite_button->set_content_padding(0.f);
-    m_favorite_button->set_background_color(Platform::Color::ButtonTransparent);
-    m_favorite_button->set_background_color_checked(
-        m_theme->color_imgui(Platform::Color::Transparent)
-    );
-    m_favorite_button->set_tooltip(Biz::_u8L("Add to favorites"));
-
+    m_favorite_button = m_header->emplace_back<FavoriteButton>();
+    m_favorite_button->set_visible(options.show_favorites);
     m_favorite_button->callbacks().action = [this]()
     { AppServices::instance().app_config_interactor().toggle_favorite_param(m_state->name); };
-    m_favorite_button->callbacks().checked_changed = [this](bool checked)
-    {
-        m_favorite_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
-        m_favorite_button->set_tooltip(
-            checked ? Biz::_u8L("Remove from favorites") : Biz::_u8L("Add to favorites")
-        );
-    };
 
     on_data_update();
 }

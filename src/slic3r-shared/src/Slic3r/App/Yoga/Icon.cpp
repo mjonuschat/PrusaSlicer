@@ -182,7 +182,7 @@ void Icon::update_draw_sizes()
 void Icon::update_texture()
 {
     if (m_icon_type == IconType::Icon) {
-        if (m_icon == Render::Icon::None || m_max_texture_size == 0) {
+        if (m_icon == Render::Icon::None || m_max_texture_size == 0 || !m_imgui_render) {
             m_texture = nullptr;
         } else {
             m_texture = m_imgui_render->icon_texture(

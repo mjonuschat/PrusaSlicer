@@ -331,6 +331,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/PrintToolRowItem.cpp
         include/Slic3r/App/Config/PrintToolFavoritesItem.hpp
         src/Slic3r/App/Config/PrintToolFavoritesItem.cpp
+        include/Slic3r/App/Config/FavoriteButton.hpp
+        src/Slic3r/App/Config/FavoriteButton.cpp
         include/Slic3r/App/Config/ConfigItemPreview.hpp
         src/Slic3r/App/Config/ConfigItemPreview.cpp
         include/Slic3r/App/Config/OverridableSubcategoryListView.hpp
@@ -1357,6 +1359,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Yoga/YogaComponentFixture.hpp
         test/Slic3r/App/Yoga/ButtonGroupTests.cpp
         test/Slic3r/App/Yoga/AbstractButtonTests.cpp
+        test/Slic3r/App/Yoga/FavoriteButtonTests.cpp
         test/Slic3r/App/Yoga/InputTextTests.cpp
         test/Slic3r/App/Yoga/ValidatorTests.cpp
         test/Slic3r/App/Yoga/TestRootItem.hpp

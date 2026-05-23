@@ -28,7 +28,8 @@ class PrintToolFavoritesItem : public Yoga::Item
         Biz::PrintToolItem,
         Biz::PrintToolConfigBoxInteractor&,
         Biz::IConfigBoxSetter&,
-        Biz::ProjectInteractor&>;
+        Biz::ProjectInteractor&,
+        PrintToolRowItemDisplayOptions>;
     using PrintToolRowListView =
         Yoga::ListView<PrintToolRowItem, Biz::PrintToolItem, PrintToolRowListViewFactory>;
 

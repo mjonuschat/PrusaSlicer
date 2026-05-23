@@ -29,6 +29,7 @@ namespace Slic3r::App {
 
 class ConfigRowItem;
 class PrintToolRowButton;
+class FavoriteButton;
 
 using ExplanationPart = std::pair<std::string, ImColor>;
 
@@ -39,6 +40,12 @@ public:
 
 protected:
     void on_data_update() override;
+};
+
+struct PrintToolRowItemDisplayOptions
+{
+    bool show_favorites{true};
+    bool show_favorites_only_on_hover{false};
 };
 
 class PrintToolRowItem :
@@ -54,7 +61,8 @@ public:
         const Biz::PrintToolItem& data,
         Biz::PrintToolConfigBoxInteractor& cbi,
         Biz::IConfigBoxSetter& cbi_setter,
-        Biz::ProjectInteractor& project_interactor
+        Biz::ProjectInteractor& project_interactor,
+        const PrintToolRowItemDisplayOptions& options = {}
     );
     ~PrintToolRowItem() override;
 
@@ -108,7 +116,7 @@ private:
     Yoga::Rectangle* m_content{nullptr};
     Yoga::Item* m_explanation_container{nullptr};
     ToolRowListView* m_tool_list_view{nullptr};
-    Yoga::LayoutButton* m_favorite_button{nullptr};
+    FavoriteButton* m_favorite_button{nullptr};
 
     Biz::UnsharedPointer<Biz::ObservableList<ExplanationPart>> m_explanation_list_labels;
     Biz::UnsharedPointer<Biz::ObservableList<ExplanationPart>> m_explanation_list;

@@ -148,7 +148,7 @@ void Text::on_resized()
 Vec2f Text::get_item_size()
 {
     Vec2f min_size;
-    ImGui::PushFont(m_imgui_render->font(m_font_type), m_font_size);
+    ImGui::PushFont(m_imgui_render ? m_imgui_render->font(m_font_type) : nullptr, m_font_size);
 
     ImVec2 taken_size;
     if (m_wrap_mode == WrapMode::NoWrap) {
