@@ -113,7 +113,7 @@ void PhysicalPrinterInteractor::add_printer_settings(
     m_storage.add_printer_settings(std::move(settings), filename);
 }
 
-bool PhysicalPrinterInteractor::can_be_selected(const std::string& uuid)
+bool PhysicalPrinterInteractor::can_be_selected(const std::string& uuid) const
 {
     auto index = index_of(uuid);
     const auto& printer = m_observable_list.at(index);
@@ -275,7 +275,7 @@ const PhysicalPrinterConfig& PhysicalPrinterInteractor::selected_physical_printe
     return m_observable_list.at(m_selected_index);
 }
 
-bool PhysicalPrinterInteractor::is_printer_compatible(const std::string& uuid, const Domain::Preset::HwPrinterConfig& config)
+bool PhysicalPrinterInteractor::is_printer_compatible(const std::string& uuid, const Domain::Preset::HwPrinterConfig& config) const
 {
     if (uuid == m_observable_list.at(0).uuid) {  // Default is always compatible
         return true;

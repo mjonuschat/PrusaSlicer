@@ -29,6 +29,7 @@
 #include "Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
+#include "Slic3r/Biz/Connect/ConnectMessageHandler.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -95,6 +96,7 @@ public:
         m_removable_drive_service(dispatcher),
         m_file_downloader_interactor(dispatcher),
         m_physical_printer_interactor(dispatcher, m_preset_interactor, m_user_account_interactor),
+        m_connect_message_handler(dispatcher, m_preset_interactor, m_user_account_interactor),
         m_project_list(*this),
         m_undo_provider(std::make_unique<NoopUndoProvider>())
     {
@@ -125,8 +127,10 @@ public:
             &m_preset_interactor.object_settings_interactor()
         );
         add_listener<ISelectedConfigContainerChangedListener>(&m_physical_printer_interactor);
+        m_connect_message_handler.add_listener<Connect::IConnectHandlerListener>(&m_preset_interactor);
+        m_connect_message_handler.add_listener<Connect::IConnectHandlerListener>(&m_physical_printer_interactor);
 
-        m_user_account_interactor.init(this);
+        m_user_account_interactor.init();
     }
 
     const Domain::Workbench& workbench() const
@@ -453,11 +457,6 @@ public:
     { /*unused*/
     }
 
-    void on_select_printer_from_connect(const std::string& printer_json) override
-    {
-        m_user_account_interactor.do_select_printer_from_connect(*this, printer_json);
-    }
-
     void load_models_to_project(std::vector<boost::filesystem::path> paths);
 
     /**
@@ -597,6 +596,11 @@ public:
         return m_physical_printer_interactor;
     }
 
+    Connect::ConnectMessageHandler& connect_message_handler()
+    {
+        return m_connect_message_handler;
+    }
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -647,6 +651,7 @@ private:
     RemovableDrive::RemovableDriveService m_removable_drive_service;
     FileDownloader::FileDownloaderInteractor m_file_downloader_interactor;
     PhysicalPrinter::PhysicalPrinterInteractor m_physical_printer_interactor;
+    Connect::ConnectMessageHandler m_connect_message_handler;
 
     ObservableProjectList m_project_list;
     IMessageDialogProvider* m_dialog_provider{ nullptr };

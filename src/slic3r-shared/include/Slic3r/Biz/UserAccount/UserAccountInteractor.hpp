@@ -3,7 +3,6 @@
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountCommunication.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp"
-#include "Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 
@@ -31,7 +30,7 @@ public:
      * @brief Reads tokens from store, starts communication in bg thread.
      * Moved to delayed init function prevent possible race conditions.
      */
-    void init(ProjectInteractor* project_interactor);
+    void init();
 
     /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
@@ -111,18 +110,11 @@ public:
 
     void request_printables_secret_token();
 
-    void on_select_printer_from_connect_browser(const std::string& message_body);
-
-    void do_select_printer_from_connect(ProjectInteractor& project_interactor, const std::string& printer_json); 
-
-    std::string uuid_for_upload(const ProjectInteractor& project_interactor);
-
 private:
     void on_user_id(const std::string& body);
 
     Platform::IMainThreadDispatcher& m_dispatcher;
     UserAccountCommunication m_communication;
-    UserAccountConnectMessageHandler m_connect_message_handler;
 
     std::map<std::string, std::string> m_account_user_data;
 

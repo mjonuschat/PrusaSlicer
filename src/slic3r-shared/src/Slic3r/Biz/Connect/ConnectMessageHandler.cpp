@@ -1,22 +1,44 @@
-#include "Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp"
+#include "Slic3r/Biz/Connect/ConnectMessageHandler.hpp"
 
-#include "Slic3r/Biz/UserAccount/UserAccountCommunication.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 
 #include "Slic3r/Log.hpp"
 #include "nlohmann/json.hpp"
 
-namespace Slic3r::Biz::UserAccount {
+namespace Slic3r::Biz::Connect {
 
-UserAccountConnectMessageHandler::UserAccountConnectMessageHandler(
-    Platform::IMainThreadDispatcher& dispatcher
-) :
-    m_dispatcher(dispatcher)
+ConnectMessageHandler::ConnectMessageHandler(
+        Platform::IMainThreadDispatcher& dispatcher,
+        const Preset::PresetInteractor& preset_interactor,
+        const UserAccount::UserAccountInteractor& user_account_interactor
+    ) :
+    m_dispatcher(dispatcher),
+    m_preset_interactor(preset_interactor),
+    m_user_account_interactor(user_account_interactor)
 {}
 
-void UserAccountConnectMessageHandler::handle_select_printer_message(
-    UserAccountCommunication& communication,
+namespace {
+std::string extract_printer_json_by_uuid(const std::string& message_json, const std::string& uuid)
+{
+    try {
+        auto j = nlohmann::json::parse(message_json);
+        if (j.contains("printers") && j["printers"].is_array()) {
+            for (const auto& printer : j["printers"]) {
+                if (printer.value("uuid", "") == uuid) {
+                    return printer.dump();
+                }
+            }
+        }
+    } catch (const nlohmann::json::exception& e) {
+        SPDLOG_ERROR("Failed to parse Connect printers JSON: {}", e.what());
+    }
+    return {};
+}
+} // namespace
+
+void ConnectMessageHandler::handle_select_printer_message(
     const std::string& message_json
 )
 {
@@ -33,45 +55,57 @@ void UserAccountConnectMessageHandler::handle_select_printer_message(
     }
 
     auto succ_fn = [this, uuid](const std::string& body)
-    { parse_connect_printers_for_selection(body, uuid); };
-
-    communication.enqueue_connect_printers_data_action(std::move(succ_fn));
-}
-
-void UserAccountConnectMessageHandler::parse_connect_printers_for_selection(
-    const std::string& message_json,
-    const std::string& uuid
-)
-{
-    try {
-        nlohmann::json j = nlohmann::json::parse(message_json);
-
-        if (!j.contains("printers") || !j["printers"].is_array()) {
-            SPDLOG_ERROR("Connect printers JSON is missing the 'printers' array.");
+    {
+        std::string printer_json = extract_printer_json_by_uuid(body, uuid);
+        
+        if (printer_json.empty()) {
+            SPDLOG_WARN("Printer with UUID {} not found in Connect message.", uuid);
             return;
         }
 
-        for (const auto& printer : j["printers"]) {
-            if (printer.contains("uuid") && printer["uuid"] == uuid) {
-                m_dispatcher.dispatch_on_main_thread(
-                    [this, printer]()
-                    {
-                        this->invoke_listeners<IUserAccountListener>(
-                            [printer](auto* listener)
-                            { listener->on_select_printer_from_connect(printer.dump()); }
-                        );
-                    }
-                );
+        m_dispatcher.dispatch_on_main_thread([this, printer_json = std::move(printer_json)]() {
+            this->do_select_printer_from_connect(printer_json);
+        });
+    };
 
-                return;
-            }
+    fetch_printer_data_async(
+        Network::ServiceConfig::instance().connect_printer_list_url(),
+        m_user_account_interactor.access_token(), 
+        std::move(succ_fn)
+    );
+}
+
+void ConnectMessageHandler::fetch_printer_data_async(
+    const std::string& url,
+    const std::string& access_token,
+    std::function<void(const std::string&)> success_fn
+) const
+{
+    std::thread([url, access_token, success_fn = std::move(success_fn)]() mutable {
+        auto retry_fn = [](Network::IHttp::Retry retry, bool& cancel) {
+            SPDLOG_INFO("Retry attempt {}: {} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
+        };
+
+        std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+            Network::IHttp::RequestMethod::Get, url, retry_fn
+        );
+
+        if (!access_token.empty()) {
+            http->header("Authorization", "Bearer " + access_token);
         }
 
-        SPDLOG_WARN("Printer with UUID {} not found in Connect message.", uuid);
+        http->on_complete([success_fn = std::move(success_fn)](std::string body, unsigned status) {
+            if (success_fn) {
+                success_fn(body);
+            }
+        });
 
-    } catch (const nlohmann::json::exception& e) {
-        SPDLOG_ERROR("Failed to parse Connect printers JSON: {}", e.what());
-    }
+        http->on_error([](std::string body, std::string error, unsigned status) {
+            SPDLOG_ERROR("Connect HTTP request failed. Status: {}, Error: {}", status, error);
+        });
+
+        http->perform_sync(Network::HttpRetryOpt::default_retry());
+    }).detach();
 }
 
 namespace {
@@ -165,8 +199,9 @@ const Preset::PresetItem* find_matching_preset_item(
 
     return nullptr;
 }
+} // namespace
 
-void select_printer_tools_from_connect(auto& preset_interactor, const nlohmann::json& j)
+void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::json& j)
 {
     if (!j.contains("tools") || !j["tools"].is_object()) {
         return;
@@ -175,12 +210,12 @@ void select_printer_tools_from_connect(auto& preset_interactor, const nlohmann::
     size_t tool_idx = 0;
 
     for (const auto& [tool_key, tool_json] : j["tools"].items()) {
-        if (!tool_json.contains("features") || tool_idx >= preset_interactor.tool_items().size()) {
+        if (!tool_json.contains("features") || tool_idx >= m_preset_interactor.tool_items().size()) {
             tool_idx++;
             continue;
         }
 
-        const auto& tool_list       = preset_interactor.tool_items().at(tool_idx);
+        const auto& tool_list       = m_preset_interactor.tool_items().at(tool_idx);
         const auto& available_tools = tool_list.items();
 
         std::string matching_tool_id;
@@ -209,26 +244,30 @@ void select_printer_tools_from_connect(auto& preset_interactor, const nlohmann::
         }
 
         if (!matching_tool_id.empty()) {
-            preset_interactor.select_printer_tool_item(tool_idx, matching_tool_id);
+            this->invoke_listeners<IConnectHandlerListener>([&tool_idx, &matching_tool_id](auto* listener) {
+                listener->on_connect_requests_select_printer_tool_item(tool_idx, matching_tool_id);
+            });
         } else {
-            SPDLOG_WARN(
-                "Connect tool sync: No matching tool definition found for tool index {}",
-                tool_idx
-            );
+            SPDLOG_WARN("Connect tool sync: No matching tool definition found for tool index {}", tool_idx);
         }
 
         tool_idx++;
     }
 }
 
-void select_printer_materials_from_connect(auto& preset_interactor, const nlohmann::json& j)
+void ConnectMessageHandler::select_printer_materials_from_connect(const nlohmann::json& j)
 {
     if (!j.contains("tools") || !j["tools"].is_object()) {
         return;
     }
 
     const auto& tools_json = j["tools"];
-    size_t max_slots = preset_interactor.material_presets().size();
+    size_t max_slots = m_preset_interactor.material_presets().size();
+
+    const auto& selected_preset = m_preset_interactor.selected_printer_preset();
+    const std::string& hw_config_id = selected_preset.hw_config.id;
+    const std::string& printer_preset_id = selected_preset.printer.id;
+    const std::string& print_preset_id = selected_preset.print.id;
 
     for (size_t slot_idx = 0; slot_idx < max_slots; ++slot_idx) {
         std::string tool_key = std::to_string(slot_idx);
@@ -242,13 +281,10 @@ void select_printer_materials_from_connect(auto& preset_interactor, const nlohma
 
         if (tool_json.contains("material_package_instance") && tool_json["material_package_instance"].is_object()) {
             const auto& mpi = tool_json["material_package_instance"];
-            
             if (mpi.contains("package") && mpi["package"].is_object()) {
                 const auto& pkg = mpi["package"];
-                
                 if (pkg.contains("material") && pkg["material"].is_object()) {
                     const auto& mat = pkg["material"];
-                    
                     if (mat.contains("type") && mat["type"].is_string()) {
                         target_type = mat["type"].get<std::string>();
                     }
@@ -260,33 +296,69 @@ void select_printer_materials_from_connect(auto& preset_interactor, const nlohma
             continue;
         }
 
-        const auto& material_list       = preset_interactor.material_presets().at(slot_idx);
+        const auto& material_list       = m_preset_interactor.material_presets().at(slot_idx);
         const auto& available_materials = material_list.items();
         std::string matching_material_id;
+
+        std::string best_prusament_id;
+        size_t best_prusament_len = std::string::npos;
+        std::string best_generic_id;
+        size_t best_generic_len = std::string::npos;
+        std::string first_match_id;
 
         for (size_t i = 0; i < available_materials.size(); ++i) {
             const Preset::PresetItem& preset = available_materials.at(i);
             
-            if (preset.name.find(target_type) != std::string::npos || 
-                preset.id.find(target_type) != std::string::npos) 
-            {
-                matching_material_id = preset.id;
-                break;
-            }
+            for (const auto& [mat_preset, is_runtime] : m_preset_interactor.get_material_presets(hw_config_id, printer_preset_id, print_preset_id, slot_idx)) {
+                if (is_runtime) {
+                    continue;
+                }
+                
+                if (mat_preset.get().id != preset.id) {
+                    continue;
+                }
+
+                auto it = mat_preset.get().config_box().find("filament_type");
+                if (it.item && it.item->template get<std::string>() == target_type) {
+                    if (first_match_id.empty()) {
+                        first_match_id = preset.id;
+                    }
+
+                    if (preset.name.starts_with("Prusament")) {
+                        if (preset.name.length() < best_prusament_len) {
+                            best_prusament_len = preset.name.length();
+                            best_prusament_id = preset.id;
+                        }
+                    } 
+                    else if (preset.name.starts_with("Generic")) {
+                        if (preset.name.length() < best_generic_len) {
+                            best_generic_len = preset.name.length();
+                            best_generic_id = preset.id;
+                        }
+                    }
+                }
+            } 
+        }
+
+        if (!best_prusament_id.empty()) {
+            matching_material_id = best_prusament_id;
+        } else if (!best_generic_id.empty()) {
+            matching_material_id = best_generic_id;
+        } else {
+            matching_material_id = first_match_id;
         }
 
         if (!matching_material_id.empty()) {
-            preset_interactor.select_material_preset(slot_idx, matching_material_id);
+            this->invoke_listeners<IConnectHandlerListener>([&slot_idx, &matching_material_id](auto* listener) {
+                listener->on_connect_requests_select_material_preset(slot_idx, matching_material_id);
+            });
         } else {
             SPDLOG_WARN("Connect material sync: No matching material preset found for slot {} (Target type: {})", slot_idx, target_type);
         }
     }
 }
 
-} // namespace
-
-void UserAccountConnectMessageHandler::do_select_printer_from_connect(
-    ProjectInteractor& project_interactor,
+void ConnectMessageHandler::do_select_printer_from_connect(
     const std::string& printer_json
 )
 {
@@ -298,8 +370,7 @@ void UserAccountConnectMessageHandler::do_select_printer_from_connect(
         return;
     }
 
-    auto& preset_interactor          = project_interactor.preset_interactor();
-    const auto& printer_configs_view = preset_interactor.get_printer_configs();
+    const auto& printer_configs_view = m_preset_interactor.get_printer_configs();
     
     const Domain::Preset::HwPrinterConfig* config =
         find_matching_printer_config(printer_configs_view, parsed_printer_json);
@@ -310,22 +381,23 @@ void UserAccountConnectMessageHandler::do_select_printer_from_connect(
     }
 
     const Preset::PresetItem* item =
-        find_matching_preset_item(preset_interactor.printer_presets().items(), config);
+        find_matching_preset_item(m_preset_interactor.printer_presets().items(), config);
 
     if (!item) {
         SPDLOG_INFO("Failed to select printer preset from Connect. No matching printer preset.");
         return;
     }
 
-    preset_interactor.select_printer_preset(config->id, item->id);
-    select_printer_tools_from_connect(preset_interactor, parsed_printer_json);
-    select_printer_materials_from_connect(preset_interactor, parsed_printer_json);
-    project_interactor.physical_printer_interactor().select_connect_upload(false);
+    this->invoke_listeners<IConnectHandlerListener>([&config, &item](auto* listener) {
+        listener->on_connect_requests_select_printer_preset(config->id, item->id);
+    });
+    select_printer_tools_from_connect(parsed_printer_json);
+    select_printer_materials_from_connect(parsed_printer_json);
 
     m_last_printer_json = printer_json;
 }
 
-std::string UserAccountConnectMessageHandler::uuid_for_upload(const ProjectInteractor& project_interactor)
+std::string ConnectMessageHandler::uuid_for_upload()
 {
     if (m_last_printer_json.empty()) {
         return {};
@@ -333,7 +405,7 @@ std::string UserAccountConnectMessageHandler::uuid_for_upload(const ProjectInter
 
     try {
         nlohmann::json j = nlohmann::json::parse(m_last_printer_json);
-        const auto& current_config = project_interactor.preset_interactor().current_printer_config();
+        const auto& current_config = m_preset_interactor.current_printer_config();
 
         std::string j_model        = j.value("model", "");
         std::string j_base_model   = j.value("base_model", "");
@@ -354,4 +426,4 @@ std::string UserAccountConnectMessageHandler::uuid_for_upload(const ProjectInter
     return {};
 }
 
-} // namespace Slic3r::Biz::UserAccount
+} // namespace Slic3r::Biz::Connect

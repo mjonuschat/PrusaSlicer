@@ -941,7 +941,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
-        include/Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp
         include/Slic3r/Biz/UserAccount/ConnectUtils.hpp
         src/Slic3r/Biz/UserAccount/UserAccountInteractor.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCommunication.cpp
@@ -951,8 +950,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.cpp
         src/Slic3r/Biz/UserAccount/UserAccountTokenStore.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.cpp
-        src/Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.cpp
         src/Slic3r/Biz/UserAccount/ConnectUtils.cpp
+
+        include/Slic3r/Biz/Connect/IConnectHandlerListener.hpp
+        include/Slic3r/Biz/Connect/ConnectMessageHandler.hpp
+        src/Slic3r/Biz/Connect/ConnectMessageHandler.cpp
 
         include/Slic3r/Biz/SHA256.hpp
 

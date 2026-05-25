@@ -5,6 +5,7 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Connect/ConnectMessageHandler.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include <nlohmann/json.hpp>
@@ -120,7 +121,7 @@ PrinterData get_printer_data(const Biz::Preset::PresetInteractor& preset_interac
     return res;
 }
 
-PrinterData get_printer_data_from_cbi(Biz::Preset::PresetInteractor& preset_interactor)
+PrinterData get_printer_data_from_cbi(const Biz::Preset::PresetInteractor& preset_interactor)
 {
     PrinterData res;
     const auto& hw_config = preset_interactor.current_printer_config();
@@ -133,7 +134,7 @@ PrinterData get_printer_data_from_cbi(Biz::Preset::PresetInteractor& preset_inte
     res.filament_abrasive.reserve(slot_count);
     res.filament_type.reserve(slot_count);
 
-    auto& material_cbis = preset_interactor.material_cbi_list();
+    const auto& material_cbis = preset_interactor.material_cbi_list();
 
     size_t slot_idx = 0;
     for (auto it = Slic3r::Domain::Preset::MaterialIterator(hw_config); it.is_valid(); ++it, ++slot_idx) {
@@ -210,7 +211,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::request_compatible_p
     */
 
     const auto filename_data = ExportPathSelect::get_export_name_data(m_project_interactor);
-    const std::string uuid = m_project_interactor.user_account_interactor().uuid_for_upload(m_project_interactor);
+    const std::string uuid = m_project_interactor.connect_message_handler().uuid_for_upload();
 
     // We have implemented 2 methods how to obtain data
     // get_printer_data looks into evaluated presets and should work with data from material database

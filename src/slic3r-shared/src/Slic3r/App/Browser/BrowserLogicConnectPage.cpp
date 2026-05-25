@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Connect/ConnectMessageHandler.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -186,7 +187,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectPage::logout()
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectPage::on_connect_action_select_printer(const std::string& message_data)
 {
-    m_project_interactor.user_account_interactor().on_select_printer_from_connect_browser(message_data);
+    m_project_interactor.connect_message_handler().handle_select_printer_message(message_data);
     return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
 }
 

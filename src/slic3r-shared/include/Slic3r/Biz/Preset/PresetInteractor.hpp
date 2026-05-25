@@ -25,6 +25,7 @@
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -89,6 +90,7 @@ struct SelectedPresetIds
 class PresetInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
+    public Connect::IConnectHandlerListener,
     public WithListeners<
         IPresetChangedListener,
         ISlicingInputChangedListener>,
@@ -252,6 +254,7 @@ public:
     ConfigBoxInteractor& printer_cbi();
     PrintToolConfigBoxInteractor& print_tool_cbi();
     OverridableCBIObservableList& material_cbi_list();
+    const OverridableCBIObservableList& material_cbi_list() const;
 
     const Domain::ConfigValue* get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
@@ -720,6 +723,29 @@ public:
     {
         m_use_hw_config_short_name = use_short_name;
     }
+
+    void on_connect_requests_select_printer_preset(
+        const std::string& printer_hw_config_id,
+        const std::string& printer_preset_id
+    ) override
+    {
+        select_printer_preset(printer_hw_config_id, printer_preset_id);
+    }
+
+    void
+    on_connect_requests_select_printer_tool_item(size_t tool_index, const std::string& id) override
+    {
+        select_printer_tool_item(tool_index, id);
+    }
+
+    void on_connect_requests_select_material_preset(
+        size_t material_index,
+        const std::string& id
+    ) override
+    {
+        select_material_preset(material_index, id);
+    }
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 

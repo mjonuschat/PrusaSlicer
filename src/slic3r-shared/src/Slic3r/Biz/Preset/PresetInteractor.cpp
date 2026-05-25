@@ -1803,6 +1803,11 @@ OverridableCBIObservableList& PresetInteractor::material_cbi_list()
     return m_material_cbi_list;
 }
 
+const OverridableCBIObservableList& PresetInteractor::material_cbi_list() const
+{
+    return m_material_cbi_list;
+}
+
 PrintToolConfigBoxInteractor& PresetInteractor::print_tool_cbi()
 {
     return m_print_tool_cbi;

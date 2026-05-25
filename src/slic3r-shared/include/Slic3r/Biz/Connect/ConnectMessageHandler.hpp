@@ -1,0 +1,57 @@
+#pragma once
+
+#include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
+
+#include <string>
+#include <nlohmann/json_fwd.hpp>
+
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
+
+namespace Slic3r::Biz::PhysicalPrinter {
+class PhysicalPrinterInteractor;
+} // namespace Slic3r::Biz::PhysicalPrinter
+
+namespace Slic3r::Biz::UserAccount {
+class UserAccountInteractor;
+} // namespace Slic3r::Biz::UserAccount
+
+namespace Slic3r::Biz::Connect {
+
+class ConnectMessageHandler : public WithListeners<IConnectHandlerListener>
+{
+public:
+    ConnectMessageHandler(
+        Platform::IMainThreadDispatcher& dispatcher,
+        const Preset::PresetInteractor& preset_interactor,
+        const UserAccount::UserAccountInteractor& user_account_interactor
+    );
+
+    void handle_select_printer_message(const std::string& message_json);
+
+    std::string uuid_for_upload();
+
+private:
+    void fetch_printer_data_async(
+        const std::string& url,
+        const std::string& access_token,
+        std::function<void(const std::string&)> success_fn
+    ) const;
+
+    void do_select_printer_from_connect(const std::string& printer_json);
+
+    void select_printer_tools_from_connect(const nlohmann::json& j);
+
+    void select_printer_materials_from_connect(const nlohmann::json& j);
+
+private:
+    Platform::IMainThreadDispatcher& m_dispatcher;
+    const Preset::PresetInteractor& m_preset_interactor;
+    const UserAccount::UserAccountInteractor& m_user_account_interactor;
+
+    std::string m_last_printer_json;
+};
+} // namespace Slic3r::Biz::Connect
