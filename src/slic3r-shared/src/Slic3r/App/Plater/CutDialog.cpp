@@ -270,10 +270,7 @@ void CutDialog::init_cut_plane_input_panel()
     m_cut_into_combo->callbacks().selection_changed = [this](int index)
     {
         keep_as_parts = index == 1;
-        m_part_A->set_as_part(keep_as_parts);
-        m_part_B->set_as_part(keep_as_parts);
-
-        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+        update_cut_into_states();
     };
 
     add_groove_input_panel();
@@ -654,6 +651,14 @@ void CutDialog::update_warnings()
     }
 }
 
+void CutDialog::update_cut_into_states()
+{
+
+    m_part_A->set_as_part(keep_as_parts);
+    m_part_B->set_as_part(keep_as_parts);
+    m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+}
+
 void CutDialog::confirm_connectors()
 {
     connectors_editing = false;
@@ -974,10 +979,9 @@ void CutDialog::set_planar_mode(bool is_planar)
     update_panels_visibility();
 
     if (!is_planar_cut_mode) {
-        keep_as_parts = false;
         m_cut_into_combo->set_current_index(0);
-        m_part_A->set_as_part(keep_as_parts);
-        m_part_B->set_as_part(keep_as_parts);
+        keep_as_parts = false;
+        update_cut_into_states();
     }
 
     // disable buttons for dovetail mode

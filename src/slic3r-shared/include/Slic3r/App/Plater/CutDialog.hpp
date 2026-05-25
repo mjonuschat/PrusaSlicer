@@ -168,6 +168,7 @@ private:
     void update_panels_visibility();
     void update_keep_object_warning();
     void update_warnings();
+    void update_cut_into_states();
 
     void confirm_connectors();
 

@@ -2068,6 +2068,8 @@ void CutGizmo::flip_cut_plane()
     if (is_planar_mode()) {
         m_part_selection.turn_over_selection();
         update_parts_nodes_colors_from_selection();
+        m_is_looking_forward_on_cut_plane =
+            m_scene_presenter.scene().camera().forward().dot(m_cut_normal) < 0.05;
         update_clipper_presenter(false);
     } else {
         update_cut_plane_mesh();
@@ -3089,7 +3091,8 @@ bool CutGizmo::is_outside_of_cut_contour(
     const int   sectorCount = shape == CutConnectorShape::Triangle ? 3 :
         shape == CutConnectorShape::Square ? 4 :
         shape == CutConnectorShape::Circle ? 60 : // supposably, 60 points are enough for conflict detection
-        shape == CutConnectorShape::Hexagon ? 6 : 1;
+        shape == CutConnectorShape::Hexagon ? 6 :
+        60; // supposably, 60 points are enough for conflict detection for snap connectors
 
     indexed_triangle_set mesh;
     auto& vertices = mesh.vertices;
