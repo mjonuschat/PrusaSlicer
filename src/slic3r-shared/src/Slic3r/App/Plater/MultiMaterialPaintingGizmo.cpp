@@ -12,6 +12,7 @@
 using namespace Slic3r::App::Yoga;
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::ModelVolume;
 
 namespace Slic3r::App::Plater {
 
@@ -40,10 +41,12 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->callbacks().second_brush_color_changed = [this](size_t color_idx)
     { m_second_brush_color_idx = color_idx; };
 
-    m_project_interactor.project_settings_interactor()
-        .add_listener<Biz::IColorsChangedListener>(this);
-    m_project_interactor.preset_interactor()
-        .add_listener<Biz::Preset::IPresetChangedListener>(this);
+    m_project_interactor.project_settings_interactor().add_listener<Biz::IColorsChangedListener>(
+        this
+    );
+    m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(
+        this
+    );
 
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
     { m_tool_type = tool_type; };
@@ -84,10 +87,12 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
 
 MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
 {
-    m_project_interactor.project_settings_interactor()
-        .remove_listener<Biz::IColorsChangedListener>(this);
-    m_project_interactor.preset_interactor()
-        .remove_listener<Biz::Preset::IPresetChangedListener>(this);
+    m_project_interactor.project_settings_interactor().remove_listener<Biz::IColorsChangedListener>(
+        this
+    );
+    m_project_interactor.preset_interactor().remove_listener<Biz::Preset::IPresetChangedListener>(
+        this
+    );
 }
 
 Scene::ToolType MultiMaterialPaintingGizmo::type() const
@@ -196,9 +201,7 @@ bool MultiMaterialPaintingGizmo::set_facets_annotation(
 {
     const bool result{model_volume.mm_segmentation_facets.set_data(triangle_selector.serialize())};
 
-    m_project_interactor.undo_provider().take_snapshot(
-        Biz::UndoSnapshotType::MMPaintingStroke
-    );
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::MMPaintingStroke);
     return result;
 }
 
@@ -243,6 +246,18 @@ void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(double value)
     m_dialog->set_clipping_of_view_value(static_cast<double>(value));
 }
 
+ColorRGBA MultiMaterialPaintingGizmo::create_default_painting_color(
+    const ModelVolume& model_volume
+) const
+{
+    const int extruder_idx = std::max(0, model_volume.extruder_id() - 1);
+    if (extruder_idx < static_cast<int>(m_painting_colors.size())) {
+        return m_painting_colors[extruder_idx];
+    }
+
+    return PaintOnGizmoBase::create_default_painting_color(model_volume);
+}
+
 std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_colors() const
 {
     const auto& settings_interactor{m_project_interactor.project_settings_interactor()};
@@ -281,7 +296,7 @@ void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
     m_painting_colors = colors;
 
     if (count_changed) {
-        m_first_brush_color_idx = 0;
+        m_first_brush_color_idx  = 0;
         m_second_brush_color_idx = 1;
     }
 

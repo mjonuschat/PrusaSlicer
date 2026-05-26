@@ -392,11 +392,10 @@ void PaintOnGizmoBase::on_activated()
         return;
     }
 
-    m_visible_volumes_nodes  = collect_visible_volumes_nodes(project, scene);
-    m_paintable_volumes      = std::move(*paintable_volumes);
-    m_default_painting_color = this->create_default_painting_color();
-    m_painting_colors        = this->create_painting_colors();
-    m_mouse_dragging         = false;
+    m_visible_volumes_nodes = collect_visible_volumes_nodes(project, scene);
+    m_paintable_volumes     = std::move(*paintable_volumes);
+    m_painting_colors       = this->create_painting_colors();
+    m_mouse_dragging        = false;
 
     this->hide_visible_volumes();
 
@@ -413,7 +412,7 @@ void PaintOnGizmoBase::on_activated()
             triangle_mesh,
             paintable_volume.aabb_mesh,
             m_painting_colors,
-            m_default_painting_color
+            this->create_default_painting_color(model_volume)
         );
         // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
         m_triangle_selector_wrappers.back().triangle_selector().deserialize(
@@ -1013,7 +1012,7 @@ PaintOnGizmoBase::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
     return GizmoActivationState::Inactive;
 }
 
-ColorRGBA PaintOnGizmoBase::create_default_painting_color() const
+ColorRGBA PaintOnGizmoBase::create_default_painting_color(const ModelVolume& model_volume) const
 {
     return Algorithms::Color::saturate(ColorRGBA::WHITE(), 0.25f);
 }
@@ -1143,7 +1142,7 @@ void PaintOnGizmoBase::rebuild_paintable_geometry()
             triangle_mesh,
             paintable_volume.aabb_mesh,
             m_painting_colors,
-            m_default_painting_color
+            this->create_default_painting_color(model_volume)
         );
         // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
         m_triangle_selector_wrappers.back().triangle_selector().deserialize(

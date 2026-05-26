@@ -65,6 +65,9 @@ protected:
     Domain::ColorRGBA get_cursor_sphere_left_button_color() const override;
     Domain::ColorRGBA get_cursor_sphere_right_button_color() const override;
 
+    Domain::ColorRGBA create_default_painting_color(
+        const Domain::ModelVolume& model_volume
+    ) const override;
     std::vector<Domain::ColorRGBA> create_painting_colors() const override;
 
     void update_painting_dialog_tools();

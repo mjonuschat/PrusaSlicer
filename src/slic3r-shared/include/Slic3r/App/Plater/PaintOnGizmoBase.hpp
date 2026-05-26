@@ -138,7 +138,6 @@ protected:
     bool m_paint_on_overhangs_only           = false;
     float m_highlight_by_angle_threshold_deg = 0.f;
 
-    Domain::ColorRGBA m_default_painting_color;
     std::vector<Domain::ColorRGBA> m_painting_colors;
 
     virtual const Domain::FacetsAnnotation& get_facets_annotation(
@@ -155,7 +154,9 @@ protected:
 
     void apply_painting_to_model() const;
 
-    virtual Domain::ColorRGBA create_default_painting_color() const;
+    virtual Domain::ColorRGBA create_default_painting_color(
+        const Domain::ModelVolume& model_volume
+    ) const;
     virtual std::vector<Domain::ColorRGBA> create_painting_colors() const;
     virtual Domain::ColorRGBA get_cursor_sphere_left_button_color() const;
     virtual Domain::ColorRGBA get_cursor_sphere_right_button_color() const;
