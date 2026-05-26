@@ -130,6 +130,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
 
     // Gizmo Multimaterial painting
     {Icon::FillDrip, "fill_drip"},
+    {Icon::ColorReplace, "color_replace"},
     {Icon::LineHeight, "line_height"},
     {Icon::Switch, "switch"},
 

@@ -80,10 +80,11 @@ private:
     ColorSelector* m_color_selector{nullptr};
     ColorDropdowns* m_color_dropdowns{nullptr};
 
-    Yoga::LayoutButton* m_brush_button        = nullptr;
-    Yoga::LayoutButton* m_smart_fill_button   = nullptr;
-    Yoga::LayoutButton* m_bucket_fill_button  = nullptr;
-    Yoga::LayoutButton* m_height_range_button = nullptr;
+    Yoga::LayoutButton* m_brush_button         = nullptr;
+    Yoga::LayoutButton* m_smart_fill_button    = nullptr;
+    Yoga::LayoutButton* m_bucket_fill_button   = nullptr;
+    Yoga::LayoutButton* m_color_replace_button = nullptr;
+    Yoga::LayoutButton* m_height_range_button  = nullptr;
     Yoga::ButtonGroup m_tool_type_group;
 
     Yoga::LayoutButton* m_sphere_brush_button   = nullptr;

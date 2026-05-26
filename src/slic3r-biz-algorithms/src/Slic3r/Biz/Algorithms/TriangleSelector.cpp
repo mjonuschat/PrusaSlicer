@@ -722,6 +722,53 @@ void TriangleSelector::bucket_fill_fill_gaps(const std::vector<int> &gap_fill_ca
     }
 }
 
+void TriangleSelector::select_triangles_by_state_type(
+    const TriangleStateType state_to_select,
+    const ClippingPlane& clp
+)
+{
+    m_triangle_selected_by_seed_fill = -1;
+    this->seed_fill_unselect_all_triangles();
+
+    for (Triangle& triangle : m_triangles) {
+        const size_t triangle_idx = &triangle - m_triangles.data();
+        if (!triangle.is_split()
+            && triangle.valid()
+            && triangle.get_state() == state_to_select
+            && !is_facet_clipped(static_cast<int>(triangle_idx), clp))
+        {
+            triangle.select_by_seed_fill();
+        }
+    }
+}
+
+std::optional<TriangleStateType> TriangleSelector::color_replace_select_triangles(
+    const Vec3f& hit,
+    int facet_start,
+    const ClippingPlane& clp,
+    ForceReselection force_reselection
+)
+{
+    const int start_facet_idx = this->select_unsplit_triangle(hit, facet_start);
+    assert(start_facet_idx != -1);
+
+    // Recompute color replace selection only if the cursor is pointing on facet unselected by color replace or a clipping plane is active.
+    if (start_facet_idx == -1
+        || (m_triangles[start_facet_idx].is_selected_by_seed_fill()
+            && force_reselection == ForceReselection::NO
+            && !clp.is_active()))
+    {
+        return std::nullopt;
+    }
+
+    assert(!m_triangles[start_facet_idx].is_split());
+    const TriangleStateType state_to_select = m_triangles[start_facet_idx].get_state();
+
+    this->select_triangles_by_state_type(state_to_select, clp);
+
+    return state_to_select;
+}
+
 // Selects either the whole triangle (discarding any children it had), or divides
 // the triangle recursively, selecting just subtriangles truly inside the circle.
 // This is done by an actual recursive call. Returns false if the triangle is
@@ -1730,7 +1777,7 @@ void TriangleSelector::get_facets_split_by_tjoints(const Index3 &vertices, const
         this->get_facets_split_by_tjoints<facet_info>(
             { vertices[0], midpoints[0], midpoints[2] },
             { this->neighbor_child(neighbors[0], vertices[1], vertices[0], Partition::Second),
-              -1, 
+              -1,
               this->neighbor_child(neighbors[2], vertices[0], vertices[2], Partition::First) },
               color, out_triangles, out_colors);
         this->get_facets_split_by_tjoints<facet_info>(

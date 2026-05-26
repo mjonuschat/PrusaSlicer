@@ -101,6 +101,7 @@ enum class Icon : wchar_t
 
     // Gizmo Multimaterial painting
     FillDrip,
+    ColorReplace,
     LineHeight,
     Switch,
 

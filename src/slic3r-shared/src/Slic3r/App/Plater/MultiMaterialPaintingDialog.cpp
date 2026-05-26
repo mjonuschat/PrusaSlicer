@@ -113,11 +113,17 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
         emplace_flex_button(tools_row, Render::Icon::WandMagicSparkles, _u8L("Smart fill"));
     m_bucket_fill_button =
         emplace_flex_button(tools_row, Render::Icon::FillDrip, _u8L("Bucket fill"));
+    m_color_replace_button =
+        emplace_flex_button(tools_row, Render::Icon::ColorReplace, _u8L("Color replace"));
     m_height_range_button =
         emplace_flex_button(tools_row, Render::Icon::LineHeight, _u8L("Height range fill"));
 
     m_tool_type_group.set_buttons(
-        {m_brush_button, m_smart_fill_button, m_bucket_fill_button, m_height_range_button}
+        {m_brush_button,
+         m_smart_fill_button,
+         m_bucket_fill_button,
+         m_color_replace_button,
+         m_height_range_button}
     );
     m_tool_type_group.callbacks().checked_changed =
         [this](AbstractButton* current_checked, AbstractButton* last_checked)
@@ -128,6 +134,8 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
             m_selected_tool_type = PaintOnGizmoBase::ToolType::SMART_FILL;
         } else if (current_checked == m_bucket_fill_button) {
             m_selected_tool_type = PaintOnGizmoBase::ToolType::BUCKET_FILL;
+        } else if (current_checked == m_color_replace_button) {
+            m_selected_tool_type = PaintOnGizmoBase::ToolType::COLOR_REPLACE;
         } else if (current_checked == m_height_range_button) {
             m_selected_tool_type = PaintOnGizmoBase::ToolType::HEIGHT_RANGE;
         }
@@ -164,8 +172,13 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
         m_callbacks.brush_shape_changed(m_selected_brush_type);
     };
 
-    auto spacer{m_brush_shape_row->emplace_back<Item>()};
-    apply_icon_button_style(*spacer);
+    for (std::size_t i = m_brush_shape_group.buttons().size();
+         i < m_tool_type_group.buttons().size();
+         ++i)
+    {
+        auto spacer{m_brush_shape_row->emplace_back<Item>()};
+        apply_icon_button_style(*spacer);
+    }
 
     return result;
 }
@@ -481,6 +494,9 @@ void MultiMaterialPaintingDialog::set_tool_type(const PaintOnGizmoBase::ToolType
         break;
     case PaintOnGizmoBase::ToolType::SMART_FILL:
         m_smart_fill_button->set_checked(true);
+        break;
+    case PaintOnGizmoBase::ToolType::COLOR_REPLACE:
+        m_color_replace_button->set_checked(true);
         break;
     case PaintOnGizmoBase::ToolType::HEIGHT_RANGE:
         m_height_range_button->set_checked(true);

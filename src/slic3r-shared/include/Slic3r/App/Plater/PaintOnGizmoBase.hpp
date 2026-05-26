@@ -38,7 +38,8 @@ public:
         BRUSH,
         BUCKET_FILL,
         SMART_FILL,
-        HEIGHT_RANGE
+        HEIGHT_RANGE,
+        COLOR_REPLACE,
     };
 
     static constexpr float SmartFillAngleMin  = 0.0f;

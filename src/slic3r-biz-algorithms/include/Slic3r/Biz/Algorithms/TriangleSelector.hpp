@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 #include <cassert>
@@ -275,6 +276,33 @@ public:
                                       float                bucket_fill_gap_area,                      // The maximal area that will be automatically selected when the surrounding triangles have already been selected.
                                       BucketFillPropagate  propagate,                                 // if bucket fill is propagated to neighbor faces or if it fills the only facet of the modified mesh that the hit point belongs to.
                                       ForceReselection     force_reselection = ForceReselection::NO); // force reselection of the triangle mesh even in cases that mouse is pointing on the selected triangle
+
+    /**
+     * @brief Select all triangles matching a given state type, optionally limited by a clipping plane.
+     *
+     * @param state_to_select  state type to select
+     * @param clp              clipping plane to limit selection to not clipped facets only
+     */
+    void select_triangles_by_state_type(
+        TriangleStateType state_to_select,
+        const ClippingPlane& clp = ClippingPlane{}
+    );
+
+    /**
+     * @brief Replace the color of the hit triangle and all connected triangles with the same state type.
+     *
+     * @param hit                point where to start
+     * @param facet_start        facet of the original mesh (unsplit) that the hit point belongs to
+     * @param clp                clipping plane to limit painting to not clipped facets only
+     * @param force_reselection  force reselection of the triangle mesh even in cases that mouse is pointing on the selected triangle
+     * @return                   the state type of the replaced region, or std::nullopt if the hit triangle has no state
+     */
+    std::optional<TriangleStateType> color_replace_select_triangles(
+        const Vec3f& hit,
+        int facet_start,
+        const ClippingPlane& clp,
+        ForceReselection force_reselection = ForceReselection::NO
+    );
 
     bool                 has_facets(TriangleStateType state) const;
     static bool          has_facets(const TriangleSplittingData &data, TriangleStateType test_state);

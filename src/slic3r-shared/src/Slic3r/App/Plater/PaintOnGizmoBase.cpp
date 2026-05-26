@@ -771,9 +771,52 @@ bool PaintOnGizmoBase::process_gizmo_event(
                         m_paint_on_overhangs_only ? m_highlight_by_angle_threshold_deg : 0.f
                     );
                 }
+            } else if (m_tool_type == ToolType::COLOR_REPLACE) {
+                for (const VolumeHitPoint& volume_hit_point : volume_hit_points) {
+                    assert(volume_hit_point.volume_idx == volume_idx);
+                    const Vec3f hit_position = volume_hit_point.volume_hit_position.cast<float>();
+                    const int facet_idx      = int(volume_hit_point.facet_idx);
+
+                    for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+                        wrapper.triangle_selector().seed_fill_apply_on_triangles(new_state);
+                    }
+
+                    ASSERT(m_tool_type == ToolType::COLOR_REPLACE);
+                    const std::optional<TriangleStateType> selected_state =
+                        triangle_selector.color_replace_select_triangles(
+                            hit_position,
+                            facet_idx,
+                            clp,
+                            TriangleSelector::ForceReselection::YES
+                        );
+
+                    if (selected_state.has_value()) {
+                        for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers)
+                        {
+                            const size_t idx = &wrapper - m_triangle_selector_wrappers.data();
+                            const Transform3d& volume_trafo_matrix =
+                                m_paintable_volumes[idx].world_trafo;
+                            const TriangleSelector::ClippingPlane& volume_clp =
+                                this->get_clipping_plane_in_volume_coordinates(volume_trafo_matrix);
+                            wrapper.triangle_selector().select_triangles_by_state_type(
+                                selected_state.value(),
+                                volume_clp
+                            );
+                        }
+                    }
+
+                    m_seed_fill_last_mesh_id = -1;
+                }
             }
 
-            triangle_selector_wrapper.update_painted_geometry(m_device);
+            if (m_tool_type == ToolType::COLOR_REPLACE) {
+                for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+                    wrapper.update_painted_geometry(m_device);
+                }
+            } else {
+                triangle_selector_wrapper.update_painted_geometry(m_device);
+            }
+
             m_last_mouse_click = gizmo_event.mouse_position;
         }
 
@@ -783,6 +826,7 @@ bool PaintOnGizmoBase::process_gizmo_event(
     if (gizmo_event.type == PaintOnGizmoEvent::Type::Moving
         && (m_tool_type == ToolType::SMART_FILL
             || m_tool_type == ToolType::BUCKET_FILL
+            || m_tool_type == ToolType::COLOR_REPLACE
             || (m_tool_type == ToolType::BRUSH
                 && m_cursor_type == TriangleSelector::CursorType::POINTER)))
     {
@@ -860,9 +904,35 @@ bool PaintOnGizmoBase::process_gizmo_event(
                 BucketFillGapArea,
                 TriangleSelector::BucketFillPropagate::YES
             );
+        } else if (m_tool_type == ToolType::COLOR_REPLACE) {
+            const std::optional<TriangleStateType> selected_state =
+                triangle_selector.color_replace_select_triangles(
+                    hit_position,
+                    static_cast<int>(hit.facet_idx),
+                    clp
+                );
+
+            if (selected_state.has_value()) {
+                for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+                    const size_t idx = &wrapper - m_triangle_selector_wrappers.data();
+                    const Transform3d& volume_trafo_matrix = m_paintable_volumes[idx].world_trafo;
+                    const TriangleSelector::ClippingPlane& volume_clp =
+                        this->get_clipping_plane_in_volume_coordinates(volume_trafo_matrix);
+                    wrapper.triangle_selector().select_triangles_by_state_type(
+                        selected_state.value(),
+                        volume_clp
+                    );
+                }
+            }
         }
 
-        triangle_selector_wrapper.update_painted_geometry(m_device);
+        if (m_tool_type == ToolType::COLOR_REPLACE) {
+            for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+                wrapper.update_painted_geometry(m_device);
+            }
+        } else {
+            triangle_selector_wrapper.update_painted_geometry(m_device);
+        }
 
         m_seed_fill_last_mesh_id = hit.volume_idx;
         return true;
