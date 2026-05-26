@@ -116,6 +116,7 @@ protected:
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;
     Biz::Platform::IMainThreadDispatcher& m_main_thread_dispatcher;
+    std::array<bool, 3> m_mouse_button_pressed{{false, false, false}};
     size_t m_render_request_count{0};
 
 private:

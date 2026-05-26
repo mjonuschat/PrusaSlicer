@@ -28,6 +28,21 @@
 namespace Slic3r::App::Platform {
 
 
+namespace {
+size_t button_to_index(MouseButton button)
+{
+    switch (button) {
+    case MouseButton::Left:
+        return 0;
+    case MouseButton::Right:
+        return 1;
+    case MouseButton::Middle:
+        return 2;
+    }
+    return size_t(-1);
+}
+}
+
 void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module)
 {
     if (m_render_module == render_module)
@@ -220,6 +235,29 @@ void AbstractRenderCanvas::update_mouse_position(int x, int y)
 
 void AbstractRenderCanvas::enqueue_mouse(const MouseEvent& e)
 {
+    const auto type = e.type();
+    if (type == MouseEvent::Type::ButtonDown) {
+        const size_t idx = button_to_index(e.button());
+
+        if (idx < m_mouse_button_pressed.size()) {
+            m_mouse_button_pressed[idx] = true;
+        }
+
+    } else if (type == MouseEvent::Type::ButtonUp) {
+        const size_t idx = button_to_index(e.button());
+        if (idx < m_mouse_button_pressed.size()) {
+            auto& pressed = m_mouse_button_pressed[idx];
+            if (!pressed) {
+                SPDLOG_DEBUG(
+                    "Missing corresponding button-down event for incoming button-up event "
+                    "(button index: {}), skipping button-up event",
+                    idx
+                );
+                return;
+            }
+            pressed = false;
+        }
+    }
     m_enqueued_mouse_events.push_back(e);
 }
 void AbstractRenderCanvas::enqueue_keyboard(const KeyboardEvent& e)

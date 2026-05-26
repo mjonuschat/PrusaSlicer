@@ -857,26 +857,14 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     // Dirty hack, which will shift focus onto ImGui and let it pass keyboard events
     SetFocus();
 
-    ImGuiIO& io = ImGui::GetIO();
-    int mouse_x = ToDIP(evt.GetX());
-    int mouse_y = ToDIP(evt.GetY());
+    const int mouse_x = ToDIP(evt.GetX());
+    const int mouse_y = ToDIP(evt.GetY());
     m_mouse_x   = mouse_x;
     m_mouse_y   = mouse_y;
     // int mouse_x = evt.GetX();
     // int mouse_y = evt.GetY();
 
     // SPDLOG_DEBUG("Mouse event {} {}", mouse_x, mouse_y);
-
-    io.MousePos              = ImVec2((float) mouse_x, (float) mouse_y);
-    io.MouseDown[0]          = evt.LeftIsDown();
-    io.MouseDown[1]          = evt.RightIsDown();
-    io.MouseDown[2]          = evt.MiddleIsDown();
-    io.MouseDoubleClicked[0] = evt.LeftDClick();
-    io.MouseDoubleClicked[1] = evt.RightDClick();
-    io.MouseDoubleClicked[2] = evt.MiddleDClick();
-    float wheel_delta        = static_cast<float>(evt.GetWheelDelta());
-    if (wheel_delta != 0.0f)
-        io.MouseWheel = static_cast<float>(evt.GetWheelRotation()) / wheel_delta;
 
     wxEventType event_type = evt.GetEventType();
 
@@ -928,6 +916,22 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     MouseEvent
         platform_event{platform_event_type, button, mouse_x, mouse_y, wheel_x, wheel_y, modifiers(evt)};
     enqueue_mouse(platform_event);
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.MousePos              = ImVec2((float) mouse_x, (float) mouse_y);
+
+    // use m_mouse_button_pressed as it has filtered out button downs without ups
+    io.MouseDown[0]          = m_mouse_button_pressed[0];
+    io.MouseDown[1]          = m_mouse_button_pressed[1];
+    io.MouseDown[2]          = m_mouse_button_pressed[2];
+
+    io.MouseDoubleClicked[0] = evt.LeftDClick();
+    io.MouseDoubleClicked[1] = evt.RightDClick();
+    io.MouseDoubleClicked[2] = evt.MiddleDClick();
+    float wheel_delta        = static_cast<float>(evt.GetWheelDelta());
+    if (wheel_delta != 0.0f)
+        io.MouseWheel = static_cast<float>(evt.GetWheelRotation()) / wheel_delta;
+
 
     repaint();
 }
