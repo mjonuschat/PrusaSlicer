@@ -1020,6 +1020,13 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     );
 
     set_object_selection({SelectionMode::Volume, updated_ids});
+    if (object_ids.size() == 1
+        && project.find_object_by_id(object_ids.front())->volumes.size() == 1)
+    {
+        // For single-volume objects, set_object_selection() does not trigger
+        // selection changes, so the bounding box must be updated manually.
+        update_selection_bounding_box();
+    }
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated_ids);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);

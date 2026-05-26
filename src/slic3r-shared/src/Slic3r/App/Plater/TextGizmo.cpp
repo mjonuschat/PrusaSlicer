@@ -102,6 +102,13 @@ void calc_from_surface(
         distance_exp.has_value() ? std::optional<float>{*distance_exp} : std::optional<float>{};
 }
 
+void clear_font_cache(Biz::Emboss::TextPresetManager& preset_manager)
+{
+    Biz::Emboss::FontFileWithCache& ff_with_cache = preset_manager.get_font_file_with_cache();
+    if (ff_with_cache.has_value()) {
+        ff_with_cache.cache->clear();
+    }
+};
 } // namespace
 
 struct TextGizmo::ProjectContext : public ::ProjectContext
@@ -221,6 +228,7 @@ TextGizmo::TextGizmo(
     auto set_optional = [this](std::optional<int>& val_opt, double new_value, double scale)
     {
         if (set_opt(val_opt, new_value, scale)) {
+            clear_font_cache(m_preset_manager);
             update_volume();
         }
     };
@@ -243,6 +251,7 @@ TextGizmo::TextGizmo(
     auto set_optional_f = [this](std::optional<float>& val_opt, double new_value, double scale)
     {
         if (set_opt(val_opt, new_value, scale)) {
+            clear_font_cache(m_preset_manager);
             update_volume();
         }
     };
