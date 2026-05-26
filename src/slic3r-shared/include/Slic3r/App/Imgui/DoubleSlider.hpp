@@ -204,18 +204,22 @@ template<typename ValType>
 class Manager : public Slic3r::App::Yoga::Window
 {
 public:
-    Manager(const std::string& name, const std::string& header_text, Yoga::Orientation orientation) : Slic3r::App::Yoga::Window(name) {
+    Manager(
+        const std::string& name,
+        const std::string& header_text,
+        Yoga::Orientation orientation
+    ) :
+        Slic3r::App::Yoga::Window(name)
+    {
+        set_padding({10.f, 5.f});
         set_orientation(orientation);
         set_alpha(0.f);
 
-        Yoga::Text* text = emplace_back<Yoga::Text>(header_text);
-        text->set_font_type(Render::ImguiFontType::Bold);
-        text->set_self_align(YGAlignCenter);
-
         const bool is_horizontal = orientation == Yoga::Orientation::Horizontal;
 
-        m_ctrl = emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
-        m_ctrl->set_min_size({ is_horizontal ? 0 : 105, is_horizontal ? 50 : 0});
+        m_ctrl =
+            emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
+        m_ctrl->set_min_size({is_horizontal ? 0 : 105, is_horizontal ? 50 : 0});
         m_ctrl->set_get_label_cb([this](int pos) { return label(pos); });
         m_ctrl->set_flex_grow(1.);
     }

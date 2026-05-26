@@ -64,11 +64,13 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
     btns->set_gap(5);
     btns->set_justify_content(YGJustifyCenter);
 
-    m_revert_btn = btns->emplace_back<Yoga::LayoutButton>(
+    const ImColor color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+    m_revert_btn        = btns->emplace_back<Yoga::LayoutButton>(
         std::string{},
         Render::Icon::DSRevert,
         _u8L("Discard all custom changes")
     );
+    m_revert_btn->set_icon_tint(color);
     m_revert_btn->set_visible(can_edit());
     m_revert_btn->set_enabled(!m_ticks.empty());
     m_revert_btn->callbacks().action = [this]() { discard_all_ticks(); };
@@ -76,6 +78,7 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
 
     m_lock_btn =
         btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::Unlock, _u8L("One layer mode"));
+    m_lock_btn->set_icon_tint(color);
     m_lock_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_lock_btn->set_checkable(true);
     m_lock_btn->callbacks().action = [this]()
@@ -85,6 +88,7 @@ DoubleSliderForLayers::DoubleSliderForLayers() :
     };
 
     m_cog_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSSettings);
+    m_cog_btn->set_icon_tint(color);
     m_cog_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_cog_btn->callbacks().action = [this]() { m_cog_menu->open(); };
 
@@ -184,9 +188,8 @@ void DoubleSliderForLayers::create_cog_menu(Item* parent)
 
     m_cog_menu->append_separator();
 
-    bool use_default_colors = m_ticks.use_default_colors();
-    m_use_default_colors_menu_item =
-        m_cog_menu->append_item(_u8L("Use default colors").c_str());
+    bool use_default_colors        = m_ticks.use_default_colors();
+    m_use_default_colors_menu_item = m_cog_menu->append_item(_u8L("Use default colors").c_str());
     m_use_default_colors_menu_item->set_checkable(true);
     m_use_default_colors_menu_item->set_checked(use_default_colors);
     m_use_default_colors_menu_item->callbacks().checked_changed = [this](bool checked)
@@ -513,6 +516,12 @@ void DoubleSliderForLayers::toggle_show_ruler(bool show)
     m_ctrl->set_min_size({x_ratio * ImGui::GetStyle().FontSizeBase, 0});
     m_ctrl->update_draw_options(m_scale, m_show_ruler);
     update_thumbs_border_color();
+}
+
+ImU32 DoubleSliderForLayers::tick_clr() const
+{
+    return m_show_ruler_bg ? ImU32(m_theme->color_imgui(Platform::Color::Text)) :
+                             IM_COL32(255, 255, 255, 255);
 }
 
 void DoubleSliderForLayers::extra_render()
@@ -985,10 +994,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
     float tick_width  = float(int(1.0f * m_scale + 0.5f));
     float icon_offset = 0.5f * m_icon_screen_size;
 
-    ImU32 tick_clr =
-        m_show_ruler ? ImGui::GetColorU32(ImGuiCol_TabSelected) : ImGui::GetColorU32(ImGuiCol_Tab);
-    ImU32 tick_hovered_clr =
-        m_show_ruler ? ImGui::GetColorU32(ImGuiCol_Tab) : ImGui::GetColorU32(ImGuiCol_WindowBg);
+    ImU32 tick_hovered_clr = tick_clr();
 
     auto get_tick_pos = [this, slideable_region](int tick)
     { return m_ctrl->position_in_rect(tick, slideable_region); };
@@ -1035,8 +1041,8 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
         // draw ticks
         ImRect tick_left(x_center - outer_x, tick_pos - tick_width, x_center - inner_x, tick_pos);
         ImRect tick_right(x_center + inner_x, tick_pos - tick_width, x_center + outer_x, tick_pos);
-        ImGui::RenderFrame(tick_left.Min, tick_left.Max, tick_clr, false);
-        ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
+        ImGui::RenderFrame(tick_left.Min, tick_left.Max, tick_clr(), false);
+        ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr(), false);
 
         ImVec2 icon_pos(
             m_ctrl->ctrl_pos().x + m_ctrl->width() - 0.5f * m_icon_screen_size,
@@ -1132,8 +1138,6 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     float tick_width    = float(int(1.0f * m_scale + 0.5f));
     float label_height  = m_icon_screen_size;
 
-    constexpr ImU32 tick_clr = IM_COL32(255, 255, 255, 255);
-
     float x_center = slideable_region.GetCenter().x;
 
     float max_val = 0.0f;
@@ -1161,14 +1165,16 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     {
         ImVec2 start    = ImVec2(x_center + long_outer_x + 1, tick_pos - (0.5f * label_height));
         std::string lbl = label(tick, LabelType::Height, max_val > 100.0f ? 1 : 2);
+        ImGui::PushStyleColor(ImGuiCol_Text, tick_clr());
         ImGui::RenderText(start, lbl.c_str());
+        ImGui::PopStyleColor();
     };
 
-    auto draw_tick = [x_center, tick_width, inner_x](const float tick_pos, const float outer_x)
+    auto draw_tick = [this, x_center, tick_width, inner_x](const float tick_pos, const float outer_x)
     {
         ImRect tick_right =
             ImRect(x_center + inner_x, tick_pos - tick_width, x_center + outer_x, tick_pos);
-        ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
+        ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr(), false);
     };
 
     auto draw_short_ticks =
@@ -1435,6 +1441,8 @@ bool DoubleSliderForLayers::render_button(
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, {m_icon_screen_size, m_icon_screen_size});
 
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
+
     int windows_flag = ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoCollapse
         | ImGuiWindowFlags_NoMove
@@ -1471,6 +1479,7 @@ bool DoubleSliderForLayers::render_button(
         Imgui::tooltip(tip);
 
     ImGui::End();
+    ImGui::PopStyleColor();
     ImGui::PopStyleVar(5);
 
     return ret;

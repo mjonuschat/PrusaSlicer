@@ -179,6 +179,7 @@ private:
 
     void process_ticks_changed();
     void toggle_show_ruler(bool show);
+    ImU32 tick_clr() const;
 
 private:
     Biz::libpgcode::UnitsSystem m_units{ Biz::libpgcode::UnitsSystem::SI };
