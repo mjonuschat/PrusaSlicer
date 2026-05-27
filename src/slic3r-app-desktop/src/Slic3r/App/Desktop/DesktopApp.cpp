@@ -316,6 +316,10 @@ bool DesktopApp::OnInit()
         .add_listener<Biz::UserAccount::IUserAccountListener>(
             &app_services.pop_notification_center()
         );
+    m_project_interactor->connect_message_handler()
+        .add_listener<Biz::Connect::IConnectHandlerListener>(
+            &app_services.pop_notification_center()
+        );
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
 

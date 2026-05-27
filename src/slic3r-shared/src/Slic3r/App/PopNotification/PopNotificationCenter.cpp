@@ -1147,4 +1147,19 @@ void PopNotificationCenter::on_fatal_arrange_error(
     );
 }
 
+void PopNotificationCenter::on_connect_handler_error(const std::string& msg) 
+{
+    const std::string header{_u8L("Prusa Connect Error")};
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::ConnectError,
+            PopNotificationLevel::Error,
+            300s,
+            PopNotificationLayoutHeaderText{header, msg}
+        },
+        never_equal_matcher
+    );
+}
+
 } // namespace Slic3r::App::PopNotification

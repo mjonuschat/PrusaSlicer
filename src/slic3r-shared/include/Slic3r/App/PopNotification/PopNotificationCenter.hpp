@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
+#include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
 
 namespace Slic3r::Biz {
@@ -26,7 +27,8 @@ class PopNotificationCenter :
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IProjectsChangedListener,
-    public Biz::IArrangeEventsListener
+    public Biz::IArrangeEventsListener,
+    public Biz::Connect::IConnectHandlerListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
@@ -82,6 +84,10 @@ public:
     {
         m_switch_left_tab_fn = switch_left_tab_fn;
     }
+
+    // Connect Message Hander
+    void on_connect_handler_error(const std::string& msg) override;
+
 private:
     PopNotificationObservableList m_notification_list;
     Biz::ObservableListSortFilter<PopNotificationData> m_list_sort_filter;

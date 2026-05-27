@@ -19,6 +19,15 @@ ConnectMessageHandler::ConnectMessageHandler(
     m_user_account_interactor(user_account_interactor)
 {}
 
+void ConnectMessageHandler::dispatch_error(std::string msg)
+{
+    m_dispatcher.dispatch_on_main_thread([this, msg = std::move(msg)]() {
+        this->invoke_listeners<IConnectHandlerListener>([&msg](auto* listener) {
+            listener->on_connect_handler_error(msg);
+        });
+    });
+}
+
 namespace {
 std::string extract_printer_json_by_uuid(const std::string& message_json, const std::string& uuid)
 {
@@ -48,9 +57,11 @@ void ConnectMessageHandler::handle_select_printer_message(
         j.at("uuid").get_to(uuid);
     } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("JSON parsing error: {}", e.what());
+        dispatch_error("Invalid payload: Failed to parse Connect message JSON.");
     }
     if (uuid.empty()) {
         SPDLOG_ERROR("Failed to select printer from Connect: Failed to parse Connect message.");
+        dispatch_error("Failed to select printer from Connect: Missing UUID.");
         return;
     }
 
@@ -60,6 +71,7 @@ void ConnectMessageHandler::handle_select_printer_message(
         
         if (printer_json.empty()) {
             SPDLOG_WARN("Printer with UUID {} not found in Connect message.", uuid);
+            dispatch_error("Printer with requested UUID not found in Connect response.");
             return;
         }
 
@@ -68,20 +80,28 @@ void ConnectMessageHandler::handle_select_printer_message(
         });
     };
 
+
+    auto fail_fn = [this](const std::string& error_msg)
+    {
+        this->dispatch_error(error_msg);
+    };
+
     fetch_printer_data_async(
         Network::ServiceConfig::instance().connect_printer_list_url(),
         m_user_account_interactor.access_token(), 
-        std::move(succ_fn)
+        std::move(succ_fn),
+        std::move(fail_fn)
     );
 }
 
 void ConnectMessageHandler::fetch_printer_data_async(
     const std::string& url,
     const std::string& access_token,
-    std::function<void(const std::string&)> success_fn
+    std::function<void(const std::string&)> success_fn,
+    std::function<void(const std::string&)> fail_fn
 ) const
 {
-    std::thread([url, access_token, success_fn = std::move(success_fn)]() mutable {
+    std::thread([url, access_token, success_fn = std::move(success_fn), fail_fn = std::move(fail_fn)]() mutable {
         auto retry_fn = [](Network::IHttp::Retry retry, bool& cancel) {
             SPDLOG_INFO("Retry attempt {}: {} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
         };
@@ -100,8 +120,11 @@ void ConnectMessageHandler::fetch_printer_data_async(
             }
         });
 
-        http->on_error([](std::string body, std::string error, unsigned status) {
+        http->on_error([fail_fn = std::move(fail_fn)](std::string body, std::string error, unsigned status) {
             SPDLOG_ERROR("Connect HTTP request failed. Status: {}, Error: {}", status, error);
+            if (fail_fn) {
+                fail_fn("Connect HTTP request failed: " + error);
+            }
         });
 
         http->perform_sync(Network::HttpRetryOpt::default_retry());
@@ -367,6 +390,7 @@ void ConnectMessageHandler::do_select_printer_from_connect(
         parsed_printer_json = nlohmann::json::parse(printer_json);
     } catch (const nlohmann::json::parse_error& e) {
         SPDLOG_ERROR("JSON parsing error: {}", e.what());
+        dispatch_error("Failed to parse specific printer JSON.");
         return;
     }
 
@@ -377,6 +401,7 @@ void ConnectMessageHandler::do_select_printer_from_connect(
 
     if (!config) {
         SPDLOG_INFO("Failed to select printer preset from Connect. No matching hw config.");
+        dispatch_error("No matching hardware configuration found locally.");
         return;
     }
 
@@ -385,6 +410,7 @@ void ConnectMessageHandler::do_select_printer_from_connect(
 
     if (!item) {
         SPDLOG_INFO("Failed to select printer preset from Connect. No matching printer preset.");
+        dispatch_error("No matching system printer preset found.");
         return;
     }
 

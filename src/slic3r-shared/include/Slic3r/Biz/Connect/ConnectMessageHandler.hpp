@@ -38,7 +38,8 @@ private:
     void fetch_printer_data_async(
         const std::string& url,
         const std::string& access_token,
-        std::function<void(const std::string&)> success_fn
+        std::function<void(const std::string&)> success_fn,
+        std::function<void(const std::string&)> fail_fn
     ) const;
 
     void do_select_printer_from_connect(const std::string& printer_json);
@@ -46,6 +47,8 @@ private:
     void select_printer_tools_from_connect(const nlohmann::json& j);
 
     void select_printer_materials_from_connect(const nlohmann::json& j);
+
+    void dispatch_error(std::string msg);
 
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;
