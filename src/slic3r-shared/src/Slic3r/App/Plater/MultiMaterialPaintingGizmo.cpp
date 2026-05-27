@@ -95,6 +95,11 @@ MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
     );
 }
 
+float MultiMaterialPaintingGizmo::get_cursor_radius_min() const
+{
+    return MultiMaterialPaintingGizmo::CursorRadiusMin;
+}
+
 Scene::ToolType MultiMaterialPaintingGizmo::type() const
 {
     return Scene::ToolType::MultiMaterialPaintingGizmo;

@@ -78,6 +78,10 @@ public:
         PlaterScenePresenter& scene_presenter
     );
 
+    virtual float get_cursor_radius_min() const;
+    virtual float get_cursor_radius_max() const;
+    virtual float get_cursor_radius_step() const;
+
     bool disable_object_selection() const override;
 
     void on_activated() override;
