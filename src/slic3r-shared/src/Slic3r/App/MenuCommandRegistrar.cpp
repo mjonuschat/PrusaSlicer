@@ -267,9 +267,17 @@ void MenuCommandRegistrar::register_bed_menu_commands()
             CommandName::DeleteBed,
             [this]
             {
-                m_project_interactor.scene_interactor().remove_bed_instance(
-                    m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
-                );
+                if (m_project_interactor.selected_config_container().bed_instances().size() > 1) {
+                    m_project_interactor.scene_interactor().remove_bed_instance(
+                        m_project_interactor.scene_interactor().bed_selection().last_selected_bed()
+                    );
+                    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::DeleteBed);
+                } else {
+                    m_project_interactor.remove_config_container(
+                        m_project_interactor.selected_config_container_id()
+                    );
+                    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::DeleteConfigContainer);
+                }
             },
             UIItemCommandExtraOpts{
                 .enabled = [this]()
@@ -277,8 +285,9 @@ void MenuCommandRegistrar::register_bed_menu_commands()
                     if (m_project_interactor.selected_config_container_id() == Domain::INVALID_ID) {
                         return false;
                     }
-                    return m_project_interactor.selected_config_container().bed_instances().size()
-                        > 1;
+                    return
+                        m_project_interactor.selected_project().config_containers().size() > 1
+                     || m_project_interactor.selected_config_container().bed_instances().size() > 1;
                 }
             }
         );

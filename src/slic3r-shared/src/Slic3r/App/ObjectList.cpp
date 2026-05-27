@@ -849,7 +849,9 @@ bool ObjectList::render_config_containers()
         }
         hit_row.highlight_on_hover();
 
-        const bool can_delete_a_bed = cc->bed_instances().size() > 1;
+        const bool can_delete_a_bed =
+            m_scene_interactor->selected_project_config_containers().size() > 1
+         || cc->bed_instances().size() > 1;
         for (auto& bed_inst : cc->bed_instances()) {
             if (!bed_inst->model_instances.empty())
                 beds_cnt++;
@@ -1898,15 +1900,30 @@ void ObjectList::add_bed(size_t config_container_id)
 
 void ObjectList::remove_bed(size_t config_container_id, size_t bed_id)
 {
-    m_deferred_actions.emplace_back(
-        [this, config_container_id, bed_id]()
-        {
-            m_scene_interactor->remove_bed_instance(
-                {.config_container_id = config_container_id, .instance_id = bed_id}
-            );
-            m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::DeleteBed);
-        }
-    );
+    const Domain::ConfigContainer* cc =
+        m_project_interactor->selected_project().find_config_container(config_container_id);
+    ASSERT(cc != nullptr);
+    if (cc->bed_instances().size() == 1) {
+        m_deferred_actions.emplace_back(
+            [this, config_container_id]()
+            {
+                m_project_interactor->remove_config_container(config_container_id);
+                m_project_interactor->undo_provider().take_snapshot(
+                    Biz::UndoSnapshotType::DeleteConfigContainer
+                );
+            }
+        );
+    } else {
+        m_deferred_actions.emplace_back(
+            [this, config_container_id, bed_id]()
+            {
+                m_scene_interactor->remove_bed_instance(
+                    {.config_container_id = config_container_id, .instance_id = bed_id}
+                );
+                m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::DeleteBed);
+            }
+        );
+    }
 }
 
 void ObjectList::set_horizontal_padding(float horizontal_padding)
