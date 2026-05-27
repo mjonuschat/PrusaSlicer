@@ -119,6 +119,15 @@ static Domain::ConfigPack original_config(
     );
 }
 
+void filter_diff_keys(const Domain::ConfigBox& cbox, std::vector<std::string>& diff_keys)
+{
+    std::erase_if(
+        diff_keys,
+        [cbox](const std::string& key)
+        { return cbox.find(key).item->def().category == Domain::ConfigItemDef::Category::Hidden; }
+    );
+}
+
 static std::vector<std::string>
 config_pack_diff(const Domain::ConfigPack& a, const Domain::ConfigPack& b)
 {
@@ -141,9 +150,8 @@ config_pack_diff(const Domain::ConfigPack& a, const Domain::ConfigPack& b)
                 {
                     ASSERT(std::holds_alternative<Domain::BoxRef>(box_or_boxes_b));
                     const auto& box_ref_b{std::get<Domain::BoxRef>(box_or_boxes_b)};
-                    const std::vector<std::string> diff_keys{
-                        box_ref_a.get().diff_keys(box_ref_b.get())
-                    };
+                    std::vector<std::string> diff_keys{box_ref_a.get().diff_keys(box_ref_b.get())};
+                    filter_diff_keys(box_ref_a.get(), diff_keys);
                     result.insert(result.end(), diff_keys.begin(), diff_keys.end());
                 },
                 [&](const Domain::BoxRefs& box_refs_a)
@@ -154,9 +162,10 @@ config_pack_diff(const Domain::ConfigPack& a, const Domain::ConfigPack& b)
                          ++inner_index) {
                         const Domain::BoxRef& box_ref_a{box_refs_a[inner_index]};
                         const Domain::BoxRef& box_ref_b{box_refs_b[inner_index]};
-                        const std::vector<std::string> diff_keys{
+                        std::vector<std::string> diff_keys{
                             box_ref_a.get().diff_keys(box_ref_b.get())
                         };
+                        filter_diff_keys(box_ref_a.get(), diff_keys);
                         result.insert(result.end(), diff_keys.begin(), diff_keys.end());
                     }
                 }
