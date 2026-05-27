@@ -43,6 +43,8 @@ public:
 
     float get_cursor_radius_min() const override;
 
+    float get_cursor_edge_limit() const override;
+
     Scene::ToolType type() const override;
     bool enabled() const override;
 

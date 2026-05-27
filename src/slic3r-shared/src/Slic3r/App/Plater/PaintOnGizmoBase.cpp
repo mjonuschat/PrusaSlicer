@@ -77,6 +77,11 @@ float PaintOnGizmoBase::get_cursor_radius_step() const
     return PaintOnGizmoBase::CursorRadiusStep;
 }
 
+float PaintOnGizmoBase::get_cursor_edge_limit() const
+{
+    return m_cursor_radius / 5.f;
+}
+
 bool PaintOnGizmoBase::disable_object_selection() const
 {
     return true;
@@ -731,7 +736,8 @@ bool PaintOnGizmoBase::process_gizmo_event(
                             m_cursor_radius,
                             m_cursor_type,
                             trafo_matrix,
-                            clp
+                            clp,
+                            this->get_cursor_edge_limit()
                         );
                     triangle_selector.select_patch(
                         int(first_hit.facet_idx),
@@ -755,7 +761,8 @@ bool PaintOnGizmoBase::process_gizmo_event(
                                 m_cursor_radius,
                                 m_cursor_type,
                                 trafo_matrix,
-                                clp
+                                clp,
+                                this->get_cursor_edge_limit()
                             );
                         triangle_selector.select_patch(
                             int(first_hit_it->facet_idx),

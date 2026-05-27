@@ -25,7 +25,7 @@ TriangleSelectorWrapper::TriangleSelectorWrapper(const Domain::TriangleMesh &mes
                 AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(mesh.its.vertices, mesh.its.indices)) {
 }
 
-void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &origin, float radius) {
+void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &origin, const float radius, const float edge_limit) {
     std::vector<igl::Hit> hits;
     Vec3f dir = (point - origin).normalized();
     static constexpr const auto eps_angle = 89.99f;
@@ -43,7 +43,7 @@ void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &orig
             Vec3f face_normal = TriMesh::its_face_normal(mesh.its, hit.id);
             if ((point - pos).norm() < radius && face_normal.dot(dir) < 0) {
                 std::unique_ptr<TriangleSelector::Cursor> cursor = std::make_unique<TriangleSelector::Sphere>(
-                        pos, origin, radius, this->mesh_transform, TriangleSelector::ClippingPlane { });
+                        pos, origin, radius, this->mesh_transform, TriangleSelector::ClippingPlane { }, edge_limit);
                 selector.select_patch(hit.id, std::move(cursor), Domain::TriangleSelector::TriangleStateType::ENFORCER, trafo_no_translate,
                         true, eps_angle);
                 break;
@@ -56,7 +56,7 @@ void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &orig
                 triangles_tree, point, hit_idx_out, hit_point_out);
         if (dist < radius) {
             std::unique_ptr<TriangleSelector::Cursor> cursor = std::make_unique<TriangleSelector::Sphere>(
-                    point, origin, radius, this->mesh_transform, TriangleSelector::ClippingPlane { });
+                    point, origin, radius, this->mesh_transform, TriangleSelector::ClippingPlane { }, edge_limit);
             selector.select_patch(hit_idx_out, std::move(cursor), Domain::TriangleSelector::TriangleStateType::ENFORCER,
                     trafo_no_translate,
                     true, eps_angle);

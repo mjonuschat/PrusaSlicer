@@ -94,7 +94,13 @@ public:
         static bool is_facet_visible(const Cursor &cursor, int facet_idx, const std::vector<Vec3f> &face_normals);
 
     protected:
-        explicit Cursor(const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_);
+        explicit Cursor(
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            float edge_limit
+        );
 
         Transform3f trafo;
         Vec3f       source;
@@ -120,17 +126,47 @@ public:
 
         bool is_pointer_in_triangle(const Vec3f &p1, const Vec3f &p2, const Vec3f &p3) const override;
 
-        static std::unique_ptr<Cursor> cursor_factory(const Vec3f &center, const Vec3f &camera_pos, const float cursor_radius, const CursorType cursor_type, const Transform3d &trafo_matrix, const ClippingPlane &clipping_plane)
+        static std::unique_ptr<Cursor> cursor_factory(
+            const Vec3f& center,
+            const Vec3f& camera_pos,
+            const float cursor_radius,
+            const CursorType cursor_type,
+            const Transform3d& trafo_matrix,
+            const ClippingPlane& clipping_plane,
+            const float edge_limit
+        )
         {
-            assert(cursor_type == TriangleSelector::CursorType::CIRCLE || cursor_type == TriangleSelector::CursorType::SPHERE);
-            if (cursor_type == TriangleSelector::CursorType::SPHERE)
-                return std::make_unique<TriangleSelector::Sphere>(center, camera_pos, cursor_radius, trafo_matrix, clipping_plane);
-            else
-                return std::make_unique<TriangleSelector::Circle>(center, camera_pos, cursor_radius, trafo_matrix, clipping_plane);
+            assert(cursor_type == CursorType::CIRCLE || cursor_type == CursorType::SPHERE);
+            if (cursor_type == CursorType::SPHERE) {
+                return std::make_unique<Sphere>(
+                    center,
+                    camera_pos,
+                    cursor_radius,
+                    trafo_matrix,
+                    clipping_plane,
+                    edge_limit
+                );
+            } else {
+                return std::make_unique<Circle>(
+                    center,
+                    camera_pos,
+                    cursor_radius,
+                    trafo_matrix,
+                    clipping_plane,
+                    edge_limit
+                );
+            }
         }
 
     protected:
-        explicit SinglePointCursor(const Vec3f &center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_);
+        explicit SinglePointCursor(
+            const Vec3f& center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            float edge_limit
+        );
 
         Vec3f center;
     };
@@ -143,17 +179,51 @@ public:
 
         bool is_pointer_in_triangle(const Vec3f &p1, const Vec3f &p2, const Vec3f &p3) const override;
 
-        static std::unique_ptr<Cursor> cursor_factory(const Vec3f &first_center, const Vec3f &second_center, const Vec3f &camera_pos, const float cursor_radius, const CursorType cursor_type, const Transform3d &trafo_matrix, const ClippingPlane &clipping_plane)
+        static std::unique_ptr<Cursor> cursor_factory(
+            const Vec3f& first_center,
+            const Vec3f& second_center,
+            const Vec3f& camera_pos,
+            const float cursor_radius,
+            const CursorType cursor_type,
+            const Transform3d& trafo_matrix,
+            const ClippingPlane& clipping_plane,
+            const float edge_limit
+        )
         {
-            assert(cursor_type == TriangleSelector::CursorType::CIRCLE || cursor_type == TriangleSelector::CursorType::SPHERE);
-            if (cursor_type == TriangleSelector::CursorType::SPHERE)
-                return std::make_unique<TriangleSelector::Capsule3D>(first_center, second_center, camera_pos, cursor_radius, trafo_matrix, clipping_plane);
-            else
-                return std::make_unique<TriangleSelector::Capsule2D>(first_center, second_center, camera_pos, cursor_radius, trafo_matrix, clipping_plane);
+            assert(cursor_type == CursorType::CIRCLE || cursor_type == CursorType::SPHERE);
+            if (cursor_type == CursorType::SPHERE) {
+                return std::make_unique<Capsule3D>(
+                    first_center,
+                    second_center,
+                    camera_pos,
+                    cursor_radius,
+                    trafo_matrix,
+                    clipping_plane,
+                    edge_limit
+                );
+            } else {
+                return std::make_unique<Capsule2D>(
+                    first_center,
+                    second_center,
+                    camera_pos,
+                    cursor_radius,
+                    trafo_matrix,
+                    clipping_plane,
+                    edge_limit
+                );
+            }
         }
 
     protected:
-        explicit DoublePointCursor(const Vec3f &first_center_, const Vec3f &second_center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_);
+        explicit DoublePointCursor(
+            const Vec3f& first_center_,
+            const Vec3f& second_center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            float edge_limit
+        );
 
         Vec3f first_center;
         Vec3f second_center;
@@ -163,8 +233,18 @@ public:
     {
     public:
         Sphere() = delete;
-        explicit Sphere(const Vec3f &center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-            : SinglePointCursor(center_, source_, radius_world, trafo_, clipping_plane_){};
+
+        explicit Sphere(
+            const Vec3f& center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            const float edge_limit
+        ) :
+            SinglePointCursor(center_, source_, radius_world, trafo_, clipping_plane_, edge_limit)
+        {}
+
         ~Sphere() override = default;
 
         bool is_mesh_point_inside(const Vec3f &point) const override;
@@ -176,8 +256,18 @@ public:
     {
     public:
         Circle() = delete;
-        explicit Circle(const Vec3f &center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-            : SinglePointCursor(center_, source_, radius_world, trafo_, clipping_plane_){};
+
+        explicit Circle(
+            const Vec3f& center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            const float edge_limit
+        ) :
+            SinglePointCursor(center_, source_, radius_world, trafo_, clipping_plane_, edge_limit)
+        {}
+
         ~Circle() override = default;
 
         bool is_mesh_point_inside(const Vec3f &point) const override;
@@ -191,9 +281,27 @@ public:
     {
     public:
         Capsule3D() = delete;
-        explicit Capsule3D(const Vec3f &first_center_, const Vec3f &second_center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-            : TriangleSelector::DoublePointCursor(first_center_, second_center_, source_, radius_world, trafo_, clipping_plane_)
+
+        explicit Capsule3D(
+            const Vec3f& first_center_,
+            const Vec3f& second_center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            const float edge_limit
+        ) :
+            TriangleSelector::DoublePointCursor(
+                first_center_,
+                second_center_,
+                source_,
+                radius_world,
+                trafo_,
+                clipping_plane_,
+                edge_limit
+            )
         {}
+
         ~Capsule3D() override = default;
 
         bool is_mesh_point_inside(const Vec3f &point) const override;
@@ -205,9 +313,27 @@ public:
     {
     public:
         Capsule2D() = delete;
-        explicit Capsule2D(const Vec3f &first_center_, const Vec3f &second_center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-            : TriangleSelector::DoublePointCursor(first_center_, second_center_, source_, radius_world, trafo_, clipping_plane_)
+
+        explicit Capsule2D(
+            const Vec3f& first_center_,
+            const Vec3f& second_center_,
+            const Vec3f& source_,
+            float radius_world,
+            const Transform3d& trafo_,
+            const ClippingPlane& clipping_plane_,
+            const float edge_limit
+        ) :
+            TriangleSelector::DoublePointCursor(
+                first_center_,
+                second_center_,
+                source_,
+                radius_world,
+                trafo_,
+                clipping_plane_,
+                edge_limit
+            )
         {}
+
         ~Capsule2D() override = default;
 
         bool is_mesh_point_inside(const Vec3f &point) const override;
