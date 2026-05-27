@@ -198,9 +198,10 @@ public:
                     last_z = min_z;
                 }
                 if (range.first.second > last_z + EPSILON) {
-                    const PartialVolumeConfigFDMPtr cfg{std::make_shared<
-                        const PartialVolumeConfigFDM>(range.second, material_slot_count)};
-                    m_ranges.push_back({ Domain::LayerHeightRange(last_z, range.first.second), cfg });
+                    const auto cfg{prepare_slicing_volume_input(range.second, material_slot_count)};
+                    m_ranges.push_back(
+                        {Domain::LayerHeightRange(last_z, range.first.second), cfg.value()}
+                    );
                     last_z = range.first.second;
                 }
             }
