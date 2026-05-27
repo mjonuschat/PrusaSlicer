@@ -96,7 +96,7 @@ public:
         m_removable_drive_service(dispatcher),
         m_file_downloader_interactor(dispatcher),
         m_physical_printer_interactor(dispatcher, m_preset_interactor, m_user_account_interactor),
-        m_connect_message_handler(dispatcher, m_preset_interactor, m_user_account_interactor),
+        m_connect_message_handler(dispatcher, m_preset_interactor, m_user_account_interactor, m_physical_printer_interactor),
         m_project_list(*this),
         m_undo_provider(std::make_unique<NoopUndoProvider>())
     {
@@ -127,8 +127,6 @@ public:
             &m_preset_interactor.object_settings_interactor()
         );
         add_listener<ISelectedConfigContainerChangedListener>(&m_physical_printer_interactor);
-        m_connect_message_handler.add_listener<Connect::IConnectHandlerListener>(&m_preset_interactor);
-        m_connect_message_handler.add_listener<Connect::IConnectHandlerListener>(&m_physical_printer_interactor);
 
         m_user_account_interactor.init();
     }

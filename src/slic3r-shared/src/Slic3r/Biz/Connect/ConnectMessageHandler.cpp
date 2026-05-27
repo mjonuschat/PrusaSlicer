@@ -11,12 +11,14 @@ namespace Slic3r::Biz::Connect {
 
 ConnectMessageHandler::ConnectMessageHandler(
         Platform::IMainThreadDispatcher& dispatcher,
-        const Preset::PresetInteractor& preset_interactor,
-        const UserAccount::UserAccountInteractor& user_account_interactor
+        Preset::PresetInteractor& preset_interactor,
+        UserAccount::UserAccountInteractor& user_account_interactor,
+    PhysicalPrinter::PhysicalPrinterInteractor& physical_printer_interactor
     ) :
     m_dispatcher(dispatcher),
     m_preset_interactor(preset_interactor),
-    m_user_account_interactor(user_account_interactor)
+    m_user_account_interactor(user_account_interactor),
+    m_physical_printer_interactor(physical_printer_interactor)
 {}
 
 void ConnectMessageHandler::dispatch_error(std::string msg)
@@ -267,9 +269,7 @@ void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::js
         }
 
         if (!matching_tool_id.empty()) {
-            this->invoke_listeners<IConnectHandlerListener>([&tool_idx, &matching_tool_id](auto* listener) {
-                listener->on_connect_requests_select_printer_tool_item(tool_idx, matching_tool_id);
-            });
+            m_preset_interactor.select_printer_tool_item(tool_idx, matching_tool_id);
         } else {
             SPDLOG_WARN("Connect tool sync: No matching tool definition found for tool index {}", tool_idx);
         }
@@ -372,9 +372,7 @@ void ConnectMessageHandler::select_printer_materials_from_connect(const nlohmann
         }
 
         if (!matching_material_id.empty()) {
-            this->invoke_listeners<IConnectHandlerListener>([&slot_idx, &matching_material_id](auto* listener) {
-                listener->on_connect_requests_select_material_preset(slot_idx, matching_material_id);
-            });
+            m_preset_interactor.select_material_preset(slot_idx, matching_material_id);
         } else {
             SPDLOG_WARN("Connect material sync: No matching material preset found for slot {} (Target type: {})", slot_idx, target_type);
         }
@@ -414,9 +412,8 @@ void ConnectMessageHandler::do_select_printer_from_connect(
         return;
     }
 
-    this->invoke_listeners<IConnectHandlerListener>([&config, &item](auto* listener) {
-        listener->on_connect_requests_select_printer_preset(config->id, item->id);
-    });
+    m_preset_interactor.select_printer_preset(config->id, item->id);
+    m_physical_printer_interactor.select_connect_upload(false);
     select_printer_tools_from_connect(parsed_printer_json);
     select_printer_materials_from_connect(parsed_printer_json);
 

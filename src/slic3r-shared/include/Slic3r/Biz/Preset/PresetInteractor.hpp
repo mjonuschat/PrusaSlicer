@@ -25,7 +25,6 @@
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
-#include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -90,7 +89,6 @@ struct SelectedPresetIds
 class PresetInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
-    public Connect::IConnectHandlerListener,
     public WithListeners<
         IPresetChangedListener,
         ISlicingInputChangedListener>,
@@ -722,28 +720,6 @@ public:
     void set_use_hw_config_short_name(bool use_short_name)
     {
         m_use_hw_config_short_name = use_short_name;
-    }
-
-    void on_connect_requests_select_printer_preset(
-        const std::string& printer_hw_config_id,
-        const std::string& printer_preset_id
-    ) override
-    {
-        select_printer_preset(printer_hw_config_id, printer_preset_id);
-    }
-
-    void
-    on_connect_requests_select_printer_tool_item(size_t tool_index, const std::string& id) override
-    {
-        select_printer_tool_item(tool_index, id);
-    }
-
-    void on_connect_requests_select_material_preset(
-        size_t material_index,
-        const std::string& id
-    ) override
-    {
-        select_material_preset(material_index, id);
     }
 
 private:

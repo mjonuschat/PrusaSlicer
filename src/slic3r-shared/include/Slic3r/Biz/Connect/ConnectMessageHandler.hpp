@@ -26,8 +26,9 @@ class ConnectMessageHandler : public WithListeners<IConnectHandlerListener>
 public:
     ConnectMessageHandler(
         Platform::IMainThreadDispatcher& dispatcher,
-        const Preset::PresetInteractor& preset_interactor,
-        const UserAccount::UserAccountInteractor& user_account_interactor
+        Preset::PresetInteractor& preset_interactor,
+        UserAccount::UserAccountInteractor& user_account_interactor,
+        PhysicalPrinter::PhysicalPrinterInteractor& physical_printer_interactor
     );
 
     void handle_select_printer_message(const std::string& message_json);
@@ -52,8 +53,9 @@ private:
 
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;
-    const Preset::PresetInteractor& m_preset_interactor;
-    const UserAccount::UserAccountInteractor& m_user_account_interactor;
+    Preset::PresetInteractor& m_preset_interactor;
+    UserAccount::UserAccountInteractor& m_user_account_interactor;
+    PhysicalPrinter::PhysicalPrinterInteractor& m_physical_printer_interactor;
 
     std::string m_last_printer_json;
 };

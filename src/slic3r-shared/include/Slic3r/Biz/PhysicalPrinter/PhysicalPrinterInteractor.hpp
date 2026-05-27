@@ -9,7 +9,6 @@
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/ObservableList.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
-#include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 #include <vector>
@@ -32,8 +31,7 @@ namespace Slic3r::Biz::PhysicalPrinter {
 class PhysicalPrinterInteractor : 
     public WithListeners<IPhysicalPrinterChangedListener>,
     public Biz::IConfigBoxSetter,
-    public ISelectedConfigContainerChangedListener,
-    public Connect::IConnectHandlerListener
+    public ISelectedConfigContainerChangedListener
 {
 public:
     PhysicalPrinterInteractor(
@@ -86,11 +84,6 @@ public:
     bool is_printer_compatible(const std::string& uuid, const Domain::Preset::HwPrinterConfig& config) const;
 
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
-
-    void on_connect_requests_select_printer_preset(const std::string& printer_hw_config_id, const std::string& printer_preset_id) override
-    {
-        select_connect_upload(false);
-    }
 
 private:
     void read_storage();
