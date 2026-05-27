@@ -311,6 +311,13 @@ void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
     center_camera_on_selected_bed(false);
 }
 
+void PlaterScenePresenter::on_project_removed(Domain::SelectionId project_id)
+{
+    Biz::Platform::PlatformServices::instance()
+        .main_thread_dispatcher()
+        .dispatch_on_main_thread_after([project_id, this]() { m_projects.erase(project_id); });
+}
+
 void PlaterScenePresenter::on_fdm_result_cache_changed(const Domain::SlicingId id)
 {
     std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};

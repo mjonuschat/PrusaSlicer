@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Platform/MouseEvent.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -12,34 +13,34 @@ class GizmoEventContext : public ISceneChangedListener
 {
 public:
     GizmoEventContext(
-        Scene& scene,
+        ISceneProvider& scene_provider,
         const Platform::MouseEvent& mouse_event,
         Ray pick_ray,
         NodePickResults pick_results,
         const Render::ScreenInfo& screen_info
     ) :
-        m_scene(scene),
+        m_scene_provider(scene_provider),
         m_mouse_event(mouse_event),
         m_pick_ray(std::move(pick_ray)),
         m_pick_results(std::move(pick_results)),
         m_screen_info(screen_info)
     {
-        m_scene.add_listener<ISceneChangedListener>(this);
+        m_scene_provider.scene().add_listener<ISceneChangedListener>(this);
     }
 
     GizmoEventContext(const GizmoEventContext& other) :
-        m_scene(other.m_scene),
+        m_scene_provider(other.m_scene_provider),
         m_mouse_event(other.m_mouse_event),
         m_pick_ray(other.m_pick_ray),
         m_pick_results(other.m_pick_results),
         m_screen_info(other.m_screen_info)
     {
-        m_scene.add_listener<ISceneChangedListener>(this);
+        m_scene_provider.scene().add_listener<ISceneChangedListener>(this);
     }
 
     ~GizmoEventContext()
     {
-        m_scene.remove_listener<ISceneChangedListener>(this);
+        m_scene_provider.scene().remove_listener<ISceneChangedListener>(this);
     }
 
     const Platform::MouseEvent& mouse_event() const
@@ -130,7 +131,7 @@ public:
     /**@}*/
 
 private:
-    Scene& m_scene;
+    ISceneProvider& m_scene_provider;
     Platform::MouseEvent m_mouse_event;
     Ray m_pick_ray;
     NodePickResults m_pick_results;

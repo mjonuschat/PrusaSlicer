@@ -58,8 +58,8 @@ PaintOnGizmoBase::PaintOnGizmoBase(
     m_scene_interactor(project_interactor.scene_interactor()),
     m_scene_presenter(scene_presenter)
 {
-    m_clipping_plane_presenter = Scene::ClipperPresenter(&m_clipping_plane_clipper, &m_device);
-    m_sinking_plane_presenter  = Scene::ClipperPresenter(&m_sinking_plane_clipper, &m_device);
+    m_clipping_plane_presenter = Scene::ClipperPresenter(&m_clipping_plane_clipper, &m_device, &m_scene_presenter);
+    m_sinking_plane_presenter  = Scene::ClipperPresenter(&m_sinking_plane_clipper, &m_device, &m_scene_presenter);
 }
 
 bool PaintOnGizmoBase::disable_object_selection() const
@@ -314,7 +314,6 @@ void PaintOnGizmoBase::init_clipper_presenters()
     const Biz::Scene::ObjectSelection& object_selection = scene_interactor.object_selection();
     const Domain::ElementRef& element                   = object_selection.elements.front();
     const Project& project                              = m_project_interactor.selected_project();
-    Scene::Scene& scene                                 = m_scene_presenter.scene();
 
     ASSERT(element.volume_id == 0); // Is object.
     const ModelObject* selected_object = project.find_object_by_id(element.object_id);
@@ -323,12 +322,12 @@ void PaintOnGizmoBase::init_clipper_presenters()
 
     ASSERT(selected_instance && selected_object);
     m_clipping_plane_presenter
-        .activate(&scene, selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
+        .activate(selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
     m_clipping_plane_presenter.set_behavior(true, true, 0.);
     m_clipping_plane_presenter.set_position_by_ratio(m_clipping_plane_clipper.get_position(), true);
 
     m_sinking_plane_presenter
-        .activate(&scene, selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
+        .activate(selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
     m_sinking_plane_presenter.set_behavior(true, true, 0.);
 
     if (is_any_paintable_volume_sinking(m_paintable_volumes)) {

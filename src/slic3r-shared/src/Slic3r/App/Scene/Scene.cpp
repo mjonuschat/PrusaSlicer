@@ -147,8 +147,13 @@ Scene::Scene() : m_camera_trackball(m_camera)
 Scene::~Scene()
 {
     s_graphics_settings.remove_listener<IGraphicsSettingsChangedListener>(this);
-    // force destruction here, while the OpenGL context is still valid
+
+    // Hacky way to clear the noise texture, while TextureManager::m_dynamic_textures
+    // is still alive.
+    // The 0 noise size should force re-generation.
     s_graphics_settings.m_ao.noise_tex.reset();
+    s_graphics_settings.m_ao.pending_noise_size = 0;
+    s_graphics_settings.m_ao.noise_size         = 0;
 }
 
 void Scene::on_shading_type_changed(ShadingType shading_type)

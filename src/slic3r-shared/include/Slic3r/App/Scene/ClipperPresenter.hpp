@@ -4,6 +4,7 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 
 namespace Slic3r::Domain {
 class ModelObject;
@@ -32,10 +33,9 @@ class ClipperPresenter
 
 public:
     ClipperPresenter() {};
-    ClipperPresenter(Clipper* clipper, Render::Device* device);
+    ClipperPresenter(Clipper* clipper, Render::Device* device, ISceneProvider* scene_provider);
 
     void activate(
-        Scene* scene,
         const Domain::ModelObject* selected_object,
         const Domain::ModelInstance* selected_instance,
         double sla_shift                           = 0.,
@@ -92,8 +92,8 @@ private:
 
 private:
     Clipper* m_clipper{nullptr};
-    Scene* m_scene{nullptr};
     Render::Device* m_device{nullptr};
+    ISceneProvider* m_scene_provider{nullptr};
 
     ModelGeometryManager m_model_geometry_manager{"clipper_presenter_geometry_manager"};
     ModelTriangleMeshManager m_model_triangle_mesh_manager{"clipper_presenter_geometry_manager"};

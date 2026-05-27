@@ -1101,7 +1101,7 @@ bool CutGizmo::disable_object_selection() const
 
 void CutGizmo::provide_clipper(Scene::Clipper& clipper)
 {
-    m_clipper_presenter = Scene::ClipperPresenter(&clipper, &m_device);
+    m_clipper_presenter = Scene::ClipperPresenter(&clipper, &m_device, &m_scene_presenter);
 }
 
 void CutGizmo::provide_gizmo_controller(Scene::IGizmoController& controller)
@@ -1279,7 +1279,6 @@ void CutGizmo::update_scene_nodes()
     update_cut_normal();
 
     m_clipper_presenter.activate(
-        &m_scene_presenter.scene(),
         context().selected_object,
         context().selected_instance
     );

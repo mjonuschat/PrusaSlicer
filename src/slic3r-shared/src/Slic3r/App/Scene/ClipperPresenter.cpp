@@ -19,9 +19,12 @@ using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Scene {
 
-ClipperPresenter::ClipperPresenter(Clipper* clipper, Render::Device* device) :
+ClipperPresenter::ClipperPresenter(Clipper* clipper,
+                                   Render::Device* device,
+                                   ISceneProvider* scene_provider) :
     m_clipper(clipper),
-    m_device(device)
+    m_device(device),
+    m_scene_provider{scene_provider}
 {}
 
 static void set_enabled_scene_nodes(
@@ -50,7 +53,6 @@ static void set_enabled_scene_nodes(
 }
 
 void ClipperPresenter::activate(
-    Scene* scene,
     const Domain::ModelObject* selected_object,
     const Domain::ModelInstance* selected_instance,
     double sla_shift,
@@ -61,9 +63,8 @@ void ClipperPresenter::activate(
         deactivate();
     }
 
-    m_scene = scene;
     if (m_clipper) {
-        m_clipper->set_camera(&m_scene->camera());
+        m_clipper->set_camera(&m_scene_provider->scene().camera());
         m_clipper->update(selected_object, selected_instance, sla_shift, true);
     }
 
@@ -73,19 +74,19 @@ void ClipperPresenter::activate(
         build_meshes_nodes(selected_instance->get_matrix());
     }
 
-    set_enabled_scene_nodes(m_scene, false, m_main_node);
+    set_enabled_scene_nodes(&m_scene_provider->scene(), false, m_main_node);
 }
 
 void ClipperPresenter::deactivate(bool force_enabled_scene_nodes /*= true*/)
 {
     reset();
-    set_enabled_scene_nodes(m_scene, true, m_main_node, force_enabled_scene_nodes);
+    set_enabled_scene_nodes(&m_scene_provider->scene(), true, m_main_node, force_enabled_scene_nodes);
 }
 
 void ClipperPresenter::reset()
 {
     if (m_main_node) {
-        m_scene->remove_children(
+        m_scene_provider->scene().remove_children(
             [&](const Node* node)
             {
                 const ClipperElement* tag = node->tag_of_type<ClipperElement>();
@@ -102,11 +103,11 @@ void ClipperPresenter::reset()
 
 void ClipperPresenter::init_main_node()
 {
-    NodeBuilder builder{*m_scene};
+    NodeBuilder builder{m_scene_provider->scene()};
     builder.set_debug_name("Clipper main").set_tag(ClipperElement());
 
-    m_scene->add_child(builder.build().release(), &m_scene->root());
-    m_main_node = m_scene->root().children().back().get();
+    m_scene_provider->scene().add_child(builder.build().release(), &m_scene_provider->scene().root());
+    m_main_node = m_scene_provider->scene().root().children().back().get();
 }
 
 void ClipperPresenter::build_meshes_nodes(const Domain::Transform3d& inst_trafo)
@@ -138,13 +139,13 @@ void ClipperPresenter::build_meshes_nodes(const Domain::Transform3d& inst_trafo)
                 .set_uniform("uniform_color", color)
                 .set_transparent(color.is_transparent());
 
-        NodeBuilder builder{*m_scene};
+        NodeBuilder builder{m_scene_provider->scene()};
         builder.set_debug_name(fmt::format("Clipped model:vol {}", volume_id))
             .set_tag(id)
             .set_mesh(geom, material, int(0))
             .transform([trafo, volume](auto& xform) { xform = trafo; });
 
-        m_scene->add_child(builder.build().release(), m_main_node);
+        m_scene_provider->scene().add_child(builder.build().release(), m_main_node);
     }
 }
 
@@ -195,7 +196,7 @@ void ClipperPresenter::build_non_mesh_node(
             .set_shader(m_device->context().shader_manager().shader(/*"gouraud_light"*/ "flat"))
             .set_uniform("uniform_color", is_plane ? m_plane_color : m_contour_color);
 
-    NodeBuilder bldr(*m_scene);
+    NodeBuilder bldr(m_scene_provider->scene());
     bldr.set_debug_name(
             fmt::format(
                 "Clipped {}:id {}, island {}",
@@ -211,7 +212,7 @@ void ClipperPresenter::build_non_mesh_node(
         bldr.set_aabb(trimesh->aabb_mesh());
     }
 
-    m_scene->add_child(bldr.build().release(), m_main_node);
+    m_scene_provider->scene().add_child(bldr.build().release(), m_main_node);
 }
 
 void ClipperPresenter::update_nodes()
@@ -236,7 +237,7 @@ void ClipperPresenter::update_nodes()
 
     // remove Plane and Contour nodes
 
-    m_scene->remove_children(
+    m_scene_provider->scene().remove_children(
         [&](const Node* node)
         {
             const ClipperElement* tag = node->tag_of_type<ClipperElement>();

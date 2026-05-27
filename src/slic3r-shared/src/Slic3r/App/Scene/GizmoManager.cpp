@@ -138,14 +138,13 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     }
     p.last_mouse_event = MouseEventContext{e, screen_info};
 
-    Scene& scene = m_scene_provider.scene();
     auto [pick_results, pick_ray] = pick(e, screen_info);
 
 #if DEBUG_GIZMO_MANAGER
     update_gizmo_activation_debug_frame_begin();
 #endif
 
-    GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
+    GizmoEventContext ctx{m_scene_provider, e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector
         && m_mouse_drag_detector->mouse_event(
             ctx,
