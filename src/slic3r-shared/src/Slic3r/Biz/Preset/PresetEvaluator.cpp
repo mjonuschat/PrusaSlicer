@@ -401,9 +401,11 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
 )
 {
     std::vector<std::string> conditions;
-    if (!context.conditions.empty()) {
+    if (!context.conditions.empty() || !context.negative_conditions.empty()) {
         std::ranges::transform(context.conditions, std::back_inserter(conditions),
             [](const std::string* p) { return *p; });
+        std::ranges::transform(context.negative_conditions, std::back_inserter(conditions),
+            [](const std::string* p) { return fmt::format("!({})", *p); });
 
         // remove duplicates
         auto to_remove = std::ranges::unique(conditions);

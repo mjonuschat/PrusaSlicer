@@ -288,6 +288,9 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         )
     );
 
+    PresetEvaluator::StringPtrs negative_conditions;
+    bool any_variant_visited = false;
+
     for (const auto& var : node.variants) {
         const bool conditional = var.condition.has_value();
         (conditional ? conditional_variants : unconditional_variants)++;
@@ -296,13 +299,18 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 0);
 
             // Condition is not met, continue with next variant
-            if (!eval_condition(overrides, expr_combine, var.condition.value().expr))
+            if (!eval_condition(overrides, expr_combine, var.condition.value().expr)) {
+                negative_conditions.push_back(&var.condition.value().expr_str);
                 continue;
+            }
+
         } else if (conditional_variants > 0) {
             // if there was at least one condition case met before
             // only one unconditional variant is valid
             ASSERT(unconditional_variants == 1);
         }
+
+        any_variant_visited = true;
 
         auto var_ctx = eval_preset(
             var,
@@ -321,6 +329,13 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             expr_combine,
             true
         );
+        for (auto& v : var_ctx) {
+            v.negative_conditions.insert(
+                v.negative_conditions.end(),
+                negative_conditions.begin(),
+                negative_conditions.end()
+            );
+        }
         var_contexts.insert(
             var_contexts.end(),
             std::make_move_iterator(var_ctx.begin()),
@@ -332,8 +347,17 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             break;
     }
 
-    if (var_contexts.empty())
+    if (var_contexts.empty()) {
+        ASSERT(!any_variant_visited);
+        for (auto& ctx : ret) {
+            ctx.negative_conditions.insert(
+                ctx.negative_conditions.end(),
+                negative_conditions.begin(),
+                negative_conditions.end()
+            );
+        }
         return PresetEvaluator::merged_same_presets(std::move(ret));
+    }
 
     // resolve variants
     PresetEvaluator::EvalPresetContexts product;
@@ -354,6 +378,11 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 context.conditions.end(),
                 var_ctx.conditions.begin(),
                 var_ctx.conditions.end()
+            );
+            context.negative_conditions.insert(
+                context.negative_conditions.end(),
+                var_ctx.negative_conditions.begin(),
+                var_ctx.negative_conditions.end()
             );
             context.last_node_location = var_ctx.last_node_location;
             override_preset_values(context.values, var_ctx.values);
