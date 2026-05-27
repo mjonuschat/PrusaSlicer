@@ -80,6 +80,39 @@ struct ConfigItemDef
     std::string label;
     std::string full_label;
 
+    /**
+     * @brief Translation context used for localization.
+     *
+     * Some localization cases require an additional context string
+     * to help translators choose the correct wording.
+     */
+    std::string i18n_context;
+
+    /**
+     * @brief Sets the localization context and returns the source string.
+     *
+     * Uppercase naming is intentional, as this function mirrors the
+     * L_CONTEXT localization marker used by xgettext when parsing
+     * translation dictionaries.
+     *
+     * Ensures that all localization calls within the same ConfigItemDef
+     * use the same translation context.
+     *
+     * @param s Source string.
+     * @param context Translation context.
+     *
+     * @return The original source string.
+     */
+    const char* L_CONTEXT(const char* s, const char* context)
+    {
+        if (i18n_context.empty()) {
+            i18n_context = context;
+        } else if (i18n_context != context) {
+            PANIC("All localization contexts inside one ConfigItemDef must be identical");
+        }
+        return s;
+    }
+
     enum class Category : uint16_t
     {
         Unknown = 0, ///< Default category, throws an error

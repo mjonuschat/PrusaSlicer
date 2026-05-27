@@ -942,7 +942,7 @@ bool ObjectList::render_out_of_beds()
 
     bool is_changed_selection = false;
 
-    render_group_name(L("Out of bed"));
+    render_group_name(_u8L("Out of bed"));
 
     BedsTable table;
     if (table.begin(
@@ -1715,24 +1715,24 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
         BoldFontGuard bfg(m_imgui_render);
         text_with_bg_aligned(
             align_x,
-            L("SLICED"),
+            _u8L("SLICED"),
             m_theme->color_imgui(Platform::Color::AccentSecondary)
         );
     } else if (status_code == StatusCode::Updating) {
-        text_with_bg_aligned(align_x, L("UPDATING"), DARK_BLUE);
+        text_with_bg_aligned(align_x, _u8L("UPDATING"), DARK_BLUE);
     } else if (status_code == StatusCode::Stopping) {
-        text_with_bg_aligned(align_x, L("STOPPING"), DARK_BLUE);
+        text_with_bg_aligned(align_x, _u8L("STOPPING"), DARK_BLUE);
     } else if (status_code == StatusCode::Running) {
-        text_with_bg_aligned(align_x, L("SLICING"), DARK_BLUE);
+        text_with_bg_aligned(align_x, _u8L("SLICING"), DARK_BLUE);
     } else if (status_code == StatusCode::InvalidData) {
-        text_with_bg_aligned(align_x, L("INVALID"), DARK_BLUE);
+        text_with_bg_aligned(align_x, _u8L("INVALID"), DARK_BLUE);
     } else if (m_mode == Mode::Preview && status_code == StatusCode::Modified) {
         BoldFontGuard bfg(m_imgui_render);
         ImGui::PushStyleColor(
             ImGuiCol_Button,
             m_theme->color_imgui(Platform::Color::AccentPrimary).Value
         );
-        if (button_aligned(align_x, L("SLICE"), ImVec2(0, 0), ImGuiButtonFlags_AlignTextBaseLine))
+        if (button_aligned(align_x, _u8L("SLICE"), ImVec2(0, 0), ImGuiButtonFlags_AlignTextBaseLine))
             m_project_interactor->slicing_interactor().slice_bed(
                 {m_project_interactor->selected_project_id(), bed_instance_id}
             );

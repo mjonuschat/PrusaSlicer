@@ -77,7 +77,7 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
             res = boost::icontains(body, "SUCCESS");
             if (!res) {
                 SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
-                error_fn(format_error(body, L("Unknown error occurred"), 0));
+                error_fn(format_error(body, _u8L("Unknown error occurred"), 0));
             }
         })
         .perform_sync();
@@ -103,7 +103,7 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
             res = boost::icontains(body, "SUCCESS");
             if (!res) {
                 SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
-                error_fn(format_error(body, L("Unknown error occurred"), 0));
+                error_fn(format_error(body, _u8L("Unknown error occurred"), 0));
             }
         })
         .perform_sync();
@@ -123,7 +123,7 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
             res = boost::icontains(body, "SUCCESS");
             if (!res) {
                 SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
-                error_fn(format_error(body, L("Unknown error occurred"), 0));
+                error_fn(format_error(body, _u8L("Unknown error occurred"), 0));
             }
         })
         .on_error([&](std::string body, std::string error, unsigned status) {

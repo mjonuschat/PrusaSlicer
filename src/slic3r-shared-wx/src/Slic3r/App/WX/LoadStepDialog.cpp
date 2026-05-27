@@ -41,10 +41,14 @@
 
 namespace Slic3r::App::WX {
 
-static std::vector<std::pair<std::string, PrecisionParams>> default_step_import_params = {
-    {"Low"      , {0.005, 1.  }},
-    {"Medium"   , {0.003, 0.5 }},
-    {"High"     , {0.001, 0.25}},
+static const std::vector<std::pair<std::string, PrecisionParams>>& default_step_import_params()
+{
+    static std::vector<std::pair<std::string, PrecisionParams>> params = {
+        {Biz::L_CONTEXT("Low", "Import quality"), {0.005, 1.}},
+        {Biz::L_CONTEXT("Medium", "Import quality"), {0.003, 0.5}},
+        {Biz::L_CONTEXT("High", "Import quality"), {0.001, 0.25}},
+    };
+    return params;
 };
 
 LoadStepDialog::LoadStepDialog(const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading)
@@ -59,7 +63,7 @@ LoadStepDialog::LoadStepDialog(const std::string& filename, double linear_precis
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL); // Get the sizer
 
     add_params(main_sizer);
-        
+
     main_sizer->Add(new StaticLine(this), 0, wxEXPAND | wxLEFT | wxRIGHT, w_config()->em_unit());
 
     wxBoxSizer* bottom_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -99,8 +103,8 @@ void LoadStepDialog::add_params(wxSizer* sizer)
 
     // add radio buttons for selection default parameters
 
-    for (const auto& [name, params] : default_step_import_params) {
-        wxRadioButton* radio_def = new wxRadioButton(this, wxID_ANY, _(name));
+    for (const auto& [name, params] : default_step_import_params()) {
+        wxRadioButton* radio_def = new wxRadioButton(this, wxID_ANY, _CTX(name, "Import quality"));
         radio_def->Bind(wxEVT_RADIOBUTTON, [params_copy = params, this](wxEvent&) {
             m_params.linear = params_copy.linear;
             m_params.angle = params_copy.angle;
@@ -163,11 +167,20 @@ void LoadStepDialog::add_params(wxSizer* sizer)
         labels_sizer->Add(new wxStaticText(this, wxID_ANY, right_text), 0, wxRIGHT, right_text_gap);
     }
 
-    auto high_vals = std::find_if(default_step_import_params.begin(), default_step_import_params.end(), 
-                                  [](const std::pair<std::string, PrecisionParams>& val) { return val.first == "High"; });
-    auto low_vals = std::find_if(default_step_import_params.begin(), default_step_import_params.end(), 
-                                  [](const std::pair<std::string, PrecisionParams>& val) { return val.first == "Low"; });
-    assert(high_vals != default_step_import_params.end() && low_vals != default_step_import_params.end());
+    auto high_vals = std::find_if(
+        default_step_import_params().begin(),
+        default_step_import_params().end(),
+        [](const std::pair<std::string, PrecisionParams>& val) { return val.first == "High"; }
+    );
+    auto low_vals = std::find_if(
+        default_step_import_params().begin(),
+        default_step_import_params().end(),
+        [](const std::pair<std::string, PrecisionParams>& val) { return val.first == "Low"; }
+    );
+    assert(
+        high_vals != default_step_import_params().end()
+        && low_vals != default_step_import_params().end()
+    );
 
     m_linear_precision_sl.init(high_vals->second.linear, low_vals->second.linear, 0.001);
     m_angle_precision_sl.init(high_vals->second.angle, low_vals->second.angle, 0.01);
@@ -265,4 +278,4 @@ bool LoadStepDialog::IsApplyToAllClicked()
     return m_apply_to_all;
 }
 
-}    // namespace Slic3r::App::WX
+} // namespace Slic3r::App::WX

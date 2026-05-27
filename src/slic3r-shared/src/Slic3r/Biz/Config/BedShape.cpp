@@ -25,28 +25,11 @@ using namespace Slic3r::Biz::Algorithms;
 
 namespace Slic3r::Biz::Config {
 
-static const std::map<BedShape::Parameter, BedShape::ParamAttributes> param_attributes_mapping = {
-    {BedShape::Parameter::RectSize,
-     {L("Size"), L("Size in X and Y of the rectangular plate."), 0, 1'200, 200}},
-    {BedShape::Parameter::RectOrigin,
-     {L("Origin"),
-      L("Distance of the 0,0 G-code coordinate from the front left corner of the rectangle."),
-      -600,
-      600,
-      0}},
-    {BedShape::Parameter::Diameter,
-     {L("Diameter"),
-      L("Diameter of the print bed. It is assumed that origin (0,0) is located in the center."),
-      0,
-      600,
-      200}},
-};
-
 BedShape::BedShape(const Domain::Vec2ds& points)
 {
     Domain::BedCreationData data{
-        .type = Bed::detect_bed_type_from_contour(points),
-        .contour = points,
+        .type         = Bed::detect_bed_type_from_contour(points),
+        .contour      = points,
         .contour_mesh = Bed::bed_contour_as_its(points)
     };
     m_bed = Domain::Bed::create(data);
@@ -65,13 +48,34 @@ bool BedShape::is_equal_to(const Domain::Vec2ds& points) const
 
 const BedShape::ParamAttributes& BedShape::attributes(Parameter param)
 {
+    static const std::map<BedShape::Parameter, BedShape::ParamAttributes> param_attributes_mapping = {
+        {BedShape::Parameter::RectSize,
+         {_u8L("Size"), _u8L("Size in X and Y of the rectangular plate."), 0, 1'200, 200}},
+        {BedShape::Parameter::RectOrigin,
+         {_u8L("Origin"),
+          _u8L(
+              "Distance of the 0,0 G-code coordinate from the front left corner of the rectangle."
+          ),
+          -600,
+          600,
+          0}},
+        {BedShape::Parameter::Diameter,
+         {_u8L("Diameter"),
+          _u8L(
+              "Diameter of the print bed. It is assumed that origin (0,0) is located in the center."
+          ),
+          0,
+          600,
+          200}},
+    };
+
     ASSERT(param_attributes_mapping.contains(param));
     return param_attributes_mapping.at(param);
 }
 
 static std::string get_param_label(BedShape::Parameter param)
 {
-    return Biz::_u8(BedShape::attributes(param).name);
+    return BedShape::attributes(param).name;
 }
 
 std::string BedShape::get_type_name(Type type)
@@ -136,7 +140,7 @@ double BedShape::get_diameter() const
 std::string BedShape::get_full_name_with_params() const
 {
     Domain::BedType bed_type = m_bed.type();
-    std::string out = Biz::_u8L("Shape") + ": " + get_type_name(this->get_type());
+    std::string out          = Biz::_u8L("Shape") + ": " + get_type_name(this->get_type());
     switch (bed_type) {
     case Domain::BedType::Circle: {
         const double diameter = get_diameter();

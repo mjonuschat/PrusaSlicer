@@ -45,7 +45,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
 
     m_footer->emplace_back<Separator>(Orientation::Vertical);
 
-    add_footer_button(_u8("Compare"), Render::Icon::Compare)->callbacks().action = [this]
+    add_footer_button(_u8L("Compare"), Render::Icon::Compare)->callbacks().action = [this]
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_diff_dialog(
@@ -53,7 +53,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
             Domain::Preset::PresetKind::FdmPrinter
         );
     };
-    add_footer_button(_u8("Save preset"))->callbacks().action = [&]
+    add_footer_button(_u8L("Save preset"))->callbacks().action = [&]
     {
         m_project_interactor->preset_interactor().save_user_preset(
             Domain::Preset::PresetKind::FdmPrinter,

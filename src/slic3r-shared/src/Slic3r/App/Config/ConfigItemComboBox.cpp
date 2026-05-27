@@ -102,8 +102,7 @@ ConfigItemComboBox::ConfigItemComboBox(
         // TODO: Unify this with ConfigItemTextField
         if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
-                m_cbi_container
-                    .set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{m_double_validator->value()},
                     m_cbi_index
@@ -149,7 +148,7 @@ ConfigItemComboBox::ConfigItemComboBox(
 void ConfigItemComboBox::on_data_update()
 {
     if (m_last_item != m_state) {
-        m_init = false;
+        m_init      = false;
         m_last_item = m_state;
     }
 
@@ -206,8 +205,12 @@ void ConfigItemComboBox::initialize()
 {
     ASSERT(!m_init);
 
+    auto i18n_str = [](const std::string& s, const std::string& context)
+    { return context.empty() ? Biz::_u8(s) : Biz::_ctx_u8(s, context); };
+
     std::vector<std::string> items;
     const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
+    const std::string& i18n_context               = m_state->def().i18n_context;
     if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
         set_editable(true);
 
@@ -232,8 +235,8 @@ void ConfigItemComboBox::initialize()
         m_int_validator = std::make_unique<IntValidator>();
         set_validator(m_int_validator.release());
 
-        for (const auto& choice : m_state->def().choices) {
-            items.push_back(Biz::_u8(choice.second));
+        for (const auto& [v, str_ui] : m_state->def().choices) {
+            items.push_back(i18n_str(str_ui, i18n_context));
         }
 
     } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
@@ -244,15 +247,15 @@ void ConfigItemComboBox::initialize()
 
         set_editable(true);
 
-        for (const auto& choice : m_state->def().choices) {
-            items.push_back(Biz::_u8(choice.second));
+        for (const auto& [v, str_ui] : m_state->def().choices) {
+            items.push_back(i18n_str(str_ui, i18n_context));
         }
     } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
         set_editable(false);
         const Domain::EnumWrapper enum_wrapper = m_state->get<Domain::EnumWrapper>();
 
         for (const Domain::EnumValueDef& value : enum_wrapper.def()) {
-            items.push_back(Biz::_u8(value.str_ui));
+            items.push_back(i18n_str(value.str_ui, i18n_context));
         }
     }
 

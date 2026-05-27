@@ -11,7 +11,6 @@ namespace I18N_libslic3r {
 } // nameaspace I18N
 
 [[maybe_unused]] inline const char* L(const char* s)    { return s; }
-[[maybe_unused]] inline const char* L_CONTEXT(const char* s, const char* context) { return s; }
 [[maybe_unused]] inline std::string _u8L(const char* s) { return I18N_libslic3r::translate(s); }
 
 } // namespace Slic3r

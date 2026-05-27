@@ -14,7 +14,7 @@ std::string _u8(const std::string& s)
     return boost::locale::translate(s.c_str()).str(Slic3r::Biz::g_ui_locale);
 }
 
-std::string _CTX_utf8(const std::string& s, const std::string& ctx) 
+std::string _ctx_u8(const std::string& s, const std::string& ctx)
 { 
     return boost::locale::translate(ctx.c_str(), s.c_str()).str(Slic3r::Biz::g_ui_locale);
 }

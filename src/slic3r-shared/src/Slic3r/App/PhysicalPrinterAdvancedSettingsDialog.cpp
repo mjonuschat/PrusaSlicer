@@ -31,7 +31,7 @@ PhysicalPrinterAdvancedSettingsDialog::PhysicalPrinterAdvancedSettingsDialog(
 
     footer_items->emplace_back<Separator>(Orientation::Vertical);
 
-    m_save_button = footer_items->emplace_back<LayoutButton>(_u8("Save"));
+    m_save_button = footer_items->emplace_back<LayoutButton>(_u8L("Save"));
     m_save_button->callbacks().action = [&]
     {
         m_project_interactor->physical_printer_interactor().save_new_printer();

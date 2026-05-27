@@ -208,7 +208,7 @@ PrintSettingsDialog::PrintSettingsDialog(
     spacer->set_flex_grow(1);
 
     LayoutButton* compare_button =
-        AbstractSettingsDialog::add_footer_button(m_footer, _u8("Compare"), Render::Icon::Compare);
+        AbstractSettingsDialog::add_footer_button(m_footer, _u8L("Compare"), Render::Icon::Compare);
     compare_button->callbacks().action = [this]
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
@@ -219,7 +219,7 @@ PrintSettingsDialog::PrintSettingsDialog(
     };
     compare_button->set_flex_shrink(0);
 
-    m_save_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8("Save preset"));
+    m_save_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8L("Save preset"));
 
     m_save_preset_menu = m_save_button->emplace_back<Menu>("SavePresetMenu", Position::Top);
     MenuItem* save_print_preset_button =
@@ -232,7 +232,8 @@ PrintSettingsDialog::PrintSettingsDialog(
         );
     };
 
-    m_save_button->callbacks().action = [this] { m_save_preset_menu->open(); };
+    m_save_button->callbacks().action = [this] { 
+        m_save_preset_menu->open(); };
 
     update_extruder_size();
     on_selected_bed_instances_changed(

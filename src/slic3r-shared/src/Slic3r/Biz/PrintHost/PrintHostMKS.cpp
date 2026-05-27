@@ -43,7 +43,7 @@ bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn err
 
             if (err_code != 0) {
                 SPDLOG_INFO("MKS: Request completed but error code was received: {}", err_code);
-                error_fn(format_error(body, L("Unknown error occurred"), 0));
+                error_fn(format_error(body, _u8L("Unknown error occurred"), 0));
                 res = false;
             } else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
                 std::string error_msg;

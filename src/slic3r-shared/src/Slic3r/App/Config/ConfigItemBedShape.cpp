@@ -75,7 +75,7 @@ static InputTextField* add_input(
 
     InputTextField* ret_input = wrap->emplace_back<InputTextField>();
     ret_input->set_validator(std::make_unique<IntValidator>(atributes.min, atributes.max));
-    ret_input->set_tooltip(Biz::_u8(atributes.tooltip));
+    ret_input->set_tooltip(atributes.tooltip);
     ret_input->set_text(fmt::format("{}", atributes.def_value));
     ret_input->callbacks().text_edited = callback;
 
@@ -131,13 +131,13 @@ ConfigItemBedShape::ConfigItemBedShape(
 
     const BedShape::ParamAttributes& size_atribs =
         BedShape::attributes(BedShape::Parameter::RectSize);
-    Item* m_size_row = add_row(rect_ui_item, Biz::_u8(size_atribs.name));
+    Item* m_size_row = add_row(rect_ui_item, size_atribs.name);
     m_size_x         = add_input(m_size_row, "x", size_atribs, is_imperial_units, callback);
     m_size_y         = add_input(m_size_row, "y", size_atribs, is_imperial_units, callback);
 
     const BedShape::ParamAttributes& origin_atribs =
         BedShape::attributes(BedShape::Parameter::RectOrigin);
-    Item* m_origin_row = add_row(rect_ui_item, Biz::_u8(origin_atribs.name));
+    Item* m_origin_row = add_row(rect_ui_item, origin_atribs.name);
     m_origin_x         = add_input(m_origin_row, "x", origin_atribs, is_imperial_units, callback);
     m_origin_y         = add_input(m_origin_row, "y", origin_atribs, is_imperial_units, callback);
 
@@ -147,7 +147,7 @@ ConfigItemBedShape::ConfigItemBedShape(
 
     const BedShape::ParamAttributes& diam_atribs =
         BedShape::attributes(BedShape::Parameter::Diameter);
-    Item* m_diameter_row = add_row(circle_ui_item, Biz::_u8(diam_atribs.name));
+    Item* m_diameter_row = add_row(circle_ui_item, diam_atribs.name);
     m_diameter           = add_input(m_diameter_row, "", diam_atribs, is_imperial_units, callback);
 
     Item* custom_ui_item = m_ui_layout->emplace_back<Item>();

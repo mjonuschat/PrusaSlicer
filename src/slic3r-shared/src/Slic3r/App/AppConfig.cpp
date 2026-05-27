@@ -69,25 +69,29 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->init_fn      = Domain::init_with(
         Theme::Style::Dark,
         {
-            {int(Theme::Style::Dark), "dark", L("Dark")},
-            {int(Theme::Style::Light), "light", L("Light")},
+            {int(Theme::Style::Dark), "dark", def->L_CONTEXT("Dark", "Theme")},
+            {int(Theme::Style::Light), "light", def->L_CONTEXT("Light", "Theme")},
         }
     );
 
     def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
     def->location     = Domain::AppConfigLocation{};
     def->label        = L("Graphics quality");
-    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->category     = Domain::ConfigItemDef::Category::AppConfig_General;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->gui_type     = GUIType::combobox;
     def->tooltip      = L("Controls rendering quality and performance of the 3D scene");
     def->init_fn      = Domain::init_with(
         App::GraphicsQuality::High,
         {
-            {int(App::GraphicsQuality::Legacy), "legacy", L("Legacy")},
-            {int(App::GraphicsQuality::Low), "low", L("Low")},
-            {int(App::GraphicsQuality::Medium), "medium", L("Medium")},
-            {int(App::GraphicsQuality::High), "high", L("High")},
+            {int(App::GraphicsQuality::Legacy),
+             "legacy",
+             def->L_CONTEXT("Legacy", "Graphics quality")},
+            {int(App::GraphicsQuality::Low), "low", def->L_CONTEXT("Low", "Graphics quality")},
+            {int(App::GraphicsQuality::Medium),
+             "medium",
+             def->L_CONTEXT("Medium", "Graphics quality")},
+            {int(App::GraphicsQuality::High), "high", def->L_CONTEXT("High", "Graphics quality")},
         }
     );
 

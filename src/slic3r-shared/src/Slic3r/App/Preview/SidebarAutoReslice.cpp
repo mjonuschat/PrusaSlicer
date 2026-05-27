@@ -18,8 +18,8 @@ SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
     row->set_orientation(Yoga::Orientation::Horizontal);
 
     m_auto_reslice_chb = row->emplace_back<Yoga::ToggleButton>(
-        Biz::L("Auto-reslice"),
-        Biz::L("Automatically runs slicing after any settings change.")
+        Biz::_u8L("Auto-reslice"),
+        Biz::_u8L("Automatically runs slicing after any settings change.")
     );
     m_auto_reslice_chb->set_font_type(Render::ImguiFontType::Bold);
     m_auto_reslice_chb->callbacks().checked_changed = [&](bool checked)

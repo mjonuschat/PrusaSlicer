@@ -74,17 +74,28 @@ void SavePresetDialog::Item::init_input_name_ctrl(
     }
 }
 
-static const std::map<Domain::Preset::PresetKind, std::string> TOP_LABELS = {
-    // kind                             Save settings
-    {Domain::Preset::PresetKind::FdmPrinter, Biz::L("Save printer settings as")},
-    {Domain::Preset::PresetKind::FdmPrint, Biz::L("Save print settings as")},
-    {Domain::Preset::PresetKind::FdmToolPrint, Biz::L("Save tool print settings as")},
-    {Domain::Preset::PresetKind::FdmMaterial, Biz::L("Save filament settings as")},
-    {Domain::Preset::PresetKind::SlaPrinter, Biz::L("Save printer settings as")},
-    {Domain::Preset::PresetKind::SlaPrint, Biz::L("Save print settings as")},
-    {Domain::Preset::PresetKind::SlaToolPrint, Biz::L("Save tool settings as")},
-    {Domain::Preset::PresetKind::SlaMaterial, Biz::L("Save material settings as")},
-};
+static std::string top_label(Domain::Preset::PresetKind kind)
+{
+    switch (kind) {
+    case Domain::Preset::PresetKind::FdmPrinter:
+    case Domain::Preset::PresetKind::SlaPrinter:
+        return Biz::_u8L("Save printer settings as");
+    case Domain::Preset::PresetKind::FdmPrint:
+    case Domain::Preset::PresetKind::SlaPrint:
+        return Biz::_u8L("Save print settings as");
+    case Domain::Preset::PresetKind::FdmToolPrint:
+        return Biz::_u8L("Save tool print settings as");
+    case Domain::Preset::PresetKind::SlaToolPrint:
+        return Biz::_u8L("Save tool settings as");
+    case Domain::Preset::PresetKind::FdmMaterial:
+        return Biz::_u8L("Save filament settings as");
+    case Domain::Preset::PresetKind::SlaMaterial:
+        return Biz::_u8L("Save material settings as");
+    default:
+        PANIC("SavePresetDialog::top_label(): Unknown preset kind");
+        return std::string();
+    };
+}
 
 SavePresetDialog::Item::Item(
     PresetKind kind,
@@ -104,7 +115,7 @@ SavePresetDialog::Item::Item(
     m_valid_label->SetFont(w_config()->bold_font());
 
     wxStaticText* label_top = is_for_multiple_save ?
-        new wxStaticText(m_parent, wxID_ANY, _(TOP_LABELS.at(m_kind)) + from_u8(":")) :
+        new wxStaticText(m_parent, wxID_ANY, from_u8(top_label(m_kind)) + from_u8(":")) :
         nullptr;
 
     wxBoxSizer* input_name_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -275,7 +286,7 @@ void SavePresetDialog::build(
 
     if (suffix.empty())
         // TRN Suffix for the preset name. Have to be a noun.
-        suffix = Biz::_CTX_utf8(Biz::L_CONTEXT("Copy", "PresetName"), "PresetName");
+        suffix = Biz::_ctx_u8L("Copy", "PresetName");
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
 

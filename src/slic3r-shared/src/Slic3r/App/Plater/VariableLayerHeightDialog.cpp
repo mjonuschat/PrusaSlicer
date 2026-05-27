@@ -89,7 +89,7 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
     blend_distance_slider_row->set_gap(gap_size());
 
     Text* blend_distance_slider_low_label =
-        blend_distance_slider_row->emplace_back<Text>(_u8L("Low"));
+        blend_distance_slider_row->emplace_back<Text>(_ctx_u8L("Low", "Blend Distance"));
     blend_distance_slider_low_label->set_self_align(YGAlignCenter);
 
     m_blend_distance_slider = Passthrough(std::make_unique<Slider>());
@@ -102,7 +102,7 @@ void VariableLayerHeightDialog::add_blend_distance_section(Item* item)
     blend_distance_slider_row->append(m_blend_distance_slider.release());
 
     Text* blend_distance_slider_high_label =
-        blend_distance_slider_row->emplace_back<Text>(_u8L("High"));
+        blend_distance_slider_row->emplace_back<Text>(_ctx_u8L("High", "Blend Distance"));
     blend_distance_slider_high_label->set_self_align(YGAlignCenter);
 
     Item* lock_high_detail_toggle_row = item->emplace_back<Item>();

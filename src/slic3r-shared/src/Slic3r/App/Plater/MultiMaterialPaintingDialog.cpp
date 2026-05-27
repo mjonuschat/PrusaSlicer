@@ -94,10 +94,10 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
     labels->set_orientation(Orientation::Vertical);
     labels->set_gap(3 * spacing);
 
-    Item* tools_label{Plater::append(labels, label(_u8("Tool")))};
+    Item* tools_label{Plater::append(labels, label(_u8L("Tool")))};
     tools_label->set_flex_grow(1);
 
-    m_shapes_label = Plater::append(labels, label(_u8("Shape")));
+    m_shapes_label = Plater::append(labels, label(_u8L("Shape")));
     m_shapes_label->set_flex_grow(1);
 
     auto icons{result->emplace_back<Item>()};

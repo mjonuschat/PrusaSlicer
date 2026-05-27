@@ -12,7 +12,6 @@ namespace Slic3r::Domain {
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
 static const std::string L(const std::string& s) { return s; }
-static const std::string L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
 void fdm_config_init_fn(ConfigDefinitions& defs);
 
@@ -255,22 +254,19 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bottom_solid_layers", typeid(int));
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
-    //TRN Print Settings: "Bottom solid layers"
-    def->label = L_CONTEXT("Solid layers Bottom", "Layers");
+    def->label = L("Bottom solid layers");
     def->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_TopBottomShells;
     def->category = ConfigItemDef::Category::Print_LayersSurfaces;
     def->order = 3;
     // def->row_group = L("Solid layers"); Temporary removed, row_group are not supported in PrintTool
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on bottom surfaces.");
-    def->full_label = L("Bottom solid layers");
     def->min = 0;
     def->init_fn = init_with(3);
 
     def = defs.add("bottom_solid_min_thickness", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
-    def->label = L_CONTEXT("Minimum shell thickness Bottom", "Layers");
     def->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_TopBottomShells;
     def->category = ConfigItemDef::Category::Print_LayersSurfaces;
     def->order = 4;
@@ -278,7 +274,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The number of bottom solid layers is increased above bottom_solid_layers if necessary to satisfy "
     				 "minimum thickness of bottom shell.");
-    def->full_label = L("Minimum bottom shell thickness");
+    def->label = L("Minimum bottom shell thickness");
     def->sidetext = L("mm");
     def->min = 0;
     def->init_fn = init_with(0.);
@@ -2638,7 +2634,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("min_fan_speed", typeid(int));
     def->location = Filament;
-    def->label = L("Min fap speed");
+    def->label = L("Min fan speed");
     def->full_label = L("Min fan speed");
     def->option_group = ConfigItemDef::OptionGroup::Filament_Cooling_FanControlLimits;
     def->category = ConfigItemDef::Category::Filament_Cooling;
@@ -4354,22 +4350,20 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("top_solid_layers", typeid(int));
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
-    //TRN Print Settings: "Top solid layers"
-    def->label = L_CONTEXT("Solid layers Top", "Layers");
+    def->label = L("Top solid layers");
     def->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_TopBottomShells;
     def->category = ConfigItemDef::Category::Print_LayersSurfaces;
     def->order = 0;
     // def->row_group = L("Solid layers"); Temporary removed, row_group are not supported in PrintTool
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on top surfaces.");
-    def->full_label = L("Top solid layers");
     def->min = 0;
     def->init_fn = init_with(3);
 
     def = defs.add("top_solid_min_thickness", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
-    def->label = L_CONTEXT("Minimum shell thickness Top", "Layers");
+    def->label = L("Minimum top shell thickness");
     def->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_TopBottomShells;
     def->category = ConfigItemDef::Category::Print_LayersSurfaces;
     def->order = 1;
@@ -4378,7 +4372,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("The number of top solid layers is increased above top_solid_layers if necessary to satisfy "
     				 "minimum thickness of top shell."
     				 " This is useful to prevent pillowing effect when printing with variable layer height.");
-    def->full_label = L("Minimum top shell thickness");
     def->sidetext = L("mm");
     def->min = 0;
     def->init_fn = init_with(0.);

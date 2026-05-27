@@ -49,7 +49,7 @@ bool PrintHostDuet::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn er
             int err_code = dsf ? (status == 201 ? 0 : 1) : get_err_code_from_body(body);
             if (err_code != 0) {
                 SPDLOG_INFO("Duet: Request completed but error code was received: {}", err_code);
-                error_fn(format_error(body, L("Unknown error occured"), 0));
+                error_fn(format_error(body, _u8L("Unknown error occured"), 0));
                 res = false;
             } else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
                 std::string errormsg;
@@ -132,7 +132,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string& msg, RetryFn r
                             "Failed to parse serverKey from Duet reply to Connect request: {}",
                             body
                         );
-                        msg = format_error(body, L("Failed to parse a Connect reply"), 0);
+                        msg = format_error(body, _u8L("Failed to parse a Connect reply"), 0);
                         res = ConnectionType::error;
                     }
                 })
@@ -147,13 +147,13 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string& msg, RetryFn r
                 res = ConnectionType::rrf;
                 break;
             case 1:
-                msg = format_error(body, L("Wrong password"), 0);
+                msg = format_error(body, _u8L("Wrong password"), 0);
                 break;
             case 2:
-                msg = format_error(body, L("Could not get resources to create a new connection"), 0);
+                msg = format_error(body, _u8L("Could not get resources to create a new connection"), 0);
                 break;
             default:
-                msg = format_error(body, L("Unknown error occured"), 0);
+                msg = format_error(body, _u8L("Unknown error occured"), 0);
                 break;
             }
         })

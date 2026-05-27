@@ -43,7 +43,11 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
     m_detail_level     = Passthrough{std::make_unique<ComboBox>("Detail level")};
     m_detail_level->set_max_width(preffered_max_width());
     m_detail_level->set_items( // Order must match enum class Detail
-        {_u8L("Extra high"), _u8L("High"), _u8L("Medium"), _u8L("Low"), _u8L("Extra low")}
+        {_ctx_u8L("Extra high", "Simplify: Detail level"),
+         _ctx_u8L("High", "Simplify: Detail level"),
+         _ctx_u8L("Medium", "Simplify: Detail level"),
+         _ctx_u8L("Low", "Simplify: Detail level"),
+         _ctx_u8L("Extra low", "Simplify: Detail level")}
     );
     m_detail_level->callbacks().selection_changed = [this](int index) {
         if (m_callbacks.detail_level_changed) {
