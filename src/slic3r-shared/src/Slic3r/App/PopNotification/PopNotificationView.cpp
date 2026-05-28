@@ -4,13 +4,14 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 namespace Slic3r::App::PopNotification {
 
 constexpr int TotalWidth = 400;
 constexpr int MinHeight  = 40;
-constexpr int MaxHeight  = 200;
+constexpr int MaxHeight  = 160;
 
 PopNotificationView::PopNotificationView(
     size_t index,
@@ -211,15 +212,23 @@ void PopNotificationView::basic_mid_header_layout(const std::string& header)
     m_header->set_text_color(text_color());
     m_header->set_margin({0.f, 5.f, 0.f, 5.f});
     m_header->set_flex_shrink(0.f);
+    m_header->set_width_percent(100.f);  
+    m_header->set_wrap_mode(Yoga::Text::WrapMode::WrapElide);
 }
 
 void PopNotificationView::basic_mid_text_layout(const std::string& text)
 {
-    m_text = m_mid_column->emplace_back<Yoga::Text>(text);
+    auto* text_scroll = m_mid_column->emplace_back<Yoga::ScrollArea>("TextScroll");
+    text_scroll->set_flex_grow(1.f);
+    text_scroll->set_flex_shrink(1.f);
+    text_scroll->set_margin({0.f, 5.f, 0.f, 10.f});
+    text_scroll->set_width_percent(100.f); 
+
+    m_text = text_scroll->emplace_back<Yoga::Text>(text);
     m_text->set_wrap_mode(Yoga::Text::WrapMode::Wrap);
     m_text->set_text_color(text_color());
-    m_text->set_margin({0.f, 5.f, 0.f, 10.f});
     m_text->set_flex_shrink(0.f);
+    m_text->set_width_percent(100.f);
 }
 
 void PopNotificationView::basic_mid_buttons_layout(
