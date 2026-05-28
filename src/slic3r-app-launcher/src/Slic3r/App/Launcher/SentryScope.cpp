@@ -108,15 +108,4 @@ SentryScope::~SentryScope()
 #endif
 }
 
-void SentryScope::send_test_message()
-{
-#ifdef SLIC3R_SENTRY
-    sentry_capture_event(sentry_value_new_message_event(
-        /*   level */ SENTRY_LEVEL_INFO,
-        /*  logger */ "custom",
-        /* message */ "It works!"
-    ));
-#endif
-}
-
 } // namespace Slic3r::App::Launcher

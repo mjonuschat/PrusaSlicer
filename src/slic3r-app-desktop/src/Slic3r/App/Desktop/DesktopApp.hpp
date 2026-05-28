@@ -20,8 +20,6 @@
 namespace Slic3r::App::Desktop {
 class MainFrame;
 
-int run(const InitParams& init_params);
-
 class DesktopApp : public wxApp
 {
 public:

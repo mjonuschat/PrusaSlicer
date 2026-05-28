@@ -23,14 +23,8 @@ target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-cli CLI11::CLI11)
 
 slic3r_add_tracy(slic3r-app-launcher)
 
-# sentry integration
-if (SLIC3R_SENTRY)
+if (SLIC3R_SENTRY_DSN)
     find_package(sentry REQUIRED COMPONENTS crashpad)
-    target_compile_definitions(slic3r-app-launcher PRIVATE
-        SLIC3R_SENTRY
-        "SLIC3R_SENTRY_DSN=\"${SLIC3R_SENTRY_DSN}\""
-    )
-
     target_link_libraries(slic3r-app-launcher PRIVATE sentry::sentry)
     if(TARGET sentry_crashpad::crashpad_handler)
         message(STATUS "SENTRY crashpad handler target present")
@@ -48,8 +42,7 @@ if (SLIC3R_SENTRY)
     else()
         message(STATUS "SENTRY crashpad handler target not present")
     endif ()
-endif (SLIC3R_SENTRY)
-#end of sentry integration part
+endif ()
 
 if (SLIC3R_GUI)
     target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-desktop)

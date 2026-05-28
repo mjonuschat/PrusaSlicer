@@ -1270,6 +1270,13 @@ target_link_libraries(slic3r-shared PUBLIC
         libcereal
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
+if (SLIC3R_SENTRY_DSN)
+    target_compile_definitions(slic3r-shared PUBLIC
+        SLIC3R_SENTRY
+        "SLIC3R_SENTRY_DSN=\"${SLIC3R_SENTRY_DSN}\""
+    )
+endif()
+
 if (EMSCRIPTEN)
 #target_link_libraries(slic3r - shared PUBLIC png - mt)
 else()

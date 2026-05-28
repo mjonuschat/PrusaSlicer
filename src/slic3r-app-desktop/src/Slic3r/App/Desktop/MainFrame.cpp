@@ -372,12 +372,12 @@ void MainFrame::on_language_changed()
 
 void MainFrame::on_app_config_changed(const std::string& key)
 {
+    AppConfig& app_config = AppServices::instance().app_config();
     update_left_bar();
     if (key == "graphics_quality") {
         update_graphics_settings();
     }
     else if (key == "translation_language") {
-        AppConfig& app_config = AppServices::instance().app_config();
         if (const std::string new_language = app_config.get<std::string>("translation_language");
             localization().active_language() != new_language)
         {
@@ -402,6 +402,16 @@ void MainFrame::on_app_config_changed(const std::string& key)
             ),
             Biz::_u8L("PrusaSlicer - Switching theme")
         );
+    } else if (key == "sentry") {
+        const bool enabled{app_config.get<bool>("sentry")};
+
+        const std::string message{
+            Biz::_u8L("The change will take effect after restarting the application.")};
+
+        AppServices::instance().dialog_manager().show_info_dialog(
+            enabled ? Biz::_u8L("Crash reporting is now enabled. ") + message :
+                      Biz::_u8L("Crash reporting is now disabled. ") + message,
+            Biz::_u8L("PrusaSlicer - Enable crash reporting"));
     }
 }
 

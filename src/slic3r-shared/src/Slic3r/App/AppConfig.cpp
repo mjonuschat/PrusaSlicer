@@ -268,6 +268,17 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
     def->init_fn  = []() { return Domain::ConfigValue(Slic3r::VERSION); };
+
+#ifdef SLIC3R_SENTRY
+    def           = defs.add("sentry", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Enable crash reporting");
+    def->tooltip = L("Automatically send crash reports to Prusa3D when the application crashes");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
+    def->init_fn  = []() { return Domain::ConfigValue(false); };
+#endif
 }
 
 tl::expected<std::unique_ptr<AppConfig>, std::string> AppConfig::load_appconfig(const std::string& filename)

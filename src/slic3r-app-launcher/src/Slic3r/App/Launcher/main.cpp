@@ -11,6 +11,8 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/AppServices.hpp"
 
 #include "SentryScope.hpp"
 
@@ -71,7 +73,14 @@ std::string app_description()
     return description.str();
 }
 
+#ifdef SLIC3R_SENTRY
+constexpr bool sentry_available{true};
+#else
+constexpr bool sentry_available{false};
+#endif
+
 } // namespace
+
 
 int main(int argc, char** argv)
 {
@@ -107,7 +116,13 @@ int main(int argc, char** argv)
 
     Slic3r::init_assert();
 
-    Slic3r::App::Launcher::SentryScope sentry;
+    auto& app_services{Slic3r::App::AppServices::instance()};
+    app_services.set_app_config(Slic3r::App::AppConfig::create_app_config());
+
+    const std::optional<Slic3r::App::Launcher::SentryScope> sentry{
+        sentry_available && app_services.app_config().get<bool>("sentry") ?
+            std::optional<Slic3r::App::Launcher::SentryScope>{std::in_place} :
+            std::nullopt};
 
 #ifdef SLIC3R_GUI
     if (init_params.misc.webdev.has_value()) {
@@ -119,7 +134,7 @@ int main(int argc, char** argv)
 
     if (!init_params.action.has_any_action() || init_params.action.gcode_viewer) {
         if constexpr (has_gui_support) {
-            return Slic3r::App::Desktop::run(init_params);
+            return Slic3r::App::Desktop::run(init_params, app_services);
         } else {
             SPDLOG_ERROR("PrusaSlicer was built without GUI support. Quitting.");
             return EXIT_FAILURE;

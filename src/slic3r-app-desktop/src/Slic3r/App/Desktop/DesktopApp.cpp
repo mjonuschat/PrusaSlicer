@@ -151,12 +151,8 @@ void register_win32_device_notification_event()
 #endif // WIN32
 } // namespace
 
-int run(const Slic3r::App::InitParams& init_params)
+int run(const Slic3r::App::InitParams& init_params, AppServices& app_services)
 {
-    auto& app_services{AppServices::instance()};
-
-    app_services.set_app_config(AppConfig::create_app_config());
-
 #ifdef __WXGTK__
     // https://github.com/prusa3d/PrusaSlicer/issues/12969
     ::setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", /* replace */ false);
