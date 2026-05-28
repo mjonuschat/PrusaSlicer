@@ -1180,7 +1180,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
     // Enforcers projected to overhangs, trimmed
     Polygons enforcer_polygons;
 
-    const bool   support_auto    = object_config.get<bool>("support_material") && object_config.get<bool>("support_material_auto");
+    const bool   support_auto    = object_config.get<Domain::SupportMode>("support_material") == Domain::SupportMode::Everywhere;
     const bool   buildplate_only = ! annotations.buildplate_covered.empty();
     // If user specified a custom angle threshold, convert it to radians.
     // Zero means automatic overhang detection.

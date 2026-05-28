@@ -45,14 +45,18 @@ static std::set<unsigned> get_extra_support_extruders(
     const Domain::PrintSettings& print_settings
 )
 {
-    const auto support_material{print_settings.items.opt("support_material").get<bool>()};
+    const bool support_material{
+        print_settings.items.opt("support_material").get<Domain::SupportMode>()
+        != Domain::SupportMode::None
+    };
     const bool raft{print_settings.items.opt("raft_layers").get<int>() > 0};
 
     std::optional<Domain::ConfigItem> object_support_material_opt{
         object_settings.overrides.get("support_material")
     };
     const bool object_support_material{
-        object_support_material_opt && (*object_support_material_opt).get<bool>()
+        object_support_material_opt
+        && (*object_support_material_opt).get<Domain::SupportMode>() != Domain::SupportMode::None
     };
     if (!support_material && !object_support_material && !raft) {
         return {};

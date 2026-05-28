@@ -458,7 +458,6 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"stuck_filament_detection", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"support_material", steps({propagate(posSupportMaterial)})},
     {"support_material_angle", steps({propagate(posSupportMaterial)})},
-    {"support_material_auto", steps({propagate(posSupportMaterial)})},
     {"support_material_bottom_contact_distance", steps({propagate(posSupportMaterial)})},
     {"support_material_bottom_interface_layers", steps({propagate(posSupportMaterial)})},
     {"support_material_buildplate_only", steps({propagate(posSupportMaterial)})},

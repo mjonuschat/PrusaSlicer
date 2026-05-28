@@ -150,6 +150,12 @@ TEST_CASE("FDM INI roundtrip", "[config]")
             // with brim_width = 5, so these two keys intentionally differ after a roundtrip.
             "brim_type",
             "brim_width",
+
+            // Since PrusaSlicer 3.0.0, support_material is a single enum (SupportMode) that replaces the
+            // legacy support_material + support_material_auto bool pair. support_material_auto is consumed
+            // by the migration and dropped, so these two keys intentionally differ after a roundtrip.
+            "support_material",
+            "support_material_auto",
         }
     );
     for (const std::string& line : diff_lines) {
@@ -264,6 +270,8 @@ const std::map<std::string, std::vector<std::string>> fdm_whitelist{
         "; stuck_filament_detection",
         "; brim_type",
         "; brim_width",
+        "; support_material",
+        "; support_material_auto",
     }},
     {model_config_file, {
         "<metadata type=\"volume\" key=\"matrix\"",

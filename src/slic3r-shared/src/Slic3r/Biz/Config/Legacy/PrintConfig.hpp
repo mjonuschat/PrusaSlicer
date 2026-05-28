@@ -253,6 +253,13 @@ enum class CoolingSlowdownLogicType
     Proportional,
 };
 
+enum class SupportMode
+{
+    None,
+    EnforcersOnly,
+    Everywhere,
+};
+
 #define CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NAME) \
     template<> const t_config_enum_names& ConfigOptionEnum<NAME>::get_enum_names(); \
     template<> const t_config_enum_values& ConfigOptionEnum<NAME>::get_enum_values();
@@ -284,6 +291,7 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOnePerimeterType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(EnsureVerticalShellThickness)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(CoolingSlowdownLogicType)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(SupportMode)
 
 #undef CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS
 
@@ -653,9 +661,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionInt,                 wall_distribution_count))
     ((ConfigOptionFloatOrPercent,      min_feature_size))
     ((ConfigOptionFloatOrPercent,      min_bead_width))
-    ((ConfigOptionBool,                support_material))
-    // Automatic supports (generated based fdm support point generator).
-    ((ConfigOptionBool,                support_material_auto))
+    ((ConfigOptionEnum<SupportMode>,   support_material))
     // Direction of the support pattern (in XY plane).`
     ((ConfigOptionFloat,               support_material_angle))
     ((ConfigOptionBool,                support_material_buildplate_only))

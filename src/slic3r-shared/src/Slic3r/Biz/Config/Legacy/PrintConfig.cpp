@@ -351,6 +351,13 @@ static const t_config_enum_values s_keys_map_CoolingSlowdownLogicType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CoolingSlowdownLogicType)
 
+static const t_config_enum_values s_keys_map_SupportMode = {
+    {"none", static_cast<int>(SupportMode::None)},
+    {"enforcers_only", static_cast<int>(SupportMode::EnforcersOnly)},
+    {"everywhere", static_cast<int>(SupportMode::Everywhere)}
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(SupportMode)
+
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
     for (std::pair<const t_config_option_key, ConfigOptionDef> &kvp : options)
@@ -3286,11 +3293,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SlicingMode>(SlicingMode::Regular));
 
-    def = this->add("support_material", coBool);
-    def->label = L("Generate support material");
+    def           = this->add("support_material", coEnum);
+    def->label    = L("Generate support material");
     def->category = L("Support material");
-    def->tooltip = L("Enable support material generation.");
-    def->set_default_value(new ConfigOptionBool(false));
+    def->tooltip  = L("Enable support material generation.");
+    def->set_enum<SupportMode>(
+        {{std::make_pair("none", L("None"))},
+         {std::make_pair("enforcers_only", L("Support enforcers only"))},
+         {std::make_pair("everywhere", L("Everywhere"))}}
+    );
+    def->set_default_value(new ConfigOptionEnum<SupportMode>(SupportMode::None));
 
     def = this->add("support_material_auto", coBool);
     def->label = L("Auto generated supports");
@@ -5201,6 +5213,12 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
             // Values other than 0/1 are replaced with "partial" for handling values from different slicers.
             value = "partial";
         }
+    } else if (opt_key == "support_material" && (value == "1" || value == "0")) {
+        // Since PrusaSlicer 3.0.0, support_material is a single enum (SupportMode) that replaces the
+        // legacy support_material + support_material_auto bool pair.
+        // We map "1" to "everywhere" here, handle_legacy_project_loaded() downgrades it to
+        // "enforcers_only" when needed.
+        value = value == "1" ? "everywhere" : "none";
     }
 
     // In PrusaSlicer 2.3.0-alpha0 the "monotonous" infill was introduced, which was later renamed to "monotonic".
@@ -5702,7 +5720,7 @@ std::string validate(const FullPrintConfig &cfg)
             return "Spiral vase mode can only print hollow objects, so you need to set Fill density to 0";
         if (cfg.top_solid_layers > 0)
             return "Spiral vase mode is not compatible with top solid layers";
-        if (cfg.support_material || cfg.support_material_enforce_layers > 0)
+        if (cfg.support_material.value != SupportMode::EnforcersOnly || cfg.support_material_enforce_layers > 0)
             return "Spiral vase mode is not compatible with support material";
     }
 

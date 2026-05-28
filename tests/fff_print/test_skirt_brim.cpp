@@ -17,6 +17,7 @@ using Biz::GCodeReader::GCodeReader;
 using Domain::BrimType;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
+using Domain::SupportMode;
 
 /// Helper method to find the tool used for the brim (always the first extrusion)
 static int get_brim_tool(const std::string &gcode)
@@ -286,7 +287,7 @@ SCENARIO("Draft shield for levitating objects", "[Skirt][DraftShield]")
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
         config.print.items.opt("skirts").set(1);
         config.print.items.opt("draft_shield").set(Domain::DraftShield::dsEnabled);
-        config.print.items.opt("support_material").set(true);
+        config.print.items.opt("support_material").set(SupportMode::Everywhere);
         config.print.items.opt("gcode_comments").set(true);
 
         std::string gcode = Slic3r::Test::slice({cube}, config, false);

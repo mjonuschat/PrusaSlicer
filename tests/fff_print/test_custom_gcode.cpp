@@ -15,6 +15,7 @@
 using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
 using Test::TestConfig;
+using Domain::SupportMode;
 
 TEST_CASE("Custom G-code", "[CustomGCode]")
 {
@@ -121,7 +122,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         TestConfig config;
         config.printer.items.opt("before_layer_gcode").set(";BEFORE [layer_num]" );
         config.printer.items.opt("layer_gcode").set(";CHANGE [layer_num]" );
-        config.print.items.opt("support_material").set(true);
+        config.print.items.opt("support_material").set(SupportMode::Everywhere);
         config.print.items.opt("layer_height").set(0.2);
         WHEN("before and after layer change G-codes set") {
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config);
