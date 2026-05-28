@@ -376,7 +376,7 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
     }
 
     using Payload = SlicingStatusNotificationData;
-    if (status.code == SlicingStatusCode::InvalidData) {
+    if (status.code != SlicingStatusCode::Running) {
         m_notification_list.erase_notification_by_predicate(
             [slicing_id](const PopNotificationData& notification)
             {
@@ -660,90 +660,54 @@ PopNotificationLayout storage_resolve_layout(const PrintHostProgressNotification
 
 PopNotificationLayout export_layout(const PrintHostProgressNotificationData& data)
 {
+    std::string header;
+    // Fallback to filename if target path is empty, otherwise show the target path
+    std::string body = data.target.empty() ? data.filename : data.target;
+
     switch (data.status) {
-    case PrintHostJobStatus::None: {
-        std::string msg;
-        if (data.filename.empty() && data.target.empty()) {
-            msg = "Export is starting.";
-        } else if (data.target.empty()) {
-            msg = fmt::format("Export of {} is starting.", data.filename);
-        } else {
-            msg = fmt::format("Export to {} is starting.", data.target);
-        }
-        return PopNotificationLayoutText(std::move(msg));
-    }
-    case PrintHostJobStatus::Started: {
-        std::string msg;
-        if (data.filename.empty() && data.target.empty()) {
-            msg = "Exporting.";
-        } else if (data.target.empty()) {
-            msg = fmt::format("Exporting {}.", data.filename);
-        } else {
-            msg = fmt::format("Exporting to {}.", data.target);
-        }
-        return PopNotificationLayoutTextProgress(std::move(msg), data.progress);
-    }
+    case PrintHostJobStatus::None: 
+        header = _u8L("Export Starting");
+        return PopNotificationLayoutHeaderText(header, body);
+        
+    case PrintHostJobStatus::Started: 
+        header = _u8L("Exporting...");
+        return PopNotificationLayoutHeaderTextProgress(header, body, data.progress);
+        
     case PrintHostJobStatus::Finished: {
-        std::string msg;
-        if (data.filename.empty() && data.target.empty()) {
-            msg = "Exporting has finished.";
-            return PopNotificationLayoutText(std::move(msg));
-        } else if (data.target.empty()) {
-            msg = fmt::format("Exporting {} has finished.", data.filename);
-            return PopNotificationLayoutText(std::move(msg));
-        } else if (data.eject_fn == nullptr) {
-            msg = fmt::format("Exporting to {} has finished.", data.target);
-            return PopNotificationLayoutTextButtons(
-                std::move(msg),
-                {{"Open folder",
-                  [data]()
-                  {
-                      boost::filesystem::path target_path(data.target);
-                      ASSERT(!target_path.empty() && target_path.has_parent_path());
-                      AppServices::instance().file_explorer_handler().open_folder(
-                          target_path.parent_path().string()
-                      );
-                      return false;
-                  }}}
-            );
-        } else {
-            msg = fmt::format("Exporting to {} has finished.", data.target);
-            return PopNotificationLayoutTextButtons(
-                std::move(msg),
-                {{"Open folder",
-                  [data]()
-                  {
-                      boost::filesystem::path target_path(data.target);
-                      ASSERT(!target_path.empty() && target_path.has_parent_path());
-                      AppServices::instance().file_explorer_handler().open_folder(
-                          target_path.parent_path().string()
-                      );
-                      return false;
-                  }},
-                 {"Eject",
-                  [data]()
-                  {
-                      data.eject_fn(data.target);
-                      return true;
-                  }}}
-            );
+        header = _u8L("Export Finished");
+        
+        if (data.target.empty()) {
+            return PopNotificationLayoutHeaderText(header, body);
         }
-    }
-    case PrintHostJobStatus::Failed: {
-        std::string msg;
-        if (data.filename.empty() && data.target.empty()) {
-            msg = fmt::format("Exporting has Failed. {}", data.additional_msg);
-        } else if (data.target.empty()) {
-            msg = fmt::format("Exporting {} has Failed. {}", data.filename, data.additional_msg);
-        } else {
-            msg = fmt::format("Exporting to {} has Failed. {}", data.target, data.additional_msg);
+
+        std::vector<PopNotificationButtonData> buttons;
+        buttons.push_back({_u8L("Open folder"), [data]() {
+            boost::filesystem::path target_path(data.target);
+            ASSERT(!target_path.empty() && target_path.has_parent_path());
+            AppServices::instance().file_explorer_handler().open_folder(
+                target_path.parent_path().string()
+            );
+            return false;
+        }});
+
+        if (data.eject_fn != nullptr) {
+            buttons.push_back({_u8L("Eject"), [data]() {
+                data.eject_fn(data.target);
+                return true;
+            }});
         }
-        return PopNotificationLayoutText(std::move(msg));
+
+        return PopNotificationLayoutHeaderTextButtons(header, body, std::move(buttons));
     }
+    case PrintHostJobStatus::Failed: 
+        header = _u8L("Export Failed");
+        body = body.empty() ? data.additional_msg : fmt::format("{}\n{}", body, data.additional_msg);
+        return PopNotificationLayoutHeaderText(header, body);
+        
     default:
         ASSERT(false);
+        return PopNotificationLayoutText("");
     }
-    return PopNotificationLayoutText("");
 }
 
 PopNotificationLayout print_host_layout(const PrintHostProgressNotificationData& data)
@@ -859,7 +823,7 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             PopNotificationLevel::ProgressWithClose,
-            simple ? 10s : 0s,
+            simple ? 10s : 60s,
             std::move(layout),
             std::move(payload)
         },
