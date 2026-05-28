@@ -541,9 +541,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("The horizontal width of the brim that will be printed around each object on the first layer. "
                      "When raft is used, no brim is generated (use raft_first_layer_expansion).");
     def->sidetext = L("mm");
-    def->min = 0;
-    def->max = 200;
-    def->init_fn = init_with(0.);
+    def->min      = 0;
+    def->max      = 200;
+    def->init_fn  = init_with(5.);
 
     def = defs.add("brim_type", typeid(EnumWrapper));
     def->location = Print;
@@ -555,7 +555,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("The places where the brim will be printed around each object on the first layer.");
     def->init_fn = init_with(
-        BrimType::OuterOnly,
+        BrimType::NoBrim,
         {{int(BrimType::NoBrim), "no_brim", L("No brim")},
          {int(BrimType::OuterOnly), "outer_only", L("Outer brim only")},
          {int(BrimType::InnerOnly), "inner_only", L("Inner brim only")},

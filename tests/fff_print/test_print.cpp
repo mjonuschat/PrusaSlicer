@@ -31,6 +31,7 @@ using Biz::Slicing::ThumbnailImageResults;
 using Biz::Slicing::ThumbnailImageRequests;
 using Domain::TriangleMesh;
 using Biz::Algorithms::ModelObject::add_volume;
+using Domain::BrimType;
 namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
@@ -144,6 +145,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
 	        Slic3r::Print print;
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(3.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 3 loops in it") {
@@ -154,6 +156,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
 	        Slic3r::Print print;
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 6 loops in it") {
@@ -164,6 +167,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
 	        Slic3r::Print print;
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			print.process();

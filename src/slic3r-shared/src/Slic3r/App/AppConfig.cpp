@@ -237,7 +237,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->init_fn  = []()
     {
         return Domain::ConfigValue(
-            std::vector<std::string>{"fill_pattern", "fill_density", "brim_width"}
+            std::vector<std::string>{"fill_pattern", "fill_density", "brim_type"}
         );
     };
 

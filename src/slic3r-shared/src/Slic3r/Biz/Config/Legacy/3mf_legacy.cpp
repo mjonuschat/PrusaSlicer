@@ -432,6 +432,21 @@ static void handle_legacy_project_loaded(
             opt_min_feature_size->value   = 25;
         }
     }
+
+    // Since PrusaSlicer 3.0.0, brim_type is the primary on/off control, and brim_width defaults to 5mm.
+    if (auto* opt_brim_width = config.option<Slic3rLegacy::ConfigOptionFloat>("brim_width", false);
+        opt_brim_width != nullptr && opt_brim_width->value <= 0.)
+    {
+        auto* opt_brim_type = config.option<Slic3rLegacy::ConfigOptionEnum<Slic3rLegacy::BrimType>>(
+            "brim_type",
+            true
+        );
+        // Zero width means brim was never printed, regardless of brim_type.
+        // Set brim_type to NoBrim and brim_width to the new default so that enabling brim
+        // immediately produces a visible brim.
+        opt_brim_type->value  = Slic3rLegacy::btNoBrim;
+        opt_brim_width->value = 5.;
+    }
 }
 
 }

@@ -145,6 +145,11 @@ TEST_CASE("FDM INI roundtrip", "[config]")
             "filament_unload_time",
             "stuck_filament_detection",
 
+            // Since PrusaSlicer 3.0.0, brim_type is the primary on/off control, and brim_width defaults to 5mm.
+            // Legacy configs with brim_width = 0 (brim off) are migrated to brim_type = no_brim
+            // with brim_width = 5, so these two keys intentionally differ after a roundtrip.
+            "brim_type",
+            "brim_width",
         }
     );
     for (const std::string& line : diff_lines) {
@@ -257,6 +262,8 @@ const std::map<std::string, std::vector<std::string>> fdm_whitelist{
         "; filament_ramming_temperature_delta",
         "; filament_unload_time",
         "; stuck_filament_detection",
+        "; brim_type",
+        "; brim_width",
     }},
     {model_config_file, {
         "<metadata type=\"volume\" key=\"matrix\"",

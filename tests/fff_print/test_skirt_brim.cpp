@@ -14,6 +14,7 @@ using namespace Slic3r::Test;
 using namespace Slic3r;
 using namespace Catch;
 using Biz::GCodeReader::GCodeReader;
+using Domain::BrimType;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
 
@@ -86,6 +87,7 @@ TEST_CASE("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
         WHEN("Brim width is set to 5") {
             config.print.items.opt("perimeters").set(0);
             config.print.items.opt("skirts").set(0);
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(5.0);
 			THEN("Brim is generated") {
 		        std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
@@ -105,6 +107,7 @@ TEST_CASE("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
 
         WHEN("Skirt area is smaller than the brim") {
             config.print.items.opt("skirts").set(1);
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(10.0);
             THEN("Gcode generates") {
                 REQUIRE(! Slic3r::Test::slice({TestMesh::cube_20x20x20}, config).empty());
@@ -155,6 +158,7 @@ TEST_CASE("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
         WHEN("brim width to 1 with layer_width of 0.5") {
             config.print.items.opt("skirts").set(0);
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("brim_type").set(BrimType::OuterOnly);
             config.print.items.opt("brim_width").set(1.0);
             THEN("2 brim lines") {
 		        Slic3r::Print print;
