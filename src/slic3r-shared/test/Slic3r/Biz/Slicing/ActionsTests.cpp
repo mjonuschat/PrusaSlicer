@@ -22,7 +22,7 @@ using Slic3r::Test::ModelOnBed;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SelectionId;
-using Slic3r::Biz::Print::WipeTowerGeometry;
+using Slic3r::Biz::Slicing::WipeTowerGeometry;
 using Slic3r::Test::SlicingFixture;
 using Slic3r::Test::StatusEvent;
 using Slic3r::Test::StatusEvents;

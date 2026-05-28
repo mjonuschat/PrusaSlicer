@@ -205,7 +205,7 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
 
     const auto& stats = *data.print_statistics;
 
-    const Biz::Print::SerializedConfig& serialized_config{data.serialized_config};
+    const Biz::Slicing::SerializedConfig& serialized_config{data.serialized_config};
     const SLAPrintConfigView full_config{data.print_config};
 
     ConfMap iniconf;

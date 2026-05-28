@@ -243,6 +243,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/HwConfigUtils.cpp
     src/libslic3r/InfillAboveBridges.cpp
     src/libslic3r/InfillAboveBridges.hpp
+    src/libslic3r/InitPrint.cpp
     src/libslic3r/InstanceTransformations.cpp
     src/libslic3r/InstanceTransformations.hpp
     src/libslic3r/JumpPointSearch.cpp
@@ -287,6 +288,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/PrePreview.hpp
     src/libslic3r/PrincipalComponents2D.cpp
     src/libslic3r/PrincipalComponents2D.hpp
+    src/libslic3r/Print.hpp
     src/libslic3r/Print.cpp
     src/libslic3r/PrintApply.cpp
     src/libslic3r/PrintBase.cpp
@@ -413,13 +415,14 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/GCode/ToolOrdering.hpp
     include/libslic3r/GCode/WipeTower.hpp
     include/libslic3r/Geometry.hpp
+    include/libslic3r/IPrint.hpp
+    include/libslic3r/InitPrint.hpp
     include/libslic3r/MinAreaBoundingBox.hpp
     include/libslic3r/miniz_extension.hpp
     include/libslic3r/ModelUtils.hpp
     include/libslic3r/OpenVDBUtils.hpp
     include/libslic3r/Optimize/NLoptOptimizer.hpp
     include/libslic3r/Optimize/Optimizer.hpp
-    include/libslic3r/Print.hpp
     include/libslic3r/PrintBase.hpp
     include/libslic3r/SerializedConfig.hpp
     include/libslic3r/SLA/Hollowing.hpp

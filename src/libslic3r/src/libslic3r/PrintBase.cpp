@@ -145,12 +145,12 @@ static Domain::Polygon get_rectangle(double width, double height)
     };
 }
 
-double Print::WipeTowerGeometry::get_height() const
+double Slicing::WipeTowerGeometry::get_height() const
 {
     return depths.empty() ? fallback_height : depths.back().z;
 }
 
-Domain::ExPolygon Print::WipeTowerGeometry::get_outline(
+Domain::ExPolygon Slicing::WipeTowerGeometry::get_outline(
     const Domain::ModelWipeTower& model_wipe_tower
 ) const
 {
@@ -172,7 +172,7 @@ Domain::ExPolygon Print::WipeTowerGeometry::get_outline(
     return outline.front();
 }
 
-Domain::BoundingBox3d Print::WipeTowerGeometry::get_bounding_box(
+Domain::BoundingBox3d Slicing::WipeTowerGeometry::get_bounding_box(
     const Domain::ModelWipeTower& model_wipe_tower
 ) const
 {
@@ -197,7 +197,7 @@ Domain::BoundingBox3d Print::WipeTowerGeometry::get_bounding_box(
     );
 }
 
-Domain::Vec2d Print::WipeTowerGeometry::get_center(
+Domain::Vec2d Slicing::WipeTowerGeometry::get_center(
     const Domain::ModelWipeTower& model_wipe_tower
 ) const
 {

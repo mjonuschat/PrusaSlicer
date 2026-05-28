@@ -330,7 +330,7 @@ void init_print(
         preset_metadata,
         Slicing::build_metadata_serializer(gcode_metadata, preset_metadata, config_in)
     )};
-    ASSERT(!std::holds_alternative<Biz::Print::ApplyStatus::InvalidData>(status));
+    ASSERT(!std::holds_alternative<Biz::Slicing::ApplyStatus::InvalidData>(status));
     print.validate();
     print.set_status_silent();
 }

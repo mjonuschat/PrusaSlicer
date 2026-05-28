@@ -57,7 +57,7 @@ class Print;
 class PrintObject;
 class SupportLayer;
 
-namespace Biz::Print {
+namespace Biz::Slicing {
 class PrePreview;
 } // namespace Biz::Print
 
@@ -566,7 +566,7 @@ private: // Prevents erroneous use by other classes.
 
 public:
     using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
-    using OnWipeTowerGeometry = std::function<void(Biz::Print::OptWipeTowerGeometry)>;
+    using OnWipeTowerGeometry = std::function<void(Biz::Slicing::OptWipeTowerGeometry)>;
     using OnExtruderCandidates = std::function<void(std::vector<unsigned>)>;
     Print();
     Print(
@@ -588,7 +588,7 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
-    virtual Biz::Print::ApplyStatus::Status update(
+    virtual Biz::Slicing::ApplyStatus::Status update(
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
@@ -596,7 +596,7 @@ public:
         const MetadataSerializeFn& serializer
     ) override;
 
-    Biz::Print::ApplyStatus::Status apply(
+    Biz::Slicing::ApplyStatus::Status apply(
         const Domain::Model& model,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Domain::Preset::SelectedPresetMetadata& metadata,
@@ -638,7 +638,7 @@ public:
     bool                has_brim() const;
 
     // Returns an empty string if valid, otherwise returns an error message.
-    Biz::Print::ValidationResult validate() const;
+    Biz::Slicing::ValidationResult validate() const;
     double              skirt_first_layer_height() const;
     Flow                brim_flow() const;
     Flow                skirt_flow() const;
@@ -753,7 +753,7 @@ public:
 private:
     std::vector<unsigned> m_extruder_candidates;
     Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
-    std::unique_ptr<Biz::Print::PrePreview> m_pre_preview;
+    std::unique_ptr<Biz::Slicing::PrePreview> m_pre_preview;
     bool m_invalid{false};
 };
 

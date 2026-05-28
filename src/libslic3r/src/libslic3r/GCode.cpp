@@ -710,7 +710,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
 
 Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     Print* print,
-    const Biz::Print::SerializedConfig& serialized_config
+    const Biz::Slicing::SerializedConfig& serialized_config
 )
 {
     using namespace Biz::libpgcode;
@@ -991,7 +991,7 @@ static inline std::optional<std::string> find_M84(const std::string &gcode) {
 Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     Print& print,
     GCodeOutputStream& file,
-    const Biz::Print::SerializedConfig& serialized_config
+    const Biz::Slicing::SerializedConfig& serialized_config
 )
 {
     std::string prepared_by_info;

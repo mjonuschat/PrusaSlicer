@@ -868,7 +868,7 @@ void build_wipe_tower_cone(
 
 void PlaterScenePresenter::build_unknown_wipe_tower_node(
     Scene::NodeBuilder& builder,
-    const Biz::Print::WipeTowerGeometry& wipe_tower,
+    const Biz::Slicing::WipeTowerGeometry& wipe_tower,
     Domain::SlicingId slicing_id
 )
 {
@@ -933,7 +933,7 @@ void PlaterScenePresenter::build_unknown_wipe_tower_node(
 
 void PlaterScenePresenter::build_wipe_tower_node(
     Scene::NodeBuilder& builder,
-    const Biz::Print::WipeTowerGeometry& wipe_tower,
+    const Biz::Slicing::WipeTowerGeometry& wipe_tower,
     Domain::SlicingId slicing_id
 )
 {
@@ -945,7 +945,7 @@ void PlaterScenePresenter::build_wipe_tower_node(
             .set_uniform("uniform_color", Domain::ColorRGBA::DARK_YELLOW())
     };
 
-    using Biz::Print::ZDepth;
+    using Biz::Slicing::ZDepth;
 
     const double depth{wipe_tower.depths.front().depth};
 
@@ -1444,7 +1444,7 @@ static void remove_wipe_tower_node(Scene::Scene& scene, Domain::SlicingId slicin
 
 void PlaterScenePresenter::on_wipe_tower_changed(
     Domain::SlicingId slicing_id,
-    const Biz::Print::WipeTowerGeometry& wipe_tower
+    const Biz::Slicing::WipeTowerGeometry& wipe_tower
 )
 {
     auto it{m_projects.find(slicing_id.project_id)};

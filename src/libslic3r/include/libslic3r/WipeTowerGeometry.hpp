@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
-namespace Slic3r::Biz::Print {
+namespace Slic3r::Biz::Slicing {
 struct ZDepth
 {
     double z{};
@@ -35,4 +35,7 @@ struct WipeTowerGeometry
         const Domain::ModelWipeTower& model_wipe_tower
     ) const;
 };
+
+using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;
+
 } // namespace Slic3r::Biz::Print

@@ -326,7 +326,7 @@ std::optional<SelectionExtents> get_selection_extents(
             if (!bed_instance) {
                 continue;
             }
-            const Biz::Print::WipeTowerGeometry* wipe_tower_geometry{
+            const Biz::Slicing::WipeTowerGeometry* wipe_tower_geometry{
                 scene_interactor.wipe_tower_geometry(element.wipe_tower_id.bed_instance_id)
             };
             if (!wipe_tower_geometry) {

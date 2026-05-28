@@ -24,6 +24,7 @@
 #include "Slic3r/Domain/SlicingId.hpp"
 #include "Slic3r/Domain/SLA/PrintStatistics.hpp"
 
+#include "libslic3r/IPrint.hpp"
 #include "libslic3r/SlicingStatus.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
@@ -406,65 +407,6 @@ private:
     const PrintBase *m_print;
 };
 
-namespace Biz::Print {
-
-namespace ApplyStatus {
-struct Unchanged
-{};
-
-struct Empty
-{};
-
-struct Changed
-{
-    std::vector<Biz::Slicing::Warning> warrnings;
-};
-
-struct InvalidData
-{
-    std::vector<Biz::Slicing::Error> errors;
-};
-
-using Status = std::variant<InvalidData, Unchanged, Changed, Empty>;
-} // namespace ApplyStatus
-
-
-using OptWipeTowerGeometry = std::optional<WipeTowerGeometry>;
-
-
-
-
-class IPrint {
-public:
-    using UniversalPrintStatistics = std::variant<Domain::PrintStatistics, Domain::SLA::PrintStatistics>;
-    using MetadataSerializeFn = std::function<SerializedConfig(const UniversalPrintStatistics&)>;
-
-    virtual ApplyStatus::Status update(
-        Domain::Model& model,
-        const Domain::ConfigPack& config,
-        const Domain::BedInstance& bed,
-        const Domain::Preset::SelectedPresetMetadata& metadata,
-        const MetadataSerializeFn& serializer
-    ) = 0;
-    virtual void slice(Domain::SlicingId, Slicing::IThumbnailImageGenerator&) = 0;
-    virtual bool empty() const = 0;
-    virtual ~IPrint() = default;
-
-    JThread::StopToken stop_token;
-    std::function<void(Biz::Slicing::Progress)> progress_callback{
-        [](Biz::Slicing::Progress) {}
-    };
-    std::function<void(Biz::Slicing::Warning)> append_warning_callback{
-        [](Biz::Slicing::Warning) {}
-    };
-};
-
-struct ValidationResult {
-    std::vector<Biz::Slicing::Error> errors;
-    std::vector<Biz::Slicing::Warning> warnings;
-};
-}
-
 /**
  * @brief Printing involves slicing and export of device dependent instructions.
  *
@@ -476,7 +418,7 @@ struct ValidationResult {
  * The PrintBase class will abstract this flow for different technologies.
  *
  */
-class PrintBase : public Domain::ObjectBase, public Biz::Print::IPrint
+class PrintBase : public Domain::ObjectBase, public Biz::Slicing::IPrint
 {
 public:
 	PrintBase() { this->restart(); }

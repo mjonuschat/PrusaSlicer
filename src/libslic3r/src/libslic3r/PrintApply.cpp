@@ -1406,7 +1406,7 @@ InvalidatedSteps sync_hw_config(
     return result;
 }
 
-Biz::Print::ApplyStatus::Status Print::apply(
+Biz::Slicing::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Domain::Preset::SelectedPresetMetadata& metadata,
@@ -1466,7 +1466,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
         num_extruders_changed
     )};
     if (!model_sync_result) {
-        return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
+        return Biz::Slicing::ApplyStatus::InvalidData{model_sync_result.error()};
     }
 
     m_extruder_candidates = extruder_candidates;
@@ -1552,7 +1552,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
 
         if (wipe_tower_invalidated || !could_have_had_wipe_tower) {
             m_on_wipe_tower_geometry(
-                Biz::Print::WipeTowerGeometry{
+                Biz::Slicing::WipeTowerGeometry{
                     .depths   = {},
                     .fallback_depth = 7.0,
                     .fallback_height = 25.0,
@@ -1580,10 +1580,10 @@ Biz::Print::ApplyStatus::Status Print::apply(
 
     if (changed) {
         this->cleanup();
-        return Biz::Print::ApplyStatus::Changed{warnings};
+        return Biz::Slicing::ApplyStatus::Changed{warnings};
     }
 
-    return Biz::Print::ApplyStatus::Unchanged{};
+    return Biz::Slicing::ApplyStatus::Unchanged{};
 }
 
 void Print::cleanup()

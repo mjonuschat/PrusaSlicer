@@ -16,7 +16,7 @@ using namespace Slic3r::Test;
 
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelObject::add_volume;
-using Biz::Print::SerializedConfig;
+using Biz::Slicing::SerializedConfig;
 using Domain::Preset::HwPrinterConfig;
 
 SCENARIO("Model construction", "[Model]") {

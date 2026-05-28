@@ -145,7 +145,7 @@ public:
     )
     {}
 
-    virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Print::WipeTowerGeometry& wipe_tower) {}
+    virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Slicing::WipeTowerGeometry& wipe_tower) {}
     virtual void on_wipe_tower_moved(Domain::SlicingId slicing_id) {}
     virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
 
@@ -461,22 +461,22 @@ public:
     void on_removed_config_container(Domain::Project& project);
 
     void on_wipe_tower_geometry_changed(
-        Print::OptWipeTowerGeometry wipe_tower,
+        Slicing::OptWipeTowerGeometry wipe_tower,
         const Domain::SlicingId slicing_id
     ) override;
 
     void remove_wipe_tower(const Domain::SlicingId slicing_id);
     void change_wipe_tower(
-        const Print::WipeTowerGeometry& wipe_tower,
+        const Slicing::WipeTowerGeometry& wipe_tower,
         const Domain::SlicingId slicing_id
     );
 
     void resolve_wipe_tower_outside_bed(
-        const Print::WipeTowerGeometry& wipe_tower,
+        const Slicing::WipeTowerGeometry& wipe_tower,
         Domain::SlicingId slicing_id
     );
 
-    const Print::WipeTowerGeometry* wipe_tower_geometry(std::size_t bed_instance_id) const;
+    const Slicing::WipeTowerGeometry* wipe_tower_geometry(std::size_t bed_instance_id) const;
 
     void update_custom_gcode(
         const Domain::SlicingId slicing_id,

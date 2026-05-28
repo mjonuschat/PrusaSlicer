@@ -8,7 +8,7 @@
 
 using namespace Slic3r::Biz;
 
-namespace Slic3r::Biz::Print {
+namespace Slic3r::Biz::Slicing {
 
 MoveVerticesPerLayer merge(MoveVerticesPerLayer a, const MoveVerticesPerLayer& b) {
     MoveVerticesPerLayer result{std::move(a)};

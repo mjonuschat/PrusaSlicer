@@ -347,7 +347,7 @@ std::vector<BedRef> get_selected_beds(
 ArrangeItem wipe_tower_to_arrange_item(
     SelectionId project_id,
     const BedRef bed_ref,
-    const Print::WipeTowerGeometry& wipe_tower,
+    const Slicing::WipeTowerGeometry& wipe_tower,
     const Domain::ModelWipeTower& model_wipe_tower,
     const Settings& settings
 )
@@ -395,7 +395,7 @@ WipeTowerPerBed get_wipe_towers_per_bed(
         if (!bed_selection.is_selected(bed_ref)) {
             continue;
         }
-        const Print::WipeTowerGeometry* wipe_tower_geometry{
+        const Slicing::WipeTowerGeometry* wipe_tower_geometry{
             scene_interactor.wipe_tower_geometry(bed_ref.instance_id)
         };
         if (wipe_tower_geometry == nullptr) {

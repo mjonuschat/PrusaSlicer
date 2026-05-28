@@ -98,7 +98,7 @@ Domain::Point PrintInstance::shift() const
 
 Print::Print()
     : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
-    , m_on_wipe_tower_geometry([](Biz::Print::OptWipeTowerGeometry&&) {})
+    , m_on_wipe_tower_geometry([](Biz::Slicing::OptWipeTowerGeometry&&) {})
     , m_on_extruder_candidates([](std::vector<unsigned>){})
 {}
 
@@ -277,7 +277,7 @@ static bool is_any_printable(const std::vector<Domain::ModelObject*>& objects)
     return false;
 }
 
-Biz::Print::ApplyStatus::Status Print::update(
+Biz::Slicing::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
@@ -285,7 +285,7 @@ Biz::Print::ApplyStatus::Status Print::update(
     const MetadataSerializeFn& serializer
 )
 {
-    namespace ApplyStatus = Biz::Print::ApplyStatus;
+    namespace ApplyStatus = Biz::Slicing::ApplyStatus;
 
     ApplyStatus::Status result{ApplyStatus::Unchanged{}};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
@@ -341,7 +341,7 @@ Biz::Print::ApplyStatus::Status Print::update(
             return;
         }
         if (std::holds_alternative<ApplyStatus::Changed>(result)) {
-            Biz::Print::ValidationResult validation_result{validate()};
+            Biz::Slicing::ValidationResult validation_result{validate()};
             if (!validation_result.errors.empty()) {
                 result = ApplyStatus::InvalidData{std::move(validation_result.errors)};
                 return;
@@ -506,14 +506,14 @@ bool Print::has_brim() const
 boost::regex regex_g92e0 { "^[ \\t]*[gG]92[ \\t]*[eE](0(\\.0*)?|\\.0+)[ \\t]*(;.*)?$" };
 
 // Precondition: Print::validate() requires the Print::apply() to be called its invocation.
-Biz::Print::ValidationResult Print::validate() const
+Biz::Slicing::ValidationResult Print::validate() const
 {
     using Biz::Slicing::Error;
     using Biz::Slicing::ErrorCode;
     using Biz::Slicing::Warning;
     using Biz::Slicing::WarningCode;
 
-    Biz::Print::ValidationResult result;
+    Biz::Slicing::ValidationResult result;
 
     std::vector<Warning>& warnings{result.warnings};
     std::vector<Error>& errors{result.errors};
@@ -1173,10 +1173,10 @@ bool Print::has_support_material() const
     return false;
 }
 
-Biz::Print::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_tower_data) {
-    using Biz::Print::ZDepth;
+Biz::Slicing::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_tower_data) {
+    using Biz::Slicing::ZDepth;
 
-    Biz::Print::WipeTowerGeometry result;
+    Biz::Slicing::WipeTowerGeometry result;
     result.depths.reserve(wipe_tower_data.z_and_depth_pairs.size());
     std::transform(
         std::begin(wipe_tower_data.z_and_depth_pairs), std::end(wipe_tower_data.z_and_depth_pairs),
@@ -1407,7 +1407,7 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
     );
     this->process();
 
-    m_pre_preview = std::make_unique<Biz::Print::PrePreview>(*this);
+    m_pre_preview = std::make_unique<Biz::Slicing::PrePreview>(*this);
     m_on_fdm_result(m_pre_preview->generate_result());
     Biz::libpgcode::ProcessorResult result{this->process_gcode()};
     result.contained_in_bed = check_result(result, config(), append_warning_callback);

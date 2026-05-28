@@ -18,7 +18,7 @@ using Biz::GCodeReader::GCodeReader;
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
-using Biz::Print::SerializedConfig;
+using Biz::Slicing::SerializedConfig;
 using Domain::Preset::HwPrinterConfig;
 
 constexpr bool debug_files{false};

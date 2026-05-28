@@ -29,7 +29,7 @@ struct SceneInteractorProjectContext
     SelectionReferenceFrame object_selection_reference_frame{SelectionReferenceFrame::Bed};
 
     // key is bed_instance_id
-    std::map<std::size_t, Biz::Print::WipeTowerGeometry> wipe_tower_geometries;
+    std::map<std::size_t, Biz::Slicing::WipeTowerGeometry> wipe_tower_geometries;
 
     std::optional<VirtualBedPreview> virtual_bed_preview;
 };

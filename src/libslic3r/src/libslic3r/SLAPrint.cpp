@@ -872,7 +872,7 @@ InstanceTrafos get_instance_trafos(const SLAPrintObject& object) {
     return instance_trafos;
 }
 
-Biz::Print::ApplyStatus::Status SLAPrint::update(
+Biz::Slicing::ApplyStatus::Status SLAPrint::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
@@ -880,7 +880,7 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
     const MetadataSerializeFn& serializer
 )
 {
-    namespace ApplyStatus = Biz::Print::ApplyStatus;
+    namespace ApplyStatus = Biz::Slicing::ApplyStatus;
 
     std::set<ObjectID> old_ids{};
     for (const SLAPrintObject* object : m_objects) {

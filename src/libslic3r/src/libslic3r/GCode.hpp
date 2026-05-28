@@ -112,7 +112,7 @@ public:
     // throws CanceledException through print->throw_if_canceled().
     Biz::libpgcode::ProcessorResult do_export(
         Print* print,
-        const Biz::Print::SerializedConfig& serialized_config
+        const Biz::Slicing::SerializedConfig& serialized_config
     );
 
     // Exported for the helper classes (OozePrevention, Wipe) and for the Perl binding for unit tests.
@@ -212,7 +212,7 @@ private:
     Domain::ExtraPrintStatistics _do_export(
         Print& print,
         GCodeOutputStream& file,
-        const Biz::Print::SerializedConfig& serialized_config
+        const Biz::Slicing::SerializedConfig& serialized_config
     );
 
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);

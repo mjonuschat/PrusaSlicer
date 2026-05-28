@@ -17,7 +17,7 @@ using namespace Slic3r::Test;
 using Biz::GCodeReader::GCodeReader;
 using Domain::Percentage;
 using Domain::FloatOrPercentage;
-using Biz::Print::SerializedConfig;
+using Biz::Slicing::SerializedConfig;
 using Domain::Preset::HwPrinterConfig;
 using Slic3r::Domain::EnumWrapper;
 using Slic3r::Domain::EnumVectorWrapper;
@@ -375,7 +375,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
         std::nullopt,
         {0}
     )};
-    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Unchanged>(apply_status));
+    REQUIRE(std::holds_alternative<Biz::Slicing::ApplyStatus::Unchanged>(apply_status));
 
     std::vector<ConfigBox*> boxes{&config.print, &config.printer, &config.project};
     for (auto& tool : config.tool) {
@@ -413,7 +413,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
         std::nullopt,
         {0}
     );
-    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
+    REQUIRE(std::holds_alternative<Biz::Slicing::ApplyStatus::Changed>(apply_status));
 }
 
 class ThumbnailGenerator : public Biz::Slicing::IThumbnailImageGenerator
@@ -487,7 +487,7 @@ void apply_and_check(
 )
 {
     ThumbnailGenerator thumbnail_generator{};
-    Biz::Print::SerializedConfig serialized_config{};
+    Biz::Slicing::SerializedConfig serialized_config{};
     HwPrinterConfig hw_config{create_dummy_hw_config()};
 
     context.print.slice(SlicingId{0, 0}, thumbnail_generator);
@@ -511,7 +511,7 @@ void apply_and_check(
         std::nullopt,
         {0}
     )};
-    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
+    REQUIRE(std::holds_alternative<Biz::Slicing::ApplyStatus::Changed>(apply_status));
     REQUIRE(is_exclusively_undone(context.print, expected_undone));
 }
 
@@ -597,9 +597,9 @@ TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - GCode flav
 }
 
 TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
-    using Biz::Print::ApplyStatus::Status;
-    using Biz::Print::ApplyStatus::InvalidData;
-    using Biz::Print::ApplyStatus::Changed;
+    using Biz::Slicing::ApplyStatus::Status;
+    using Biz::Slicing::ApplyStatus::InvalidData;
+    using Biz::Slicing::ApplyStatus::Changed;
     using Biz::Slicing::ErrorCode;
 
     Print print{};
@@ -754,7 +754,7 @@ void apply_and_check(
 )
 {
     ThumbnailGenerator thumbnail_generator{};
-    Biz::Print::SerializedConfig serialized_config{};
+    Biz::Slicing::SerializedConfig serialized_config{};
     HwPrinterConfig hw_config{create_dummy_hw_config(1, 0, Domain::PrinterTechnology::SLA)};
 
     context.print.slice(SlicingId{0, 0}, thumbnail_generator);

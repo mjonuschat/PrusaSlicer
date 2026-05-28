@@ -29,7 +29,7 @@ using Domain::Percentage;
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
-using Biz::Print::SerializedConfig;
+using Biz::Slicing::SerializedConfig;
 using Domain::Preset::HwPrinterConfig;
 
 SCENARIO("Basic tests", "[Multi]")
@@ -204,7 +204,7 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
         preset_metadata,
         Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
     )};
-    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(status));
+    REQUIRE(std::holds_alternative<Biz::Slicing::ApplyStatus::Changed>(status));
     print.validate();
     return Test::gcode(print);
 }

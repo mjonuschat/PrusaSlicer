@@ -4,7 +4,7 @@
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "libslic3r/Print.hpp"
 
-namespace Slic3r::Biz::Print {
+namespace Slic3r::Biz::Slicing {
 
 using MoveVerticesPerLayer = std::map<int, libpgcode::MoveVertices>;
 using ObjectInstanceShifts = std::vector<Domain::Point>;

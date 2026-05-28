@@ -10,63 +10,13 @@
 #include "Slic3r/Log.hpp"
 
 #include "libslic3r/libslic3r_version.h"
-#include "libslic3r/Print.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/Utils.hpp"
 #include "Slic3r/Time.hpp"
 #include <boost/algorithm/string.hpp>
 
-namespace {
-using namespace Slic3r;
-using Biz::Slicing::IProcessCallbacks;
-using Domain::SlicingId;
-using Biz::Slicing::FDMResult;
-using Biz::Slicing::SLAResult;
-using Biz::Slicing::Sla::Object;
-using Biz::Print::IPrint;
-using Biz::Print::OptWipeTowerGeometry;
-
-std::unique_ptr<IPrint> init_print(
-    const Domain::PrinterTechnology& printer_technology,
-    IProcessCallbacks& callbacks,
-    const SlicingId id)
-{
-    std::unique_ptr<PrintBase> print;
-    std::reference_wrapper<IProcessCallbacks> callbacks_ref{callbacks};
-    switch (printer_technology) {
-    case Domain::PrinterTechnology::FFF: {
-        Print::OnFdmResult on_fdm_result = [callbacks_ref, id](FDMResult&& result) {
-            callbacks_ref.get().on_fdm_result(std::move(result), id); };
-        Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](OptWipeTowerGeometry&& geometry) {
-            callbacks_ref.get().on_wipe_tower_geometry(std::move(geometry), id); };
-        Print::OnExtruderCandidates on_extruder_candidates = [callbacks_ref, id](std::vector<unsigned> extruder_candidates) {
-            callbacks_ref.get().on_extruder_candidates(std::move(extruder_candidates), id); };
-        print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry, on_extruder_candidates);
-        break;
-    }
-    case Domain::PrinterTechnology::SLA: {
-        SLAPrint::OnSlaResult on_sla_result = [callbacks_ref, id](SLAResult&& result) {
-            callbacks_ref.get().on_sla_result(id, std::move(result)); };
-        SLAPrint::OnSlaObject on_sla_object = [callbacks_ref, id](const Object& object) {
-            auto object_copy = object;
-            callbacks_ref.get().on_sla_object(id, std::move(object_copy)); };
-        print = std::make_unique<SLAPrint>(on_sla_result, on_sla_object);
-        break;
-    }
-    default:
-        UNREACHABLE("Only FFF and SLA are viable options!");
-    }
-    callbacks_ref.get().on_wipe_tower_geometry(std::nullopt, id);
-    print->set_status_silent();
-    return print;
-}
-
-} // namespace
-
 namespace Slic3r::Biz::Slicing {
 
-using Print::IPrint;
-namespace ApplyStatus = Print::ApplyStatus;
 using JThread::StopToken;
 using JThread::JThread;
 using Domain::ConfigPack;
@@ -123,17 +73,17 @@ Domain::GCodeMetadata build_gcode_metadata(
     return metadata;
 }
 
-PrintBase::MetadataSerializeFn build_metadata_serializer(
+IPrint::MetadataSerializeFn build_metadata_serializer(
     const Domain::GCodeMetadata& metadata,
     const Domain::Preset::SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config
 )
 {
-    return [=](const PrintBase::UniversalPrintStatistics& gcode_stats) -> Print::SerializedConfig
+    return [=](const PrintBase::UniversalPrintStatistics& gcode_stats) -> SerializedConfig
     {
         // TODO: update captured `metadata.stats` with `gcode_stats`
 
-        const Print::SerializedConfig serialized_config{
+        const SerializedConfig serialized_config{
             .json = beautify_json(metadata, 2, 14),
             .ini  = Biz::serialize_as_legacy_config(config, preset_metadata.hw_config)
         };
@@ -149,7 +99,7 @@ BackgroundProcess::BackgroundProcess(
     const Domain::Preset::SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const SlicingId id
+    const Domain::SlicingId id
 ) :
     m_hw_config_id{preset_metadata.hw_config.id},
     m_print{init_print(preset_metadata.hw_config.technology, callbacks, id)},
@@ -175,7 +125,7 @@ BackgroundProcess::BackgroundProcess(
     const Domain::Preset::SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const SlicingId id
+    const Domain::SlicingId id
 )
     : m_hw_config_id{preset_metadata.hw_config.id}
     , m_print{std::move(print)}

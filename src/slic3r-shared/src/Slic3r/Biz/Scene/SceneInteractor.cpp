@@ -50,7 +50,7 @@
 using Eigen::Rotation2Dd;
 using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
 using Slic3r::Biz::Algorithms::Bed::WipeTowerCollisionData;
-using Slic3r::Biz::Print::WipeTowerGeometry;
+using Slic3r::Biz::Slicing::WipeTowerGeometry;
 using Slic3r::Domain::BedContainer;
 using Slic3r::Domain::BedInstance;
 using Slic3r::Domain::BedRef;
@@ -2314,7 +2314,7 @@ void SceneInteractor::on_preset_value_changed(
         for (const Domain::SelectionId& bed_id :
              get_bed_ids(m_workbench, project_id, config_container_id))
         {
-            const Print::WipeTowerGeometry* geometry{wipe_tower_geometry(bed_id)};
+            const WipeTowerGeometry* geometry{wipe_tower_geometry(bed_id)};
             if (!geometry) {
                 continue;
             }
@@ -2541,7 +2541,7 @@ void SceneInteractor::transform_instances(const std::vector<Arrange::InstanceTra
                 continue;
             }
 
-            const Print::WipeTowerGeometry* geometry{
+            const WipeTowerGeometry* geometry{
                 wipe_tower_geometry(wipe_tower_id.bed_instance_id)
             };
             if (!geometry) {
@@ -2785,7 +2785,7 @@ void SceneInteractor::on_removed_config_container(Domain::Project& project)
 }
 
 void SceneInteractor::on_wipe_tower_geometry_changed(
-    Print::OptWipeTowerGeometry wipe_tower,
+    Slicing::OptWipeTowerGeometry wipe_tower,
     const Domain::SlicingId slicing_id
 )
 {
@@ -2817,7 +2817,7 @@ void SceneInteractor::remove_wipe_tower(const Domain::SlicingId slicing_id)
 }
 
 void SceneInteractor::change_wipe_tower(
-    const Print::WipeTowerGeometry& wipe_tower,
+    const WipeTowerGeometry& wipe_tower,
     const Domain::SlicingId slicing_id
 )
 {
@@ -2966,7 +2966,7 @@ const std::optional<SelectionExtents> SceneInteractor::selection_bounding_box() 
     return project_it->second.object_selection_bounding_box;
 }
 
-const Print::WipeTowerGeometry* SceneInteractor::wipe_tower_geometry(
+const WipeTowerGeometry* SceneInteractor::wipe_tower_geometry(
     std::size_t bed_instance_id
 ) const
 {

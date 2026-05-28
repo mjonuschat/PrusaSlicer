@@ -297,7 +297,7 @@ void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instanc
 }
 
 void SlicingInteractor::on_wipe_tower_geometry(
-    Print::OptWipeTowerGeometry&& wipe_tower_geometry,
+    Slicing::OptWipeTowerGeometry&& wipe_tower_geometry,
     const SlicingId id
 )
 {
