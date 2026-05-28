@@ -14,7 +14,7 @@
 #include "Slic3r/Math.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/I18N_private.hpp"
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/PolygonUtils.hpp"
 

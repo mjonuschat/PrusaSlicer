@@ -5,7 +5,7 @@
 #ifndef slic3r_Format_3mf_prusafile_hpp_
 #define slic3r_Format_3mf_prusafile_hpp_
 
-#include "libslic3r/miniz_extension.hpp" // mz_zip_archive + mz_zip_archive_file_stat
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp" // mz_zip_archive + mz_zip_archive_file_stat
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp" // Error handling
 #include "ModelMap.hpp"
 #include "Slic3r/Domain/Project.hpp"

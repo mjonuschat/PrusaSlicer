@@ -10,8 +10,6 @@ project(libslic3r)
 
 include(PrecompiledHeader)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/libslic3r/libslic3r_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h @ONLY)
-
 if(SLIC3R_STATIC)
     set(OPENVDB_USE_STATIC_LIBS ON)
     set(USE_BLOSC TRUE)
@@ -31,7 +29,7 @@ set(OpenVDBUtils_SOURCES "")
 if (TARGET OpenVDB::openvdb)
     set(OpenVDBUtils_SOURCES
         src/libslic3r/OpenVDBUtils.cpp
-        include/libslic3r/OpenVDBUtils.hpp
+        src/libslic3r/OpenVDBUtils.hpp
         src/libslic3r/OpenVDBUtilsLegacy.hpp
     )
 endif ()
@@ -42,12 +40,12 @@ slic3r_remap_configs(LibBGCode::bgcode_binarize RelWithDebInfo Release)
 slic3r_remap_configs(LibBGCode::bgcode_convert RelWithDebInfo Release)
 
 set(SLIC3R_SOURCES
+    src/libslic3r/AnyPtr.hpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.cpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.hpp
     src/libslic3r/Algorithm/PathSorting.hpp
     src/libslic3r/Algorithm/RegionExpansion.cpp
     src/libslic3r/Algorithm/RegionExpansion.hpp
-    #src/libslic3r/AppConfig.cpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategy.cpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategy.hpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategyFactory.cpp
@@ -101,13 +99,18 @@ set(SLIC3R_SOURCES
     src/libslic3r/ClipperUtils.cpp
     src/libslic3r/ClipperUtils.hpp
     src/libslic3r/ClipperZUtils.hpp
+    src/libslic3r/ConfigUtils.hpp
     src/libslic3r/ConfigUtils.cpp
+    src/libslic3r/ConfigViews.hpp
+    src/libslic3r/CSGMesh/CSGMesh.hpp
+    src/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp
     src/libslic3r/CSGMesh/CSGMeshCopy.hpp
     src/libslic3r/CSGMesh/ModelToCSGMesh.hpp
     src/libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp
     src/libslic3r/CSGMesh/SliceCSGMesh.hpp
     src/libslic3r/CSGMesh/TriangleMeshAdapter.hpp
     src/libslic3r/CustomGCode.cpp
+    src/libslic3r/CustomParametersHandling.hpp
     src/libslic3r/CustomParametersHandling.cpp
     src/libslic3r/EdgeGrid.cpp
     src/libslic3r/EdgeGrid.hpp
@@ -118,8 +121,11 @@ set(SLIC3R_SOURCES
     src/libslic3r/Extruder.cpp
     src/libslic3r/Extruder.hpp
     src/libslic3r/ExtruderCandidates.cpp
+    src/libslic3r/ExtrusionEntity.hpp
     src/libslic3r/ExtrusionEntity.cpp
+    src/libslic3r/ExtrusionEntityCollection.hpp
     src/libslic3r/ExtrusionEntityCollection.cpp
+    src/libslic3r/ExtrusionRole.hpp
     src/libslic3r/ExtrusionRole.cpp
     src/libslic3r/ExtrusionSimulator.cpp
     src/libslic3r/ExtrusionSimulator.hpp
@@ -132,6 +138,9 @@ set(SLIC3R_SOURCES
     src/libslic3r/Feature/Interlocking/VoxelUtils.cpp
     src/libslic3r/Feature/Interlocking/VoxelUtils.hpp
     src/libslic3r/FileParserError.hpp
+    src/libslic3r/Fill/FillAdaptive.hpp
+    src/libslic3r/Fill/FillBase.hpp
+    src/libslic3r/Fill/FillLightning.hpp
     src/libslic3r/Fill/Fill.cpp
     src/libslic3r/Fill/Fill3DHoneycomb.cpp
     src/libslic3r/Fill/Fill3DHoneycomb.hpp
@@ -160,6 +169,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Fill/Lightning/Layer.hpp
     src/libslic3r/Fill/Lightning/TreeNode.cpp
     src/libslic3r/Fill/Lightning/TreeNode.hpp
+    src/libslic3r/Flow.hpp
     src/libslic3r/Flow.cpp
     #src/libslic3r/Format/PrintRequest.cpp
     #src/libslic3r/Format/PrintRequest.cpp
@@ -167,6 +177,9 @@ set(SLIC3R_SOURCES
     src/libslic3r/Format/SL1.hpp
     src/libslic3r/Format/SL1_SVG.cpp
     src/libslic3r/Format/SL1_SVG.hpp
+    src/libslic3r/GCode/Thumbnails.hpp
+    src/libslic3r/GCode/ToolOrdering.hpp
+    src/libslic3r/GCode/WipeTower.hpp
     src/libslic3r/GCode.cpp
     src/libslic3r/GCode.hpp
     src/libslic3r/GCode/AvoidCrossingPerimeters.cpp
@@ -232,6 +245,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/GCode/WipeTower.cpp
     src/libslic3r/GCode/WipeTowerIntegration.cpp
     src/libslic3r/GCode/WipeTowerIntegration.hpp
+    src/libslic3r/Geometry.hpp
     src/libslic3r/Geometry/ArcWelder.cpp
     src/libslic3r/Geometry/ArcWelder.hpp
     src/libslic3r/Geometry/Bicubic.hpp
@@ -257,12 +271,11 @@ set(SLIC3R_SOURCES
     src/libslic3r/MarchingSquares.hpp
     src/libslic3r/MeshNormals.cpp
     src/libslic3r/MeshNormals.hpp
-    src/libslic3r/MinAreaBoundingBox.cpp
-    src/libslic3r/miniz_extension.cpp
     src/libslic3r/Model.cpp
     src/libslic3r/Model.hpp
     src/libslic3r/ModelProcessing.cpp
     src/libslic3r/ModelProcessing.hpp
+    src/libslic3r/ModelUtils.hpp
     src/libslic3r/ModelUtils.cpp
     src/libslic3r/MTUtils.hpp
     src/libslic3r/MultiMaterialSegmentation.cpp
@@ -274,7 +287,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/MutablePriorityQueue.hpp
     src/libslic3r/NormalUtils.cpp
     src/libslic3r/NormalUtils.hpp
-    src/libslic3r/Optimize/BruteforceOptimizer.hpp
     src/libslic3r/PerimeterGenerator.cpp
     src/libslic3r/PerimeterGenerator.hpp
     src/libslic3r/Point.cpp
@@ -291,6 +303,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Print.hpp
     src/libslic3r/Print.cpp
     src/libslic3r/PrintApply.cpp
+    src/libslic3r/PrintBase.hpp
     src/libslic3r/PrintBase.cpp
     src/libslic3r/PrintObject.cpp
     src/libslic3r/PrintObjectSlice.cpp
@@ -301,6 +314,13 @@ set(SLIC3R_SOURCES
     src/libslic3r/ShortestPath.hpp
     src/libslic3r/ShrinkageCompensation.hpp
     src/libslic3r/ShrinkageCompensation.cpp
+    src/libslic3r/SLA/Hollowing.hpp
+    src/libslic3r/SLA/JobController.hpp
+    src/libslic3r/SLA/Pad.hpp
+    src/libslic3r/SLA/SupportIslands/SampleConfig.hpp
+    src/libslic3r/SLA/SupportPointGenerator.hpp
+    src/libslic3r/SLA/SupportTree.hpp
+    src/libslic3r/SLA/SupportTreeStrategies.hpp
     src/libslic3r/SLA/AGGRaster.hpp
     src/libslic3r/SLA/BranchingTreeSLA.cpp
     src/libslic3r/SLA/BranchingTreeSLA.hpp
@@ -335,6 +355,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/SLA/SupportTreeUtilsLegacy.hpp
     src/libslic3r/SLA/ZCorrection.cpp
     src/libslic3r/SLA/ZCorrection.hpp
+    src/libslic3r/SLAPrint.hpp
     src/libslic3r/SLAPrint.cpp
     src/libslic3r/SLAPrintSteps.cpp
     src/libslic3r/SLAPrintSteps.hpp
@@ -364,6 +385,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Support/TreeSupport.hpp
     src/libslic3r/Support/TreeSupportCommon.cpp
     src/libslic3r/Support/TreeSupportCommon.hpp
+    src/libslic3r/SupportSpotsGenerator.hpp
     src/libslic3r/SupportSpotsGenerator.cpp
     src/libslic3r/Surface.cpp
     src/libslic3r/Surface.hpp
@@ -378,6 +400,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/TriangleSetSampling.cpp
     src/libslic3r/TriangleSetSampling.hpp
     src/libslic3r/TriangulateWall.hpp
+    src/libslic3r/Utils.hpp
     src/libslic3r/utils.cpp
     src/libslic3r/Utils/JsonUtils.cpp
     src/libslic3r/Utils/JsonUtils.hpp
@@ -392,57 +415,16 @@ set(SLIC3R_SOURCES
 )
 
 set(SLIC3R_PUBLIC_HEADERS
-    include/libslic3r/AnyPtr.hpp
-    #include/libslic3r/AppConfig.hpp
-    include/libslic3r/BoostAdapter.hpp
-    include/libslic3r/clonable_ptr.hpp
-    include/libslic3r/ConfigUtils.hpp
-    include/libslic3r/ConfigViews.hpp
-    include/libslic3r/CSGMesh/CSGMesh.hpp
-    include/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp
     include/libslic3r/CustomGCode.hpp
-    include/libslic3r/CustomParametersHandling.hpp
     include/libslic3r/ExtruderCandidates.hpp
-    include/libslic3r/ExtrusionEntity.hpp
-    include/libslic3r/ExtrusionEntityCollection.hpp
-    include/libslic3r/ExtrusionRole.hpp
-    include/libslic3r/Fill/FillAdaptive.hpp
-    include/libslic3r/Fill/FillBase.hpp
-    include/libslic3r/Fill/FillLightning.hpp
-    include/libslic3r/Flow.hpp
-    include/libslic3r/format.hpp
-    include/libslic3r/GCode/Thumbnails.hpp
-    include/libslic3r/GCode/ToolOrdering.hpp
-    include/libslic3r/GCode/WipeTower.hpp
-    include/libslic3r/Geometry.hpp
     include/libslic3r/IPrint.hpp
     include/libslic3r/InitPrint.hpp
-    include/libslic3r/MinAreaBoundingBox.hpp
-    include/libslic3r/miniz_extension.hpp
-    include/libslic3r/ModelUtils.hpp
-    include/libslic3r/OpenVDBUtils.hpp
-    include/libslic3r/Optimize/NLoptOptimizer.hpp
-    include/libslic3r/Optimize/Optimizer.hpp
-    include/libslic3r/PrintBase.hpp
     include/libslic3r/SerializedConfig.hpp
-    include/libslic3r/SLA/Hollowing.hpp
-    include/libslic3r/SLA/JobController.hpp
-    include/libslic3r/SLA/Pad.hpp
-    include/libslic3r/SLA/SLAResult.hpp
-    include/libslic3r/SLA/SupportIslands/SampleConfig.hpp
-    include/libslic3r/SLA/SupportPointGenerator.hpp
-    include/libslic3r/SLA/SupportTree.hpp
-    include/libslic3r/SLA/SupportTreeStrategies.hpp
-    include/libslic3r/SLAPrint.hpp
+    include/libslic3r/SLAResult.hpp
     include/libslic3r/Slicing.hpp
-    include/libslic3r/StaticMap.hpp
-    include/libslic3r/SupportSpotsGenerator.hpp
     include/libslic3r/ThumbnailImageRequest.hpp
     include/libslic3r/TriangleMeshSlicer.hpp
-    include/libslic3r/Utils.hpp
     include/libslic3r/SlicingStatus.hpp
-
-    "${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h"
 )
 
 add_library(libslic3r STATIC ${SLIC3R_SOURCES} ${SLIC3R_PUBLIC_HEADERS})
@@ -463,13 +445,11 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_LIST_SLA})
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 
 target_include_directories(libslic3r PUBLIC include)
-target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include) # For libslic3r_version.h
 target_include_directories(libslic3r PRIVATE src)
 
 find_package(JPEG REQUIRED)
 
 target_link_libraries(libslic3r PRIVATE
-    libnest2d
     libexpat
     qhull
     TBB::tbb
@@ -478,7 +458,6 @@ target_link_libraries(libslic3r PRIVATE
     JPEG::JPEG
     qoi
     fastfloat
-    int128
 )
 
 if (NOT EMSCRIPTEN)
@@ -496,7 +475,6 @@ target_link_libraries(libslic3r PUBLIC
     admesh
     localesutils
     LibBGCode::bgcode_convert
-    miniz
     agg
     ankerl
     #libseqarrange

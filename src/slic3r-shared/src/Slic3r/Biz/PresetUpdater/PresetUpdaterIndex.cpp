@@ -2,7 +2,7 @@
 
 #include "Slic3r/Exception.hpp"
 
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 #include <cctype>
 #include <boost/filesystem/operations.hpp>

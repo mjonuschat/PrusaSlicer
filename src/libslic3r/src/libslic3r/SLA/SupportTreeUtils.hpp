@@ -9,8 +9,8 @@
 #include <optional>
 
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
-#include <libslic3r/Optimize/NLoptOptimizer.hpp>
-#include <libslic3r/Optimize/BruteforceOptimizer.hpp>
+#include <Slic3r/Biz/Algorithms/Optimize/NLoptOptimizer.hpp>
+#include <Slic3r/Biz/Algorithms/Optimize/BruteforceOptimizer.hpp>
 #include <libslic3r/MeshNormals.hpp>
 #include <libslic3r/Geometry.hpp>
 #include <libslic3r/SLA/SupportTreeBuilder.hpp>
@@ -20,12 +20,12 @@
 
 namespace Slic3r { namespace sla {
 
-using Slic3r::opt::initvals;
-using Slic3r::opt::bounds;
-using Slic3r::opt::StopCriteria;
-using Slic3r::opt::Optimizer;
-using Slic3r::opt::AlgNLoptSubplex;
-using Slic3r::opt::AlgNLoptGenetic;
+using Slic3r::Biz::Algorithms::Optimize::initvals;
+using Slic3r::Biz::Algorithms::Optimize::bounds;
+using Slic3r::Biz::Algorithms::Optimize::StopCriteria;
+using Slic3r::Biz::Algorithms::Optimize::Optimizer;
+using Slic3r::Biz::Algorithms::Optimize::AlgNLoptSubplex;
+using Slic3r::Biz::Algorithms::Optimize::AlgNLoptGenetic;
 using Slic3r::Geometry::dir_to_spheric;
 using Slic3r::Geometry::spheric_to_dir;
 
@@ -378,11 +378,11 @@ bool optimize_pinhead_placement(Ex                     policy,
         // viable normal that doesn't collide with the model
         // geometry and its very close to the default.
 
-        Optimizer<opt::AlgNLoptMLSL_Subplx> solver(get_criteria(m.cfg).stop_score(w).max_iterations(100));
+        Optimizer<Biz::Algorithms::Optimize::AlgNLoptMLSL_Subplx> solver(get_criteria(m.cfg).stop_score(w).max_iterations(100));
         solver.seed(0); // we want deterministic behavior
 
         auto oresult = solver.to_max().optimize(
-            [&m, pin_r, back_r, hp, sd, policy](const opt::Input<3> &input) {
+            [&m, pin_r, back_r, hp, sd, policy](const Biz::Algorithms::Optimize::Input<3> &input) {
                 auto &[plr, azm, l] = input;
 
                 auto dir = spheric_to_dir(plr, azm).normalized();
@@ -629,7 +629,7 @@ GroundConnection deepsearch_ground_connection(
     criteria_loc.abs_score_diff(EPSILON);
     criteria_loc.rel_score_diff(RelScoreDiff);
 
-    Optimizer<opt::AlgNLoptMLSL_Subplx> solver(criteria);
+    Optimizer<Biz::Algorithms::Optimize::AlgNLoptMLSL_Subplx> solver(criteria);
     solver.set_loc_criteria(criteria_loc);
     solver.seed(0); // require repeatability
 
@@ -638,7 +638,7 @@ GroundConnection deepsearch_ground_connection(
     // traced from source, through this bridge and an attached pillar. If there
     // is a collision with the mesh, the Z height is returned. Otherwise the
     // z level of ground is returned.
-    auto z_fn = [&](const opt::Input<3> &input) {
+    auto z_fn = [&](const Biz::Algorithms::Optimize::Input<3> &input) {
         // solver suggests polar, azimuth and bridge length values:
         auto &[plr, azm, bridge_len] = input;
 
@@ -717,7 +717,7 @@ GroundConnection deepsearch_ground_connection(
 
     // The resulting ground connection is only valid if the pillar base is set.
     // At this point it will only be set if the search was succesful.
-    if (z_fn(opt::Input<3>({plr, azm, bridge_l})) <= gndlvl)
+    if (z_fn(Biz::Algorithms::Optimize::Input<3>({plr, azm, bridge_l})) <= gndlvl)
         conn.pillar_base =
             Pedestal{gp, sm.cfg.base_height_mm, base_r, end_radius};
 
@@ -804,7 +804,7 @@ bool optimize_anchor_placement(Ex                     policy,
     solver.seed(0); // deterministic behavior
 
     auto oresult = solver.to_max().optimize(
-        [&sm, &anchor, sd, policy](const opt::Input<3> &input) {
+        [&sm, &anchor, sd, policy](const Biz::Algorithms::Optimize::Input<3> &input) {
             auto &[plr, azm, l] = input;
 
             auto dir = spheric_to_dir(plr, azm).normalized();

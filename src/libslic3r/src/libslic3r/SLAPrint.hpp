@@ -37,7 +37,7 @@
 
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
 #include "libslic3r/SLA/SupportPointGenerator.hpp"
 

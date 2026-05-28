@@ -4,13 +4,13 @@
 #include <optional>
 
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/FullConfigSLA.hpp"
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/SLA/PrintStatistics.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 
-#include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r::Biz::Slicing {
@@ -90,7 +90,7 @@ using Instances = std::vector<Object>;
 struct SLAResultData
 {
     SerializedConfig serialized_config;
-    SLAPrintConfigView print_config;
+    Domain::FullConfigSLA full_config;
     std::optional<Domain::SLA::PrintStatistics> print_statistics;
     Sla::OutputFiles files; // count files == slices.size()
     Domain::Images thumbnails;
@@ -103,7 +103,7 @@ struct SLAResultData
 struct SLAResult
 {
     // New: shared pointer to the data used by store_sl1 and other result-dependent operations
-    std::shared_ptr<SLAResultData> export_data = std::make_shared<SLAResultData>();
+    std::shared_ptr<SLAResultData> export_data;
 
     // It is filled after slicing
     // NOTE: SLAPrint::print_statistics();

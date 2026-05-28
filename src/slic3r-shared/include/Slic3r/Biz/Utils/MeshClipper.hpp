@@ -4,17 +4,13 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Utils.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 
-#include "libslic3r/AnyPtr.hpp" //!!!
-
 #include <admesh/stl.h>
 #include <cfloat>
 #include <optional>
-#include <memory>
 
 namespace Slic3r::Biz {
 
@@ -137,10 +133,8 @@ public:
     // Which mesh to cut. MeshClipper remembers const * to it, caller
     // must make sure that it stays valid.
     void set_mesh(const indexed_triangle_set& mesh);
-    void set_mesh(AnyPtr<const indexed_triangle_set>&& ptr);
 
     void set_negative_mesh(const indexed_triangle_set& mesh);
-    void set_negative_mesh(AnyPtr<const indexed_triangle_set>&& ptr);
     /*
         template <class It>
         void set_mesh(const Range<It>& csgrange, bool copy_meshes = false)
@@ -196,8 +190,8 @@ private:
     void recalculate_triangles();
 
     Domain::Transformation m_trafo;
-    AnyPtr<const indexed_triangle_set> m_mesh;
-    AnyPtr<const indexed_triangle_set> m_negative_mesh;
+    const indexed_triangle_set* m_mesh = nullptr;
+    const indexed_triangle_set* m_negative_mesh = nullptr;
     // std::vector<csg::CSGPart> m_csgmesh;
 
     ClippingPlane m_plane;

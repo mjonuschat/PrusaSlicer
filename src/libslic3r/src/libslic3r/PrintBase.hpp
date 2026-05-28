@@ -26,17 +26,13 @@
 
 #include "libslic3r/IPrint.hpp"
 #include "libslic3r/SlicingStatus.hpp"
+#include "libslic3r/CanceledException.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 #include "libslic3r/WipeTowerGeometry.hpp"
 
 namespace Slic3r {
 class PrintConfigView;
-
-class CanceledException : public std::exception {
-public:
-   const char* what() const throw() { return "Background processing has been canceled"; }
-};
 
 class PrintStateBase {
 public:
@@ -547,9 +543,9 @@ protected:
     // To be called by the worker thread and its sub-threads (mostly launched on the TBB thread pool) regularly.
     void                   throw_if_canceled() const {
         if (stop_token.stop_requested()) {
-            throw CanceledException();
+            throw Biz::Slicing::CanceledException();
         }
-        if (m_cancel_status.load(std::memory_order_acquire)) throw CanceledException();
+        if (m_cancel_status.load(std::memory_order_acquire)) throw Biz::Slicing::CanceledException();
     }
     // Wrapper around this->throw_if_canceled(), so that throw_if_canceled() may be passed to a function without making throw_if_canceled() public.
     PrintTryCancel         make_try_cancel() const { return PrintTryCancel(this); }
@@ -805,7 +801,7 @@ protected:
 protected:
     // If the background processing stop was requested, throw CanceledException.
     // To be called by the worker thread and its sub-threads (mostly launched on the TBB thread pool) regularly.
-    void            throw_if_canceled() { if (m_print->canceled()) throw CanceledException(); }
+    void            throw_if_canceled() { if (m_print->canceled()) throw Biz::Slicing::CanceledException(); }
 
     friend PrintType;
     PrintType                                *m_print;

@@ -24,7 +24,7 @@
 #include <boost/spirit/include/karma.hpp>
 
 #include "Slic3r/Utils.hpp" // ScopeGuard
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3f;
@@ -1017,7 +1017,7 @@ tl::expected<LoadedModelFile, Read3mfIssue> read_modelfile(mz_zip_archive &archi
         return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::expat_cant_create_parser));
 
     ScopeGuard sg_parser([&xml_parser]() { XML_ParserFree(xml_parser); });
-    MzIterType file_data_iterator(iterator_ptr);
+    Slic3r::Biz::Algorithms::MzIterType file_data_iterator(iterator_ptr);
 
     // Parser data itss
     LoadContext context{&xml_parser, collected_issues};

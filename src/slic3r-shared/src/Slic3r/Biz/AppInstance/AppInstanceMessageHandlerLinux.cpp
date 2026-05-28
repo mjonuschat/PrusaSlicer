@@ -4,8 +4,8 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 
-#include "libslic3r/format.hpp"
-#include "libslic3r/Utils.hpp" // get_current_pid
+#include "Slic3r/LegacyFormat.hpp"
+#include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp"
 
 #include <boost/nowide/convert.hpp>
 #include <regex>

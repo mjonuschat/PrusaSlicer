@@ -1,7 +1,7 @@
 #include <string>
 #include <memory>
 
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 namespace Slic3r::Biz::PrintHost::Sla {
 

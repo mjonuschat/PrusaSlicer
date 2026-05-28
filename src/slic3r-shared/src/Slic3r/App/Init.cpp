@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/Platform/BlacklistedLibraryCheck.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Platform.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -13,8 +14,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include "libslic3r/Utils.hpp"
-
 namespace Slic3r::App {
 
 InitParams::InitParams(const int argc, char** argv) : argc(argc), argv(argv) {}
@@ -22,11 +21,11 @@ InitParams::InitParams(const int argc, char** argv) : argc(argc), argv(argv) {}
 void init_common()
 {
     {
-        Slic3r::set_logging_level(1);
+        Slic3r::set_log_level(1);
         const char* loglevel = boost::nowide::getenv("SLIC3R_LOGLEVEL");
         if (loglevel != nullptr) {
             if (loglevel[0] >= '0' && loglevel[0] <= '9' && loglevel[1] == 0) {
-                Slic3r::set_logging_level(loglevel[0] - '0');
+                Slic3r::set_log_level(loglevel[0] - '0');
             } else {
                 SPDLOG_ERROR("Invalid SLIC3R_LOGLEVEL environment variable: {}", loglevel);
             }

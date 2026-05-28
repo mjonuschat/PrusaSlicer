@@ -40,8 +40,6 @@
 #include "Slic3r/Biz/WX/FontManager.hpp"
 #include "Slic3r/App/WX/WindowMetrics.hpp"
 
-#include "libslic3r/Utils.hpp"
-
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>

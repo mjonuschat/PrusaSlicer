@@ -10,8 +10,6 @@
 
 #include "Slic3r/App/WX/I18N.hpp" // translation for font name style modifier
 
-// #include "libslic3r/Utils.hpp" // IWYU pragma: keep
-// #include "libslic3r/Exception.hpp"
 #ifdef _WIN32
 #include <boost/crc.hpp>
 #include <windows.h>
@@ -19,7 +17,7 @@
 #include <windef.h>
 #include <WinUser.h>
 #elif defined(__APPLE__)
-#include "libslic3r/Utils.hpp" // ScopeGuard
+#include "Slic3r/Utils.hpp" // ScopeGuard
 #include <CoreText/CTFont.h>
 #include <wx/uri.h>
 #include <wx/fontutil.h> // wxNativeFontInfo

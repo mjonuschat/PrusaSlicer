@@ -12,10 +12,11 @@
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Extruder.hpp"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/Time.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "libslic3r/I18N_private.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
+#include "libslic3r/Utils.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <Slic3r/Log.hpp>
@@ -402,23 +403,23 @@ static std::vector<std::string> format_statistics(const Domain::FullPrintStatist
 
     result.push_back(
         "; estimated printing time (normal mode) = "
-        + get_time_dhms(stats.normal_mode_time.time)
+        + Utils::get_time_dhms(stats.normal_mode_time.time)
     );
     if (stats.silent_mode_time) {
         result.push_back(
             "; estimated printing time (silent mode) = "
-            + get_time_dhms(stats.silent_mode_time->time)
+            + Utils::get_time_dhms(stats.silent_mode_time->time)
         );
     }
 
     result.push_back(
         "; estimated first layer printing time (normal mode) = "
-        + get_time_dhms(stats.estimated_first_layer_printing_time_normal)
+        + Utils::get_time_dhms(stats.estimated_first_layer_printing_time_normal)
     );
     if (stats.estimated_first_layer_printing_time_silent) {
         result.push_back(
             "; estimated first layer printing time (silent mode) = "
-            + get_time_dhms(*stats.estimated_first_layer_printing_time_silent)
+            + Utils::get_time_dhms(*stats.estimated_first_layer_printing_time_silent)
         );
     }
 

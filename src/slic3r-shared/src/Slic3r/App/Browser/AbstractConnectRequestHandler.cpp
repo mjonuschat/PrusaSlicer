@@ -6,7 +6,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <nlohmann/json.hpp>
 

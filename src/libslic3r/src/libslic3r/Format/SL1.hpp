@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 
+#include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/SLA/RasterBase.hpp" // ISlaRasterizer
 
 namespace Slic3r {

@@ -16,7 +16,7 @@
 
 #include "libslic3r/BuildVolume.hpp"
 #include "libslic3r/Utils/JsonUtils.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Vec2d;

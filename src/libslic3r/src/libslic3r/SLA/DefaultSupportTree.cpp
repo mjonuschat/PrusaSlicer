@@ -4,7 +4,7 @@
 ///|/
 #include "DefaultSupportTree.hpp"
 
-#include <libslic3r/Optimize/NLoptOptimizer.hpp>
+#include "Slic3r/Biz/Algorithms/Optimize/NLoptOptimizer.hpp"
 #include <libslic3r/SLA/Clustering.hpp>
 #include <libslic3r/MeshNormals.hpp>
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
@@ -18,7 +18,7 @@
 #include <cstddef>
 
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/Optimize/Optimizer.hpp"
+#include "Slic3r/Biz/Algorithms/Optimize/Optimizer.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/SpatIndex.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
@@ -29,12 +29,12 @@
 
 namespace Slic3r { namespace sla {
 
-using Slic3r::opt::initvals;
-using Slic3r::opt::bounds;
-using Slic3r::opt::StopCriteria;
-using Slic3r::opt::Optimizer;
-using Slic3r::opt::AlgNLoptSubplex;
-using Slic3r::opt::AlgNLoptGenetic;
+using Slic3r::Biz::Algorithms::Optimize::initvals;
+using Slic3r::Biz::Algorithms::Optimize::bounds;
+using Slic3r::Biz::Algorithms::Optimize::StopCriteria;
+using Slic3r::Biz::Algorithms::Optimize::Optimizer;
+using Slic3r::Biz::Algorithms::Optimize::AlgNLoptSubplex;
+using Slic3r::Biz::Algorithms::Optimize::AlgNLoptGenetic;
 
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 
@@ -474,7 +474,7 @@ void DefaultSupportTree::add_pinheads()
             solver.seed(0); // we want deterministic behavior
 
             auto oresult = solver.to_max().optimize(
-                [this, pin_r, back_r, hp](const opt::Input<3> &input)
+                [this, pin_r, back_r, hp](const Biz::Algorithms::Optimize::Input<3> &input)
                 {
                     auto &[plr, azm, l] = input;
 

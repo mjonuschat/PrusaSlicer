@@ -53,7 +53,7 @@ std::optional<DiffBridge> search_widening_path(Ex                     policy,
     double fallback_ratio = radius / sm.cfg.head_back_radius_mm;
 
     auto oresult = solver.to_max().optimize(
-        [&policy, &sm, jp, radius, new_radius](const opt::Input<3> &input) {
+        [&policy, &sm, jp, radius, new_radius](const Biz::Algorithms::Optimize::Input<3> &input) {
             auto &[plr, azm, t] = input;
 
             auto d = spheric_to_dir(plr, azm).normalized();
@@ -285,7 +285,7 @@ std::pair<bool, long> search_ground_route(Ex                     policy,
 
     auto   sd  = j.r * sm.cfg.safety_distance_mm / sm.cfg.head_back_radius_mm;
     auto oresult = solver.to_max().optimize(
-        [&j, sd, &policy, &sm, &downdst, &end_radius](const opt::Input<2> &input) {
+        [&j, sd, &policy, &sm, &downdst, &end_radius](const Biz::Algorithms::Optimize::Input<2> &input) {
             auto &[plr, azm] = input;
             Vec3d n = spheric_to_dir(plr, azm).normalized();
             Beam beam{Ball{j.pos, j.r}, Ball{j.pos + downdst * n, end_radius}};

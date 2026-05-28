@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/WX/FontConfigHelp.hpp"
+#include "Slic3r/Utils.hpp"
 #ifdef EXIST_FONT_CONFIG_INCLUDE
 
 #include <wx/buffer.h>
@@ -14,8 +15,6 @@
 
 #include <wx/filename.h>
 #include <fontconfig/fontconfig.h>
-
-#include "libslic3r/Utils.hpp"
 
 namespace Slic3r::Biz::WX {
 

@@ -8,7 +8,7 @@ namespace {
 struct CornerResult
 {
     size_t contour_id;
-    opt::Result<1> oresult;
+    Algorithms::Optimize::Result<1> oresult;
 };
 } // namespace
 
@@ -51,7 +51,7 @@ double Packer::pick_best_spot_on_nfp(ArrangeItem& item, const Domain::ExPolygons
 
             auto cornerfn = [&](size_t i) {
                 ContourLocation cr = corners[i];
-                auto objfn         = [&](opt::Input<1>& in) {
+                auto objfn         = [&](Algorithms::Optimize::Input<1>& in) {
                     Domain::Vec2crd p  = ec_contour.coords(ContourLocation{cr.contour_id, in[0]});
                     Domain::Vec2crd tr = p - ref_v;
 
@@ -60,7 +60,7 @@ double Packer::pick_best_spot_on_nfp(ArrangeItem& item, const Domain::ExPolygons
 
                 // Assuming that solver is a lightweight object
                 solver.to_max();
-                auto oresult = solver.optimize(objfn, opt::initvals({cr.dist}), opt::bounds({{0., 1.}}));
+                auto oresult = solver.optimize(objfn, Algorithms::Optimize::initvals({cr.dist}), Algorithms::Optimize::bounds({{0., 1.}}));
 
                 results[i] = CornerResult{cr.contour_id, oresult};
             };

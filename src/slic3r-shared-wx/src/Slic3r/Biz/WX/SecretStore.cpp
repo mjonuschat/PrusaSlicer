@@ -3,7 +3,7 @@
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <wx/secretstore.h>
 

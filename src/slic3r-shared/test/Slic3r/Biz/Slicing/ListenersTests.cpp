@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 using namespace Catch;
 using Catch::Matchers::Equals;

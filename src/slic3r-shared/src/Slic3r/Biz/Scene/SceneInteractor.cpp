@@ -44,7 +44,6 @@
 #include <vector>
 #include <unordered_set>
 
-#include <libslic3r/GCode/WipeTower.hpp>
 #include <tracy/Tracy.hpp>
 
 using Eigen::Rotation2Dd;

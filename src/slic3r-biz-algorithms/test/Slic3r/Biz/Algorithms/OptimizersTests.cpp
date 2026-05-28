@@ -1,9 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include <test_utils.hpp>
 
-#include <libslic3r/Optimize/BruteforceOptimizer.hpp>
-
-#include <libslic3r/Optimize/NLoptOptimizer.hpp>
+#include "Slic3r/Biz/Algorithms/Optimize/BruteforceOptimizer.hpp"
+#include "Slic3r/Biz/Algorithms/Optimize/NLoptOptimizer.hpp"
 
 #include <numbers>
 
@@ -20,7 +18,7 @@ void check_opt_result(double score, double ref, double abs_err, double rel_err)
 
 template<class Opt> void test_sin(Opt &&opt)
 {
-    using namespace Slic3r::opt;
+    using namespace Slic3r::Biz::Algorithms::Optimize;
 
     auto optfunc = [](const auto &in) {
         auto [phi] = in;
@@ -40,7 +38,7 @@ template<class Opt> void test_sin(Opt &&opt)
 
 template<class Opt> void test_sphere_func(Opt &&opt)
 {
-    using namespace Slic3r::opt;
+    using namespace Slic3r::Biz::Algorithms::Optimize;
 
     Result result = opt.to_min().optimize([](const auto &in) {
         auto [x, y] = in;
@@ -52,7 +50,7 @@ template<class Opt> void test_sphere_func(Opt &&opt)
 }
 
 TEST_CASE("Test brute force optimzer for basic 1D and 2D functions", "[Opt]") {
-    using namespace Slic3r::opt;
+    using namespace Slic3r::Biz::Algorithms::Optimize;
 
     Optimizer<AlgBruteForce> opt;
 

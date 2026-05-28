@@ -20,7 +20,7 @@
 #include "BranchingTree.hpp"
 //#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/MutablePriorityQueue.hpp"
-#include "libslic3r/BoostAdapter.hpp"
+#include "Slic3r/Biz/Algorithms/BoostAdapter.hpp" // IWYU pragma: keep
 #include "boost/geometry/index/rtree.hpp"
 
 #include "Slic3r/Domain/BoundingBox.hpp"

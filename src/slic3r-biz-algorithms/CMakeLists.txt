@@ -89,6 +89,12 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/Bed.cpp
     include/Slic3r/Biz/Algorithms/LayerHeight.hpp
     src/Slic3r/Biz/Algorithms/LayerHeight.cpp
+    include/Slic3r/Biz/Algorithms/Optimize/NLoptOptimizer.hpp
+    include/Slic3r/Biz/Algorithms/Optimize/Optimizer.hpp
+    include/Slic3r/Biz/Algorithms/Optimize/BruteforceOptimizer.hpp
+    include/Slic3r/Biz/Algorithms/BoostAdapter.hpp
+    include/Slic3r/Biz/Algorithms/MiniZWrapper.hpp
+    src/Slic3r/Biz/Algorithms/MiniZWrapper.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
@@ -113,6 +119,7 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     stb_image
     stb_dxt
     PNG::PNG
+    miniz
 )
 
 if(SLIC3R_BUILD_TESTS)
@@ -120,6 +127,8 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp
         test/Slic3r/Biz/Algorithms/BedContainmentTests.cpp
+        test/Slic3r/Biz/Algorithms/OptimizersTests.cpp
+
     )
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)
 

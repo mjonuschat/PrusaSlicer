@@ -41,7 +41,7 @@
 #include "libslic3r/GCode/ConflictChecker.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/BuildVolume.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "libslic3r/PrePreview.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/SlicingInput.hpp"

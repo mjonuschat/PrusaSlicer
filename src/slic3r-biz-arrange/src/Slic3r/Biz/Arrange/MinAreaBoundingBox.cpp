@@ -2,9 +2,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/MinAreaBoundingBox.hpp"
+#include "Slic3r/Biz/Arrange/MinAreaBoundingBox.hpp"
 
-#include <libslic3r/ExPolygon.hpp>
+#include "Slic3r/Domain/ExPolygon.hpp"
 
 #if defined(_MSC_VER) && defined(__clang__)
 #define BOOST_NO_CXX17_HDR_STRING_VIEW
@@ -20,16 +20,14 @@
 #include <libnest2d/backends/libslic3r/geometries.hpp> // IWYU pragma: keep
 #include <libnest2d/utils/rotcalipers.hpp>
 #include <cmath>
-#include <cinttypes>
 #include <cstdlib>
+#include <numbers>
 
 #include "libnest2d/common.hpp"
 #include "libnest2d/geometry_traits.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/libslic3r.h"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::Arrange {
 
 // Used as compute type.
 using Unit = int64_t;
@@ -39,6 +37,11 @@ using Rational = boost::rational<boost::multiprecision::int128_t>;
 #else
 using Rational = boost::rational<__int128>;
 #endif
+
+using Domain::Point;
+using Domain::Polygon;
+using Domain::ExPolygon;
+using Domain::Points;
 
 template<class P>
 libnest2d::RotatedBox<Point, Unit> minAreaBoundigBox_(
@@ -84,7 +87,7 @@ double MinAreaBoundigBox::angle_to_X() const
 {
     double ret = std::atan2(m_axis.y(), m_axis.x());
     auto   s   = std::signbit(ret);
-    if (s) ret += 2 * PI;
+    if (s) ret += 2 * std::numbers::pi;
     return -ret;
 }
 

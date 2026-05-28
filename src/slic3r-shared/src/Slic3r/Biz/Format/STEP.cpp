@@ -12,7 +12,6 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>

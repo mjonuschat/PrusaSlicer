@@ -7,7 +7,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 using namespace Slic3r::Biz;
 

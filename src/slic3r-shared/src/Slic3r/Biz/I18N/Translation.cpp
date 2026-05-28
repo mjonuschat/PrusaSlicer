@@ -13,7 +13,7 @@
 #include <Slic3r/Log.hpp>
 #include <iostream>
 
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 #ifdef __linux__
 #include <cstdlib>

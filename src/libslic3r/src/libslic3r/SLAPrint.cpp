@@ -19,8 +19,9 @@
 #include "Slic3r/Biz/Parser/IO.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
+#include "Slic3r/Time.hpp"
 
-#include <libslic3r/SLA/SLAResult.hpp>
+#include <libslic3r/SLAResult.hpp>
 
 #include <libslic3r/Format/SL1.hpp>
 #include <boost/algorithm/string.hpp>
@@ -998,7 +999,7 @@ namespace {
 ParserConfig to_config(const Domain::SLA::PrintStatistics& stats)
 {
     ParserConfig config;
-    const std::string print_time = Slic3r::short_time(get_time_dhms(float(stats.estimated_print_time)));
+    const std::string print_time = Slic3r::short_time(Utils::get_time_dhms(float(stats.estimated_print_time)));
     config.set("print_time", print_time);
     config.set("objects_used_material", stats.objects_used_material);
     config.set("support_used_material", stats.support_used_material);

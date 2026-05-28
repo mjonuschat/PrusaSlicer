@@ -42,32 +42,16 @@ void MeshClipper::set_limiting_plane(const ClippingPlane& plane)
 
 void MeshClipper::set_mesh(const indexed_triangle_set& mesh)
 {
-    if (m_mesh.get() != &mesh) {
+    if (m_mesh != &mesh) {
         m_mesh = &mesh;
-        result.reset();
-    }
-}
-
-void MeshClipper::set_mesh(AnyPtr<const indexed_triangle_set>&& ptr)
-{
-    if (m_mesh.get() != ptr.get()) {
-        m_mesh = std::move(ptr);
         result.reset();
     }
 }
 
 void MeshClipper::set_negative_mesh(const indexed_triangle_set& mesh)
 {
-    if (m_negative_mesh.get() != &mesh) {
+    if (m_negative_mesh != &mesh) {
         m_negative_mesh = &mesh;
-        result.reset();
-    }
-}
-
-void MeshClipper::set_negative_mesh(AnyPtr<const indexed_triangle_set>&& ptr)
-{
-    if (m_negative_mesh.get() != ptr.get()) {
-        m_negative_mesh = std::move(ptr);
         result.reset();
     }
 }

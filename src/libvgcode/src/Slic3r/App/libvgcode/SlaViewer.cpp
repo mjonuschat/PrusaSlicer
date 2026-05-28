@@ -17,8 +17,8 @@
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 
 #include "Slic3r/Domain/ObjectID.hpp"
-#include "libslic3r/SLA/SLAResult.hpp"
-#include "libslic3r/format.hpp"
+#include "libslic3r/SLAResult.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 
 #include <map>

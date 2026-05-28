@@ -8,11 +8,11 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <boost/nowide/convert.hpp>
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz::libpgcode;

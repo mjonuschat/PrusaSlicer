@@ -3,7 +3,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <nlohmann/json.hpp>
 

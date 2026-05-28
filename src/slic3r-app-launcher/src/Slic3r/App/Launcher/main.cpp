@@ -23,7 +23,7 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 #include "libslic3r/Utils.hpp"
 
 #if !defined(__has_feature)
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
     Slic3r::init_logging();
 
     if (init_params.misc.loglevel.has_value()) {
-        Slic3r::set_logging_level(init_params.misc.loglevel.value());
+        Slic3r::set_log_level(init_params.misc.loglevel.value());
     } else {
         Slic3r::set_log_level(4);
     }

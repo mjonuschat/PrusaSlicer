@@ -261,15 +261,6 @@ inline bool shorter_then(const Point& p0, const coord_t len)
     return p0.cast<int64_t>().squaredNorm() <= Slic3r::sqr(int64_t(len));
 }
 
-namespace int128 {
-    // Exact orientation predicate,
-    // returns +1: CCW, 0: collinear, -1: CW.
-    int orient(const Vec2crd &p1, const Vec2crd &p2, const Vec2crd &p3);
-    // Exact orientation predicate,
-    // returns +1: CCW, 0: collinear, -1: CW.
-    int cross(const Vec2crd &v1, const Vec2crd &v2);
-}
-
 // A generic class to search for a closest Point in a given radius.
 // It uses std::unordered_multimap to implement an efficient 2D spatial hashing.
 // The PointAccessor has to return const Point*.

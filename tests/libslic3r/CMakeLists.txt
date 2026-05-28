@@ -30,7 +30,6 @@ add_executable(${_TEST_NAME}_tests
 	test_timeutils.cpp
 	test_utils.cpp
 	test_voronoi.cpp
-    test_optimizers.cpp
     test_png_io.cpp
     test_timeutils.cpp
         test_quadric_edge_collapse.cpp
@@ -44,7 +43,6 @@ add_executable(${_TEST_NAME}_tests
     test_layer_region.cpp
     ../data/prusaparts.cpp
     ../data/prusaparts.hpp
-    test_static_map.cpp
     test_model_utils.cpp
     test_custom_parameters_handling.cpp
 	)

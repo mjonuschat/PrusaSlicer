@@ -19,7 +19,7 @@
 #undef max
 #endif
 
-namespace Slic3r { namespace opt {
+namespace Slic3r::Biz::Algorithms::Optimize {
 
 template<class T, class O = T>
 using FloatingOnly = std::enable_if_t<std::is_floating_point<T>::value, O>;
@@ -205,6 +205,6 @@ template<size_t N> auto score_gradient(double s, const double (&grad)[N])
     return ScoreGradient<N>(s, detail::to_arr(grad));
 }
 
-}} // namespace Slic3r::opt
+}
 
 #endif // OPTIMIZER_HPP

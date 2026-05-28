@@ -12,7 +12,7 @@
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <imgui_internal.h>
 

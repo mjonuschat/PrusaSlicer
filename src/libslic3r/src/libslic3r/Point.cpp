@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <cstring>
 
-#include "Int128.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
@@ -134,19 +133,4 @@ std::ostream& operator<<(std::ostream &stm, const Vec2d &pointf)
     return stm << pointf(0) << "," << pointf(1);
 }
 
-namespace int128 {
-
-int orient(const Vec2crd &p1, const Vec2crd &p2, const Vec2crd &p3)
-{
-    Slic3r::Vector v1(p2 - p1);
-    Slic3r::Vector v2(p3 - p1);
-    return Int128::sign_determinant_2x2_filtered(v1.x(), v1.y(), v2.x(), v2.y());
-}
-
-int cross(const Vec2crd &v1, const Vec2crd &v2)
-{
-    return Int128::sign_determinant_2x2_filtered(v1.x(), v1.y(), v2.x(), v2.y());
-}
-
-}
 } // namespace Slic3r

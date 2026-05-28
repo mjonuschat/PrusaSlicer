@@ -13,8 +13,8 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include "libslic3r/libslic3r_version.h"
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Version.hpp"
+#include "Slic3r/Biz/Utils/XmlEscape.hpp"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -197,7 +197,7 @@ static void add_msg_content(MsgDialog* parent, wxBoxSizer* content_sizer, const 
     }
     html->SetMinSize(page_size);
 
-    std::string msg_escaped = xml_escape(into_u8(content.msg), content.is_marked_msg || content.on_link_clicked);
+    std::string msg_escaped = Biz::Utils::xml_escape(into_u8(content.msg), content.is_marked_msg || content.on_link_clicked);
     boost::replace_all(msg_escaped, "\r\n", "<br>");
     boost::replace_all(msg_escaped, "\n", "<br>");
     if (content.is_monospaced_font)

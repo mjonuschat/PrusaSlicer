@@ -7,8 +7,6 @@
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
 
-#include "libslic3r/ModelUtils.hpp"
-
 using namespace Catch;
 using Catch::Matchers::Equals;
 using Catch::Matchers::Contains;
@@ -18,19 +16,17 @@ using std::chrono::seconds;
 using std::chrono::high_resolution_clock;
 using Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Test::get_cubes_model;
+using Slic3r::Domain::ModelObject;
 using Slic3r::Test::ModelOnBed;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SelectionId;
-using Slic3r::Biz::Slicing::WipeTowerGeometry;
 using Slic3r::Test::SlicingFixture;
 using Slic3r::Test::StatusEvent;
 using Slic3r::Test::StatusEvents;
 using Slic3r::Test::ResultListener;
 using Slic3r::Domain::ModelInstanceList;
-using Slic3r::Biz::Slicing::with_limited_instances;
 using Slic3r::Test::is_gcode_sane;
-using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Biz::Slicing::IFDMResultListener;
 
 
@@ -106,13 +102,17 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
 
     REQUIRE(listener.gcodes.size() == 1);
     REQUIRE(listener.gcodes.contains(bed_id));
-    with_limited_instances(model_on_bed.model, instances_to_keep, [&](){
-        CHECK(model_on_bed.model.objects.size() == 4);
-        const auto error{is_gcode_sane(listener.gcodes[bed_id]->str(), model_on_bed.model)};
-        INFO((error ? *error : ""));
-        CHECK(!error);
+
+    std::erase_if(model_on_bed.model.objects, [&](const ModelObject* object){
+        REQUIRE(object->instances.size() == 1);
+        const auto it{std::ranges::find(instances_to_keep, object->instances.front())};
+        return it == instances_to_keep.end();
     });
 
+    CHECK(model_on_bed.model.objects.size() == 4);
+    const auto error{is_gcode_sane(listener.gcodes[bed_id]->str(), model_on_bed.model)};
+    INFO((error ? *error : ""));
+    CHECK(!error);
 }
 
 TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][slicing-interactor]") {

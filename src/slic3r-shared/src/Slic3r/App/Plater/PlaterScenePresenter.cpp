@@ -29,7 +29,6 @@
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
-#include <libslic3r/GCode/WipeTower.hpp>
 #include <tracy/Tracy.hpp>
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0

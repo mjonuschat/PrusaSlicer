@@ -20,7 +20,6 @@
 
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
-#include "libslic3r/PrintBase.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 
 namespace Slic3r { class ObjectModel; }

@@ -18,8 +18,8 @@
 
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
-#include "libslic3r/format.hpp"
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/LegacyFormat.hpp"
+#include "Slic3r/Time.hpp"
 
 #include <boost/nowide/convert.hpp>
 #include <boost/nowide/iostream.hpp>
@@ -145,7 +145,7 @@ void ObjectListWindow::update_sliced_info()
         const std::string first_layer_time = "? seconds";
         m_first_layer_time->set_text(first_layer_time);
 
-        const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.normal_mode_time.time);
+        const std::string estimated_time = Utils::get_time_dhms(print_statistics.normal_mode_time.time);
         m_estimated_time->set_text(estimated_time);
 
         return;
@@ -166,7 +166,7 @@ void ObjectListWindow::update_sliced_info()
 
     m_first_layer_time->set_text(format("%1% seconds", print_statistics.layers_times_running_total[0]));
 
-    const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.estimated_print_time);
+    const std::string estimated_time = Utils::get_time_dhms(print_statistics.estimated_print_time);
     m_estimated_time->set_text(estimated_time);
 }
 

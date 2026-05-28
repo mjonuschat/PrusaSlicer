@@ -22,7 +22,6 @@
 
 // #include "libslic3r/Format/OBJ.hpp" // load_obj for default mesh
 // #include <libslic3r/SLA/ReprojectPointsOnMesh.hpp>
-#include "libslic3r/Utils.hpp"
 
 #include "tl/expected.hpp"
 

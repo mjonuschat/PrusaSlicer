@@ -10,7 +10,7 @@
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Arrange/Tesselate.hpp"
-#include "libslic3r/MinAreaBoundingBox.hpp"
+#include "Slic3r/Biz/Arrange/MinAreaBoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 

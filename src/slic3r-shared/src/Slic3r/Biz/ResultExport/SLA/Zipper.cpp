@@ -3,8 +3,10 @@
 #include <Slic3r/Log.hpp>
 #include <cstring>
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/miniz_extension.hpp"
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
+#include "Slic3r/Biz/MiniZErrorTranslation.hpp"
 #include "miniz.h"
 
 #if defined(_MSC_VER) &&  _MSC_VER <= 1800 || __cplusplus < 201103L
@@ -15,14 +17,19 @@
 
 namespace Slic3r::Biz::PrintHost::Sla {
 
+using Algorithms::MZ_Archive;
+using Algorithms::open_zip_writer;
+using Algorithms::close_zip_writer;
+
 class Zipper::Impl: public MZ_Archive {
 public:
     std::string m_zipname;
 
     std::string formatted_errorstr() const
     {
-        return "Error with ZIP archive " + m_zipname + ": " +
-               get_errorstr();
+        return fmt::format(fmt::runtime(_u8L("Error with ZIP archive {}: {}!")),
+                           m_zipname,
+                           translate_miniz_error(arch.m_last_error));
     }
 
     SLIC3R_NORETURN void blow_up() const

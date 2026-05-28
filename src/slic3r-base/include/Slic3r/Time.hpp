@@ -77,4 +77,8 @@ inline time_t parse_iso_utc_timestamp(const std::string &str)
 
 // /////////////////////////////////////////////////////////////////////////////
 
+// Returns the given time is seconds in format DDd HHh MMm SSs
+std::string get_time_dhms(float time_in_secs);
+
+
 } // namespace Slic3r::Utils

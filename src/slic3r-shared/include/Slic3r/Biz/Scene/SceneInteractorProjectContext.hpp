@@ -2,8 +2,7 @@
 
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Scene/SelectionExtents.hpp"
-#include "Slic3r/Domain/Transformation.hpp"
-#include "libslic3r/PrintBase.hpp"
+#include "libslic3r/WipeTowerGeometry.hpp"
 
 namespace Slic3r::Domain { class Project; }
 

@@ -17,7 +17,7 @@
 
 #include "Slic3r/Domain/enum_bitmask.hpp"
 
-#include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp" // IWYU pragma: keep
 #include "libslic3r/Point.hpp"
 #include "miniz.h"
 

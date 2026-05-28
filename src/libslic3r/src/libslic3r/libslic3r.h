@@ -15,7 +15,7 @@
 #define _libslic3r_h_
 
 #include "Slic3r/Domain/Constants.hpp"
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 #include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"

@@ -2,9 +2,10 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/PrintStatistics.hpp"
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Biz/Units.hpp"
 
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <algorithm>

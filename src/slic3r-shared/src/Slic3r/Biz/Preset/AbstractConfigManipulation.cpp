@@ -6,7 +6,7 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 #include <string>
 

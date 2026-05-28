@@ -12,8 +12,8 @@
 #include "Slic3r/Biz/Arrange/Packer.hpp"
 #include "Slic3r/Domain/ModelInstance.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
-#include "libslic3r/Optimize/NLoptOptimizer.hpp"
-#include "libslic3r/Optimize/Optimizer.hpp"
+#include "Slic3r/Biz/Algorithms/Optimize/NLoptOptimizer.hpp"
+#include "Slic3r/Biz/Algorithms/Optimize/Optimizer.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -290,7 +290,7 @@ std::optional<ArrangeResult> arrange(
     Packer packer{
         std::move(final_kernel),
         accuracy,
-        opt::Optimizer<opt::AlgNLoptSubplex>{},
+        Algorithms::Optimize::Optimizer<Algorithms::Optimize::AlgNLoptSubplex>{},
         stop_condition
     };
 

@@ -9,7 +9,7 @@
 #include <boost/filesystem.hpp>
 #include <nlohmann/json.hpp>
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 namespace fs = boost::filesystem;
 

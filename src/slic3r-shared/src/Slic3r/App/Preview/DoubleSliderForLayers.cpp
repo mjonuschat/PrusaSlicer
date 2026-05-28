@@ -30,7 +30,7 @@
 
 #include <algorithm>
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "libslic3r/CustomGCode.hpp"
 
 using namespace Slic3r::Biz::libpgcode;

@@ -28,7 +28,7 @@
 #include <vector>
 
 // tmp include
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Domain::ColorRGB;

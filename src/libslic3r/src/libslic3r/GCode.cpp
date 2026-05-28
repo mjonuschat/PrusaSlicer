@@ -44,7 +44,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "LocalesUtils.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "Slic3r/Time.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
 

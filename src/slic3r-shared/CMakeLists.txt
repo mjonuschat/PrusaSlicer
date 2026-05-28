@@ -730,6 +730,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/OverridableConfigBoxObservableList.cpp
         include/Slic3r/Biz/OverridableConfigBoxInteractor.hpp
         src/Slic3r/Biz/OverridableConfigBoxInteractor.cpp
+        include/Slic3r/Biz/MiniZErrorTranslation.hpp
+        src/Slic3r/Biz/MiniZErrorTranslation.cpp
 
         include/Slic3r/Biz/OverrideItem.hpp
         src/Slic3r/Biz/Utils/MeshClipper.cpp
@@ -738,6 +740,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Utils/CutUtils.hpp
         src/Slic3r/Biz/Utils/Transformation.cpp
         include/Slic3r/Biz/Utils/Transformation.hpp
+        src/Slic3r/Biz/Utils/XmlEscape.cpp
+        include/Slic3r/Biz/Utils/XmlEscape.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -807,6 +811,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/HwConfigEvaluator.cpp
         src/Slic3r/Biz/Preset/ValueMapBuilder.hpp
         src/Slic3r/Biz/Preset/ValueMapBuilder.cpp
+        src/Slic3r/Biz/Preset/JsonUtils.hpp
+        src/Slic3r/Biz/Preset/JsonUtils.cpp
 
         include/Slic3r/Biz/Expr/Parser.hpp
         src/Slic3r/Biz/Expr/Parser.cpp
@@ -1406,6 +1412,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
         test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
         test/Slic3r/Biz/Preset/PresetNameValidatorTests.cpp
+        test/Slic3r/Biz/Preset/JsonUtilsTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

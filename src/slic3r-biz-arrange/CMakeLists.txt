@@ -20,6 +20,8 @@ add_library(slic3r-biz-arrange
 
     include/Slic3r/Biz/Arrange/ArrangeItem.hpp
     src/Slic3r/Biz/Arrange/ArrangeItem.cpp
+    src/Slic3r/Biz/Arrange/MinAreaBoundingBox.hpp
+    src/Slic3r/Biz/Arrange/MinAreaBoundingBox.cpp
     include/Slic3r/Biz/Arrange/Bed.hpp
     src/Slic3r/Biz/Arrange/Bed.cpp
     include/Slic3r/Biz/Arrange/Packer.hpp
@@ -42,6 +44,7 @@ add_library(slic3r-biz-arrange
 target_include_directories(slic3r-biz-arrange PUBLIC include)
 target_include_directories(slic3r-biz-arrange PRIVATE src)
 
+target_link_libraries(slic3r-biz-arrange PRIVATE int128 libnest2d)
 target_link_libraries(slic3r-biz-arrange PUBLIC slic3r-domain libslic3r)
 
 if(SLIC3R_BUILD_TESTS)

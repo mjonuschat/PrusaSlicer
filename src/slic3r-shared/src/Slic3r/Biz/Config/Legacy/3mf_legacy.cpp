@@ -5,7 +5,7 @@
 ///|/
 
 #include "Slic3r/Domain/Image.hpp"
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -55,8 +55,8 @@ namespace pt = boost::property_tree;
 #include "Slic3r/Biz/Emboss/NSVGUtils.hpp"
 
 #include "libslic3r/CustomGCode.hpp"
-#include "libslic3r/miniz_extension.hpp"
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
+#include "Slic3r/Biz/Utils/XmlEscape.hpp"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
@@ -78,6 +78,11 @@ using Slic3r::Domain::ConfigPackFDM;
 using Slic3r::Domain::ConfigPackSLA;
 
 using namespace Slic3r::Biz;
+
+using Algorithms::open_zip_reader;
+using Algorithms::close_zip_reader;
+using Algorithms::open_zip_writer;
+using Algorithms::close_zip_writer;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
@@ -245,6 +250,34 @@ const char* VALID_OBJECT_TYPES[] =
     "surface",
     "other"
 };
+
+// Definition of escape symbols https://www.w3.org/TR/REC-xml/#AVNormalize
+// During the read of xml attribute normalization of white spaces is applied
+// Soo for not lose white space character it is escaped before store
+std::string xml_escape_double_quotes_attribute_value(std::string text)
+{
+    std::string::size_type pos = 0;
+    for (;;) {
+        pos = text.find_first_of("\"&<\r\n\t", pos);
+        if (pos == std::string::npos) break;
+
+        std::string replacement;
+        switch (text[pos]) {
+        case '\"': replacement = "&quot;"; break;
+        case '&': replacement = "&amp;"; break;
+        case '<': replacement = "&lt;"; break;
+        case '\r': replacement = "&#xD;"; break;
+        case '\n': replacement = "&#xA;"; break;
+        case '\t': replacement = "&#x9;"; break;
+        default: break;
+        }
+
+        text.replace(pos, 1, replacement);
+        pos += replacement.size();
+    }
+
+    return text;
+}
 
 class version_error : public Slic3r::FileIOError
 {
@@ -3318,7 +3351,7 @@ namespace Slic3rLegacy {
             if (model.is_mm_painted())
                 stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_MM_PAINTING_VERSION << "\">" << MM_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
 
-            std::string name = xml_escape(boost::filesystem::path(filename).stem().string());
+            std::string name = Slic3r::Biz::Utils::xml_escape(boost::filesystem::path(filename).stem().string());
             stream << " <" << METADATA_TAG << " name=\"Title\">" << name << "</" << METADATA_TAG << ">\n";
             stream << " <" << METADATA_TAG << " name=\"Designer\">" << "</" << METADATA_TAG << ">\n";
             stream << " <" << METADATA_TAG << " name=\"Description\">" << name << "</" << METADATA_TAG << ">\n";
@@ -4031,7 +4064,7 @@ namespace Slic3rLegacy {
 
                     // stores volume's source data
                     {
-                        std::string input_file = xml_escape(m_fullpath_sources ? volume->source.input_file : boost::filesystem::path(volume->source.input_file).filename().string());
+                        std::string input_file = Slic3r::Biz::Utils::xml_escape(m_fullpath_sources ? volume->source.input_file : boost::filesystem::path(volume->source.input_file).filename().string());
                         std::string prefix = std::string("   <") + METADATA_TAG + " " + TYPE_ATTR + "=\"" + VOLUME_TYPE + "\" " + KEY_ATTR + "=\"";
                         if (! volume->source.input_file.empty()) {
                             stream << prefix << SOURCE_FILE_KEY      << "\" " << VALUE_ATTR << "=\"" << input_file << "\"/>\n";

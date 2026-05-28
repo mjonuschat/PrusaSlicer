@@ -5,9 +5,9 @@
 #ifndef BRUTEFORCEOPTIMIZER_HPP
 #define BRUTEFORCEOPTIMIZER_HPP
 
-#include <libslic3r/Optimize/Optimizer.hpp>
+#include "Slic3r/Biz/Algorithms/Optimize/Optimizer.hpp"
 
-namespace Slic3r { namespace opt {
+namespace Slic3r::Biz::Algorithms::Optimize {
 
 namespace detail {
 // Implementing a bruteforce optimizer
@@ -141,6 +141,6 @@ public:
     const StopCriteria &get_criteria() const { return m_alg.stc; }
 };
 
-}} // namespace Slic3r::opt
+}
 
 #endif // BRUTEFORCEOPTIMIZER_HPP

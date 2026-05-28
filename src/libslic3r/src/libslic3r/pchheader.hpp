@@ -121,7 +121,7 @@
 #include "clipper/clipper.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/enum_bitmask.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/Point.hpp"
@@ -130,6 +130,6 @@
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 #include <admesh/stl.h>

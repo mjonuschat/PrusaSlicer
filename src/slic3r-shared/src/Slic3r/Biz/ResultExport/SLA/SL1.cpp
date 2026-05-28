@@ -1,13 +1,15 @@
 #include "Slic3r/Biz/ResultExport/SLA/SL1.hpp"
 #include "Slic3r/Biz/ResultExport/SLA/Zipper.hpp"
 
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/FullConfigSLA.hpp"
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Time.hpp"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/libslic3r_version.h"
-#include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "Slic3r/Utils.hpp"
+#include "Slic3r/Version.hpp"
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp" // IWYU pragma: keep
+#include "libslic3r/SLAResult.hpp"
 
 #include <LocalesUtils.hpp>
 #include <sstream>
@@ -67,7 +69,7 @@ const std::vector<std::string> count_opts{
     "tilt_up_cycles"
 };
 
-std::string tilt_options_to_json(const SLAPrintConfigView& cfg, const ConfMap& iniconf)
+std::string tilt_options_to_json(const Domain::FullConfigSLA& cfg, const ConfMap& iniconf)
 {
     json below_node;
     json above_node;
@@ -137,7 +139,7 @@ static std::string serialize(const double value)
     return ss.str();
 }
 
-void fill_iniconf(ConfMap &m, const SLAPrintConfigView &cfg, const Domain::SLA::PrintStatistics &stats) {
+void fill_iniconf(ConfMap &m, const Domain::FullConfigSLA &cfg, const Domain::SLA::PrintStatistics &stats) {
     using Domain::SLAMaterialSpeed;
     using Domain::SLAMaterialSpeed::slamsSlow;
     using Domain::SLAMaterialSpeed::slamsFast;
@@ -206,7 +208,7 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
     const auto& stats = *data.print_statistics;
 
     const Biz::Slicing::SerializedConfig& serialized_config{data.serialized_config};
-    const SLAPrintConfigView full_config{data.print_config};
+    const Domain::FullConfigSLA& full_config{data.full_config};
 
     ConfMap iniconf;
     fill_iniconf(iniconf, full_config, stats);

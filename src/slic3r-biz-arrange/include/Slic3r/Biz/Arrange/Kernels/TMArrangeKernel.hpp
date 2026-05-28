@@ -13,7 +13,7 @@
 #include "Slic3r/Biz/Arrange/PackingContext.hpp"
 #include "Slic3r/Biz/Arrange/Kernels/IKernel.hpp"
 
-#include "libslic3r/BoostAdapter.hpp" // IWYU pragma: keep
+#include "Slic3r/Biz/Algorithms/BoostAdapter.hpp" // IWYU pragma: keep
 
 namespace Slic3r::Biz::Arrange::Kernels {
 

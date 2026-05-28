@@ -5,13 +5,11 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Domain/GCodeMetadata.hpp"
-#include "Slic3r/Biz/ProjectMetadataJson.hpp"
-#include "Slic3r/Biz/Config/GCodeMetadataJson.hpp"
-#include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Config/GCodeMetadataJson.hpp" // IWYU pragma: keep
 
-#include "libslic3r/libslic3r_version.h"
-#include "libslic3r/SLAPrint.hpp"
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Utils.hpp"
+#include "Slic3r/Version.hpp"
+#include "libslic3r/CanceledException.hpp"
 #include "Slic3r/Time.hpp"
 #include <boost/algorithm/string.hpp>
 
@@ -20,8 +18,6 @@ namespace Slic3r::Biz::Slicing {
 using JThread::StopToken;
 using JThread::JThread;
 using Domain::ConfigPack;
-using Domain::ConfigPackFDM;
-using Domain::ConfigPackSLA;
 
 LoggingScopeLock::LoggingScopeLock(std::mutex& mutex, std::string id)
     : m_mutex{mutex}, m_id{std::move(id)}
@@ -79,7 +75,7 @@ IPrint::MetadataSerializeFn build_metadata_serializer(
     const ConfigPack& config
 )
 {
-    return [=](const PrintBase::UniversalPrintStatistics& gcode_stats) -> SerializedConfig
+    return [=](const IPrint::UniversalPrintStatistics& gcode_stats) -> SerializedConfig
     {
         // TODO: update captured `metadata.stats` with `gcode_stats`
 
@@ -266,7 +262,7 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                 try {
                     print->slice(m_id, thumbnail_generator);
                     finished = true;
-                } catch (const Biz::Slicing::Exception& exception) {
+                } catch (const Exception& exception) {
                     slicing_error = exception.error();
                 } catch (CanceledException&) {
                     /* Intentionally pass. */

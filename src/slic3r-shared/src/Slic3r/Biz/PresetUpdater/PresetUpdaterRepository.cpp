@@ -8,7 +8,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/miniz_extension.hpp"
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/directory.hpp>
@@ -22,6 +22,9 @@ namespace fs                     = boost::filesystem;
 static const char* TMP_EXTENSION = ".download";
 
 namespace Slic3r::Biz::PresetUpdater {
+
+using Algorithms::open_zip_reader;
+using Algorithms::close_zip_reader;
 
 namespace {
 
@@ -50,7 +53,7 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
     boost::system::error_code ec;
     mz_zip_archive archive;
     mz_zip_zero_struct(&archive);
-    if (!Slic3r::open_zip_reader(&archive, source_path.string())) {
+    if (!open_zip_reader(&archive, source_path.string())) {
         SPDLOG_ERROR("Couldn't open zipped Archive source. {}", source_path.string());
         return false;
     }
@@ -63,7 +66,7 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
                 "Failed to get file stat for file #{} in the zip archive. Ending Unzipping.",
                 std::to_string(i)
             );
-            Slic3r::close_zip_reader(&archive);
+            close_zip_reader(&archive);
             return false;
         }
         fs::path extracted_path = target_path / file_stat.m_filename;
@@ -87,11 +90,11 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
         // Extract file
         if (!mz_zip_reader_extract_to_file(&archive, i, extracted_path.string().c_str(), 0)) {
             SPDLOG_ERROR("Failed to extract file #{} from the zip archive. Ending Unzipping.", i);
-            Slic3r::close_zip_reader(&archive);
+            close_zip_reader(&archive);
             return false;
         }
     }
-    Slic3r::close_zip_reader(&archive);
+    close_zip_reader(&archive);
     return true;
 }
 

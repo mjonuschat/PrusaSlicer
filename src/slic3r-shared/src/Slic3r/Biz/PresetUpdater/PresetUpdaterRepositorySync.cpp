@@ -13,7 +13,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Directories.hpp"
 
-#include "libslic3r/miniz_extension.hpp"
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
 
 #include <fmt/format.h>
 #include <boost/filesystem/path.hpp>
@@ -27,6 +27,9 @@
 namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PresetUpdater {
+
+using Algorithms::open_zip_reader;
+using Algorithms::close_zip_reader;
 
 namespace {
 fs::path create_temp_dir()
@@ -663,7 +666,7 @@ void PresetUpdaterRepositorySync::sync_repository(
     // Unzip archive to temp_dir
     mz_zip_archive archive;
     mz_zip_zero_struct(&archive);
-    if (!Slic3r::open_zip_reader(&archive, archive_path.string())) {
+    if (!open_zip_reader(&archive, archive_path.string())) {
         std::string msg = fmt::format(
             "Failed to check updates for source {}. Couldn't open zipped bundle.",
             repo->descriptor().id
@@ -728,7 +731,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                         );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-                        Slic3r::close_zip_reader(&archive);
+                        close_zip_reader(&archive);
                         return;
                     }
                     auto result = safe_move(tmp_path, target_path);
@@ -740,7 +743,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                         );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-                        Slic3r::close_zip_reader(&archive);
+                        close_zip_reader(&archive);
                         return;
                     }
 
@@ -750,7 +753,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                 }
             }
         }
-        Slic3r::close_zip_reader(&archive);
+        close_zip_reader(&archive);
     }
 
     // Now we have vendors_list, but we need index_db.

@@ -47,7 +47,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include "libslic3r/I18N_private.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Model.hpp"
@@ -1551,7 +1551,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
     .export_data = std::make_shared<SLAResultData>(SLAResultData{
         .serialized_config = m_print->build_serialized_config(print_statistics),
-        .print_config      = config,
+        .full_config       = config.full_config(),
         .print_statistics  = print_statistics,
     }),
     .slices  = std::move(slices),
@@ -1648,6 +1648,7 @@ void SLAPrint::Steps::rasterize()
     // Send encoded files to frontend for export files for printer    
     m_print->m_on_sla_result(SLAResult{
         .export_data = std::make_shared<SLAResultData>(SLAResultData{
+            .full_config = printer_config.full_config(),
             .files = OutputFiles{
                 .data = std::move(files),
                 .type = output_type

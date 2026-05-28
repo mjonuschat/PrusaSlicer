@@ -11,9 +11,8 @@
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Time.hpp"
-#include "libslic3r/Utils.hpp"
 
-#include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp" // IWYU pragma: keep
 #include <LocalesUtils.hpp>
 #include "libslic3r/SLA/RasterBase.hpp"
 

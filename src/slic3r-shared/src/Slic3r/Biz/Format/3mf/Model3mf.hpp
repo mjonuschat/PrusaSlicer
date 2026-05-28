@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <optional>
 #include <variant>
-#include "libslic3r/miniz_extension.hpp" // mini zip archivator
+#include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp" // mini zip archivator
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "admesh/stl.h" // indexed_triangle_set

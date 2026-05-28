@@ -3,7 +3,6 @@
 
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
-#include "libslic3r/Utils.hpp"
 
 namespace{
 using namespace Slic3r;

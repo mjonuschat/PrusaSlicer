@@ -31,7 +31,7 @@
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/VoronoiOffset.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Line.hpp"

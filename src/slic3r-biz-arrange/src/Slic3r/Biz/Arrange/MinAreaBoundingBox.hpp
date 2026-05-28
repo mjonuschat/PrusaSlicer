@@ -10,7 +10,7 @@
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::Arrange {
 
 void remove_collinear_points(Domain::Polygon& p);
 void remove_collinear_points(Domain::ExPolygon& p);

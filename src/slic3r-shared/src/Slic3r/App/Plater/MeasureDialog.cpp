@@ -13,7 +13,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Math.hpp"
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Plater::Measure;

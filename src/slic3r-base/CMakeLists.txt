@@ -26,6 +26,7 @@ set(SLIC3R_BASE_FILES
         src/Slic3r/Directories.cpp
 		include/Slic3r/InvokeLaterBag.hpp
 		src/Slic3r/InvokeLaterBag.cpp
+        include/Slic3r/LegacyFormat.hpp
 )
 
 if (APPLE)

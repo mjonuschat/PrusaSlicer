@@ -1,7 +1,7 @@
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Assert.hpp"
 
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 #include "fmt/ostream.h"
 

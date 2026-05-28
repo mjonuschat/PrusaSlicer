@@ -9,7 +9,7 @@
 
 #include "Slic3r/Directories.hpp"
 
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 #include <wx/font.h>
 #include <wx/dcmemory.h>

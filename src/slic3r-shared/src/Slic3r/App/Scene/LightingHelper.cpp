@@ -16,7 +16,7 @@
 
 #include <Slic3r/App/libvgcode/GCodeNodeTag.hpp>
 
-#include <libslic3r/format.hpp>
+#include <Slic3r/LegacyFormat.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>

@@ -17,9 +17,9 @@
 
 #include <utility>
 
-#include "Optimizer.hpp"
+#include "Slic3r/Biz/Algorithms/Optimize/Optimizer.hpp"
 
-namespace Slic3r { namespace opt {
+namespace Slic3r::Biz::Algorithms::Optimize {
 
 namespace detail {
 
@@ -409,6 +409,6 @@ template<class M> struct AlgFeatures_<NLoptAUGLAG<M>> {
 
 } // namespace detail
 
-}} // namespace Slic3r::opt
+}
 
 #endif // NLOPTOPTIMIZER_HPP

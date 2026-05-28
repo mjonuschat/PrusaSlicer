@@ -57,7 +57,7 @@
 
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
-#include "libslic3r/format.hpp"
+#include "Slic3r/LegacyFormat.hpp"
 
 namespace Slic3r::Biz::AppInstance {
 

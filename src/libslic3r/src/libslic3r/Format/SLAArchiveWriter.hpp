@@ -6,7 +6,7 @@
 #define SLAARCHIVE_HPP
 
 #include <string>
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 namespace Slic3r::sla {
 class ISlaStore

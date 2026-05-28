@@ -4,7 +4,7 @@
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/IPrint.hpp"
 #include "libslic3r/WipeTowerGeometry.hpp"
-#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLAResult.hpp"
 
 namespace Slic3r::Biz::Slicing {
 

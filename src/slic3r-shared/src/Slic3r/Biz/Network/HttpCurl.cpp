@@ -6,8 +6,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Platform.hpp"
 
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/libslic3r_version.h"
+#include "Slic3r/Version.hpp"
 
 #include "fmt/format.h"
 #include <boost/nowide/fstream.hpp>
@@ -326,7 +325,7 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
     ::curl_easy_setopt(m_curl.get(), CURLOPT_PROGRESSDATA, static_cast<void*>(this));
 #endif
 
-    ::curl_easy_setopt(m_curl.get(), CURLOPT_VERBOSE, get_logging_level() >= 5);
+    ::curl_easy_setopt(m_curl.get(), CURLOPT_VERBOSE, spdlog::get_level() == spdlog::level::trace);
 
     std::string header_data;
     curl_easy_setopt(m_curl.get(), CURLOPT_HEADERFUNCTION, headercb);
