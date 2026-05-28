@@ -40,12 +40,13 @@ protected:
     Text* m_preset_name{nullptr};
     LayoutButton* m_cog_btn{nullptr};
 
+    bool m_is_visible_cog{false};
+
 private:
     Text* m_printer_name{nullptr};
     LayoutButton* m_printers_btn{nullptr};
 
     bool m_is_visible_printers{false};
-    bool m_is_visible_cog{false};
 };
 
 } // namespace Slic3r::App::Yoga

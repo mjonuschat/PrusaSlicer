@@ -63,7 +63,8 @@ void PhysicalPrinterSettingsButton::update_btns_visibility()
 {
     PrinterSettingsButton::update_btns_visibility();
 
-    m_bin_btn->set_visible(m_is_visible_bin && (hovered() || m_bin_btn->hovered()));
+    m_bin_btn->set_visible(m_is_visible_bin && (hovered() || m_bin_btn->hovered() || m_cog_btn->hovered()));
+    m_cog_btn->set_visible(m_is_visible_cog && (hovered() || m_bin_btn->hovered() || m_cog_btn->hovered()));
 }
 
 void PhysicalPrinterSettingsButton::update()
