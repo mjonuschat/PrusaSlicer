@@ -69,3 +69,5 @@ endif()
 
 find_package(fmt REQUIRED)
 slic3r_remap_configs(fmt::fmt RelWithDebInfo Release)
+
+find_package(Tracy REQUIRED)

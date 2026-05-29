@@ -61,7 +61,7 @@ target_link_libraries(slic3r-platform PUBLIC slic3r-render slic3r-jthread)
 
 # Doxygen
 add_target_to_doxygen(slic3r-platform)
-
+slic3r_add_tracy(slic3r-platform)
 
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-platform-tests

@@ -7,6 +7,8 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
+#include <tracy/Tracy.hpp>
+
 using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
 using Slic3r::Biz::Algorithms::Bed::BedInstanceCollisionData;
 using Slic3r::Domain::Bed;
@@ -34,6 +36,7 @@ void remove_instance_from_bed(
     BedTrackingChanges& changes
 )
 {
+    ZoneScoped;
     if (remove_instance(project.unplaced_model_instances(), model_instance)) {
         changes.unplaced_instances_updated = true;
         for (auto& cc : project.config_containers()) {
@@ -79,6 +82,8 @@ BedTracking::find_bed_instance_for_bounds(
     const Algorithms::Bed::ObjectCollisionData& obj_collision_data
 )
 {
+    ZoneScoped;
+
     for (const auto& cc : project.config_containers()) {
         const BedCacheEntry& bed_cache = get_or_create_bed_cache(cc->bed());
         for (const auto& bi : cc->bed_instances()) {
@@ -134,6 +139,8 @@ BedContainmentState BedTracking::check_instance_containment_2d(
 const Algorithms::Bed::ObjectCollisionData& BedTracking::get_instance_collision_data(const Domain::Project& project,
     const Domain::ModelInstance& inst)
 {
+    ZoneScoped;
+
     // This function calculates an instance's 3D bounding box and 2D convex hull, using a cache to boost performance.
     // The cache is invalidated if the instance's transform, its object's internal volume transforms,
     // or any volume's ID or type are modified.
@@ -229,6 +236,8 @@ void BedTracking::update_instance_bed_placement(
     BedTrackingChanges& changes
 )
 {
+    ZoneScoped;
+
     const auto& collision_data = get_instance_collision_data(project, inst);
 
     auto [cc, bi, state] = find_bed_instance_for_bounds(project, collision_data);
@@ -321,6 +330,8 @@ BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& 
 BedTrackingChanges
 BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ModelInstanceList& instances, bool remove_original_links)
 {
+    ZoneScoped;
+
     BedTrackingChanges changes;
     for (auto* inst : instances) {
         if (remove_original_links)

@@ -20,6 +20,7 @@
 
 #include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <boost/filesystem/path.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
@@ -420,6 +421,8 @@ void ProjectInteractor::set_dialog_provider(IMessageDialogProvider* dialog_provi
 
 void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)
 {
+    ZoneScoped;
+
     auto& project = selected_project();
     const Domain::BedInstance* instance{project.find_bed_instance_by_id(bed_instance.instance_id)};
     ASSERT(instance);

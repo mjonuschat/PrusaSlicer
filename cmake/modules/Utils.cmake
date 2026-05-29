@@ -132,3 +132,18 @@ function(slic3r_app_extract_symbols target)
         message(WARNING "dsymutil or strip not found. Symbol extraction for ${target} will be skipped.")
     endif()
 endfunction()
+
+function(slic3r_add_tracy target)
+    if(SLIC3R_ENABLE_PROFILING)
+        # Profiling ON: Link the library and enable the macros
+        target_link_libraries(${target} PRIVATE Tracy::TracyClient)
+        target_compile_definitions(${target} PRIVATE TRACY_ENABLE)
+    else()
+        # Profiling OFF: Do NOT link the library
+        # But WE MUST provide the include directories so #include <Tracy.hpp> doesn't fail.
+        get_target_property(TRACY_INCLUDES Tracy::TracyClient INTERFACE_INCLUDE_DIRECTORIES)
+        if(TRACY_INCLUDES)
+            target_include_directories(${target} PRIVATE ${TRACY_INCLUDES})
+        endif()
+    endif()
+endfunction()

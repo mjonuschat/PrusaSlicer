@@ -99,6 +99,7 @@
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 #include <boost/algorithm/string/predicate.hpp> // iends_with
+#include <tracy/Tracy.hpp>
 
 #define ENABLED_DEBUG_BEDS 0
 #define ENABLED_NODE_LOGGING 0
@@ -1215,6 +1216,8 @@ void PlaterRenderModule::set_camera_synch_data(const Platform::CameraSynchData& 
 
 void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    ZoneScoped;
+
     Render::ScopedDebugGroup event_imgui_render("Plater Render", cmd_buffer);
     m_device->load_state();
 
@@ -1231,6 +1234,8 @@ void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 
 void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
+    ZoneScoped;
+
     if (!m_scene_presenter->project_ready())
         return;
 
@@ -1301,6 +1306,8 @@ void PlaterRenderModule::render_object_hud(
 
 void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 {
+    ZoneScoped;
+
     m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
     m_scene_presenter->update_sinking_contours_visibility(e, m_screen_info);
 

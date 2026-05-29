@@ -1337,6 +1337,7 @@ if (SLIC3R_DEBUG_PRESET_CACHE)
 endif()
 
 add_target_to_doxygen(slic3r-shared)
+slic3r_add_tracy(slic3r-shared)
 
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-shared-tests

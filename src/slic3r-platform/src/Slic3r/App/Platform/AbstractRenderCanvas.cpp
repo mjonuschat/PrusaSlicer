@@ -12,7 +12,10 @@
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Render/ScopedDebugGroup.hpp>
 
+#include <tracy/Tracy.hpp>
+
 #include <GL/glew.h>
+#include <tracy/TracyOpenGL.hpp>
 #include <Slic3r/Log.hpp>
 
 
@@ -67,6 +70,8 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
+    TracyGpuZone("GPU: Main frame");
+
     m_render_module->ensure_initialized(device(), imgui_render(), m_animation_manager);
     if (m_animation_manager.update())
         request_render();
@@ -90,7 +95,9 @@ void AbstractRenderCanvas::render()
     assert_no_gl_error();
     {
         Render::ScopedDebugGroup event_new_frame("AbstractRenderCanvas", *cmd_buffer);
-        begin_frame();
+        if (!begin_frame()) {
+            return;
+        }
         assert_no_gl_error();
         emit_enqueued_events();
         assert_no_gl_error();
@@ -117,6 +124,8 @@ void AbstractRenderCanvas::render()
 
 Render::ImguiRender& AbstractRenderCanvas::imgui_render()
 {
+    ZoneScoped;
+
     if (!m_imgui_render)
         m_imgui_render = std::make_unique<Render::ImguiRender>(device());
     return *m_imgui_render;
@@ -132,9 +141,13 @@ void AbstractRenderCanvas::set_default_font_size(float font_size, float dpi_scal
     m_pending_dpi_scale = dpi_scale;
 }
 
-void AbstractRenderCanvas::begin_frame()
+bool AbstractRenderCanvas::begin_frame()
 {
-    begin_frame_platform();
+    ZoneScoped;
+
+    if (!begin_frame_platform()) {
+        return false;
+    }
     assert_no_gl_error();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -157,10 +170,13 @@ void AbstractRenderCanvas::begin_frame()
     glClear(GL_COLOR_BUFFER_BIT);
     assert_no_gl_error();
     */
+    return true;
 }
 
 void AbstractRenderCanvas::begin_imgui_frame()
 {
+    ZoneScoped;
+
     // Start the Dear ImGui frame
     m_imgui_render->new_frame();
     begin_imgui_frame_platform();
@@ -169,6 +185,8 @@ void AbstractRenderCanvas::begin_imgui_frame()
 
 void AbstractRenderCanvas::end_imgui_frame()
 {
+    ZoneScoped;
+
     end_imgui_frame_platform();
     // Rendering
     ImGui::Render();
@@ -177,6 +195,8 @@ void AbstractRenderCanvas::end_imgui_frame()
 
 void AbstractRenderCanvas::end_frame(Render::CommandBuffer& cmd_buffer)
 {
+    ZoneScoped;
+
     const ImDrawData* draw_data = ImGui::GetDrawData();
     if (draw_data) {
         Render::ScopedDebugGroup event_imgui_render("ImGui", cmd_buffer);
@@ -227,8 +247,25 @@ void AbstractRenderCanvas::enqueue_keyboard(const KeyboardEvent& e)
     m_enqueued_keyboard_events.push_back(e);
 }
 
+void AbstractRenderCanvas::emit_mouse(const MouseEvent& e)
+{
+    ZoneScoped;
+
+    if (m_render_module)
+        m_render_module->on_scene_mouse_event(e);
+}
+
+void AbstractRenderCanvas::emit_keyboard(const KeyboardEvent& e)
+{
+    ZoneScoped;
+    if (m_render_module)
+        m_render_module->on_scene_keyboard_event(e);
+}
+
 void AbstractRenderCanvas::emit_enqueued_events()
 {
+    ZoneScoped;
+
     ImGuiIO& io = ImGui::GetIO();
     if (!io.WantTextInput) {
         for (const auto& e : m_enqueued_keyboard_events)
@@ -254,6 +291,8 @@ void AbstractRenderCanvas::emit_enqueued_events()
 
 void AbstractRenderCanvas::request_render()
 {
+    ZoneScoped;
+
     m_render_request_count = std::max<size_t>(m_render_request_count, 2);
     on_render_requested();
 }

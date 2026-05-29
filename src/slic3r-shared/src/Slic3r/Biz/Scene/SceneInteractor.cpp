@@ -45,6 +45,7 @@
 #include <unordered_set>
 
 #include <libslic3r/GCode/WipeTower.hpp>
+#include <tracy/Tracy.hpp>
 
 using Eigen::Rotation2Dd;
 using Slic3r::Biz::Algorithms::Bed::BedContainmentState;
@@ -155,6 +156,8 @@ SelectionMode transform_selection_instance_mode(
     TransformMemento& memento
 )
 {
+    ZoneScoped;
+
     const bool initialize_memento = memento.elements.empty();
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
@@ -238,6 +241,8 @@ SelectionMode transform_selection_instance_mode(
 
 void transform_selection_volume_mode(const SceneInteractorProjectContext& proj, const SceneInteractor::Transform& relative_transform, TransformMemento& memento)
 {
+    ZoneScoped;
+
     const bool initialize_memento = memento.elements.empty();
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Volume);
@@ -2412,6 +2417,8 @@ void SceneInteractor::transform_selection(
     bool place_on_bed
 )
 {
+    ZoneScoped;
+
     DEBUG_ASSERT(fabs(relative_transform.determinant()) > 1e-9);
     auto& proj         = m_projects.find(m_selected_project_id)->second;
     bool instance_mode = proj.object_selection.mode == SelectionMode::Instance;
@@ -2443,6 +2450,7 @@ void SceneInteractor::transform_selection(
         && bounding_box->is_floating()
         && selection.mode == SelectionMode::Volume)
     {
+        ZoneScopedN("set_transform")
         for (const auto& e : selection.elements) {
             if (!e.has_instance() || !e.has_volume()) {
                 continue;
@@ -2471,39 +2479,45 @@ void SceneInteractor::transform_selection(
 
     const BedTrackingChanges changes = update_elements_bed_placement(
         proj.object_selection.elements,
-        selection.mode == SelectionMode::Volume || memento.forced_volume_mode
+        selection.mode == SelectionMode::Volume || memento.forced_volume_mode,
+        true
     );
 
-    for (const auto& [_, e] : memento.elements) {
-        if (e.element.is_wipe_tower()) {
-            invoke_listeners<ISceneChangedListener>(
-                [&](auto listener) { listener->on_wipe_tower_moved(e.element.wipe_tower_id); }
-            );
-        }
-    }
-    invoke_listeners<ISceneChangedListener>(
-        [&](ISceneChangedListener* l)
-        {
-            if (instance_mode)
-                l->on_instance_transformed(m_selected_project_id, selection.elements, TransformState::InProgress, changes);
-            else
-                l->on_volume_transformed(m_selected_project_id, selection.elements, TransformState::InProgress, changes);
-        }
-    );
-    invoke_listeners<ISceneSelectionChangedListener>(
-        [&](ISceneSelectionChangedListener* l)
-        { l->on_scene_selection_transformed(m_selected_project_id, selection); }
-    );
+    memento.changes.append(changes);
 
-    if (!changes.updated_instances.empty()) {
+    {
+        ZoneScopedN("invoke_listeners");
+        for (const auto& [_, e] : memento.elements) {
+            if (e.element.is_wipe_tower()) {
+                invoke_listeners<ISceneChangedListener>(
+                    [&](auto listener) { listener->on_wipe_tower_moved(e.element.wipe_tower_id); }
+                );
+            }
+        }
         invoke_listeners<ISceneChangedListener>(
             [&](ISceneChangedListener* l)
             {
-                l->on_instances_last_bed_updated(
-                    {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
-                );
+                if (instance_mode)
+                    l->on_instance_transformed(m_selected_project_id, selection.elements, TransformState::InProgress, changes);
+                else
+                    l->on_volume_transformed(m_selected_project_id, selection.elements, TransformState::InProgress, changes);
             }
         );
+        invoke_listeners<ISceneSelectionChangedListener>(
+            [&](ISceneSelectionChangedListener* l)
+            { l->on_scene_selection_transformed(m_selected_project_id, selection); }
+        );
+
+        if (!changes.updated_instances.empty()) {
+            invoke_listeners<ISceneChangedListener>(
+                [&](ISceneChangedListener* l)
+                {
+                    l->on_instances_last_bed_updated(
+                        {changes.updated_instances.cbegin(), changes.updated_instances.cend()}
+                    );
+                }
+            );
+        }
     }
 }
 
@@ -2720,7 +2734,11 @@ void SceneInteractor::finalize_transform_selection(
             }
         }
 
-        changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode);
+        changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode, false);
+    } else if (!canceled) {
+        for (const auto& bed_ref : memento.changes.updated_beds) {
+            invoke_slicing_input_changed(bed_ref);
+        }
     }
 
     update_selection_bounding_box();
@@ -2906,6 +2924,8 @@ void SceneInteractor::update_selection_bounding_box(
     const std::optional<SelectionExtents>& bounding_box
 )
 {
+    ZoneScoped;
+
     const auto& project_it{m_projects.find(m_selected_project_id)};
     if (project_it == m_projects.end()) {
         return;
@@ -3146,8 +3166,14 @@ void SceneInteractor::set_state(
     }
 }
 
-BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)
+BedTrackingChanges SceneInteractor::update_elements_bed_placement(
+    const Domain::ElementRefs& elements,
+    bool volume_mode,
+    bool postpone_slicing_invalidation
+)
 {
+    ZoneScoped;
+
     BedTrackingChanges changes;
     auto& proj          = m_projects.find(m_selected_project_id)->second;
     if (volume_mode) {
@@ -3174,8 +3200,10 @@ BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::
 
     this->update_wipe_tower_containment(proj, elements, changes);
 
-    for (const BedRef& bed_ref : changes.updated_beds) {
-        invoke_slicing_input_changed(bed_ref);
+    if (!postpone_slicing_invalidation) {
+        for (const BedRef& bed_ref : changes.updated_beds) {
+            invoke_slicing_input_changed(bed_ref);
+        }
     }
 
     return changes;
@@ -3187,6 +3215,8 @@ void SceneInteractor::update_wipe_tower_containment(
     BedTrackingChanges& changes
 )
 {
+    ZoneScoped;
+
     for (const ElementRef& element : elements) {
         if (!element.is_wipe_tower()) {
             continue;
@@ -3264,6 +3294,7 @@ void SceneInteractor::normalize_single_volume_object(Domain::ModelObject& object
 
 void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_instance)
 {
+    ZoneScoped;
     invoke_listeners<ISlicingInputChangedListener>(
         [&](auto listener) { listener->on_slicing_input_changed(bed_instance); }
     );

@@ -32,7 +32,7 @@ public:
 protected:
     void on_render_requested() override;
 
-    void begin_frame_platform() override;
+    bool begin_frame_platform() override;
     void begin_imgui_frame_platform() override;
     void end_imgui_frame_platform() override;
     void end_frame_platform() override;
@@ -52,6 +52,7 @@ private:
 
     void init();
     void init_wx_imgui();
+    void repaint();
 
 private:
     using Clock = std::chrono::high_resolution_clock;
@@ -62,6 +63,25 @@ private:
 
     bool m_initialized{false};
     bool m_in_render{false};
+    bool m_pending_frame{false};
+
+    static constexpr size_t MAX_INFLIGHT_FRAMES{1};
+    GLsync m_frame_fence[MAX_INFLIGHT_FRAMES] = {nullptr};
+    size_t m_current_frame_idx{0};
+
+    size_t m_timeout_fps{30};
+
+#if DEBUG_RENDER_TIMING
+    struct FrameTiming
+    {
+        double request_time;
+        double render_start_time;
+        double render_end_time;
+    };
+
+    std::optional<FrameTiming> m_current_frame_timing;
+    std::vector<FrameTiming> m_frame_timings;
+#endif
 };
 
 } // namespace Slic3r::App::Platform::WX

@@ -47,7 +47,7 @@ struct Shadows
     mutable Render::Framebuffer* framebuffer{nullptr};
     mutable Camera light_cam;
 
-    static constexpr int DEFAULT_FRAMEBUFFER_SIZE = 4096;
+    static constexpr int DEFAULT_FRAMEBUFFER_SIZE = 2048;
     static constexpr float DEFAULT_INTENSITY = 0.75f;
     static constexpr int SHADOWSMAP_TEX_UNIT = 15;
 };

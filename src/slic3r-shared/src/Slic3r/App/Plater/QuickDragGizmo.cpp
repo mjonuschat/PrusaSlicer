@@ -14,6 +14,8 @@
 #include <map>
 #include <set>
 
+#include <tracy/Tracy.hpp>
+
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3d;
 using Slic3r::App::Scene::SceneNodeTag;
@@ -40,6 +42,8 @@ Scene::GizmoActivationState QuickDragGizmo::on_mouse(Scene::GizmoEventContext& c
 
 bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
 {
+    ZoneScoped;
+
     // Additional condition to start dragging by QuickDrag
     const Scene::NodePickResult* n{nullptr};
     if (ctx.mouse_event().key_modifiers() != 0
@@ -73,6 +77,7 @@ bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
 
 bool QuickDragGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
 {
+    ZoneScoped;
     Vec3d p;
     if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), p)) {
         // weird should not appear

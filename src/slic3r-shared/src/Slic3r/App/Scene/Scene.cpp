@@ -17,6 +17,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <imgui/imgui.h>
+#include <tracy/Tracy.hpp>
 
 #include <list>
 #include <random>
@@ -369,6 +370,8 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
 
 void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd_buffer) const
 {
+    ZoneScoped;
+
     ColorRGBA top_color    = m_use_background_error_color ? s_scene_colors.bg_top_color_error :
                                                             s_scene_colors.bg_top_color_default;
     ColorRGBA bottom_color = m_use_background_error_color ? s_scene_colors.bg_bottom_color_error :
@@ -385,6 +388,8 @@ void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd
 
 void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer) const
 {
+    ZoneScoped;
+
     Shadows& shadows = s_graphics_settings.m_shadows;
     if (shadows.light_cam.cam_projection().type() == CameraProjectionType::Perspective)
         shadows.light_cam.switch_projection_type();
@@ -506,6 +511,8 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
 void Scene::render_shadows_receivers_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
     ISceneRenderCustomizer* customizer) const
 {
+    ZoneScoped;
+
     NodeMaterials nodes = collect_nodes_with_material([](auto n) {
         return n->has_render_component() && n->render_component()->receive_shadows() && !resolve_material(*n).transparent();
     });
@@ -565,6 +572,8 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, const Camera& 
 
 void Scene::render_no_shadows_pass(const Camera& camera, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
+    ZoneScoped;
+
     NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
         return n->has_render_component() && (!s_graphics_settings.shadows_enabled() || !n->render_component()->receive_shadows());
     });
@@ -655,6 +664,8 @@ void Scene::render_no_shadows_pass(const Camera& camera, Render::CommandBuffer& 
 void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer,
     const Render::Rect& viewport, PBRParamsList& pbr_params_list) const
 {
+    ZoneScoped;
+
     Domain::Index2 viewport_size = { viewport.width, viewport.height };
 
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
@@ -746,6 +757,8 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera,
 
 void Scene::render_ao_texture_pass(Render::Device& device, const Camera& camera, const Render::Rect& viewport) const
 {
+    ZoneScoped;
+
     Domain::Index2 viewport_size = { viewport.width / 2, viewport.height / 2 };
 
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
@@ -804,6 +817,8 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Camera& camera,
 
 void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Camera& camera, const Render::Rect& viewport) const
 {
+    ZoneScoped;
+
     Domain::Index2 viewport_size = { viewport.width / 2, viewport.height / 2 };
 
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
@@ -841,6 +856,8 @@ void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Camera& c
 
 void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Camera& camera, const Render::Rect& viewport) const
 {
+    ZoneScoped;
+
     Domain::Index2 viewport_size = { viewport.width / 2, viewport.height / 2 };
 
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
@@ -879,6 +896,8 @@ void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Camera& c
 void Scene::render_ao_lighting_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
     const Render::Rect& viewport, const PBRParamsList& pbr_params_list) const
 {
+    ZoneScoped;
+
     cmd_buffer.set_viewport(viewport);
     cmd_buffer.set_depth_test_enabled(false);
     cmd_buffer.set_depth_write_enabled(false);
@@ -934,6 +953,8 @@ void Scene::render_ao_lighting_pass(Render::Device& device, const Camera& camera
 void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer,
     Camera* override_camera) const
 {
+    ZoneScoped;
+
     Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
 
     const Camera& camera = (override_camera != nullptr) ? *override_camera : m_camera;
@@ -948,6 +969,8 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
         render_shadowsmap_pass(device, camera, customizer);
 
     if (s_graphics_settings.ao_enabled()) {
+        ZoneScopedN("render AO");
+
         const Render::Rect& viewport = camera.viewport();
         PBRParamsList pbr_params_list;
         render_ao_gbuffer_pass(device, camera, customizer, viewport, pbr_params_list);
@@ -1006,6 +1029,8 @@ Eigen::AlignedBox<float, 2> to_imgui_coords(const Eigen::AlignedBox<float, 2>& b
 
 void Scene::render_imgui(const Render::ScreenInfo& screen_info) const
 {
+    ZoneScoped;
+
     Node::ConstNodeList nodes;
     m_root.query([](auto n){ return n->has_imgui_render_component();}, nodes);
     for (const auto* n : nodes) {

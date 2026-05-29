@@ -73,6 +73,8 @@ static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)
     return {za.second, za.first};
 }
 
+// #define GRAPHIC_SETTINGS_DEBUG
+
 void render_imgui_graphics_settings_debug_window(const Domain::Project& project, const Render::Device& device, ISceneProvider& scene_provider,
     Render::ImguiRender& imgui_render)
 {

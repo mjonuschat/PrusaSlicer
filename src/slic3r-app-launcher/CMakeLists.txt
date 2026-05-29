@@ -21,6 +21,8 @@ find_package(CLI11 CONFIG REQUIRED)
 target_include_directories(slic3r-app-launcher PRIVATE src)
 target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-cli CLI11::CLI11)
 
+slic3r_add_tracy(slic3r-app-launcher)
+
 # sentry integration
 if (SLIC3R_SENTRY)
     find_package(sentry REQUIRED COMPONENTS crashpad)
