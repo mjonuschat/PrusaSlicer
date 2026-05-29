@@ -47,7 +47,6 @@ struct PrusaFilesResult {
 PrusaFilesResult load_prusa_files(
     mz_zip_archive &archive,
     const ModelMap& model_map,
-    Domain::Model& model,
     Read3mfIssues& collected_issues
 );
 

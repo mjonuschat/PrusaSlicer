@@ -926,14 +926,30 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, Read3mfIs
   
     if (auto source_json_it = volume_json.find(SOURCE);
         source_json_it != volume_json.end()){
+        // Volumes in mvs may share the same underlying TriangleMesh via shared_ptr.
+        // Group by raw mesh pointer so geometry is copied at most once per unique mesh.
+        std::unordered_map<const Domain::TriangleMesh*, std::shared_ptr<const Domain::TriangleMesh>> mesh_cache;
         for (ModelVolume *mv : mvs) {
-            // Use previously loaded mesh stats to avoid invalidating them
-            // during source deserialization.
             Domain::TriangleMeshStats stats = mv->mesh().stats();
             SourceSerialization::load(*source_json_it, mv->source, stats, collected_issues);
-            // Stats cannot be set directly, so the mesh has to be recreated.
-            auto &its = const_cast<indexed_triangle_set &>(mv->mesh().its);
-            mv->set_mesh(Domain::TriangleMesh(std::move(its), std::move(stats)));
+            const Domain::TriangleMesh* old_ptr = &mv->mesh();
+            auto it = mesh_cache.find(old_ptr);
+            if (it == mesh_cache.end()) {
+                it = mesh_cache.emplace(old_ptr,
+                    std::make_shared<const Domain::TriangleMesh>(old_ptr->its, std::move(stats))
+                ).first;
+            }
+            mv->set_mesh(it->second);
+        }
+        // Propagate the new meshes to every other volume in the full volume_map that
+        // still points to one of the old TriangleMesh objects. This preserves sharing:
+        // volumes not covered by PrusaFile end up pointing to the same new mesh as their
+        // PrusaFile-covered counterparts, so the file does not grow on re-save.
+        for (const auto& [pid, vols] : volume_map) {
+            for (ModelVolume* v : vols) {
+                if (auto cache_it = mesh_cache.find(&v->mesh()); cache_it != mesh_cache.end())
+                    v->set_mesh(cache_it->second);
+            }
         }
     }
 
@@ -1188,7 +1204,6 @@ const NamesType OBJECT_NAMES{{ID, OBJECT_UUID, VOLUMES, INSTANCES, RANGES, CUT_O
 json object_to_json(const ModelObject &object, const StoredStructure &stored_structure) {
     const ObjectToObjectid &o2id = stored_structure.objects;
     auto it = o2id.find(object.id().id);
-    assert(it != o2id.end());
     if (it == o2id.end())
         return {};
 
@@ -1569,7 +1584,6 @@ void Slic3r::store_prusa_files(
 PrusaFilesResult Slic3r::load_prusa_files(
     mz_zip_archive &archive,
     const ModelMap &model_map,
-    Domain::Model& model,
     Read3mfIssues& collected_issues
 ) {
     PrusaFilesResult result;

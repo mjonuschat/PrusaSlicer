@@ -1216,6 +1216,9 @@ char * format_coordinate(float f, char *buf)
 
 void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangle_set &its, std::string &output_buffer, bool is_mirrored = false) 
 {
+    ASSERT(its.vertices.size() >= 4);
+    ASSERT(! its.indices.empty());
+
     output_buffer += std::string() +
         "   <" + MESH_TAG + ">\n" + 
         "    <" + VERTICES_TAG + ">\n";
@@ -1227,12 +1230,6 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
             output_buffer.clear();
         }
     };
-
-    // 3mf define maximal count of vertices
-    assert(its.vertices.size() < 2147483648); // 2 ^ 31
-    assert(its.vertices.size() >= 4);         // minimal tetrahedron
-    if (its.vertices.size() < 3 || its.vertices.size() >= 2147483648)
-        return; // 3mf define minimal 3 vertices
 
     char buf[256];
     for (const Domain::Vec3f &v : its.vertices) {
@@ -1251,13 +1248,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
 
     output_buffer += std::string() + 
         "    </" + VERTICES_TAG + ">\n" +
-        "    <" + TRIANGLES_TAG + ">\n";
-
-    // 3mf define maximal count of triangles
-    assert(its.indices.size() < 2147483648); // 2 ^ 31
-    assert(its.indices.size() >= 4);         // Tetrahedron is minimal closed model
-    if (its.indices.empty() || its.indices.size() >= 2147483648)
-        return; // 3mf core specification need at least 1 triangle
+        "    <" + TRIANGLES_TAG + ">\n";    
 
     size_t vertices_count = its.vertices.size();
 
@@ -1473,13 +1464,13 @@ MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r:
     unsigned &object_id) {
     MeshToObjectid stored_meshes;
     for (const ModelObject *object_ptr : model.objects) {
-        assert(is_valid_object(object_ptr));
         if (!is_valid_object(object_ptr))
             continue;
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
             const TriangleMesh *mesh_ptr = get_mesh_ptr(volume_ptr);
-            assert(mesh_ptr != nullptr);
-            if (mesh_ptr == nullptr)
+            if (mesh_ptr == nullptr
+             || mesh_ptr->its.vertices.size() < 4
+             || mesh_ptr->its.indices.empty())
                 continue;
             if (auto it = stored_meshes.find(mesh_ptr); 
                 it != stored_meshes.end())
@@ -1543,8 +1534,9 @@ MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Doma
             continue;
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
             const TriangleMesh *mesh_ptr = get_mesh_ptr(volume_ptr);
-            assert(mesh_ptr != nullptr);
-            if (mesh_ptr == nullptr)
+            ASSERT(mesh_ptr != nullptr);
+            if (mesh_ptr->its.vertices.size() < 4
+             || mesh_ptr->its.indices.empty())
                 continue;
             if (auto it = stored_meshes.find(mesh_ptr); it != stored_meshes.end())
                 // already stored volume geometry
@@ -1573,14 +1565,16 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Domain::
     write_xml_commnet(stream, "List of PrusaSlic3r:ModelVolume contian reference on mesh + volume name");        
     VolumeToObjectid stored_volumes;
     for (const ModelObject *object_ptr : model.objects) {
-        if (!is_valid_object(object_ptr)) continue;
+        if (!is_valid_object(object_ptr))
+            continue;
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
             const TriangleMesh *mesh_ptr = get_mesh_ptr(volume_ptr);
-            if (mesh_ptr == nullptr) continue;
+            if (mesh_ptr == nullptr)
+                continue;
 
             auto it = stored_mesh.find(mesh_ptr);
-            assert(it != stored_mesh.end());
-            if (it == stored_mesh.end()) continue;
+            if (it == stored_mesh.end())
+                continue;
 
             const ObjectIdWithPath &id_path = it->second;
             unsigned mesh_id = id_path.id;
@@ -1649,34 +1643,33 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Domain::
         //if (object_uuid_it->object_uuid.is_nil())
         //    continue;
 
-        stream << "  <" << OBJECT_TAG << " " 
-            << ID_ATTR << "=\"" << object_id << "\" "
-            << NAME_ATTR << "=\"" << object_ptr->name + "\" "
-        //  << PROD_NS << UUID_ATTR<< "=\"" << object_uuid_it->object_uuid << "\" " 
-            << ">\n";
-        stored_objects[object_ptr->id().id] = {object_id};
-        ++object_id;
-
         //assert(object_uuid_it->components_uuid.size() == object_ptr->volumes.size());
         //if (object_uuid_it->components_uuid.size() != object_ptr->volumes.size())
         //    continue;
         //auto component_uuid_it = object_uuid_it->components_uuid.begin();
 
-        stream << "   <" << COMPONENTS_TAG << ">\n";
+        std::vector<std::pair<unsigned, const ModelVolume *>> valid_volumes;
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
         //  ScopeGuard sg_component_increase([&component_uuid_it]() { ++component_uuid_it; });
             if (volume_ptr == nullptr || volume_ptr->mesh_ptr() == nullptr)
                 continue;
-
-            auto it = stored_volumes.find(volume_ptr->id().id);
-            assert(it != stored_volumes.end());
-            if (it == stored_volumes.end()) continue;
-
-            //assert(component_uuid_it->volume_id == volume_ptr->id().id);
-
-            unsigned volume_id = it->second;
-            store_component(stream, volume_id, /*component_uuid_it->component_uuid,*/ &volume_ptr->get_matrix());
+            if (auto it = stored_volumes.find(volume_ptr->id().id); it != stored_volumes.end())
+                valid_volumes.emplace_back(it->second, volume_ptr);
         }
+        if (valid_volumes.empty())
+            continue;
+
+        stream << "  <" << OBJECT_TAG << " "
+            << ID_ATTR << "=\"" << object_id << "\" "
+            << NAME_ATTR << "=\"" << object_ptr->name + "\" "
+        //  << PROD_NS << UUID_ATTR<< "=\"" << object_uuid_it->object_uuid << "\" "
+            << ">\n";
+        stored_objects[object_ptr->id().id] = {object_id};
+        ++object_id;
+
+        stream << "   <" << COMPONENTS_TAG << ">\n";
+        for (auto [volume_id, volume_ptr] : valid_volumes)
+            store_component(stream, volume_id, /*component_uuid_it->component_uuid,*/ &volume_ptr->get_matrix());
         stream << "   </" << COMPONENTS_TAG << ">\n";
         stream << "  </" << OBJECT_TAG << ">\n";
     }
@@ -1700,7 +1693,6 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Do
         if (!is_valid_object(object_ptr))
             continue;
         auto it = stored_objects.find(object_ptr->id().id);
-        assert(it != stored_objects.end());
         if (it == stored_objects.end())
             continue;
         unsigned instance_id = it->second;

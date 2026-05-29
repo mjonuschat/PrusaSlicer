@@ -530,25 +530,27 @@ bool check_pointer(const ModelMap& mm, const Slic3r::Domain::Model& m)
         return false;
     };
 
-    for (const ModelObject* mo : m.objects) {
-        if (!found_object(mo)) {
-            // object is not in model objects map
-            assert(false);
+    // Check that every build-mapped object/volume/instance actually lives in the model.
+    // Note: m.objects also contains non-printable objects (added by add_nonprintable_objects)
+    // that are intentionally absent from mm.build, so we must iterate mm.build, not m.objects.
+    for (const ModelObject* mo : objects) {
+        bool in_model = std::any_of(m.objects.begin(), m.objects.end(),
+            [mo](const ModelObject* o) { return o == mo; });
+        if (!in_model) {
+            assert(false); // build-mapped object is missing from model
             return false;
         }
 
         for (const ModelVolume* mv : mo->volumes) {
             if (!found_volume(mv)) {
-                // volume is not in volumes map
-                assert(false);
+                assert(false); // volume is missing from volume map
                 return false;
             }
         }
 
         for (const ModelInstance* mi : mo->instances) {
             if (!found_instance(mi)) {
-                // instance is not in map
-                assert(false);
+                assert(false); // instance is missing from instance map
                 return false;
             }
         }
@@ -700,7 +702,7 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
         }
     }
 
-    PrusaFilesResult prusa_files_result = load_prusa_files(archive, model_map, model, collected_issues);
+    PrusaFilesResult prusa_files_result = load_prusa_files(archive, model_map, collected_issues);
 
     std::vector<bool>& used_files = prusa_files_result.used_file_indices;
     assert(used_files.size() == mz_zip_reader_get_num_files(&archive));
