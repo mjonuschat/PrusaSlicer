@@ -441,6 +441,8 @@ struct Model{
 using Models = std::unordered_map<std::string, format_3MF::Model>;
 } // namespace Slic3r::format_3MF
 
+namespace Slic3r::Domain { class ModelVolume; }
+
 namespace Slic3r {
 
 struct LoadedModel {
@@ -477,8 +479,8 @@ struct ObjectIdWithPath{
 
 //                           Pointer on data(volume), objectid from .model file
 using MeshToObjectid = std::unordered_map<const Domain::TriangleMesh *, ObjectIdWithPath>;
-// ModelVolume::id to objectid
-using VolumeToObjectid = std::unordered_map<size_t, unsigned>;
+// ModelVolume pointer to objectid (keyed by pointer, not id, because copies share the same id)
+using VolumeToObjectid = std::unordered_map<const Domain::ModelVolume *, unsigned>;
 // ModelObject::id to objectid
 using ObjectToObjectid = std::unordered_map<size_t, unsigned>;
 // ModelInstance::id to order inside of build

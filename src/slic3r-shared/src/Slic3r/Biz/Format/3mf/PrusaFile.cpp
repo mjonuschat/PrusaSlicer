@@ -634,7 +634,7 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
     json facets_json = json::array();
     for (const ModelObject *mo : model.objects) {
         for (const ModelVolume *mv : mo->volumes) {
-            auto it = v2id.find(mv->id().id);
+            auto it = v2id.find(mv);
             if (it == v2id.end())
                 continue;
             unsigned id = it->second;
@@ -852,7 +852,7 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
         const ModelVolume &volume = *volume_ptr;
         json volume_json;
         { // write object id for volume
-            auto it = v2id.find(volume.id().id);
+            auto it = v2id.find(volume_ptr);
             // id is created during writing .model file into 3mf
             assert(it != v2id.end());
             if (it == v2id.end())

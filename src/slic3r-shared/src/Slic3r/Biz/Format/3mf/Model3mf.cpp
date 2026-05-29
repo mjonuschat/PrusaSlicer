@@ -1605,7 +1605,7 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Domain::
                 << NAME_ATTR << "=\"" << volume_ptr->name + "\" "
             //  << PROD_NS << UUID_ATTR<< "=\"" << volume_uuid_it->object_uuid << "\" " 
                 << ">\n";
-            stored_volumes[volume_ptr->id().id] = {object_id};
+            stored_volumes[volume_ptr] = object_id;
             ++object_id;
 
             stream << "   <" << COMPONENTS_TAG << ">\n";
@@ -1653,7 +1653,7 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Domain::
         //  ScopeGuard sg_component_increase([&component_uuid_it]() { ++component_uuid_it; });
             if (volume_ptr == nullptr || volume_ptr->mesh_ptr() == nullptr)
                 continue;
-            if (auto it = stored_volumes.find(volume_ptr->id().id); it != stored_volumes.end())
+            if (auto it = stored_volumes.find(volume_ptr); it != stored_volumes.end())
                 valid_volumes.emplace_back(it->second, volume_ptr);
         }
         if (valid_volumes.empty())

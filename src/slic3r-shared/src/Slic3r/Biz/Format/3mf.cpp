@@ -498,37 +498,9 @@ bool check_pointer(const ModelMap& mm, const Slic3r::Domain::Model& m)
     Domain::ModelObjectPtrs objects;
     for (const auto& [id, mos] : mm.build)
         objects.insert(objects.end(), mos.begin(), mos.end());
-    std::vector<bool> founded_object(objects.size(), {false});
-
     ModelVolumePtrs volumes;
     for (const auto& [id, mvs] : mm.volumes)
         volumes.insert(volumes.end(), mvs.begin(), mvs.end());
-    std::vector<bool> founded_volume(volumes.size(), {false});
-
-    auto found_object = [&](const ModelObject* mo) {
-        for (size_t i = 0; i < objects.size(); i++)
-            if (mo == objects[i]) {
-                founded_object[i] = true;
-                return true;
-            }
-        return false;
-    };
-
-    auto found_volume = [&](const ModelVolume* mv) {
-        for (size_t i = 0; i < volumes.size(); i++)
-            if (mv == volumes[i]) {
-                founded_volume[i] = true;
-                return true;
-            }
-        return false;
-    };
-
-    auto found_instance = [&](const ModelInstance* mi) {
-        for (const auto& mi_ : mm.instances)
-            if (mi_ == mi)
-                return true;
-        return false;
-    };
 
     // Check that every build-mapped object/volume/instance actually lives in the model.
     // Note: m.objects also contains non-printable objects (added by add_nonprintable_objects)
@@ -542,14 +514,18 @@ bool check_pointer(const ModelMap& mm, const Slic3r::Domain::Model& m)
         }
 
         for (const ModelVolume* mv : mo->volumes) {
-            if (!found_volume(mv)) {
+            bool in_volumes = std::any_of(volumes.begin(), volumes.end(),
+                [mv](const ModelVolume* v) { return v == mv; });
+            if (!in_volumes) {
                 assert(false); // volume is missing from volume map
                 return false;
             }
         }
 
         for (const ModelInstance* mi : mo->instances) {
-            if (!found_instance(mi)) {
+            bool in_instances = std::any_of(mm.instances.begin(), mm.instances.end(),
+                [mi](const ModelInstance* i) { return i == mi; });
+            if (!in_instances) {
                 assert(false); // instance is missing from instance map
                 return false;
             }
