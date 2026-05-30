@@ -16,6 +16,9 @@ lost during the rebase and squash based workflow.
 
 ### Fixed
 
+- Automatic role-specific extrusion widths now compute their default values when
+  both the role width and default extrusion width are set to auto, instead of
+  resolving to zero.
 - Nip/Tuck seams no longer create a doubled notch on thin walls where two outer
   perimeters share a single inner perimeter. The shared inner is now split so
   each outer perimeter gets its own clean notch gap.
