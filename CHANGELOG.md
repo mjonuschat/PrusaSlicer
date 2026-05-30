@@ -19,6 +19,9 @@ lost during the rebase and squash based workflow.
 - Nip/Tuck seams no longer create a doubled notch on thin walls where two outer
   perimeters share a single inner perimeter. The shared inner is now split so
   each outer perimeter gets its own clean notch gap.
+- 3D Honeycomb infill is now consistent between layers when "combine infill
+  every N layers" is enabled. Previously the pattern drifted with the combined
+  layer height and produced poor bridges.
 - Fixed ooze-prevention preheat commands for first-layer tool changes. Tools
   first used after the initial tool on layer one now preheat to their
   first-layer nozzle temperature instead of their normal layer temperature.
