@@ -2586,11 +2586,24 @@ tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf
     Domain::Preset::SelectedPreset& selected_preset
 )
 {
+    using Domain::Preset::PresetOrigin;
+
     auto& pc              = get_or_create_project_context(project_id);
     auto& runtime_presets = pc.runtime_presets;
 
     bool runtime_presets_evaluation_required = false;
     const auto& preset_bundle = m_workbench.preset_bundle();
+
+    // update origin:
+    selected_preset.printer.origin = PresetOrigin::Runtime;
+    selected_preset.print.origin   = PresetOrigin::Runtime;
+    for (auto& p : selected_preset.tools) {
+        p.origin = PresetOrigin::Runtime;
+    }
+    for (auto& p : selected_preset.materials) {
+        p.origin = PresetOrigin::Runtime;
+    }
+
     // 0. Update features according to up-to-date definitions
     auto& hw_config = selected_preset.hw_config;
     const auto vendor_it = preset_bundle.vendor_bundles.find(hw_config.vendor_id);

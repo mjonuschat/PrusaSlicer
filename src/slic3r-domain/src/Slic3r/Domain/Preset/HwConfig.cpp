@@ -259,13 +259,11 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
             auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
             auto feeder_it = cfg.feeders.find(Address{static_cast<uint8_t>(i)});
             ASSERT(tool != nullptr, t.id);
-            if (!brief) {
-                if (first) {
-                    first = false;
-                    ss << " ";
-                } else {
-                    ss << ", ";
-                }
+            if (first) {
+                first = false;
+                ss << " ";
+            } else if (!brief){
+                ss << ", ";
             }
 
             if (feeder_it != cfg.feeders.end()) {

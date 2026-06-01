@@ -19,7 +19,8 @@ enum class ConditionMatchMode
 enum class PresetOrigin : uint8_t
 {
     System,
-    User
+    User,
+    Runtime
 };
 
 struct PresetNode
