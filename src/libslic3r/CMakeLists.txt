@@ -8,8 +8,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(libslic3r)
 
-include(PrecompiledHeader)
-
 if(SLIC3R_STATIC)
     set(OPENVDB_USE_STATIC_LIBS ON)
     set(USE_BLOSC TRUE)
@@ -408,8 +406,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/I18N_private.cpp
 
     src/libslic3r/libslic3r.h
-    src/libslic3r/pchheader.cpp
-    src/libslic3r/pchheader.hpp
 
     ${OpenVDBUtils_SOURCES}
 )
@@ -507,8 +503,8 @@ if (APPLE)
     target_compile_options(libslic3r PUBLIC "-fno-aligned-allocation")
 endif ()
 
-if (SLIC3R_PCH AND NOT SLIC3R_SYNTAXONLY)
-    add_precompiled_header(libslic3r src/libslic3r/pchheader.hpp FORCEINCLUDE)
-endif ()
+if (SLIC3R_PCH)
+    target_precompile_headers(libslic3r REUSE_FROM slic3r-domain)
+endif()
 
 #add_target_to_doxygen(libslic3r INPUT .)

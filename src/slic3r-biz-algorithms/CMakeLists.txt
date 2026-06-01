@@ -122,6 +122,10 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     miniz
 )
 
+if (SLIC3R_PCH)
+    target_precompile_headers(slic3r-biz-algorithms REUSE_FROM slic3r-domain)
+endif()
+
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-algorithms-tests
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp

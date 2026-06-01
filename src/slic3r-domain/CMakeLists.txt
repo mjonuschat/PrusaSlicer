@@ -191,6 +191,10 @@ target_link_libraries(slic3r-domain PUBLIC
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
 
+if (SLIC3R_PCH)
+    target_precompile_headers(slic3r-domain PRIVATE pch.hpp)
+endif()
+
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-domain-tests
         test/Slic3r/Domain/ConfigValueTests.cpp

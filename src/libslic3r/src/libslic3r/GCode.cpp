@@ -59,7 +59,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/find.hpp>
-#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <Slic3r/Log.hpp>
 

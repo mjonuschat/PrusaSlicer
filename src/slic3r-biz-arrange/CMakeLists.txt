@@ -47,6 +47,10 @@ target_include_directories(slic3r-biz-arrange PRIVATE src)
 target_link_libraries(slic3r-biz-arrange PRIVATE int128 libnest2d)
 target_link_libraries(slic3r-biz-arrange PUBLIC slic3r-domain libslic3r)
 
+if (SLIC3R_PCH)
+    target_precompile_headers(slic3r-biz-arrange REUSE_FROM slic3r-domain)
+endif()
+
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-biz-arrange-tests
         test/Slic3r/Biz/Arrange/PackerTests.cpp

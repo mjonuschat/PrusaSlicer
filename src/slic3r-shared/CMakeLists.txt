@@ -1371,6 +1371,10 @@ endif()
 add_target_to_doxygen(slic3r-shared)
 slic3r_add_tracy(slic3r-shared)
 
+if (SLIC3R_PCH)
+    target_precompile_headers(slic3r-shared REUSE_FROM slic3r-domain)
+endif()
+
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-shared-tests
         test/main.cpp
