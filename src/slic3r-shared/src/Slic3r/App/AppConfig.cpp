@@ -10,6 +10,7 @@
 
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Version.hpp"
 
 #include "nlohmann/json.hpp"
 #include "boost/filesystem.hpp"
@@ -255,6 +256,11 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;
     def->init_fn  = []() { return Domain::ConfigValue(true); };
+
+    def           = defs.add("version", typeid(std::string));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn  = []() { return Domain::ConfigValue(Slic3r::VERSION); };
 }
 
 tl::expected<std::unique_ptr<AppConfig>, std::string> AppConfig::load_appconfig(const std::string& filename)
