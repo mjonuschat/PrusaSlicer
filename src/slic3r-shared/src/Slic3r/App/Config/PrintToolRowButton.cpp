@@ -74,7 +74,15 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
         show_preview = std::all_of(
             print_tool_item->shared_context.extruder_candidates.cbegin(),
             print_tool_item->shared_context.extruder_candidates.cend(),
-            [&](unsigned extruder) { return print_tool_item->tool_value(extruder) == first_value; }
+            [&](unsigned extruder)
+            {
+                if (extruder < print_tool_item->tool_overrides.size()) {
+                    // Tool overrides were still not updated
+                    return false;
+                } else {
+                    return print_tool_item->tool_value(extruder) == first_value;
+                }
+            }
         );
         m_config_item_preview->set_data(*print_tool_item->print_item, first_value, false);
     } else {
