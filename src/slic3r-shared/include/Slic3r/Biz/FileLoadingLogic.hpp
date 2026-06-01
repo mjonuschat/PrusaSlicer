@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
@@ -35,8 +36,10 @@ Domain::Project load_file_as_project(
 /**
  * Load meshes (e.g., STL, OBJ) and complex models (e.g., 3MF) from multiple source files
  * and insert them into the scene graph.
+ *
+ * @return Instance-level element refs of all newly added objects.
  */
-void import_files_and_add_to_scene(
+Domain::ElementRefs import_files_and_add_to_scene(
     const std::vector<boost::filesystem::path>& input_file_paths,
     int tool_count,
     Scene::SceneInteractor& scene_interactor,

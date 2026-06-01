@@ -402,11 +402,18 @@ void PlaterRenderModule::register_commands()
                 CommandName::AddInstance,
                 [this]() -> void
                 {
-                    m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+                    const ElementRefs new_instances =
+                        m_project_interactor.scene_interactor().add_instance(Vec2d(10., 5.));
 #if ENABLED_NODE_LOGGING
                     m_scene_presenter->scene().log_nodes();
 #endif
-                    m_project_interactor.undo_provider().take_snapshot(
+                    const BedRef target_bed =
+                        m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+
+                    m_project_interactor.arrange_interactor().arrange_added_instances(
+                        m_project_interactor.selected_project_id(),
+                        new_instances,
+                        target_bed,
                         UndoSnapshotType::AddInstance
                     );
                 },

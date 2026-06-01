@@ -4,9 +4,6 @@
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
-#include <mutex>
-#include <queue>
-#include <set>
 #include <vector>
 
 namespace Slic3r::Biz {
@@ -68,38 +65,14 @@ private:
         void clear();
     };
 
-    struct PendingArrange
-    {
-        Domain::SelectionId project_id{Domain::INVALID_ID};
-        std::set<size_t> object_ids;
-        Domain::BedRef target_bed;
-    };
-
     void paste_objects(Domain::SelectionId project_id);
     void paste_volumes(Domain::SelectionId project_id);
-
-    void process_partial_arrange_queue();
-
-    /**
-     * @brief Moves given instances to the origin of the specified bed.
-     * @param project_id Project containing the instances.
-     * @param instances Elements to move.
-     * @param bed_ref Target bed.
-     */
-    void move_instances_to_bed(
-        Domain::SelectionId project_id,
-        const Domain::ElementRefs& instances,
-        const Domain::BedRef& bed_ref
-    );
 
     Scene::SceneInteractor& m_scene_interactor;
     ArrangeInteractor& m_arrange_interactor;
     const Domain::Workbench& m_workbench;
 
     Clipboard m_clipboard;
-
-    std::queue<PendingArrange> m_partial_arrange_queue;
-    std::mutex m_arrange_mutex;
 };
 
 } // namespace Slic3r::Biz

@@ -1,7 +1,5 @@
 #include "Slic3r/Biz/ClipboardInteractor.hpp"
 
-#include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -11,12 +9,13 @@
 #include "Slic3r/Domain/ModelVolume.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 
+#include <set>
+
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::Scene::SelectionMode;
-using Slic3r::Domain::BedInstance;
 using Slic3r::Domain::BedRef;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::ElementRefs;
@@ -26,17 +25,9 @@ using Slic3r::Domain::ModelObjectPtrs;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
-using Slic3r::Domain::Transformation;
-using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Workbench;
 
 namespace Slic3r::Biz {
-
-const Arrange::Settings ARRANGE_SETTINGS{
-    .strategy        = Arrange::Strategy::Gravity,
-    .scaled_offset   = Algorithms::Scaling::scaled(3.0),
-    .allow_rotations = false
-};
 
 ClipboardInteractor::ClipboardInteractor(
     Scene::SceneInteractor& scene_interactor,
@@ -117,129 +108,29 @@ bool ClipboardInteractor::Clipboard::is_empty() const
 
 void ClipboardInteractor::paste_objects(const SelectionId project_id)
 {
-    ModelObjectPtrs new_objects = m_scene_interactor.clone_objects_from_project(
+    const ModelObjectPtrs new_objects = m_scene_interactor.clone_objects_from_project(
         m_clipboard.source_project_id,
         m_clipboard.selected_elements
     );
 
-    std::set<size_t> new_object_ids;
+    ElementRefs new_instances;
     for (const ModelObject* new_object : new_objects) {
-        new_object_ids.insert(new_object->id().id);
+        for (const ModelInstance* instance : new_object->instances) {
+            new_instances.emplace_back(new_object->id().id, instance->id().id, 0);
+        }
     }
 
-    if (new_object_ids.empty()) {
+    if (new_instances.empty()) {
         return;
     }
 
     const BedRef target_bed = m_scene_interactor.bed_selection().last_selected_bed();
-
-    bool is_queue_processing_running = false;
-    {
-        std::lock_guard lock(m_arrange_mutex);
-        is_queue_processing_running = !m_partial_arrange_queue.empty();
-        m_partial_arrange_queue.push({project_id, std::move(new_object_ids), target_bed});
-    }
-
-    if (!is_queue_processing_running) {
-        this->process_partial_arrange_queue();
-    }
-}
-
-void ClipboardInteractor::process_partial_arrange_queue()
-{
-    PendingArrange pending_arrange;
-    {
-        std::lock_guard lock(m_arrange_mutex);
-
-        if (m_partial_arrange_queue.empty()) {
-            m_scene_interactor.undo_provider().take_snapshot(UndoSnapshotType::PasteObjects);
-            return;
-        }
-
-        pending_arrange = m_partial_arrange_queue.front();
-    }
-
-    m_arrange_interactor.partial_arrange(
-        pending_arrange.project_id,
-        pending_arrange.object_ids,
-        pending_arrange.target_bed,
-        ARRANGE_SETTINGS,
-        [this](const ElementRefs& not_arranged)
-        {
-            if (!not_arranged.empty()) {
-                const PendingArrange& current         = m_partial_arrange_queue.front();
-                const SelectionId project_id          = current.project_id;
-                const BedRef& target_bed              = current.target_bed;
-                const Project& project                = m_workbench.project(project_id);
-                const SelectionId config_container_id = current.target_bed.config_container_id;
-
-                const Domain::ConfigContainer* config_container =
-                    project.find_config_container(config_container_id);
-                ASSERT(config_container != nullptr);
-
-                const BedRef last_bed_in_container{
-                    config_container_id,
-                    config_container->bed_instances().back()->id().id
-                };
-
-                BedRef next_bed = last_bed_in_container;
-                if (target_bed == last_bed_in_container) {
-                    // Create a new bed and arrange objects there.
-                    const BedInstance& new_bed =
-                        m_scene_interactor.add_bed_instance(config_container_id);
-                    next_bed = BedRef{config_container_id, new_bed.id().id};
-                    m_scene_interactor.bed_selection().toggle(next_bed);
-                }
-
-                std::set<size_t> not_arranged_ids;
-                for (const ElementRef& ref : not_arranged) {
-                    not_arranged_ids.insert(ref.object_id);
-                }
-
-                this->move_instances_to_bed(project_id, not_arranged, next_bed);
-
-                {
-                    std::lock_guard lock(m_arrange_mutex);
-                    m_partial_arrange_queue.pop();
-                    m_partial_arrange_queue.push(
-                        {project_id, std::move(not_arranged_ids), next_bed}
-                    );
-                }
-            } else {
-                std::lock_guard lock(m_arrange_mutex);
-
-                m_partial_arrange_queue.pop();
-            }
-
-            this->process_partial_arrange_queue();
-        }
+    m_arrange_interactor.arrange_added_instances(
+        project_id,
+        new_instances,
+        target_bed,
+        UndoSnapshotType::PasteObjects
     );
-}
-
-void ClipboardInteractor::move_instances_to_bed(
-    const SelectionId project_id,
-    const ElementRefs& instances,
-    const BedRef& bed_ref
-)
-{
-    const BedInstance* bed_instance =
-        m_workbench.project(project_id).find_bed_instance_by_id(bed_ref.instance_id);
-    if (bed_instance == nullptr) {
-        return;
-    }
-
-    const Vec2d bed_offset =
-        Algorithms::Point::to_2d(Transformation{bed_instance->transformation}.get_offset());
-    const Vec2d bed_center = bed_offset + bed_instance->bed.get().center();
-
-    Arrange::InstanceTransforms trafos;
-    for (const ElementRef& ref : instances) {
-        trafos.push_back(
-            {.instance_ref = ref, .absolute_offset = bed_center, .rotation_delta = 0.0}
-        );
-    }
-
-    m_scene_interactor.transform_instances(trafos);
 }
 
 void ClipboardInteractor::paste_volumes(SelectionId project_id)
