@@ -32,6 +32,7 @@ public:
     std::string error_html() const { return m_error_html; }
 
     virtual std::pair<int,int> size(int em_unit) const {return std::pair<int,int>(100*em_unit, 100*em_unit); }
+    virtual std::pair<int,int> min_size(int em_unit) const {return std::pair<int,int>(40*em_unit, 40*em_unit); }
     virtual std::string access_token() { return {}; }
 
     virtual std::vector<BrowserLogicCommand> on_navigation_request_webview_event(const std::string& new_url, const std::string& current_url) { return {}; }

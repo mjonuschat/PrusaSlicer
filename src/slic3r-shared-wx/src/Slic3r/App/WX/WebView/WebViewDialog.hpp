@@ -81,6 +81,7 @@ private:
     std::atomic<size_t> m_atomic_counter{0};
     size_t m_counter_to_match{0};
     bool m_force_close{false};
+    bool m_busy_cursor_set {false};
 
 protected:
     bool handle_logic_command_LoadURL(const std::string& data) override;

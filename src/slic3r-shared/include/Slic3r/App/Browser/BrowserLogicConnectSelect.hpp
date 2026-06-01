@@ -17,6 +17,7 @@ public:
     std::vector<BrowserLogicCommand> on_script_message_webview_event(const std::string& message) override;
     std::vector<BrowserLogicCommand> on_show_webview_event(bool show) override;
     std::pair<int,int> size(int em_unit) const override {return std::pair<int,int>(200*em_unit, 100*em_unit); }
+    std::pair<int,int> min_size(int em_unit) const override { return {100 * em_unit, 50 * em_unit}; }
 protected:
     // AbstractConnectRequestHandler
     std::vector<BrowserLogicCommand> on_connect_action_select_printer(const std::string& message_data) override;

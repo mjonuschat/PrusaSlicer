@@ -67,8 +67,12 @@ WebViewDialog::WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>
     wxBoxSizer* panel_sizer = new wxBoxSizer(wxVERTICAL);
     panel->SetSizer(panel_sizer);
 #endif
-    topsizer->SetMinSize(this->GetSize());
-    SetSizerAndFit(topsizer);
+    
+    auto [min_w, min_h] = m_logic->min_size(w_config()->em_unit());
+    SetMinSize(wxSize(min_w, min_h));
+    SetSizer(topsizer);
+
+    this->CenterOnParent();
 
     // Create the webview
     if (!m_web_view) {
@@ -165,14 +169,20 @@ void WebViewDialog::on_idle(wxIdleEvent& WXUNUSED(evt))
 {
     if (!m_web_view)
         return;
-    if (m_web_view->IsBusy()) {
-        if constexpr (!is_linux) {
+
+    bool is_busy = m_web_view->IsBusy();
+
+    if constexpr (!is_linux) {
+        if (is_busy && !m_busy_cursor_set) {
             wxSetCursor(wxCURSOR_ARROWWAIT);
-        }
-    } else {
-        if constexpr (!is_linux) {
+            m_busy_cursor_set = true;
+        } else if (!is_busy && m_busy_cursor_set) {
             wxSetCursor(wxNullCursor);
+            m_busy_cursor_set = false;
         }
+    }
+
+    if (!is_busy) {
         if (m_load_error_page) {
             m_load_error_page = false;
             m_web_view->LoadURL(format_wxstr(
@@ -188,8 +198,9 @@ void WebViewDialog::on_idle(wxIdleEvent& WXUNUSED(evt))
             EndModal(wxID_OK);
         }
     }
+    
 #ifdef DEBUG_URL_PANEL
-    m_button_stop->Enable(m_web_view->IsBusy());
+    m_button_stop->Enable(is_busy);
 #endif
 }
 
