@@ -129,7 +129,7 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
 
     set_max_width(TotalWidth);
     set_max_height(MaxHeight);
-
+    set_flex_shrink(0.f);
     set_orientation(Yoga::Orientation::Horizontal);
     set_justify_content(YGJustifyFlexStart); // razeni itemu uvnitr
 
