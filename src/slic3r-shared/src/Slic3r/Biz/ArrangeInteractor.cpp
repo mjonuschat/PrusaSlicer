@@ -1260,9 +1260,32 @@ void ArrangeInteractor::process_added_arrange_queue()
         [this,
          project_id    = pending_arrange.project_id,
          target_bed    = pending_arrange.target_bed,
-         snapshot_type = pending_arrange.snapshot_type](const ElementRefs& not_arranged)
+         snapshot_type = pending_arrange.snapshot_type,
+         attempted_ids = pending_arrange.instance_ids](const ElementRefs& not_arranged)
         {
-            if (!not_arranged.empty()) {
+            // If nothing was placed and the bed had no other instances, the bed was empty and the
+            // instances are too big for it, so do not move them onto a new empty bed.
+            bool instances_cannot_fit_on_bed = false;
+            if (!not_arranged.empty() && not_arranged.size() == attempted_ids.size()) {
+                const Project& project = m_workbench.project(project_id);
+                const BedInstance* bed = project.find_bed_instance_by_id(target_bed.instance_id);
+
+                bool bed_has_other_instances = false;
+                if (bed != nullptr) {
+                    for (const ModelInstance* inst : bed->model_instances) {
+                        // Skip our own instances, because they are on the bed too.
+                        // Any other instance means the bed wasn't empty.
+                        if (!attempted_ids.contains(inst->id().id)) {
+                            bed_has_other_instances = true;
+                            break;
+                        }
+                    }
+                }
+
+                instances_cannot_fit_on_bed = !bed_has_other_instances;
+            }
+
+            if (!not_arranged.empty() && !instances_cannot_fit_on_bed) {
                 const Project& project                = m_workbench.project(project_id);
                 const SelectionId config_container_id = target_bed.config_container_id;
 
@@ -1299,6 +1322,14 @@ void ArrangeInteractor::process_added_arrange_queue()
                     );
                 }
             } else {
+                if (!not_arranged.empty()) {
+                    // These instances cannot fit any bed.
+                    invoke_listeners<IArrangeEventsListener>(
+                        [&](auto* listener)
+                        { listener->on_elements_not_arranged(project_id, not_arranged); }
+                    );
+                }
+
                 {
                     std::lock_guard lock(m_added_arrange_mutex);
                     m_added_arrange_queue.pop();
