@@ -151,8 +151,9 @@ static void save_config_container(
     );
     save_bed_instances(sub_archive, config_container.bed_instances(), id);
 
-    snapshot.separate_chunks[channel_id] =
-        ConfigContainerChunk{oss.str(), config_container.selected_preset().hw_config.id};
+    snapshot.separate_chunks[channel_id] = ConfigContainerChunk{
+        oss.str(),
+        {config_container.selected_preset().hw_config.id, config_container.id().id}};
     archive(channel_id);
 }
 

@@ -953,8 +953,12 @@ void ProjectInteractor::reload_config_containers_after_undo(
         remove_config_container(id);
     }
     for (std::size_t id : containers_diff.added) {
-        auto it{
-            std::ranges::find_if(new_containers, [&](const auto& cc) { return cc->id().id == id; })
+        auto it{std::ranges::find_if(new_containers,
+            [&](const auto& cc)
+            {
+                ASSERT(cc);
+                return cc->id().id == id;
+            })
         };
         const std::size_t position{
             static_cast<std::size_t>(std::distance(new_containers.begin(), it))
@@ -965,6 +969,8 @@ void ProjectInteractor::reload_config_containers_after_undo(
         // are not removed, the position should be always valid, even
         // if project.config_containers.size() != new_containers.size().
         insert_config_container(project_id, std::move(*it), position);
+        // Moved out unique ptr is already guaranteed nullptr, but lets be explicit.
+        *it = nullptr;
     }
 
     for (std::size_t config_container_id : containers_diff.changed) {
@@ -972,9 +978,15 @@ void ProjectInteractor::reload_config_containers_after_undo(
             old_containers,
             [&](const auto& cc) { return cc->id().id == config_container_id; }
         )};
-        auto new_it{std::ranges::find_if(
-            new_containers,
-            [&](const auto& cc) { return cc->id().id == config_container_id; }
+        auto new_it{std::ranges::find_if(new_containers,
+             [&](const auto& cc)
+             {
+                 // Skip moved out of containers.
+                 if (!cc) {
+                     return false;
+                 }
+                 return cc->id().id == config_container_id;
+             }
         )};
 
         ASSERT(active_it != old_containers.end());

@@ -33,7 +33,7 @@ struct VersionedChunk
 struct ConfigContainerChunk
 {
     std::string serialized_data;
-    std::string hw_config_id{};
+    std::tuple<std::string, std::size_t> config_id{};
 
     bool operator==(const ConfigContainerChunk& other) const = default;
 };

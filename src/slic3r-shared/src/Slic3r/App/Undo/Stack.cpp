@@ -30,7 +30,7 @@ public:
             if (!m_chunks.empty()) {
                 ConfigContainerChunk& new_chunk{std::get<ConfigContainerChunk>(chunk)};
                 ConfigContainerChunk& old_chunk{std::get<ConfigContainerChunk>(m_chunks.back())};
-                if (old_chunk.hw_config_id == new_chunk.hw_config_id) {
+                if (old_chunk.config_id == new_chunk.config_id) {
                     m_chunks.back() = {std::move(chunk)};
                     m_intervals.back() = snapshot_index + 1;
                 } else {
@@ -404,7 +404,7 @@ void Stack::take_snapshot(
     to_save.at(1) = serialize_object_selection(object_selection);
     to_save.at(2) = SerializedData{{}, std::to_string(static_cast<int>(selected_tool_gizmo))};
     to_save.at(3) = serialize_config_container_list(config_containers);
-    to_save.at(4) = serialize_bed_selection_state(bed_selection_state);
+    to_save.at(4) = serialize_bed_selection_state(bed_selection_state, config_containers);
     to_save.at(5) = serialize_tools_state(tools_state);
 
     m_stack->save_snapshot(to_save, type);
@@ -454,7 +454,8 @@ LoadedSnapshot Stack::load_and_select_snapshot(
         bed_container,
         preset_interactor
     );
-    result.bed_selection_state = load_serialized_bed_selection_state(to_load.at(4));
+    result.bed_selection_state =
+        load_serialized_bed_selection_state(to_load.at(4), result.config_containers);
     result.tools_state         = load_serialized_tools_state(to_load.at(5));
 
     const std::vector<Snapshot>& snapshots{m_stack->get_snapshots()};

@@ -26,6 +26,8 @@ Texture::Texture(Device& device)
 
 Texture::~Texture()
 {
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.unbind_texture(0, *this);
     glDeleteTextures(1, &get_internal_as<GL::GLTextureInternal>().m_id);
     glCheck();
 }
