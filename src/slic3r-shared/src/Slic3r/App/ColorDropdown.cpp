@@ -22,6 +22,7 @@ ColorMenuItem::ColorMenuItem(
     m_dropdown_indicator(dropdown_indicator)
 {
     set_min_height(24_fpx);
+    set_flex_shrink(0);
     set_width_percent(100);
     set_content_padding(
         m_dropdown_indicator ? Yoga::Paddings{8_fpx, 3_fpx, 24_fpx, 3_fpx} : Yoga::Paddings{8_fpx, 3_fpx}
