@@ -68,7 +68,10 @@ void LogicalPrinterSettingsButton::on_data_update()
     } else {
         const std::string prefix{m_state->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
         set_printer_name(prefix + m_state->name);
-        set_preset_name(m_state->hw_printer_config_name);
+        const std::string hw_prefix{
+            m_state->hw_printer_config_runtime_only ? Biz::_u8L("(From 3mf) ") : ""
+        };
+        set_preset_name(prefix + m_state->hw_printer_config_name);
         m_preset_name->set_visible(true);
         set_tooltip(prefix + m_state->name + "\n" + m_state->hw_printer_config_name);
     }

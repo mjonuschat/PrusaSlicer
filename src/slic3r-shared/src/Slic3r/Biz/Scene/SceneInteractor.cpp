@@ -2255,8 +2255,6 @@ void SceneInteractor::update_config_container_bed(Domain::SelectionId project_id
                 }
             );
         }
-
-        SPDLOG_CRITICAL("Update wt!");
     }
 }
 

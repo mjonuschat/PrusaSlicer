@@ -788,13 +788,6 @@ void update_hw_config_tools_and_materials_features_from_preset(
     using Domain::overloaded;
     using Domain::Preset::override_features;
 
-    override_features(preset.hw_config.features, preset.printer.features);
-
-    for (size_t i = 0, n = preset.tools.size(); i < n; i++) {
-        override_features(preset.hw_config.tools[i].features, preset.printer.features);
-        override_features(preset.hw_config.tools[i].features, preset.tools[i].features);
-    }
-
     for (size_t i = 0, n = preset.materials.size(); i < n; i++) {
         const auto& src_mat = preset.materials[i];
         const auto address =
@@ -1004,6 +997,7 @@ std::optional<size_t> set_items(
     const V& source,
     const std::string& hw_config_id,
     const std::string& hw_config_name,
+    bool hw_config_runtime,
     const Domain::Preset::EvaluatedPreset<TF, TS>& selected,
     const std::optional<std::string>& preferred
 )
@@ -1017,7 +1011,15 @@ std::optional<size_t> set_items(
         const auto& item = item_rw.get();
         std::string name;
         name = item.short_name();
-        items.emplace_back(item.id, std::move(name), hw_config_id, hw_config_name, item.origin, is_runtime);
+        items.emplace_back(
+            item.id,
+            std::move(name),
+            hw_config_id,
+            hw_config_name,
+            item.origin,
+            is_runtime,
+            hw_config_runtime
+        );
         if (item.id == selected.id)
             selected_index = idx;
         if (item.short_name() == selected.short_name())
@@ -1052,7 +1054,7 @@ void PresetInteractor::fill_printer_presets(bool no_data_update, ListenerInvokeL
 
     std::vector<PresetItem> items;
     const HwPrinterConfigProjectView config_view(preset_bundle, p.runtime_presets);
-    for (const auto& [hw_config_rw, runtime] : config_view.items()) {
+    for (const auto& [hw_config_rw, hw_config_runtime] : config_view.items()) {
         const auto& hw_config = hw_config_rw.get();
         const PrinterPresetProjectView printer_view(preset_bundle, p.runtime_presets, hw_config.id);
         for (const auto& [printer_rw, is_runtime] : printer_view.items()) {
@@ -1063,7 +1065,8 @@ void PresetInteractor::fill_printer_presets(bool no_data_update, ListenerInvokeL
                 hw_config.id,
                 m_use_hw_config_short_name ? hw_config.short_name : hw_config.name,
                 printer.origin,
-                is_runtime
+                is_runtime,
+                hw_config_runtime
             );
         }
     }
@@ -1134,9 +1137,10 @@ void PresetInteractor::fill_print_presets(
     ListenerInvokeLaterBag& bag
 )
 {
-    const auto& p                      = get_or_fail_project_context(m_selected_project_id);
-    const auto& hw_config              = selected_preset.hw_config;
-    const auto& hw_config_id           = hw_config.id;
+    const auto& p            = get_or_fail_project_context(m_selected_project_id);
+    const auto& hw_config    = selected_preset.hw_config;
+    const auto& hw_config_id = hw_config.id;
+    bool hw_config_runtime   = !m_workbench.preset_bundle().printer_configs.contains(hw_config_id);
     const auto changed_selection_index = set_items(
         m_print_presets,
         PrintPresetProjectView(
@@ -1147,6 +1151,7 @@ void PresetInteractor::fill_print_presets(
         ),
         hw_config_id,
         m_use_hw_config_short_name ? hw_config.short_name : hw_config.name,
+        hw_config_runtime,
         selected_preset.print,
         get_string(selected_preset.printer, "default_print")
     );
@@ -1163,6 +1168,7 @@ void PresetInteractor::fill_tools_presets(
 )
 {
     const Domain::Preset::HwPrinterConfig& hw_config = selected_preset.hw_config;
+    bool hw_config_runtime = !m_workbench.preset_bundle().printer_configs.contains(hw_config.id);
     std::vector<PresetItemObservableList> tools;
 
     const size_t tool_count =
@@ -1196,6 +1202,7 @@ void PresetInteractor::fill_tools_presets(
                 view,
                 hw_config.id,
                 m_use_hw_config_short_name ? hw_config.short_name : hw_config.name,
+                hw_config_runtime,
                 selected_preset.tools[tool_index],
                 get_string(selected_preset.print, "default_tool_print")
             );
@@ -1229,8 +1236,9 @@ void PresetInteractor::fill_materials_presets(
 {
     std::vector<PresetItemObservableList> materials;
     std::vector<std::optional<size_t>> changed_selected_indices;
-    const auto& p         = get_or_fail_project_context(m_selected_project_id);
-    const auto& hw_config = selected_preset.hw_config;
+    const auto& p          = get_or_fail_project_context(m_selected_project_id);
+    const auto& hw_config  = selected_preset.hw_config;
+    bool hw_config_runtime = !m_workbench.preset_bundle().printer_configs.contains(hw_config.id);
     for (size_t n = hw_config.material_slot_count(), slot_index = 0; slot_index < n; ++slot_index) {
         PresetItemObservableList items;
         MaterialPresetProjectView view(
@@ -1246,6 +1254,7 @@ void PresetInteractor::fill_materials_presets(
             view,
             hw_config.id,
             m_use_hw_config_short_name ? hw_config.short_name : hw_config.name,
+            hw_config_runtime,
             selected_preset.materials[slot_index],
             get_string(selected_preset.print, "default_material")
         );

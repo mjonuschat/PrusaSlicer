@@ -55,6 +55,7 @@ struct PresetItem
     std::string hw_printer_config_name;
     Domain::Preset::PresetOrigin origin;
     bool runtime_only;
+    bool hw_printer_config_runtime_only;
 };
 
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
