@@ -28,28 +28,26 @@ PopNotificationView::PopNotificationView(
 
 void PopNotificationView::reset()
 {
-    // remove child trees from root
-    if (m_left_column) {
-        remove(m_left_column);
-        m_left_column = nullptr;
+    if (m_top_row) {
+        remove(m_top_row);
+        m_top_row = nullptr;
     }
     if (m_mid_column) {
         remove(m_mid_column);
         m_mid_column = nullptr;
     }
-    if (m_right_column) {
-        remove(m_right_column);
-        m_right_column = nullptr;
-    }
 
-    // set rest of the pointers to nullptr (those are already removed)
-    m_text   = nullptr;
-    m_header = nullptr;
+    m_left_column           = nullptr;
+    m_top_mid               = nullptr;
+    m_right_column          = nullptr;
+    m_text                  = nullptr;
+    m_header                = nullptr;
+    m_button_line           = nullptr;
+    m_progress_bar          = nullptr;
+    m_left_icon             = nullptr;
+    m_close_button          = nullptr;
+    m_progress_percent_text = nullptr;
     m_buttons.clear();
-    m_button_line  = nullptr;
-    m_progress_bar = nullptr;
-    m_left_icon    = nullptr;
-    m_close_button = nullptr;
 }
 
 void PopNotificationView::layout()
@@ -75,13 +73,7 @@ void PopNotificationView::on_data_update()
 {
     ASSERT(m_state);
 
-    if (m_current_layout.index() != m_state->layout.index()) {
-        reset();
-        layout();
-        return;
-    }
-
-    if (m_current_level != m_state->level) {
+    if (m_current_layout.index() != m_state->layout.index() || m_current_level != m_state->level) {
         m_current_level = m_state->level;
         reset();
         layout();
@@ -125,28 +117,35 @@ void PopNotificationView::on_data_update()
 
 void PopNotificationView::basic_layout(Render::Icon icon_override)
 {
-    set_margin(5.); // space between notifications
-
+    set_margin(5.);
     set_max_width(TotalWidth);
     set_max_height(MaxHeight);
     set_flex_shrink(0.f);
-    set_orientation(Yoga::Orientation::Horizontal);
-    set_justify_content(YGJustifyFlexStart); // razeni itemu uvnitr
+    set_orientation(Yoga::Orientation::Vertical);
+    set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 10.f));
 
-    m_left_column  = emplace_back<Yoga::Item>();
-    m_mid_column   = emplace_back<Yoga::Item>();
-    m_right_column = emplace_back<Yoga::Item>();
+    // Top Row: Icon, Header, Close Button
+    m_top_row = emplace_back<Yoga::Item>();
+    m_top_row->set_orientation(Yoga::Orientation::Horizontal);
+    m_top_row->set_width_percent(100.f);
 
-    basic_left_layout(icon_override);
-    basic_right_layout();
+    m_left_column  = m_top_row->emplace_back<Yoga::Item>();
+    m_top_mid      = m_top_row->emplace_back<Yoga::Item>();
+    m_right_column = m_top_row->emplace_back<Yoga::Item>();
+
+    m_left_column->set_self_align(YGAlignCenter);
+    m_top_mid->set_self_align(YGAlignCenter);
+    m_top_mid->set_flex_grow(1.f);
+    m_right_column->set_self_align(YGAlignCenter);
+
+    // Main Content Column (Below Top Row)
+    m_mid_column = emplace_back<Yoga::Item>();
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
     m_mid_column->set_flex_grow(1.f);
     m_mid_column->set_self_align(YGAlignStretch);
 
-    m_update_right_on_resize = true;
-
-    // m_right_column->set_debug_border(true);
-    // m_mid_column->set_debug_border(true);
-    // m_left_column->set_debug_border(true);
+    basic_left_layout(icon_override);
+    basic_right_layout();
 }
 
 void PopNotificationView::basic_left_layout(Render::Icon icon_override)
@@ -154,29 +153,40 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
     m_left_column->set_orientation(Yoga::Orientation::Horizontal);
     m_left_column->set_justify_content(YGJustifyFlexStart);
 
-    Render::Icon icon = Render::Icon::None;
-    if (icon_override != Render::Icon::None) {
-        icon = icon_override;
-    } else if (m_state->level == PopNotificationLevel::Warning) {
-        icon = Render::Icon::ErrorMarker;
-    } else if (m_state->level == PopNotificationLevel::Error) {
-        icon = Render::Icon::WarningMarker;
+    Render::Icon icon = icon_override;
+    std::optional<Platform::Color> tint_color;
+
+    if (icon == Render::Icon::None && m_state->level == PopNotificationLevel::Warning) {
+        icon       = Render::Icon::WarningMarkerWhite;
+        tint_color = Platform::Color::Warning;
+    } else if (icon == Render::Icon::None && m_state->level == PopNotificationLevel::Error) {
+        icon       = Render::Icon::ErrorMarker;
+        tint_color = Platform::Color::Error;
     }
+
     if (icon == Render::Icon::None) {
-        m_left_column->set_min_height(MinHeight);
+        m_left_column->set_min_width(0);
+        m_left_column->set_min_height(0);
         return;
     }
 
     m_left_column->set_min_width(25);
-    m_left_column->set_min_height(MinHeight);
+    m_left_column->set_min_height(20);
     m_left_icon = m_left_column->emplace_back<Yoga::Icon>(icon);
     m_left_icon->set_min_width(20);
     m_left_icon->set_min_height(20);
-    m_left_icon->set_margin({0.f, 10.f, 10.f, 0.f});
+    m_left_icon->set_margin({0.f, 0.f, 10.f, 0.f});
+
+    if (tint_color) {
+        m_left_icon->set_tint(m_theme->color_imgui(*tint_color));
+    }
 }
 
 void PopNotificationView::basic_right_layout()
 {
+    m_right_column->set_orientation(Yoga::Orientation::Horizontal);
+    m_right_column->set_justify_content(YGJustifyFlexEnd);
+
     if (m_state->level != PopNotificationLevel::ProgressNoClose) {
         m_close_button = m_right_column->emplace_back<Yoga::LayoutButton>(
             std::string{},
@@ -202,17 +212,17 @@ void PopNotificationView::basic_right_layout()
 void PopNotificationView::basic_mid_layout()
 {
     m_mid_column->set_orientation(Yoga::Orientation::Vertical);
-    m_mid_column->set_justify_content(YGJustifyCenter);
+    m_mid_column->set_justify_content(YGJustifyFlexStart);
 }
 
 void PopNotificationView::basic_mid_header_layout(const std::string& header)
 {
-    m_header = m_mid_column->emplace_back<Yoga::Text>(header);
+    m_header = m_top_mid->emplace_back<Yoga::Text>(header);
     m_header->set_font_type(Render::ImguiFontType::Bold);
     m_header->set_text_color(text_color());
     m_header->set_margin({0.f, 5.f, 0.f, 5.f});
     m_header->set_flex_shrink(0.f);
-    m_header->set_width_percent(100.f);  
+    m_header->set_width_percent(100.f);
     m_header->set_wrap_mode(Yoga::Text::WrapMode::WrapElide);
 }
 
@@ -221,8 +231,10 @@ void PopNotificationView::basic_mid_text_layout(const std::string& text)
     auto* text_scroll = m_mid_column->emplace_back<Yoga::ScrollArea>("TextScroll");
     text_scroll->set_flex_grow(1.f);
     text_scroll->set_flex_shrink(1.f);
-    text_scroll->set_margin({0.f, 5.f, 0.f, 10.f});
-    text_scroll->set_width_percent(100.f); 
+    text_scroll->set_justify_content(YGJustifyFlexStart);
+    text_scroll->set_margin({0.f, 0.f, -10.f, 10.f});
+    text_scroll->set_padding({0.f, 0.f, 10.f, 0.f});
+    text_scroll->set_width_percent(100.f);
 
     m_text = text_scroll->emplace_back<Yoga::Text>(text);
     m_text->set_wrap_mode(Yoga::Text::WrapMode::Wrap);
@@ -240,6 +252,7 @@ void PopNotificationView::basic_mid_buttons_layout(
     m_button_line->set_justify_content(YGJustifyFlexStart);
     m_button_line->set_margin({0.f, 0.f, 0.f, 5.f});
     m_button_line->set_flex_shrink(0.f);
+
     for (const auto& bdata : buttons) {
         Yoga::LayoutButton* button =
             m_buttons.emplace_back(m_button_line->emplace_back<Yoga::LayoutButton>(bdata.text));
@@ -346,20 +359,22 @@ void PopNotificationView::layout_type_header_text_progress()
 
 void PopNotificationView::update_text(const std::string& text)
 {
-    if (text != m_text->text()) {
+    if (m_text && text != m_text->text()) {
         m_text->set_text(text);
     }
 }
 
 void PopNotificationView::update_header(const std::string& text)
 {
-    if (text != m_header->text()) {
+    if (m_header && text != m_header->text()) {
         m_header->set_text(text);
     }
 }
 
 void PopNotificationView::update_buttons(const std::vector<PopNotificationButtonData>& buttons)
 {
+    if (!m_button_line)
+        return;
     for (size_t i = 0; i < buttons.size(); i++) {
         if (m_buttons.size() <= i) {
             m_buttons.emplace_back(
@@ -405,7 +420,6 @@ ImColor PopNotificationView::text_color() const
     } else if (m_state->level == PopNotificationLevel::Error) {
         return m_theme->color_imgui(Platform::Color::Error);
     }
-
     return m_theme->color_imgui(Platform::Color::Text);
 }
 
@@ -418,25 +432,6 @@ Platform::Color PopNotificationView::button_color() const
         return Platform::Color::Error;
     default:
         return Platform::Color::Button;
-    }
-}
-
-void PopNotificationView::on_resized()
-{
-    if (m_update_right_on_resize && height() > 0) {
-        m_update_right_on_resize = false;
-        update_right_column();
-    }
-}
-
-void PopNotificationView::update_right_column()
-{
-    if (height() > 0 && height() <= 70) {
-        m_right_column->set_orientation(Yoga::Orientation::Vertical);
-        m_right_column->set_justify_content(YGJustifyCenter);
-    } else {
-        m_right_column->set_orientation(Yoga::Orientation::Horizontal);
-        m_right_column->set_justify_content(YGJustifyFlexEnd);
     }
 }
 

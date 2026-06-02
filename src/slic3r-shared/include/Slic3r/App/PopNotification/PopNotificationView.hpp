@@ -19,32 +19,31 @@ class PopNotificationView : public Yoga::Window, public Biz::DataObserver<PopNot
 public:
     PopNotificationView(size_t index, const PopNotificationData& data, PopNotificationObservableList& notification_list);
 
-    void on_resized() override;
+    void on_resized() override {}
 
 protected:
     void on_data_update() override;
 
 private:
-    // const PopNotificationData& m_notification_data;
     PopNotificationObservableList& m_notification_list;
 
-    Yoga::Item* m_left_column;
-    Yoga::Item* m_mid_column;
-    Yoga::Item* m_right_column;
+    Yoga::Item* m_top_row{nullptr};
+    Yoga::Item* m_left_column{nullptr};
+    Yoga::Item* m_top_mid{nullptr};
+    Yoga::Item* m_right_column{nullptr};
+    Yoga::Item* m_mid_column{nullptr};
 
     Yoga::Icon* m_left_icon{nullptr};
     Yoga::LayoutButton* m_close_button {nullptr};
     Yoga::Text* m_text{nullptr};
     Yoga::Text* m_header{nullptr};
     std::vector<Yoga::LayoutButton*> m_buttons;
-    Yoga::Item* m_button_line;
+    Yoga::Item* m_button_line{nullptr};
     Yoga::Text* m_progress_percent_text{nullptr};
-    Yoga::ProgressBar* m_progress_bar;
+    Yoga::ProgressBar* m_progress_bar{nullptr};
 
     PopNotificationLayout m_current_layout;
     PopNotificationLevel m_current_level;
-
-    bool m_update_right_on_resize {false};
 
     void reset();
     void layout();
@@ -70,8 +69,6 @@ private:
     void update_header(const std::string& text);
     void update_buttons(const std::vector<PopNotificationButtonData>& buttons);
     void update_progress(int progress);
-
-    void update_right_column();
 
     ImColor text_color() const;
     Platform::Color button_color() const;
