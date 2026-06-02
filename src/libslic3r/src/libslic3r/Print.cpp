@@ -1713,8 +1713,7 @@ void Print::alert_when_supports_needed()
         std::vector<std::pair<const PrintObject *, std::vector<std::pair<SupportSpotsGenerator::SupportPointCause, bool>>>> objects_isssues;
 
         for (const PrintObject *object : m_objects) {
-            std::unordered_set<const Domain::ModelObject *> checked_model_objects;
-            if (!object->has_support() && checked_model_objects.find(object->model_object()) == checked_model_objects.end()) {
+            if (!object->has_support()) {
                 if (object->m_shared_regions->generated_support_points.has_value()) {
                     SupportSpotsGenerator::SupportPoints  supp_points = object->m_shared_regions->generated_support_points->support_points;
                     SupportSpotsGenerator::PartialObjects partial_objects = object->m_shared_regions->generated_support_points
@@ -1724,7 +1723,6 @@ void Print::alert_when_supports_needed()
                         objects_isssues.emplace_back(object, issues);
                     }
                 }
-                checked_model_objects.emplace(object->model_object());
             }
         }
 
