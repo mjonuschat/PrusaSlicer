@@ -41,4 +41,14 @@ void calculate_convex_hull(Domain::ModelVolume& model_volume);
 // Returns the bbox of the given ModelVolume transformed by the given transformation
 Domain::BoundingBox3d transformed_bounding_box(const Domain::ModelVolume& model_volume, const Domain::Transform3d& trafo);
 
+/**
+ * @brief Whether the volume has a support enforcer.
+ *
+ * True when the volume is a support-enforcer volume, or a model part painted with support-enforcer facets.
+ *
+ * @param model_volume The volume to test.
+ * @return True if the volume has a support enforcer, false otherwise.
+ */
+bool has_support_enforcers(const Domain::ModelVolume& model_volume);
+
 } // namespace Slic3r::Biz::Algorithms::ModelVolume

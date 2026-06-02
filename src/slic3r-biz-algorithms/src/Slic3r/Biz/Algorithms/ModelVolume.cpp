@@ -2,6 +2,7 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -202,5 +203,19 @@ Domain::BoundingBox3d transformed_bounding_box(const Domain::ModelVolume& model_
     const Domain::TriangleMesh* m = (ch != nullptr) ? ch.get() : &model_volume.mesh();
     return TriangleMesh::transformed_bounding_box(*m, trafo);
 }
+
+bool has_support_enforcers(const Domain::ModelVolume& model_volume)
+{
+    if (model_volume.is_support_enforcer()) {
+        return true;
+    }
+
+    return model_volume.is_model_part()
+        && FacetsAnnotation::has_facets(
+               model_volume.supported_facets,
+               Domain::TriangleSelector::TriangleStateType::ENFORCER
+        );
+}
+
 
 } // namespace Slic3r::Biz::Algorithms::ModelVolume

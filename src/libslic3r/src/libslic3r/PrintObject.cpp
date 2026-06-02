@@ -33,6 +33,7 @@
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
@@ -554,6 +555,17 @@ static float get_min_acceleration(
         }
     }
     return static_cast<float>(min);
+}
+
+bool PrintObject::has_support_enforcers() const
+{
+    for (const Domain::ModelVolume* model_volume : this->model_object()->volumes) {
+        if (Algorithms::ModelVolume::has_support_enforcers(*model_volume)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void PrintObject::generate_support_spots()

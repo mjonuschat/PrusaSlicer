@@ -403,6 +403,8 @@ public:
     const PrintObjectRegions*   shared_regions() const { return m_shared_regions.get(); }
 
     bool                        has_support()           const { return m_config.get<Domain::SupportMode>("support_material") != Domain::SupportMode::None || m_config.get<int>("support_material_enforce_layers") > 0; }
+    // Whether the object has any support enforcer (an enforcer volume or painted enforcer facets).
+    bool                        has_support_enforcers() const;
     bool                        has_raft()              const { return m_config.get<int>("raft_layers") > 0; }
     bool                        has_support_material()  const { return this->has_support() || this->has_raft(); }
     // Checks if the model object is painted using the multi-material painting gizmo.
