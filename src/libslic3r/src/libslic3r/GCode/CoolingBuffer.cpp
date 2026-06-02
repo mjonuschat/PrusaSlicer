@@ -1058,7 +1058,8 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
     // Collect total print time of non-adjustable extruders.
     float elapsed_time_total0 = 0.f;
     for (PerExtruderAdjustments &adj : per_extruder_adjustments) {
-        const double perimeter_transition_distance = m_config.cooling_perimeter_transition_distance.at(m_current_extruder);
+        const double perimeter_transition_distance =
+            m_config.cooling_perimeter_transition_distance.at(adj.extruder_id);
         if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::ConsistentSurface && perimeter_transition_distance >= 0.) {
             // Create non-adjustable segments for ConsistentSurface logic before sorting.
             adj.create_non_adjustable_segments(static_cast<float>(perimeter_transition_distance));
