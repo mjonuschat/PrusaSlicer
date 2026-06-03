@@ -16,6 +16,7 @@
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/textdlg.h>
+#include <wx/display.h>
 
 namespace Slic3r::App::WX::WebView {
 
@@ -68,8 +69,26 @@ WebViewDialog::WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>
     panel->SetSizer(panel_sizer);
 #endif
     
+    auto [req_w, req_h] = m_logic->size(w_config()->em_unit());
     auto [min_w, min_h] = m_logic->min_size(w_config()->em_unit());
+
+    wxRect client_area = wxDisplay(wxDisplay::GetFromWindow(this)).GetClientArea();
+    if (client_area.IsEmpty()) {
+        // Fallback if display detection fails
+        int scr_w, scr_h;
+        wxDisplaySize(&scr_w, &scr_h);
+        client_area = wxRect(0, 0, scr_w, scr_h);
+    }
+
+    int max_safe_w = static_cast<int>(client_area.GetWidth() * 0.90);
+    int max_safe_h = static_cast<int>(client_area.GetHeight() * 0.85);
+    int final_w = std::min(req_w, max_safe_w);
+    int final_h = std::min(req_h, max_safe_h);
+    min_w = std::min(min_w, final_w);
+    min_h = std::min(min_h, final_h);
+
     SetMinSize(wxSize(min_w, min_h));
+    SetSize(wxSize(final_w, final_h));
     SetSizer(topsizer);
 
     this->CenterOnParent();
