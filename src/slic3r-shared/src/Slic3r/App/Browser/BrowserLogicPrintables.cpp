@@ -95,7 +95,6 @@ std::vector<BrowserLogicCommand> result;
 
     if (m_refreshing_token) {
         result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
-        m_refreshing_token = false;
     }
 
     result.emplace_back(BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse, std::string());
@@ -122,6 +121,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
         emplace_load_default_url_commands(result, current_url);
         return result;
     }
+
+    m_refreshing_token = true;
 
     result.emplace_back(BrowserLogicCommandType::RunScript, script_show_loading_overlay());
     result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
