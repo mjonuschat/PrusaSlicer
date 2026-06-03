@@ -46,10 +46,9 @@ uint8_t address_from_legacy_public(uint8_t address)
 Address address_from_legacy_public(const Address& address)
 {
     Address ret;
-    for (const auto component: address)
+    for (const auto component : address)
         ret.push_back(address_from_legacy_public(component));
     return ret;
-
 }
 
 std::string to_string(const Address& v)
@@ -64,12 +63,8 @@ tl::expected<Address, std::string> from_string(const std::string& input)
     Address address;
     for (const auto& slot : std::views::split(input, ".")) {
         int slot_v;
-        auto result = std::from_chars(
-            std::to_address(slot.begin()),
-            std::to_address(slot.end()),
-            slot_v,
-            10
-        );
+        auto result =
+            std::from_chars(std::to_address(slot.begin()), std::to_address(slot.end()), slot_v, 10);
         if (result.ec != std::errc()) {
             return tl::unexpected{"Failed to parse a number!"};
         }
@@ -156,7 +151,7 @@ bool contains_enum(std::string_view val)
     return magic_enum::enum_contains<E>(val, magic_enum::case_insensitive);
 }
 
-}
+} // namespace
 
 namespace Slic3r::Domain::Preset {
 
@@ -243,6 +238,10 @@ void from_json(const ordered_json& j, HwSheetConfig& v)
     j.at("features").get_to(v.features);
 }
 
+constexpr const char* MATERIAL_STRUCTURE_PREFIX  = "package.material.";
+constexpr const char* MATERIAL_STRUCTURE_KEY     = "material_package_instance";
+constexpr const char* MATERIAL_STRUCTURE_OLD_KEY = "material";
+
 void tools_to_json(
     ordered_json& j,
     const HwToolConfigs& tools,
@@ -251,7 +250,7 @@ void tools_to_json(
 )
 {
     for (size_t i = 0, n = tools.size(); i < n; ++i) {
-        ordered_json ji      = tools[i];
+        ordered_json ji = tools[i];
         // shift by +1
         j[std::to_string(i)] = ji;
     }
@@ -277,7 +276,8 @@ void tools_to_json(
         auto& ji = j[key];
         // decompose material
         ji["slicer_material"] = mat;
-        ji["material"]        = Biz::Config::features_to_structure(v.features);
+        ji[MATERIAL_STRUCTURE_KEY] =
+            Biz::Config::features_to_structure(v.features, MATERIAL_STRUCTURE_PREFIX);
     }
 }
 
@@ -305,17 +305,29 @@ tl::expected<ToolsNodeLoadedResult, std::string> parse_tools(const ordered_json&
         }
 
         // compose material
-        if (v.contains("material") || v.contains("slicer_material")) {
-
+        if (v.contains(MATERIAL_STRUCTURE_OLD_KEY)
+            || v.contains(MATERIAL_STRUCTURE_KEY)
+            || v.contains("slicer_material"))
+        {
             MaterialConfig mat;
             if (v.contains("slicer_material")) {
                 const auto& mat_node = v.at("slicer_material");
                 // read material definition
                 mat = mat_node.get<MaterialConfig>();
             }
-            if (v.contains("material")) {
-                const auto& matdb_node = v.at("material");
-                Biz::Config::structure_to_features(matdb_node.get<JsonValue>());
+            if (v.contains(MATERIAL_STRUCTURE_KEY)) {
+                const auto& matdb_node = v.at(MATERIAL_STRUCTURE_KEY);
+                mat.features.merge(
+                    Biz::Config::structure_to_features(
+                        matdb_node.get<JsonValue>(),
+                        MATERIAL_STRUCTURE_PREFIX
+                    )
+                );
+            } else if (v.contains(MATERIAL_STRUCTURE_OLD_KEY)) {
+                const auto& matdb_node = v.at(MATERIAL_STRUCTURE_OLD_KEY);
+                mat.features.merge(
+                    Biz::Config::structure_to_features(matdb_node.get<JsonValue>(), "")
+                );
             }
             ret.materials.insert({k, mat});
             parsed = true;
@@ -672,11 +684,12 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     const bool legacy_public_address_used =
         tools_result->tools.contains("1") && !tools_result->tools.contains("0");
 
-
     for (const auto& [key, value] : tools_result->tools) {
         const auto address{from_string(key)};
         if (!address) {
-            return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
+            return tl::unexpected{
+                "Address could not be parsed from '" + key + "': " + address.error()
+            };
         }
         if (address->size() != 1) {
             return tl::unexpected{fmt::format(
@@ -697,7 +710,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     for (const auto& [key, value] : tools_result->feeders) {
         const auto address{from_string(key)};
         if (!address) {
-            return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
+            return tl::unexpected{
+                "Address could not be parsed from '" + key + "': " + address.error()
+            };
         }
         feeders.insert({*address, value});
     }
@@ -706,7 +721,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     for (const auto& [key, value] : tools_result->materials) {
         const auto address{from_string(key)};
         if (!address) {
-            return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
+            return tl::unexpected{
+                "Address could not be parsed from '" + key + "': " + address.error()
+            };
         }
         auto slicer_address = *address;
         if (legacy_public_address_used) {

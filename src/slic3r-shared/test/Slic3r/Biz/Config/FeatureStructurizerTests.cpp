@@ -9,12 +9,14 @@ TEST_CASE("FeatureStructurizer", "[preset]")
 {
     SECTION("Round trip test")
     {
-        FeatureValueMap features;
-        features["$.type.abbreviation"] = "PET";
-        features["$.tags"] = JsonArray{JsonObject{{"id", "abrasive"}}};
-        auto structure = features_to_structure(features);
-        auto result = structure_to_features(structure);
-        REQUIRE(result.size() == features.size());
-        REQUIRE(result == features);
+        for (const char* key_prefix : {"", "material_package_instance.package."}) {
+            FeatureValueMap features;
+            features["$.type.abbreviation"] = "PET";
+            features["$.tags"] = JsonArray{JsonObject{{"id", "abrasive"}}};
+            auto structure = features_to_structure(features, key_prefix);
+            auto result = structure_to_features(structure, key_prefix);
+            REQUIRE(result.size() == features.size());
+            REQUIRE(result == features);
+        }
     }
 }
