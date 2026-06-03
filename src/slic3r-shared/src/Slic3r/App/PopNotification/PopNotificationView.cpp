@@ -124,6 +124,17 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     set_orientation(Yoga::Orientation::Vertical);
     set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 10.f));
 
+    if (m_state->level == PopNotificationLevel::Error) {
+        set_border_size(2.f);
+        set_border_color(m_theme->color_imgui(Platform::Color::Error));
+    } else if (m_state->level == PopNotificationLevel::Warning) {
+        set_border_size(2.f);
+        set_border_color(m_theme->color_imgui(Platform::Color::Warning));
+    } else {
+        set_border_size(0.f);
+        set_border_color(std::nullopt);
+    }
+
     // Top Row: Icon, Header, Close Button
     m_top_row = emplace_back<Yoga::Item>();
     m_top_row->set_orientation(Yoga::Orientation::Horizontal);
@@ -415,11 +426,6 @@ void PopNotificationView::update_progress(int progress)
 
 ImColor PopNotificationView::text_color() const
 {
-    if (m_state->level == PopNotificationLevel::Warning) {
-        return m_theme->color_imgui(Platform::Color::Warning);
-    } else if (m_state->level == PopNotificationLevel::Error) {
-        return m_theme->color_imgui(Platform::Color::Error);
-    }
     return m_theme->color_imgui(Platform::Color::Text);
 }
 

@@ -53,6 +53,25 @@ void Window::set_alpha(float alpha)
     }
 }
 
+float Window::border_size() const
+{
+    return m_border_size;
+}
+
+void Window::set_border_size(float border_size)
+{
+    if (!Domain::fuzzy_compare(m_border_size, border_size)) {
+        m_border_size = border_size;
+        set_style_dirty();
+    }
+}
+
+void Window::set_border_color(const std::optional<ImColor>& color)
+{
+    m_border_color = color;
+    set_style_dirty();
+}
+
 void Window::render(const Vec2f& pos, const Vec2f& size)
 {
     // Process begin of popup modal if needed
@@ -93,10 +112,15 @@ void Window::render(const Vec2f& pos, const Vec2f& size)
     ImGui::SetNextWindowPos(next_pos);
 
     // Discard current paddings and spacing of the window to corect apply of sizer's margins
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, m_border_size);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
+
+    bool has_border_color = m_border_color.has_value() && m_border_size > 0.f;
+    if (has_border_color) {
+        ImGui::PushStyleColor(ImGuiCol_Border, m_border_color.value().Value);
+    }
 
     ImGui::Begin(object_name().c_str(), nullptr, m_flags);
 
@@ -133,6 +157,10 @@ void Window::render(const Vec2f& pos, const Vec2f& size)
     ImGui::End();
     // Revert current paddings and spacing
     ImGui::PopStyleVar(4);
+
+    if (has_border_color) {
+        ImGui::PopStyleColor();
+    }
 
     // Process end of popup modal if needed
     if (m_is_modal && is_begin_popup_modal) {

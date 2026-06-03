@@ -27,6 +27,10 @@ public:
     float alpha() const;
     void set_alpha(float alpha);
 
+    float border_size() const;
+    void set_border_size(float border_size);
+    void set_border_color(const std::optional<ImColor>& color);
+
     void render(const Vec2f& pos, const Vec2f& size) override final;
     /**
      * @brief render_body by default will render all Window children
@@ -61,6 +65,9 @@ private:
     float m_rounding = 5;
 
     float m_alpha = 1.f;
+
+    float m_border_size = 0.f;
+    std::optional<ImColor> m_border_color;
 
     bool m_position_by_yoga = true;
     std::optional<Vec2f> m_requested_position;
