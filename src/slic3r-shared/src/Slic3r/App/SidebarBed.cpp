@@ -50,7 +50,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_bed_name->set_margin(Paddings(0.f, -5.f, 0.f, 0.f));
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
-    m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
+    m_logical_printer_button = emplace_back<PrinterSettingsButton>();
     m_logical_printer_button->set_flex_grow(1.f);
     m_logical_printer_button->set_visible_cog(true);
 
@@ -157,6 +157,7 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
     m_logical_printer_button->set_printer_name(prefix + preset_item.name);
     const std::string hw_prefix{preset_item.runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
     m_logical_printer_button->set_preset_name(hw_prefix + preset_item.hw_printer_config_name);
+    m_logical_printer_button->set_tooltip(prefix + preset_item.name + "\n" + hw_prefix + preset_item.hw_printer_config_name);
 
     const Domain::Preset::HwPrinterConfig& printer_config =
         m_project_interactor.preset_interactor().current_printer_config();

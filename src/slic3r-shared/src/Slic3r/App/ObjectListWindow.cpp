@@ -38,7 +38,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     const ObjectList::Mode mode = for_plater ? ObjectList::Mode::Plater : ObjectList::Mode::Preview;
     if (mode == ObjectList::Mode::Plater) {
         m_add_container_button = content()->emplace_back<Yoga::LayoutButton>(
-            _u8L("Add Printer Container"),
+            _u8L("Add Printer Group"),
             Render::Icon::ConfigContainer
         );
         m_add_container_button->set_flex_shrink(0.f);

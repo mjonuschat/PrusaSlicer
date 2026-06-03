@@ -23,7 +23,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     FnIndexClicked on_cog_clicked,
     Biz::ProjectInteractor& project_interactor
 ) :
-    RectangleButton(format(_u8L("Material %1% TT"), index + 1)),
+    RectangleButton(),
     Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, state),
     m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this),
     m_button_group(button_group),
@@ -204,6 +204,7 @@ void MaterialSettingsButton::on_view_will_be_removed()
 void MaterialSettingsButton::set_material_name(const std::string& name)
 {
     m_material_name->set_text(name);
+    set_tooltip(name);
 }
 
 void MaterialSettingsButton::checked_updated_internal()
