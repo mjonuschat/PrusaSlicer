@@ -333,7 +333,6 @@ bool process_object_with_components(
 bool move_mesh(CT_Object& object_3mf, ModelObject& temp_object, ObjectMap& object_map, const std::string* path)
 {
     // By 3mf core spec CT_Object should contain mesh OR components
-    assert(object_3mf.mesh.its.empty() != object_3mf.components.empty());
     if (object_3mf.mesh.its.empty() && object_3mf.components.empty())
         return true; // Can't be both empty
 
@@ -342,7 +341,17 @@ bool move_mesh(CT_Object& object_3mf, ModelObject& temp_object, ObjectMap& objec
 
     // is Object with mesh?
     if (!object_3mf.mesh.its.empty()) {
-        // Triangle mesh check validity in constructor
+
+        // Check that no triangle references non-existent vertex.
+        indexed_triangle_set& its = object_3mf.mesh.its;
+        int vertices_cnt = int(its.vertices.size());
+        for (size_t i=0; i<its.indices.size(); ++i) {
+            for (size_t j=0; j<3; ++j) {
+                if (its.indices[i][j] < 0 || its.indices[i][j] >= vertices_cnt)
+                    throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::unknown, "File contains a corrupted mesh."));
+            }
+        }
+
         Domain::TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(
             object_3mf.mesh.its
         );
