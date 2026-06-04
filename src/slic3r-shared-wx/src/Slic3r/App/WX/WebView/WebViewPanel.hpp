@@ -52,7 +52,7 @@ private:
 
 
     bool m_do_late_webview_create{false};
-
+    bool m_busy_cursor_set {false};
     bool m_load_error_page{false};
     bool m_shown{false};
     bool m_load_default_url_on_next_error{false};

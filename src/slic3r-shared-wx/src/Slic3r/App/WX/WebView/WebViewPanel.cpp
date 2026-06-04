@@ -342,19 +342,26 @@ void WebViewPanel::on_idle(wxIdleEvent& evt)
     if (!m_web_view || m_do_late_webview_create)
         return;
 
+    bool is_busy = m_web_view->IsBusy();
+
     // The busy cursor on webview is switched off on Linux.
     // Because m_browser->IsBusy() is almost always true on Printables / Connect.
 #ifndef __linux__
     if (m_shown) {
-        if (m_web_view->IsBusy()) {
-            wxSetCursor(wxCURSOR_ARROWWAIT);
-        } else {
-            wxSetCursor(wxNullCursor);
+        // Use window-specific SetCursor instead of global wxSetCursor to allow parent frame resizing
+        if (is_busy && !m_busy_cursor_set) {
+            this->SetCursor(wxCURSOR_ARROWWAIT);
+            m_busy_cursor_set = true;
+            SPDLOG_INFO("busy cursor");
+        } else if (!is_busy && m_busy_cursor_set) {
+            this->SetCursor(wxNullCursor);
+            m_busy_cursor_set = false;
+            SPDLOG_INFO("normal cursor");
         }
     }
 #endif // !__linux__
 
-    if (m_shown && m_load_error_page && !m_web_view->IsBusy()) {
+    if (m_shown && m_load_error_page && !is_busy) {
         m_load_error_page = false;
         if (m_load_default_url_on_next_error) {
             m_load_default_url_on_next_error = false;
@@ -377,7 +384,7 @@ void WebViewPanel::on_idle(wxIdleEvent& evt)
     }
 
 #ifdef DEBUG_URL_PANEL
-    m_button_stop->Enable(m_web_view->IsBusy());
+    m_button_stop->Enable(is_busy);
 #endif
 }
 
