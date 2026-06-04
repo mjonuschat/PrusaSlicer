@@ -304,7 +304,7 @@ void AbstractRenderLayout::init_middle_column()
     m_layout_scene_row->append(m_pop_notification_list_view.release());
     m_pop_notification_list_view->set_orientation(Orientation::Vertical);
     m_pop_notification_list_view->set_max_width(400.f);
-    m_pop_notification_list_view->set_max_height(1000.f);
+    m_pop_notification_list_view->set_max_height(200.f);
     m_pop_notification_list_view->set_flex_grow(1);
     m_pop_notification_list_view->set_margin(10.);
     m_pop_notification_list_view->set_self_align(YGAlignFlexEnd);
