@@ -376,6 +376,12 @@ void add_misc_options(CLI::App& app, App::InitParams& params)
         "instead of the default OpenGL driver."
     );
 
+    app.add_flag(
+        "--webdev",
+        params.misc.webdev,
+        "Enable webdev tools in webview components."
+    );
+
     app.add_option(
            "--threads",
            params.misc.threads,
