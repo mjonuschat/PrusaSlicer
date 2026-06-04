@@ -1,4 +1,6 @@
 #include "Slic3r/Biz/Format/Metadata.hpp"
+#include "Slic3r/Biz/Utils/XmlEscape.hpp"
+
 #include <string_view>
 
 #include <boost/assign.hpp>
@@ -22,14 +24,14 @@ const ModelMetadataToString type_to_name =
     (ModelMetadataNames::Slic3r_version  , "slic3rpe:Version3mf");
 
 void write_metadata(std::ostream &stream, const ModelMetadata &metadata) {
-    stream << "<metadata name=\"" << to_name(metadata.name) << "\"";
+    stream << "<metadata name=\"" << Slic3r::Biz::Utils::xml_escape(std::string(to_name(metadata.name))) << "\"";
     // Not supported by xs
     //if (metadata.preserve)
     //    stream << " preserve=\"true\"";
     if (!metadata.type.empty())
-        stream << " type=\"" << metadata.type << "\"";
+        stream << " type=\"" << Slic3r::Biz::Utils::xml_escape(metadata.type) << "\"";
     stream << ">" 
-        << metadata.value << "</metadata>\n";
+        << Slic3r::Biz::Utils::xml_escape(metadata.value) << "</metadata>\n";
 }
 
 #ifndef NDEBUG // function is used only in assert

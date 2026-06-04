@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
+#include "Slic3r/Biz/Utils/XmlEscape.hpp"
 
 #include "Slic3r/Time.hpp" // utc_timestamp
 #include "LocalesUtils.hpp" // CNumericLocalesSetter
@@ -1339,7 +1340,7 @@ void store_resource_object_mirror_geometry(mz_zip_writer_staged_context &context
     output_buffer += std::string() + 
         "  <" + OBJECT_TAG + " " + 
         ID_ATTR + "=\"" + std::to_string(object_id) + "\" " +
-        NAME_ATTR + "=\"" + name + "\" >\n";
+        NAME_ATTR + "=\"" + Slic3r::Biz::Utils::xml_escape(name) + "\" >\n";
     if (duplicate_geometry) {
         bool is_mirrored = true;
         store_geometry(context, its, output_buffer, is_mirrored);
@@ -1602,7 +1603,7 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Domain::
 
             stream << "  <" << OBJECT_TAG << " "
                 << ID_ATTR << "=\"" << object_id << "\" "
-                << NAME_ATTR << "=\"" << volume_ptr->name + "\" "
+                << NAME_ATTR << "=\"" << Slic3r::Biz::Utils::xml_escape(volume_ptr->name) + "\" "
             //  << PROD_NS << UUID_ATTR<< "=\"" << volume_uuid_it->object_uuid << "\" " 
                 << ">\n";
             stored_volumes[volume_ptr] = object_id;
@@ -1661,7 +1662,7 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Domain::
 
         stream << "  <" << OBJECT_TAG << " "
             << ID_ATTR << "=\"" << object_id << "\" "
-            << NAME_ATTR << "=\"" << object_ptr->name + "\" "
+            << NAME_ATTR << "=\"" << Slic3r::Biz::Utils::xml_escape(object_ptr->name) + "\" "
         //  << PROD_NS << UUID_ATTR<< "=\"" << object_uuid_it->object_uuid << "\" "
             << ">\n";
         stored_objects[object_ptr->id().id] = {object_id};
