@@ -241,17 +241,27 @@ ColorRGBA MultiMaterialPaintingGizmo::get_cursor_sphere_right_button_color() con
     return color;
 }
 
-void MultiMaterialPaintingGizmo::on_cursor_radius_changed(float value)
+void MultiMaterialPaintingGizmo::on_cursor_radius_changed(const float value)
 {
     m_dialog->set_brush_radius(static_cast<double>(value));
 }
 
-void MultiMaterialPaintingGizmo::on_smart_fill_angle_changed(float value)
+void MultiMaterialPaintingGizmo::on_smart_fill_angle_changed(const float value)
 {
     m_dialog->set_smart_fill_angle(static_cast<double>(value));
 }
 
-void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(double value)
+void MultiMaterialPaintingGizmo::on_bucket_fill_angle_changed(const float value)
+{
+    m_dialog->set_bucket_fill_angle(static_cast<double>(value));
+}
+
+void MultiMaterialPaintingGizmo::on_height_range_z_range_changed(const float value)
+{
+    m_dialog->set_height_range(static_cast<double>(value));
+}
+
+void MultiMaterialPaintingGizmo::on_clipping_of_view_changed(const double value)
 {
     m_dialog->set_clipping_of_view_value(static_cast<double>(value));
 }

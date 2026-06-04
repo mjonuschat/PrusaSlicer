@@ -66,6 +66,8 @@ protected:
 
     void on_cursor_radius_changed(float value) override;
     void on_smart_fill_angle_changed(float value) override;
+    void on_bucket_fill_angle_changed(float value) override;
+    void on_height_range_z_range_changed(float value) override;
     void on_clipping_of_view_changed(double value) override;
 
     Domain::ColorRGBA get_cursor_sphere_left_button_color() const override;

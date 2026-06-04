@@ -288,7 +288,7 @@ static ItemPtr help()
 
     help.add_item(
         {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseWheel, icon_size, icon_size}},
-        _u8L("Brush size")
+        _u8L("Tool size")
     );
     return result;
 }
