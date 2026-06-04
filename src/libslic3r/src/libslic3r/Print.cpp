@@ -78,6 +78,7 @@ using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
 using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
 using Slic3r::Domain::VolumeSettings;
+using Slic3r::Domain::SupportMode;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -979,19 +980,8 @@ DONE:;
 
             // Do we have custom support data that would not be used?
             // Notify the user in that case.
-            if (!object->has_support()) {
-                for (const Domain::ModelVolume* mv : object->model_object()->volumes) {
-                    bool has_enforcers = mv->is_support_enforcer()
-                        || (mv->is_model_part()
-                            && Algorithms::FacetsAnnotation::has_facets(
-                                mv->supported_facets,
-                                Domain::TriangleSelector::TriangleStateType::ENFORCER
-                            ));
-                    if (has_enforcers) {
-                        warnings.emplace_back(Warning{WarningCode::SupportsTurnedOff});
-                        break;
-                    }
-                }
+            if (!object->has_support() && object->has_support_enforcers()) {
+                warnings.emplace_back(Warning{WarningCode::SupportsTurnedOff});
             }
 
             // validate first_layer_height
@@ -1712,19 +1702,35 @@ void Print::alert_when_supports_needed()
         // vector of pairs of object and its issues, where each issue is a pair of type and critical flag
         std::vector<std::pair<const PrintObject *, std::vector<std::pair<SupportSpotsGenerator::SupportPointCause, bool>>>> objects_isssues;
 
-        for (const PrintObject *object : m_objects) {
-            std::unordered_set<const Domain::ModelObject *> checked_model_objects;
-            if (!object->has_support() && checked_model_objects.find(object->model_object()) == checked_model_objects.end()) {
-                if (object->m_shared_regions->generated_support_points.has_value()) {
-                    SupportSpotsGenerator::SupportPoints  supp_points = object->m_shared_regions->generated_support_points->support_points;
-                    SupportSpotsGenerator::PartialObjects partial_objects = object->m_shared_regions->generated_support_points
-                                                                                ->partial_objects;
-                    auto issues = SupportSpotsGenerator::gather_issues(supp_points, partial_objects);
-                    if (issues.size() > 0) {
-                        objects_isssues.emplace_back(object, issues);
-                    }
-                }
-                checked_model_objects.emplace(object->model_object());
+        // True when support material actually is generated for the object.
+        const auto is_support_generated = [](const PrintObject& print_object) -> bool
+        {
+            const PrintObjectConfigView& config = print_object.config();
+            const SupportMode support_mode      = config.get<SupportMode>("support_material");
+            if (support_mode == SupportMode::Everywhere) {
+                return true;
+            } else if (config.get<int>("support_material_enforce_layers") > 0) {
+                return true;
+            } else if (support_mode == SupportMode::EnforcersOnly) {
+                return print_object.has_support_enforcers();
+            }
+
+            return false;
+        };
+
+        for (const PrintObject* object : m_objects) {
+            if (is_support_generated(*object)) {
+                continue;
+            } else if (!object->m_shared_regions->generated_support_points.has_value()) {
+                continue;
+            }
+
+            SupportSpotsGenerator::SupportPoints  supp_points = object->m_shared_regions->generated_support_points->support_points;
+            SupportSpotsGenerator::PartialObjects partial_objects = object->m_shared_regions->generated_support_points
+                                                                        ->partial_objects;
+            auto issues = SupportSpotsGenerator::gather_issues(supp_points, partial_objects);
+            if (issues.size() > 0) {
+                objects_isssues.emplace_back(object, issues);
             }
         }
 

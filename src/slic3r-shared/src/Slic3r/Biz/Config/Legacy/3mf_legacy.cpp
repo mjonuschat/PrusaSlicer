@@ -432,6 +432,47 @@ static void handle_legacy_project_loaded(
             opt_min_feature_size->value   = 25;
         }
     }
+
+    // Since PrusaSlicer 3.0.0, brim_type is the primary on/off control, and brim_width defaults to 5mm.
+    if (auto* opt_brim_width = config.option<Slic3rLegacy::ConfigOptionFloat>("brim_width", false);
+        opt_brim_width != nullptr && opt_brim_width->value <= 0.)
+    {
+        auto* opt_brim_type = config.option<Slic3rLegacy::ConfigOptionEnum<Slic3rLegacy::BrimType>>(
+            "brim_type",
+            true
+        );
+        // Zero width means brim was never printed, regardless of brim_type.
+        // Set brim_type to NoBrim and brim_width to the new default so that enabling brim
+        // immediately produces a visible brim.
+        opt_brim_type->value  = Slic3rLegacy::btNoBrim;
+        opt_brim_width->value = 5.;
+    }
+
+    // Since PrusaSlicer 3.0.0, support_material is a single enum that replaces
+    // the legacy support_material + support_material_auto bool pair.
+    if (const auto* opt_support_material_auto =
+            config.option<Slic3rLegacy::ConfigOptionBool>("support_material_auto", false);
+        opt_support_material_auto != nullptr)
+    {
+        auto* opt_support_material =
+            config.option<Slic3rLegacy::ConfigOptionEnum<Slic3rLegacy::SupportMode>>(
+                "support_material",
+                false
+            );
+
+        // Since PrusaSlicer 3.0.0, the support_material + support_material_auto bool pair maps to:
+        // support_material = false                                 -> none
+        // support_material = true,  support_material_auto = false  -> enforcers_only
+        // support_material = true,  support_material_auto = true   -> everywhere
+        // handle_legacy() already mapped the bool to none/everywhere.
+        if (opt_support_material->value != Slic3rLegacy::SupportMode::None
+            && !opt_support_material_auto->value)
+        {
+            opt_support_material->value = Slic3rLegacy::SupportMode::EnforcersOnly;
+        }
+
+        config.erase("support_material_auto");
+    }
 }
 
 }

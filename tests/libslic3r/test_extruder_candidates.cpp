@@ -19,6 +19,7 @@ using Slic3r::Biz::Slicing::get_extruder_candidates;
 using Slic3r::Biz::Algorithms::TriangleSelector;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
 using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::SupportMode;
 using CustomGCodeItem = Slic3r::Domain::CustomGCode::Item;
 using CustomGCodeType = Slic3r::Domain::CustomGCode::Type;
 using CustomGCodeInfo = Slic3r::Domain::CustomGCode::Info;
@@ -41,6 +42,7 @@ TEST_CASE_METHOD(
     "[ExtruderCandidates]"
 )
 {
+    config.print.items.opt("support_material").set(SupportMode::None);
     config.print.items.opt("perimeter_extruder").set(2);
 
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
@@ -58,6 +60,8 @@ TEST_CASE_METHOD(
     "[ExtruderCandidates]"
 )
 {
+    config.print.items.opt("support_material").set(SupportMode::None);
+
     // It does not matter if the volumes are parts or modifiers, so there is no need
     // for a special "modifiers" test.
 
@@ -100,6 +104,8 @@ TEST_CASE_METHOD(
     "[ExtruderCandidates]"
 )
 {
+    config.print.items.opt("support_material").set(SupportMode::None);
+
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0});
 
@@ -138,7 +144,7 @@ TEST_CASE_METHOD(
 )
 {
     object->object_settings.items.opt("extruder").set(3);
-    object->object_settings.overrides.set("support_material", true);
+    object->object_settings.overrides.set("support_material", SupportMode::Everywhere);
 
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
     CHECK(extruders == std::vector<unsigned>{0, 2});
@@ -173,6 +179,8 @@ TEST_CASE_METHOD(
     "[ExtruderCandidates]"
 )
 {
+    config.print.items.opt("support_material").set(SupportMode::None);
+
     object->object_settings.items.opt("extruder").set(3);
     BedInstance instance{bed};
     instance.custom_gcode = CustomGCodeInfo{

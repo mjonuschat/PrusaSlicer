@@ -91,6 +91,12 @@ enum class PerimeterGeneratorType
     Arachne  // Perimeter generator with variable extrusion width based on the paper  "A framework for
              // "adaptive width control of dense contour-parallel toolpaths in fused deposition modeling" ported from Cura.
 };
+enum class SupportMode
+{
+    None,
+    EnforcersOnly,
+    Everywhere,
+};
 
 // Then, define all types of ConfigBoxes that will be used. Provide our list
 // of definitions and the type of the box (which must match definitions).

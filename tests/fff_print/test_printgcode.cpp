@@ -16,6 +16,7 @@ using namespace Catch;
 using Biz::GCodeReader::GCodeReader;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
+using Domain::SupportMode;
 
 boost::regex perimeters_regex("G1 X[-0-9.]* Y[-0-9.]* E[-0-9.]* ; perimeter");
 boost::regex infill_regex("G1 X[-0-9.]* Y[-0-9.]* E[-0-9.]* ; infill");
@@ -31,6 +32,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
             config.print.items.opt("layer_height").set(0.2);
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.print.items.opt("support_material").set(SupportMode::None);
             config.print.items.opt("gcode_comments").set(true);
             config.printer.items.opt("start_gcode").set("");
 
@@ -101,7 +103,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
             config.print.items.opt("layer_height").set(0.2);
-            config.print.items.opt("support_material").set(false);
+            config.print.items.opt("support_material").set(SupportMode::None);
             config.print.items.opt("raft_layers").set(0);
             config.print.items.opt("complete_objects").set(true);
             config.print.items.opt("gcode_comments").set(true);
@@ -174,7 +176,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
         WHEN("the output is executed with support material") {
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
-            config.print.items.opt("support_material").set(true);
+            config.print.items.opt("support_material").set(SupportMode::Everywhere);
             config.print.items.opt("raft_layers").set(3);
             config.print.items.opt("gcode_comments").set(true);
 
@@ -198,6 +200,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
         WHEN("the output is executed with a separate first layer extrusion width") {
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("support_material").set(SupportMode::None);
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
             THEN("Some text output is generated.") {
                 REQUIRE(gcode.size() > 0);

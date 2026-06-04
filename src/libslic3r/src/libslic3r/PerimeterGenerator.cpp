@@ -239,7 +239,7 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
 
         ExtrusionPaths paths;
         if (params.config.get<std::vector<bool>>("overhangs").at(extruder_id) && params.layer_id > params.config.get<int>("raft_layers") &&
-            !((params.config.get<bool>("support_material") || params.config.get<int>("support_material_enforce_layers") > 0) &&
+            !((params.config.get<Domain::SupportMode>("support_material") != Domain::SupportMode::None || params.config.get<int>("support_material_enforce_layers") > 0) &&
               params.config.get<double>("support_material_contact_distance") == 0)) {
             // Detect overhanging/bridging perimeters.
             BoundingBox bbox(BB::construct(polygon.points));
@@ -451,7 +451,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
         ExtrusionPaths paths;
         // detect overhanging/bridging perimeters
         if (params.config.get<std::vector<bool>>("overhangs").at(extruder_id) && params.layer_id > params.config.get<int>("raft_layers")
-            && ! ((params.config.get<bool>("support_material") || params.config.get<int>("support_material_enforce_layers") > 0) &&
+            && ! ((params.config.get<Domain::SupportMode>("support_material") != Domain::SupportMode::None || params.config.get<int>("support_material_enforce_layers") > 0) &&
                  params.config.get<double>("support_material_contact_distance") == 0)) {
 
             ClipperLib_Z::Path extrusion_path;

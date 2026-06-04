@@ -171,7 +171,7 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
         const PrintObjectConfigView &object_config = print_object.config();
 #endif // NDEBUG
         // Support must be enabled and set to Tree style.
-        assert(object_config.get<bool>("support_material") || object_config.get<int>("support_material_enforce_layers") > 0);
+        assert(object_config.get<Domain::SupportMode>("support_material") != Domain::SupportMode::None || object_config.get<int>("support_material_enforce_layers") > 0);
         assert(object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree || object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
 
         bool found_existing_group = false;
@@ -231,7 +231,7 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
 
     const PrintConfigView &print_config                 = print_object.print()->config();
     const PrintObjectConfigView &config                 = print_object.config();
-    const bool               support_auto           = config.get<bool>("support_material") && config.get<bool>("support_material_auto");
+    const bool               support_auto           = config.get<Domain::SupportMode>("support_material") == Domain::SupportMode::Everywhere;
     const int                support_enforce_layers = config.get<int>("support_material_enforce_layers");
     std::vector<Polygons>    enforcers_layers{ print_object.slice_support_enforcers() };
     std::vector<Polygons>    blockers_layers{ print_object.slice_support_blockers() };

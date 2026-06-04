@@ -9,13 +9,14 @@ using namespace Slic3r::Test;
 using namespace Slic3r;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
+using Domain::SupportMode;
 
 TEST_CASE("SupportMaterial: Three raft layers created", "[SupportMaterial]")
 {
 	Slic3r::Print print;
 
     TestConfig config;
-    config.print.items.opt("support_material").set(true);
+    config.print.items.opt("support_material").set(SupportMode::Everywhere);
     config.print.items.opt("raft_layers").set(3);
 
 	Slic3r::Test::init_and_process_print({ TestMesh::cube_20x20x20 }, print, config);
@@ -79,7 +80,7 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 			Slic3r::Print print;
 
             TestConfig config;
-            config.print.items.opt("support_material").set(true);
+            config.print.items.opt("support_material").set(SupportMode::Everywhere);
             config.print.items.opt("layer_height").set(0.2);
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
             config.print.items.opt("dont_support_bridges").set(false);
@@ -96,7 +97,7 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 			Slic3r::Print print;
 
             TestConfig config;
-            config.print.items.opt("support_material").set(true);
+            config.print.items.opt("support_material").set(SupportMode::Everywhere);
             config.print.items.opt("layer_height").set(0.2);
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
             config.print.items.opt("dont_support_bridges").set(false);
@@ -113,7 +114,7 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 			Slic3r::Print print;
 
             TestConfig config;
-            config.print.items.opt("support_material").set(true);
+            config.print.items.opt("support_material").set(SupportMode::Everywhere);
             config.print.items.opt("layer_height").set(0.2);
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
             config.print.items.opt("dont_support_bridges").set(false);

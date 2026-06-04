@@ -1,4 +1,4 @@
-﻿#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
@@ -541,9 +541,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("The horizontal width of the brim that will be printed around each object on the first layer. "
                      "When raft is used, no brim is generated (use raft_first_layer_expansion).");
     def->sidetext = L("mm");
-    def->min = 0;
-    def->max = 200;
-    def->init_fn = init_with(0.);
+    def->min      = 0;
+    def->max      = 200;
+    def->init_fn  = init_with(5.);
 
     def = defs.add("brim_type", typeid(EnumWrapper));
     def->location = Print;
@@ -555,7 +555,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("The places where the brim will be printed around each object on the first layer.");
     def->init_fn = init_with(
-        BrimType::OuterOnly,
+        BrimType::NoBrim,
         {{int(BrimType::NoBrim), "no_brim", L("No brim")},
          {int(BrimType::OuterOnly), "outer_only", L("Outer brim only")},
          {int(BrimType::InnerOnly), "inner_only", L("Inner brim only")},
@@ -758,7 +758,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Don't support bridges");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 6;
+    def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Experimental option for preventing support material from being generated "
                    "under bridged areas.");
@@ -3695,28 +3695,26 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "User is responsible for ensuring there is no collision with the print.");
     def->init_fn = init_with(false);
 
-    def = defs.add("support_material", typeid(bool));
-    def->location = Print;
-    def->overrides_in = Locations{ Object };
-    def->label = L("Generate support material");
+    def               = defs.add("support_material", typeid(EnumWrapper));
+    def->location     = Print;
+    def->overrides_in = Locations{Object};
+    def->label        = L("Supports");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
-    def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 0;
-    def->gui_type = ConfigItemDef::GUIType::checkbox;
-    def->tooltip = L("Enable support material generation.");
-    def->init_fn = init_with(false);
-
-    def = defs.add("support_material_auto", typeid(bool));
-    def->location = Print;
-    def->overrides_in = Locations{ Object };
-    def->label = L("Auto generated supports");
-    def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
-    def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 1;
-    def->gui_type = ConfigItemDef::GUIType::checkbox;
-    def->tooltip = L("If checked, supports will be generated automatically based on the overhang threshold value."\
-                     " If unchecked, supports will be generated inside the \"Support Enforcer\" volumes only.");
-    def->init_fn = init_with(true);
+    def->category     = ConfigItemDef::Category::Print_Supports;
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::combobox;
+    def->tooltip      = L(
+        "Enable support material generation.\n"
+             "Off - Disables support material generation.\n"
+             "Support enforcers only - Generates supports inside the \"Support Enforcer\" volumes only.\n"
+             "Everywhere - Generates supports automatically based on the overhang threshold value and also inside the \"Support Enforcer\" volumes."
+    );
+    def->init_fn = init_with(
+        SupportMode::EnforcersOnly,
+        {{int(SupportMode::None), "none", L("Off")},
+         {int(SupportMode::EnforcersOnly), "enforcers_only", L("Support enforcers only")},
+         {int(SupportMode::Everywhere), "everywhere", L("Everywhere")}}
+    );
 
     def = defs.add("support_material_xy_spacing", typeid(FloatOrPercentage));
     def->location = Print;
@@ -3756,7 +3754,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Support on build plate only");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 4;
+    def->order = 3;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
     def->init_fn = init_with(false);
@@ -3808,7 +3806,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Enforce support for the first");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 5;
+    def->order = 4;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Generate support material for the specified number of layers counting from bottom, "
                    "regardless of whether normal support material is enabled or not and regardless "
@@ -4061,7 +4059,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Style");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 2;
+    def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Style and shape of the support towers. Projecting the supports into a regular grid "
                      "will create more stable supports, while snug support towers will save material and reduce "
@@ -4095,7 +4093,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Overhang threshold");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category = ConfigItemDef::Category::Print_Supports;
-    def->order = 3;
+    def->order = 2;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Support material will not be generated for overhangs whose slope angle "
                    "(90° = vertical) is above the given threshold. In other words, this value "

@@ -88,7 +88,7 @@ SlicingParameters SlicingParameters::create_from_config(
     // Miniumum/maximum of the minimum layer height over all extruders.
     params.min_layer_height = MIN_LAYER_HEIGHT;
     params.max_layer_height = std::numeric_limits<double>::max();
-    if (config.get<bool>("support_material") || params.base_raft_layers > 0 || config.get<int>("support_material_enforce_layers") > 0) {
+    if (config.get<Domain::SupportMode>("support_material") != Domain::SupportMode::None || params.base_raft_layers > 0 || config.get<int>("support_material_enforce_layers") > 0) {
         // Extruder indices in config are 1-based, but zero has special meaning (don't care).
         // Assume that first extruder will be used if zero is selected.
         const int support_material_extruder = std::max(1, config.get<int>("support_material_extruder"));
