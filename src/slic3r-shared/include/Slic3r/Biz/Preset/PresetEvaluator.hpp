@@ -37,6 +37,7 @@ private:
     using IdentifiedPresets = Domain::Preset::IdentifiedPresets;
     using IdentifiedPresetsCollection = Domain::Preset::IdentifiedPresetsCollection;
     using SourceLocation = Domain::Preset::SourceLocation;
+    using StringPtrs = std::vector<const std::string*>;
 
     struct EvalPresetContext
     {
@@ -47,7 +48,10 @@ private:
         std::optional<Domain::Preset::ConditionMatchMode> match_mode{
             Domain::Preset::ConditionMatchMode::FirstMatch
         };
-        std::vector<const std::string*> conditions;
+        // Positive (fulfilled) conditions during evaluation
+        StringPtrs conditions;
+        // Negative (non-fulfilled) conditions during evaluation
+        StringPtrs negative_conditions;
         EvalPresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;

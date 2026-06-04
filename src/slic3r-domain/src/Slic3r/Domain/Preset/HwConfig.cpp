@@ -259,13 +259,11 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
             auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
             auto feeder_it = cfg.feeders.find(Address{static_cast<uint8_t>(i)});
             ASSERT(tool != nullptr, t.id);
-            if (!brief) {
-                if (first) {
-                    first = false;
-                    ss << " ";
-                } else {
-                    ss << ", ";
-                }
+            if (first) {
+                first = false;
+                ss << " ";
+            } else if (!brief){
+                ss << ", ";
             }
 
             if (feeder_it != cfg.feeders.end()) {
@@ -305,67 +303,105 @@ std::string HwPrinterConfig::relative_path_to_assets() const
 bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
 {
 #ifndef NDEBUG
-    SPDLOG_INFO("HwPrinterConfig::has_same_values id: {}, name: {}", id, name);
-    if (printer_id != other.printer_id) {
-        SPDLOG_INFO("printer_id mismatched {} != {}", printer_id, other.printer_id);
-    }
-    if (vendor_id != other.vendor_id) {
-        SPDLOG_INFO("vendor_id mismatched {} != {}", vendor_id, other.vendor_id);
-    }
-    if (repo_id != other.repo_id) {
-        SPDLOG_INFO("repo_id mismatched {} != {}", repo_id, other.repo_id);
-    }
-    if (repo_version != other.repo_version) {
-        SPDLOG_INFO("repo_version mismatched {} != {}", repo_version, other.repo_version);
-    }
-    if (name != other.name) {
-        SPDLOG_INFO("name mismatched {} != {}", name, other.name);
-    }
-    if (short_name != other.short_name) {
-        SPDLOG_INFO("short_name mismatched {} != {}", short_name, other.short_name);
-    }
-    if (technology != other.technology) {
-        SPDLOG_INFO("technology mismatched {} != {}", int(technology), int(other.technology));
-    }
-    if (model != other.model) {
-        SPDLOG_INFO(
-            "model mismatched {}/{} != {}/{}",
-            model.base_model,
-            model.model,
-            other.model.base_model,
-            other.model.model
-        );
-    }
-    if (tool_count != other.tool_count) {
-        SPDLOG_INFO("tool_count mismatched {} != {}", tool_count, other.tool_count);
-    }
-    if (features != other.features) {
-        SPDLOG_INFO("features mismatched |{}| != |{}|", features.size(), other.features.size());
-    }
-    if (visual != other.visual) {
-        SPDLOG_INFO("visual mismatched");
-    }
-    if (tools != other.tools) {
-        SPDLOG_INFO("tools mismatched");
-    }
-    if (feeders != other.feeders) {
-        SPDLOG_INFO("feeders mismatched |{}| != |{}|", feeders.size(), other.feeders.size());
-    }
-    if (materials != other.materials) {
-        SPDLOG_INFO("materials mismatched |{}| != |{}|", materials.size(), other.materials.size());
-    }
-    if (sheet != other.sheet) {
-        SPDLOG_INFO("sheet mismatched");
-    }
+    auto feature_val_to_string = []<typename T>(const T& val) -> std::string {
+        if constexpr (std::is_same_v<T, std::string>) {
+            return val;
+        } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return "(null)";
+        } else if constexpr (!std::is_same_v<T, JsonObject> && !std::is_same_v<T, JsonArray> ) {
+            return std::to_string(val);
+        } else {
+            return "...";
+        }
+    };
 
+    constexpr size_t N = 10;
+    if (name.substr(0, N) == other.name.substr(0, N)) {
+        SPDLOG_INFO("HwPrinterConfig::has_same_values id: {}, name: {}", id, name);
+        if (printer_id != other.printer_id) {
+            SPDLOG_INFO("printer_id mismatched {} != {}", printer_id, other.printer_id);
+        }
+        if (vendor_id != other.vendor_id) {
+            SPDLOG_INFO("vendor_id mismatched {} != {}", vendor_id, other.vendor_id);
+        }
+        if (repo_id != other.repo_id) {
+            SPDLOG_INFO("repo_id mismatched {} != {}", repo_id, other.repo_id);
+        }
+        if (repo_version != other.repo_version) {
+            SPDLOG_INFO("repo_version mismatched {} != {}", repo_version, other.repo_version);
+        }
+        if (name != other.name) {
+            SPDLOG_INFO("name mismatched {} != {}", name, other.name);
+        }
+        if (short_name != other.short_name) {
+            SPDLOG_INFO("short_name mismatched {} != {}", short_name, other.short_name);
+        }
+        if (technology != other.technology) {
+            SPDLOG_INFO("technology mismatched {} != {}", int(technology), int(other.technology));
+        }
+        if (model != other.model) {
+            SPDLOG_INFO(
+                "model mismatched {}/{} != {}/{}",
+                model.base_model,
+                model.model,
+                other.model.base_model,
+                other.model.model
+            );
+        }
+        if (tool_count != other.tool_count) {
+            SPDLOG_INFO("tool_count mismatched {} != {}", tool_count, other.tool_count);
+        }
+        if (features != other.features) {
+            SPDLOG_INFO("features mismatched |{}| != |{}|", features.size(), other.features.size());
+            for (const auto& [k, v] : features) {
+                auto oit = other.features.find(k);
+                std::optional<std::string> other_val;
+                if (oit != other.features.end()) {
+                    auto val = oit->second;
+                    if (val == v) {
+                        continue;
+                    }
+                    other_val = std::visit(feature_val_to_string, val);
+                }
+
+                SPDLOG_INFO(
+                    "  {}: {} != {}",
+                    k,
+                    std::visit(feature_val_to_string, v),
+                    other_val.has_value() ? *other_val : "ø"
+                );
+            }
+            for (const auto& [k, v] : other.features) {
+                if (features.contains(k) ) {
+                    continue;
+                }
+
+                SPDLOG_INFO("  {}: ø != {}", k, std::visit(feature_val_to_string, v));
+            }
+        }
+        if (visual != other.visual) {
+            SPDLOG_INFO("visual mismatched");
+        }
+        if (tools != other.tools) {
+            SPDLOG_INFO("tools mismatched");
+        }
+        if (feeders != other.feeders) {
+            SPDLOG_INFO("feeders mismatched |{}| != |{}|", feeders.size(), other.feeders.size());
+        }
+        if (sheet != other.sheet) {
+            SPDLOG_INFO("sheet mismatched");
+        }
+    }
 #endif // NDEBUG
 
+    // Intentionally omitted fields as changing these don't change the preset logic:
+    // - name, short_name
+    // - material: this is only 3MF/GCode metadata unified storage about materials
+    //   (i.e. won't change preset logic either)
     return printer_id == other.printer_id
         && vendor_id == other.vendor_id
         && repo_id == other.repo_id
         && repo_version == other.repo_version
-        && name == other.name
-        && short_name == other.short_name
         && technology == other.technology
         && model == other.model
         && tool_count == other.tool_count
@@ -373,7 +409,6 @@ bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
         && visual == other.visual
         && tools == other.tools
         && feeders == other.feeders
-        && materials == other.materials
         && sheet == other.sheet;
 }
 
