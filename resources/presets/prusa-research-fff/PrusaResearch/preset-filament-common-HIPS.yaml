@@ -51,7 +51,7 @@ values:
   min_fan_speed: 20
   min_print_speed: 15
   slowdown_below_layer_time: 15
-  pressure_advance_enable: true
+  pressure_advance: enabled
   cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
 ## C1

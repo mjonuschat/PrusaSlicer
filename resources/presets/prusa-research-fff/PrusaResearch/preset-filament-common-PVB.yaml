@@ -51,7 +51,7 @@ values:
   temperature: 215
   cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
-  pressure_advance_enable: true
+  pressure_advance: enabled
 variants:
   ## C1
 - condition: printer.base_model == "COREONE"
@@ -462,7 +462,7 @@ variants:
         filament_max_volumetric_speed: 19
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         start_filament_gcode: M142 S36 ; set heatbreak target temp
-        pressure_advance_enable: true
+        pressure_advance: enabled
         pressure_advance_value: 0.015
 ## MK3.5
 - condition: printer.base_model == "MK3.5"

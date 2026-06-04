@@ -61,7 +61,7 @@ values:
   start_filament_gcode: M142 S45 ; set heatbreak target temp
   first_layer_temperature: 285
   temperature: 285
-  pressure_advance_enable: true
+  pressure_advance: enabled
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"

@@ -32,7 +32,7 @@ values:
   min_fan_speed: 100
   min_print_speed: 15
   slowdown_below_layer_time: 15
-  pressure_advance_enable: true
+  pressure_advance: enabled
   cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
   # MMU3 parameters (BVOH 0.4std PG MK4)

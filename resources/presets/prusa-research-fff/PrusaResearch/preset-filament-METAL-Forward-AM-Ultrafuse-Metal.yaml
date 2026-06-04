@@ -14,7 +14,7 @@ values:
   bed_temperature: 100
   first_layer_temperature: 250
   temperature: 250
-  pressure_advance_enable: true
+  pressure_advance: enabled
   pressure_advance_value: 0
   filament_max_volumetric_speed: 4
   bridge_fan_speed: 0
