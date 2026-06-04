@@ -137,7 +137,7 @@ void Theme::initialize_dark_colors()
         std::make_unique<ImColor>(200, 150, 130);
     m_colors[Platform::Color::AccentSecondary]  = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
     m_colors[Platform::Color::Error]            = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
-    m_colors[Platform::Color::Warning]          = ColorEntry{{0.00f, 0.76f, 0.03f, 1.0f}};
+    m_colors[Platform::Color::Warning]          = ColorEntry{{255, 193, 7}};
     m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.80f, 0.80f, 0.80f, 0.35f}};
 
     m_colors[Platform::Color::SceneBgTop]         = ColorEntry{{0.35f, 0.35f, 0.35f, 1.0f}};
