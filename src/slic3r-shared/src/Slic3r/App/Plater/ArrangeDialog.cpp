@@ -12,6 +12,7 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
 using namespace Slic3r::Biz;
@@ -39,6 +40,7 @@ using Yoga::Slider;
 using Yoga::SliderWithInput;
 using Yoga::Text;
 using Yoga::ToggleButton;
+using Yoga::operator""_fpx;
 
 namespace {
 std::optional<PivotPoint> get_pivot_point(const std::size_t row, const std::size_t column)
@@ -127,6 +129,53 @@ private:
     std::map<AbstractButton*, PivotPoint> m_pivot_buttons;
 };
 
+SliderWithInput* append_spacing_slider(Item* container,
+                                       const std::string& label,
+                                       double initial_value,
+                                       double max_width)
+{
+    auto spacing_section{container->emplace_back<Item>()};
+    spacing_section->set_orientation(Orientation::Vertical);
+    spacing_section->set_gap(10_fpx);
+    auto spacing_label{spacing_section->emplace_back<Text>(label)};
+    spacing_label->set_padding({0_fpx, 3_fpx, 0_fpx, 3_fpx});
+    spacing_label->set_font_type(Render::ImguiFontType::Bold);
+
+    auto slider{spacing_section->emplace_back<SliderWithInput>("mm")};
+    slider->set_begin_value(0.0);
+    slider->set_end_value(100.0);
+    slider->set_step(1.0);
+    slider->set_max_width(max_width);
+    slider->set_value(initial_value);
+
+    return slider;
+}
+
+static ItemPtr help()
+{
+    ItemPtr result{std::make_unique<Item>()};
+    result->set_orientation(Orientation::Vertical);
+    result->set_gap(10_fpx);
+
+    auto all_beds_text{result->emplace_back<Text>(_u8L("All beds"))};
+    all_beds_text->set_font_type(Render::ImguiFontType::Bold);
+    all_beds_text->set_text_color(ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    GizmoHelpFactory all_beds_help;
+    all_beds_help.init(result.get());
+    all_beds_help.add_item({"A"}, _u8L("Arrange"));
+    all_beds_help.add_item({"SHIFT", "A"}, _u8L("Arrange selection"));
+
+    auto single_bed_text{result->emplace_back<Text>(_u8L("Current bed"))};
+    single_bed_text->set_font_type(Render::ImguiFontType::Bold);
+    single_bed_text->set_text_color(ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    GizmoHelpFactory single_bed_help;
+    single_bed_help.init(result.get());
+    single_bed_help.add_item({"D"}, _u8L("Arrange"));
+    single_bed_help.add_item({"SHIFT", "D"}, _u8L("Arrange selection"));
+
+    return result;
+}
+
 ArrangeDialog::ArrangeDialog(
     OnArrange on_arrange,
     OnCancel on_cancel,
@@ -138,79 +187,102 @@ ArrangeDialog::ArrangeDialog(
     m_on_cancel{on_cancel}
 {
     content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(gap_size());
+    content()->set_gap(0);
+    content()->set_padding(0);
 
     using Segment = SegmentedControl::Segment;
     using Icon    = Render::Icon;
     auto segments = {
         Segment{
-            .icon               = Icon::Circle,
+            .icon               = Icon::MultipleSquares,
             .tooltip            = Biz::_u8L("All beds"),
             .initially_selected = settings.mode == Mode::Global,
         },
         Segment{
-            .icon               = Icon::Sphere,
+            .icon               = Icon::SingleSquare,
             .tooltip            = Biz::_u8L("Selected beds"),
             .initially_selected = settings.mode == Mode::Local,
         },
     };
 
-    auto mode{std::make_unique<SegmentedControl>(
+    auto mode_spacing_section{content()->emplace_back<Item>()};
+    mode_spacing_section->set_flex_shrink(0);
+    mode_spacing_section->set_padding({20_fpx, 20_fpx, 20_fpx, 15_fpx});
+    mode_spacing_section->set_gap(15_fpx);
+    mode_spacing_section->set_orientation(Orientation::Vertical);
+
+    auto mode_row{mode_spacing_section->emplace_back<Item>()};
+    mode_row->set_align_items(YGAlignCenter);
+    mode_row->set_gap(15_fpx);
+
+    auto mode_label{mode_row->emplace_back<Text>(_u8L("Mode"))};
+    mode_label->set_max_width(55_fpx);
+    mode_label->set_flex_grow(1);
+
+    m_mode = mode_row->emplace_back<SegmentedControl>(
         segments,
-        gap_size(),
         [on_mode_selected](std::size_t index)
         { on_mode_selected(static_cast<Biz::Arrange::Mode>(index)); }
-    )};
-    m_mode = mode.get();
-    GizmoWindow::add_new_row(_u8L("Mode"), std::move(mode));
+    );
+
+    m_offset_slider = append_spacing_slider(mode_spacing_section,
+                          _u8L("Spacing"),
+                          unscaled(static_cast<coord_t>(settings.scaled_offset)) * 2.0,
+                          preffered_max_width());
 
     add_separator(content());
 
-    auto offset_slider{std::make_unique<SliderWithInput>()};
-    offset_slider->set_begin_value(0.0);
-    offset_slider->set_end_value(100.0);
-    offset_slider->set_step(1.0);
-    offset_slider->set_max_width(preffered_max_width());
-
-    m_offset_slider = offset_slider.get();
-    GizmoWindow::add_new_row(_u8L("Spacing"), std::move(offset_slider));
-    m_offset_slider->set_value(unscaled(static_cast<coord_t>(settings.scaled_offset)) * 2.0);
-
-    auto bed_offset_slider{std::make_unique<SliderWithInput>()};
-    bed_offset_slider->set_begin_value(0.0);
-    bed_offset_slider->set_end_value(100.0);
-    bed_offset_slider->set_step(1.0);
-    bed_offset_slider->set_max_width(preffered_max_width());
-
-    m_bed_offset_slider = bed_offset_slider.get();
-    GizmoWindow::add_new_row(_u8L("Bed spacing"), std::move(bed_offset_slider));
-    m_bed_offset_slider->set_value(settings.unscaled_bed_offset);
-
-    auto geometry_handling_control{std::make_unique<Item>()};
-    geometry_handling_control->set_align_content(YGAlign::YGAlignCenter);
-    geometry_handling_control->set_gap(15.0);
-    geometry_handling_control->emplace_back<Text>("fast");
-    m_mode_slider = geometry_handling_control->emplace_back<Slider>(0.0, 2.0, 1.0);
-    m_mode_slider->set_flex_grow(1.0);
-    geometry_handling_control->emplace_back<Text>("accurate");
-    geometry_handling_control->set_max_width(preffered_max_width());
-    add_new_row(_u8L("Performance"), std::move(geometry_handling_control));
+    auto bed_spacing_section{content()->emplace_back<Item>()};
+    bed_spacing_section->set_flex_shrink(0);
+    bed_spacing_section->set_padding({20_fpx, 15_fpx, 20_fpx, 15_fpx});
+    bed_spacing_section->set_orientation(Orientation::Vertical);
+    m_bed_offset_slider = append_spacing_slider(bed_spacing_section,
+                          _u8L("Spacing from bed"),
+                          settings.unscaled_bed_offset,
+                          preffered_max_width());
 
     add_separator(content());
 
-    auto pivot_picker{std::make_unique<PivotPicker>()};
-    m_pivot_picker = pivot_picker.get();
-    m_bed_segments_row =
-        add_new_row(_u8L("Alignment"), std::move(pivot_picker), YGAlign::YGAlignFlexStart);
+    auto rotation_geometry_section{content()->emplace_back<Item>()};
+    rotation_geometry_section->set_flex_shrink(0);
+    rotation_geometry_section->set_gap(10_fpx);
+    rotation_geometry_section->set_orientation(Orientation::Vertical);
+    rotation_geometry_section->set_padding({20_fpx, 15_fpx, 20_fpx, 15_fpx});
+
+    auto rotation_row{rotation_geometry_section->emplace_back<Item>()};
+    rotation_row->set_padding({0_fpx, 3_fpx, 0_fpx, 3_fpx});
+    rotation_row->set_gap(10_fpx);
+    m_enable_rotations_toggle = rotation_row->emplace_back<ToggleButton>();
+    m_enable_rotations_toggle->set_checked(settings.allow_rotations);
+    rotation_row->emplace_back<Text>(_u8L("Rotations (slow)"));
+
+    m_geometry_handling = rotation_geometry_section->emplace_back<Yoga::ComboBox>(
+        std::initializer_list{_u8L("Fast geometry"),
+                              _u8L("Balanced geometry"),
+                              _u8L("Accurate geometry")});
+    m_geometry_handling->set_max_width(preffered_max_width());
+
+    add_separator(content());
+
+    m_bed_segments_section = content()->emplace_back<Item>();
+    m_bed_segments_section->set_flex_shrink(0);
+    m_bed_segments_section->set_gap(15_fpx);
+    m_bed_segments_section->set_padding({20_fpx, 15_fpx, 20_fpx, 15_fpx});
+    auto alignment_label{m_bed_segments_section->emplace_back<Text>(_u8L("Alignment"))};
+    alignment_label->set_max_width(55_fpx);
+    alignment_label->set_flex_grow(1);
+    m_pivot_picker = m_bed_segments_section->emplace_back<PivotPicker>();
     m_bed_segments_separator = add_separator(content());
     set_bed_segments(settings.bed_segments);
 
-    m_enable_rotations_toggle = content()->emplace_back<ToggleButton>(_u8L("Enable rotations"));
-    m_enable_rotations_toggle->set_checked(settings.allow_rotations);
-
-    add_separator(content());
+    auto help_section{content()->emplace_back<Item>()};
+    help_section->set_flex_shrink(0);
+    help_section->set_padding({20_fpx, 15_fpx, 20_fpx, 15_fpx});
+    help_section->set_flex_shrink(0);
+    help_section->append(help());
 
     m_arrange_button = bottom_bar()->emplace_back<LayoutButton>("Arrange");
+    bottom_bar()->set_flex_shrink(0);
     m_arrange_button->set_padding(Yoga::Paddings{5});
     m_arrange_button->set_height(40);
     m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
@@ -224,10 +296,10 @@ ArrangeDialog::ArrangeDialog(
 
 void ArrangeDialog::update_segments_visibility() {
     if (m_bed_segments && !m_auxiliary_travel_anchor) {
-        m_bed_segments_row->set_visible(true);
+        m_bed_segments_section->set_visible(true);
         m_bed_segments_separator->set_visible(true);
     } else {
-        m_bed_segments_row->set_visible(false);
+        m_bed_segments_section->set_visible(false);
         m_bed_segments_separator->set_visible(false);
     }
 }
@@ -278,11 +350,11 @@ Settings ArrangeDialog::get_settings() const
     result.scaled_offset       = scaled(m_offset_slider->value() / 2.0);
     result.unscaled_bed_offset = m_bed_offset_slider->value();
 
-    const double mode_value{m_mode_slider->value()};
-    if (mode_value < 0.5) {
+    const int geometry_handling{m_geometry_handling->current_index()};
+    if (geometry_handling == 0) {
         result.fixed_geometry   = GeometryHandling::Convex;
         result.movable_geometry = GeometryHandling::Convex;
-    } else if (mode_value < 1.5) {
+    } else if (geometry_handling == 1) {
         result.fixed_geometry   = GeometryHandling::Arbitrary;
         result.movable_geometry = GeometryHandling::Convex;
     } else {

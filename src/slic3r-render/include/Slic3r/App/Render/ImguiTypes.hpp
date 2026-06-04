@@ -126,6 +126,8 @@ enum class Icon : wchar_t
     ArrangeBottomLeft,
     ArrangeBottomRight,
     ArrangeCenter,
+    MultipleSquares,
+    SingleSquare,
 
     // Gizmo Layer Height
     ArrowUpToLine,

@@ -4,11 +4,10 @@
 namespace Slic3r::App::Yoga {
 SegmentedControl::SegmentedControl(
     std::initializer_list<Segment> segments,
-    const float gap,
     OnIndexSelected on_index_selected
 )
 {
-    set_gap(gap);
+    set_gap(10_fpx);
 
     bool initial_selection_picked{false};
     for (const Segment& segment : segments) {
@@ -17,9 +16,9 @@ SegmentedControl::SegmentedControl(
         LayoutButton* button{emplace_back<LayoutButton>("", segment.icon, segment.tooltip)};
 
         button->set_checkable(true);
-        button->set_min_width(50.f);
-        button->set_min_height(50.f);
-        button->set_content_padding(15);
+        button->set_min_width(36_fpx);
+        button->set_min_height(36_fpx);
+        button->set_content_padding(9_fpx);
         m_group.insert_button(button);
         m_group.callbacks().checked_changed =
             [this, on_index_selected](AbstractButton* current_checked, AbstractButton* last_checked) {

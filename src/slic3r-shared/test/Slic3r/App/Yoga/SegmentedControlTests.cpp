@@ -21,6 +21,6 @@ TEST_CASE_METHOD(ImGuiFixture, "Segmented control", "[Yoga]")
         },
     };
 
-    const auto segmented_control{tree.emplace_back<SegmentedControl>(segments, 10.0)};
+    const auto segmented_control{tree.emplace_back<SegmentedControl>(segments)};
     CHECK(segmented_control->selected_index() == 1);
 }

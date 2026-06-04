@@ -55,10 +55,10 @@ private:
     Yoga::SegmentedControl* m_mode{nullptr};
     Yoga::SliderWithInput* m_offset_slider{nullptr};
     Yoga::SliderWithInput* m_bed_offset_slider{nullptr};
-    Yoga::Slider* m_mode_slider{nullptr};
+    Yoga::ComboBox* m_geometry_handling{nullptr};
     Yoga::ToggleButton* m_enable_rotations_toggle{nullptr};
     PivotPicker* m_pivot_picker{nullptr};
-    Yoga::Item* m_bed_segments_row{nullptr};
+    Yoga::Item* m_bed_segments_section{nullptr};
     Yoga::Separator* m_bed_segments_separator{nullptr};
     Yoga::LayoutButton* m_arrange_button{nullptr};
     std::optional<Domain::BedSegments> m_bed_segments;

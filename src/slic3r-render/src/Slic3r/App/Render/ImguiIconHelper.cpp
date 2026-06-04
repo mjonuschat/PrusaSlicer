@@ -146,6 +146,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ArrangeBottomRight, "arrange_bottom_right"},
     {Icon::ArrangeCenter, "arrange_center"},
 
+    {Icon::MultipleSquares, "multiple_squares"},
+    {Icon::SingleSquare, "single_square"},
+
     // Gizmo Layer Height
     {Icon::ArrowUpToLine, "arrow_up_to_line"},
     {Icon::ArrowUpFromLine, "arrow_up_from_line"},

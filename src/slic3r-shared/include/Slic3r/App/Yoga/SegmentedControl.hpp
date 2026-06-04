@@ -20,7 +20,6 @@ public:
 
     SegmentedControl(
         std::initializer_list<Segment> segments,
-        const float gap,
         OnIndexSelected on_index_selected = [](std::size_t) {}
     );
 
