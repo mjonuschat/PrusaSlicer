@@ -415,6 +415,7 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     return {
         .kind       = kind,
         .origin     = context.origin,
+        .user_file  = context.user_file,
         .root_id    = context.root_id,
         .id         = context.id.empty() ? generate_uuid() : context.id,
         .name       = context.name,

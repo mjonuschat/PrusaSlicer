@@ -37,8 +37,7 @@ SidebarToolHeadRow::SidebarToolHeadRow(
     m_combo_box->set_get_name_fn(
         [](const Biz::Preset::PresetItem* item) -> std::string
         {
-            const std::string prefix{item->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-            return prefix + item->name;
+            return item->ui_preset_name();
         }
     );
     m_combo_box->set_flex_grow(1);

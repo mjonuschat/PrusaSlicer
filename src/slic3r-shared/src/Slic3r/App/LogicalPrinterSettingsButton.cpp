@@ -61,19 +61,15 @@ const Biz::Preset::PresetItem& LogicalPrinterSettingsButton::preset_item() const
 void LogicalPrinterSettingsButton::on_data_update()
 {
     if (m_state->origin == Domain::Preset::PresetOrigin::System) {
-        set_printer_name(m_state->hw_printer_config_name);
+        set_printer_name(m_state->ui_hw_config_name());
         set_preset_name({});
         m_preset_name->set_visible(false);
-        set_tooltip(m_state->hw_printer_config_name);
+        set_tooltip(m_state->ui_hw_config_name());
     } else {
-        const std::string prefix{m_state->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-        set_printer_name(prefix + m_state->name);
-        const std::string hw_prefix{
-            m_state->hw_printer_config_runtime_only ? Biz::_u8L("(From 3mf) ") : ""
-        };
-        set_preset_name(prefix + m_state->hw_printer_config_name);
+        set_printer_name(m_state->ui_preset_name());
+        set_preset_name(m_state->ui_hw_config_name());
         m_preset_name->set_visible(true);
-        set_tooltip(prefix + m_state->name + "\n" + m_state->hw_printer_config_name);
+        set_tooltip(m_state->ui_preset_name() + "\n" + m_state->ui_hw_config_name());
     }
 
     const Domain::Preset::HwPrinterConfig& printer_config =

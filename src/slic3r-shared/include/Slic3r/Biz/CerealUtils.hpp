@@ -250,8 +250,10 @@ template <class Archive>
 void serialize(Archive& archive, Slic3r::Domain::Preset::PresetName& name)
 {
     std::vector<std::string> ids{name.id.begin(), name.id.end()};
+    std::vector<std::string> root_ids{name.root_id.begin(), name.root_id.end()};
     archive(name.name, ids, name.origin);
     name.id = std::set<std::string>{ids.begin(), ids.end()};
+    name.root_id = std::set<std::string>{root_ids.begin(), root_ids.end()};
 }
 
 template <class Archive, class ConfigFdmType, class ConfigSlaType>
@@ -269,6 +271,7 @@ void serialize(
         preset.values,
         preset.features,
         preset.conditions,
+        preset.user_file,
         preset.last_node_location
     );
 }

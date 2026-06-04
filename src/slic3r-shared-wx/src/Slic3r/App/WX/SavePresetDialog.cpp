@@ -143,9 +143,8 @@ SavePresetDialog::Item::Item(
         );
     }
 #endif
-    ASSERT(!init_name.empty());
 
-    init_input_name_ctrl(input_name_sizer, init_name);
+    init_input_name_ctrl(input_name_sizer, init_name.empty() ? name : init_name);
 
     if (label_top)
         sizer->Add(label_top, 0, wxEXPAND | wxTOP | wxBOTTOM, BORDER_W);

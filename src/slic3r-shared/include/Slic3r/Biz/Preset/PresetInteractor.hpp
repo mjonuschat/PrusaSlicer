@@ -54,8 +54,11 @@ struct PresetItem
     std::string hw_printer_config_id;
     std::string hw_printer_config_name;
     Domain::Preset::PresetOrigin origin;
-    bool runtime_only;
     bool hw_printer_config_runtime_only;
+
+    bool preset_runtime_only() const;
+    std::string ui_preset_name() const;
+    std::string ui_hw_config_name() const;
 };
 
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
@@ -266,22 +269,32 @@ public:
 
     template <typename T>
     using ConstRefBoolPair = std::pair<std::reference_wrapper<const T>, bool>;
+    template <typename T>
+    using ConstPtrBoolPair = std::pair<const T*, bool>;
 
     [[nodiscard]] ConstRefBoolPair<Domain::Preset::HwPrinterConfig>
     get_printer_config(Domain::SelectionId project_id, const std::string& hw_config_id) const;
+    [[nodiscard]] ConstPtrBoolPair<Domain::Preset::HwPrinterConfig>
+    get_printer_config_unsafe(Domain::SelectionId project_id, const std::string& hw_config_id) const;
     [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedPrinterPreset::Preset>
     get_printer_preset(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id
     ) const;
-    [[nodiscard]] const Domain::Preset::EvaluatedPrinterPreset::Preset&
+    [[nodiscard]] ConstPtrBoolPair<Domain::Preset::EvaluatedPrinterPreset::Preset>
+    get_printer_preset_unsafe(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedPrinterPreset::Preset*
     get_printer_system_preset(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id
     ) const;
-    const std::string& get_printer_system_preset_id(
+    const std::string* get_printer_system_preset_id(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id
@@ -292,13 +305,19 @@ public:
         const std::string& printer_preset_id,
         const std::string& print_id
     ) const;
-    [[nodiscard]] const Domain::Preset::EvaluatedPrintPreset::Preset& get_print_system_preset(
+    [[nodiscard]] ConstPtrBoolPair<Domain::Preset::EvaluatedPrintPreset::Preset> get_print_preset_unsafe(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,
         const std::string& print_id
     ) const;
-    const std::string& get_print_system_preset_id(
+    [[nodiscard]] const Domain::Preset::EvaluatedPrintPreset::Preset* get_print_system_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_id
+    ) const;
+    const std::string* get_print_system_preset_id(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,
@@ -314,7 +333,16 @@ public:
         size_t tool_index,
         const std::string& tool_print_preset_id
     ) const;
-    [[nodiscard]] const Domain::Preset::EvaluatedToolPrintPreset::Preset&
+    [[nodiscard]] ConstPtrBoolPair<Domain::Preset::EvaluatedToolPrintPreset::Preset>
+    get_tool_print_preset_unsafe(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index,
+        const std::string& tool_print_preset_id
+    ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedToolPrintPreset::Preset*
     get_tool_print_system_preset(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
@@ -323,7 +351,7 @@ public:
         size_t tool_index,
         const std::string& tool_print_preset_id
     ) const;
-    const std::string& get_tool_print_system_preset_id(
+    const std::string* get_tool_print_system_preset_id(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,
@@ -341,7 +369,16 @@ public:
         size_t slot_index,
         const std::string& material_preset_id
     ) const;
-    [[nodiscard]] const Domain::Preset::EvaluatedMaterialPreset::Preset&
+    [[nodiscard]] ConstPtrBoolPair<Domain::Preset::EvaluatedMaterialPreset::Preset>
+    get_material_preset_unsafe(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index,
+        const std::string& material_preset_id
+    ) const;
+    [[nodiscard]] const Domain::Preset::EvaluatedMaterialPreset::Preset*
     get_material_system_preset(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
@@ -350,7 +387,7 @@ public:
         size_t slot_index,
         const std::string& material_preset_id
     ) const;
-    const std::string& get_material_system_preset_id(
+    const std::string* get_material_system_preset_id(
         Domain::SelectionId project_id,
         const std::string& hw_config_id,
         const std::string& printer_preset_id,

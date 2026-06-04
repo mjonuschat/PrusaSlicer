@@ -25,6 +25,11 @@ NameValidator::NameValidator(
     m_used_for_renaming(used_for_renaming),
     m_preset_names(preset_interactor.get_all_vendor_preset_names(kind))
 {
+    // Filter out runtime presets
+    std::erase_if(
+        m_preset_names,
+        [](const auto& pn) { return pn.origin == Domain::Preset::PresetOrigin::Runtime; }
+    );
     // Sort preset names to enable binary search
     std::sort(
         m_preset_names.begin(),
@@ -38,6 +43,9 @@ NameValidator::NameValidator(
     m_casei_preset_names.clear();
 
     for (const Domain::Preset::PresetName& preset_name : m_preset_names) {
+        if (preset_name.origin ==Domain::Preset::PresetOrigin::Runtime) {
+            continue;
+        }
         m_casei_preset_names.emplace_back(PresetNameCaseIMapper(
             {boost::to_lower_copy<std::string>(preset_name.name), preset_name.name}
         ));

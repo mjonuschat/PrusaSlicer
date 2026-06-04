@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
 #include "Slic3r/Biz/Config/HwConfigJson.hpp"
+#include "Slic3r/Biz/JsonValueJson.hpp"
 #include "Slic3r/Biz/Expr/Parser.hpp"
 #include "Slic3r/Biz/Expr/Eval.hpp"
 #include <nlohmann/json.hpp>
@@ -27,6 +28,9 @@ void from_json(const nlohmann::ordered_json& j, EvaluatedPresetMetadata& v)
     v.id         = j["id"].get<std::string>();
     v.root_id    = j["root_id"].get<std::string>();
     v.conditions = j["conditions"].get<std::vector<std::string>>();
+    if (j.contains("features")) {
+        v.features = j["features"].get<FeatureValueMap>();
+    }
 }
 
 void to_json(nlohmann::ordered_json& j, const EvaluatedPresetMetadata& v)
@@ -35,6 +39,9 @@ void to_json(nlohmann::ordered_json& j, const EvaluatedPresetMetadata& v)
     j["id"]         = v.id;
     j["root_id"]    = v.root_id;
     j["conditions"] = v.conditions;
+    if (!v.features.empty()) {
+        j["features"] = v.features;
+    }
 }
 
 void to_json(nlohmann::ordered_json& j, const SelectedPresetMetadata& v)

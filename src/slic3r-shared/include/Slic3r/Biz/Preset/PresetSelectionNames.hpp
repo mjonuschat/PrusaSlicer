@@ -10,11 +10,12 @@ struct PresetSelectionNames
     struct PresetName
     {
         std::string name;
+        Domain::Preset::PresetOrigin origin;
         bool is_runtime_only;
 
         bool operator==(const PresetName& other) const
         {
-            return this->name == other.name && this->is_runtime_only == other.is_runtime_only;
+            return this->name == other.name && this->origin == other.origin;
         }
     };
 

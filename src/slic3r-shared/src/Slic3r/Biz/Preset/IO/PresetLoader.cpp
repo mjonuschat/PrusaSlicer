@@ -11,7 +11,7 @@ namespace Slic3r::Biz::Preset::IO {
 
 namespace Details {
 
-void collect_names(PresetNamesMapCollection& preset_names, const Domain::Preset::PresetNode& node, Domain::Preset::PresetKind kind, Domain::Preset::PresetOrigin origin)
+void collect_names(PresetNamesMapCollection& preset_names, const Domain::Preset::PresetNode& node, Domain::Preset::PresetKind kind, Domain::Preset::PresetOrigin origin, const std::string& root_id)
 {
     if (node.name.has_value()) {
         auto& dest = preset_names[kind];
@@ -20,12 +20,12 @@ void collect_names(PresetNamesMapCollection& preset_names, const Domain::Preset:
         if (auto it = dest.find(name); it != dest.end()) {
             it->second.id.insert(node.id);
         } else {
-            dest.emplace(name, Domain::Preset::PresetName{name, {node.id}, origin});
+            dest.emplace(name, Domain::Preset::PresetName{name, {node.id}, {root_id}, origin});
         }
     }
 
     for (const auto& v : node.variants) {
-        collect_names(preset_names, v, kind, origin);
+        collect_names(preset_names, v, kind, origin, root_id);
     }
 }
 
@@ -57,7 +57,7 @@ void PresetLoader::load(const std::string& file_name, std::mutex& mutex, PresetO
         if (origin == PresetOrigin::User) {
             preset.user_file = file_name;
         }
-        Details::collect_names(m_preset_names, preset, preset.kind, origin);
+        Details::collect_names(m_preset_names, preset, preset.kind, origin, preset.id);
         m_presets[preset.kind].emplace_back(std::move(preset));
     });
 }
@@ -67,7 +67,7 @@ void PresetLoader::load_from_string(std::string_view source, PresetOrigin origin
     Yaml::parse_all_documents_in_string(source, [this, origin](const auto& doc) {
         auto preset = Yaml::parse_struct_unwrap<RootPresetNode>(doc);
         preset.origin = origin;
-        Details::collect_names(m_preset_names, preset, preset.kind, origin);
+        Details::collect_names(m_preset_names, preset, preset.kind, origin, preset.id);
         m_presets[preset.kind].emplace_back(std::move(preset));
     });
 }
@@ -111,7 +111,7 @@ Domain::Preset::PresetNamesCollection collect_names(
     Details::PresetNamesMapCollection names;
     std::ranges::for_each(
         presets | std::views::values | std::views::join,
-        [&names](const auto& node) { Details::collect_names(names, node, node.kind, node.origin); }
+        [&names](const auto& node) { Details::collect_names(names, node, node.kind, node.origin, node.id); }
     );
 
     return Details::to_preset_names_collection(names);

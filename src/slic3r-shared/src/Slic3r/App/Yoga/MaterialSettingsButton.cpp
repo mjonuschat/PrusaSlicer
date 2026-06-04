@@ -142,8 +142,7 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
 
     const Biz::Preset::PresetItem& preset_item = m_state->items().at(new_selection);
 
-    const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
-    set_material_name(prefix + preset_item.name);
+    set_material_name(preset_item.ui_preset_name());
 
     const std::vector<Domain::ColorRGB> colors =
         m_project_interactor.project_settings_interactor().get_colors(

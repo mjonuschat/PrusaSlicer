@@ -58,8 +58,8 @@ struct PresetName
 {
     std::string name;
     std::set<std::string> id;
+    std::set<std::string> root_id;
     PresetOrigin origin;
-
 };
 
 using PresetNames = std::vector<PresetName>;

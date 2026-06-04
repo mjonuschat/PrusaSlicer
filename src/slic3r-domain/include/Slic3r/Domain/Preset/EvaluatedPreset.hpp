@@ -25,6 +25,7 @@ struct EvaluatedPresetMetadata
     std::string root_id;
     std::string id;
     std::string name;
+    FeatureValueMap features;
     std::vector<std::string> conditions;
 };
 
@@ -48,6 +49,45 @@ struct EvaluatedPreset
 
     bool has_same_values(const EvaluatedPreset& rhs) const
     {
+#ifndef _NDEBUG
+        if (rhs.name.starts_with(name.substr(0, 20))
+            && !(
+                kind == rhs.kind
+                && root_id == rhs.root_id
+                && id == rhs.id
+                && name == rhs.name
+                && values == rhs.values
+                && features == rhs.features
+            ))
+        {
+            SPDLOG_INFO("No match between {} ({}) and {} ({}):", name, id, rhs.name, rhs.id);
+            if (kind != rhs.kind)
+            {
+                SPDLOG_INFO("- kind mismatched: {} != {}", int(kind), int(rhs.kind));
+            }
+            if (root_id != rhs.root_id)
+            {
+                SPDLOG_INFO("- root_id mismatched: {} != {}", root_id, rhs.root_id);
+            }
+            if (id != rhs.id)
+            {
+                SPDLOG_INFO("- id mismatched: {} != {}", id, rhs.id);
+            }
+            if (name != rhs.name)
+            {
+                SPDLOG_INFO("- name mismatched: {} != {}", name, rhs.name);
+            }
+            if (values != rhs.values)
+            {
+                SPDLOG_INFO("- values mismatched: {} != {}", config_box().items.all_items().size(), rhs.config_box().items.all_items().size());
+            }
+            if (features != rhs.features)
+            {
+                SPDLOG_INFO("- features mismatched: {} != {}", features.size(), rhs.features.size());
+            }
+
+        }
+#endif
         // last_node_location and conditions intentionally left
         return kind == rhs.kind
             && root_id == rhs.root_id
@@ -65,6 +105,7 @@ struct EvaluatedPreset
             .id = metadata.id,
             .name = metadata.name,
             .values = values,
+            .features = metadata.features,
             .conditions = metadata.conditions,
         };
     }
@@ -75,6 +116,7 @@ struct EvaluatedPreset
             .root_id = root_id,
             .id = id,
             .name = name,
+            .features = features,
             .conditions = conditions,
         };
     }

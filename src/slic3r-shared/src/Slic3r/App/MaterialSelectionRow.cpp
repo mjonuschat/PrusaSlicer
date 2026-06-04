@@ -22,7 +22,7 @@ MaterialSelectionRow::MaterialSelectionRow(
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
     Biz::DataObserver<Biz::Preset::PresetItem>(index, data),
-    LayoutButton(data.name, Render::Icon::Lock),
+    LayoutButton(data.ui_preset_name(), Render::Icon::Lock),
     m_material_index(material_index),
     m_on_clicked_extention(on_clicked_extention),
     m_on_favorite_clicked(on_favorite_clicked),
@@ -98,7 +98,7 @@ MaterialSelectionRow::MaterialSelectionRow(
 
 void MaterialSelectionRow::on_data_update()
 {
-    set_label(m_state->name);
+    set_label(m_state->ui_preset_name());
     set_icon(
         m_state->origin == Domain::Preset::PresetOrigin::System ? Render::Icon::Lock :
                                                                   Render::Icon::None

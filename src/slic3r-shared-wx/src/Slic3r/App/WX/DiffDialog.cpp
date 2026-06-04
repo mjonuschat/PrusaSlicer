@@ -31,10 +31,15 @@ namespace Slic3r::App::WX {
 using namespace Diff;
 using namespace Biz;
 
-static std::string get_preset_name(const std::string& name, bool is_runtime_only)
+static std::string get_preset_name(const Biz::Preset::PresetItem& item)
 {
-    const std::string prefix{is_runtime_only ? _u8L("(From 3mf) ") : ""};
-    return prefix + name;
+    return item.ui_preset_name();
+}
+
+template <typename FdmT, typename Sla>
+static std::string get_preset_name(const Domain::Preset::EvaluatedPreset<FdmT, Sla>& preset)
+{
+    return get_preset_name(Preset::PresetItem{.name=preset.name, .origin=preset.origin});
 }
 
 DiffDialog::DiffDialog(
@@ -107,7 +112,7 @@ DiffDialog::DiffDialog(
         wxString printer_name = from_u8(
             fmt::format(
                 "{} ({})",
-                get_preset_name(printer.name, printer.runtime_only),
+                get_preset_name(printer),
                 printer.hw_printer_config_name
             )
         );
@@ -323,7 +328,7 @@ void DiffDialog::select_printer(
          m_preset_interactor.get_print_presets(printer.hw_printer_config_id, printer.id))
     {
         const auto& print_preset = ref.get();
-        prints_cb->Append(from_u8(get_preset_name(print_preset.name, is_runtime)));
+        prints_cb->Append(from_u8(get_preset_name(print_preset)));
     }
 
     select_print(print_selection, location, tool_print_selection, material_selection);
@@ -376,7 +381,7 @@ void DiffDialog::select_print(
         {
             const auto& tool_print_preset = ref.get();
 
-            tool_cb->Append(from_u8(get_preset_name(tool_print_preset.name, is_runtime)));
+            tool_cb->Append(from_u8(get_preset_name(tool_print_preset)));
             tool_cb->SetClientObject(row_id++, new BCBClientData(tool_id, tool_print_id++));
         }
     }
@@ -427,7 +432,7 @@ void DiffDialog::select_tool_print(
              .get_material_presets(printer.hw_printer_config_id, printer.id, print.id, tool_id))
     {
         const auto& material_preset = ref.get();
-        material_cb->Append(from_u8(get_preset_name(material_preset.name, is_runtime)));
+        material_cb->Append(from_u8(get_preset_name(material_preset)));
     }
 
     select_material(material_selection, location);
@@ -700,10 +705,10 @@ void DiffDialog::update_tree()
             preset_name = fmt::format(
                 "{} \"{}({})\" vs \"{}({})\"",
                 _u8L("Printer"),
-                get_preset_name(printer_preset_left.name, is_runtime_printer_left),
-                printer_left.hw_printer_config_name,
-                get_preset_name(printer_preset_right.name, is_runtime_printer_right),
-                printer_right.hw_printer_config_name
+                get_preset_name(printer_preset_left),
+                printer_left.ui_hw_config_name(),
+                get_preset_name(printer_preset_right),
+                printer_right.ui_hw_config_name()
             );
 
             if (kind == PresetKind::FdmPrinter) {
@@ -723,8 +728,8 @@ void DiffDialog::update_tree()
             preset_name = fmt::format(
                 "{} \"{}\" vs \"{}\"",
                 _u8L("Print"),
-                get_preset_name(print_preset_left.name, is_runtime_print_left),
-                get_preset_name(print_preset_right.name, is_runtime_print_right)
+                get_preset_name(print_preset_left),
+                get_preset_name(print_preset_right)
             );
             if (kind == PresetKind::FdmPrint) {
                 config_left  = &std::get<Domain::PrintSettings>(print_preset_left.values);
@@ -765,8 +770,8 @@ void DiffDialog::update_tree()
             preset_name = fmt::format(
                 "{} \"{}\" vs \"{}\"",
                 _u8L("Tool Print"),
-                get_preset_name(tool_print_preset_left.name, is_runtime_tool_print_left),
-                get_preset_name(tool_print_preset_right.name, is_runtime_tool_print_right)
+                get_preset_name(tool_print_preset_left),
+                get_preset_name(tool_print_preset_right)
             );
 
             config_left  = &std::get<Domain::ToolPrintSettings>(tool_print_preset_left.values);
@@ -805,8 +810,8 @@ void DiffDialog::update_tree()
             preset_name  = fmt::format(
                 "{} \"{}\" vs \"{}\"",
                 _u8L("Tool Filament"),
-                get_preset_name(filament_preset_left.name, is_runtime_filament_left),
-                get_preset_name(filament_preset_right.name, is_runtime_filament_right)
+                get_preset_name(filament_preset_left),
+                get_preset_name(filament_preset_right)
             );
             break;
         }
@@ -840,8 +845,8 @@ void DiffDialog::update_tree()
             preset_name  = fmt::format(
                 "{} \"{}\" vs \"{}\"",
                 _u8L("Material"),
-                get_preset_name(sla_material_preset_left.name, is_runtime_sla_material_left),
-                get_preset_name(sla_material_preset_right.name, is_runtime_sla_material_right)
+                get_preset_name(sla_material_preset_left),
+                get_preset_name(sla_material_preset_right)
             );
             break;
         }

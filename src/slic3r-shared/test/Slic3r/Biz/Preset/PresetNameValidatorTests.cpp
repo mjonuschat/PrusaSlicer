@@ -47,12 +47,12 @@ using PresetKind   = Domain::Preset::PresetKind;
 
 PresetName user_preset(std::string name)
 {
-    return PresetName{std::move(name), {}, PresetOrigin::User};
+    return PresetName{std::move(name), {}, {}, PresetOrigin::User};
 }
 
 PresetName system_preset(std::string name)
 {
-    return PresetName{std::move(name), {}, PresetOrigin::System};
+    return PresetName{std::move(name), {}, {}, PresetOrigin::System};
 }
 
 TEST_CASE("NameValidator: empty name is invalid")

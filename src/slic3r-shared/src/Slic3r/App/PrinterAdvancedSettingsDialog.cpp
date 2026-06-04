@@ -71,7 +71,7 @@ void PrinterAdvancedSettingsDialog::on_list_selection_changed(Domain::SelectionI
     const Biz::Preset::PresetItem& preset_item =
         m_project_interactor->preset_interactor().printer_presets().items().at(new_selection);
 
-    m_label_preset_name->set_text(preset_item.hw_printer_config_name);
+    m_label_preset_name->set_text(preset_item.ui_hw_config_name());
 }
 
 void PrinterAdvancedSettingsDialog::close_action()

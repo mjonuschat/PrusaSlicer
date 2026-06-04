@@ -27,7 +27,7 @@ struct BundlePaths;
 template <typename FdmConfig, typename SlaConfig>
 Domain::Preset::RootPresetNode transform_for_saving(
     const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& source,
-    const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>& system,
+    const Domain::Preset::EvaluatedPreset<FdmConfig, SlaConfig>* system,
     const KeySet& items_to_omit
 )
 {
@@ -41,7 +41,7 @@ Domain::Preset::RootPresetNode transform_for_saving(
 
     PresetNode main;
     auto it = source.features.find(FEATURE_BASED_ID);
-    if (it != source.features.end()) {
+    if (it != source.features.end() && system != nullptr) {
         main.unconditional_inherits = {std::get<std::string>(it->second)};
     }
 
@@ -53,9 +53,24 @@ Domain::Preset::RootPresetNode transform_for_saving(
     main.name = source.name;
     main.features = source.features;
 
+    std::vector<std::string> diff_keys;
     const auto& source_cb = source.config_box();
-    const auto& system_cb = system.config_box();
-    const auto& diff_keys = source_cb.diff_keys(system_cb);
+    if (system != nullptr) {
+        const auto& system_cb = system->config_box();
+        diff_keys = source_cb.diff_keys(system_cb);
+    } else {
+        auto append_keys = [&diff_keys]<typename T>(const T& items) {
+            std::ranges::copy(
+                items.all_items()
+                    | std::views::transform(
+                        [](const auto& it) -> const auto& { return it.name(); }
+                    ),
+                std::back_inserter(diff_keys)
+            );
+        };
+        append_keys(source_cb.items);
+        append_keys(source_cb.overrides);
+    }
 
     KeySet items_to_include;
     auto not_omitted = [&items_to_omit](const auto& key) { return !items_to_omit.contains(key); };

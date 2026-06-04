@@ -158,11 +158,9 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
     const Biz::Preset::PresetItem& preset_item =
         m_project_interactor.preset_interactor().printer_presets().items().at(new_selection);
 
-    const std::string prefix{preset_item.runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-    m_logical_printer_button->set_printer_name(prefix + preset_item.name);
-    const std::string hw_prefix{preset_item.runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-    m_logical_printer_button->set_preset_name(hw_prefix + preset_item.hw_printer_config_name);
-    m_logical_printer_button->set_tooltip(prefix + preset_item.name + "\n" + hw_prefix + preset_item.hw_printer_config_name);
+    m_logical_printer_button->set_printer_name(preset_item.ui_preset_name());
+    m_logical_printer_button->set_preset_name(preset_item.ui_hw_config_name());
+    m_logical_printer_button->set_tooltip(preset_item.ui_preset_name() + "\n" + preset_item.ui_hw_config_name());
 
     const Domain::Preset::HwPrinterConfig& printer_config =
         m_project_interactor.preset_interactor().current_printer_config();
