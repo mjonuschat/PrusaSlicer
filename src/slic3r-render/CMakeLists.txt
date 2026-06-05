@@ -96,6 +96,8 @@ if (EMSCRIPTEN)
 else()
     find_package(PNG REQUIRED)
     target_link_libraries(slic3r-render PUBLIC PNG::PNG)
+    find_package(JPEG REQUIRED)
+    target_link_libraries(slic3r-render PUBLIC JPEG::JPEG)
 endif ()
 target_include_directories(slic3r-render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

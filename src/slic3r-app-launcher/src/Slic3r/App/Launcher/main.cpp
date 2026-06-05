@@ -73,12 +73,6 @@ std::string app_description()
     return description.str();
 }
 
-#ifdef SLIC3R_SENTRY
-constexpr bool sentry_available{true};
-#else
-constexpr bool sentry_available{false};
-#endif
-
 } // namespace
 
 
@@ -120,7 +114,7 @@ int main(int argc, char** argv)
     app_services.set_app_config(Slic3r::App::AppConfig::create_app_config());
 
     const std::optional<Slic3r::App::Launcher::SentryScope> sentry{
-        sentry_available && app_services.app_config().get<bool>("sentry") ?
+        app_services.app_config().is_sentry_enabled() ?
             std::optional<Slic3r::App::Launcher::SentryScope>{std::in_place} :
             std::nullopt};
 

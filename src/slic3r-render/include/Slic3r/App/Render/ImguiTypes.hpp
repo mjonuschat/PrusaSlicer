@@ -37,6 +37,9 @@ enum class Icon : wchar_t
     LegendShells,
     LegendToolMarker,
     PrusaSlicerIcon,
+    Printables,
+    Connect,
+    Cloud,
     Lock,
     Unlock,
     LightLockClosed,
@@ -221,6 +224,7 @@ enum class Icon : wchar_t
     Filter,
     ArrowRight,
     PhysicalPrinterIcon,
+    CheckMark,
 
     // FontIconS
     // DO NOT TOUCH, DO NOT CHANGE ORDER

@@ -334,6 +334,10 @@ void PlaterRenderModule::on_init(
 
     // force update on various UI elements
     update_object_selection();
+
+    if (!AppServices::instance().app_config().get<bool>("initialized")) {
+        m_welcome_dialog->open();
+    }
 }
 
 static const char* tool_type_to_command_name(Scene::ToolType tool_type)
@@ -597,6 +601,8 @@ void PlaterRenderModule::init_scene_layout()
         *m_render_module_navigator
     );
 
+    m_welcome_dialog = std::make_unique<WelcomeDialog>(m_project_interactor);
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -646,7 +652,8 @@ void PlaterRenderModule::init_scene_layout()
         m_sidebar_object.release(),
         m_sidebar_action_buttons.release(),
         m_history.release(),
-        m_number_entry_dialog.release()
+        m_number_entry_dialog.release(),
+        m_welcome_dialog.release()
     ));
     m_layout->init();
 

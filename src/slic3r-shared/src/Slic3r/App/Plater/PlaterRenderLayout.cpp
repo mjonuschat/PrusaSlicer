@@ -16,7 +16,8 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<SidebarObject> sidebar_object,
     std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
     std::unique_ptr<History> history,
-    std::unique_ptr<NumberEntryDialog> number_entry_dialog
+    std::unique_ptr<NumberEntryDialog> number_entry_dialog,
+    std::unique_ptr<WelcomeDialog> welcome_dialog
 ) :
     AbstractRenderLayout(
         navigator,
@@ -31,8 +32,16 @@ PlaterRenderLayout::PlaterRenderLayout(
         std::move(number_entry_dialog)
     ),
     m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
-    m_history(std::move(history))
+    m_history(std::move(history)),
+    m_welcome_dialog(std::move(welcome_dialog))
 {}
+
+void PlaterRenderLayout::init() {
+    AbstractRenderLayout::init();
+
+    m_layout_main.append(m_welcome_dialog.release());
+    m_welcome_dialog->attach_to_center();
+}
 
 void PlaterRenderLayout::init_left_column()
 {

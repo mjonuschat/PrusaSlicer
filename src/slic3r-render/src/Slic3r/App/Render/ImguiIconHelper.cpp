@@ -69,6 +69,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::RemoveTick, "colorchange_del"},
     {Icon::RemoveTickHovered, "colorchange_del_f"},
     {Icon::PhysicalPrinterIcon, "printer_physical"},
+    {Icon::CheckMark, "checked"},
     // sidebar icons
     {Icon::SavePrint, "save_print"},
     {Icon::SavePrintToFlash, "save_print_to_flash"},
@@ -99,6 +100,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
 
     {Icon::ClippyMarker, "notification_clippy"},
     {Icon::PrusaSlicerIcon, "PrusaSlicer"},
+    {Icon::Printables, "printables"},
+    {Icon::Connect, "connect"},
+    {Icon::Cloud, "cloud"},
     // toolbar icons
     {Icon::ToolbarObjects, "toolbar_objects"},
     {Icon::ToolbarHistory, "toolbar_history"},

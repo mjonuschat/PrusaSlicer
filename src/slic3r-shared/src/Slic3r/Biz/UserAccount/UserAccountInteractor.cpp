@@ -29,6 +29,9 @@ UserAccountInteractor::~UserAccountInteractor()
 
 void UserAccountInteractor::do_log_out(bool notify_owner)
 {
+    if (!m_communication.is_logged_in()) {
+        return;
+    }
     m_communication.do_log_out(notify_owner);
     if (update_menu_callback) {
         update_menu_callback(true);
@@ -61,6 +64,11 @@ std::string UserAccountInteractor::username() const
 boost::filesystem::path UserAccountInteractor::avatar() const
 {
     return m_communication.avatar();
+}
+
+const std::string& UserAccountInteractor::email() const
+{
+    return m_communication.email();
 }
 
 void UserAccountInteractor::request_refresh()
@@ -122,6 +130,7 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
         if (update_menu_callback) {
             update_menu_callback(true);
         }
+        invoke_listeners<IUserAccountListener>([](auto* l) { l->on_avatar_downloaded(); });
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::PrinterData:
         break;
@@ -202,8 +211,14 @@ void UserAccountInteractor::on_user_id(const std::string& body)
         SPDLOG_ERROR("User ID message from PrusaAuth did not contain public_username. Login failed. Message data: {}", body);
         return;
     }
-    std::string public_username = m_account_user_data["public_username"];
+    std::string public_username = m_account_user_data.at("public_username");
     m_communication.on_username_changed(public_username, true);
+
+    if (m_account_user_data.find("email") != m_account_user_data.end()) {
+        m_communication.on_email(m_account_user_data["email"]);
+    } else {
+        SPDLOG_ERROR("User ID message from PrusaAuth did not contain email info.");
+    }
 
     // enqueue GET with avatar url
 

@@ -50,10 +50,14 @@ public:
      */
     boost::filesystem::path avatar() const;
 
+    const std::string& email() const;
+
     /**
      * @brief Uses data to download avatar.
      */
     void on_avatar_url(const std::string& data);
+
+    void on_email(const std::string& data);
 
     /**
      * @brief Stores avatar into file.
@@ -68,5 +72,6 @@ public:
 private:
     std::string m_code_verifier;
     std::string m_avatar_extension;
+    std::string m_email;
 };
 }

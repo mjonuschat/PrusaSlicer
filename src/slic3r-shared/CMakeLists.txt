@@ -270,6 +270,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Theme.cpp
         include/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp
         src/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.cpp
+        include/Slic3r/App/WelcomeDialog.hpp
+        src/Slic3r/App/WelcomeDialog.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp

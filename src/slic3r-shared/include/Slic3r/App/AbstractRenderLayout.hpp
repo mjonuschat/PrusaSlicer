@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Yoga/RootItem.hpp"
 #include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/ToolBar/ToolBarSwitchButton.hpp"

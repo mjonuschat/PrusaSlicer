@@ -1467,9 +1467,11 @@ void Item::render_image(
     const ImVec2& uv0,
     const ImVec2& uv1,
     const ImVec4& background_col,
-    const ImVec4& tint_col
+    const ImVec4& tint_col,
+    float rounding
 )
 {
+    ImGui::PushStyleVar(ImGuiStyleVar_ImageRounding, rounding);
     ImGui::ImageWithBg(
         (ImTextureID) (intptr_t) texture.get(),
         image_size,
@@ -1479,6 +1481,7 @@ void Item::render_image(
         tint_col
     );
     m_imgui_render->use_texture(texture);
+    ImGui::PopStyleVar();
 }
 
 void Item::check_resized()

@@ -49,8 +49,11 @@ public:
     const AppSettingsAdvanced& app_settings_advanced() const;
     AppSettingsAdvanced& app_settings_advanced();
 
+    bool is_webkit_available() const;
     bool is_printables_enabled() const;
     bool is_prusa_account_enabled() const;
+    bool is_sentry_enabled() const;
+    bool is_sentry_available() const;
 
     /**
      * @brief Records a crash and disables a related configuration option.

@@ -38,6 +38,7 @@ UserAccountCommunication::UserAccountCommunication(Platform::IMainThreadDispatch
 void UserAccountCommunication::do_log_out(bool notify_owner)
 {
     do_clear(notify_owner);
+    m_email = "";
 }
 
 std::string UserAccountCommunication::on_log_in_request(
@@ -108,6 +109,10 @@ boost::filesystem::path UserAccountCommunication::avatar() const
     }
 }
 
+const std::string& UserAccountCommunication::email() const {
+    return m_email;
+}
+
 void UserAccountCommunication::on_avatar_url(const std::string& data)
 {
     const boost::filesystem::path server_file(data);
@@ -129,6 +134,11 @@ void UserAccountCommunication::on_avatar_success(std::string&& data) const
     }
     fwrite(data.c_str(), 1, data.size(), file);
     fclose(file);
+}
+
+void UserAccountCommunication::on_email(const std::string& data)
+{
+    m_email = data;
 }
 
 void UserAccountCommunication::request_printables_secret_token()

@@ -212,7 +212,7 @@ struct SizeInfo
 struct EvaluatedUnit
 {
     Unit source;
-    float result;
+    float result{};
 
     explicit EvaluatedUnit(const Unit& source = {0});
 

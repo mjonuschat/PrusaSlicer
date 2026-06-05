@@ -279,6 +279,11 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
     def->init_fn  = []() { return Domain::ConfigValue(false); };
 #endif
+
+    def           = defs.add("initialized", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn  = []() { return Domain::ConfigValue{false}; };
 }
 
 tl::expected<std::unique_ptr<AppConfig>, std::string> AppConfig::load_appconfig(const std::string& filename)
@@ -352,22 +357,46 @@ AppSettingsAdvanced& AppConfig::app_settings_advanced()
     return m_app_settings_advanced;
 }
 
+bool AppConfig::is_webkit_available() const {
+#ifdef SLIC3R_HAS_WEBKIT
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool AppConfig::is_printables_enabled() const
 {
-#ifndef SLIC3R_HAS_WEBKIT
-    return false;
-#endif // SLIC3R_HAS_WEBKIT
-
+    if (!is_webkit_available()) {
+        return false;
+    }
     return get<bool>("enable_printables");
 }
 
 bool AppConfig::is_prusa_account_enabled() const
 {
-#ifndef SLIC3R_HAS_WEBKIT
-    return false;
-#endif // SLIC3R_HAS_WEBKIT
+    if (!is_webkit_available()) {
+        return false;
+    }
 
     return get<bool>("enable_prusa_account");
+}
+
+bool AppConfig::is_sentry_enabled() const
+{
+    if (!is_sentry_available()) {
+        return false;
+    }
+    return get<bool>("sentry");
+}
+
+bool AppConfig::is_sentry_available() const
+{
+#ifdef SLIC3R_SENTRY
+    return true;
+#else
+    return false;
+#endif
 }
 
 void

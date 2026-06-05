@@ -14,6 +14,7 @@ class IUserAccountListener
 public:
     virtual ~IUserAccountListener() = default;
     virtual void on_user_account_id_success(bool is_refresh, const std::string& username) {};
+    virtual void on_avatar_downloaded() {};
     virtual void on_user_account_logged_out() {};
     virtual void on_user_account_will_refresh() {};
     virtual void on_user_account_action_retry(

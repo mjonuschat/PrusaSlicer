@@ -403,15 +403,17 @@ void MainFrame::on_app_config_changed(const std::string& key)
             Biz::_u8L("PrusaSlicer - Switching theme")
         );
     } else if (key == "sentry") {
-        const bool enabled{app_config.get<bool>("sentry")};
+        if (app_config.get<bool>("initialized")) {
+            const bool enabled{app_config.get<bool>("sentry")};
 
-        const std::string message{
-            Biz::_u8L("The change will take effect after restarting the application.")};
+            const std::string message{
+                Biz::_u8L("The change will take effect after restarting the application.")};
 
-        AppServices::instance().dialog_manager().show_info_dialog(
-            enabled ? Biz::_u8L("Crash reporting is now enabled. ") + message :
-                      Biz::_u8L("Crash reporting is now disabled. ") + message,
-            Biz::_u8L("PrusaSlicer - Enable crash reporting"));
+            AppServices::instance().dialog_manager().show_info_dialog(
+                enabled ? Biz::_u8L("Crash reporting is now enabled. ") + message :
+                          Biz::_u8L("Crash reporting is now disabled. ") + message,
+                Biz::_u8L("PrusaSlicer - Enable crash reporting"));
+        }
     }
 }
 

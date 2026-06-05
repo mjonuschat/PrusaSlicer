@@ -2,6 +2,7 @@
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Memory.hpp>
+#include <Slic3r/Utils.hpp>
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 #include <sstream>
@@ -13,6 +14,7 @@
 #include <nanosvg/nanosvg.h>
 // #define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvg/nanosvgrast.h>
+#include <jpeglib.h>
 
 namespace Slic3r::App::Render {
 
@@ -102,6 +104,124 @@ private:
 
 private:
     NSVGrasterizerPtr m_rasterizer;
+};
+
+// The layout of this struct is super important!
+// It is because reinterpret_cast<JpegErrorManager*>(&jpeg_error_mgr)
+// using the pointer to the first field. It is horrible,
+// but it is a way to get the error out of libjpg and not crash the app.
+struct JpegErrorManager
+{
+    jpeg_error_mgr manager{};
+    jmp_buf jump_buffer{};
+};
+
+static void jpeg_error_exit(j_common_ptr cinfo)
+{
+    auto* err = reinterpret_cast<JpegErrorManager*>(cinfo->err);
+    longjmp(err->jump_buffer, 1);
+}
+
+class JpgReadCodec : public IImageLoadCodec
+{
+public:
+    bool matches(const std::string& filename) override {
+        return boost::algorithm::iends_with(filename, ".jpg")
+            || boost::algorithm::iends_with(filename, ".jpeg");
+    }
+
+    std::vector<Image>
+    load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) override
+    {
+        std::vector<unsigned char> buffer{
+            std::istreambuf_iterator<char>(is),
+            std::istreambuf_iterator<char>()
+        };
+
+        if (!is && !is.eof()) {
+            SPDLOG_ERROR("failed reading JPEG stream");
+            return {};
+        }
+        if (buffer.empty()) {
+            SPDLOG_ERROR("empty JPEG stream");
+            return {};
+        }
+
+        jpeg_decompress_struct cinfo{};
+        JpegErrorManager jerr{};
+
+        // Our handler jumps to jerr.jump_buffer, few lines bellow.
+        jerr.manager.error_exit = jpeg_error_exit;
+        cinfo.err = jpeg_std_error(&jerr.manager);
+
+        bool created = false;
+        bool started = false;
+
+        // The rest of the function avoid a scope guard, as it would be triggered
+        // by a longjmp here and trigger things that might not be valid.
+        if (setjmp(jerr.jump_buffer)) {
+            SPDLOG_ERROR("JPEG decode failed");
+
+            if (started) {
+                jpeg_abort_decompress(&cinfo);
+            }
+
+            if (created) {
+                jpeg_destroy_decompress(&cinfo);
+            }
+
+            return {};
+        }
+
+        jpeg_create_decompress(&cinfo);
+        created = true;
+
+        jpeg_mem_src(&cinfo, buffer.data(),
+                     static_cast<unsigned long>(buffer.size()));
+
+        jpeg_read_header(&cinfo, TRUE);
+        jpeg_start_decompress(&cinfo);
+        started = true;
+
+        const int width = static_cast<int>(cinfo.output_width);
+        const int height = static_cast<int>(cinfo.output_height);
+        const int channels = cinfo.output_components;
+
+        if (image_size) {
+            *image_size = {width, height};
+        }
+
+        if (channels != 3) {
+            SPDLOG_ERROR("unsupported JPEG format (channels={})", channels);
+            jpeg_finish_decompress(&cinfo);
+            jpeg_destroy_decompress(&cinfo);
+            return {};
+        }
+
+        PixelFormat format{PixelFormat::RGB8};
+
+        const std::size_t stride = static_cast<std::size_t>(width) * channels;
+        const std::size_t size = static_cast<std::size_t>(height) * stride;
+
+        std::vector<unsigned char> pixels(size);
+
+        while (cinfo.output_scanline < cinfo.output_height) {
+            unsigned char* row =
+                pixels.data() + cinfo.output_scanline * stride;
+
+            jpeg_read_scanlines(&cinfo, &row, 1);
+        }
+
+        jpeg_finish_decompress(&cinfo);
+        jpeg_destroy_decompress(&cinfo);
+
+        return {Image{
+            format,
+            width,
+            height,
+            std::move(pixels)
+        }};
+    }
 };
 
 std::vector<Image> PngReadCodec::load(
@@ -345,6 +465,7 @@ ImageCodecManager::ImageCodecManager()
     // register known codecs
     m_loaders.emplace_back(new PngReadCodec());
     m_loaders.emplace_back(new SvgReadCodec());
+    m_loaders.emplace_back(new JpgReadCodec());
 }
 
 ImageCodecManager& ImageCodecManager::instance()

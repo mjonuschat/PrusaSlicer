@@ -73,6 +73,8 @@ public:
      */
     boost::filesystem::path avatar() const;
 
+    const std::string& email() const;
+
     /**
      * @brief Sets callback for refreshing left bar account menu. Bool is recreate avatar.
      */

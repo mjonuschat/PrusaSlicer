@@ -61,6 +61,7 @@ public:
     Icon(Render::Icon icon);
 
     void render(const Vec2f& pos, const Vec2f& size) override;
+    void resize(const SizeInfo& size_info) override;
 
     IconType icon_type() const;
     Render::Icon icon() const;
@@ -84,6 +85,8 @@ public:
     bool preserve_colors() const;
     void set_preserve_colors(bool preserve_colors);
 
+    void set_rounding(Unit rounding);
+
 private:
     void update_draw_sizes();
     void update_texture();
@@ -102,6 +105,7 @@ private:
     FillMode m_fill_mode = FillMode::PreservedAspect;
     ImVec4 m_tint{1, 1, 1, 1};
     bool m_preserve_colors{false};
+    EvaluatedUnit m_rounding;
 
     // Computed
     Vec2f m_cached_size;

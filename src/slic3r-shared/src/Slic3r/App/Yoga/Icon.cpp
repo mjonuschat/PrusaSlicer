@@ -59,11 +59,17 @@ void Icon::render(const Vec2f& pos, const Vec2f& size)
             uv1,
             {0, 0, 0, 0},
             enabled() ? tint() :
-                        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+                        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled),
+            m_rounding.result
         );
     }
 
     render_item_end(pos, size);
+}
+
+void Icon::resize(const SizeInfo& size_info) {
+    Item::resize(size_info);
+    m_rounding.evaluate(size_info);
 }
 
 Icon::IconType Icon::icon_type() const
@@ -220,6 +226,11 @@ void Icon::set_preserve_colors(bool preserve_colors)
         update_texture();
         set_style_dirty();
     }
+}
+
+void Icon::set_rounding(Unit rounding)
+{
+    m_rounding = EvaluatedUnit{rounding};
 }
 
 } // namespace Slic3r::App::Yoga

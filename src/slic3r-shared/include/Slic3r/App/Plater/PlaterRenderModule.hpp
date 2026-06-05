@@ -15,6 +15,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 #include "Slic3r/App/Plater/ContextMenuGizmo.hpp"
+#include "Slic3r/App/WelcomeDialog.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -238,6 +239,7 @@ private:
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
+    Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
 
     ToolBarButton* m_toolbar_add                     = nullptr;
     ToolBarButton* m_toolbar_delete                  = nullptr;

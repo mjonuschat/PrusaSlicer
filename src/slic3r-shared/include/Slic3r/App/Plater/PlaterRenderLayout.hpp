@@ -25,8 +25,11 @@ public:
         std::unique_ptr<SidebarObject> sidebar_object,
         std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
         std::unique_ptr<History> history,
-        std::unique_ptr<NumberEntryDialog> number_entry_dialog
+        std::unique_ptr<NumberEntryDialog> number_entry_dialog,
+        std::unique_ptr<WelcomeDialog> welcome_dialog
     );
+
+    void init() override;
 
 private:
     void init_left_column() override;
@@ -35,6 +38,7 @@ private:
 private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
+    Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
 };
 
 } // namespace Slic3r::App::Plater
