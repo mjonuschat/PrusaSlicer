@@ -942,7 +942,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp
         include/Slic3r/Biz/UserAccount/IUserAccountActionCallbacks.hpp
         include/Slic3r/Biz/UserAccount/UserAccountInteractor.hpp
+        include/Slic3r/Biz/UserAccount/IUserAccountCommunication.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCommunication.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountCommunicationDummy.hpp
         include/Slic3r/Biz/UserAccount/UserAccountSession.hpp
         include/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountAction.hpp

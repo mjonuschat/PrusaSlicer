@@ -127,8 +127,6 @@ public:
             &m_preset_interactor.object_settings_interactor()
         );
         add_listener<ISelectedConfigContainerChangedListener>(&m_physical_printer_interactor);
-
-        m_user_account_interactor.init();
     }
 
     const Domain::Workbench& workbench() const

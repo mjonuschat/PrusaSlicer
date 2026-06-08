@@ -371,7 +371,23 @@ void MainFrame::on_language_changed()
 void MainFrame::on_app_config_changed(const std::string& key)
 {
     AppConfig& app_config = AppServices::instance().app_config();
-    update_left_bar();
+
+    if (key == "enable_printables") {
+        if (bool printables_enabled = AppServices::instance().app_config().is_printables_enabled();
+            m_printables_page_added != printables_enabled)
+        {
+            update_printables_left_bar(printables_enabled);
+        }
+    }
+
+    if (key == "enable_prusa_account") {
+        if (bool acc_enabled = AppServices::instance().app_config().is_prusa_account_enabled();
+            acc_enabled != m_project_interactor.user_account_interactor().is_enabled())
+        {
+            m_project_interactor.user_account_interactor().init(acc_enabled);
+        }
+    }
+
     if (key == "graphics_quality") {
         update_graphics_settings();
     }
@@ -606,43 +622,50 @@ static size_t get_tab_index_by_id(LeftBar* left_bar, LeftBarTabs page_id)
     return size_t(-1);
 };
 
-void MainFrame::update_left_bar()
+void MainFrame::remove_left_bar_page(LeftBarTabs page_id)
 {
-    ASSERT(m_left_bar);
+    int page_index = get_tab_index_by_id(m_left_bar, page_id);
+    ASSERT(page_index != size_t(-1));
+    m_left_bar->RemovePage(page_index);
+}
 
-    auto remove_page = [this](LeftBarTabs page_id) -> void
-    {
-        int page_index = get_tab_index_by_id(m_left_bar, page_id);
-        ASSERT(page_index != size_t(-1));
-        m_left_bar->RemovePage(page_index);
-    };
-
-    bool printables_enabled = AppServices::instance().app_config().is_printables_enabled();
-    if (m_printables_page_added && !printables_enabled) {
-        remove_page(LeftBarTabs::Printables);
-        m_printables_page_added = false;
-    } else if (!m_printables_page_added && printables_enabled) {
-        init_printables_page(m_project_interactor);
-    }
-
-    bool prusa_account_enabled = AppServices::instance().app_config().is_prusa_account_enabled();
-    if (m_printers_page_added && !prusa_account_enabled) {
-        remove_page(LeftBarTabs::Printers);
-        m_printers_page_added = false;
-    } else if (!m_printers_page_added && prusa_account_enabled) {
-        init_printer_page(m_project_interactor);
-    }
-    m_left_bar->ShowUserAccount(prusa_account_enabled);
-    if (!prusa_account_enabled) {
-        m_project_interactor.user_account_interactor().do_log_out(true);
-    }
-
-    // Always select the Slicing page after updating the left bar
+void MainFrame::ensure_slicing_page_selected()
+{
     if (wxWindow* selected_page = m_left_bar->GetCurrentPage();
         selected_page && selected_page->GetId() != static_cast<wxWindowID>(LeftBarTabs::Slicing))
     {
         switch_left_tab(LeftBarTabs::Slicing, std::string());
     }
+}
+
+void MainFrame::update_printables_left_bar(bool printables_enabled)
+{
+    ASSERT(m_left_bar);
+
+    if (!printables_enabled) {
+        remove_left_bar_page(LeftBarTabs::Printables);
+        m_printables_page_added = false;
+    } else if (printables_enabled) {
+        init_printables_page(m_project_interactor);
+    }
+
+    ensure_slicing_page_selected();
+}
+
+void MainFrame::on_user_account_enabled_state_changed(bool is_enabled)
+{
+    ASSERT(m_left_bar);
+
+    if (m_printers_page_added && !is_enabled) {
+        remove_left_bar_page(LeftBarTabs::Printers);
+        m_printers_page_added = false;
+    } else if (!m_printers_page_added && is_enabled) {
+        init_printer_page(m_project_interactor);
+    }
+
+    m_left_bar->ShowUserAccount(is_enabled);
+
+    ensure_slicing_page_selected();
 }
 
 void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)

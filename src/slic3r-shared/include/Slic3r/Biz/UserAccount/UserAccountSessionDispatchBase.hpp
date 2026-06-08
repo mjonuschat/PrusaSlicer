@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
+#include <memory>
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -38,5 +39,6 @@ protected:
 
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;
+    std::shared_ptr<bool> m_lifetime_token;
 };
 } // namespace Slic3r::Biz::UserAccount

@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 
 #include <functional>
+#include <map>
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -27,10 +28,14 @@ public:
     UserAccountInteractor& operator=(UserAccountInteractor&& other) = delete;
 
     /**
-     * @brief Reads tokens from store, starts communication in bg thread.
-     * Moved to delayed init function prevent possible race conditions.
+     * @brief If enabled reads tokens from store, starts communication in bg thread. Otherwise logsout and completely disables communication by replacing its implementation.
      */
-    void init();
+    void init(bool app_config_enabled);
+
+    /**
+     * @brief Returns true if communication was initilized.
+     */
+    bool is_enabled() const;
 
     /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
@@ -73,7 +78,7 @@ public:
      */
     boost::filesystem::path avatar() const;
 
-    const std::string& email() const;
+    std::string email() const;
 
     /**
      * @brief Sets callback for refreshing left bar account menu. Bool is recreate avatar.
@@ -85,7 +90,7 @@ public:
 
     void cancel_ongoing_session_action()
     {
-        m_communication.cancel_ongoing_session_action();
+        m_communication->cancel_ongoing_session_action();
     }
 
     /**
@@ -116,7 +121,7 @@ private:
     void on_user_id(const std::string& body);
 
     Platform::IMainThreadDispatcher& m_dispatcher;
-    UserAccountCommunication m_communication;
+    std::unique_ptr<IUserAccountCommunication> m_communication;
 
     std::map<std::string, std::string> m_account_user_data;
 

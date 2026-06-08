@@ -370,6 +370,11 @@ bool DesktopApp::OnInit()
     if (scrn)
         scrn->Destroy();
 
+    m_project_interactor->user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(m_main_frame);
+
+    m_project_interactor->user_account_interactor().init(app_services.app_config().is_prusa_account_enabled());
+
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
         m_project_interactor->preset_updater_interactor(),
         preset_interactor,

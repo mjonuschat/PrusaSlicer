@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/UserAccount/IUserAccountCommunication.hpp"
 #include "Slic3r/Biz/Platform/TimerQueue.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountSession.hpp"
 
@@ -11,7 +12,7 @@ namespace Slic3r::Biz::UserAccount {
 /**
  * @brief Manages token refresh with respect to multiple instances using same token.
  */
-class UserAccountCommunicationTokenBase
+class UserAccountCommunicationTokenBase : public IUserAccountCommunication
 {
 public:
     UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher);
@@ -22,25 +23,27 @@ public:
     UserAccountCommunicationTokenBase& operator=(const UserAccountCommunicationTokenBase&) = delete;
     UserAccountCommunicationTokenBase& operator=(UserAccountCommunicationTokenBase&& other) = delete;
 
-    void init();
+    void init() override;
+
+    bool is_active() const override { return true; }
 
     /**
      *@brief Sets token timer to try refreshing tokens based on given input.
      * Latest refresh is 10 seconds before token expires.
      */
-    void set_refresh_time(int seconds);
+    void set_refresh_time(int seconds) override;
 
     /**
      * @brief Writes tokens to token store, if store is true or username empty (which is on log out).
      */
-    void on_username_changed(const std::string& username, bool store);
+    void on_username_changed(const std::string& username, bool store) override;
 
     /**
      * @brief Called after enqueue_refresh_race on session failed.
      */
-    void on_race_lost(const std::string& body);
+    void on_race_lost(const std::string& body) override;
 
-    void add_session_listener(IUserAccountSessionListener* listener)
+    void add_session_listener(IUserAccountSessionListener* listener) override
     {
         m_session.add_listener<IUserAccountSessionListener>(listener);
     }
@@ -48,20 +51,20 @@ public:
     /**
      * @brief Called when other instance changed tokens in store.
      */
-    void on_read_token_store_message();
+    void on_read_token_store_message() override;
 
     /**
      * @brief This function is called when Printables requests new token - same token as we have now wont do.
      */
-    void request_refresh();
+    void request_refresh() override;
 
     /**
      * @brief Starts refresh sequence of access token if needed. Returns true if refresh started.
      * Called from Connect webpage wrapper to prevent posting expired token.
      */
-    bool validate_and_refresh();
+    bool validate_and_refresh() override;
 
-    std::string username() const
+    std::string username() const override
     {
         return m_username;
     }

@@ -109,7 +109,7 @@ boost::filesystem::path UserAccountCommunication::avatar() const
     }
 }
 
-const std::string& UserAccountCommunication::email() const {
+std::string UserAccountCommunication::email() const {
     return m_email;
 }
 

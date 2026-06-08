@@ -22,6 +22,8 @@ public:
         std::function<void(void)> cancel_callback
     ) {};
     virtual void on_printables_secret_token(const std::string& body) {};
+
+    virtual void on_user_account_enabled_state_changed(bool is_enabled) {};
 };
 
 class IConnectHandlerListener 

@@ -12,6 +12,7 @@
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
+#include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
@@ -36,7 +37,11 @@ constexpr int WM_USER_MEDIACHANGED{0x7FFF}; // WM_USER from 0x0400 to 0x7FFF, pi
 
 class LeftBar;
 
-class MainFrame : public wxFrame, public ILanguageChangedListener, public IAppConfigChangedListener
+class MainFrame :
+    public wxFrame,
+    public ILanguageChangedListener,
+    public IAppConfigChangedListener,
+    public Biz::UserAccount::IUserAccountListener
 {
 public:
     MainFrame(
@@ -63,9 +68,9 @@ public:
     void register_win32_callbacks();
 #endif // WIN32
 
-    void update_left_bar();
-
     void switch_left_tab(LeftBarTabs id, const std::string& data);
+
+    void on_user_account_enabled_state_changed(bool is_enabled) override;
 
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
@@ -74,6 +79,9 @@ private:
     void init_printables_page(Biz::ProjectInteractor& project_interactor);
     void init_preferences_button();
     void complete_and_bind_left_bar();
+    void remove_left_bar_page(LeftBarTabs page_id);
+    void ensure_slicing_page_selected();
+    void update_printables_left_bar(bool printables_enabled);
 
     void on_language_changed() override;
     void on_app_config_changed(const std::string& key) override;

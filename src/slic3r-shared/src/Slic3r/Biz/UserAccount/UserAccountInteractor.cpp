@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-
+#include "Slic3r/Biz/UserAccount/UserAccountCommunicationDummy.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <nlohmann/json.hpp>
@@ -8,14 +8,49 @@
 namespace Slic3r::Biz::UserAccount {
 UserAccountInteractor::UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher) :
     m_dispatcher{dispatcher},
-    m_communication{dispatcher}
+    m_communication{std::make_unique<UserAccountCommunicationDummy>()}
 {
-    m_communication.add_session_listener(this);
+    m_communication->add_session_listener(this);
 }
 
-void UserAccountInteractor::init()
+void UserAccountInteractor::init(bool app_config_enabled)
 {
-    m_communication.init();
+    bool was_enabled = is_enabled();
+    if (app_config_enabled) {
+        if (!is_enabled()) {
+            m_communication = std::make_unique<UserAccountCommunication>(m_dispatcher);
+            m_communication->add_session_listener(this);
+            m_communication->init();
+        }
+    } else {
+        if (is_enabled()) {
+            bool was_logged = is_logged_in();
+            do_log_out(true);
+            m_communication = std::make_unique<UserAccountCommunicationDummy>();
+            m_communication->add_session_listener(this);
+
+            // This switch ends dispatching from UserAccountSessionDispatchBase before it can asynchrtonously dispatch loggout.
+            // We do it manually here (possible double dispatch is ok).
+            // Cut off of other messages is correct.
+            if (was_logged) {
+                invoke_listeners<IUserAccountListener>(
+                    [](auto* listener) { listener->on_user_account_logged_out(); }
+                );
+            }
+            
+        }
+    }
+    
+    if (bool enabled = is_enabled(); enabled != was_enabled) {
+        invoke_listeners<IUserAccountListener>(
+            [enabled](auto* listener) { listener->on_user_account_enabled_state_changed(enabled); }
+        );
+    }
+}
+
+bool UserAccountInteractor::is_enabled() const
+{
+   return m_communication->is_active();
 }
 
 UserAccountInteractor::~UserAccountInteractor()
@@ -29,10 +64,10 @@ UserAccountInteractor::~UserAccountInteractor()
 
 void UserAccountInteractor::do_log_out(bool notify_owner)
 {
-    if (!m_communication.is_logged_in()) {
+    if (!m_communication->is_logged_in()) {
         return;
     }
-    m_communication.do_log_out(notify_owner);
+    m_communication->do_log_out(notify_owner);
     if (update_menu_callback) {
         update_menu_callback(true);
     }
@@ -41,54 +76,54 @@ void UserAccountInteractor::do_log_out(bool notify_owner)
 std::string
 UserAccountInteractor::on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service /* = std::string()*/)
 {
-    return m_communication.on_log_in_request(lang_code, generate_code_verifier, service);
+    return m_communication->on_log_in_request(lang_code, generate_code_verifier, service);
 }
 
 void UserAccountInteractor::on_log_in_code_response(const std::string& url_message)
 {
-    m_communication.on_log_in_code_response(url_message);
+    m_communication->on_log_in_code_response(url_message);
 }
 
 bool UserAccountInteractor::is_logged_in() const
 {
-    return m_communication.is_logged_in();
+    return m_communication->is_logged_in();
 }
 
 void UserAccountInteractor::on_read_token_store_message() {}
 
 std::string UserAccountInteractor::username() const
 {
-    return m_communication.username();
+    return m_communication->username();
 }
 
 boost::filesystem::path UserAccountInteractor::avatar() const
 {
-    return m_communication.avatar();
+    return m_communication->avatar();
 }
 
-const std::string& UserAccountInteractor::email() const
+std::string UserAccountInteractor::email() const
 {
-    return m_communication.email();
+    return m_communication->email();
 }
 
 void UserAccountInteractor::request_refresh()
 {
-    m_communication.request_refresh();
+    m_communication->request_refresh();
 }
 
 bool UserAccountInteractor::validate_and_refresh()
 {
-    return m_communication.validate_and_refresh();
+    return m_communication->validate_and_refresh();
 }
 
 std::string UserAccountInteractor::access_token() const
 {
-    return m_communication.access_token();
+    return m_communication->access_token();
 }
 
 void UserAccountInteractor::request_printables_secret_token()
 {
-    m_communication.request_printables_secret_token();
+    m_communication->request_printables_secret_token();
 }
 
 void UserAccountInteractor::on_action_retry(const Network::IHttp::Retry& retry)
@@ -126,7 +161,7 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
     case Slic3r::Biz::UserAccount::ActionSuccessType::ConnectPrinterModels:
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::Avatar:
-        m_communication.on_avatar_success(std::move(body));
+        m_communication->on_avatar_success(std::move(body));
         if (update_menu_callback) {
             update_menu_callback(true);
         }
@@ -167,12 +202,12 @@ void UserAccountInteractor::on_enqueued_refresh()
 
 void UserAccountInteractor::on_new_refresh_time(long long exp)
 {
-    m_communication.set_refresh_time(exp);
+    m_communication->set_refresh_time(exp);
 }
 
 void UserAccountInteractor::on_race_lost(const std::string& msg)
 {
-    m_communication.on_race_lost(msg);
+    m_communication->on_race_lost(msg);
 }
 
 void UserAccountInteractor::on_logged_out()
@@ -211,11 +246,11 @@ void UserAccountInteractor::on_user_id(const std::string& body)
         SPDLOG_ERROR("User ID message from PrusaAuth did not contain public_username. Login failed. Message data: {}", body);
         return;
     }
-    std::string public_username = m_account_user_data.at("public_username");
-    m_communication.on_username_changed(public_username, true);
+    std::string public_username = m_account_user_data["public_username"];
+    m_communication->on_username_changed(public_username, true);
 
     if (m_account_user_data.find("email") != m_account_user_data.end()) {
-        m_communication.on_email(m_account_user_data["email"]);
+        m_communication->on_email(m_account_user_data["email"]);
     } else {
         SPDLOG_ERROR("User ID message from PrusaAuth did not contain email info.");
     }
@@ -223,7 +258,7 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     // enqueue GET with avatar url
 
     if (m_account_user_data.find("avatar_small") != m_account_user_data.end()) {
-        m_communication.on_avatar_url(m_account_user_data["avatar_small"]);
+        m_communication->on_avatar_url(m_account_user_data["avatar_small"]);
     } else {
         SPDLOG_ERROR("User ID message from PrusaAuth did not contain avatar info.");
     }
