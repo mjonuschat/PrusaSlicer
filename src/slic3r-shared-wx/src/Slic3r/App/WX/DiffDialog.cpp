@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 #include "Slic3r/App/Config/CategoryUtils.hpp"
 
 #include "Slic3r/Domain/Preset/Bundle.hpp"
@@ -179,51 +180,63 @@ void DiffDialog::init_from_selection()
     const Domain::Preset::SelectedPreset& spp = m_preset_interactor.selected_printer_preset();
 
     const auto& printers = m_preset_interactor.printer_presets().items();
-    int selected_printer = 0;
+    int selected_printer = -1;
     for (size_t i = 0; i < printers.size(); i++) {
         auto& printer = printers.at(i);
-        if (printer.hw_printer_config_name == spp.hw_config.name && printer.id == spp.printer.id) {
+        if (printer.hw_printer_config_id == spp.hw_config.id && printer.id == spp.printer.id) {
             selected_printer = int(i);
             break;
         }
     }
+    ASSERT(selected_printer>=0);
 
     int selected_print = 0;
+    bool found{ false };
     for (const auto [print_ref, print_is_runtime] :
          m_preset_interactor.get_print_presets(spp.hw_config.id, spp.printer.id))
     {
         const auto& print_preset = print_ref.get();
         if (print_preset.id == spp.print.id) {
+            found = true;
             break;
         }
         selected_print++;
     }
+    ASSERT(found);
 
     bool has_tool_prints = spp.technology() == Domain::PrinterTechnology::FFF;
 
     int selected_frst_tool_print = has_tool_prints ? 0 : -1;
+    found = false;
     if (has_tool_prints) {
         for (const auto [ref, is_runtime] :
              m_preset_interactor
                  .get_tool_print_presets(spp.hw_config.id, spp.printer.id, spp.print.id, 0))
         {
             const auto& tool_print_preset = ref.get();
-            if (spp.tools[0].id == tool_print_preset.id)
+            if (spp.tools[0].id == tool_print_preset.id) {
+                found = true;
                 break;
+            }
             selected_frst_tool_print++;
         }
     }
+    ASSERT(found);
 
     int selected_material = 0;
+    found = false;
     for (const auto [ref, is_runtime] :
          m_preset_interactor
              .get_material_presets(spp.hw_config.id, spp.printer.id, spp.print.id, 0))
     {
         const auto& material_preset = ref.get();
-        if (spp.materials[0].id == material_preset.id)
+        if (spp.materials[0].id == material_preset.id) {
+            found = true;
             break;
+        }
         selected_material++;
     }
+    ASSERT(found);
 
     select_printer(
         selected_printer,
@@ -496,16 +509,20 @@ void DiffDialog::compare()
     m_diffs_per_kind.clear();
 
     if (show_printers()) {
-        diff_keys = printer_preset_left.config_box().diff_keys(printer_preset_right.config_box());
+        const Domain::ConfigBox& cb_left = printer_preset_left.config_box();
+        diff_keys                        = cb_left.diff_keys(printer_preset_right.config_box());
         if (!diff_keys.empty()) {
+            Biz::Preset::PresetSelectionCheck::filter_diff_keys(cb_left, diff_keys);
             m_diffs_per_kind[printer_preset_left.kind] = diff_keys;
         }
         m_printers->set_state(diff_keys.empty() ? State::Equal : State::NotEqual);
     }
 
     if (show_prints()) {
-        diff_keys = print_preset_left.config_box().diff_keys(print_preset_right.config_box());
+        const Domain::ConfigBox& cb_left = print_preset_left.config_box();
+        diff_keys                        = cb_left.diff_keys(print_preset_right.config_box());
         if (!diff_keys.empty()) {
+            Biz::Preset::PresetSelectionCheck::filter_diff_keys(cb_left, diff_keys);
             m_diffs_per_kind[print_preset_left.kind] = diff_keys;
         }
         m_prints->set_state(diff_keys.empty() ? State::Equal : State::NotEqual);
@@ -531,9 +548,10 @@ void DiffDialog::compare()
             const Domain::Preset::EvaluatedToolPrintPreset::Preset& tool_print_preset_right =
                 tool_print_ref_right.get();
 
-            diff_keys =
-                tool_print_preset_left.config_box().diff_keys(tool_print_preset_right.config_box());
+            const Domain::ConfigBox& cb_left = tool_print_preset_left.config_box();
+            diff_keys = cb_left.diff_keys(tool_print_preset_right.config_box());
             if (!diff_keys.empty()) {
+                Biz::Preset::PresetSelectionCheck::filter_diff_keys(cb_left, diff_keys);
                 m_diffs_per_kind[Domain::Preset::PresetKind::FdmToolPrint] = diff_keys;
             }
             m_tools_prints->set_state(diff_keys.empty() ? State::Equal : State::NotEqual);
@@ -563,8 +581,10 @@ void DiffDialog::compare()
         const Domain::Preset::EvaluatedMaterialPreset::Preset& material_preset_right =
             filament_ref_right.get();
 
-        diff_keys = material_preset_left.config_box().diff_keys(material_preset_right.config_box());
+        const Domain::ConfigBox& cb_left = material_preset_left.config_box();
+        diff_keys                        = cb_left.diff_keys(material_preset_right.config_box());
         if (!diff_keys.empty()) {
+            Biz::Preset::PresetSelectionCheck::filter_diff_keys(cb_left, diff_keys);
             m_diffs_per_kind[material_preset_left.kind] = diff_keys;
         }
         m_tool_materials->set_state(diff_keys.empty() ? State::Equal : State::NotEqual);
