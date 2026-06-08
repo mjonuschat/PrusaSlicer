@@ -83,13 +83,13 @@ void ConfigItemTextField::on_data_update()
             if (m_state->def().multiline) {
                 set_flags(flags() | ImGuiInputTextFlags_Multiline);
                 set_resizable(true);
-                set_height(YGUndefined);
                 input_text()->set_min_height(80);
             } else {
                 set_flags(flags() & ~ImGuiInputTextFlags_Multiline);
                 set_resizable(false);
-                set_height(YGUndefined);
+                input_text()->set_height(YGUndefined);
                 input_text()->set_min_height(0);
+                input_text()->invalidate_min_size_calculation();
             }
             m_is_multiline = m_state->def().multiline;
         }
@@ -122,6 +122,9 @@ void ConfigItemTextField::on_data_update()
                 *m_state->def().type == typeid(Domain::FloatOrPercentage)
             );
             set_validator(m_percentage_validator.release());
+        } else if (validator()) {
+            // Remove the validator when validation is no longer required.
+            set_validator(nullptr);
         }
     }
 

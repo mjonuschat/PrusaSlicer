@@ -355,4 +355,9 @@ void InputText::set_font_type(Render::ImguiFontType font_type)
     m_font_type = font_type;
 }
 
+void InputText::invalidate_min_size_calculation()
+{
+    Item::invalidate_min_size_calculation();
+}
+
 } // namespace Slic3r::App::Yoga

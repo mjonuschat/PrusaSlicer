@@ -100,6 +100,8 @@ public:
     bool resizable() const;
     void set_resizable(bool resizable);
 
+    void invalidate_min_size_calculation();
+
 protected:
     Vec2f get_item_size() override;
 
