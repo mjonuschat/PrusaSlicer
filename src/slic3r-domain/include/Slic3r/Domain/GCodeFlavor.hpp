@@ -10,6 +10,7 @@ enum class GCodeFlavor : unsigned char
     gcfMakerWare,
     gcfMarlinLegacy,
     gcfMarlinFirmware,
+    gcfPrusaFirmwareBuddy,
     gcfKlipper,
     gcfSailfish,
     gcfMach3,

@@ -137,6 +137,7 @@ public:
     std::string set_fan(unsigned int speed) const;
 
     std::string set_pressure_advance(double pressure_advance, const std::string& vendor_id) const;
+    std::string emit_automatic_pressure_advance_calibration() const;
 
 private:
 	// Extruders are sorted by their ID, so that binary search is possible.

@@ -98,6 +98,13 @@ enum class SupportMode
     Everywhere,
 };
 
+enum class PressureAdvance
+{
+    Disabled,
+    Enabled,
+    AutomaticCalibration,
+};
+
 // Then, define all types of ConfigBoxes that will be used. Provide our list
 // of definitions and the type of the box (which must match definitions).
 

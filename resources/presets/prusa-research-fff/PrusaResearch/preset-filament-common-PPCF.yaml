@@ -61,7 +61,7 @@ values:
   start_filament_gcode: M142 S45 ; set heatbreak target temp
   first_layer_temperature: 270
   temperature: 270
-  pressure_advance_enable: true
+  pressure_advance: enabled
   travel_max_lift: 0.6
   travel_ramping_lift: true
   travel_slope: 1

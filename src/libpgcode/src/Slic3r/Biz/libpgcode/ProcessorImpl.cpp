@@ -1109,7 +1109,9 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
           process_G1(g1_axes, g1_feedrate, G1DiscretizationOrigin::G2G3, remaining_internal_g1_lines);
     };
 
-    if (m_config.flavor == GCodeFlavor::gcfMarlinFirmware) {
+    if (m_config.flavor == GCodeFlavor::gcfMarlinFirmware
+        || m_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+    {
         // calculate arc segments
         // reference:
         // Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\gcode\motion\G2_G3.cpp - plan_arc()
@@ -1301,13 +1303,20 @@ void ProcessorImpl::process_G28(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_G60(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware)
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy
+        || m_config.flavor == GCodeFlavor::gcfMarlinFirmware
+        || m_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+    {
         m_saved_position = m_end_position;
+    }
 }
 
 void ProcessorImpl::process_G61(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware) {
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy
+        || m_config.flavor == GCodeFlavor::gcfMarlinFirmware
+        || m_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+    {
         bool modified = false;
         if (line.has_x()) {
             m_end_position[X] = m_saved_position[X];
@@ -1491,9 +1500,10 @@ void ProcessorImpl::process_M203(const GCodeReader::GCodeLine& line)
     // see http://reprap.org/wiki/G-code#M203:_Set_maximum_feedrate
     // http://smoothieware.org/supported-g-codes
     UnitsType units = UnitsType::MillimetersPerMinute;
-    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy ||
-        m_config.flavor == GCodeFlavor::gcfMarlinFirmware ||
-        m_config.flavor == GCodeFlavor::gcfSmoothie)
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy
+        || m_config.flavor == GCodeFlavor::gcfMarlinFirmware
+        || m_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+        || m_config.flavor == GCodeFlavor::gcfSmoothie)
         units = UnitsType::MillimetersPerSecond;
 
     for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
@@ -1566,10 +1576,13 @@ void ProcessorImpl::process_M205(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_M220(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor != GCodeFlavor::gcfMarlinLegacy &&
-        m_config.flavor != GCodeFlavor::gcfMarlinFirmware &&
-        m_config.flavor != GCodeFlavor::gcfKlipper)
+    if (m_config.flavor != GCodeFlavor::gcfMarlinLegacy
+        && m_config.flavor != GCodeFlavor::gcfMarlinFirmware
+        && m_config.flavor != GCodeFlavor::gcfPrusaFirmwareBuddy
+        && m_config.flavor != GCodeFlavor::gcfKlipper)
+    {
         return;
+    }
 
     if (line.has('B'))
         m_feed_multiply.saved = m_feed_multiply.current;
@@ -1718,9 +1731,13 @@ void ProcessorImpl::process_T(const std::string_view command)
         int eid = 0;
         if (!parse_number(command.substr(1), eid) || eid < 0 || eid > 255) {
             // Specific to the MMU2 V2 (see https://www.help.prusa3d.com/en/article/prusa-specific-g-codes_112173):
-            if ((m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware) &&
-                (command == "Tx" || command == "Tc" || command == "T?"))
+            if ((m_config.flavor == GCodeFlavor::gcfMarlinLegacy
+                 || m_config.flavor == GCodeFlavor::gcfMarlinFirmware
+                 || m_config.flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+                && (command == "Tx" || command == "Tc" || command == "T?"))
+            {
                 return;
+            }
 
             // T-1 is a valid gcode line for RepRap Firmwares (used to deselects all tools) see https://github.com/prusa3d/PrusaSlicer/issues/5677
             if ((m_config.flavor != GCodeFlavor::gcfRepRapFirmware && m_config.flavor != GCodeFlavor::gcfRepRapSprinter) || eid != -1) {

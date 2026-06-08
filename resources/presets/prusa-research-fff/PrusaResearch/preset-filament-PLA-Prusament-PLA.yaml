@@ -51,7 +51,7 @@ values:
   temperature: 215
   cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
-  pressure_advance_enable: true
+  pressure_advance: enabled
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"

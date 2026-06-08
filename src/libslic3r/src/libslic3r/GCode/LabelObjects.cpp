@@ -233,7 +233,11 @@ std::string LabelObjects::start_object(const PrintInstance& print_instance, Incl
     if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint)
         out += std::string("; printing object ") + label.name + "\n";
     else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
-        if (m_flavor == GCodeFlavor::gcfMarlinFirmware || m_flavor == GCodeFlavor::gcfMarlinLegacy || m_flavor == GCodeFlavor::gcfRepRapFirmware) {
+        if (m_flavor == GCodeFlavor::gcfMarlinFirmware
+            || m_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+            || m_flavor == GCodeFlavor::gcfMarlinLegacy
+            || m_flavor == GCodeFlavor::gcfRepRapFirmware)
+        {
             out += std::string("M486 S") + std::to_string(label.unique_id);
             if (include_name == IncludeName::Yes) {
                 out += (m_flavor == GCodeFlavor::gcfRepRapFirmware ? " A" : "\nM486 A");
@@ -262,7 +266,10 @@ std::string LabelObjects::stop_object(const PrintInstance& print_instance) const
     if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint)
         out += std::string("; stop printing object ") + label.name + "\n";
     else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
-        if (m_flavor == GCodeFlavor::gcfMarlinFirmware || m_flavor == GCodeFlavor::gcfMarlinLegacy || m_flavor == GCodeFlavor::gcfRepRapFirmware)
+        if (m_flavor == GCodeFlavor::gcfMarlinFirmware
+            || m_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
+            || m_flavor == GCodeFlavor::gcfMarlinLegacy
+            || m_flavor == GCodeFlavor::gcfRepRapFirmware)
             out += std::string("M486 S-1\n");
         else if (m_flavor ==gcfKlipper)
             out += "EXCLUDE_OBJECT_END NAME='" + label.name + "'\n";

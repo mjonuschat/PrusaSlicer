@@ -110,13 +110,20 @@ public:
         return (*this);
     }
 
-    WipeTowerWriter&            disable_linear_advance() {
-        if (m_gcode_flavor == Domain::GCodeFlavor::gcfRepRapSprinter || m_gcode_flavor == Domain::GCodeFlavor::gcfRepRapFirmware)
+    WipeTowerWriter& disable_linear_advance()
+    {
+        if (m_gcode_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy) {
+            m_gcode += "M572 S0\n";
+        } else if (m_gcode_flavor == GCodeFlavor::gcfRepRapSprinter
+                   || m_gcode_flavor == GCodeFlavor::gcfRepRapFirmware)
+        {
             m_gcode += (std::string("M572 D") + std::to_string(m_current_tool) + " S0\n");
-        else if (m_gcode_flavor == Domain::GCodeFlavor::gcfKlipper)
+        } else if (m_gcode_flavor == GCodeFlavor::gcfKlipper) {
             m_gcode += "SET_PRESSURE_ADVANCE ADVANCE=0\n";
-        else
+        } else {
             m_gcode += "M900 K0\n";
+        }
+
         return *this;
     }
 
@@ -382,21 +389,30 @@ public:
     }
 
 	// Let the firmware back up the active speed override value.
-	WipeTowerWriter& speed_override_backup()
+    WipeTowerWriter& speed_override_backup()
     {
         // This is only supported by Prusa at this point (https://github.com/prusa3d/PrusaSlicer/issues/3114)
         if (m_gcode_flavor == GCodeFlavor::gcfMarlinLegacy
-            || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware)
+            || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware
+            || m_gcode_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        {
             m_gcode += "M220 B\n";
-		return *this;
+        }
+
+        return *this;
     }
 
 	// Let the firmware restore the active speed override value.
-	WipeTowerWriter& speed_override_restore()
-	{
-        if (m_gcode_flavor == GCodeFlavor::gcfMarlinLegacy || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware)
+    WipeTowerWriter& speed_override_restore()
+    {
+        if (m_gcode_flavor == GCodeFlavor::gcfMarlinLegacy
+            || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware
+            || m_gcode_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy)
+        {
             m_gcode += "M220 R\n";
-		return *this;
+        }
+
+        return *this;
     }
 
 	// Set digital trimpot motor

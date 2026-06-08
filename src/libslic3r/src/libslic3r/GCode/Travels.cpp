@@ -333,9 +333,12 @@ SmoothingParams get_smoothing_params(
     // so machine_mode_idx should always be 0 (normal mode).
     assert(machine_mode_idx == 0);
 
-    if (config.gcode_flavor != Domain::GCodeFlavor::gcfMarlinFirmware)
-        // Smoothing is supported only on Marlin.
+    if (config.gcode_flavor != Domain::GCodeFlavor::gcfMarlinFirmware
+        && config.gcode_flavor != Domain::GCodeFlavor::gcfPrusaFirmwareBuddy)
+    {
+        // Smoothing is supported only on Marlin and PrusaBuddy.
         return {0, 1};
+    }
 
     const double slope = lift_height / slope_end;
     const double max_machine_z_velocity = config.machine_max_feedrate_z.at(machine_mode_idx);

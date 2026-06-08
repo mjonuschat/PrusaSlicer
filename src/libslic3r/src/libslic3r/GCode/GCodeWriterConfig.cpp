@@ -21,9 +21,10 @@ GCodeWriterConfig::GCodeWriterConfig(const PrintConfigView& print_config)
     extrusion_axis                 = get_extrusion_axis(print_config);
     single_extruder_multi_material = print_config.get<bool>("single_extruder_multi_material");
 
-    gcode_flavor = print_config.get<GCodeFlavor>("gcode_flavor");
-    const bool use_mach_limits     = gcode_flavor == GCodeFlavor::gcfMarlinLegacy
+    gcode_flavor               = print_config.get<GCodeFlavor>("gcode_flavor");
+    const bool use_mach_limits = gcode_flavor == GCodeFlavor::gcfMarlinLegacy
         || gcode_flavor == GCodeFlavor::gcfMarlinFirmware
+        || gcode_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
         || gcode_flavor == GCodeFlavor::gcfRepRapFirmware;
     const bool emit_limits = use_mach_limits
         && print_config.get<MachineLimitsUsage>("machine_limits_usage")
@@ -32,6 +33,7 @@ GCodeWriterConfig::GCodeWriterConfig(const PrintConfigView& print_config)
     supports_separate_travel_acceleration =
         (gcode_flavor == GCodeFlavor::gcfRepetier
          || gcode_flavor == GCodeFlavor::gcfMarlinFirmware
+         || gcode_flavor == GCodeFlavor::gcfPrusaFirmwareBuddy
          || gcode_flavor == GCodeFlavor::gcfRepRapFirmware);
 
     max_acceleration        = static_cast<unsigned int>(std::round(
