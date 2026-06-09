@@ -103,11 +103,14 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     REQUIRE(listener.gcodes.size() == 1);
     REQUIRE(listener.gcodes.contains(bed_id));
 
-    std::erase_if(model_on_bed.model.objects, [&](const ModelObject* object){
+    const auto objects{model_on_bed.model.objects};
+    for (ModelObject * object : objects) {
         REQUIRE(object->instances.size() == 1);
         const auto it{std::ranges::find(instances_to_keep, object->instances.front())};
-        return it == instances_to_keep.end();
-    });
+        if (it == instances_to_keep.end()) {
+            model_on_bed.model.delete_object(object);
+        }
+    }
 
     CHECK(model_on_bed.model.objects.size() == 4);
     const auto error{is_gcode_sane(listener.gcodes[bed_id]->str(), model_on_bed.model)};
