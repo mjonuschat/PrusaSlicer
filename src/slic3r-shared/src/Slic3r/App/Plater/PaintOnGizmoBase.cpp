@@ -58,8 +58,10 @@ PaintOnGizmoBase::PaintOnGizmoBase(
     m_scene_interactor(project_interactor.scene_interactor()),
     m_scene_presenter(scene_presenter)
 {
-    m_clipping_plane_presenter = Scene::ClipperPresenter(&m_clipping_plane_clipper, &m_device, &m_scene_presenter);
-    m_sinking_plane_presenter  = Scene::ClipperPresenter(&m_sinking_plane_clipper, &m_device, &m_scene_presenter);
+    m_clipping_plane_presenter =
+        Scene::ClipperPresenter(&m_clipping_plane_clipper, &m_device, &m_scene_presenter);
+    m_sinking_plane_presenter =
+        Scene::ClipperPresenter(&m_sinking_plane_clipper, &m_device, &m_scene_presenter);
 }
 
 float PaintOnGizmoBase::get_cursor_radius_min() const
@@ -201,6 +203,16 @@ static bool is_any_paintable_volume_sinking(const PaintOnGizmoBase::PaintableVol
     }
 
     return false;
+}
+
+void PaintOnGizmoBase::seed_fill_unselect_all()
+{
+    for (TriangleSelectorRenderWrapper& triangle_selector_wrapper : m_triangle_selector_wrappers) {
+        triangle_selector_wrapper.triangle_selector().seed_fill_unselect_all_triangles();
+        triangle_selector_wrapper.update_painted_geometry(m_device);
+    }
+
+    m_seed_fill_last_mesh_id = -1;
 }
 
 void PaintOnGizmoBase::restore_visible_volumes()
@@ -354,6 +366,30 @@ void PaintOnGizmoBase::init_clipper_presenters()
         m_sinking_plane_presenter
             .update_clipper(-Vec3d::UnitZ(), Domain::SINKING_Z_THRESHOLD, Domain::EPSILON, false);
     }
+}
+
+void PaintOnGizmoBase::set_tool_type(ToolType tool_type)
+{
+    if (m_tool_type == tool_type) {
+        return;
+    }
+
+    m_tool_type = tool_type;
+
+    // Deselect all triangles selected by the previous tool.
+    this->seed_fill_unselect_all();
+}
+
+void PaintOnGizmoBase::set_cursor_type(TriangleSelector::CursorType cursor_type)
+{
+    if (m_cursor_type == cursor_type) {
+        return;
+    }
+
+    m_cursor_type = cursor_type;
+
+    // Deselect all triangles selected by the previous cursor.
+    this->seed_fill_unselect_all();
 }
 
 void PaintOnGizmoBase::update_clipping_plane()
@@ -865,22 +901,10 @@ bool PaintOnGizmoBase::process_gizmo_event(
         // Now "click" into all the prepared points and spill paint around them.
         this->update_raycast_cache(gizmo_event.mouse_position, m_scene_presenter.scene().camera());
 
-        auto seed_fill_unselect_all = [this]()
-        {
-            for (TriangleSelectorRenderWrapper& triangle_selector_wrapper :
-                 m_triangle_selector_wrappers)
-            {
-                TriangleSelector& triangle_selector = triangle_selector_wrapper.triangle_selector();
-                triangle_selector.seed_fill_unselect_all_triangles();
-                triangle_selector_wrapper.update_painted_geometry(m_device);
-            }
-        };
-
         const VolumeHitPoint& hit = m_raycast_cache.hit;
         if (hit.volume_idx == -1) {
             // Clean selected by seed fill for all triangles in all volumes when a mouse isn't pointing on any volume.
-            seed_fill_unselect_all();
-            m_seed_fill_last_mesh_id = -1;
+            this->seed_fill_unselect_all();
 
             // In case we have no valid hit, we can return.
             return false;
@@ -888,7 +912,7 @@ bool PaintOnGizmoBase::process_gizmo_event(
 
         // The mouse moved from one object's volume to another one. So it is needed to unselect all triangles selected by seed fill.
         if (hit.volume_idx != m_seed_fill_last_mesh_id) {
-            seed_fill_unselect_all();
+            this->seed_fill_unselect_all();
         }
 
         const PaintableVolume& paintable_volume      = m_paintable_volumes[hit.volume_idx];

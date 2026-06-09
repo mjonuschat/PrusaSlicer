@@ -27,7 +27,7 @@ PaintOnSeamsGizmo::PaintOnSeamsGizmo(
 
     m_dialog->callbacks().brush_shape_changed =
         [this](const Biz::Algorithms::TriangleSelector::CursorType cursor_type)
-    { m_cursor_type = cursor_type; };
+    { this->set_cursor_type(cursor_type); };
 
     m_dialog->callbacks().brush_radius_changed = [this](const double value)
     { m_cursor_radius = static_cast<float>(value); };
@@ -72,9 +72,7 @@ bool PaintOnSeamsGizmo::set_facets_annotation(
 ) const
 {
     const bool result{model_volume.seam_facets.set_data(triangle_selector.serialize())};
-    m_project_interactor.undo_provider().take_snapshot(
-        Biz::UndoSnapshotType::PaintOnSeamsStroke
-    );
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::PaintOnSeamsStroke);
     return result;
 }
 

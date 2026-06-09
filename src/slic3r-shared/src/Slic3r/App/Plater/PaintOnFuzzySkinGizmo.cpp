@@ -29,11 +29,11 @@ PaintOnFuzzySkinGizmo::PaintOnFuzzySkinGizmo(
     m_dialog->set_split_triangles_value(m_triangle_splitting_enabled);
 
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
-    { m_tool_type = tool_type; };
+    { this->set_tool_type(tool_type); };
 
     m_dialog->callbacks().brush_shape_changed =
         [this](const Biz::Algorithms::TriangleSelector::CursorType cursor_type)
-    { m_cursor_type = cursor_type; };
+    { this->set_cursor_type(cursor_type); };
 
     m_dialog->callbacks().brush_radius_changed = [this](const double value)
     { m_cursor_radius = static_cast<float>(value); };

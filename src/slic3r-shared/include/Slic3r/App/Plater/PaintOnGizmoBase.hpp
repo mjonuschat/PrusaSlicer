@@ -155,6 +155,9 @@ protected:
         const Biz::Algorithms::TriangleSelector& triangle_selector
     ) const = 0;
 
+    void set_tool_type(ToolType tool_type);
+    void set_cursor_type(Biz::Algorithms::TriangleSelector::CursorType cursor_type);
+
     void update_clipping_plane();
     void update_overhang_detection();
     void clear_all_paintings();
@@ -258,6 +261,12 @@ private:
     // Performs the actual raycast computation (without using cache)
     VolumeHitPoint
     perform_raycast(const Domain::Vec2d& mouse_position, const Scene::Camera& camera) const;
+
+    /**
+     * @brief Unselects all triangles selected by seed fill in all volumes
+     * and refreshes their painted geometry.
+     */
+    void seed_fill_unselect_all();
 
     void restore_visible_volumes();
     void hide_visible_volumes();
