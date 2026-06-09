@@ -564,7 +564,7 @@ CutGizmo::CutGizmo(
         update_cut_plane_trafo();
         update_nodes_on_mode_changed();
         context().state.is_planar_mode = is_planar_mode();
-        m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutChangeMode);
+        take_snapshot(UndoSnapshotType::CutChangeMode);
     };
 
     m_dialog->callbacks().groove_depth_value_changed = [this](double value)
@@ -603,7 +603,7 @@ CutGizmo::CutGizmo(
     m_dialog->callbacks().reset_connectors = [this]()
     {
         reset_connectors();
-        m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutResetConnectors);
+        take_snapshot(UndoSnapshotType::CutResetConnectors);
     };
 
     m_dialog->callbacks().connector_attributes_changed = [this](UndoSnapshotType undo_snapshot_type)
@@ -633,6 +633,16 @@ CutGizmo::CutGizmo(
         update_nodes_on_mode_changed();
         update_cut_plane_color();
         context().state.connectors_editing = connectors_editing;
+    };
+
+    m_dialog->callbacks().cut_settings_changed = [this](bool force_take_snapshot)
+    {
+        context().state.keep_as_parts    = keep_as_parts();
+        context().state.part_state_upper = m_dialog->part_state_upper();
+        context().state.part_state_lower = m_dialog->part_state_lower();
+        if (force_take_snapshot) {
+            take_snapshot(UndoSnapshotType::CutChangeMainSettings);
+        }
     };
 }
 
@@ -897,8 +907,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             m_is_plane_hovered = false;
             m_translation_ray.direction =
                 context().state.rotation_m * axis_type_dir(tag.primary_axis);
-        } else if (ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
-        {
+        } else if (ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>()) {
             m_is_plane_hovered          = true;
             m_translation_ray.direction = context().state.rotation_m * Vec3d::UnitZ();
         } else if (
@@ -968,7 +977,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             flip_cut_plane();
         } else {
             preprocess_cut();
-            m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutPlaneMove);
+            take_snapshot(UndoSnapshotType::CutPlaneMove);
         }
 
         return Scene::GizmoActivationState::Done;
@@ -1020,8 +1029,7 @@ CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_activ
     const auto& pick_ray           = ctx.pick_ray();
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        if (ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>() != nullptr)
-        {
+        if (ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>() != nullptr) {
             if (event_button == Platform::MouseButton::Right) {
                 select_hovered_connector(true);
                 remove_selected_connectors();
@@ -1066,9 +1074,7 @@ CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_activ
             check_and_update_connectors_state();
             update_connector_node(id);
             if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-                m_project_interactor->undo_provider().take_snapshot(
-                    UndoSnapshotType::CutMoveConnector
-                );
+                take_snapshot(UndoSnapshotType::CutMoveConnector);
             }
         } else if (event_type == Platform::MouseEvent::Type::ButtonUp) {
             if (event_key_modifiers & Platform::KeyModifiers(Platform::KeyModifier::Alt)) {
@@ -1269,19 +1275,13 @@ void CutGizmo::update_scene_nodes()
         m_dialog->set_build_size(bb_size, m_bb_center.z());
         m_dialog->set_groove_values(context().state.groove, m_mean_size);
         m_dialog->set_connector_defaults(m_mean_size);
-        m_dialog->set_planar_mode(context().state.is_planar_mode);
-        if (context().state.is_planar_mode && context().state.connectors_editing) {
-            m_dialog->force_connectors_editing();
-        }
+        m_dialog->update_from_gizmo_state(context().state);
         set_plane_center(m_bb_center + context().state.center_offset);
     }
 
     update_cut_normal();
 
-    m_clipper_presenter.activate(
-        context().selected_object,
-        context().selected_instance
-    );
+    m_clipper_presenter.activate(context().selected_object, context().selected_instance);
     m_clipper_presenter.set_behavior(true, true, 0.4);
 
     update_cut_plane_mesh();
@@ -1680,7 +1680,8 @@ void CutGizmo::update_cut_plane_trafo()
 
 void CutGizmo::update_handles_material_and_enability(Handle hovered_handle)
 {
-    const bool disabled_handles = (m_dragging && m_is_plane_hovered) || m_dialog->connectors_editing;
+    const bool disabled_handles =
+        (m_dragging && m_is_plane_hovered) || m_dialog->connectors_editing;
     m_handles_node->set_enabled(!disabled_handles);
     if (disabled_handles)
         return;
@@ -2079,7 +2080,7 @@ void CutGizmo::flip_cut_plane()
         update_cut_plane_trafo();
     }
 
-    m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutFlipPlane);
+    take_snapshot(UndoSnapshotType::CutFlipPlane);
 }
 
 void CutGizmo::update_cut_normal()
@@ -2821,8 +2822,7 @@ void CutGizmo::perform_cut()
         m_project_interactor->arrange_interactor().arrange(
             m_project_interactor->selected_project_id(),
             settings,
-            [this]()
-            { m_project_interactor->undo_provider().take_snapshot(Biz::UndoSnapshotType::Cut); }
+            [this]() { take_snapshot(Biz::UndoSnapshotType::Cut); }
         );
         // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
@@ -2896,32 +2896,32 @@ void CutGizmo::preprocess_cut()
 
 bool CutGizmo::keep_upper() const
 {
-    return m_dialog->keep_upper;
+    return context().state.part_state_upper.keep;
 }
 
 bool CutGizmo::keep_lower() const
 {
-    return m_dialog->keep_lower;
+    return context().state.part_state_lower.keep;
 }
 
 bool CutGizmo::place_on_cut_upper() const
 {
-    return m_dialog->place_on_cut_upper;
+    return context().state.part_state_upper.place_on_cut;
 }
 
 bool CutGizmo::place_on_cut_lower() const
 {
-    return m_dialog->place_on_cut_lower;
+    return context().state.part_state_lower.place_on_cut;
 }
 
 bool CutGizmo::flip_upper() const
 {
-    return m_dialog->flip_upper;
+    return context().state.part_state_upper.flip;
 }
 
 bool CutGizmo::flip_lower() const
 {
-    return m_dialog->flip_lower;
+    return context().state.part_state_lower.flip;
 }
 
 bool CutGizmo::is_planar_mode() const
@@ -2958,7 +2958,7 @@ bool CutGizmo::add_connector(Domain::Vec3d pos_world)
     check_and_update_connectors_state();
     update_dialog_on_selection_changed();
 
-    m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutAddConnector);
+    take_snapshot(UndoSnapshotType::CutAddConnector);
 
     return true;
 }
@@ -2994,7 +2994,7 @@ bool CutGizmo::remove_selected_connectors()
         node.get()->tag_of_type<CutConnectorNodeTag>()->id = id++;
     }
 
-    m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutRemoveConnector);
+    take_snapshot(UndoSnapshotType::CutRemoveConnector);
 
     return true;
 }
@@ -3273,7 +3273,7 @@ CutGizmo::on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active)
             m_start_dragging_m = context().state.rotation_m = m;
             update_cut_plane_trafo();
             update_cut_plane_mesh();
-            m_project_interactor->undo_provider().take_snapshot(UndoSnapshotType::CutPlaneMove);
+            take_snapshot(UndoSnapshotType::CutPlaneMove);
         }
 
         m_is_cut_line_processing = false;

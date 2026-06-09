@@ -59,9 +59,10 @@ Slic3r::App::Yoga::PartProcessingItem::PartProcessingItem(
     m_part_toggler->set_checked(true);
     m_part_toggler->callbacks().checked_changed = [this](bool checked)
     {
+        m_state.keep = checked;
         set_enabled_buttons(checked);
         if (callbacks().checked_changed) {
-            callbacks().checked_changed(checked);
+            callbacks().checked_changed();
         }
     };
 
@@ -72,11 +73,11 @@ Slic3r::App::Yoga::PartProcessingItem::PartProcessingItem(
     m_group.set_buttons({m_keep_btn, m_place_on_cut_btn, m_flip_btn});
     m_group.callbacks().action = [this](AbstractButton* btn)
     {
-        Action action = btn == m_keep_btn ? Action::Keep :
-            btn == m_place_on_cut_btn     ? Action::PlaceOnCut :
-                                            Action::Flip;
+        m_state.keep         = is_checked() || btn == m_keep_btn;
+        m_state.place_on_cut = btn == m_place_on_cut_btn;
+        m_state.flip         = btn == m_flip_btn;
         if (callbacks().part_action_changed) {
-            callbacks().part_action_changed(action);
+            callbacks().part_action_changed();
         }
     };
 }
@@ -92,6 +93,9 @@ void PartProcessingItem::set_as_part(bool is_part)
 {
     const std::string new_name =
         fmt::format("{} {}", is_part ? _u8L("Part") : _u8L("Object"), m_name);
+    if (m_label->text() == new_name)
+        return;
+
     m_label->set_text(new_name);
 
     if (is_part) {
@@ -118,6 +122,25 @@ bool PartProcessingItem::is_checked() const
 void PartProcessingItem::set_enabled_toggler(bool enabled)
 {
     m_part_toggler->set_enabled(enabled);
+}
+
+const Undo::CutGizmoState::PartState& PartProcessingItem::state() const
+{
+    return m_state;
+}
+
+void PartProcessingItem::set_state(const Undo::CutGizmoState::PartState& state)
+{
+    m_state = state;
+
+    // Note: state.keep is not mutually exclusive with state.flip or state.place_on_cut.
+    // To ensure the correct button is selected, state.keep is evaluated last.
+    AbstractButton* btn = state.flip ? m_flip_btn :
+        state.place_on_cut           ? m_place_on_cut_btn :
+                                       m_keep_btn;
+    btn->set_checked(true);
+
+    m_part_toggler->set_checked(state.keep);
 }
 
 } // namespace Slic3r::App::Yoga
@@ -268,6 +291,9 @@ void CutDialog::init_cut_plane_input_panel()
     {
         keep_as_parts = index == 1;
         update_cut_into_states();
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(false);
+        }
     };
 
     add_groove_input_panel();
@@ -490,32 +516,36 @@ void CutDialog::add_cut_settings()
     m_part_A->set_as_part(false);
     m_part_B->set_as_part(false);
 
-    m_part_A->callbacks().checked_changed = [this](bool checked)
+    m_part_A->callbacks().checked_changed = [this]()
     {
-        keep_upper = checked;
         update_keep_object_warning();
-        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper() && keep_lower());
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(true);
+        }
     };
-    m_part_A->callbacks().part_action_changed = [this](PartProcessingItem::Action action)
+    m_part_A->callbacks().part_action_changed = [this]()
     {
-        keep_upper         = m_part_A->is_checked() || action == PartProcessingItem::Action::Keep;
-        place_on_cut_upper = action == PartProcessingItem::Action::PlaceOnCut;
-        flip_upper         = action == PartProcessingItem::Action::Flip;
         update_keep_object_warning();
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(true);
+        }
     };
 
-    m_part_B->callbacks().checked_changed = [this](bool checked)
+    m_part_B->callbacks().checked_changed = [this]()
     {
-        keep_lower = checked;
         update_keep_object_warning();
-        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+        m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper() && keep_lower());
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(true);
+        }
     };
-    m_part_B->callbacks().part_action_changed = [this](PartProcessingItem::Action action)
+    m_part_B->callbacks().part_action_changed = [this]()
     {
-        keep_lower         = m_part_B->is_checked() || action == PartProcessingItem::Action::Keep;
-        place_on_cut_lower = action == PartProcessingItem::Action::PlaceOnCut;
-        flip_lower         = action == PartProcessingItem::Action::Flip;
         update_keep_object_warning();
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(true);
+        }
     };
 }
 
@@ -545,8 +575,6 @@ void CutDialog::add_connectors_editing_buttons()
 
 void CutDialog::update_state(OutState state)
 {
-    update_keep_object_warning();
-
     bool connectors_warnig = state.connectors_outside_cut_contour > 0
         || state.connectors_outside_object > 0
         || state.connectors_overlap;
@@ -554,7 +582,7 @@ void CutDialog::update_state(OutState state)
     bool has_warnings = connectors_warnig
         || state.plane_outside_object
         || state.invalid_groove
-        || (!keep_upper && !keep_lower);
+        || (!keep_upper() && !keep_lower());
 
     m_perform_btn->set_visible(!connectors_editing);
     m_perform_btn->set_enabled(!has_warnings);
@@ -562,11 +590,11 @@ void CutDialog::update_state(OutState state)
     m_confirm_connectors_btn->set_visible(connectors_editing);
     m_cancel_connectors_btn->set_visible(connectors_editing);
 
-    m_warnings.clear();
+    m_connectors_warnings.clear();
 
     if (connectors_warnig) {
         if (state.connectors_outside_cut_contour > size_t(0)) {
-            m_warnings.emplace_back(
+            m_connectors_warnings.emplace_back(
                 fmt::vformat(
                     _L_PLURAL_u8(
                         "{} connector is out of cut contour",
@@ -578,7 +606,7 @@ void CutDialog::update_state(OutState state)
             );
         }
         if (state.connectors_outside_object > size_t(0)) {
-            m_warnings.emplace_back(
+            m_connectors_warnings.emplace_back(
                 fmt::vformat(
                     _L_PLURAL_u8(
                         "{} connector is out of object",
@@ -590,15 +618,15 @@ void CutDialog::update_state(OutState state)
             );
         }
         if (state.connectors_overlap) {
-            m_warnings.emplace_back(_u8L("Some connectors are overlapped"));
+            m_connectors_warnings.emplace_back(_u8L("Some connectors are overlapped"));
         }
     }
 
     if (state.invalid_groove) {
-        m_warnings.emplace_back(_u8L("Cut plane with groove is invalid"));
+        m_connectors_warnings.emplace_back(_u8L("Cut plane with groove is invalid"));
     }
     if (state.plane_outside_object) {
-        m_warnings.emplace_back(_u8L("Cut plane is placed out of object"));
+        m_connectors_warnings.emplace_back(_u8L("Cut plane is placed out of object"));
     }
 
     update_warnings();
@@ -608,6 +636,63 @@ void CutDialog::update_state(OutState state)
     m_cut_into_row->set_enabled(!state.has_connectors);
     m_remove_connectors_btn->set_visible(state.has_connectors);
     m_mode_row->set_enabled(!state.has_connectors);
+}
+
+void CutDialog::update_from_gizmo_state(const Undo::CutGizmoState& state)
+{
+    set_planar_mode(state.is_planar_mode);
+    if (state.is_planar_mode && state.connectors_editing) {
+        force_connectors_editing();
+    }
+
+    keep_as_parts = state.keep_as_parts;
+    m_cut_into_combo->set_current_index(keep_as_parts ? 1 : 0);
+    update_cut_into_states();
+
+    m_part_A->set_state(state.part_state_upper);
+    m_part_B->set_state(state.part_state_lower);
+
+    update_keep_object_warning();
+}
+
+const Undo::CutGizmoState::PartState& CutDialog::part_state_upper() const
+{
+    return m_part_A->state();
+}
+
+const Undo::CutGizmoState::PartState& CutDialog::part_state_lower() const
+{
+    return m_part_B->state();
+}
+
+bool CutDialog::keep_upper() const
+{
+    return m_part_A->state().keep;
+}
+
+bool CutDialog::keep_lower() const
+{
+    return m_part_B->state().keep;
+}
+
+bool CutDialog::place_on_cut_upper() const
+{
+    return m_part_A->state().place_on_cut;
+}
+
+bool CutDialog::place_on_cut_lower() const
+{
+    return m_part_B->state().place_on_cut;
+}
+
+bool CutDialog::flip_upper() const
+{
+    return m_part_A->state().flip;
+}
+
+bool CutDialog::flip_lower() const
+{
+    return m_part_B->state().flip;
 }
 
 void CutDialog::update_panels_visibility()
@@ -624,36 +709,33 @@ void CutDialog::update_panels_visibility()
 
 void CutDialog::update_keep_object_warning()
 {
-    const std::string warning_text = _u8L("Select at least one object to keep after cutting.");
-
-    bool has_warning = !keep_upper && !keep_lower;
-    m_perform_btn->set_enabled(!has_warning);
-
-    if (has_warning && (m_warnings.empty() || m_warnings.front() != warning_text)) {
-        // Warning is on and not yet preset in the warning list
-        m_warnings.insert(m_warnings.begin(), warning_text);
-    } else if (!has_warning && !m_warnings.empty() && m_warnings.front() == warning_text) {
-        m_warnings.erase(m_warnings.cbegin());
-    }
-
+    m_has_keep_object_warning = !keep_upper() && !keep_lower();
+    m_perform_btn->set_enabled(!m_has_keep_object_warning);
     update_warnings();
 }
 
 void CutDialog::update_warnings()
 {
-    if (m_warnings.empty()) {
-        clear_warning();
+    ASSERT(!m_has_keep_object_warning || m_connectors_warnings.empty());
+    // "keep object" and "connectors" warnings are mutually exclusive, 
+    // so they are handled separately.
+    if (m_has_keep_object_warning) {
+        set_warning(
+            _u8L("Cut tool issues"),
+            _u8L("Select at least one object to keep after cutting.")
+        );
+    } else if (!m_connectors_warnings.empty()) {
+        set_warning(_u8L("Cut tool issues"), m_connectors_warnings);
     } else {
-        set_warning(_u8L("Cut tool issues"), m_warnings);
+        clear_warning();
     }
 }
 
 void CutDialog::update_cut_into_states()
 {
-
     m_part_A->set_as_part(keep_as_parts);
     m_part_B->set_as_part(keep_as_parts);
-    m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper && keep_lower);
+    m_add_connectors_btn->set_enabled(!keep_as_parts && keep_upper() && keep_lower());
 }
 
 void CutDialog::confirm_connectors()
@@ -912,11 +994,13 @@ void CutDialog::add_connectors_help_panel()
         _u8L("Remove connector")
     );
     help.add_item(
-        {{"SHIFT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
+        {{"SHIFT"},
+         GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
         _u8L("Select multiple")
     );
     help.add_item(
-        {{"ALT"}, GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
+        {{"ALT"},
+         GizmoHelpFactory::HelpIcon{Render::Icon::MouseLeft, mouse_help_size, mouse_help_size}},
         _u8L("Remove from selection")
     );
     help.add_item({{"CTRL"}, {"A"}}, _u8L("Select all"));
@@ -980,6 +1064,9 @@ void CutDialog::set_planar_mode(bool is_planar)
     if (!is_planar_cut_mode) {
         m_cut_into_combo->set_current_index(0);
         keep_as_parts = false;
+        if (callbacks().cut_settings_changed) {
+            callbacks().cut_settings_changed(false);
+        }
         update_cut_into_states();
     }
 

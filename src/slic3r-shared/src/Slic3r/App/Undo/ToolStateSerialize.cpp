@@ -32,6 +32,12 @@ void serialize(Archive& archive, BoxType& box)
 }
 
 template <class Archive>
+void serialize(Archive& archive, Slic3r::App::Undo::CutGizmoState::PartState& part_state)
+{
+    archive(part_state.keep, part_state.place_on_cut, part_state.flip);
+}
+
+template <class Archive>
 void serialize(Archive& ar, Slic3r::App::Undo::CutGizmoState& tool_state)
 {
     ar(tool_state.bounding_box,
@@ -39,6 +45,9 @@ void serialize(Archive& ar, Slic3r::App::Undo::CutGizmoState& tool_state)
        tool_state.connectors_editing,
        tool_state.center_offset,
        tool_state.rotation_m,
+       tool_state.keep_as_parts,
+       tool_state.part_state_upper,
+       tool_state.part_state_lower,
        tool_state.groove);
 }
 

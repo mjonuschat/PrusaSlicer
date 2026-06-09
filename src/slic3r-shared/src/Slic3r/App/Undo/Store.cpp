@@ -111,6 +111,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Change connector style");
     case Type::CutChangeConnectorShape:
         return _u8L("Change connector shape");
+    case Type::CutChangeMainSettings:
+        return _u8L("Change cut settings");
     case Type::AddObject:
         return _u8L("Add an object");
     case Type::AddInstance:

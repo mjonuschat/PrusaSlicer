@@ -11,6 +11,8 @@
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 
+#include "Slic3r/App/Undo/ToolState.hpp"
+
 namespace Slic3r::App::Yoga {
 class LayoutButton;
 class ToggleButton;
@@ -28,23 +30,10 @@ public:
     explicit PartProcessingItem(const std::string& part_name, ImColor color);
     virtual ~PartProcessingItem();
 
-    enum class Type
-    {
-        Object,
-        Part
-    };
-
-    enum class Action
-    {
-        Keep,
-        PlaceOnCut,
-        Flip
-    };
-
     struct Callbacks
     {
-        std::function<void(bool checked)> checked_changed{nullptr};
-        std::function<void(Action action)> part_action_changed{nullptr};
+        std::function<void()> checked_changed{nullptr};
+        std::function<void()> part_action_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -52,6 +41,8 @@ public:
     void set_enabled_buttons(bool enabled);
     bool is_checked() const;
     void set_enabled_toggler(bool enabled);
+    const Undo::CutGizmoState::PartState& state() const;
+    void set_state(const Undo::CutGizmoState::PartState& state);
 
 private:
     Yoga::Text* m_label{nullptr};
@@ -64,8 +55,7 @@ private:
     Callbacks m_callbacks;
 
     std::string m_name;
-    Type m_type{Type::Object};
-    Action m_act{Action::Keep}; //?
+    Undo::CutGizmoState::PartState m_state;
 };
 
 } // namespace Slic3r::App::Yoga
@@ -106,8 +96,12 @@ public:
         std::function<void(bool connectors_editing)> connectors_editing_changed{nullptr};
 
         std::function<void()> snap_settings_changed{nullptr};
-        std::function<void(Biz::UndoSnapshotType undo_snapshot_type)> connector_attributes_changed{nullptr};
+        std::function<void(Biz::UndoSnapshotType undo_snapshot_type)> connector_attributes_changed{
+            nullptr
+        };
         std::function<void()> connector_transformations_changed{nullptr};
+
+        std::function<void(bool take_snapshot)> cut_settings_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -132,15 +126,13 @@ public:
     // check state of teh cut settings and show warning line or "Perform" button
     void update_state(OutState state);
 
+    void update_from_gizmo_state(const Undo::CutGizmoState& state);
+    const Undo::CutGizmoState::PartState& part_state_upper() const;
+    const Undo::CutGizmoState::PartState& part_state_lower() const;
+
 public:
     bool is_planar_cut_mode{true};
     bool keep_as_parts{false};
-    bool keep_upper{true};
-    bool keep_lower{true};
-    bool place_on_cut_upper{true};
-    bool place_on_cut_lower{false};
-    bool flip_upper{false};
-    bool flip_lower{false};
     bool connectors_editing{false};
 
     Domain::CutConnectorType connector_type{Domain::CutConnectorType::Plug};
@@ -171,6 +163,13 @@ private:
     void update_cut_into_states();
 
     void confirm_connectors();
+
+    bool keep_upper() const;
+    bool keep_lower() const;
+    bool place_on_cut_upper() const;
+    bool place_on_cut_lower() const;
+    bool flip_upper() const;
+    bool flip_lower() const;
 
     // return an Item(box) where some control can be placed
     Yoga::Item* add_row(const std::string& title, Yoga::Item* parent);
@@ -255,7 +254,8 @@ private:
     // vector of Text items used for mm/inch units
     // Will be updated on units sweetching
     std::vector<Yoga::Text*> m_units;
-    std::vector<std::string> m_warnings;
+    std::vector<std::string> m_connectors_warnings;
+    bool m_has_keep_object_warning{false};
 
     bool m_imperial_units{false};
 };

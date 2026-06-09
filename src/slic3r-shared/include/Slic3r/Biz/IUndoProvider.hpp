@@ -31,6 +31,7 @@ enum class UndoSnapshotType
     CutChangeConnectorType,
     CutChangeConnectorStyle,
     CutChangeConnectorShape,
+    CutChangeMainSettings,
     AddObject,
     AddInstance,
     DelInstance,

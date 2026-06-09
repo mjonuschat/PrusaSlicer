@@ -18,6 +18,18 @@ struct CutGizmoState
     bool connectors_editing{false};
     bool is_planar_mode{true};
     Biz::Cut::Groove groove;
+
+    bool keep_as_parts{false};
+
+    struct PartState
+    {
+        bool keep{true};
+        bool place_on_cut{false};
+        bool flip{false};
+    };
+
+    PartState part_state_upper = {.place_on_cut = true};
+    PartState part_state_lower;
 };
 
 struct HeightRangeGizmoState
