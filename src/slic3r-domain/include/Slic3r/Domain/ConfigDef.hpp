@@ -270,10 +270,6 @@ struct ConfigItemDef
 
         Filament_Overrides_PrintSpeedOverride = 5400,
 
-        Filament_CustomGCode_StartGCode       = 5500,
-        Filament_CustomGCode_EndGCode         = 5501,
-        Filament_CustomGCode_CustomParameters = 5502,
-
         Filament_MaterialPrintingProfile_ProfilesSettings = 5600,
 
         Filament_Notes_Notes = 6000,
@@ -292,8 +288,6 @@ struct ConfigItemDef
         Printer_General_Output                   = 10009,
 
         Printer_Bed_SizeAndCoordinates = 10100,
-
-        Printer_CustomGCode_StartGCodeOptions = 10200,
 
         Printer_MachineLimits_General              = 10300,
         Printer_MachineLimits_MaximumAccelerations = 10301,

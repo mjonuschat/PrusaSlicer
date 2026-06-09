@@ -250,12 +250,6 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Wipe Tower Purging");
     case ConfigItemDef::OptionGroup::Filament_Overrides_PrintSpeedOverride:
         return L("Print Speed Override");
-    case ConfigItemDef::OptionGroup::Filament_CustomGCode_StartGCode:
-        return L("Start G-code");
-    case ConfigItemDef::OptionGroup::Filament_CustomGCode_EndGCode:
-        return L("End G-code");
-    case ConfigItemDef::OptionGroup::Filament_CustomGCode_CustomParameters:
-        return L("Custom Parameters");
     case ConfigItemDef::OptionGroup::Filament_MaterialPrintingProfile_ProfilesSettings:
         return L("Profile settings");
     case ConfigItemDef::OptionGroup::Filament_Notes_Notes:
@@ -282,8 +276,6 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Output");
     case ConfigItemDef::OptionGroup::Printer_Bed_SizeAndCoordinates:
         return L("Size & Coordinates");
-    case ConfigItemDef::OptionGroup::Printer_CustomGCode_StartGCodeOptions:
-        return L("Start G-code options");
     case ConfigItemDef::OptionGroup::Printer_MachineLimits_General:
         return L("General");
     case ConfigItemDef::OptionGroup::Printer_MachineLimits_MaximumAccelerations:
