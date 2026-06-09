@@ -10,6 +10,9 @@ using namespace Slic3r;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
 using Domain::SupportMode;
+using Slic3r::Biz::Algorithms::TriangleMesh::make_cube;
+using Slic3r::Domain::BoundingBox3d;
+using Slic3r::Domain::TriangleMesh;
 
 TEST_CASE("SupportMaterial: Three raft layers created", "[SupportMaterial]")
 {
@@ -128,6 +131,80 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 //            THEN("Layers above top surfaces are spaced correctly")	{ REQUIRE(d == true); }
         }
     }
+}
+
+TEST_CASE("SupportMaterial: Raft under a levitating object", "[SupportMaterial]")
+{
+    using Biz::Algorithms::TriangleMesh::make_cube;
+
+    // 20mm cube lifted 10mm into the air.
+    TriangleMesh cube = make_cube(20.0, 20.0, 20.0);
+    cube.translate(Vec3f(0.0f, 0.0f, 10.0f));
+
+    TestConfig config;
+    config.print.items.opt("support_material").set(SupportMode::Everywhere);
+    config.print.items.opt("raft_layers").set(20);
+
+    Print print;
+    Test::init_and_process_print({cube}, print, config, false);
+
+    const PrintObject* object   = print.objects().front();
+    const SlicingParameters& sp = object->slicing_parameters();
+
+    // The raft must have at least one dense interface layer.
+    bool has_interface_layer = false;
+    for (const SupportLayer* support_layer : object->support_layers()) {
+        if (support_layer->print_z > sp.raft_interface_top_z + EPSILON) {
+            continue;
+        }
+
+        const ExtrusionRole role = support_layer->support_fills.role();
+        if (role.is_support_interface()) {
+            has_interface_layer = true;
+        }
+    }
+
+    REQUIRE(has_interface_layer);
+}
+
+TEST_CASE("SupportMaterial: Raft under a levitating edge-balanced object", "[SupportMaterial]")
+{
+    using Biz::Algorithms::TriangleMesh::make_cube;
+
+    // 20mm cube tilted 45 deg onto its edge and lifted 10mm into the air.
+    TriangleMesh cube = make_cube(20.0, 20.0, 20.0);
+    cube.rotate(std::numbers::pi_v<float> / 4.f, Axis::X);
+    const BoundingBox3d bb = cube.bounding_box();
+    cube.translate(Vec3f(
+        static_cast<float>(-bb.min.x()),
+        static_cast<float>(-bb.min.y()),
+        static_cast<float>(10.0 - bb.min.z())
+    ));
+
+    TestConfig config;
+    config.print.items.opt("support_material").set(SupportMode::Everywhere);
+    config.print.items.opt("raft_layers").set(20);
+
+    Print print;
+    Test::init_and_process_print({cube}, print, config, false);
+
+    const PrintObject* object   = print.objects().front();
+    const SlicingParameters& sp = object->slicing_parameters();
+
+    // The raft interface must have role SupportMaterialInterface, not Mixed.
+    // Mixed means a dense interface only on the edge plus the support columns.
+    bool pure_raft_interface_layer = false;
+    for (const SupportLayer* support_layer : object->support_layers()) {
+        if (support_layer->print_z > sp.raft_interface_top_z + EPSILON) {
+            continue;
+        }
+
+        if (support_layer->support_fills.role() == ExtrusionRole::SupportMaterialInterface) {
+            pure_raft_interface_layer = true;
+        }
+    }
+
+    REQUIRE(pure_raft_interface_layer);
 }
 
 #if 0
