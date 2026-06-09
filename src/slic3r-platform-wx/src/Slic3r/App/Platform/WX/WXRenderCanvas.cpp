@@ -779,7 +779,21 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
         io.AddKeyEvent(ImGuiMod_Alt, evt.AltDown());
         io.AddKeyEvent(ImGuiMod_Super, evt.MetaDown());
 
-        if (key != WXK_TAB && key != WXK_LEFT && key != WXK_UP && key != WXK_RIGHT && key != WXK_DOWN)
+#ifdef _WIN32
+        // A skipped bare Alt makes DefWindowProc enter the hidden modal menu mode
+        // (SC_KEYMENU) that eats all mouse events until the next click.
+        const bool suppress_alt_menu_mode = (key == WXK_ALT);
+#else
+        // Other platforms have no harmful default handling of a bare Alt.
+        const bool suppress_alt_menu_mode = false;
+#endif
+
+        if (key != WXK_TAB
+            && key != WXK_LEFT
+            && key != WXK_UP
+            && key != WXK_RIGHT
+            && key != WXK_DOWN
+            && !suppress_alt_menu_mode)
         {
             evt.Skip(); // Needed to have EVT_CHAR generated as well
         }
