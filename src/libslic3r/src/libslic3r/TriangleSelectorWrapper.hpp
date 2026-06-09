@@ -27,7 +27,7 @@ public:
 
     TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform);
 
-    void enforce_spot(const Vec3f &point, const Vec3f& origin, float radius);
+    void enforce_spot(const Vec3f &point, const Vec3f& origin, float radius, float edge_limit);
 
 };
 

@@ -2131,14 +2131,23 @@ double TriangleSelector::get_triangle_area(const Triangle &triangle) const {
     return (v1 - v0).cross(v2 - v0).norm() / 2.;
 }
 
-TriangleSelector::Cursor::Cursor(const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-    : trafo{trafo_.cast<float>()}, source{source_}, clipping_plane{clipping_plane_}
+TriangleSelector::Cursor::Cursor(
+    const Vec3f& source_,
+    float radius_world,
+    const Transform3d& trafo_,
+    const ClippingPlane& clipping_plane_,
+    const float edge_limit
+) :
+    trafo{trafo_.cast<float>()},
+    source{source_},
+    clipping_plane{clipping_plane_}
 {
     Vec3d sf = Transformation(trafo_).get_scaling_factor();
     if (is_approx(sf.x(), sf.y()) && is_approx(sf.y(), sf.z())) {
         radius                = float(radius_world / sf.x());
         radius_sqr            = float(Slic3r::sqr(radius_world / sf.x()));
         use_world_coordinates = false;
+        m_edge_limit          = float(edge_limit / sf.x());
     } else {
         // In case that the transformation is non-uniform, all checks whether
         // something is inside the cursor should be done in world coords.
@@ -2148,13 +2157,20 @@ TriangleSelector::Cursor::Cursor(const Vec3f &source_, float radius_world, const
         radius                = radius_world;
         radius_sqr            = Slic3r::sqr(radius_world);
         trafo_normal          = trafo.linear().inverse().transpose();
+        m_edge_limit          = edge_limit;
     }
-
-    m_edge_limit = std::sqrt(radius_sqr) / 5.f;
 }
 
-TriangleSelector::SinglePointCursor::SinglePointCursor(const Vec3f& center_, const Vec3f& source_, float radius_world, const Transform3d& trafo_, const ClippingPlane &clipping_plane_)
-    : Cursor(source_, radius_world, trafo_, clipping_plane_), center{center_}
+TriangleSelector::SinglePointCursor::SinglePointCursor(
+    const Vec3f& center_,
+    const Vec3f& source_,
+    float radius_world,
+    const Transform3d& trafo_,
+    const ClippingPlane& clipping_plane_,
+    const float edge_limit
+) :
+    Cursor(source_, radius_world, trafo_, clipping_plane_, edge_limit),
+    center{center_}
 {
     // In case that the transformation is non-uniform, all checks whether
     // something is inside the cursor should be done in world coords.
@@ -2167,8 +2183,18 @@ TriangleSelector::SinglePointCursor::SinglePointCursor(const Vec3f& center_, con
     dir = (center - source).normalized();
 }
 
-TriangleSelector::DoublePointCursor::DoublePointCursor(const Vec3f &first_center_, const Vec3f &second_center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-    : Cursor(source_, radius_world, trafo_, clipping_plane_), first_center{first_center_}, second_center{second_center_}
+TriangleSelector::DoublePointCursor::DoublePointCursor(
+    const Vec3f& first_center_,
+    const Vec3f& second_center_,
+    const Vec3f& source_,
+    float radius_world,
+    const Transform3d& trafo_,
+    const ClippingPlane& clipping_plane_,
+    const float edge_limit
+) :
+    Cursor(source_, radius_world, trafo_, clipping_plane_, edge_limit),
+    first_center{first_center_},
+    second_center{second_center_}
 {
     if (use_world_coordinates) {
         first_center  = trafo * first_center_;
@@ -2373,7 +2399,7 @@ bool TriangleSelector::Capsule2D::is_any_edge_inside_cursor(const Triangle &tr, 
 }
 
 TriangleSelector::HeightRange::HeightRange(const Vec3f &mesh_hit, const Domain::BoundingBox3d &mesh_bbox, float z_range, const Transform3d &trafo, const ClippingPlane &clipping_plane)
-    : Cursor(Vec3f::Zero(), 0.f, trafo, clipping_plane) {
+    : Cursor(Vec3f::Zero(), 0.f, trafo, clipping_plane, 0.f) {
     const Vec3f mesh_hit_world = (trafo * mesh_hit.cast<double>()).cast<float>();
 
     m_z_range_top    = mesh_hit_world.z() + z_range / 2.f;
