@@ -30,6 +30,8 @@ std::unordered_map<ICoreWebView2*,EventRegistrationToken> g_basic_auth_handler_t
 
 void setup_webview_with_credentials(wxWebView* webview, const std::string& username, const std::string& password)
 {
+    SPDLOG_DEBUG("{}", __FUNCTION__);
+
     ASSERT(webview);
     ICoreWebView2* webView2_raw = static_cast<ICoreWebView2*>(webview->GetNativeBackend());
     if (!webView2_raw) {
@@ -57,8 +59,13 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
                 HRESULT hr = args->get_Response(&response);
                 if (FAILED(hr)) return hr;
 
-                response->put_UserName(from_u8(username).c_str());
-                response->put_Password(from_u8(password).c_str());
+                args->put_Cancel(FALSE);
+
+                std::wstring w_username = boost::nowide::widen(username);
+                std::wstring w_password = boost::nowide::widen(password);
+
+                response->put_UserName(w_username.c_str());
+                response->put_Password(w_password.c_str());
                 
                 return S_OK;
             }).Get(),
@@ -74,6 +81,7 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
 
 void remove_webview_credentials(wxWebView* webview)
 {
+    SPDLOG_DEBUG("{}", __FUNCTION__);
     ASSERT(webview);
     ICoreWebView2* webView2_raw = static_cast<ICoreWebView2*>(webview->GetNativeBackend());
     if (!webView2_raw) {
@@ -98,7 +106,7 @@ void remove_webview_credentials(wxWebView* webview)
             g_basic_auth_handler_tokens.erase(it);
         }
     } else {
-        SPDLOG_ERROR("{}: Cannot unregister authentication request handler", __FUNCTION__);
+        SPDLOG_WARN("{}: Cannot unregister authentication request handler", __FUNCTION__);
     }
 
 }

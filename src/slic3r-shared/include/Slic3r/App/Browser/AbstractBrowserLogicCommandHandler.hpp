@@ -32,6 +32,8 @@ protected:
     virtual bool handle_logic_command_SetLoadDefaultURLOnErrorTrue(const std::string& data) = 0;
     virtual bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) = 0;
     virtual bool handle_logic_command_SwitchToSlicing(const std::string& data) = 0;
+    virtual bool handle_logic_command_SetBasicAuth(const std::string& data) = 0;
+    virtual bool handle_logic_command_ClearBasicAuth(const std::string& data) = 0;
 
     bool process_logic_command_vector(std::vector<BrowserLogicCommand>&& command)
     {
@@ -63,6 +65,8 @@ protected:
         case BrowserLogicCommandType::SetLoadDefaultURLOnErrorTrue:  return handle_logic_command_SetLoadDefaultURLOnErrorTrue(command.data);
         case BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse: return handle_logic_command_SetLoadDefaultURLOnErrorFalse(command.data);
         case BrowserLogicCommandType::SwitchToSlicing:               return handle_logic_command_SwitchToSlicing(command.data);
+        case BrowserLogicCommandType::SetBasicAuth:                  return handle_logic_command_SetBasicAuth(command.data);
+        case BrowserLogicCommandType::ClearBasicAuth:                return handle_logic_command_ClearBasicAuth(command.data);
         }
         DEBUG_ASSERT(false, "Missing BrowserLogicCommand handling");
         return true;

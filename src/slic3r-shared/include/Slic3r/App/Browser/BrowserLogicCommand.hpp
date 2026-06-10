@@ -23,6 +23,8 @@ enum class BrowserLogicCommandType
     SetLoadDefaultURLOnErrorTrue,
     SetLoadDefaultURLOnErrorFalse,
     SwitchToSlicing,
+    ClearBasicAuth,
+    SetBasicAuth
 };
 
 struct BrowserLogicCommand

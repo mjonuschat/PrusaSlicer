@@ -595,4 +595,14 @@ bool WebViewDialog::handle_logic_command_SwitchToSlicing(const std::string& data
     return true;
 }
 
+bool WebViewDialog::handle_logic_command_SetBasicAuth(const std::string& data)
+{
+    return false;
+}
+
+bool WebViewDialog::handle_logic_command_ClearBasicAuth(const std::string& data)
+{
+    return false;
+}
+
 } // namespace Slic3r::App::WX::WebView

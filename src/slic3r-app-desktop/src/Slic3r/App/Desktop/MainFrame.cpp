@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Desktop/LeftBar.hpp"
 
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
@@ -23,6 +24,7 @@
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
+#include "Slic3r/App/Browser/BrowserLogicPhysicalPrinter.hpp"
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 
@@ -178,6 +180,7 @@ MainFrame::MainFrame(
     SetForegroundColour(config->get_label_clr_default());
 
     AppServices::instance().app_config_interactor().add_listener<IAppConfigChangedListener>(this);
+    project_interactor.physical_printer_interactor().add_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
 
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -527,7 +530,7 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     m_left_bar->set_compact_mode(true);
 
     init_slicing_page();
-    init_printer_page(project_interactor);
+    init_printers_page(project_interactor);
     init_printables_page(project_interactor);
     init_preferences_button();
 
@@ -569,7 +572,7 @@ void MainFrame::init_preferences_button()
     );
 }
 
-void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
+void MainFrame::init_printers_page(Biz::ProjectInteractor& project_interactor)
 {
     if (!AppServices::instance().app_config().is_prusa_account_enabled()) {
         return;
@@ -601,6 +604,23 @@ void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
     m_left_bar->AddNewPage(webview_panel, WX::_L("Printables"), "lb_printables");
     webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_printables_page_added = true;
+}
+
+void MainFrame::init_physical_printer_page(Biz::ProjectInteractor& project_interactor)
+{
+    assert(!m_physical_printer_page_added);
+    const auto selected_printer = project_interactor.physical_printer_interactor().selected_physical_printer_data();
+    const auto* payload = std::get_if<Slic3r::Biz::PhysicalPrinter::PrinterUpload>(&selected_printer.payload);
+    std::string url = selected_printer.host;
+    static const std::regex scheme_regex(R"(^[a-zA-Z][a-zA-Z0-9+.-]*://)");
+    if (!std::regex_search(url, scheme_regex)) {
+        url = "http://" + url;
+    }
+    std::unique_ptr<App::Browser::BrowserLogicPhysicalPrinter> logic = std::make_unique<App::Browser::BrowserLogicPhysicalPrinter>(url, payload->api_key, payload->username, payload->password);
+    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::PhysicalPrinter), std::move(logic), false);
+    m_left_bar->AddNewPage( webview_panel, WX::_L("Physical Printer"), "lb_printers");
+    webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
+    m_physical_printer_page_added = true;
 }
 
 void MainFrame::complete_and_bind_left_bar()
@@ -659,10 +679,29 @@ void MainFrame::on_user_account_enabled_state_changed(bool is_enabled)
         remove_left_bar_page(LeftBarTabs::Printers);
         m_printers_page_added = false;
     } else if (!m_printers_page_added && is_enabled) {
-        init_printer_page(m_project_interactor);
+        init_printers_page(m_project_interactor);
     }
 
     m_left_bar->ShowUserAccount(is_enabled);
+
+    ensure_slicing_page_selected();
+}
+
+void MainFrame::on_selected_physical_printer_changed() 
+{
+    ASSERT(m_left_bar);
+
+
+    bool show_physicial_printer_page = m_project_interactor.physical_printer_interactor().is_printer_upload_selected();
+    
+    if (m_physical_printer_page_added) {
+        remove_left_bar_page(LeftBarTabs::PhysicalPrinter);
+        m_physical_printer_page_added = false;
+    }
+
+    if (!m_physical_printer_page_added && show_physicial_printer_page) {
+        init_physical_printer_page(m_project_interactor);
+    }
 
     ensure_slicing_page_selected();
 }

@@ -16,6 +16,8 @@
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
+#include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp"
 
 #include <wx/wx.h>
 
@@ -51,6 +53,7 @@ class MainFrame :
     public IAppConfigChangedListener,
     public Biz::IProjectsChangedListener,
     public Biz::UserAccount::IUserAccountListener
+    public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
 {
 public:
     MainFrame(
@@ -83,9 +86,12 @@ public:
     void on_project_loaded(Domain::SelectionId project_id) override;
     void on_project_saved(Domain::SelectionId project_id) override;
 
+    void on_selected_physical_printer_changed() override;
+
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
-    void init_printer_page(Biz::ProjectInteractor& project_interactor);
+    void init_printers_page(Biz::ProjectInteractor& project_interactor);
+    void init_physical_printer_page(Biz::ProjectInteractor& project_interactor);
     void init_slicing_page();
     void init_printables_page(Biz::ProjectInteractor& project_interactor);
     void init_preferences_button();
@@ -138,8 +144,9 @@ private:
     uint32_t m_ulSHChangeNotifyRegister{0};
 #endif // WIN32
 
-    bool m_printables_page_added{false};
-    bool m_printers_page_added{false};
+    bool m_printables_page_added {false};
+    bool m_printers_page_added {false};
+    bool m_physical_printer_page_added {false};
 
 #ifdef USE_NATIVE_MENU
     std::unique_ptr<WX::MacOSNativeMenuBar> m_native_menu_bar;

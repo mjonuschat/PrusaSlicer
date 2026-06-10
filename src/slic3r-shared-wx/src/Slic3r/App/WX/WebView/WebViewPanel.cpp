@@ -18,6 +18,8 @@
 #include <wx/textdlg.h>
 #include <wx/uri.h>
 
+#include "nlohmann/json.hpp"
+
 namespace Slic3r::App::WX::WebView {
 
 WebViewPanel::WebViewPanel(wxWindow* parent,  int id, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create) :
@@ -637,6 +639,29 @@ bool WebViewPanel::handle_logic_command_SwitchToSlicing(const std::string& data)
     if (m_switch_left_tab_fn) {
         m_switch_left_tab_fn(LeftBarTabs::Slicing, {});
     }
+    return true;
+}
+
+bool WebViewPanel::handle_logic_command_SetBasicAuth(const std::string& data)
+{
+    std::string usr;
+    std::string pwd;
+    try {
+        nlohmann::json j = nlohmann::json::parse(data);
+        usr = j["username"].get<std::string>();
+        pwd = j["password"].get<std::string>();
+    } catch (const nlohmann::json::exception& e) {
+        SPDLOG_ERROR("Could not parse json message. {}", e.what());
+        return false;
+    }
+
+    setup_webview_with_credentials(m_web_view, usr, pwd);
+    return true;
+}
+
+bool WebViewPanel::handle_logic_command_ClearBasicAuth(const std::string& data)
+{
+    remove_webview_credentials(m_web_view);
     return true;
 }
 
