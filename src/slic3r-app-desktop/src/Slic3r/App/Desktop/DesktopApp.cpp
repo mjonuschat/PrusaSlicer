@@ -2,6 +2,7 @@
 #include "MainFrame.hpp"
 #include "Slic3r/App/Undo/Store.hpp"
 #include "SplashScreen.hpp"
+#include <wx/weakref.h>
 #include "AppInstanceCheck.hpp"
 #include "SecretStoreFactory.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
@@ -210,7 +211,7 @@ bool DesktopApp::OnInit()
     const wxString dots = WX::from_u8("...");
 
     bool is_editor     = true; // is_editor();
-    SplashScreen* scrn = nullptr;
+    wxWeakRef<SplashScreen> scrn;
     const std::string last_crash_reason =
         app_services.app_config().get<std::string>("crash_reason");
     if (app_services.app_config().get<bool>("show_splash_screen")) {
@@ -238,10 +239,9 @@ bool DesktopApp::OnInit()
         // on set position for splashscreen
         app_services.app_config().resolve_crash(last_crash_reason, "show_splash_screen");
 
-#ifndef __linux__
         wxYield();
-#endif
-        scrn->SetText(WX::_L("Loading configurations") + dots);
+        if (scrn)
+            scrn->SetText(WX::_L("Loading configurations") + dots);
     }
 
     using Biz::Platform::PlatformServices;
