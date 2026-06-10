@@ -6,7 +6,6 @@
 
 #include "Slic3r/App/Desktop/LeftBar.hpp"
 
-#include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
@@ -25,9 +24,6 @@
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/App/Platform/KeyboardShortcut.hpp"
-#include "Slic3r/App/CommandBindingManager.hpp"
-#include "Slic3r/App/MenuManager.hpp"
 
 #include "Slic3r/App/Scene/Scene.hpp"
 
@@ -38,9 +34,9 @@
 #include "Slic3r/App/WX/MacOSNativeMenuBar.hpp"
 #endif
 
+#include <Slic3r/Biz/Platform/Termination.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
-#include "boost/algorithm/string.hpp"
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -166,11 +162,12 @@ MainFrame::MainFrame(
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_preset_interactor(project_interactor.preset_interactor()),
-    m_navigator(navigator)
+    m_navigator(navigator),
+    m_projects_changed_listener_scope(m_project_interactor, *this)
 {
     // AppInstanceCheck on Windows expects "PrusaSlicer" in the title
     // (in AppInstanceMessageHandlerWin32.cpp). Better check it.
-    ASSERT(boost::contains(into_u8(this->GetTitle()), "PrusaSlicer"));
+    ASSERT(into_u8(this->GetTitle()).find("PrusaSlicer") != std::string::npos);
 
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon());
@@ -686,6 +683,28 @@ void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
     m_left_bar->SetSelection(page_index);
 }
 
+void MainFrame::on_project_loaded(Domain::SelectionId project_id)
+{
+    const Domain::Project* project =
+        m_project_interactor.workbench().find_project_by_id(project_id);
+    ASSERT(project);
+
+    AppServices::instance().app_config().app_settings_advanced().push_recent_project(
+        project->loaded_file_path().string()
+    );
+}
+
+void MainFrame::on_project_saved(Domain::SelectionId project_id)
+{
+    const Domain::Project* project =
+        m_project_interactor.workbench().find_project_by_id(project_id);
+    ASSERT(project);
+
+    AppServices::instance().app_config().app_settings_advanced().push_recent_project(
+        project->loaded_file_path().string()
+    );
+}
+
 void MainFrame::sys_color_changed()
 {
     w_config()->force_colors_update(w_config()->dark_mode(), {this});
@@ -925,6 +944,7 @@ void MainFrame::setup_macos_native_menu_bar()
     CommandBindingManager& command_binding_manager = render_module->command_binding_manager();
 
     m_native_menu_bar = std::make_unique<MacOSNativeMenuBar>(
+        m_project_interactor,
         menu_manager,
         command_binding_manager,
         [this]() { m_canvas->SetFocus(); }

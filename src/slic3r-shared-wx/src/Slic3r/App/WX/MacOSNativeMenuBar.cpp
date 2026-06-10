@@ -3,11 +3,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/WX/MacOSNativeMenuBar.hpp"
-#include "Slic3r/App/WX/StringConversions.hpp"
-#include "Slic3r/App/WX/BitmapGetters.hpp"
 
 #ifdef USE_NATIVE_MENU
-
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/MenuItem.hpp"
 #include "Slic3r/App/MenuBuilder.hpp"
@@ -16,17 +13,25 @@
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/Platform/ICommand.hpp"
 #include "Slic3r/App/Platform/KeyboardShortcut.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
+
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 
 namespace Slic3r::App::WX {
 
 MacOSNativeMenuBar::MacOSNativeMenuBar(
+    Biz::ProjectInteractor& project_interactor,
     MenuManager& menu_manager,
     CommandBindingManager& command_binding_manager,
     std::function<void()> force_focused_canvas
 ) :
+    m_project_interactor(project_interactor),
     m_menu_manager(menu_manager),
     m_command_binding_manager(command_binding_manager),
-    m_force_focused_canvas(force_focused_canvas)
+    m_force_focused_canvas(force_focused_canvas),
+    m_projects_changed_listener_scope(project_interactor, *this)
 {}
 
 MacOSNativeMenuBar::~MacOSNativeMenuBar()
@@ -52,6 +57,8 @@ void MacOSNativeMenuBar::build_from_menu_manager()
 
     // Build Help menu (Help button in TopBar)
     build_menu_from_name(MenuItemName::Help);
+
+    update_recent_projects();
 }
 
 void MacOSNativeMenuBar::build_menu_from_name(MenuItemName menu_item_name)
@@ -132,7 +139,12 @@ void MacOSNativeMenuBar::populate_menu(wxMenu* wx_menu, MenuItem* parent_item)
 
         wxString label = from_u8(MenuBuilder::item_name_translated(item->name()));
 
-        if (!item->children().empty()) {
+        if (item->name() == MenuItemName::RecentProjects) {
+            // Recent project is an empty Submenu populated later
+            ASSERT(!m_recent_project_menu, "Recent project menu was added twice");
+            m_recent_project_menu = new wxMenu();
+            m_recent_project_item = wx_menu->AppendSubMenu(m_recent_project_menu, label);
+        } else if (!item->children().empty()) {
             // This is a submenu
             wxMenu* submenu = new wxMenu();
             populate_menu(submenu, item);
@@ -277,6 +289,42 @@ void MacOSNativeMenuBar::on_removable_drive_status_changed(
 )
 {
     update_menu_states();
+}
+
+void MacOSNativeMenuBar::on_project_loaded(Domain::SelectionId project_id)
+{
+    update_recent_projects();
+}
+
+void MacOSNativeMenuBar::on_project_saved(Domain::SelectionId project_id)
+{
+    update_recent_projects();
+}
+
+void MacOSNativeMenuBar::update_recent_projects()
+{
+    // Remove all existing menu items.
+    while (m_recent_project_menu->GetMenuItemCount() > 0) {
+        wxMenuItem* item = m_recent_project_menu->FindItemByPosition(0);
+        m_recent_project_menu->Destroy(item);
+    }
+
+    const AppSettingsAdvanced::RecentProjects& recent_projects =
+        AppServices::instance().app_config().app_settings_advanced().recent_projects;
+
+    for (const std::string& filepath : recent_projects) {
+        const int id = wxWindow::NewControlId();
+
+        m_recent_project_menu->Append(id, from_u8(filepath));
+
+        m_recent_project_menu->Bind(
+            wxEVT_MENU,
+            [this, filepath](wxCommandEvent&) { m_project_interactor.load_project(filepath); },
+            id
+        );
+    }
+
+    m_recent_project_item->Enable(!recent_projects.empty());
 }
 
 } // namespace Slic3r::App::WX

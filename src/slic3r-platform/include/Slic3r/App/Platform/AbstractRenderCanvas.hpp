@@ -13,9 +13,6 @@
 
 #include <Slic3r/App/Render/ImguiRender.hpp>
 
-#ifdef __APPLE__
-#define USE_NATIVE_MENU
-#endif
 
 #ifndef DEBUG_RENDER_TIMING
 #define DEBUG_RENDER_TIMING 0

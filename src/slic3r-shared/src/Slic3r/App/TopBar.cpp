@@ -9,9 +9,10 @@
 
 #include "Slic3r/App/SearchBar.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
 #include "Slic3r/App/MenuBuilder.hpp"
 #include "Slic3r/App/MenuManager.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
 
@@ -35,6 +36,7 @@ TopBar::TopBar(
 ) :
     Window("TopBar"),
     m_selected_project_changed_listener_scope(*project_interactor, *this),
+    m_projects_changed_listener_scope(*project_interactor, *this),
     m_project_interactor(*project_interactor),
     m_render_module(render_module),
     m_navigator(navigator),
@@ -207,6 +209,16 @@ void TopBar::on_undo_store_changed(
     }
 }
 
+void TopBar::on_project_loaded(Domain::SelectionId project_id)
+{
+    update_recent_projects();
+}
+
+void TopBar::on_project_saved(Domain::SelectionId project_id)
+{
+    update_recent_projects();
+}
+
 void TopBar::focus_search()
 {
     m_search_bar->focus_search();
@@ -332,7 +344,41 @@ void TopBar::add_menu_btns(Item* parent)
             m_file_menu_btn->emplace_back<Yoga::Menu>("file_menu", Yoga::Position::Bottom);
         m_file_menu->set_offset(0.f);
         menu_builder.add_menu_items(m_file_menu, file_menu_item);
+
+        const std::vector<App::MenuItem*> children                     = file_menu_item->children();
+        std::vector<App::MenuItem*>::const_iterator recent_projects_it = std::find_if(
+            children.cbegin(),
+            children.cend(),
+            [](App::MenuItem* menu_item)
+            { return menu_item->name() == MenuItemName::RecentProjects; }
+        );
+        ASSERT(recent_projects_it != children.cend());
+        m_recent_projects_item =
+            m_file_menu->item_at(std::distance(children.cbegin(), recent_projects_it));
+
+        update_recent_projects();
     }
+}
+
+void TopBar::update_recent_projects()
+{
+    if (!m_recent_projects_item) {
+        return;
+    }
+
+    m_recent_projects_item->clear_submenu();
+
+    const AppSettingsAdvanced::RecentProjects& recent_projects =
+        AppServices::instance().app_config().app_settings_advanced().recent_projects;
+
+    for (const std::string& recent_project : recent_projects) {
+        Yoga::MenuItem* recent_project_item =
+            m_recent_projects_item->append_sub_menu_item(recent_project);
+        recent_project_item->callbacks().action = [this, recent_project]
+        { m_project_interactor.load_project(recent_project); };
+    }
+
+    m_recent_projects_item->set_enabled(!recent_projects.empty());
 }
 
 void TopBar::register_context_menus(

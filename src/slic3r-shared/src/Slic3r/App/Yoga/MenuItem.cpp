@@ -88,10 +88,8 @@ void MenuItem::append_sub_menu_separator()
 
 void MenuItem::clear_submenu()
 {
-    // !!? add this as a clear() method fo rthe Item !!?
-    // No :))
-    for (Item* child : items()) {
-        m_sub_menu->remove(child);
+    if (m_sub_menu) {
+        m_sub_menu->clear();
     }
 }
 

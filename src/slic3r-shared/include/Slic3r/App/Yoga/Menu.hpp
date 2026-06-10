@@ -22,6 +22,7 @@ public:
     void remove_item(size_t index);
     void clear();
     size_t menu_item_count() const;
+    MenuItem* item_at(size_t index) const;
 
     void append_separator();
     void close_all_submenus() const;

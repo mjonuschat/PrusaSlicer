@@ -47,7 +47,9 @@ public:
 
     void execute() const override
     {
-        m_execute();
+        if (m_execute) {
+            m_execute();
+        }
     }
 
     const std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts() const override

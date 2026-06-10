@@ -61,10 +61,9 @@ enum class MenuItemName
     FileMenu,
     NewProject,
     OpenProject,
+    RecentProjects,
     SaveProject,
     SaveProjectAs,
-
-    RecentProjects,
 
     Import,
     ImportGeometry,

@@ -4,16 +4,18 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
-
 #ifdef USE_NATIVE_MENU
 
 #include <wx/menu.h>
 #include <functional>
 #include <unordered_map>
 
-#include "Slic3r/Biz/ProjectScoped.hpp"
-#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/Platform/ListenerScope.hpp"
+#include "Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp"
+#include "Slic3r/Biz/StatusCache.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 
 namespace Slic3r::App {
 class MenuManager;
@@ -21,6 +23,10 @@ class MenuItem;
 class CommandBindingManager;
 enum class MenuItemName;
 } // namespace Slic3r::App
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
 
 namespace Slic3r::App::WX {
 
@@ -41,7 +47,8 @@ class MacOSNativeMenuBar :
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IStatusCacheChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
-    public Biz::RemovableDrive::IRemovableDriveStatusListener
+    public Biz::RemovableDrive::IRemovableDriveStatusListener,
+    public Biz::IProjectsChangedListener
 {
 public:
     /**
@@ -50,6 +57,7 @@ public:
      * @param command_binding_manager Binding manager to execute commands when menu items are clicked
      */
     MacOSNativeMenuBar(
+        Biz::ProjectInteractor& project_interactor,
         MenuManager& menu_manager,
         CommandBindingManager& command_binding_manager,
         std::function<void()> force_focused_canvas
@@ -105,6 +113,9 @@ public:
         Biz::RemovableDrive::RemovableDriveStatus
     ) override;
 
+    void on_project_loaded(Domain::SelectionId project_id) override;
+    void on_project_saved(Domain::SelectionId project_id) override;
+
 private:
     void build_menu_from_name(MenuItemName menu_item_name);
     wxMenu* build_menu_from_item(MenuItem* menu_item);
@@ -119,10 +130,18 @@ private:
 
     void process_command_event(const char* command_name);
 
+    void update_recent_projects();
+
+    Biz::ProjectInteractor& m_project_interactor;
     MenuManager& m_menu_manager;
     CommandBindingManager& m_command_binding_manager;
     std::function<void()> m_force_focused_canvas{nullptr};
     wxMenuBar* m_menu_bar{nullptr};
+    wxMenu* m_recent_project_menu{nullptr};
+    wxMenuItem* m_recent_project_item{nullptr};
+
+    Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, MacOSNativeMenuBar>
+        m_projects_changed_listener_scope;
 
     // Maps wxMenuItem IDs to command names for execution
     std::unordered_map<int, std::string> m_id_to_command;

@@ -1204,6 +1204,9 @@ find_package(nlohmann_json 3.11 REQUIRED)
 find_package(EXPAT CONFIG REQUIRED)
 find_package(pugixml CONFIG REQUIRED)
 
+if (APPLE)
+    set(USE_NATIVE_MENU_DEFINE "-DUSE_NATIVE_MENU")
+endif()
 
 if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
     find_package(fyaml REQUIRED)
@@ -1281,7 +1284,7 @@ target_link_libraries(slic3r-shared PUBLIC
         range-v3::range-v3
         libcereal
 )
-target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
+target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE} ${USE_NATIVE_MENU_DEFINE})
 if (SLIC3R_SENTRY_DSN)
     target_compile_definitions(slic3r-shared PUBLIC
         SLIC3R_SENTRY

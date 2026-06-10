@@ -333,18 +333,25 @@ void publish(Domain::Model& model, IMessageDialogProvider* messager) {
 }
 }
 
-void ProjectInteractor::save_project(const boost::filesystem::path& file_path, const Store3mfParam& params)
+void ProjectInteractor::save_project(
+    const boost::filesystem::path& file_path,
+    const Store3mfParam& params
+)
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
-    selected_project.set_file_name(file_path.stem().string());
+    selected_project.set_file_path(file_path);
     publish(selected_project.model(), m_dialog_provider);
     store_3mf(file_path.string(), selected_project, params);
 
     selected_project.directory_storage().set_project_dir(file_path);
 
     invoke_listeners<IProjectsChangedListener>(
-        [this](auto* l) { l->on_project_changed(selected_project_id()); }
+        [this](auto* l)
+        {
+            l->on_project_changed(selected_project_id());
+            l->on_project_saved(selected_project_id());
+        }
     );
 }
 

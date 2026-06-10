@@ -8,7 +8,6 @@
 #include "Slic3r/Domain/FindById.hpp"
 #include "Slic3r/Domain/ProjectDirectoryStorage.hpp"
 
-
 namespace Slic3r::Domain {
 class Model;
 class ModelInstance;
@@ -50,9 +49,24 @@ public:
         m_file_name = file_name;
     }
 
+    /**
+     * @warning Do not call this method directly if project is already handled by ProjectInteractor
+     * UI would not be notified
+     */
+    void set_file_path(const boost::filesystem::path& file_path)
+    {
+        m_loaded_file_path = file_path;
+        set_file_name(file_path.stem().string());
+    }
+
     [[nodiscard]] const std::string& file_name() const
     {
         return m_file_name;
+    }
+
+    [[nodiscard]] const boost::filesystem::path& loaded_file_path() const
+    {
+        return m_loaded_file_path;
     }
 
     [[nodiscard]] ConfigContainerList& config_containers()
@@ -82,7 +96,8 @@ public:
 
     [[nodiscard]] const Domain::ModelObject* find_object_by_id(size_t id) const;
     [[nodiscard]] const Domain::ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
-    [[nodiscard]] const Domain::ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id) const;
+    [[nodiscard]] const Domain::ModelInstance*
+    find_instance_by_id(size_t obj_id, size_t inst_id) const;
     [[nodiscard]] const Domain::ModelInstance* find_instance_by_id(size_t inst_id) const;
     [[nodiscard]] Domain::ModelObject* find_object_by_id(size_t id);
     [[nodiscard]] Domain::ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
@@ -146,7 +161,9 @@ public:
 
 private:
     ProjectMetadata m_metadata;
-    std::string m_file_name;
+    std::string m_file_name; ///< Used when saving project, can be changed
+    boost::filesystem::path
+        m_loaded_file_path; ///< Can be empty, path to the project file, set only on load and save
     ConfigContainerList m_config_containers;
     BedContainer m_bed_container;
     std::unique_ptr<Domain::Model> m_model;

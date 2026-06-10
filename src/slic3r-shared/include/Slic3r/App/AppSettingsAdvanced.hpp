@@ -17,9 +17,11 @@ struct AppSettingsAdvanced
     // using PrinterFavoritePresets  = std::set<std::pair<std::string, std::string>>;
     using PrinterFavoritePresets  = std::set<std::string>;
     using MaterialFavoritePresets = std::set<std::string>;
+    using RecentProjects          = std::vector<std::string>;
 
     void toggle_printer_favorite_preset(const std::string& id, const std::string& hw_config_id);
     void toggle_material_favorite_preset(const std::string& id);
+    void push_recent_project(const std::string& recent_project);
 
     bool
     contains_printer_favorite_preset(const std::string& id, const std::string& hw_config_id) const;
@@ -27,6 +29,7 @@ struct AppSettingsAdvanced
 
     PrinterFavoritePresets printer_favorite_presets;
     MaterialFavoritePresets material_favorite_presets;
+    RecentProjects recent_projects;
 };
 
 void to_json(

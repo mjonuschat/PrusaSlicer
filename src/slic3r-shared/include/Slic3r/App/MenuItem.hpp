@@ -35,7 +35,9 @@ public:
     {
         return m_children;
     }
-    bool is_separator() const {
+
+    bool is_separator() const
+    {
         return m_name == MenuItemName::Separator;
     }
 

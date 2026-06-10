@@ -3,15 +3,13 @@
 #include <Slic3r/Domain/SelectionId.hpp>
 
 #include <Slic3r/Biz/Platform/ListenerScope.hpp>
-
-#include "Slic3r/App/Undo/Store.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
+#include "Slic3r/App/Undo/Store.hpp"
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
-
 #include "Slic3r/App/MenuCommandRegistrar.hpp"
 
 namespace Slic3r::App::Platform {
@@ -26,6 +24,7 @@ class LayoutButton;
 class Rectangle;
 class ScrollArea;
 class Menu;
+class MenuItem;
 } // namespace Yoga
 
 struct ThumbnailStore;
@@ -35,7 +34,8 @@ class Navigator;
 class TopBar final :
     public Yoga::Window,
     public Biz::ISelectedProjectChangedListener,
-    public Undo::IStoreChangedListener
+    public Undo::IStoreChangedListener,
+    public Biz::IProjectsChangedListener
 {
 public:
     TopBar(
@@ -60,6 +60,9 @@ public:
         std::size_t selected_index
     ) override;
 
+    void on_project_loaded(Domain::SelectionId project_id) override;
+    void on_project_saved(Domain::SelectionId project_id) override;
+
     void focus_search();
 
 private:
@@ -70,6 +73,8 @@ private:
 
     void add_menu_btns(Item* parent);
 
+    void update_recent_projects();
+
 private:
     using ProjectButtonListView = Yoga::ListView<
         Yoga::ProjectButton,
@@ -79,6 +84,9 @@ private:
 
     Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, TopBar>
         m_selected_project_changed_listener_scope;
+
+    Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, TopBar>
+        m_projects_changed_listener_scope;
 
     ProjectButtonListView* m_list_view{nullptr};
 
@@ -96,6 +104,8 @@ private:
     Yoga::Menu* m_file_menu{nullptr};
     Yoga::Menu* m_undo_menu{nullptr};
     Yoga::Menu* m_redo_menu{nullptr};
+
+    Yoga::MenuItem* m_recent_projects_item{nullptr};
 
     SearchBar* m_search_bar{nullptr};
 

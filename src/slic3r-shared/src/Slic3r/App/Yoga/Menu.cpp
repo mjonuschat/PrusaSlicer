@@ -52,6 +52,11 @@ size_t Menu::menu_item_count() const
     return m_scroll_area->object_count();
 }
 
+MenuItem* Menu::item_at(size_t index) const
+{
+    return m_items.at(index);
+}
+
 void Menu::append_separator()
 {
     m_scroll_area->emplace_back<Separator>();

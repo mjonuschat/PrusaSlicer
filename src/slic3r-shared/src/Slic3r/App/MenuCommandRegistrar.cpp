@@ -2142,6 +2142,10 @@ void MenuCommandRegistrar::register_file_menu_commands()
                 }
             )
         )
+        .register_menu_item(
+            {MenuItemName::FileMenu, MenuItemName::RecentProjects},
+            std::make_unique<UIItemCommand>("recent_projects", nullptr, UIItemCommandExtraOpts{})
+        )
         // File -> Save Project
         .register_menu_item(
             {MenuItemName::FileMenu, MenuItemName::SaveProject},
