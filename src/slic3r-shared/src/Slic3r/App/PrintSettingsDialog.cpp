@@ -70,7 +70,7 @@ PrintSettingsDialog::PrintSettingsDialog(
         {
             DEBUG_ASSERT(
                 item.print_item->def().category != Domain::ConfigItemDef::Category::Unknown,
-                "ConfigItemDef cannot have unkown category, please fill it."
+                "ConfigItemDef cannot have unknown category, please fill it."
             );
 
             if (seen_keys.contains(item.print_item->def().category)) {

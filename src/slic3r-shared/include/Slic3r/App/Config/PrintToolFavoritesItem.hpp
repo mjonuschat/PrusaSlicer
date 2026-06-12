@@ -8,6 +8,7 @@
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/PrintToolItem.hpp"
+#include "Slic3r/App/PrintToolFavoritesOptionGroup.hpp"
 
 #include "Slic3r/App/Config/PrintToolRowItem.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -23,22 +24,23 @@ namespace Slic3r::App {
 
 class PrintToolFavoritesItem : public Yoga::Item
 {
-    using PrintToolRowListViewFactory = Yoga::ViewFactory<
-        PrintToolRowItem,
+    using ObservableFavoritesCategorizer =
+        Biz::ObservableListSortFilter<Biz::PrintToolItem, Domain::ConfigItemDef::Category>;
+
+    using PrintToolFavoritesOptionGroupListViewFactory = Yoga::
+        ViewFactory<PrintToolFavoritesOptionGroup, Biz::PrintToolItem, Biz::ProjectInteractor&>;
+    using PrintToolFavoritesOptionGroupListView = Yoga::ListView<
+        PrintToolFavoritesOptionGroup,
         Biz::PrintToolItem,
-        Biz::PrintToolConfigBoxInteractor&,
-        Biz::IConfigBoxSetter&,
-        Biz::ProjectInteractor&,
-        PrintToolRowItemDisplayOptions>;
-    using PrintToolRowListView =
-        Yoga::ListView<PrintToolRowItem, Biz::PrintToolItem, PrintToolRowListViewFactory>;
+        PrintToolFavoritesOptionGroupListViewFactory>;
 
 public:
     PrintToolFavoritesItem(Biz::ProjectInteractor& project_interactor);
 
 private:
-    PrintToolRowListView* m_rows_list_view{nullptr};
-    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::PrintToolItem>> m_rows_filter_list;
+    Biz::UnsharedPointer<ObservableFavoritesCategorizer> m_favorites_categorizer;
+
+    PrintToolFavoritesOptionGroupListView* m_categories_view{nullptr};
 };
 
 } // namespace Slic3r::App

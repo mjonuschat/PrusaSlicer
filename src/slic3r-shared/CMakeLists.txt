@@ -233,6 +233,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/ObjectConfigItem.cpp
         include/Slic3r/App/OverrideSettingsDialog.hpp
         src/Slic3r/App/OverrideSettingsDialog.cpp
+        include/Slic3r/App/PrintToolFavoritesOptionGroup.hpp
+        src/Slic3r/App/PrintToolFavoritesOptionGroup.cpp
         src/Slic3r/App/WipeTowerSettings.hpp
         src/Slic3r/App/WipeTowerSettings.cpp
         include/Slic3r/App/OverrideCategoryButton.hpp

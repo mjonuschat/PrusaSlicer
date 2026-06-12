@@ -11,42 +11,47 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 PrintToolFavoritesItem::PrintToolFavoritesItem(Biz::ProjectInteractor& project_interactor) :
-    m_rows_filter_list(std::make_shared<Biz::ObservableListSortFilter<Biz::PrintToolItem>>())
+    m_favorites_categorizer(std::make_shared<ObservableFavoritesCategorizer>())
 {
     set_object_name("PrintToolFavoritesItem");
     set_orientation(Orientation::Vertical);
     set_flex_shrink(0);
 
-    m_rows_filter_list->set_filter_fn(
+    m_favorites_categorizer->set_filter_fn(
         [](const Biz::PrintToolItem& item) -> bool { return item.is_favorite; }
     );
-
-    m_rows_filter_list->set_sort_fn(
-        [](const Biz::PrintToolItem& lhs, const Biz::PrintToolItem& rhs)
+    m_favorites_categorizer->set_group_by_fn(
+        [](const Biz::PrintToolItem& item,
+           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys)
         {
-            return lhs.print_item->def().category < rhs.print_item->def().category
-                || (lhs.print_item->def().category == rhs.print_item->def().category
-                    && lhs.print_item->def().option_group < rhs.print_item->def().option_group)
-                || (lhs.print_item->def().category == rhs.print_item->def().category
-                    && lhs.print_item->def().option_group == rhs.print_item->def().option_group
-                    && lhs.print_item->def().order < rhs.print_item->def().order);
+            Domain::ConfigItemDef::Category category = item.print_item->def().category;
+            DEBUG_ASSERT(
+                category != Domain::ConfigItemDef::Category::Unknown,
+                "ConfigItemDef cannot have unknown category, please fill it."
+            );
+
+            if (seen_keys.contains(category)) {
+                return true;
+            } else {
+                seen_keys.insert(category);
+                return false;
+            }
         }
     );
+    m_favorites_categorizer->set_sort_fn(
+        [](const Biz::PrintToolItem& lhs, const Biz::PrintToolItem& rhs)
+        { return lhs.print_item->def().category < rhs.print_item->def().category; }
+    );
 
-    m_rows_filter_list->set_source_model(
+    m_favorites_categorizer->set_source_model(
         project_interactor.preset_interactor().print_tool_cbi().observable_list()
     );
 
-    m_rows_list_view = emplace_back<PrintToolRowListView>(PrintToolRowListViewFactory{
-        project_interactor.preset_interactor().print_tool_cbi(),
-        project_interactor.preset_interactor(),
-        project_interactor,
-        {.show_favorites = false}
-    });
-    m_rows_list_view->set_object_name("PrintToolRowFavoritesListView");
-    m_rows_list_view->set_orientation(Orientation::Vertical);
+    m_categories_view = emplace_back<PrintToolFavoritesOptionGroupListView>(project_interactor);
+    m_categories_view->set_object_name("PrintToolRowFavoritesListView");
+    m_categories_view->set_orientation(Orientation::Vertical);
 
-    m_rows_list_view->set_source_list(m_rows_filter_list.get());
+    m_categories_view->set_source_list(m_favorites_categorizer.get());
 }
 
 } // namespace Slic3r::App

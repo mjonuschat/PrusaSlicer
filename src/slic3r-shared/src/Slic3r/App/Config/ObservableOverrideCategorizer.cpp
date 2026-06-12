@@ -44,7 +44,7 @@ ObservableOverrideCategorizer::ObservableOverrideCategorizer()
             Domain::ConfigItemDef::Category category = item.config_item->def().category;
             DEBUG_ASSERT(
                 category != Domain::ConfigItemDef::Category::Unknown,
-                "ConfigItemDef cannot have unkown category, please fill it."
+                "ConfigItemDef cannot have unknown category, please fill it."
             );
 
             if (seen_keys.contains(category)) {

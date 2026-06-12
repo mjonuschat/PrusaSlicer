@@ -62,11 +62,6 @@ private:
     void update_enable_modifiers();
 
 private:
-    using ConfigItemListViewFactory =
-        Yoga::ViewFactory<ObjectConfigItem, Biz::OverrideItem, Biz::Preset::PresetInteractor&>;
-    using ConfigItemListView =
-        Yoga::ListView<ObjectConfigItem, Biz::OverrideItem, ConfigItemListViewFactory>;
-
     using OverrideGroupListViewFactory =
         Yoga::ViewFactory<OverrideOptionGroup, Biz::OverrideItem, Biz::ProjectInteractor&>;
     using OverrideGroupListView =
