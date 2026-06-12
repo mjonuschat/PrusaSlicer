@@ -212,8 +212,6 @@ MainFrame::MainFrame(
                 project_interactor.user_account_interactor().do_log_out(true);
             }
         },
-        []() {} // TODO finish with preferences options
-        ,
         [&project_interactor]()
         {
             return TabsBarMenus::UserAccountInfo{
