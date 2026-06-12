@@ -228,6 +228,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->location = printer;
     def->label = L("Printer notes");
     def->category = ConfigItemDef::Category::Printer_Notes;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_Notes_Notes; 
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put your notes regarding the printer here.");
     def->multiline = true;

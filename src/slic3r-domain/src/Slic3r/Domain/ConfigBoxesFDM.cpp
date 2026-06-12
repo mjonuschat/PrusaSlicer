@@ -231,6 +231,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("Before layer change G-code");
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 3;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This custom code is inserted at every layer change, right before the Z move. "
@@ -245,6 +246,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("Between objects G-code");
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 6;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This code is inserted between objects when using sequential printing. By default extruder and bed temperature are reset using non-wait command; however if M104, M109, M140 or M190 are detected in this custom code, Slic3r will not add temperature commands. Note that you can use placeholder variables for all Slic3r settings, so you can put a \"M109 S[first_layer_temperature]\" command wherever you want.");
@@ -779,6 +781,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 2;
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file. "
@@ -799,6 +802,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("End G-code");
     def->category = ConfigItemDef::Category::Filament_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Filament_CustomGCode;
     def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This end procedure is inserted at the end of the output file, before the printer end gcode (and "
@@ -2327,6 +2331,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("After layer change G-code");
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 4;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This custom code is inserted at every layer change, right after the Z move "
@@ -3600,6 +3605,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("autoemit_temperature_commands", typeid(bool));
     def->location = Printer;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->order = 1;
     def->label = L("Emit temperature commands automatically");
@@ -3619,6 +3625,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("start_gcode", typeid(std::string));
     def->location = Printer;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 0;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Start G-code");
@@ -3633,6 +3640,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("Start G-code");
     def->category = ConfigItemDef::Category::Filament_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Filament_CustomGCode;
     def->order = 0;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This start procedure is inserted at the beginning, after any printer start gcode (and "
@@ -3653,6 +3661,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("Color change G-code");
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 7;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This G-code will be used as a code for the color change");
@@ -3664,6 +3673,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("pause_print_gcode", typeid(std::string));
     def->location = Printer;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 8;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Pause Print G-code");
@@ -3677,6 +3687,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("Custom G-code");
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 9;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This G-code will be used as a custom code");
@@ -4322,6 +4333,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("toolchange_gcode", typeid(std::string));
     def->location = Printer;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Tool change G-code");
@@ -4814,6 +4826,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("custom_parameters_print", typeid(std::string));
     def->location = Print;
     def->category = ConfigItemDef::Category::Print_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Print_CustomGCode;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Custom print parameters");
     // FIXME: Translating the tooltip like this will likely not work.
@@ -4833,6 +4846,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("custom_parameters_printer", typeid(std::string));
     def->location = Printer;
     def->category = ConfigItemDef::Category::Printer_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Printer_CustomGCode;
     def->order = 10;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Custom printer parameters");
@@ -4846,6 +4860,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->order = 2;
     def->category = ConfigItemDef::Category::Filament_CustomGCode;
+    def->option_group = ConfigItemDef::OptionGroup::Filament_CustomGCode;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Custom filament parameters");
     def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_filament").str();

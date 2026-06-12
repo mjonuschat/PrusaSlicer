@@ -212,6 +212,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Hollowing");
     case ConfigItemDef::OptionGroup::Print_OutputOptions_OutputFile:
         return L("Output file");
+    case ConfigItemDef::OptionGroup::Print_CustomGCode:
+        return L("Custom G-code");
     case ConfigItemDef::OptionGroup::Print_Notes_Notes:
         return L("Notes");
     case ConfigItemDef::OptionGroup::Filament_MaterialTemperatures_MaterialProperty:
@@ -252,6 +254,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Print Speed Override");
     case ConfigItemDef::OptionGroup::Filament_MaterialPrintingProfile_ProfilesSettings:
         return L("Profile settings");
+    case ConfigItemDef::OptionGroup::Filament_CustomGCode:
+        return L("Custom G-code");
     case ConfigItemDef::OptionGroup::Filament_Notes_Notes:
         return L("Notes");
     case ConfigItemDef::OptionGroup::Printer_General_FirmwareGCode:
@@ -295,7 +299,9 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
     case ConfigItemDef::OptionGroup::
         Printer_SingleExtruderMMSetup_SingleExtruderMultimaterialParameters:
         return L("Single Extruder Multimaterial parameters");
-    case ConfigItemDef::OptionGroup::Printer_Notes_Note:
+    case ConfigItemDef::OptionGroup::Printer_CustomGCode:
+        return L("Custom G-code");
+    case ConfigItemDef::OptionGroup::Printer_Notes_Notes:
         return L("Notes");
     case ConfigItemDef::OptionGroup::AppConfig_General_General:
         return L("General");

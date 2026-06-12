@@ -241,9 +241,11 @@ struct ConfigItemDef
 
         Print_Hollowing_Hollowing = 1200,
 
-        Print_OutputOptions_OutputFile = 2000,
+        Print_CustomGCode = 1300,
 
-        Print_Notes_Notes = 2100,
+        Print_OutputOptions_OutputFile = 1400,
+
+        Print_Notes_Notes = 1500,
 
         ///////////////// Filament //////////////////
 
@@ -271,6 +273,8 @@ struct ConfigItemDef
         Filament_Overrides_PrintSpeedOverride = 5400,
 
         Filament_MaterialPrintingProfile_ProfilesSettings = 5600,
+
+        Filament_CustomGCode = 5700,
 
         Filament_Notes_Notes = 6000,
 
@@ -301,7 +305,9 @@ struct ConfigItemDef
 
         Printer_SingleExtruderMMSetup_SingleExtruderMultimaterialParameters = 10500,
 
-        Printer_Notes_Note = 10600,
+        Printer_CustomGCode = 10600,
+
+        Printer_Notes_Notes = 10700,
 
         ///////////////// AppConfig //////////////////
 
