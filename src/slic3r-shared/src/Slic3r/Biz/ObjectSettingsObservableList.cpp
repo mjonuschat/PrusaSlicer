@@ -24,6 +24,13 @@ size_t ObjectSettingsObservableList::size() const
     return m_items.size();
 }
 
+void ObjectSettingsObservableList::set_object_settings_source(
+    const Domain::ConfigBox* object_settings_source
+)
+{
+    m_object_settings_source = object_settings_source;
+}
+
 void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigBox*>& sources)
 {
     std::vector<OverrideItemPtr> new_items;
@@ -114,6 +121,8 @@ ObjectSettingsObservableList::set_value(const std::string& key, const Domain::Co
         }
     }
 
+    update_overriden(item);
+
     m_scene_interactor.undo_provider().take_snapshot(UndoSnapshotType::SetPartSettingsValue);
 
     invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
@@ -139,10 +148,10 @@ void ObjectSettingsObservableList::set_override(const std::string& key, bool ena
 const Domain::ConfigValue*
 ObjectSettingsObservableList::find_object_value(const std::string& key, size_t index)
 {
-    OverrideItem* item = find_item(key);
-    ASSERT(item && item->is_override(), "key has to correspond with existing override item");
-
-    return item ? &item->config_item->value() : nullptr;
+    if (m_object_settings_source) {
+        return &m_object_settings_source->find(key).item->value();
+    }
+    return nullptr;
 }
 
 OverrideItem* ObjectSettingsObservableList::find_item(const std::string& name)

@@ -6,10 +6,10 @@
 
 #include "Slic3r/App/Config/ObservableOverrideCategorizer.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/OverrideCategoryButton.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
-#include "Slic3r/App/OverrideItemPreviewRow.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/OverrideCategoryButton.hpp"
+#include "Slic3r/App/OverridablePreviewSubcategoryItem.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -45,15 +45,17 @@ private:
         Yoga::ListView<OverrideCategoryButton, Biz::OverrideItem, OverrideCategoryFactory>;
 
     using OverrideConfigListViewFactory = Yoga::ViewFactory<
-        OverrideItemPreviewRow,
+        OverridablePreviewSubcategoryItem,
         Biz::OverrideItem,
         Biz::Preset::PresetInteractor&>;
     using OverrideConfigListView = Yoga::ListView<
-        OverrideItemPreviewRow,
+        OverridablePreviewSubcategoryItem,
         Biz::OverrideItem,
         OverrideConfigListViewFactory,
         Yoga::ScrollArea>;
-    using OverrideConfigFilter = Biz::ObservableListSortFilter<Biz::OverrideItem>;
+
+    using OverrideConfigFilter =
+        Biz::ObservableListSortFilter<Biz::OverrideItem, Domain::ConfigItemDef::OptionGroup>;
 
     Biz::ProjectInteractor& m_project_interactor;
 

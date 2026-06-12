@@ -28,6 +28,13 @@ void ObservableOverrideCategorizer::set_default_categories(
     m_def_categories = def_categories;
 }
 
+void ObservableOverrideCategorizer::set_ignored_categories(
+    std::initializer_list<Domain::ConfigItemDef::Category> ignored_categories
+)
+{
+    m_ignored_categories = ignored_categories;
+}
+
 ObservableOverrideCategorizer::ObservableOverrideCategorizer()
 {
     set_filter_fn(
@@ -37,6 +44,12 @@ ObservableOverrideCategorizer::ObservableOverrideCategorizer()
                 != m_def_categories.end())
             {
                 return true;
+            }
+
+            if (std::ranges::find(m_ignored_categories, item.config_item->def().category)
+                != m_ignored_categories.end())
+            {
+                return false;
             }
 
             if (!item.is_override()) {

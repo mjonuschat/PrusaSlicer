@@ -3,18 +3,23 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+
+#include <unordered_set>
 
 namespace Slic3r::Biz {
 
 ObjectSettingsInteractor::ObjectSettingsInteractor(
     SetAccessor& set_accessor,
     Domain::Workbench& workbench,
-    Scene::SceneInteractor& scene_interactor
+    Scene::SceneInteractor& scene_interactor,
+    IConfigBoxSetter& preset_interactor
 ) :
     m_workbench(workbench),
     m_scene_interactor(scene_interactor),
+    m_preset_interactor(preset_interactor),
     m_scene_selection_listener_scope(scene_interactor, *this),
     m_scene_changed_listener_scope(scene_interactor, *this),
     m_object_observable_list(std::make_shared<ObjectSettingsObservableList>(m_scene_interactor))
@@ -102,6 +107,7 @@ void ObjectSettingsInteractor::update_sources()
         Domain::Project& project = m_workbench.project(m_project_id);
 
         if (m_current_selection.mode == Scene::SelectionMode::Instance) {
+            m_object_observable_list->set_object_settings_source(nullptr);
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
                 if (ref.is_wipe_tower()) {
                     continue;
@@ -124,8 +130,10 @@ void ObjectSettingsInteractor::update_sources()
 
                 Domain::ModelObject* model_object = project.find_object_by_id(ref.object_id);
                 if (m_current_print_technology == Domain::PrinterTechnology::FFF) {
+                    update_settings_from_original(model_object->object_settings);
                     sources.push_back(&model_object->object_settings);
                 } else {
+                    update_settings_from_original(model_object->object_settings_sla);
                     sources.push_back(&model_object->object_settings_sla);
                 }
             }
@@ -134,15 +142,36 @@ void ObjectSettingsInteractor::update_sources()
             && m_current_print_technology == Domain::PrinterTechnology::FFF
         )
         {
+            Domain::ModelObject* model_object =
+                project.find_object_by_id(m_current_selection.elements.front().object_id);
+            update_settings_from_original(model_object->object_settings);
+
+            m_object_observable_list->set_object_settings_source(&model_object->object_settings);
+
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
                 Domain::ModelVolume* model_volume =
                     project.find_volume_by_id(ref.object_id, ref.volume_id);
+                update_settings_from_original(model_volume->volume_settings);
                 sources.push_back(&model_volume->volume_settings);
             }
         }
     }
 
     m_object_observable_list->set_sources(sources);
+}
+
+void ObjectSettingsInteractor::update_settings_from_original(Domain::ConfigBox& settings)
+{
+    for (Domain::ConfigItem& item : settings.overrides.all_items()) {
+        if (!settings.overrides.get(item.name()).has_value()) {
+            // Restore original values only for items without overrides.
+            if (const Domain::ConfigValue* value =
+                    m_preset_interactor.get_override_original_value(item, 0))
+            {
+                item.set(*value);
+            }
+        }
+    }
 }
 
 void ObjectSettingsInteractor::SetAccessor::set_source(

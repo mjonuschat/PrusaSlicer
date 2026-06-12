@@ -47,9 +47,6 @@ OverrideItemRow::OverrideItemRow(
         Biz::_u8L("Remove override")
     );
     remove_button->set_background_color(Platform::Color::ButtonTransparent);
-    remove_button->set_icon_tint(
-        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
-    );
     remove_button->set_width(22);
     remove_button->set_height(22);
     remove_button->set_content_padding(4);

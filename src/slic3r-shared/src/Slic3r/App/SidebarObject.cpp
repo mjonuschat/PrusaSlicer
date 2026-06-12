@@ -68,35 +68,40 @@ public:
         on_color_selected = [this](std::size_t index)
         {
             const Biz::Scene::ObjectSelection& selection{
-                m_project_interactor.scene_interactor().object_selection()};
+                m_project_interactor.scene_interactor().object_selection()
+            };
 
             Domain::Project& project{m_project_interactor.selected_project()};
-            for (const Domain::ElementRef& element :
-                 selection.elements)
-            {
+            for (const Domain::ElementRef& element : selection.elements) {
                 const Domain::ModelObject* model_object{
-                    project.find_object_by_id(element.object_id)};
+                    project.find_object_by_id(element.object_id)
+                };
                 if (!model_object) {
                     continue;
                 }
 
                 if (selection.mode == Biz::Scene::SelectionMode::Instance) {
                     const Domain::ConfigItem& item{
-                        model_object->object_settings.items.opt("extruder")};
+                        model_object->object_settings.items.opt("extruder")
+                    };
                     m_project_interactor.preset_interactor().set_item_value(
                         item,
-                        Domain::ConfigValue{static_cast<int>(index)});
+                        Domain::ConfigValue{static_cast<int>(index)}
+                    );
                 } else if (selection.mode == Biz::Scene::SelectionMode::Volume) {
                     const Domain::ModelVolume* model_volume{
-                        project.find_volume_by_id(element.object_id, element.volume_id)};
+                        project.find_volume_by_id(element.object_id, element.volume_id)
+                    };
                     if (!model_volume) {
                         continue;
                     }
                     const Domain::ConfigItem& item{
-                        *model_volume->volume_settings.overrides.find("extruder")};
+                        *model_volume->volume_settings.overrides.find("extruder")
+                    };
                     m_project_interactor.preset_interactor().set_item_value(
                         item,
-                        Domain::ConfigValue{static_cast<int>(index)});
+                        Domain::ConfigValue{static_cast<int>(index)}
+                    );
                     m_project_interactor.preset_interactor().set_item_override(item, index != 0);
                 }
             }
@@ -122,7 +127,9 @@ public:
             return;
         }
         const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
-        if (location != Domain::FDMConfigLocation::Object && location != Domain::FDMConfigLocation::Volume) {
+        if (location != Domain::FDMConfigLocation::Object
+            && location != Domain::FDMConfigLocation::Volume)
+        {
             return;
         }
         if (item.name() != "extruder") {
@@ -308,13 +315,16 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
 
     m_override_group_filter = std::make_shared<ObservableOverrideCategorizer>();
     m_override_group_filter->set_allow_disabled(false);
-    m_override_group_filter->set_default_categories({
-        Domain::ConfigItemDef::Category::Print_Infill,
-        Domain::ConfigItemDef::Category::Print_LayersSurfaces,
-        Domain::ConfigItemDef::Category::Print_Supports,
-        Domain::ConfigItemDef::Category::Print_WallsPerimeters,
-        Domain::ConfigItemDef::Category::Print_BedAdhesion
-    });
+    m_override_group_filter->set_default_categories(
+        {Domain::ConfigItemDef::Category::Print_Infill,
+         Domain::ConfigItemDef::Category::Print_LayersSurfaces,
+         Domain::ConfigItemDef::Category::Print_Supports,
+         Domain::ConfigItemDef::Category::Print_WallsPerimeters,
+         Domain::ConfigItemDef::Category::Print_BedAdhesion}
+    );
+    m_override_group_filter->set_ignored_categories(
+        {Domain::ConfigItemDef::Category::Object_Extruders}
+    );
 
     m_open_override_settings_dialog_for_category = [this](Domain::ConfigItemDef::Category category)
     { m_override_settings_dialog->open_for_category(category); };

@@ -68,9 +68,6 @@ OverrideOptionGroup::OverrideOptionGroup(
             m_open_dialog_for_category(m_category);
         }
     };
-    add_overrides_btn->set_icon_tint(
-        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
-    );
 
     m_override_config_filter = std::make_shared<OverrideConfigFilter>();
     m_override_config_filter->set_filter_fn(
@@ -79,6 +76,15 @@ OverrideOptionGroup::OverrideOptionGroup(
             return item.is_override()
                 && item.config_item->def().category == m_category
                 && item.overriden.value();
+        }
+    );
+    m_override_config_filter->set_sort_fn(
+        [](const Biz::OverrideItem& lhs, const Biz::OverrideItem& rhs)
+        {
+            return lhs.config_item->def().option_group < rhs.config_item->def().option_group
+                || (lhs.config_item->def().category == rhs.config_item->def().category
+                    && lhs.config_item->def().option_group == rhs.config_item->def().option_group
+                    && lhs.config_item->def().order < rhs.config_item->def().order);
         }
     );
 

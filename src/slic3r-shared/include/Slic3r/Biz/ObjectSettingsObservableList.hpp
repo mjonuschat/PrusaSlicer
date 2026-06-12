@@ -22,12 +22,13 @@ public:
 
     void set_sources(const std::vector<Domain::ConfigBox*>& sources);
 
+    void set_object_settings_source(const Domain::ConfigBox* object_settings_source);
+
     void set_value(const std::string& key, const Domain::ConfigValue& value);
 
     void set_override(const std::string& key, bool enabled);
 
-    const Domain::ConfigValue*
-        find_object_value(const std::string& key, size_t index = 0);
+    const Domain::ConfigValue* find_object_value(const std::string& key, size_t index = 0);
 
 private:
     OverrideItem* find_item(const std::string& name);
@@ -39,6 +40,10 @@ private:
     using OverrideItemPtr = std::unique_ptr<OverrideItem>;
     using ItemMap         = std::unordered_map<std::string, size_t>;
     std::vector<Domain::ConfigBox*> m_sources;
+
+    // Source ConfigBox used to get object settings when ObjectSettingsObservableList
+    // is used for volume settings overrides.
+    const Domain::ConfigBox* m_object_settings_source{nullptr};
 
     std::unordered_map<OverrideItem*, std::set<Domain::ConfigBox*>> m_item_sources;
     std::vector<OverrideItemPtr> m_items;

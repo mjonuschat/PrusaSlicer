@@ -10,9 +10,7 @@
 
 namespace Slic3r::Biz {
 
-namespace Preset {
-class PresetInteractor;
-} // namespace Preset
+class IConfigBoxSetter;
 
 namespace Scene {
 class SceneInteractor;
@@ -33,7 +31,7 @@ public:
         void set_value(const std::string& key, const Domain::ConfigValue& value);
         void set_override(const std::string& key, bool enable);
         const Domain::ConfigValue*
-            find_object_value(const std::string& key, size_t index = 0) const;
+        find_object_value(const std::string& key, size_t index = 0) const;
 
     private:
         std::weak_ptr<ObjectSettingsObservableList> m_object_observable_list;
@@ -42,7 +40,8 @@ public:
     explicit ObjectSettingsInteractor(
         SetAccessor& set_accessor,
         Domain::Workbench& workbench,
-        Scene::SceneInteractor& scene_interactor
+        Scene::SceneInteractor& scene_interactor,
+        IConfigBoxSetter& preset_interactor
     );
     ~ObjectSettingsInteractor();
     ObjectSettingsInteractor(ObjectSettingsInteractor&&) = default;
@@ -67,15 +66,16 @@ public:
 
     void on_model_reloaded(Domain::SelectionId project_id) override;
 
-
     void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) override;
 
 private:
     void update_sources();
+    void update_settings_from_original(Domain::ConfigBox& object_settings);
 
 private:
     Domain::Workbench& m_workbench;
     Scene::SceneInteractor& m_scene_interactor;
+    IConfigBoxSetter& m_preset_interactor;
 
     ListenerScope<
         Scene::ISceneSelectionChangedListener,

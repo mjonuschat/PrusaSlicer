@@ -78,7 +78,8 @@ PresetInteractor::PresetInteractor(
     m_object_settings_interactor(
         m_object_settings_interactor_accessor,
         m_workbench,
-        scene_interactor
+        scene_interactor,
+        *this
     ),
     m_print_tool_cbi(m_workbench, scene_interactor, m_print_tool_cbi_accessor)
 {
@@ -1946,10 +1947,9 @@ PresetInteractor::get_override_original_value(const Domain::ConfigItem& item, si
                     return m_material_cbi_list.at(index).find(name);
                 case Domain::FDMConfigLocation::Tool:
                     return m_print_tool_cbi.find_tool_value(name, index);
-                default:
-                case Domain::FDMConfigLocation::Object:{
+                case Domain::FDMConfigLocation::Object:
                     return m_object_settings_interactor_accessor.find_object_value(name, index);
-                } break;
+                default:
                     break;
                 }
             } else if constexpr (std::is_same_v<T, Domain::SLAConfigLocation>) {
@@ -2060,8 +2060,19 @@ void PresetInteractor::set_item_override(const Domain::ConfigItem& item, bool en
                 } break;
                 case Domain::FDMConfigLocation::Object:
                 case Domain::FDMConfigLocation::Volume: {
+                    if (!enable) {
+                        // For Objects and Volumes, revert the overridden value to the original value
+                        // when removing the override.
+                        if (const auto* original_value = get_override_original_value(item, 0)) {
+                            m_object_settings_interactor_accessor.set_value(
+                                item.name(),
+                                *original_value
+                            );
+                        }
+                    }
                     m_object_settings_interactor_accessor.set_override(name, enable);
-                } break;
+                    break;
+                }
                 default:
                     break;
                 }

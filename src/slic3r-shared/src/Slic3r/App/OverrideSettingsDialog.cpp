@@ -29,6 +29,7 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     m_stack_layout->set_orientation(Orientation::Vertical);
 
     m_categorizer = std::make_shared<ObservableOverrideCategorizer>();
+    m_categorizer->set_ignored_categories({Domain::ConfigItemDef::Category::Object_Extruders});
 
     m_select_category = [this](Domain::ConfigItemDef::Category category)
     {
@@ -75,6 +76,7 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     back_button->callbacks().action = [this]() { on_about_to_show(); };
     m_options_category_text         = back_row->emplace_back<Text>(std::string());
     m_options_category_text->set_flex_grow(1);
+    m_options_category_text->set_self_align(YGAlignCenter);
     m_options_category_text->set_font_type(Render::ImguiFontType::Bold);
 
     options_page->emplace_back<Separator>(Orientation::Horizontal)->set_margin(Margins(-20, 0));
@@ -83,6 +85,34 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     m_category_filter->set_filter_fn(
         [this](const Biz::OverrideItem& item) -> bool
         { return item.is_override() && item.config_item->def().category == m_current_category; }
+    );
+    m_category_filter->set_sort_fn(
+        [](const Biz::OverrideItem& lhs, const Biz::OverrideItem& rhs)
+        {
+            return lhs.config_item->def().option_group < rhs.config_item->def().option_group
+                || (lhs.config_item->def().category == rhs.config_item->def().category
+                    && lhs.config_item->def().option_group == rhs.config_item->def().option_group
+                    && lhs.config_item->def().order < rhs.config_item->def().order);
+        }
+    );
+    // also group by option_group
+    m_category_filter->set_group_by_fn(
+        [](const Biz::OverrideItem& item,
+           std::unordered_set<Domain::ConfigItemDef::OptionGroup>& seen_keys) -> bool
+        {
+            const Domain::ConfigItemDef::OptionGroup& option_group =
+                item.config_item->def().option_group;
+            if (option_group == Domain::ConfigItemDef::OptionGroup::Unknown) {
+                PANIC("All option groups have to be known");
+            } else {
+                if (seen_keys.contains(option_group)) {
+                    return true;
+                } else {
+                    seen_keys.insert(option_group);
+                    return false;
+                }
+            }
+        }
     );
 
     m_override_config_list_view = options_page->emplace_back<OverrideConfigListView>(
@@ -102,8 +132,8 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
 
 void OverrideSettingsDialog::open_for_category(Domain::ConfigItemDef::Category category)
 {
-    if (!this->opened()) {
-        this->open();
+    if (!opened()) {
+        open();
     }
     if (m_select_category) {
         m_select_category(category);

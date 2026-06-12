@@ -11,6 +11,26 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
+static LayoutButton* add_button(
+    Item* parent,
+    Render::Icon icon,
+    const std::string& tooltip,
+    std::optional<ImColor> icon_tint_color = std::nullopt
+)
+{
+    LayoutButton* button = parent->emplace_back<LayoutButton>(std::string(), icon, tooltip);
+    button->set_background_color(Platform::Color::ButtonTransparent);
+    if (icon_tint_color) {
+        button->set_icon_tint(icon_tint_color.value());
+    }
+    button->set_width(22);
+    button->set_height(22);
+    button->set_content_padding(Paddings(2));
+    button->set_flex_shrink(0);
+
+    return button;
+}
+
 OverrideItemPreviewRow::OverrideItemPreviewRow(
     size_t index,
     const Biz::OverrideItem& data,
@@ -43,19 +63,12 @@ OverrideItemPreviewRow::OverrideItemPreviewRow(
     m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
     m_sidetext->set_font_type(Render::ImguiFontType::Italic);
 
-    m_add_button = container->emplace_back<LayoutButton>(
-        std::string(),
+    m_add_button = add_button(
+        container,
         Render::Icon::Plus,
-        Biz::_u8L("Add override")
+        Biz::_u8L("Add override"),
+        m_theme->color_imgui(Platform::Color::Text)
     );
-    m_add_button->set_background_color(Platform::Color::ButtonTransparent);
-    m_add_button->set_icon_tint(
-        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
-    );
-    m_add_button->set_width(22);
-    m_add_button->set_height(22);
-    m_add_button->set_content_padding(Paddings(2));
-    m_add_button->set_flex_shrink(0);
     m_add_button->callbacks().action = [this]
     { m_preset_interactor.set_item_override(*m_state->config_item, true); };
 
@@ -66,16 +79,26 @@ void OverrideItemPreviewRow::on_data_update()
 {
     ASSERT(m_state->is_override());
 
-    m_label->set_text(Biz::_u8(m_state->config_item->def().label));
-    m_preview->set_data(*m_state->config_item, m_state->config_item->value(), false);
+    const Domain::ConfigItem& item = *m_state->config_item;
+    m_label->set_text(Biz::_u8(item.def().label));
+    m_preview->set_data(item, item.value(), m_state->mixed);
+
+    const Domain::ConfigValue* init_value =
+        m_preset_interactor.get_override_original_value(item, 0);
+
+    const bool is_changed_value = (init_value ? item.value() != *init_value : true) || m_state->mixed;
+    m_label->set_text_color(m_theme->color_imgui(
+        is_changed_value ? Platform::Color::AccentSecondary : Platform::Color::Text
+    ));
 
     m_add_button->set_visible(!m_state->overriden.value());
 
-    m_sidetext->set_text(
-        *m_state->config_item->def().type == typeid(Domain::FloatOrPercentage) ?
-            std::string() : // For this item, m_preview already contains the measurement unit.
-            Biz::_u8(m_state->config_item->def().sidetext)
-    );
+    // Side text does not make sense for mixed values.
+    // For typeid(Domain::FloatOrPercentage) items, m_preview already contains
+    // the measurement unit.
+    const bool hide_sidetext =
+        *item.def().type == typeid(Domain::FloatOrPercentage) || m_state->mixed;
+    m_sidetext->set_text(hide_sidetext ? std::string() : Biz::_u8(item.def().sidetext));
 }
 
 } // namespace Slic3r::App
