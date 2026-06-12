@@ -888,6 +888,15 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         return on_mouse_for_cut_line(ctx, only_active);
     }
 
+    Handle hovered_handle;
+    if (const Scene::Node* handle_node = ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>())
+    {
+        const CutHandleNodeTag& tag = *handle_node->tag_of_type<CutHandleNodeTag>();
+        ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
+        hovered_handle = tag.handle();
+    }
+    update_handles_nodes(hovered_handle);
+
     const auto& pick_ray = ctx.pick_ray();
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         Scene::Node* part_node = ctx.pick_result_node_with_tag_of_type<CutPartNodeTag>();
@@ -986,40 +995,6 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
     return Scene::GizmoActivationState();
 }
 
-void CutGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
-{
-    if (m_dragging)
-        return;
-
-    if (const Scene::Node* handle_node = ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>())
-    {
-        const CutHandleNodeTag& tag = *handle_node->tag_of_type<CutHandleNodeTag>();
-        ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
-        update_handles_nodes(tag.handle());
-        return;
-    }
-
-    if (m_dialog->connectors_editing) {
-        const Scene::Node* connector_node =
-            ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>();
-        std::optional<size_t> hovered_connector_id = connector_node ?
-            std::optional<size_t>(connector_node->tag_of_type<CutConnectorNodeTag>()->id) :
-            std::nullopt;
-
-        if (m_hovered_connector_id != hovered_connector_id) {
-            m_hovered_connector_id = hovered_connector_id;
-            update_connectors_nodes_colors();
-        }
-    }
-
-    if (m_is_cut_line_processing) {
-        m_line_end = ray_origin_on_near_z_plane(m_scene_presenter.scene().camera(), ctx.pick_ray());
-        update_cut_line_node();
-    }
-
-    clear_highlight();
-}
-
 Scene::GizmoActivationState
 CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_active)
 {
@@ -1060,8 +1035,20 @@ CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_activ
         update_connectors_nodes_colors();
     }
 
-    if (!m_dragging)
+    if (!m_dragging) {
+        const Scene::Node* connector_node =
+            ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>();
+        std::optional<size_t> hovered_connector_id = connector_node ?
+            std::optional<size_t>(connector_node->tag_of_type<CutConnectorNodeTag>()->id) :
+            std::nullopt;
+
+        if (m_hovered_connector_id != hovered_connector_id) {
+            m_hovered_connector_id = hovered_connector_id;
+            update_connectors_nodes_colors();
+        }
+
         return Scene::GizmoActivationState::Inactive;
+    }
 
     if (m_is_connector_handled) {
         Domain::Vec3d pos_world;
@@ -1113,13 +1100,6 @@ void CutGizmo::provide_clipper(Scene::Clipper& clipper)
 void CutGizmo::provide_gizmo_controller(Scene::IGizmoController& controller)
 {
     m_controller = &controller;
-}
-
-void CutGizmo::clear_highlight()
-{
-    if (m_handles_node) {
-        update_handles_nodes();
-    }
 }
 
 void CutGizmo::on_stop_dragging()
@@ -2983,7 +2963,6 @@ bool CutGizmo::remove_selected_connectors()
             scene.remove_child(node);
         }
     }
-    check_and_update_connectors_state();
 
     ASSERT(connectors.size() == m_connectors_node->children().size());
 
@@ -2993,6 +2972,7 @@ bool CutGizmo::remove_selected_connectors()
     for (const auto& node : m_connectors_node->children()) {
         node.get()->tag_of_type<CutConnectorNodeTag>()->id = id++;
     }
+    check_and_update_connectors_state();
 
     take_snapshot(UndoSnapshotType::CutRemoveConnector);
 
@@ -3246,6 +3226,9 @@ CutGizmo::on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active)
         m_is_cut_line_processing = false;
         return Scene::GizmoActivationState::Inactive;
     }
+
+    m_line_end = ray_origin_on_near_z_plane(m_scene_presenter.scene().camera(), ctx.pick_ray());
+    update_cut_line_node();
 
     Scene::Ray pick_ray = ctx.pick_ray();
     if (event_button == Platform::MouseButton::Left

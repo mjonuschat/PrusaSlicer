@@ -73,7 +73,6 @@ public:
      * @{
      */
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
-    void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
     void on_cycle_prepare() override;
     bool disable_object_selection() const override;
     void provide_clipper(Scene::Clipper& clipper) override;
@@ -190,7 +189,6 @@ private:
     bool flip_upper() const;
     bool flip_lower() const;
 
-    void clear_highlight();
     void on_stop_dragging();
 
     bool add_connector(Domain::Vec3d pos_world);
