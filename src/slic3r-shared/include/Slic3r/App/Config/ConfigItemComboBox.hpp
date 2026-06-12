@@ -20,8 +20,8 @@ public:
     ConfigItemComboBox(
         size_t index,
         const Domain::ConfigItem& config_item,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -30,14 +30,11 @@ protected:
     void initialize();
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index = 0;
-
     Yoga::Passthrough<Yoga::IntValidator> m_int_validator;
     Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
     Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;
 
-    const Domain::ConfigItem* m_last_item{ nullptr };
+    const Domain::ConfigItem* m_last_item{nullptr};
     bool m_init = false;
 };
 

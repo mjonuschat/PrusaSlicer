@@ -19,12 +19,10 @@ namespace Slic3r::App {
 ConfigItemPoints::ConfigItemPoints(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     set_orientation(Orientation::Vertical);
     set_gap(5);
@@ -57,7 +55,7 @@ void ConfigItemPoints::send_data()
         data.push_back({point.validator_x->value(), point.validator_y->value()});
     }
 
-    m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
+    set_item_value(Domain::ConfigValue{data});
 }
 
 void ConfigItemPoints::construct_points()

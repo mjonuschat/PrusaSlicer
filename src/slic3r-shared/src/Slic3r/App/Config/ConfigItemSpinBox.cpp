@@ -4,8 +4,10 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
 
-#include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
+#include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -15,35 +17,33 @@ namespace Slic3r::App {
 ConfigItemSpinBox::ConfigItemSpinBox(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
+    ConfigItemControl(index, data, cb_setter, cbi_index),
     InputTextWithSpin(
         std::make_unique<IntValidator>(
             data.def().min.value_or(std::numeric_limits<int>::min()),
             data.def().max.value_or(std::numeric_limits<int>::max())
         )
-    ),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    )
 {
     set_width(80);
     m_value_validator = dynamic_cast<IntValidator*>(validator());
 
     callbacks().text_edited = [this]()
     {
+        std::optional<Domain::ConfigValue> val;
         if (*m_state->def().type == typeid(int)) {
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{value()}, m_cbi_index);
+            val = Domain::ConfigValue{value()};
         } else if (*m_state->def().type == typeid(std::optional<int>)) {
             if (m_state->get<std::optional<int>>().has_value()) {
-                m_cbi_container
-                    .set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{std::optional<int>(value())},
-                    m_cbi_index
-                );
+                val = Domain::ConfigValue{std::optional<int>(value())};
             }
+        }
+
+        if (val.has_value()) {
+            set_item_value(val.value());
         }
     };
 
@@ -62,7 +62,7 @@ int ConfigItemSpinBox::value() const
 void ConfigItemSpinBox::on_data_update()
 {
     if (mixed()) {
-        set_override_label("Mixed");
+        set_override_label(Biz::_u8L("Mixed"));
         set_font_type(Render::ImguiFontType::Italic);
         return;
     }

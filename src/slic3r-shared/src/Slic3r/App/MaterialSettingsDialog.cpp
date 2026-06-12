@@ -237,6 +237,10 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
     tab.replace_stack_layout(std::move(category_list_view));
 
     tab.page_list_view->set_source_list(category_page_transformer.get());
+
+    if (tab.page_list_view->list_item_count()) {
+        tab.page_list_view->item_at(0)->set_checked(true);
+    }
 }
 
 void MaterialSettingsDialog::ConfigTab::navigate_to_item(const Domain::ConfigItem* config_item)

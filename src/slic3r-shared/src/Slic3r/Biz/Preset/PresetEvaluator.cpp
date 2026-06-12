@@ -483,6 +483,27 @@ const Domain::Preset::PresetNode* PresetEvaluator::find_node(PresetKind kind, st
     return &*it;
 }
 
+void PresetEvaluator::fill_missing_tool_overrides_from_print(
+    Domain::Preset::EvaluatedToolPrintPreset& tool_print_preset,
+    const Domain::ConfigBox& print_config_box,
+    const HwPrinterConfig& hw_config
+)
+{
+    if (Domain::Preset::get_feature<bool>(hw_config.features, "multi_extruder").value_or(false)) {
+        Domain::ConfigOverrides& tool_overrides = tool_print_preset.preset.config_box().overrides;
+        for (Domain::ConfigItem& override_item : tool_overrides.all_items()) {
+            const std::string& name = override_item.name();
+            if (!tool_overrides.get(name).has_value()) {
+                // ToolOverride is not set
+                const Domain::ConfigItem* print_item = print_config_box.items.find(name);
+                ASSERT(print_item);
+                // Set it with Print value
+                tool_overrides.set(name, print_item->value());
+            }
+        }
+    }
+}
+
 PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrinterConfig& hw_config, bool use_material_cache) const
 {
     Expr::ValueMap printer_values;
@@ -562,15 +583,22 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
 
                     // evaluate all variants
                     Domain::Preset::SingleToolEvaluatedToolPrintPresets eval_variants;
-                    auto tool_preset_variants = tool_eval.eval_preset({tool_values});
-                    for (const auto& tool_variant : tool_preset_variants)
-                        eval_variants.emplace_back(
+                    EvalPresetContexts tool_preset_variants = tool_eval.eval_preset({tool_values});
+                    for (const EvalPresetContext& tool_variant : tool_preset_variants) {
+                        Domain::Preset::EvaluatedToolPrintPreset evaluated_tool_preset{
                             preset_from_context<Domain::ToolPrintSettings, std::monostate>(
                                 hw_config,
                                 tool_kind,
                                 tool_variant
                             )
+                        };
+                        fill_missing_tool_overrides_from_print(
+                            evaluated_tool_preset,
+                            evaluated_print_preset.config_box(),
+                            hw_config
                         );
+                        eval_variants.push_back(std::move(evaluated_tool_preset));
+                    }
                     tools.emplace_back(std::move(eval_variants));
                 }
             }

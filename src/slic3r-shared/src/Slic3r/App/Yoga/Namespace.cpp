@@ -237,4 +237,28 @@ Unit operator/(Unit unit, float scalar)
     return unit;
 }
 
+Unit operator+(Unit lhs, Unit rhs)
+{
+    ASSERT(lhs.type == rhs.type);
+    return {lhs.value + rhs.value, lhs.type};
+}
+
+Unit operator-(Unit lhs, Unit rhs)
+{
+    ASSERT(lhs.type == rhs.type);
+    return {lhs.value - rhs.value, lhs.type};
+}
+
+Unit operator*(Unit lhs, Unit rhs)
+{
+    ASSERT(lhs.type == rhs.type);
+    return {lhs.value * rhs.value, lhs.type};
+}
+
+Unit operator/(Unit lhs, Unit rhs)
+{
+    ASSERT(lhs.type == rhs.type);
+    return {lhs.value / rhs.value, lhs.type};
+}
+
 } // namespace Slic3r::App::Yoga

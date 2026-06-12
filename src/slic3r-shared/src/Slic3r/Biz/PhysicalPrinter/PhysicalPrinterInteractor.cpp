@@ -226,22 +226,27 @@ const Domain::ConfigValue* PhysicalPrinterInteractor::get_override_original_valu
     return m_cbi.find(item.name());
 }
 
-void PhysicalPrinterInteractor::set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index)
+void PhysicalPrinterInteractor::set_item_value(
+    const Domain::ConfigItem& item,
+    const Domain::ConfigValue& value,
+    const std::vector<size_t>& indexes
+)
 {
     m_cbi_accessor.set_value(item.name(), value);
-    
+
     size_t current_idx = m_selected_index;
     if (current_idx != 0) {
         // Edited printer is existing configuration. Save after each changed value.
         const auto& hw_config = m_storage.hw_config(m_selected_uuid);
         m_storage.save_one(m_selected_uuid, hw_config);
-        
+
         m_observable_list.set(
-            settings_to_printer(m_storage.all_settings().at(m_selected_uuid), hw_config), 
+            settings_to_printer(m_storage.all_settings().at(m_selected_uuid), hw_config),
             current_idx
         );
-        
-        invoke_listeners<IPhysicalPrinterChangedListener>([](auto* l) { l->on_printer_data_changed(); });
+
+        invoke_listeners<IPhysicalPrinterChangedListener>([](auto* l)
+                                                          { l->on_printer_data_changed(); });
     }
 }
 

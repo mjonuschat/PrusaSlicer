@@ -23,8 +23,8 @@ public:
     ConfigItemComboBoxes(
         size_t index,
         const Domain::ConfigItem& config_item,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -35,8 +35,6 @@ private:
     void update_values();
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
     std::vector<Yoga::ComboBox*> m_combo_boxes;
 };
 

@@ -225,6 +225,7 @@ enum class Icon : wchar_t
     ArrowRight,
     PhysicalPrinterIcon,
     CheckMark,
+    Robot,
 
     // FontIconS
     // DO NOT TOUCH, DO NOT CHANGE ORDER

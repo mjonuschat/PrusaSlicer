@@ -54,7 +54,7 @@ PrintToolFavoritesOptionGroup::PrintToolFavoritesOptionGroup(
         project_interactor.preset_interactor().print_tool_cbi(),
         project_interactor.preset_interactor(),
         project_interactor,
-        {.show_favorites = false}
+        {.show_favorites = false, .show_explanation = false}
     });
     m_favorites_list_view->set_orientation(Orientation::Vertical);
     m_favorites_list_view->set_gap(0);

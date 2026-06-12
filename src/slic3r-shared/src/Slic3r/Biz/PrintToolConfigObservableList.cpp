@@ -33,11 +33,13 @@ size_t PrintToolConfigObservableList::size() const
 
 void PrintToolConfigObservableList::set_sources(
     const Domain::SelectionId selected_project_id,
+    const Domain::SelectionId selected_container_id,
     Domain::Preset::SelectedPreset& selected_preset,
     const std::vector<Domain::ConfigBox*>& tool_config_boxes
 )
 {
-    m_selected_project_id = selected_project_id;
+    m_selected_project_id   = selected_project_id;
+    m_selected_container_id = selected_container_id;
     m_extruder_candidates.clear();
 
     Domain::ConfigBox& print_config_box = selected_preset.print.config_box();
@@ -63,24 +65,20 @@ void PrintToolConfigObservableList::set_sources(
         m_tool_config_boxes = tool_config_boxes;
         m_items.clear();
         for (const Domain::ConfigItem& print_item : print_items) {
-            std::vector<PrintToolItem::ToolOverride> tool_items;
             std::vector<const Domain::ConfigItem*> tool_overrides;
             if (print_item.def().overrides_in.contains(Domain::FDMConfigLocation::Tool)) {
-                tool_items.reserve(tool_config_boxes.size());
+                tool_overrides.reserve(tool_config_boxes.size());
                 for (const Domain::ConfigBox* tool_config_box : tool_config_boxes) {
                     const Domain::ConfigItem* tool_override =
                         tool_config_box->overrides.find(print_item.name());
-                    bool overriden = tool_config_box->overrides.get(print_item.name()).has_value();
-                    ASSERT(tool_override);
-                    tool_items.emplace_back(tool_override, overriden);
-                    tool_overrides.emplace_back(overriden ? tool_override : nullptr);
+                    tool_overrides.emplace_back(tool_override);
                 }
             }
             m_items.emplace_back(
                 print_item.name(),
                 false,
                 &print_item,
-                tool_items,
+                tool_overrides,
                 Domain::apply_compatibility_rule(
                     &print_item.value(),
                     tool_overrides,
@@ -120,54 +118,31 @@ void PrintToolConfigObservableList::set_tool_override(
     bool override
 )
 {
-    PrintToolItems::iterator index_it = find_item(key);
-
-    if (index_it != m_items.cend() && index < index_it->tool_overrides.size()) {
-        if (override) {
-            m_tool_config_boxes.at(index)->overrides.enable(key);
-        } else {
-            m_tool_config_boxes.at(index)->overrides.disable(key);
-        }
-
-        index_it->tool_overrides.at(index).second = override;
-        index_it->update_value();
-
-        const size_t override_index = std::distance(m_items.begin(), index_it);
-        invoke_listeners<IListObserver<PrintToolItem>>(
-            [override_index](IListObserver<PrintToolItem>* l) { l->on_updated(override_index); }
-        );
-    }
+    // Does nothing, override is always set
 }
 
 void PrintToolConfigObservableList::set_tool_value(
     const std::string& key,
-    size_t index,
+    const std::vector<size_t>& indexes,
     const Domain::ConfigValue& value
 )
 {
     PrintToolItems::iterator index_it = find_item(key);
 
-    if (index_it != m_items.cend()
-        && index < index_it->tool_overrides.size()
-        && index_it->tool_overrides.at(index).first->value() != value)
-    {
-        m_tool_config_boxes.at(index)->overrides.set(key, value);
-        index_it->tool_overrides.at(index).second = true;
+    if (index_it != m_items.cend()) {
+        for (size_t index : indexes) {
+            if (index > m_tool_config_boxes.size()) {
+                continue;
+            }
+            m_tool_config_boxes.at(index)->overrides.set(key, value);
+        }
+
         index_it->update_value();
 
         const size_t override_index = std::distance(m_items.begin(), index_it);
         invoke_listeners<IListObserver<PrintToolItem>>(
             [override_index](IListObserver<PrintToolItem>* l) { l->on_updated(override_index); }
         );
-    }
-}
-
-void PrintToolConfigObservableList::set_project_id(const Domain::SelectionId selected_project_id)
-{
-    if (m_selected_project_id != selected_project_id) {
-        m_selected_project_id = selected_project_id;
-
-        update_extruders();
     }
 }
 
@@ -193,6 +168,7 @@ void PrintToolConfigObservableList::on_bed_instance_extruder_candidates_changed(
 )
 {
     if (m_selected_project_id == project_id
+        && instance.config_container_id == m_selected_container_id
         && m_scene_interactor.bed_selection().last_selected_bed() == instance)
     {
         update_extruders();
@@ -204,7 +180,9 @@ void PrintToolConfigObservableList::on_selected_bed_instances_changed(
     const Scene::BedSelection& bed_selection
 )
 {
-    if (m_selected_project_id == project_id) {
+    if (m_selected_project_id == project_id
+        && m_selected_container_id == bed_selection.last_selected_bed().config_container_id)
+    {
         update_extruders();
     }
 }
@@ -263,7 +241,6 @@ void PrintToolConfigObservableList::update_items()
 
         tool_print_item.print_item = m_print_config_box->items.find(tool_print_item.name);
 
-        tool_print_item.tool_overrides.clear();
         std::vector<const Domain::ConfigItem*> tool_overrides;
         if (tool_print_item.print_item->def().overrides_in.contains(
                 Domain::FDMConfigLocation::Tool
@@ -272,14 +249,11 @@ void PrintToolConfigObservableList::update_items()
             for (const Domain::ConfigBox* tool_config_box : m_tool_config_boxes) {
                 const Domain::ConfigItem* tool_override =
                     tool_config_box->overrides.find(tool_print_item.print_item->name());
-                bool overriden =
-                    tool_config_box->overrides.get(tool_print_item.print_item->name()).has_value();
-                ASSERT(tool_override);
-                tool_print_item.tool_overrides.emplace_back(tool_override, overriden);
-                tool_overrides.emplace_back(overriden ? tool_override : nullptr);
+                tool_overrides.emplace_back(tool_override);
             }
         }
-        tool_print_item.value = Domain::apply_compatibility_rule(
+        tool_print_item.tool_overrides = tool_overrides;
+        tool_print_item.value          = Domain::apply_compatibility_rule(
             &tool_print_item.print_item->value(),
             tool_overrides,
             m_extruder_candidates

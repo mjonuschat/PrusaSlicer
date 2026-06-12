@@ -23,8 +23,8 @@ public:
     ConfigItemCheckBoxes(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -37,8 +37,6 @@ private:
     void update_values();
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
     std::vector<Yoga::ToggleButton*> m_toggle_buttons;
 };
 

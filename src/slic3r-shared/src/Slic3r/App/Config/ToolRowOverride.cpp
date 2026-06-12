@@ -1,0 +1,17 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#include "Slic3r/App/Config/ToolRowOverride.hpp"
+
+#include "Slic3r/App/Config/ConfigItemUtils.hpp"
+#include "Slic3r/Domain/Config.hpp"
+
+namespace Slic3r::App {
+
+std::string ToolRowOverride::dnd_key() const
+{
+    return override_item->name() + "_" + ConfigItemUtils::config_item_to_string(*override_item);
+}
+
+} // namespace Slic3r::App

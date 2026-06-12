@@ -15,16 +15,12 @@ public:
     ConfigItemRammingParams(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
     void on_data_update() override;
-
-private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
 };
 
 } // namespace Slic3r::App

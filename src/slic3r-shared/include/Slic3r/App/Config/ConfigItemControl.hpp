@@ -22,7 +22,12 @@ namespace Slic3r::App {
 class ConfigItemControl : public Biz::DataObserver<Domain::ConfigItem>
 {
 public:
-    explicit ConfigItemControl(size_t index, const Domain::ConfigItem& data);
+    explicit ConfigItemControl(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
+    );
 
     static ConfigItemControl* config_item_control_factory(
         Yoga::Item* container,
@@ -30,7 +35,7 @@ public:
         size_t data_index,
         const Domain::ConfigItem& item,
         Biz::IConfigBoxSetter& cb_setter,
-        size_t cbi_index
+        std::vector<size_t> cbi_index
     );
 
     bool mixed() const;
@@ -50,6 +55,12 @@ protected:
     std::string tooltip_text() const;
 
     Biz::ProjectInteractor* project_interactor() const;
+
+    void set_item_value(const Domain::ConfigValue& value);
+
+protected:
+    Biz::IConfigBoxSetter& m_cbi_container;
+    std::vector<size_t> m_cbi_index;
 
 private:
     static Biz::ProjectInteractor* m_project_interactor;

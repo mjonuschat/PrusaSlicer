@@ -87,12 +87,10 @@ static InputTextField* add_input(
 ConfigItemBedShape::ConfigItemBedShape(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index),
+    ConfigItemControl(index, data, cb_setter, cbi_index),
     m_bed_shape({})
 {
     bool is_imperial_units{false}; // ToDo detect this value from app_config
@@ -220,8 +218,7 @@ void ConfigItemBedShape::send_data()
         return;
     }
 
-    m_cbi_container
-        .set_item_value(*m_state, Domain::ConfigValue{m_bed_shape.contour()}, m_cbi_index);
+    set_item_value(Domain::ConfigValue{m_bed_shape.contour()});
 }
 
 // Loads an stl file, projects it to the XY plane and calculates a polygon.

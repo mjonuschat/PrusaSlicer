@@ -307,10 +307,13 @@ Biz::Slicing::ApplyStatus::Status Print::update(
         const std::vector<unsigned> extruder_candidates{
             metadata.hw_config.material_slot_count() == 1 ?
                 std::vector<unsigned>{0} :
-                Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)};
-        if (m_extruder_candidates != extruder_candidates) {
-            m_on_extruder_candidates(extruder_candidates);
-        }
+                Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
+        };
+        // Backend needs extruder_candidates for MMU, but in Biz/App extruder candidates
+        // has to correspond to tool count
+        m_on_extruder_candidates(
+            metadata.hw_config.tool_count == 1 ? std::vector<unsigned>{0} : extruder_candidates
+        );
 
         std::vector<Biz::Slicing::Error> errors{
             validate_input(model, config_fdm, metadata.hw_config)
@@ -452,7 +455,11 @@ std::vector<unsigned int> Print::extruders() const
     // The wipe tower extruder can also be set. When the wipe tower is enabled and it will be generated,
     // append its extruder into the list too.
     if (can_have_wipe_tower() && config().get<int>("wipe_tower_extruder") != 0 && extruders.size() > 1) {
-        assert(config().get<int>("wipe_tower_extruder") > 0 && config().get<int>("wipe_tower_extruder") < int(config().hw_config().material_slot_count()));
+        assert(
+            config().get<int>("wipe_tower_extruder") > 0
+            && config().get<int>("wipe_tower_extruder")
+                <= int(config().hw_config().material_slot_count())
+        );
         extruders.emplace_back(config().get<int>("wipe_tower_extruder") - 1); // the config value is 1-based
         sort_remove_duplicates(extruders);
     }

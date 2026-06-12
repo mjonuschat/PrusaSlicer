@@ -23,8 +23,8 @@ public:
     ConfigItemSpinBox(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
     int value() const;
@@ -35,9 +35,6 @@ protected:
     void update_value(const Domain::ConfigValue& value);
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
-
     Yoga::IntValidator* m_value_validator{nullptr};
 };
 

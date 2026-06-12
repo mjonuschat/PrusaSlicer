@@ -18,12 +18,10 @@ namespace Slic3r::App {
 ConfigItemTextFields::ConfigItemTextFields(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -83,7 +81,7 @@ void ConfigItemTextFields::send_data()
     for (size_t i = 0; i < values.size(); ++i) {
         values[i] = m_fields.at(i).double_validator->value();
     }
-    m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
+    set_item_value(Domain::ConfigValue{values});
 }
 
 } // namespace Slic3r::App

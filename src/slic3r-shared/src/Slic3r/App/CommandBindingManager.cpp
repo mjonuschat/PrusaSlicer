@@ -1,7 +1,7 @@
 #include "Slic3r/App/CommandBindingManager.hpp"
 
 #include "Slic3r/App/UIItemCommand.hpp"
-#include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
 
 #include "Slic3r/App/Scene/GizmoCommandRegistry.hpp"
 
@@ -12,9 +12,9 @@ namespace Slic3r::App {
 static auto translator = [](const std::string& s) { return Biz::_u8(s); };
 
 void
-CommandBindingManager::bind_menu_item(const UIItemCommand* command, Yoga::AbstractButton* ui_item)
+CommandBindingManager::bind_menu_item(const UIItemCommand* command, Yoga::MenuItem* ui_item)
 {
-    ui_item->callbacks().action = [this, command]() { command->execute(); };
+    ui_item->callbacks().action = [command]() { command->execute(); };
 
     ui_item->callbacks().checked_changed = [command](bool checked)
     { command->checked_changed(checked); };

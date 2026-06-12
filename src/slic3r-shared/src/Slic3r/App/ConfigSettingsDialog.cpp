@@ -23,7 +23,11 @@ ConfigSettingsDialog::ConfigSettingsDialog(
     m_navigator(navigator)
 {}
 
-ConfigSettingsDialog::ConfigSettingsDialog(Biz::IConfigBoxSetter& cbi_container, Navigator & navigator, const std::string & name) :
+ConfigSettingsDialog::ConfigSettingsDialog(
+    Biz::IConfigBoxSetter& cbi_container,
+    Navigator& navigator,
+    const std::string& name
+) :
     AbstractSettingsDialog({}, name.empty() ? "ConfigSettingsDialog" : name),
     m_cbi_container(cbi_container),
     m_navigator(navigator)
@@ -92,22 +96,25 @@ void ConfigSettingsDialog::ConfigTab::init()
         Domain::ConfigItem,
         Biz::IConfigBoxSetter&,
         Biz::ConfigBoxInteractor&,
-	size_t>;
+        size_t>;
     using CategoryListView = ListView<
         ConfigSubcategoryListView,
         Domain::ConfigItem,
         CategoryListViewFactory,
         StackLayout>;
 
-    std::unique_ptr<CategoryListView> category_list_view = std::make_unique<CategoryListView>(
-        CategoryListViewFactory{cbi_container, *cbi, cbi_index}
-    );
+    std::unique_ptr<CategoryListView> category_list_view =
+        std::make_unique<CategoryListView>(CategoryListViewFactory{cbi_container, *cbi, cbi_index});
 
     category_list_view->set_source_list(observable_categorizer.get());
 
     tab->replace_stack_layout(std::move(category_list_view));
 
     tab->page_list_view->set_source_list(category_page_transformer.get());
+
+    if (tab->page_list_view->list_item_count()) {
+        tab->page_list_view->item_at(0)->set_checked(true);
+    }
 }
 
 void ConfigSettingsDialog::ConfigTab::navigate_to_item(const Domain::ConfigItem* config_item)

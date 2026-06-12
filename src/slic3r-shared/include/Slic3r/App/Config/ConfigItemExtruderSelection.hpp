@@ -27,8 +27,8 @@ public:
     ConfigItemExtruderSelection(
         size_t index,
         const Domain::ConfigItem& config_item,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
     void on_preset_selection_changed(
@@ -49,9 +49,6 @@ private:
         Biz::Preset::PresetInteractor,
         ConfigItemExtruderSelection>
         m_preset_changed_scope;
-
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index = 0;
 };
 
 } // namespace Slic3r::App

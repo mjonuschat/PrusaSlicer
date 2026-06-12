@@ -1136,6 +1136,26 @@ static std::string fmt_eu(const EvaluatedUnit& eu)
 {
     return fmt_side(eu.source, eu.result);
 }
+
+static void draw_debug_cross(ImVec2 pos)
+{
+    static float a = 0.0f;
+    a += 0.13f; // ~7.5°
+
+    const ImVec2 c{pos.x + 8.0f, pos.y + 8.0f};
+    const auto l = [&](float x) {
+        const ImVec2 d{std::cos(x) * 8.0f, std::sin(x) * 8.0f};
+        ImGui::GetForegroundDrawList()->AddLine(
+            {c.x - d.x, c.y - d.y},
+            {c.x + d.x, c.y + d.y},
+            IM_COL32(255, 0, 0, 255),
+            2.0f
+            );
+    };
+
+    l(a);
+    l(a + 1.5708f);
+}
 #endif
 
 void Item::render_debug_overlay(ImDrawList* draw_list) const
@@ -1425,6 +1445,8 @@ void Item::render_debug_overlay(ImDrawList* draw_list) const
     }
 
     ImGui::PopFont();
+
+    draw_debug_cross({0, pmin.y - 16});
 #endif
 }
 

@@ -169,7 +169,7 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
             0,
             *config_item,
             *m_config_box_setter,
-            0
+            {0}
         );
 
         if (Item* control_item = dynamic_cast<Item*>(control); control_item != nullptr) {

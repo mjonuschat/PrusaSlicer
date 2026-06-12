@@ -15,12 +15,10 @@ namespace Slic3r::App {
 ConfigItemCheckBoxes::ConfigItemCheckBoxes(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     on_data_update();
 
@@ -64,7 +62,7 @@ void ConfigItemCheckBoxes::reconstruct_buttons()
             bool checked           = button->checked();
             std::vector<bool> data = get_data();
             data[index]            = checked;
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
+            set_item_value(Domain::ConfigValue{data});
         };
     }
 

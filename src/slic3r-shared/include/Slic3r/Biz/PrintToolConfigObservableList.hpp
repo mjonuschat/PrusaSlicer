@@ -14,7 +14,7 @@
 
 namespace Slic3r::Domain::Preset {
 struct SelectedPreset;
-}
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::Biz {
 
@@ -39,6 +39,7 @@ public:
      */
     void set_sources(
         const Domain::SelectionId selected_project_id,
+        const Domain::SelectionId selected_container_id,
         Domain::Preset::SelectedPreset& selected_preset,
         const std::vector<Domain::ConfigBox*>& tool_config_boxes
     );
@@ -47,9 +48,11 @@ public:
 
     void set_tool_override(const std::string& key, size_t index, bool override);
 
-    void set_tool_value(const std::string& key, size_t index, const Domain::ConfigValue& value);
-
-    void set_project_id(const Domain::SelectionId selected_project_id);
+    void set_tool_value(
+        const std::string& key,
+        const std::vector<size_t>& indexes,
+        const Domain::ConfigValue& value
+    );
 
     const Domain::ConfigValue* find_print_value(const std::string& name) const;
 
@@ -91,7 +94,8 @@ private:
         PrintToolConfigObservableList>
         m_selected_bed_changed_listener_scope;
 
-    Domain::SelectionId m_selected_project_id = Domain::INVALID_ID;
+    Domain::SelectionId m_selected_project_id   = Domain::INVALID_ID;
+    Domain::SelectionId m_selected_container_id = Domain::INVALID_ID;
     Domain::ConfigBox* m_print_config_box{nullptr};
     std::vector<Domain::ConfigBox*> m_tool_config_boxes;
     PrintToolItems m_items;

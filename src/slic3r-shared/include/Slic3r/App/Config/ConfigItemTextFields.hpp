@@ -24,8 +24,8 @@ public:
     ConfigItemTextFields(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -43,8 +43,6 @@ private:
         Yoga::Passthrough<Yoga::DoubleValidator> double_validator;
     };
 
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
     std::vector<Field> m_fields;
 };
 

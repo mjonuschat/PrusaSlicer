@@ -19,12 +19,10 @@ namespace Slic3r::App {
 ConfigItemSubstitutions::ConfigItemSubstitutions(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     set_orientation(Orientation::Vertical);
     set_gap(5);
@@ -174,7 +172,7 @@ void ConfigItemSubstitutions::send_data(const std::vector<Substitution>& substit
         data.push_back(substitution.notes);
     }
 
-    m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{std::move(data)}, m_cbi_index);
+    set_item_value(Domain::ConfigValue{std::move(data)});
 }
 
 void ConfigItemSubstitutions::add_substitution()
@@ -187,8 +185,7 @@ void ConfigItemSubstitutions::add_substitution()
 
 void ConfigItemSubstitutions::clear_substitutions()
 {
-    m_cbi_container
-        .set_item_value(*m_state, Domain::ConfigValue{std::vector<std::string>()}, m_cbi_index);
+    set_item_value(Domain::ConfigValue{std::vector<std::string>()});
 }
 
 SubstitutionRow::SubstitutionRow(

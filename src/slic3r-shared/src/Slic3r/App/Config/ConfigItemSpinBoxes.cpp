@@ -17,12 +17,10 @@ namespace Slic3r::App {
 ConfigItemSpinBoxes::ConfigItemSpinBoxes(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -65,7 +63,7 @@ void ConfigItemSpinBoxes::reconstruct_spin_buttons()
         {
             std::vector<int> data = m_state->get<std::vector<int>>();
             data[index]           = m_boxes.at(index).value_validator->value();
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
+            set_item_value(Domain::ConfigValue{data});
         };
         input->set_tooltip(tooltip);
     }

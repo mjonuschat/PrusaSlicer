@@ -262,7 +262,7 @@ public:
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
-        size_t index = 0
+        const std::vector<size_t>& indexes = {0}
     ) override;
 
     void set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0) override;
@@ -895,7 +895,10 @@ private:
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
     void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
-    void update_print_tool_cbi(Domain::Preset::SelectedPreset& selected_preset);
+    void update_print_tool_cbi(
+        Domain::Preset::SelectedPreset& selected_preset,
+        Domain::SelectionId config_container_id
+    );
 
     void duplicate_hw_config_if_needed_and_update(Domain::Preset::HwPrinterConfig& hw_config, ListenerInvokeLaterBag& bag);
 

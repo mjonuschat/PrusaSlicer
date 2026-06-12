@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain {
     class FloatOrPercentage;
@@ -50,9 +52,9 @@ public:
 
     bool operator==(const FloatOrPercentage& other) const
     {
-        return m_value == other.m_value && m_is_percentage == other.m_is_percentage;
+        return Domain::fuzzy_compare(m_value, other.m_value)
+            && m_is_percentage == other.m_is_percentage;
     }
-
 
 private:
     double m_value = 0.;

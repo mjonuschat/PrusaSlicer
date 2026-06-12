@@ -15,14 +15,12 @@ namespace Slic3r::App {
 ConfigItemExtruderSelection::ConfigItemExtruderSelection(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, config_item),
+    ConfigItemControl(index, config_item, cb_setter, cbi_index),
     ComboBox("ConfigItemCombo"),
-    m_preset_changed_scope(project_interactor()->preset_interactor(), *this),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    m_preset_changed_scope(project_interactor()->preset_interactor(), *this)
 {
     set_width(150);
 
@@ -35,13 +33,14 @@ ConfigItemExtruderSelection::ConfigItemExtruderSelection(
 
     callbacks().selection_changed = [this](int selected)
     {
-        const size_t n = project_interactor()
-                             ->preset_interactor()
-                             .current_printer_config()
-                             .material_slot_count();
-        if (current_index() <= n) {
-            m_cbi_container
-                .set_item_value(*m_state, Domain::ConfigValue{current_index()}, m_cbi_index);
+        const size_t material_slots = project_interactor()
+                                          ->preset_interactor()
+                                          .current_printer_config()
+                                          .material_slot_count();
+        if (current_index() <= material_slots) {
+            Domain::ConfigValue value{current_index()};
+
+            set_item_value(Domain::ConfigValue{current_index()});
             update_size();
         }
     };

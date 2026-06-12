@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/ContextPopup.hpp"

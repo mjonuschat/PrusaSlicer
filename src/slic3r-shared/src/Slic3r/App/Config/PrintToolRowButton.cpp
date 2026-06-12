@@ -61,13 +61,24 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
     ASSERT(print_tool_item);
     m_last_print_tool_item = print_tool_item;
     bool show_preview      = false;
+    std::optional<Domain::ConfigValue> value;
 
     if (print_tool_item->print_item->def().require_compatibility_rule) {
         show_preview = true;
-        m_config_item_preview
-            ->set_data(*print_tool_item->print_item, print_tool_item->value.first, false);
-    } else if (!print_tool_item->shared_context.extruder_candidates.empty()) {
-        // Maybe the tool values are same
+    } else if (print_tool_item->shared_context.extruder_candidates.empty()) {
+        // Extruder candidates are empty, just compare all extruder values
+        const std::size_t tool_count           = print_tool_item->tool_overrides.size();
+        const Domain::ConfigValue& first_value = print_tool_item->tool_value(0);
+        bool all_same                          = true;
+        for (std::size_t extruder_id{1}; extruder_id < tool_count; ++extruder_id) {
+            if (print_tool_item->tool_value(extruder_id) != first_value) {
+                all_same = false;
+            }
+        }
+        show_preview = all_same;
+        value        = first_value;
+    } else {
+        // Extruder candidates are not empty, compare their values
         const Domain::ConfigValue& first_value = print_tool_item->tool_value(
             *print_tool_item->shared_context.extruder_candidates.cbegin()
         );
@@ -76,7 +87,7 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
             print_tool_item->shared_context.extruder_candidates.cend(),
             [&](unsigned extruder)
             {
-                if (extruder < print_tool_item->tool_overrides.size()) {
+                if (extruder >= print_tool_item->tool_overrides.size()) {
                     // Tool overrides were still not updated
                     return false;
                 } else {
@@ -84,20 +95,16 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
                 }
             }
         );
-        m_config_item_preview->set_data(*print_tool_item->print_item, first_value, false);
-    } else {
-        const std::size_t tool_count           = print_tool_item->tool_overrides.size();
-        const Domain::ConfigValue& first_value = print_tool_item->tool_value(0);
-        bool all_same                          = true;
-        for (std::size_t extruder_id{}; extruder_id < tool_count; ++extruder_id) {
-            if (print_tool_item->tool_value(extruder_id) != first_value) {
-                all_same = false;
-            }
-        }
-        show_preview = all_same;
-        m_config_item_preview->set_data(*print_tool_item->print_item, first_value, false);
+        value = first_value;
     }
 
+    if (show_preview) {
+        m_config_item_preview->set_data(
+            *print_tool_item->print_item,
+            value.value_or(print_tool_item->value.first),
+            false
+        );
+    }
     m_config_item_preview->set_visible(show_preview);
     m_per_extruder_label->set_visible(!show_preview);
 

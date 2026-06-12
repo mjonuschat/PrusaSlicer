@@ -8,6 +8,8 @@
 
 #include <imgui_internal.h>
 
+constexpr const char* AbstractButtonDnDType = "AbstractButtonDnDType";
+
 namespace Slic3r::App::Yoga {
 
 AbstractButton::Callbacks& AbstractButton::callbacks()
@@ -21,6 +23,34 @@ AbstractButton::AbstractButton(const std::string& tooltip, const std::string& na
     set_object_name(name.empty() ? "Button" : name);
 }
 
+void AbstractButton::style_node()
+{
+    // The only reason following code is here instead of render is becase
+    // we would like to have this information even though AbstractButton is invisible
+    // and render apart from style_node is not called if Item is invisible
+    bool accept_dnd_key = false;
+    if (const ImGuiPayload* active_payload = ImGui::GetDragDropPayload()) {
+        if (active_payload->IsDataType(AbstractButtonDnDType)
+            && active_payload->DataSize == sizeof(DnDPayload))
+        {
+            const DnDPayload incoming = *static_cast<const DnDPayload*>(active_payload->Data);
+
+            if (m_droppable) {
+                accept_dnd_key = m_accepted_keys.contains(incoming.type);
+            }
+        }
+    }
+    if (m_accept_dnd_key != accept_dnd_key) {
+        m_accept_dnd_key = accept_dnd_key;
+        dnd_key_accepted_changed_internal(accept_dnd_key);
+        if (m_callbacks.dnd_key_accepted_changed) {
+            m_callbacks.dnd_key_accepted_changed(accept_dnd_key);
+        }
+    }
+
+    Item::style_node();
+}
+
 void AbstractButton::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
@@ -32,24 +62,86 @@ void AbstractButton::render(const Vec2f& pos, const Vec2f& size)
         ImGui::SetNextItemAllowOverlap();
     }
 
+    const bool was_drag_source_active = m_drag_source_active;
+    bool was_rendered                 = false;
+
     bool pressed = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
     bool hovered = ImGui::IsItemHovered() && ImGui::IsItemVisible();
     bool held    = ImGui::IsItemActive();
 
-    bool primary_pressed   = pressed && ImGui::IsMouseReleased(m_primary_button);
-    bool secondary_pressed = pressed && ImGui::IsMouseReleased(m_secondary_button);
-
     bool primary_held   = held && ImGui::IsMouseDown(m_primary_button);
     bool secondary_held = held && ImGui::IsMouseDown(m_secondary_button);
 
+    const bool dnd_hovered =
+        ImGui::IsItemHovered(
+            ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_AllowWhenOverlapped
+        )
+        && ImGui::IsItemVisible();
+
+    bool could_accept_drop = m_accept_dnd_key && dnd_hovered;
+    if (m_could_accept_drop != could_accept_drop) {
+        m_could_accept_drop = could_accept_drop;
+        dnd_could_accept_changed_internal(could_accept_drop);
+        if (m_callbacks.dnd_could_accept_changed) {
+            m_callbacks.dnd_could_accept_changed(could_accept_drop);
+        }
+    }
+
+    if (enabled() && m_draggable && primary_held && m_dnd_payload.has_value()) {
+        if (ImGui::BeginDragDropSource(
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceNoDisableHover
+            ))
+        {
+            m_drag_source_active = true;
+
+            ImGui::SetDragDropPayload(
+                AbstractButtonDnDType,
+                &m_dnd_payload.value(),
+                sizeof(m_dnd_payload.value())
+            );
+
+            // Render Dragged item
+            was_rendered = true;
+            Vec2f pos    = from_im(ImGui::GetCursorScreenPos());
+            ImGui::Dummy(to_im(size));
+            render_item_end(pos, size);
+
+            ImGui::EndDragDropSource();
+        }
+    }
+
+    if (enabled() && m_droppable && m_accept_dnd_key) {
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AbstractButtonDnDType)) {
+                IM_ASSERT(payload->DataSize == sizeof(DnDPayload));
+
+                const DnDPayload dropped = *static_cast<const DnDPayload*>(payload->Data);
+
+                if (m_droppable) {
+                    dnd_accepted_internal(dropped);
+                    if (m_callbacks.dnd_accepted) {
+                        m_callbacks.dnd_accepted(dropped);
+                    }
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+    }
+
     ImGui::PopID();
+
+    bool primary_pressed =
+        pressed && ImGui::IsMouseReleased(m_primary_button) && !was_drag_source_active;
+    bool secondary_pressed =
+        pressed && ImGui::IsMouseReleased(m_secondary_button) && !was_drag_source_active;
 
     if (enabled()) {
         set_hovered(hovered);
         set_pressed_primary(primary_held);
         set_pressed_secondary(secondary_held);
 
-        if (m_hovered || held) {
+        if ((m_hovered || held)) {
             ImGui::SetMouseCursor(m_cursor);
         }
 
@@ -70,7 +162,13 @@ void AbstractButton::render(const Vec2f& pos, const Vec2f& size)
         }
     }
 
-    render_item_end(pos, size);
+    if (!primary_held) {
+        m_drag_source_active = false;
+    }
+
+    if (!was_rendered) {
+        render_item_end(pos, size);
+    }
 }
 
 const std::string& AbstractButton::shortcut() const
@@ -83,7 +181,7 @@ void AbstractButton::set_shortcut(const std::string& shortcut)
     if (m_shortcut != shortcut) {
         m_shortcut = shortcut;
         m_tooltip->set_shortcut(m_shortcut);
-        set_shortcut_internal(m_shortcut);
+        shortcut_updated_internal();
     }
 }
 
@@ -201,6 +299,46 @@ void AbstractButton::update_flags()
     m_flags = ImGuiButtonFlags_EnableNav | convert(m_primary_button) | convert(m_secondary_button);
 }
 
+const std::optional<DnDPayload>& AbstractButton::dnd_payload() const
+{
+    return m_dnd_payload;
+}
+
+void AbstractButton::set_dnd_payload(const DnDPayload& dnd_payload)
+{
+    m_dnd_payload = dnd_payload;
+}
+
+const std::unordered_set<std::string>& AbstractButton::dnd_key() const
+{
+    return m_accepted_keys;
+}
+
+void AbstractButton::set_accepted_keys(const std::unordered_set<std::string>& accepted_keys)
+{
+    m_accepted_keys = accepted_keys;
+}
+
+bool AbstractButton::droppable() const
+{
+    return m_droppable;
+}
+
+void AbstractButton::set_droppable(bool droppable)
+{
+    m_droppable = droppable;
+}
+
+bool AbstractButton::draggable() const
+{
+    return m_draggable;
+}
+
+void AbstractButton::set_draggable(bool draggable)
+{
+    m_draggable = draggable;
+}
+
 ImGuiMouseButton AbstractButton::primary_button() const
 {
     return m_primary_button;
@@ -259,7 +397,13 @@ void AbstractButton::action_internal() {}
 
 void AbstractButton::secondary_action_internal() {}
 
-void AbstractButton::set_shortcut_internal(const std::string& shortcut) {}
+void AbstractButton::dnd_accepted_internal(const DnDPayload& dnd_payload) {}
+
+void AbstractButton::dnd_key_accepted_changed_internal(bool could_accept) {}
+
+void AbstractButton::dnd_could_accept_changed_internal(bool could_accept) {}
+
+void AbstractButton::shortcut_updated_internal() {}
 
 void AbstractButton::enabled_updated_internal()
 {

@@ -29,8 +29,7 @@ public:
 
     void set_item_value(
         const std::string& item_name,
-        const Domain::ConfigValue& value,
-        size_t index = 0
+        const Domain::ConfigValue& value
     );
 
     void toggle_favorite_param(const std::string& param);
@@ -39,7 +38,7 @@ public:
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
-        size_t index = 0
+        const std::vector<size_t>& indexes = {0}
     ) override;
 
     void set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0) override {

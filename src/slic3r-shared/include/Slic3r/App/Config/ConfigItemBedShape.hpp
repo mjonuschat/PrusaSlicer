@@ -27,8 +27,8 @@ public:
     ConfigItemBedShape(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -43,9 +43,6 @@ private:
     void update_preview();
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
-
     Biz::Config::BedShape m_bed_shape;
     std::vector<Domain::Vec2d> m_last_loaded_custom_contour{};
 
@@ -57,7 +54,7 @@ private:
     Yoga::InputTextField* m_diameter{nullptr};
     Yoga::LayoutButton* m_load_btn{nullptr};
 
-    Yoga::StackLayout* m_ui_layout{ nullptr };
+    Yoga::StackLayout* m_ui_layout{nullptr};
 
     BedShapePreview* m_shape_preview{nullptr};
 };

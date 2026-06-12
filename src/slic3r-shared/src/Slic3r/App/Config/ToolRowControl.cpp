@@ -6,93 +6,143 @@
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Biz/Algorithms/Color.hpp"
 
-#include "Slic3r/App/Yoga/Icon.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
-#include "Slic3r/App/Config/ConfigItemPreview.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
+#include "Slic3r/App/ExtruderIcon.hpp"
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
+
+#include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
+class ExtruderButton : public RectangleButton
+{
+public:
+    explicit ExtruderButton(ToolRowControl::ExtruderClickedFn clicked_fn) : m_clicked_fn(clicked_fn)
+    {
+        set_orientation(Orientation::Vertical);
+        set_background_color(Platform::Color::ButtonTransparent);
+        m_icon = emplace_back<ExtruderIcon>();
+        m_icon->set_width(18_fpx);
+        m_icon->set_height(18_fpx);
+        set_content_padding(4_fpx);
+        set_max_width(22_fpx);
+        set_max_height(22_fpx);
+
+        set_draggable(true);
+        set_cursor(ImGuiMouseCursor_Hand);
+    }
+
+    ExtruderIcon* icon() const
+    {
+        return m_icon;
+    }
+
+    void set_tool_index(size_t tool_index)
+    {
+        m_tool_index = tool_index;
+        set_tooltip(
+            fmt::format(
+                fmt::runtime(Biz::_u8L("Tool {}\nDrag tool to separate into different group.")),
+                m_tool_index + 1
+            )
+        );
+    }
+
+protected:
+    void action_internal() override
+    {
+        m_clicked_fn(m_tool_index);
+    }
+
+private:
+    ExtruderIcon* m_icon{nullptr};
+    ToolRowControl::ExtruderClickedFn m_clicked_fn;
+    size_t m_tool_index{0};
+};
+
 ToolRowControl::ToolRowControl(
     size_t index,
-    const ToolRowOverride& data,
+    const ToolRowOverrideGroup& data,
     Biz::IConfigBoxSetter& cb_setter,
-    Biz::ProjectInteractor& project_interactor
+    ExtruderClickedFn clicked_fn,
+    ExtruderDroppedFn dropped_fn
 ) :
-    Biz::DataObserver<ToolRowOverride>(index, data),
+    Biz::DataObserver<ToolRowOverrideGroup>(index, data),
     m_cb_setter(cb_setter),
-    m_project_interactor(project_interactor),
-    m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this)
+    m_extruder_clicked_fn(clicked_fn),
+    m_extruder_dropped_fn(dropped_fn)
 {
     set_orientation(Orientation::Horizontal);
-    set_gap(5);
     set_align_items(YGAlign::YGAlignCenter);
-    set_height(29);
+    set_content_justify_content(YGJustifyFlexStart);
+    set_height(25_fpx);
+    set_padding(Paddings{10_fpx, 0, 0, 0});
+    set_gap(5_fpx);
+    set_allow_overlap(true);
+    set_droppable(true);
+    set_background_color(Platform::Color::Transparent);
+    set_background_color_border(m_theme->color_imgui(Platform::Color::AccentSecondary));
 
-    m_icon = emplace_back<Icon>(Render::Icon::Funnel);
-    m_icon->set_width(18);
-    m_icon->set_height(18);
-
-    m_label = emplace_back<Text>(std::string{});
-
-    m_switch_override = emplace_back<LayoutButton>(std::string{}, Render::Icon::Chain);
-    m_switch_override->set_width(22);
-    m_switch_override->set_height(22);
-    m_switch_override->callbacks().action = [this]
-    { m_cb_setter.set_item_override(*m_state->override_item, !m_state->overriden, m_index); };
-
-    m_default_label = emplace_back<Text>(Biz::_u8L("(default)"));
-    m_default_label->set_font_type(Render::ImguiFontType::Italic);
-    m_default_label->set_visible(false);
-    m_default_label->set_enabled(false);
-
-    m_in_use_label = emplace_back<Text>(Biz::_u8L("(in use)"));
-    m_in_use_label->set_font_type(Render::ImguiFontType::Italic);
-    m_in_use_label->set_visible(false);
-    m_in_use_label->set_enabled(false);
+    m_icon_container = emplace_back<Item>();
 
     on_index_update();
     on_data_update();
 }
 
-void ToolRowControl::on_colors_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id,
-    const std::vector<Domain::ColorRGB>& colors
-)
-{
-    update_color(colors);
-}
-
 void ToolRowControl::on_data_update()
 {
-    bool overriden = m_state->overriden;
+    std::vector<size_t> indexes;
 
-    if (m_state->print_item->name() == "nozzle_high_flow") {
-        ASSERT(true);
+    const ToolRowOverrides& overrides = m_state->first;
+    indexes.reserve(overrides.size());
+    std::ranges::transform(overrides, std::back_inserter(indexes), &ToolRowOverride::tool_index);
+
+    m_icon_container->set_width(22_fpx * m_state->second);
+
+    if (m_last_indexes != indexes) {
+        m_control_gui_type = Domain::ConfigItemDef::GUIType::undefined; // reset GUI
+        m_last_indexes     = std::move(indexes);
+        for (AbstractButton* icon : std::as_const(m_extruders)) {
+            m_icon_container->remove_later(icon);
+        }
+        m_extruders.clear();
+        for (size_t index : std::as_const(m_last_indexes)) {
+            ExtruderButton* button =
+                m_icon_container->emplace_back<ExtruderButton>(m_extruder_clicked_fn);
+            m_extruders.emplace_back(button);
+        }
     }
 
-    m_switch_override->set_icon(overriden ? Render::Icon::Unchain : Render::Icon::Chain);
-    m_switch_override->set_tooltip(
-        overriden ? Biz::_u8L("Use default value") : Biz::_u8L("Use tool specific value")
-    );
-    m_switch_override->set_tooltip_position(Position::Top);
+    for (size_t i = 0; i < m_extruders.size(); ++i) {
+        ExtruderIcon* icon              = m_extruders.at(i)->icon();
+        const ToolRowOverride* override = overrides.at(i);
+        icon->set_extruder_index(override->tool_index + 1);
 
-    const ImColor text_color = m_theme->color_imgui(Platform::Color::Text);
-    const ImColor disabled_color =
-        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
+        ImColor color = override->color;
+        if (override->extruder_candidate) {
+            icon->set_enabled(true);
+        } else {
+            icon->set_enabled(false);
+            color = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
+        }
+        icon->set_extruder_color(color);
+        m_extruders.at(i)->set_tool_index(m_last_indexes.at(i));
+        m_extruders.at(i)->set_dnd_payload(
+            DnDPayload{
+                .type{override->dnd_key()},
+                .data{{"tool_index", size_t{(m_last_indexes.at(i))}}}
+            }
+        );
+    }
 
-    m_switch_override->set_icon_tint(overriden ? text_color : disabled_color);
-    const Domain::ConfigItem* config_item = m_state->override_item;
-    if (m_last_overriden != overriden || m_control_gui_type != config_item->def().gui_type) {
-        m_last_overriden = overriden;
+    set_accepted_keys({overrides.front()->dnd_key()});
+
+    const Domain::ConfigItem* config_item = overrides.front()->override_item;
+    if (m_control_gui_type != config_item->def().gui_type) {
         // We got a new ConfigItem assigned with different GuiType
         if (m_input) {
             m_control_gui_type = Domain::ConfigItemDef::GUIType::undefined;
@@ -100,76 +150,33 @@ void ToolRowControl::on_data_update()
             m_input   = nullptr;
             m_control = nullptr;
         }
-        if (m_preview) {
-            remove(m_preview);
-            m_preview = nullptr;
-        }
 
-        if (overriden) {
-            m_control_gui_type = config_item->def().gui_type;
-            m_control          = ConfigItemControl::config_item_control_factory(
-                this,
-                3,
-                m_index,
-                *config_item,
-                m_cb_setter,
-                m_index
-            );
+        m_control_gui_type = config_item->def().gui_type;
+        m_control          = ConfigItemControl::config_item_control_factory(
+            this,
+            1,
+            m_index,
+            *config_item,
+            m_cb_setter,
+            m_last_indexes
+        );
 
-            m_input = dynamic_cast<Yoga::Item*>(m_control);
-            ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
-        } else {
-            std::unique_ptr<ConfigItemPreview> preview = std::make_unique<ConfigItemPreview>();
-            m_preview                                  = preview.get();
-            insert(std::move(preview), 3);
-        }
+        m_input = dynamic_cast<Yoga::Item*>(m_control);
+        ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
     }
 
-    update_color();
-
-    m_default_label->set_visible(!overriden);
-    m_in_use_label->set_visible(m_state->extruder_candidate);
-    if (m_control) {
-        m_control->set_state(*m_state->override_item);
-    } else if (m_preview) {
-        m_preview->set_data(*m_state->print_item, m_state->print_item->value(), false);
-    }
+    ASSERT(m_control);
+    m_control->set_state(*overrides.front()->override_item);
 }
 
-void ToolRowControl::on_index_update()
+void ToolRowControl::dnd_accepted_internal(const Yoga::DnDPayload& dnd_payload)
 {
-    m_label->set_text(Biz::_u8L("Tool") + " " + std::to_string(m_index + 1));
+    m_extruder_dropped_fn(*dnd_payload.get<size_t>("tool_index"), m_index);
 }
 
-void ToolRowControl::update_color()
+void ToolRowControl::dnd_could_accept_changed_internal(bool could_accept)
 {
-    update_color(m_project_interactor.project_settings_interactor().get_colors(
-        m_project_interactor.selected_config_container_id()
-    ));
-}
-
-void ToolRowControl::update_color(const std::vector<Domain::ColorRGB> colors)
-{
-    ImColor color;
-    if (m_state->extruder_candidate) {
-        if (m_index < colors.size()) {
-            const Domain::ColorRGB& color_domain = colors.at(m_index);
-            color = {color_domain.r(), color_domain.g(), color_domain.b()};
-        } else {
-            Domain::ColorRGB color_domain;
-            ASSERT(
-                Biz::Algorithms::Color::decode_color(
-                    Biz::ProjectSettingsInteractor::palette_color(m_index),
-                    color_domain
-                )
-            );
-            color = {color_domain.r(), color_domain.g(), color_domain.b()};
-        }
-    } else {
-        color = m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled);
-    }
-    m_icon->set_tint(color);
-    m_label->set_text_color(color);
+    set_background_border_width(could_accept ? 2 : 0);
 }
 
 } // namespace Slic3r::App

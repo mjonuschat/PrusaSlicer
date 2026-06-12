@@ -5,9 +5,6 @@
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
 
-#include "Slic3r/Domain/Preset/HwConfig.hpp"
-#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
-
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
@@ -38,9 +35,6 @@ PrintSettingsDialog::PrintSettingsDialog(
     Dialog("PrintSettingsDialog"),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
-    m_selected_bed_changed_scope(m_project_interactor.scene_interactor(), *this),
-    m_scene_bed_instance_changed_scope(m_project_interactor.scene_interactor(), *this),
-    m_preset_changed_listener_scope(m_project_interactor.preset_interactor(), *this),
     m_tool_print_categorizer(std::make_shared<ToolPrintCategorizer>()),
     m_tool_print_transformer(std::make_shared<ToolPrintMenuTransformer>()),
     m_extruder_menu_transformer(std::make_shared<ExtruderMenuTransformer>())
@@ -196,13 +190,6 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_bed_name = m_footer->emplace_back<Text>(std::string{});
     m_bed_name->set_flex_shrink(0);
 
-    m_tool_label_list_view =
-        m_footer->emplace_back<ToolLabelListView>(ToolLabelFactory{m_project_interactor});
-    m_tool_label_list_view->set_orientation(Orientation::Horizontal);
-    m_tool_label_list_view->set_gap(14);
-    m_tool_label_list_view->set_source_list(this);
-    m_tool_label_list_view->set_flex_shrink(0);
-
     m_footer->set_gap(5.f);
     Item* spacer = m_footer->emplace_back<Item>();
     spacer->set_flex_grow(1);
@@ -232,29 +219,11 @@ PrintSettingsDialog::PrintSettingsDialog(
         );
     };
 
-    m_save_button->callbacks().action = [this] { 
-        m_save_preset_menu->open(); };
+    m_save_button->callbacks().action = [this] { m_save_preset_menu->open(); };
 
-    update_extruder_size();
-    on_selected_bed_instances_changed(
-        m_project_interactor.selected_project_id(),
-        m_project_interactor.scene_interactor().bed_selection()
-    );
-}
-
-PrintSettingsDialog::~PrintSettingsDialog()
-{
-    m_tool_label_list_view->set_source_list(nullptr, true);
-}
-
-const bool& PrintSettingsDialog::at(size_t index) const
-{
-    return m_extruders.at(index);
-}
-
-size_t PrintSettingsDialog::size() const
-{
-    return m_extruders.size();
+    if (m_category_page_list_view->list_item_count()) {
+        m_category_page_list_view->item_at(0)->set_checked(true);
+    }
 }
 
 void PrintSettingsDialog::close_action()
@@ -285,77 +254,6 @@ void PrintSettingsDialog::select_page_entry(size_t index, bool category)
     category ? m_category_stack_list_view->set_current_index(index) :
                m_metadata_stack_list_view->set_current_index(index);
     m_content_stack_layout->set_current_index(category ? 0 : 1);
-}
-
-void PrintSettingsDialog::update_extruder_candidates()
-{
-    if (m_extruders.empty()) {
-        return;
-    }
-
-    update_extruder_candidates_internal();
-
-    invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l)
-                                          { l->on_updated({0, m_extruders.size() - 1}); });
-}
-
-void PrintSettingsDialog::update_extruder_size()
-{
-    invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_will_be_reset(); });
-
-    m_extruders.resize(
-        m_project_interactor.preset_interactor().current_printer_config().material_slot_count()
-    );
-
-    update_extruder_candidates_internal();
-
-    invoke_listeners<IListObserver<bool>>([&](IListObserver<bool>* l) { l->on_reset(); });
-
-    const bool is_multi_extruder =
-        Domain::Preset::get_feature<bool>(
-            m_project_interactor.preset_interactor().selected_printer_preset().hw_config.features,
-            "multi_extruder"
-        )
-            .value_or(false);
-    const size_t extruder_count = is_multi_extruder ? m_extruders.size() : 0;
-    while (is_multi_extruder && extruder_count > m_save_preset_menu->menu_item_count() - 1) {
-        const size_t index         = m_save_preset_menu->menu_item_count() - 1;
-        MenuItem* tool_save_button = m_save_preset_menu->append_item(
-            fmt::format("{} {} {}", Biz::_u8L("Tool"), index + 1, Biz::_u8L("preset")),
-            Render::Icon::Funnel
-        );
-        tool_save_button->callbacks().action = [index, this]
-        {
-            m_project_interactor.preset_interactor().save_user_preset(
-                Domain::Preset::PresetKind::FdmToolPrint,
-                index
-            );
-        };
-    }
-    while (extruder_count < m_save_preset_menu->menu_item_count() - 1) {
-        m_save_preset_menu->remove_item(m_save_preset_menu->menu_item_count() - 1);
-    }
-}
-
-void PrintSettingsDialog::update_extruder_candidates_internal()
-{
-    std::fill(m_extruders.begin(), m_extruders.end(), false);
-
-    const Domain::BedRef last_selected_bed =
-        m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-
-    const Domain::BedInstance* bed_instance =
-        m_project_interactor.selected_project().find_bed_instance_by_id(
-            last_selected_bed.instance_id
-        );
-
-    for (unsigned candidate : std::as_const(bed_instance->extruder_candidates)) {
-        // there is a chance we are still reading old extruder candidates
-        if (candidate >= m_extruders.size()) {
-            continue;
-        }
-        m_extruders.at(candidate) = true;
-    }
 }
 
 void PrintSettingsDialog::on_about_to_close()
@@ -389,60 +287,6 @@ void PrintSettingsDialog::clear_navigation()
         dynamic_cast<PrintToolSubcategoryListView*>(m_category_stack_list_view->get_item(index))
             ->clear_navigation();
     }
-}
-
-void PrintSettingsDialog::on_selected_bed_instances_changed(
-    Domain::SelectionId project_id,
-    const Biz::Scene::BedSelection& bed_selection
-)
-{
-    if (project_id == Domain::INVALID_ID
-        || m_project_interactor.selected_project_id() != project_id)
-    {
-        return;
-    }
-
-    Domain::BedInstance* bed_instance =
-        m_project_interactor.selected_project().find_bed_instance_by_id(
-            bed_selection.last_selected_bed().instance_id
-        );
-
-    ASSERT(bed_instance);
-    m_bed_name->set_text(bed_instance->name());
-
-    update_extruder_candidates();
-}
-
-void PrintSettingsDialog::on_bed_instance_extruder_candidates_changed(
-    Domain::SelectionId project_id,
-    Domain::BedRef instance,
-    const std::vector<unsigned int>& extruder_candidates
-)
-{
-    if (project_id == m_project_interactor.selected_project_id()
-        && m_project_interactor.scene_interactor().bed_selection().last_selected_bed() == instance)
-    {
-        update_extruder_candidates();
-    }
-}
-
-void PrintSettingsDialog::on_preset_selection_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id,
-    Biz::Preset::PresetItemType type
-)
-{
-    if (type == Biz::Preset::PresetItemType::PrinterPreset) {
-        update_extruder_size();
-    }
-}
-
-void PrintSettingsDialog::on_config_container_selection_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id
-)
-{
-    update_extruder_size();
 }
 
 } // namespace Slic3r::App

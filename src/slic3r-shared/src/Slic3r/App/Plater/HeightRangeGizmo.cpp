@@ -71,7 +71,7 @@ struct HeightRangeGizmo::ConfigBoxSetterImpl : public IConfigBoxSetter
         return found ? &found->value() : nullptr;
     }
 
-    void set_item_value(const ConfigItem& item, const ConfigValue& value, size_t) override
+    void set_item_value(const ConfigItem& item, const ConfigValue& value, const std::vector<size_t>&) override
     {
         ConfigBox* settings = m_gizmo.selected_height_range_config_box();
         ASSERT(settings != nullptr);

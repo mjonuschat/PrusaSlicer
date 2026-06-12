@@ -22,7 +22,7 @@ class Workbench;
 
 namespace Slic3r::Domain::Preset {
 struct SelectedPreset;
-}
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
@@ -44,15 +44,19 @@ public:
 
         void set_tool_override(const std::string& key, size_t index, bool override);
 
-        void set_tool_value(const std::string& key, size_t index, const Domain::ConfigValue& value);
-
-        void set_project_id(Domain::SelectionId selected_project_id);
+        void set_tool_value(
+            const std::string& key,
+            const std::vector<size_t>& indexes,
+            const Domain::ConfigValue& value
+        );
 
         void set_sources(
             const Domain::SelectionId selected_project_id,
+            const Domain::SelectionId selected_container_id,
             Domain::Preset::SelectedPreset& selected_preset,
             const std::vector<Domain::ConfigBox*>& tool_config_boxes
         );
+
     private:
         std::weak_ptr<PrintToolConfigObservableList> m_observable_list;
     };

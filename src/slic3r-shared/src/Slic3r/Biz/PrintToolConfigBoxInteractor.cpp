@@ -96,27 +96,26 @@ void PrintToolConfigBoxInteractor::SetAccessor::set_tool_override(
 
 void PrintToolConfigBoxInteractor::SetAccessor::set_tool_value(
     const std::string& key,
-    size_t index,
+    const std::vector<size_t>& indexes,
     const Domain::ConfigValue& value
 )
 {
-    m_observable_list.lock()->set_tool_value(key, index, value);
-}
-
-void PrintToolConfigBoxInteractor::SetAccessor::set_project_id(
-    Domain::SelectionId selected_project_id
-)
-{
-    m_observable_list.lock()->set_project_id(selected_project_id);
+    m_observable_list.lock()->set_tool_value(key, indexes, value);
 }
 
 void PrintToolConfigBoxInteractor::SetAccessor::set_sources(
     const Domain::SelectionId selected_project_id,
+    const Domain::SelectionId selected_container_id,
     Domain::Preset::SelectedPreset& selected_preset,
     const std::vector<Domain::ConfigBox*>& tool_config_boxes
 )
 {
-    m_observable_list.lock()->set_sources(selected_project_id, selected_preset, tool_config_boxes);
+    m_observable_list.lock()->set_sources(
+        selected_project_id,
+        selected_container_id,
+        selected_preset,
+        tool_config_boxes
+    );
 }
 
 } // namespace Slic3r::Biz

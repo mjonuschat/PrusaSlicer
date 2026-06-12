@@ -37,7 +37,8 @@ public:
 
     const Menu* submenu() const ;
 
-    void set_shortcut_internal(const std::string& shortcut) override;
+protected:
+    void shortcut_updated_internal() override;
 
 private:
     void create(

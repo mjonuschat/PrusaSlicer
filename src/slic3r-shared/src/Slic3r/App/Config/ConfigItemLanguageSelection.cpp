@@ -9,13 +9,11 @@ namespace Slic3r::App {
 ConfigItemLanguageSelection::ConfigItemLanguageSelection(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, config_item),
-    ComboBox("ConfigItemCombo"),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, config_item, cb_setter, cbi_index),
+    ComboBox("ConfigItemCombo")
 {
     set_width(150);
 
@@ -40,13 +38,7 @@ ConfigItemLanguageSelection::ConfigItemLanguageSelection(
     set_current_index(init_selection);
 
     callbacks().selection_changed = [this](int selected)
-    {
-        m_cbi_container.set_item_value(
-            *m_state,
-            Domain::ConfigValue{localization().languages()[selected].canonical_name},
-            m_cbi_index
-        );
-    };
+    { set_item_value(Domain::ConfigValue{localization().languages()[selected].canonical_name}); };
 
     on_data_update();
 }
@@ -59,8 +51,7 @@ void ConfigItemLanguageSelection::on_data_update()
     auto it             = std::find_if(
         language_infos.begin(),
         language_infos.end(),
-        [&name](const Biz::LanguageShortInfo& item)
-        { return item.canonical_name == name; }
+        [&name](const Biz::LanguageShortInfo& item) { return item.canonical_name == name; }
     );
     ASSERT(it != language_infos.end());
 

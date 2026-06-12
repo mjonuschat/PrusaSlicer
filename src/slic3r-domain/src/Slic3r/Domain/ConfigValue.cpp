@@ -148,7 +148,57 @@ ConfigValue& ConfigValue::operator=(ConfigValue&& other) noexcept {
 
 ConfigValue::~ConfigValue() = default;
 
-bool ConfigValue::operator==(const ConfigValue& rhs) const = default;
+namespace {
+
+template <class T>
+bool config_value_equal(const T& lhs, const T& rhs)
+{
+    return lhs == rhs;
+}
+
+bool config_value_equal(double lhs, double rhs)
+{
+    return Domain::fuzzy_compare(lhs, rhs);
+}
+
+bool config_value_equal(const Domain::Vec2d& lhs, const Domain::Vec2d& rhs)
+{
+    return Domain::fuzzy_compare(lhs[0], rhs[0]) && Domain::fuzzy_compare(lhs[1], rhs[1]);
+}
+
+template <class T>
+bool config_value_equal(const std::vector<T>& lhs, const std::vector<T>& rhs)
+{
+    return lhs.size() == rhs.size()
+        && std::equal(
+               lhs.begin(),
+               lhs.end(),
+               rhs.begin(),
+               [](const auto& a, const auto& b) { return config_value_equal(a, b); }
+        );
+}
+
+} // namespace
+
+bool ConfigValue::operator==(const ConfigValue& rhs) const
+{
+    // Custom comparison of all doubles using Domain::fuzzy_compare
+    return std::visit(
+        [](const auto& lhs_value, const auto& rhs_value) -> bool
+        {
+            using Lhs = std::remove_cvref_t<decltype(lhs_value)>;
+            using Rhs = std::remove_cvref_t<decltype(rhs_value)>;
+
+            if constexpr (std::is_same_v<Lhs, Rhs>) {
+                return config_value_equal(lhs_value, rhs_value);
+            } else {
+                return false;
+            }
+        },
+        m_value,
+        rhs.m_value
+    );
+}
 
 void ConfigValue::assert_types_equal(const ConfigValue& a, const ConfigValue& b) {
     // TODO: Vectors are now "convertible" to scalars, to allow backend to have scalars where it used to have them.

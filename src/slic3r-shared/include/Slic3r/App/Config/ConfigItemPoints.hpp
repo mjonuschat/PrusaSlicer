@@ -24,8 +24,8 @@ public:
     ConfigItemPoints(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -42,9 +42,6 @@ private:
         Yoga::Passthrough<Yoga::DoubleValidator> validator_x;
         Yoga::Passthrough<Yoga::DoubleValidator> validator_y;
     };
-
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
 
     std::vector<Point> m_points;
 };

@@ -26,16 +26,15 @@ AppConfigInteractor::get_override_original_value(const Domain::ConfigItem& item,
 void AppConfigInteractor::set_item_value(
     const Domain::ConfigItem& item,
     const Domain::ConfigValue& value,
-    size_t index
+    const std::vector<size_t>& indexes
 )
 {
-    this->set_item_value(item.name(), value, index);
+    set_item_value(item.name(), value);
 }
 
 void AppConfigInteractor::set_item_value(
     const std::string& item_name,
-    const Domain::ConfigValue& value,
-    size_t index
+    const Domain::ConfigValue& value
 )
 {
     m_cbi_accessor.set_value(item_name, value);

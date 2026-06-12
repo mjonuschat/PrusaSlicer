@@ -92,8 +92,8 @@ public:
     ConfigItemSubstitutions(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
     ~ConfigItemSubstitutions();
 
@@ -117,8 +117,6 @@ private:
     using SubstitutionListView =
         Yoga::ListView<SubstitutionRow, Substitution, SubstitutionListViewFactory>;
 
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
     std::vector<Substitution> m_substitutions;
     SubstitutionListView* m_list_view{nullptr};
     Yoga::LayoutButton* m_button_remove_all{nullptr};

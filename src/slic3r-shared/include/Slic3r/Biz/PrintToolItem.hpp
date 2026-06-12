@@ -29,23 +29,17 @@ struct PrintToolItem
             extruder_candidates; ///< extruder candidates vector stored probably in PrintToolCBOL
     };
 
-    using ToolOverride = std::pair<const Domain::ConfigItem*, bool>;
-
     std::string name;
     bool mixed = false; ///< true if all sources values are same, false otherwise
     const Domain::ConfigItem* print_item{nullptr}; ///< pointer to this item in the Print ConfigBox
-    std::vector<ToolOverride>
-        tool_overrides; ///< vector of turned overrides from Tool or nullptr, if override is off
+    std::vector<const Domain::ConfigItem*> tool_overrides; ///< vector of turned overrides from Tool
     std::pair<Domain::ConfigValue, bool> value;
     const SharedContext& shared_context;
-    bool is_favorite{ false };
+    bool is_favorite{false};
 
     const Domain::ConfigValue& tool_value(size_t index) const;
 
     void update_value();
-
-private:
-    std::vector<const Domain::ConfigItem*> construct_overrides() const;
 };
 
 } // namespace Slic3r::Biz

@@ -7,10 +7,6 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 
-namespace Slic3r::Biz {
-class IConfigBoxSetter;
-} // namespace Slic3r::Biz
-
 namespace Slic3r::App::Yoga {
 class IntValidator;
 class InputTextWithSpin;
@@ -24,8 +20,8 @@ public:
     ConfigItemSpinBoxes(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
@@ -41,9 +37,6 @@ private:
         Yoga::InputTextWithSpin* spinbox{nullptr};
         Yoga::IntValidator* value_validator{nullptr};
     };
-
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
 
     std::vector<Box> m_boxes;
 };

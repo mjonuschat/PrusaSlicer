@@ -258,7 +258,7 @@ static void apply_overriding_config_value(
 )
 {
     ConfigItem override_item{config_item_override.def(), override_location};
-    preset_interactor.set_item_value(override_item, config_item_override.value(), slot_idx);
+    preset_interactor.set_item_value(override_item, config_item_override.value(), {slot_idx});
     preset_interactor.set_item_override(override_item, true, slot_idx);
 }
 
@@ -353,7 +353,7 @@ static bool apply_config_overrides(CLIRuntime& runtime, const InitParams& init_p
 
         for (size_t slot_idx = 0; slot_idx < slot_count; ++slot_idx) {
             preset_interactor
-                .set_item_value(config_item_override, config_item_override.value(), slot_idx);
+                .set_item_value(config_item_override, config_item_override.value(), {slot_idx});
         }
 
         const HwPrinterConfig& hw_config = config_container.selected_preset().hw_config;

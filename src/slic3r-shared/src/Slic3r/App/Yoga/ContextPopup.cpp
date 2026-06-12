@@ -12,6 +12,7 @@ namespace Slic3r::App::Yoga {
 
 ContextPopup::ContextPopup(const std::string& name)
 {
+    m_background_color = m_theme->color_imgui(Platform::Color::WindowBg);
     set_object_name(name.empty() ? "ContextMenu" : name);
     set_position_type(YGPositionType::YGPositionTypeAbsolute);
 }
@@ -128,6 +129,7 @@ void ContextPopup::render(const Vec2f& pos, const Vec2f& size)
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, m_background_color.Value);
 
     bool begin = false;
     if (m_flags & ImGuiWindowFlags_ChildMenu) {
@@ -167,6 +169,7 @@ void ContextPopup::render(const Vec2f& pos, const Vec2f& size)
     }
 
     // Revert current paddings and spacing
+    ImGui::PopStyleColor();
     ImGui::PopStyleVar(5);
 }
 
@@ -269,6 +272,16 @@ void ContextPopup::invalidate_style()
     set_left(YGUndefined);
     set_right(YGUndefined);
     set_style_dirty();
+}
+
+const ImColor& ContextPopup::background_color() const
+{
+    return m_background_color;
+}
+
+void ContextPopup::set_background_color(const ImColor& background_color)
+{
+    m_background_color = background_color;
 }
 
 } // namespace Slic3r::App::Yoga

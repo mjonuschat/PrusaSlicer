@@ -203,8 +203,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
         m_preset_favorite_filter->invalidate();
         AppServices::instance().app_config_interactor().set_item_value(
             "printers_only_favorites",
-            Domain::ConfigValue{checked},
-            0
+            Domain::ConfigValue{checked}
         );
     };
     on_app_config_changed("printers_only_favorites");

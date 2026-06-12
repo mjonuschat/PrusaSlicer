@@ -40,12 +40,10 @@ static std::string get_wildcards(const std::string& config_item_name)
 ConfigItemFilePicker::ConfigItemFilePicker(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     Vec2f btn_size{24, 24};
     set_gap(10.f);
@@ -61,7 +59,7 @@ ConfigItemFilePicker::ConfigItemFilePicker(
     m_file_name->callbacks().hovered_changed = [this](bool hovered)
     { hovered ? m_tooltip->open() : m_tooltip->close(); };
 
-    m_load_btn = emplace_back<LayoutButton>("", Render::Icon::TobBarLoad);
+    m_load_btn = emplace_back<LayoutButton>(std::string{}, Render::Icon::TobBarLoad);
     m_load_btn->set_min_width(btn_size.x());
     m_load_btn->set_min_height(btn_size.y());
     m_load_btn->callbacks().action = [this]()
@@ -74,11 +72,7 @@ ConfigItemFilePicker::ConfigItemFilePicker(
                 if (m_file_name->text() != file_name) {
                     m_file_name->set_text(file_name);
 
-                    m_cbi_container.set_item_value(
-                        *m_state,
-                        Domain::ConfigValue{file_paths.begin()->string()},
-                        m_cbi_index
-                    );
+                    set_item_value(Domain::ConfigValue{file_paths.begin()->string()});
                 }
 
                 m_remove_btn->set_visible(true);
@@ -88,18 +82,18 @@ ConfigItemFilePicker::ConfigItemFilePicker(
             FileDialogType::Open,
             Biz::_u8L("Load file"),
             AppServices::instance().app_config().get<std::string>("last_used_directory"),
-            "",
+            std::string{},
             get_wildcards(m_state->name()),
             callback
         );
     };
 
-    m_remove_btn = emplace_back<LayoutButton>("", Render::Icon::DeleteBtnIcon);
+    m_remove_btn = emplace_back<LayoutButton>(std::string{}, Render::Icon::DeleteBtnIcon);
     m_remove_btn->set_min_width(btn_size.x());
     m_remove_btn->set_min_height(btn_size.y());
     m_remove_btn->callbacks().action = [this]()
     {
-        m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{""}, m_cbi_index);
+        set_item_value(Domain::ConfigValue{std::string{}});
         m_remove_btn->set_visible(false);
     };
 

@@ -105,9 +105,9 @@ const Menu* MenuItem::submenu() const
     return m_sub_menu;
 }
 
-void MenuItem::set_shortcut_internal(const std::string& shortcut)
+void MenuItem::shortcut_updated_internal()
 {
-    m_shortcut_text->set_text(shortcut);
+    m_shortcut_text->set_text(shortcut());
 }
 
 void MenuItem::action_internal()

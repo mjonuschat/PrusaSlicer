@@ -10,6 +10,7 @@ namespace Slic3r::App {
 
 namespace Yoga {
 class AbstractButton;
+class MenuItem;
 } // namespace Yoga
 
 namespace Scene {
@@ -38,7 +39,7 @@ public:
         m_gizmos_command_registry = gizmos_command_registry;
     }
 
-    void bind_menu_item(const UIItemCommand* command, Yoga::AbstractButton* ui_item);
+    void bind_menu_item(const UIItemCommand* command, Yoga::MenuItem* ui_item);
 
     void bind_tb_item(const char* command_name, Yoga::AbstractButton* ui_item);
 

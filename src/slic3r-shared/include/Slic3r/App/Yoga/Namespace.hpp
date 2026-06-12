@@ -68,6 +68,20 @@ struct Unit
         return *this;
     }
 
+    Unit& operator+=(Unit& unit)
+    {
+        ASSERT(unit.type == type);
+        value += unit.value;
+        return *this;
+    }
+
+    Unit& operator-=(Unit& unit)
+    {
+        ASSERT(unit.type == type);
+        value -= unit.value;
+        return *this;
+    }
+
     Unit& operator/=(float scalar)
     {
         value /= scalar;
@@ -81,6 +95,10 @@ struct Unit
 Unit operator*(Unit unit, float scalar);
 Unit operator*(float scalar, Unit unit);
 Unit operator/(Unit unit, float scalar);
+Unit operator+(Unit lhs, Unit rhs);
+Unit operator-(Unit lhs, Unit rhs);
+Unit operator*(Unit lhs, Unit rhs);
+Unit operator/(Unit lhs, Unit rhs);
 
 Unit operator""_px(long double value);
 Unit operator""_px(unsigned long long value);

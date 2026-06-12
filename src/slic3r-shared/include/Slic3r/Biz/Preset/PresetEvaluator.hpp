@@ -66,6 +66,17 @@ private:
     void collect_preset_ids(PresetKind kind, const PresetNode& node, const PresetNodePath& node_path);
     const PresetNode* find_node(PresetKind kind, std::string_view name) const;
 
+    /**
+     * ToolPrintPresets needs to have all overrides set,
+     * this method ensures that by setting their unset
+     * overrides with values from print_preset
+     */
+    static void fill_missing_tool_overrides_from_print(
+        Domain::Preset::EvaluatedToolPrintPreset& tool_print_preset,
+        const Domain::ConfigBox& print_config_box,
+        const HwPrinterConfig& hw_config
+    );
+
     template <typename FdmConfigType, typename SlaConfigType>
     static Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> preset_from_context(
         const Domain::Preset::HwPrinterConfig& hw_config,

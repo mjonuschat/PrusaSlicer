@@ -804,7 +804,7 @@ void PresetInteractor::on_selected_config_container_changed(
 
     m_printer_cbi_accessor.set_config_box(&selected_preset.printer.config_box());
 
-    update_print_tool_cbi(selected_preset);
+    update_print_tool_cbi(selected_preset, container_id);
 
     bag.add([this, project_id, container_id]{
         // notify listeners on changes
@@ -1692,7 +1692,7 @@ void PresetInteractor::select_printer_preset_internal(
     fill_tools_presets(selected_preset, no_data_update, bag);
     fill_materials_presets(selected_preset, no_data_update, bag);
 
-    update_print_tool_cbi(selected_preset);
+    update_print_tool_cbi(selected_preset, ccc.config_container_id);
 
     bag.add([this, project_id = m_selected_project_id, cc]{
         // notify on change
@@ -1741,10 +1741,10 @@ PresetInteractor::select_print_preset_internal(
     fill_tools_presets(selected_preset, no_data_update, bag);
     fill_materials_presets(selected_preset, no_data_update, bag);
 
-    update_print_tool_cbi(selected_preset);
-
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
+    update_print_tool_cbi(selected_preset, config_container_id);
+
     bag.add([this, project_id = m_selected_project_id, config_container_id]{
         invoke_listeners<IPresetChangedListener>(
             [project_id, config_container_id](auto* l)
@@ -1795,11 +1795,10 @@ void PresetInteractor::select_tool_print_preset_internal(
         { item.set_selected([&id](const PresetItem& item) { return item.id == id; }); }
     );
 
-    update_print_tool_cbi(selected_preset);
-
-
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
+    update_print_tool_cbi(selected_preset, config_container_id);
+
     bag.add([this, project_id = m_selected_project_id, config_container_id]{
         invoke_listeners<IPresetChangedListener>(
             [project_id, config_container_id](auto* l)
@@ -2209,7 +2208,7 @@ PresetInteractor::get_override_original_value(const Domain::ConfigItem& item, si
 void PresetInteractor::set_item_value(
     const Domain::ConfigItem& item,
     const Domain::ConfigValue& value,
-    size_t index
+    const std::vector<size_t>& indexes
 )
 {
     // This is a temporary dummy way how to set items, a whole dependency resolving with overrides needs
@@ -2231,10 +2230,13 @@ void PresetInteractor::set_item_value(
                     m_print_tool_cbi_accessor.set_print_value(name, value);
                     break;
                 case Domain::FDMConfigLocation::Filament: {
-                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
+                    for (size_t index : indexes) {
+                        m_material_accessors.at(&m_material_cbi_list.at(index))
+                            .set_value(name, value);
+                    }
                 } break;
                 case Domain::FDMConfigLocation::Tool: {
-                    m_print_tool_cbi_accessor.set_tool_value(name, index, value);;
+                    m_print_tool_cbi_accessor.set_tool_value(name, indexes, value);;
                 } break;
                 case Domain::FDMConfigLocation::Object:
                 case Domain::FDMConfigLocation::Volume: {
@@ -2252,7 +2254,10 @@ void PresetInteractor::set_item_value(
                     m_print_tool_cbi_accessor.set_print_value(name, value );
                     break;
                 case Domain::SLAConfigLocation::Material: {
-                    m_material_accessors.at(&m_material_cbi_list.at(index)).set_value(name, value);
+                    for (size_t index : indexes) {
+                        m_material_accessors.at(&m_material_cbi_list.at(index))
+                            .set_value(name, value);
+                    }
                 } break;
                 case Domain::SLAConfigLocation::Object: {
                     m_object_settings_interactor_accessor.set_value(name, value);
@@ -3554,7 +3559,10 @@ MaterialPresetProjectView PresetInteractor::get_material_presets_view(
     };
 }
 
-void PresetInteractor::update_print_tool_cbi(Domain::Preset::SelectedPreset& selected_preset)
+void PresetInteractor::update_print_tool_cbi(
+    Domain::Preset::SelectedPreset& selected_preset,
+    Domain::SelectionId config_container_id
+)
 {
     std::vector<Domain::ConfigBox*> tool_cbs;
     tool_cbs.reserve(selected_preset.tools.size());
@@ -3565,8 +3573,7 @@ void PresetInteractor::update_print_tool_cbi(Domain::Preset::SelectedPreset& sel
         [](Domain::Preset::EvaluatedToolPrintPreset::Preset& preset)
         { return &preset.config_box(); }
     );
-    m_print_tool_cbi_accessor
-        .set_sources(m_selected_project_id, selected_preset, tool_cbs);
+    m_print_tool_cbi_accessor.set_sources(m_selected_project_id, config_container_id, selected_preset, tool_cbs);
 }
 
 } // namespace Slic3r::Biz::Preset

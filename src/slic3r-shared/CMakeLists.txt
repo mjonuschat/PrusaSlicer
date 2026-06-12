@@ -271,11 +271,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/IConfigNavigable.hpp
         include/Slic3r/App/PrintMetadataSettings.hpp
         src/Slic3r/App/PrintMetadataSettings.cpp
-        include/Slic3r/App/ToolLabel.hpp
-        src/Slic3r/App/ToolLabel.cpp
         include/Slic3r/App/ThemeTypes.hpp
         include/Slic3r/App/Theme.hpp
         src/Slic3r/App/Theme.cpp
+        include/Slic3r/App/ExtruderIcon.hpp
+        src/Slic3r/App/ExtruderIcon.cpp
         include/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp
         src/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.cpp
         include/Slic3r/App/WelcomeDialog.hpp
@@ -331,6 +331,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/PrintToolRowButton.cpp
         include/Slic3r/App/Config/ToolRowControl.hpp
         src/Slic3r/App/Config/ToolRowControl.cpp
+        include/Slic3r/App/Config/ToolRowOverride.hpp
+        src/Slic3r/App/Config/ToolRowOverride.cpp
         include/Slic3r/App/Config/PrintToolSubcategoryListView.hpp
         include/Slic3r/App/Config/PrintToolSubcategoryItem.hpp
         src/Slic3r/App/Config/PrintToolSubcategoryItem.cpp
@@ -359,6 +361,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigRowItem.cpp
         include/Slic3r/App/Config/ConfigRowItems.hpp
         src/Slic3r/App/Config/ConfigRowItems.cpp
+        src/Slic3r/App/Config/ExplanationContainer.cpp
+        include/Slic3r/App/Config/ExplanationContainer.hpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -628,8 +632,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/HeightRangeControl.cpp
         include/Slic3r/App/Yoga/TwoColorRing.hpp
         src/Slic3r/App/Yoga/TwoColorRing.cpp
+        include/Slic3r/App/Yoga/DataObserverItem.hpp
         include/Slic3r/App/ColorDropdown.hpp
         src/Slic3r/App/ColorDropdown.cpp
+        include/Slic3r/App/Yoga/DnDPayload.hpp
 
         include/Slic3r/App/ToolBar/ToolBar.hpp
         src/Slic3r/App/ToolBar/ToolBar.cpp

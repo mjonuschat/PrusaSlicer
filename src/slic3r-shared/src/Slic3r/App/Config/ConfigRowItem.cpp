@@ -72,7 +72,7 @@ void ConfigRowItem::on_data_update()
             m_index,
             *m_state,
             m_cb_setter,
-            m_cbi_index
+            {m_cbi_index}
         );
 
         m_input = dynamic_cast<Yoga::Item*>(m_control);
@@ -112,7 +112,7 @@ void ConfigRowItem::on_data_update()
                     value = m_config_item_spin_box->value();
                 }
 
-                m_cb_setter.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
+                m_cb_setter.set_item_value(*m_state, Domain::ConfigValue{value}, {m_cbi_index});
             };
         } else {
             if (m_toggle_enable) {

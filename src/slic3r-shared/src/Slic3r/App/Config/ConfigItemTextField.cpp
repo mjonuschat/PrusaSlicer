@@ -20,12 +20,10 @@ namespace Slic3r::App {
 ConfigItemTextField::ConfigItemTextField(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, data),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, data, cb_setter, cbi_index)
 {
     m_tooltip->set_text_wrap(true);
     m_tooltip->content_item()->set_width(350);
@@ -34,44 +32,33 @@ ConfigItemTextField::ConfigItemTextField(
 
     callbacks().text_edited = [this]()
     {
+        std::optional<Domain::ConfigValue> value;
         if (*m_state->def().type == typeid(std::string)) {
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{text()}, m_cbi_index);
+            value = Domain::ConfigValue{text()};
         } else if (*m_state->def().type == typeid(std::vector<std::string>)) {
             std::vector<std::string> new_strings;
             boost::split(new_strings, text(), boost::is_any_of("\n"));
             std::erase_if(new_strings, [](const std::string& s) { return s.empty(); });
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{new_strings}, m_cbi_index);
+            value = Domain::ConfigValue{new_strings};
         } else if (*m_state->def().type == typeid(double)) {
-            m_cbi_container.set_item_value(
-                *m_state,
-                Domain::ConfigValue{m_double_validator->value()},
-                m_cbi_index
-            );
+            value = Domain::ConfigValue{m_double_validator->value()};
         } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-            m_cbi_container.set_item_value(
-                *m_state,
-                Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}},
-                m_cbi_index
-            );
+            value = Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}};
         } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
             const std::string value_text = text();
             if (m_percentage_validator->entered_percentage_symbol()) {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{Domain::FloatOrPercentage{
-                        Domain::Percentage{m_percentage_validator->value()}
-                    }},
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{
+                    Domain::FloatOrPercentage{Domain::Percentage{m_percentage_validator->value()}}
+                };
             } else {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}},
-                    m_cbi_index
-                );
+                value =
+                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}};
             }
         } else {
             PANIC("Item is used for unexpected parameter type");
+        }
+        if (value.has_value()) {
+            set_item_value(value.value());
         }
     };
 }

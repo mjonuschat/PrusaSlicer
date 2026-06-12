@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include <cstddef>
+#include <vector>
 
 namespace Slic3r::Domain {
 class ConfigItem;
@@ -28,7 +28,7 @@ public:
     virtual void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
-        size_t index = 0
+        const std::vector<size_t>& index = {0}
     ) = 0;
 
     virtual void

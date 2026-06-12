@@ -28,8 +28,15 @@ namespace Slic3r::App {
 
 Biz::ProjectInteractor* ConfigItemControl::m_project_interactor = nullptr;
 
-ConfigItemControl::ConfigItemControl(size_t index, const Domain::ConfigItem& data) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data)
+ConfigItemControl::ConfigItemControl(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
+) :
+    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    m_cbi_container(cb_setter),
+    m_cbi_index(cbi_index)
 {}
 
 std::string ConfigItemControl::tooltip_text() const
@@ -55,6 +62,11 @@ std::string ConfigItemControl::tooltip_text() const
 Biz::ProjectInteractor* ConfigItemControl::project_interactor() const
 {
     return m_project_interactor;
+}
+
+void ConfigItemControl::set_item_value(const Domain::ConfigValue& value)
+{
+    m_cbi_container.set_item_value(*m_state, value, m_cbi_index);
 }
 
 int ConfigItemControl::location_index() const
@@ -145,7 +157,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     size_t data_index,
     const Domain::ConfigItem& item,
     Biz::IConfigBoxSetter& cb_setter,
-    size_t cbi_index
+    std::vector<size_t> cbi_index
 )
 {
     ConfigItemControl* item_control = nullptr;

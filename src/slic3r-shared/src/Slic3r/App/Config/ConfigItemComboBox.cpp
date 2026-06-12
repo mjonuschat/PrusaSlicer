@@ -18,13 +18,11 @@ namespace Slic3r::App {
 ConfigItemComboBox::ConfigItemComboBox(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::IConfigBoxSetter& cbi_container,
-    size_t cbi_index
+    Biz::IConfigBoxSetter& cb_setter,
+    std::vector<size_t> cbi_index
 ) :
-    ConfigItemControl(index, config_item),
-    ComboBox("ConfigItemCombo"),
-    m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index)
+    ConfigItemControl(index, config_item, cb_setter, cbi_index),
+    ComboBox("ConfigItemCombo")
 {
     const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
     set_editable(
@@ -45,102 +43,71 @@ ConfigItemComboBox::ConfigItemComboBox(
 
     callbacks().selection_changed = [this](int selected)
     {
+        std::optional<Domain::ConfigValue> value;
         const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
         if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{
-                        std::get<double>(m_state->def().choices.at(current_index()).first)
-                    },
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{
+                    std::get<double>(m_state->def().choices.at(current_index()).first)
+                };
             } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{Domain::Percentage{
-                        std::get<double>(m_state->def().choices.at(current_index()).first)
-                    }},
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{Domain::Percentage{
+                    std::get<double>(m_state->def().choices.at(current_index()).first)
+                }};
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
                 // Assume it is always Float :((
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{Domain::FloatOrPercentage{
-                        std::get<double>(m_state->def().choices.at(current_index()).first)
-                    }},
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{Domain::FloatOrPercentage{
+                    std::get<double>(m_state->def().choices.at(current_index()).first)
+                }};
             }
         } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
-            m_cbi_container.set_item_value(
-                *m_state,
-                Domain::ConfigValue{
-                    std::get<int>(m_state->def().choices.at(current_index()).first)
-                },
-                m_cbi_index
-            );
+            value = Domain::ConfigValue{
+                std::get<int>(m_state->def().choices.at(current_index()).first)
+            };
         } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
-            m_cbi_container.set_item_value(
-                *m_state,
-                Domain::ConfigValue{
-                    std::get<std::string>(m_state->def().choices.at(current_index()).first)
-                },
-                m_cbi_index
-            );
+            value = Domain::ConfigValue{
+                std::get<std::string>(m_state->def().choices.at(current_index()).first)
+            };
         } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
             Domain::EnumWrapper values = m_state->get<Domain::EnumWrapper>();
             values.set_string(values.def().at(static_cast<size_t>(selected)).str_serialized);
-            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
+            value = Domain::ConfigValue{values};
+        }
+
+        if (value.has_value()) {
+            set_item_value(value.value());
         }
     };
 
     callbacks().text_edited = [this]()
     {
+        std::optional<Domain::ConfigValue> value;
         const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
         // TODO: Unify this with ConfigItemTextField
         if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{m_double_validator->value()},
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{m_double_validator->value()};
             } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-                m_cbi_container.set_item_value(
-                    *m_state,
-                    Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}},
-                    m_cbi_index
-                );
+                value = Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}};
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
                 if (m_percentage_validator->entered_percentage_symbol()) {
-                    m_cbi_container.set_item_value(
-                        *m_state,
-                        Domain::ConfigValue{Domain::FloatOrPercentage{
-                            Domain::Percentage{m_percentage_validator->value()}
-                        }},
-                        m_cbi_index
-                    );
+                    value = Domain::ConfigValue{Domain::FloatOrPercentage{
+                        Domain::Percentage{m_percentage_validator->value()}
+                    }};
                 } else {
-                    m_cbi_container.set_item_value(
-                        *m_state,
-                        Domain::ConfigValue{
-                            Domain::FloatOrPercentage{m_percentage_validator->value()}
-                        },
-                        m_cbi_index
-                    );
+                    value = Domain::ConfigValue{
+                        Domain::FloatOrPercentage{m_percentage_validator->value()}
+                    };
                 }
             }
         } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
-            m_cbi_container.set_item_value(
-                *m_state,
-                Domain::ConfigValue{m_int_validator->value()},
-                m_cbi_index
-            );
+            value = Domain::ConfigValue{m_int_validator->value()};
         } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
-            m_cbi_container
-                .set_item_value(*m_state, Domain::ConfigValue{current_label()}, m_cbi_index);
+            value = Domain::ConfigValue{current_label()};
+        }
+
+        if (value.has_value()) {
+            set_item_value(value.value());
         }
     };
 }

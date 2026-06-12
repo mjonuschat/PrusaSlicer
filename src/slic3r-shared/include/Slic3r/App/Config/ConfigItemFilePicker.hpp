@@ -21,17 +21,14 @@ public:
     ConfigItemFilePicker(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::IConfigBoxSetter& cbi_container,
-        size_t cbi_index
+        Biz::IConfigBoxSetter& cb_setter,
+        std::vector<size_t> cbi_index
     );
 
 protected:
     void on_data_update() override;
 
 private:
-    Biz::IConfigBoxSetter& m_cbi_container;
-    size_t m_cbi_index{0};
-
     //! InputText is used instead of Text to allow displaying a tooltip for the label on hovering.
     Yoga::InputText* m_file_name{nullptr};
     Yoga::LayoutButton* m_load_btn{nullptr};
