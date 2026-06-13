@@ -16,8 +16,7 @@ PaintOnSeamsDialog::Callbacks& PaintOnSeamsDialog::callbacks()
     return m_callbacks;
 }
 
-PaintOnSeamsDialog::PaintOnSeamsDialog() :
-    GizmoWindow(_u8L("Paint-on seams"), Render::Icon::PaintSeams)
+PaintOnSeamsDialog::PaintOnSeamsDialog() : GizmoWindow()
 {
     content()->set_padding(20.f);
     content()->set_gap(2.f * gap_size());

@@ -26,7 +26,7 @@ TranslationDialog::TranslationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    GizmoWindow{_u8L("Move"), Render::Icon::None, "M"},
+    GizmoWindow(),
     m_scene_provider(scene_provider),
     m_project_interactor{project_interactor},
     m_projects{project_interactor}

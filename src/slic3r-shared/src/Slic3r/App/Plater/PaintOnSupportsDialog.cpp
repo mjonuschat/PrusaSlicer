@@ -18,8 +18,7 @@ PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
     return m_callbacks;
 }
 
-PaintOnSupportsDialog::PaintOnSupportsDialog() :
-    GizmoWindow(_u8L("Paint-on supports"), Render::Icon::PaintSupports)
+PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoWindow()
 {
     content()->set_padding(20.f);
     content()->set_gap(2.f * gap_size());

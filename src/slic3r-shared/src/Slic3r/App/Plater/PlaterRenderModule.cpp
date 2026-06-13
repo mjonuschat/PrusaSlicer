@@ -58,6 +58,7 @@
 #include "Slic3r/App/Plater/VariableLayerHeightDialog.hpp"
 #include "Slic3r/App/Plater/HeightRangeGizmo.hpp"
 #include "Slic3r/App/Plater/HeightRangeDialog.hpp"
+#include "Slic3r/App/Plater/ToolGizmosUiInfo.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 #include "Slic3r/App/Platform/AnimationManager.hpp"
@@ -340,49 +341,6 @@ void PlaterRenderModule::on_init(
     }
 }
 
-static const char* tool_type_to_command_name(Scene::ToolType tool_type)
-{
-    switch (tool_type) {
-    case Scene::ToolType::Translation:
-        return CommandName::MoveGizmo;
-    case Scene::ToolType::Rotation:
-        return CommandName::RotateGizmo;
-    case Scene::ToolType::Scale:
-        return CommandName::ScaleGizmo;
-    case Scene::ToolType::PlaceOnFace:
-        return CommandName::PlaceOnFace;
-    case Scene::ToolType::Simplify:
-        return CommandName::SimplifyGizmo;
-    case Scene::ToolType::ArrangeGizmo:
-        return CommandName::ArrangeGizmo;
-    case Scene::ToolType::PaintOnSupportsGizmo:
-        return CommandName::PaintOnSupportsGizmo;
-    case Scene::ToolType::PaintOnSeamsGizmo:
-        return CommandName::PaintOnSeamsGizmo;
-    case Scene::ToolType::PaintOnFuzzySkinGizmo:
-        return CommandName::PaintOnFuzzySkinGizmo;
-    case Scene::ToolType::MultiMaterialPaintingGizmo:
-        return CommandName::MultiMaterialPaintingGizmo;
-    case Scene::ToolType::TextGizmo:
-        return CommandName::TextGizmo;
-    case Scene::ToolType::Svg:
-        return CommandName::SvgGizmo;
-    case Scene::ToolType::MeasureGizmo:
-        return CommandName::MeasureGizmo;
-    case Scene::ToolType::CutGizmo:
-        return CommandName::CutGizmo;
-    case Scene::ToolType::VariableLayerHeightGizmo:
-        return CommandName::VariableLayerHeightGizmo;
-    case Scene::ToolType::HeightRangeGizmo:
-        return CommandName::HeightRangeGizmo;
-    case Scene::ToolType::None:
-        return nullptr;
-    default:
-        PANIC("Unknown gizmo!");
-    }
-}
-
-
 void PlaterRenderModule::register_commands()
 {
     auto is_instance_from_same_object_selected = [this]() -> bool
@@ -515,30 +473,11 @@ void PlaterRenderModule::register_commands()
             )
         );
 
-    const std::map<Scene::ToolType, Platform::KeyCode> shortcuts{
-        {Scene::ToolType::Translation, Platform::KeyCode::M},
-        {Scene::ToolType::Rotation, Platform::KeyCode::R},
-        {Scene::ToolType::Scale, Platform::KeyCode::S},
-        {Scene::ToolType::PlaceOnFace, Platform::KeyCode::F},
-        {Scene::ToolType::ArrangeGizmo, Platform::KeyCode::A},
-        {Scene::ToolType::Simplify, Platform::KeyCode::E},
-        {Scene::ToolType::PaintOnSupportsGizmo, Platform::KeyCode::L},
-        {Scene::ToolType::PaintOnSeamsGizmo, Platform::KeyCode::P},
-        {Scene::ToolType::PaintOnFuzzySkinGizmo, Platform::KeyCode::H},
-        {Scene::ToolType::MultiMaterialPaintingGizmo, Platform::KeyCode::N},
-        {Scene::ToolType::TextGizmo, Platform::KeyCode::T},
-        {Scene::ToolType::Svg, Platform::KeyCode::G},// !never processed
-        {Scene::ToolType::CutGizmo, Platform::KeyCode::C},
-        {Scene::ToolType::MeasureGizmo, Platform::KeyCode::U},
-        {Scene::ToolType::VariableLayerHeightGizmo, Platform::KeyCode::V},
-        {Scene::ToolType::HeightRangeGizmo, Platform::KeyCode::W},
-    };
-
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
         const Scene::ToolType type{tool_gizmo->type()};
         m_command_registry.register_command(
             std::make_unique<UIItemCommand>(
-                tool_type_to_command_name(type),
+                tool_command_name(type),
                 [this, type]()
                 {
                     if (m_gizmo_manager->current_tool_type() == type) {
@@ -550,7 +489,7 @@ void PlaterRenderModule::register_commands()
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
-                            Platform::KeyboardShortcut{0, shortcuts.at(type)}
+                            Platform::KeyboardShortcut{0, tool_key_code(type)}
                         },
                     .enabled = [tool_gizmo = tool_gizmo.get()]() { return tool_gizmo->enabled(); },
                     .checked = [this, type]()
@@ -589,7 +528,7 @@ void PlaterRenderModule::bind_commands()
     for (const Scene::GizmoManager::IToolGizmoPtr& tool_gizmo : m_gizmo_manager->tool_gizmos()) {
         const Scene::ToolType type{tool_gizmo->type()};
         m_command_binding_manager.bind_tb_item(
-            tool_type_to_command_name(type),
+            tool_command_name(type),
             get_toolbar_button(type)
         );
     }
@@ -703,96 +642,99 @@ void PlaterRenderModule::init_scene_layout()
     m_toolbar_move = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Move,
-        _u8L("Move")
+        tool_name(Scene::ToolType::Translation)
     );
 
     m_toolbar_rotate = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Rotate,
-        _u8L("Rotate")
+        tool_name(Scene::ToolType::Rotation)
     );
 
     m_toolbar_scale = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Scale,
-        _u8L("Scale")
+        tool_name(Scene::ToolType::Scale)
     );
 
     m_toolbar_place_on_face = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PlaceOnFace,
-        _u8L("Place On Face")
+        tool_name(Scene::ToolType::PlaceOnFace)
     );
 
     m_toolbar_arrange = m_layout->add_toolbar_item(
         ToolbarID::Left,
         Render::Icon::Layout,
-        _u8L("Arrange")
+        tool_name(Scene::ToolType::ArrangeGizmo)
     );
 
     m_toolbar_simplify = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Simplify,
-        _u8L("Simplify")
+        tool_name(Scene::ToolType::Simplify)
     );
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,
-        _u8L("Paint-on supports")
+        tool_name(Scene::ToolType::PaintOnSupportsGizmo)
     );
 
     m_toolbar_paint_on_seams = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintSeams,
-        _u8L("Paint-on seams")
+        tool_name(Scene::ToolType::PaintOnSeamsGizmo)
     );
 
     m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintFuzzySkin,
-        _u8L("Paint-on fuzzy skin")
+        tool_name(Scene::ToolType::PaintOnFuzzySkinGizmo)
     );
 
     m_toolbar_multi_material_painting = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::PaintMultiMaterial,
-        _u8L("Multimaterial painting")
+        tool_name(Scene::ToolType::MultiMaterialPaintingGizmo)
     );
 
     m_toolbar_text = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Text,
-        _u8L("Emboss text")
+        tool_name(Scene::ToolType::TextGizmo)
     );
 
     m_toolbar_svg = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Svg,
-        _u8L("Scalable vector graphics(SVG)")
+        tool_name(Scene::ToolType::Svg)
     );
 
-    m_toolbar_cut =
-        m_layout
-            ->add_toolbar_item(ToolbarID::Middle, Render::Icon::Cut, "Cut");
+    m_toolbar_cut = m_layout->add_toolbar_item(
+        ToolbarID::Middle,
+        Render::Icon::Cut,
+        tool_name(Scene::ToolType::CutGizmo)
+    );
 
     m_toolbar_measure = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::Ruler,
-        _u8L("Measure")
+        tool_name(Scene::ToolType::MeasureGizmo)
     );
 
     m_toolbar_variable_layer_height = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::VariableLayerHeight,
-        _u8L("Variable Layer Height")
+        tool_name(Scene::ToolType::VariableLayerHeightGizmo)
     );
 
     m_toolbar_height_range = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::HeightRange,
-        _u8L("Height Range")
+        tool_name(Scene::ToolType::HeightRangeGizmo)
     );
+
     ToolBarButton* plater_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
@@ -850,6 +792,9 @@ void PlaterRenderModule::init_dialog_navigation()
             m_gizmo_manager->deactivate_current_tool();
             m_command_binding_manager.update_ui_items();
         };
+        dialog->set_title(tool_name(tool_type));
+        dialog->set_shortcut(tool_shortcut(tool_type));
+
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
 

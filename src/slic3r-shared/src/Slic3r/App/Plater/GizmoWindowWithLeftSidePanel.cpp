@@ -9,12 +9,7 @@ namespace Slic3r::App::Plater {
 
 const constexpr float SIDE_PANEL_WIDTH = 80.f;
 
-GizmoWindowWithLeftSidePanel::GizmoWindowWithLeftSidePanel(
-    const std::string& title,
-    Render::Icon icon,
-    const std::string& shortcut
-) :
-    GizmoWindow(title, icon, shortcut)
+GizmoWindowWithLeftSidePanel::GizmoWindowWithLeftSidePanel() : GizmoWindow()
 {
     // Background rectangle for the side panel (with rounded corners on the left).
     m_side_panel = emplace<Rectangle>(0);

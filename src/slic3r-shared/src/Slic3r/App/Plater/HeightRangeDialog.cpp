@@ -60,7 +60,7 @@ static std::string format_trimmed(const double value, const int precision)
 }
 
 HeightRangeDialog::HeightRangeDialog(IConfigBoxSetter* config_box_setter) :
-    GizmoWindowWithLeftSidePanel(_u8L("Height range"), Render::Icon::HeightRange),
+    GizmoWindowWithLeftSidePanel(),
     m_config_box_setter(config_box_setter)
 {
     this->content()->set_orientation(Orientation::Vertical);

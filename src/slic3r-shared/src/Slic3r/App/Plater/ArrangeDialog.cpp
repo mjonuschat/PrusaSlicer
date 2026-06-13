@@ -182,7 +182,7 @@ ArrangeDialog::ArrangeDialog(
     OnModeSelected on_mode_selected,
     const Settings& settings
 ) :
-    GizmoWindow{Biz::_u8L("Arrange"), Render::Icon::Layout},
+    GizmoWindow(),
     m_on_arrange{on_arrange},
     m_on_cancel{on_cancel}
 {

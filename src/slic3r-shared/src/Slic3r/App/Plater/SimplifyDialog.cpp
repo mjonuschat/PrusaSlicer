@@ -26,7 +26,7 @@ SimplifyDialog::Callbacks& SimplifyDialog::callbacks()
     return m_callbacks;
 }
 
-SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::Simplify)
+SimplifyDialog::SimplifyDialog() : GizmoWindow()
 {
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());

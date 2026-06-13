@@ -31,7 +31,7 @@ TextDialog::Callbacks& TextDialog::callbacks()
     return m_callbacks;
 }
 
-TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
+TextDialog::TextDialog() : GizmoWindow()
 {
     content()->set_gap(2.f * gap_size());
 

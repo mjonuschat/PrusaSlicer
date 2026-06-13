@@ -16,10 +16,9 @@ using Slic3r::Domain::ZHeightPairs;
 
 namespace Slic3r::App::Plater {
 
-static const Margins BUTTON_TEXT_MARGIN         = {10.f, 2.f, 10.f, 2.f};
+static const Margins BUTTON_TEXT_MARGIN = {10.f, 2.f, 10.f, 2.f};
 
-VariableLayerHeightDialog::VariableLayerHeightDialog() :
-    GizmoWindowWithLeftSidePanel(_u8L("Variable layer height"), Render::Icon::VariableLayerHeight)
+VariableLayerHeightDialog::VariableLayerHeightDialog() : GizmoWindowWithLeftSidePanel()
 {
     this->content()->set_orientation(Orientation::Vertical);
     this->content()->set_gap(gap_size());

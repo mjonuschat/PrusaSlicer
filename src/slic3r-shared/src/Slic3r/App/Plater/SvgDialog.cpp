@@ -37,7 +37,7 @@ const double SvgDialog::MIN_WIDTH{1e-3};
 const double SvgDialog::MAX_WIDTH{1e3};
 constexpr float ButtonSize = 20;
 
-SvgDialog::SvgDialog() : GizmoWindow(_u8L("SVG emboss"), Render::Icon::Svg)
+SvgDialog::SvgDialog() : GizmoWindow()
 {
     Paddings padding = content()->padding().source;
 

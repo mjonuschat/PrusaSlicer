@@ -16,6 +16,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -156,7 +157,7 @@ CutDialog::Callbacks& CutDialog::callbacks()
 
 static constexpr ImColor build_volume_color{192, 154, 247};
 
-CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Cut)
+CutDialog::CutDialog() : GizmoWindow()
 {
     LayoutButton* reset_cut_btn = revert_button();
     reset_cut_btn->set_tooltip(_u8L("Reset cutting plane and remove connectors"));
@@ -171,7 +172,7 @@ CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Cut)
         }
     };
 
-    content()->set_padding({content()->padding().left, 0.f});
+    content()->set_padding({content()->padding().left, 20.f, content()->padding().right, 0.f});
     content()->set_gap(2.f * gap_size());
 
     init_connectors_header();
@@ -717,7 +718,7 @@ void CutDialog::update_keep_object_warning()
 void CutDialog::update_warnings()
 {
     ASSERT(!m_has_keep_object_warning || m_connectors_warnings.empty());
-    // "keep object" and "connectors" warnings are mutually exclusive, 
+    // "keep object" and "connectors" warnings are mutually exclusive,
     // so they are handled separately.
     if (m_has_keep_object_warning) {
         set_warning(
@@ -749,26 +750,33 @@ void CutDialog::confirm_connectors()
 
 void CutDialog::init_connectors_header()
 {
-    top_bar()->set_gap(gap_size());
+    top_bar()->set_gap(10.);
+    top_bar()->set_orientation(Orientation::Vertical);
     top_bar()->set_padding(5.f);
-    top_bar()->set_align_items(YGAlignCenter);
-    top_bar()->set_flex_shrink(0);
-    LayoutButton* back_btn = top_bar()->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
+
+    Item* header = top_bar()->emplace_back<Item>();
+    header->set_gap(gap_size());
+    header->set_padding(5.f);
+    header->set_align_items(YGAlignCenter);
+    header->set_flex_shrink(0);
+    LayoutButton* back_btn = header->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
     back_btn->callbacks().action = [this]() { confirm_connectors(); };
     back_btn->set_height(24.f);
-    top_bar()
-        ->emplace_back<Text>(_u8L("Connectors")) //->set_align_items()
-        ->set_font_type(Render::ImguiFontType::Bold);
+    Text* text = header->emplace_back<Text>(_u8L("Connectors"));
+    text->set_self_align(YGAlignCenter);
+    text->set_font_type(Render::ImguiFontType::Bold);
 
     // Proces reset button in taskbar
-    m_remove_connectors_btn = add_revert_btn(top_bar(), _u8L("Remove connectors"));
+    m_remove_connectors_btn = add_revert_btn(header, _u8L("Remove connectors"));
+    m_remove_connectors_btn->set_background_color(Platform::Color::ButtonTransparent);
     m_remove_connectors_btn->callbacks().action = [this]()
     {
         if (callbacks().reset_connectors) {
             callbacks().reset_connectors();
         }
     };
-    add_separator(content());
+
+    add_separator(top_bar())->set_margin({ 0, -5.f, 0, 0 });
 }
 
 void CutDialog::init_connectors_input_panel()

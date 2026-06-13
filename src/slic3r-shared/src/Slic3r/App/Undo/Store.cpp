@@ -60,6 +60,7 @@ static std::string to_string(Biz::UndoSnapshotType type)
 {
     using Type = Biz::UndoSnapshotType;
     using Biz::_u8L;
+    using Biz::_ctx_u8L;
     switch (type) {
     case Type::None:
         PANIC("None snapshot type!");
@@ -90,7 +91,7 @@ static std::string to_string(Biz::UndoSnapshotType type)
     case Type::Arrange:
         return _u8L("Arrange");
     case Type::Cut:
-        return _u8L("Cut");
+        return _ctx_u8L("Cut", "Tool name");
     case Type::CutPlaneMove:
         return _u8L("Move cut plane");
     case Type::CutChangeMode:

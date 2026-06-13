@@ -24,7 +24,7 @@ static const ImColor FEATURE_2_COLOR = ImColor(191, 64, 191);
 
 using namespace Biz;
 
-MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Ruler)
+MeasureDialog::MeasureDialog() : GizmoWindow()
 {
     const Vec2f shortcut_button_size{30.f, 30.f};
 

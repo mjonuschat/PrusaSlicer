@@ -3,6 +3,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PlaterScenePresenter.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
+        include/Slic3r/App/Plater/ToolGizmosUiInfo.hpp
+        src/Slic3r/App/Plater/ToolGizmosUiInfo.cpp
         include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
         src/Slic3r/App/Plater/PlaterCameraGizmo.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp

@@ -8,8 +8,7 @@ namespace Slic3r::App::Plater {
 
 using Biz::_u8L;
 
-ScaleDialog::ScaleDialog(Biz::ProjectInteractor& project_interactor) :
-    GizmoWindow{_u8L("Scale"), Render::Icon::None, "S"}
+ScaleDialog::ScaleDialog(Biz::ProjectInteractor& project_interactor) : GizmoWindow()
 {
     content()->set_padding({20_fpx, 20_fpx});
     content()->set_orientation(Yoga::Orientation::Vertical);

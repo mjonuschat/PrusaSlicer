@@ -22,7 +22,7 @@ RotationDialog::RotationDialog(
     App::Plater::PlaterScenePresenter& scene_provider,
     Biz::ProjectInteractor& project_interactor
 ) :
-    GizmoWindow{_u8L("Rotate"), Render::Icon::None, "R"},
+    GizmoWindow(),
     m_scene_provider{scene_provider},
     m_project_interactor{project_interactor},
     m_projects{project_interactor}

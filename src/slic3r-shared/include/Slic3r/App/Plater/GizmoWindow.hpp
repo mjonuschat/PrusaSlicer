@@ -34,11 +34,15 @@ public:
         std::function<void()> revert_requested{nullptr};
     };
 
+    explicit GizmoWindow();
+
     explicit GizmoWindow(
         const std::string& title,
-        Render::Icon icon,
         const std::string& shortcut = std::string{}
     );
+
+    void set_title(const std::string& title);
+    void set_shortcut(const std::string& shortcut);
 
     GizmoCallbacks& gizmo_callbacks();
 
@@ -243,6 +247,9 @@ protected:
 
 private:
     GizmoCallbacks m_gizmo_callback;
+
+    Yoga::Text* m_title_text{nullptr};
+    Yoga::Text* m_shortcut_text{nullptr};
 
     Yoga::LayoutButton* m_close_button  = nullptr;
     Yoga::LayoutButton* m_revert_button = nullptr;

@@ -19,8 +19,7 @@ PaintOnFuzzySkinDialog::Callbacks& PaintOnFuzzySkinDialog::callbacks()
     return m_callbacks;
 }
 
-PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() :
-    GizmoWindow(_u8L("Paint-on fuzzy skin"), Render::Icon::PaintFuzzySkin)
+PaintOnFuzzySkinDialog::PaintOnFuzzySkinDialog() : GizmoWindow()
 {
     content()->set_padding(20.f);
     content()->set_gap(2.f * gap_size());

@@ -24,7 +24,30 @@ namespace Slic3r::App::Plater {
 
 constexpr float dialog_padding = 20;
 
-GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std::string& shortcut) :
+GizmoWindow::GizmoWindow() : GizmoWindow(std::string{}, std::string{}) {}
+
+void GizmoWindow::set_title(const std::string& title)
+{
+    m_title_text->set_text(title);
+}
+
+void GizmoWindow::set_shortcut(const std::string& shortcut)
+{
+    m_shortcut_text->set_text(shortcut);
+    m_shortcut_text->set_visible(!shortcut.empty());
+}
+
+static LayoutButton* add_button(Item* parent, Render::Icon icon)
+{
+    LayoutButton* button = parent->emplace_back<LayoutButton>(std::string{}, icon);
+    button->set_background_color(Platform::Color::ButtonTransparent);
+    button->set_width(20);
+    button->set_height(20);
+
+    return button;
+}
+
+GizmoWindow::GizmoWindow(const std::string& title, const std::string& shortcut) :
     Window("GizmoWindow")
 {
     set_orientation(Orientation::Horizontal);
@@ -39,44 +62,33 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
 
     Item* top_row = column->emplace_back<Item>();
     top_row->set_max_height(40);
+    top_row->set_gap(5.f);
     top_row->set_flex_shrink(0);
 
-    Rectangle* buttons_rect = top_row->emplace_back<Rectangle>();
+    Item* name_rect = top_row->emplace_back<Item>();
+    name_rect->set_align_items(YGAlignCenter);
+    name_rect->set_gap(10.f);
+    name_rect->set_flex_grow(1.f);
+    name_rect->set_padding({dialog_padding, dialog_padding, 0.f, dialog_padding});
+
+    m_shortcut_text = name_rect->emplace_back<Text>(shortcut);
+    m_shortcut_text->set_margin({6, 0, 0, 0});
+    m_shortcut_text->set_text_color(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
+    m_shortcut_text->set_visible(!shortcut.empty());
+
+    m_title_text = name_rect->emplace_back<Text>(title);
+    m_title_text->set_font_type(Render::ImguiFontType::Bold);
+    m_title_text->set_wrap_mode(Text::WrapMode::WrapElide);
+    m_title_text->set_flex_grow(1.f);
+
+    Item* buttons_rect = top_row->emplace_back<Item>();
     buttons_rect->set_align_items(YGAlignCenter);
-    buttons_rect->set_padding(dialog_padding);
-    buttons_rect->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
-    buttons_rect->set_flex_grow(1);
-    buttons_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight);
+    buttons_rect->set_flex_shrink(0.f);
+    buttons_rect->set_padding({0.f, dialog_padding, dialog_padding, dialog_padding});
 
-    if (icon != Render::Icon::None) {
-        Icon* header_icon = buttons_rect->emplace_back<Icon>(icon);
-        header_icon->set_margin(Margins{0, 0, 3, 0});
-        header_icon->set_width(20);
-        header_icon->set_height(20);
-        header_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-        header_icon->set_flex_shrink(0.f);
-    } else {
-        buttons_rect->set_padding(Paddings{24, dialog_padding, dialog_padding, dialog_padding});
-    }
-
-    Text* title_text = buttons_rect->emplace_back<Text>(title);
-    title_text->set_font_type(Render::ImguiFontType::Bold);
-
-    if (!shortcut.empty()) {
-        Text* shortcut_text = buttons_rect->emplace_back<Text>(shortcut);
-        shortcut_text->set_margin({6, 0, 0, 0});
-        shortcut_text->set_text_color(
-            m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
-        );
-    }
-
-    Item* spacer = buttons_rect->emplace_back<Item>();
-    spacer->set_flex_grow(1);
-
-    m_revert_button =
-        buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::UndoGizmo);
-    m_revert_button->set_width(24);
-    m_revert_button->set_height(24);
+    m_revert_button                     = add_button(buttons_rect, Render::Icon::UndoGizmo);
     m_revert_button->callbacks().action = [this]
     {
         if (m_gizmo_callback.revert_requested) {
@@ -86,16 +98,15 @@ GizmoWindow::GizmoWindow(const std::string& title, Render::Icon icon, const std:
     m_revert_button->set_visible(false);
     m_revert_button->set_margin(Margins(10.f, 0.f));
 
-    m_close_button =
-        buttons_rect->emplace_back<LayoutButton>(std::string{}, Render::Icon::PrintIdle);
-    m_close_button->set_width(20);
-    m_close_button->set_height(20);
+    m_close_button = add_button(buttons_rect, Render::Icon::PrintIdle);
     m_close_button->callbacks().action = [this]
     {
         if (m_gizmo_callback.close_requested) {
             m_gizmo_callback.close_requested();
         }
     };
+
+    add_separator(column);
 
     m_top_bar = column->emplace_back<Item>();
 
@@ -127,12 +138,10 @@ Separator* GizmoWindow::add_separator(Item* item)
     float margin_end{0.f};
     Item* parent_item = item;
     while (parent_item != this) {
-        margin_begin += item->orientation() == Orientation::Vertical ?
-            parent_item->padding().left :
-            parent_item->padding().top;
-        margin_end += item->orientation() == Orientation::Vertical ?
-            parent_item->padding().right :
-            parent_item->padding().bottom;
+        margin_begin += item->orientation() == Orientation::Vertical ? parent_item->padding().left :
+                                                                       parent_item->padding().top;
+        margin_end += item->orientation() == Orientation::Vertical ? parent_item->padding().right :
+                                                                     parent_item->padding().bottom;
         parent_item = parent_item->parent_item();
     }
 

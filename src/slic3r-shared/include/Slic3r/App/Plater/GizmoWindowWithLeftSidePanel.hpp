@@ -17,11 +17,7 @@ namespace Slic3r::App::Plater {
 class GizmoWindowWithLeftSidePanel : public GizmoWindow
 {
 public:
-    explicit GizmoWindowWithLeftSidePanel(
-        const std::string& title,
-        Render::Icon icon,
-        const std::string& shortcut = std::string{}
-    );
+    explicit GizmoWindowWithLeftSidePanel();
 
     Yoga::Rectangle* side_panel() const;
     Yoga::Text* side_panel_header_title() const;

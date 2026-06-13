@@ -296,7 +296,7 @@ static ItemPtr help()
 MultiMaterialPaintingDialog::MultiMaterialPaintingDialog(
     Biz::ProjectInteractor& project_interactor
 ) :
-    GizmoWindow(_u8L("Painting"), Render::Icon::None, _u8L("N"))
+    GizmoWindow()
 {
     const Paddings padding{4 * spacing};
 
