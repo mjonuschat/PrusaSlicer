@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
+#include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
 
 #include <wx/panel.h>
 #include <functional>
@@ -33,6 +34,8 @@ public:
     void on_printables_secret_token(const std::string& body) override {}
 
     virtual void set_next_show_url(const std::string url) {}
+
+    virtual App::Browser::AbstractBrowserLogic* browser_logic() { return nullptr; }
 
     void set_switch_left_tab_fn(std::function<void(LeftBarTabs, const std::string&)> switch_left_tab_fn)
     {

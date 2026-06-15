@@ -133,6 +133,7 @@ public:
     void perform_sync(const HttpRetryOpt& retry_opts = HttpRetryOpt::no_retry()) override;
 
     static std::string extract_host_from_url(const std::string& url_in);
+    static std::string get_origin_from_url(const std::string& url_in);
     static std::string substitute_host(const std::string& orig_addr, std::string sub_addr);
     static std::string escape_path_by_element(const boost::filesystem::path& path);
     static std::string escape_string(const std::string& str);

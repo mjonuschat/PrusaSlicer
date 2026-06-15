@@ -695,6 +695,55 @@ std::string HttpCurl::extract_host_from_url(const std::string& url_in)
     return host;
 }
 
+std::string HttpCurl::get_origin_from_url(const std::string& url_in)
+{
+    std::string url = url_in;
+    if (url.find("://") == std::string::npos) {
+        url = "http://" + url;
+    }
+
+    CURLU* curlu = curl_url();
+    if (!curlu) {
+        SPDLOG_ERROR("get_origin_from_url: Failed to allocate CURLU handle");
+        return url_in;
+    }
+
+    if (curl_url_set(curlu, CURLUPART_URL, url.c_str(), 0) != CURLUE_OK) {
+        SPDLOG_ERROR("get_origin_from_url: Failed to parse URL: {}", url);
+        curl_url_cleanup(curlu);
+        return url_in;
+    }
+
+    char* scheme_cstr = nullptr;
+    if (curl_url_get(curlu, CURLUPART_SCHEME, &scheme_cstr, 0) != CURLUE_OK) {
+        SPDLOG_ERROR("get_origin_from_url: Failed to extract scheme from URL: {}", url);
+        curl_url_cleanup(curlu);
+        return url_in;
+    }
+
+    char* host_cstr = nullptr;
+    if (curl_url_get(curlu, CURLUPART_HOST, &host_cstr, 0) != CURLUE_OK) {
+        curl_free(scheme_cstr);
+        SPDLOG_ERROR("get_origin_from_url: Failed to extract host from URL: {}", url);
+        curl_url_cleanup(curlu);
+        return url_in;
+    }
+
+    std::string origin = std::string(scheme_cstr) + "://" + std::string(host_cstr);
+    curl_free(scheme_cstr);
+    curl_free(host_cstr);
+
+    // Include port only if explicitly present in the URL
+    char* port_cstr = nullptr;
+    if (curl_url_get(curlu, CURLUPART_PORT, &port_cstr, 0) == CURLUE_OK) {
+        origin += ":" + std::string(port_cstr);
+        curl_free(port_cstr);
+    }
+
+    curl_url_cleanup(curlu);
+    return origin;
+}
+
 std::string HttpCurl::substitute_host(const std::string& orig_addr, std::string sub_addr)
 {
     // Ensure IPv6 addresses are enclosed in brackets

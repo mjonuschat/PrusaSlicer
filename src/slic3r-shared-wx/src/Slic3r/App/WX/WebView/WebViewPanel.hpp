@@ -34,7 +34,7 @@ public:
 
     void on_printables_secret_token(const std::string& body) override;
 
-    App::Browser::AbstractBrowserLogic* browser_logic()
+    App::Browser::AbstractBrowserLogic* browser_logic() override
     {
         return m_logic.get();
     }

@@ -52,7 +52,7 @@ class MainFrame :
     public ILanguageChangedListener,
     public IAppConfigChangedListener,
     public Biz::IProjectsChangedListener,
-    public Biz::UserAccount::IUserAccountListener
+    public Biz::UserAccount::IUserAccountListener,
     public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
 {
 public:
@@ -87,6 +87,7 @@ public:
     void on_project_saved(Domain::SelectionId project_id) override;
 
     void on_selected_physical_printer_changed() override;
+    void on_printer_data_changed() override;
 
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);

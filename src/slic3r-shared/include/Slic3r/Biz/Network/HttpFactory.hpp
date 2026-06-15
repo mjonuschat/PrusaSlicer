@@ -15,6 +15,7 @@ public:
 
     using CreateFn = std::unique_ptr<IHttp>(IHttp::RequestMethod, std::string, IHttp::RetryFn);
     using ExtractHostFn = std::string(const std::string&);
+    using GetOriginFn = std::string(const std::string&);
     using SubstituteHostFn = std::string(const std::string&, std::string);
     using EscapePathFn = std::string(const boost::filesystem::path&);
     using EscapeStringFn = std::string(const std::string&);
@@ -42,6 +43,13 @@ public:
             initialize();
         }
         return m_extract_host_from_url_fn(url_in);
+    }
+
+    std::string get_origin_from_url(const std::string& url_in) {
+        if (!m_get_origin_from_url_fn) {
+            initialize();
+        }
+        return m_get_origin_from_url_fn(url_in);
     }
 
     std::string substitute_host(const std::string& orig_addr, std::string sub_addr) {
@@ -116,6 +124,10 @@ public:
         m_extract_host_from_url_fn = std::move(fn);
     }
 
+    void set_get_origin_from_url_fn(std::function<GetOriginFn> fn) {
+        m_get_origin_from_url_fn = std::move(fn);
+    }
+
     void set_substitute_host_fn(std::function<SubstituteHostFn> fn) {
         m_substitute_host_fn = std::move(fn);
     }
@@ -168,6 +180,7 @@ private:
 
     std::function<CreateFn> m_create_fn;
     std::function<ExtractHostFn> m_extract_host_from_url_fn;
+    std::function<GetOriginFn> m_get_origin_from_url_fn;
     std::function<SubstituteHostFn> m_substitute_host_fn;
     std::function<EscapePathFn> m_escape_path_by_element_fn;
     std::function<EscapeStringFn> m_escape_string_fn;
