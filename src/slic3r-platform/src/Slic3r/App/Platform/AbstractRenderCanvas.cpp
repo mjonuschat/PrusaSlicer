@@ -236,7 +236,10 @@ void AbstractRenderCanvas::update_mouse_position(int x, int y)
 void AbstractRenderCanvas::enqueue_mouse(const MouseEvent& e)
 {
     const auto type = e.type();
-    if (type == MouseEvent::Type::ButtonDown) {
+    // For double-clicks, wxWidgets generates the following event sequence:
+    // Down -> Up -> DblClick -> Up.
+    // Therefore, process MouseEvent::Type::DoubleClick as a mouse button press as well.
+    if (type == MouseEvent::Type::ButtonDown || type == MouseEvent::Type::DoubleClick) {
         const size_t idx = button_to_index(e.button());
 
         if (idx < m_mouse_button_pressed.size()) {
