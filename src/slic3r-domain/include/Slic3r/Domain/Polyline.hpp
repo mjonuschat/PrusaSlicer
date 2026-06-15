@@ -11,10 +11,10 @@ public:
 
     Polyline() = default;
     Polyline(const Polyline& other) : MultiPoint(other.points) {}
-    Polyline(Polyline&& other) : MultiPoint(std::move(other.points)) {}
+    Polyline(Polyline&& other) noexcept : MultiPoint(std::move(other)) {}
     Polyline(std::initializer_list<Point> points) : MultiPoint(points) {}
     explicit Polyline(const Points& points) : MultiPoint(points) {}
-    explicit Polyline(Points&& points) : MultiPoint(std::move(points)) {}
+    explicit Polyline(Points&& points) noexcept: MultiPoint(std::move(points)) {}
     explicit Polyline(const Point& p1, const Point& p2)
     {
         this->points.reserve(2);

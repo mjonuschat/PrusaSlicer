@@ -10,6 +10,7 @@ public:
     Polygon() = default;
     Polygon(const Polygon& other) : MultiPoint(other.points) {}
     Polygon(Polygon&& other) noexcept : MultiPoint(std::move(other)) {}
+    explicit Polygon(Points&& points_) noexcept : MultiPoint(std::move(points_)) {}
     Polygon(std::initializer_list<Point> points) : MultiPoint(points) {}
     explicit Polygon(const Points& points) : MultiPoint(points) {}
 

@@ -17,6 +17,7 @@ public:
     MultiPoint(MultiPoint&& other) noexcept : points(std::move(other.points)) {}
     MultiPoint(std::initializer_list<Point> list) : points(list) {}
     explicit MultiPoint(const Points& points) : points(points) {}
+    explicit MultiPoint(Points&& points_) noexcept : points(std::move(points_)) {}
 
     virtual ~MultiPoint() = default;
 

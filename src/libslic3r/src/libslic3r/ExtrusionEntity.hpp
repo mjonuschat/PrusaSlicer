@@ -186,12 +186,12 @@ public:
     ExtrusionPath(ExtrusionRole role) : m_attributes{ role } {}
     ExtrusionPath(const ExtrusionAttributes &attributes) : m_attributes(attributes) {}
     ExtrusionPath(const ExtrusionPath &rhs) : polyline(rhs.polyline), m_attributes(rhs.m_attributes) {}
-    ExtrusionPath(ExtrusionPath &&rhs) : polyline(std::move(rhs.polyline)), m_attributes(rhs.m_attributes) {}
+    ExtrusionPath(ExtrusionPath &&rhs) noexcept : polyline(std::move(rhs.polyline)), m_attributes(rhs.m_attributes) {}
     ExtrusionPath(const Domain::Polyline &polyline, const ExtrusionAttributes &attribs) : polyline(polyline), m_attributes(attribs) {}
-    ExtrusionPath(Domain::Polyline &&polyline, const ExtrusionAttributes &attribs) : polyline(std::move(polyline)), m_attributes(attribs) {}
+    ExtrusionPath(Domain::Polyline &&polyline, const ExtrusionAttributes &attribs) noexcept : polyline(std::move(polyline)), m_attributes(attribs) {}
 
     ExtrusionPath& operator=(const ExtrusionPath &rhs) { this->polyline = rhs.polyline; m_attributes = rhs.m_attributes; return *this; }
-    ExtrusionPath& operator=(ExtrusionPath &&rhs) { this->polyline = std::move(rhs.polyline); m_attributes = rhs.m_attributes; return *this; }
+    ExtrusionPath& operator=(ExtrusionPath &&rhs) noexcept { this->polyline = std::move(rhs.polyline); m_attributes = rhs.m_attributes; return *this; }
 
 	ExtrusionEntity* clone() const override { return new ExtrusionPath(*this); }
     // Create a new object, initialize it with this object using the move semantics.
@@ -260,12 +260,12 @@ public:
     
     ExtrusionMultiPath() {}
     ExtrusionMultiPath(const ExtrusionMultiPath &rhs) : paths(rhs.paths) {}
-    ExtrusionMultiPath(ExtrusionMultiPath &&rhs) : paths(std::move(rhs.paths)) {}
+    ExtrusionMultiPath(ExtrusionMultiPath &&rhs) noexcept : paths(std::move(rhs.paths)) {}
     ExtrusionMultiPath(const ExtrusionPaths &paths) : paths(paths) {}
     ExtrusionMultiPath(const ExtrusionPath &path) { this->paths.push_back(path); }
 
     ExtrusionMultiPath& operator=(const ExtrusionMultiPath &rhs) { this->paths = rhs.paths; return *this; }
-    ExtrusionMultiPath& operator=(ExtrusionMultiPath &&rhs) { this->paths = std::move(rhs.paths); return *this; }
+    ExtrusionMultiPath& operator=(ExtrusionMultiPath &&rhs) noexcept { this->paths = std::move(rhs.paths); return *this; }
 
     bool is_loop() const override { return false; }
     bool can_reverse() const override { return true; }
