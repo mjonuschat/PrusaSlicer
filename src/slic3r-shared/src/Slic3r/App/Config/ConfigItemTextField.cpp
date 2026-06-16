@@ -81,11 +81,11 @@ void ConfigItemTextField::on_data_update()
     if (m_last_item != m_state) {
         if (!m_is_multiline || m_is_multiline.value() != m_state->def().multiline) {
             if (m_state->def().multiline) {
-                set_flags(flags() | ImGuiInputTextFlags_Multiline);
+                set_input_flags(flags() | ImGuiInputTextFlags_Multiline);
                 set_resizable(true);
                 input_text()->set_min_height(80);
             } else {
-                set_flags(flags() & ~ImGuiInputTextFlags_Multiline);
+                set_input_flags(flags() & ~ImGuiInputTextFlags_Multiline);
                 set_resizable(false);
                 input_text()->set_height(YGUndefined);
                 input_text()->set_min_height(0);
