@@ -244,7 +244,7 @@ void PopNotificationView::basic_mid_text_layout(const std::string& text)
     text_scroll->set_flex_shrink(1.f);
     text_scroll->set_justify_content(YGJustifyFlexStart);
     text_scroll->set_margin({0.f, 0.f, -10.f, 10.f});
-    text_scroll->set_padding({0.f, 0.f, 10.f, 0.f});
+    text_scroll->set_padding({0.f, 0.f, 20.f, 0.f});
     text_scroll->set_width_percent(100.f);
 
     m_text = text_scroll->emplace_back<Yoga::Text>(text);
