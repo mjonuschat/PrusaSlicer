@@ -225,6 +225,9 @@ MaterialSelectionDialog::MaterialSelectionDialog(
             m_callbacks.advanced_settings_tab_opened(current_index);
         }
     };
+
+
+    set_material_index(0);
 }
 
 MaterialSelectionDialog::~MaterialSelectionDialog()
