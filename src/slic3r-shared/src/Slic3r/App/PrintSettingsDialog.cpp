@@ -116,7 +116,7 @@ PrintSettingsDialog::PrintSettingsDialog(
             [this](size_t index) { select_page_entry(index, false); }
         );
     ScrollArea* left_column = center_row->emplace_back<ScrollArea>();
-    left_column->set_padding(Paddings(0, 0, 8, 0));
+    left_column->set_padding(Paddings(0, 0, 12, 0));
     left_column->set_orientation(Orientation::Vertical);
     left_column->set_gap(5);
 

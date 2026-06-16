@@ -256,6 +256,7 @@ SubstitutionRow::SubstitutionRow(
 
     Item* checkbox_row = emplace_back<Item>();
     checkbox_row->set_flex_wrap(YGWrap::YGWrapWrap);
+    checkbox_row->set_gap(5);
     m_checkbox_regexp =
         checkbox_row->emplace_back<Yoga::ToggleButton>(Biz::_u8L("Regular expression"));
     m_checkbox_regexp->set_checkable(false);
@@ -288,8 +289,7 @@ SubstitutionRow::SubstitutionRow(
             !m_checkbox_whole_word->checked()
         );
     };
-    m_checkbox_single_line =
-        checkbox_row->emplace_back<Yoga::ToggleButton>(Biz::_u8L("Match single line"));
+    m_checkbox_single_line = emplace_back<Yoga::ToggleButton>(Biz::_u8L("Match single line"));
     m_checkbox_single_line->set_checkable(false);
     m_checkbox_single_line->callbacks().action = [this]()
     {
