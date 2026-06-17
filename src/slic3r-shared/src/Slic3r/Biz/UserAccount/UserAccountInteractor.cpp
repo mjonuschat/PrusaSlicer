@@ -68,9 +68,6 @@ void UserAccountInteractor::do_log_out(bool notify_owner)
         return;
     }
     m_communication->do_log_out(notify_owner);
-    if (update_menu_callback) {
-        update_menu_callback(true);
-    }
 }
 
 std::string
@@ -212,6 +209,9 @@ void UserAccountInteractor::on_race_lost(const std::string& msg)
 
 void UserAccountInteractor::on_logged_out()
 {
+    if (update_menu_callback) {
+        update_menu_callback(true);
+    }
     invoke_listeners<IUserAccountListener>(
         [](auto* listener) { listener->on_user_account_logged_out(); }
     );
