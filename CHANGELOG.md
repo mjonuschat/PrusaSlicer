@@ -11,6 +11,16 @@ lost during the rebase and squash based workflow.
 
 ### Changed
 
+### Fixed
+
+### Ported
+
+### Notes
+
+## 2.9.6-rc1 - 2026-06-17
+
+### Changed
+
 - Paint-on line drawing now snaps to vertical within 15 degrees instead of 5,
   making the vertical snap easier to trigger on curved surfaces.
 
@@ -28,9 +38,3 @@ lost during the rebase and squash based workflow.
 - Fixed ooze-prevention preheat commands for first-layer tool changes. Tools
   first used after the initial tool on layer one now preheat to their
   first-layer nozzle temperature instead of their normal layer temperature.
-
-### Ported
-
-### Notes
-
-- BOSS is now based on upstream PrusaSlicer 2.9.6-rc1.
