@@ -32,3 +32,5 @@ lost during the rebase and squash based workflow.
 ### Ported
 
 ### Notes
+
+- BOSS is now based on upstream PrusaSlicer 2.9.6-rc1.
