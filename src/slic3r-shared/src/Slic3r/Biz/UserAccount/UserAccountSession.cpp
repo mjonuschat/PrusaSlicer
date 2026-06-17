@@ -103,6 +103,7 @@ void UserAccountSession::process_action_queue_inner()
             std::move(selected_data),
             m_global_cancel
         );
+        m_global_cancel = false;
         process_action_queue_inner();
     }
 }
