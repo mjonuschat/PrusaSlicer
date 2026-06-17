@@ -207,6 +207,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Select a bed");
     case Type::AddConfigContainer:
         return _u8L("Add Printer Group");
+    case Type::DuplicateConfigContainer:
+        return _u8L("Duplicate Printer Group");
     case Type::DeleteConfigContainer:
         return _u8L("Delete Printer Group");
     case Type::AddBed:

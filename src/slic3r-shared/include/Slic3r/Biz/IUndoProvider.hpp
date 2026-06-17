@@ -86,6 +86,7 @@ enum class UndoSnapshotType
     DeactivateGizmo,
     SelectBed,
     AddConfigContainer,
+    DuplicateConfigContainer,
     DeleteConfigContainer,
     AddBed,
     DeleteBed,

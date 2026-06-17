@@ -200,7 +200,12 @@ void ObjectListWindow::init_cc_context_menu()
     m_cc_context_menu->append_item(_u8L("Duplicate"), Render::Icon::CopyForGizmo)
         ->callbacks()
         .action = [this]()
-    { m_project_interactor->duplicate_config_container(m_selected_config_container_id); };
+    {
+        m_project_interactor->duplicate_config_container(m_selected_config_container_id);
+        m_project_interactor->undo_provider().take_snapshot(
+            Biz::UndoSnapshotType::DuplicateConfigContainer
+        );
+    };
 
     // Process callback for show context menu
 
