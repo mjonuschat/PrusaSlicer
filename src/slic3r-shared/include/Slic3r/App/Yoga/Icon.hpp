@@ -99,6 +99,7 @@ private:
     bool m_auto_resize   = true;
     int m_max_texture_size{0};
     std::shared_ptr<Render::Texture> m_texture;
+    std::shared_ptr<Render::Texture> m_disabled_texture;
     Render::Icon m_icon;
     std::string m_image;
     Vec2f m_source_size{0, 0};

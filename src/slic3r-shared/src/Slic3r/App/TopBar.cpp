@@ -6,6 +6,7 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 
 #include "Slic3r/App/SearchBar.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
@@ -53,6 +54,7 @@ TopBar::TopBar(
     set_rounding(0.f);
     set_gap(0.f);
     set_flex_shrink(0);
+    set_height(35_fpx);
 
     Item* left_wrapper = emplace_back<Item>();
     left_wrapper->set_flex_shrink(0);
@@ -73,11 +75,13 @@ TopBar::TopBar(
             }
         };
     }
+
+    left_wrapper->emplace_back<Separator>(Orientation::Vertical);
 #endif // !USE_NATIVE_MENU
 
     add_save_project_btn(left_wrapper);
     m_undo_redo_wrapper = left_wrapper->emplace_back<Item>();
-    m_undo_redo_wrapper->set_min_width(96);
+    m_undo_redo_wrapper->set_min_width(100_fpx);
     if (m_undo_store) {
         add_undo_btn(m_undo_redo_wrapper);
         add_redo_btn(m_undo_redo_wrapper);
@@ -123,17 +127,34 @@ TopBar::TopBar(
              add_new_project_btn
          })
     {
-        if (!btn)
+        if (!btn) {
             continue;
+        }
         btn->set_background_color(Platform::Color::ButtonTransparent);
         btn->set_tooltip_position(Position::Bottom);
-        btn->set_height(btn == m_main_menu_btn || btn == add_new_project_btn ? 30.f : 24.f);
+        btn->set_content_align_items(YGAlignCenter);
+        btn->icon_object()->set_height(16_fpx);
+        btn->icon_object()->set_width(16_fpx);
+        btn->set_height(35_fpx);
+        btn->set_content_padding({7_fpx, 0});
+        btn->set_draw_flags(ImDrawFlags_None);
     }
 
-    for (Item* wrapper : std::initializer_list<Item*>{left_wrapper, right_wrapper}) {
-        wrapper->set_gap(7.f);
-        wrapper->set_padding({15.f, 5.f});
+    m_main_menu_btn->icon_object()->set_width(24_fpx);
+    m_main_menu_btn->icon_object()->set_height(24_fpx);
+    add_new_project_btn->set_width(22_fpx);
+    add_new_project_btn->set_height(22_fpx);
+    add_new_project_btn->set_content_padding({});
+
+    if (m_undo_stack_btn) {
+        m_undo_stack_btn->set_content_padding({2_fpx, 0});
     }
+    if (m_redo_stack_btn) {
+        m_redo_stack_btn->set_content_padding({2_fpx, 0});
+    }
+
+    left_wrapper->set_padding(5_fpx);
+    right_wrapper->set_padding(5_fpx);
 
     if (m_project_interactor.selected_project_id() != Domain::INVALID_ID) {
         on_selected_project_changed(m_project_interactor.selected_project_id());

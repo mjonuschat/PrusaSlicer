@@ -16,6 +16,7 @@ struct TextureKey
     int width = 0;
     int height = 0;
     Domain::PixelFormat pixel_format = Domain::PixelFormat::RGBA8; // consider removing it from key
+    std::unordered_map<std::string, std::string> replace_strings;
 
     bool operator==(const TextureKey& rhs) const;
     bool operator!=(const TextureKey& rhs) const;

@@ -50,24 +50,30 @@ void Icon::render(const Vec2f& pos, const Vec2f& size)
     if (m_texture) {
         constexpr ImVec2 uv0{0, 0};
         constexpr ImVec2 uv1{1, 1};
+        constexpr ImVec4 bg_color{0, 0, 0, 0};
 
         ImGui::SetCursorScreenPos(pixel_round(to_im(pos) + m_offset));
-        render_image(
-            m_texture,
-            m_draw_size,
-            uv0,
-            uv1,
-            {0, 0, 0, 0},
-            enabled() ? tint() :
-                        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled),
-            m_rounding.result
-        );
+
+        if (enabled()) {
+            render_image(m_texture, m_draw_size, uv0, uv1, bg_color, tint(), m_rounding.result);
+        } else {
+            render_image(
+                m_disabled_texture ? m_disabled_texture : m_texture,
+                m_draw_size,
+                uv0,
+                uv1,
+                bg_color,
+                m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled),
+                m_rounding.result
+            );
+        }
     }
 
     render_item_end(pos, size);
 }
 
-void Icon::resize(const SizeInfo& size_info) {
+void Icon::resize(const SizeInfo& size_info)
+{
     Item::resize(size_info);
     m_rounding.evaluate(size_info);
 }
@@ -191,13 +197,17 @@ void Icon::update_texture()
         if (m_icon == Render::Icon::None || m_max_texture_size == 0 || !m_imgui_render) {
             m_texture = nullptr;
         } else {
-            m_texture = m_imgui_render->icon_texture(
+            constexpr ImVec4 WhiteColor{1, 1, 1, 1};
+            const bool colors_preserved = m_preserve_colors || m_tint != WhiteColor;
+            m_texture                   = m_imgui_render->icon_texture(
                 m_icon,
                 m_max_texture_size,
-                m_preserve_colors || m_tint != ImVec4{1, 1, 1, 1} ?
-                    std::unordered_map<std::string, std::string>{} :
-                    s_replace_strings
+                colors_preserved ? std::unordered_map<std::string, std::string>{} :
+                                   s_replace_strings
             );
+            m_disabled_texture = colors_preserved ?
+                m_texture :
+                m_imgui_render->icon_texture(m_icon, m_max_texture_size);
         }
     } else if (m_icon_type == IconType::Image) {
         if (m_image.empty() || m_max_texture_size == 0) {
@@ -211,6 +221,9 @@ void Icon::update_texture()
         // loop before Icon::render, in those cases, let us cache all images that we are
         // creating, all unused ones will be cleared in the next frame.
         m_imgui_render->use_texture(m_texture);
+    }
+    if (m_disabled_texture) {
+        m_imgui_render->use_texture(m_disabled_texture);
     }
 }
 

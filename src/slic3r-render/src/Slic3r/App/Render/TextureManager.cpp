@@ -16,8 +16,11 @@ using Domain::Image;
 
 bool TextureKey::operator==(const TextureKey& rhs) const
 {
-    return key_name == rhs.key_name && width == rhs.width && height == rhs.height &&
-        pixel_format == rhs.pixel_format;
+    return key_name == rhs.key_name
+        && width == rhs.width
+        && height == rhs.height
+        && pixel_format == rhs.pixel_format
+        && replace_strings == rhs.replace_strings;
 }
 
 bool TextureKey::operator!=(const TextureKey& rhs) const { return !(*this == rhs); }
@@ -37,7 +40,13 @@ TexturePtr TextureManager::get_or_create_image(
         // we have loaded this file before
         // compute what loaded scale we would use
         Size scaled_size = opts.resolve_to_size(size_it->second);
-        const TextureKey key{filename, scaled_size.width, scaled_size.height};
+        const TextureKey key{
+            filename,
+            scaled_size.width,
+            scaled_size.height,
+            Domain::PixelFormat::RGBA8,
+            opts.replace_strings
+        };
         TextureMap::const_iterator it = m_image_textures.find(key);
         if (it != m_image_textures.end()) {
             // we have same texture in the same size, return it
@@ -92,7 +101,7 @@ TexturePtr TextureManager::get_or_create_image(
     m_image_sizes[filename] = size;
 
     Size scaled_size = opts.resolve_to_size(size);
-    TextureKey key{filename, scaled_size.width, scaled_size.height, PixelFormat::RGBA8};
+    TextureKey key{filename, scaled_size.width, scaled_size.height, PixelFormat::RGBA8, opts.replace_strings};
     tex->set_object_name(key.key_name);
     TexturePtr shared_tex(tex.release(), [this, key](Texture* texture) {
         delete texture;
