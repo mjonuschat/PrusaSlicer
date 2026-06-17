@@ -56,9 +56,7 @@ void UserAccountSession::do_clear(bool notify_owner)
         std::lock_guard<std::mutex> lock(m_session_mutex);
         m_processing_enabled = false;
     }
-    if (notify_owner) {
-        dispatch_logged_out();
-    }
+    dispatch_logged_out(notify_owner);
 }
 
 void UserAccountSession::process_action_queue()

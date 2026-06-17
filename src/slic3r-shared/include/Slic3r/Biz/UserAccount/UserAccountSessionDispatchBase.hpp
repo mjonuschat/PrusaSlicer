@@ -35,7 +35,7 @@ protected:
     void dispatch_enqueued_refresh();
     void dispatch_new_refresh_time(long long exp);
     void dispatch_race_lost(const std::string& body);
-    void dispatch_logged_out();
+    void dispatch_logged_out(bool notify_owner);
 
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;

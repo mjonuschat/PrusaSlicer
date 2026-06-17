@@ -40,7 +40,7 @@ public:
     /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
      */
-    void do_log_out(bool notify_owner);
+    void do_log_out();
 
     /**
      * @brief Returns url to be displayed in browser for logging in.
@@ -110,7 +110,7 @@ public:
     void on_enqueued_refresh() override;
     void on_new_refresh_time(long long exp) override;
     void on_race_lost(const std::string& body) override;
-    void on_logged_out() override;
+    void on_logged_out(bool notify_owner) override;
     void on_printables_secret_token(const std::string& body) override;
 
     std::string access_token() const;

@@ -18,7 +18,7 @@ public:
     virtual void on_enqueued_refresh()                                               = 0;
     virtual void on_new_refresh_time(long long exp)                                  = 0;
     virtual void on_race_lost(const std::string& body)                               = 0;
-    virtual void on_logged_out()                                                     = 0;
+    virtual void on_logged_out(bool notify_owner)                                    = 0;
     virtual void on_printables_secret_token(const std::string& body)                 = 0;
 };
 } // namespace Slic3r::Biz::UserAccount

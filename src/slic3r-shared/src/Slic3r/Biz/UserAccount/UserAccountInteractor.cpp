@@ -62,12 +62,12 @@ UserAccountInteractor::~UserAccountInteractor()
     );
 }
 
-void UserAccountInteractor::do_log_out(bool notify_owner)
+void UserAccountInteractor::do_log_out()
 {
     if (!m_communication->is_logged_in()) {
         return;
     }
-    m_communication->do_log_out(notify_owner);
+    m_communication->do_log_out(true);
 }
 
 std::string
@@ -86,7 +86,10 @@ bool UserAccountInteractor::is_logged_in() const
     return m_communication->is_logged_in();
 }
 
-void UserAccountInteractor::on_read_token_store_message() {}
+void UserAccountInteractor::on_read_token_store_message()
+{
+    m_communication.on_read_token_store_message();
+}
 
 std::string UserAccountInteractor::username() const
 {
@@ -182,7 +185,7 @@ void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string
     case Slic3r::Biz::UserAccount::ActionFailType::Fail:
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::Reset:
-        do_log_out(true);
+        do_log_out();
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::PrinterData:
         break;
@@ -207,7 +210,7 @@ void UserAccountInteractor::on_race_lost(const std::string& msg)
     m_communication->on_race_lost(msg);
 }
 
-void UserAccountInteractor::on_logged_out()
+void UserAccountInteractor::on_logged_out(bool notify_owner)
 {
     if (update_menu_callback) {
         update_menu_callback(true);
@@ -215,6 +218,12 @@ void UserAccountInteractor::on_logged_out()
     invoke_listeners<IUserAccountListener>(
         [](auto* listener) { listener->on_user_account_logged_out(); }
     );
+
+    if (notify_owner) {
+        invoke_listeners<IUserAccountListener>(
+            [](auto* listener) { listener->on_user_account_logged_out_notify_instances(); }
+        );
+    }
 }
 
 void UserAccountInteractor::on_printables_secret_token(const std::string& body)

@@ -398,12 +398,17 @@ void UserAccountCommunicationTokenBase::on_read_token_store_message()
     const auto prior_expiration_secs = std::max(m_last_token_duration_seconds / 24, 10);
     if (expires_in_second > 0) {
         SPDLOG_INFO("Token is alive - using it.");
+        const bool was_logged_out = username().empty();
         set_tokens(
             stored_data.access_token,
             stored_data.refresh_token,
             stored_data.shared_session_key,
             stored_data.next_timeout
         );
+        if (was_logged_out) {
+            m_session.enqueue_test_with_refresh();
+            wakeup_session_thread();
+        }
         return;
     }
 }

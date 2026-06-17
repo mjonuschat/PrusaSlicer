@@ -445,11 +445,13 @@ public:
     }
 
     /**
-     * @brief Called on performed log out.
+     * @brief Called on performed log out that originated locally.
      * Notifies all other running apps to read token store.
-     * This listener should be triggered from UserAccount only when logout was NOT caused by accepted STORE_READ.
+     * Dispatched separately from on_user_account_logged_out (only when notify_owner is true) so that a
+     * logout caused by an accepted STORE_READ from another instance does not echo another STORE_READ
+     * back, which would make the instances notify each other in an infinite loop.
      */
-    void on_user_account_logged_out() override
+    void on_user_account_logged_out_notify_instances() override
     {
         m_app_instance_message_handler
             ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());

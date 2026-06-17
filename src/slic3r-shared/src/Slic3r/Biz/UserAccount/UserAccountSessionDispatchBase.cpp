@@ -122,16 +122,16 @@ void UserAccountSessionDispatchBase::dispatch_race_lost(const std::string& body)
     );
 }
 
-void UserAccountSessionDispatchBase::dispatch_logged_out()
+void UserAccountSessionDispatchBase::dispatch_logged_out(bool notify_owner)
 {
     // User Account could be turned off during runtime, which destroys most of its objects including this one.
     std::weak_ptr<bool> weak_token = m_lifetime_token;
     m_dispatcher.dispatch_on_main_thread(
-        [this, weak_token]()
+        [this, weak_token, notify_owner]()
         {
             if (!weak_token.lock()) return;
             this->invoke_listeners<IUserAccountSessionListener>(
-                [](auto* listener) { listener->on_logged_out(); }
+                [notify_owner](auto* listener) { listener->on_logged_out(notify_owner); }
             );
         }
     );

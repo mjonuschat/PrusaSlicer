@@ -207,7 +207,7 @@ MainFrame::MainFrame(
                 }
 
             } else {
-                project_interactor.user_account_interactor().do_log_out(true);
+                project_interactor.user_account_interactor().do_log_out();
             }
         },
         [&project_interactor]()
