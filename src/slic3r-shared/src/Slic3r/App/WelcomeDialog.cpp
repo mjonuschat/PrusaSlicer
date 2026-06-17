@@ -99,6 +99,9 @@ public:
             text_item->set_flex_wrap(YGWrap::YGWrapWrap);
             for (const ColoredText& colored_text : list_item) {
                 for (auto&& word_range : colored_text.text | std::views::split(' ')) {
+                    if (word_range.begin() == word_range.end()) {
+                        continue;
+                    }
                     std::string word(&*word_range.begin(), std::ranges::distance(word_range));
                     word += " ";
                     auto text{text_item->emplace_back<Text>(word)};
@@ -294,14 +297,14 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
         green,
         std::initializer_list<std::initializer_list<ColoredText>>{
             {
-                {Biz::_u8L("Your existing 3MF projects from PrusaSlicer 2.x load and work ")},
+                {Biz::_u8L("Your existing 3MF projects from PrusaSlicer 2.x load and work")},
                 {
                     Biz::_u8L("— configuration is automatically converted to the new format."),
                     secondary_color,
                 },
             },
             {
-                {Biz::_u8L("Profiles are saved to a separate directory ")},
+                {Biz::_u8L("Profiles are saved to a separate directory")},
                 {
                     Biz::_u8L("— runs safely alongside PrusaSlicer 2.x without conflicts."),
                     secondary_color,
@@ -315,14 +318,14 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
         red,
         std::initializer_list<std::initializer_list<ColoredText>>{
             {
-                {Biz::_u8L("This is a genuine alpha ")},
+                {Biz::_u8L("This is a genuine alpha")},
                 {
                     Biz::_u8L("— expect instability and unfinished edges."),
                     secondary_color,
                 },
             },
             {
-                {Biz::_u8L("Not all PrusaSlicer 2.x features have been ported yet ")},
+                {Biz::_u8L("Not all PrusaSlicer 2.x features have been ported yet")},
                 {
                     Biz::_u8L("— some are already under development."),
                     secondary_color,
@@ -330,7 +333,7 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
             },
             {{Biz::_u8L("Standalone G-code viewer is not available in this release")}},
             {
-                {Biz::_u8L("Third-party printer profiles are not included in this alpha ")},
+                {Biz::_u8L("Third-party printer profiles are not included in this alpha")},
                 {
                     Biz::_u8L("— vendor support will be restored and expanded later on."),
                     secondary_color,

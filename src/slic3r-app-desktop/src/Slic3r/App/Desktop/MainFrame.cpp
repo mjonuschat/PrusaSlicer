@@ -408,8 +408,13 @@ void MainFrame::on_app_config_changed(const std::string& key)
                 Biz::_u8L("The change will take effect after restarting the application.")};
 
             AppServices::instance().dialog_manager().show_info_dialog(
-                enabled ? Biz::_u8L("Crash reporting is now enabled. ") + message :
-                          Biz::_u8L("Crash reporting is now disabled. ") + message,
+                enabled ?
+                    // TRN {} is message
+                    fmt::format(fmt::runtime(Biz::_u8L("Crash reporting is now enabled. {}")),
+                                message) :
+                    // TRN {} is message
+                    fmt::format(fmt::runtime(Biz::_u8L("Crash reporting is now disabled. {}")),
+                                message),
                 Biz::_u8L("PrusaSlicer - Enable crash reporting"));
         }
     }
