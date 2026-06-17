@@ -52,9 +52,6 @@ public:
     bool is_modal() const;
     void set_modal(bool is_modal);
 
-protected:
-    Vec2f get_item_size() override;
-
 private:
     Callbacks m_callbacks;
 

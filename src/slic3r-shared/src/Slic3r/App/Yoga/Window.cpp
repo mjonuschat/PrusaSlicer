@@ -175,26 +175,6 @@ bool Window::is_in_window() const
     return true;
 }
 
-Vec2f Window::get_item_size()
-{
-    ImVec2 old_pos = ImGui::GetCursorScreenPos();
-    ImGui::SetCursorScreenPos({});
-
-    // render widget with 0 alpha and store their size
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-    render({}, {});
-    ImGui::PopStyleVar();
-
-    ImVec2 size = ImGui::GetCursorScreenPos();
-
-    Vec2f result = Vec2f{ImMax(0.f, size.x), ImMax(0.f, size.y)};
-
-    // reset cursor pos
-    ImGui::SetCursorScreenPos(old_pos);
-
-    return result;
-}
-
 Window::Callbacks& Window::callbacks()
 {
     return m_callbacks;
