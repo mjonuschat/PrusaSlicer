@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Slic3r/Biz/IObservableList.hpp"
-#include "Slic3r/Log.hpp"
 
 #include <vector>
 #include <sstream>
@@ -85,7 +84,10 @@ class ObservableListSearcher : public Biz::IListObserver<Data>, public IObservab
 
 public:
     // Returns int scoring value of an item. Higher value -> higher match
-    using ScoreFn = std::function<int(const Data& item, const std::string& search_text)>;
+    using ScoreFn =
+        std::function<int(std::function<const std::string&(const std::string&)> process_string,
+                          const Data& item,
+                          const std::string& search_text)>;
 
     ObservableListSearcher(ScoreFn score_fn) : m_score_fn(score_fn) {}
 
@@ -201,7 +203,13 @@ public:
                     m_search_text_cleaned.cend(),
                     0,
                     [&](int sum, const std::string& search_text)
-                    { return sum + m_score_fn(*item, search_text); }
+                    {
+                        return sum + m_score_fn(
+                            [this](const std::string& input) -> const std::string& { return processed_string(input); },
+                            *item,
+                            search_text
+                        );
+                    }
                 );
                 if (!score) {
                     continue;

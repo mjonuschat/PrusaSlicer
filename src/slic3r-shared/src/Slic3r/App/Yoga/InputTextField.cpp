@@ -128,9 +128,17 @@ void InputTextField::update_fill()
 {
     ImColor color;
     if (hovered() || m_input_text->active()) {
-        color = m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered);
+        if (m_color) {
+            color = m_theme->color_imgui(*m_color, Platform::ColorGroup::Hovered);
+        } else {
+            color = m_theme->color_imgui(Platform::Color::Button, Platform::ColorGroup::Hovered);
+        }
     } else {
-        color = m_theme->color_imgui(Platform::Color::Button);
+        if (m_color) {
+            color = m_theme->color_imgui(*m_color);
+        } else {
+            color = m_theme->color_imgui(Platform::Color::Button);
+        }
     }
     set_fill(color);
 }
@@ -178,5 +186,14 @@ bool InputTextField::resizable() const
 void InputTextField::set_resizable(bool resizable)
 {
     m_input_text->set_resizable(resizable);
+}
+
+std::optional<Platform::Color> InputTextField::color() const {
+    return m_color;
+}
+
+void InputTextField::set_color(std::optional<Platform::Color> color) {
+    m_color = color;
+    update_fill();
 }
 } // namespace Slic3r::App::Yoga

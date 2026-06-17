@@ -325,7 +325,7 @@ void MaterialSelectionDialog::on_app_config_changed(const std::string& key)
             AppServices::instance()
                 .app_config()
                 .get_config_box()
-                .items.find("printers_only_favorites")
+                .items.find("materials_only_favorites")
                 ->value()
                 .get<bool>()
         );

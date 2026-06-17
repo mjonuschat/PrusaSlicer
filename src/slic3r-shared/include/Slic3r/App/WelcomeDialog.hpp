@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/Popup.hpp"
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
+#include "Slic3r/App/AddPrinterDialog.hpp"
 
 namespace Slic3r::App {
 
@@ -30,6 +31,8 @@ private:
 
     bool m_online{true};
     bool m_sentry_enabled{false};
+
+    void finalize(const std::vector<AddPrinterDialog::Printer>& printers);
 
     void reload_top_bar();
 

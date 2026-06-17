@@ -13,7 +13,9 @@
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AddPrinterDialog.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <fmt/format.h>
@@ -149,36 +151,44 @@ static ItemPtr create_navigation(const NavigationSetup& setup, const Theme& them
     content->set_height(85_fpx);
     content->set_width_percent(100);
 
-    content->set_justify_content(YGJustifySpaceBetween);
     content->set_align_items(YGAlignCenter);
     content->set_padding({45_fpx, 0, 45_fpx, 0});
 
+    auto left_item{content->emplace_back<Item>()};
+    left_item->set_flex_grow(1);
+    left_item->set_width_percent(25);
+
     if (!setup.left_button_text.empty()) {
-        auto left_button{content->emplace_back<LayoutButton>(Biz::_u8L("Back"))};
+        auto left_button{left_item->emplace_back<LayoutButton>(Biz::_u8L("Back"))};
         left_button->set_background_color(Platform::Color::ButtonTransparent);
         left_button->set_content_padding({23_fpx, 14_fpx, 23_fpx, 14_fpx});
         left_button->callbacks().action = setup.left_button_action;
-    } else {
-        auto spacer{content->emplace_back<Item>()};
-        spacer->set_width(60_fpx);
     }
 
-    ASSERT(!setup.center_button_text.empty());
-    auto center_button{content->emplace_back<LayoutButton>(setup.center_button_text)};
-    center_button->set_background_color(Platform::Color::AccentPrimary);
-    center_button->set_width(200_fpx);
-    center_button->set_height(45_fpx);
-    center_button->set_label_font_type(Render::ImguiFontType::Bold);
-    center_button->callbacks().action = setup.center_button_action;
+    auto center_item{content->emplace_back<Item>()};
+    center_item->set_flex_grow(1);
+    center_item->set_justify_content(YGJustifyCenter);
+    center_item->set_width_percent(25);
+
+    if (!setup.center_button_text.empty()) {
+        auto center_button{center_item->emplace_back<LayoutButton>(setup.center_button_text)};
+        center_button->set_background_color(Platform::Color::AccentPrimary);
+        center_button->set_width(200_fpx);
+        center_button->set_height(45_fpx);
+        center_button->set_label_font_type(Render::ImguiFontType::Bold);
+        center_button->callbacks().action = setup.center_button_action;
+    }
+
+    auto right_item{content->emplace_back<Item>()};
+    right_item->set_flex_grow(1);
+    right_item->set_width_percent(25);
+    right_item->set_justify_content(YGJustifyFlexEnd);
 
     if (!setup.rigth_button_text.empty()) {
-        auto right_button{content->emplace_back<LayoutButton>(setup.rigth_button_text)};
+        auto right_button{right_item->emplace_back<LayoutButton>(setup.rigth_button_text)};
         right_button->set_background_color(Platform::Color::ButtonTransparent);
         right_button->set_content_padding({23_fpx, 14_fpx, 23_fpx, 14_fpx});
         right_button->callbacks().action = setup.rigth_button_action;
-    } else {
-        auto spacer{content->emplace_back<Item>()};
-        spacer->set_width(60_fpx);
     }
 
     return result;
@@ -187,7 +197,7 @@ static ItemPtr create_navigation(const NavigationSetup& setup, const Theme& them
 class Screen : public Item
 {
 public:
-    Screen(const NavigationSetup& navigation_setup)
+    Screen(const NavigationSetup& navigation_setup = {})
     {
         set_orientation(Orientation::Vertical);
         set_width_percent(100);
@@ -198,7 +208,15 @@ public:
         m_content->set_gap(30_fpx);
         m_content->set_flex_grow(1);
         m_content->set_padding(20_fpx);
-        append_item(this, create_navigation(navigation_setup, *m_theme));
+        update_navigation(navigation_setup);
+    }
+
+    void update_navigation(const NavigationSetup& navigation_setup)
+    {
+        if (m_navigation) {
+            remove(m_navigation);
+        }
+        m_navigation = append_item(this, create_navigation(navigation_setup, *m_theme));
     }
 
     Item* content()
@@ -207,7 +225,8 @@ public:
     }
 
 private:
-    Item* m_content;
+    Item* m_content{nullptr};
+    Item* m_navigation{nullptr};
 };
 
 class Title : public Item
@@ -445,27 +464,167 @@ RectangleButton* emplace_online_decision_button(Item* container, std::string nam
     return result;
 }
 
-static ItemPtr create_choose_a_printer_screen(const Theme& theme,
-                                              std::function<void()> go_to_prev,
-                                              std::function<void()> finish)
+class PrinterScreen : public Item
 {
-    const NavigationSetup navigation_setup{
-        .left_button_text     = Biz::_u8L("Back"),
-        .left_button_action   = go_to_prev,
-        .center_button_text   = Biz::_u8L("Finish"),
-        .center_button_action = finish,
-    };
-    auto result{std::make_unique<Screen>(navigation_setup)};
-    result->content()->emplace_back<Title>(Biz::_u8L("Choose a printer"));
+public:
+    PrinterScreen(Biz::ProjectInteractor& project_interactor,
+                  const Theme& theme,
+                  std::function<void()> go_to_prev,
+                  std::function<void(const std::vector<AddPrinterDialog::Printer>&)> finish,
+                  std::function<void(bool)> hide_top_bar) :
+        m_go_to_prev{go_to_prev},
+        m_finish{finish},
+        m_hide_top_bar{hide_top_bar}
+    {
+        m_screen   = emplace_back<Screen>();
+        update_navigation();
 
-    auto note{result->content()->emplace_back<Paragraph>(
-        Biz::_u8L("This section is under development. Currently all the standard"
-                  " Prusa printers are pre-configured."))};
-    note->set_justify_content(YGJustifyCenter);
-    note->set_max_width(300_fpx);
+        m_screen->content()->emplace_back<Title>(
+            Biz::_u8L("Choose your printer"),
+            Biz::_u8L("If you have more then one printer you can also add them now."));
 
-    return result;
-}
+        m_add_button = m_screen->content()->emplace_back<LayoutButton>(Biz::_u8L("Choose a printer"));
+        m_add_button->set_background_color(Platform::Color::AccentPrimary);
+        m_add_button->set_content_padding({30_fpx, 10_fpx, 30_fpx, 10_fpx});
+        m_add_button->callbacks().action = [this](){
+            show_dialog(true);
+        };
+
+        m_printers = m_screen->content()->emplace_back<Rectangle>();
+        m_printers->set_border_color(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
+        m_printers->set_border_width(1);
+        m_printers->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
+        m_printers->set_rounding(10);
+        m_printers->set_padding(10_fpx);
+        m_printers->set_orientation(Orientation::Vertical);
+        m_printers->set_gap(10_fpx);
+        m_printers->set_visible(false);
+        m_dialog = emplace_back<AddPrinterDialog>(
+            project_interactor,
+            [this]() { show_dialog(false); },
+            [this](const AddPrinterDialog::Printer& printer)
+            {
+                add_printer(printer);
+                show_dialog(false);
+            });
+        m_dialog->set_visible(false);
+    }
+
+    void show_dialog(bool show)
+    {
+        m_screen->set_visible(!show);
+        m_dialog->set_visible(show);
+        m_hide_top_bar(show);
+    }
+
+    void update_navigation() {
+        if (!m_printers_to_add.empty()) {
+            const NavigationSetup navigation_setup{
+                .left_button_text     = Biz::_u8L("Back"),
+                .left_button_action   = m_go_to_prev,
+                .center_button_text   = Biz::_u8L("Finish"),
+                .center_button_action = [this]() { m_finish(m_printers_to_add); },
+                .rigth_button_text    = Biz::_u8L("Add another printer"),
+                .rigth_button_action  = [this]() { show_dialog(true); },
+            };
+            m_screen->update_navigation(navigation_setup);
+        } else {
+            const NavigationSetup navigation_setup{
+                .left_button_text     = Biz::_u8L("Back"),
+                .left_button_action   = m_go_to_prev
+            };
+            m_screen->update_navigation(navigation_setup);
+        }
+    }
+
+    void delete_printer(std::size_t index) {
+        ASSERT(index < m_printers_to_add.size());
+        ASSERT(m_printers_to_add.size() == m_printers->items().size());
+
+        m_printers->remove_later(m_printers->items().at(index));
+        m_printers_to_add.erase(m_printers_to_add.begin() + index);
+
+        if (m_printers_to_add.empty()) {
+            m_printers->set_visible(false);
+            m_add_button->set_visible(true);
+            update_navigation();
+        }
+    }
+
+    void add_printer(const AddPrinterDialog::Printer& printer)
+    {
+        auto it{
+            std::ranges::find_if(m_printers_to_add,
+                                 [&](const AddPrinterDialog::Printer& candidate)
+                                 { return candidate.preset_item_id == printer.preset_item_id; })};
+
+        const std::size_t index{
+            static_cast<std::size_t>(std::distance(m_printers_to_add.begin(), it))};
+
+        Rectangle* printer_item{nullptr};
+        if (it == m_printers_to_add.end()) {
+            m_printers_to_add.push_back(printer);
+            printer_item = m_printers->emplace_back<Rectangle>();
+        } else {
+            *it = printer;
+            printer_item = dynamic_cast<Rectangle*>(m_printers->items().at(index));
+            ASSERT(printer_item);
+            while(!printer_item->items().empty()) {
+                printer_item->remove(printer_item->items().back());
+            }
+        }
+
+        printer_item->set_width(350_fpx);
+        printer_item->set_padding({20_fpx, 10_fpx, 20_fpx, 10_fpx});
+        printer_item->set_rounding(10);
+        printer_item->set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
+        printer_item->set_justify_content(YGJustifySpaceBetween);
+        auto label{printer_item->emplace_back<Item>()};
+        label->set_orientation(Orientation::Vertical);
+        label->set_justify_content(YGJustifyCenter);
+        auto title{label->emplace_back<Text>(printer.default_config.short_name)};
+        title->set_font_type(Render::ImguiFontType::Bold);
+
+        const std::string sheet_name{printer.sheets.sheet_defs.at(printer.sheets.selected_sheet).name};
+
+        std::string nozzles;
+        for (std::size_t i{}; i < printer.tools.selected_tools.size(); ++i) {
+            std::size_t selected_tool{printer.tools.selected_tools[i]};
+            nozzles += (i == 0 ? "" : ", ") + printer.tools.tool_defs.at(selected_tool).name;
+        }
+
+        auto sub_title{label->emplace_back<Text>(
+            // TRN first {} is sheet_name, second {} are nozzles
+            Biz::_u8L(fmt::format(fmt::runtime("{} sheet, {}"), sheet_name, nozzles)))};
+        sub_title->set_text_color(
+            m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
+
+        auto right_section{printer_item->emplace_back<Item>()};
+        right_section->set_align_items(YGAlign::YGAlignCenter);
+        auto delete_button{right_section->emplace_back<LayoutButton>("", Render::Icon::DeleteBtnIcon)};
+        delete_button->set_width(19_fpx);
+        delete_button->set_aspect_ratio(1);
+        delete_button->callbacks().action = [this, index](){
+            delete_printer(index);
+        };
+
+        m_printers->set_visible(true);
+        m_add_button->set_visible(false);
+        if (m_printers_to_add.size() == 1) {
+            update_navigation();
+        }
+    }
+
+private:
+    std::function<void()> m_go_to_prev;
+    std::function<void(const std::vector<AddPrinterDialog::Printer>&)> m_finish;
+    std::function<void(bool)> m_hide_top_bar;
+    Screen* m_screen{nullptr};
+    AddPrinterDialog* m_dialog{nullptr};
+    LayoutButton* m_add_button{nullptr};
+    Rectangle* m_printers{nullptr};
+    std::vector<AddPrinterDialog::Printer> m_printers_to_add;
+};
 
 class Note : public Item
 {
@@ -641,8 +800,7 @@ public:
         }
 
         const std::string username{m_project_interactor.user_account_interactor().username()};
-        m_title->set_title(
-            fmt::format(fmt::runtime(Biz::_u8L("Welcome, {}")), username));
+        m_title->set_title(fmt::format(fmt::runtime(Biz::_u8L("Welcome, {}")), username));
 
         const std::string email{m_project_interactor.user_account_interactor().email()};
         m_title->set_sub_title(email);
@@ -690,8 +848,8 @@ public:
         label_section->set_flex_grow(1);
         label_section->set_orientation(Orientation::Vertical);
         label_section->set_gap(5_fpx);
-        auto label_title{
-            label_section->emplace_back<Text>(Biz::_u8L("Use Prusa Connect to its full potential"))};
+        auto label_title{label_section->emplace_back<Text>(
+            Biz::_u8L("Use Prusa Connect to its full potential"))};
         label_title->set_font_type(Render::ImguiFontType::Bold);
         label_section->emplace_back<Paragraph>(
             Biz::_u8L("Once you log in, your printers will be automatically synchronized."),
@@ -835,28 +993,19 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
         },
         [this]() { go_to_screen(ASSERT_VAL(m_printer_screen)); });
 
-    auto finalize{[this]()
-                  {
-                      sync_config();
-                      auto& app_config_interactor{AppServices::instance().app_config_interactor()};
-                      app_config_interactor.set_item_value("initialized",
-                                                           Domain::ConfigValue{true});
-                      AppServices::instance().app_config().save();
-                      close();
-                  }};
-
-    m_printer_screen = append_item(m_content,
-                                   create_choose_a_printer_screen(
-                                       *m_theme,
-                                       [this]()
-                                       {
-                                           if (m_online) {
-                                               go_to_screen(ASSERT_VAL(m_login_screen));
-                                           } else {
-                                               go_to_screen(ASSERT_VAL(m_online_decision_screen));
-                                           }
-                                       },
-                                       finalize));
+    m_printer_screen = m_content->emplace_back<PrinterScreen>(
+        project_interactor,
+        *m_theme,
+        [this]()
+        {
+            if (m_online) {
+                go_to_screen(ASSERT_VAL(m_login_screen));
+            } else {
+                go_to_screen(ASSERT_VAL(m_online_decision_screen));
+            }
+        },
+        [this](const std::vector<AddPrinterDialog::Printer>& printers) { finalize(printers); },
+        [this](bool hide) { m_top_bar->set_visible(!hide); });
 
     for (Item* child : m_content->items()) {
         child->set_width_percent(100);
@@ -864,6 +1013,65 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
     }
 
     go_to_screen(m_changelog_screen);
+}
+
+void WelcomeDialog::finalize(const std::vector<AddPrinterDialog::Printer>& printers)
+{
+    std::vector<Domain::Preset::HwPrinterConfig> printer_configs;
+    printer_configs.reserve(printers.size());
+
+    std::vector<std::string>printer_preset_item_ids;
+    printer_preset_item_ids.reserve(printers.size());
+
+
+    for (const AddPrinterDialog::Printer& printer : printers) {
+        printer_configs.push_back(printer.default_config);
+        Domain::Preset::HwPrinterConfig& printer_config{printer_configs.back()};
+
+        const Domain::Preset::VendorData& vendor_data{
+            m_project_interactor.workbench()
+                .preset_bundle()
+                .vendor_bundles.at(printer.default_config.vendor_id)
+                .vendor_data};
+
+        printer_config.sheet =
+            Biz::Preset::from_def(vendor_data, printer.sheets.sheet_defs.at(printer.sheets.selected_sheet));
+        printer_config.tools.clear();
+        for (std::size_t selected_tool : printer.tools.selected_tools) {
+            printer_config.tools.push_back(
+                Biz::Preset::from_def(vendor_data, printer.tools.tool_defs.at(selected_tool)));
+        }
+
+        printer_preset_item_ids.push_back(printer.preset_item_id);
+    }
+
+    m_project_interactor.preset_interactor().update_changed_printer_configs(printer_configs);
+
+    AppSettingsAdvanced& app_settings_advanced{
+        AppServices::instance().app_config().app_settings_advanced()};
+    app_settings_advanced.printer_favorite_presets.clear();
+
+    ASSERT(!printer_configs.empty());
+    ASSERT(printer_preset_item_ids.size() == printer_configs.size());
+
+    for (std::size_t i{}; i < printer_configs.size(); ++i) {
+        Domain::Preset::HwPrinterConfig& hw_config{printer_configs[i]};
+        const std::string& printer_preset_item_id{printer_preset_item_ids[i]};
+        app_settings_advanced.toggle_printer_favorite_preset(printer_preset_item_id, hw_config.id);
+    }
+
+    m_project_interactor.preset_interactor().select_printer_preset(printer_configs.front().id,
+                                                                   printer_preset_item_ids.front());
+
+    auto& app_config_interactor{AppServices::instance().app_config_interactor()};
+    app_config_interactor.set_item_value("printers_only_favorites", Domain::ConfigValue{false});
+    if (!app_settings_advanced.printer_favorite_presets.empty()) {
+        app_config_interactor.set_item_value("printers_only_favorites", Domain::ConfigValue{true});
+    }
+    sync_config();
+    app_config_interactor.set_item_value("initialized", Domain::ConfigValue{true});
+    AppServices::instance().app_config().save();
+    close();
 }
 
 void WelcomeDialog::reload_top_bar()
@@ -899,8 +1107,7 @@ void WelcomeDialog::reload_top_bar()
             auto screen_indicator{m_top_bar->emplace_back<Circle>()};
             screen_indicator->set_width(6_fpx);
             screen_indicator->set_height(6_fpx);
-            screen_indicator->set_fill(
-                m_theme->color_imgui(Platform::Color::Text));
+            screen_indicator->set_fill(m_theme->color_imgui(Platform::Color::Text));
             if (i > current_screen_index) {
                 screen_indicator->set_fill(
                     m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));

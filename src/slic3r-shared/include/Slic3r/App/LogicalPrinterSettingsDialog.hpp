@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Yoga/ComboBoxListViewSelection.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -113,6 +114,12 @@ private:
         Biz::ProjectInteractor,
         LogicalPrinterSettingsDialog>
         m_selected_project_changed_listener_scope;
+
+    Biz::ListenerScope<
+        IAppConfigChangedListener,
+        AppConfigInteractor,
+        LogicalPrinterSettingsDialog>
+        m_app_config_changed_listener_scope;
 
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;

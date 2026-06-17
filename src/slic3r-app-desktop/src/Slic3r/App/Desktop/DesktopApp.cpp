@@ -186,6 +186,35 @@ int run(const Slic3r::App::InitParams& init_params, AppServices& app_services)
     return wxEntry(argc, argv);
 }
 
+// Temporary workaround, to select a favorite printer on application start.
+// DELETE this once it is not needed.
+static void select_favorite_preset(Biz::Preset::PresetInteractor& preset_interactor)
+{
+    const auto& app_services{AppServices::instance()};
+    const AppConfig& app_config{app_services.app_config()};
+    const AppSettingsAdvanced::PrinterFavoritePresets& printer_favorite_presets{
+        app_config.app_settings_advanced().printer_favorite_presets};
+
+    if (printer_favorite_presets.size() > 0 && app_config.get<bool>("printers_only_favorites")) {
+        const std::string& preset_id{*printer_favorite_presets.begin()};
+
+        auto printer_list{preset_interactor.printer_presets().items()};
+
+        std::string hw_config_id;
+        for (std::size_t i{}; i < printer_list.size(); ++i) {
+            const Slic3r::Biz::Preset::PresetItem& preset{printer_list.at(i)};
+            if (preset.id == preset_id) {
+                hw_config_id = preset.hw_printer_config_id;
+                break;
+            }
+        }
+
+        if (!hw_config_id.empty()) {
+            preset_interactor.select_printer_preset(hw_config_id, preset_id);
+        }
+    }
+}
+
 bool DesktopApp::OnInit()
 {
     auto& app_services{AppServices::instance()};
@@ -351,6 +380,8 @@ bool DesktopApp::OnInit()
     preset_interactor.set_dialog_manager(&app_services.dialog_manager());
 
     m_project_interactor->new_project();
+
+    select_favorite_preset(preset_interactor);
 
     handle_previous_crash_recovery(app_services.app_config());
 

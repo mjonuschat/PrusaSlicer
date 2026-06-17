@@ -722,6 +722,24 @@ public:
         m_use_hw_config_short_name = use_short_name;
     }
 
+    struct ToolItems {
+        std::vector<Domain::Preset::HwToolConfigDef> tool_defs;
+        std::vector<std::size_t> selected_tools;
+    };
+
+    [[nodiscard]] ToolItems
+    get_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
+
+    struct SheetItems {
+        std::vector<Domain::Preset::HwSheetConfigDef> sheet_defs;
+        std::size_t selected_sheet{};
+    };
+
+    [[nodiscard]] SheetItems
+    get_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
+
+    bool update_changed_printer_configs(const std::vector<Domain::Preset::HwPrinterConfig>& hw_configs);
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
@@ -836,6 +854,7 @@ private:
         ListenerInvokeLaterBag& bag
     );
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
+
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
     void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);

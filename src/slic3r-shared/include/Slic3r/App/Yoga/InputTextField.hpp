@@ -52,6 +52,9 @@ public:
     bool resizable() const;
     void set_resizable(bool resizable);
 
+    std::optional<Platform::Color> color() const;
+    void set_color(std::optional<Platform::Color> color);
+
 protected:
     virtual void text_updated_internal() {}
 
@@ -66,6 +69,8 @@ protected:
 private:
     InputText* m_input_text{nullptr};
     std::string m_default_text;
+
+    std::optional<Platform::Color> m_color;
 };
 
 } // namespace Slic3r::App::Yoga

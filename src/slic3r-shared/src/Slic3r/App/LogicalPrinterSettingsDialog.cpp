@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 
+#include "Slic3r/App/PrinterSearchFunction.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
@@ -35,43 +36,20 @@ namespace Slic3r::App {
 LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
     PrinterAddDialog* printer_add_dialog,
-    Navigator& navigator
-) :
+    Navigator& navigator) :
     Dialog({"Printers"}, "LogicalPrinterSettingsDialog"),
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_preset_list_selection_changed_listener_scope(
         project_interactor.preset_interactor().printer_presets(),
-        *this
-    ),
+        *this),
     m_selected_project_changed_listener_scope(project_interactor, *this),
+    m_app_config_changed_listener_scope(AppServices::instance().app_config_interactor(), *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_preset_favorite_filter(
-        std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()
-    ),
+        std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()),
     m_preset_searcher(
-        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(
-            [this](const Biz::Preset::PresetItem& item, const std::string& search_text) -> int
-            {
-                int score = 0;
-
-                const std::string& name = m_preset_searcher->processed_string(item.name);
-                if (!name.empty() && name.find(search_text) != std::string::npos) {
-                    score += 10;
-                }
-
-                const std::string& hw_printer_config_name =
-                    m_preset_searcher->processed_string(item.hw_printer_config_name);
-                if (!hw_printer_config_name.empty()
-                    && hw_printer_config_name.find(search_text) != std::string::npos)
-                {
-                    score += 10;
-                }
-
-                return score;
-            }
-        )
-    ),
+        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_printer)),
     m_printer_add_dialog(printer_add_dialog)
 {
     m_preset_favorite_filter->set_filter_fn(
