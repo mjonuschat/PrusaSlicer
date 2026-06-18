@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/Namespace.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
@@ -56,6 +57,9 @@ void PopNotificationView::layout()
         Domain::overloaded{
             [this](const PopNotificationLayoutText&) { layout_type_text(); },
             [this](const PopNotificationLayoutHeaderText&) { layout_type_header_text(); },
+            [this](const PopNotificationLayoutImageText&) { layout_type_image_text(); },
+            [this](const PopNotificationLayoutImageHeaderText&)
+            { layout_type_image_header_text(); },
             [this](const PopNotificationLayoutTextButtons&) { layout_type_text_buttons(); },
             [this](const PopNotificationLayoutHeaderTextButtons&)
             { layout_type_header_text_buttons(); },
@@ -88,6 +92,27 @@ void PopNotificationView::on_data_update()
                 update_header(d.header);
                 update_text(d.text);
             },
+            [this](const PopNotificationLayoutImageText& d)
+            {
+                if (d.image_path.empty() != (m_left_icon == nullptr)) {
+                    reset();
+                    layout();
+                    return;
+                }
+                update_text(d.text);
+                update_image(d.image_path);
+            },
+            [this](const PopNotificationLayoutImageHeaderText& d)
+            {
+                if (d.image_path.empty() != (m_left_icon == nullptr)) {
+                    reset();
+                    layout();
+                    return;
+                }
+                update_header(d.header);
+                update_text(d.text);
+                update_image(d.image_path);
+            },
             [this](const PopNotificationLayoutTextButtons& d)
             {
                 update_text(d.text);
@@ -115,7 +140,7 @@ void PopNotificationView::on_data_update()
     );
 }
 
-void PopNotificationView::basic_layout(Render::Icon icon_override)
+void PopNotificationView::basic_layout(const LeftContent& left_content)
 {
     set_margin(5.);
     set_max_width(TotalWidth);
@@ -155,7 +180,13 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     m_mid_column->set_flex_grow(1.f);
     m_mid_column->set_self_align(YGAlignStretch);
 
-    basic_left_layout(icon_override);
+    if (const std::string* image_path = std::get_if<std::string>(&left_content);
+        image_path && !image_path->empty()) {
+        basic_left_image_layout(*image_path);
+    } else {
+        const Render::Icon* icon = std::get_if<Render::Icon>(&left_content);
+        basic_left_layout(icon ? *icon : Render::Icon::None);
+    }
     basic_right_layout();
 }
 
@@ -191,6 +222,30 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
     if (tint_color) {
         m_left_icon->set_tint(m_theme->color_imgui(*tint_color));
     }
+}
+
+void PopNotificationView::basic_left_image_layout(const std::string& image_path)
+{
+    using namespace Yoga;
+
+    m_left_column->set_orientation(Yoga::Orientation::Horizontal);
+    m_left_column->set_justify_content(YGJustifyFlexStart);
+
+    if (image_path.empty()) {
+        m_left_column->set_min_width(0);
+        m_left_column->set_min_height(0);
+        return;
+    }
+
+    m_left_column->set_min_width(30);
+    m_left_column->set_min_height(20);
+
+    m_left_icon = m_left_column->emplace_back<Yoga::Icon>(Render::Icon::None);
+    m_left_icon->set_min_width(20);
+    m_left_icon->set_min_height(20);
+    m_left_icon->set_rounding(10);
+    m_left_icon->set_margin({0.f, 0.f, 10.f, 0.f});
+    m_left_icon->set_image(image_path);
 }
 
 void PopNotificationView::basic_right_layout()
@@ -325,6 +380,25 @@ void PopNotificationView::layout_type_header_text()
     basic_mid_text_layout(layout_data->text);
 }
 
+void PopNotificationView::layout_type_image_text()
+{
+    const auto* layout_data = std::get_if<PopNotificationLayoutImageText>(&m_state->layout);
+    ASSERT(layout_data);
+    basic_layout(layout_data->image_path);
+    basic_mid_layout();
+    basic_mid_text_layout(layout_data->text);
+}
+
+void PopNotificationView::layout_type_image_header_text()
+{
+    const auto* layout_data = std::get_if<PopNotificationLayoutImageHeaderText>(&m_state->layout);
+    ASSERT(layout_data);
+    basic_layout(layout_data->image_path);
+    basic_mid_layout();
+    basic_mid_header_layout(layout_data->header);
+    basic_mid_text_layout(layout_data->text);
+}
+
 void PopNotificationView::layout_type_text_buttons()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout);
@@ -379,6 +453,13 @@ void PopNotificationView::update_header(const std::string& text)
 {
     if (m_header && text != m_header->text()) {
         m_header->set_text(text);
+    }
+}
+
+void PopNotificationView::update_image(const std::string& image_path)
+{
+    if (m_left_icon && m_left_icon->image() != image_path) {
+        m_left_icon->set_image(image_path);
     }
 }
 

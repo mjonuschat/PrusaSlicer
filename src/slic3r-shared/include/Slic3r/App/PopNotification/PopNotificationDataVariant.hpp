@@ -70,6 +70,8 @@ enum class ArrangeEventType {
     FatalError
 };
 
+struct UserAccountLoginNotificationData {};
+
 // Define the variant type alias.
 using PopNotificationPayload = std::variant<
     std::monostate,
@@ -80,7 +82,8 @@ using PopNotificationPayload = std::variant<
     PrintHostProgressNotificationData,
     EjectNotificationData,
     DownloadProgressNotificationData,
-    ArrangeEventType
+    ArrangeEventType,
+    UserAccountLoginNotificationData
 >;
 
 } // namespace Slic3r::App::PopNotification

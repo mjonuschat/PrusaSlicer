@@ -5,6 +5,8 @@
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
+#include <variant>
+
 namespace Slic3r::App::Yoga {
 class Text;
 class LayoutButton;
@@ -48,8 +50,11 @@ private:
     void reset();
     void layout();
 
-    void basic_layout(Render::Icon icon_override);
+    using LeftContent = std::variant<Render::Icon, std::string>; // Built-in icon or a filesystem image path
+
+    void basic_layout(const LeftContent& left_content = Render::Icon::None);
     void basic_left_layout(Render::Icon icon_override);
+    void basic_left_image_layout(const std::string& image_path);
     void basic_right_layout();
 
     void basic_mid_layout();
@@ -60,6 +65,8 @@ private:
 
     void layout_type_text();
     void layout_type_header_text();
+    void layout_type_image_text();
+    void layout_type_image_header_text();
     void layout_type_text_buttons();
     void layout_type_header_text_buttons();
     void layout_type_text_progress();
@@ -67,6 +74,7 @@ private:
 
     void update_text(const std::string& text);
     void update_header(const std::string& text);
+    void update_image(const std::string& image_path);
     void update_buttons(const std::vector<PopNotificationButtonData>& buttons);
     void update_progress(int progress);
 

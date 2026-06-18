@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <ranges>
+#include <boost/filesystem/operations.hpp>
 
 using Slic3r::Biz::Platform::JobManager::JobManagerStatus;
 using Slic3r::Biz::Platform::JobManager::Progress;
@@ -927,6 +928,11 @@ void PopNotificationCenter::on_removable_drive_status_changed(
     );
 }
 
+const auto user_account_login_matcher{cmp<UserAccountLoginNotificationData>( //
+    [](const UserAccountLoginNotificationData&, const UserAccountLoginNotificationData&)
+    { return true; }
+)};
+
 void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
     if (is_refresh) {
@@ -935,14 +941,51 @@ void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const st
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
+    const boost::filesystem::path avatar{m_project_interactor.user_account_interactor().avatar()};
+    const std::string image_path{boost::filesystem::exists(avatar) ? avatar.string() : std::string{}};
+
     m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
             10s,
-            PopNotificationLayoutText(fmt::format("User {} logged in.", username))
+            PopNotificationLayoutImageHeaderText(image_path,
+                fmt::format(fmt::runtime(_u8L("Logged in as {}")), username), {}),
+            UserAccountLoginNotificationData{}
         },
-        never_equal_matcher
+        user_account_login_matcher
+    );
+}
+
+void PopNotificationCenter::on_avatar_downloaded()
+{
+    auto& user_account = m_project_interactor.user_account_interactor();
+    if (!user_account.is_logged_in()) {
+        return;
+    }
+    // Only update an already shown login notification; avoid popping a new one when the
+    // avatar is re-downloaded outside of a fresh login (e.g. during a token refresh).
+    std::function<bool(const UserAccountLoginNotificationData&)> any =
+        [](const UserAccountLoginNotificationData&) { return true; };
+    if (!m_notification_list.get_notifcation_payload<UserAccountLoginNotificationData>(any)) {
+        return;
+    }
+
+    const boost::filesystem::path avatar{user_account.avatar()};
+    if (!boost::filesystem::exists(avatar)) {
+        return;
+    }
+
+    m_notification_list.upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::UserAccountLogin,
+            PopNotificationLevel::Regular,
+            10s,
+            PopNotificationLayoutImageHeaderText(avatar.string(),
+                fmt::format(fmt::runtime(_u8L("Logged in as {}")), user_account.username()), {}),
+            UserAccountLoginNotificationData{}
+        },
+        user_account_login_matcher
     );
 }
 
@@ -950,12 +993,17 @@ void PopNotificationCenter::on_user_account_logged_out()
 {
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
+
+    const boost::filesystem::path avatar{m_project_interactor.user_account_interactor().avatar()};
+    const std::string image_path{boost::filesystem::exists(avatar) ? avatar.string() : std::string{}};
+
     m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
             10s,
-            PopNotificationLayoutText("User Account logged out.")
+            PopNotificationLayoutImageHeaderText(image_path, _u8L("Successfully logged out"), {}),
+            UserAccountLoginNotificationData{}
         },
         never_equal_matcher
     );
