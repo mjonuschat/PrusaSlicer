@@ -1117,13 +1117,13 @@ void ArrangeInteractor::arrange(
 
 void ArrangeInteractor::partial_arrange(
     const SelectionId project_id,
-    const std::set<size_t>& arrangeable_object_ids,
+    const std::set<size_t>& arrangeable_instance_ids,
     const BedRef& target_bed,
     const Settings& settings,
     PartialArrangeCallback on_completed
 )
 {
-    if (project_id == Domain::INVALID_ID || arrangeable_object_ids.empty()) {
+    if (project_id == Domain::INVALID_ID || arrangeable_instance_ids.empty()) {
         if (on_completed) {
             on_completed({});
         }
@@ -1132,8 +1132,8 @@ void ArrangeInteractor::partial_arrange(
     }
 
     const IsArrangeablePredicate is_arrangeable =
-        [&arrangeable_object_ids](const ModelInstance* instance)
-    { return arrangeable_object_ids.contains(instance->get_object()->id().id); };
+        [&arrangeable_instance_ids](const ModelInstance* instance)
+    { return arrangeable_instance_ids.contains(instance->id().id); };
 
     const double unplaced_offset{-20.0};
     const ModelInstancesPerBed model_instances_per_bed{
@@ -1206,6 +1206,168 @@ void ArrangeInteractor::partial_arrange(
         invoke_listeners<IArrangeEventsListener>([&](auto* listener)
                                                  { listener->on_fatal_arrange_error(project_id); });
     }
+}
+
+void ArrangeInteractor::arrange_added_instances(
+    const SelectionId project_id,
+    const ElementRefs& added_instances,
+    const BedRef& target_bed,
+    const UndoSnapshotType snapshot_type
+)
+{
+    std::set<size_t> instance_ids;
+    for (const ElementRef& ref : added_instances) {
+        instance_ids.insert(ref.instance_id);
+    }
+
+    bool is_queue_processing_running = false;
+    {
+        std::lock_guard lock(m_added_arrange_mutex);
+        is_queue_processing_running = !m_added_arrange_queue.empty();
+        m_added_arrange_queue.push(
+            {project_id, std::move(instance_ids), target_bed, snapshot_type}
+        );
+    }
+
+    if (!is_queue_processing_running) {
+        this->process_added_arrange_queue();
+    }
+}
+
+void ArrangeInteractor::process_added_arrange_queue()
+{
+    const constexpr Settings ARRANGE_SETTINGS{
+        .strategy        = Arrange::Strategy::Gravity,
+        .scaled_offset   = Algorithms::Scaling::scaled(3.0),
+        .allow_rotations = false
+    };
+
+    PendingArrange pending_arrange;
+    {
+        std::lock_guard lock(m_added_arrange_mutex);
+        if (m_added_arrange_queue.empty()) {
+            return;
+        }
+
+        pending_arrange = m_added_arrange_queue.front();
+    }
+
+    this->partial_arrange(
+        pending_arrange.project_id,
+        pending_arrange.instance_ids,
+        pending_arrange.target_bed,
+        ARRANGE_SETTINGS,
+        [this,
+         project_id    = pending_arrange.project_id,
+         target_bed    = pending_arrange.target_bed,
+         snapshot_type = pending_arrange.snapshot_type,
+         attempted_ids = pending_arrange.instance_ids](const ElementRefs& not_arranged)
+        {
+            // If nothing was placed and the bed had no other instances, the bed was empty and the
+            // instances are too big for it, so do not move them onto a new empty bed.
+            bool instances_cannot_fit_on_bed = false;
+            if (!not_arranged.empty() && not_arranged.size() == attempted_ids.size()) {
+                const Project& project = m_workbench.project(project_id);
+                const BedInstance* bed = project.find_bed_instance_by_id(target_bed.instance_id);
+
+                bool bed_has_other_instances = false;
+                if (bed != nullptr) {
+                    for (const ModelInstance* inst : bed->model_instances) {
+                        // Skip our own instances, because they are on the bed too.
+                        // Any other instance means the bed wasn't empty.
+                        if (!attempted_ids.contains(inst->id().id)) {
+                            bed_has_other_instances = true;
+                            break;
+                        }
+                    }
+                }
+
+                instances_cannot_fit_on_bed = !bed_has_other_instances;
+            }
+
+            if (!not_arranged.empty() && !instances_cannot_fit_on_bed) {
+                const Project& project                = m_workbench.project(project_id);
+                const SelectionId config_container_id = target_bed.config_container_id;
+
+                const Domain::ConfigContainer* config_container =
+                    project.find_config_container(config_container_id);
+                ASSERT(config_container != nullptr);
+
+                const BedRef last_bed_in_container{
+                    config_container_id,
+                    config_container->bed_instances().back()->id().id
+                };
+
+                BedRef next_bed = last_bed_in_container;
+                if (target_bed == last_bed_in_container) {
+                    // Create a new bed and arrange objects there.
+                    const BedInstance& new_bed =
+                        m_scene_interactor.add_bed_instance(config_container_id);
+                    next_bed = BedRef{config_container_id, new_bed.id().id};
+                    m_scene_interactor.bed_selection().toggle(next_bed);
+                }
+
+                std::set<size_t> not_arranged_ids;
+                for (const ElementRef& ref : not_arranged) {
+                    not_arranged_ids.insert(ref.instance_id);
+                }
+
+                this->move_instances_to_bed(project_id, not_arranged, next_bed);
+
+                {
+                    std::lock_guard lock(m_added_arrange_mutex);
+                    m_added_arrange_queue.pop();
+                    m_added_arrange_queue.push(
+                        {project_id, std::move(not_arranged_ids), next_bed, snapshot_type}
+                    );
+                }
+            } else {
+                if (!not_arranged.empty()) {
+                    // These instances cannot fit any bed.
+                    invoke_listeners<IArrangeEventsListener>(
+                        [&](auto* listener)
+                        { listener->on_elements_not_arranged(project_id, not_arranged); }
+                    );
+                }
+
+                {
+                    std::lock_guard lock(m_added_arrange_mutex);
+                    m_added_arrange_queue.pop();
+                }
+
+                // Take the undo snapshot only once the whole arrange operation has finished.
+                m_scene_interactor.undo_provider().take_snapshot(snapshot_type);
+            }
+
+            this->process_added_arrange_queue();
+        }
+    );
+}
+
+void ArrangeInteractor::move_instances_to_bed(
+    const SelectionId project_id,
+    const ElementRefs& instances,
+    const BedRef& bed_ref
+)
+{
+    const BedInstance* bed_instance =
+        m_workbench.project(project_id).find_bed_instance_by_id(bed_ref.instance_id);
+    if (bed_instance == nullptr) {
+        return;
+    }
+
+    const Vec2d bed_offset =
+        Algorithms::Point::to_2d(Transformation{bed_instance->transformation}.get_offset());
+    const Vec2d bed_center = bed_offset + bed_instance->bed.get().center();
+
+    Arrange::InstanceTransforms trafos;
+    for (const ElementRef& ref : instances) {
+        trafos.push_back(
+            {.instance_ref = ref, .absolute_offset = bed_center, .rotation_delta = 0.0}
+        );
+    }
+
+    m_scene_interactor.transform_instances(trafos);
 }
 
 } // namespace Slic3r::Biz

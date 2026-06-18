@@ -309,11 +309,22 @@ static std::string geometry_name(Scene::GeometryDataId geometry_id)
 
 void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
 {
-    auto add_object_shape = [this](Scene::GeometryDataId geometry_id)
+    auto add_object_shape =
+        [this](Scene::GeometryDataId geometry_id, UndoSnapshotType snapshot_type)
     {
-        m_project_interactor.scene_interactor().add_object_to_active_bed(
-            m_data_factory->triangle_mesh(geometry_id)->triangles(),
-            geometry_name(geometry_id)
+        const Domain::ElementRefs new_instances =
+            m_project_interactor.scene_interactor().add_object_to_active_bed(
+                m_data_factory->triangle_mesh(geometry_id)->triangles(),
+                geometry_name(geometry_id)
+            );
+
+        const Domain::BedRef target_bed =
+            m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+        m_project_interactor.arrange_interactor().arrange_added_instances(
+            m_project_interactor.selected_project_id(),
+            new_instances,
+            target_bed,
+            snapshot_type
         );
     };
 
@@ -327,9 +338,7 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
             "add-object-shape-cube",
             [this, add_object_shape]()
             {
-                add_object_shape(Scene::GeometryDataId::Cube);
-
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddCube);
+                add_object_shape(Scene::GeometryDataId::Cube, UndoSnapshotType::AddCube);
             }
         )
         .append_item(
@@ -337,8 +346,7 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
             "add-object-shape-cylinder",
             [this, add_object_shape]()
             {
-                add_object_shape(Scene::GeometryDataId::Cylinder);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddCylinder);
+                add_object_shape(Scene::GeometryDataId::Cylinder, UndoSnapshotType::AddCylinder);
             }
         )
         .append_item(
@@ -346,8 +354,7 @@ void MenuCommandRegistrar::register_bed_menu_add_shape_commands()
             "add-object-shape-sphere",
             [this, add_object_shape]()
             {
-                add_object_shape(Scene::GeometryDataId::Sphere);
-                m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::AddSphere);
+                add_object_shape(Scene::GeometryDataId::Sphere, UndoSnapshotType::AddSphere);
             }
         )
         .append_separator()
@@ -434,10 +441,17 @@ void MenuCommandRegistrar::register_object_menu_commands()
                     [this](int number)
                     {
                         ASSERT(number > 0);
-                        m_project_interactor.scene_interactor().set_selected_objects_instance_count(
-                            number
-                        );
-                        m_project_interactor.undo_provider().take_snapshot(
+                        const Domain::ElementRefs new_instances =
+                            m_project_interactor.scene_interactor()
+                                .set_selected_objects_instance_count(number);
+                        const Domain::BedRef target_bed = m_project_interactor.scene_interactor()
+                                                              .bed_selection()
+                                                              .last_selected_bed();
+
+                        m_project_interactor.arrange_interactor().arrange_added_instances(
+                            m_project_interactor.selected_project_id(),
+                            new_instances,
+                            target_bed,
                             UndoSnapshotType::SetNumberOfInstances
                         );
                     }
@@ -2035,10 +2049,8 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
                 CommandName::ImportGeometry,
                 [this]()
                 {
+                    // The undo snapshot is taken inside load_models_to_project().
                     load_object();
-                    m_project_interactor.undo_provider().take_snapshot(
-                        Biz::UndoSnapshotType::AddObject
-                    );
                 },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{

@@ -1007,7 +1007,7 @@ Domain::Project load_file_as_project(
     return convert_to_project(std::move(loaded_3mf), dialog_provider);
 }
 
-void import_files_and_add_to_scene(
+ElementRefs import_files_and_add_to_scene(
     const std::vector<boost::filesystem::path>& file_paths,
     int tool_count,
     Scene::SceneInteractor& scene_interactor,
@@ -1017,12 +1017,15 @@ void import_files_and_add_to_scene(
 {
     auto data = Biz::FileLoadingLogic::import_files(file_paths, dialog_provider, tool_count);
 
+    ElementRefs added_instances;
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
+        ElementRefs new_instances;
         using namespace Biz::Algorithms;
         if (file_data.mesh) {
             auto mesh = file_data.mesh;
-            scene_interactor.new_object_from_mesh(std::move(mesh.value()), file_data.file_name);
+            new_instances =
+                scene_interactor.new_object_from_mesh(std::move(mesh.value()), file_data.file_name);
 
             bbox = mesh->bounding_box();
         } else if (file_data.model) {
@@ -1039,7 +1042,8 @@ void import_files_and_add_to_scene(
                     bbox                     = BoundingBox::merge(bbox, bb);
                 }
             }
-            scene_interactor.add_new_objects(model.objects);
+
+            new_instances = scene_interactor.add_new_objects(model.objects);
         }
 
         ASSERT(bbox.defined);
@@ -1048,7 +1052,11 @@ void import_files_and_add_to_scene(
         xform.translate(Vec3d(0., 0., BoundingBox::sizes(bbox).z() / 2.));
         xform.translate(Vec3d{bed_center.x(), bed_center.y(), 0});
         scene_interactor.transform_selection(xform.matrix());
+
+        added_instances.insert(added_instances.end(), new_instances.begin(), new_instances.end());
     }
+
+    return added_instances;
 }
 
 /**

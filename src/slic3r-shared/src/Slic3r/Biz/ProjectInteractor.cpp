@@ -758,7 +758,7 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         proj.find_config_container(selected_bed.config_container_id);
     const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
     int slot_count             = cc->selected_preset().hw_config.material_slot_count();
-    FileLoadingLogic::import_files_and_add_to_scene(
+    const Domain::ElementRefs new_instances = FileLoadingLogic::import_files_and_add_to_scene(
         paths,
         slot_count,
         scene_interactor(),
@@ -767,6 +767,13 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
     );
 
     set_project_dir(selected_project_id(), paths.front());
+
+    arrange_interactor().arrange_added_instances(
+        selected_project_id(),
+        new_instances,
+        selected_bed,
+        UndoSnapshotType::AddObject
+    );
 }
 
 Domain::SelectionId ProjectInteractor::add_config_container()

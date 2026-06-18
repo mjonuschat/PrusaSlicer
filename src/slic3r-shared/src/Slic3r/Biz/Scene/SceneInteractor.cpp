@@ -620,17 +620,23 @@ BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_i
     return &it->second.bed_selection;
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name) {
+ElementRefs SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name)
+{
     UpdateObjectFn update_object = [&name](ModelObject& object) {
         object.name = name;
         object.volumes.front()->name = name;
         //for (Domain::ModelVolume* volume : object.volumes)
         //    volume->name = name;
     };
-    new_object_from_mesh(std::move(mesh), m_selected_project_id, update_object);
+
+    return new_object_from_mesh(std::move(mesh), m_selected_project_id, update_object);
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id, UpdateObjectFn update_object)
+ElementRefs SceneInteractor::new_object_from_mesh(
+    TriangleMesh&& mesh,
+    SelectionId project_id,
+    UpdateObjectFn update_object
+)
 {
     auto& project = m_workbench.project(project_id);
     auto& obj     = *project.model().add_object();
@@ -664,9 +670,11 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
 
     // TODO: need to send project_id for set selection (for @JanBartipan)
     set_object_selection({ SelectionMode::Instance, updated });
+
+    return updated;
 }
 
-void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& objects)
+ElementRefs SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& objects)
 {
     auto& project = m_workbench.project(m_selected_project_id);
 
@@ -677,6 +685,15 @@ void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& o
     }
 
     notify_listener_on_objects(new_objects);
+
+    ElementRefs new_instances;
+    for (const ModelObject* new_object : new_objects) {
+        for (const ModelInstance* instance : new_object->instances) {
+            new_instances.emplace_back(new_object->id().id, instance->id().id, 0);
+        }
+    }
+
+    return new_instances;
 }
 
 void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const std::string& name, const Transform& xform)
@@ -778,7 +795,7 @@ void SceneInteractor::set_selected_volume_type(Domain::ModelVolumeType volume_ty
         invoke_slicing_input_changed(bed_ref);
 }
 
-void SceneInteractor::add_instance(const Vec2d& offset)
+ElementRefs SceneInteractor::add_instance(const Vec2d& offset)
 {
     auto& project              = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
@@ -814,6 +831,8 @@ void SceneInteractor::add_instance(const Vec2d& offset)
     }
 
     set_object_selection({SelectionMode::Instance, updated});
+
+    return updated;
 }
 
 ModelObjectPtrs SceneInteractor::clone_objects_from_project(
@@ -879,7 +898,7 @@ void SceneInteractor::delete_selected_object_last_instance()
     set_object_selection({SelectionMode::Instance, to_select});
 }
 
-void SceneInteractor::set_selected_objects_instance_count(int count)
+ElementRefs SceneInteractor::set_selected_objects_instance_count(int count)
 {
     auto& project = m_workbench.project(m_selected_project_id);
     ObjectSelection sel = object_selection();
@@ -945,6 +964,8 @@ void SceneInteractor::set_selected_objects_instance_count(int count)
     }
 
     set_object_selection(sel);
+
+    return to_add;
 }
 
 void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& objects)
@@ -3304,7 +3325,7 @@ void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_ins
     );
 }
 
-void
+ElementRefs
 SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const std::string& name)
 {
     const auto& project = m_workbench.project(m_selected_project_id);
@@ -3330,7 +3351,7 @@ SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const
     mesh.scale(std::max(10., std::round(0.1 * bed_shape.get_size().x())));
     Domain::BoundingBox3d bbox = mesh.bounding_box();
 
-    new_object_from_mesh(std::move(mesh), name);
+    ElementRefs new_instances = new_object_from_mesh(std::move(mesh), name);
 
     if (bbox.defined) {
         Domain::Transform3d xform = Domain::Transform3d::Identity();
@@ -3340,6 +3361,8 @@ SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const
         xform.translate(Domain::Vec3d{ bed_center.x(), bed_center.y(), 0. });
         transform_selection(xform.matrix());
     }
+
+    return new_instances;
 }
 
 void SceneInteractor::add_volume_to_active_object(

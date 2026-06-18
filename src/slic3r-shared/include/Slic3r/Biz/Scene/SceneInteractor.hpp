@@ -206,7 +206,7 @@ public:
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
 
-    void add_new_objects(const std::vector<Domain::ModelObject*>& objects);
+    Domain::ElementRefs add_new_objects(const std::vector<Domain::ModelObject*>& objects);
     void add_volume_from_mesh(
         Domain::TriangleMesh&& mesh,
         Domain::ModelVolumeType volume_type,
@@ -225,16 +225,17 @@ public:
     );
 
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;
-    void new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
-    void new_object_from_mesh(
+    Domain::ElementRefs
+    new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
+    Domain::ElementRefs new_object_from_mesh(
         Domain::TriangleMesh&& mesh,
         Domain::SelectionId project_id,
         UpdateObjectFn update_object
     );
 
-    void add_instance(const Domain::Vec2d& offset);
+    Domain::ElementRefs add_instance(const Domain::Vec2d& offset);
     void delete_selected_object_last_instance();
-    void set_selected_objects_instance_count(int count);
+    Domain::ElementRefs set_selected_objects_instance_count(int count);
 
     Domain::ModelObjectPtrs clone_objects_from_project(
         Domain::SelectionId source_project_id,
@@ -487,7 +488,8 @@ public:
 
     void on_extruder_candidates_changed(std::vector<unsigned>, const Domain::SlicingId) override;
 
-    void add_object_to_active_bed(const indexed_triangle_set& its, const std::string& name);
+    Domain::ElementRefs
+    add_object_to_active_bed(const indexed_triangle_set& its, const std::string& name);
     void add_volume_to_active_object(
         const indexed_triangle_set& its,
         Domain::ModelVolumeType volume_type,
