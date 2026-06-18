@@ -57,6 +57,8 @@ void PopNotificationView::layout()
         Domain::overloaded{
             [this](const PopNotificationLayoutText&) { layout_type_text(); },
             [this](const PopNotificationLayoutHeaderText&) { layout_type_header_text(); },
+            [this](const PopNotificationLayoutHeader&) { layout_type_header(); },
+            [this](const PopNotificationLayoutImageHeader&) { layout_type_image_header(); },
             [this](const PopNotificationLayoutImageText&) { layout_type_image_text(); },
             [this](const PopNotificationLayoutImageHeaderText&)
             { layout_type_image_header_text(); },
@@ -91,6 +93,17 @@ void PopNotificationView::on_data_update()
             {
                 update_header(d.header);
                 update_text(d.text);
+            },
+            [this](const PopNotificationLayoutHeader& d) { update_header(d.header); },
+            [this](const PopNotificationLayoutImageHeader& d)
+            {
+                if (d.image_path.empty() != (m_left_icon == nullptr)) {
+                    reset();
+                    layout();
+                    return;
+                }
+                update_header(d.header);
+                update_image(d.image_path);
             },
             [this](const PopNotificationLayoutImageText& d)
             {
@@ -140,7 +153,7 @@ void PopNotificationView::on_data_update()
     );
 }
 
-void PopNotificationView::basic_layout(const LeftContent& left_content)
+void PopNotificationView::basic_layout(const LeftContent& left_content, bool top_row_only)
 {
     set_margin(5.);
     set_max_width(TotalWidth);
@@ -148,6 +161,12 @@ void PopNotificationView::basic_layout(const LeftContent& left_content)
     set_flex_shrink(0.f);
     set_orientation(Yoga::Orientation::Vertical);
     set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 10.f));
+
+    if (top_row_only) {
+        set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 20.f));
+        set_min_height(MinHeight);
+        set_justify_content(YGJustifyCenter);
+    }
 
     if (m_state->level == PopNotificationLevel::Error) {
         set_border_size(2.f);
@@ -160,7 +179,6 @@ void PopNotificationView::basic_layout(const LeftContent& left_content)
         set_border_color(std::nullopt);
     }
 
-    // Top Row: Icon, Header, Close Button
     m_top_row = emplace_back<Yoga::Item>();
     m_top_row->set_orientation(Yoga::Orientation::Horizontal);
     m_top_row->set_width_percent(100.f);
@@ -174,11 +192,12 @@ void PopNotificationView::basic_layout(const LeftContent& left_content)
     m_top_mid->set_flex_grow(1.f);
     m_right_column->set_self_align(YGAlignCenter);
 
-    // Main Content Column (Below Top Row)
-    m_mid_column = emplace_back<Yoga::Item>();
-    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
-    m_mid_column->set_flex_grow(1.f);
-    m_mid_column->set_self_align(YGAlignStretch);
+    if (!top_row_only) {
+        m_mid_column = emplace_back<Yoga::Item>();
+        m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+        m_mid_column->set_flex_grow(1.f);
+        m_mid_column->set_self_align(YGAlignStretch);
+    }
 
     if (const std::string* image_path = std::get_if<std::string>(&left_content);
         image_path && !image_path->empty()) {
@@ -378,6 +397,22 @@ void PopNotificationView::layout_type_header_text()
     basic_mid_layout();
     basic_mid_header_layout(layout_data->header);
     basic_mid_text_layout(layout_data->text);
+}
+
+void PopNotificationView::layout_type_header()
+{
+    const auto* layout_data = std::get_if<PopNotificationLayoutHeader>(&m_state->layout);
+    ASSERT(layout_data);
+    basic_layout(Render::Icon::None, /*top_row_only=*/true);
+    basic_mid_header_layout(layout_data->header);
+}
+
+void PopNotificationView::layout_type_image_header()
+{
+    const auto* layout_data = std::get_if<PopNotificationLayoutImageHeader>(&m_state->layout);
+    ASSERT(layout_data);
+    basic_layout(layout_data->image_path, /*top_row_only=*/true);
+    basic_mid_header_layout(layout_data->header);
 }
 
 void PopNotificationView::layout_type_image_text()

@@ -23,6 +23,17 @@ struct PopNotificationLayoutHeaderText
     std::string text;
 };
 
+struct PopNotificationLayoutHeader
+{
+    std::string header;
+};
+
+struct PopNotificationLayoutImageHeader
+{
+    std::string image_path;
+    std::string header;
+};
+
 struct PopNotificationLayoutImageText
 {
     std::string image_path;
@@ -65,6 +76,8 @@ struct PopNotificationLayoutHeaderTextProgress
 using PopNotificationLayout = std::variant<
     PopNotificationLayoutText,
     PopNotificationLayoutHeaderText,
+    PopNotificationLayoutHeader,
+    PopNotificationLayoutImageHeader,
     PopNotificationLayoutImageText,
     PopNotificationLayoutImageHeaderText,
     PopNotificationLayoutTextButtons,

@@ -52,7 +52,7 @@ private:
 
     using LeftContent = std::variant<Render::Icon, std::string>; // Built-in icon or a filesystem image path
 
-    void basic_layout(const LeftContent& left_content = Render::Icon::None);
+    void basic_layout(const LeftContent& left_content = Render::Icon::None, bool top_row_only = false);
     void basic_left_layout(Render::Icon icon_override);
     void basic_left_image_layout(const std::string& image_path);
     void basic_right_layout();
@@ -65,6 +65,8 @@ private:
 
     void layout_type_text();
     void layout_type_header_text();
+    void layout_type_header();
+    void layout_type_image_header();
     void layout_type_image_text();
     void layout_type_image_header_text();
     void layout_type_text_buttons();
