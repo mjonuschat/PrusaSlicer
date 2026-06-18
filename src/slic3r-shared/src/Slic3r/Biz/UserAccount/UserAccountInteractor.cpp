@@ -25,7 +25,7 @@ void UserAccountInteractor::init(bool app_config_enabled)
     } else {
         if (is_enabled()) {
             bool was_logged = is_logged_in();
-            do_log_out(true);
+            do_log_out();
             m_communication = std::make_unique<UserAccountCommunicationDummy>();
             m_communication->add_session_listener(this);
 
@@ -88,7 +88,7 @@ bool UserAccountInteractor::is_logged_in() const
 
 void UserAccountInteractor::on_read_token_store_message()
 {
-    m_communication.on_read_token_store_message();
+    m_communication->on_read_token_store_message();
 }
 
 std::string UserAccountInteractor::username() const

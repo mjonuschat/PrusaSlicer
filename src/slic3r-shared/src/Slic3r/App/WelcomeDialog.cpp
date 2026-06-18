@@ -1086,7 +1086,7 @@ public:
 
     ItemPtr logged_in_layout()
     {
-        auto logout{[this]() { m_project_interactor.user_account_interactor().do_log_out(true); }};
+        auto logout{[this]() { m_project_interactor.user_account_interactor().do_log_out(); }};
         const NavigationSetup navigation_setup{
             .left_button_text     = Biz::_u8L("Back"),
             .left_button_action   = m_go_to_prev,
@@ -1168,7 +1168,7 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
             } else {
                 ASSERT(button == m_offline_button);
                 m_online = false;
-                m_project_interactor.user_account_interactor().do_log_out(true);
+                m_project_interactor.user_account_interactor().do_log_out();
                 m_login_screen->reload_layout();
                 go_to_screen(ASSERT_VAL(m_printer_screen));
             }
