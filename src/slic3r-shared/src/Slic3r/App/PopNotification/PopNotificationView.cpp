@@ -10,9 +10,11 @@
 
 namespace Slic3r::App::PopNotification {
 
-constexpr int TotalWidth = 400;
-constexpr int MinHeight  = 40;
-constexpr int MaxHeight  = 160;
+using namespace Yoga;
+
+const Unit TotalWidth = 400_fpx;
+const Unit MinHeight  =  40_fpx;
+const Unit MaxHeight  = 160_fpx;
 
 PopNotificationView::PopNotificationView(
     size_t index,
@@ -155,15 +157,15 @@ void PopNotificationView::on_data_update()
 
 void PopNotificationView::basic_layout(const LeftContent& left_content, bool top_row_only)
 {
-    set_margin(5.);
+    set_margin(5_fpx);
     set_max_width(TotalWidth);
     set_max_height(MaxHeight);
     set_flex_shrink(0.f);
     set_orientation(Yoga::Orientation::Vertical);
-    set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 10.f));
+    set_padding(Yoga::Paddings(16_fpx, 10_fpx, 16_fpx, 10_fpx));
 
     if (top_row_only) {
-        set_padding(Yoga::Paddings(20.f, 20.f, 20.f, 20.f));
+        //set_padding(Yoga::Paddings(20_fpx, 10_fpx, 20_fpx, 10_fpx));
         set_min_height(MinHeight);
         set_justify_content(YGJustifyCenter);
     }
@@ -182,6 +184,7 @@ void PopNotificationView::basic_layout(const LeftContent& left_content, bool top
     m_top_row = emplace_back<Yoga::Item>();
     m_top_row->set_orientation(Yoga::Orientation::Horizontal);
     m_top_row->set_width_percent(100.f);
+    m_top_row->set_flex_shrink(0.f);
 
     m_left_column  = m_top_row->emplace_back<Yoga::Item>();
     m_top_mid      = m_top_row->emplace_back<Yoga::Item>();
@@ -231,12 +234,12 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
         return;
     }
 
-    m_left_column->set_min_width(25);
-    m_left_column->set_min_height(20);
+    m_left_column->set_min_width(25_fpx);
+    m_left_column->set_min_height(16_fpx);
     m_left_icon = m_left_column->emplace_back<Yoga::Icon>(icon);
-    m_left_icon->set_min_width(20);
-    m_left_icon->set_min_height(20);
-    m_left_icon->set_margin({0.f, 0.f, 10.f, 0.f});
+    m_left_icon->set_min_width(16_fpx);
+    m_left_icon->set_min_height(16_fpx);
+    m_left_icon->set_margin({0_fpx, 0_fpx, 10_fpx, 0_fpx});
 
     if (tint_color) {
         m_left_icon->set_tint(m_theme->color_imgui(*tint_color));
@@ -245,8 +248,6 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
 
 void PopNotificationView::basic_left_image_layout(const std::string& image_path)
 {
-    using namespace Yoga;
-
     m_left_column->set_orientation(Yoga::Orientation::Horizontal);
     m_left_column->set_justify_content(YGJustifyFlexStart);
 
@@ -256,14 +257,14 @@ void PopNotificationView::basic_left_image_layout(const std::string& image_path)
         return;
     }
 
-    m_left_column->set_min_width(30);
-    m_left_column->set_min_height(20);
+    m_left_column->set_min_width(30_fpx);
+    m_left_column->set_min_height(16_fpx);
 
     m_left_icon = m_left_column->emplace_back<Yoga::Icon>(Render::Icon::None);
-    m_left_icon->set_min_width(20);
-    m_left_icon->set_min_height(20);
-    m_left_icon->set_rounding(10);
-    m_left_icon->set_margin({0.f, 0.f, 10.f, 0.f});
+    m_left_icon->set_min_width(16_fpx);
+    m_left_icon->set_min_height(16_fpx);
+    m_left_icon->set_rounding(10_fpx);
+    m_left_icon->set_margin({0_fpx, 0_fpx, 10_fpx, 0_fpx});
     m_left_icon->set_image(image_path);
 }
 
@@ -277,10 +278,10 @@ void PopNotificationView::basic_right_layout()
             std::string{},
             Render::Icon::NotificationCloseGray
         );
-        m_close_button->set_min_width(20);
-        m_close_button->set_min_height(20);
-        m_close_button->set_max_width(20);
-        m_close_button->set_max_height(20);
+        m_close_button->set_min_width(16_fpx);
+        m_close_button->set_min_height(16_fpx);
+        m_close_button->set_max_width(16_fpx);
+        m_close_button->set_max_height(16_fpx);
         m_close_button->callbacks().action = [this]()
         {
             // This code is called from render function -> removing notification now might trigger destroying object that is rendering right now.
@@ -290,7 +291,7 @@ void PopNotificationView::basic_right_layout()
                     [this]() { m_notification_list.on_notification_close_button(m_state); }
                 );
         };
-        m_close_button->set_margin({10.f, 0.f, 0.f, 0.f});
+        m_close_button->set_margin({10_fpx, 0_fpx, 0_fpx, 0_fpx});
     }
 }
 
@@ -305,7 +306,7 @@ void PopNotificationView::basic_mid_header_layout(const std::string& header)
     m_header = m_top_mid->emplace_back<Yoga::Text>(header);
     m_header->set_font_type(Render::ImguiFontType::Bold);
     m_header->set_text_color(text_color());
-    m_header->set_margin({0.f, 5.f, 0.f, 5.f});
+    m_header->set_margin({0_fpx, 5_fpx, 0_fpx, 5_fpx});
     m_header->set_flex_shrink(0.f);
     m_header->set_width_percent(100.f);
     m_header->set_wrap_mode(Yoga::Text::WrapMode::WrapElide);
@@ -317,8 +318,8 @@ void PopNotificationView::basic_mid_text_layout(const std::string& text)
     text_scroll->set_flex_grow(1.f);
     text_scroll->set_flex_shrink(1.f);
     text_scroll->set_justify_content(YGJustifyFlexStart);
-    text_scroll->set_margin({0.f, 0.f, -10.f, 10.f});
-    text_scroll->set_padding({0.f, 0.f, 20.f, 0.f});
+    text_scroll->set_margin({0_fpx, 0_fpx, -10_fpx, 10_fpx});
+    text_scroll->set_padding({0_fpx, 0_fpx, 10_fpx, 0_fpx});
     text_scroll->set_width_percent(100.f);
 
     m_text = text_scroll->emplace_back<Yoga::Text>(text);
@@ -335,7 +336,7 @@ void PopNotificationView::basic_mid_buttons_layout(
     m_button_line = m_mid_column->emplace_back<Yoga::Item>();
     m_button_line->set_orientation(Yoga::Orientation::Horizontal);
     m_button_line->set_justify_content(YGJustifyFlexStart);
-    m_button_line->set_margin({0.f, 0.f, 0.f, 5.f});
+    m_button_line->set_margin({0_fpx, 0_fpx, 0_fpx, 5_fpx});
     m_button_line->set_flex_shrink(0.f);
 
     for (const auto& bdata : buttons) {
@@ -356,9 +357,9 @@ void PopNotificationView::basic_mid_buttons_layout(
                 );
         };
         button->set_background_color(button_color());
-        button->set_margin({0.f, 0.f, 5.f, 0.f});
+        button->set_margin({0_fpx, 0_fpx, 5_fpx, 0_fpx});
         if (button->label_object()) {
-            button->label_object()->set_margin({5.f, 2.f, 5.f, 2.f});
+            button->label_object()->set_margin({5_fpx, 2_fpx, 5_fpx, 2_fpx});
         }
     }
 }
@@ -370,8 +371,8 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
     m_progress_bar->set_flex_grow(1.f);
     m_progress_bar->set_progress(progress);
     m_progress_bar->set_min_width(m_mid_column->min_width());
-    m_progress_bar->set_min_height(3);
-    m_progress_bar->set_margin({0.f, 5.f, 0.f, 0.f});
+    m_progress_bar->set_min_height(3_fpx);
+    m_progress_bar->set_margin({0_fpx, 5_fpx, 0_fpx, 0_fpx});
     m_progress_bar->set_flex_shrink(0.f);
 
     m_progress_percent_text =
