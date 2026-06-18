@@ -50,7 +50,7 @@ void LeftBarCtrl::UpdateAccountButton(bool avatar/* = false*/)
         return;
 
     TabsBarMenus::UserAccountInfo  user_account = m_menus->get_user_account_info();
-    const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Log in");
+    const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Sign in");
     m_account_btn->SetToolTip(user_name);
     if (avatar) {
         if (user_account.is_logged) {

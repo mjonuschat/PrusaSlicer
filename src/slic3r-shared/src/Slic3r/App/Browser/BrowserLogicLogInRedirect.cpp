@@ -12,7 +12,7 @@ BrowserLogicLogInRedirect::BrowserLogicLogInRedirect(Biz::UserAccount::UserAccou
     AbstractBrowserLogic({}, {"PrusaSlicerWebviewMessage"}, "login_before_redirect"),
     m_user_account(user_account)
 {
-    set_title("Log in");
+    set_title("Sign in");
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_loaded_webview_event(const std::string& url)

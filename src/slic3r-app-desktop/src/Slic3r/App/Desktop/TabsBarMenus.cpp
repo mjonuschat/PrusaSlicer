@@ -51,7 +51,7 @@ void TabsBarMenus::sys_color_changed()
 
 void TabsBarMenus::CreateAccountMenu()
 {
-    m_login_item = append_menu_item(&account, wxID_ANY, from_u8("Login"), {},
+    m_login_item = append_menu_item(&account, wxID_ANY, from_u8("Sign in"), {},
         [this](wxCommandEvent&) { if (m_cb_act_with_user_account) m_cb_act_with_user_account(); }, "login");
 }
 
@@ -61,7 +61,7 @@ void TabsBarMenus::UpdateAccountMenu()
     if (m_cb_get_user_account_info)
         is_logged = m_cb_get_user_account_info().is_logged;
     if (m_login_item) {
-        m_login_item->SetItemLabel(is_logged ? _L("Log out") : _L("Log in"));
+        m_login_item->SetItemLabel(is_logged ? _L("Sign out") : _L("Sign in"));
         set_menu_item_bitmap(m_login_item, is_logged ? "logout" : "login");
     }
 }

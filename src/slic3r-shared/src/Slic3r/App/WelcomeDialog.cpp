@@ -819,7 +819,7 @@ public:
         const NavigationSetup navigation_setup{
             .left_button_text     = Biz::_u8L("Back"),
             .left_button_action   = m_go_to_prev,
-            .center_button_text   = Biz::_u8L("Log in"),
+            .center_button_text   = Biz::_u8L("Sign in"),
             .center_button_action = login,
             .rigth_button_text    = Biz::_u8L("Skip"),
             .rigth_button_action  = m_go_to_next,
@@ -832,9 +832,9 @@ public:
         m_logged_out_avatar->set_rounding(25_fpx);
 
         result->content()->emplace_back<Title>(
-            Biz::_u8L("Log in to your Prusa Account"),
+            Biz::_u8L("Sign in to your Prusa Account"),
             Biz::_u8L(
-                "Click the Log in button to open an external browser, where you can safely log in to your Prusa account."));
+                "Click the Sign in button to open an external browser, where you can safely sign in to your Prusa account."));
 
         auto note_section{result->content()->emplace_back<Rectangle>()};
         note_section->set_flex_shrink(0);
@@ -852,7 +852,7 @@ public:
             Biz::_u8L("Use Prusa Connect to its full potential"))};
         label_title->set_font_type(Render::ImguiFontType::Bold);
         label_section->emplace_back<Paragraph>(
-            Biz::_u8L("Once you log in, your printers will be automatically synchronized."),
+            Biz::_u8L("Once you sign in, your printers will be automatically synchronized."),
             std::nullopt,
             m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
 
@@ -876,7 +876,7 @@ public:
             .left_button_action   = m_go_to_prev,
             .center_button_text   = Biz::_u8L("Continue"),
             .center_button_action = m_go_to_next,
-            .rigth_button_text    = Biz::_u8L("Log out"),
+            .rigth_button_text    = Biz::_u8L("Sign out"),
             .rigth_button_action  = logout,
         };
         auto result{std::make_unique<Screen>(navigation_setup)};

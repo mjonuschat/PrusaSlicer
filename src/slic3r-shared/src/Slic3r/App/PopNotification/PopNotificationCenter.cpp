@@ -950,7 +950,7 @@ void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const st
             PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutImageHeader(image_path,
-                fmt::format(fmt::runtime(_u8L("Logged in as {}")), username)),
+                fmt::format(fmt::runtime(_u8L("Signed in as {}")), username)),
             UserAccountLoginNotificationData{}
         },
         user_account_login_matcher
@@ -982,7 +982,7 @@ void PopNotificationCenter::on_avatar_downloaded()
             PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutImageHeader(avatar.string(),
-                fmt::format(fmt::runtime(_u8L("Logged in as {}")), user_account.username())),
+                fmt::format(fmt::runtime(_u8L("Signed in as {}")), user_account.username())),
             UserAccountLoginNotificationData{}
         },
         user_account_login_matcher
@@ -1002,7 +1002,7 @@ void PopNotificationCenter::on_user_account_logged_out()
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
             10s,
-            PopNotificationLayoutImageHeader(image_path, _u8L("Successfully logged out")),
+            PopNotificationLayoutImageHeader(image_path, _u8L("Successfully signed out")),
             UserAccountLoginNotificationData{}
         },
         never_equal_matcher
