@@ -926,7 +926,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Network/TCPConsole.hpp
         include/Slic3r/Biz/Network/ServiceConfig.hpp
         include/Slic3r/Biz/Network/Jwt.hpp
-        include/Slic3r/Biz/Network/HttpCurlFactory.hpp
         src/Slic3r/Biz/Network/IHttp.cpp
         src/Slic3r/Biz/Network/HttpCurl.cpp
         src/Slic3r/Biz/Network/Bonjour.cpp

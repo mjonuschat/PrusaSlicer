@@ -39,6 +39,10 @@ void configure_http_factory_with_mock() {
         return false;
     });
 
+    factory.set_get_apex_domain_fn([](const std::string& url) -> std::string {
+        return "mock.host";
+    });
+
     factory.set_ca_file_supported_fn([]() -> bool {
         return true;
     });

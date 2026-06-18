@@ -101,6 +101,7 @@ struct ProjectInteractorWrapper
 TEST_CASE("Preset updater")
 {
     boost::nowide::nowide_filesystem();
+
     Slic3r::Biz::Network::configure_http_factory_with_mock();
 
     const std::string repo_name = "test_repo";
