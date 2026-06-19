@@ -19,7 +19,8 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     Dialog({Biz::_u8L("Settings")}, "OverrideSettingsDialog"),
     m_project_interactor(project_interactor)
 {
-    content()->set_width(380);
+    content()->set_width(350);
+    content()->set_padding(20);
 
     Biz::Preset::PresetInteractor& preset_interactor = project_interactor.preset_interactor();
 
@@ -65,30 +66,31 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     Item* back_row = options_page->emplace_back<Item>();
     back_row->set_gap(5);
     back_row->set_flex_shrink(0);
+    back_row->set_margin({0, -10, 0, 0});
     LayoutButton* back_button = back_row->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
-    back_button->set_width(18);
-    back_button->set_height(18);
-    back_button->set_content_padding(Paddings(2));
-    back_button->callbacks().action = [this]() {
-        on_about_to_show();
-    };
-    m_options_category_text = back_row->emplace_back<Text>(std::string());
+    back_button->set_width(22);
+    back_button->set_height(22);
+    back_button->set_content_padding(Paddings(0));
+    back_button->set_background_color(Platform::Color::ButtonTransparent);
+    back_button->callbacks().action = [this]() { on_about_to_show(); };
+    m_options_category_text         = back_row->emplace_back<Text>(std::string());
     m_options_category_text->set_flex_grow(1);
     m_options_category_text->set_font_type(Render::ImguiFontType::Bold);
 
-    options_page->emplace_back<Separator>(Orientation::Horizontal);
+    options_page->emplace_back<Separator>(Orientation::Horizontal)->set_margin(Margins(-20, 0));
 
     m_category_filter = std::make_shared<OverrideConfigFilter>();
-    m_category_filter->set_filter_fn([this](const Biz::OverrideItem& item) -> bool {
-        return item.is_override() && item.config_item->def().category == m_current_category;
-    });
+    m_category_filter->set_filter_fn(
+        [this](const Biz::OverrideItem& item) -> bool
+        { return item.is_override() && item.config_item->def().category == m_current_category; }
+    );
 
     m_override_config_list_view = options_page->emplace_back<OverrideConfigListView>(
-        OverrideConfigListViewFactory{preset_interactor, false}
+        OverrideConfigListViewFactory{preset_interactor}
     );
     m_override_config_list_view->set_orientation(Orientation::Vertical);
-    m_override_config_list_view->set_gap(5);
-    m_override_config_list_view->set_margin(Margins(0, 0, -10, 0));
+    m_override_config_list_view->set_gap(10);
+    m_override_config_list_view->set_margin(Margins(0, 0, -20, 0));
     m_override_config_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_override_config_list_view->set_source_list(m_category_filter.get());
     m_override_config_list_view->set_max_height(350);
@@ -96,6 +98,16 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     m_category_filter->set_source_model(
         preset_interactor.object_settings_interactor().object_observable_list()
     );
+}
+
+void OverrideSettingsDialog::open_for_category(Domain::ConfigItemDef::Category category)
+{
+    if (!this->opened()) {
+        this->open();
+    }
+    if (m_select_category) {
+        m_select_category(category);
+    }
 }
 
 void OverrideSettingsDialog::on_about_to_show()

@@ -62,8 +62,11 @@ private:
     void update_enable_modifiers();
 
 private:
-    using OverrideGroupListViewFactory =
-        Yoga::ViewFactory<OverrideOptionGroup, Biz::OverrideItem, Biz::ProjectInteractor&>;
+    using OverrideGroupListViewFactory = Yoga::ViewFactory<
+        OverrideOptionGroup,
+        Biz::OverrideItem,
+        Biz::ProjectInteractor&,
+        OverrideOptionGroup::SelectCategoryFn&>;
     using OverrideGroupListView =
         Yoga::ListView<OverrideOptionGroup, Biz::OverrideItem, OverrideGroupListViewFactory>;
 
@@ -97,8 +100,8 @@ private:
     Biz::UnsharedPointer<ObservableOverrideCategorizer> m_override_group_filter;
 
     Yoga::Text* m_text_object_name{nullptr};
-    Yoga::ComboBox* m_volume_type_selector{ nullptr };
-    Yoga::Text* m_volume_type_selector_warning{ nullptr };
+    Yoga::ComboBox* m_volume_type_selector{nullptr};
+    Yoga::Text* m_volume_type_selector_warning{nullptr};
     Plater::ScaleWidget* m_scale_widget{nullptr};
     Yoga::LayoutButton* m_add_settings_button{nullptr};
     Yoga::Text* m_no_overrides_label{nullptr};
@@ -109,6 +112,8 @@ private:
     OverrideSettingsDialog* m_override_settings_dialog{nullptr};
 
     WipeTowerSettings* m_wipe_tower_settings{nullptr};
+
+    OverrideOptionGroup::SelectCategoryFn m_open_override_settings_dialog_for_category{nullptr};
 };
 
 } // namespace Slic3r::App

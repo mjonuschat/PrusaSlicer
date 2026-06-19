@@ -21,11 +21,24 @@ void ObservableOverrideCategorizer::set_allow_disabled(bool allow_disabled)
     }
 }
 
+void ObservableOverrideCategorizer::set_default_categories(
+    std::initializer_list<Domain::ConfigItemDef::Category> def_categories
+)
+{
+    m_def_categories = def_categories;
+}
+
 ObservableOverrideCategorizer::ObservableOverrideCategorizer()
 {
     set_filter_fn(
         [this](const Biz::OverrideItem& item) -> bool
         {
+            if (std::ranges::find(m_def_categories, item.config_item->def().category)
+                != m_def_categories.end())
+            {
+                return true;
+            }
+
             if (!item.is_override()) {
                 return false;
             }

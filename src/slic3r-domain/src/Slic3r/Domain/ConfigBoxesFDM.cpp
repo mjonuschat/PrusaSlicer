@@ -1672,7 +1672,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->order = 0;
     def->tooltip = L("When printing with very low layer heights, you might still want to print a thicker "
                    "bottom layer to improve adhesion and tolerance for non perfect build plates.");
-    def->sidetext = L("mm");
+    def->sidetext = L("mm or %");
     def->min = 0;
     def->init_fn = init_with(FloatOrPercentage{0.35});
 

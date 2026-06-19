@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 
 #include "Slic3r/Domain/ConfigDef.hpp"
@@ -16,20 +12,20 @@ class PresetInteractor;
 
 namespace Slic3r::App::Yoga {
 class Text;
+class LayoutButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
-class ConfigItemControl;
+class ConfigItemPreview;
 
-class OverrideItemRow : public Biz::DataObserver<Biz::OverrideItem>, public Yoga::Item
+class OverrideItemPreviewRow : public Biz::DataObserver<Biz::OverrideItem>, public Yoga::Item
 {
 public:
-    explicit OverrideItemRow(
+    explicit OverrideItemPreviewRow(
         size_t index,
         const Biz::OverrideItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor,
-        bool enable_remove
+        Biz::Preset::PresetInteractor& preset_interactor
     );
 
 protected:
@@ -39,9 +35,9 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
 
     Yoga::Text* m_label{nullptr};
-    ConfigItemControl* m_control{nullptr};
-    Yoga::Item* m_control_item{nullptr};
+    ConfigItemPreview* m_preview{nullptr};
     Yoga::Text* m_sidetext{nullptr};
+    Yoga::LayoutButton* m_add_button{nullptr};
     Domain::ConfigItemDef::GUIType m_gui_type{Domain::ConfigItemDef::GUIType::undefined};
 };
 

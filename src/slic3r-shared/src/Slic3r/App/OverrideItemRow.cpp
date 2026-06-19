@@ -22,8 +22,7 @@ OverrideItemRow::OverrideItemRow(
     bool enable_remove
 ) :
     Biz::DataObserver<Biz::OverrideItem>(index, data),
-    m_preset_interactor(preset_interactor),
-    m_enable_remove(enable_remove)
+    m_preset_interactor(preset_interactor)
 {
     set_gap(5);
     set_flex_shrink(0);
@@ -39,23 +38,25 @@ OverrideItemRow::OverrideItemRow(
     m_sidetext->set_flex_grow(1);
     m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    if (m_enable_remove) {
-        Item* container = emplace_back<Item>();
-        container->set_justify_content(YGJustifyFlexEnd);
-        container->set_flex_grow(1);
-        LayoutButton* remove_button = container->emplace_back<LayoutButton>(
-            std::string(),
-            Render::Icon::Minus,
-            Biz::_u8L("Remove override")
-        );
-        remove_button->set_width(16);
-        remove_button->set_height(16);
-        remove_button->set_content_padding(Paddings(2));
-        remove_button->set_flex_shrink(0);
-        remove_button->callbacks().action = [this] {
-            m_preset_interactor.set_item_override(*m_state->config_item, false);
-        };
-    }
+    Item* container = emplace_back<Item>();
+    container->set_justify_content(YGJustifyFlexEnd);
+    container->set_flex_grow(1);
+    LayoutButton* remove_button = container->emplace_back<LayoutButton>(
+        std::string(),
+        Render::Icon::Minus,
+        Biz::_u8L("Remove override")
+    );
+    remove_button->set_background_color(Platform::Color::ButtonTransparent);
+    remove_button->set_icon_tint(
+        m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled)
+    );
+    remove_button->set_width(22);
+    remove_button->set_height(22);
+    remove_button->set_content_padding(4);
+    remove_button->set_flex_shrink(0);
+    remove_button->callbacks().action = [this] {
+        m_preset_interactor.set_item_override(*m_state->config_item, false);
+    };
 
     on_data_update();
 }

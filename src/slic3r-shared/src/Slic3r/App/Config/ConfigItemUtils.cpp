@@ -19,7 +19,8 @@ std::string ConfigItemUtils::config_item_to_string(const Domain::ConfigItem& con
 std::string ConfigItemUtils::config_item_tooltip(const Domain::ConfigItem& config_item)
 {
     const Domain::ConfigItemDef& def = config_item.def();
-    std::string text = fmt::format("{}\n\n{}: {}", Biz::_u8(def.tooltip), Biz::_u8L("Parameter name"), def.name);
+    std::string text =
+        fmt::format("{}\n\n{}: {}", Biz::_u8(def.tooltip), Biz::_u8L("Parameter name"), def.name);
 
     if (def.min.has_value()) {
         text += fmt::format("\nMin: {:.10g}", def.min.value());
@@ -47,8 +48,17 @@ std::string ConfigItemUtils::config_item_to_string(
         result = fmt::format("{:.10g}", value.get<Domain::Percentage>().value);
     } else if (*config_item.def().type == typeid(Domain::FloatOrPercentage)) {
         Domain::FloatOrPercentage fop = value.get<Domain::FloatOrPercentage>();
-        result = fop.is_percentage() ? fmt::format("{:.10g} %", fop.percentage().value) :
-                                       fmt::format("{:.10g}", fop.float_value());
+        if (fop.is_percentage()) {
+            result = fmt::format("{:.10g} %", fop.percentage().value);
+        } else {
+            // sidetext may contain " or %" (e.g. "mm or %", "mm/s or %",
+            // "mm or % (zero to disable)").  Strip everything from " or " onward
+            // to get just the unit.  If " or " is absent, use sidetext as-is.
+            const std::string& sidetext = config_item.def().sidetext;
+            const auto pos              = sidetext.find(" or ");
+            const std::string unit = pos != std::string::npos ? sidetext.substr(0, pos) : sidetext;
+            result                 = fmt::format("{:.10g} {}", fop.float_value(), Biz::_u8(unit));
+        }
     } else if (*config_item.def().type == typeid(Domain::EnumWrapper)) {
         const Domain::EnumWrapper enum_wrapper = value.get<Domain::EnumWrapper>();
         result = enum_wrapper.def().at(enum_wrapper.index_of_value(enum_wrapper.value())).str_ui;

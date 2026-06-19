@@ -268,7 +268,11 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
         project_interactor,
         Biz::Scene::SelectionReferenceFrame::Volume
     )};
-    m_scale_widget = m_scale_section->emplace_back<Plater::ScaleWidget>(m_project_interactor, nullptr, reference_frame_picker.get());
+    m_scale_widget = m_scale_section->emplace_back<Plater::ScaleWidget>(
+        m_project_interactor,
+        nullptr,
+        reference_frame_picker.get()
+    );
     m_scale_widget->on_activated(m_project_interactor.selected_project_id());
     m_scale_widget->set_flex_shrink(0);
 
@@ -285,7 +289,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
             .object_observable_list();
     m_config_item_filter->set_source_model(object_settings_observable_list);
 
-    m_add_settings_button = m_scroll_area->emplace_back<LayoutButton>(std::string{});
+    m_add_settings_button = m_scroll_area->emplace_back<LayoutButton>(Biz::_u8L("More settings"));
     m_add_settings_button->set_self_align(YGAlignCenter);
     m_add_settings_button->callbacks().action = [this]
     {
@@ -304,9 +308,22 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
 
     m_override_group_filter = std::make_shared<ObservableOverrideCategorizer>();
     m_override_group_filter->set_allow_disabled(false);
+    m_override_group_filter->set_default_categories({
+        Domain::ConfigItemDef::Category::Print_Infill,
+        Domain::ConfigItemDef::Category::Print_LayersSurfaces,
+        Domain::ConfigItemDef::Category::Print_Supports,
+        Domain::ConfigItemDef::Category::Print_WallsPerimeters,
+        Domain::ConfigItemDef::Category::Print_BedAdhesion
+    });
+
+    m_open_override_settings_dialog_for_category = [this](Domain::ConfigItemDef::Category category)
+    { m_override_settings_dialog->open_for_category(category); };
 
     m_override_group_list_view =
-        m_scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
+        m_scroll_area->emplace_back<OverrideGroupListView>(OverrideGroupListViewFactory{
+            m_project_interactor,
+            m_open_override_settings_dialog_for_category
+        });
     m_override_group_list_view->set_orientation(Orientation::Vertical);
     m_override_group_list_view->set_gap(0.25_rem);
     m_override_group_list_view->set_flex_shrink(0);
@@ -334,7 +351,7 @@ void SidebarObject::on_scene_selection_changed(
     update_object_name();
     update_volume_type_selector();
     update_enable_modifiers();
-    m_add_settings_button->set_label(
+    m_add_settings_button->set_tooltip(
         m_selection.mode == Biz::Scene::SelectionMode::Instance ? Biz::_u8L("Add object settings") :
                                                                   Biz::_u8L("Add volume settings")
     );
@@ -380,6 +397,8 @@ void SidebarObject::add_volume_type_selector()
         );
         m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::ChangeVolumeType);
         m_volume_type_selector->set_override_label(std::string());
+
+        update_enable_modifiers();
     };
 
     m_volume_type_selector_warning = m_scroll_area->emplace_back<Text>(

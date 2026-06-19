@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
 
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+
 namespace Slic3r::Biz {
 
 ObjectSettingsInteractor::ObjectSettingsInteractor(
@@ -128,20 +129,15 @@ void ObjectSettingsInteractor::update_sources()
                     sources.push_back(&model_object->object_settings_sla);
                 }
             }
-        } else if (m_current_selection.mode == Scene::SelectionMode::Volume
-                   && m_current_print_technology == Domain::PrinterTechnology::FFF)
+        } else if (
+            m_current_selection.mode == Scene::SelectionMode::Volume
+            && m_current_print_technology == Domain::PrinterTechnology::FFF
+        )
         {
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
-                if (ref.is_wipe_tower()) {
-                    continue;
-                }
                 Domain::ModelVolume* model_volume =
                     project.find_volume_by_id(ref.object_id, ref.volume_id);
-                if (model_volume->type() == Domain::ModelVolumeType::MODEL_PART
-                    || model_volume->type() == Domain::ModelVolumeType::PARAMETER_MODIFIER)
-                {
-                    sources.push_back(&model_volume->volume_settings);
-                }
+                sources.push_back(&model_volume->volume_settings);
             }
         }
     }
@@ -169,10 +165,8 @@ void ObjectSettingsInteractor::SetAccessor::set_override(const std::string& key,
     m_object_observable_list.lock()->set_override(key, enable);
 }
 
-const Domain::ConfigValue* ObjectSettingsInteractor::SetAccessor::find_object_value(
-    const std::string& key,
-    size_t index
-) const
+const Domain::ConfigValue*
+ObjectSettingsInteractor::SetAccessor::find_object_value(const std::string& key, size_t index) const
 {
     return m_object_observable_list.lock()->find_object_value(key, index);
 }

@@ -241,6 +241,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/WipeTowerSettings.cpp
         include/Slic3r/App/OverrideCategoryButton.hpp
         src/Slic3r/App/OverrideCategoryButton.cpp
+        include/Slic3r/App/OverrideItemPreviewRow.hpp
+        src/Slic3r/App/OverrideItemPreviewRow.cpp
         include/Slic3r/App/RenderModuleHelper.hpp
         src/Slic3r/App/RenderModuleHelper.cpp
         include/Slic3r/App/DialogNavigation.hpp

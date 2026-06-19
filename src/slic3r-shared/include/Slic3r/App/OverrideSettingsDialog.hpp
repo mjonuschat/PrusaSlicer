@@ -8,7 +8,7 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/OverrideCategoryButton.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
-#include "Slic3r/App/OverrideItemRow.hpp"
+#include "Slic3r/App/OverrideItemPreviewRow.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 namespace Slic3r::Biz {
@@ -30,6 +30,8 @@ public:
 
     explicit OverrideSettingsDialog(Biz::ProjectInteractor& project_interactor);
 
+    void open_for_category(Domain::ConfigItemDef::Category category);
+
 private:
     void on_about_to_show() override;
 
@@ -43,12 +45,11 @@ private:
         Yoga::ListView<OverrideCategoryButton, Biz::OverrideItem, OverrideCategoryFactory>;
 
     using OverrideConfigListViewFactory = Yoga::ViewFactory<
-        OverrideItemRow,
+        OverrideItemPreviewRow,
         Biz::OverrideItem,
-        Biz::Preset::PresetInteractor&,
-        bool>;
+        Biz::Preset::PresetInteractor&>;
     using OverrideConfigListView = Yoga::ListView<
-        OverrideItemRow,
+        OverrideItemPreviewRow,
         Biz::OverrideItem,
         OverrideConfigListViewFactory,
         Yoga::ScrollArea>;

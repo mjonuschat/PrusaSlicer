@@ -25,6 +25,8 @@ void ConfigItemPreview::set_data(
 {
     if (m_last_gui_type != data.def().gui_type) {
         switch (m_last_gui_type) {
+        case Domain::ConfigItemDef::GUIType::undefined:
+            break;
         case Domain::ConfigItemDef::GUIType::color:
             remove(m_input_color);
             m_input_color = nullptr;
@@ -42,9 +44,13 @@ void ConfigItemPreview::set_data(
             remove(m_input_text);
             m_input_text = nullptr;
             break;
+        default:
+            PANIC("All gui types must be explicitly handled here, you apparently missed one.");
         }
 
         switch (data.def().gui_type) {
+        case Domain::ConfigItemDef::GUIType::undefined:
+            break;
         case Domain::ConfigItemDef::GUIType::color:
             m_input_color = emplace_back<Rectangle>();
             m_input_color->set_width(30);
@@ -61,15 +67,21 @@ void ConfigItemPreview::set_data(
         case Domain::ConfigItemDef::GUIType::f_enum_open:
         case Domain::ConfigItemDef::GUIType::i_enum_open:
         case Domain::ConfigItemDef::GUIType::s_enum_open:
-        case Domain::ConfigItemDef::GUIType::combobox:
+        case Domain::ConfigItemDef::GUIType::combobox: {
             m_input_text = emplace_back<Text>(std::string{});
+            m_input_text->set_font_type(m_text_font_type);
             break;
+        }
+        default:
+            PANIC("All gui types must be explicitly handled here, you apparently missed one.");
         }
 
         m_last_gui_type = data.def().gui_type;
     }
 
     switch (data.def().gui_type) {
+    case Domain::ConfigItemDef::GUIType::undefined:
+        break;
     case Domain::ConfigItemDef::GUIType::color: {
         Domain::ColorRGB color;
         if (Biz::Algorithms::Color::decode_color(value.get<std::string>(), color)) {
@@ -84,9 +96,17 @@ void ConfigItemPreview::set_data(
     case Domain::ConfigItemDef::GUIType::f_enum_open:
     case Domain::ConfigItemDef::GUIType::i_enum_open:
     case Domain::ConfigItemDef::GUIType::s_enum_open:
+    case Domain::ConfigItemDef::GUIType::combobox:
         m_input_text->set_text(ConfigItemUtils::config_item_to_string(data, value));
         break;
+    default:
+        PANIC("All gui types must be explicitly handled here, you apparently missed one.");
     }
+}
+
+void ConfigItemPreview::set_text_font_type(Render::ImguiFontType font)
+{
+    m_text_font_type = font;
 }
 
 } // namespace Slic3r::App
