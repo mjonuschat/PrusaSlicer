@@ -16,7 +16,7 @@ sync monitoring.
 | Slicer | Local checkout | Last synced |
 |--------|----------------|-------------|
 | SuperSlicer | `../SuperSlicer` | tag `2.5.59.13` (`e2eef1da2d`, 2024-07-01) |
-| OrcaSlicer | `../OrcaSlicer` | per-feature commits; fixes reviewed through `b78d5b94dc` (2026-05-30) |
+| OrcaSlicer | `../OrcaSlicer` | tag `v2.4.0` (`6d9eb1792f`, 2026-06-19) |
 | preFlight | `../preFlight` | v1.0.1-beta2 (`99f70c2`, 2026-05-28) |
 
 preFlight publishes one squashed commit per release, so its finest granularity is
