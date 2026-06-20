@@ -13,6 +13,11 @@ lost during the rebase and squash based workflow.
 
 ### Fixed
 
+- Modifier volumes that override bridge or infill speeds now keep their own
+  fill groups, so bridge-speed overrides are respected in generated G-code.
+- Arachne no longer generates duplicate overlapping wall segments for thin
+  frames near the 1-to-2 bead transition.
+
 ### Ported
 
 ### Notes
