@@ -6,6 +6,7 @@
 ///|/ Copyright (c) 2011 Michael Moon
 ///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/ Copyright (c) OrcaSlicer 2023 SoftFever @SoftFever
+///|/ Copyright (c) OrcaSlicer 2026 Kiss Lorand @kisslorand
 ///|/ Copyright (c) preFlight 2026 oozeBot R&D @oozebot
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
@@ -97,6 +98,8 @@ struct SurfaceFillParams
 
 	// Index of this entry in a linear vector.
     size_t 			idx = 0;
+    // Speed setting for the effective extrusion role.
+    float           role_speed = 0.f;
 
 
 	bool operator<(const SurfaceFillParams &rhs) const {
@@ -120,7 +123,10 @@ struct SurfaceFillParams
 		RETURN_COMPARE_NON_EQUAL(flow.height());
 		RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
 		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
-		return this->extrusion_role.lower(rhs.extrusion_role);
+        if (this->extrusion_role.lower(rhs.extrusion_role)) return true;
+        if (rhs.extrusion_role.lower(this->extrusion_role)) return false;
+		RETURN_COMPARE_NON_EQUAL(role_speed);
+        return false;
 	}
 
 	bool operator==(const SurfaceFillParams &rhs) const {
@@ -136,7 +142,8 @@ struct SurfaceFillParams
 				this->anchor_length  	== rhs.anchor_length    &&
 				this->anchor_length_max == rhs.anchor_length_max &&
 				this->flow 				== rhs.flow 			&&
-				this->extrusion_role	== rhs.extrusion_role;
+				this->extrusion_role	== rhs.extrusion_role	&&
+                this->role_speed        == rhs.role_speed;
 	}
 };
 
@@ -264,6 +271,19 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 					// Always enable thick bridges for internal bridges.
 					layerm.bridging_flow(extrusion_role, (surface.is_bridge() && !surface.is_external()) || object_config.thick_bridges) :
 					layerm.flow(extrusion_role, (surface.thickness == -1) ? layer.height : surface.thickness);
+
+                params.role_speed = 0.f;
+                if (params.extrusion_role == ExtrusionRole::BridgeInfill)
+                    params.role_speed = float(region_config.get_abs_value("bridge_speed"));
+                else if (params.extrusion_role == ExtrusionRole::InternalInfill)
+                    params.role_speed = float(region_config.get_abs_value("infill_speed"));
+                else if (params.extrusion_role == ExtrusionRole::InfillOverBridge) {
+                    const double solid_infill_speed = region_config.get_abs_value("solid_infill_speed");
+                    params.role_speed = float(region_config.get_abs_value("over_bridge_speed", solid_infill_speed));
+                } else if (params.extrusion_role == ExtrusionRole::SolidInfill)
+                    params.role_speed = float(region_config.get_abs_value("solid_infill_speed"));
+                else if (params.extrusion_role == ExtrusionRole::TopSolidInfill)
+                    params.role_speed = float(region_config.get_abs_value("top_solid_infill_speed"));
 
 				// Calculate flow spacing for infill pattern generation.
 		        if (surface.is_solid() || is_bridge) {
