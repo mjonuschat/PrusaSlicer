@@ -383,8 +383,10 @@ void UserAccountCommunicationTokenBase::on_read_token_store_message()
     TokenStore::StoreData stored_data;
     bool tokens_loaded = TokenStore::load_tokens(stored_data);
     if (!tokens_loaded || stored_data.refresh_token.empty()) {
+        if (!username().empty() || m_session.is_initialized()) {
         SPDLOG_INFO("Store is empty - logging out.");
         do_clear(false); // The false here is important, we do not want to notify other instances - we were just notified.
+        }
         return;
     }
 

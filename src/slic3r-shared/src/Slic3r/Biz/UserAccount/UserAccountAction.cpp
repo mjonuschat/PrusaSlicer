@@ -20,11 +20,14 @@ void UserAccountActionPost::perform(
 
     auto retry_fn = [&global_cancel, &callbacks, &url = m_url](Network::IHttp::Retry retry, bool& cancel)
     {
+        cancel = global_cancel;
+        if (cancel) {
+            return;
+        }
         SPDLOG_INFO("Action POST retry attempt {}: {} ms to next attempt. Url: {}", retry.attempt, retry.ms_to_next_attempt, url);
         if (retry.attempt > 1 && retry.just_tried) {
             callbacks->on_action_retry(retry);
         }
-        cancel = global_cancel;
     };
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
@@ -101,11 +104,14 @@ void UserAccountActionGetWithEvent::perform(
 
     auto retry_fn = [&global_cancel, &callbacks,  &url = m_url](Network::IHttp::Retry retry, bool& cancel)
     {
+        cancel = global_cancel;
+        if (cancel) {
+            return;
+        }
         SPDLOG_INFO("Action GET retry attempt {}: {} ms to next attempt. Url: {}", retry.attempt, retry.ms_to_next_attempt, url);
         if (retry.attempt > 1 && retry.just_tried) {
             callbacks->on_action_retry(retry);
         }
-        cancel = global_cancel;
     };
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);

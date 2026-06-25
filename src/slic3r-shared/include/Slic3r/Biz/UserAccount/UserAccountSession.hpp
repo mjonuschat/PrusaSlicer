@@ -6,6 +6,8 @@
 #include <queue>
 #include <mutex>
 #include <deque>
+#include <atomic>
+#include <cstdint>
 
 namespace Slic3r::Biz::UserAccount {
 /**
@@ -109,15 +111,25 @@ private:
     // End of section guarded by m_credentials_mutex
 
     std::atomic_bool m_global_cancel{false};
+
+    /**
+     * @brief Bumped on every logout (do_clear). Token-producing requests capture the
+     * epoch when enqueued; both their success and failure handlers discard the result if
+     * the epoch has since changed, so a request that was already in flight when the user
+     * logged out (or when another instance's token was adopted from the store) cannot
+     * write tokens / log the instance back in - and, just as importantly, its late failure
+     * cannot tear down a newer session that has meanwhile been established.
+     */
+    std::atomic<uint64_t> m_session_epoch{0};
     /**
      * Called to pass data from Session thread to UI thread.
      */
 
-    void refresh_fail_callback(const std::string& body);
-    void refresh_fail_soft_callback(const std::string& body);
+    void refresh_fail_callback(const std::string& body, uint64_t epoch);
+    void refresh_fail_soft_callback(const std::string& body, uint64_t epoch);
     void cancel_queue();
-    void code_exchange_fail_callback(const std::string& body);
-    void token_success_callback(const std::string& body);
+    void code_exchange_fail_callback(const std::string& body, uint64_t epoch);
+    void token_success_callback(const std::string& body, uint64_t epoch);
     void process_action_queue_inner();
     void remove_from_queue(UserAccountActionID action_id);
 };

@@ -46,6 +46,11 @@ void UserAccountSession::set_tokens(const std::string& access_token, const std::
 
 void UserAccountSession::do_clear(bool notify_owner)
 {
+    // Invalidate any request that was already in flight or queued when we logged out, so a
+    // refresh/code-exchange that completes afterwards cannot write tokens or log us back in.
+    ++m_session_epoch;
+    m_global_cancel = true;
+    cancel_queue();
     {
         std::lock_guard<std::mutex> lock(m_credentials_mutex);
         m_access_token.clear();
@@ -94,6 +99,7 @@ void UserAccountSession::process_action_queue_inner()
         }
     }
     if (call_priority || call_standard) {
+        m_global_cancel = false;
         bool use_token = m_actions[selected_data.action_id]->get_requires_auth_token();
         m_actions[selected_data.action_id]->perform(
             this,
@@ -101,7 +107,6 @@ void UserAccountSession::process_action_queue_inner()
             std::move(selected_data),
             m_global_cancel
         );
-        m_global_cancel = false;
         process_action_queue_inner();
     }
 }
@@ -116,11 +121,12 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
             "code=" + code + "&client_id=" + Network::ServiceConfig::instance().account_client_id() + "&grant_type=authorization_code" + "&redirect_uri=" + REDIRECT_URI + "&code_verifier=" + code_verifier;
 
         m_processing_enabled = true;
+        const uint64_t epoch = m_session_epoch.load();
         // fail fn might be cancel_queue here
         m_priority_action_queue.push_back(
             {UserAccountActionID::CodeForToken,
-             std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1),
-             std::bind(&UserAccountSession::code_exchange_fail_callback, this, std::placeholders::_1),
+             [this, epoch](const std::string& body) { token_success_callback(body, epoch); },
+             [this, epoch](const std::string& body) { code_exchange_fail_callback(body, epoch); },
              post_fields}
         );
     }
@@ -165,10 +171,11 @@ void UserAccountSession::enqueue_refresh(const std::string& body)
     }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
+        const uint64_t epoch = m_session_epoch.load();
         m_priority_action_queue.push_back(
             {UserAccountActionID::RefreshToken,
-             std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1),
-             std::bind(&UserAccountSession::refresh_fail_callback, this, std::placeholders::_1),
+             [this, epoch](const std::string& body) { token_success_callback(body, epoch); },
+             [this, epoch](const std::string& body) { refresh_fail_callback(body, epoch); },
              post_fields}
         );
     }
@@ -192,10 +199,11 @@ void UserAccountSession::enqueue_refresh_race(const std::string& refresh_token_f
     }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
+        const uint64_t epoch = m_session_epoch.load();
         m_priority_action_queue.push_back(
             {UserAccountActionID::RefreshToken,
-             std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1),
-             std::bind(&UserAccountSession::refresh_fail_soft_callback, this, std::placeholders::_1),
+             [this, epoch](const std::string& body) { token_success_callback(body, epoch); },
+             [this, epoch](const std::string& body) { refresh_fail_soft_callback(body, epoch); },
              post_fields}
         );
     }
@@ -219,15 +227,24 @@ void UserAccountSession::enqueue_action_inner(ActionQueueData&& action)
     m_action_queue.push(std::move(action));
 }
 
-void UserAccountSession::refresh_fail_callback(const std::string& body)
+void UserAccountSession::refresh_fail_callback(const std::string& body, uint64_t epoch)
 {
-    do_clear(true);
+    if (epoch != m_session_epoch.load()) {
+        SPDLOG_INFO("Stale token refresh failure after logout - ignoring.");
+        return;
+    }
+
+    do_clear(false);
     cancel_queue();
     dispatch_action_fail(ActionFailType::Reset, body);
 }
 
-void UserAccountSession::refresh_fail_soft_callback(const std::string& body)
+void UserAccountSession::refresh_fail_soft_callback(const std::string& body, uint64_t epoch)
 {
+    if (epoch != m_session_epoch.load()) {
+        SPDLOG_INFO("Stale soft token refresh failure after logout - ignoring.");
+        return;
+    }
     // We do not clear tokens here, only notify token management
     cancel_queue();
     // Note: body cannot be moved to here from Action, it is used in the next call.
@@ -245,16 +262,27 @@ void UserAccountSession::cancel_queue()
     }
 }
 
-void UserAccountSession::code_exchange_fail_callback(const std::string& body)
+void UserAccountSession::code_exchange_fail_callback(const std::string& body, uint64_t epoch)
 {
+    if (epoch != m_session_epoch.load()) {
+        SPDLOG_INFO("Stale code exchange failure after logout - ignoring.");
+        return;
+    }
     SPDLOG_INFO("Access token refresh failed, body: {}", body);
-    do_clear(true);
+    do_clear(false);
     cancel_queue();
     dispatch_action_fail(ActionFailType::Reset, body);
 }
 
-void UserAccountSession::token_success_callback(const std::string& body)
+void UserAccountSession::token_success_callback(const std::string& body, uint64_t epoch)
 {
+    // A logout (do_clear) happened while this request was in flight - discard the result so
+    // it cannot write tokens or log the instance back in.
+    if (epoch != m_session_epoch.load()) {
+        SPDLOG_INFO("Stale token response after logout - discarding.");
+        return;
+    }
+
     // No need to use lock m_session_mutex here
 
     // This is here to prevent performing refresh again until UUserAccountActionID::UserIdAfterTokenSuccess is performed.
