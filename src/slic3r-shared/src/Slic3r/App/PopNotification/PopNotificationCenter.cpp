@@ -68,6 +68,7 @@ std::string job_status_to_string(const JobStatus& status, const std::string& job
         // TRN job_status_to_string, {} is job name.
         return fmt::format(fmt::runtime(_u8L("{} has finished.")), job_name);
     case JobStatus::Failed:
+        // TRN job_status_to_string, status of a failed job.
         status_text = _u8L("has failed");
         // TRN job_status_to_string, {} is job name.
         return fmt::format(fmt::runtime(_u8L("{} has failed.")), job_name);
@@ -216,110 +217,146 @@ const auto download_job_matcher{cmp<DownloadProgressNotificationData>( //
     { return a.download_id == b.download_id; }
 )};
 
+PopNotificationLayout PopNotificationCenter::download_finished_layout(
+    const std::string& body,
+    const boost::filesystem::path& dest_path,
+    const std::string& printables_url,
+    bool is_loaded
+)
+{
+    // TRN Header of a finished file download notification.
+    const std::string header{_u8L("Download Finished")};
+
+    // The file has not been loaded into the scene yet: let the user pick where to open it.
+    if (!is_loaded) {
+        return PopNotificationLayoutHeaderTextButtons{
+            header,
+            body,
+            // TRN Button on a finished download notification: load the file into the current project.
+            {{_u8L("Load"),
+              [this, dest_path]()
+              {
+                  m_project_interactor.open_downloaded_file(dest_path, false);
+                  return true;
+              }},
+             // TRN Button on a finished download notification: load the file into a new project.
+             {_u8L("Load as New Project"),
+              [this, dest_path]()
+              {
+                  m_project_interactor.open_downloaded_file(dest_path, true);
+                  return true;
+              }}},
+            Render::Icon::Printables
+        };
+    }
+
+    // The file was already loaded: offer follow-up actions instead.
+    std::vector<PopNotificationButtonData> buttons;
+    if (!printables_url.empty()) {
+        buttons.emplace_back(PopNotificationButtonData{
+            // TRN Button on a finished download notification: open the Printables tab.
+            _u8L("Printables"),
+            [this, printables_url]()
+            {
+                if (m_switch_left_tab_fn) {
+                    m_switch_left_tab_fn(LeftBarTabs::Printables, printables_url);
+                }
+                return true;
+            }
+        });
+    }
+    if (!dest_path.empty()) {
+        buttons.emplace_back(PopNotificationButtonData{
+            // TRN Button on a finished download notification: open the download folder.
+            _u8L("Open Folder"),
+            [dest_path]()
+            {
+                ASSERT(!dest_path.empty() && dest_path.has_parent_path());
+                AppServices::instance().file_explorer_handler().open_folder(
+                    dest_path.parent_path().string()
+                );
+                return true;
+            }
+        });
+    }
+
+    if (buttons.empty()) {
+        return PopNotificationLayoutHeaderText{header, body, Render::Icon::Printables};
+    }
+    return PopNotificationLayoutHeaderTextButtons{
+        header, body, std::move(buttons), Render::Icon::Printables
+    };
+}
+
 void PopNotificationCenter::on_download_job_status_changed(
     const std::string& string,
     const Biz::Platform::JobManager::Progress& progress
 )
 {
-    size_t download_id;
-    std::string filename;
-    boost::filesystem::path dest_path;
-    std::string printables_url;
-    bool is_loaded;
-    size_t total_files;
-    if (const auto* payload =
-            std::any_cast<FileDownloaderJobProgressPayload>(&progress.progress_detail.payload))
-    {
-        download_id = payload->download_id;
-        filename    = payload->filename;
-        dest_path   = payload->final_path;
-        printables_url = payload->project_url;
-        is_loaded = payload->load_count > 0;
-        total_files = payload->total_files;
-    } else {
+    const auto* payload =
+        std::any_cast<FileDownloaderJobProgressPayload>(&progress.progress_detail.payload);
+    if (payload == nullptr) {
         // Ignore progress without payload
         return;
     }
+    const size_t download_id{payload->download_id};
+    const boost::filesystem::path dest_path{payload->final_path};
+    const std::string printables_url{payload->project_url};
+    const bool is_loaded{payload->load_count > 0};
+    const size_t total_files{payload->total_files};
 
-    bool print_single_file_name = (total_files == 1 || progress.status == JobStatus::Started || progress.status == JobStatus::None);
-    std::string text_name = print_single_file_name ?
-        // TRN text to be passed to job_status_to_string as job name, {} is filename
-        fmt::format(fmt::runtime(_u8L("Downloading {}")), filename) :
-        // TRN text to be passed to job_status_to_string as job name, {} is number of files (2 or more)
-        fmt::format(fmt::runtime(_u8L("Downloading {} files")), total_files); 
-    std::string text        = job_status_to_string(progress.status, text_name);
+    // While downloading, the payload always describes a single file. The aggregated "N files"
+    // wording is only meaningful once a multi-file download has finished.
+    const bool single_file = total_files <= 1
+        || progress.status == JobStatus::Started
+        || progress.status == JobStatus::None;
+    const std::string body = single_file ?
+        payload->filename :
+        // TRN Body of a multi-file download notification, {} is number of files (2 or more).
+        fmt::format(fmt::runtime(_u8L("{} files")), total_files);
+
     PopNotificationLayout layout;
-    PopNotificationLevel level = PopNotificationLevel::ProgressWithClose;
-    if (progress.status == JobStatus::Finished) {
-        if (!is_loaded) {
-            layout = PopNotificationLayoutTextButtons{
-                text,
-                {{_u8L("Load"),
-                  [this, dest_path]()
-                  {
-                      m_project_interactor.open_downloaded_file(dest_path, false);
-                      return true;
-                  }},
-                 {_u8L("Load as New Project"),
-                  [this, dest_path]()
-                  {
-                      m_project_interactor.open_downloaded_file(dest_path, true);
-                      return true;
-                  }}}
+    PopNotificationLevel level;
+    std::chrono::seconds timeout;
+
+    switch (progress.status) {
+    case JobStatus::Finished:
+        layout  = download_finished_layout(body, dest_path, printables_url, is_loaded);
+        level   = PopNotificationLevel::ProgressWithClose;
+        timeout = 20s;
+        timeout = is_loaded ? 20s : 0s;
+        break;
+    case JobStatus::Failed:
+        // TRN Header of a failed file download notification.
+        layout  = PopNotificationLayoutHeaderText{_u8L("Download Failed"), body};
+        level   = PopNotificationLevel::Error;
+        timeout = 20s;
+        break;
+    case JobStatus::Started:
+    case JobStatus::None:
+    default: {
+        // TRN Header of an in-progress file download notification.
+        const std::string header{_u8L("Downloading...")};
+        if (progress.percent) {
+            const int perc = (int) (progress.percent.value().value * 100);
+            layout = PopNotificationLayoutHeaderTextProgress{
+                header, body, perc, Render::Icon::Printables
             };
+            level  = PopNotificationLevel::ProgressNoClose;
         } else {
-            std::vector<PopNotificationButtonData> buttons;
-            if (!printables_url.empty()) {
-                buttons.emplace_back(
-                    PopNotificationButtonData{
-                        _u8L("Printables"),
-                        [this, printables_url]()
-                        {
-                            if (m_switch_left_tab_fn) {
-                                m_switch_left_tab_fn(LeftBarTabs::Printables, printables_url);
-                            }
-                            return true;
-                        }
-                    }
-                );
-            }
-            if (!dest_path.empty()) {
-                buttons.emplace_back(
-                    PopNotificationButtonData{
-                        _u8L("Open Folder"),
-                        [this, dest_path]()
-                        {
-                            ASSERT(!dest_path.empty() && dest_path.has_parent_path());
-                            AppServices::instance().file_explorer_handler().open_folder(
-                                dest_path.parent_path().string()
-                            );
-                            return true;
-                        }
-                    }
-                );
-            }
-            if (buttons.empty()) {
-                layout = PopNotificationLayoutText{text};
-            } else {
-                layout = PopNotificationLayoutTextButtons{text, std::move(buttons)};
-            } 
+            layout = PopNotificationLayoutHeaderText{header, body, Render::Icon::Printables};
+            level  = PopNotificationLevel::ProgressWithClose;
         }
-        
-    } else if (progress.status == JobStatus::Finished) {
-        layout = PopNotificationLayoutText{text};
-    } else if (progress.percent) {
-        int perc = (int) (progress.percent.value().value * 100);
-        layout   = PopNotificationLayoutTextProgress(text, perc);
-        level    = PopNotificationLevel::ProgressNoClose;
-    } else {
-        layout = PopNotificationLayoutText(text);
+        timeout = 0s;
+        break;
+    }
     }
 
     m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::DownloadProgress,
             level,
-            progress.status == JobStatus::Finished ? 20s : 0s,
+            timeout,
             std::move(layout),
             DownloadProgressNotificationData(download_id)
         },
@@ -332,20 +369,28 @@ std::string slicing_status_to_string(const SlicingStatusCode status)
 {
     switch (status) {
     case SlicingStatusCode::Empty:
+        // TRN Slicing status label.
         return _u8L("Empty");
     case SlicingStatusCode::Updating:
+        // TRN Slicing status label.
         return _u8L("Updating");
     case SlicingStatusCode::Running:
+        // TRN Slicing status label.
         return _u8L("Slicing");
     case SlicingStatusCode::Finished:
+        // TRN Slicing status label.
         return _u8L("Slicing Finished");
     case SlicingStatusCode::Modified:
+        // TRN Slicing status label.
         return _u8L("Modified");
     case SlicingStatusCode::Stopping:
+        // TRN Slicing status label.
         return _u8L("Slicing Stopped");
     case SlicingStatusCode::Removed:
+        // TRN Slicing status label.
         return _u8L("Removed");
     case SlicingStatusCode::InvalidData:
+        // TRN Slicing status label.
         return _u8L("Invalid settings");
     default:
         return "Unknown";
@@ -640,15 +685,19 @@ PopNotificationLayout storage_resolve_layout(const PrintHostProgressNotification
 {
     switch (data.status) {
     case PrintHostJobStatus::None: {
+        // TRN PrusaLink storage resolve notification.
         return PopNotificationLayoutText(_u8L("Resolving PrusaLink storage."));
     }
     case PrintHostJobStatus::Started: {
+        // TRN PrusaLink storage resolve notification.
         return PopNotificationLayoutTextProgress(_u8L("Resolving PrusaLink storage."), data.progress);
     }
     case PrintHostJobStatus::Finished: {
+        // TRN PrusaLink storage resolve notification.
         return PopNotificationLayoutText(_u8L("Resolving storage has finished."));
     }
     case PrintHostJobStatus::Failed: {
+        // TRN PrusaLink storage resolve notification.
         std::string translatable_part = _u8L("Resolving storage has Failed.");
         std::string msg = fmt::format("{} {}", translatable_part, data.additional_msg);       
         return PopNotificationLayoutText(std::move(msg));
@@ -666,15 +715,18 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
     std::string body = data.target.empty() ? data.filename : data.target;
 
     switch (data.status) {
-    case PrintHostJobStatus::None: 
+    case PrintHostJobStatus::None:
+        // TRN Header of an export notification.
         header = _u8L("Export Starting");
         return PopNotificationLayoutHeaderText(header, body);
-        
-    case PrintHostJobStatus::Started: 
+
+    case PrintHostJobStatus::Started:
+        // TRN Header of an export notification.
         header = _u8L("Exporting...");
         return PopNotificationLayoutHeaderTextProgress(header, body, data.progress);
-        
+
     case PrintHostJobStatus::Finished: {
+        // TRN Header of an export notification.
         header = _u8L("Export Finished");
         
         if (data.target.empty()) {
@@ -682,6 +734,7 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
         }
 
         std::vector<PopNotificationButtonData> buttons;
+        // TRN Button on a finished export notification: open the target folder.
         buttons.push_back({_u8L("Open folder"), [data]() {
             boost::filesystem::path target_path(data.target);
             ASSERT(!target_path.empty() && target_path.has_parent_path());
@@ -692,6 +745,7 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
         }});
 
         if (data.eject_fn != nullptr) {
+            // TRN Button on a finished export notification: eject the removable drive.
             buttons.push_back({_u8L("Eject"), [data]() {
                 data.eject_fn(data.target);
                 return true;
@@ -700,7 +754,8 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
 
         return PopNotificationLayoutHeaderTextButtons(header, body, std::move(buttons));
     }
-    case PrintHostJobStatus::Failed: 
+    case PrintHostJobStatus::Failed:
+        // TRN Header of an export notification.
         header = _u8L("Export Failed");
         body = body.empty() ? data.additional_msg : fmt::format("{}\n{}", body, data.additional_msg);
         return PopNotificationLayoutHeaderText(header, body);
@@ -950,6 +1005,7 @@ void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const st
             PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutImageHeader(image_path,
+                // TRN User account login notification, {} is the user name.
                 fmt::format(fmt::runtime(_u8L("Signed in as {}")), username)),
             UserAccountLoginNotificationData{}
         },
@@ -982,6 +1038,7 @@ void PopNotificationCenter::on_avatar_downloaded()
             PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutImageHeader(avatar.string(),
+                // TRN User account login notification, {} is the user name.
                 fmt::format(fmt::runtime(_u8L("Signed in as {}")), user_account.username())),
             UserAccountLoginNotificationData{}
         },
@@ -1002,6 +1059,7 @@ void PopNotificationCenter::on_user_account_logged_out()
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
             10s,
+            // TRN User account logout notification.
             PopNotificationLayoutImageHeader(image_path, _u8L("Successfully signed out")),
             UserAccountLoginNotificationData{}
         },
@@ -1095,6 +1153,7 @@ void PopNotificationCenter::on_elements_not_arranged(
         }
     }
 
+    // TRN Header of the arrange notification listing objects that could not be placed.
     const std::string header{_u8L("Some objects could not be arranged")};
 
     std::string text;
@@ -1102,6 +1161,7 @@ void PopNotificationCenter::on_elements_not_arranged(
         text += name + "\n";
         if (instance_indicies.size() > 1) {
             for (int instance_index : instance_indicies) {
+                // TRN Arrange notification, label of an object instance followed by its number.
                 text += "  "+_u8L("Instance")+ " " + std::to_string(instance_index + 1) + "\n";
             }
         }
@@ -1134,8 +1194,10 @@ void PopNotificationCenter::on_fatal_arrange_error(
     Domain::SelectionId project_id
 )
 {
+    // TRN Header of the fatal arrange error notification.
     const std::string header{_u8L("Fatal arrange error")};
     const std::string text{
+        // TRN Body of the fatal arrange error notification.
         _u8L("Arrange failed, this is usually caused by an object being larger than slicer limits.")
     };
 
@@ -1161,6 +1223,7 @@ void PopNotificationCenter::on_fatal_arrange_error(
 
 void PopNotificationCenter::on_connect_handler_error(const std::string& msg) 
 {
+    // TRN Header of the Prusa Connect error notification.
     const std::string header{_u8L("Prusa Connect Error")};
 
     upsert_notifcation(
