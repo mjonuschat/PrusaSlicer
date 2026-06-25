@@ -116,8 +116,7 @@ WebViewDialog::WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>
     }
 
     if (Biz::Network::ServiceConfig::instance().webdev_enabled()) {
-        m_web_view->EnableContextMenu();
-        m_web_view->EnableAccessToDevTools();
+        setup_webview_devtools(m_web_view);
     }
 
     topsizer->Add(m_web_view, wxSizerFlags().Expand().Proportion(1));

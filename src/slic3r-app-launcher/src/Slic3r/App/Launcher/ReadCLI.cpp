@@ -814,6 +814,14 @@ InitParams read_cli(::CLI::App& app, const std::string& app_version, const int a
         return init_params;
     }
 
+#ifdef __linux__
+    if (init_params.misc.webdev.has_value()) {
+        std::cerr << "Error: --webdev is not supported on this system (Linux)." << std::endl;
+        init_params.exit_code = 1;
+        return init_params;
+    }
+#endif
+
     if (init_params.action.help_fff || init_params.action.help_sla) {
         custom_formatter->set_show_full_fdm_help(init_params.action.help_fff);
         custom_formatter->set_show_full_sla_help(init_params.action.help_sla);

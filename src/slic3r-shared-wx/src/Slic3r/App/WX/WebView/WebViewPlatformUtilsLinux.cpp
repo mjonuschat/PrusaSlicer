@@ -146,4 +146,10 @@ void load_request(wxWebView* web_view, const std::string& address, const std::st
     // Load the request in the WebView
     webkit_web_view_load_request(native_backend, request);
 }
+
+void setup_webview_devtools(wxWebView* web_view)
+{
+    web_view->EnableContextMenu();
+    web_view->EnableAccessToDevTools();
+}
 }

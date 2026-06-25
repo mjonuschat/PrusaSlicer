@@ -141,8 +141,7 @@ void WebViewPanel::late_create()
     );
 
     if (Biz::Network::ServiceConfig::instance().webdev_enabled()) {
-        m_web_view->EnableContextMenu();
-        m_web_view->EnableAccessToDevTools();
+        setup_webview_devtools(m_web_view);
     }
     topsizer->Add(m_web_view, wxSizerFlags().Expand().Proportion(1));
 
@@ -154,12 +153,9 @@ void WebViewPanel::late_create()
     Bind(wxEVT_WEBVIEW_CREATED, &WebViewPanel::on_created, this, m_web_view->GetId());
 
     Layout();
-    
 
-    // TODO: Read --webdev switch from CLA
 #ifdef DEBUG_URL_PANEL
-    m_web_view->EnableContextMenu();
-    m_web_view->EnableAccessToDevTools();
+    setup_webview_devtools(m_web_view);
 #endif
 }
 

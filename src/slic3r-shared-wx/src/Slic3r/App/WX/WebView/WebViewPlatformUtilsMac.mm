@@ -181,5 +181,11 @@ void load_request(wxWebView* web_view, const std::string& address, const std::st
     [request setValue:auth_value forHTTPHeaderField:@"Authorization"];
     [backend loadRequest:request];
 }
+
+void setup_webview_devtools(wxWebView* web_view)
+{
+    web_view->EnableContextMenu();
+    web_view->EnableAccessToDevTools();
+}
 }
 

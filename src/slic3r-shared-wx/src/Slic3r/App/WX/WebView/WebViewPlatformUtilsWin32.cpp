@@ -325,4 +325,10 @@ void register_prusaslicer_url()
     }
 }
 
+void setup_webview_devtools(wxWebView* web_view)
+{
+    web_view->EnableContextMenu();
+    web_view->EnableAccessToDevTools();
+}
+
 } // Slic3r::App::WX::WebView
