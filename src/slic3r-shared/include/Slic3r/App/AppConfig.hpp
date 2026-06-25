@@ -96,6 +96,15 @@ private:
     static tl::expected<std::unique_ptr<AppConfig>, std::string> load_appconfig(
         const std::string& filename
     );
+
+    /**
+     * @brief Updates app_config item values to current version
+     *
+     * This is the place where to put all handling of outdated
+     * AppConfig values. If you need to update new default
+     * value without user, this is the place to put it.
+     */
+    static void handle_legacy_config(AppConfig& app_config);
 };
 
 } // namespace Slic3r::App

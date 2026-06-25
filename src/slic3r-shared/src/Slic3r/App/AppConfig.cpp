@@ -1,5 +1,6 @@
 #include "Slic3r/App/AppConfig.hpp"
 
+#include "Slic3r/Semver.hpp"
 #include "Slic3r/Domain/ConfigDefUtils.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -116,8 +117,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->category = Domain::ConfigItemDef::Category::AppConfig_General;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->min = 8;
-    def->max = 20;
-    def->init_fn = []() { return Domain::ConfigValue{13}; };
+    def->max = 18;
+    def->init_fn = []() { return Domain::ConfigValue{11}; };
 
 #ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
@@ -309,7 +310,27 @@ tl::expected<std::unique_ptr<AppConfig>, std::string> AppConfig::load_appconfig(
     } catch (...) {
         return tl::unexpected(L("Unable to read application settings."));
     }
+
+    AppConfig::handle_legacy_config(*app_config.get());
+
     return std::move(app_config);
+}
+
+void AppConfig::handle_legacy_config(AppConfig& app_config)
+{
+    const boost::optional<Semver> semver{Semver::parse(app_config.get<std::string>("version"))};
+    if (!semver.has_value()) {
+        return;
+    }
+
+    const Semver version300_alpha9{3, 0, 0, nullptr, "alpha9"};
+    if (semver <= version300_alpha9) {
+        // reset font size to new default value
+        const Domain::ConfigItem* font_size_item =
+            app_config.get_config_box().items.find("font_size");
+        ASSERT(font_size_item);
+        app_config.set("font_size", font_size_item->def().init_fn());
+    }
 }
 
 AppConfig::AppConfig() :

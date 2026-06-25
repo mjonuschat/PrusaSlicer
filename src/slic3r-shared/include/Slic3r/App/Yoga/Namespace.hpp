@@ -198,6 +198,7 @@ struct SizeInfo
     int viewport_size_x{0};
     int viewport_size_y{0};
     float root_font_size{0}; ///<! Same as ImGuiStyle::FontSizeBase
+    float root_font_size_pt{0}; ///<! Original value
 
     int viewport_max() const;
     int viewport_min() const;

@@ -21,11 +21,12 @@ struct ImGuiFixture : public Slic3r::Biz::Platform::IRenderRequestHandler
 {
     ImGuiFixture()
     {
-        default_size_info.dpi              = 96;
-        default_size_info.dpi_scale_factor = 1.0f;
-        default_size_info.viewport_size_x  = 1280;
-        default_size_info.viewport_size_y  = 720;
-        default_size_info.root_font_size   = 18;
+        default_size_info.dpi               = 96;
+        default_size_info.dpi_scale_factor  = 1.0f;
+        default_size_info.viewport_size_x   = 1280;
+        default_size_info.viewport_size_y   = 720;
+        default_size_info.root_font_size    = 18;
+        default_size_info.root_font_size_pt = 11;
 
         Slic3r::Biz::Platform::PlatformServices::instance().set_render_request_handler(this);
 

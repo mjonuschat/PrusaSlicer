@@ -1030,9 +1030,7 @@ bool WXRenderCanvas::begin_frame_platform()
     style.FontScaleMain = 1; // We are scaling whole canvas, no need for ImGui scaling
     style.FontSizeBase  = font_size_px;
 
-    set_screen_size(
-        {display_w, display_h, scale_factor, GetDPI().x, font_size_px}
-    );
+    set_screen_size({display_w, display_h, scale_factor, GetDPI().x, font_size_px, font_size_pt});
     io.DisplayFramebufferScale =
         ImVec2(scale_factor, scale_factor);
 

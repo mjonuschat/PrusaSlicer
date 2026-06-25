@@ -47,10 +47,7 @@ void AbstractRenderLayout::load_column_sizes()
     }
 }
 
-void AbstractRenderLayout::on_app_config_changed(const std::string &key)
-{
-
-}
+void AbstractRenderLayout::on_app_config_changed(const std::string& key) {}
 
 void AbstractRenderLayout::update_cube_view_position()
 {
@@ -110,7 +107,8 @@ void AbstractRenderLayout::update_left_separator_enable()
     // SplitLayout left column separator enable
 
     bool enabled = false;
-    for (size_t child_index = 0; child_index < m_layout_left_column->object_count(); ++child_index) {
+    for (size_t child_index = 0; child_index < m_layout_left_column->object_count(); ++child_index)
+    {
         CollapsibleWindow* window =
             dynamic_cast<CollapsibleWindow*>(m_layout_left_column->get_item(child_index));
         if (window && !window->collapsed()) {
@@ -122,11 +120,8 @@ void AbstractRenderLayout::update_left_separator_enable()
     m_layout_main_bottom->set_separator_enable(0, enabled);
 }
 
-ToolBarButton* AbstractRenderLayout::add_toolbar_item(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip
-)
+ToolBarButton*
+AbstractRenderLayout::add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip)
 {
     ToolBar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
@@ -308,7 +303,7 @@ void AbstractRenderLayout::init_middle_column()
     m_pop_notification_list_view->set_flex_grow(1);
     m_pop_notification_list_view->set_margin(10.);
     m_pop_notification_list_view->set_self_align(YGAlignFlexEnd);
-    m_pop_notification_list_view->set_justify_content(YGJustifyFlexEnd);                                                                                                                                                                                                                                                                                                                                                                                                           
+    m_pop_notification_list_view->set_justify_content(YGJustifyFlexEnd);
     m_pop_notification_list_view->set_flex_shrink(1);
     m_pop_notification_list_view->set_source_list(
         &AppServices::instance().pop_notification_center().source_list()
@@ -442,12 +437,12 @@ AbstractRenderLayout::~AbstractRenderLayout()
 void AbstractRenderLayout::set_size_info_from_screen(const Render::ScreenInfo& screen_info)
 {
     m_info.dpi_scale_factor = screen_info.scale();
-    m_info.dpi              = screen_info.dpi() > 0
-                          ? screen_info.dpi()
-                          : static_cast<int>(96.f * m_info.dpi_scale_factor);
-    m_info.viewport_size_x  = static_cast<int>(screen_info.logical_width());
-    m_info.viewport_size_y  = static_cast<int>(screen_info.logical_height());
-    m_info.root_font_size = screen_info.root_font_size();
+    m_info.dpi = screen_info.dpi() > 0 ? screen_info.dpi() :
+                                         static_cast<int>(96.f * m_info.dpi_scale_factor);
+    m_info.viewport_size_x   = static_cast<int>(screen_info.logical_width());
+    m_info.viewport_size_y   = static_cast<int>(screen_info.logical_height());
+    m_info.root_font_size    = screen_info.root_font_size();
+    m_info.root_font_size_pt = screen_info.root_font_size_pt();
 }
 
 void AbstractRenderLayout::render()

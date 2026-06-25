@@ -21,7 +21,7 @@ enum class ArrangeTaskStatus
     Running
 };
 
-class ArrangeDialog final : public GizmoWindow
+class ArrangeDialog : public GizmoWindow
 {
 public:
     using OnArrange      = std::function<void()>;

@@ -6,7 +6,6 @@
 #include <imgui/imgui.h>
 
 #include <map>
-#include <cmath>
 
 namespace Slic3r::App::Render {
 

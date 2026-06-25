@@ -9,6 +9,8 @@
 #include <imgui/imgui.h>
 #include <boost/filesystem/operations.hpp>
 
+#include <array>
+
 namespace Slic3r::App::Render {
 
 ImguiFontHelper::ImguiFontHelper()
@@ -30,7 +32,12 @@ load_font(const std::string& base_filename, const std::vector<std::string>& addi
     const std::string path = Slic3r::resources_dir() + "/fonts/" + base_filename;
     ASSERT(boost::filesystem::exists(path), "font file does not exists");
 
-    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str());
+    static const std::array<ImWchar, 3> s_private_use_range{0xE000, 0xEFFF, 0};
+
+    ImFontConfig base_config;
+    base_config.GlyphExcludeRanges = s_private_use_range.data();
+
+    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), 0, &base_config);
 
     if (font == nullptr) {
         SPDLOG_WARN("Fallback to default font");
@@ -58,15 +65,15 @@ void ImguiFontHelper::create_font_texture()
     io.Fonts->Clear();
 
     m_fonts[ImguiFontType::Regular] = load_font(
-        "NotoSans-Regular.ttf",
+        "Inter-Regular.ttf",
         {"NotoSansCJK-Regular.ttc", "NotoSansThai-Regular.ttf", "Slic3rIcons.ttf"}
     );
     m_fonts[ImguiFontType::Bold] = load_font(
-        "NotoSans-Bold.ttf",
+        "Inter-Bold.ttf",
         {"NotoSansCJK-Bold.ttc", "NotoSansThai-Bold.ttf", "Slic3rIcons.ttf"}
     );
     m_fonts[ImguiFontType::Italic] = load_font(
-        "NotoSans-Italic.ttf",
+        "Inter-Italic.ttf",
         {"NotoSansCJK-Italic.ttc", "NotoSansThai-Regular.ttf", "Slic3rIcons.ttf"}
     );
 }

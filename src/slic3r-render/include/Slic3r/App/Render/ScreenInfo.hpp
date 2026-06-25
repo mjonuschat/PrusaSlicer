@@ -20,12 +20,20 @@ public:
      * @param dpi Actual DPI as reported by the platform (0 = unknown, caller will fall back to 96*scale)
      * @param root_font_size base font size in pixels
      */
-    ScreenInfo(size_t width, size_t height, float scale, int dpi = 0, float root_font_size = 0) :
+    ScreenInfo(
+        size_t width,
+        size_t height,
+        float scale,
+        int dpi                 = 0,
+        float root_font_size    = 0,
+        float root_font_size_pt = 0
+    ) :
         m_width(width),
         m_height(height),
         m_scale(scale),
         m_dpi(dpi),
-        m_root_font_size{root_font_size}
+        m_root_font_size{root_font_size},
+        m_root_font_size_pt{root_font_size}
     {}
 
     ScreenInfo(const ScreenInfo& other) = default;
@@ -41,6 +49,7 @@ public:
     float scale() const { return m_scale; }
     int dpi() const { return m_dpi; }
     float root_font_size() const { return m_root_font_size; }
+    float root_font_size_pt() const { return m_root_font_size_pt; }
 
     float logical_to_physical(float logical_coord) const { return logical_coord * m_scale; }
     float physical_to_logical(float physical_coord) const { return physical_coord / m_scale; }
@@ -56,7 +65,8 @@ public:
             && m_height == rhs.m_height
             && Domain::fuzzy_compare(m_scale, rhs.m_scale)
             && m_dpi == rhs.m_dpi
-            && Domain::fuzzy_compare(m_root_font_size, rhs.m_root_font_size);
+            && Domain::fuzzy_compare(m_root_font_size, rhs.m_root_font_size)
+            && Domain::fuzzy_compare(m_root_font_size_pt, rhs.m_root_font_size_pt);
     }
 
     bool operator!=(const ScreenInfo& rhs) const
@@ -70,6 +80,7 @@ private:
     float m_scale;
     int m_dpi{0};
     float m_root_font_size{0};
+    float m_root_font_size_pt{0};
 };
 
 }

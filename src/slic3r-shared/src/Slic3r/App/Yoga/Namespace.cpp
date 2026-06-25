@@ -21,6 +21,7 @@ bool SizeInfo::operator==(const SizeInfo& other) const
     return dpi == other.dpi
         && Domain::fuzzy_compare(dpi_scale_factor, other.dpi_scale_factor)
         && Domain::fuzzy_compare(root_font_size, other.root_font_size)
+        && Domain::fuzzy_compare(root_font_size_pt, other.root_font_size_pt)
         && viewport_size_x == other.viewport_size_x
         && viewport_size_y == other.viewport_size_y;
 }
@@ -39,7 +40,7 @@ void EvaluatedUnit::evaluate(const SizeInfo& size_info)
         result = source.value;
         break;
     case Unit::Type::FigmaPixel:
-        result = source.value * (size_info.root_font_size / 14.f);
+        result = source.value * (size_info.root_font_size_pt / 11.f);
         break;
     // case Unit::Type::Milimeter:
     // result = source.value * static_cast<float>(size_info.dpi) / size_info.dpi_scale_factor / 25.4f;

@@ -38,13 +38,14 @@ ColorButton::ColorButton(
 
     m_color_circle = m_highlight_circle->emplace_back<Yoga::Circle>();
     m_color_circle->set_flex_grow(1);
-    m_color_circle->set_align_items(YGAlignFlexStart);
+    m_color_circle->set_align_items(YGAlignCenter);
     m_color_circle->set_justify_content(YGJustifyCenter);
     update_inner_circle();
 
     auto text{m_color_circle->emplace_back<Yoga::Text>(label)};
     text->set_font_type(Render::ImguiFontType::Bold);
     text->set_text_color(Imgui::contrast_color(m_inner_color));
+    text->set_margin(Margins(0, -1, 0, 0));
 }
 
 void ColorButton::hovered_updated_internal()
