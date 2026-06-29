@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include <nlohmann/json.hpp>
 
 #include <fmt/format.h>
 
@@ -464,33 +465,74 @@ RectangleButton* emplace_online_decision_button(Item* container, std::string nam
     return result;
 }
 
+struct PrinterToAdd
+{
+    Domain::Preset::HwPrinterConfig config;
+    std::string preset_item_id;
+};
+
+static const Domain::Preset::HwToolConfigDef* find_tool_config_def(
+    const nlohmann::json& json,
+    const std::vector<Domain::Preset::HwToolConfigDef>& tool_defs)
+{
+    const auto& features{json["features"]};
+    const auto nozzle_diameter{features["nozzle_diameter"].get<double>()};
+    const auto nozzle_high_flow{features.value<bool>("nozzle_high_flow", false)};
+    auto it{std::ranges::find_if(
+        tool_defs,
+        [&](const Domain::Preset::HwToolConfigDef& tool_def)
+        {
+            std::optional<double> def_nozzle_diameter;
+            bool def_nozzle_high_flow{false};
+            if (auto it{tool_def.features.find("nozzle_diameter")}; it != tool_def.features.end()) {
+                def_nozzle_diameter = std::get<double>(it->second.default_value);
+            }
+            if (auto it{tool_def.features.find("nozzle_high_flow")};
+                it != tool_def.features.end()) {
+                def_nozzle_high_flow = std::get<bool>(it->second.default_value);
+            }
+
+            if (!def_nozzle_diameter) {
+                return false;
+            }
+
+            return Domain::fuzzy_compare(*def_nozzle_diameter, nozzle_diameter, 0.01)
+                && def_nozzle_high_flow == nozzle_high_flow;
+        })};
+
+    if (it == tool_defs.end()) {
+        return nullptr;
+    }
+
+    return &(*it);
+}
+
 class PrinterScreen : public Item
 {
 public:
     PrinterScreen(Biz::ProjectInteractor& project_interactor,
                   const Theme& theme,
                   std::function<void()> go_to_prev,
-                  std::function<void(const std::vector<AddPrinterDialog::Printer>&)> finish,
+                  std::function<void(const std::vector<PrinterToAdd>&)> finish,
                   std::function<void(bool)> hide_top_bar) :
+        m_project_interactor{project_interactor},
         m_go_to_prev{go_to_prev},
         m_finish{finish},
         m_hide_top_bar{hide_top_bar}
     {
-        m_screen   = emplace_back<Screen>();
+        m_screen = emplace_back<Screen>();
         update_navigation();
 
-        m_screen->content()->emplace_back<Title>(
-            Biz::_u8L("Choose your printer"),
-            Biz::_u8L("If you have more then one printer you can also add them now."));
+        m_title = m_screen->content()->emplace_back<Title>(m_default_title, m_default_subtitle);
 
-        m_add_button = m_screen->content()->emplace_back<LayoutButton>(Biz::_u8L("Choose a printer"));
+        m_add_button =
+            m_screen->content()->emplace_back<LayoutButton>(Biz::_u8L("Choose a printer"));
         m_add_button->set_background_color(Platform::Color::AccentPrimary);
         m_add_button->set_content_padding({30_fpx, 10_fpx, 30_fpx, 10_fpx});
-        m_add_button->callbacks().action = [this](){
-            show_dialog(true);
-        };
+        m_add_button->callbacks().action = [this]() { show_dialog(true); };
 
         m_printers = m_screen->content()->emplace_back<Rectangle>();
+        m_printers->set_flex_shrink(0);
         m_printers->set_border_color(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
         m_printers->set_border_width(1);
         m_printers->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
@@ -504,7 +546,24 @@ public:
             [this]() { show_dialog(false); },
             [this](const AddPrinterDialog::Printer& printer)
             {
-                add_printer(printer);
+                const Domain::Preset::VendorData& vendor_data{
+                    m_project_interactor.workbench()
+                        .preset_bundle()
+                        .vendor_bundles.at(printer.default_config.vendor_id)
+                        .vendor_data};
+
+                Domain::Preset::HwPrinterConfig config{printer.default_config};
+                config.sheet = Biz::Preset::from_def(
+                    vendor_data,
+                    printer.sheets.sheet_defs.at(printer.sheets.selected_sheet));
+                config.tools.clear();
+                for (std::size_t selected_tool : printer.tools.selected_tools) {
+                    config.tools.push_back(
+                        Biz::Preset::from_def(vendor_data,
+                                              printer.tools.tool_defs.at(selected_tool)));
+                }
+
+                add_printer(PrinterToAdd{config, printer.preset_item_id});
                 show_dialog(false);
             });
         m_dialog->set_visible(false);
@@ -517,7 +576,8 @@ public:
         m_hide_top_bar(show);
     }
 
-    void update_navigation() {
+    void update_navigation()
+    {
         if (!m_printers_to_add.empty()) {
             const NavigationSetup navigation_setup{
                 .left_button_text     = Biz::_u8L("Back"),
@@ -529,33 +589,183 @@ public:
             };
             m_screen->update_navigation(navigation_setup);
         } else {
-            const NavigationSetup navigation_setup{
-                .left_button_text     = Biz::_u8L("Back"),
-                .left_button_action   = m_go_to_prev
-            };
+            const NavigationSetup navigation_setup{.left_button_text   = Biz::_u8L("Back"),
+                                                   .left_button_action = m_go_to_prev};
             m_screen->update_navigation(navigation_setup);
         }
     }
 
-    void delete_printer(std::size_t index) {
-        ASSERT(index < m_printers_to_add.size());
-        ASSERT(m_printers_to_add.size() == m_printers->items().size());
-
-        m_printers->remove_later(m_printers->items().at(index));
-        m_printers_to_add.erase(m_printers_to_add.begin() + index);
-
+    void reload_content_state()
+    {
         if (m_printers_to_add.empty()) {
             m_printers->set_visible(false);
             m_add_button->set_visible(true);
-            update_navigation();
+        } else {
+            m_printers->set_visible(true);
+            m_add_button->set_visible(false);
         }
+        update_navigation();
     }
 
-    void add_printer(const AddPrinterDialog::Printer& printer)
+    void delete_printer(const std::string& preset_item_id)
+    {
+        ASSERT(m_printers_to_add.size() == m_printers->items().size());
+
+        auto it{std::ranges::find_if(m_printers_to_add,
+                                     [&](const PrinterToAdd& printer)
+                                     { return printer.preset_item_id == preset_item_id; })};
+
+        const std::size_t index{
+            static_cast<std::size_t>(std::distance(m_printers_to_add.begin(), it))};
+        ASSERT(index < m_printers_to_add.size());
+
+        m_printers->remove_later(m_printers->items().at(index));
+        m_printers_to_add.erase(it);
+
+        m_title->set_title(m_default_title);
+        m_title->set_sub_title(m_default_subtitle);
+        reload_content_state();
+    }
+
+    std::optional<PrinterToAdd> parse_printer_json(const nlohmann::json& json)
+    {
+        const Biz::Preset::PresetInteractor& preset_interactor{
+            m_project_interactor.preset_interactor()};
+
+        const auto& presets{preset_interactor.printer_presets().items()};
+
+        for (std::size_t i{}; i < presets.size(); ++i) {
+            const auto& preset{presets.at(i)};
+            Domain::Preset::HwPrinterConfig config{
+                m_project_interactor.preset_interactor()
+                    .get_printer_config(m_project_interactor.selected_project_id(),
+                                        preset.hw_printer_config_id)
+                    .first.get()};
+
+            const Domain::Preset::VendorData& vendor_data{m_project_interactor.workbench()
+                                                              .preset_bundle()
+                                                              .vendor_bundles.at(config.vendor_id)
+                                                              .vendor_data};
+
+            const std::vector<Domain::Preset::HwToolConfigDef> tool_defs{
+                m_project_interactor.preset_interactor().get_tool_items(config).tool_defs};
+
+            std::string model{json.value("model", "")};
+            std::string base_model{json.value("base_model", "")};
+            uint8_t tool_count{json.value("tool_count", static_cast<uint8_t>(0))};
+            size_t tools_array_size{
+                json.contains("tools") && json["tools"].is_object() ? json["tools"].size() : 0};
+
+            if (config.model.model == model
+                && config.model.base_model == base_model
+                && config.tool_count == tool_count
+                && config.material_slot_count() == tools_array_size)
+            {
+                config.tools.clear();
+                for (const auto& [_, tool] : json["tools"].items()) {
+                    const Domain::Preset::HwToolConfigDef* hw_tool_config_def{
+                        find_tool_config_def(tool, tool_defs)};
+                    if (!hw_tool_config_def) {
+                        continue;
+                    }
+                    config.tools.push_back(Biz::Preset::from_def(vendor_data, *hw_tool_config_def));
+                }
+                if (config.tools.size() != tool_count) {
+                    continue;
+                }
+                return PrinterToAdd{config, preset.id};
+            }
+        }
+        return std::nullopt;
+    }
+
+    void sync_printers()
+    {
+        if (!m_printers_to_add.empty()) {
+            return;
+        }
+        if (!m_project_interactor.user_account_interactor().is_logged_in()) {
+            return;
+        }
+
+        m_title->set_title(Biz::_u8L("Synchronization in progress"));
+        m_title->set_sub_title(Biz::_u8L("Please wait while we fetch your printers"));
+        m_add_button->set_visible(false);
+
+        auto handle_error{
+            [this](const std::string& error)
+            {
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread(
+                        [this]()
+                        {
+                            m_title->set_title(Biz::_u8L("Unable to synchronize your printers"));
+                            m_title->set_sub_title(Biz::_u8L("Please add your printers manually"));
+                            reload_content_state();
+                        });
+            }};
+
+        const std::string url{Biz::Network::ServiceConfig::instance().connect_printer_list_url()};
+        const std::string access_token{
+            m_project_interactor.user_account_interactor().access_token()};
+
+        m_project_interactor.connect_message_handler().fetch_printer_data_async(
+            url,
+            access_token,
+            [handle_error, this](const std::string& body)
+            {
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread(
+                        [handle_error, body, this]()
+                        {
+                            std::vector<PrinterToAdd> printers;
+                            try {
+                                auto json{nlohmann::json::parse(body)};
+                                const auto& root{json.is_array() && json.size() == 1 ? json[0] :
+                                                                                       json};
+                                if (!root.is_object()
+                                    || !root.contains("printers")
+                                    || !root["printers"].is_array())
+                                {
+                                    handle_error(Biz::_u8L("Invalid response!"));
+                                    return;
+                                }
+
+                                for (const nlohmann::json& printer_json : root["printers"]) {
+                                    if (!printer_json.is_object()) {
+                                        handle_error(Biz::_u8L("Failed to parse response"));
+                                        return;
+                                    }
+                                    std::optional<PrinterToAdd> printer{
+                                        parse_printer_json(printer_json)};
+                                    if (printer) {
+                                        printers.push_back(*printer);
+                                    }
+                                }
+                            } catch (const nlohmann::json::exception& e) {
+                                handle_error(Biz::_u8L("Failed to parse response"));
+                                return;
+                            }
+                            for (const PrinterToAdd& printer : printers) {
+                                add_printer(printer);
+                            }
+
+                            m_title->set_title(
+                                Biz::_u8L("Successfully synchronized your printers"));
+                            m_title->set_sub_title(Biz::_u8L(
+                                "If you have any offline printers, you can also add them now"));
+                        });
+            },
+            handle_error);
+    }
+
+    void add_printer(const PrinterToAdd& printer)
     {
         auto it{
             std::ranges::find_if(m_printers_to_add,
-                                 [&](const AddPrinterDialog::Printer& candidate)
+                                 [&](const PrinterToAdd& candidate)
                                  { return candidate.preset_item_id == printer.preset_item_id; })};
 
         const std::size_t index{
@@ -566,14 +776,15 @@ public:
             m_printers_to_add.push_back(printer);
             printer_item = m_printers->emplace_back<Rectangle>();
         } else {
-            *it = printer;
+            *it          = printer;
             printer_item = dynamic_cast<Rectangle*>(m_printers->items().at(index));
             ASSERT(printer_item);
-            while(!printer_item->items().empty()) {
+            while (!printer_item->items().empty()) {
                 printer_item->remove(printer_item->items().back());
             }
         }
 
+        printer_item->set_flex_shrink(0);
         printer_item->set_width(350_fpx);
         printer_item->set_padding({20_fpx, 10_fpx, 20_fpx, 10_fpx});
         printer_item->set_rounding(10);
@@ -582,15 +793,15 @@ public:
         auto label{printer_item->emplace_back<Item>()};
         label->set_orientation(Orientation::Vertical);
         label->set_justify_content(YGJustifyCenter);
-        auto title{label->emplace_back<Text>(printer.default_config.short_name)};
+        auto title{label->emplace_back<Text>(printer.config.short_name)};
         title->set_font_type(Render::ImguiFontType::Bold);
+        title->set_flex_shrink(0);
 
-        const std::string sheet_name{printer.sheets.sheet_defs.at(printer.sheets.selected_sheet).name};
+        const std::string sheet_name{printer.config.sheet.name};
 
         std::string nozzles;
-        for (std::size_t i{}; i < printer.tools.selected_tools.size(); ++i) {
-            std::size_t selected_tool{printer.tools.selected_tools[i]};
-            nozzles += (i == 0 ? "" : ", ") + printer.tools.tool_defs.at(selected_tool).name;
+        for (std::size_t i{}; i < printer.config.tools.size(); ++i) {
+            nozzles += (i == 0 ? "" : ", ") + printer.config.tools[i].name;
         }
 
         auto sub_title{label->emplace_back<Text>(
@@ -598,32 +809,37 @@ public:
             Biz::_u8L(fmt::format(fmt::runtime("{} sheet, {}"), sheet_name, nozzles)))};
         sub_title->set_text_color(
             m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
+        sub_title->set_flex_shrink(0);
 
         auto right_section{printer_item->emplace_back<Item>()};
         right_section->set_align_items(YGAlign::YGAlignCenter);
-        auto delete_button{right_section->emplace_back<LayoutButton>("", Render::Icon::DeleteBtnIcon)};
+        auto delete_button{
+            right_section->emplace_back<LayoutButton>("", Render::Icon::DeleteBtnIcon)};
         delete_button->set_width(19_fpx);
         delete_button->set_aspect_ratio(1);
-        delete_button->callbacks().action = [this, index](){
-            delete_printer(index);
-        };
+        delete_button->callbacks().action = [this, id = printer.preset_item_id]()
+        { delete_printer(id); };
 
-        m_printers->set_visible(true);
-        m_add_button->set_visible(false);
-        if (m_printers_to_add.size() == 1) {
-            update_navigation();
-        }
+        m_title->set_title(m_default_title);
+        m_title->set_sub_title(m_default_subtitle);
+        reload_content_state();
     }
 
 private:
+    Biz::ProjectInteractor& m_project_interactor;
     std::function<void()> m_go_to_prev;
-    std::function<void(const std::vector<AddPrinterDialog::Printer>&)> m_finish;
+    std::function<void(const std::vector<PrinterToAdd>&)> m_finish;
     std::function<void(bool)> m_hide_top_bar;
     Screen* m_screen{nullptr};
     AddPrinterDialog* m_dialog{nullptr};
+    Title* m_title{nullptr};
     LayoutButton* m_add_button{nullptr};
     Rectangle* m_printers{nullptr};
-    std::vector<AddPrinterDialog::Printer> m_printers_to_add;
+    std::vector<PrinterToAdd> m_printers_to_add;
+
+    std::string m_default_title{Biz::_u8L("Choose your printer")};
+    std::string m_default_subtitle{
+        Biz::_u8L("If you have more then one printer you can also add them now.")};
 };
 
 class Note : public Item
@@ -953,6 +1169,7 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
                 ASSERT(button == m_offline_button);
                 m_online = false;
                 m_project_interactor.user_account_interactor().do_log_out(true);
+                m_login_screen->reload_layout();
                 go_to_screen(ASSERT_VAL(m_printer_screen));
             }
 
@@ -991,7 +1208,11 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
                 go_to_screen(ASSERT_VAL(m_online_decision_screen));
             }
         },
-        [this]() { go_to_screen(ASSERT_VAL(m_printer_screen)); });
+        [this]()
+        {
+            m_printer_screen->sync_printers();
+            go_to_screen(ASSERT_VAL(m_printer_screen));
+        });
 
     m_printer_screen = m_content->emplace_back<PrinterScreen>(
         project_interactor,
@@ -1004,7 +1225,7 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
                 go_to_screen(ASSERT_VAL(m_online_decision_screen));
             }
         },
-        [this](const std::vector<AddPrinterDialog::Printer>& printers) { finalize(printers); },
+        [this](const std::vector<PrinterToAdd>& printers) { finalize(printers); },
         [this](bool hide) { m_top_bar->set_visible(!hide); });
 
     for (Item* child : m_content->items()) {
@@ -1015,33 +1236,16 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
     go_to_screen(m_changelog_screen);
 }
 
-void WelcomeDialog::finalize(const std::vector<AddPrinterDialog::Printer>& printers)
+void WelcomeDialog::finalize(const std::vector<PrinterToAdd>& printers)
 {
     std::vector<Domain::Preset::HwPrinterConfig> printer_configs;
     printer_configs.reserve(printers.size());
 
-    std::vector<std::string>printer_preset_item_ids;
+    std::vector<std::string> printer_preset_item_ids;
     printer_preset_item_ids.reserve(printers.size());
 
-
-    for (const AddPrinterDialog::Printer& printer : printers) {
-        printer_configs.push_back(printer.default_config);
-        Domain::Preset::HwPrinterConfig& printer_config{printer_configs.back()};
-
-        const Domain::Preset::VendorData& vendor_data{
-            m_project_interactor.workbench()
-                .preset_bundle()
-                .vendor_bundles.at(printer.default_config.vendor_id)
-                .vendor_data};
-
-        printer_config.sheet =
-            Biz::Preset::from_def(vendor_data, printer.sheets.sheet_defs.at(printer.sheets.selected_sheet));
-        printer_config.tools.clear();
-        for (std::size_t selected_tool : printer.tools.selected_tools) {
-            printer_config.tools.push_back(
-                Biz::Preset::from_def(vendor_data, printer.tools.tool_defs.at(selected_tool)));
-        }
-
+    for (const PrinterToAdd& printer : printers) {
+        printer_configs.push_back(printer.config);
         printer_preset_item_ids.push_back(printer.preset_item_id);
     }
 

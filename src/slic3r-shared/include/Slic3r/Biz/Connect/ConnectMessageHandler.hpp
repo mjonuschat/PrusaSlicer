@@ -35,7 +35,6 @@ public:
 
     std::string uuid_for_upload();
 
-private:
     void fetch_printer_data_async(
         const std::string& url,
         const std::string& access_token,
@@ -43,6 +42,7 @@ private:
         std::function<void(const std::string&)> fail_fn
     ) const;
 
+private:
     void do_select_printer_from_connect(const std::string& printer_json);
 
     void select_printer_tools_from_connect(const nlohmann::json& j);
