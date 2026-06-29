@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/UserAccount/IUserAccountCommunication.hpp"
+#include "Slic3r/Directories.hpp"
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -23,7 +24,8 @@ public:
     void on_log_in_code_response(const std::string& url_message) override {}
     bool is_logged_in() const override { return false; }
     std::string access_token() const override { return {}; }
-    boost::filesystem::path avatar() const override { return {}; }
+    // Reason for having this path here: avatar is being read also after switching Communication backends for notifications.
+    boost::filesystem::path avatar() const override {  return boost::filesystem::path(resources_dir()) / "icons" / "user.svg"; }
     void on_avatar_url(const std::string& data) override {}
     std::string email() const override { return {}; }
     void on_email(const std::string& data) override {}
