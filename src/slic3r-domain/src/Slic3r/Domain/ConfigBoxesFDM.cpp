@@ -3731,7 +3731,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def               = defs.add("support_material", typeid(EnumWrapper));
     def->location     = Print;
     def->overrides_in = Locations{Object};
-    def->label        = L("Supports");
+    def->label        = L("Generate Supports");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_Generation;
     def->category     = ConfigItemDef::Category::Print_Supports;
     def->order        = 0;
@@ -3739,14 +3739,14 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip      = L(
         "Enable support material generation.\n"
              "Off - Disables support material generation.\n"
-             "Support enforcers only - Generates supports inside the \"Support Enforcer\" volumes only.\n"
-             "Everywhere - Generates supports automatically based on the overhang threshold value and also inside the \"Support Enforcer\" volumes."
+             "Manual Only - Generates supports inside the \"Support Enforcer\" volumes only.\n"
+             "On - Generates supports automatically based on the overhang threshold value and also inside the \"Support Enforcer\" volumes."
     );
     def->init_fn = init_with(
         SupportMode::EnforcersOnly,
         {{int(SupportMode::None), "none", L("Off")},
-         {int(SupportMode::EnforcersOnly), "enforcers_only", L("Support enforcers only")},
-         {int(SupportMode::Everywhere), "everywhere", L("Everywhere")}}
+         {int(SupportMode::EnforcersOnly), "enforcers_only", L("Manual Only")},
+         {int(SupportMode::Everywhere), "everywhere", L("On")}}
     );
 
     def = defs.add("support_material_xy_spacing", typeid(FloatOrPercentage));
