@@ -88,6 +88,11 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
                 );
             }
         },
+        [toggle_logical_printer_settings_dialog, this](size_t index)
+        {
+            toggle_logical_printer_settings_dialog();
+            m_logical_printer_settings_dialog->select_page_settings();
+        },
         m_project_interactor
     });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());

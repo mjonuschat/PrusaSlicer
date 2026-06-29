@@ -64,11 +64,7 @@ MaterialSelectionRow::MaterialSelectionRow(
 
     auto add_button = [this](Render::Icon icon, const std::string& tooltip)
     {
-        Item* button_wrap = emplace<Item>(1);
-        button_wrap->set_min_width(20);
-        button_wrap->set_min_height(20);
-        button_wrap->set_flex_shrink(0.f);
-        LayoutButton* btn = button_wrap->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
+        LayoutButton* btn = emplace<LayoutButton>(1, std::string{}, icon, tooltip);
         btn->set_self_align(YGAlignCenter);
         btn->set_margin(-2.f);
         btn->set_width(24.f);

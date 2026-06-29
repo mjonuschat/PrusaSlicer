@@ -21,6 +21,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     const Biz::Preset::PresetItemObservableList& state,
     std::weak_ptr<ButtonGroup> button_group,
     FnIndexClicked on_cog_clicked,
+    FnIndexClicked on_nozzle_clicked,
     Biz::ProjectInteractor& project_interactor
 ) :
     RectangleButton(),
@@ -28,15 +29,17 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_colors_changed_listener_scope(project_interactor.project_settings_interactor(), *this),
     m_button_group(button_group),
     m_on_cog_clicked(on_cog_clicked),
+    m_on_nozzle_clicked(on_nozzle_clicked),
     m_project_interactor(project_interactor)
 {
+    Unit height = 1.5_rem;
     set_checkable(true);
-    set_height(1.5_rem);
+    set_height(height);
     set_flex_shrink(0);
     set_allow_overlap(true);
 
     // invalidate vertical padding to use whole button height for separators
-    set_content_padding({5.f, 0.f});
+    set_content_padding({5.f, 0.f, 0.f, 0.f});
 
     Item* text_index = emplace_back<Text>(std::to_string(index + 1));
     text_index->set_self_align(YGAlignCenter);
@@ -65,19 +68,15 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_material_name->set_self_align(YGAlignCenter);
     m_material_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    Item* button_wrap = emplace_back<Item>();
-    button_wrap->set_min_width(20.f);
-    button_wrap->set_min_height(20.f);
-    button_wrap->set_flex_shrink(0);
-    m_cog_btn = button_wrap->emplace_back<LayoutButton>(
+    m_cog_btn = emplace_back<LayoutButton>(
         std::string{},
         Render::Icon::Cog,
         Biz::_u8L("Show material settings")
     );
     m_cog_btn->set_self_align(YGAlignCenter);
     m_cog_btn->set_margin(-2.f);
-    m_cog_btn->set_width(24.f);
-    m_cog_btn->set_height(24.f);
+    m_cog_btn->set_width(height);
+    m_cog_btn->set_height(height);
     m_cog_btn->set_background_color(m_theme->color_imgui(Platform::Color::Transparent));
     m_cog_btn->callbacks().action = [this]()
     {
@@ -93,8 +92,19 @@ MaterialSettingsButton::MaterialSettingsButton(
     emplace_back<Separator>(Orientation::Vertical)
         ->set_fill(m_theme->color_imgui(Platform::Color::WindowBg));
 
-    m_nozzle = emplace_back<Text>(std::string{});
-    m_nozzle->set_self_align(YGAlignCenter);
+    m_nozzle_btn =
+        emplace_back<LayoutButton>(std::string{}, Render::Icon::None, _u8L("Change nozzle size"));
+    m_nozzle_btn->set_self_align(YGAlignCenter);
+    m_nozzle_btn->set_margin({-content_gap(), 0, 0, 0});
+    m_nozzle_btn->set_draw_flags(ImDrawFlags_RoundCornersRight);
+    m_nozzle_btn->set_height(height);
+    m_nozzle_btn->set_content_padding({5.f, 0.f});
+    m_nozzle_btn->callbacks().action = [this]()
+    {
+        if (m_on_nozzle_clicked) {
+            m_on_nozzle_clicked(m_index);
+        }
+    };
 
     on_data_update();
 
@@ -117,7 +127,7 @@ void MaterialSettingsButton::set_color(const ImColor& color)
 
 void MaterialSettingsButton::set_nozzle(const std::string& nozzle)
 {
-    m_nozzle->set_text(nozzle);
+    m_nozzle_btn->set_label(nozzle);
 }
 
 void MaterialSettingsButton::on_data_update()

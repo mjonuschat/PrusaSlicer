@@ -64,6 +64,7 @@ private:
         Biz::Preset::PresetItemObservableList,
         std::weak_ptr<Yoga::ButtonGroup>,
         Yoga::MaterialSettingsButton::FnIndexClicked,
+        Yoga::MaterialSettingsButton::FnIndexClicked,
         Biz::ProjectInteractor&>;
     using MaterialListView = Yoga::ListView<
         Yoga::MaterialSettingsButton,

@@ -39,6 +39,7 @@ public:
         const Biz::Preset::PresetItemObservableList& state,
         std::weak_ptr<ButtonGroup> button_group,
         FnIndexClicked on_cog_clicked,
+        FnIndexClicked on_nozzle_clicked,
         Biz::ProjectInteractor& project_interactor
     );
     ~MaterialSettingsButton();
@@ -81,9 +82,10 @@ private:
     ColorPickerButton* m_color_marker{nullptr};
     Text* m_material_name{nullptr};
     LayoutButton* m_cog_btn{nullptr};
-    Text* m_nozzle{nullptr};
+    LayoutButton* m_nozzle_btn{nullptr};
     std::weak_ptr<ButtonGroup> m_button_group;
     FnIndexClicked m_on_cog_clicked;
+    FnIndexClicked m_on_nozzle_clicked;
     Biz::ProjectInteractor& m_project_interactor;
 };
 

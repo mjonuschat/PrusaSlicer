@@ -139,6 +139,16 @@ void RectangleButton::set_content_padding(const Paddings& padding)
     m_background->set_padding(padding);
 }
 
+const Unit& RectangleButton::content_gap()
+{
+    return m_background->gap();
+}
+
+void RectangleButton::set_content_gap(const Unit& gap)
+{
+    m_background->set_gap(gap);
+}
+
 Orientation RectangleButton::content_orientation() const
 {
     return m_background->orientation();

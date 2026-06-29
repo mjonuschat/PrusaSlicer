@@ -52,6 +52,9 @@ public:
     const EvaluatedPaddings& content_padding();
     void set_content_padding(const Paddings& padding);
 
+    const Unit& content_gap();
+    void set_content_gap(const Unit& gap);
+
     Orientation content_orientation() const;
     void set_content_orientation(Orientation orientation);
 
