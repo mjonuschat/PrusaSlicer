@@ -259,8 +259,10 @@ std::vector<Biz::Slicing::Error> validate_input(
     if (auto error{check_extruder_offset(model, config)}) {
         errors.push_back(std::move(*error));
     }
-    if (auto error{check_extruders(model, config, hw_config)}) {
-        errors.push_back(std::move(*error));
+    if (hw_config.material_slot_count() != 1) {
+        if (auto error{check_extruders(model, config, hw_config)}) {
+            errors.push_back(std::move(*error));
+        }
     }
     return errors;
 }
@@ -303,8 +305,9 @@ Biz::Slicing::ApplyStatus::Status Print::update(
         // Extruder candidates need to be checked before validation, to update the UI
         // even in case of InvalidData.
         const std::vector<unsigned> extruder_candidates{
-            Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
-        };
+            metadata.hw_config.material_slot_count() == 1 ?
+                std::vector<unsigned>{0} :
+                Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)};
         if (m_extruder_candidates != extruder_candidates) {
             m_on_extruder_candidates(extruder_candidates);
         }

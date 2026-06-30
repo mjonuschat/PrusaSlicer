@@ -18,17 +18,27 @@ using Biz::Slicing::ErrorCode;
 
 namespace {
 
-void set_extruders(PartialConfig& partial_config, const auto& settings)
+void set_extruders(PartialConfig& partial_config, const auto& settings, std::size_t material_slot_count)
 {
-    if (const auto extruder{partial_config.template get<int>("extruder")}; extruder > 0) {
-        if (!settings.overrides.get("infill_extruder")) {
-            partial_config.set("infill_extruder", *extruder);
+    if (material_slot_count == 1) {
+        for (const char* key :
+             {
+                 "perimeter_extruder",
+                 "infill_extruder",
+                 "solid_infill_extruder",
+                 "support_material_extruder",
+                 "support_material_interface_extruder",
+             })
+        {
+            if (partial_config.get<int>(key)) {
+                partial_config.set(key, 1);
+            }
         }
-        if (!settings.overrides.get("perimeter_extruder")) {
-            partial_config.set("perimeter_extruder", *extruder);
-        }
-        if (!settings.overrides.get("solid_infill_extruder")) {
-            partial_config.set("solid_infill_extruder", *extruder);
+    } else if (const auto extruder{partial_config.template get<int>("extruder")}; extruder > 0) {
+        for (const char* key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"}) {
+            if (!settings.overrides.get(key)) {
+                partial_config.set(key, *extruder);
+            }
         }
     }
 }
@@ -61,6 +71,20 @@ tl::expected<FullConfigFDMPtr, std::vector<Error>> prepare_slicing_input(
     }
 
     FullConfigFDM result{config_pack, extruder_candidates, hw_config};
+    if (hw_config.material_slot_count() == 1) {
+        for (const char* key :
+             {
+                 "perimeter_extruder",
+                 "infill_extruder",
+                 "solid_infill_extruder",
+                 "support_material_extruder",
+                 "support_material_interface_extruder",
+             })
+        {
+            result.set(key, 1);
+        }
+    }
+
     return std::make_shared<const FullConfigFDM>(std::move(result));
 }
 
@@ -70,7 +94,7 @@ tl::expected<PartialObjectConfigFDMPtr, std::vector<Error>> prepare_slicing_obje
 )
 {
     PartialObjectConfigFDM result{object_settings, material_slot_count};
-    set_extruders(result, object_settings);
+    set_extruders(result, object_settings, material_slot_count);
     return std::make_shared<PartialObjectConfigFDM>(std::move(result));
 };
 
@@ -80,7 +104,7 @@ tl::expected<PartialVolumeConfigFDMPtr, std::vector<Error>> prepare_slicing_volu
 )
 {
     PartialVolumeConfigFDM result{volume_settings, material_slot_count};
-    set_extruders(result, volume_settings);
+    set_extruders(result, volume_settings, material_slot_count);
     return std::make_shared<const PartialVolumeConfigFDM>(std::move(result));
 }
 } // namespace Slic3r
