@@ -1019,7 +1019,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ProjectMetadataJson.cpp
         src/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
-        src/Slic3r/Biz/Config/SelectedPresetJson.hpp
+        include/Slic3r/Biz/Config/SelectedPresetJson.hpp
         src/Slic3r/Biz/Config/SelectedPresetJson.cpp
         src/Slic3r/Biz/Config/GCodeMetadataJson.hpp
         src/Slic3r/Biz/Config/GCodeMetadataJson.cpp
