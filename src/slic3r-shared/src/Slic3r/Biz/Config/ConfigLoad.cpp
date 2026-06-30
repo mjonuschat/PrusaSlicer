@@ -2,6 +2,8 @@
 #include <nlohmann/json.hpp>
 #include <tl/expected.hpp>
 #include "Slic3r/Biz/Config/ConfigJson.hpp" // IWYU pragma: keep
+#include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
+#include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
 
 
 namespace Slic3r::Biz::Config {
@@ -397,6 +399,39 @@ load(const ordered_json& json, const Domain::Preset::HwPrinterConfig& hw_config)
     } else {
         return tl::unexpected{GlobalParsingIssue::UnableToDeducePrinterTechnology};
     }
+}
+
+tl::expected<PresetAndConfig, std::string> load_preset_and_config(
+    const ordered_json& project_config_json
+)
+{
+    using Format::ProjectFileConstants::CONFIGURATION;
+    using Format::ProjectFileConstants::PRESET_METADATA;
+
+    if (!project_config_json.contains(PRESET_METADATA)
+        || !project_config_json.contains(CONFIGURATION))
+    {
+        return tl::make_unexpected(
+            std::string{"The configuration is missing the \"preset\" or \"configuration\" data."}
+        );
+    }
+
+    tl::expected<Domain::Preset::SelectedPresetMetadata, std::string> preset_metadata =
+        load_preset_metadata(project_config_json[PRESET_METADATA]);
+    if (!preset_metadata.has_value()) {
+        return tl::make_unexpected(preset_metadata.error());
+    }
+
+    tl::expected<LoadResult, GlobalParsingIssue> config =
+        load(project_config_json[CONFIGURATION], preset_metadata.value().hw_config);
+    if (!config.has_value()) {
+        return tl::make_unexpected(std::string{"The configuration data could not be parsed."});
+    }
+
+    return PresetAndConfig{
+        .preset_metadata = std::move(preset_metadata.value()),
+        .config_pack     = std::move(config.value().config)
+    };
 }
 
 } // namespace Slic3r::Biz::Config
