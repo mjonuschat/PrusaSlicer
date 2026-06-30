@@ -1,515 +1,487 @@
 #include "Slic3r/App/CLI/LoadPrintData.hpp"
 
+#include "Slic3r/App/CLI/CLIRuntime.hpp"
+#include "Slic3r/App/CLI/CLIUtils.hpp"
 #include "Slic3r/App/CLI/ProcessActions.hpp"
-#include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
+#include "Slic3r/App/CLI/ProfilePresetSelection.hpp"
 #include "Slic3r/App/Init.hpp"
-#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-#include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
-#include <cstdio>
+#include <algorithm>
 #include <fstream>
+#include <memory>
 #include <string>
 #include <variant>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/nowide/args.hpp>
 #include <boost/nowide/iostream.hpp>
 
 #include <nlohmann/json.hpp>
 
-#include "libslic3r/GCode/PostProcessor.hpp"
-#include "libslic3r/Model.hpp"
-#include "libslic3r/libslic3r.h"
+#include <spdlog/spdlog.h>
 
-namespace fs = boost::filesystem;
+using Slic3r::Biz::IProjectsChangedListener;
+using Slic3r::Biz::ProjectInteractor;
+using Slic3r::Biz::Config::PresetAndConfig;
+using Slic3r::Biz::Preset::PresetInteractor;
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::ConfigItem;
+using Slic3r::Domain::ConfigLocation;
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ConfigPackSLA;
+using Slic3r::Domain::ConstFindResult;
+using Slic3r::Domain::FDMConfigLocation;
+using Slic3r::Domain::Model;
+using Slic3r::Domain::PrinterTechnology;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::SLAConfigLocation;
+using Slic3r::Domain::Preset::HwPrinterConfig;
 
-using namespace Slic3r;
 using namespace Slic3r::Biz;
-
-using Slic3r::Domain::Vec2d;
 
 namespace Slic3r::App::CLI {
 
-void merge_fdm_config_packs(
-    Domain::ConfigPackFDM& target_config_pack,
-    const Domain::ConfigPackFDM& source_config_pack
-)
+static std::optional<PresetAndConfig> load_config_file(const std::string& file_path)
 {
-    target_config_pack.printer = source_config_pack.printer;
-    target_config_pack.print   = source_config_pack.print;
-    target_config_pack.project = source_config_pack.project;
-
-    if (target_config_pack.tool.size() < source_config_pack.tool.size()) {
-        target_config_pack.tool.resize(source_config_pack.tool.size());
-    }
-
-    for (size_t i = 0; i < source_config_pack.tool.size(); ++i) {
-        target_config_pack.tool[i] = source_config_pack.tool[i];
-    }
-
-    if (target_config_pack.filament.size() < source_config_pack.filament.size()) {
-        target_config_pack.filament.resize(source_config_pack.filament.size());
-    }
-
-    for (size_t i = 0; i < source_config_pack.filament.size(); ++i) {
-        target_config_pack.filament[i] = source_config_pack.filament[i];
-    }
-}
-
-void merge_sla_config_packs(
-    Domain::ConfigPackSLA& target_config_pack,
-    const Domain::ConfigPackSLA& source_config_pack
-)
-{
-    target_config_pack.sla_printer_settings  = source_config_pack.sla_printer_settings;
-    target_config_pack.sla_print_settings    = source_config_pack.sla_print_settings;
-    target_config_pack.sla_material_settings = source_config_pack.sla_material_settings;
-}
-
-bool merge_config_pack(
-    Domain::ConfigPack& target_config_pack,
-    const Domain::ConfigPack& source_config_pack
-)
-{
-    // Check if both ConfigPacks are the same PrinterTechnology.
-    if (target_config_pack.index() != source_config_pack.index()) {
-        return false; // Cannot merge different PrinterTechnology (FDM vs SLA).
-    }
-
-    if (std::holds_alternative<Domain::ConfigPackFDM>(target_config_pack)) {
-        merge_fdm_config_packs(
-            std::get<Domain::ConfigPackFDM>(target_config_pack),
-            std::get<Domain::ConfigPackFDM>(source_config_pack)
-        );
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(target_config_pack)) {
-        merge_sla_config_packs(
-            std::get<Domain::ConfigPackSLA>(target_config_pack),
-            std::get<Domain::ConfigPackSLA>(source_config_pack)
-        );
-    } else {
-        return false;
-    }
-
-    return true;
-}
-
-std::optional<Domain::PrinterTechnology> get_printer_technology(const InitParams& init_params)
-{
-    for (const Domain::ConfigItem& config_item : init_params.config_overrides) {
-        return config_item.get<Domain::PrinterTechnology>();
-    }
-
-    return std::nullopt;
-}
-
-Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config_pack)
-{
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-        return Domain::PrinterTechnology::FFF;
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-        return Domain::PrinterTechnology::SLA;
-    } else {
-        PANIC("Unexpected config type!");
-    }
-}
-
-static bool can_apply_printer_technology(
-    std::optional<Domain::PrinterTechnology>& printer_technology,
-    const Domain::PrinterTechnology& other_printer_technology
-)
-{
-    if (!printer_technology.has_value()) {
-        printer_technology = other_printer_technology;
-        return true;
-    }
-
-    if (printer_technology.value() != other_printer_technology) {
-        boost::nowide::cerr << "Mixing configurations for FFF and SLA technologies" << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-static std::optional<Domain::ConfigPack> load_config_from_file(const std::string& file_path)
-{
-    if (!boost::filesystem::exists(file_path)) {
-        return std::nullopt;
-    }
-
+    nlohmann::ordered_json json_document;
     try {
-        if (boost::algorithm::iends_with(file_path, ".json")) {
-            // Load JSON config.
-            std::ifstream file(file_path);
-            if (!file.is_open()) {
-                boost::nowide::cerr
-                    << "Error while reading JSON config from "
-                    << file_path
-                    << std::endl;
-                return std::nullopt;
-            }
-
-            nlohmann::ordered_json json_config;
-            file >> json_config;
-
-            // TODO: where to get propper hw config?
-            const Domain::Preset::HwPrinterConfig hw_config{.tool_count = 1};
-            if (auto result = Config::load(json_config, hw_config); result) {
-                return result.value().config;
-            } else {
-                boost::nowide::cerr
-                    << "Error while loading JSON config from "
-                    << file_path
-                    << std::endl;
-            }
-        } else {
-            // Load legacy INI config.
-            return load_config_from_legacy_file(file_path);
+        std::ifstream file(file_path);
+        if (!file.is_open()) {
+            boost::nowide::cerr
+                << "Error while reading JSON config from "
+                << file_path
+                << std::endl;
+            return std::nullopt;
         }
-    } catch (std::exception& ex) {
+
+        file >> json_document;
+    } catch (const std::exception& exception) {
         boost::nowide::cerr
             << "Error while reading config file \""
             << file_path
             << "\": "
-            << ex.what()
+            << exception.what()
             << std::endl;
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    tl::expected<PresetAndConfig, std::string> preset_and_config =
+        Config::load_preset_and_config(json_document);
+    if (!preset_and_config.has_value()) {
+        boost::nowide::cerr << file_path << ": " << preset_and_config.error() << std::endl;
+        return std::nullopt;
+    }
+
+    return std::move(preset_and_config.value());
 }
 
-static bool load_print_config(
-    Domain::ConfigPack& config_pack,
-    std::optional<Domain::PrinterTechnology>& printer_technology,
-    const InitParams& init_params
-)
+/**
+ * @brief Creates a new project from a preset built from the given metadata and configuration.
+ *
+ * @return ID of the created project, or std::nullopt on failure.
+ */
+static std::optional<SelectionId>
+add_project_with_selected_preset(CLIRuntime& runtime, const PresetAndConfig& preset_and_config)
 {
-    if (!init_params.input.config_files.empty()) {
-        // Load config files supplied via --load.
-        for (const std::string& file_path : init_params.input.config_files) {
-            if (!boost::filesystem::exists(file_path)) {
-                if (init_params.misc.ignore_nonexistent_config.has_value()
-                    && init_params.misc.ignore_nonexistent_config.value())
-                {
-                    continue;
-                } else {
-                    boost::nowide::cerr << "No such file: " << file_path << std::endl;
-                    return false;
-                }
-            }
-
-            std::optional<Domain::ConfigPack> loaded_config = load_config_from_file(file_path);
-            if (!loaded_config.has_value()) {
-                return false;
-            }
-
-            if (!can_apply_printer_technology(
-                    printer_technology,
-                    get_printer_technology(loaded_config.value())
-                ))
-            {
-                return false;
-            }
-
-            merge_config_pack(config_pack, loaded_config.value());
-        }
-    }
-
-    // Then apply other options from full print config if any is provided by profiles set.
-    if (has_full_config_from_profiles(init_params)) {
-        Domain::ConfigPack loaded_config;
-        // Load config from profiles set.
-        std::string errors = load_full_print_config(
-            init_params.input.print_profile_preset.value(),
-            init_params.input.material_profile_presets,
-            init_params.input.tool_profile_presets,
-            init_params.input.printer_profile_preset.value(),
-            loaded_config,
-            printer_technology
+    const tl::expected<SelectionId, std::string> project_id =
+        runtime.project_interactor().new_project_with_preset(
+            preset_and_config.preset_metadata,
+            preset_and_config.config_pack
         );
 
-        if (!errors.empty()) {
-            boost::nowide::cerr
-                << "Error while loading config from profiles: "
-                << errors
-                << std::endl;
-            return false;
-        }
-
-        if (!can_apply_printer_technology(
-                printer_technology,
-                get_printer_technology(loaded_config)
-            ))
-        {
-            return false;
-        }
-
-        merge_config_pack(config_pack, loaded_config);
+    if (!project_id.has_value()) {
+        boost::nowide::cerr << project_id.error() << std::endl;
+        return std::nullopt;
     }
 
-    return true;
+    return project_id.value();
+}
+
+/**
+ * @brief Loads the geometry of the given file into a new project.
+ *
+ * @return ID of the created project, or std::nullopt when the file should be skipped.
+ */
+static std::optional<SelectionId> load_geometry_project(
+    CLIRuntime& runtime,
+    const std::string& input_file,
+    const std::optional<PresetAndConfig>& base_preset_config
+)
+{
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    tl::expected<Model, std::string> model_data =
+        FileLoadingLogic::read_model_from_file(input_file, nullptr);
+    if (!model_data.has_value()) {
+        boost::nowide::cerr << "Error: " + model_data.error() << std::endl;
+        return std::nullopt;
+    }
+
+    if (model_data.value().objects.empty()) {
+        boost::nowide::cerr << "Error: file is empty: " << input_file << std::endl;
+        return std::nullopt;
+    }
+
+    std::optional<SelectionId> project_id;
+    if (base_preset_config.has_value()) {
+        project_id = add_project_with_selected_preset(runtime, base_preset_config.value());
+        if (!project_id.has_value()) {
+            return std::nullopt;
+        }
+    } else {
+        project_id = project_interactor.new_project();
+    }
+
+    project_interactor.scene_interactor().add_new_objects(model_data.value().objects);
+
+    return project_id;
+}
+
+/**
+ * @brief Loads the geometry and configuration of the given 3MF file into a new project.
+ *
+ * @return ID of the loaded project, or std::nullopt on failure.
+ */
+static std::optional<SelectionId>
+load_3mf_project(CLIRuntime& runtime, const std::string& input_file)
+{
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    SPDLOG_INFO("Loading project from the 3MF file {}.", input_file);
+
+    ProjectLoadResultListener load_result_listener;
+    project_interactor.add_listener<IProjectsChangedListener>(&load_result_listener);
+
+    project_interactor.load_project(boost::filesystem::path{input_file});
+    runtime.wait_until([&load_result_listener]() { return load_result_listener.finished(); });
+
+    project_interactor.remove_listener<IProjectsChangedListener>(&load_result_listener);
+
+    if (load_result_listener.load_error.has_value()) {
+        boost::nowide::cerr
+            << input_file
+            << ": "
+            << load_result_listener.load_error.value()
+            << std::endl;
+        return std::nullopt;
+    }
+
+    SPDLOG_INFO(
+        "Project from the 3MF file {} was loaded as project {}.",
+        input_file,
+        load_result_listener.loaded_project_id.value()
+    );
+
+    return load_result_listener.loaded_project_id;
 }
 
 static bool process_input_files(
-    std::vector<Domain::Project>& projects,
-    Domain::ConfigPack& config_pack,
-    std::optional<Domain::PrinterTechnology>& printer_technology,
-    InitParams& init_params
+    CLIRuntime& runtime,
+    std::vector<SelectionId>& project_ids,
+    const InitParams& init_params,
+    const std::optional<PresetAndConfig>& base_preset_config
 )
 {
-    for (const std::string& file : init_params.input.input_files) {
-        if (boost::starts_with(file, "prusaslicer://")) {
+    for (const std::string& input_file : init_params.input.input_files) {
+        if (boost::starts_with(input_file, "prusaslicer://")) {
             continue;
         }
 
-        if (!boost::filesystem::exists(file)) {
-            boost::nowide::cerr << "No such file: " << file << std::endl;
+        if (!boost::filesystem::exists(input_file)) {
+            boost::nowide::cerr << "No such file: " << input_file << std::endl;
             return false;
         }
 
-        Domain::Project project;
         try {
+            std::optional<SelectionId> project_id;
             if (has_full_config_from_profiles(init_params)
-                || !FileLoadingLogic::is_project_file(file))
+                || !FileLoadingLogic::is_project_file(input_file))
             {
                 // We have a full bunch of options from profiles set, so just load a geometry.
-                if (tl::expected<Domain::Model, std::string> model_data =
-                        FileLoadingLogic::read_model_from_file(file, nullptr);
-                    !model_data)
-                {
-                    boost::nowide::cerr << "Error: " + model_data.error() << std::endl;
-                } else {
-                    project.model() = std::move(model_data.value());
+                project_id = load_geometry_project(runtime, input_file, base_preset_config);
+                if (!project_id.has_value()) {
+                    continue;
                 }
             } else {
-                assert(FileLoadingLogic::is_project_file(file));
-
-                Domain::Workbench workbench;
-                Scene::SceneInteractor scene_interactor{workbench};
-                Preset::PresetInteractor preset_interactor{workbench, scene_interactor};
-                scene_interactor.set_preset_visual_getter(&preset_interactor);
-
-                // Load new presets.
-                preset_interactor.load_preset_bundle(
-                    Preset::IO::BundlePaths::make_standard_runtime()
-                );
-
-                // Load model and configuration from the file.
-                Domain::Project loaded_project = Biz::FileLoadingLogic::load_file_as_project(
-                    file,
-                    workbench.preset_bundle(),
-                    nullptr
-                );
-
-                if (loaded_project.config_containers().empty()) {
-                    loaded_project.config_containers().emplace_back(
-                        std::make_unique<Domain::ConfigContainer>()
-                    );
-                    preset_interactor.initialize_config_container_with_default(
-                        *loaded_project.config_containers().back()
-                    );
-                }
-
-                // TODO: For now, we always use the first ConfigContainer.
-                Domain::ConfigPack loaded_config =
-                    loaded_project.config_containers().front()->build_print_config();
-
-                if (!can_apply_printer_technology(
-                        printer_technology,
-                        get_printer_technology(loaded_config)
-                    ))
-                {
+                project_id = load_3mf_project(runtime, input_file);
+                if (!project_id.has_value()) {
                     return false;
                 }
-
-                project = std::move(loaded_project);
-                // Config is applied with config_pack loaded before.
-                merge_config_pack(config_pack, loaded_config);
             }
 
-            // If model for slicing is loaded from 3mf file, then its geometry has to be used and arrange couldn't be apply for this model.
-            if (FileLoadingLogic::is_project_file(file)
-                && (!init_params.transform.dont_arrange.has_value()
-                    || !init_params.transform.dont_arrange.value()))
-            {
-                // So, check a state of "dont_arrange" parameter and set it to true, if its value is false.
-                init_params.transform.dont_arrange = true;
-            }
-        } catch (std::exception& e) {
-            boost::nowide::cerr << file << ": " << e.what() << std::endl;
+            project_ids.push_back(project_id.value());
+        } catch (const std::exception& exception) {
+            boost::nowide::cerr << input_file << ": " << exception.what() << std::endl;
             return false;
         }
-
-        if (project.model().objects.empty()) {
-            boost::nowide::cerr << "Error: file is empty: " << file << std::endl;
-            continue;
-        }
-
-        projects.emplace_back(std::move(project));
     }
 
     return true;
 }
 
-static bool finalize_print_config(
-    Domain::ConfigPack& config_pack,
-    std::optional<Domain::PrinterTechnology>& printer_technology,
-    const InitParams& init_params
+static bool apply_profile_presets(CLIRuntime& runtime, const InitParams& init_params)
+{
+    const ProfilePresetSelectionRequest selection_request{
+        .printer_profile_name   = init_params.input.printer_profile_preset.value_or(std::string{}),
+        .print_profile_name     = init_params.input.print_profile_preset.value_or(std::string{}),
+        .material_profile_names = init_params.input.material_profile_presets,
+        .tool_profile_names     = init_params.input.tool_profile_presets
+    };
+
+    const std::optional<std::string> selection_error = select_profile_presets_by_name(
+        runtime.project_interactor().preset_interactor(),
+        selection_request
+    );
+    if (selection_error.has_value()) {
+        boost::nowide::cerr
+            << "Error while loading config from profiles: "
+            << selection_error.value()
+            << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+static void apply_overriding_config_value(
+    PresetInteractor& preset_interactor,
+    const ConfigItem& config_item_override,
+    const ConfigLocation& override_location,
+    const size_t slot_idx
 )
 {
-    if (!printer_technology.has_value()) {
-        printer_technology = init_params.action.export_sla ? Domain::PrinterTechnology::SLA :
-                                                             Domain::PrinterTechnology::FFF;
+    ConfigItem override_item{config_item_override.def(), override_location};
+    preset_interactor.set_item_value(override_item, config_item_override.value(), slot_idx);
+    preset_interactor.set_item_override(override_item, true, slot_idx);
+}
+
+static size_t
+overriding_config_slot_count(const ConfigLocation& location, const HwPrinterConfig& hw_config)
+{
+    if (const FDMConfigLocation* fdm_location = std::get_if<FDMConfigLocation>(&location)) {
+        if (*fdm_location == FDMConfigLocation::Tool) {
+            return hw_config.tool_count;
+        }
+        if (*fdm_location == FDMConfigLocation::Filament) {
+            return hw_config.material_slot_count();
+        }
+    } else if (const SLAConfigLocation* sla_location = std::get_if<SLAConfigLocation>(&location)) {
+        if (*sla_location == SLAConfigLocation::Material) {
+            return 1;
+        }
     }
 
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)
-        && printer_technology.value() != Domain::PrinterTechnology::FFF)
-    {
-        config_pack = Domain::ConfigPackFDM{};
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)
-               && printer_technology.value() != Domain::PrinterTechnology::SLA)
-    {
-        config_pack = Domain::ConfigPackSLA{};
-    }
+    return 0;
+}
 
-    if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-        Domain::ConfigPackFDM& config_pack_fdm = std::get<Domain::ConfigPackFDM>(config_pack);
-        for (const Domain::ConfigItem& config_item_override : init_params.config_overrides) {
-            if (!std::holds_alternative<Domain::FDMConfigLocation>(
-                    config_item_override.def().location
-                ))
-            {
+static bool apply_config_overrides(CLIRuntime& runtime, const InitParams& init_params)
+{
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+    PresetInteractor& preset_interactor   = project_interactor.preset_interactor();
+    ConfigContainer& config_container     = project_interactor.selected_config_container();
+
+    const PrinterTechnology selected_technology = config_container.selected_preset().technology();
+
+    for (const ConfigItem& config_item_override : init_params.config_overrides) {
+        const ConfigLocation& location = config_item_override.def().location;
+        const std::string& option_name = config_item_override.def().name;
+
+        // Tool/Filament overrides are applied to every slot.
+        size_t slot_count = 1;
+
+        if (selected_technology == PrinterTechnology::FFF) {
+            if (!std::holds_alternative<FDMConfigLocation>(location)) {
                 boost::nowide::cerr
                     << "Error: PrinterTechnology::FFF doesn't contains configuration key: "
-                        + config_item_override.def().name
+                        + option_name
                     << std::endl;
                 continue;
             }
 
-            const Domain::FDMConfigLocation& location =
-                std::get<Domain::FDMConfigLocation>(config_item_override.def().location);
-            switch (location) {
-            case Domain::FDMConfigLocation::Printer:
-                config_pack_fdm.printer.items.opt(config_item_override.def().name)
+            const FDMConfigLocation& fdm_location = std::get<FDMConfigLocation>(location);
+            if (fdm_location == FDMConfigLocation::Project) {
+                config_container.project_settings()
+                    .items.opt(option_name)
                     .set(config_item_override.value());
-                break;
-            case Domain::FDMConfigLocation::Print:
-                config_pack_fdm.print.items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            case Domain::FDMConfigLocation::Tool:
-                config_pack_fdm.tool.front()
-                    .items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            case Domain::FDMConfigLocation::Filament:
-                config_pack_fdm.filament.front()
-                    .items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            default:
-                PANIC("Unsupported location {}", location);
+                continue;
             }
-        }
-    } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-        Domain::ConfigPackSLA& config_pack_sla = std::get<Domain::ConfigPackSLA>(config_pack);
-        for (const Domain::ConfigItem& config_item_override : init_params.config_overrides) {
-            if (!std::holds_alternative<Domain::SLAConfigLocation>(
-                    config_item_override.def().location
-                ))
+
+            if (fdm_location != FDMConfigLocation::Printer
+                && fdm_location != FDMConfigLocation::Print
+                && fdm_location != FDMConfigLocation::Tool
+                && fdm_location != FDMConfigLocation::Filament)
             {
                 boost::nowide::cerr
-                    << "Error: PrinterTechnology::SLA doesn't contains configuration key: "
-                        + config_item_override.def().name
+                    << "Error: Unsupported location of configuration key: " + option_name
                     << std::endl;
                 continue;
             }
 
-            const Domain::SLAConfigLocation& location =
-                std::get<Domain::SLAConfigLocation>(config_item_override.def().location);
-            switch (location) {
-            case Domain::SLAConfigLocation::Printer:
-                config_pack_sla.sla_printer_settings.items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            case Domain::SLAConfigLocation::Print:
-                config_pack_sla.sla_print_settings.items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            case Domain::SLAConfigLocation::Material:
-                config_pack_sla.sla_material_settings.items.opt(config_item_override.def().name)
-                    .set(config_item_override.value());
-                break;
-            default:
-                PANIC("Unsupported location {}", location);
+            const HwPrinterConfig& hw_config = config_container.selected_preset().hw_config;
+            if (fdm_location == FDMConfigLocation::Tool) {
+                slot_count = hw_config.tool_count;
+            } else if (fdm_location == FDMConfigLocation::Filament) {
+                slot_count = hw_config.material_slot_count();
+            }
+        } else {
+            if (!std::holds_alternative<SLAConfigLocation>(location)) {
+                boost::nowide::cerr
+                    << "Error: PrinterTechnology::SLA doesn't contains configuration key: "
+                        + option_name
+                    << std::endl;
+                continue;
+            }
+
+            const SLAConfigLocation& sla_location = std::get<SLAConfigLocation>(location);
+            if (sla_location != SLAConfigLocation::Printer
+                && sla_location != SLAConfigLocation::Print
+                && sla_location != SLAConfigLocation::Material)
+            {
+                boost::nowide::cerr
+                    << "Error: Unsupported location of configuration key: " + option_name
+                    << std::endl;
+                continue;
             }
         }
-    } else {
-        PANIC("Unsupported ConfigPack {}", config_pack);
-    }
 
-    // TODO: Validate print configuration.
+        for (size_t slot_idx = 0; slot_idx < slot_count; ++slot_idx) {
+            preset_interactor
+                .set_item_value(config_item_override, config_item_override.value(), slot_idx);
+        }
+
+        const HwPrinterConfig& hw_config = config_container.selected_preset().hw_config;
+        for (const ConfigLocation& override_location : config_item_override.def().overrides_in) {
+            const size_t override_slot_count =
+                overriding_config_slot_count(override_location, hw_config);
+            for (size_t slot_idx = 0; slot_idx < override_slot_count; ++slot_idx) {
+                apply_overriding_config_value(
+                    preset_interactor,
+                    config_item_override,
+                    override_location,
+                    slot_idx
+                );
+            }
+        }
+    }
 
     return true;
 }
 
 bool load_print_data(
-    std::vector<Domain::Project>& projects,
-    Domain::ConfigPack& config_pack,
-    std::optional<Domain::PrinterTechnology>& printer_technology,
-    InitParams& init_params
+    CLIRuntime& runtime,
+    std::vector<SelectionId>& project_ids,
+    const InitParams& init_params
 )
 {
-    if (!load_print_config(config_pack, printer_technology, init_params)) {
+    const bool profiles_requested         = has_full_config_from_profiles(init_params);
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    std::optional<PresetAndConfig> base_preset_config;
+    if (!profiles_requested && init_params.input.config_file.has_value()) {
+        const std::string& config_file_path = init_params.input.config_file.value();
+        if (!boost::filesystem::exists(config_file_path)) {
+            if (!init_params.misc.ignore_nonexistent_config.value_or(false)) {
+                boost::nowide::cerr << "No such file: " << config_file_path << std::endl;
+                return false;
+            }
+        } else {
+            base_preset_config = load_config_file(config_file_path);
+            if (!base_preset_config.has_value()) {
+                return false;
+            }
+        }
+    }
+
+    if (!process_input_files(runtime, project_ids, init_params, base_preset_config)) {
         return false;
     }
 
-    if (!process_input_files(projects, config_pack, printer_technology, init_params)) {
-        return false;
+    std::vector<SelectionId> projects_to_configure = project_ids;
+    if (projects_to_configure.empty()) {
+        if (base_preset_config.has_value()) {
+            const std::optional<SelectionId> config_holder_project_id =
+                add_project_with_selected_preset(runtime, base_preset_config.value());
+
+            if (!config_holder_project_id.has_value()) {
+                return false;
+            }
+
+            projects_to_configure.push_back(config_holder_project_id.value());
+        } else {
+            projects_to_configure.push_back(project_interactor.new_project());
+        }
     }
 
-    if (!finalize_print_config(config_pack, printer_technology, init_params)) {
-        return false;
+    for (const SelectionId project_id : projects_to_configure) {
+        project_interactor.select_project(project_id);
+
+        if (profiles_requested) {
+            if (!apply_profile_presets(runtime, init_params)) {
+                return false;
+            }
+        }
+
+        if (!apply_config_overrides(runtime, init_params)) {
+            return false;
+        }
     }
 
     return true;
 }
 
-bool is_needed_post_processing(const Domain::ConfigPack& config_pack)
+bool
+is_needed_post_processing(const CLIRuntime& runtime, const std::vector<SelectionId>& project_ids)
 {
-    if (!std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-        return false;
-    }
+    const ProjectInteractor& project_interactor = runtime.project_interactor();
 
-    const Domain::ConfigPackFDM& config_pack_fdm = std::get<Domain::ConfigPackFDM>(config_pack);
-    if (const Domain::ConstFindResult result = config_pack_fdm.print.find("post_process");
-        result.item != nullptr)
-    {
-        const std::vector<std::string>& post_process = result.item->get<std::vector<std::string>>();
-        if (!post_process.empty()) {
-            boost::nowide::cout
-                << "\nA post-processing script has been detected in the config data:\n\n";
-            for (const std::string& s : post_process) {
-                boost::nowide::cout << "> " << s << "\n";
+    std::vector<std::string> post_process_scripts;
+    for (const SelectionId project_id : project_ids) {
+        const Project& project = project_interactor.project(project_id);
+        for (const std::unique_ptr<ConfigContainer>& config_container : project.config_containers())
+        {
+            const ConfigPack config_pack = config_container->build_print_config();
+            if (!std::holds_alternative<ConfigPackFDM>(config_pack)) {
+                continue;
             }
 
-            boost::nowide::cout << "\nContinue(Y/N) ? ";
+            const ConstFindResult result =
+                std::get<ConfigPackFDM>(config_pack).print.find("post_process");
+            if (result.item == nullptr) {
+                continue;
+            }
 
-            char in = 0;
-            boost::nowide::cin >> in;
-            if (in != 'Y' && in != 'y') {
-                return true;
+            for (const std::string& script : result.item->get<std::vector<std::string>>()) {
+                if (std::find(post_process_scripts.begin(), post_process_scripts.end(), script)
+                    == post_process_scripts.end())
+                {
+                    post_process_scripts.push_back(script);
+                }
             }
         }
     }
 
-    return false;
+    if (post_process_scripts.empty()) {
+        return false;
+    }
+
+    boost::nowide::cout << "\nA post-processing script has been detected in the config data:\n\n";
+    for (const std::string& post_process_script : post_process_scripts) {
+        boost::nowide::cout << "> " << post_process_script << "\n";
+    }
+
+    boost::nowide::cout << "\nContinue(Y/N) ? ";
+
+    char user_answer = 0;
+    boost::nowide::cin >> user_answer;
+
+    return user_answer != 'Y' && user_answer != 'y';
 }
 
 } // namespace Slic3r::App::CLI

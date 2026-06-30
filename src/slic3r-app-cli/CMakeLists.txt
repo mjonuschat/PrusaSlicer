@@ -1,6 +1,10 @@
 set(SLIC3R_APP_CLI_FILES
         src/Slic3r/App/CLI/CLIApp.cpp
         include/Slic3r/App/CLI/CLIApp.hpp
+        src/Slic3r/App/CLI/CLIRuntime.cpp
+        include/Slic3r/App/CLI/CLIRuntime.hpp
+        src/Slic3r/App/CLI/CLIUtils.cpp
+        include/Slic3r/App/CLI/CLIUtils.hpp
         src/Slic3r/App/CLI/ProcessTransform.cpp
         include/Slic3r/App/CLI/ProcessTransform.hpp
         src/Slic3r/App/CLI/ProcessActions.cpp
@@ -9,6 +13,8 @@ set(SLIC3R_APP_CLI_FILES
         include/Slic3r/App/CLI/LoadPrintData.hpp
         src/Slic3r/App/CLI/ProfilesSharingUtils.cpp
         include/Slic3r/App/CLI/ProfilesSharingUtils.hpp
+        src/Slic3r/App/CLI/ProfilePresetSelection.cpp
+        include/Slic3r/App/CLI/ProfilePresetSelection.hpp
 )
 
 

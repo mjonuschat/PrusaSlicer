@@ -120,10 +120,10 @@ void add_input_options(CLI::App& app, App::InitParams& params)
 
     app.add_option(
            "--load",
-           params.input.config_files,
-           "Load configuration from the specified file. It can be used more than once to load options from multiple files."
+           params.input.config_file,
+           "Load configuration from the specified single JSON file in the format produced by --save (identical to the configuration stored inside 3MF files)."
     )
-        ->option_text("ABCD");
+        ->option_text("FILE");
 
     app.add_option(
            "--material-profile",
@@ -437,8 +437,7 @@ void add_action_options(CLI::App& app, App::InitParams& params)
     app.add_flag(
         "--query-printer-models",
         params.action.query_printer_models,
-        "Get list of installed printer models into JSON. Note: To print printer models for required technology "
-        "use 'printer-technology' option with value FFF or SLA. By default printer_technology is FFF. "
+        "Get list of installed printer models (both FFF and SLA) into JSON. "
         "To print out JSON into file use 'output' option. To specify configuration folder use 'datadir' option."
     );
 
@@ -458,10 +457,10 @@ void add_action_options(CLI::App& app, App::InitParams& params)
     app.add_flag(
         "--slice,-s",
         params.action.slice,
-        "Slice the model as FFF or SLA based on the printer_technology configuration value and export the result."
+        "Slice the model and export the result. The printer technology (FFF or SLA) is determined by the selected printer profile."
     );
 
-   // Allow using at most one action simultaneously from this group.
+    // Allow using at most one action simultaneously from this group.
     auto& preset_updater_action_group = *app.add_option_group("Preset Updater");
     preset_updater_action_group.required(false);
     preset_updater_action_group.require_option(0, 1);
@@ -478,30 +477,32 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         "Preset Updater performs check of reconfigurations and prints result in json format. This includes downloading possible update files from servers for all currently selected sources."
     );
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-add-local",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_add_local = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Adds local source to Preset Updater sources. The source is specified by a path to a zip file."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-add-local",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_add_local = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Adds local source to Preset Updater sources. The source is specified by a path to a zip file."
+        )
         ->option_text("ABCD");
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-remove-local",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_remove_local = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Removes local source from Preset Updater by UUID."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-remove-local",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_remove_local = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Removes local source from Preset Updater by UUID."
+        )
         ->option_text("ABCD");
 
     preset_updater_action_group.add_flag(
@@ -510,17 +511,18 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         "Lists all sources of Preset Updater in json format."
     );
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-select-source",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_switch_repo = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Selects or unselects Preset Updater Source by given UUID. If source is selected, automatically unselects other sources with same id."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-select-source",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_switch_repo = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Selects or unselects Preset Updater Source by given UUID. If source is selected, automatically unselects other sources with same id."
+        )
         ->option_text("ABCD");
 
     preset_updater_action_group.add_flag(

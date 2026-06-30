@@ -1,32 +1,33 @@
 #pragma once
 
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 #include <vector>
-#include <variant>
-
-namespace Slic3r::Domain {
-struct ConfigPackFDM;
-struct ConfigPackSLA;
-class Project;
-
-using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;
-} // namespace Slic3r::Domain
 
 namespace Slic3r::App {
 class InitParams;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::CLI {
+class CLIRuntime;
 
-Domain::Points get_bed_shape(const Domain::ConfigPack& config_pack);
+/**
+ * @brief Moves all instances of the selected project so that the center of their
+ * common bounding box lies at @p center_point (XY only, Z is kept).
+ */
+void center_selected_project_around_point(CLIRuntime& runtime, const Domain::Vec2d& center_point);
 
-double min_object_distance(const Domain::ConfigPack& config_pack);
+/**
+ * @brief Arranges all instances of the given project on its beds through the
+ * ArrangeInteractor and waits for the asynchronous arrangement to finish.
+ */
+void arrange_and_wait(CLIRuntime& runtime, Domain::SelectionId project_id);
 
 bool process_transform(
+    CLIRuntime& runtime,
     const InitParams& init_params,
-    const Domain::ConfigPack& config_pack,
-    std::vector<Domain::Project>& projects
+    std::vector<Domain::SelectionId>& project_ids
 );
 
 } // namespace Slic3r::App::CLI

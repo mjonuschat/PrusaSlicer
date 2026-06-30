@@ -78,7 +78,7 @@ struct ActionParams
 struct InputParams
 {
     std::vector<std::string> input_files; // Input files or URLs
-    std::vector<std::string> config_files;
+    std::optional<std::string> config_file;
     std::vector<std::string> material_profile_presets;
     std::vector<std::string> tool_profile_presets;
 
