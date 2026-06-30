@@ -11,12 +11,12 @@
 namespace Slic3r::App::Yoga {
 class Icon;
 class LayoutButton;
-}
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
-class PhysicalPrinterSettingsButton
-    : public Yoga::PrinterSettingsButton,
+class PhysicalPrinterSettingsButton :
+    public Yoga::PrinterSettingsButton,
     public Biz::DataObserver<Biz::PhysicalPrinter::PhysicalPrinterConfig>
 {
 public:
@@ -35,6 +35,7 @@ public:
     void set_icon(Render::Icon icon);
 
     void set_visible_bin(bool is_visible);
+    void set_visible_expand_icon(bool is_visible);
     std::function<void()>& on_bin();
 
     void update();
@@ -53,10 +54,11 @@ private:
     FnIndexClicked m_on_cog_clicked;
     FnIndexClicked m_on_bin_clicked;
 
-    Yoga::LayoutButton*  m_bin_btn{nullptr};
-    bool                 m_is_visible_bin{ false };
+    Yoga::LayoutButton* m_bin_btn{nullptr};
+    Yoga::Icon* m_expand_icon{nullptr};
+    bool m_is_visible_bin{false};
 
-    Yoga::Icon*          m_attention_icon{nullptr};
+    Yoga::Icon* m_attention_icon{nullptr};
 };
 
 } // namespace Slic3r::App

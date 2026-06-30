@@ -71,13 +71,13 @@ void SidebarActionButtons::init_physical_printer_ui()
     { m_render_module_navigator->set_opened_dialog(m_physical_printer_settings_dialog); };
 
     auto& interactor = m_project_interactor->physical_printer_interactor();
-    
+
     m_buttons_layout = emplace_back<Yoga::Item>();
     m_buttons_layout->set_orientation(Yoga::Orientation::Vertical);
     m_buttons_layout->set_gap(10.0f);
     m_buttons_layout->set_flex_grow(1);
 
-    m_buttons_layout->emplace_back<Yoga::Text>(Biz::_u8L("Destination"));
+    m_buttons_layout->emplace_back<Yoga::Text>(Biz::_u8L("Select Destination"));
 
     m_physical_printer_button = m_buttons_layout->emplace_back<PhysicalPrinterSettingsButton>(
         0,
@@ -86,13 +86,13 @@ void SidebarActionButtons::init_physical_printer_ui()
         [](size_t) {},
         [](size_t) {}
     );
-    
+
     m_physical_printer_button->set_visible(true);
     m_physical_printer_button->set_self_align(YGAlignStretch);
     m_physical_printer_button->set_flex_grow(1.f);
 
     m_physical_printer_settings_dialog->attach_to_item(this, Yoga::Position::Left);
-    
+
     m_physical_printer_settings_dialog->callbacks().opened = [this]() {
         m_physical_printer_button->set_checked(true);
     };
@@ -106,7 +106,8 @@ void SidebarActionButtons::init_physical_printer_ui()
             m_physical_printer_settings_dialog->opened() ? nullptr : m_physical_printer_settings_dialog
         );
     };
-    
+    m_physical_printer_button->set_visible_expand_icon(true);
+
     m_physical_printer_button->on_cog() = [this]() {
         if (m_physical_printer_advanced_settings_dialog->opened()) {
             m_render_module_navigator->set_opened_dialog(nullptr);
@@ -182,7 +183,7 @@ void SidebarActionButtons::on_printer_data_changed()
 }
 
 void SidebarActionButtons::on_selected_physical_printer_changed()
-{    
+{
     if (!m_project_interactor) {
         return;
     }

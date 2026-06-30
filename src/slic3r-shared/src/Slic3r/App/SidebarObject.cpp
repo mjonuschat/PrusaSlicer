@@ -59,7 +59,8 @@ public:
         m_project_interactor{project_interactor}
     {
         m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(
-            this);
+            this
+        );
         m_project_interactor.scene_interactor()
             .add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
         m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
@@ -150,7 +151,8 @@ public:
         reload(project_id);
     }
 
-    void reload(std::size_t project_id) {
+    void reload(std::size_t project_id)
+    {
         const Domain::Project& project{m_project_interactor.workbench().project(project_id)};
         const Biz::Scene::ObjectSelection& selection{
             m_project_interactor.scene_interactor().object_selection(project_id)
@@ -210,10 +212,21 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
 
     auto title{emplace_back<Item>()};
     title->set_flex_shrink(0);
-    title->set_padding({1.25_rem, gap, 0, 0});
+    title->set_padding({1.25_rem, gap});
     m_text_object_name = title->emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);
     m_text_object_name->set_font_size(15_fpx);
+    m_text_object_name->set_flex_grow(1);
+
+    LayoutButton* close_button =
+        title->emplace_back<LayoutButton>(std::string{}, Render::Icon::PrintIdle);
+    close_button->set_background_color(Platform::Color::ButtonTransparent);
+    close_button->set_width(20);
+    close_button->set_height(20);
+    close_button->callbacks().action = [this]
+    { m_project_interactor.scene_interactor().clear_object_selection(); };
+
+    add_separator(this, {});
 
     m_scroll_area = emplace_back<ScrollArea>("ScrollPanels");
     m_scroll_area->set_orientation(Orientation::Vertical);

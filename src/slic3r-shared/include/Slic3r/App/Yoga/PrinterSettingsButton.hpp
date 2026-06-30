@@ -32,6 +32,7 @@ protected:
     virtual void update_btns_visibility();
 
     LayoutButton* add_button(Render::Icon icon, const std::string& tooltip);
+    Icon* add_extra_icon(Render::Icon icon);
 
 protected:
     Icon* m_icon{nullptr};

@@ -135,4 +135,18 @@ LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::st
     return button;
 };
 
+Icon* PrinterSettingsButton::add_extra_icon(Render::Icon icon)
+{
+    Icon* extra_icon = m_btn_wrapper->emplace_back<Icon>(icon);
+    extra_icon->set_self_align(YGAlignCenter);
+    extra_icon->set_min_width(24.f);
+    extra_icon->set_min_height(24.f);
+    extra_icon->set_flex_shrink(0);
+    // Extra icon is hidden by default.
+    // It can be shown in the settings dialog under certain conditions.
+    extra_icon->set_visible(false);
+
+    return extra_icon;
+}
+
 } // namespace Slic3r::App::Yoga

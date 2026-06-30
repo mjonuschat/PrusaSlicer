@@ -48,6 +48,8 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     set_visible_bin(true);
     on_bin() = [this]() { m_on_bin_clicked(m_index); };
 
+    m_expand_icon = add_extra_icon(Render::Icon::CaretDown);
+
     m_icon->set_width(32);
     m_icon->set_margin(8);
 
@@ -121,6 +123,13 @@ void PhysicalPrinterSettingsButton::set_visible_bin(bool is_visible)
     if (m_is_visible_bin != is_visible) {
         m_is_visible_bin = is_visible;
         update_btns_visibility();
+    }
+}
+
+void PhysicalPrinterSettingsButton::set_visible_expand_icon(bool is_visible)
+{
+    if (m_expand_icon) {
+        m_expand_icon->set_visible(is_visible);
     }
 }
 

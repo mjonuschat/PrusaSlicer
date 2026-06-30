@@ -84,40 +84,6 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(5);
 
-    Item* search_row = content()->emplace_back<Item>();
-    search_row->set_gap(5);
-    Icon* icon = search_row->emplace_back<Icon>(Render::Icon::Search);
-    icon->set_width(16);
-    icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-    m_input_text_search = search_row->emplace_back<InputText>();
-    m_input_text_search->set_hint(_u8L("Search..."));
-    m_input_text_search->set_flex_grow(1);
-
-    m_only_favorites_button = search_row->emplace_back<LayoutButton>(
-        std::string(),
-        Render::Icon::Star,
-        Biz::_u8L("Only favorites")
-    );
-    m_only_favorites_button->set_width(24);
-    m_only_favorites_button->set_height(24);
-    m_only_favorites_button->set_checkable(true);
-    m_only_favorites_button->set_self_align(YGAlignCenter);
-    m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
-    {
-        m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
-        m_only_favorites_button->set_tooltip(
-            checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
-        );
-        m_material_filter->invalidate();
-        AppServices::instance().app_config_interactor().set_item_value(
-            "materials_only_favorites",
-            Domain::ConfigValue{checked}
-        );
-    };
-    on_app_config_changed("materials_only_favorites");
-
-    content()->emplace_back<Separator>(Orientation::Horizontal);
-
     Item* filters_wrap = content()->emplace_back<Item>();
     filters_wrap->set_orientation(Orientation::Horizontal);
     filters_wrap->set_gap(5.f);
@@ -175,7 +141,42 @@ MaterialSelectionDialog::MaterialSelectionDialog(
         }
     );
 
+    content()->emplace_back<Separator>(Orientation::Horizontal);
+
+    Item* search_row = content()->emplace_back<Item>();
+    search_row->set_gap(5);
+    Icon* icon = search_row->emplace_back<Icon>(Render::Icon::Search);
+    icon->set_width(16);
+    icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+    m_input_text_search = search_row->emplace_back<InputText>();
+    m_input_text_search->set_hint(_u8L("Search..."));
+    m_input_text_search->set_flex_grow(1);
+
+    m_only_favorites_button = search_row->emplace_back<LayoutButton>(
+        std::string(),
+        Render::Icon::Star,
+        Biz::_u8L("Only favorites")
+    );
+    m_only_favorites_button->set_width(24);
+    m_only_favorites_button->set_height(24);
+    m_only_favorites_button->set_checkable(true);
+    m_only_favorites_button->set_self_align(YGAlignCenter);
+    m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
+        {
+            m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+            m_only_favorites_button->set_tooltip(
+                checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
+            );
+            m_material_filter->invalidate();
+            AppServices::instance().app_config_interactor().set_item_value(
+                "materials_only_favorites",
+                Domain::ConfigValue{ checked }
+            );
+        };
+    on_app_config_changed("materials_only_favorites");
+
     m_input_text_search->callbacks().text_changed = [this]() { m_material_filter->invalidate(); };
+
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
     Item* scroll_area = content()->emplace_back<Item>();
