@@ -1027,6 +1027,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/FeatureStructurizer.hpp
         include/Slic3r/Biz/Format/3mf.hpp
         include/Slic3r/Biz/Format/Metadata.hpp
+        include/Slic3r/Biz/Format/ProjectFileConstants.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
         src/Slic3r/Biz/Format/3mf.cpp
 #src / Slic3r / Biz / Format / 3mf / BuildTicket.cpp

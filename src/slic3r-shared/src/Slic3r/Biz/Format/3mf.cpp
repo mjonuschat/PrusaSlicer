@@ -22,6 +22,7 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
+#include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/MiniZErrorTranslation.hpp"
@@ -792,8 +793,7 @@ void store_3mf(const std::string& filepath, const Domain::Project& project, cons
         // thumbnail_path
         (param.thumbnail != nullptr && ImageUtils::is_valid(*param.thumbnail)) ? THUMBNAIL_FILE : std::string(),
         // project_file_path
-        // TODO: Fix to use same constant
-        "Metadata/PrusaSlicer3_project.json" // PRUSA_PROJECT_FILEPATH
+        std::string{Biz::Format::ProjectFileConstants::PRUSA_PROJECT_FILEPATH}
     };
     store(archive, get_relationships(relations), RELATIONSHIPS_FILE.c_str());
 
