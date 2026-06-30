@@ -66,21 +66,38 @@ public:
 
         on_color_selected = [this](std::size_t index)
         {
+            const Biz::Scene::ObjectSelection& selection{
+                m_project_interactor.scene_interactor().object_selection()};
+
             Domain::Project& project{m_project_interactor.selected_project()};
             for (const Domain::ElementRef& element :
-                 m_project_interactor.scene_interactor().object_selection().elements)
+                 selection.elements)
             {
                 const Domain::ModelObject* model_object{
-                    project.find_object_by_id(element.object_id)
-                };
+                    project.find_object_by_id(element.object_id)};
                 if (!model_object) {
                     continue;
                 }
-                const Domain::ConfigItem& item{model_object->object_settings.items.opt("extruder")};
-                m_project_interactor.preset_interactor().set_item_value(
-                    item,
-                    Domain::ConfigValue{static_cast<int>(index)}
-                );
+
+                if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+                    const Domain::ConfigItem& item{
+                        model_object->object_settings.items.opt("extruder")};
+                    m_project_interactor.preset_interactor().set_item_value(
+                        item,
+                        Domain::ConfigValue{static_cast<int>(index)});
+                } else if (selection.mode == Biz::Scene::SelectionMode::Volume) {
+                    const Domain::ModelVolume* model_volume{
+                        project.find_volume_by_id(element.object_id, element.volume_id)};
+                    if (!model_volume) {
+                        continue;
+                    }
+                    const Domain::ConfigItem& item{
+                        *model_volume->volume_settings.overrides.find("extruder")};
+                    m_project_interactor.preset_interactor().set_item_value(
+                        item,
+                        Domain::ConfigValue{static_cast<int>(index)});
+                    m_project_interactor.preset_interactor().set_item_override(item, index != 0);
+                }
             }
         };
     }
@@ -104,7 +121,7 @@ public:
             return;
         }
         const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
-        if (location != Domain::FDMConfigLocation::Object) {
+        if (location != Domain::FDMConfigLocation::Object && location != Domain::FDMConfigLocation::Volume) {
             return;
         }
         if (item.name() != "extruder") {
@@ -144,7 +161,18 @@ public:
             if (!object) {
                 continue;
             }
-            extruder_ids.insert(object->object_settings.items.opt("extruder").get<int>());
+            if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+                extruder_ids.insert(object->object_settings.items.opt("extruder").get<int>());
+            } else if (selection.mode == Biz::Scene::SelectionMode::Volume) {
+                const Domain::ModelVolume* model_volume{
+                    project.find_volume_by_id(element.object_id, element.volume_id)};
+                if (!model_volume) {
+                    continue;
+                }
+                auto extruder{model_volume->volume_settings.overrides.get("extruder")};
+                const int extruder_id{extruder ? extruder->get<int>() : 0};
+                extruder_ids.insert(extruder_id);
+            }
         }
 
         if (extruder_ids.size() == 1) {
@@ -472,9 +500,14 @@ void SidebarObject::update_enable_modifiers()
     m_wipe_tower_settings->set_visible(wipe_tower_selected && m_selection.elements.size() == 1);
     m_add_settings_button->set_visible(!wipe_tower_selected);
     m_add_settings_button->set_enabled(enable);
-    m_extruder_picker->set_visible(
-        enable && m_selection.mode == Biz::Scene::SelectionMode::Instance
-    );
+
+    const bool show_extruder_picker{enable
+                                    && m_project_interactor.selected_config_container()
+                                            .selected_preset()
+                                            .hw_config.material_slot_count()
+                                        > 1};
+
+    m_extruder_picker->set_visible(show_extruder_picker);
     m_override_group_list_view->set_visible(enable);
     m_no_overrides_label->set_visible(!wipe_tower_selected && !enable);
     m_scale_section->set_visible(!wipe_tower_selected);
