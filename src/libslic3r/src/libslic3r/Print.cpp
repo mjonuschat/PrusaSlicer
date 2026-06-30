@@ -340,7 +340,10 @@ Biz::Slicing::ApplyStatus::Status Print::update(
             result = ApplyStatus::Empty{};
             return;
         }
-        if (std::holds_alternative<ApplyStatus::Changed>(result)) {
+        if (
+            std::holds_alternative<ApplyStatus::Changed>(result)
+            || (m_invalid && std::holds_alternative<ApplyStatus::Unchanged>(result))
+        ) {
             Biz::Slicing::ValidationResult validation_result{validate()};
             if (!validation_result.errors.empty()) {
                 result = ApplyStatus::InvalidData{std::move(validation_result.errors)};
