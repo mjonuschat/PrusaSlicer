@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Plater/GizmoWindow.hpp"
 #include "Slic3r/Biz/Arrange/Settings.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App::Yoga {
 class SliderWithInput;
@@ -24,14 +25,17 @@ enum class ArrangeTaskStatus
 class ArrangeDialog : public GizmoWindow
 {
 public:
-    using OnArrange      = std::function<void()>;
+    enum ArrangeMode {
+        PrinterGroup,
+        SelectedBeds
+    };
+
+    using OnArrange      = std::function<void(ArrangeMode)>;
     using OnCancel       = std::function<void()>;
-    using OnModeSelected = std::function<void(Biz::Arrange::Mode)>;
 
     ArrangeDialog(
         OnArrange on_arrange,
         OnCancel on_cancel,
-        OnModeSelected on_mode_selected,
         const Biz::Arrange::Settings& settings
     );
 
@@ -42,10 +46,6 @@ public:
     void set_auxiliary_travel_anchor(const std::optional<Domain::Vec2d>& auxiliary_travel_anchor);
 
     void update_status(const ArrangeTaskStatus status);
-
-
-    Biz::Arrange::Mode get_arrange_mode() const;
-    void set_arrange_mode(Biz::Arrange::Mode mode);
 
     Biz::Arrange::Settings get_settings() const;
 
@@ -63,6 +63,9 @@ private:
     Yoga::LayoutButton* m_arrange_button{nullptr};
     std::optional<Domain::BedSegments> m_bed_segments;
     std::optional<Domain::Vec2d> m_auxiliary_travel_anchor;
+
+    std::string m_arrange_all_label{Biz::_u8L("Arrange all")};
+    std::string m_arrange_beds_label{Biz::_u8L("Arrange beds")};
 };
 
 } // namespace Slic3r::App::Plater

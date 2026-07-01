@@ -516,6 +516,8 @@ public:
         return *m_undo_provider;
     };
 
+    BedInstances selected_bed_instances() const;
+
 private:
     void layout_after_project_load(Domain::Project& added_project);
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);

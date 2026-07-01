@@ -10,7 +10,6 @@
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
@@ -22,7 +21,6 @@ namespace Slic3r::App::Plater {
 using Biz::Algorithms::Scaling::scaled;
 using Biz::Algorithms::Scaling::unscaled;
 using Biz::Arrange::GeometryHandling;
-using Biz::Arrange::Mode;
 using Biz::Arrange::PivotPoint;
 using Biz::Arrange::Settings;
 using Domain::BedRefs;
@@ -36,7 +34,6 @@ using Yoga::ItemPtr;
 using Yoga::LayoutButton;
 using Yoga::Orientation;
 using Yoga::SegmentedControl;
-using Yoga::Slider;
 using Yoga::SliderWithInput;
 using Yoga::Text;
 using Yoga::ToggleButton;
@@ -179,7 +176,6 @@ static ItemPtr help()
 ArrangeDialog::ArrangeDialog(
     OnArrange on_arrange,
     OnCancel on_cancel,
-    OnModeSelected on_mode_selected,
     const Settings& settings
 ) :
     GizmoWindow(),
@@ -195,13 +191,13 @@ ArrangeDialog::ArrangeDialog(
     auto segments = {
         Segment{
             .icon               = Icon::MultipleSquares,
-            .tooltip            = Biz::_u8L("All beds"),
-            .initially_selected = settings.mode == Mode::Global,
+            .tooltip            = Biz::_u8L("Printer group"),
+            .initially_selected = true,
         },
         Segment{
             .icon               = Icon::SingleSquare,
             .tooltip            = Biz::_u8L("Selected beds"),
-            .initially_selected = settings.mode == Mode::Local,
+            .initially_selected = false,
         },
     };
 
@@ -221,8 +217,13 @@ ArrangeDialog::ArrangeDialog(
 
     m_mode = mode_row->emplace_back<SegmentedControl>(
         segments,
-        [on_mode_selected](std::size_t index)
-        { on_mode_selected(static_cast<Biz::Arrange::Mode>(index)); }
+        [this](std::size_t index) {
+            if (index == 0) {
+                m_arrange_button->set_label(m_arrange_all_label);
+            } else {
+                m_arrange_button->set_label(m_arrange_beds_label);
+            }
+        }
     );
 
     m_offset_slider = append_spacing_slider(mode_spacing_section,
@@ -281,11 +282,13 @@ ArrangeDialog::ArrangeDialog(
     help_section->set_flex_shrink(0);
     help_section->append(help());
 
-    m_arrange_button = bottom_bar()->emplace_back<LayoutButton>("Arrange");
+    m_arrange_button = bottom_bar()->emplace_back<LayoutButton>(m_arrange_all_label);
     bottom_bar()->set_flex_shrink(0);
     m_arrange_button->set_padding(Yoga::Paddings{5});
     m_arrange_button->set_height(40);
-    m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
+    m_arrange_button->callbacks().action = [this]() {
+        m_on_arrange(static_cast<ArrangeMode>(m_mode->selected_index()));
+    };
 
     m_arrange_button->set_flex_grow(1);
 
@@ -325,27 +328,21 @@ void ArrangeDialog::update_status(const ArrangeTaskStatus status)
         m_arrange_button->set_label(_u8L("Cancel"));
         m_arrange_button->callbacks().action = [this]() { m_on_cancel(); };
     } else if (status == ArrangeTaskStatus::Idle) {
-        m_arrange_button->set_label(_u8L("Arrange"));
-        m_arrange_button->callbacks().action = [this]() { m_on_arrange(); };
+        const auto mode{static_cast<ArrangeMode>(m_mode->selected_index())};
+        if (mode == ArrangeMode::PrinterGroup) {
+            m_arrange_button->set_label(m_arrange_all_label);
+        } else {
+            m_arrange_button->set_label(m_arrange_beds_label);
+        }
+        m_arrange_button->callbacks().action = [this, mode]() { m_on_arrange(mode); };
     } else {
         PANIC("Unknown arrange task status!");
     }
 }
 
-Biz::Arrange::Mode ArrangeDialog::get_arrange_mode() const
-{
-    return static_cast<Biz::Arrange::Mode>(m_mode->selected_index());
-}
-
-void ArrangeDialog::set_arrange_mode(Biz::Arrange::Mode mode)
-{
-    m_mode->select_index(static_cast<int>(mode));
-}
-
 Settings ArrangeDialog::get_settings() const
 {
     Settings result;
-    result.mode = get_arrange_mode();
 
     result.scaled_offset       = scaled(m_offset_slider->value() / 2.0);
     result.unscaled_bed_offset = m_bed_offset_slider->value();

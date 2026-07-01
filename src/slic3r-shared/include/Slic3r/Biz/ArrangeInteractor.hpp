@@ -5,10 +5,8 @@
 #include "Slic3r/Biz/IArrangeEventsListener.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
-#include "Slic3r/Exception.hpp"
 
 #include <functional>
-#include <mutex>
 #include <queue>
 #include <set>
 
@@ -16,21 +14,24 @@ namespace Slic3r::Biz {
 
 struct ArrangeBed
 {
-    const Domain::BedInstance& bed_instance;
-    const double offset{};
+    const Domain::BedInstance* bed_instance;
+    double offset{};
 };
 
 using ArrangeBeds = std::vector<ArrangeBed>;
-
-struct ArrangeFatalError : public Exception
-{
-    using Exception::Exception;
-};
 
 struct Pack
 {
     Arrange::InstanceTransforms trafos;
     Domain::BoundingBox2d bounding_box;
+};
+
+struct BedToArrange {
+    Domain::BedRef ref;
+    std::size_t index{};
+    Domain::ConstModelInstanceList arrangeable;
+    Domain::ConstModelInstanceList fixed;
+    bool fixed_wipe_tower{false};
 };
 
 using Packs = std::vector<Pack>;
@@ -42,27 +43,12 @@ public:
 
     void arrange(
         const Domain::SelectionId project_id,
-        const Biz::Arrange::Settings& settings,
-        std::function<void()> on_finished
-    );
-
-    using PartialArrangeCallback = std::function<void(const Domain::ElementRefs& not_arranged)>;
-
-    /**
-     * @brief Arranges a subset of instances on a single bed while keeping all others fixed.
-     * @param project_id ID of the target project.
-     * @param arrangeable_instance_ids Instance IDs to arrange (everything else is fixed).
-     * @param target_bed Bed to arrange on.
-     * @param settings Arrangement settings.
-     * @param on_completed Optional callback invoked on the main thread after the arrangement finishes,
-     *        receiving elements that could not be arranged on the target bed.
-     */
-    void partial_arrange(
-        Domain::SelectionId project_id,
-        const std::set<size_t>& arrangeable_instance_ids,
-        const Domain::BedRef& target_bed,
-        const Biz::Arrange::Settings& settings,
-        PartialArrangeCallback on_completed = {}
+        const std::vector<BedToArrange>& beds,
+        std::optional<std::size_t> config_container_to_add_beds,
+        const Domain::ConstModelInstanceList& extra,
+        const Arrange::Settings& settings,
+        std::function<void()> on_finished,
+        const std::string& job_name = "arrange"
     );
 
     /**
@@ -83,7 +69,6 @@ public:
 
 private:
     Scene::SceneInteractor& m_scene_interactor;
-    Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     const Domain::Workbench& m_workbench;
 
     struct PendingArrange
@@ -95,59 +80,13 @@ private:
     };
 
     std::queue<PendingArrange> m_added_arrange_queue;
-    std::mutex m_added_arrange_mutex;
 
     void process_added_arrange_queue();
 
-    Domain::ConstModelInstanceList get_model_instances(
+    void apply_local_arrange_result(
         const Domain::SelectionId project_id,
-        const Scene::BedSelection& selection,
-        const bool include_unplaced
-    ) const;
-
-    enum class OverflowMode
-    {
-        AddBeds,
-        MoveNextToFirstBed
-    };
-
-    double apply_arrange_result(
-        const Scene::BedInstances& bed_instances,
-        const double scaled_offset,
-        const std::vector<Pack>& packs,
-        const double initial_offset,
-        Domain::ElementRefs* not_arranged
-    );
-
-    double apply_arrange_result(
-        const Domain::SelectionId project_id,
-        const Scene::BedSelection& selection,
-        const OverflowMode& overflow_mode,
-        const double scaled_offset,
-        const std::vector<Pack>& packs,
-        const double initial_offset,
-        Domain::ElementRefs* not_arranged = nullptr
-    );
-
-    double apply_arrange_result(
-        const Domain::SelectionId project_id,
-        const Domain::BedRef& bed_ref,
-        const double scaled_offset,
-        const std::vector<Pack>& packs,
-        const double initial_offset,
-        Domain::ElementRefs* not_arranged = nullptr
-    );
-
-    /**
-     * @brief Moves given instances to the origin of the specified bed.
-     * @param project_id Project containing the instances.
-     * @param instances Elements to move.
-     * @param bed_ref Target bed.
-     */
-    void move_instances_to_bed(
-        Domain::SelectionId project_id,
-        const Domain::ElementRefs& instances,
-        const Domain::BedRef& bed_ref
-    );
+        const std::vector<std::pair<Domain::BedRef, Pack>>& packs,
+        const Packs& unpacked_packs,
+        std::optional<std::size_t> config_container_to_add_beds);
 };
 } // namespace Slic3r::Biz

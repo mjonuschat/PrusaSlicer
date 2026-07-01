@@ -467,7 +467,7 @@ void PlaterScenePresenter::update_volume_materials()
 
     std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> instances = get_instances_on_beds(bed_instances);
 
-    BedInstances sel_bed_instances = selected_bed_instances();
+    BedInstances sel_bed_instances = m_project_interactor.scene_interactor().selected_bed_instances();
     std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> sel_instances = get_instances_on_beds(sel_bed_instances);
 
     const Domain::Project& proj = m_project_interactor.selected_project();
@@ -1001,23 +1001,6 @@ void PlaterScenePresenter::build_wipe_tower_node(
     );
 }
 
-PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances() const
-{
-    BedInstances result;
-    const Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
-    const Biz::Scene::BedSelection& selection{scene_interactor.bed_selection()};
-    const Domain::Project& project{m_workbench.project(m_project_interactor.selected_project_id())};
-    const Domain::ConfigContainer& config_container{
-        *ASSERT_VAL(project.find_config_container(selection.config_container_id()))
-    };
-    for (const auto& bed_instance : config_container.bed_instances()) {
-        if (selection.is_selected(Domain::BedRef{config_container.id().id, bed_instance->id().id})) {
-            result.push_back(*bed_instance);
-        }
-    }
-    return result;
-}
-
 void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId project_id)
 {
     Domain::BedRefs bed_refs;
@@ -1149,7 +1132,7 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
     Biz::Scene::TransformState state, const Biz::BedTrackingChanges& bed_tracking_changes)
 {
-    const BedInstances bed_instances{selected_bed_instances()};
+    const BedInstances bed_instances{m_project_interactor.scene_interactor().selected_bed_instances()};
 
     auto& scn        = scene();
     const auto& proj = m_workbench.project(project_id);

@@ -110,26 +110,9 @@ Domain::BedRef BedSelection::last_selected_bed() const
 
 bool BedSelection::is_selected(const Domain::BedRef bed_ref) const
 {
-    if (m_mode == BedSelectionMode::SingleBed) {
-        ASSERT(!m_selected_beds.empty());
-        const auto it{std::ranges::find(m_selected_beds, bed_ref)};
-        return it != m_selected_beds.end();
-    } else if (m_mode == BedSelectionMode::ConfigContainer) {
-        ASSERT(m_selected_config_container != Domain::INVALID_ID);
-        return bed_ref.config_container_id == m_selected_config_container;
-    }
-    PANIC("Unknown mode!");
-}
-
-Domain::SelectionId BedSelection::config_container_id() const
-{
-    if (m_mode == BedSelectionMode::SingleBed) {
-        ASSERT(!m_selected_beds.empty());
-        return m_selected_beds.front().config_container_id;
-    } else if (m_mode == BedSelectionMode::ConfigContainer) {
-        return m_selected_config_container;
-    }
-    PANIC("Unknown mode!");
+    ASSERT(!m_selected_beds.empty());
+    const auto it{std::ranges::find(m_selected_beds, bed_ref)};
+    return it != m_selected_beds.end();
 }
 
 bool BedSelection::empty() const
@@ -141,38 +124,19 @@ bool BedSelection::select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSe
 {
     m_camera_action_on_selection = camera_action;
 
-    if (m_mode == BedSelectionMode::SingleBed) {
-        if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref &&
-            camera_action != CameraActionOnBedSelection::CenterOnBed) {
-            return false;
-        }
-        m_selected_beds     = {bed_ref};
-        m_last_selected_bed = bed_ref;
-        on_change(*this);
-        return true;
-    } else if (m_mode == BedSelectionMode::ConfigContainer) {
-        ASSERT(bed_ref.config_container_id != Domain::INVALID_ID);
-        if (m_selected_config_container == bed_ref.config_container_id
-            && m_last_selected_bed == bed_ref)
-        {
-            return false;
-        }
-        m_selected_config_container = bed_ref.config_container_id;
-        m_selected_beds = {bed_ref};
-        m_last_selected_bed = bed_ref;
-        on_change(*this);
-        return true;
+    if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref &&
+        camera_action != CameraActionOnBedSelection::CenterOnBed) {
+        return false;
     }
-    PANIC("Unknown mode!");
+    m_selected_beds     = {bed_ref};
+    m_last_selected_bed = bed_ref;
+    on_change(*this);
+    return true;
 }
 
 bool BedSelection::toggle(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action)
 {
     m_camera_action_on_selection = camera_action;
-
-    if (m_mode == BedSelectionMode::ConfigContainer) {
-        return false;
-    }
 
     if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref) {
         return false;
@@ -183,27 +147,6 @@ bool BedSelection::toggle(const Domain::BedRef& bed_ref, CameraActionOnBedSelect
     }
     m_selected_beds.push_back(bed_ref);
     m_last_selected_bed = bed_ref;
-    on_change(*this);
-    return true;
-}
-
-bool BedSelection::set_mode(const BedSelectionMode mode)
-{
-    if (m_mode == mode) {
-        return false;
-    }
-
-    m_mode = mode;
-    if (m_mode == BedSelectionMode::ConfigContainer) {
-        m_selected_config_container = last_selected_bed().config_container_id;
-    } else if (m_mode == BedSelectionMode::SingleBed) {
-        m_selected_config_container = Domain::INVALID_ID;
-        const auto it{std::ranges::find(m_selected_beds, m_last_selected_bed)};
-        if (it == m_selected_beds.end() && !m_selected_beds.empty()) {
-            m_last_selected_bed = m_selected_beds.back();
-        }
-    }
-
     on_change(*this);
     return true;
 }
@@ -225,46 +168,14 @@ bool BedSelection::remove(const Domain::BedRef& bed_ref)
 
 void BedSelection::set_state(
     Domain::BedRefs selected_beds,
-    Domain::SelectionId selected_config_container,
     Domain::BedRef last_selected_bed,
-    BedSelectionMode mode,
     CameraActionOnBedSelection camera_action_on_selection
 )
 {
     m_selected_beds = std::move(selected_beds);
-    m_selected_config_container = selected_config_container;
     m_last_selected_bed = last_selected_bed;
-    m_mode  = mode;
     m_camera_action_on_selection = camera_action_on_selection;
     on_change(*this);
-}
-
-BedInstances get_selected_beds(
-    const Domain::SelectionId project_id,
-    const BedSelection& selection,
-    const Domain::Workbench& workbench
-)
-{
-    BedInstances result;
-
-    const Domain::ConfigContainer* config_container{
-        workbench.project(project_id).find_config_container(selection.config_container_id())
-    };
-
-    if (config_container == nullptr) {
-        return {};
-    }
-
-    for (const auto& bed_instance : config_container->bed_instances()) {
-        if (selection.is_selected(Domain::BedRef{config_container->id().id, bed_instance->id().id}))
-            result.push_back(*bed_instance);
-    }
-
-    std::ranges::sort(result, [](const BedInstanceRefWrap& a, const BedInstanceRefWrap& b) {
-        return a.get().index() < b.get().index();
-    });
-
-    return result;
 }
 
 } // namespace Slic3r::Biz::Scene

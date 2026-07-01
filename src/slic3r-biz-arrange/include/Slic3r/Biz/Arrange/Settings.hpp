@@ -18,16 +18,9 @@ enum class GeometryHandling
     Arbitrary,
 };
 
-enum class Mode
-{
-    Global,
-    Local,
-};
-
 struct Settings
 {
     Strategy strategy{Strategy::Overfit};
-    Mode mode{Mode::Global};
     double scaled_offset{0.0};
     double unscaled_bed_offset{0.0};
     bool allow_rotations{false};

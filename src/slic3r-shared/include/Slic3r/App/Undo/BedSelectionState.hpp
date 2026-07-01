@@ -9,9 +9,7 @@ struct BedSelectionState
     BedSelectionState(const Biz::Scene::BedSelection& selection);
 
     Domain::BedRefs selected_beds;
-    Domain::SelectionId selected_config_container{};
     Domain::BedRef last_selected_bed{};
-    Biz::Scene::BedSelectionMode mode{};
     Biz::Scene::CameraActionOnBedSelection camera_action_on_selection{};
 };
 }

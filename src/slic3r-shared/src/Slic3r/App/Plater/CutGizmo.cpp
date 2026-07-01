@@ -2793,17 +2793,51 @@ void CutGizmo::perform_cut()
 
         // update cut results in the model
         m_project_interactor->scene_interactor().delete_object(context().selected_object);
-        m_project_interactor->scene_interactor().add_new_objects(new_objects);
+        const ElementRefs instance_refs{m_project_interactor->scene_interactor().add_new_objects(new_objects)};
 
         // arrange result objects
         Biz::Arrange::Settings settings;
         settings.scaled_offset = Biz::Algorithms::Scaling::scaled(3.0);
-        settings.mode          = Biz::Arrange::Mode::Local;
+
+        const Biz::Scene::BedSelection selection{
+            m_project_interactor->scene_interactor().bed_selection()};
+        ASSERT(!selection.empty());
+        const BedRef& bed_ref{selection.selected_beds().front()};
+        const Domain::BedInstance* bed_instance{
+            m_project_interactor->selected_project().find_bed_instance_by_id(bed_ref.instance_id)};
+        ASSERT(bed_instance);
+
+        BedToArrange bed_to_arrange{
+            bed_ref,
+            bed_instance->index(),
+            {},
+            {},
+            true
+        };
+
+        ASSERT(instance_refs.size() == 2);
+        for (std::size_t i{}; i < instance_refs.size(); ++i) {
+            const ElementRef& element{instance_refs[i]};
+            const ModelInstance* instance{
+                m_project_interactor->selected_project()
+                    .find_instance_by_id(element.object_id, element.instance_id)};
+            if (!instance) {
+                continue;
+            }
+            if (i == 0) {
+                bed_to_arrange.fixed.push_back(instance);
+            } else {
+                bed_to_arrange.arrangeable.push_back(instance);
+            }
+        }
+
         m_project_interactor->arrange_interactor().arrange(
             m_project_interactor->selected_project_id(),
+            {bed_to_arrange},
+            std::nullopt,
+            {},
             settings,
-            [this]() { take_snapshot(Biz::UndoSnapshotType::Cut); }
-        );
+            [this]() { take_snapshot(Biz::UndoSnapshotType::Cut); });
         // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
     }

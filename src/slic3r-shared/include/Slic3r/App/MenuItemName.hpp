@@ -20,6 +20,8 @@ enum class MenuItemName
     Paste,
     ReloadFromDisk,
     Search,
+    Arrange,
+    ArrangeSelection,
 
     ShapeGallery,
 
@@ -88,6 +90,7 @@ enum class MenuItemName
     ObjectShapeSvg,
     ObjectShapeFromGallery,
     ArrangeBed,
+    ArrangeSelectionBed,
     SelectAllOnBed,
     DeleteBed,
 

@@ -275,8 +275,6 @@ private:
         Domain::SlicingId slicing_id
     );
 
-    BedInstances selected_bed_instances() const;
-
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
 
     void update_selection_root(

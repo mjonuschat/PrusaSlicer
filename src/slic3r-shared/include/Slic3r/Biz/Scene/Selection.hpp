@@ -54,12 +54,6 @@ struct ObjectSelection
     bool operator==(const ObjectSelection& selection) const = default;
 };
 
-enum class BedSelectionMode
-{
-    SingleBed,
-    ConfigContainer
-};
-
 enum class CameraActionOnBedSelection : uint8_t
 {
     None,
@@ -68,14 +62,11 @@ enum class CameraActionOnBedSelection : uint8_t
 
 struct BedSelection
 {
-    std::function<void(const BedSelection&)> on_change{[](const BedSelection&) {
-    }};
+    std::function<void(const BedSelection&)> on_change{[](const BedSelection&) {}};
 
     Domain::BedRef last_selected_bed() const;
 
     bool is_selected(const Domain::BedRef bed_ref) const;
-
-    Domain::SelectionId config_container_id() const;
 
     bool empty() const;
 
@@ -85,17 +76,13 @@ struct BedSelection
     /** @brief Add or remove from active selection. */
     bool toggle(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action = CameraActionOnBedSelection::None);
 
-    bool set_mode(const BedSelectionMode mode);
-
     bool remove(const Domain::BedRef& bed_ref);
 
     CameraActionOnBedSelection camera_action_on_selection() const { return m_camera_action_on_selection; }
 
     void set_state(
         Domain::BedRefs selected_beds,
-        Domain::SelectionId selected_config_container,
         Domain::BedRef last_selected_bed,
-        BedSelectionMode mode,
         CameraActionOnBedSelection camera_action_on_selection
     );
 
@@ -104,32 +91,13 @@ struct BedSelection
         return m_selected_beds;
     }
 
-    // Call config_container_id() instead
-    Domain::SelectionId selected_config_container() const
-    {
-        return m_selected_config_container;
-    }
-
-    BedSelectionMode mode() const
-    {
-        return m_mode;
-    }
-
 private:
     Domain::BedRefs m_selected_beds;
-    Domain::SelectionId m_selected_config_container{Domain::INVALID_ID};
     Domain::BedRef m_last_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
-    BedSelectionMode m_mode{BedSelectionMode::SingleBed};
     CameraActionOnBedSelection m_camera_action_on_selection{ CameraActionOnBedSelection::None };
 };
 
 using BedInstanceRefWrap = std::reference_wrapper<const Domain::BedInstance>;
 using BedInstances       = std::vector<BedInstanceRefWrap>;
-
-[[nodiscard]] BedInstances get_selected_beds(
-    const Domain::SelectionId project_id,
-    const BedSelection& selection,
-    const Domain::Workbench& workbench
-);
 
 } // namespace Slic3r::Biz::Scene

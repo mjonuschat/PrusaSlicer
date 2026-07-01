@@ -23,7 +23,7 @@ static const std::unordered_map<Scene::ToolType, ToolGizmoUiInfo> tool_gizmos_ui
     {Scene::ToolType::Simplify,
      {Biz::L("Simplify"), Platform::CommandName::SimplifyGizmo, Platform::KeyCode::E}},
     {Scene::ToolType::ArrangeGizmo,
-     {Biz::L("Arrange"), Platform::CommandName::ArrangeGizmo, Platform::KeyCode::A}},
+     {Biz::L("Arrange"), Platform::CommandName::ArrangeGizmo, Platform::KeyCode::Q}},
     {Scene::ToolType::PaintOnSupportsGizmo,
      {Biz::L("Paint-on supports"),
       Platform::CommandName::PaintOnSupportsGizmo,

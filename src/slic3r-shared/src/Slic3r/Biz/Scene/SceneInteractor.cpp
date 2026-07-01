@@ -2038,6 +2038,28 @@ void SceneInteractor::update_beds(
     }
 }
 
+BedInstances SceneInteractor::selected_bed_instances() const
+{
+    BedInstances result;
+    const Biz::Scene::BedSelection& selection{bed_selection()};
+
+    auto it{m_projects.find(m_selected_project_id)};
+    if (it == m_projects.end()) {
+        return result;
+    }
+    Project& project{it->second.project};
+
+    for (const Domain::BedRef& bed_ref : selection.selected_beds()) {
+        const Domain::BedInstance* bed_instance{project.find_bed_instance_by_id(bed_ref.instance_id)};
+        if (!bed_instance) {
+            continue;
+        }
+        result.push_back(*bed_instance);
+    }
+
+    return result;
+}
+
 void
 SceneInteractor::erase_bed_instance(Domain::SelectionId project_id, const Domain::BedRef& bed_ref)
 {

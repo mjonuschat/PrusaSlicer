@@ -24,7 +24,7 @@ void serialize(Archive& ar, BedIndex& bed_index)
 
 namespace Slic3r::App::Undo {
 
-std::size_t container_id_to_index(std::size_t id,
+static std::size_t container_id_to_index(std::size_t id,
                                   const Domain::Project::ConfigContainerList& config_containers)
 {
     if (id == Domain::INVALID_ID) {
@@ -41,16 +41,7 @@ std::size_t container_id_to_index(std::size_t id,
     return {};
 }
 
-std::size_t container_index_to_id(std::size_t index,
-                                  const Domain::Project::ConfigContainerList& config_containers)
-{
-    if (index == Domain::INVALID_ID) {
-        return Domain::INVALID_ID;
-    }
-    return ASSERT_VAL(config_containers.at(index))->id().id;
-}
-
-BedIndex bed_ref_to_bed_index(const Domain::BedRef& bed_ref,
+static BedIndex bed_ref_to_bed_index(const Domain::BedRef& bed_ref,
                               const Domain::Project::ConfigContainerList& config_containers)
 {
     if (bed_ref.config_container_id == Domain::INVALID_ID
@@ -74,7 +65,7 @@ BedIndex bed_ref_to_bed_index(const Domain::BedRef& bed_ref,
     return {};
 }
 
-Domain::BedRef bed_index_to_bed_ref(const BedIndex& bed_index,
+static Domain::BedRef bed_index_to_bed_ref(const BedIndex& bed_index,
                                     const Domain::Project::ConfigContainerList& config_containers)
 {
     if (bed_index.container_index == Domain::INVALID_ID
@@ -102,9 +93,7 @@ SerializedData serialize_bed_selection_state(
         const BedIndex index{bed_ref_to_bed_index(bed_ref, config_containers)};
         archive(index);
     }
-    archive(container_id_to_index(value.selected_config_container, config_containers));
     archive(bed_ref_to_bed_index(value.last_selected_bed, config_containers));
-    archive(value.mode);
     archive(value.camera_action_on_selection);
 
     SerializedData snapshot;
@@ -130,13 +119,9 @@ BedSelectionState load_serialized_bed_selection_state(
         archive(index);
         bed_ref = bed_index_to_bed_ref(index, config_containers);
     }
-    std::size_t container_index{};
-    archive(container_index);
-    result.selected_config_container = container_index_to_id(container_index, config_containers);
     BedIndex bed_index{};
     archive(bed_index);
     result.last_selected_bed = bed_index_to_bed_ref(bed_index, config_containers);
-    archive(result.mode);
     archive(result.camera_action_on_selection);
 
     return result;

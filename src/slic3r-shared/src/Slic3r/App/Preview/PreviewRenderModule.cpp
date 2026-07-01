@@ -1397,7 +1397,7 @@ void PreviewRenderModule::update_viewer()
         const Biz::Scene::BedSelection& bed_selection =
             m_project_interactor.scene_interactor().bed_selection();
         if (!bed_selection.empty()) {
-            config_container_id = bed_selection.config_container_id();
+            config_container_id = bed_selection.last_selected_bed().config_container_id;
         }
         ASSERT(config_container_id != Domain::INVALID_ID);
         cc = m_project_interactor.selected_project().find_config_container(config_container_id);

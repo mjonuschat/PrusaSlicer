@@ -51,6 +51,10 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                 case MenuItemName::ReloadObject:
                 case MenuItemName::ReloadVolume:
                     return Biz::_u8L("Reload From Disk");
+                case MenuItemName::Arrange:
+                    return Biz::_u8L("Arrange");
+                case MenuItemName::ArrangeSelection:
+                    return Biz::_u8L("Arrange selection");
                 case MenuItemName::Search:
                     return Biz::_u8L("Search");
                 case MenuItemName::Preferences:
@@ -151,6 +155,8 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                     return Biz::_u8L("Update from Online Presets");
                 case MenuItemName::ArrangeBed:
                     return Biz::_u8L("Arrange Bed");
+                case MenuItemName::ArrangeSelectionBed:
+                    return Biz::_u8L("Arrange selection");
                 case MenuItemName::SelectAllOnBed:
                     return Biz::_u8L("Select All Objects");
                 case MenuItemName::DeleteBed:
@@ -184,7 +190,6 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                 case MenuItemName::FixVolumeWithRepairAlgorithm:
                     return Biz::_u8L("Fix by Windows repair algorithm");
                 case MenuItemName::PrintableObject:
-
                 case MenuItemName::PrintableMultiObjects:
                     return Biz::_u8L("Printable");
                 case MenuItemName::AddObjectShape:
@@ -283,6 +288,8 @@ Render::Icon MenuBuilder::item_icon(UniversalMenuItemName menu_item_name)
         return Render::Icon::DeleteBtnIcon;
     case MenuItemName::Search:
         return Render::Icon::Search;
+    case MenuItemName::Arrange:
+        return Render::Icon::AllBeds;
     case MenuItemName::Preferences:
         return Render::Icon::Cog;
     case MenuItemName::FileMenu:

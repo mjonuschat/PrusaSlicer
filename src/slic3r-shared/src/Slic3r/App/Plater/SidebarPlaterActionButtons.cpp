@@ -14,7 +14,6 @@ namespace Slic3r::App::Plater {
 
 using Biz::Scene::BedInstances;
 using Biz::Scene::BedSelection;
-using Biz::Scene::get_selected_beds;
 using Biz::Slicing::StatusCode;
 using Domain::SelectionId;
 using Domain::SlicingId;
@@ -85,9 +84,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
 
     const Domain::SelectionId project_id{m_project_interactor->selected_project_id()};
     const Domain::Project& project{m_project_interactor->workbench().project(project_id)};
-    const BedInstances instances{
-        get_selected_beds(project_id, selection, m_project_interactor->workbench())
-    };
+    const BedInstances instances{m_project_interactor->scene_interactor().selected_bed_instances()};
 
     std::vector<BedStatus> statuses;
     for (const auto& bed_instance_ref : instances) {

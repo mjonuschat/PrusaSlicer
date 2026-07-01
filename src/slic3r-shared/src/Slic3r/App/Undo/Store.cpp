@@ -301,9 +301,7 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
 
     m_scene_interactor.bed_selection().set_state(
         loaded_snapshot.bed_selection_state.selected_beds,
-        loaded_snapshot.bed_selection_state.selected_config_container,
         loaded_snapshot.bed_selection_state.last_selected_bed,
-        loaded_snapshot.bed_selection_state.mode,
         loaded_snapshot.bed_selection_state.camera_action_on_selection
     );
 

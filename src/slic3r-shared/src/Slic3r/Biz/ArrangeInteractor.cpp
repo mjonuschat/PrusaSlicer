@@ -1,4 +1,3 @@
-#include <span>
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
@@ -10,14 +9,13 @@
 
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
-#include "Slic3r/Math.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp" // project_mesh
+#include <ranges>
 
 namespace Slic3r::Biz {
 
 using Algorithms::BoundingBox::merge;
 using Algorithms::BoundingBox::to_2d;
-using Algorithms::ClipperUtils::shrink;
 using Algorithms::ClipperUtils::union_ex;
 using Algorithms::ExPolygon::area;
 using Algorithms::Point::to_2d;
@@ -30,7 +28,6 @@ using Arrange::InputShape;
 using Arrange::Settings;
 using Arrange::StopCondition;
 using Arrange::to_arrange_items;
-using Biz::Arrange::Mode;
 using Biz::JThread::StopToken;
 using Domain::BedInstance;
 using Domain::BedRef;
@@ -48,7 +45,6 @@ using Domain::ElementRefs;
 using Domain::ExPolygons;
 using Domain::ModelInstance;
 using Domain::ModelInstanceList;
-using Domain::ModelObject;
 using Domain::ModelVolumeType;
 using Domain::Points;
 using Domain::Polygon;
@@ -67,8 +63,6 @@ using Platform::PlatformServices;
 using Platform::JobManager::JobManager;
 using Platform::JobManager::ProgressTracker;
 using Scene::BedInstances;
-using Scene::BedSelection;
-using Scene::get_selected_beds;
 
 using Trafo  = Arrange::InstanceTransform2D;
 using Trafos = Arrange::InstanceTransforms;
@@ -153,7 +147,7 @@ std::optional<ArbitraryShape> extract_outline(const InstanceMeshes& meshes, cons
 
 Points get_bed_contour(const ArrangeBed& arrange_bed, const Settings& settings)
 {
-    const Domain::Bed& bed{arrange_bed.bed_instance.bed.get()};
+    const Domain::Bed& bed{arrange_bed.bed_instance->bed.get()};
     Points points;
     for (const Vec2d& point : bed.contour()) {
         points.push_back(scaled(point));
@@ -189,10 +183,6 @@ std::vector<InstanceMeshes> get_meshes(
     std::vector<InstanceMeshes> result;
     result.reserve(instances.size());
     for (const ModelInstance* instance : instances) {
-        if (!check_coord_bounds(to_2d(instance_bounding_box(*instance)))) {
-            throw ArrangeFatalError{"Instance too large to be arranged!"};
-        }
-
         std::vector<InstanceMesh> meshes;
         for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
             Transform3d instance_trafo{instance->get_matrix()};
@@ -293,7 +283,7 @@ ArrangeBed get_arrange_bed(
     const ConfigContainer* config_container{project.find_config_container(bed_ref.config_container_id)};
 
     double brim_width{0.0};
-    const ConfigPack& config{config_container->build_print_config()};
+    const ConfigPack& config{ASSERT_VAL(config_container)->build_print_config()};
     if (std::holds_alternative<ConfigPackFDM>(config)) {
         const ConfigPackFDM& fdm_config{std::get<ConfigPackFDM>(config)};
         brim_width = fdm_config.print.items.opt("brim_width").get<double>();
@@ -303,46 +293,19 @@ ArrangeBed get_arrange_bed(
     const BedInstance& bed_instance{
         ASSERT_VAL(config_container)->find_bed_instance(bed_ref.instance_id)
     };
-    return {bed_instance, std::max(brim_width, settings.unscaled_bed_offset)};
+    return {&bed_instance, std::max(brim_width, settings.unscaled_bed_offset)};
 }
 
 struct BedWithInstances
 {
     BedRef bed_ref;
+    std::size_t index{};
     std::vector<InstanceMeshes> arrangeable_instances;
     std::vector<InstanceMeshes> fixed_instances;
     ArrangeBed arrange_bed;
 };
 
 using ModelInstancesPerBed = std::vector<BedWithInstances>;
-
-std::vector<BedRef> get_selected_beds(
-
-    const SelectionId project_id,
-    const Workbench& workbench,
-    const Scene::SceneInteractor& scene_interactor
-)
-{
-    const Project& project{workbench.project(project_id)};
-    const BedSelection& selection{scene_interactor.bed_selection()};
-    const ConfigContainer* config_container{
-        project.find_config_container(selection.config_container_id())
-    };
-    if (config_container == nullptr) {
-        return {};
-    }
-
-    std::vector<BedRef> result;
-    for (const auto& bed_instance : config_container->bed_instances()) {
-        const BedRef bed_ref{config_container->id().id, bed_instance->id().id};
-        if (!selection.is_selected(bed_ref)) {
-            continue;
-        }
-
-        result.push_back(bed_ref);
-    }
-    return result;
-}
 
 ArrangeItem wipe_tower_to_arrange_item(
     SelectionId project_id,
@@ -375,192 +338,86 @@ using WipeTowerPerBed = std::map<BedRef, WipeTowerForArrange>;
 
 WipeTowerPerBed get_wipe_towers_per_bed(
     const SelectionId project_id,
+    const BedRefs& bed_refs,
+    const std::set<BedRef>& fixed_wipe_towers,
     const Settings& settings,
     const Workbench& workbench,
-    const Scene::SceneInteractor& scene_interactor
-)
+    const Scene::SceneInteractor& scene_interactor)
 {
     const Project& project{workbench.project(project_id)};
-    const Scene::BedSelection& bed_selection{scene_interactor.bed_selection()};
-    const ConfigContainer* config_container{
-        project.find_config_container(bed_selection.config_container_id())
-    };
-    if (config_container == nullptr) {
-        return {};
-    }
 
     WipeTowerPerBed result;
-    for (const auto& bed_instance : config_container->bed_instances()) {
-        const BedRef bed_ref{config_container->id().id, bed_instance->id().id};
-        if (!bed_selection.is_selected(bed_ref)) {
-            continue;
-        }
+    for (const BedRef& bed_ref : bed_refs) {
         const Slicing::WipeTowerGeometry* wipe_tower_geometry{
-            scene_interactor.wipe_tower_geometry(bed_ref.instance_id)
-        };
+            scene_interactor.wipe_tower_geometry(bed_ref.instance_id)};
         if (wipe_tower_geometry == nullptr) {
             continue;
         }
 
-        result.insert(
-            {bed_ref,
-             {wipe_tower_to_arrange_item(
-                  project_id,
-                  bed_ref,
-                  *wipe_tower_geometry,
-                  bed_instance->wipe_tower,
-                  settings
-              ),
-              false,
-              scaled(bed_instance->wipe_tower.position)}}
-        );
+        const BedInstance* bed_instance{project.find_bed_instance_by_id(bed_ref.instance_id)};
+        if (!bed_instance) {
+            continue;
+        }
+
+        const Vec2crd bed_position{scaled(bed_instance->wipe_tower.position)};
+
+        const auto& [it, _]{result.insert({
+            bed_ref,
+            {
+                .wipe_tower = wipe_tower_to_arrange_item(
+                    project_id,
+                    bed_ref,
+                    *wipe_tower_geometry,
+                    bed_instance->wipe_tower,
+                    settings),
+                .is_fixed     = fixed_wipe_towers.contains(bed_ref),
+                .bed_position = bed_position,
+            },
+        })};
+
+        if (it->second.is_fixed) {
+            it->second.wipe_tower.set_translation(bed_position);
+        }
     }
 
     return result;
 }
 
-using IsArrangeablePredicate = std::function<bool(const ModelInstance*)>;
-
-BedWithInstances get_bed_with_instances(
+ModelInstancesPerBed get_arrange_input_per_bed(
     const SelectionId project_id,
-    const BedRef& bed_ref,
-    const BedInstance& bed_instance,
+    const std::vector<BedToArrange>& beds,
     const Settings& settings,
-    const Workbench& workbench,
-    const IsArrangeablePredicate& is_arrangeable
-)
-{
-    ModelInstanceList model_instances{bed_instance.model_instances};
-    std::erase_if(model_instances, [](const ModelInstance* inst) { return !inst->printable; });
-
-    ConstModelInstanceList arrangeable_model_intances;
-    ConstModelInstanceList fixed_model_intances;
-
-    for (const ModelInstance* instance : model_instances) {
-        if (is_arrangeable(instance)) {
-            arrangeable_model_intances.push_back(instance);
-        } else {
-            fixed_model_intances.push_back(instance);
-        }
-    }
-
-    ArrangeBed arrange_bed{get_arrange_bed(
-        project_id,
-        bed_ref,
-        get_max_brim(arrangeable_model_intances),
-        settings,
-        workbench
-    )};
-
-    const Vec3d bed_translation{arrange_bed.bed_instance.transformation.get_matrix().translation()};
-    return {
-        bed_ref,
-        get_meshes(arrangeable_model_intances, ResetTranslation::True),
-        get_meshes(fixed_model_intances, -bed_translation),
-        std::move(arrange_bed)
-    };
-}
-
-ModelInstancesPerBed get_model_instances_per_bed(
-    const SelectionId project_id,
-    const BedSelection& selection,
-    const Settings& settings,
-    const Workbench& workbench,
-    const IsArrangeablePredicate& is_arrangeable
-)
+    const Workbench& workbench)
 {
     ModelInstancesPerBed result;
 
-    const Project& project{workbench.project(project_id)};
-    const ConfigContainer* config_container{
-        project.find_config_container(selection.config_container_id())
-    };
-    if (config_container == nullptr) {
-        return {};
+    for (const BedToArrange& bed : beds) {
+        ArrangeBed arrange_bed{get_arrange_bed(
+            project_id,
+            bed.ref,
+            get_max_brim(bed.arrangeable),
+            settings,
+            workbench)};
+
+        const Vec3d bed_translation{
+            arrange_bed.bed_instance->transformation.get_matrix().translation()};
+        result.push_back(
+            {bed.ref,
+             bed.index,
+             get_meshes(bed.arrangeable, ResetTranslation::True),
+             get_meshes(bed.fixed, -bed_translation),
+             std::move(arrange_bed)});
     }
 
-    for (const auto& bed_instance : config_container->bed_instances()) {
-        const BedRef bed_ref{config_container->id().id, bed_instance->id().id};
-        if (!selection.is_selected(bed_ref)) {
-            continue;
-        }
-        result.push_back(get_bed_with_instances(
-            project_id,
-            bed_ref,
-            *bed_instance,
-            settings,
-            workbench,
-            is_arrangeable
-        ));
-    }
+    std::ranges::sort(result, [](const BedWithInstances& a, const BedWithInstances& b){
+        return a.index < b.index;
+    });
 
     return result;
-}
-
-ModelInstancesPerBed get_model_instances_per_bed(
-    const SelectionId project_id,
-    const BedRef& bed_ref,
-    const Settings& settings,
-    const Workbench& workbench,
-    const IsArrangeablePredicate& is_arrangeable
-)
-{
-    const Project& project{workbench.project(project_id)};
-    if (project.find_config_container(bed_ref.config_container_id) == nullptr) {
-        return {};
-    }
-
-    const BedInstance* bed_instance{project.find_bed_instance_by_id(bed_ref.instance_id)};
-    if (bed_instance == nullptr) {
-        return {};
-    }
-
-    BedWithInstances result = get_bed_with_instances(
-        project_id,
-        bed_ref,
-        *bed_instance,
-        settings,
-        workbench,
-        is_arrangeable
-    );
-
-    // Arrangeable instances may not be tracked on the target bed (e.g. cross-bed
-    // paste where clones remain at the source bed position). Find them directly
-    // in the model so arrangement can place them on the target bed.
-    std::set<size_t> instances_on_target_bed;
-    for (const InstanceMeshes& meshes : result.arrangeable_instances) {
-        instances_on_target_bed.insert(meshes.element_ref.instance_id);
-    }
-
-    ConstModelInstanceList untracked_instances;
-    for (const ModelObject* model_object : project.model().objects) {
-        for (const ModelInstance* model_instance : model_object->instances) {
-            if (is_arrangeable(model_instance)
-                && model_instance->printable
-                && !instances_on_target_bed.contains(model_instance->id().id))
-            {
-                untracked_instances.push_back(model_instance);
-            }
-        }
-    }
-
-    if (!untracked_instances.empty()) {
-        std::vector<InstanceMeshes> meshes =
-            get_meshes(untracked_instances, ResetTranslation::True);
-        result.arrangeable_instances.insert(
-            result.arrangeable_instances.end(),
-            std::make_move_iterator(meshes.begin()),
-            std::make_move_iterator(meshes.end())
-        );
-    }
-
-    return {std::move(result)};
 }
 
 void offset_trafos(Trafos& trafos, const Vec2d& offset)
 {
-    Trafos result;
-    result.reserve(trafos.size());
     for (Trafo& trafo : trafos) {
         trafo.absolute_offset += offset;
     }
@@ -573,115 +430,46 @@ ArrangeInteractor::ArrangeInteractor(Scene::SceneInteractor& scene_interactor, c
     m_workbench{workbench}
 {}
 
-ConstModelInstanceList ArrangeInteractor::get_model_instances(
+void ArrangeInteractor::apply_local_arrange_result(
     const SelectionId project_id,
-    const Scene::BedSelection& selection,
-    const bool include_unplaced
-) const
-{
-    ConstModelInstanceList result;
-    const BedInstances beds{get_selected_beds(project_id, selection, m_workbench)};
-    for (const auto& bed : beds) {
-        const ModelInstanceList& instances{bed.get().model_instances};
-        result.insert(result.end(), instances.begin(), instances.end());
-    }
-
-    if (include_unplaced) {
-        const ModelInstanceList& instances{m_scene_interactor.unplaced_model_instances(project_id)};
-        result.insert(result.end(), instances.begin(), instances.end());
-    }
-
-    std::erase_if(result, [](const ModelInstance* inst) {return !inst->printable; });
-
-    return result;
-}
-
-double ArrangeInteractor::apply_arrange_result(
-    const BedInstances& bed_instances,
-    const double scaled_offset,
-    const Packs& packs,
-    const double initial_offset,
-    ElementRefs* not_arranged
+    const std::vector<std::pair<BedRef, Pack>>& packs,
+    const Packs& unpacked_packs,
+    std::optional<std::size_t> config_container_to_add_beds
 )
 {
-    const std::size_t existing_count{std::min(bed_instances.size(), packs.size())};
-
-    std::size_t bed_index{0};
-    for (Pack pack : std::span{packs}.subspan(0, existing_count)) {
-        const BedInstance& bed_instance{bed_instances.at(bed_index).get()};
-        Transformation bed_trafo{bed_instance.transformation};
+    for (auto [bed_ref, pack] : packs) {
+        const BedInstance* bed_instance{
+            m_workbench.project(project_id).find_bed_instance_by_id(bed_ref.instance_id)
+        };
+        if (!bed_instance) {
+            continue;
+        }
+        Transformation bed_trafo{bed_instance->transformation};
         const Vec2d bed_offset{to_2d(bed_trafo.get_offset())};
         offset_trafos(pack.trafos, bed_offset);
         m_scene_interactor.transform_instances(pack.trafos);
-        ++bed_index;
     }
 
-    if (bed_instances.empty()) {
-        return initial_offset;
-    }
-
-    double offset{initial_offset};
-    for (Pack pack : std::span{packs}.subspan(existing_count)) {
-        offset -= BB::sizes(pack.bounding_box).x();
-        offset -= unscaled(static_cast<int>(scaled_offset));
-        offset_trafos(pack.trafos, Vec2d{offset, 0.0});
-        m_scene_interactor.transform_instances(pack.trafos);
-        for (auto trafo : pack.trafos) {
-            ASSERT(not_arranged);
-            not_arranged->push_back(trafo.instance_ref);
-        }
-    }
-
-    return offset;
-}
-
-double ArrangeInteractor::apply_arrange_result(
-    const SelectionId project_id,
-    const BedSelection& selection,
-    const OverflowMode& overflow_mode,
-    const double scaled_offset,
-    const Packs& packs,
-    const double initial_offset,
-    ElementRefs* not_arranged
-)
-{
-    BedInstances bed_instances{get_selected_beds(project_id, selection, m_workbench)};
-
-    if (overflow_mode == OverflowMode::AddBeds) {
-        const std::size_t existing_count{std::min(bed_instances.size(), packs.size())};
-        const std::size_t remaining_count{packs.size() - existing_count};
-        for (std::size_t i{0}; i < remaining_count; ++i) {
-            const SelectionId config_container_id{selection.config_container_id()};
+    if (config_container_to_add_beds) {
+        for (Pack pack : unpacked_packs) {
             const BedInstance& bed_instance{
-                m_scene_interactor.add_bed_instance(config_container_id)
-            };
-            bed_instances.emplace_back(bed_instance);
+                m_scene_interactor.add_bed_instance(*config_container_to_add_beds)};
+
+            Transformation bed_trafo{bed_instance.transformation};
+            const Vec2d bed_offset{to_2d(bed_trafo.get_offset())};
+            offset_trafos(pack.trafos, bed_offset);
+            m_scene_interactor.transform_instances(pack.trafos);
         }
     } else {
-        ASSERT(overflow_mode == OverflowMode::MoveNextToFirstBed);
+        double offset{-20.0};
+        for (Pack pack : unpacked_packs) {
+            offset -= BB::sizes(pack.bounding_box).x();
+            offset -= -5.0;
+            offset_trafos(pack.trafos, Vec2d{offset, 0.0});
+            m_scene_interactor.transform_instances(pack.trafos);
+        }
     }
 
-    return apply_arrange_result(bed_instances, scaled_offset, packs, initial_offset, not_arranged);
-}
-
-double ArrangeInteractor::apply_arrange_result(
-    const SelectionId project_id,
-    const BedRef& bed_ref,
-    const double scaled_offset,
-    const Packs& packs,
-    const double initial_offset,
-    ElementRefs* not_arranged
-)
-{
-    BedInstances bed_instances;
-    const BedInstance* bed_instance{
-        m_workbench.project(project_id).find_bed_instance_by_id(bed_ref.instance_id)
-    };
-    if (bed_instance != nullptr) {
-        bed_instances.emplace_back(*bed_instance);
-    }
-
-    return apply_arrange_result(bed_instances, scaled_offset, packs, initial_offset, not_arranged);
 }
 
 namespace {
@@ -694,26 +482,26 @@ struct PackingResult
 
 std::optional<PackingResult> pack_to_bed(
     std::vector<ArrangeItem>& to_pack,
-    std::vector<ArrangeItem>& extra,
-    const std::vector<ArrangeItem>& fixed,
+    const std::map<BedRef, std::vector<ArrangeItem>>& fixed_per_bed,
     const ArrangeBed arrange_bed,
     const StopCondition stop_condition,
     Settings settings,
     const std::vector<BedRef>& available_beds,
-    const WipeTowerPerBed& wipe_tower_per_bed
+    const WipeTowerPerBed& wipe_tower_per_bed,
+    std::size_t limit = 1000
 )
 {
     Packs packs;
-    const std::size_t limit{1'000};
-
-    std::vector<ArrangeItem> extra_to_pack{extra};
 
     for (std::size_t index{}; index < limit; ++index) {
-        ASSERT(index < limit - 1, "Infinite arrange loop!");
+        ASSERT(index < 999, "Infinite arrange loop!");
+
+        const std::optional<BedRef> bed_ref{
+            index < available_beds.size() ? std::optional{available_beds[index]} : std::nullopt};
 
         std::optional<WipeTowerForArrange> wipe_tower;
-        if (index < available_beds.size()) {
-            const auto it{wipe_tower_per_bed.find(available_beds[index])};
+        if (bed_ref) {
+            const auto it{wipe_tower_per_bed.find(*bed_ref)};
             if (it != wipe_tower_per_bed.end()) {
                 wipe_tower = it->second;
             }
@@ -734,7 +522,15 @@ std::optional<PackingResult> pack_to_bed(
             }
         }
         to_pack_with_tower.insert(to_pack_with_tower.end(), to_pack.begin(), to_pack.end());
-        fixed_with_tower.insert(fixed_with_tower.end(), fixed.begin(), fixed.end());
+
+        const auto it{bed_ref ? fixed_per_bed.find(*bed_ref) : fixed_per_bed.end()};
+
+        bool fixed_on_bed{false};
+        if (it != fixed_per_bed.end()) {
+            const std::vector<ArrangeItem>& fixed{it->second};
+            fixed_on_bed = !fixed.empty();
+            fixed_with_tower.insert(fixed_with_tower.end(), fixed.begin(), fixed.end());
+        }
 
         std::optional<ArrangeResult> result{Arrange::arrange(
             bed_contour,
@@ -747,26 +543,13 @@ std::optional<PackingResult> pack_to_bed(
             return std::nullopt;
         }
 
-        std::vector<ArrangeItem> fixed_for_extra{result->packed};
-        fixed_for_extra.insert(fixed_for_extra.end(), fixed_with_tower.begin(), fixed_with_tower.end());
-        std::optional<ArrangeResult> extra_result{
-            Arrange::arrange(bed_contour, extra_to_pack, fixed_for_extra, settings, stop_condition)
-        };
-        if (!extra_result) {
-            return std::nullopt;
-        }
-        extra_to_pack = extra_result->not_packed;
-
-        std::vector<ArrangeItem> packed{result->packed};
-        packed.insert(packed.end(), extra_result->packed.begin(), extra_result->packed.end());
-
-        if (packed.empty()) {
+        if (result->packed.empty() && !fixed_on_bed) {
             break;
         }
 
         Pack pack;
         pack.bounding_box = BB::unscaled<double>(BB::construct(bed_contour));
-        for (ArrangeItem& item : packed) {
+        for (ArrangeItem& item : result->packed) {
             const Vec2d item_offset{unscaled<double>(item.get_translation())};
 
             pack.trafos.push_back(
@@ -781,57 +564,13 @@ std::optional<PackingResult> pack_to_bed(
 
         to_pack = result->not_packed;
     }
-    PackingResult result{packs, extra_to_pack};
-    result.unpacked.insert(result.unpacked.end(), to_pack.begin(), to_pack.end());
+    PackingResult result{packs, to_pack};
     return result;
 }
 
-struct ArrangeGlobalResult {
-    Packs packs;
-    std::vector<ArrangeItem> failed;
-};
-
-std::optional<ArrangeGlobalResult> arrange_global(
-    StopToken stop_token,
-    ProgressTracker progress_tracker,
-    const Settings settings,
-    const ArrangeBed arrange_bed,
-    const std::vector<InstanceMeshes> instance_meshes,
-    const std::vector<BedRef> available_beds,
-    const WipeTowerPerBed wipe_tower_per_bed
-)
-{
-    const auto stop_condition{[=]() {
-        return stop_token.stop_requested();
-    }};
-
-    const std::optional<std::vector<InputShape>> arrange_input{
-        get_arrange_input(instance_meshes, stop_condition)
-    };
-    if (!arrange_input) {
-        return std::nullopt;
-    }
-
-    std::vector<ArrangeItem> to_pack{to_arrange_items(*arrange_input, settings)};
-    std::vector<ArrangeItem> extra;
-    if (auto result{pack_to_bed(
-            to_pack,
-            extra,
-            {},
-            arrange_bed,
-            stop_condition,
-            settings,
-            available_beds,
-            wipe_tower_per_bed
-        )})
-    {
-        return ArrangeGlobalResult{std::move(result->packs), std::move(result->unpacked)};
-    }
-    return std::nullopt;
-}
-
 struct ArrangeLocalResult {
-    std::vector<std::pair<BedRef, Packs>> packs;
+    std::vector<std::pair<BedRef, Pack>> packs;
+    Packs unpacked_packs;
     std::vector<ArrangeItem> failed;
 };
 
@@ -848,7 +587,7 @@ std::optional<ArrangeLocalResult> arrange_local(
         return stop_token.stop_requested();
     }};
 
-    std::vector<std::pair<BedRef, Packs>> packs;
+    std::vector<std::pair<BedRef, Pack>> packs;
 
     const std::optional<std::vector<InputShape>> extra_input{
         get_arrange_input(extra_instances, stop_condition)
@@ -856,7 +595,13 @@ std::optional<ArrangeLocalResult> arrange_local(
     if (!extra_input) {
         return std::nullopt;
     }
+
+    std::set<ElementRef> extra_elements;
     std::vector<ArrangeItem> extra{to_arrange_items(*extra_input, settings)};
+    for (const ArrangeItem& item : extra) {
+        extra_elements.insert(item.get_element_ref());
+    }
+    std::vector<ArrangeItem> unpacked{};
 
     for (const BedWithInstances& bed_with_instances : model_instances_per_bed) {
         const std::optional<std::vector<InputShape>> arrangeable_input{
@@ -873,20 +618,57 @@ std::optional<ArrangeLocalResult> arrange_local(
         }
 
         std::vector<ArrangeItem> arrangeable{to_arrange_items(*arrangeable_input, settings)};
-        const std::vector<ArrangeItem> fixed{to_arrange_items(*fixed_input, settings)};
+        arrangeable.insert(arrangeable.end(), extra.begin(), extra.end());
+        extra.clear();
+
+        const std::map<BedRef, std::vector<ArrangeItem>> fixed{
+            {bed_with_instances.bed_ref, to_arrange_items(*fixed_input, settings)}
+        };
+
         if (auto packing_result{pack_to_bed(
                 arrangeable,
-                extra,
                 fixed,
                 bed_with_instances.arrange_bed,
                 stop_condition,
                 settings,
                 {bed_with_instances.bed_ref},
-                wipe_tower_per_bed
+                wipe_tower_per_bed,
+                1
             )})
         {
-            packs.push_back({bed_with_instances.bed_ref, std::move(packing_result->packs)});
-            extra = packing_result->unpacked;
+            if (!packing_result->packs.empty()) {
+                ASSERT(packing_result->packs.size() == 1);
+                packs.push_back({bed_with_instances.bed_ref, std::move(packing_result->packs.front())});
+            }
+            for (const auto& item : packing_result->unpacked) {
+                if (extra_elements.contains(item.get_element_ref())) {
+                    extra.push_back(item);
+                } else {
+                    unpacked.push_back(item);
+                }
+            }
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    unpacked.insert(unpacked.end(), extra.begin(), extra.end());
+
+    Packs unpacked_packs;
+    if (!model_instances_per_bed.empty()) {
+        const BedWithInstances& bed_with_instances{model_instances_per_bed.front()};
+        if (auto packing_result{pack_to_bed(
+                unpacked,
+                {},
+                bed_with_instances.arrange_bed,
+                stop_condition,
+                settings,
+                {bed_with_instances.bed_ref},
+                {}
+            )})
+        {
+            unpacked_packs = packing_result->packs;
+            unpacked = packing_result->unpacked;
         } else {
             return std::nullopt;
         }
@@ -894,355 +676,126 @@ std::optional<ArrangeLocalResult> arrange_local(
 
     return ArrangeLocalResult{
         packs,
-        extra
+        unpacked_packs,
+        unpacked
     };
 }
 
-std::set<SelectionId> get_extra_selected_instances(
-    const Scene::ObjectSelection& object_selection,
-    const ModelInstancesPerBed& model_instances_per_bed
-)
+ElementRefs get_not_arranged(const ArrangeLocalResult& result, bool add_unpacked_packs)
 {
-    std::set<SelectionId> result;
-    for (const ElementRef& element : object_selection.elements) {
-        if (element.has_instance()) {
-            result.insert(element.instance_id);
-        }
+    ElementRefs not_arranged;
+    for (const ArrangeItem& arrange_item : result.failed) {
+        not_arranged.push_back(arrange_item.get_element_ref());
     }
-    for (const BedWithInstances& bed_with_instances : model_instances_per_bed) {
-        for (const InstanceMeshes& instance_meshes : bed_with_instances.arrangeable_instances) {
-            ASSERT(instance_meshes.element_ref.has_instance());
-            result.erase(instance_meshes.element_ref.instance_id);
-        }
-    }
-    return result;
-}
-
-ConstModelInstanceList get_instances(
-    const SelectionId project_id,
-    const std::set<SelectionId>& instance_ids,
-    const Workbench& workbench
-)
-{
-    ConstModelInstanceList result;
-
-    const Domain::Model& model{workbench.project(project_id).model()};
-    for (const ModelObject* object : model.objects) {
-        for (const ModelInstance* instance : object->instances) {
-            if (instance_ids.contains(instance->id().id)) {
-                result.push_back(instance);
+    if (add_unpacked_packs) {
+        for (const Pack& pack : result.unpacked_packs) {
+            for (const Trafo& trafo : pack.trafos) {
+                not_arranged.push_back(trafo.instance_ref);
             }
         }
     }
-    std::erase_if(result, [](const ModelInstance* inst) { return !inst->printable; });
-    return result;
+    return not_arranged;
 }
 
 } // namespace
 
 void ArrangeInteractor::arrange(
     const Domain::SelectionId project_id,
+    const std::vector<BedToArrange>& beds,
+    std::optional<std::size_t> config_container_to_add_beds,
+    const Domain::ConstModelInstanceList& extra,
     const Settings& settings,
-    std::function<void()> on_finished
+    std::function<void()> on_finished,
+    const std::string& job_name
 )
 {
     if (project_id == Domain::INVALID_ID) {
         if (on_finished) {
             on_finished();
         }
-
         return;
     }
 
-    const double unplaced_offset{-20.0};
+    for (const ModelInstance* instance : extra) {
+        if (!check_coord_bounds(to_2d(instance_bounding_box(*instance)))) {
+            invoke_listeners<IArrangeEventsListener>(
+                [&](auto* listener) { listener->on_fatal_arrange_error(project_id); });
+            if (on_finished) {
+                on_finished();
+            }
+            return;
+        }
+    }
 
-    const std::vector<BedRef> selected_beds{
-        get_selected_beds(project_id, m_workbench, m_scene_interactor)
-    };
-    WipeTowerPerBed wipe_tower_per_bed{get_wipe_towers_per_bed(
+    BedRefs bed_refs;
+    std::set<BedRef> fixed_wipe_towers;
+    for (const BedToArrange& bed_to_arrange : beds) {
+        bed_refs.push_back(bed_to_arrange.ref);
+        if (bed_to_arrange.fixed_wipe_tower) {
+            fixed_wipe_towers.insert(bed_to_arrange.ref);
+        }
+    }
+
+    const WipeTowerPerBed wipe_tower_per_bed{get_wipe_towers_per_bed(
         project_id,
+        bed_refs,
+        fixed_wipe_towers,
         settings,
         m_workbench,
-        m_scene_interactor
-    )};
-
+        m_scene_interactor)};
 
     JobManager& job_manager{PlatformServices::instance().job_manager()};
-    try {
-        if (settings.mode == Mode::Global) {
-            const BedRef last_selected_bed{m_scene_interactor.bed_selection().last_selected_bed()};
-            const ConstModelInstanceList instances{
-                get_model_instances(project_id, m_scene_interactor.bed_selection(), true)
-            };
-            job_manager
-                .create_job(
-                    "arrange",
-                    arrange_global,
-                    settings,
-                    get_arrange_bed(
-                        project_id,
-                        last_selected_bed,
-                        get_max_brim(instances),
-                        settings,
-                        m_workbench
-                    ),
-                    get_meshes(instances, ResetTranslation::True),
-                    selected_beds,
-                    wipe_tower_per_bed
-                )
-                .on_result(
-                    [this, project_id, settings, unplaced_offset, on_finished](const std::optional<ArrangeGlobalResult>& result)
-                    {
-                        if (!result) {
-                            if (on_finished) {
-                                on_finished();
-                            }
-
-                            return;
-                        }
-
-                        ElementRefs not_arranged;
-                        for (const ArrangeItem& arrange_item : result->failed) {
-                            not_arranged.push_back(arrange_item.get_element_ref());
-                        }
-                        apply_arrange_result(
-                            project_id,
-                            m_scene_interactor.bed_selection(),
-                            OverflowMode::AddBeds,
-                            settings.scaled_offset,
-                            result->packs,
-                            unplaced_offset,
-                            &not_arranged
-                        );
-                        on_finished();
-                        if (!not_arranged.empty()) {
-                            invoke_listeners<IArrangeEventsListener>(
-                                [&](auto* listener)
-                                { listener->on_elements_not_arranged(project_id, not_arranged); }
-                            );
-                        }
-                    }
-                )
-                .start();
-        } else if (settings.mode == Mode::Local) {
-            const Scene::ObjectSelection& object_selection{m_scene_interactor.object_selection()};
-            const IsArrangeablePredicate is_arrangeable =
-                [&object_selection](const ModelInstance* instance) -> bool
-            {
-                if (object_selection.empty()) {
-                    return true;
-                }
-
-                const ElementRef ref{instance->get_object()->id().id, instance->id().id};
-                return object_selection.is_selected(ref);
-            };
-
-            const ModelInstancesPerBed model_instances_per_bed{get_model_instances_per_bed(
-                project_id,
-                m_scene_interactor.bed_selection(),
-                settings,
-                m_workbench,
-                is_arrangeable
-            )};
-
-            std::vector<InstanceMeshes> selected_extra_model_instances;
-            if (!object_selection.empty()) {
-                const std::set<SelectionId> instance_ids{
-                    get_extra_selected_instances(object_selection, model_instances_per_bed)
-                };
-                const ConstModelInstanceList instances{
-                    get_instances(project_id, instance_ids, m_workbench)
-                };
-                selected_extra_model_instances = get_meshes(instances, ResetTranslation::True);
-
-                for (auto& [bed_ref, wipe_tower] : wipe_tower_per_bed) {
-                    if (!object_selection.is_selected(wipe_tower.wipe_tower.get_element_ref())) {
-                        wipe_tower.is_fixed = true;
-                        wipe_tower.wipe_tower.set_translation(wipe_tower.bed_position);
-                    }
-                }
-            }
-
-            job_manager
-                .create_job(
-                    "arrange",
-                    arrange_local,
-                    settings,
-                    model_instances_per_bed,
-                    selected_extra_model_instances,
-                    wipe_tower_per_bed
-                )
-                .on_result(
-                    [this, project_id, settings, unplaced_offset, on_finished](
-                        const std::optional<ArrangeLocalResult>& result
-                    )
-                    {
-                        if (!result) {
-                            if (on_finished) {
-                                on_finished();
-                            }
-
-                            return;
-                        }
-
-                        ElementRefs not_arranged;
-                        for (const ArrangeItem& arrange_item : result->failed) {
-                            not_arranged.push_back(arrange_item.get_element_ref());
-                        }
-                        double offset{unplaced_offset};
-
-                        for (const auto& [bed_ref, packs] : result->packs) {
-                            m_scene_interactor.bed_selection().select_one(
-                                bed_ref,
-                                Scene::CameraActionOnBedSelection::CenterOnBed
-                            );
-                            offset = apply_arrange_result(
-                                project_id,
-                                bed_ref,
-                                settings.scaled_offset,
-                                packs,
-                                offset,
-                                &not_arranged
-                            );
-                        }
-                        on_finished();
-                        if (!not_arranged.empty()) {
-                            invoke_listeners<IArrangeEventsListener>(
-                                [&](auto* listener)
-                                { listener->on_elements_not_arranged(project_id, not_arranged); }
-                            );
-                        }
-                    }
-                )
-                .start();
-        } else {
-            PANIC("Unknown arrange mode!");
-        }
-
-    } catch (const ArrangeFatalError&) {
-        invoke_listeners<IArrangeEventsListener>([&](auto* listener)
-                                                 { listener->on_fatal_arrange_error(project_id); });
-
-        if (on_finished) {
-            on_finished();
-        }
-    }
-}
-
-void ArrangeInteractor::partial_arrange(
-    const SelectionId project_id,
-    const std::set<size_t>& arrangeable_instance_ids,
-    const BedRef& target_bed,
-    const Settings& settings,
-    PartialArrangeCallback on_completed
-)
-{
-    if (project_id == Domain::INVALID_ID || arrangeable_instance_ids.empty()) {
-        if (on_completed) {
-            on_completed({});
-        }
-
-        return;
-    }
-
-    const IsArrangeablePredicate is_arrangeable =
-        [&arrangeable_instance_ids](const ModelInstance* instance)
-    { return arrangeable_instance_ids.contains(instance->id().id); };
-
-    const double unplaced_offset{-20.0};
     const ModelInstancesPerBed model_instances_per_bed{
-        get_model_instances_per_bed(project_id, target_bed, settings, m_workbench, is_arrangeable)
-    };
+        get_arrange_input_per_bed(project_id, beds, settings, m_workbench)};
 
-    if (model_instances_per_bed.empty()) {
-        if (on_completed) {
-            on_completed({});
-        }
-
-        return;
-    }
-
-    WipeTowerPerBed wipe_tower_per_bed{
-        get_wipe_towers_per_bed(project_id, settings, m_workbench, m_scene_interactor)
-    };
-    for (auto& [bed_ref, wipe_tower] : wipe_tower_per_bed) {
-        wipe_tower.is_fixed = true;
-        wipe_tower.wipe_tower.set_translation(wipe_tower.bed_position);
-    }
-
-    JobManager& job_manager{PlatformServices::instance().job_manager()};
-    try {
-        job_manager
-            .create_job(
-                "partial_arrange",
-                arrange_local,
-                settings,
-                model_instances_per_bed,
-                std::vector<InstanceMeshes>{},
-                wipe_tower_per_bed
-            )
-            .on_result(
-                [this,
-                 project_id,
-                 settings,
-                 unplaced_offset,
-                 on_completed =
-                     std::move(on_completed)](const std::optional<ArrangeLocalResult>& result)
-                {
-                    if (!result) {
-                        return;
+    job_manager
+        .create_job(
+            job_name,
+            arrange_local,
+            settings,
+            model_instances_per_bed,
+            get_meshes(extra, ResetTranslation::True),
+            wipe_tower_per_bed)
+        .on_result(
+            [this, project_id, settings, on_finished, config_container_to_add_beds](
+                const std::optional<ArrangeLocalResult>& result)
+            {
+                if (!result) {
+                    if (on_finished) {
+                        on_finished();
                     }
-
-                    ElementRefs not_arranged;
-                    for (const ArrangeItem& arrange_item : result->failed) {
-                        not_arranged.push_back(arrange_item.get_element_ref());
-                    }
-
-                    double offset{unplaced_offset};
-                    for (const auto& [bed_ref, packs] : result->packs) {
-                        offset = apply_arrange_result(
-                            project_id,
-                            bed_ref,
-                            settings.scaled_offset,
-                            packs,
-                            offset,
-                            &not_arranged
-                        );
-                    }
-
-                    if (on_completed) {
-                        on_completed(not_arranged);
-                    }
+                    return;
                 }
-            )
-            .start();
-    } catch (const ArrangeFatalError&) {
-        invoke_listeners<IArrangeEventsListener>([&](auto* listener)
-                                                 { listener->on_fatal_arrange_error(project_id); });
-    }
+
+                apply_local_arrange_result(project_id, result->packs, result->unpacked_packs, config_container_to_add_beds);
+
+                if (on_finished) {
+                    on_finished();
+                }
+
+                const ElementRefs not_arranged{get_not_arranged(*result, !config_container_to_add_beds)};
+                if (!not_arranged.empty()) {
+                    invoke_listeners<IArrangeEventsListener>(
+                        [&](auto* listener)
+                        { listener->on_elements_not_arranged(project_id, not_arranged); });
+                }
+            })
+        .start();
 }
 
 void ArrangeInteractor::arrange_added_instances(
     const SelectionId project_id,
     const ElementRefs& added_instances,
     const BedRef& target_bed,
-    const UndoSnapshotType snapshot_type
-)
+    const UndoSnapshotType snapshot_type)
 {
     std::set<size_t> instance_ids;
     for (const ElementRef& ref : added_instances) {
         instance_ids.insert(ref.instance_id);
     }
 
-    bool is_queue_processing_running = false;
-    {
-        std::lock_guard lock(m_added_arrange_mutex);
-        is_queue_processing_running = !m_added_arrange_queue.empty();
-        m_added_arrange_queue.push(
-            {project_id, std::move(instance_ids), target_bed, snapshot_type}
-        );
-    }
-
+    const bool is_queue_processing_running{!m_added_arrange_queue.empty()};
+    m_added_arrange_queue.push({project_id, std::move(instance_ids), target_bed, snapshot_type});
     if (!is_queue_processing_running) {
         this->process_added_arrange_queue();
     }
@@ -1256,132 +809,69 @@ void ArrangeInteractor::process_added_arrange_queue()
         .allow_rotations = false
     };
 
-    PendingArrange pending_arrange;
-    {
-        std::lock_guard lock(m_added_arrange_mutex);
-        if (m_added_arrange_queue.empty()) {
-            return;
-        }
-
-        pending_arrange = m_added_arrange_queue.front();
-    }
-
-    this->partial_arrange(
-        pending_arrange.project_id,
-        pending_arrange.instance_ids,
-        pending_arrange.target_bed,
-        ARRANGE_SETTINGS,
-        [this,
-         project_id    = pending_arrange.project_id,
-         target_bed    = pending_arrange.target_bed,
-         snapshot_type = pending_arrange.snapshot_type,
-         attempted_ids = pending_arrange.instance_ids](const ElementRefs& not_arranged)
-        {
-            // If nothing was placed and the bed had no other instances, the bed was empty and the
-            // instances are too big for it, so do not move them onto a new empty bed.
-            bool instances_cannot_fit_on_bed = false;
-            if (!not_arranged.empty() && not_arranged.size() == attempted_ids.size()) {
-                const Project& project = m_workbench.project(project_id);
-                const BedInstance* bed = project.find_bed_instance_by_id(target_bed.instance_id);
-
-                bool bed_has_other_instances = false;
-                if (bed != nullptr) {
-                    for (const ModelInstance* inst : bed->model_instances) {
-                        // Skip our own instances, because they are on the bed too.
-                        // Any other instance means the bed wasn't empty.
-                        if (!attempted_ids.contains(inst->id().id)) {
-                            bed_has_other_instances = true;
-                            break;
-                        }
-                    }
-                }
-
-                instances_cannot_fit_on_bed = !bed_has_other_instances;
-            }
-
-            if (!not_arranged.empty() && !instances_cannot_fit_on_bed) {
-                const Project& project                = m_workbench.project(project_id);
-                const SelectionId config_container_id = target_bed.config_container_id;
-
-                const Domain::ConfigContainer* config_container =
-                    project.find_config_container(config_container_id);
-                ASSERT(config_container != nullptr);
-
-                const BedRef last_bed_in_container{
-                    config_container_id,
-                    config_container->bed_instances().back()->id().id
-                };
-
-                BedRef next_bed = last_bed_in_container;
-                if (target_bed == last_bed_in_container) {
-                    // Create a new bed and arrange objects there.
-                    const BedInstance& new_bed =
-                        m_scene_interactor.add_bed_instance(config_container_id);
-                    next_bed = BedRef{config_container_id, new_bed.id().id};
-                    m_scene_interactor.bed_selection().toggle(next_bed);
-                }
-
-                std::set<size_t> not_arranged_ids;
-                for (const ElementRef& ref : not_arranged) {
-                    not_arranged_ids.insert(ref.instance_id);
-                }
-
-                this->move_instances_to_bed(project_id, not_arranged, next_bed);
-
-                {
-                    std::lock_guard lock(m_added_arrange_mutex);
-                    m_added_arrange_queue.pop();
-                    m_added_arrange_queue.push(
-                        {project_id, std::move(not_arranged_ids), next_bed, snapshot_type}
-                    );
-                }
-            } else {
-                if (!not_arranged.empty()) {
-                    // These instances cannot fit any bed.
-                    invoke_listeners<IArrangeEventsListener>(
-                        [&](auto* listener)
-                        { listener->on_elements_not_arranged(project_id, not_arranged); }
-                    );
-                }
-
-                {
-                    std::lock_guard lock(m_added_arrange_mutex);
-                    m_added_arrange_queue.pop();
-                }
-
-                // Take the undo snapshot only once the whole arrange operation has finished.
-                m_scene_interactor.undo_provider().take_snapshot(snapshot_type);
-            }
-
-            this->process_added_arrange_queue();
-        }
-    );
-}
-
-void ArrangeInteractor::move_instances_to_bed(
-    const SelectionId project_id,
-    const ElementRefs& instances,
-    const BedRef& bed_ref
-)
-{
-    const BedInstance* bed_instance =
-        m_workbench.project(project_id).find_bed_instance_by_id(bed_ref.instance_id);
-    if (bed_instance == nullptr) {
+    if (m_added_arrange_queue.empty()) {
         return;
     }
 
-    const Vec2d bed_offset =
-        Algorithms::Point::to_2d(Transformation{bed_instance->transformation}.get_offset());
-    const Vec2d bed_center = bed_offset + bed_instance->bed.get().center();
+    const PendingArrange pending_arrange{m_added_arrange_queue.front()};
+    const Project& project{m_workbench.project(pending_arrange.project_id)};
 
-    Arrange::InstanceTransforms trafos;
-    for (const ElementRef& ref : instances) {
-        trafos.push_back(
-            {.instance_ref = ref, .absolute_offset = bed_center, .rotation_delta = 0.0}
-        );
+    const ConfigContainer* config_container{
+        project.find_config_container(pending_arrange.target_bed.config_container_id)};
+
+    const BedInstance* target_bed{
+        project.find_bed_instance_by_id(pending_arrange.target_bed.instance_id)
+    };
+
+    if (!config_container || !target_bed) {
+        m_added_arrange_queue.pop();
+        process_added_arrange_queue();
+        return;
     }
 
-    m_scene_interactor.transform_instances(trafos);
+    std::vector<BedToArrange> beds;
+    for (const auto& bed_instance : config_container->bed_instances()) {
+        if (bed_instance->index() < target_bed->index()) {
+            continue;
+        }
+        BedToArrange bed_to_arrange{
+            .ref = {config_container->id().id, bed_instance->id().id},
+            .index = bed_instance->index(),
+            .fixed_wipe_tower = true
+        };
+        for (const ModelInstance* instnace : bed_instance->model_instances) {
+            if (!pending_arrange.instance_ids.contains(ASSERT_VAL(instnace)->id().id)) {
+                bed_to_arrange.fixed.push_back(instnace);
+            }
+        }
+        beds.push_back(bed_to_arrange);
+    }
+
+    ConstModelInstanceList instances;
+    for (const std::size_t instnace_id : pending_arrange.instance_ids) {
+        const ModelInstance* instance{project.find_instance_by_id(instnace_id)};
+        if (!instance) {
+            continue;
+        }
+        instances.push_back(instance);
+    }
+
+    this->arrange(
+        pending_arrange.project_id,
+        beds,
+        pending_arrange.target_bed.config_container_id,
+        instances,
+        ARRANGE_SETTINGS,
+        [this, snapshot_type = pending_arrange.snapshot_type](){
+            m_added_arrange_queue.pop();
+            if (m_added_arrange_queue.empty()) {
+                m_scene_interactor.undo_provider().take_snapshot(snapshot_type);
+            } else {
+                this->process_added_arrange_queue();
+            }
+        },
+        "partial_arrange"
+    );
 }
 
 } // namespace Slic3r::Biz

@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Arrange/Settings.hpp"
 #include "Slic3r/App/Plater/ArrangeDialog.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 
 namespace Slic3r::App::Scene {
@@ -25,6 +26,7 @@ namespace Slic3r::App::Plater {
 class ArrangeGizmo final :
     public Scene::IToolGizmo,
     public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::Preset::IPresetChangedListener,
     public Biz::Platform::JobManager::IJobManagerStatusChangedListener
 {
 public:
@@ -45,6 +47,14 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::BedSelection& bed_selection
     ) override;
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
+
+    void update_dialog();
 
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
 
@@ -70,6 +80,9 @@ private:
     bool m_active{false};
 
     Biz::Arrange::Settings default_settings() const;
-    void arrange();
+    void arrange_selected_config_container();
+    void arrange_selection_in_selected_config_container();
+    void arrange_selected_beds();
+    void arrange_selection_on_selected_beds();
 };
 } // namespace Slic3r::App::Plater

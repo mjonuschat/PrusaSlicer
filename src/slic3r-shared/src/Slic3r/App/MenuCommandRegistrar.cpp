@@ -198,11 +198,9 @@ void MenuCommandRegistrar::register_bed_menu_commands()
         if (selection.empty()) {
             return false;
         }
-        const Biz::Scene::BedInstances beds{get_selected_beds(
-            m_project_interactor.selected_project_id(),
-            m_project_interactor.scene_interactor().bed_selection(),
-            m_project_interactor.workbench()
-        )};
+        const Biz::Scene::BedInstances beds{
+            m_project_interactor.scene_interactor().selected_bed_instances()
+        };
 
         for (const auto& bed : beds) {
             if (!bed.get().model_instances.empty())
@@ -219,23 +217,35 @@ void MenuCommandRegistrar::register_bed_menu_commands()
             CommandName::ArrangeBed,
             [this]
             {
-                // arrange result objects
-                Biz::Arrange::Settings settings;
-                settings.scaled_offset = Biz::Algorithms::Scaling::scaled(3.0);
-                settings.mode          = Biz::Arrange::Mode::Local;
-                m_project_interactor.arrange_interactor().arrange(
-                    m_project_interactor.selected_project_id(),
-                    settings,
-                    [this]()
-                    {
-                        m_project_interactor.undo_provider().take_snapshot(
-                            Biz::UndoSnapshotType::Arrange
-                        );
-                    }
-                );
+                const auto it{m_render_module.gizmo_commands().find("arrange-gizmo-arrange-local")};
+                if (it != m_render_module.gizmo_commands().end()) {
+                    it->second->execute();
+                }
             },
             UIItemCommandExtraOpts{
-                .enabled = [any_selected_bed_has_object]() { return any_selected_bed_has_object(); }
+                .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                    Platform::KeyModifiers{},
+                    Platform::KeyCode::D
+                }},
+                .enabled = [any_selected_bed_has_object]() { return any_selected_bed_has_object(); },
+            }
+        )
+        .append_item(
+            MenuItemName::ArrangeSelectionBed,
+            CommandName::ArrangeSelectionBed,
+            [this]
+            {
+                const auto it{m_render_module.gizmo_commands().find("arrange-gizmo-arrange-local-selection")};
+                if (it != m_render_module.gizmo_commands().end()) {
+                    it->second->execute();
+                }
+            },
+            UIItemCommandExtraOpts{
+                .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::D
+                }},
+                .enabled = [this]() { return !m_project_interactor.scene_interactor().object_selection().empty(); },
             }
         )
         .append_item(
@@ -243,11 +253,8 @@ void MenuCommandRegistrar::register_bed_menu_commands()
             CommandName::SelectAllOnBed,
             [this]
             {
-                const Biz::Scene::BedInstances beds{get_selected_beds(
-                    m_project_interactor.selected_project_id(),
-                    m_project_interactor.scene_interactor().bed_selection(),
-                    m_project_interactor.workbench()
-                )};
+                const Biz::Scene::BedInstances beds{
+                    m_project_interactor.scene_interactor().selected_bed_instances()};
 
                 Biz::Scene::ObjectSelection new_selection;
                 for (const auto& bed : beds) {
@@ -1633,6 +1640,42 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::F
+                    }}
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::Arrange},
+            std::make_unique<UIItemCommand>(
+                CommandName::Arrange,
+                [this]() {
+                    const auto it{m_render_module.gizmo_commands().find("arrange-gizmo-arrange")};
+                    if (it != m_render_module.gizmo_commands().end()) {
+                        it->second->execute();
+                    }
+                },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers{},
+                        Platform::KeyCode::A
+                    }}
+                }
+            )
+        )
+        .register_menu_item(
+            {MenuItemName::MainMenu, MenuItemName::Edit, MenuItemName::ArrangeSelection},
+            std::make_unique<UIItemCommand>(
+                CommandName::ArrangeSelection,
+                [this]() {
+                    const auto it{m_render_module.gizmo_commands().find("arrange-gizmo-arrange-selection")};
+                    if (it != m_render_module.gizmo_commands().end()) {
+                        it->second->execute();
+                    }
+                },
+                UIItemCommandExtraOpts{
+                    .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
+                        Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                        Platform::KeyCode::A
                     }}
                 }
             )

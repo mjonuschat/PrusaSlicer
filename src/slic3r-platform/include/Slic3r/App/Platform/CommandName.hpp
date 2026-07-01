@@ -26,6 +26,8 @@ struct CommandName
     static constexpr const char* ScaleGizmo                 = "scale-gizmo";
     static constexpr const char* PlaceOnFace                = "place-on-face-gizmo";
     static constexpr const char* ArrangeGizmo               = "arrange-gizmo";
+    static constexpr const char* Arrange                    = "arrange";
+    static constexpr const char* ArrangeSelection           = "arrange-selection";
     static constexpr const char* SimplifyGizmo              = "simplify-gizmo";
     static constexpr const char* TextGizmo                  = "text-gizmo";
     static constexpr const char* CreateObjectAsText         = "create-object-as-text";
@@ -107,9 +109,10 @@ struct CommandName
     static constexpr const char* TipOfTheDay             = "tip-of-the-day";
     static constexpr const char* KeyboardShortcutsDialog = "keyboard-shortcuts";
 
-    static constexpr const char* ArrangeBed     = "arrange-bed";
-    static constexpr const char* SelectAllOnBed = "select-all-on-bed";
-    static constexpr const char* DeleteBed      = "delete-bed";
+    static constexpr const char* ArrangeBed          = "arrange-bed";
+    static constexpr const char* ArrangeSelectionBed = "arrange-selection-bed";
+    static constexpr const char* SelectAllOnBed      = "select-all-on-bed";
+    static constexpr const char* DeleteBed           = "delete-bed";
 
     static constexpr const char* SetNumberOfInstances   = "set-number-of-instances";
     static constexpr const char* FixWithRepairAlgorithm = "fix-with-repair-algorithm";
