@@ -180,19 +180,36 @@ void center_selected_project_around_point(CLIRuntime& runtime, const Vec2d& cent
 
 void arrange_and_wait(CLIRuntime& runtime, const SelectionId project_id)
 {
-    ProjectInteractor& project_interactor   = runtime.project_interactor();
-    const ConfigContainer& config_container = project_interactor.selected_config_container();
-    const ConfigPack config_pack            = config_container.build_print_config();
+    ProjectInteractor& project_interactor{runtime.project_interactor()};
+    const ConfigContainer& config_container{project_interactor.selected_config_container()};
+    const ConfigPack config_pack{config_container.build_print_config()};
 
-    const double scaled_offset =
-        static_cast<double>(Algorithms::Scaling::scaled(min_object_distance(config_pack))) / 2.;
+    const double scaled_offset{
+        static_cast<double>(Algorithms::Scaling::scaled(min_object_distance(config_pack))) / 2.};
 
-    bool arrange_finished = false;
-    project_interactor.arrange_interactor().arrange(
-        project_id,
-        Arrange::Settings{.scaled_offset = scaled_offset},
-        [&arrange_finished]() { arrange_finished = true; }
-    );
+    Domain::ConstModelInstanceList instances{};
+    std::vector<Biz::BedToArrange> beds;
+    for (const auto& bed_instance : config_container.bed_instances()) {
+        instances.insert(instances.end(),
+                         bed_instance->model_instances.begin(),
+                         bed_instance->model_instances.end());
+        beds.push_back({Domain::BedRef{config_container.id().id, bed_instance->id().id},
+                        bed_instance->index()});
+    }
+
+    const Domain::ModelInstanceList& unplaced_instances{
+        project_interactor.scene_interactor().unplaced_model_instances(
+            project_interactor.selected_project_id())};
+    instances.insert(instances.end(), unplaced_instances.begin(), unplaced_instances.end());
+
+    bool arrange_finished{false};
+    ArrangeInteractor& arrange_interactor{project_interactor.arrange_interactor()};
+    arrange_interactor.arrange(project_interactor.selected_project_id(),
+                               beds,
+                               config_container.id().id,
+                               instances,
+                               Arrange::Settings{.scaled_offset = scaled_offset},
+                               [&arrange_finished]() { arrange_finished = true; });
 
     runtime.wait_until([&arrange_finished]() { return arrange_finished; });
 }
