@@ -71,11 +71,13 @@ CLI::Option* add_vec2d_option(
     const std::string& option_description = ""
 )
 {
-    return app.add_option_function<std::array<double, 2>>(
-        option_name,
-        [&variable](const std::array<double, 2>& arr) { variable = Vec2d(arr[0], arr[1]); },
-        option_description
-    );
+    return app
+        .add_option_function<std::array<double, 2>>(
+            option_name,
+            [&variable](const std::array<double, 2>& arr) { variable = Vec2d(arr[0], arr[1]); },
+            option_description
+        )
+        ->delimiter(',');
 }
 
 CLI::Option* add_vec3d_option(
@@ -85,11 +87,14 @@ CLI::Option* add_vec3d_option(
     const std::string& option_description = ""
 )
 {
-    return app.add_option_function<std::array<double, 3>>(
-        option_name,
-        [&variable](const std::array<double, 3>& arr) { variable = Vec3d(arr[0], arr[1], arr[2]); },
-        option_description
-    );
+    return app
+        .add_option_function<std::array<double, 3>>(
+            option_name,
+            [&variable](const std::array<double, 3>& arr)
+            { variable = Vec3d(arr[0], arr[1], arr[2]); },
+            option_description
+        )
+        ->delimiter(',');
 }
 
 Percentage parse_percentage(const std::string& str)
@@ -130,14 +135,16 @@ void add_input_options(CLI::App& app, App::InitParams& params)
            params.input.material_profile_presets,
            "Name(s) of the material preset(s) used for slicing. Could be filaments or sla_material preset name(s) depending on printer technology."
     )
-        ->option_text("ABCD");
+        ->option_text("ABCD")
+        ->delimiter(','); // Material presets are comma-separated.
 
     app.add_option(
            "--tool-print-profile",
            params.input.tool_profile_presets,
            "Name(s) of the tool print preset(s) used for slicing."
     )
-        ->option_text("ABCD");
+        ->option_text("ABCD")
+        ->delimiter(','); // Tool presets are comma-separated.
 
     app.add_option(
            "--print-profile",
@@ -193,7 +200,8 @@ void add_transform_options(CLI::App& app, App::InitParams& params)
            params.transform.duplicate_grid,
            "Multiply copies by creating a grid."
     )
-        ->type_name("X,Y");
+        ->type_name("X,Y")
+        ->delimiter(',');
 
     app.add_flag(
            "--ensure-on-bed,!--no-ensure-on-bed",
@@ -638,7 +646,8 @@ void add_config_item_override(
                        },
                        option_description
                 )
-                    ->option_text("ABCD");
+                    ->option_text("ABCD")
+                    ->delimiter(',');
             } else if constexpr (std::is_same_v<ValueType, Domain::Percentage>) {
                 app.add_option_function<std::string>(
                        option_name_with_prefix,
@@ -692,14 +701,16 @@ void add_config_item_override(
                     option_description
                 );
 
-                if constexpr (std::is_same_v<ValueType, std::string>
-                              || std::is_same_v<ValueType, std::vector<std::string>>)
-                {
+                if constexpr (std::is_same_v<ValueType, std::string>) {
                     option->option_text("ABCD");
+                } else if constexpr (std::is_same_v<ValueType, std::vector<std::string>>) {
+                    option->option_text("ABCD")->delimiter(',');
                 } else if constexpr (std::is_same_v<ValueType, Vec2d>
                                      || std::is_same_v<ValueType, std::vector<Vec2d>>)
                 {
-                    option->type_name("X,Y");
+                    option->type_name("X,Y")->delimiter(',');
+                } else {
+                    option->delimiter(',');
                 }
             }
         }
@@ -766,7 +777,6 @@ InitParams read_cli(::CLI::App& app, const std::string& app_version, const int a
 
     std::shared_ptr<CustomFormatter> custom_formatter = std::make_shared<CustomFormatter>();
     app.formatter(custom_formatter);
-    app.option_defaults()->delimiter(',');
 
     app.set_version_flag(
         "-v,--version",
