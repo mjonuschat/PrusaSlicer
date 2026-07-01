@@ -114,12 +114,8 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
         return Biz::_u8L("Help");
     case MenuItemName::PSWebsite:
         return Biz::_u8L("PrusaSlicer Website");
-    case MenuItemName::QuickStart:
-        return Biz::_u8L("Quick Start");
     case MenuItemName::Samples:
         return Biz::_u8L("Sample G-codes and Models");
-    case MenuItemName::Prusa3DDrivers:
-        return Biz::_u8L("Prusa 3D Drivers");
     case MenuItemName::Releases:
         return Biz::_u8L("Software Releases");
     case MenuItemName::SystemInfo:
@@ -127,7 +123,7 @@ std::string MenuBuilder::item_name_translated(MenuItemName menu_item_name)
     case MenuItemName::ConfigFolder:
         return Biz::_u8L("Show Configuration Folder");
     case MenuItemName::ReportAnIssue:
-        return Biz::_u8L("Report an Issue");
+        return Biz::_u8L("Report PrusaSlicer Issue");
     case MenuItemName::About:
         return Biz::_u8L("About PrusaSlicer");
     case MenuItemName::TipOfTheDay:

@@ -1775,23 +1775,6 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 }
             )
         )
-        // Menu -> Help -> Quick Start
-        .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::QuickStart},
-            std::make_unique<UIItemCommand>(
-                CommandName::QuickStart,
-                [this]()
-                {
-                    open_browser(
-                        OpenBrowserParams{
-                            .url =
-                                "https://help.prusa3d.com/article/first-print-with-prusaslicer_1753",
-                            .force_remember_choice = false
-                        }
-                    );
-                }
-            )
-        )
         // Menu -> Help -> Samples
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::Samples},
@@ -1803,24 +1786,6 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                         OpenBrowserParams{
                             .url = "https://help.prusa3d.com/article/sample-g-codes_529630",
                             .force_remember_choice = false
-                        }
-                    );
-                }
-            )
-        )
-        // Menu -> Help -> Separator
-        .register_menu_separator_item({MenuItemName::MainMenu, MenuItemName::Help})
-        // Menu -> Help -> Prusa 3D Drivers
-        .register_menu_item(
-            {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::Prusa3DDrivers},
-            std::make_unique<UIItemCommand>(
-                CommandName::Prusa3DDrivers,
-                [this]()
-                {
-                    open_browser(
-                        OpenBrowserParams{
-                            .url              = "https://www.prusa3d.com/downloads",
-                            .is_localized_url = true
                         }
                     );
                 }

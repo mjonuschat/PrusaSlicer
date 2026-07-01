@@ -45,9 +45,7 @@ enum class MenuItemName
 
     Help,
     PSWebsite,
-    QuickStart,
     Samples,
-    Prusa3DDrivers,
     Releases,
     SystemInfo,
     ConfigFolder,

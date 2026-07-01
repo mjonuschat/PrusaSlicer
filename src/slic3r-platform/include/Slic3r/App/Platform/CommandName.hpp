@@ -97,9 +97,7 @@ struct CommandName
     static constexpr const char* OnlinePresetUpdate = "online-preset-update";
 
     static constexpr const char* PSWebsite      = "ps-website";
-    static constexpr const char* QuickStart     = "quick-start";
     static constexpr const char* Samples        = "samples";
-    static constexpr const char* Prusa3DDrivers = "prusa-3d-drivers";
     static constexpr const char* Releases       = "releases";
     static constexpr const char* SystemInfo     = "system-info";
     static constexpr const char* ConfigFolder   = "config-folder";
