@@ -17,7 +17,7 @@ elseif(UNIX)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
+    set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk3")
 endif ()
 find_package(NanoSVG REQUIRED)
 

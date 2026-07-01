@@ -12,7 +12,6 @@
           },
           "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Release",
-            "DEP_WX_GTK3": true,
             "DEP_DOWNLOAD_DIR": {
                 "type": "PATH",
                 "value": "${sourceDir}/.pkg_cache"

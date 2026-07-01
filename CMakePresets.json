@@ -9,7 +9,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "SLIC3R_STATIC": true,
-                "SLIC3R_GTK": "3",
                 "SLIC3R_ENC_CHECK": false,
                 "SLIC3R_PCH": true,
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/build-default/dist",
@@ -36,7 +35,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "SLIC3R_STATIC": false,
-                "SLIC3R_GTK": "3",
                 "SLIC3R_ENC_CHECK": false,
                 "SLIC3R_PCH": true,
                 "PrusaSlicer_BUILD_DEPS": false

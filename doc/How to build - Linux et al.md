@@ -51,7 +51,7 @@ PrusaSlicer uses CMake and the build is quite simple, the only tricky part is re
     cd deps
     mkdir build
     cd build
-    cmake .. -DDEP_WX_GTK3=ON
+    cmake ..
     make
     cd ../..
 
@@ -61,11 +61,11 @@ PrusaSlicer uses CMake and the build is quite simple, the only tricky part is re
 
 #### 3. Building PrusaSlicer
 
-Now when the dependencies are compiled, all that is needed is to tell CMake that we are interested in static build and point it to the dependencies. From the top of the repository, run
+Now when the dependencies are compiled, all that is needed is to point CMake to the dependencies. From the top of the repository, run
 
     mkdir build
     cd build
-    cmake .. -DSLIC3R_STATIC=1 -DSLIC3R_GTK=3 -DSLIC3R_PCH=OFF -DCMAKE_PREFIX_PATH=$(pwd)/../deps/build/destdir/usr/local
+    cmake .. -DSLIC3R_PCH=OFF -DCMAKE_PREFIX_PATH=$(pwd)/../deps/build/destdir/usr/local
     make -j4
 
 And that's it. It is now possible to run the freshly built PrusaSlicer binary:
@@ -101,13 +101,10 @@ Any of these unit tests can be run directly e.g.
 
 - `-DDEP_DOWNLOAD_DIR=<download cache dir>` specifies a directory to cache the downloaded source packages for each library. Can be useful for repeated builds, to avoid unnecessary network traffic.
 
-- `-DDEP_WX_GTK3=ON` builds wxWidgets (one of the dependencies) against GTK3 (defaults to OFF)
-
 
 ## Useful CMake flags when building PrusaSlicer
 - `-DSLIC3R_ASAN=ON` enables gcc/clang address sanitizer (defaults to `OFF`, requires gcc>4.8 or clang>3.1)
-- `-DSLIC3R_GTK=3` to use GTK3 (defaults to `2`). Note that wxWidgets must be built against the same GTK version.
-- `-DSLIC3R_STATIC=ON` for static build (defaults to `OFF`)
+- `-DSLIC3R_STATIC=OFF` for dynamic linking (defaults to `ON`)
 - `-DCMAKE_BUILD_TYPE=Debug` to build in debug mode (defaults to `Release`)
 - `-DSLIC3R_GUI=no` to build the console variant of PrusaSlicer
 

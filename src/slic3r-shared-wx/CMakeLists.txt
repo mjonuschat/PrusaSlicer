@@ -158,8 +158,7 @@ slic3r_add_tracy(slic3r-shared-wx)
 
 if (UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
-    find_package(GTK${SLIC3R_GTK} REQUIRED)
-    target_include_directories(slic3r-shared-wx PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
+    find_package(GTK3 REQUIRED)
 
     set(WEBKIT_LINK_LIBS "")
     if (SLIC3R_ENABLE_WEBKIT)
@@ -168,10 +167,10 @@ if (UNIX AND NOT APPLE)
     endif()
 
     target_link_libraries(slic3r-shared-wx PUBLIC
-        ${GTK${SLIC3R_GTK}_LIBRARIES}
         fontconfig
         ${WEBKIT_LINK_LIBS}
     )
+    target_link_libraries(slic3r-shared-wx PRIVATE GTK3::GTK3)
 endif ()
     
 if (WIN32 AND SLIC3R_ENABLE_WEBKIT)

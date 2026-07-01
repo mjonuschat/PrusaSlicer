@@ -1,13 +1,7 @@
 if (NOT EMSCRIPTEN)
     set(_wx_toolkit "")
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        option(DEP_WX_GTK3 "Build wxWidgets for GTK3 instead of GTK2" OFF)
-
-        set(_gtk_ver 2)
-        if (DEP_WX_GTK3)
-            set(_gtk_ver 3)
-        endif ()
-        set(_wx_toolkit "-DwxBUILD_TOOLKIT=gtk${_gtk_ver}")
+        set(_wx_toolkit "-DwxBUILD_TOOLKIT=gtk3")
     endif()
 
     set(_unicode_utf8 OFF)
