@@ -2,6 +2,8 @@ name: Build flatpak
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - 'version_*'
   workflow_dispatch:
