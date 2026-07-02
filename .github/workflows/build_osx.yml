@@ -2,9 +2,6 @@ name: Build osx
 
 on:
   push:
-    branches-ignore:
-      - master
-      - release
     tags:
       - 'version_*'
   workflow_dispatch:
