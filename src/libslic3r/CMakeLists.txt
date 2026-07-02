@@ -497,12 +497,6 @@ if(WIN32)
     target_link_libraries(libslic3r PUBLIC Psapi.lib)
 endif()
 
-if (APPLE)
-    # This flag prevents the need for minimum SDK version 10.14
-    # currently, PS targets v10.12
-    target_compile_options(libslic3r PUBLIC "-fno-aligned-allocation")
-endif ()
-
 if (SLIC3R_PCH)
     target_precompile_headers(libslic3r REUSE_FROM slic3r-domain)
 endif()

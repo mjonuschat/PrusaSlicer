@@ -27,6 +27,8 @@
 #include <boost/nowide/fstream.hpp>
 #include <fmt/format.h>
 
+#include <numeric>
+
 #ifdef WIN32
 
 // The standard Windows includes.

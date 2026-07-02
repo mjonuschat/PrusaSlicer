@@ -13,7 +13,18 @@ project(PrusaSlicer)
 
 option(SLIC3R_STATIC "Compile PrusaSlicer with static libraries (Boost, TBB, glew)" ON)
 option(SLIC3R_FHS "Assume PrusaSlicer is to be installed in a FHS directory structure" OFF)
+
+if (DEFINED SLIC3R_PCH AND SLIC3R_PCH AND MSVC)
+    message(FATAL_ERROR "SLIC3R_PCH was explicitly requested, but they are currently not "
+        "supported on MSVC. Two issues to solve: we must require at least CMake 4.2.1, otherwise "
+        "we get a C2859 build failure, and we must turn on IPO for slic3r-shared (currently turned off "
+        "because we are hitting a 4GB limit with debug symbols - it requires splitting the library)")
+endif ()
 option(SLIC3R_PCH "Use precompiled headers" ON)
+if (SLIC3R_PCH AND MSVC)
+    message(STATUS "Disabling SLIC3R_PCH: Currently not supported on MSVC")
+    set(SLIC3R_PCH OFF)
+endif ()
 option(SLIC3R_ASAN "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN "Enable UBSan on Clang and GCC" 0)
 option(SLIC3R_REPO_URL "Preset repo URL")

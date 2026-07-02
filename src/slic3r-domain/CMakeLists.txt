@@ -191,6 +191,15 @@ target_link_libraries(slic3r-domain PUBLIC
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
 
+if (APPLE AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.14")
+    # This flag prevents the need for minimum SDK version 10.14. Only the
+    # Intel build targets an OS older than that (currently 10.13); the ARM
+    # build targets 11.0 and doesn't need it.
+    # Set here (PUBLIC) instead of in libslic3r so it also applies to the
+    # precompiled header below, which every target reusing it must match exactly.
+    target_compile_options(slic3r-domain PUBLIC "-fno-aligned-allocation")
+endif ()
+
 if (SLIC3R_PCH)
     target_precompile_headers(slic3r-domain PRIVATE pch.hpp)
 endif()

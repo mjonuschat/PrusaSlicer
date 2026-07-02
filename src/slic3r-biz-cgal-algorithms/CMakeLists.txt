@@ -39,7 +39,8 @@ add_library(slic3r-biz-cgal-algorithms STATIC
 target_include_directories(slic3r-biz-cgal-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-cgal-algorithms PRIVATE src)
 
-if (APPLE)
+if (APPLE AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.14")
+    # See matching comment in slic3r-domain CMakeLists
     target_compile_options(slic3r-biz-cgal-algorithms PUBLIC "-fno-aligned-allocation")
 endif ()
 

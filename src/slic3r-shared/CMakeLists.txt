@@ -1373,6 +1373,18 @@ slic3r_add_tracy(slic3r-shared)
 
 if (SLIC3R_PCH)
     target_precompile_headers(slic3r-shared REUSE_FROM slic3r-domain)
+    if (APPLE)
+        # These .mm (Objective-C++) sources can't reuse a PCH that was compiled
+        # as plain C++ (slic3r-domain has no Objective-C sources), since the
+        # compiler enables Objective-C for .mm files but the PCH was built
+        # without it, causing "Objective-C was disabled in PCH file but is
+        # currently enabled". Just compile the header from scratch for them.
+        set_source_files_properties(
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
+            PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+        )
+    endif()
 endif()
 
 if(SLIC3R_BUILD_TESTS)
