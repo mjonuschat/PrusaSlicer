@@ -12,8 +12,6 @@
 #include <boost/nowide/filesystem.hpp>
 #include <boost/nowide/convert.hpp>
 
-#include <spdlog/spdlog.h>
-
 namespace Slic3r::App {
 
 InitParams::InitParams(const int argc, char** argv) : argc(argc), argv(argv) {}

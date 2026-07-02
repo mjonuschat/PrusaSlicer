@@ -1,12 +1,6 @@
 #pragma once
 
-#ifndef _NDEBUG
-#define SPDLOG_ACTIVE_LEVEL 0//SPDLOG_LEVEL_TRACE
-#else
-#define SPDLOG_ACTIVE_LEVEL 2//SPDLOG_LEVEL_INFO
-#endif
-#include <spdlog/spdlog.h>
-#include <spdlog/stopwatch.h>
+#include "LogIncludeSPD.hpp"
 
 namespace Slic3r {
 

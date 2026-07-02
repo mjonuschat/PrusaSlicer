@@ -21,6 +21,8 @@
 #include "Slic3r/LegacyFormat.hpp"
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 
+#include "Slic3r/Log.hpp"
+
 #include <map>
 #include <assert.h>
 #include <stdexcept>
@@ -30,7 +32,6 @@
 #include <cmath>
 #include <numeric>
 #include <memory>
-#include <spdlog/spdlog.h>
 
 using namespace Slic3r::Biz::libpgcode;
 using Slic3r::Domain::Vec3f;

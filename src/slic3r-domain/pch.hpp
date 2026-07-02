@@ -30,5 +30,5 @@
 #include <Eigen/Geometry>
 
 #include <libassert/assert.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/stopwatch.h>
+
+#include "Slic3r/LogIncludeSPD.hpp"

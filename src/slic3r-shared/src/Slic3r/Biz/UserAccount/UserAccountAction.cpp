@@ -113,7 +113,7 @@ void UserAccountActionGetWithEvent::perform(
         http->set_post_body(post_body);
     if (!access_token.empty()) {
         http->header("Authorization", "Bearer " + access_token);
-#ifndef _NDEBUG
+#ifndef NDEBUG
         // In debug mode, also verify the token expiration
         // This is here to help with "dev" accounts with shorten (sort of faked) expiration time
         // The /api/v1/me will accept these tokens even if these are fake-marked as expired

@@ -5,12 +5,13 @@
 #include "MutablePolygon.hpp"
 
 #include <cstdint>
-#include <spdlog/spdlog.h>
 #include <utility>
 #include <cmath>
 
 #include "libslic3r.h"
 #include "libslic3r/Point.hpp"
+
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r {
 

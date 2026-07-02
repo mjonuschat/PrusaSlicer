@@ -130,7 +130,7 @@ SavePresetDialog::Item::Item(
             break;
         }
     }
-#ifndef  _NDEBUG
+#ifndef  NDEBUG
     if (init_name.empty()) {
         SPDLOG_ERROR(
             "Cannot find '{}' in {}",

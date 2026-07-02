@@ -29,7 +29,7 @@
 
 #include <wx/scrolwin.h>
 #include <fmt/format.h>
-#include <spdlog/spdlog.h>
+#include "Slic3r/Log.hpp"
 
 using namespace Slic3r::Biz;
 

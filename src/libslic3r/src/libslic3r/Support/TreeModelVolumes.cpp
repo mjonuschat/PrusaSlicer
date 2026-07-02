@@ -21,7 +21,6 @@
 #include <chrono>
 #include <limits>
 #include <numeric>
-#include <spdlog/spdlog.h>
 #include <string>
 #include <unordered_map>
 #include <cmath>

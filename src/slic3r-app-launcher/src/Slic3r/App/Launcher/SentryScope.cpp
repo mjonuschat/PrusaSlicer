@@ -76,7 +76,7 @@ SentryScope::SentryScope()
     sentry_options_set_release(options, release.c_str());
     sentry_options_set_debug(
         options,
-#ifdef _NDEBUG
+#ifdef NDEBUG
         0
 #else
         1

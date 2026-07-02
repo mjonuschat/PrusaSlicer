@@ -12,11 +12,11 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <spdlog/spdlog.h>
 
 #include "libslic3r/BuildVolume.hpp"
 #include "libslic3r/Utils/JsonUtils.hpp"
 #include "Slic3r/LegacyFormat.hpp"
+#include "Slic3r/Log.hpp"
 
 using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Vec2d;

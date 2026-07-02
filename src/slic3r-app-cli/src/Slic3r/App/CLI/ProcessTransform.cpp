@@ -17,8 +17,7 @@
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Math.hpp"
-
-#include <spdlog/spdlog.h>
+#include "Slic3r/Log.hpp"
 
 #include "libslic3r/ModelProcessing.hpp"
 

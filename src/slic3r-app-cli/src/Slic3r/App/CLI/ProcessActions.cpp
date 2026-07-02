@@ -42,12 +42,11 @@
 
 #include <nlohmann/json.hpp>
 
-#include <spdlog/spdlog.h>
-
 #include "Slic3r/Biz/Format/OBJ.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Semver.hpp"
 #include "Slic3r/Version.hpp"
+#include "Slic3r/Log.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 
 namespace fs = boost::filesystem;
