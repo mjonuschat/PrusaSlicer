@@ -39,6 +39,7 @@ void UserAccountCommunication::do_log_out(bool notify_owner)
 {
     do_clear(notify_owner);
     m_email = "";
+    m_login_pending = false;
 }
 
 std::string UserAccountCommunication::on_log_in_request(
@@ -57,6 +58,8 @@ std::string UserAccountCommunication::on_log_in_request(
         m_code_verifier = ccg.generate_verifier();
     }
     std::string code_challenge = ccg.generate_challenge(m_code_verifier);
+
+    m_login_pending = true;
 
     std::string language = lang_code;
     ASSERT(!language.empty(), "Language code must not be empty.");
@@ -83,6 +86,10 @@ std::string UserAccountCommunication::on_log_in_request(
 void UserAccountCommunication::on_log_in_code_response(const std::string& url_message)
 {
     const std::string code = get_code_from_message(url_message);
+    if (!m_login_pending) {
+        return;
+    }
+    m_login_pending = false;
     m_session.on_log_in_code_response(code, m_code_verifier);
     wakeup_session_thread();
 }

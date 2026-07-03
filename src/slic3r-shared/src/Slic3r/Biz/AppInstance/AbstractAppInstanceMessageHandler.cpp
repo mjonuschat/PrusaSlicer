@@ -76,7 +76,7 @@ void AbstractAppInstanceMessageHandler::handle_message(const std::string& messag
     }
 
     ASSERT(!type.empty());
-    ASSERT(m_message_handlers.find(type) != m_message_handlers.end(), "Message type that has no handler callback set."); 
+    ASSERT(m_message_handlers.find(type) != m_message_handlers.end(), "Message type that has no handler callback set.");
     if (m_message_handlers.find(type) != m_message_handlers.end()) {
         m_message_handlers[type](data);
     }
@@ -85,11 +85,10 @@ void AbstractAppInstanceMessageHandler::handle_message(const std::string& messag
 void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::string& data)
 {
     SPDLOG_INFO(__FUNCTION__);
-    if (!Biz::Platform::PlatformServices::instance().single_instance_checker().is_primary_instance())
-    {
-        SPDLOG_INFO("Handling message from another app instance while not being primary app instance. Aborting.");
-        return;
-    }
+    const bool is_primary = Biz::Platform::PlatformServices::instance().single_instance_checker().is_primary_instance();
+    // Note: login URLs (prusaslicer://login) are handled on EVERY instance, because the login code
+    // must reach the instance that initiated the login (which may not be the primary). File paths
+    // and prusaslicer://open are single-instance actions and are handled only on the primary.
     std::vector<std::string> args;
 	bool parsed = Algorithms::unescape_strings_cstyle(data, args);
 	assert(parsed);
@@ -98,17 +97,13 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
 		return;
 	}
 
-    
+
 	std::vector<boost::filesystem::path> paths;
 	std::vector<std::string> downloads;
+	bool has_login_arg = false;
 	for (auto it = args.begin(); it != args.end(); ++ it) {
-        SPDLOG_INFO(*it);
-		boost::filesystem::path p = get_path(*it);
-		if (! p.string().empty())
-			paths.emplace_back(p);
-		else if (it->rfind("prusaslicer://open", 0) == 0)
-			downloads.emplace_back(*it);
-		else if (it->rfind("prusaslicer://login", 0) == 0) {
+		if (it->rfind("prusaslicer://login", 0) == 0) {
+            has_login_arg = true;
             std::string url(*it);
             {
                 std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
@@ -118,8 +113,25 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
                     });
                 });
             }
+            continue;
 		}
+        // Everything below is a single-instance action - only the primary instance acts on it.
+        if (!is_primary) {
+            continue;
+        }
+		boost::filesystem::path p = get_path(*it);
+		if (! p.string().empty()) {
+			paths.emplace_back(p);
+        }
+		else if (it->rfind("prusaslicer://open", 0) == 0) {
+			downloads.emplace_back(*it);
+        }
 	}
+
+    if (is_primary && has_login_arg) {
+        multicast_message("CLI", data, Biz::Platform::PlatformServices::instance().app_hash());
+    }
+
 	if (! paths.empty()) {
         {
             std::lock_guard<std::mutex> lock(m_dispatcher_mutex);

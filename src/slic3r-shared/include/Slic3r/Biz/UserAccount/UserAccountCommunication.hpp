@@ -73,5 +73,9 @@ private:
     std::string m_code_verifier;
     std::string m_avatar_extension;
     std::string m_email;
+    /**
+     * @brief True while THIS instance is waiting for a login code it initiated (between on_log_in_request and on_log_in_code_response).
+     */
+    bool m_login_pending{false};
 };
 }

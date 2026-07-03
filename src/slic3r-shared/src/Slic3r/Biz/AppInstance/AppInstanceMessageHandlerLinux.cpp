@@ -181,7 +181,7 @@ void AppInstanceMessageSenderLinux::broadcast_message(const std::string& message
     std::string     interface_name = "com.prusa3d.prusaslicer.BroadcastListener.Object" + version;
     std::string     method_name = "Message";
     std::string     object_name = "/com/prusa3d/prusaslicer/BroadcastListener/Object" + version;
-    
+
     // initialise the error value
     dbus_error_init(&err);
     

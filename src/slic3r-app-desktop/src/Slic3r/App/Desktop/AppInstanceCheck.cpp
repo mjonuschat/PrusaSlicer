@@ -55,12 +55,8 @@ bool instance_check(const Slic3r::App::InitParams& init_params, bool app_config_
     if (is_another_running && should_send_and_exit) {
         std::unique_ptr<Biz::AppInstance::AbstractAppInstanceMessageSender>
             sender = Biz::AppInstance::create_app_instance_message_sender();
-        sender->broadcast_message(
-            "CLI",
-            get_init_params_in_string(init_params.argc, init_params.argv),
-            hashed_path,
-            nullptr
-        );
+        std::string forwarded_args = get_init_params_in_string(init_params.argc, init_params.argv);
+        sender->broadcast_message("CLI", forwarded_args, hashed_path, nullptr);
         return true;
     }
     Biz::Platform::PlatformServices::instance().set_single_instance_checker(
