@@ -140,8 +140,10 @@ TopBar::TopBar(
         btn->set_draw_flags(ImDrawFlags_None);
     }
 
-    m_main_menu_btn->icon_object()->set_width(24_fpx);
-    m_main_menu_btn->icon_object()->set_height(24_fpx);
+    if (m_main_menu_btn) {
+        m_main_menu_btn->icon_object()->set_width(24_fpx);
+        m_main_menu_btn->icon_object()->set_height(24_fpx);
+    }
     add_new_project_btn->set_width(22_fpx);
     add_new_project_btn->set_height(22_fpx);
     add_new_project_btn->set_content_padding({});
