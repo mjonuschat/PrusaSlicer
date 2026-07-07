@@ -131,7 +131,10 @@ void QuickDragGizmo::on_drag_finish()
 
     if (commit_virtual_bed) {
         const Domain::BedInstance& bed_inst = m_scene_interactor.add_bed_instance(cc_id);
-        m_scene_interactor.bed_selection().select_one(Domain::BedRef(cc_id, bed_inst.id().id));
+        m_scene_interactor.bed_selection().select_one(
+            Domain::BedRef(cc_id, bed_inst.id().id),
+            Biz::Scene::CameraActionOnBedSelection::CenterOnBed
+        );
         m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::QuickDragAndAddBed);
     } else {
         m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::QuickDrag);
