@@ -345,12 +345,15 @@ struct Label get_label(
     std::optional<std::size_t> index,
     bool with_default,
     bool with_numbers,
-    const std::vector<std::pair<Domain::ColorRGBA, std::string>>& material_colors
+    const std::vector<std::pair<Domain::ColorRGBA, std::string>>& material_colors,
+    const Theme& theme
 )
 {
+    const Domain::ColorRGBA default_color{theme.color(Platform::Color::Text)};
+
     if (!index) {
         return {
-            .color  = Domain::ColorRGBA::WHITE(),
+            .color  = default_color,
             .name   = Biz::_u8L("Mixed"),
             .hollow = true,
         };
@@ -368,7 +371,7 @@ struct Label get_label(
     if (with_default) {
         if (index == 0) {
             return {
-                .color  = Domain::ColorRGBA::WHITE(),
+                .color  = default_color,
                 .name   = Biz::_u8L("Default"),
                 .hollow = true,
             };
@@ -413,7 +416,7 @@ void ColorDropdown::rebuild_popup_items()
 
     for (std::size_t index{}; index < items_count; ++index) {
         const auto& [color, name, hollow, index_string]{
-            get_label(index, m_with_default, m_with_numbers, m_material_colors)
+            get_label(index, m_with_default, m_with_numbers, m_material_colors, *m_theme)
         };
         ColorMenuItem* item{
             m_popup->emplace_back<ColorMenuItem>(name, color, true, false, hollow, index_string)
@@ -436,7 +439,7 @@ void ColorDropdown::update_trigger_label()
         return;
     }
     const auto& [color, name, hollow, index]{
-        get_label(m_current_index, m_with_default, m_with_numbers, m_material_colors)
+        get_label(m_current_index, m_with_default, m_with_numbers, m_material_colors, *m_theme)
     };
     m_trigger->set_entry(name, color, hollow, index);
 }
