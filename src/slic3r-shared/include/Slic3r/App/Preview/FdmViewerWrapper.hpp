@@ -104,7 +104,8 @@ public:
     void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const Domain::ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
     
     libvgcode::ViewType view_type() const { return m_viewer.view_type(); }
-    void set_view_type(libvgcode::ViewType type) { m_viewer.set_view_type(type); }
+    void set_view_type(libvgcode::ViewType type);
+    bool is_view_type_available(libvgcode::ViewType type) const;
 
     Domain::BoundingBox3d bounding_box(const Biz::libpgcode::MoveTypes& types = {
         Biz::libpgcode::MoveType::Retract,

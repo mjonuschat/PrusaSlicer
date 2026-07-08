@@ -52,7 +52,9 @@ LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapp
     m_type_selector->set_flags(ImGuiComboFlags_HeightLargest);
     m_type_selector->set_flex_grow(1.0);
     m_type_selector->callbacks().selection_changed = [this, viewer](int current_index) {
-        viewer->set_view_type(libvgcode::ViewType(current_index));
+        if (current_index < 0 || current_index >= int(m_type_option_types.size()))
+            return;
+        viewer->set_view_type(m_type_option_types[current_index]);
         if (m_legend->callbacks().cb_view_type_changed)
             m_legend->callbacks().cb_view_type_changed();
         update_show_time_estimate(*viewer);
@@ -71,8 +73,9 @@ LegendCallbacks& LegendWindow::callbacks()
     return m_legend->callbacks();
 }
 
-void LegendWindow::update_type_selector(const std::vector<std::string>& types, int selection)
+void LegendWindow::update_type_selector(const std::vector<std::string>& types, const std::vector<libvgcode::ViewType>& option_types, int selection)
 {
+    m_type_option_types = option_types;
     m_type_selector->set_items(types);
     m_type_selector->set_current_index(selection);
 }

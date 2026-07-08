@@ -430,33 +430,52 @@ void FdmViewerWrapper::update_slider_gcode(std::optional<size_t> visible_range_m
     m_slider_gcode->show_lower_thumb(!m_viewer.is_top_layer_only_view_range());
 }
 
+static bool has_layer_times(const libvgcode::FdmViewer& viewer)
+{
+    std::vector<float> layers_times = viewer.layers_estimated_times();
+    return !layers_times.empty() && layers_times.size() == viewer.layers_count();
+}
+
 void FdmViewerWrapper::update_legend_type_selector()
 {
-    std::vector<float> layers_times = m_viewer.layers_estimated_times();
-    bool has_layers_times = !layers_times.empty() && layers_times.size() == m_viewer.layers_count();
-    std::vector<int> layer_times_ids = { int(ViewType::LayerTimeLinear), int(ViewType::LayerTimeLogarithmic) };
+    bool has_layers_times = has_layer_times(m_viewer);
+    const std::array<ViewType, 2> layer_times_types = { ViewType::LayerTimeLinear, ViewType::LayerTimeLogarithmic };
 
-    std::vector<int> options_id;
-    options_id.reserve(VIEW_TYPES_COUNT);
+    std::vector<ViewType> options;
+    options.reserve(VIEW_TYPES_COUNT);
     for (int i = 0; i < int(VIEW_TYPES_COUNT); ++i) {
+        ViewType type = ViewType(i);
         if (has_layers_times ||
-            std::find(layer_times_ids.begin(), layer_times_ids.end(), i) == layer_times_ids.end())
-            options_id.emplace_back(i);
+            std::find(layer_times_types.begin(), layer_times_types.end(), type) == layer_times_types.end())
+            options.emplace_back(type);
     }
 
-    int selection = int(m_viewer.view_type());
+    ViewType selection = m_viewer.view_type();
     if (!has_layers_times &&
-        std::find(layer_times_ids.begin(), layer_times_ids.end(), selection) != layer_times_ids.end())
-        selection = int(ViewType::FeatureType);
-    int selection_id = int(std::distance(options_id.begin(), std::find(options_id.begin(), options_id.end(), selection)));
+        std::find(layer_times_types.begin(), layer_times_types.end(), selection) != layer_times_types.end())
+        selection = ViewType::FeatureType;
+    int selection_id = int(std::distance(options.begin(), std::find(options.begin(), options.end(), selection)));
 
     std::vector<std::string> types;
-    types.reserve(options_id.size());
-    for (int i = 0; i < int(options_id.size()); ++i) {
-        types.emplace_back(to_string(ViewType(options_id[i])));
+    types.reserve(options.size());
+    for (ViewType type : options) {
+        types.emplace_back(to_string(type));
     }
 
-    m_legend->update_type_selector(types, selection_id);
+    m_legend->update_type_selector(types, options, selection_id);
+}
+
+void FdmViewerWrapper::set_view_type(ViewType type)
+{
+    m_viewer.set_view_type(type);
+    update_legend_type_selector();
+}
+
+bool FdmViewerWrapper::is_view_type_available(ViewType type) const
+{
+    if (type == ViewType::LayerTimeLinear || type == ViewType::LayerTimeLogarithmic)
+        return has_layer_times(m_viewer);
+    return true;
 }
 
 static void adjust_ticks_values(std::vector<CustomGCode::Item>& gcodes, const std::vector<float>& zs)

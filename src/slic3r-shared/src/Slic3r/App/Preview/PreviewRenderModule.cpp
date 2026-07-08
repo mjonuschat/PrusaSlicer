@@ -1102,10 +1102,31 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
     }
 
     const GCodeEvents& gcode_events = m_fdm_viewer.gcode_events();
-    m_fdm_viewer.set_view_type(
+    const ViewType heuristic_view_type =
         !gcode_events.empty()                       ? ViewType::ColorPrint :
             m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
-                                                      ViewType::FeatureType
+                                                      ViewType::FeatureType;
+
+    const Domain::ConfigContainer* config_container{
+        project.find_config_container_by_bed_instance_id(id.bed_instance_id)
+    };
+    ASSERT(config_container != nullptr);
+
+    ProjectGCodeViewTypeStates& proj_states = m_gcode_view_type_states.project(id.project_id);
+
+    // Lazy prune: forget states for config containers that no longer exist in this project.
+    std::erase_if(proj_states.by_config_container, [&project](const auto& kv) {
+        return project.find_config_container(kv.first) == nullptr;
+    });
+
+    GCodeViewTypeState& view_type_state = proj_states.by_config_container[config_container->id().id];
+    if (view_type_state.last_heuristic != heuristic_view_type)
+        view_type_state.user_choice.reset();
+    view_type_state.last_heuristic = heuristic_view_type;
+
+    m_fdm_viewer.set_view_type(
+        view_type_state.user_choice.has_value() && m_fdm_viewer.is_view_type_available(*view_type_state.user_choice)
+            ? *view_type_state.user_choice : heuristic_view_type
     );
 
     update_scene_aabb();
@@ -1213,7 +1234,10 @@ void PreviewRenderModule::on_request_extra_frames(unsigned int count)
 
 void PreviewRenderModule::on_gcode_view_type_changed()
 {
-    // TODO
+    const Domain::SelectionId project_id = m_project_interactor.selected_project_id();
+    const Domain::SelectionId container_id = m_project_interactor.selected_config_container_id();
+    m_gcode_view_type_states.project(project_id).by_config_container[container_id].user_choice =
+        m_fdm_viewer.view_type();
 }
 
 void PreviewRenderModule::on_slider_layers_on_thumb_move()

@@ -20,8 +20,11 @@
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 
+#include <map>
 #include <memory>
+#include <optional>
 
 namespace Slic3r::App {
 struct ThumbnailStore;
@@ -34,6 +37,21 @@ namespace Slic3r::App::Preview {
 struct ExtrudersSequence;
 class SidebarPreviewActionButtons;
 class PreviewCameraGizmo;
+
+// Remembers the gcode view type (Speed, FeatureType, ...) the user explicitly picked in the
+// legend, per ConfigContainer, so autoslicing / project switching doesn't reset it. Cleared
+// whenever the heuristic that would otherwise pick the type changes (e.g. printer switched to
+// a multiextruder one), since the user's choice was made in the context of the old heuristic.
+struct GCodeViewTypeState
+{
+    std::optional<libvgcode::ViewType> user_choice;
+    std::optional<libvgcode::ViewType> last_heuristic;
+};
+
+struct ProjectGCodeViewTypeStates
+{
+    std::map<Domain::SelectionId, GCodeViewTypeState> by_config_container;
+};
 
 class PreviewRenderModule final :
     public Platform::AbstractRenderModule,
@@ -63,7 +81,8 @@ public:
         m_thumbnail_image_generator(thumbnail_image_generator),
         m_menu_manager(m_command_registry),
         m_command_binding_manager(m_command_registry),
-        m_shared_model_geometry_provider(model_geometry_provider)
+        m_shared_model_geometry_provider(model_geometry_provider),
+        m_gcode_view_type_states(m_project_interactor)
     {}
 
     /**
@@ -236,6 +255,8 @@ private:
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
+
+    Biz::ProjectScoped<ProjectGCodeViewTypeStates> m_gcode_view_type_states;
 
 private:
     void init_gizmos();
