@@ -157,12 +157,16 @@ int run(const Slic3r::App::InitParams& init_params, AppServices& app_services)
     ::setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", /* replace */ false);
     ::setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", /* replace */ false);
 
+    // On Linux, wxGTK has no support for Wayland, and the app crashes on
+    // startup if gtk3 is used. This env var has to be set explicitly to
+    // instruct the window manager to fall back to X server mode.
+    ::setenv("GDK_BACKEND", "x11", /* replace */ true);
+
     if (app_services.app_config().get<Theme::Style>("theme") == Theme::Style::Light) {
         setenv("GTK_THEME", "Adwaita:light", 1);
     } else {
         setenv("GTK_THEME", "Adwaita:dark", 1);
     }
-
 #endif
 
     bool single_instance_app_config =
