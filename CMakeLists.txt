@@ -172,6 +172,15 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     )
 endif()
 
+# check if our compiler supports -fno-link-libatomic
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-fno-link-libatomic" CXX_SUPPORTS_FNO_LINK_LIBATOMIC)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CXX_SUPPORTS_FNO_LINK_LIBATOMIC)
+    # do not auto-append -latomic_asneeded (which usually comes from webkitgtk)
+    # we are already linking atomic dynamically so it would result in static + dynamic link
+    add_link_options(-fno-link-libatomic)
+endif()
+
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(
         # Clang reports misleading indentation for some IF blocks because of mixing tabs with spaces.
