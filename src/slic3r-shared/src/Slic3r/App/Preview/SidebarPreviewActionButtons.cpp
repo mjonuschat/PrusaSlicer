@@ -142,12 +142,12 @@ void SidebarPreviewActionButtons::update_buttons()
         };
     } break;
     case StatusCode::Finished: {
+        m_primary_button->set_enabled(true);
         if (m_project_interactor->physical_printer_interactor().is_filesystem_export_selected()) {
             const auto& phys_printer = m_project_interactor->physical_printer_interactor().selected_physical_printer_data();
             const auto* payload = std::get_if<Slic3r::Biz::PhysicalPrinter::FileSystemExport>(&phys_printer.payload);
             ASSERT(payload);
             m_primary_button->set_label(Biz::_u8L("Export"));
-            m_primary_button->set_enabled(true);
             m_primary_button->set_tooltip(export_tooltip);
             m_primary_button->callbacks().action = payload->prefer_removable ? 
                 ExportActions::export_gcode_to_flash(*m_project_interactor) :
