@@ -255,6 +255,7 @@ private:
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
+    bool m_active{false};
 
     Biz::ProjectScoped<ProjectGCodeViewTypeStates> m_gcode_view_type_states;
 

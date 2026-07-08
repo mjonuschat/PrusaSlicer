@@ -323,6 +323,12 @@ void PreviewRenderModule::on_selected_bed_instances_changed(
 
     m_object_list->update_sliced_info();
 
+    if (m_active && m_sidebar_auto_reslice->is_enabled()) {
+        m_project_interactor.slicing_interactor().enable_auto_slicing(
+            m_project_interactor.selected_bed_slicing_id()
+        );
+    }
+
     request_render();
 }
 
@@ -488,6 +494,7 @@ void PreviewRenderModule::on_init(
 
 void PreviewRenderModule::on_activated()
 {
+    m_active = true;
     if (m_scene_presenter != nullptr)
         m_scene_presenter->scene().set_lights(App::global_lighting());
 
@@ -509,6 +516,7 @@ void PreviewRenderModule::on_activated()
 
 void PreviewRenderModule::on_deactivated()
 {
+    m_active = false;
     Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
     m_project_interactor.slicing_interactor().disable_auto_slicing();
 
