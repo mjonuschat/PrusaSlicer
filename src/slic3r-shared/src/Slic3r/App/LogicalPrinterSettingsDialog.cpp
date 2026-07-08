@@ -27,6 +27,7 @@
 #include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
+#include "Slic3r/App/WarningPanel.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
@@ -36,20 +37,24 @@ namespace Slic3r::App {
 LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
     PrinterAddDialog* printer_add_dialog,
-    Navigator& navigator) :
+    Navigator& navigator
+) :
     Dialog({"Printers"}, "LogicalPrinterSettingsDialog"),
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_preset_list_selection_changed_listener_scope(
         project_interactor.preset_interactor().printer_presets(),
-        *this),
+        *this
+    ),
     m_selected_project_changed_listener_scope(project_interactor, *this),
     m_app_config_changed_listener_scope(AppServices::instance().app_config_interactor(), *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_preset_favorite_filter(
-        std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()),
+        std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()
+    ),
     m_preset_searcher(
-        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_printer)),
+        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_printer)
+    ),
     m_printer_add_dialog(printer_add_dialog)
 {
     m_preset_favorite_filter->set_filter_fn(
@@ -109,7 +114,12 @@ void LogicalPrinterSettingsDialog::on_config_container_selection_changed(
     Domain::SelectionId config_container_id
 )
 {
-    m_warning->set_visible(false);
+    update_warning();
+}
+
+void LogicalPrinterSettingsDialog::update_warning()
+{
+    m_warning->set_visible(m_project_interactor.preset_interactor().has_invalid_hw_config());
 }
 
 void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId new_selection)
@@ -140,7 +150,6 @@ void LogicalPrinterSettingsDialog::on_selected_project_changed_final(size_t inde
     // Once we will start to implement remembering Dialog context in Navigator
     // This should be cleaned up to open proper page instead of defaulting to list
     m_stack_layout->set_current_index(0);
-    m_warning->set_visible(m_project_interactor.preset_interactor().has_invalid_hw_config());
 }
 
 PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_settings_dialog()
@@ -150,6 +159,7 @@ PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_se
 
 void LogicalPrinterSettingsDialog::select_page_settings()
 {
+    update_warning();
     m_stack_layout->set_current_index(1);
 }
 
@@ -262,8 +272,8 @@ void LogicalPrinterSettingsDialog::create_page_list()
                 return;
             }
 
-            select_page_settings();
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
+            select_page_settings();
             m_project_interactor.undo_provider().take_snapshot(
                 UndoSnapshotType::SelectPrinterPreset
             );
@@ -317,12 +327,8 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     back_button->set_width(24);
     back_button->set_height(24);
     back_button->set_content_padding(3.f);
-    back_button->callbacks().action = [this]()
-    {
-        m_stack_layout->set_current_index(0);
-        m_warning->set_visible(false);
-    };
-    m_text_printer_name = title_row->emplace_back<Text>("Unknown");
+    back_button->callbacks().action = [this]() { m_stack_layout->set_current_index(0); };
+    m_text_printer_name             = title_row->emplace_back<Text>("Unknown");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -361,12 +367,11 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     m_nozzle_list_view->set_gap(5);
     m_nozzle_list_view->set_source_list(&m_project_interactor.preset_interactor().tool_items());
 
-    m_warning = m_page_settings->emplace_back<Text>(
-        _u8L("Invalid configuration"),
-        Render::ImguiFontType::Bold
+    m_warning = m_page_settings->emplace_back<WarningPanel>();
+    m_warning->set_warning(
+        Biz::_u8L("Invalid combination"),
+        Biz::_u8L("Selected nozzles cannot be used together on any layer height.")
     );
-    m_warning->set_visible(false);
-    m_warning->set_text_color({0.98f, 0.4f, 0.19f});
 
     m_advanced_dialog->attach_to_item(content_item(), Position::Left);
 
@@ -391,7 +396,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
 void LogicalPrinterSettingsDialog::on_about_to_show()
 {
     m_stack_layout->set_current_index(0);
-    m_warning->set_visible(false);
+    update_warning();
 }
 
 void LogicalPrinterSettingsDialog::update_settings_data()

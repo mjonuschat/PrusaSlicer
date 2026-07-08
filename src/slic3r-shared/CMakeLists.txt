@@ -101,8 +101,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/MMPaintingColorSelector.cpp
         include/Slic3r/App/Plater/HeightRangeButton.hpp
         src/Slic3r/App/Plater/HeightRangeButton.cpp
-        src/Slic3r/App/Plater/WarningPanel.cpp
-        include/Slic3r/App/Plater/WarningPanel.hpp
         include/Slic3r/App/Plater/GizmoWindow.hpp
         src/Slic3r/App/Plater/GizmoWindow.cpp
         include/Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.hpp
@@ -280,6 +278,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.cpp
         include/Slic3r/App/WelcomeDialog.hpp
         src/Slic3r/App/WelcomeDialog.cpp
+        src/Slic3r/App/WarningPanel.cpp
+        include/Slic3r/App/WarningPanel.hpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp

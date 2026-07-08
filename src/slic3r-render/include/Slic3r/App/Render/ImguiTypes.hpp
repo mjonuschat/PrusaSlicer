@@ -207,7 +207,7 @@ enum class Icon : wchar_t
     RectangleAdd,
     Rotate,
     Simplify,
-    ExclamationRed,
+    ExclamationTriangle,
     Plus,
     Chain,
     Unchain,

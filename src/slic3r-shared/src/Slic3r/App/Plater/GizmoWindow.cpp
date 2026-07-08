@@ -16,7 +16,7 @@
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
-#include "Slic3r/App/Plater/WarningPanel.hpp"
+#include "Slic3r/App/WarningPanel.hpp"
 
 using namespace Slic3r::App::Yoga;
 

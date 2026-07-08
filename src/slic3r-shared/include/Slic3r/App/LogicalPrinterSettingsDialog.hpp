@@ -32,6 +32,7 @@ namespace Slic3r::App {
 class PrinterAddDialog;
 class Navigator;
 class PrinterAdvancedSettingsDialog;
+class WarningPanel;
 
 class LogicalPrinterSettingsDialog :
     public Yoga::Dialog,
@@ -76,6 +77,8 @@ private:
 
 protected:
     void close_action() override;
+
+    void update_warning();
 
 private:
     using PrinterListViewFactory = Yoga::ViewFactory<
@@ -140,7 +143,7 @@ private:
     Yoga::Text* m_text_printer_name{nullptr};
     Yoga::Icon* m_printer_icon{nullptr};
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
-    Yoga::Text* m_warning{nullptr};
+    WarningPanel* m_warning{nullptr};
     NozzleListView* m_nozzle_list_view{nullptr};
 
     PrinterAdvancedSettingsDialog* m_advanced_dialog{nullptr};

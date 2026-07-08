@@ -245,7 +245,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::RectangleAdd, "rectangle_add"},
     {Icon::Rotate, "rotate"},
     {Icon::Simplify, "simplify"},
-    {Icon::ExclamationRed, "exclamation_red"},
+    {Icon::ExclamationTriangle, "exclamation_triangle"},
     {Icon::Plus, "plus"},
     {Icon::Chain, "chain"},
     {Icon::Unchain, "unchain"},

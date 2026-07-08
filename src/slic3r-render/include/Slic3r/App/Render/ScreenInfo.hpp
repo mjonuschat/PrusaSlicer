@@ -33,7 +33,7 @@ public:
         m_scale(scale),
         m_dpi(dpi),
         m_root_font_size{root_font_size},
-        m_root_font_size_pt{root_font_size}
+        m_root_font_size_pt{root_font_size_pt}
     {}
 
     ScreenInfo(const ScreenInfo& other) = default;

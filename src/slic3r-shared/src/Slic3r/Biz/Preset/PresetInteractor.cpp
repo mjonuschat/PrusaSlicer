@@ -1668,6 +1668,7 @@ void PresetInteractor::select_printer_preset_internal(
     const auto& ccc = selected_config_container_context();
     auto* cc        = project.find_config_container(ccc.config_container_id);
     ASSERT(cc != nullptr, ccc.config_container_id);
+    get_or_fail_project_context(m_selected_project_id).invalid_hw_config = std::nullopt;
 
     if (!no_data_update) {
         fill_config_container_with_selected_preset(*cc, printer_hw_config_id, printer_preset_id, true, bag);

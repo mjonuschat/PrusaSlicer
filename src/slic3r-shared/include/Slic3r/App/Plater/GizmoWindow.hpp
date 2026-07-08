@@ -21,9 +21,11 @@ class ComboBox;
 class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
-namespace Slic3r::App::Plater {
-
+namespace Slic3r::App {
 class WarningPanel;
+}
+
+namespace Slic3r::App::Plater {
 
 class GizmoWindow : public Yoga::Window
 {
