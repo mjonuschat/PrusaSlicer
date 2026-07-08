@@ -745,7 +745,7 @@ void VariableLayerHeightGizmo::perform_layer_height_profile_clamping()
 
 void VariableLayerHeightGizmo::generate_adaptive_layer_height_profile()
 {
-    const float quality_factor = std::clamp(static_cast<float>(1. - m_smart_resolution), 0.f, 1.f);
+    const float quality_factor = std::clamp(static_cast<float>(m_smart_resolution), 0.f, 1.f);
 
     const AdaptiveParams adaptive_params{
         .min_layer_height          = m_layer_height_params.min_layer_height,
