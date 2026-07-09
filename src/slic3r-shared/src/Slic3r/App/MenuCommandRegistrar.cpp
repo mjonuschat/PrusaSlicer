@@ -1118,8 +1118,7 @@ void MenuCommandRegistrar::save_project()
 void MenuCommandRegistrar::save_project_as()
 {
     Domain::SelectionId selected_project_id = m_project_interactor.selected_project_id();
-    const std::string& project_name =
-        m_project_interactor.get_project_name(selected_project_id);
+    const std::string project_name = m_project_interactor.get_project_save_name(selected_project_id);
     Store3mfParam params{
         .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
     };

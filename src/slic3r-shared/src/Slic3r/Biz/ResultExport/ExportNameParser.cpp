@@ -200,7 +200,7 @@ ExportNameData parse_sla_export_name(
 ExportNameData parse_export_name(const Biz::ProjectInteractor& project_interactor)
 {
     Domain::SelectionId project_id = project_interactor.selected_project_id();
-    std::string project_name = project_interactor.get_project_name(project_id);
+    std::string project_name = project_interactor.get_project_save_name(project_id);
     const Domain::ConfigItem*
         item = project_interactor.preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
     if (!item) {
@@ -225,7 +225,7 @@ ExportNameData parse_export_name(const Biz::ProjectInteractor& project_interacto
 ExportNameData error_state_export_name(const Biz::ProjectInteractor& project_interactor)
 {
        Domain::SelectionId project_id = project_interactor.selected_project_id();
-    std::string project_name = project_interactor.get_project_name(project_id);
+    std::string project_name = project_interactor.get_project_save_name(project_id);
     const Domain::ConfigItem*
         item = project_interactor.preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
     if (!item) {

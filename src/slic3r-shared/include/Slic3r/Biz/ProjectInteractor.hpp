@@ -76,7 +76,6 @@ class ProjectInteractor final :
     public IColorsChangedListener,
     public UserAccount::IUserAccountListener,
     public AppInstance::IAppInstanceMessageContentListener,
-    public Scene::ISceneChangedListener,
     public FileDownloader::IFileDownloaderListener,
     public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
@@ -107,7 +106,6 @@ public:
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_preset_interactor);
         m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
-        m_scene_interactor.add_listener<Scene::ISceneChangedListener>(this);
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
@@ -195,14 +193,6 @@ public:
      * @param project_id
      */
     void remove_project(Domain::SelectionId project_id);
-
-    /**
-     * Renames project and push changes to ObservableProjectsList
-     * @param project_id
-     * @param new_name
-     * @note project_id needs to be valid
-     */
-    void rename_project(Domain::SelectionId project_id, const std::string& new_name);
 
     /** @} */
 
@@ -379,8 +369,6 @@ public:
 
     Domain::SlicingId selected_bed_slicing_id() const;
 
-    void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs &instances) override;
-
     /**
      * @name ISelectedBedInstancesChangedListener interface implementation
      * @{
@@ -542,6 +530,11 @@ public:
     }
 
     std::string get_project_name(Domain::SelectionId project_id) const;
+
+    /**
+     * @returns Project filename, or if empty name of the first object if there is any
+     */
+    std::string get_project_save_name(Domain::SelectionId project_id) const;
     
     /**
      * @brief Getter for default path when exporting 3mf file.
