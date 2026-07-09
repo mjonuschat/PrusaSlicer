@@ -1583,6 +1583,17 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_id, bool is
 
     ImGui::TableSetColumnIndex(ciPrintable);
 
+    const ImVec2 pos    = ImGui::GetCursorScreenPos();
+    const ImVec2 size   = ImGui::CalcTextSize(icon_str(icon).c_str());
+    std::string tooltip = is_printable ?
+        (sel_id.has_instance() ? Biz::_u8L("This object instance is printable.") :
+                                 Biz::_u8L("This object is printable.")) :
+        (sel_id.has_instance() ? Biz::_u8L("This object instance is unprintable.") :
+                                 Biz::_u8L("This object is unprintable."));
+    tooltip += "\n" + Biz::_u8L("Click to change printable state.");
+    if (ImGui::IsMouseHoveringRect(pos, pos + size))
+        Imgui::tooltip(tooltip);
+
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_Button));
     ImGui::PushID(
@@ -1628,15 +1639,21 @@ void ObjectList::render_extruder_marker(
 )
 {
     if (config_container_id) {
-        if (volume) {
+        bool show_extruder_marker{
+            m_project_interactor->selected_project()
+                .find_config_container(config_container_id.value())
+                ->selected_preset()
+                .hw_config.material_slot_count()
+            > 1
+        };
+        if (show_extruder_marker && volume) {
             const Domain::VolumeSettings& volume_settings = volume->volume_settings;
             bool has_extruder_overrides = volume_settings.overrides.get("extruder").has_value();
-            const bool show_extruder_makter =
+            show_extruder_marker =
                 (volume->is_modifier() && has_extruder_overrides) || volume->is_model_part();
-            if (!show_extruder_makter) {
-                return;
-            }
         }
+        if (!show_extruder_marker)
+            return;
 
         const std::vector<Domain::ColorRGB> extruder_colors =
             m_project_interactor->project_settings_interactor().get_colors(
@@ -1646,14 +1663,14 @@ void ObjectList::render_extruder_marker(
             m_project_interactor->selected_project().find_config_container(
                 config_container_id.value()
             );
-        Domain::Preset::SelectedPresetConfigPack config_pack_viewer(config_container->selected_preset());
+        Domain::Preset::SelectedPresetConfigPack config_pack_viewer(
+            config_container->selected_preset()
+        );
 
         std::set<unsigned> extruder_candidates;
         if (object) {
-            extruder_candidates = Biz::Slicing::get_object_extruder_candidates(
-                *object,
-                config_pack_viewer
-            );
+            extruder_candidates =
+                Biz::Slicing::get_object_extruder_candidates(*object, config_pack_viewer);
         } else if (volume) {
             extruder_candidates = Biz::Slicing::get_volume_extruder_candidates(
                 volume->volume_settings,
@@ -1666,13 +1683,16 @@ void ObjectList::render_extruder_marker(
         }
 
         ImGui::TableSetColumnIndex(ciExtruder);
-        BoldFontGuard bfg(m_imgui_render);
+
+        bool has_invalid_extruder{false};
 
         std::vector<ImVec4> vec4_colors;
         vec4_colors.reserve(extruder_candidates.size());
         for (const auto& extruder : extruder_candidates) {
-            if (extruder >= extruder_colors.size())
-                return;
+            if (extruder >= extruder_colors.size()) {
+                has_invalid_extruder = true;
+                continue;
+            }
             const ColorRGB& clr = extruder_colors[extruder];
             vec4_colors.push_back({clr.r(), clr.g(), clr.b(), 1.f});
         }
@@ -1680,10 +1700,34 @@ void ObjectList::render_extruder_marker(
             std::to_string(*extruder_candidates.begin() + 1) :
             std::string();
 
+        // Tooltip
+        {
+            std::string tooltip = has_invalid_extruder ? Biz::_u8L("Invalid extruder is used.") :
+                                                         Biz::_u8L("Used extruder indicator.");
+            const ImVec2 pos   = ImGui::GetCursorScreenPos();
+            const float height = ImGui::CalcTextSize(extruder_marker_text.c_str()).y
+                + GImGui->Style.FramePadding.y * 2.0f;
+            if (ImGui::IsMouseHoveringRect(pos, pos + ImVec2(height, height)))
+                Imgui::tooltip(tooltip);
+        }
+
+        BoldFontGuard bfg(m_imgui_render);
+
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 1.f));
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_WindowBg));
 
-        colored_circle_marker_aligned(0.5f, extruder_marker_text, vec4_colors);
+        if (has_invalid_extruder) {
+            ImGui::PushStyleColor(
+                ImGuiCol_Text,
+                m_theme->color_imgui(Platform::Color::Error).Value
+            );
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("%s", icon_str(Render::Icon::ErrorTickHovered).c_str());
+            ImGui::PopStyleColor();
+        }
+        else {
+            colored_circle_marker_aligned(0.5f, extruder_marker_text, vec4_colors);
+        }
 
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
