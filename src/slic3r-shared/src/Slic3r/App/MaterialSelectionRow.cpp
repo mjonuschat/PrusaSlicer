@@ -22,7 +22,7 @@ MaterialSelectionRow::MaterialSelectionRow(
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
     Biz::DataObserver<Biz::Preset::PresetItem>(index, data),
-    LayoutButton(data.ui_preset_name(), Render::Icon::Lock),
+    LayoutButton(data.ui_preset_name(), Render::Icon::LightLockClosed),
     m_material_index(material_index),
     m_on_clicked_extention(on_clicked_extention),
     m_on_favorite_clicked(on_favorite_clicked),
@@ -39,7 +39,6 @@ MaterialSelectionRow::MaterialSelectionRow(
     set_content_direction(YGDirectionRTL);
     set_allow_overlap(true);
 
-    set_icon_tint(m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
     set_text_wrap_mode(Text::WrapMode::WrapElide);
 
     auto switch_matrial = [this]() -> bool
@@ -100,7 +99,7 @@ void MaterialSelectionRow::on_data_update()
 {
     set_label(m_state->ui_preset_name());
     set_icon(
-        m_state->origin == Domain::Preset::PresetOrigin::System ? Render::Icon::Lock :
+        m_state->origin == Domain::Preset::PresetOrigin::System ? Render::Icon::LightLockClosed :
                                                                   Render::Icon::None
     );
     m_favorite_btn->set_icon(
