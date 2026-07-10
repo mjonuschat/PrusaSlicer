@@ -18,12 +18,13 @@ LeftBarCtrl::LeftBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
 : TabsBarCtrl(parent, orient, menus)
 {
     auto add_btn = [this](Button* btn) -> void {
-        m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, m_btn_margin); };
+        m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP, m_btn_margin); };
 
     preferences_btn = new Button(this, { wxEmptyString, "cog_wx", m_action_btn_sz, wxVERTICAL });
     add_btn(preferences_btn);
 
     m_account_btn = new ButtonWithPopup(this, "user", orient, m_login_icon_sz);
+    m_account_btn->set_margin(static_cast<int>(0.3 * w_config()->em_unit()));
     add_btn(m_account_btn);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
@@ -78,6 +79,22 @@ void LeftBarCtrl::UpdateAccountButton(bool avatar/* = false*/)
 void LeftBarCtrl::UnselectPopupButtons()
 {
     m_account_btn->set_selected(false);
+}
+
+void LeftBarCtrl::Rescale()
+{
+    TabsBarCtrl::Rescale();
+    int margin = w_config()->em_unit(this);
+    m_account_btn->set_margin(static_cast<int>(0.3 * margin));
+    preferences_btn->set_margin(margin);
+}
+
+void LeftBarCtrl::set_compact_mode(bool compact_mode)
+{
+    TabsBarCtrl::set_compact_mode(compact_mode);
+    m_login_icon_sz = compact_mode ? 32 : 42;
+    m_account_btn->set_compact_mode(compact_mode, m_login_icon_sz);
+    preferences_btn->set_compact_mode(compact_mode, m_action_btn_sz);
 }
 
 void LeftBarCtrl::ShowUserAccount(bool show)

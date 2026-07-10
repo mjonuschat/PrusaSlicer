@@ -14,6 +14,8 @@ public:
 
     void OnColorsChanged() override;
     void UnselectPopupButtons() override;
+    void Rescale() override;
+    void set_compact_mode(bool compact_mode) override;
 
     void UpdateAccountButton(bool avatar/* = false*/);
     void ShowUserAccount(bool show);

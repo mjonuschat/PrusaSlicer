@@ -42,6 +42,8 @@ public:
 
         void set_selected(bool selected);
         void set_hovered(bool hovered);
+        void set_compact_mode(bool compact_mode, int icon_px_cnt = 16 );
+        void set_margin(int margin);
         void render();
         bool is_selected() const { return m_is_selected; }
 
@@ -64,6 +66,9 @@ public:
         wxColour    m_background_color;
         wxColour    m_foreground_color;
         wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
+
+        bool m_compact_mode{false};
+        int m_margin{0};
     };
 
     class ButtonWithPopup : public Button
@@ -105,6 +110,8 @@ public:
 
     virtual void UnselectPopupButtons() = 0;
 
+    virtual void set_compact_mode(bool compact_mode);
+
 protected:
     wxRect get_selected_tab_rect();
 
@@ -123,6 +130,7 @@ protected:
 
     TabsBarMenus*           m_menus         { nullptr };
     int                     m_btn_max_width { -1 };
+    bool                    m_compact_mode{false};
 };
 
 } // namespace Slic3r::App::Desktop

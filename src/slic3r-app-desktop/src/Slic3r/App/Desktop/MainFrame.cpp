@@ -524,6 +524,7 @@ void MainFrame::set_accel_table()
 void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
 {
     m_left_bar = LeftBar::Create(this, &m_tabs_bar_menus);
+    m_left_bar->set_compact_mode(true);
 
     init_slicing_page();
     init_printer_page(project_interactor);

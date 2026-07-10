@@ -26,6 +26,7 @@ TabsBarCtrl::Button::Button(wxWindow* parent, const ButtonAppearance& appear, wx
 #endif
     m_foreground_color(m_parent->GetForegroundColour())
 {
+    m_margin = w_config()->em_unit(this);
     init_bitmaps();
     messure_min_size();
 
@@ -92,10 +93,14 @@ void TabsBarCtrl::Button::init_bitmaps()
 
 void TabsBarCtrl::Button::messure_min_size()
 {
-    int btn_margin = w_config()->em_unit(this);
-    int x, y;
+    if (m_compact_mode) {
+        const double koef = 0.1*w_config()->em_unit(this);
+        this->SetMinSize(wxSize(static_cast<int>(50.*koef), static_cast<int>(52.*koef)));
+        return;
+    }
 
-    wxString localized_label = m_appearance.label;
+    int x, y;
+    wxString localized_label = m_compact_mode ? wxString() : m_appearance.label;
 
     if (m_appearance.orient == wxHORIZONTAL) {
         GetTextExtent(
@@ -103,7 +108,7 @@ void TabsBarCtrl::Button::messure_min_size()
             &x,
             &y
         );
-        wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
+        wxSize size(x + 4 * m_margin, y + int(1.5 * m_margin));
         if (m_appearance.icon_name.empty())
             this->SetMinSize(size);
         else if (localized_label.IsEmpty()) {
@@ -117,12 +122,12 @@ void TabsBarCtrl::Button::messure_min_size()
 #endif
     } else {
         GetTextExtent(localized_label, &x, &y);
-        wxSize size(x + 2 * btn_margin, y + 3 * btn_margin + m_appearance.px_cnt);
-        if (m_appearance.label.empty()) {
+        wxSize size(x + 2 * m_margin, y + 3 * m_margin + m_appearance.px_cnt);
+        if (localized_label.IsEmpty()) {
             this->SetMinSize(wxSize(size.y, size.y));
         } else {
-            size.y += btn_margin;
-            this->SetMinSize(wxSize(size.x, size.y));
+            size.y += m_margin;
+            this->SetMinSize(size);
         }
     }
 }
@@ -161,12 +166,32 @@ void TabsBarCtrl::Button::set_hovered(bool hovered)
     this->Update();
 }
 
+void TabsBarCtrl::Button::set_compact_mode(bool compact_mode, int icon_px_cnt)
+{
+    if (m_appearance.px_cnt != icon_px_cnt) {
+        m_appearance.px_cnt = icon_px_cnt;
+        init_bitmaps();
+    }
+    m_compact_mode = compact_mode;
+    messure_min_size();
+
+    SetToolTip(m_compact_mode && !m_appearance.label.IsEmpty() ? m_appearance.label : wxString());
+}
+
+void TabsBarCtrl::Button::set_margin(int margin)
+{
+    m_margin = margin;
+    messure_min_size();
+}
+
 void TabsBarCtrl::Button::render()
 {
     const wxRect rc(GetSize());
     wxPaintDC dc(this);
 
     int em = w_config()->em_unit(this);
+    const double round_radius = 0.0;// 0.5 * em;
+    const int gap = int(0.5 * em);
 
     // Draw def rect with rounded corners
 
@@ -176,12 +201,12 @@ void TabsBarCtrl::Button::render()
     if (m_appearance.orient == wxHORIZONTAL && !m_appearance.label.empty() && m_is_selected) {
         // render Button as a Tab
         wxRect new_rc(rc.GetPosition(), rc.GetSize() + wxSize(0, em));
-        dc.DrawRoundedRectangle(new_rc, int(0.5 * em));
+        dc.DrawRoundedRectangle(new_rc, round_radius);
     } else
-        dc.DrawRoundedRectangle(rc, int(0.5 * em));
+        dc.DrawRoundedRectangle(rc, round_radius);
 
     wxPoint pt    = {0, 0};
-    wxString text = m_appearance.label;
+    wxString text = m_compact_mode ? wxString() : m_appearance.label;
 
     if (m_appearance.orient == wxHORIZONTAL) {
         if (m_bmp_bundle.IsOk()) {
@@ -189,7 +214,7 @@ void TabsBarCtrl::Button::render()
             pt.x          = text.IsEmpty() ? ((rc.width - szIcon.x) / 2) : em;
             pt.y          = (rc.height - szIcon.y) / 2;
             dc.DrawBitmap(m_bmp_bundle.GetBitmapFor(this), pt, true);
-            pt.x += szIcon.x + int(0.5 * em);
+            pt.x += szIcon.x + gap;
         }
 
         // Draw text
@@ -206,7 +231,7 @@ void TabsBarCtrl::Button::render()
             dc.SetFont(GetFont());
             dc.DrawText(text, pt);
 
-            pt.x += labelSize.x + int(0.5 * em);
+            pt.x += labelSize.x + gap;
 
             // Draw down_arrow if needed
 
@@ -336,6 +361,23 @@ void TabsBarCtrl::update_margins()
 {
     int em       = w_config()->em_unit(this);
     m_btn_margin = std::lround(0.9 * em);
+
+    for (auto* btn : m_pageButtons) {
+        btn->set_margin(em);
+    }
+    Layout();
+}
+
+void TabsBarCtrl::set_compact_mode(bool compact_mode)
+{
+    m_compact_mode = compact_mode;
+
+    m_btn_max_width = wxDefaultCoord;
+    for (auto* btn : m_pageButtons) {
+        btn->set_compact_mode(m_compact_mode, 20);
+    }
+
+    Layout();
 }
 
 wxPoint TabsBarCtrl::ButtonWithPopup::get_popup_pos()
@@ -360,7 +402,7 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
     update_margins();
 
     wxAlignment align;
-    int margin_flags;
+    int margin_flags{0};
 
     if (orient == wxHORIZONTAL) {
         m_sizer = new wxFlexGridSizer(2);
@@ -371,14 +413,13 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
         m_sizer = new wxFlexGridSizer(1);
         m_sizer->AddGrowableRow(0);
         align        = wxALIGN_CENTER_HORIZONTAL;
-        margin_flags = wxALL;
     }
     m_sizer->SetFlexibleDirection(orient);
     this->SetSizer(m_sizer);
 
     m_first_sizer = new wxBoxSizer(orient);
 
-    m_buttons_sizer = new wxFlexGridSizer(1, 1, m_btn_margin, m_btn_margin);
+    m_buttons_sizer = new wxFlexGridSizer(1, 1, m_btn_margin, orient == wxVERTICAL ? 0 : m_btn_margin);
     m_buttons_sizer->SetFlexibleDirection(wxBOTH);
     m_first_sizer->Add(m_buttons_sizer, 0, align | margin_flags, m_btn_margin);
 
@@ -445,6 +486,7 @@ bool TabsBarCtrl::InsertPage(
 )
 {
     Button* btn = new Button(this, {text, bmp_name, 22, m_orient});
+    btn->set_compact_mode(m_compact_mode, 22);
     btn->Bind(
         wxEVT_BUTTON,
         [this, btn](wxCommandEvent& event)

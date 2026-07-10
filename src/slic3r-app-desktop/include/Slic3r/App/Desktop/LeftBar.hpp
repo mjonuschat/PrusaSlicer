@@ -47,6 +47,11 @@ public:
         return GetLeftBarCtrl()->preferences_btn;
     }
 
+    void set_compact_mode(bool compact_mode)
+    {
+        GetLeftBarCtrl()->set_compact_mode(compact_mode);
+    }
+
     LeftBarCtrl* GetLeftBarCtrl() const { return static_cast<LeftBarCtrl*>(m_bookctrl); }
 
 private:
