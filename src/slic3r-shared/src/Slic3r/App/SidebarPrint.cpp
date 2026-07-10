@@ -65,7 +65,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     text_rect->set_align_items(YGAlignCenter);
     text_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
     text_rect->set_padding(Paddings(5, 0));
-    text_rect->emplace_back<Text>("Print");
+    text_rect->emplace_back<Text>(Biz::_u8L("Print preset"));
 
     m_combo_print =
         layer_height_row->emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
