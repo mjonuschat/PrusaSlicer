@@ -62,6 +62,7 @@ public:
         }
 
         std::string preset_name() const;
+        void set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names);
 
     private:
         void init_input_name_ctrl(wxBoxSizer* input_name_sizer, const std::string& preset_name);
@@ -119,6 +120,11 @@ public:
 
     bool get_template_filament_checkbox() const;
     const wxString& get_info_line_extension() const;
+
+    void set_reserved_preset_names(
+        PresetKind kind,
+        const std::vector<std::string>& reserved_preset_names
+    );
 
 private:
     void build(

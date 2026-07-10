@@ -40,6 +40,8 @@ public:
     ValidationResult validate(const std::string& name) const;
     std::string get_conflict_name(const std::string& preset_name) const;
 
+    void set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names);
+
 private:
     const Domain::Preset::PresetName* get_existing_preset(const std::string& name) const;
 
@@ -61,6 +63,8 @@ private:
     bool m_used_for_renaming{false};
     Domain::Preset::PresetNames m_preset_names;
     std::vector<PresetNameCaseIMapper> m_casei_preset_names;
+
+    std::vector<std::string> m_casei_reserved_preset_names;
 };
 
 } // namespace Slic3r::Biz::Preset

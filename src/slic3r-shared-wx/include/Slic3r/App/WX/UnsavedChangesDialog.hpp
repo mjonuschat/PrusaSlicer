@@ -92,6 +92,9 @@ private:
     int m_exit_queue{0};
     bool m_is_enabled_transfer{false};
     bool m_new_printer_has_multiple_extruders{false};
+
+    std::vector<std::string> m_reserved_material_preset_names;
+    std::vector<std::string> m_reserved_tool_preset_names;
 };
 
 } // namespace Slic3r::App::WX

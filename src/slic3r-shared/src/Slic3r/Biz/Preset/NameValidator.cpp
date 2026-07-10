@@ -54,6 +54,13 @@ NameValidator::NameValidator(
     std::sort(m_casei_preset_names.begin(), m_casei_preset_names.end());
 }
 
+void NameValidator::set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names)
+{
+    for (const std::string& preset_name : reserved_preset_names) {
+        m_casei_reserved_preset_names.emplace_back(boost::to_lower_copy<std::string>(preset_name));
+    }
+}
+
 const Domain::Preset::PresetNames& NameValidator::preset_names() const
 {
     return m_preset_names;
@@ -114,6 +121,15 @@ NameValidator::ValidationResult NameValidator::validate(const std::string& prese
 
     if (valid_type == ValidationType::Valid && preset_name == "- default -") {
         info_line  = _u8L("This name is reserved, use another.");
+        valid_type = ValidationType::Invalid;
+    }
+
+    if (std::find(m_casei_reserved_preset_names.cbegin(),
+                  m_casei_reserved_preset_names.cend(),
+                  boost::to_lower_copy<std::string>(preset_name))
+        != m_casei_reserved_preset_names.cend())
+    {
+        info_line  = _u8L("This name is already reserved, use another.");
         valid_type = ValidationType::Invalid;
     }
 

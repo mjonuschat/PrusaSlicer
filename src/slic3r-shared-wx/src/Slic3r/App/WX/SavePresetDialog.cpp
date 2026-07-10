@@ -189,6 +189,12 @@ std::string SavePresetDialog::Item::preset_name() const
     return existed_preset_name;
 }
 
+void SavePresetDialog::Item::set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names)
+{
+    m_validator.set_reserved_preset_names(reserved_preset_names);
+    update_state();
+}
+
 void SavePresetDialog::Item::update_state()
 {
     m_preset_name = into_u8(m_use_text_ctrl ? m_text_ctrl->GetValue() : m_combo->GetValue());
@@ -371,6 +377,16 @@ bool SavePresetDialog::get_template_filament_checkbox() const
 const wxString& App::WX::SavePresetDialog::get_info_line_extension() const
 {
     return m_info_line_extension;
+}
+
+void SavePresetDialog::set_reserved_preset_names(PresetKind kind, const std::vector<std::string>& reserved_preset_names)
+{
+    for (const auto& item : m_items) {
+        if (item->kind() == kind) {
+            item->set_reserved_preset_names(reserved_preset_names);
+            return;
+        }
+    }
 }
 
 bool SavePresetDialog::enable_ok_btn() const

@@ -408,9 +408,11 @@ void UnsavedChangesDialog::append_diff_keys(
             kind,
             preset_name,
             Biz::_u8(Domain::ConfigItemDef::translate_category(def.category, m_printer_technology)),
-            Biz::_u8(def.option_group == Domain::ConfigItemDef::OptionGroup::Unknown ?
-                def.label :
-                Domain::ConfigItemDef::translate_option_group(def.option_group)),
+            Biz::_u8(
+                def.option_group == Domain::ConfigItemDef::OptionGroup::Unknown ?
+                    def.label :
+                    Domain::ConfigItemDef::translate_option_group(def.option_group)
+            ),
             Biz::_u8(def.full_label.empty() ? def.label : def.full_label),
             Diff::get_display_value_or_na(config_left, key),
             Diff::get_display_value_or_na(config_mid, key),
@@ -642,11 +644,29 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
                 {{kind_id.kind, preset_name(m_preset_names, kind_id.kind, kind_id.id.value_or(0))}},
                 m_preset_interactor
             );
+            if (kind_id.kind == PresetKind::FdmMaterial) {
+                save_dlg.set_reserved_preset_names(
+                    PresetKind::FdmMaterial,
+                    m_reserved_material_preset_names
+                );
+            } else if (kind_id.kind == PresetKind::FdmToolPrint) {
+                save_dlg.set_reserved_preset_names(
+                    PresetKind::FdmToolPrint,
+                    m_reserved_tool_preset_names
+                );
+            }
+
             if (save_dlg.ShowModal() == wxID_OK)
                 new_preset_name = save_dlg.get_name();
             else
                 return;
             m_exit_states[kind_id].new_preset_name = new_preset_name;
+
+            if (kind_id.kind == PresetKind::FdmMaterial) {
+                m_reserved_material_preset_names.emplace_back(new_preset_name);
+            } else if (kind_id.kind == PresetKind::FdmToolPrint) {
+                m_reserved_tool_preset_names.emplace_back(new_preset_name);
+            }
         }
 
         // Note:
