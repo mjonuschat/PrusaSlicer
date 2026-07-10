@@ -69,15 +69,6 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
     };
     m_search_popup->content_item()->callbacks().hovered_changed = [this](bool)
     { update_open_popup(); };
-
-    Text* label = emplace_back<Text>(std::string{});
-#ifdef __APPLE__
-    label->set_text("CMD + F");
-#else
-    label->set_text("CTRL + F");
-#endif
-    label->set_margin(Margins(3, 0, 0, 0));
-    label->set_font_type(Render::ImguiFontType::Italic);
 }
 
 void SearchBar::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
