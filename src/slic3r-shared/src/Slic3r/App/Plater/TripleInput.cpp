@@ -12,7 +12,6 @@ class InputWithLabel : public Yoga::Rectangle {
 public:
     InputWithLabel(const std::string& label, const ImColor& color)
     {
-        set_min_width(42_fpx);
         set_align_items(YGAlignCenter);
         set_fill(m_theme->color_imgui(Platform::Color::Button));
         set_padding({2_fpx, 0, 2_fpx, 0});
@@ -63,6 +62,8 @@ TripleInput::TripleInput(
     const std::optional<ImColor>& color_override
 )
 {
+    set_min_width(128_fpx);
+
     const std::array<std::pair<std::string, ImColor>, 3> labels{
         std::pair{"X", color_override.value_or(ImColor{220, 63, 63})},
         std::pair{"Y", color_override.value_or(ImColor{101, 201, 0})},
