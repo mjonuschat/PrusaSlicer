@@ -259,6 +259,14 @@ Settings ArrangeGizmo::default_settings() const
     return settings;
 }
 
+static void append_printable_instances(Domain::ConstModelInstanceList& destination, const Domain::ModelInstanceList& source) {
+    for (const Domain::ModelInstance* instance : source) {
+        if (instance->printable) {
+            destination.push_back(instance);
+        }
+    }
+}
+
 void ArrangeGizmo::arrange_selected_config_container()
 {
     const ConfigContainer& config_container{m_project_interactor.selected_config_container()};
@@ -266,10 +274,7 @@ void ArrangeGizmo::arrange_selected_config_container()
     Domain::ConstModelInstanceList instances{};
     std::vector<Biz::BedToArrange> beds;
     for (const auto& bed_instance : config_container.bed_instances()) {
-        instances.insert(
-            instances.end(),
-            bed_instance->model_instances.begin(),
-            bed_instance->model_instances.end());
+        append_printable_instances(instances, bed_instance->model_instances);
         beds.push_back(
             {Domain::BedRef{config_container.id().id, bed_instance->id().id},
              bed_instance->index()});
@@ -278,7 +283,7 @@ void ArrangeGizmo::arrange_selected_config_container()
     const Domain::ModelInstanceList& unplaced_instances{
         m_project_interactor.scene_interactor().unplaced_model_instances(
             m_project_interactor.selected_project_id())};
-    instances.insert(instances.end(), unplaced_instances.begin(), unplaced_instances.end());
+    append_printable_instances(instances, unplaced_instances);
 
     m_arrange_interactor.arrange(
         m_project_interactor.selected_project_id(),
@@ -364,9 +369,7 @@ void ArrangeGizmo::arrange_selected_beds()
 
         bed_to_arrange.index = bed_instance->index();
 
-        for (const Domain::ModelInstance* instance : bed_instance->model_instances) {
-            bed_to_arrange.arrangeable.push_back(instance);
-        }
+        append_printable_instances(bed_to_arrange.arrangeable, bed_instance->model_instances);
         beds_to_arrange.push_back(bed_to_arrange);
     }
 
