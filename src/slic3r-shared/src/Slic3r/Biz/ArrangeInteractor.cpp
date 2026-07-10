@@ -257,15 +257,38 @@ std::optional<std::vector<InputShape>> get_arrange_input(
     return result;
 }
 
-double get_max_brim(const ConstModelInstanceList& instances)
+double get_max_brim(const ConstModelInstanceList& instances, double print_brim_width, bool print_brim_enabled)
 {
     double result{0.0};
     for (const ModelInstance* instance : instances) {
-        const std::optional<ConfigItem> brim_width{
-            instance->get_object()->object_settings.overrides.get("brim_width")
+        bool object_brim_enabled{false};
+        const auto brim_type{
+            instance->get_object()->object_settings.overrides.get("brim_type")
         };
-        if (brim_width) {
-            result = std::max(result, brim_width->get<double>());
+        if (brim_type) {
+            const auto brim_type_value{brim_type->get<Domain::BrimType>()};
+            if (brim_type_value == Domain::BrimType::OuterOnly || brim_type_value == Domain::BrimType::OuterAndInner) {
+                object_brim_enabled = true;
+            } else {
+                // Brim is explicitly disabled for this object, skip it.
+                continue;
+            }
+        } else {
+            object_brim_enabled = print_brim_enabled;
+        }
+
+        if (!object_brim_enabled) {
+            result = std::max(result, print_brim_enabled ? print_brim_width : 0.0);
+        } else {
+            const std::optional<ConfigItem> brim_width{
+                instance->get_object()->object_settings.overrides.get("brim_width")
+            };
+
+            if (brim_width) {
+                result = std::max(result, brim_width->get<double>());
+            } else {
+                result = std::max(result, print_brim_width);
+            }
         }
     }
     return result;
@@ -274,21 +297,13 @@ double get_max_brim(const ConstModelInstanceList& instances)
 ArrangeBed get_arrange_bed(
     const SelectionId project_id,
     const BedRef& bed_ref,
-    const double instances_brim,
+    const double brim_width,
     const Settings& settings,
     const Workbench& workbench
 )
 {
     const Project& project{workbench.project(project_id)};
     const ConfigContainer* config_container{project.find_config_container(bed_ref.config_container_id)};
-
-    double brim_width{0.0};
-    const ConfigPack& config{ASSERT_VAL(config_container)->build_print_config()};
-    if (std::holds_alternative<ConfigPackFDM>(config)) {
-        const ConfigPackFDM& fdm_config{std::get<ConfigPackFDM>(config)};
-        brim_width = fdm_config.print.items.opt("brim_width").get<double>();
-        brim_width = std::max(brim_width, instances_brim);
-    }
 
     const BedInstance& bed_instance{
         ASSERT_VAL(config_container)->find_bed_instance(bed_ref.instance_id)
@@ -386,16 +401,35 @@ WipeTowerPerBed get_wipe_towers_per_bed(
 ModelInstancesPerBed get_arrange_input_per_bed(
     const SelectionId project_id,
     const std::vector<BedToArrange>& beds,
+    const Domain::ConstModelInstanceList& extra,
     const Settings& settings,
-    const Workbench& workbench)
+    const Workbench& workbench
+)
 {
     ModelInstancesPerBed result;
 
     for (const BedToArrange& bed : beds) {
+        const ConfigContainer* config_container{workbench.project(project_id).find_config_container(bed.ref.config_container_id)};
+        const ConfigPack& config{ASSERT_VAL(config_container)->build_print_config()};
+
+        double print_brim_width{0.0};
+        bool print_brim_enabled{false};
+        if (std::holds_alternative<ConfigPackFDM>(config)) {
+            const ConfigPackFDM& fdm_config{std::get<ConfigPackFDM>(config)};
+            const auto brim_type{fdm_config.print.items.opt("brim_type").get<Domain::BrimType>()};
+            print_brim_enabled = brim_type == Domain::BrimType::OuterOnly
+                || brim_type == Domain::BrimType::OuterAndInner;
+            print_brim_width = fdm_config.print.items.opt("brim_width").get<double>();
+        }
+
+        const double extra_brim{get_max_brim(extra, print_brim_width, print_brim_enabled)};
+        const double arrangeable_brim{
+            get_max_brim(bed.arrangeable, print_brim_width, print_brim_enabled)};
+
         ArrangeBed arrange_bed{get_arrange_bed(
             project_id,
             bed.ref,
-            get_max_brim(bed.arrangeable),
+            std::max(extra_brim, arrangeable_brim),
             settings,
             workbench)};
 
@@ -746,7 +780,7 @@ void ArrangeInteractor::arrange(
 
     JobManager& job_manager{PlatformServices::instance().job_manager()};
     const ModelInstancesPerBed model_instances_per_bed{
-        get_arrange_input_per_bed(project_id, beds, settings, m_workbench)};
+        get_arrange_input_per_bed(project_id, beds, extra, settings, m_workbench)};
 
     job_manager
         .create_job(
