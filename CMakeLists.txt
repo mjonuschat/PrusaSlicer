@@ -169,6 +169,14 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53431
         # We will turn the warning of for GCC for now:
         -Wno-unknown-pragmas
+
+        # GCC 13+ warns when a type is used in a SFINAE/type-trait context (e.g. std::is_assignable,
+        # pulled in transitively by <algorithm>/<type_traits>) while only forward-declared, and is
+        # later fully defined in the same translation unit. This codebase relies heavily on
+        # forward-declaring UI-owner types across many headers for compile-time firewalling.
+        # None of these types are ever used by value in a container/trait that would make the
+        # incomplete-type SFINAE result observable, so this is noise, not a bug.
+        -Wno-sfinae-incomplete
     )
 endif()
 
@@ -196,7 +204,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" MATC
         #TEMPORARY
         -Wno-deprecated-declarations # Disable deprecation warnings
 
-        -Wno-reorder
+        $<$<COMPILE_LANGUAGE:CXX>:-Wno-reorder>
 
         # On GCC and Clang, no return from a non-void function is a warning only. Here, we make it an error.
         -Werror=return-type

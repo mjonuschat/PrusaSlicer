@@ -208,7 +208,7 @@ std::string ProjectSettingsInteractor::resolve_auto_color(
     }
 
     if (std::string c = preset_color(project_id, config_container_id, slot); !c.empty())
-        return std::move(c);
+        return c;
 
     return palette_color(slot);
 }

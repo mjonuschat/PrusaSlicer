@@ -129,6 +129,11 @@ void SlaViewer::reset()
                 id.type = Scene::AuxiliaryElementId::Type::SlaSupports;
                 break;
             }
+            case SlaMeshType::Undefined:
+            case SlaMeshType::TopClip:
+            case SlaMeshType::BottomClip:
+                // Clip types are excluded above by !t->is_clip(); Undefined is not expected here.
+                break;
             }
 
             if (node->has_render_component())

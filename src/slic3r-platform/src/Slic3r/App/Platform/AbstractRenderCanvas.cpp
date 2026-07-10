@@ -38,6 +38,8 @@ size_t button_to_index(MouseButton button)
         return 1;
     case MouseButton::Middle:
         return 2;
+    case MouseButton::NoButton:
+        break;
     }
     return size_t(-1);
 }

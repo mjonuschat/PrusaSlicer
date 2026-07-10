@@ -17,10 +17,6 @@ if (SLIC3R_ASAN)
         # and some issues (e.g. accessing an element past vector size but within its capacity) wont be reported.
         add_compile_definitions(_LIBCPP_HAS_NO_ASAN)
     endif ()
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lasan")
-    endif ()
 endif ()
 
 if (SLIC3R_UBSAN)
@@ -43,8 +39,4 @@ if (SLIC3R_UBSAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_ubsan_flags}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${_ubsan_flags}")
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${_ubsan_flags}")
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lubsan")
-    endif ()
 endif ()

@@ -302,6 +302,14 @@ static std::string geometry_name(Scene::GeometryDataId geometry_id)
         return _u8L("Cylinder");
     case Scene::GeometryDataId::Sphere:
         return _u8L("Sphere");
+    case Scene::GeometryDataId::Segment:
+    case Scene::GeometryDataId::Cone:
+    case Scene::GeometryDataId::Circle:
+    case Scene::GeometryDataId::GradedCircle:
+    case Scene::GeometryDataId::SmoothSphere:
+    case Scene::GeometryDataId::ToolMarker:
+    case Scene::GeometryDataId::CandyButton:
+        break;
     }
     PANIC("Unsupported geometry");
     return "Undefined";

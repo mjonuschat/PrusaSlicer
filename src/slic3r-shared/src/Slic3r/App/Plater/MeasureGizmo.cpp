@@ -190,6 +190,8 @@ static std::optional<Domain::Vec3d> position_on_feature(
         ret = hit_position;
         break;
     }
+    case SurfaceFeatureType::Undefined:
+        break;
     }
 
     return ret;
@@ -320,6 +322,16 @@ Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext& ctx
                 handle_left_click_on_current_feature(*hovered_feature_node->parent());
                 break;
             }
+            case MeasureGizmoElementType::Undefined:
+            case MeasureGizmoElementType::Features:
+            case MeasureGizmoElementType::Dimensionings:
+            case MeasureGizmoElementType::DimensioningLinear:
+            case MeasureGizmoElementType::DimensioningLinearStem:
+            case MeasureGizmoElementType::DimensioningLinearArrow1:
+            case MeasureGizmoElementType::DimensioningLinearArrow2:
+            case MeasureGizmoElementType::DimensioningAngularArc:
+            case MeasureGizmoElementType::DimensioningAngular:
+                break;
             }
             update_measurement();
         } else {
@@ -1727,6 +1739,8 @@ void MeasureGizmo::add_feature_to_scene(
         build_plane_feature(builder, ref, feature, measuring, color);
         break;
     }
+    case SurfaceFeatureType::Undefined:
+        break;
     }
 
     scene.add_child(builder.build().release(), &parent_node);
