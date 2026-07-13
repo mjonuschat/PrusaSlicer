@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 class RootItem;
 class Popup;
 using WindowPtr = std::unique_ptr<Window>;
-using PopupPtr = std::unique_ptr<Popup>;
+using PopupPtr  = std::unique_ptr<Popup>;
 
 class Popup : public Object
 {
@@ -25,10 +25,17 @@ public:
     Popup();
     ~Popup() override;
 
+    Callbacks& callbacks();
+
     /**
      * @param item that the Popup is attached to
      */
-    void attach_to_item(Item* item, Position prefered_position = Position::Right, float offset = 10);
+    void attach_to_item(
+        Item* item,
+        Position preferred_position = Position::Right,
+        const Unit& offset          = 10,
+        AlignU preferred_aligment   = AlignU::Center
+    );
     /**
      * @param item - any item from the tree, from which Popup will source RootItem
      */
@@ -42,17 +49,21 @@ public:
     Window* content_item() const;
 
     void render(const Vec2f& pos, const Vec2f& size) override;
-    void resize(const SizeInfo &size_info) override;
+    void resize(const SizeInfo& size_info) override;
 
     void check_resized();
 
-    float offset() const;
-    void set_offset(float offset);
+    const Unit& offset() const;
+    void set_offset(const Unit& offset);
 
     Position preferred_position() const;
     void set_preferred_position(Position preferred_position);
 
-    Callbacks& callbacks();
+    AlignU preferred_aligment() const;
+    void set_preferred_aligment(AlignU preferred_aligment);
+
+    bool allow_fallback_position() const;
+    void set_allow_fallback_position(bool allow_fallback_position);
 
 protected:
     void set_content_item(WindowPtr content_item);
@@ -78,22 +89,26 @@ private:
 
     enum class AttachedType
     {
-        Item,        ///< Attaches popup to an Item, uses Preferred position and offset
-        Center,      ///< Attaches popup to the center of the screen
+        Item, ///< Attaches popup to an Item, uses Preferred position and offset
+        Center, ///< Attaches popup to the center of the screen
         FreeStanding ///< popup can be moved anywhere within the screen
     };
 
     AttachedType m_attached_type = AttachedType::FreeStanding;
-    Item* m_attached_to = nullptr;
-    Position m_preferred_position = Position::Right;
-    float m_offset = 10;
+    ////////////////////AttachedType::Item/////////////////////
+    Item* m_attached_to            = nullptr;
+    Position m_preferred_position  = Position::Right;
+    AlignU m_preferred_aligment    = AlignU::Center;
+    bool m_allow_fallback_position = false;
+    EvaluatedUnit m_offset;
+    ///////////////////////////////////////////////////////////
     Vec2f m_last_size;
     Vec2f m_last_attached_pos;
     SizeInfo m_last_size_info;
 
     // hack
     bool m_resized = false;
-    bool m_opened = false;
+    bool m_opened  = false;
 };
 
 } // namespace Slic3r::App::Yoga

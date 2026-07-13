@@ -186,6 +186,13 @@ enum class AlignV
     Bottom
 };
 
+enum class AlignU
+{
+    Start,
+    Center,
+    End
+};
+
 struct Align
 {
     AlignH horizontal{AlignH::Left};

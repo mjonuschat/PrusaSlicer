@@ -41,6 +41,7 @@ Tooltip::Tooltip(
     );
 
     set_content_item(std::move(window));
+    set_allow_fallback_position(true);
 
     attach_to_item(parent);
 }

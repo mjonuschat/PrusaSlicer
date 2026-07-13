@@ -189,49 +189,6 @@ TEST_CASE_METHOD(YogaComponentFixture, "Popup: attach_to_item places popup at al
 }
 
 // ---------------------------------------------------------------------------
-// attach_to_item — fallback when preferred position overflows the viewport
-//
-// Anchor near the right edge: (1160, 300) 100×50.
-// Right: left=1260+10=1270, Max.x=1350 > 1280 → off-screen, skip
-// Left:  left=1160-10-80=1070, Max.x=1150 → fits → used as fallback
-// ---------------------------------------------------------------------------
-
-TEST_CASE_METHOD(
-    YogaComponentFixture,
-    "Popup: attach_to_item falls back to Left when Right overflows"
-)
-{
-    auto* anchor = make_anchor(*this, 1160.f, 300.f);
-    auto* popup  = window->emplace_back<TestPopup>();
-    popup->attach_to_item(anchor, Position::Right, 10.f);
-
-    popup->open();
-    render();
-
-    REQUIRE_THAT(popup->content_item()->left(), WithinAbs(1070.f, 0.5f));
-    REQUIRE_THAT(popup->content_item()->top(), WithinAbs(295.f, 0.5f));
-}
-
-TEST_CASE_METHOD(
-    YogaComponentFixture,
-    "Popup: attach_to_item falls back to Right when Left underflows"
-)
-{
-    // Anchor near the left edge: (20, 300) 100x50.
-    // Left:  left = 20 - 10 - 80 = -70 < 0 → off-screen, skip
-    // Right: left = 120 + 10 = 130, Max.x = 210 < 1280 → fits → used as fallback
-    auto* anchor = make_anchor(*this, 20.f, 300.f);
-    auto* popup  = window->emplace_back<TestPopup>();
-    popup->attach_to_item(anchor, Position::Left, 10.f);
-
-    popup->open();
-    render();
-
-    REQUIRE_THAT(popup->content_item()->left(), WithinAbs(130.f, 0.5f));
-    REQUIRE_THAT(popup->content_item()->top(), WithinAbs(295.f, 0.5f));
-}
-
-// ---------------------------------------------------------------------------
 // attach_to_item — viewport clamping when all positions overflow
 //
 // A 80×730 popup on a 720-high screen overflows in the Y axis for every

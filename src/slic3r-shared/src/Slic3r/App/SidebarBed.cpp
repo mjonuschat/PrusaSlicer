@@ -54,7 +54,8 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_logical_printer_button->set_flex_grow(1.f);
     m_logical_printer_button->set_visible_cog(true);
 
-    m_logical_printer_settings_dialog->attach_to_item(this, Position::Left);
+    m_logical_printer_settings_dialog
+        ->attach_to_item(m_logical_printer_button, Position::Left, 20_fpx, AlignU::Start);
     m_logical_printer_settings_dialog->callbacks().opened = [this]()
     { m_logical_printer_button->set_checked(true); };
     m_logical_printer_settings_dialog->callbacks().closed = [this]()
@@ -99,7 +100,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_list_view->set_orientation(Orientation::Vertical);
     m_list_view->set_gap(0.25_rem);
 
-    m_material_selection_dialog->attach_to_item(this, Position::Left);
+    m_material_selection_dialog->attach_to_item(m_list_view, Position::Left, 20_fpx, AlignU::Start);
     m_material_selection_dialog->callbacks().closed = [this]()
     {
         for (AbstractButton* button : m_material_button_group->buttons()) {
@@ -160,7 +161,9 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
 
     m_logical_printer_button->set_printer_name(preset_item.ui_preset_name());
     m_logical_printer_button->set_preset_name(preset_item.ui_hw_config_name());
-    m_logical_printer_button->set_tooltip(preset_item.ui_preset_name() + "\n" + preset_item.ui_hw_config_name());
+    m_logical_printer_button->set_tooltip(
+        preset_item.ui_preset_name() + "\n" + preset_item.ui_hw_config_name()
+    );
 
     const Domain::Preset::HwPrinterConfig& printer_config =
         m_project_interactor.preset_interactor().current_printer_config();

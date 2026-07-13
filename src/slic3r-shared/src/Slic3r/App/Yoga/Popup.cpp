@@ -13,6 +13,8 @@
 
 #include <list>
 
+namespace Slic3r::App::Yoga {
+
 namespace {
 
 [[nodiscard]] std::pair<bool, ImRect> try_to_place_popup(
@@ -20,41 +22,67 @@ namespace {
     const ImRect& target_rect,
     const ImVec2& attachee_size,
     float offset,
-    Slic3r::App::Yoga::Position position
+    Position position,
+    AlignU align
 )
 {
-    ImRect rect;
+    const float alignment = [&]
+    {
+        switch (align) {
+        case AlignU::Start:
+            return 0.f;
+        case AlignU::Center:
+            return 0.5f;
+        case AlignU::End:
+            return 1.f;
+        }
+        return 0.5f;
+    }();
+
+    const auto aligned_position = [alignment](float min, float max, float size)
+    { return std::lerp(min, max, alignment) - size * alignment; };
+
+    ImVec2 min;
     switch (position) {
-    case Slic3r::App::Yoga::Position::Left:
-        rect.Min.x = target_rect.Min.x - offset - attachee_size.x;
-        rect.Min.y = std::max(0.f, target_rect.GetCenter().y - attachee_size.y * 0.5f);
+    case Position::Left:
+        min = {
+            target_rect.Min.x - offset - attachee_size.x,
+            aligned_position(target_rect.Min.y, target_rect.Max.y, attachee_size.y)
+        };
         break;
-    case Slic3r::App::Yoga::Position::Right:
-        rect.Min.x = target_rect.Max.x + offset;
-        rect.Min.y = std::max(0.f, target_rect.GetCenter().y - attachee_size.y * 0.5f);
+
+    case Position::Right:
+        min = {
+            target_rect.Max.x + offset,
+            aligned_position(target_rect.Min.y, target_rect.Max.y, attachee_size.y)
+        };
         break;
-    case Slic3r::App::Yoga::Position::Top:
-        rect.Min.x = std::max(0.f, target_rect.GetCenter().x - attachee_size.x * 0.5f);
-        rect.Min.y = target_rect.Min.y - offset - attachee_size.y;
+
+    case Position::Top:
+        min = {
+            aligned_position(target_rect.Min.x, target_rect.Max.x, attachee_size.x),
+            target_rect.Min.y - offset - attachee_size.y
+        };
         break;
-    case Slic3r::App::Yoga::Position::Bottom:
-        rect.Min.x = std::max(0.f, target_rect.GetCenter().x - attachee_size.x * 0.5f);
-        rect.Min.y = target_rect.Max.y + offset;
+
+    case Position::Bottom:
+        min = {
+            aligned_position(target_rect.Min.x, target_rect.Max.x, attachee_size.x),
+            target_rect.Max.y + offset
+        };
         break;
     }
 
-    rect.Max = rect.Min + attachee_size;
-
-    return {size_rect.Contains(rect), {rect}};
+    const ImRect rect{min, min + attachee_size};
+    return {size_rect.Contains(rect), rect};
 }
 
 } // namespace
 
-namespace Slic3r::App::Yoga {
-
 Popup::Popup()
 {
-    m_popup_node = YGNodeNewWithConfig(m_config);
+    m_offset.source = 10;
+    m_popup_node    = YGNodeNewWithConfig(m_config);
     YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);
 }
 
@@ -105,18 +133,44 @@ ObjectPtr Popup::remove(Object* child)
     return Object::remove(child);
 }
 
+bool Popup::allow_fallback_position() const
+{
+    return m_allow_fallback_position;
+}
+
+void Popup::set_allow_fallback_position(bool allow_fallback_position)
+{
+    m_allow_fallback_position = allow_fallback_position;
+}
+
+AlignU Popup::preferred_aligment() const
+{
+    return m_preferred_aligment;
+}
+
+void Popup::set_preferred_aligment(AlignU preferred_aligment)
+{
+    m_preferred_aligment = preferred_aligment;
+}
+
 Popup::Callbacks& Popup::callbacks()
 {
     return m_callbacks;
 }
 
-void Popup::attach_to_item(Item* item, Position prefered_position, float offset)
+void Popup::attach_to_item(
+    Item* item,
+    Position prefered_position,
+    const Unit& offset,
+    AlignU prefered_alignment
+)
 {
     ASSERT(item);
     m_attached_type      = AttachedType::Item;
     m_attached_to        = item;
     m_preferred_position = prefered_position;
-    m_offset             = offset;
+    m_preferred_aligment = prefered_alignment;
+    set_offset(offset);
     m_content_item->set_position_by_yoga(true);
 }
 
@@ -195,7 +249,7 @@ void Popup::render(const Vec2f& pos, const Vec2f& size)
 
     if (!needs_resize && m_attached_type == AttachedType::Item) {
         const Vec2f current_pos = m_attached_to->get_global_pos();
-        needs_resize = !Domain::fuzzy_compare(current_pos.x(), m_last_attached_pos.x())
+        needs_resize            = !Domain::fuzzy_compare(current_pos.x(), m_last_attached_pos.x())
             || !Domain::fuzzy_compare(current_pos.y(), m_last_attached_pos.y());
     }
 
@@ -214,11 +268,19 @@ void Popup::check_resized()
     m_content_item->check_resized();
 }
 
-void Popup::resize(const SizeInfo &size_info)
+void Popup::resize(const SizeInfo& size_info)
 {
-    m_last_size_info = size_info;
-    m_last_size = Vec2f{size_info.viewport_size_x, size_info.viewport_size_y};
-    YGNodeCalculateLayout(m_popup_node, size_info.viewport_size_x, size_info.viewport_size_y, YGDirectionLTR);
+    if (m_last_size_info != size_info) {
+        m_last_size_info = size_info;
+        m_last_size      = Vec2f{size_info.viewport_size_x, size_info.viewport_size_y};
+        m_offset.evaluate(size_info);
+    }
+    YGNodeCalculateLayout(
+        m_popup_node,
+        size_info.viewport_size_x,
+        size_info.viewport_size_y,
+        YGDirectionLTR
+    );
 
     // Free standing windows have all handling implemented in Window class
     if (m_attached_type == AttachedType::FreeStanding) {
@@ -245,20 +307,24 @@ void Popup::resize(const SizeInfo &size_info)
             size_rect,
             target_rect,
             attachee_size,
-            m_offset,
-            m_preferred_position
+            m_offset.result,
+            m_preferred_position,
+            m_preferred_aligment
         );
         ImRect preferred_rect = placed.second;
-        // fallback to all other positions
-        while (!placed.first && !available_positions.empty()) {
-            placed = try_to_place_popup(
-                size_rect,
-                target_rect,
-                attachee_size,
-                m_offset,
-                available_positions.front()
-            );
-            available_positions.pop_front();
+        if (!placed.first && m_allow_fallback_position) {
+            // fallback to all other positions
+            while (!placed.first && !available_positions.empty()) {
+                placed = try_to_place_popup(
+                    size_rect,
+                    target_rect,
+                    attachee_size,
+                    m_offset.result,
+                    available_positions.front(),
+                    AlignU::Center
+                );
+                available_positions.pop_front();
+            }
         }
         popup_rect = placed.first ? placed.second : preferred_rect;
     } else if (m_attached_type == AttachedType::Center) {
@@ -296,14 +362,18 @@ void Popup::set_content_item(WindowPtr content_item)
     m_content_item->set_position_type(YGPositionTypeAbsolute);
 }
 
-float Popup::offset() const
+const Unit& Popup::offset() const
 {
-    return m_offset;
+    return m_offset.source;
 }
 
-void Popup::set_offset(float offset)
+void Popup::set_offset(const Unit& offset)
 {
-    m_offset = offset;
+    if (m_offset.source != offset) {
+        m_offset.source = offset;
+        m_offset.evaluate(m_last_size_info);
+        set_style_dirty();
+    }
 }
 
 void Popup::open_at(const Vec2f& pos)
