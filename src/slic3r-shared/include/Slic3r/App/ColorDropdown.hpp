@@ -12,12 +12,14 @@
 
 namespace Slic3r::App::Yoga {
 
+class MulticolorCircle;
+
 class ColorMenuItem : public Yoga::RectangleButton
 {
 public:
     ColorMenuItem(
         const std::string& label,
-        const Domain::ColorRGBA& color,
+        const std::vector<Domain::ColorRGBA>& colors,
         bool selectable,
         bool dropdown_indicator = false,
         bool hollow = false,
@@ -26,7 +28,7 @@ public:
 
     void set_entry(
         const std::string& label,
-        const Domain::ColorRGBA& color,
+        const std::vector<Domain::ColorRGBA>& colors,
         bool hollow = false,
         std::optional<std::string> index = std::nullopt
     );
@@ -34,7 +36,8 @@ public:
     void render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size) override;
 
 private:
-    Circle* m_swatch{nullptr};
+    MulticolorCircle* m_swatch{nullptr};
+    Text* m_text{nullptr};
     std::string m_label;
     bool m_dropdown_indicator{false};
 };
@@ -68,12 +71,16 @@ public:
         Biz::Preset::PresetItemType type
     ) override;
 
+protected:
+    void reload();
 private:
+    void reload_default_colors();
     void rebuild_popup_items();
+    std::string get_default_text();
     void update_trigger_label();
     void set_current_index_internal(std::size_t index);
-
     void set_items(const std::vector<std::pair<Domain::ColorRGBA, std::string>>& material_colors);
+
     Biz::ProjectInteractor& m_project_interactor;
     bool m_with_default{};
     bool m_with_numbers{};
@@ -82,6 +89,7 @@ private:
     ColorMenuItem* m_trigger{nullptr};
     ContextPopup* m_popup{nullptr};
     std::vector<ColorMenuItem*> m_popup_items;
+    std::vector<Domain::ColorRGBA> m_default_colors;
 };
 
 } // namespace Slic3r::App::Yoga

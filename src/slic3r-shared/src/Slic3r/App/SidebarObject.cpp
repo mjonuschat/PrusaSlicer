@@ -132,11 +132,17 @@ public:
         {
             return;
         }
-        if (item.name() != "extruder") {
-            return;
+
+        if (item.name() == "perimeter_extruder"
+            || item.name() == "infill_extruder"
+            || item.name() == "solid_infill_extruder")
+        {
+            ColorDropdown::reload();
         }
 
-        reload(project_id);
+        if (item.name() == "extruder") {
+            reload(project_id);
+        }
     }
 
     void on_scene_selection_changed(
@@ -148,6 +154,7 @@ public:
             return;
         }
         reload(project_id);
+        ColorDropdown::reload();
     }
 
     void on_selected_project_changed(size_t project_id) override
@@ -263,6 +270,8 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_extruder_picker->set_flex_shrink(0);
     m_extruder_picker->set_orientation(Orientation::Vertical);
     m_extruder_picker->set_gap(gap);
+    auto picker_label{m_extruder_picker->emplace_back<Text>(Biz::_u8L("Extruder"))};
+    picker_label->set_font_type(Render::ImguiFontType::Bold);
     m_extruder_picker->emplace_back<ExtruderDropdown>(m_project_interactor);
     add_separator(m_extruder_picker, padding);
 
