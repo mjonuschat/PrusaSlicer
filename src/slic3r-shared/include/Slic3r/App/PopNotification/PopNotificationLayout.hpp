@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/App/Render/ImguiTypes.hpp"
+
 #include <string>
 #include <functional>
 #include <variant>
@@ -15,17 +17,20 @@ struct PopNotificationButtonData
 struct PopNotificationLayoutText
 {
     std::string text;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutHeaderText
 {
     std::string header;
     std::string text;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutHeader
 {
     std::string header;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutImageHeader
@@ -51,6 +56,7 @@ struct PopNotificationLayoutTextButtons
 {
     std::string text;
     std::vector<PopNotificationButtonData> buttons;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutHeaderTextButtons
@@ -58,12 +64,14 @@ struct PopNotificationLayoutHeaderTextButtons
     std::string header;
     std::string text;
     std::vector<PopNotificationButtonData> buttons;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutTextProgress
 {
     std::string text;
     int progress;
+    Render::Icon icon{Render::Icon::None};
 };
 
 struct PopNotificationLayoutHeaderTextProgress
@@ -71,6 +79,7 @@ struct PopNotificationLayoutHeaderTextProgress
     std::string header;
     std::string text;
     int progress;
+    Render::Icon icon{Render::Icon::None};
 };
 
 using PopNotificationLayout = std::variant<

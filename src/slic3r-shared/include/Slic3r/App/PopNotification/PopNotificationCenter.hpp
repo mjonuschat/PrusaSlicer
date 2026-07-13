@@ -90,6 +90,13 @@ public:
     void on_connect_handler_error(const std::string& msg) override;
 
 private:
+    PopNotificationLayout download_finished_layout(
+        const std::string& body,
+        const boost::filesystem::path& dest_path,
+        const std::string& printables_url,
+        bool is_loaded
+    );
+
     PopNotificationObservableList m_notification_list;
     Biz::ObservableListSortFilter<PopNotificationData> m_list_sort_filter;
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;

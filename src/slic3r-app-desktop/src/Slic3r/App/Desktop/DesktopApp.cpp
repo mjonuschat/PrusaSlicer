@@ -580,6 +580,8 @@ void DesktopApp::MacOpenURL(const wxString& url)
     std::string narrow_url = WX::into_u8(url);
     if (boost::starts_with(narrow_url, "prusaslicer://login")) {
         m_project_interactor->user_account_interactor().on_log_in_code_response(narrow_url);
+    } else if (boost::starts_with(narrow_url, "prusaslicer://open")) {
+        m_project_interactor->on_download_models({std::move(narrow_url)});
     } else {
         SPDLOG_ERROR("MacOpenURL recieved improper URL: {}", narrow_url);
     }

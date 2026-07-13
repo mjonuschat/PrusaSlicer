@@ -385,7 +385,7 @@ void PopNotificationView::layout_type_text()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutText>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_text_layout(layout_data->text);
 }
@@ -394,7 +394,7 @@ void PopNotificationView::layout_type_header_text()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_header_layout(layout_data->header);
     basic_mid_text_layout(layout_data->text);
@@ -404,7 +404,7 @@ void PopNotificationView::layout_type_header()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutHeader>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None, /*top_row_only=*/true);
+    basic_layout(layout_data->icon, /*top_row_only=*/true);
     basic_mid_header_layout(layout_data->header);
 }
 
@@ -439,7 +439,7 @@ void PopNotificationView::layout_type_text_buttons()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_text_layout(layout_data->text);
     basic_mid_buttons_layout(layout_data->buttons);
@@ -449,7 +449,7 @@ void PopNotificationView::layout_type_header_text_buttons()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_header_layout(layout_data->header);
     basic_mid_text_layout(layout_data->text);
@@ -460,7 +460,7 @@ void PopNotificationView::layout_type_text_progress()
 {
     const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_text_layout(layout_data->text);
     basic_mid_progress_layout(layout_data->progress);
@@ -471,7 +471,7 @@ void PopNotificationView::layout_type_header_text_progress()
     const auto* layout_data =
         std::get_if<PopNotificationLayoutHeaderTextProgress>(&m_state->layout);
     ASSERT(layout_data);
-    basic_layout(Render::Icon::None);
+    basic_layout(layout_data->icon);
     basic_mid_layout();
     basic_mid_header_layout(layout_data->header);
     basic_mid_text_layout(layout_data->text);
