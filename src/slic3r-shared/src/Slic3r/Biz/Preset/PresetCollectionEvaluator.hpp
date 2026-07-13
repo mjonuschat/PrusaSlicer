@@ -15,6 +15,12 @@ enum class ExprCombine
     Or, And
 };
 
+enum class EvalMode
+{
+    Downstream,
+    NodeOnly
+};
+
 
 class PresetCollectionEvaluator {
 public:
@@ -38,6 +44,7 @@ private:
         const PresetEvaluator::EvalPresetContexts& parent_contexts,
         const ValueMaps& overrides,
         ExprCombine expr_combine = ExprCombine::Or,
+        EvalMode mode = EvalMode::Downstream,
         bool skip_condition_eval = false
     ) const;
     bool eval_condition(const Expr::ValueMap& overrides, const Domain::Preset::SourceLocatedExpr& expr) const;

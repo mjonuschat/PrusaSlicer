@@ -321,13 +321,17 @@ variants:
       d: 2
 ---
 kind: printer
-id: 'Printer'
-name: 'Printer'
-unconditional_inherits:
-  - '*common*@A'
 values:
-  c: false
-  e: 42
+  a: 2
+  d: 2
+variants:
+  - id: 'Printer'
+    name: 'Printer'
+    unconditional_inherits:
+      - '*common*@A'
+    values:
+      c: false
+      e: 42
 )";
 
         IO::PresetLoader loader;
@@ -360,6 +364,136 @@ values:
             REQUIRE(std::get<double>(p.features.find("f1")->second) == 1);
             REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_d);
         }
+    }
+
+    SECTION("mixing unconditional inherits with inherits")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+values:
+  com_a: 1
+  com_b: "x"
+  com_c: true
+features:
+  com_f1: 1
+  com_f4: 1
+variants:
+  - condition: 'tool.nozzle_diameter == 0.6'
+    id: '*common*@A'
+    features:
+      com_f2: 2
+    values:
+      com_d: 2
+  - condition: 'tool.nozzle_diameter == 0.4'
+    id: '*common*@B'
+    values:
+      com_d: 1
+    features:
+      com_f2: 1
+    variants:
+      - condition: 'tool.nozzle_high_flow'
+        id: '*common*@B1'
+        values:
+          com_c: false
+        features:
+          com_f2: 3
+---
+kind: printer
+id: '*printer_common*'
+values:
+  p_com_a: 10
+  p_com_b: "xx"
+  p_com_c: true
+---
+kind: printer
+id: '*printer_base*'
+inherits:
+- '*common*'
+values:
+  a: 1
+  b: "x"
+  c: true
+features:
+  f1: 1
+variants:
+  - id: '*printer_base*@A'
+    unconditional_inherits:
+    - '*printer_common*'
+    values:
+      d: 1
+    features:
+      f2: 1
+    variants:
+      - id: '*printer_base*@A1'
+        values:
+          g: 11
+  - id: '*printer_base*@B'
+    features:
+      f2: 2
+    values:
+      d: 2
+---
+kind: printer
+values:
+  a: 2
+  d: 2
+variants:
+  - id: 'Printer'
+    name: 'Printer'
+    unconditional_inherits:
+      - '*printer_base*@A'
+    values:
+      c: false
+      e: 42
+      com_b: "y"
+    features:
+      com_f4: 2
+)";
+
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        Expr::ValueMap values{
+            {"tool.nozzle_diameter", 0.4},
+            {"tool.nozzle_high_flow", true},
+        };
+
+        auto evals = eval.eval_preset({values}, false);
+        REQUIRE(evals.size() == 3 + 2);
+
+        auto it = std::find_if(evals.begin(), evals.end(), [](const auto& p){ return p.name == "Printer"; });
+        REQUIRE(it != evals.end());
+        const auto& p = *it;
+        REQUIRE(p.id == "Printer");
+        REQUIRE(p.conditions.size() == 0);
+        REQUIRE(p.values.size() == 12);
+        REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
+        REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
+        REQUIRE(std::get<bool>(p.values.find("c")->second) == false);
+        REQUIRE(std::get<double>(p.values.find("d")->second) == 1);
+        REQUIRE(std::get<double>(p.values.find("e")->second) == 42);
+
+        REQUIRE(std::get<double>(p.features.find("f1")->second) == 1);
+        REQUIRE(std::get<double>(p.features.find("f2")->second) == 1);
+
+        REQUIRE(std::get<double>(p.values.find("com_a")->second) == 1);
+        REQUIRE(std::get<std::string>(p.values.find("com_b")->second) == "y");
+        REQUIRE(std::get<bool>(p.values.find("com_c")->second) == false);
+        REQUIRE(std::get<double>(p.values.find("com_d")->second) == 1);
+        REQUIRE(std::get<double>(p.features.find("com_f2")->second) == 3);
+        REQUIRE(std::get<double>(p.features.find("com_f4")->second) == 2);
+
+        REQUIRE(std::get<double>(p.values.find("p_com_a")->second) == 10);
+        REQUIRE(std::get<std::string>(p.values.find("p_com_b")->second) == "xx");
+        REQUIRE(std::get<bool>(p.values.find("p_com_c")->second) == true);
     }
 
     SECTION("product inherits")
@@ -427,10 +561,10 @@ features:
         auto evals = eval.eval_preset({}, false);
         REQUIRE(evals.size() == 2 + 2 + 2 * 2);
         for (const auto& [name, expected_d, expected_f] : {
-            std::make_tuple("Printer@A@A", 1, 1),
+            std::make_tuple("Printer@A", 1, 1),
             std::make_tuple("Printer@B@A", 1, 2),
             std::make_tuple("Printer@A@B", 2, 1),
-            std::make_tuple("Printer@B@B", 2, 2),
+            std::make_tuple("Printer@B", 2, 2),
         }) {
             INFO("Preset: " << name);
             auto it = std::find_if(evals.begin(), evals.end(), [&name](const auto& p){ return p.id == name; });

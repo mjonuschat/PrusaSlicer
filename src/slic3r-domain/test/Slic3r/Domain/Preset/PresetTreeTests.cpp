@@ -11,4 +11,6 @@ TEST_CASE("Preset name utils")
     REQUIRE(derive_name("X", "A") == "X");
     REQUIRE(derive_name("", "A") == "A");
     REQUIRE(derive_name("A", "") == "A");
+    REQUIRE(derive_name("X@B", "A@B") == "X@B");
+    REQUIRE(derive_name("X@B@D", derive_name("A@B", "B@C")) == "X@D@B@C");
 }

@@ -27,30 +27,31 @@
 namespace Slic3r::Biz::Preset {
 
 namespace {
-    using namespace Domain::Preset;
+using namespace Domain::Preset;
 
-    template<typename DestMap, typename SrcMap>
-    void override_preset_values(DestMap& dest, const SrcMap& overrides)
-    {
-        for (const auto& [key, value] : overrides) {
-            if (key.starts_with("custom_parameters_")) {
-                auto it = dest.find(key);
-                ASSERT(std::holds_alternative<std::string>(value));
-                if (it != dest.end()) {
-                    ASSERT(std::holds_alternative<std::string>(it->second));
-                    dest[key] = merge_json(std::get<std::string>(it->second), std::get<std::string>(value));
-                    continue;
-                }
+template<typename DestMap, typename SrcMap>
+void override_preset_values(DestMap& dest, const SrcMap& overrides)
+{
+    for (const auto& [key, value] : overrides) {
+        if (key.starts_with("custom_parameters_")) {
+            auto it = dest.find(key);
+            ASSERT(std::holds_alternative<std::string>(value));
+            if (it != dest.end()) {
+                ASSERT(std::holds_alternative<std::string>(it->second));
+                dest[key] = merge_json(std::get<std::string>(it->second), std::get<std::string>(value));
+                continue;
             }
-            dest[key] = value;
         }
+        dest[key] = value;
     }
+}
 
-    void override_feature_values(FeatureValueMap& dest, const FeatureValueMap& overrides)
-    {
-        for (const auto& [key, value] : overrides)
-            dest[key] = value;
-    }
+void override_feature_values(FeatureValueMap& dest, const FeatureValueMap& overrides)
+{
+    for (const auto& [key, value] : overrides)
+        dest[key] = value;
+}
+
 }
 
 PresetCollectionEvaluator::PresetCollectionEvaluator(
@@ -188,6 +189,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     const PresetEvaluator::EvalPresetContexts& parent_contexts,
     const ValueMaps& overrides,
     ExprCombine expr_combine,
+    EvalMode mode,
     bool skip_condition_eval
 ) const
 {
@@ -217,6 +219,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 ret,
                 overrides,
                 expr_combine,
+                EvalMode::Downstream,
                 skip_superclass_condition_eval
             );
 
@@ -237,8 +240,22 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         const auto& node_path = named_preset(unc_inh);
 
         for (const auto& n : node_path) {
-            override_preset_values(unconditional_inherited_values, n->values);
-            override_feature_values(unconditional_inherited_features, n->features);
+            auto node_ctxs = eval_preset(
+                *n,
+                root_id,
+                origin,
+                user_file,
+                ret,
+                overrides,
+                expr_combine,
+                EvalMode::NodeOnly,
+                true
+            );
+
+            ASSERT(node_ctxs.size() == 1);
+            const auto& ctx = node_ctxs.front();
+            override_preset_values(unconditional_inherited_values, ctx.values);
+            override_feature_values(unconditional_inherited_features, ctx.features);
         }
     }
 
@@ -266,6 +283,10 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         override_preset_values(context.values, node.values);
         override_feature_values(context.features, unconditional_inherited_features);
         override_feature_values(context.features, node.features);
+    }
+
+    if (mode != EvalMode::Downstream) {
+        return PresetEvaluator::merged_same_presets(ret);
     }
 
     size_t conditional_variants   = 0;
@@ -328,6 +349,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             },
             overrides,
             expr_combine,
+            EvalMode::Downstream,
             true
         );
         for (auto& v : var_ctx) {

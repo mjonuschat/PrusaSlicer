@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <unordered_map>
+#include <string_view>
 #include <vector>
 #include <set>
 
@@ -67,7 +68,7 @@ using PresetNamesCollection = std::map<PresetKind, PresetNames>;
 
 
 bool is_public_name(const std::string& name);
-std::string derive_name(const std::string& name, const std::string& parent_name);
+std::string derive_name(std::string_view name, std::string_view parent_name);
 std::string_view short_name(const std::string& name);
 
 } // namespace Slic3r::Domain::Presets
