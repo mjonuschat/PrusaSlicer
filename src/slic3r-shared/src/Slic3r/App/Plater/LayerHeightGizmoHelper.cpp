@@ -9,7 +9,7 @@
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
-#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/App/Plater/LayerHeightProfileControl.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"

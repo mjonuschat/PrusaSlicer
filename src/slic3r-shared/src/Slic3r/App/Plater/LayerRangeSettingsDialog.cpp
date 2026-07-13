@@ -159,9 +159,9 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         const std::string& setting_label =
             Biz::_u8(item.def().full_label.empty() ? item.def().label : item.def().full_label);
         Text* label_text = setting_row->emplace_back<Text>(setting_label);
-        label_text->set_width(120);
-        label_text->set_max_width(120);
         label_text->set_wrap_mode(Text::WrapMode::Wrap);
+        label_text->set_align({AlignH::Left, AlignV::Center});
+        label_text->set_width(120);
 
         ConfigItemControl* control = ConfigItemControl::config_item_control_factory(
             setting_row,
@@ -180,8 +180,10 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         control->set_overriden(true);
         control->set_state(*config_item);
 
-        Text* setting_right_sidetext = setting_row->emplace_back<Text>(Biz::_u8(config_item->def().sidetext));
+        Text* setting_right_sidetext =
+            setting_row->emplace_back<Text>(Biz::_u8(config_item->def().sidetext));
         setting_right_sidetext->set_flex_grow(1);
+        setting_right_sidetext->set_align({AlignH::Left, AlignV::Center});
         setting_right_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
         m_setting_rows.push_back(setting_row);
@@ -193,7 +195,6 @@ void LayerRangeSettingsDialog::clear_settings()
     for (Item* setting_row : m_setting_rows) {
         m_settings_scroll->remove_later(setting_row);
     }
-
     m_setting_rows.clear();
 }
 

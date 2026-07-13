@@ -1,4 +1,4 @@
-#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/App/Plater/LayerHeightProfileControl.hpp"
 
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
@@ -9,8 +9,9 @@
 using Slic3r::Domain::Vec2f;
 using Slic3r::Domain::ZHeightPair;
 using Slic3r::Domain::ZHeightPairs;
+using namespace Slic3r::App::Yoga;
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 const constexpr float LAYER_HEIGHT_BASELINE_THICKNESS = 2.f;
 const constexpr float LAYER_HEIGHT_PROFILE_THICKNESS  = 2.f;

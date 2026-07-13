@@ -1,4 +1,4 @@
-#include "Slic3r/App/Yoga/VariableLayerHeightControl.hpp"
+#include "Slic3r/App/Plater/VariableLayerHeightControl.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -7,7 +7,7 @@
 #include <imgui/imgui.h>
 #include <numbers>
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 const constexpr float LAYER_HEIGHT_PROFILE_PADDING = 5.f;
 const constexpr ImColor LAYER_HEIGHT_CURSOR_COLOR  = ImColor(255, 255, 0, 255);
@@ -37,7 +37,7 @@ void VariableLayerHeightControl::reset_cursor_position()
     m_cursor_normalized_position.reset();
 }
 
-void VariableLayerHeightControl::render(const Vec2f& pos, const Vec2f& size)
+void VariableLayerHeightControl::render(const Domain::Vec2f& pos, const Domain::Vec2f& size)
 {
     if (size.x() <= 0.f || size.y() <= 0.f) {
         return;
@@ -45,8 +45,8 @@ void VariableLayerHeightControl::render(const Vec2f& pos, const Vec2f& size)
 
     this->render_item_begin(pos, size);
 
-    const Vec2f profile_area_position{pos.x() + LAYER_HEIGHT_PROFILE_PADDING, pos.y()};
-    const Vec2f profile_area_size{size.x() - 2.f * LAYER_HEIGHT_PROFILE_PADDING, size.y()};
+    const Domain::Vec2f profile_area_position{pos.x() + LAYER_HEIGHT_PROFILE_PADDING, pos.y()};
+    const Domain::Vec2f profile_area_size{size.x() - 2.f * LAYER_HEIGHT_PROFILE_PADDING, size.y()};
 
     this->process_input(pos, size, profile_area_position, profile_area_size);
 
@@ -59,7 +59,7 @@ void VariableLayerHeightControl::render(const Vec2f& pos, const Vec2f& size)
     this->render_item_end(pos, size);
 }
 
-void VariableLayerHeightControl::render_cursor(const Vec2f& pos, const Vec2f& size) const
+void VariableLayerHeightControl::render_cursor(const Domain::Vec2f& pos, const Domain::Vec2f& size) const
 {
     if (!m_cursor_normalized_position.has_value() || this->object_max_z() <= 0.f) {
         return;
@@ -147,10 +147,10 @@ void VariableLayerHeightControl::render_cursor(const Vec2f& pos, const Vec2f& si
 }
 
 void VariableLayerHeightControl::process_input(
-    const Vec2f& pos,
-    const Vec2f& size,
-    const Vec2f& profile_area_position,
-    const Vec2f& profile_area_size
+    const Domain::Vec2f& pos,
+    const Domain::Vec2f& size,
+    const Domain::Vec2f& profile_area_position,
+    const Domain::Vec2f& profile_area_size
 )
 {
     ImGui::SetCursorScreenPos(ImVec2(pos.x(), pos.y()));

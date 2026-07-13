@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/App/Plater/LayerHeightProfileControl.hpp"
 
 #include <functional>
 #include <optional>
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 class HeightRangeControl : public LayerHeightProfileControl
 {
@@ -26,7 +26,7 @@ public:
 
     Callbacks& callbacks();
 
-    void render(const Vec2f& pos, const Vec2f& size) override;
+    void render(const Domain::Vec2f& pos, const Domain::Vec2f& size) override;
 
 private:
     enum class BorderSide
@@ -57,14 +57,21 @@ private:
     };
 
     void process_input(
-        const Vec2f& pos,
-        const Vec2f& size,
-        const Vec2f& profile_area_position,
-        const Vec2f& profile_area_size
+        const Domain::Vec2f& pos,
+        const Domain::Vec2f& size,
+        const Domain::Vec2f& profile_area_position,
+        const Domain::Vec2f& profile_area_size
     );
-    ZRange compute_dragged_height_range(float mouse_y, const Vec2f& pos, const Vec2f& size) const;
-    std::optional<BorderHitResult>
-    pick_height_range_border(float mouse_y, const Vec2f& pos, const Vec2f& size) const;
+    ZRange compute_dragged_height_range(
+        float mouse_y,
+        const Domain::Vec2f& pos,
+        const Domain::Vec2f& size
+    ) const;
+    std::optional<BorderHitResult> pick_height_range_border(
+        float mouse_y,
+        const Domain::Vec2f& pos,
+        const Domain::Vec2f& size
+    ) const;
 
     DragMode m_drag_mode = DragMode::None;
     size_t m_dragged_range_index{0};
@@ -77,4 +84,4 @@ private:
     Callbacks m_callbacks;
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App::Plater

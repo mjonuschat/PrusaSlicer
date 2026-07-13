@@ -2,8 +2,6 @@
 
 #include "Slic3r/App/Plater/GizmoWindow.hpp"
 
-#include <string>
-
 namespace Slic3r::App::Yoga {
 class Text;
 class Rectangle;

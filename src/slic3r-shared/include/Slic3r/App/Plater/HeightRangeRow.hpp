@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
-#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/App/Plater/LayerHeightProfileControl.hpp"
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -24,19 +24,19 @@ public:
         std::function<void(bool)> hovered    = [](bool) {};
     };
 
-    explicit HeightRangeRow(const Yoga::HeightRangeEntry& height_range);
+    explicit HeightRangeRow(const HeightRangeEntry& height_range);
 
     Callbacks& callbacks();
 
-    const Yoga::HeightRangeEntry& height_range() const;
+    const HeightRangeEntry& height_range() const;
 
-    void set_height_range(const Yoga::HeightRangeEntry& height_range);
+    void set_height_range(const HeightRangeEntry& height_range);
     void set_has_overrides(bool has_overrides);
     void set_checked(bool checked);
     void set_highlighted(bool highlighted);
 
 private:
-    Yoga::HeightRangeEntry m_height_range;
+    HeightRangeEntry m_height_range;
     bool m_has_overrides{false};
 
     HeightRangeButton* m_height_range_button{nullptr};

@@ -14,7 +14,6 @@ struct ConfigBox;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::Yoga {
-class HeightRangeControl;
 class InputText;
 class LayoutButton;
 class Rectangle;
@@ -25,6 +24,7 @@ class ToggleButton;
 namespace Slic3r::App::Plater {
 
 class LayerRangeSettingsDialog;
+class HeightRangeControl;
 
 class HeightRangeDialog : public GizmoWindowWithLeftSidePanel
 {
@@ -74,13 +74,13 @@ public:
     void set_height_range_max_z(double max_z);
 
     void update_height_ranges(
-        const Yoga::HeightRangeEntries& height_range_entries,
+        const HeightRangeEntries& height_range_entries,
         const Domain::LayerConfigRanges& layer_config_ranges
     );
     void update_overrides_section();
     void update_single_height_range(
         const Domain::LayerHeightRange& range_to_update,
-        const Yoga::HeightRangeEntry& height_range_entry
+        const HeightRangeEntry& height_range_entry
     );
 
     void select_range(const Domain::LayerHeightRange& range_to_select);
@@ -91,7 +91,7 @@ public:
 
 private:
     Biz::IConfigBoxSetter* m_config_box_setter               = nullptr;
-    Yoga::HeightRangeControl* m_layer_height_profile_control = nullptr;
+    HeightRangeControl* m_layer_height_profile_control = nullptr;
     LayerRangeSettingsDialog* m_layer_range_settings_dialog  = nullptr;
     Domain::ConfigBox* m_current_range_settings              = nullptr;
 

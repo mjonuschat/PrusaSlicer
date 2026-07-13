@@ -4,7 +4,7 @@
 #include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/App/Yoga/VariableLayerHeightControl.hpp"
+#include "Slic3r/App/Plater/VariableLayerHeightControl.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
@@ -20,6 +20,7 @@ static const Margins BUTTON_TEXT_MARGIN = {10.f, 2.f, 10.f, 2.f};
 
 VariableLayerHeightDialog::VariableLayerHeightDialog() : GizmoWindowWithLeftSidePanel()
 {
+    side_panel()->set_min_width(80);
     this->content()->set_orientation(Orientation::Vertical);
     this->content()->set_gap(gap_size());
     this->revert_button()->set_visible(true);

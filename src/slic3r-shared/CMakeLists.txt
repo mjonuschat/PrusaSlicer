@@ -111,6 +111,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/GizmoHelpFactory.cpp
         include/Slic3r/App/Plater/KeyIcon.hpp
         src/Slic3r/App/Plater/KeyIcon.cpp
+        include/Slic3r/App/Plater/LayerHeightProfileControl.hpp
+        src/Slic3r/App/Plater/LayerHeightProfileControl.cpp
+        include/Slic3r/App/Plater/VariableLayerHeightControl.hpp
+        src/Slic3r/App/Plater/VariableLayerHeightControl.cpp
+        include/Slic3r/App/Plater/HeightRangeControl.hpp
+        src/Slic3r/App/Plater/HeightRangeControl.cpp
 
         include/Slic3r/App/Plater/DialogUtils.hpp
         include/Slic3r/App/Scene/EmbossCreate.hpp
@@ -632,12 +638,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/ColorPicker.cpp
         include/Slic3r/App/Yoga/ColorPickerButton.hpp
         src/Slic3r/App/Yoga/ColorPickerButton.cpp
-        include/Slic3r/App/Yoga/LayerHeightProfileControl.hpp
-        src/Slic3r/App/Yoga/LayerHeightProfileControl.cpp
-        include/Slic3r/App/Yoga/VariableLayerHeightControl.hpp
-        src/Slic3r/App/Yoga/VariableLayerHeightControl.cpp
-        include/Slic3r/App/Yoga/HeightRangeControl.hpp
-        src/Slic3r/App/Yoga/HeightRangeControl.cpp
         include/Slic3r/App/Yoga/TwoColorRing.hpp
         src/Slic3r/App/Yoga/TwoColorRing.cpp
         include/Slic3r/App/Yoga/DataObserverItem.hpp

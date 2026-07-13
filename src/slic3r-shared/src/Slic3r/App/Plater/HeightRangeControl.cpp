@@ -1,11 +1,11 @@
-#include "Slic3r/App/Yoga/HeightRangeControl.hpp"
+#include "Slic3r/App/Plater/HeightRangeControl.hpp"
 
 #include <imgui/imgui.h>
 #include <ranges>
 
 using Slic3r::Domain::Vec2f;
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 const constexpr float LAYER_HEIGHT_PROFILE_PADDING            = 5.f;
 const constexpr float HEIGHT_RANGE_BORDER_DETECTION_THRESHOLD = 5.f;

@@ -3,7 +3,7 @@
 #include "Slic3r/App/Plater/GizmoWindowWithLeftSidePanel.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/App/Yoga/VariableLayerHeightControl.hpp"
+#include "Slic3r/App/Plater/VariableLayerHeightControl.hpp"
 #include "Slic3r/Domain/LayerHeightProfile.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -30,20 +30,18 @@ public:
             float cursor_normalized_position,
             bool shift_down,
             bool ctrl_down,
-            Yoga::VariableLayerHeightControl::Button mouse_button
+            VariableLayerHeightControl::Button mouse_button
         )>
-            layer_profile_mouse_down =
-                [](float, bool, bool, Yoga::VariableLayerHeightControl::Button) {};
+            layer_profile_mouse_down = [](float, bool, bool, VariableLayerHeightControl::Button) {};
         std::function<void(
             float cursor_normalized_position,
             bool shift_down,
             bool ctrl_down,
-            Yoga::VariableLayerHeightControl::Button mouse_button
+            VariableLayerHeightControl::Button mouse_button
         )>
-            layer_profile_mouse_drag =
-                [](float, bool, bool, Yoga::VariableLayerHeightControl::Button) {};
-        std::function<void(Yoga::VariableLayerHeightControl::Button mouse_button)>
-            layer_profile_mouse_up = [](Yoga::VariableLayerHeightControl::Button) {};
+            layer_profile_mouse_drag = [](float, bool, bool, VariableLayerHeightControl::Button) {};
+        std::function<void(VariableLayerHeightControl::Button mouse_button)>
+            layer_profile_mouse_up = [](VariableLayerHeightControl::Button) {};
         std::function<void(float mouse_wheel_delta, bool ctrl_down)> layer_profile_mouse_wheel =
             [](float, bool) {};
         std::function<void()> on_height_range_click = []() {};
@@ -67,7 +65,7 @@ public:
     void reset_cursor_position();
 
     void set_layer_height_profile(const Domain::ZHeightPairs& layer_height_profile);
-    void set_height_ranges(const Yoga::HeightRangeEntries& height_ranges);
+    void set_height_ranges(const HeightRangeEntries& height_ranges);
 
 private:
     Yoga::Passthrough<Yoga::Slider> m_blend_distance_slider;
@@ -78,7 +76,7 @@ private:
     Yoga::LayoutButton* m_auto_calculate_button = nullptr;
     Yoga::LayoutButton* m_smooth_button         = nullptr;
 
-    Yoga::VariableLayerHeightControl* m_layer_height_profile_control = nullptr;
+    VariableLayerHeightControl* m_layer_height_profile_control = nullptr;
 
     Callbacks m_callbacks;
 

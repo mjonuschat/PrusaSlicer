@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/LayerHeightProfileControl.hpp"
+#include "Slic3r/App/Plater/LayerHeightProfileControl.hpp"
 
 #include <functional>
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 class VariableLayerHeightControl : public LayerHeightProfileControl
 {
@@ -48,17 +48,17 @@ public:
     void set_cursor_normalized_position(float normalized_position);
     void reset_cursor_position();
 
-    void render(const Vec2f& pos, const Vec2f& size) override;
+    void render(const Domain::Vec2f& pos, const Domain::Vec2f& size) override;
 
 private:
-    void render_cursor(const Vec2f& pos, const Vec2f& size) const;
+    void render_cursor(const Domain::Vec2f& pos, const Domain::Vec2f& size) const;
     void render_height_range_tooltip() const;
 
     void process_input(
-        const Vec2f& pos,
-        const Vec2f& size,
-        const Vec2f& profile_area_position,
-        const Vec2f& profile_area_size
+        const Domain::Vec2f& pos,
+        const Domain::Vec2f& size,
+        const Domain::Vec2f& profile_area_position,
+        const Domain::Vec2f& profile_area_size
     );
 
     float m_cursor_band_width = 0.f;
@@ -72,4 +72,4 @@ private:
     bool m_was_hovered         = false;
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App::Plater

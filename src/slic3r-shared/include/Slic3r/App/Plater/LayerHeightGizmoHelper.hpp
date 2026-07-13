@@ -20,11 +20,6 @@ class NodeBuilder;
 class Scene;
 } // namespace Slic3r::App::Scene
 
-namespace Slic3r::App::Yoga {
-struct HeightRangeEntry;
-using HeightRangeEntries = std::vector<HeightRangeEntry>;
-} // namespace Slic3r::App::Yoga
-
 namespace Slic3r::Biz::Scene {
 struct ObjectSelection;
 } // namespace Slic3r::Biz::Scene
@@ -36,6 +31,9 @@ class Project;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::Plater {
+
+struct HeightRangeEntry;
+using HeightRangeEntries = std::vector<HeightRangeEntry>;
 
 struct LayerHeightParams
 {
@@ -122,7 +120,7 @@ Domain::ZHeightPairs compute_layer_height_profile(
     const Domain::ZHeightPairs& layer_height_profile = Domain::ZHeightPairs{}
 );
 
-Yoga::HeightRangeEntries create_height_ranges_from_config(
+HeightRangeEntries create_height_ranges_from_config(
     const Domain::LayerConfigRanges& layer_config_ranges,
     double default_layer_height
 );

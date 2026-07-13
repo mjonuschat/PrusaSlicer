@@ -3,7 +3,7 @@
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Plater/LayerRangeSettingsDialog.hpp"
 #include "Slic3r/App/Plater/GizmoHelpFactory.hpp"
-#include "Slic3r/App/Yoga/HeightRangeControl.hpp"
+#include "Slic3r/App/Plater/HeightRangeControl.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
 #include "Slic3r/App/Yoga/LambdaItem.hpp"
@@ -332,7 +332,9 @@ void HeightRangeDialog::add_override_category_section(
         Text* config_item_title             = override_row->emplace_back<Text>(config_item_name);
         config_item_title->set_width(120);
         config_item_title->set_max_width(120);
-        config_item_title->set_wrap_mode(Text::WrapMode::Wrap);
+        config_item_title->set_height(40);
+        config_item_title->set_wrap_mode(Text::WrapMode::WrapElide);
+        config_item_title->set_align({AlignH::Left, AlignV::Center});
 
         ConfigItemControl* control = ConfigItemControl::config_item_control_factory(
             override_row,
@@ -351,10 +353,11 @@ void HeightRangeDialog::add_override_category_section(
         control->set_state(*override_item);
 
         Text* sidetext = override_row->emplace_back<Text>(Biz::_u8(config_item.def().sidetext));
-        sidetext->set_flex_shrink(0);
-
-        Item* remove_button_spacer = override_row->emplace_back<Item>();
-        remove_button_spacer->set_flex_grow(1);
+        sidetext->set_height(40);
+        sidetext->set_min_width(25);
+        sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
+        sidetext->set_flex_grow(1);
+        sidetext->set_align({AlignH::Left, AlignV::Center});
 
         LayoutButton* remove_override_button = override_row->emplace_back<LayoutButton>(
             std::string(),
@@ -363,7 +366,6 @@ void HeightRangeDialog::add_override_category_section(
         );
         remove_override_button->set_width(22);
         remove_override_button->set_height(22);
-        remove_override_button->set_flex_shrink(0);
         remove_override_button->callbacks().action = [this, key = config_item.name()]()
         { m_callbacks.override_removed(key); };
     }

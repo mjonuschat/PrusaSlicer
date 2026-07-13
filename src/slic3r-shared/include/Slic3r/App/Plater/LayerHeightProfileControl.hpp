@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App::Plater {
 
 struct HeightRangeEntry
 {
@@ -17,7 +17,7 @@ struct HeightRangeEntry
 
 using HeightRangeEntries = std::vector<HeightRangeEntry>;
 
-class LayerHeightProfileControl : public Item
+class LayerHeightProfileControl : public Yoga::Item
 {
 public:
     LayerHeightProfileControl();
@@ -58,14 +58,14 @@ protected:
     float project_layer_z(float layer_z, float out_range_min, float out_range_max) const;
     float project_mouse_y_to_z(
         float mouse_y,
-        const Vec2f& pos,
-        const Vec2f& size,
+        const Domain::Vec2f& pos,
+        const Domain::Vec2f& size,
         float object_max_z
     ) const;
 
-    void render_baseline(const Vec2f& pos, const Vec2f& size) const;
-    void render_layer_height_profile(const Vec2f& pos, const Vec2f& size) const;
-    void render_height_ranges(const Vec2f& pos, const Vec2f& size) const;
+    void render_baseline(const Domain::Vec2f& pos, const Domain::Vec2f& size) const;
+    void render_layer_height_profile(const Domain::Vec2f& pos, const Domain::Vec2f& size) const;
+    void render_height_ranges(const Domain::Vec2f& pos, const Domain::Vec2f& size) const;
 
     /**
      * @brief Returns the index of the height range under the given screen Y coordinate, if any.
@@ -75,7 +75,7 @@ protected:
      * @param size Width and height of the profile control area.
      */
     std::optional<size_t>
-    pick_height_range(float mouse_y, const Vec2f& pos, const Vec2f& size) const;
+    pick_height_range(float mouse_y, const Domain::Vec2f& pos, const Domain::Vec2f& size) const;
 
 private:
     float m_object_max_z         = 0.f;
@@ -101,4 +101,4 @@ private:
     ImColor m_height_range_color_overlap_border;
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App::Plater
