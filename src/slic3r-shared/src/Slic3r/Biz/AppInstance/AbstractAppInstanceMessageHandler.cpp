@@ -39,6 +39,7 @@ AbstractAppInstanceMessageHandler::AbstractAppInstanceMessageHandler(Platform::I
     : m_dispatcher{dispatcher}
 {
      m_message_handlers["CLI"] = std::bind(&AbstractAppInstanceMessageHandler::handle_message_type_cli, this, std::placeholders::_1);
+     m_message_handlers["LOGIN"] = std::bind(&AbstractAppInstanceMessageHandler::handle_message_type_login, this, std::placeholders::_1);
      m_message_handlers["STORE_READ"] = std::bind(&AbstractAppInstanceMessageHandler::handle_message_type_store_read, this, std::placeholders::_1);
      m_message_handlers["OTHER_CLOSING"] = std::bind(&AbstractAppInstanceMessageHandler::handle_message_type_other_closed, this, std::placeholders::_1);
 }
@@ -104,15 +105,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
 	for (auto it = args.begin(); it != args.end(); ++ it) {
 		if (it->rfind("prusaslicer://login", 0) == 0) {
             has_login_arg = true;
-            std::string url(*it);
-            {
-                std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-                m_dispatcher.dispatch_on_main_thread([this,url](){
-                    invoke_listeners<IAppInstanceMessageContentListener>([url](auto* listener){
-                        listener->on_login_data(url);
-                    });
-                });
-            }
+            dispatch_login(*it);
             continue;
 		}
         // Everything below is a single-instance action - only the primary instance acts on it.
@@ -129,7 +122,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
 	}
 
     if (is_primary && has_login_arg) {
-        multicast_message("CLI", data, Biz::Platform::PlatformServices::instance().app_hash());
+        multicast_message("LOGIN", data, Biz::Platform::PlatformServices::instance().app_hash());
     }
 
 	if (! paths.empty()) {
@@ -152,6 +145,32 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
             });
         }
 	}
+}
+
+void AbstractAppInstanceMessageHandler::handle_message_type_login(const std::string& data)
+{
+    std::vector<std::string> args;
+    bool parsed = Algorithms::unescape_strings_cstyle(data, args);
+    assert(parsed);
+    if (! parsed) {
+        SPDLOG_ERROR("login message from other instance is incorrectly formatted: {}", data);
+        return;
+    }
+    for (const std::string& arg : args) {
+        if (arg.rfind("prusaslicer://login", 0) == 0) {
+            dispatch_login(arg);
+        }
+    }
+}
+
+void AbstractAppInstanceMessageHandler::dispatch_login(const std::string& url)
+{
+    std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
+    m_dispatcher.dispatch_on_main_thread([this, url](){
+        invoke_listeners<IAppInstanceMessageContentListener>([url](auto* listener){
+            listener->on_login_data(url);
+        });
+    });
 }
 
 void AbstractAppInstanceMessageHandler::handle_message_type_store_read(const std::string& data)
