@@ -10,6 +10,7 @@
 
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
 #include "Slic3r/Biz/ProjectMetadataJson.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
@@ -1389,13 +1390,9 @@ tl::expected<ResultLoadJson, Read3mfIssue> load_json(mz_zip_archive &archive, co
 }
 
 namespace ProjectFileSerialization {
-constexpr const char *PRUSA_PROJECT_FILEPATH = "Metadata/PrusaSlicer3_project.json";
-constexpr std::string_view CONFIGURATION = "configuration"; // DynamicConfig
-constexpr std::string_view PROJECT_METADATA = "project";
-constexpr std::string_view PRESET_METADATA = "preset";
-constexpr std::string_view OBJECTS = "objects";
+using namespace Slic3r::Biz::Format::ProjectFileConstants;
+
 NamesType PROJECT_NAMES{{PROJECT_METADATA, CONFIGURATION, PRESET_METADATA, OBJECTS}};
-constexpr std::string_view CONFIG_CONTAINERS = "config_containers";
 
 void write(
     mz_zip_archive &archive,
@@ -1468,7 +1465,7 @@ void write(
     if (project_json.empty())
         return;
 
-    write_file(archive, project_json, PRUSA_PROJECT_FILEPATH);
+    write_file(archive, project_json, std::string{PRUSA_PROJECT_FILEPATH}.c_str());
 }
 
 void load(
@@ -1494,26 +1491,18 @@ void load(
     }
 
     // TODO: handle multiple config containers, add check that the keys exist in the JSON.
-    for (const nlohmann::ordered_json& config_container : project_json["config_containers"]) {
+    for (const nlohmann::ordered_json& config_container : project_json[CONFIG_CONTAINERS]) {
         config_containers_data.emplace_back();
-        if (config_container.contains(PRESET_METADATA)) {
-            auto res = Biz::Config::load_preset_metadata(config_container[PRESET_METADATA]);
-            if (! res)
-                collected_issues.add_issue(RT::project_config_issue);
-            else
-                config_containers_data.back().preset = res.value();
+
+        tl::expected<Biz::Config::PresetAndConfig, std::string> preset_and_config =
+            Biz::Config::load_preset_and_config(config_container);
+        if (!preset_and_config) {
+            collected_issues.add_issue(RT::project_config_issue);
+        } else {
+            config_containers_data.back().preset = std::move(preset_and_config->preset_metadata);
+            config_containers_data.back().config_pack = std::move(preset_and_config->config_pack);
         }
-        if (config_container.contains(CONFIGURATION)) {
-            tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res =
-                Biz::Config::load(
-                    config_container[CONFIGURATION],
-                    config_containers_data.back().preset.hw_config
-                );
-            if (! res)
-                collected_issues.add_issue(RT::project_config_issue);
-            else
-                config_containers_data.back().config_pack = res.value().config;
-        }
+
         if (config_container.contains("beds")) {
             int bed_idx{ 0 };
             for (const nlohmann::ordered_json& bed : config_container["beds"]) {
@@ -1602,9 +1591,20 @@ PrusaFilesResult Slic3r::load_prusa_files(
         return result_json.value().parsed_json;
     };
 
-    if (std::optional<json> project_json = get_json(ProjectFileSerialization::PRUSA_PROJECT_FILEPATH, RT::project_file_is_corrupted);
+    if (std::optional<json> project_json = get_json(
+            std::string{ProjectFileSerialization::PRUSA_PROJECT_FILEPATH}.c_str(),
+            RT::project_file_is_corrupted
+        );
         project_json.has_value())
-        ProjectFileSerialization::load(*project_json, model_map, result.project_metadata, result.config_containers_data, collected_issues);
+    {
+        ProjectFileSerialization::load(
+            *project_json,
+            model_map,
+            result.project_metadata,
+            result.config_containers_data,
+            collected_issues
+        );
+    }
 
     if (std::optional<json> facets_json = get_json(FacetsAnnotationSerialization::FACETS_ANNOTATION_FILE, RT::facets_annotation_file_is_corrupted);
         facets_json.has_value()) 

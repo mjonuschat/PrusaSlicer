@@ -19,7 +19,6 @@ const Domain::BoundingBox3d& raw_mesh_bounding_box(const Domain::ModelObject&);
 } // namespace Slic3r::Biz::Algorithms::ModelObject
 
 namespace Slic3r::Biz::Algorithms::Model {
-Domain::ModelObject* add_object(Domain::Model*, const char*, const char*, const Domain::TriangleMesh&);
 Domain::ModelObject* add_object(Domain::Model*, const char*, const char*, Domain::TriangleMesh&&);
 } // namespace Slic3r::Biz::Algorithms::Model
 
@@ -248,7 +247,6 @@ private:
 
     friend class Model;
 
-    friend Domain::ModelObject* Slic3r::Biz::Algorithms::Model::add_object(Domain::Model*, const char*, const char*, const Domain::TriangleMesh&);
     friend Domain::ModelObject* Slic3r::Biz::Algorithms::Model::add_object(Domain::Model*, const char*, const char*, Domain::TriangleMesh&&);
     friend void Slic3r::Biz::Algorithms::ModelObject::translate(Domain::ModelObject&, double, double, double);
     friend const BoundingBox3d& Slic3r::Biz::Algorithms::ModelObject::bounding_box_approx(const Domain::ModelObject&);

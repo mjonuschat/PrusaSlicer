@@ -71,11 +71,13 @@ CLI::Option* add_vec2d_option(
     const std::string& option_description = ""
 )
 {
-    return app.add_option_function<std::array<double, 2>>(
-        option_name,
-        [&variable](const std::array<double, 2>& arr) { variable = Vec2d(arr[0], arr[1]); },
-        option_description
-    );
+    return app
+        .add_option_function<std::array<double, 2>>(
+            option_name,
+            [&variable](const std::array<double, 2>& arr) { variable = Vec2d(arr[0], arr[1]); },
+            option_description
+        )
+        ->delimiter(',');
 }
 
 CLI::Option* add_vec3d_option(
@@ -85,11 +87,14 @@ CLI::Option* add_vec3d_option(
     const std::string& option_description = ""
 )
 {
-    return app.add_option_function<std::array<double, 3>>(
-        option_name,
-        [&variable](const std::array<double, 3>& arr) { variable = Vec3d(arr[0], arr[1], arr[2]); },
-        option_description
-    );
+    return app
+        .add_option_function<std::array<double, 3>>(
+            option_name,
+            [&variable](const std::array<double, 3>& arr)
+            { variable = Vec3d(arr[0], arr[1], arr[2]); },
+            option_description
+        )
+        ->delimiter(',');
 }
 
 Percentage parse_percentage(const std::string& str)
@@ -120,24 +125,26 @@ void add_input_options(CLI::App& app, App::InitParams& params)
 
     app.add_option(
            "--load",
-           params.input.config_files,
-           "Load configuration from the specified file. It can be used more than once to load options from multiple files."
+           params.input.config_file,
+           "Load configuration from the specified single JSON file in the format produced by --save (identical to the configuration stored inside 3MF files)."
     )
-        ->option_text("ABCD");
+        ->option_text("FILE");
 
     app.add_option(
            "--material-profile",
            params.input.material_profile_presets,
            "Name(s) of the material preset(s) used for slicing. Could be filaments or sla_material preset name(s) depending on printer technology."
     )
-        ->option_text("ABCD");
+        ->option_text("ABCD")
+        ->delimiter(','); // Material presets are comma-separated.
 
     app.add_option(
            "--tool-print-profile",
            params.input.tool_profile_presets,
            "Name(s) of the tool print preset(s) used for slicing."
     )
-        ->option_text("ABCD");
+        ->option_text("ABCD")
+        ->delimiter(','); // Tool presets are comma-separated.
 
     app.add_option(
            "--print-profile",
@@ -193,7 +200,8 @@ void add_transform_options(CLI::App& app, App::InitParams& params)
            params.transform.duplicate_grid,
            "Multiply copies by creating a grid."
     )
-        ->type_name("X,Y");
+        ->type_name("X,Y")
+        ->delimiter(',');
 
     app.add_flag(
            "--ensure-on-bed,!--no-ensure-on-bed",
@@ -437,8 +445,7 @@ void add_action_options(CLI::App& app, App::InitParams& params)
     app.add_flag(
         "--query-printer-models",
         params.action.query_printer_models,
-        "Get list of installed printer models into JSON. Note: To print printer models for required technology "
-        "use 'printer-technology' option with value FFF or SLA. By default printer_technology is FFF. "
+        "Get list of installed printer models (both FFF and SLA) into JSON. "
         "To print out JSON into file use 'output' option. To specify configuration folder use 'datadir' option."
     );
 
@@ -458,10 +465,10 @@ void add_action_options(CLI::App& app, App::InitParams& params)
     app.add_flag(
         "--slice,-s",
         params.action.slice,
-        "Slice the model as FFF or SLA based on the printer_technology configuration value and export the result."
+        "Slice the model and export the result. The printer technology (FFF or SLA) is determined by the selected printer profile."
     );
 
-   // Allow using at most one action simultaneously from this group.
+    // Allow using at most one action simultaneously from this group.
     auto& preset_updater_action_group = *app.add_option_group("Preset Updater");
     preset_updater_action_group.required(false);
     preset_updater_action_group.require_option(0, 1);
@@ -478,30 +485,32 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         "Preset Updater performs check of reconfigurations and prints result in json format. This includes downloading possible update files from servers for all currently selected sources."
     );
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-add-local",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_add_local = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Adds local source to Preset Updater sources. The source is specified by a path to a zip file."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-add-local",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_add_local = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Adds local source to Preset Updater sources. The source is specified by a path to a zip file."
+        )
         ->option_text("ABCD");
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-remove-local",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_remove_local = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Removes local source from Preset Updater by UUID."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-remove-local",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_remove_local = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Removes local source from Preset Updater by UUID."
+        )
         ->option_text("ABCD");
 
     preset_updater_action_group.add_flag(
@@ -510,17 +519,18 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         "Lists all sources of Preset Updater in json format."
     );
 
-    preset_updater_action_group.add_option_function<std::string>(
-           "--preset-update-select-source",
-           [&params](const std::string& file)
-           {
-               params.action.preset_updater_switch_repo = true;
-               if (!params.misc.output.has_value()) {
-                   params.misc.output = file;
-               }
-           },
-           "Selects or unselects Preset Updater Source by given UUID. If source is selected, automatically unselects other sources with same id."
-    )
+    preset_updater_action_group
+        .add_option_function<std::string>(
+            "--preset-update-select-source",
+            [&params](const std::string& file)
+            {
+                params.action.preset_updater_switch_repo = true;
+                if (!params.misc.output.has_value()) {
+                    params.misc.output = file;
+                }
+            },
+            "Selects or unselects Preset Updater Source by given UUID. If source is selected, automatically unselects other sources with same id."
+        )
         ->option_text("ABCD");
 
     preset_updater_action_group.add_flag(
@@ -636,7 +646,8 @@ void add_config_item_override(
                        },
                        option_description
                 )
-                    ->option_text("ABCD");
+                    ->option_text("ABCD")
+                    ->delimiter(',');
             } else if constexpr (std::is_same_v<ValueType, Domain::Percentage>) {
                 app.add_option_function<std::string>(
                        option_name_with_prefix,
@@ -690,14 +701,16 @@ void add_config_item_override(
                     option_description
                 );
 
-                if constexpr (std::is_same_v<ValueType, std::string>
-                              || std::is_same_v<ValueType, std::vector<std::string>>)
-                {
+                if constexpr (std::is_same_v<ValueType, std::string>) {
                     option->option_text("ABCD");
+                } else if constexpr (std::is_same_v<ValueType, std::vector<std::string>>) {
+                    option->option_text("ABCD")->delimiter(',');
                 } else if constexpr (std::is_same_v<ValueType, Vec2d>
                                      || std::is_same_v<ValueType, std::vector<Vec2d>>)
                 {
-                    option->type_name("X,Y");
+                    option->type_name("X,Y")->delimiter(',');
+                } else {
+                    option->delimiter(',');
                 }
             }
         }
@@ -764,7 +777,6 @@ InitParams read_cli(::CLI::App& app, const std::string& app_version, const int a
 
     std::shared_ptr<CustomFormatter> custom_formatter = std::make_shared<CustomFormatter>();
     app.formatter(custom_formatter);
-    app.option_defaults()->delimiter(',');
 
     app.set_version_flag(
         "-v,--version",

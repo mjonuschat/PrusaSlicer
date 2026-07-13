@@ -1,187 +1,96 @@
 #include "Slic3r/App/CLI/ProcessActions.hpp"
 
-#include "CLIUtils.hpp"
-
-#include "Slic3r/App/CLI/LoadPrintData.hpp"
+#include "Slic3r/App/CLI/CLIRuntime.hpp"
+#include "Slic3r/App/CLI/CLIUtils.hpp"
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
-#include "Slic3r/App/Init.hpp"
-#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
-#include "Slic3r/App/PresetUpdaterCLI.hpp"
 #include "Slic3r/App/ConfigModelDump.hpp"
+#include "Slic3r/App/Init.hpp"
+#include "Slic3r/App/PresetUpdaterCLI.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
-#include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
+#include "Slic3r/Biz/Format/OBJ.hpp"
+#include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Biz/SecretStoreDummy.hpp"
+#include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
-#include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
-#include "Slic3r/Domain/Image.hpp"
-#include "Slic3r/Domain/Model.hpp"
-#include "Slic3r/Domain/PixelFormat.hpp"
+#include "Slic3r/Domain/Preset/Bundle.hpp"
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/Workbench.hpp"
+#include "Slic3r/Log.hpp"
+#include "Slic3r/Semver.hpp"
+#include "Slic3r/Version.hpp"
 
-#include <string>
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <set>
+#include <sstream>
+#include <string>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/nowide/iostream.hpp>
-#include <boost/nowide/fstream.hpp>
 #include <boost/nowide/filesystem.hpp>
+#include <boost/nowide/fstream.hpp>
+#include <boost/nowide/iostream.hpp>
 
 #include <nlohmann/json.hpp>
-
-#include "Slic3r/Biz/Format/OBJ.hpp"
-#include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
-#include "Slic3r/Semver.hpp"
-#include "Slic3r/Version.hpp"
-#include "Slic3r/Log.hpp"
-#include "libslic3r/IThumbnailImageGenerator.hpp"
 
 namespace fs = boost::filesystem;
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
+using Slic3r::Biz::Format::ProjectFileConstants::CONFIGURATION;
+using Slic3r::Biz::Format::ProjectFileConstants::PRESET_METADATA;
+using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener;
+using Slic3r::Biz::Preset::IO::BundlePaths;
+using Slic3r::Biz::Slicing::SlicingInteractor;
+using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ConfigPackSLA;
 using Slic3r::Domain::Model;
+using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Project;
-using Slic3r::Domain::Vec2crd;
-using Slic3r::Domain::Vec2d;
-using Slic3r::Domain::Vec2ds;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::SlicingId;
+using Slic3r::Domain::Preset::Bundle;
 
 namespace Slic3r::App::CLI {
 
+namespace {
 
-
-
-class CLIThumbnailImageGenerator : public Slicing::IThumbnailImageGenerator
+std::string format_slicing_errors(const std::vector<Slicing::Error>& slicing_errors)
 {
-public:
-    CLIThumbnailImageGenerator() = default;
-    explicit CLIThumbnailImageGenerator(const std::vector<std::string>& input_files)
-    {
-        if (input_files.size() == 1 && boost::iends_with(input_files[0], ".3mf")) {
-            m_filename = input_files[0];
-        }
+    std::ostringstream error_stream;
+    for (const Slicing::Error& slicing_error : slicing_errors) {
+        error_stream << slicing_error << "\n";
     }
 
-    std::future<Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
-        const Slicing::ThumbnailImageRequests& requests
-    ) override
-    {
-        std::promise<Slicing::ThumbnailImageResults> promise;
-        std::future<Slicing::ThumbnailImageResults> result{promise.get_future()};
-        if (m_filename.empty()) {
-            promise.set_value(Slicing::ThumbnailImageResults{});
-            return result;
-        }
-
-        // Create a list of all sizes that we need to generate.
-        std::vector<Domain::Size> sizes;
-        for (const auto& request : requests) {
-            for (const auto& size : request.params.sizes) {
-                sizes.emplace_back(size);
-            }
-        }
-
-        // Now actually generate the thumbnails:
-        std::vector<Domain::Image> source_images = get_thumbnail_images_from_3mf(m_filename, sizes);
-        
-        if (source_images.empty() || source_images.size() != sizes.size()
-         || std::any_of(source_images.begin(), source_images.end(),
-             [](const Domain::Image& img) { return img.width() == 0 || img.height() == 0; })
-            ) {
-            promise.set_value(Slicing::ThumbnailImageResults{});
-            return result;
-        }
-
-        Slicing::ThumbnailImageResults results;
-        size_t j=0;
-        for (const auto& request : requests) {
-            Slicing::ThumbnailImageResult thumbnail_result;
-            thumbnail_result.type = request.type;
-            thumbnail_result.project_id = request.params.project_id;
-            thumbnail_result.bed_instance_id = request.params.bed_instance_id;
-
-            for (size_t i = 0; i < request.params.sizes.size(); ++i) {
-                thumbnail_result.images.push_back(source_images[j++]);
-                ASSERT(thumbnail_result.images.back().width() == request.params.sizes[i].width);
-                ASSERT(thumbnail_result.images.back().height() == request.params.sizes[i].height);
-            }
-            results.push_back(std::move(thumbnail_result));
-        }
-        ASSERT(j == source_images.size());
-        promise.set_value(std::move(results));
-        return result;
+    if (slicing_errors.empty()) {
+        error_stream << "Slicing failed.";
     }
 
-    void handle_enqueued_requests() override {}
-private:
-    std::string m_filename;
-};
+    return error_stream.str();
+}
 
-struct SlicingStatusChangeListener : Slicing::IStatusListener
-{
-    std::promise<std::pair<Domain::SlicingId, Slicing::StatusUpdate>> promise_slicing_finished;
-
-    void on_status_changed(
-        const Slicing::StatusUpdate status_update,
-        const Domain::SlicingId slicing_id
-    ) override
-    {
-        if (status_update.code == Biz::Slicing::StatusCode::Finished
-            || !status_update.errors_to_append.empty())
-        {
-            promise_slicing_finished.set_value(std::make_pair(slicing_id, status_update));
-        }
-    }
-};
-
-struct ExportFinishedJobManagerStatusListener : public Biz::Platform::JobManager::IJobManagerStatusChangedListener
-{
-    std::promise<std::optional<std::string>> promise_export_error;
-
-    void on_job_manager_status_changed(
-        const Slic3r::Biz::Platform::JobManager::JobManagerStatus& job_manager_status
-    ) override
-    {
-        for (const auto& [job_name, progress] : job_manager_status) {
-            if (!job_name.starts_with("printhost")) {
-                continue;
-            }
-
-            std::string payload_message;
-            if (const auto* payload =
-                    std::any_cast<Biz::PrintHost::PrintHostJobProgressPayload>(&progress.progress_detail.payload))
-            {
-                payload_message = payload->message;
-            }
-
-            if (progress.status == Slic3r::Domain::JobStatus::Failed)
-            {
-                promise_export_error.set_value(payload_message);
-            } else if (progress.status == Slic3r::Domain::JobStatus::Finished)
-            {
-                promise_export_error.set_value(std::nullopt);
-            }
-        }
-    }
-};
+} // namespace
 
 static std::string output_filename_and_path(
     const Project& project,
-    const Domain::ConfigPack& config_pack,
+    const ConfigContainer& config_container,
     const std::optional<std::string>& output_path
 )
 {
@@ -189,13 +98,13 @@ static std::string output_filename_and_path(
         Algorithms::Model::propose_export_file_name_and_path(project.model())
     };
 
+    const ConfigPack config_pack{config_container.build_print_config()};
     const std::string extension = [&config_pack]() -> std::string
     {
-        if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
+        if (std::holds_alternative<ConfigPackSLA>(config_pack)) {
             return ".sl1";
         } else {
-            const Domain::ConfigPackFDM& config_pack_fdm =
-                std::get<Domain::ConfigPackFDM>(config_pack);
+            const ConfigPackFDM& config_pack_fdm = std::get<ConfigPackFDM>(config_pack);
             if (config_pack_fdm.printer.items.opt("binary_gcode").get<bool>()) {
                 return ".bgcode";
             } else {
@@ -243,123 +152,98 @@ static std::string output_filename_and_path(
     return (output_dir / filename).replace_extension(extension).string();
 }
 
-std::optional<std::string> slice_single_model_project(
-    Domain::Project&& project_to_slice,
-    ProjectInteractor& project_interactor,
-    const Domain::ConfigPack& config_pack,
-    const std::optional<std::string>& output_path
-)
+/**
+ * @brief Slices the selected bed of the selected project and exports the result.
+ */
+static std::optional<std::string>
+slice_and_export_selected_bed(CLIRuntime& runtime, const std::optional<std::string>& output_path)
 {
-    Domain::Model& model = project_to_slice.model();
-    // Remove all projects before slicing another one.
-    const Domain::Workbench& workbench = project_interactor.workbench();
-    for (const Domain::SelectionId selection_id : workbench.projects() | std::views::keys) {
-        project_interactor.remove_project(selection_id);
-    }
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+    SlicingInteractor& slicing_interactor = project_interactor.slicing_interactor();
+    StatusCache& status_cache             = project_interactor.status_cache();
 
-    Biz::Platform::IMainThreadDispatcher& dispatcher =
-        Biz::Platform::PlatformServices::instance().main_thread_dispatcher();
-
-    project_interactor.new_project_with_modification(
-        [&](Project& project)
-        {
-            project.model() = std::move(model);
-            project.set_file_name(project_to_slice.file_name());
-
-            // Apply the provided config_pack.
-            Domain::ConfigContainer& config_container = *project.config_containers().front();
-            Domain::Preset::SelectedPresetMetadata metadata =
-                config_container.selected_preset().metadata();
-            if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-                metadata.hw_config.technology = Domain::PrinterTechnology::SLA;
-            }
-
-            config_container.mutable_selected_preset() =
-                Domain::Preset::SelectedPreset::make(metadata, config_pack);
-        }
+    const SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
+    std::string dest_path      = output_filename_and_path(
+        project_interactor.selected_project(),
+        project_interactor.selected_config_container(),
+        output_path
     );
-    const Project& project = project_interactor.selected_project();
 
-    // Make sure the events from the bed update are dispatched, before hooking in
-    // the slicing_status_change_listener.
-    dispatcher.dispatch_enqueued();
-
-    Slicing::SlicingInteractor& slicing_interactor = project_interactor.slicing_interactor();
-    const Domain::SlicingId slicing_id = project_interactor.selected_bed_slicing_id();
-    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
-
-    if (slicing_interactor.get_status(slicing_id) == Biz::Slicing::StatusCode::Empty) {
-        return "Nothing to print for "
-            + dest_path
-            + " . Either the print is empty or no object is fully inside the print volume.";
+    const BedInstance* selected_bed_instance =
+        project_interactor.selected_project().find_bed_instance_by_id(slicing_id.bed_instance_id);
+    if (selected_bed_instance == nullptr) {
+        return "No bed is selected for " + dest_path + ".";
     }
 
-    SlicingStatusChangeListener slicing_status_change_listener;
-    slicing_interactor.add_listener<Biz::Slicing::IStatusListener>(&slicing_status_change_listener);
+    Project& project                        = project_interactor.selected_project();
+    const ConfigContainer& config_container = project_interactor.selected_config_container();
+    slicing_interactor.update_process(
+        project.model(),
+        project.metadata(),
+        config_container.selected_preset().metadata(),
+        config_container.build_print_config(),
+        *selected_bed_instance
+    );
+
+    const std::function<bool()> terminal_status_predicate = [&status_cache, slicing_id]()
+    {
+        const std::optional<Slicing::Status> current_status = status_cache.get_status(slicing_id);
+        return current_status.has_value()
+            && (current_status->code == Slicing::StatusCode::Empty
+                || current_status->code == Slicing::StatusCode::Removed
+                || current_status->code == Slicing::StatusCode::Finished
+                || current_status->code == Slicing::StatusCode::InvalidData);
+    };
 
     slicing_interactor.slice_bed(slicing_id);
+    runtime.wait_until(terminal_status_predicate);
 
-    const Slicing::StatusUpdate& slicing_status_update = [&slicing_status_change_listener,
-                                             &dispatcher]() -> Slicing::StatusUpdate
-    {
-        std::future<std::pair<Domain::SlicingId, Slicing::StatusUpdate>> future_slicing_status_update =
-            slicing_status_change_listener.promise_slicing_finished.get_future();
-        while (future_slicing_status_update.wait_for(std::chrono::milliseconds(1))
-               != std::future_status::ready)
-        {
-            dispatcher.dispatch_enqueued();
-        }
-
-        return future_slicing_status_update.get().second;
-    }();
-
-    if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
-        Biz::Platform::PlatformServices& platform_services =
-            Biz::Platform::PlatformServices::instance();
-        platform_services.set_job_manager(
-            std::make_unique<Biz::Platform::JobManager::JobManager>(dispatcher)
-        );
-        ExportFinishedJobManagerStatusListener export_finished_listener;
-        platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(&export_finished_listener);
-
-        Biz::ExportNameParser::ExportNameData name_data;
-        try {
-           name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
-        } catch (const Slic3r::PlaceholderParserError& e) {
-            SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
-        }
-
-        boost::filesystem::path export_path;
-        if (name_data.filename.empty()) {
-            export_path = boost::filesystem::path(dest_path);
-        } else {
-            export_path = boost::filesystem::path(dest_path).parent_path() / name_data.filename;
-            // Store back to dest_path, it is used later.
-            dest_path = export_path.string();
-        }
-
-        project_interactor.do_result_export(slicing_id, export_path);
-
-        std::optional<std::string> export_error = [&export_finished_listener, &dispatcher]()
-        {
-            std::future<std::optional<std::string>> future_slicing_status =
-                export_finished_listener.promise_export_error.get_future();
-            while (future_slicing_status.wait_for(std::chrono::milliseconds(1))
-                   != std::future_status::ready)
-            {
-                dispatcher.dispatch_enqueued();
-            }
-
-            return future_slicing_status.get();
-        }();
-
-        if (export_error.has_value()) {
-            return export_error.value();
-        }
+    const Slicing::Status current_status = status_cache.get_status(slicing_id).value();
+    if (current_status.code == Slicing::StatusCode::Empty) {
+        return "All objects are outside of the print volume.";
+    } else if (current_status.code == Slicing::StatusCode::Removed) {
+        return "The slicing input for " + dest_path + " was removed.";
+    } else if (current_status.code == Slicing::StatusCode::InvalidData) {
+        return format_slicing_errors(current_status.errors);
     } else {
-        std::ostringstream oss;
-        oss << slicing_status_update;
-        return oss.str();
+        ASSERT(current_status.code == Slicing::StatusCode::Finished);
+    }
+
+    PlatformServices& platform_services = PlatformServices::instance();
+    ExportFinishedJobManagerStatusListener export_finished_listener;
+    platform_services.job_manager().add_listener<IJobManagerStatusChangedListener>(
+        &export_finished_listener
+    );
+
+    ExportNameParser::ExportNameData name_data;
+    try {
+        name_data = ExportNameParser::parse_export_name(project_interactor);
+    } catch (const Slic3r::PlaceholderParserError& parser_error) {
+        boost::nowide::cerr
+            << "Failed to parse output filename: "
+            << parser_error.what()
+            << std::endl;
+    }
+
+    boost::filesystem::path export_path;
+    if (name_data.filename.empty()) {
+        export_path = boost::filesystem::path(dest_path);
+    } else {
+        export_path = boost::filesystem::path(dest_path).parent_path() / name_data.filename;
+        // Store back to dest_path, it is used later.
+        dest_path = export_path.string();
+    }
+
+    project_interactor.do_result_export(slicing_id, export_path);
+
+    runtime.wait_until([&export_finished_listener]()
+                       { return export_finished_listener.export_finished; });
+    platform_services.job_manager().remove_listener<IJobManagerStatusChangedListener>(
+        &export_finished_listener
+    );
+
+    if (export_finished_listener.export_error.has_value()) {
+        return export_finished_listener.export_error;
     }
 
     const std::string dest_path_final = [&output_path, &dest_path]() -> std::string
@@ -401,22 +285,25 @@ bool has_full_config_from_profiles(const InitParams& init_params)
         && ((input.print_profile_preset.has_value() && !input.print_profile_preset->empty())
             || !input.material_profile_presets.empty()
             || !input.tool_profile_presets.empty()
-            || (input.printer_profile_preset.has_value() && !input.print_profile_preset->empty()));
+            || (input.printer_profile_preset.has_value()
+                && !input.printer_profile_preset->empty()));
 }
 
-bool process_profiles_sharing(const InitParams& init_params)
+bool process_profiles_sharing(CLIRuntime& runtime, const InitParams& init_params)
 {
     if (!has_profile_sharing_action(init_params)) {
         return false;
     }
 
+    const Bundle& preset_bundle = runtime.project_interactor().workbench().preset_bundle();
+
     std::string ret;
     if (init_params.action.query_printer_models) {
-        ret = get_json_printer_models(get_printer_technology(init_params));
+        ret = get_json_printer_models(preset_bundle);
     } else if (init_params.action.query_print_tool_filament_profiles) {
         if (init_params.input.printer_profile_preset.has_value()) {
             const std::string& printer_profile = init_params.input.printer_profile_preset.value();
-            ret = get_json_print_tool_filament_profiles(printer_profile);
+            ret = get_json_print_tool_filament_profiles(preset_bundle, printer_profile);
             if (ret.empty()) {
                 boost::nowide::cerr
                     << "query-print-tool-filament-profiles error: Printer profile '"
@@ -463,7 +350,7 @@ bool process_profiles_sharing(const InitParams& init_params)
 
         boost::nowide::cout << "Output for your request is written into " << file << std::endl;
     } else {
-        printf("%s", ret.c_str());
+        boost::nowide::cout << ret;
     }
 
     return true;
@@ -480,11 +367,8 @@ enum ExportFormat : int
 };
 } // namespace IO
 
-static std::string output_filepath(
-    const Project& project,
-    IO::ExportFormat format,
-    const std::string& cmdline_param
-)
+static std::string
+output_filepath(const Project& project, IO::ExportFormat format, const std::string& cmdline_param)
 {
     std::string ext;
     switch (format) {
@@ -525,17 +409,21 @@ static std::string output_filepath(
 }
 
 static bool export_projects(
-    std::vector<Project>& projects,
+    CLIRuntime& runtime,
+    const std::vector<SelectionId>& project_ids,
     IO::ExportFormat format,
     const std::string& cmdline_param
 )
 {
-    for (Domain::Project& project : projects) {
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    for (const SelectionId project_id : project_ids) {
+        Project& project       = project_interactor.project(project_id);
         const std::string path = output_filepath(project, format, cmdline_param);
         bool success           = false;
         switch (format) {
         case IO::OBJ: {
-            success = Slic3r::Biz::store_obj(path.c_str(), &project.model());
+            success = store_obj(path.c_str(), &project.model());
             break;
         }
         case IO::STL: {
@@ -544,7 +432,11 @@ static bool export_projects(
         }
         case IO::TMF: {
             try {
-                store_3mf(path, project, Store3mfParam{.fullpath_sources = false});
+                project_interactor.select_project(project_id);
+                project_interactor.save_project(
+                    boost::filesystem::path{path},
+                    Store3mfParam{.fullpath_sources = false}
+                );
 
                 success = true;
             } catch (boost::filesystem::filesystem_error&) {
@@ -560,9 +452,9 @@ static bool export_projects(
         }
 
         if (success) {
-            std::cout << "File exported to " << path << std::endl;
+            boost::nowide::cout << "File exported to " << path << std::endl;
         } else {
-            SPDLOG_ERROR("File export to {} failed", path);
+            boost::nowide::cerr << "File export to " << path << " failed" << std::endl;
             return false;
         }
     }
@@ -570,245 +462,264 @@ static bool export_projects(
     return true;
 }
 
-bool process_actions(
+/**
+ * @brief Prints the model statistics (--info) of every project.
+ */
+static bool perform_model_info(CLIRuntime& runtime, const std::vector<SelectionId>& project_ids)
+{
+    if (project_ids.empty()) {
+        boost::nowide::cerr << "Cannot show info for empty projects." << std::endl;
+        return false;
+    }
+
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+    for (const SelectionId project_id : project_ids) {
+        Algorithms::Model::print_info(project_interactor.project(project_id).model());
+    }
+
+    return true;
+}
+
+/**
+ * @brief Dumps the configuration model (--dump-json-model) into a JSON file.
+ */
+static void perform_config_model_dump(const MiscParams& misc)
+{
+    dump_config_model(misc.config_model_json_file.value_or("config-model.json"));
+}
+
+/**
+ * @brief Generates the binary preset bundle cache (--generate-preset-cache) in
+ * data_dir()/cache/bundle_cache.
+ */
+static void perform_preset_cache_generation(CLIRuntime& runtime)
+{
+    try {
+        // Strip build metadata from Slic3r::VERSION so that build server builds produce a cache
+        // compatible with local debug builds.
+        Semver semver(Slic3r::VERSION);
+        semver.set_metadata(nullptr);
+
+        const std::string cache_file =
+            fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
+        Preset::IO::serialize_bundle(
+            cache_file,
+            runtime.project_interactor().workbench().preset_bundle(),
+            BundlePaths::make_standard_runtime(),
+            semver.to_string()
+        );
+
+        boost::nowide::cout << "Preset cache generated: " << cache_file << std::endl;
+    } catch (const std::exception& ex) {
+        boost::nowide::cerr << "Failed to generate preset cache: " << ex.what() << std::endl;
+    }
+}
+
+/**
+ * @brief Saves the selected configuration (--save) as a JSON with the preset metadata
+ * and the configuration boxes (the same format as the project JSON stored in 3MF).
+ */
+static bool perform_configuration_save(CLIRuntime& runtime, const MiscParams& misc)
+{
+    const std::string config_save_path =
+        misc.output.has_value() ? misc.output.value() : "config.json";
+
+    const ConfigContainer& config_container =
+        runtime.project_interactor().selected_config_container();
+
+    nlohmann::ordered_json config_json;
+    config_json[PRESET_METADATA] =
+        nlohmann::ordered_json(config_container.selected_preset().metadata());
+
+    const ConfigPack config_pack{config_container.build_print_config()};
+    if (std::holds_alternative<ConfigPackFDM>(config_pack)) {
+        config_json[CONFIGURATION] =
+            nlohmann::ordered_json(Domain::as_boxes(std::get<ConfigPackFDM>(config_pack)));
+    } else if (std::holds_alternative<ConfigPackSLA>(config_pack)) {
+        config_json[CONFIGURATION] =
+            nlohmann::ordered_json(Domain::as_boxes(std::get<ConfigPackSLA>(config_pack)));
+    } else {
+        PANIC("Unexpected config type!");
+    }
+
+    boost::nowide::ofstream config_file;
+    config_file.open(config_save_path, std::ios::out | std::ios::trunc);
+    if (config_file.is_open()) {
+        config_file << config_json.dump() << std::endl;
+        config_file.close();
+    } else {
+        boost::nowide::cerr
+            << "Cannot open file "
+            << config_save_path
+            << " for writing"
+            << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Exports the model of every project (--export-stl/--export-obj/--export-3mf).
+ */
+static bool perform_model_exports(
+    CLIRuntime& runtime,
     const InitParams& init_params,
-    const Domain::ConfigPack& config_pack,
-    std::vector<Project>& projects
+    const std::vector<SelectionId>& project_ids
+)
+{
+    if (project_ids.empty()) {
+        boost::nowide::cerr << "Cannot export empty projects." << std::endl;
+        return false;
+    }
+
+    const ActionParams& action = init_params.action;
+    const std::string output =
+        init_params.misc.output.has_value() ? init_params.misc.output.value() : "";
+
+    if (action.export_stl) {
+        if (!export_projects(runtime, project_ids, IO::STL, output)) {
+            return false;
+        }
+    }
+
+    if (action.export_obj) {
+        if (!export_projects(runtime, project_ids, IO::OBJ, output)) {
+            return false;
+        }
+    }
+
+    if (action.export_3mf) {
+        if (!export_projects(runtime, project_ids, IO::TMF, output)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief Slices every project and exports the result (--slice/--export-gcode/
+ * --export-sla).
+ */
+static bool perform_slicing_exports(
+    CLIRuntime& runtime,
+    const InitParams& init_params,
+    const std::vector<SelectionId>& project_ids
+)
+{
+    const ActionParams& action            = init_params.action;
+    const TransformParams& transform      = init_params.transform;
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    for (const SelectionId project_id : project_ids) {
+        project_interactor.select_project(project_id);
+
+        const PrinterTechnology printer_technology =
+            project_interactor.selected_config_container().selected_preset().technology();
+        if (action.export_gcode && printer_technology == PrinterTechnology::SLA) {
+            boost::nowide::cerr
+                << "Error: Cannot export G-code for an FFF configuration."
+                << std::endl;
+            return false;
+        } else if (action.export_sla && printer_technology == PrinterTechnology::FFF) {
+            boost::nowide::cerr
+                << "error: Cannot export SLA slices for a SLA configuration."
+                << std::endl;
+            return false;
+        }
+
+        // If all objects have defined instances, their relative positions will be
+        // honored when printing (they will be only centered, unless --dont-arrange
+        // is supplied).
+        if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
+            arrange_and_wait(runtime, project_id);
+            if (transform.center.has_value()) {
+                center_selected_project_around_point(runtime, transform.center.value());
+            }
+        }
+
+        const std::optional<std::string> slicing_error =
+            slice_and_export_selected_bed(runtime, init_params.misc.output);
+        if (slicing_error.has_value()) {
+            boost::nowide::cerr << slicing_error.value() << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief Runs the preset updater actions (--preset-updater-*).
+ */
+static void perform_preset_updater_actions(
+    CLIRuntime& runtime,
+    const ActionParams& action,
+    const MiscParams& misc
+)
+{
+    if (!misc.loglevel) {
+        Slic3r::set_log_level(0);
+    }
+
+    const std::string additional_data =
+        misc.output.has_value() ? misc.output.value() : std::string();
+
+    // Every method of PresetUpdaterInteractor works only on data in the filesystem.
+    PresetUpdaterCLI preset_updater_cli(runtime.project_interactor().preset_updater_interactor());
+    preset_updater_cli.start(action, additional_data);
+    runtime.wait_until([&preset_updater_cli]() { return preset_updater_cli.has_result(); });
+}
+
+bool process_actions(
+    CLIRuntime& runtime,
+    const InitParams& init_params,
+    const std::vector<SelectionId>& project_ids
 )
 {
     if (!init_params.action.has_any_action()) {
         return true;
     }
 
-    const ActionParams& action       = init_params.action;
-    const MiscParams& misc           = init_params.misc;
-    const TransformParams& transform = init_params.transform;
+    const ActionParams& action = init_params.action;
+    const MiscParams& misc     = init_params.misc;
 
     if (action.model_info) {
-        if (projects.empty()) {
-            SPDLOG_ERROR("Cannot show info for empty projects.");
+        if (!perform_model_info(runtime, project_ids)) {
             return true;
-        }
-
-        // --info works on unrepaired model
-        for (Project& project : projects) {
-            Model &model = project.model();
-            model.add_default_instances();
-            Algorithms::Model::print_info(model);
         }
     }
 
     if (action.dump_json_model) {
-        dump_config_model(misc.config_model_json_file.value_or("config-model.json"));
+        perform_config_model_dump(misc);
     }
 
     if (action.generate_preset_cache) {
-        try {
-            Domain::Workbench workbench;
-            Scene::SceneInteractor scene_interactor{workbench};
-            Preset::PresetInteractor preset_interactor(workbench, scene_interactor);
-
-            Preset::IO::BundlePaths bundle_paths = Preset::IO::BundlePaths::make_standard_runtime();
-            preset_interactor.load_preset_bundle(bundle_paths);
-
-            // Strip build metadata from Slic3r::VERSION so that build server builds produce a cache
-            // compatible with local debug builds.
-            Semver semver(Slic3r::VERSION);
-            semver.set_metadata(nullptr);
-
-            const std::string cache_file =
-                fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
-            Preset::IO::serialize_bundle(
-                cache_file,
-                workbench.preset_bundle(),
-                bundle_paths,
-                semver.to_string()
-            );
-
-            boost::nowide::cout << "Preset cache generated: " << cache_file << std::endl;
-        } catch (const std::exception& ex) {
-            SPDLOG_ERROR("Failed to generate preset cache: {}", ex.what());
-        }
+        perform_preset_cache_generation(runtime);
     }
 
     if (action.configuration_save) {
-        // FIXME check for mixing the FFF / SLA parameters.
-        // or better save fff_print_config vs. sla_print_config
-
-        const std::string config_save_path =
-            misc.output.has_value() ? misc.output.value() : "config.json";
-
-        nlohmann::ordered_json config_json;
-        if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)) {
-            config_json = nlohmann::ordered_json(
-                Domain::as_boxes(std::get<Domain::ConfigPackFDM>(config_pack))
-            );
-        } else if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-            config_json = nlohmann::ordered_json(
-                Domain::as_boxes(std::get<Domain::ConfigPackSLA>(config_pack))
-            );
-        } else {
-            PANIC("Unexpected config type!");
-        }
-
-        boost::nowide::ofstream config_file;
-        config_file.open(config_save_path, std::ios::out | std::ios::trunc);
-        if (config_file.is_open()) {
-            config_file << config_json.dump() << std::endl;
-            config_file.close();
-        } else {
-            SPDLOG_ERROR("Cannot open file {} for writing", config_save_path);
+        if (!perform_configuration_save(runtime, misc)) {
             return false;
         }
     }
 
-    if (projects.empty() && (action.export_stl || action.export_obj || action.export_3mf)) {
-        SPDLOG_ERROR("Cannot export empty projects.");
-        return true;
-    }
-
-    const std::string output =
-        init_params.misc.output.has_value() ? init_params.misc.output.value() : "";
-
-    if (action.export_stl) {
-        for (Project& project : projects) {
-            Model& model = project.model();
-            model.add_default_instances();
-        }
-
-        if (!export_projects(projects, IO::STL, output)) {
-            return true;
-        }
-    }
-
-    if (action.export_obj) {
-        for (Project& project : projects) {
-            Model& model = project.model();
-            model.add_default_instances();
-        }
-
-        if (!export_projects(projects, IO::OBJ, output)) {
-            return true;
-        }
-    }
-
-    if (action.export_3mf) {
-        if (!export_projects(projects, IO::TMF, output)) {
+    if (action.export_stl || action.export_obj || action.export_3mf) {
+        if (!perform_model_exports(runtime, init_params, project_ids)) {
             return true;
         }
     }
 
     if (action.slice || action.export_gcode || action.export_sla) {
-        Domain::PrinterTechnology printer_technology = get_printer_technology(config_pack);
-        if (action.export_gcode && printer_technology == Domain::PrinterTechnology::SLA) {
-            boost::nowide::cerr
-                << "Error: Cannot export G-code for an FFF configuration."
-                << std::endl;
-            return true;
-        } else if (action.export_sla && printer_technology == Domain::PrinterTechnology::FFF) {
-            boost::nowide::cerr
-                << "error: Cannot export SLA slices for a SLA configuration."
-                << std::endl;
+        if (!perform_slicing_exports(runtime, init_params, project_ids)) {
             return true;
         }
-
-        Biz::Platform::PlatformServices& platform_services =
-            Biz::Platform::PlatformServices::instance();
-        platform_services.set_secret_store(std::make_unique<Biz::SecretStoreDummy>());
-        platform_services.set_main_thread_dispatcher(
-            std::make_unique<App::Platform::StdMainThreadDispatcher>()
-        );
-        platform_services.set_job_manager(
-            std::make_unique<Biz::Platform::JobManager::JobManager>(
-                platform_services.main_thread_dispatcher()
-            )
-        );
-
-        Biz::Platform::IMainThreadDispatcher& dispatcher =
-            platform_services.main_thread_dispatcher();
-        Domain::Workbench workbench;
-        CLIThumbnailImageGenerator thumbnail_image_generator{init_params.input.input_files};
-        ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
-
-        Preset::PresetInteractor& preset_interactor = project_interactor.preset_interactor();
-
-        // Load new presets.
-        preset_interactor.load_preset_bundle(Preset::IO::BundlePaths::make_standard_runtime());
-
-        for (Project& project : projects) {
-            Model &model = project.model();
-            // If all objects have defined instances, their relative positions will be
-            // honored when printing (they will be only centered, unless --dont-arrange
-            // is supplied); if any object has no instances, it will get a default one
-            // and all instances will be rearranged (unless --dont-arrange is supplied).
-            if (!transform.dont_arrange.has_value() || !transform.dont_arrange.value()) {
-                Biz::Arrange::arrange_model_in_place(
-                    model,
-                    get_bed_shape(config_pack),
-                    Biz::Arrange::Settings{
-                        .scaled_offset = double(scale_(min_object_distance(config_pack)) / 2.)
-                    }
-                );
-                if (transform.center.has_value()) {
-                    Algorithms::Model::center_instances_around_point(
-                        model, transform.center.value()
-                    );
-                }
-            }
-
-            const std::optional<std::string> slicing_errors = slice_single_model_project(
-                std::move(project),
-                project_interactor,
-                config_pack,
-                init_params.misc.output
-            );
-            if (slicing_errors.has_value()) {
-                boost::nowide::cerr << slicing_errors.value() << std::endl;
-                dispatcher.close();
-                return true;
-            }
-        }
-
-        dispatcher.close();
     }
 
     if (action.has_preset_updater_action()) {
-        if (!misc.loglevel) {
-            Slic3r::set_log_level(0);
-        }
-        const std::string additional_data =
-            misc.output.has_value() ? misc.output.value() : std::string();
-
-        Biz::Platform::PlatformServices& platform_services =
-            Biz::Platform::PlatformServices::instance();
-        platform_services.set_secret_store(std::make_unique<Biz::SecretStoreDummy>());
-        platform_services.set_main_thread_dispatcher(
-            std::make_unique<App::Platform::StdMainThreadDispatcher>()
-        );
-        platform_services.set_job_manager(
-            std::make_unique<Biz::Platform::JobManager::JobManager>(
-                platform_services.main_thread_dispatcher()
-            )
-        );
-
-        // Potentially here we can only create standalone PresetUpdaterInteractor (without ProjectInteractor).
-        // Currently every method of PresetUpdaterInteractor works only on data in filesystem and there are no listeners added in ProjectInteractor.
-        Biz::Platform::IMainThreadDispatcher& dispatcher =
-            platform_services.main_thread_dispatcher();
-        Domain::Workbench workbench;
-        CLIThumbnailImageGenerator thumbnail_image_generator{init_params.input.input_files};
-        ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
-
-        PresetUpdaterCLI pu(project_interactor.preset_updater_interactor());
-        pu.start(action, additional_data);
-        while (true) {
-            dispatcher.dispatch_enqueued();
-            if (pu.has_result()) {
-                dispatcher.close();
-                return true;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
+        perform_preset_updater_actions(runtime, action, misc);
+        return true;
     }
 
     return true;

@@ -947,6 +947,10 @@ void ArrangeInteractor::arrange(
 )
 {
     if (project_id == Domain::INVALID_ID) {
+        if (on_finished) {
+            on_finished();
+        }
+
         return;
     }
 
@@ -990,6 +994,10 @@ void ArrangeInteractor::arrange(
                     [this, project_id, settings, unplaced_offset, on_finished](const std::optional<ArrangeGlobalResult>& result)
                     {
                         if (!result) {
+                            if (on_finished) {
+                                on_finished();
+                            }
+
                             return;
                         }
 
@@ -1070,6 +1078,10 @@ void ArrangeInteractor::arrange(
                     )
                     {
                         if (!result) {
+                            if (on_finished) {
+                                on_finished();
+                            }
+
                             return;
                         }
 
@@ -1108,10 +1120,12 @@ void ArrangeInteractor::arrange(
         }
 
     } catch (const ArrangeFatalError&) {
-        invoke_listeners<IArrangeEventsListener>(
-            [&](auto* listener)
-            { listener->on_fatal_arrange_error(project_id); }
-        );
+        invoke_listeners<IArrangeEventsListener>([&](auto* listener)
+                                                 { listener->on_fatal_arrange_error(project_id); });
+
+        if (on_finished) {
+            on_finished();
+        }
     }
 }
 

@@ -4,7 +4,9 @@
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/Bed.hpp>
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
@@ -21,6 +23,14 @@
 #include <Slic3r/Biz/I18N/I18N.hpp> // translations
 #include <boost/filesystem/path.hpp>
 #include <tracy/Tracy.hpp>
+
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::Preset::SelectedPreset;
+using Slic3r::Domain::Preset::SelectedPresetMetadata;
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
@@ -119,6 +129,87 @@ Domain::SelectionId ProjectInteractor::new_project_with_modification(
     return project_id;
 }
 
+tl::expected<SelectionId, std::string> ProjectInteractor::do_load_project(
+    Project&& project,
+    const std::optional<boost::filesystem::path>& project_file_path
+)
+{
+    const auto report_error = [this](const std::string& description) -> tl::unexpected<std::string>
+    {
+        SPDLOG_ERROR(description);
+        invoke_listeners<IProjectsChangedListener>([&description](IProjectsChangedListener* l)
+                                                   { l->on_project_load_failed(description); });
+
+        return tl::unexpected<std::string>{description};
+    };
+
+    if (project.config_containers().empty() && project.model().objects.empty()) {
+        return report_error(Biz::_u8L("Loading file failed: The loaded project is empty."));
+    }
+
+    SelectionId project_id;
+    {
+        InvokeLaterBag bag;
+        const SelectionId original_project_id = m_selection.project_id;
+        project_id                            = this->add_project(std::move(project), bag);
+        Project& added_project{m_workbench.project(project_id)};
+
+        for (std::unique_ptr<ConfigContainer>& config_container : added_project.config_containers())
+        {
+            const tl::expected<void, std::string> result =
+                m_preset_interactor.load_selected_preset_from_3mf(
+                    project_id,
+                    config_container->mutable_selected_preset()
+                );
+            if (!result.has_value()) {
+                // clean up project state
+                this->select_project(original_project_id);
+                this->remove_project(project_id);
+
+                // invoke error listener and quit
+                return report_error(result.error());
+            }
+        }
+
+        if (added_project.config_containers().empty()) {
+            added_project.config_containers().emplace_back(std::make_unique<ConfigContainer>());
+            ConfigContainer* config_container = added_project.config_containers().back().get();
+            m_preset_interactor.initialize_config_container_with_default(*config_container);
+        }
+
+        for (std::unique_ptr<ConfigContainer>& config_container : added_project.config_containers())
+        {
+            if (config_container->bed_instances().empty()) {
+                this->initialize_bed(
+                    project_id,
+                    config_container->id().id,
+                    added_project.bed_container()
+                );
+            }
+        }
+
+        // Ensure bed selection is valid for the config container.
+        const ConfigContainer& config_container{*added_project.config_containers().front()};
+        m_scene_interactor.bed_selection().select_one(
+            {config_container.id().id, config_container.bed_instances().front()->id().id},
+            Scene::CameraActionOnBedSelection::CenterOnBed
+        );
+
+        this->do_select_config_container(added_project.config_containers().front()->id().id);
+
+        m_scene_interactor.prepare_added_project(project_id);
+
+        if (project_file_path.has_value()) {
+            this->set_project_dir(project_id, project_file_path.value());
+        }
+    }
+
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l)
+                                               { l->on_project_loaded(project_id); });
+
+    return project_id;
+}
+
 void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 {
     auto report_error{
@@ -132,64 +223,8 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         }
     };
 
-    auto on_result{
-        [this, file_path, report_error](Domain::Project&& project)
-        {
-            if (project.config_containers().empty() && project.model().objects.empty())
-                return;
-
-            Domain::SelectionId project_id;
-            {
-                InvokeLaterBag bag;
-                auto original_project_id = m_selection.project_id;
-                project_id = add_project(std::move(project), bag);
-                Domain::Project& added_project{m_workbench.project(project_id)};
-
-                for (auto& config_container : added_project.config_containers()) {
-                    auto result = m_preset_interactor.load_selected_preset_from_3mf(
-                        project_id,
-                        config_container->mutable_selected_preset()
-                    );
-                    if (!result.has_value()) {
-                        // clean up project state
-                        select_project(original_project_id);
-                        remove_project(project_id);
-
-                        // invoke error listener
-                        report_error(result.error());
-
-                        // and quit
-                        return;
-                    }
-                }
-
-                if (added_project.config_containers().empty()) {
-                    added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-                    auto cc = added_project.config_containers().back().get();
-                    m_preset_interactor.initialize_config_container_with_default(*cc);
-                    initialize_bed(project_id, cc->id().id, added_project.bed_container());
-                }
-                // Ensure bed selection is valid for the config container.
-                const Domain::ConfigContainer& config_container{
-                    *added_project.config_containers().front()
-                };
-                m_scene_interactor.bed_selection().select_one(
-                    {config_container.id().id, config_container.bed_instances().front()->id().id},
-                    Scene::CameraActionOnBedSelection::CenterOnBed
-                );
-
-                do_select_config_container(added_project.config_containers().front()->id().id);
-
-                m_scene_interactor.prepare_added_project(project_id);
-
-                set_project_dir(project_id, file_path);
-            }
-
-            invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
-                l->on_project_loaded(project_id);
-            });
-        }
-    };
+    auto on_result{[this, file_path](Project&& project)
+                   { this->do_load_project(std::move(project), file_path); }};
 
     auto on_error{[report_error](std::exception_ptr eptr)
     {
@@ -226,6 +261,23 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .on_result(on_result)
         .on_exception(on_error)
         .start();
+}
+
+tl::expected<SelectionId, std::string> ProjectInteractor::new_project_with_preset(
+    const SelectedPresetMetadata& preset_metadata,
+    const ConfigPack& config_pack
+)
+{
+    Project project;
+    project.config_containers().emplace_back(std::make_unique<ConfigContainer>());
+    ConfigContainer& config_container = *project.config_containers().front();
+
+    config_container.mutable_selected_preset() = SelectedPreset::make(preset_metadata, config_pack);
+    if (const ConfigPackFDM* config_pack_fdm = std::get_if<ConfigPackFDM>(&config_pack)) {
+        config_container.project_settings() = config_pack_fdm->project;
+    }
+
+    return do_load_project(std::move(project));
 }
 
 namespace {

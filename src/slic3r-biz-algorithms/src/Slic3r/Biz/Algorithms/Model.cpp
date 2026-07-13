@@ -11,28 +11,6 @@ using namespace Slic3r::Biz::Algorithms;
 
 namespace Slic3r::Biz::Algorithms::Model {
 
-void translate(Domain::Model& model, const double x, const double y, const double z)
-{
-    for (Domain::ModelObject* o : model.objects) {
-        ModelObject::translate(*o, x, y, z);
-    }
-}
-
-Domain::ModelObject* add_object(Domain::Model* model,const char* name, const char* path, const Domain::TriangleMesh& mesh)
-{
-    Domain::ModelObject* new_object = new Domain::ModelObject(model);
-    model->objects.push_back(new_object);
-    new_object->name = name;
-    new_object->input_file = path;
-    Domain::ModelVolume* new_volume = ModelObject::add_volume(new_object, mesh);
-    new_volume->name = name;
-    new_volume->source.input_file = path;
-    new_volume->source.object_idx = (int) model->objects.size() - 1;
-    new_volume->source.volume_idx = (int) new_object->volumes.size() - 1;
-    new_object->invalidate_bounding_box();
-    return new_object;
-}
-
 Domain::ModelObject* add_object(Domain::Model* model,const char* name, const char* path, Domain::TriangleMesh&& mesh)
 {
     Domain::ModelObject* new_object = new Domain::ModelObject(model);
@@ -118,44 +96,6 @@ bool center_instances_around_point(Domain::Model& model, const Domain::Vec2d& po
     }
 
     return true;
-}
-
-void duplicate_objects_grid(Domain::Model& model, const size_t x, const size_t y, const double dist)
-{
-    if (model.objects.size() > 1)
-        throw "Grid duplication is not supported with multiple objects";
-
-    if (model.objects.empty())
-        throw "No objects!";
-
-    Domain::ModelObject* object = model.objects.front();
-    object->clear_instances();
-
-    Domain::Vec3d ext_size = BoundingBox::sizes(ModelObject::bounding_box_exact(*object)) + dist * Domain::Vec3d::Ones();
-
-    for (size_t x_copy = 1; x_copy <= x; ++x_copy) {
-        for (size_t y_copy = 1; y_copy <= y; ++y_copy) {
-            Domain::ModelInstance* instance = object->add_instance();
-            instance->set_offset(Domain::Vec3d(ext_size.x() * (double) (x_copy - 1), ext_size.y() * (double) (y_copy - 1), 0.));
-        }
-    }
-}
-
-void adjust_min_z(Domain::Model& model)
-{
-    if (model.objects.empty())
-        return;
-
-    if (Model::bounding_box_exact(model).min.z() < 0.) {
-        for (Domain::ModelObject* obj : model.objects) {
-            if (obj != nullptr) {
-                double obj_min_z = obj->min_z();
-                if (obj_min_z < 0.) {
-                    obj->translate_instances(Domain::Vec3d(0., 0., -obj_min_z));
-                }
-            }
-        }
-    }
 }
 
 // Flattens everything to a single mesh.

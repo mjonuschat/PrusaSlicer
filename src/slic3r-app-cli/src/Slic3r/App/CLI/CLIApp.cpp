@@ -1,13 +1,23 @@
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/CLI/CLIRuntime.hpp"
 #include "Slic3r/App/CLI/LoadPrintData.hpp"
 #include "Slic3r/App/CLI/ProcessActions.hpp"
 #include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
-#include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/App/Init.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
-#include "Slic3r/Domain/Model.hpp"
-#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/IMessageDialogProvider.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
+
+#include <algorithm>
+
+using Slic3r::Biz::ProjectInteractor;
+using Slic3r::Biz::StepLoadDialogResult;
+using Slic3r::Biz::Preset::PresetInteractor;
+using Slic3r::Biz::Preset::PresetSelectionNames;
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::Preset::PresetKind;
 
 namespace Slic3r::Biz::Preset {
 struct PresetSelectionNames;
@@ -33,8 +43,10 @@ public:
         const std::string& title,
         const std::string& text,
         const std::string& default_value
-    ) override 
-    { return {}; }
+    ) override
+    {
+        return {};
+    }
 
     void show_input_dialog_with_buttons(
         const std::string& title,
@@ -48,17 +60,20 @@ public:
         const std::string& title,
         const std::string& text,
         const std::vector<std::string>& values
-    ) override  { return {}; }
+    ) override
+    {
+        return {};
+    }
 
     void show_webview_dialog(
         std::unique_ptr<Browser::AbstractBrowserLogic>&& logic,
-        Biz::ProjectInteractor* project_interactor
+        ProjectInteractor* project_interactor
     ) override
     {}
 
     void show_upload_webview_dialog(
         std::unique_ptr<Browser::AbstractUploadBrowserLogic>&& logic,
-        Slic3r::Biz::ProjectInteractor* project_interactor,
+        ProjectInteractor* project_interactor,
         const UploadCallback& callback
     ) override
     {}
@@ -80,8 +95,8 @@ public:
     {}
 
     void show_diff_dialog(
-        const Biz::Preset::PresetInteractor& preset_interactor,
-        std::optional<Domain::Preset::PresetKind> kind
+        const PresetInteractor& preset_interactor,
+        std::optional<PresetKind> kind
     ) override
     {}
 
@@ -95,7 +110,11 @@ public:
         PANIC("Open browser not implemented for CLI");
     }
 
-    void show_info_dialog(const std::string& text, const std::string& title, bool is_marked = false) override
+    void show_info_dialog(
+        const std::string& text,
+        const std::string& title,
+        bool is_marked = false
+    ) override
     {
         SPDLOG_INFO("{}: {}", title, text);
     }
@@ -112,36 +131,36 @@ public:
 
     PresetsSwitchStates show_unsaved_changes_dialog(
         const std::string& dialog_name,
-        const Domain::ConfigPack& config_original,
-        const Domain::ConfigPack& config_selected,
-        Domain::ConfigPack* config_new_selected,
-        const Biz::Preset::PresetSelectionNames& preset_names,
-        const Biz::Preset::PresetSelectionNames& preset_names_new,
-        const Biz::Preset::PresetInteractor& preset_interactor,
+        const ConfigPack& config_original,
+        const ConfigPack& config_selected,
+        ConfigPack* config_new_selected,
+        const PresetSelectionNames& preset_names,
+        const PresetSelectionNames& preset_names_new,
+        const PresetInteractor& preset_interactor,
         bool new_printer_has_multiple_extruders
     ) override
     {
         return {};
     }
 
-    std::optional<Biz::StepLoadDialogResult> show_load_step_dialog(
+    std::optional<StepLoadDialogResult> show_load_step_dialog(
         const std::string& filename,
         double linear_precision,
         double angle_precision,
-        bool multiple) override
+        bool multiple
+    ) override
     {
         return std::nullopt;
     }
 
     std::string show_save_dialog(
-        Domain::Preset::PresetKind kind,
+        PresetKind kind,
         const std::string& original_name,
-        const Biz::Preset::PresetInteractor& preset_interactor
+        const PresetInteractor& preset_interactor
     ) override
     {
         return "";
     }
-
 };
 
 int run(InitParams& init_params)
@@ -150,29 +169,37 @@ int run(InitParams& init_params)
     AppServices& app_services = AppServices::instance();
     app_services.set_dialog_manager(std::make_unique<CLIDummyDialogManager>());
 
-    if (process_profiles_sharing(init_params)) {
+    CLIRuntime runtime{init_params};
+
+    if (process_profiles_sharing(runtime, init_params)) {
         return EXIT_SUCCESS;
     }
 
-    std::optional<Domain::PrinterTechnology> printer_technology =
-        get_printer_technology(init_params);
+    // A loaded 3MF brings its own placement, so skip arrange.
+    if (!init_params.transform.dont_arrange.value_or(false)
+        && std::ranges::any_of(
+            init_params.input.input_files,
+            [](const std::string& input_file)
+            { return Biz::FileLoadingLogic::is_project_file(input_file); }
+        ))
+    {
+        init_params.transform.dont_arrange = true;
+    }
 
-    Domain::ConfigPack config_pack;
-    std::vector<Domain::Project> projects;
-
-    if (!load_print_data(projects, config_pack, printer_technology, init_params)) {
+    std::vector<SelectionId> project_ids;
+    if (!load_print_data(runtime, project_ids, init_params)) {
         return EXIT_FAILURE;
     }
 
-    if (is_needed_post_processing(config_pack)) {
+    if (is_needed_post_processing(runtime, project_ids)) {
         return EXIT_SUCCESS;
     }
 
-    if (!process_transform(init_params, config_pack, projects)) {
+    if (!process_transform(runtime, init_params, project_ids)) {
         return EXIT_FAILURE;
     }
 
-    if (!process_actions(init_params, config_pack, projects)) {
+    if (!process_actions(runtime, init_params, project_ids)) {
         return EXIT_FAILURE;
     }
 

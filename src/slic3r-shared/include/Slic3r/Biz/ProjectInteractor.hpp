@@ -150,6 +150,16 @@ public:
     );
 
     /**
+     * @brief Create new project from a preset built from metadata and configuration
+     *
+     * @return ID of the created project, or the error message on failure
+     */
+    tl::expected<Domain::SelectionId, std::string> new_project_with_preset(
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+        const Domain::ConfigPack& config_pack
+    );
+
+    /**
      * @name Project manipulation
      * @{
      */
@@ -609,6 +619,21 @@ private:
     Domain::SelectionId add_project(Domain::Project&& p, InvokeLaterBag& bag);
     void do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag);
     void do_select_config_container(Domain::SelectionId container_id);
+
+    /**
+     * @brief Integrates a fully-built project (config containers carrying selected
+     * presets) into the workbench: registers the runtime presets, creates missing
+     * beds, selects the first bed and config container, prepares the project and fires
+     * on_project_loaded / on_project_load_failed. The shared body of load_project()
+     * and new_project_with_preset().
+     * @param project_file_path When given, it is stored as the project directory.
+     * @return ID of the integrated project, or the error message on failure (the
+     * project is then removed and the previous selection restored).
+     */
+    tl::expected<Domain::SelectionId, std::string> do_load_project(
+        Domain::Project&& project,
+        const std::optional<boost::filesystem::path>& project_file_path = std::nullopt
+    );
 
     void do_result_export_inner(
         const Domain::SlicingId id,

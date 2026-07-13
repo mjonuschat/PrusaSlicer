@@ -4,6 +4,8 @@
 
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
@@ -11,8 +13,19 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Directories.hpp"
 
+#include <chrono>
+#include <thread>
+
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/filesystem.hpp>
+
+using Slic3r::Biz::IProjectsChangedListener;
+using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::Biz::Platform::JobManager::JobManager;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
+
+namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::Mock {
 
@@ -179,5 +192,72 @@ TEST_CASE_METHOD(ProjectInteractorFixture, "Project Interactor Config Container"
     REQUIRE(p0.config_containers().size() == 2);
 
     const auto& p1_id = project_interactor.new_project();
+}
 
+namespace {
+
+struct ProjectLoadResultCapture final : public IProjectsChangedListener
+{
+    bool project_loaded{false};
+    bool load_failed{false};
+
+    void on_project_loaded(SelectionId) override
+    {
+        project_loaded = true;
+    }
+
+    void on_project_load_failed(const std::string&) override
+    {
+        load_failed = true;
+    }
+};
+
+boost::filesystem::path write_empty_project_3mf(const boost::filesystem::path& directory)
+{
+    const fs::path empty_3mf_path = directory / "empty_project.3mf";
+    const Project empty_project;
+    Slic3r::store_3mf(empty_3mf_path.string(), empty_project);
+
+    return empty_3mf_path;
+}
+
+} // namespace
+
+TEST_CASE_METHOD(
+    ProjectInteractorFixture,
+    "Load project reports failure for a 3MF without a loadable project",
+    "[ProjectInteractor]"
+)
+{
+    PlatformServices::instance().set_job_manager(std::make_unique<JobManager>(dispatcher));
+
+    const fs::path temp_dir =
+        fs::temp_directory_path() / fs::unique_path("slic3r-pi-test-%%%%-%%%%");
+    fs::create_directories(temp_dir);
+
+    const fs::path empty_3mf_path = write_empty_project_3mf(temp_dir);
+    REQUIRE(fs::exists(empty_3mf_path));
+
+    ProjectLoadResultCapture load_result_capture;
+    project_interactor.add_listener<IProjectsChangedListener>(&load_result_capture);
+    project_interactor.load_project(empty_3mf_path);
+
+    const std::chrono::steady_clock::time_point deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (!load_result_capture.project_loaded
+           && !load_result_capture.load_failed
+           && std::chrono::steady_clock::now() < deadline)
+    {
+        dispatcher.dispatch_enqueued();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    project_interactor.remove_listener<IProjectsChangedListener>(&load_result_capture);
+    PlatformServices::instance().set_job_manager(nullptr);
+
+    boost::system::error_code cleanup_error;
+    fs::remove_all(temp_dir, cleanup_error);
+
+    CHECK_FALSE(load_result_capture.project_loaded);
+    REQUIRE(load_result_capture.load_failed);
 }
