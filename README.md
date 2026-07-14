@@ -1,56 +1,66 @@
-
 ![PrusaSlicer logo](/resources/icons/PrusaSlicer_128px.png)
 
 # PrusaSlicer
 
-PrusaSlicer takes 3D models and converts them into G-code instructions for FDM 3D printers or PNG layers for mSLA 3D printers.
-It is developed by [Prusa Research](https://www.prusa3d.com/), but it also supports printers of different manufacturers.
+PrusaSlicer enables you to take your 3D models, generate 3D printing instructions and send them to your 3D printer. It supports both FDM 3D printers and mSLA 3D printers. It is developed by [Prusa Research](https://www.prusa3d.com/) and apart from Prusa printers it supports machines from a wide variety of manufacturers.
 
-PrusaSlicer is based on [Slic3r](https://github.com/Slic3r/Slic3r) by Alessandro Ranellucci and the RepRap community.
+PrusaSlicer is originally based on [Slic3r](https://github.com/Slic3r/Slic3r) by Alessandro Ranellucci and the RepRap community.
 
-### Distribution
+## Installation
 
-Windows installer and a DMG for macOS can be downloaded from [PrusaSlicer project page](https://www.prusa3d.com/prusaslicer/). Alternatively, you can download them directly from [github releases page](https://github.com/prusa3d/PrusaSlicer/releases) (as well as no-install ZIP package for Windows).
+The **recommended installation method** is to go to the [PrusaSlicer project page](https://www.prusa3d.com/prusaslicer/) and download and install the software by following the instructions there.
 
-Linux is currently distributed exclusively through [Flatpak](https://flatpak.org/). Visit [our Flathub](https://flathub.org/en/apps/com.prusa3d.PrusaSlicer) page for more information.
+**Alternatively**, for Windows and macOS, you can download the software directly from the [GitHub releases page](https://github.com/prusa3d/PrusaSlicer/releases). For Linux, PrusaSlicer is currently distributed exclusively through [Flathub](https://flathub.org/en/apps/com.prusa3d.PrusaSlicer).
 
-You are also more than welcome to build PrusaSlicer yourself from source. See the [documentation directory](doc/) in the source tree to learn how to do it.
-
+If you prefer, you can always build PrusaSlicer yourself from source. See the [documentation](doc/) to learn how to do it.
 
 ### Main features
 
-* **multi-platform** (Win/macOS/Linux)
-* **command-line interface** to use it with no GUI
-* supports **both FDM and SLA** printers
-* per-object and feature-type based invalidation allows to reslice just part of a project when a parameter changes
-* ability to set settings on per-object basis
-* ability to open **multiple projects**, each containing **multiple beds** (each with potentially **different settings**)
-* multiple layer heights in a single print
-* advanced 3D preview
-* customizable **G-code macros**
-* integration with [PrusaConnect](https://connect.prusa3d.com/) and [Printables](https://www.printables.com)
+* Set the **printing parameters** with precision - from settings affecting the **whole print** down to **single-layer adjustments**.
+* Modify your objects before printing to best suit your needs, you can **paint**, **cut**, **arrange** and do **many more** directly in PrusaSlicer.
+* Open **multiple projects** at once, each containing **multiple beds** (each with potentially **different settings**).
+* Make full use of **multi-material printing**
+* Use your **preferred method to send your prints to the printer**, PrusaSlicer supports a wide range of possibilities.
+* **View the generated print instructions** in an advanced **3D preview**.
+* You can make use of the **command-line interface** to use **PrusaSlicer without GUI** in your automation setups.
+* If you want, you **can make use of the integration** with [PrusaConnect](https://connect.prusa3d.com/) and [Printables](https://www.printables.com) to greatly simplify your workflow.
 
+### Reporting a bug
 
-### Technical stack
+Did you find a bug? Bugs can be reported in our [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues), but **first make sure your report complies with the policy stated below**. **Are you not sure?** Get in touch in our [GitHub Discussions](https://www.github.com/prusa3d/discussions), before filing a bug report in the issue tracker. You can always file a bug report later, once you have more confidence.
 
-All of PrusaSlicer is written in C++20, with CMake as the build system.
+#### Issue tracker policy
 
-The slicing backend heavily relies on [Clipper](https://www.angusj.com/clipper2) by Angus Johnson, which handles polygon boolean operations, offsets and similar. [Eigen](https://libeigen.gitlab.io/) library is used for basic types and linear algebra calculations.
+The [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues) is **only** for reporting bugs. Feature requests, suggestions or any general questions/comments should be submitted to [GitHub Discussions](https://www.github.com/prusa3d/discussions). The bug report must be **well-formed** and provide all the necessary details for us to be able to reproduce it. The policy more formally:
 
-[wxWidgets](https://wxwidgets.org) library is used to handle GUI window and events across platforms. Most of the UI is implemented using a custom OpenGL-based UI toolkit based on [Yoga layout engine](https://github.com/facebook/yoga) and [Dear Imgui](https://github.com/ocornut/imgui), which makes it platform-independent.
+1. The report must be a bug.
+2. You must provide all the necessary details for us to reproduce the issue. This includes a clear detailed description in English, a project file (3mf) where applicable and any screenshots/videos to support the written description.
+3. You must make sure that the bug you are reporting is not already reported in the bug tracker.
+4. You must not combine multiple bug reports into a single issue, rather make multiple bug reports if necessary.
+5. You must use the latest PrusaSlicer version available when reporting (including alpha, beta and RC) without significant modifications (e.g. extensive scripting).
+6. You must specify the operating system and PrusaSlicer version.
+7. We may close your issue if there is a lot of text with very little substance. This is specifically aimed at suspected AI-generated content.
+8. We may move an issue to Discussions or close it if we are unable to reproduce it.
+9. We may (very rarely) move a reproducible bug report to Discussions or close it if it happens under extremely specific circumstances.
 
-The application uses many other libraries, you can see [deps/](deps/) and [bundled_deps/](bundled_deps/) folders in the source tree to see the complete list. We are grateful to the authors and maintaners to open-source their work.
+These rules are intentionally **quite strict** with the aim to keep the issue tracker clean and useful for everyone. Once a bug is **acknowledged** in the issue tracker and not closed/moved to Discussions, it means we **will do our best to fix it**.
+
+Also note that we **really want your feedback** and these rules apply **only to the issue tracker**. You can always voice your concerns/questions/remarks in the [GitHub Discussions](https://www.github.com/prusa3d/discussions).
 
 ### How to get in touch
 
-#### Questions and feature requests
+We maintain a [GitHub Discussions](https://www.github.com/prusa3d/discussions) page in this repository to be used for **general discussions**, **questions** and **feature requests**. Furthermore, there is an announcements category, which we use to communicate with you directly.
 
-We maintain a [GitHub Discussions](https://www.github.com/prusa3d/discussions) pages in this repository to be used for general discussions, questions and feature requests. You can also find announcements from our side there.
+### Pull requests
 
-#### Bug reports
+Read our [contribution guide](.github/CONTRIBUTING.md) to get more information.
 
-Issues can be reported in our [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues). Make sure that your issue is not already reported and that it indeed is a bug - questions and feature request belong to Discussions. This is to keep the issue tracker in order.
+### Technical stack
 
-#### Pull requests
+All of PrusaSlicer is written in C++, using CMake as the build system. The code assumes that the compiler supports C++20.
 
-Read our [contribution guide](.github/CONTRIBUTING.md) to get more info.
+The slicing backend heavily relies on [Clipper](https://www.angusj.com/clipper2) by Angus Johnson, which handles polygon boolean operations, offsets and similar. [Eigen](https://libeigen.gitlab.io/) library is used for basic types and linear algebra calculations.
+
+[wxWidgets](https://wxwidgets.org) library is used to handle GUI windows and events across platforms. Most of the UI is implemented using a custom OpenGL-based UI toolkit based on the [Yoga layout engine](https://github.com/facebook/yoga) and [Dear ImGui](https://github.com/ocornut/imgui), which makes it platform-independent.
+
+The application uses many other libraries. You can see the [deps/](deps/) and [bundled_deps/](bundled_deps/) folders in the source tree to see the complete list. We are grateful to the authors and maintainers for open-sourcing their work.
