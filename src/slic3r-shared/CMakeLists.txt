@@ -1153,6 +1153,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.cpp
         include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp
         src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.cpp
+        include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterJson.hpp
+        src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterJson.cpp
         include/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterStorage.hpp
         src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterStorage.cpp
         include/Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp

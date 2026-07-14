@@ -222,6 +222,8 @@ void PhysicalPrinterSettingsDialog::on_printer_data_changed()
         button->update_button_text();
     }
 
+    // A printer's data (e.g. its hardware config) may have changed its compatibility.
+    set_compatibility_to_buttons();
 }
 
 void PhysicalPrinterSettingsDialog::on_selected_physical_printer_changed()

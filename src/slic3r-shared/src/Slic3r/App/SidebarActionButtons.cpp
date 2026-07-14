@@ -177,6 +177,14 @@ void SidebarActionButtons::on_printer_data_changed()
     m_physical_printer_button->set_visible_bin(false);
 
     update_buttons();
+
+    // The printer's data (e.g. its hardware config) may have changed its compatibility.
+    const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
+    bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
+        *m_physical_printer_button->state(),
+        printer_config
+    );
+    m_physical_printer_button->set_compatible(compatible);
 }
 
 void SidebarActionButtons::on_selected_physical_printer_changed()

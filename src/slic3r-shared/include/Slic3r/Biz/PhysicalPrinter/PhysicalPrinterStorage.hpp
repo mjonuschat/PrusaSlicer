@@ -1,21 +1,19 @@
 #pragma once
 
-#include "Slic3r/Domain/ConfigPhysical.hpp"
-#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.hpp"
 
 #include <string>
 #include <map>
 
-
 namespace Slic3r::Domain::Preset {
 struct HwPrinterConfig;
-}
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::Biz::PhysicalPrinter {
 
-using UuidSettingsMap = std::map<std::string, Domain::PhysicalPrinterSettings>;
-using UuidHwConfigMap = std::map<std::string, Domain::Preset::HwPrinterConfig>;
+using UuidPrinterMap = std::map<std::string, PhysicalPrinterConfig>;
 
+/// Persists host-upload physical printers as one JSON file per uuid under {data_dir}/physical_printer.
 class PhysicalPrinterStorage
 {
 public:
@@ -24,32 +22,26 @@ public:
 
     void load_all();
     void save_all();
-    void save_one(const std::string& uuid, const Domain::Preset::HwPrinterConfig& hw_config);
+    void save_one(const std::string& uuid);
     void remove_one(const std::string& uuid);
 
-    Domain::PhysicalPrinterSettings& printer_settings(const std::string& filename);
-    void add_printer_settings(Domain::PhysicalPrinterSettings&& settings, const std::string& filename);
+    const UuidPrinterMap& all_printers() const;
+    UuidPrinterMap& all_printers();
 
-    const UuidSettingsMap& all_settings() const;
+    /// Scratch printer edited before a new one is persisted.
+    PhysicalPrinterConfig& dummy();
+    const PhysicalPrinterConfig& dummy() const;
 
-    UuidSettingsMap& all_settings();
-
-    Domain::PhysicalPrinterSettings& dummy_settings();
-
+    /// Persists the dummy under a fresh uuid with @p hw_config, resets it, and returns the uuid.
     std::string create_from_dummy(const Domain::Preset::HwPrinterConfig& hw_config);
 
-    const Domain::Preset::HwPrinterConfig& hw_config(const std::string& uuid) const
-    {
-        return m_hw_config_supplement_map.at(uuid);
-    }
-
 private:
+    /// Deletes stored files whose uuid is no longer held in memory.
     void consolidate_files();
 
 private:
-    UuidSettingsMap m_map; 
-    UuidHwConfigMap m_hw_config_supplement_map;
-    Domain::PhysicalPrinterSettings m_dummy_settings;
+    UuidPrinterMap m_map;
+    PhysicalPrinterConfig m_dummy;
 };
 
-} //namespace Slic3r::Biz::PhysicalPrinter
+} // namespace Slic3r::Biz::PhysicalPrinter

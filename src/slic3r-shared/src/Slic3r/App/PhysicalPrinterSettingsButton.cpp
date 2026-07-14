@@ -35,7 +35,10 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
     m_attention_icon = emplace<Icon>(1, Render::Icon::ExclamationMark);
     m_attention_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_attention_icon->set_aspect_ratio(1);
-    m_attention_icon->set_margin(Margins(3.f, 6.f, 3.f, 0.f));
+    m_attention_icon->set_position_type(YGPositionTypeAbsolute);
+    m_attention_icon->set_width(22.f);
+    m_attention_icon->set_left(0.f);
+    m_attention_icon->set_bottom(0.f); 
     m_attention_icon->set_visible(false);
 
     m_bin_btn = add_button(Render::Icon::DeleteBtnIcon, Biz::_u8L("Delete physical printer"));
