@@ -1962,8 +1962,17 @@ void MenuCommandRegistrar::register_undo_redo_commands()
                             },
                         },
 
-                    .enabled = [&]()
-                    { return m_project_interactor.undo_provider().is_undo_possible(); }
+                    .enabled =
+                        [&]()
+                    {
+                        if (auto plater_render_module{
+                                dynamic_cast<Plater::PlaterRenderModule*>(&m_render_module)
+                            })
+                        {
+                            return m_project_interactor.undo_provider().is_undo_possible();
+                        }
+                        return false;
+                    }
                 }
             )
         )
@@ -1984,9 +1993,16 @@ void MenuCommandRegistrar::register_undo_redo_commands()
                                 Platform::KeyCode::Y
                             },
                         },
-
                     .enabled = [&]()
-                    { return m_project_interactor.undo_provider().is_redo_possible(); }
+                    {
+                        if (auto plater_render_module{
+                                dynamic_cast<Plater::PlaterRenderModule*>(&m_render_module)
+                            })
+                        {
+                            return m_project_interactor.undo_provider().is_undo_possible();
+                        }
+                        return false;
+                    }
                 }
             )
         );
@@ -2064,7 +2080,14 @@ void MenuCommandRegistrar::register_file_menu_import_commands()
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
                         Platform::KeyCode::I
-                    }}
+                    }},
+                    .enabled = [&]()
+                    {
+                        auto plater_render_module{
+                                dynamic_cast<Plater::PlaterRenderModule*>(&m_render_module)
+                            };
+                        return plater_render_module != nullptr;
+                    }
                 }
             )
         );
