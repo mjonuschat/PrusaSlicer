@@ -32,7 +32,7 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
 {
     m_texts_wrapper->set_min_height(36);
 
-    m_attention_icon = emplace<Icon>(1, Render::Icon::ExclamationMark);
+    m_attention_icon = m_icon->emplace_back<Icon>(Render::Icon::ExclamationMark);
     m_attention_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_attention_icon->set_aspect_ratio(1);
     m_attention_icon->set_position_type(YGPositionTypeAbsolute);
@@ -92,7 +92,15 @@ void PhysicalPrinterSettingsButton::update()
                 set_visible_cog(false);
                 set_visible_bin(false);
             } else if constexpr (std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::PrinterUpload>) {
-                set_icon(Render::Icon::PhysicalPrinterIcon);
+                // Reuse the picture of the linked logical printer; fall back to the generic icon.
+                if (m_state->hw_config.visual.thumbnail.has_value()) {
+                    set_image(
+                        m_state->hw_config.relative_path_to_assets()
+                        + m_state->hw_config.visual.thumbnail.value()
+                    );
+                } else {
+                    set_icon(Render::Icon::PhysicalPrinterIcon);
+                }
                 set_visible_cog(true);
                 set_visible_bin(true);
             } else if constexpr (

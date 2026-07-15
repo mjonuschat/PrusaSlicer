@@ -117,8 +117,8 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     keywords_row->set_padding({0, 5});
 
     constexpr std::pair<DisplayModes, const char*> keywords[] = {
-        {DisplayModes::Compatible, "Compatible"},
         {DisplayModes::All, "All"},
+        {DisplayModes::Compatible, "Compatible"},
     };
     m_selected_mode = keywords[0].first;
 

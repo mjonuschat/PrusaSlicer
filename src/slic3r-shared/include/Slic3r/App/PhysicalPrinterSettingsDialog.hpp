@@ -142,6 +142,6 @@ private:
     Yoga::Item* m_page_settings{nullptr};
     Yoga::ButtonGroup m_group_keywords;
     std::unordered_map<Slic3r::App::Yoga::AbstractButton*, DisplayModes> m_button_modes;
-    DisplayModes m_selected_mode{DisplayModes::Compatible};
+    DisplayModes m_selected_mode{DisplayModes::All};
 };
 } // namespace Slic3r::App
