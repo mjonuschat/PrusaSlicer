@@ -4,10 +4,9 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
-
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 
 #include "Slic3r/App/Config/ConfigRowItems.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -26,23 +25,23 @@ class IConfigBoxSetter;
 namespace Slic3r::App {
 
 class ConfigSubcategoryItem :
-    public Biz::DataObserver<Domain::ConfigItem>,
+    public Biz::DataObserver<Biz::ConfigItemContext>,
     public Yoga::Rectangle,
     public IConfigNavigable
 {
     using ConfigRowListViewFactory = Yoga::ViewFactory<
         ConfigRowItems,
-        Domain::ConfigItem,
+        Biz::ConfigItemContext,
         Biz::IConfigBoxSetter&,
         Biz::ConfigBoxInteractor&,
         size_t>;
     using ConfigRowListView =
-        Yoga::ListView<ConfigRowItems, Domain::ConfigItem, ConfigRowListViewFactory>;
+        Yoga::ListView<ConfigRowItems, Biz::ConfigItemContext, ConfigRowListViewFactory>;
 
 public:
     ConfigSubcategoryItem(
         size_t index,
-        const Domain::ConfigItem& data,
+        const Biz::ConfigItemContext& data,
         Biz::IConfigBoxSetter& cbi_container,
         Biz::ConfigBoxInteractor& cbi,
         size_t cbi_index
@@ -62,7 +61,7 @@ private:
     size_t m_cbi_index{0};
 
     ConfigRowListView* m_rows_list_view{nullptr};
-    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_rows_filter_list;
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::ConfigItemContext>> m_rows_filter_list;
     Yoga::Text* m_label{nullptr};
     Domain::ConfigItemDef::OptionGroup m_option_group{Domain::ConfigItemDef::OptionGroup::Unknown};
     Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unknown};

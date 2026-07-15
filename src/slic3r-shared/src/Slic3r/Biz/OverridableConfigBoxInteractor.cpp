@@ -28,19 +28,28 @@ void OverridableConfigBoxInteractor::SetAccessor::set_override(const std::string
     m_config_box_list.lock()->set_override(key, enable);
 }
 
-void OverridableConfigBoxInteractor::SetAccessor::set_config_box(Domain::ConfigBox* config_box) {
-    m_config_box_list.lock()->set_config_box(config_box);
+void OverridableConfigBoxInteractor::SetAccessor::set_config_box(
+    Domain::ConfigBox* config_box,
+    const Domain::ConfigBox* original_config_box
+)
+{
+    m_config_box_list.lock()->set_config_box(config_box, original_config_box);
+}
+
+void OverridableConfigBoxInteractor::SetAccessor::set_from_original_value(const std::string& key)
+{
+    m_config_box_list.lock()->set_from_original_value(key);
 }
 
 OverridableConfigBoxInteractor::OverridableConfigBoxInteractor(
     SetAccessor& set_accessor,
-    Domain::ConfigBox* config_box
+    const ConfigBoxes& config_boxes
 ) :
     OverridableConfigBoxInteractor()
 {
     set_accessor.set_source(m_config_box_list.get());
 
-    m_config_box_list->set_config_box(config_box);
+    m_config_box_list->set_config_box(config_boxes.editable, config_boxes.original);
 }
 
 OverridableConfigBoxInteractor::OverridableConfigBoxInteractor() :
@@ -49,7 +58,23 @@ OverridableConfigBoxInteractor::OverridableConfigBoxInteractor() :
 
 const Domain::ConfigValue* OverridableConfigBoxInteractor::find(const std::string& name) const
 {
-    return m_config_box_list->find(name);
+    const auto& [value, overridden] = m_config_box_list->find(name);
+    return value;
+}
+
+bool OverridableConfigBoxInteractor::is_dirty(const std::string& name) const
+{
+    return m_config_box_list->is_dirty(name);
+}
+
+bool OverridableConfigBoxInteractor::is_dirty() const
+{
+    return m_config_box_list->is_dirty();
+}
+
+std::set<Domain::ConfigItemDef::Category> OverridableConfigBoxInteractor::dirty_categories() const
+{
+    return m_config_box_list->dirty_categories();
 }
 
 std::weak_ptr<const OverridableConfigBoxObservableList>

@@ -13,6 +13,7 @@ struct PageEntry
 {
     std::string name;
     Render::Icon icon = Render::Icon::None;
+    std::optional<bool> is_highlighted_text{ std::nullopt};
 };
 
 class PageEntryButton : public Yoga::LayoutButton, public Biz::DataObserver<PageEntry>

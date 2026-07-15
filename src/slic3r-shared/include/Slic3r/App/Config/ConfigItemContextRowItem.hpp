@@ -1,20 +1,13 @@
-///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 
-#include "Slic3r/Domain/ConfigDef.hpp"
-
 #include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/Biz/OverrideItem.hpp"
+#include "Slic3r/Biz/ConfigItemContext.hpp"
 
 #include "Slic3r/App/IConfigNavigable.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::Biz {
 class IConfigBoxSetter;
-class OverridableConfigBoxInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
@@ -25,17 +18,16 @@ namespace Slic3r::App {
 
 class ConfigRowItem;
 
-class OverridableConfigRowItem :
-    public Biz::DataObserver<Biz::OverrideItem>,
+class ConfigItemContextRowItem :
+    public Biz::DataObserver<Biz::ConfigItemContext>,
     public IConfigNavigable,
     public Yoga::Item
 {
 public:
-    OverridableConfigRowItem(
+    ConfigItemContextRowItem(
         size_t index,
-        const Biz::OverrideItem& data,
+        const Biz::ConfigItemContext& data,
         Biz::IConfigBoxSetter& cb_setter,
-        Biz::OverridableConfigBoxInteractor& cbi,
         size_t cbi_index
     );
 
@@ -47,12 +39,10 @@ protected:
 
 private:
     Biz::IConfigBoxSetter& m_cb_setter;
-    Biz::OverridableConfigBoxInteractor& m_cbi;
     size_t m_cbi_index{0};
 
-    bool m_last_is_override{false};
+    Domain::ConfigItemDef::GUIType m_last_gui_type{Domain::ConfigItemDef::GUIType::undefined};
 
-    Yoga::ToggleButton* m_override_toggle_button{nullptr};
     ConfigRowItem* m_config_row_item{nullptr};
 };
 

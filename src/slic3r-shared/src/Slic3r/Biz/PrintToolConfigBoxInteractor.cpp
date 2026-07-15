@@ -47,7 +47,7 @@ void PrintToolConfigBoxInteractor::set_app_config_cbol(
 )
 {
     m_app_config_cbol = app_config_cbol;
-    m_app_config_cbol.lock()->add_listener<IListObserver<Domain::ConfigItem>>(this);
+    m_app_config_cbol.lock()->add_listener<IListObserver<Biz::ConfigItemContext>>(this);
     update_favorites();
 }
 

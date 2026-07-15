@@ -36,6 +36,14 @@ void PageEntryButton::on_data_update()
 {
     set_label(m_state->name);
     set_icon(m_state->icon);
+
+    if (m_state->is_highlighted_text) {
+        ImColor color = m_state->is_highlighted_text.value() ?
+            m_theme->color_imgui(Platform::Color::AccentTertiary) :
+            m_theme->color_imgui(Platform::Color::Text);
+//        set_icon_tint(color);
+        set_label_color(color);
+    }
 }
 
 } // namespace Slic3r::App

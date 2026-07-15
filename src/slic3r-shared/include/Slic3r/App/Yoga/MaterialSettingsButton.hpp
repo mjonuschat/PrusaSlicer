@@ -60,6 +60,12 @@ public:
 
     void on_view_will_be_removed() override;
 
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
+
 protected:
     void on_data_update() override;
     void checked_updated_internal() override;
@@ -67,7 +73,7 @@ protected:
 
     void set_color(const ImColor& color);
     void set_nozzle(const std::string& nozzle);
-    void set_material_name(const std::string& name);
+    void set_material_name(const std::string& name, bool is_modified);
 
 private:
     void update_cog_visibility();
@@ -87,6 +93,8 @@ private:
     FnIndexClicked m_on_cog_clicked;
     FnIndexClicked m_on_nozzle_clicked;
     Biz::ProjectInteractor& m_project_interactor;
+
+    std::string m_material_preset_name{};
 };
 
 } // namespace Slic3r::App::Yoga

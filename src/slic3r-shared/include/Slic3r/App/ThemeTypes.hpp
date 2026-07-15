@@ -18,6 +18,7 @@ enum class Color
     Control,
     AccentPrimary,
     AccentSecondary,
+    AccentTertiary,
     Button,
     ButtonTransparent,
     RadioButtonBackground,

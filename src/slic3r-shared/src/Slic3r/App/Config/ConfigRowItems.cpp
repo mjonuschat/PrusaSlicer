@@ -12,12 +12,12 @@ namespace Slic3r::App {
 
 ConfigRowItems::ConfigRowItems(
     size_t index,
-    const Domain::ConfigItem& data,
+    const Biz::ConfigItemContext& data,
     Biz::IConfigBoxSetter& cbi_container,
     Biz::ConfigBoxInteractor& cbi,
     size_t cbi_index
 ) :
-    DataObserver<Domain::ConfigItem>(index, data),
+    DataObserver<Biz::ConfigItemContext>(index, data),
     m_cbi_container(cbi_container),
     m_cbi(cbi),
     m_cbi_index(cbi_index)
@@ -49,9 +49,10 @@ void ConfigRowItems::clear_navigation()
 
 void ConfigRowItems::on_data_update()
 {
-    const std::string row_group                           = m_state->def().row_group;
-    const Domain::ConfigItemDef::OptionGroup option_group = m_state->def().option_group;
-    const Domain::ConfigItemDef::Category category        = m_state->def().category;
+    const std::string row_group = m_state->config_item->def().row_group;
+    const Domain::ConfigItemDef::OptionGroup option_group =
+        m_state->config_item->def().option_group;
+    const Domain::ConfigItemDef::Category category = m_state->config_item->def().category;
     if (m_row_group != row_group || m_initialized_type == InitializedType::None) {
         m_row_group = row_group;
         if (row_group.empty()) {
@@ -66,7 +67,7 @@ void ConfigRowItems::on_data_update()
 
             if (m_initialized_type != InitializedType::Single) {
                 m_initialized_type = InitializedType::Single;
-                m_single_item      = emplace_back<ConfigRowItem>(
+                m_single_item      = emplace_back<ConfigItemContextRowItem>(
                     m_index,
                     *m_state,
                     m_cbi_container,
@@ -84,22 +85,22 @@ void ConfigRowItems::on_data_update()
 
             if (m_initialized_type != InitializedType::Multiple) {
                 m_initialized_type = InitializedType::Multiple;
-                m_label            = emplace_back<Text>(m_state->def().row_group);
+                m_label            = emplace_back<Text>(m_state->config_item->def().row_group);
                 m_label->set_width(150);
                 m_label->set_self_align(YGAlignCenter);
 
                 m_row_items_filter =
-                    std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>();
+                    std::make_shared<Biz::ObservableListSortFilter<Biz::ConfigItemContext>>();
 
                 m_category  = category;
                 m_row_group = row_group;
 
                 m_row_items_filter->set_filter_fn(
-                    [this](const Domain::ConfigItem& item) -> bool
+                    [this](const Biz::ConfigItemContext& item) -> bool
                     {
-                        return item.def().option_group == m_option_group
-                            && item.def().category == m_category
-                            && item.def().row_group == m_row_group;
+                        return item.config_item->def().option_group == m_option_group
+                            && item.config_item->def().category == m_category
+                            && item.config_item->def().row_group == m_row_group;
                     }
                 );
                 m_row_items_filter->set_source_model(m_cbi.config_box_list());

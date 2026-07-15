@@ -3,12 +3,16 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include "Slic3r/Domain/Config.hpp"
 
 namespace Slic3r::Biz {
 
-void OverridableConfigBoxObservableList::set_config_box(Domain::ConfigBox* config_box)
+void OverridableConfigBoxObservableList::set_config_box(
+    Domain::ConfigBox* config_box,
+    const Domain::ConfigBox* original_config_box
+)
 {
     invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
                                                   { l->on_will_be_reset(); });
@@ -18,15 +22,33 @@ void OverridableConfigBoxObservableList::set_config_box(Domain::ConfigBox* confi
 
     // 1. Go through all Config Boxes and populate m_item_sources, m_items and m_item_index
     for (const Domain::ConfigItem& config_item : config_box->items.all_items()) {
-        m_items.emplace_back(config_item.name(), false, std::nullopt, &config_item);
+        const Domain::ConfigItem* original_config_item =
+            original_config_box ? original_config_box->find(config_item.name()).item : nullptr;
+
+        m_items.emplace_back(
+            config_item.name(),
+            false,
+            std::nullopt,
+            &config_item,
+            std::nullopt,
+            original_config_item
+        );
     }
 
     for (const Domain::ConfigItem& config_item : config_box->overrides.all_items()) {
+        const Domain::ConfigItem* original_config_item =
+            original_config_box ? original_config_box->find(config_item.name()).item : nullptr;
+        std::optional<bool> original_overridden = std::nullopt;
+        if (original_config_box)
+            original_overridden =
+                original_config_box->overrides.get(config_item.name()).has_value();
         m_items.emplace_back(
             config_item.name(),
             false,
             config_box->overrides.get(config_item.name()).has_value(),
-            &config_item
+            &config_item,
+            original_overridden,
+            original_config_item
         );
     }
 
@@ -123,14 +145,61 @@ void OverridableConfigBoxObservableList::set_override(const std::string& key, bo
     );
 }
 
-const Domain::ConfigValue* OverridableConfigBoxObservableList::find(const std::string& name) const
+static const OverrideItem&
+find_override_item(const std::vector<OverrideItem>& items, const std::string& key)
 {
-    Items::const_iterator it = std::find_if(
-        m_items.cbegin(),
-        m_items.cend(),
-        [&](const OverrideItem& item) { return item.name == name; }
+    std::vector<OverrideItem>::const_iterator it = std::find_if(
+        items.cbegin(),
+        items.cend(),
+        [&](const OverrideItem& item) { return item.name == key; }
     );
-    return it == m_items.cend() ? nullptr : &it->config_item->value();
+    ASSERT(it != items.cend());
+
+    return *it;
+}
+
+std::pair<const Domain::ConfigValue*, std::optional<bool>> OverridableConfigBoxObservableList::find(
+    const std::string& key
+) const
+{
+    const OverrideItem& override_item = find_override_item(m_items, key);
+    return {&override_item.config_item->value(), override_item.overriden};
+}
+
+bool OverridableConfigBoxObservableList::is_dirty(const std::string& key) const
+{
+    const OverrideItem& override_item = find_override_item(m_items, key);
+    return override_item.is_dirty();
+}
+
+bool OverridableConfigBoxObservableList::is_dirty() const
+{
+    for (const auto& item : m_items) {
+        if (item.is_dirty())
+            return true;
+    }
+    return false;
+}
+
+std::set<Domain::ConfigItemDef::Category>
+OverridableConfigBoxObservableList::dirty_categories() const
+{
+    std::vector<std::string> diff_keys;
+    for (const auto& item : m_items) {
+        if (item.is_dirty())
+            diff_keys.emplace_back(item.name);
+    }
+    return Preset::PresetSelectionCheck::dirty_categories(*m_config_box, diff_keys);
+}
+
+void OverridableConfigBoxObservableList::set_from_original_value(const std::string& key)
+{
+    const OverrideItem& override_item = find_override_item(m_items, key);
+    if (override_item.original_config_item) {
+        set_value(key, override_item.original_config_item->value());
+        if (override_item.original_overridden.has_value())
+            set_override(key, override_item.original_overridden.value());
+    }
 }
 
 const OverrideItem& OverridableConfigBoxObservableList::at(size_t index) const

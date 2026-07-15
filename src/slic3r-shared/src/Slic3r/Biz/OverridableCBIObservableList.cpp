@@ -17,21 +17,21 @@ size_t OverridableCBIObservableList::size() const
 }
 
 std::map<const OverridableConfigBoxInteractor*, OverridableConfigBoxInteractor::SetAccessor>
-OverridableCBIObservableList::set_items(const std::vector<Domain::ConfigBox*>& config_boxes)
+OverridableCBIObservableList::set_items(const std::vector<OverridableConfigBoxInteractor::ConfigBoxes>& config_boxes_list)
 {
     invoke_listeners<IListObserver<OverridableConfigBoxInteractor>>(
         [&](IListObserver<OverridableConfigBoxInteractor>* l) { l->on_will_be_reset(); }
     );
 
     m_items.clear();
-    m_items.reserve(config_boxes.size());
+    m_items.reserve(config_boxes_list.size());
 
     std::map<const OverridableConfigBoxInteractor*, OverridableConfigBoxInteractor::SetAccessor>
         accessor_map;
 
-    for (Domain::ConfigBox* config_box : config_boxes) {
+    for (const OverridableConfigBoxInteractor::ConfigBoxes& config_boxes : config_boxes_list) {
         OverridableConfigBoxInteractor::SetAccessor accessor;
-        m_items.emplace_back(accessor, config_box);
+        m_items.emplace_back(accessor, config_boxes);
         accessor_map[&m_items.back()] = accessor;
     }
 

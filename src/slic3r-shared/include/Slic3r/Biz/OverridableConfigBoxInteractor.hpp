@@ -4,9 +4,11 @@
 ///|/
 #pragma once
 
+#include "Slic3r/Domain/ConfigDef.hpp"
 #include "Slic3r/Biz/IListObserver.hpp"
 
 #include <memory>
+#include <set>
 
 namespace Slic3r::Domain {
 struct ConfigBox;
@@ -20,6 +22,11 @@ class OverridableConfigBoxObservableList;
 class OverridableConfigBoxInteractor
 {
 public:
+    struct ConfigBoxes {
+        Domain::ConfigBox* editable;
+        const Domain::ConfigBox* original;
+    };
+
     class SetAccessor
     {
     public:
@@ -29,16 +36,28 @@ public:
 
         void set_override(const std::string& key, bool enable);
 
-        void set_config_box(Domain::ConfigBox* config_box);
+        void set_config_box(
+            Domain::ConfigBox* config_box,
+            const Domain::ConfigBox* original_config_box
+        );
+
+        void set_from_original_value(const std::string& key);
 
     private:
         std::weak_ptr<OverridableConfigBoxObservableList> m_config_box_list;
     };
 
-    explicit OverridableConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box);
+    explicit OverridableConfigBoxInteractor(
+        SetAccessor& set_accessor,
+        const ConfigBoxes& config_boxes
+    );
     OverridableConfigBoxInteractor();
 
     const Domain::ConfigValue* find(const std::string& name) const;
+
+    bool is_dirty(const std::string& name) const;
+    bool is_dirty() const;
+    std::set<Domain::ConfigItemDef::Category> dirty_categories() const;
 
     std::weak_ptr<const OverridableConfigBoxObservableList> config_box_overridable_list() const;
 

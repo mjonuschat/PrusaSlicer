@@ -4,8 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
-
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
@@ -13,6 +12,7 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Config/ConfigRowItem.hpp"
+#include "Slic3r/App/Config/ConfigItemContextRowItem.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"
 
 namespace Slic3r::Biz {
@@ -28,19 +28,22 @@ namespace Slic3r::App {
 class ConfigItemSpinBox;
 
 class ConfigRowItems :
-    public Biz::DataObserver<Domain::ConfigItem>,
+    public Biz::DataObserver<Biz::ConfigItemContext>,
     public Yoga::Item,
     public IConfigNavigable
 {
-    using ConfigRowListViewFactory =
-        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::IConfigBoxSetter&, size_t>;
+    using ConfigRowListViewFactory = Yoga::ViewFactory<
+        ConfigItemContextRowItem,
+        Biz::ConfigItemContext,
+        Biz::IConfigBoxSetter&,
+        size_t>;
     using ConfigRowListView =
-        Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
+        Yoga::ListView<ConfigItemContextRowItem, Biz::ConfigItemContext, ConfigRowListViewFactory>;
 
 public:
     ConfigRowItems(
         size_t index,
-        const Domain::ConfigItem& data,
+        const Biz::ConfigItemContext& data,
         Biz::IConfigBoxSetter& cbi_container,
         Biz::ConfigBoxInteractor& cbi,
         size_t cbi_index
@@ -65,9 +68,9 @@ private:
     Biz::ConfigBoxInteractor& m_cbi;
     size_t m_cbi_index{0};
 
-    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_row_items_filter;
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::ConfigItemContext>> m_row_items_filter;
     ConfigRowListView* m_row_group_list_view{nullptr};
-    ConfigRowItem* m_single_item{nullptr};
+    ConfigItemContextRowItem* m_single_item{nullptr};
     Yoga::Text* m_label{nullptr};
 
     Domain::ConfigItemDef::OptionGroup m_option_group{Domain::ConfigItemDef::OptionGroup::Unknown};

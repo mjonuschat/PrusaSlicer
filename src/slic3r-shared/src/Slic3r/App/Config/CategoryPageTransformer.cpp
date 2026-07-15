@@ -12,9 +12,9 @@ namespace Slic3r::App {
 CategoryPageTransformer::CategoryPageTransformer()
 {
     set_transform_fn(
-        [this](const Domain::ConfigItem& data, size_t index)
+        [this](const Biz::ConfigItemContext& data, size_t index)
         {
-            const Domain::ConfigItemDef::Category category = data.def().category;
+            const Domain::ConfigItemDef::Category category = data.config_item->def().category;
 
             Domain::PrinterTechnology pt = m_project_interactor ?
                 m_project_interactor->selected_config_container().print_technology() :

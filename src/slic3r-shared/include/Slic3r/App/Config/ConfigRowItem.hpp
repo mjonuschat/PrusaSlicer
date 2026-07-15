@@ -19,6 +19,7 @@ class IConfigBoxSetter;
 namespace Slic3r::App::Yoga {
 class Text;
 class ToggleButton;
+class LayoutButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -32,10 +33,13 @@ class ConfigRowItem :
     public IConfigNavigable
 {
 public:
+    using FnEnableRevert = std::function<bool()>;
+
     ConfigRowItem(
         size_t index,
         const Domain::ConfigItem& data,
         Biz::IConfigBoxSetter& cb_setter,
+        FnEnableRevert enable_revert_fn,
         size_t cbi_index,
         std::optional<std::string> force_label = std::nullopt
     );
@@ -44,6 +48,7 @@ public:
     void clear_navigation() override;
 
     void set_label_text_color(const ImColor& color);
+    void set_enabled_control(bool enabled);
 
 private:
     void on_data_update() override;
@@ -58,6 +63,7 @@ private:
     const std::type_info* m_created_value_type{nullptr};
     Yoga::Item* m_left_side{nullptr};
     Yoga::Text* m_label{nullptr};
+    Yoga::LayoutButton* m_revert_button{nullptr};
     Yoga::Text* m_sidetext{nullptr};
     Yoga::Item* m_input{nullptr};
     Yoga::ToggleButton* m_toggle_enable{nullptr};
@@ -66,6 +72,8 @@ private:
     ConfigItemSpinBox* m_config_item_spin_box{
         nullptr
     }; ///< valid only if ConfigItem gui type is spinbox
+
+    FnEnableRevert m_enable_revert{nullptr};
 };
 
 } // namespace Slic3r::App

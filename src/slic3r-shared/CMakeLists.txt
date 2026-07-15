@@ -359,6 +359,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigSubcategoryItem.cpp
         include/Slic3r/App/Config/ConfigRowItem.hpp
         src/Slic3r/App/Config/ConfigRowItem.cpp
+        include/Slic3r/App/Config/ConfigItemContextRowItem.hpp
+        src/Slic3r/App/Config/ConfigItemContextRowItem.cpp
         include/Slic3r/App/Config/ConfigRowItems.hpp
         src/Slic3r/App/Config/ConfigRowItems.cpp
         src/Slic3r/App/Config/ExplanationContainer.cpp
@@ -751,6 +753,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/MiniZErrorTranslation.cpp
 
         include/Slic3r/Biz/OverrideItem.hpp
+        include/Slic3r/Biz/ConfigItemContext.hpp
         src/Slic3r/Biz/Utils/MeshClipper.cpp
         include/Slic3r/Biz/Utils/MeshClipper.hpp
         src/Slic3r/Biz/Utils/CutUtils.cpp

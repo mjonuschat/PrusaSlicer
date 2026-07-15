@@ -7,23 +7,28 @@
 namespace Slic3r::Biz {
 
 ConfigBoxInteractor::ConfigBoxInteractor() :
-    m_config_box_list(std::make_shared<ConfigBoxObservableList>()),
-    m_config_box_overrides_list(std::make_shared<ConfigBoxOverridesObservableList>())
+    m_config_box_list(std::make_shared<ConfigBoxObservableList>())
 {}
 
-ConfigBoxInteractor::ConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box) :
+ConfigBoxInteractor::ConfigBoxInteractor(SetAccessor& set_accessor) :
     ConfigBoxInteractor()
 {
-    set_accessor.set_source(
-        m_config_box_list.get(),
-        m_config_box_overrides_list.get()
-    );
-    set_accessor.set_config_box(config_box);
+    set_accessor.set_source(m_config_box_list.get());
 }
 
 const Domain::ConfigValue* ConfigBoxInteractor::find(const std::string& name) const
 {
     return m_config_box_list->find(name);
+}
+
+bool ConfigBoxInteractor::is_dirty() const
+{
+    return m_config_box_list->is_dirty();
+}
+
+std::set<Domain::ConfigItemDef::Category> ConfigBoxInteractor::dirty_categories() const
+{
+    return m_config_box_list->dirty_categories();
 }
 
 std::weak_ptr<ConfigBoxObservableList> ConfigBoxInteractor::config_box_list()
@@ -36,35 +41,42 @@ std::weak_ptr<const ConfigBoxObservableList> ConfigBoxInteractor::config_box_lis
     return m_config_box_list.get();
 }
 
-std::weak_ptr<ConfigBoxOverridesObservableList> ConfigBoxInteractor::config_box_overrides_list()
-{
-    return m_config_box_overrides_list.get();
-}
-
 void ConfigBoxInteractor::SetAccessor::set_source(
-    std::weak_ptr<ConfigBoxObservableList> config_box_list,
-    std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list
+    std::weak_ptr<ConfigBoxObservableList> config_box_list
 )
 {
     m_config_box_list           = config_box_list;
-    m_config_box_overrides_list = config_box_overrides_list;
 }
 
-void ConfigBoxInteractor::SetAccessor::set_value(const std::string& key, const Domain::ConfigValue& value)
+void ConfigBoxInteractor::SetAccessor::set_value(
+    const std::string& key,
+    const Domain::ConfigValue& value
+)
 {
     m_config_box_list.lock()->set_value(key, value);
-    m_config_box_overrides_list.lock()->set_value(key, value);
 }
 
-void ConfigBoxInteractor::SetAccessor::set_override(const std::string& key, bool enable)
+void ConfigBoxInteractor::SetAccessor::set_config_box(
+    Domain::ConfigBox* config_box,
+    const Domain::ConfigBox* original_config_box
+)
 {
-    m_config_box_overrides_list.lock()->set_override(key, enable);
+    m_config_box_list.lock()->set_config_box(config_box, original_config_box);
 }
 
-void ConfigBoxInteractor::SetAccessor::set_config_box(Domain::ConfigBox* config_box)
+bool ConfigBoxInteractor::SetAccessor::is_dirty(const std::string& key) const
 {
-    m_config_box_list.lock()->set_config_box(config_box);
-    m_config_box_overrides_list.lock()->set_config_box(config_box);
+    return m_config_box_list.lock()->is_dirty(key);
+}
+
+bool ConfigBoxInteractor::SetAccessor::is_dirty() const
+{
+    return m_config_box_list.lock()->is_dirty();
+}
+
+void ConfigBoxInteractor::SetAccessor::set_from_original_value(const std::string& key)
+{
+    m_config_box_list.lock()->set_from_original_value(key);
 }
 
 } // namespace Slic3r::Biz

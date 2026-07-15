@@ -8,7 +8,7 @@ namespace Slic3r::App {
 
 AppConfigInteractor::AppConfigInteractor(Domain::ConfigBox* app_config_box)
 {
-    m_app_config_cbi = Biz::ConfigBoxInteractor(m_cbi_accessor, nullptr);
+    m_app_config_cbi = Biz::ConfigBoxInteractor(m_cbi_accessor);
     m_cbi_accessor.set_config_box(app_config_box);
 }
 

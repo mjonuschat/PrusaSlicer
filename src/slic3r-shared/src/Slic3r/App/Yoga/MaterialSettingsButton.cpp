@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+
 #include "Slic3r/LegacyFormat.hpp"
 
 using namespace Slic3r::Biz;
@@ -142,7 +144,18 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
 
     const Biz::Preset::PresetItem& preset_item = m_state->items().at(new_selection);
 
-    set_material_name(preset_item.ui_preset_name());
+    const auto& preset_interactor = m_project_interactor.preset_interactor();
+    auto& selected_preset = preset_interactor.selected_printer_preset();
+    bool is_modified_preset = preset_interactor.is_tool_material_preset_selected_and_dirty(
+        preset_item.hw_printer_config_id,
+        selected_preset.printer.id,
+        selected_preset.print.id,
+        preset_item.id,
+        m_index
+    );
+
+    m_material_preset_name = preset_item.ui_preset_name();
+    set_material_name(m_material_preset_name, is_modified_preset);
 
     const std::vector<Domain::ColorRGB> colors =
         m_project_interactor.project_settings_interactor().get_colors(
@@ -215,9 +228,13 @@ void MaterialSettingsButton::on_view_will_be_removed()
     m_project_interactor.preset_interactor().remove_listener<Preset::IPresetChangedListener>(this);
 }
 
-void MaterialSettingsButton::set_material_name(const std::string& name)
+void MaterialSettingsButton::set_material_name(const std::string& name, bool is_modified)
 {
-    m_material_name->set_text(name);
+    const std::string modified_prefix = is_modified ? "* " : "";
+    m_material_name->set_text(modified_prefix + name);
+    m_material_name->set_text_color(
+        m_theme->color_imgui(is_modified ? Platform::Color::AccentTertiary : Platform::Color::Text)
+    );
     set_tooltip(name);
 }
 
@@ -236,6 +253,28 @@ void MaterialSettingsButton::hovered_updated_internal()
 void MaterialSettingsButton::update_cog_visibility()
 {
     m_cog_btn->set_visible(this->hovered() || m_cog_btn->hovered());
+}
+
+void MaterialSettingsButton::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
+{
+    if (std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+        const auto location{ std::get<Domain::FDMConfigLocation>(item.location()) };
+        if (location != Domain::FDMConfigLocation::Filament) {
+            return;
+        }
+    }
+    else if (std::holds_alternative<Domain::SLAConfigLocation>(item.location())) {
+        const auto location{ std::get<Domain::SLAConfigLocation>(item.location()) };
+        if (location != Domain::SLAConfigLocation::Material) {
+            return;
+        }
+    }
+    const bool is_modified_preset = m_project_interactor.preset_interactor().material_cbi_list().at(m_index).is_dirty();
+    set_material_name(m_material_preset_name, is_modified_preset);
 }
 
 } // namespace Slic3r::App::Yoga

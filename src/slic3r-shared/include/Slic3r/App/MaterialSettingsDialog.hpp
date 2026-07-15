@@ -11,6 +11,9 @@
 #include "Slic3r/Biz/ObservableListTransformer.hpp"
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 
+#include "Slic3r/Biz/Platform/ListenerScope.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
+
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"
 
@@ -18,18 +21,26 @@ namespace Slic3r::Biz {
 class ProjectInteractor;
 class OverridableConfigBoxInteractor;
 class OverridableCBIObservableList;
+
+namespace Preset {
+class PresetInteractor;
+} // namespace Preset
 } // namespace Slic3r::Biz
+
+namespace Slic3r::App::Yoga {
+class LayoutButton;
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
 class Navigator;
 class MaterialSelectionDialog;
-class ConfigSubcategoryListView;
 class CurrentPresetLabel;
 
 class MaterialSettingsDialog :
     public Yoga::AbstractSettingsDialog,
     public IConfigNavigable,
+    public Biz::Preset::IPresetChangedListener,
     public Biz::IListObserver<Biz::OverridableConfigBoxInteractor>
 {
 public:
@@ -45,6 +56,18 @@ public:
 
     void on_reset() override;
 
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
+
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
+
 protected:
     void close_action() override;
 
@@ -54,12 +77,14 @@ protected:
 
 private:
     void on_about_to_close() override;
+    void update_ui_state(const Domain::ConfigItem* changed_item = nullptr);
 
 private:
     using OverridableCategoryPageTransformer =
         Biz::ObservableListTransformer<Biz::OverrideItem, PageEntry>;
 
-    using Categorizer = Biz::ObservableListSortFilter<Biz::OverrideItem, Domain::ConfigItemDef::Category>;
+    using Categorizer =
+        Biz::ObservableListSortFilter<Biz::OverrideItem, Domain::ConfigItemDef::Category>;
 
     struct ConfigTab
     {
@@ -94,7 +119,15 @@ private:
     MaterialSelectionDialog* m_material_selection_dialog{nullptr};
     Biz::OverridableCBIObservableList& m_material_cbi_list;
 
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        MaterialSettingsDialog>
+        m_preset_changed_listener_scope;
+
     CurrentPresetLabel* m_current_preset_label{nullptr};
+
+    Yoga::LayoutButton* m_revert_button{nullptr};
 };
 
 } // namespace Slic3r::App

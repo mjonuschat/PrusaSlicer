@@ -44,9 +44,12 @@ void PrinterSettingsButton::set_image(const std::string& image)
     m_icon->set_image(image);
 }
 
-void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
+void PrinterSettingsButton::set_printer_name(const std::string& printer_name, bool is_modified)
 {
-    m_printer_name->set_text(printer_name);
+    const std::string prefix = is_modified ? "* " : "";
+    m_printer_name->set_text(prefix + printer_name); 
+    m_printer_name->set_text_color(m_theme->color_imgui(
+        is_modified ? Platform::Color::AccentTertiary : Platform::Color::Text));
 }
 
 void PrinterSettingsButton::set_preset_name(const std::string& preset_name)

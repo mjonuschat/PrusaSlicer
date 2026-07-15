@@ -259,6 +259,8 @@ public:
 
     const Domain::ConfigValue* get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
+    void set_from_original_value(const Domain::ConfigItem& item, size_t index = 0) override;
+
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
@@ -718,6 +720,34 @@ public:
         );
     }
 
+    bool is_printer_preset_selected_and_dirty(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id) const;
+
+    bool is_print_preset_selected_and_dirty(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id) const;
+
+    bool is_tool_print_preset_selected_and_dirty(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        const std::string& tool_print_preset_id,
+        size_t tool_index) const;
+
+    bool is_tool_material_preset_selected_and_dirty(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        const std::string& tool_material_preset_id,
+        size_t slot_index) const;
+
+    void discard_selected_printer_preset_changes();
+    void discard_selected_print_preset_changes();
+    void discard_selected_tool_print_preset_changes(size_t tool_index);
+    void discard_selected_tool_material_preset_changes(size_t slot_index);
+
     void set_dialog_manager(IPresetDialogManager* dialog_manager) {
         m_dialog_manager = dialog_manager;
     }
@@ -894,7 +924,10 @@ private:
 
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
-    void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
+    void fill_selected_material_cbis(
+        Domain::Preset::SelectedPreset& selected_preset,
+        bool force_fill_originals=false
+    );
     void update_print_tool_cbi(
         Domain::Preset::SelectedPreset& selected_preset,
         Domain::SelectionId config_container_id

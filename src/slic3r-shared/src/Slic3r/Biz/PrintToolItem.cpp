@@ -23,4 +23,10 @@ void PrintToolItem::update_value()
     );
 }
 
+bool PrintToolItem::is_dirty() const
+{
+    if (print_item->def().category == Domain::ConfigItemDef::Category::Hidden)
+        return false;
+    return false; // TODO
+}
 } // namespace Slic3r::Biz

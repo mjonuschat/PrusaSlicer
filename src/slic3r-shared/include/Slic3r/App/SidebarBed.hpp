@@ -14,6 +14,8 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
+#include "Slic3r/Biz/Platform/ListenerScope.hpp"
+
 namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
@@ -35,7 +37,8 @@ class PrinterSettingsButton;
 class SidebarBed :
     public Yoga::Window,
     public Biz::IListSelectionChangedListener,
-    public Biz::ISelectedBedInstancesChangedListener
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     explicit SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
@@ -47,11 +50,23 @@ public:
         const Biz::Scene::BedSelection& bed_selection
     ) override;
 
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
+
     LogicalPrinterSettingsDialog& logical_printer_settings_dialog();
     PrinterAddDialog& printer_add_dialog();
     MaterialSelectionDialog& material_selection_dialog();
 
 private:
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        SidebarBed>
+        m_preset_changed_listener_scope;
+
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
 
@@ -75,6 +90,9 @@ private:
     LogicalPrinterSettingsDialog* m_logical_printer_settings_dialog{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
     MaterialSelectionDialog* m_material_selection_dialog{nullptr};
+
+    std::string m_selected_printer_preset_name{};
+
 };
 
 } // namespace Slic3r::App

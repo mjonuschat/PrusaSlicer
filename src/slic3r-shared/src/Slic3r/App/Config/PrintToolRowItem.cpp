@@ -347,8 +347,14 @@ void PrintToolRowItem::initialize()
     if (!m_state->shared_context.has_multiple_extruders || m_state->tool_overrides.empty()) {
         m_initialized_type = InitializedType::PrintOnly;
 
-        m_config_row_item =
-            m_header->emplace<ConfigRowItem>(0, m_index, *m_state->print_item, m_cb_setter, 0);
+        m_config_row_item = m_header->emplace<ConfigRowItem>(
+            0,
+            m_index,
+            *m_state->print_item,
+            m_cb_setter,
+            [this]() { return m_state->is_dirty(); },
+            0
+        );
         m_config_row_item->set_flex_grow(1.f);
 
         m_favorite_button->set_margin(Margins{0, 10_fpx, 0, 0});

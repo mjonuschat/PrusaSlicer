@@ -113,7 +113,7 @@ public:
     void on_updated(const IndexRange& index_range) override
     {
         if (m_transform_fn && m_source_model.is_valid()) {
-            for (size_t i = index_range.from; i < index_range.to; ++i) {
+            for (size_t i = index_range.from; i <= index_range.to; ++i) {
                 m_transformed_items[i] = m_transform_fn(m_source_model->at(i), i);
             }
 

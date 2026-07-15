@@ -8,7 +8,7 @@
 
 #include "Slic3r/Biz/IListObserver.hpp"
 #include "Slic3r/Biz/ConfigBoxObservableList.hpp"
-#include "Slic3r/Domain/Config.hpp"
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 
 #include <vector>
 #include <string>
@@ -32,7 +32,7 @@ namespace Slic3r::Biz {
 
 class PrintToolConfigObservableList;
 
-class PrintToolConfigBoxInteractor : public IListObserver<Domain::ConfigItem>
+class PrintToolConfigBoxInteractor : public IListObserver<Biz::ConfigItemContext>
 {
 public:
     class SetAccessor

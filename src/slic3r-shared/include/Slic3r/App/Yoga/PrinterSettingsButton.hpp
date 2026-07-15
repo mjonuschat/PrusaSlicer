@@ -15,7 +15,7 @@ public:
     explicit PrinterSettingsButton(const std::string& tooltip = {});
 
     void set_image(const std::string& image);
-    void set_printer_name(const std::string& printer_name);
+    void set_printer_name(const std::string& printer_name, bool is_modified = false);
     void set_preset_name(const std::string& preset_name);
     void set_printing_state(int state);
 

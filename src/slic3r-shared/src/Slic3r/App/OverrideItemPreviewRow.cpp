@@ -88,7 +88,7 @@ void OverrideItemPreviewRow::on_data_update()
 
     const bool is_changed_value = (init_value ? item.value() != *init_value : true) || m_state->mixed;
     m_label->set_text_color(m_theme->color_imgui(
-        is_changed_value ? Platform::Color::AccentSecondary : Platform::Color::Text
+        is_changed_value ? Platform::Color::AccentTertiary : Platform::Color::Text
     ));
 
     m_add_button->set_visible(!m_state->overriden.value());

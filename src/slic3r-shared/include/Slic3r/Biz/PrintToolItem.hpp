@@ -40,6 +40,8 @@ struct PrintToolItem
     const Domain::ConfigValue& tool_value(size_t index) const;
 
     void update_value();
+
+    bool is_dirty() const;
 };
 
 } // namespace Slic3r::Biz

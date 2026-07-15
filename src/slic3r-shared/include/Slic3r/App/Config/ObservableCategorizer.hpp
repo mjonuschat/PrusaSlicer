@@ -4,13 +4,13 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
 
 namespace Slic3r::App {
 
 class ObservableCategorizer :
-    public Biz::ObservableListSortFilter<Domain::ConfigItem, Domain::ConfigItemDef::Category>
+    public Biz::ObservableListSortFilter<Biz::ConfigItemContext, Domain::ConfigItemDef::Category>
 {
 public:
     ObservableCategorizer();

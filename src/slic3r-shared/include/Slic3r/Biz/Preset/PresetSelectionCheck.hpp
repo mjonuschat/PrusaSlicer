@@ -1,7 +1,9 @@
 #pragma once
+#include "Slic3r/Domain/ConfigDef.hpp"
 
 #include <string>
 #include <vector>
+#include <set>
 
 namespace Slic3r::Domain {
 struct ConfigBox;
@@ -14,6 +16,9 @@ class PresetInteractor;
 namespace PresetSelectionCheck {
 
 void filter_diff_keys(const Domain::ConfigBox& cbox, std::vector<std::string>& diff_keys);
+
+std::set<Domain::ConfigItemDef::Category>
+dirty_categories(const Domain::ConfigBox& cb, const std::vector<std::string>& diff_keys);
 
 bool can_select_printer_preset(
     PresetInteractor& preset_interactor,

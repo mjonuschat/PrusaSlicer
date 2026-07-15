@@ -15,6 +15,7 @@
 #include "Slic3r/App/PrinterAddDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui/imgui_internal.h>
@@ -25,6 +26,7 @@ namespace Slic3r::App {
 
 SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     Window("SidebarBed"),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator)
 {
@@ -156,17 +158,24 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
         return;
     }
 
+    const auto& preset_interactor = m_project_interactor.preset_interactor();
     const Biz::Preset::PresetItem& preset_item =
-        m_project_interactor.preset_interactor().printer_presets().items().at(new_selection);
+        preset_interactor.printer_presets().items().at(new_selection);
 
-    m_logical_printer_button->set_printer_name(preset_item.ui_preset_name());
+    const bool is_modified_preset = preset_interactor.is_printer_preset_selected_and_dirty(
+        preset_item.hw_printer_config_id,
+        preset_item.id
+    );
+
+    m_selected_printer_preset_name = preset_item.ui_preset_name();
+    m_logical_printer_button->set_printer_name(m_selected_printer_preset_name, is_modified_preset);
     m_logical_printer_button->set_preset_name(preset_item.ui_hw_config_name());
     m_logical_printer_button->set_tooltip(
         preset_item.ui_preset_name() + "\n" + preset_item.ui_hw_config_name()
     );
 
     const Domain::Preset::HwPrinterConfig& printer_config =
-        m_project_interactor.preset_interactor().current_printer_config();
+        preset_interactor.current_printer_config();
 
     if (printer_config.visual.thumbnail.has_value()) {
         const std::string image_path =
@@ -195,6 +204,29 @@ void SidebarBed::on_selected_bed_instances_changed(
     ASSERT(bed_instance);
 
     m_bed_name->set_text(bed_instance->name());
+}
+
+void SidebarBed::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
+{
+    if (std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+        const auto location{ std::get<Domain::FDMConfigLocation>(item.location()) };
+        if (location != Domain::FDMConfigLocation::Printer) {
+            return;
+        }
+    }
+    else if (std::holds_alternative<Domain::SLAConfigLocation>(item.location())) {
+        const auto location{ std::get<Domain::SLAConfigLocation>(item.location()) };
+        if (location != Domain::SLAConfigLocation::Printer) {
+            return;
+        }
+    }
+
+    bool is_modified_preset = m_project_interactor.preset_interactor().printer_cbi().is_dirty();
+    m_logical_printer_button->set_printer_name(m_selected_printer_preset_name, is_modified_preset);
 }
 
 LogicalPrinterSettingsDialog& SidebarBed::logical_printer_settings_dialog()

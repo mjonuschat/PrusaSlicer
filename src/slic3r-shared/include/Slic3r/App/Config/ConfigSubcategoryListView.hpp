@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 
 #include "Slic3r/App/Config/ConfigSubcategoryItem.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -24,7 +25,7 @@ namespace Slic3r::App {
 
 using ConfigSubcategoryListViewFactory = Yoga::ViewFactory<
     ConfigSubcategoryItem,
-    Domain::ConfigItem,
+    Biz::ConfigItemContext,
     Biz::IConfigBoxSetter&,
     Biz::ConfigBoxInteractor&,
     size_t>;
@@ -32,16 +33,16 @@ using ConfigSubcategoryListViewFactory = Yoga::ViewFactory<
 class ConfigSubcategoryListView :
     public Yoga::ListView<
         ConfigSubcategoryItem,
-        Domain::ConfigItem,
+        Biz::ConfigItemContext,
         ConfigSubcategoryListViewFactory,
         Yoga::ScrollArea>,
-    public Biz::DataObserver<Domain::ConfigItem>,
+    public Biz::DataObserver<Biz::ConfigItemContext>,
     public IConfigNavigable
 {
 public:
     explicit ConfigSubcategoryListView(
         size_t index,
-        const Domain::ConfigItem& data,
+        const Biz::ConfigItemContext& data,
         Biz::IConfigBoxSetter& cbi_container,
         Biz::ConfigBoxInteractor& cbi,
         size_t cbi_index
@@ -59,7 +60,7 @@ private:
     size_t m_cbi_index{0};
 
     Biz::UnsharedPointer<
-        Biz::ObservableListSortFilter<Domain::ConfigItem, Domain::ConfigItemDef::OptionGroup>>
+        Biz::ObservableListSortFilter<Biz::ConfigItemContext, Domain::ConfigItemDef::OptionGroup>>
         m_category_filter;
     Yoga::Rectangle* m_background{nullptr};
     Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unknown};

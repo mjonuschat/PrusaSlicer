@@ -136,6 +136,7 @@ void Theme::initialize_dark_colors()
     m_colors[Platform::Color::AccentPrimary].color_disabled =
         std::make_unique<ImColor>(200, 150, 130);
     m_colors[Platform::Color::AccentSecondary]  = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
+    m_colors[Platform::Color::AccentTertiary]   = ColorEntry{{175, 119, 255}};
     m_colors[Platform::Color::Error]            = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
     m_colors[Platform::Color::Warning]          = ColorEntry{{255, 193, 7}};
     m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.80f, 0.80f, 0.80f, 0.35f}};
@@ -227,6 +228,7 @@ void Theme::initialize_light_colors()
     // Keep Prusa orange as the primary accent; it pops well on white/light grey
     m_colors[Platform::Color::AccentPrimary]    = ColorEntry{k_prusa_orange};
     m_colors[Platform::Color::AccentSecondary]  = ColorEntry{{0.32f, 0.48f, 0.84f, 1.0f}};
+    m_colors[Platform::Color::AccentTertiary]   = ColorEntry{{175, 119, 255}};
     m_colors[Platform::Color::Error]            = ColorEntry{{0.79f, 0.18f, 0.14f, 1.0f}};
     m_colors[Platform::Color::Warning]          = ColorEntry{{0.85f, 0.47f, 0.02f, 1.0f}};
     m_colors[Platform::Color::ModalWindowDimBg] = ColorEntry{{0.20f, 0.20f, 0.20f, 0.35f}};

@@ -8,16 +8,19 @@
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include "Slic3r/App/Config/OverridableSubcategoryListView.hpp"
+#include "Slic3r/App/Config/CategoryUtils.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/CurrentPresetLabel.hpp"
-#include "Slic3r/App/Config/CategoryUtils.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 #include <fmt/format.h>
 
@@ -36,7 +39,8 @@ MaterialSettingsDialog::MaterialSettingsDialog(
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_material_selection_dialog(material_selection_dialog),
-    m_material_cbi_list(m_project_interactor.preset_interactor().material_cbi_list())
+    m_material_cbi_list(m_project_interactor.preset_interactor().material_cbi_list()),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this)
 {
     m_material_cbi_list.add_listener<Biz::IListObserver<Biz::OverridableConfigBoxInteractor>>(this);
 
@@ -48,6 +52,16 @@ MaterialSettingsDialog::MaterialSettingsDialog(
     m_current_preset_label->set_align(Align{AlignH::Center, AlignV::Center});
 
     m_footer->emplace_back<Separator>(Orientation::Vertical);
+
+    m_revert_button = add_footer_button(_u8L("Revert changes"), Render::Icon::UndoGizmo);
+    m_revert_button->set_icon_tint(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->set_label_color(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->callbacks().action = [this]
+    {
+        m_project_interactor.preset_interactor().discard_selected_tool_material_preset_changes(
+            current_tab_index()
+        );
+    };
 
     add_footer_button(_u8L("Compare"), Render::Icon::Compare)->callbacks().action = [this]
     {
@@ -102,6 +116,7 @@ void MaterialSettingsDialog::on_reset()
     while (!m_config_tabs.empty()) {
         remove_tab(0);
     }
+    m_revert_button->set_visible(false);
 
     for (size_t material_cbi_index = 0; material_cbi_index < m_material_cbi_list.size();
          ++material_cbi_index)
@@ -126,6 +141,17 @@ void MaterialSettingsDialog::on_reset()
     }
 }
 
+void MaterialSettingsDialog::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (type == Biz::Preset::PresetItemType::MaterialPreset) {
+        update_ui_state();
+    }
+}
+
 void MaterialSettingsDialog::close_action()
 {
     m_navigator.set_opened_dialog(m_material_selection_dialog);
@@ -143,11 +169,39 @@ void MaterialSettingsDialog::on_tab_selected(int current_index)
 
     if (m_current_tab && current_index < static_cast<int>(m_material_cbi_list.size())) {
         m_current_preset_label->set_current_list(current_index);
+        update_ui_state();
     }
 }
 
-void MaterialSettingsDialog::on_about_to_close() {
+void MaterialSettingsDialog::on_about_to_close()
+{
     clear_navigation();
+}
+
+void MaterialSettingsDialog::update_ui_state(const Domain::ConfigItem* changed_item)
+{
+    Biz::OverridableConfigBoxInteractor& cbi = const_cast<Biz::OverridableConfigBoxInteractor&>(
+        m_material_cbi_list.at(current_tab_index())
+        );
+    m_revert_button->set_visible(cbi.is_dirty());
+
+    if (changed_item) {
+        auto& category_page_transformer =
+            m_config_tabs.at(current_tab_index())->category_page_transformer;
+        Domain::PrinterTechnology pt =
+            m_project_interactor.selected_config_container().print_technology();
+        for (size_t index = 0; index < category_page_transformer->size(); index++) {
+            const Domain::ConfigItemDef::Category category =
+                changed_item->def().location != changed_item->location() ?
+                Domain::ConfigItemDef::Category::Filament_Overrides :
+                changed_item->def().category;
+
+            const auto& data = category_page_transformer->at(index);
+            if (data.name == Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt))) {
+                category_page_transformer->on_updated(index);
+            }
+        }
+    }
 }
 
 MaterialSettingsDialog::ConfigTab::ConfigTab(
@@ -204,9 +258,16 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
                 this->project_interactor.selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
+            auto dirty_categories    = this->project_interactor.preset_interactor()
+                                           .material_cbi_list()
+                                           .at(this->cbi_index)
+                                           .dirty_categories();
+            bool is_highlighted_text = dirty_categories.find(category) != dirty_categories.end();
+
             return PageEntry{
                 Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
-                icon
+                icon,
+                is_highlighted_text
             };
         }
     );
@@ -249,7 +310,9 @@ void MaterialSettingsDialog::ConfigTab::navigate_to_item(const Domain::ConfigIte
 
     const bool is_override = config_item->def().location != config_item->location();
 
-    const Domain::ConfigItemDef::Category category = is_override ? Domain::ConfigItemDef::Category::Filament_Overrides : config_item->def().category;
+    const Domain::ConfigItemDef::Category category = is_override ?
+        Domain::ConfigItemDef::Category::Filament_Overrides :
+        config_item->def().category;
     for (size_t category_index = 0; category_index < categorizer->size(); ++category_index) {
         if (categorizer->at(category_index).config_item->def().category == category) {
             tab.page_list_view->item_at(category_index)->callbacks().action();
@@ -268,6 +331,27 @@ void MaterialSettingsDialog::ConfigTab::clear_navigation()
         dynamic_cast<OverridableSubcategoryListView*>(tab.pages_stack_layout->get_item(index))
             ->clear_navigation();
     }
+}
+
+void MaterialSettingsDialog::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
+{
+    if (std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
+        if (location != Domain::FDMConfigLocation::Filament) {
+            return;
+        }
+    } else if (std::holds_alternative<Domain::SLAConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::SLAConfigLocation>(item.location())};
+        if (location != Domain::SLAConfigLocation::Material) {
+            return;
+        }
+    }
+
+    update_ui_state(&item);
 }
 
 } // namespace Slic3r::App

@@ -30,8 +30,13 @@ OverridableConfigRowItem::OverridableConfigRowItem(
     set_orientation(Orientation::Horizontal);
     set_gap(5);
 
-    m_config_row_item =
-        emplace_back<ConfigRowItem>(0, *data.config_item, cb_setter, cbi_index);
+    m_config_row_item = emplace_back<ConfigRowItem>(
+        0,
+        *data.config_item,
+        cb_setter,
+        [this]() ->bool {return m_state->is_dirty(); },
+        cbi_index
+    );
     m_config_row_item->set_flex_grow(1);
 
     on_data_update();
@@ -66,7 +71,7 @@ void OverridableConfigRowItem::on_data_update()
         } else {
             remove(m_override_toggle_button);
             m_override_toggle_button = nullptr;
-            m_config_row_item->set_enabled(true);
+            m_config_row_item->set_enabled_control(true);
         }
     }
 
@@ -76,7 +81,7 @@ void OverridableConfigRowItem::on_data_update()
             m_state->overriden.value() ? Biz::_u8L("Disable override") :
                                          Biz::_u8L("Enable override")
         );
-        m_config_row_item->set_enabled(m_state->overriden.value());
+        m_config_row_item->set_enabled_control(m_state->overriden.value());
     }
     m_config_row_item->set_state(*m_state->config_item);
 }

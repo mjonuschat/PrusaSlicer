@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
 
@@ -20,13 +21,15 @@ ConfigRowItem::ConfigRowItem(
     size_t index,
     const Domain::ConfigItem& data,
     Biz::IConfigBoxSetter& cb_setter,
+    FnEnableRevert enable_revert_fn,
     size_t cbi_index,
     std::optional<std::string> force_label
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_cb_setter(cb_setter),
     m_cbi_index(cbi_index),
-    m_force_label(force_label)
+    m_force_label(force_label),
+    m_enable_revert(enable_revert_fn)
 {
     set_fill(m_theme->color_imgui(Platform::Color::Transparent));
     set_border_width(2);
@@ -39,6 +42,21 @@ ConfigRowItem::ConfigRowItem(
     m_label->set_height(40);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
     m_label->set_align({AlignH::Left, AlignV::Center});
+
+    m_revert_button = m_left_side->emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::UndoGizmo,
+        Biz::_u8L("Revert to the initial profile value")
+    );
+    m_revert_button->set_background_color(Platform::Color::ButtonTransparent);
+    m_revert_button->set_icon_tint(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->set_self_align(YGAlignCenter);
+    m_revert_button->set_content_padding(3);
+    m_revert_button->set_width(20);
+    m_revert_button->set_height(20);
+    m_revert_button->set_flex_shrink(0.f);
+    m_revert_button->callbacks().action = [this]()
+    { m_cb_setter.set_from_original_value(*m_state, m_cbi_index); };
 
     m_sidetext = emplace_back<Text>(Biz::_u8(m_state->def().sidetext));
     m_sidetext->set_self_align(YGAlignCenter);
@@ -54,6 +72,12 @@ ConfigRowItem::ConfigRowItem(
 void ConfigRowItem::set_label_text_color(const ImColor& color)
 {
     m_label->set_text_color(color);
+}
+
+void ConfigRowItem::set_enabled_control(bool enabled)
+{
+    get_item(1)->set_enabled(enabled);
+    m_sidetext->set_enabled(enabled);
 }
 
 void ConfigRowItem::on_data_update()
@@ -132,6 +156,12 @@ void ConfigRowItem::on_data_update()
     }
 
     m_control->set_state(*m_state);
+
+    const bool can_revert = m_enable_revert();
+    m_revert_button->set_visible(can_revert);
+    m_label->set_text_color(
+        m_theme->color_imgui(can_revert ? Platform::Color::AccentTertiary : Platform::Color::Text)
+    );
 }
 
 void ConfigRowItem::navigate_to_item(const Domain::ConfigItem* config_item)

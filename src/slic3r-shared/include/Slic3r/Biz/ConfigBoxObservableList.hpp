@@ -4,17 +4,20 @@
 ///|/
 #pragma once
 
-#include <Slic3r/Domain/Config.hpp>
+#include <Slic3r/Biz/ConfigItemContext.hpp>
 #include <Slic3r/Biz/IObservableList.hpp>
 
 namespace Slic3r::Biz {
 
-class ConfigBoxObservableList : public IObservableList<Domain::ConfigItem>
+class ConfigBoxObservableList : public IObservableList<ConfigItemContext>
 {
 public:
-    void set_config_box(Domain::ConfigBox* config_box);
+    void set_config_box(
+        Domain::ConfigBox* observable_config_box,
+        const Domain::ConfigBox* original_config_box
+    );
 
-    const Domain::ConfigItem& at(size_t index) const override;
+    const ConfigItemContext& at(size_t index) const override;
 
     size_t size() const override;
 
@@ -22,25 +25,17 @@ public:
 
     const Domain::ConfigValue* find(const std::string& name) const;
 
-private:
-    Domain::ConfigBox* m_config_box{nullptr};
-};
+    bool is_dirty(const std::string& key) const;
+    bool is_dirty() const;
+    std::set<Domain::ConfigItemDef::Category> dirty_categories();
 
-class ConfigBoxOverridesObservableList : public IObservableList<Domain::ConfigItem>
-{
-public:
-    void set_config_box(Domain::ConfigBox* config_box);
-
-    const Domain::ConfigItem& at(size_t index) const override;
-
-    size_t size() const override;
-
-    void set_value(const std::string& key, const Domain::ConfigValue& value);
-
-    void set_override(const std::string& key, bool enable);
+    void set_from_original_value(const std::string& key);
 
 private:
     Domain::ConfigBox* m_config_box{nullptr};
+
+    using Items = std::vector<ConfigItemContext>;
+    Items m_items;
 };
 
 } // namespace Slic3r::Biz

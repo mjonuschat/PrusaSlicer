@@ -116,7 +116,7 @@ void SearchObservableList::invalidate_source_items()
         m_source_items.reserve(m_source_items.size() + cbol_size);
 
         for (size_t index = 0; index < cbol_size; ++index) {
-            const Domain::ConfigItem* item = &cbol->at(index);
+            const Domain::ConfigItem* item = cbol->at(index).config_item;
 
             if (item->def().category == Domain::ConfigItemDef::Category::Hidden) {
                 continue;

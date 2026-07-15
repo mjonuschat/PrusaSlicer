@@ -93,13 +93,13 @@ void ConfigSettingsDialog::ConfigTab::init()
 
     using CategoryListViewFactory = ViewFactory<
         ConfigSubcategoryListView,
-        Domain::ConfigItem,
+        Biz::ConfigItemContext,
         Biz::IConfigBoxSetter&,
         Biz::ConfigBoxInteractor&,
         size_t>;
     using CategoryListView = ListView<
         ConfigSubcategoryListView,
-        Domain::ConfigItem,
+        Biz::ConfigItemContext,
         CategoryListViewFactory,
         StackLayout>;
 
@@ -125,7 +125,7 @@ void ConfigSettingsDialog::ConfigTab::navigate_to_item(const Domain::ConfigItem*
     for (size_t category_index = 0; category_index < observable_categorizer->size();
          ++category_index)
     {
-        if (observable_categorizer->at(category_index).def().category == category) {
+        if (observable_categorizer->at(category_index).config_item->def().category == category) {
             tab->page_list_view->item_at(category_index)->callbacks().action();
             dynamic_cast<ConfigSubcategoryListView*>(
                 tab->pages_stack_layout->get_item(category_index)
