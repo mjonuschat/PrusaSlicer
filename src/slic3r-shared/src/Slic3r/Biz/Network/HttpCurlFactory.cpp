@@ -65,9 +65,9 @@ void HttpFactory::initialize()
         };
     }
 
-    if (!m_get_origin_from_url_fn) {
-        m_get_origin_from_url_fn = [](const std::string& url) -> std::string {
-            return HttpCurl::get_origin_from_url(url);
+    if (!m_get_base_url_fn) {
+        m_get_base_url_fn = [](const std::string& url) -> std::string {
+            return HttpCurl::get_base_url(url);
         };
     }
 }

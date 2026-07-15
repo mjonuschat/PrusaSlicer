@@ -27,9 +27,9 @@ std::string IHttp::extract_host_from_url(const std::string& url)
 {
     return HttpFactory::instance().extract_host_from_url(url);
 }
-std::string IHttp::get_origin_from_url(const std::string& url)
+std::string IHttp::get_base_url(const std::string& url)
 {
-    return HttpFactory::instance().get_origin_from_url(url);
+    return HttpFactory::instance().get_base_url(url);
 }
 std::string IHttp::substitute_host(const std::string& orig_addr, std::string sub_addr)
 {

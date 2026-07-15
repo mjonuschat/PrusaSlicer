@@ -22,7 +22,7 @@ BrowserLogicPhysicalPrinter::BrowserLogicPhysicalPrinter(
     , m_api_key(api_key)
     , m_usr(usr)
     , m_psk(psk)
-    , m_url_origin(Slic3r::Biz::Network::IHttp::get_origin_from_url(url))
+    , m_base_url(Slic3r::Biz::Network::IHttp::get_base_url(url))
 {
     m_events["reloadHomePage"] = std::bind(&BrowserLogicPhysicalPrinter::on_reload_event, this, std::placeholders::_1);
     m_events["appQuit"] = std::bind(&BrowserLogicPhysicalPrinter::on_dummy_event, this, std::placeholders::_1);
@@ -64,8 +64,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_loaded_webview_
         return {{BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse, std::string()}};
     }
 
-    if (!m_origin_preloaded && m_url_origin != m_url && url.find(m_url_origin) == 0 && url.find(m_url) != 0) {
-        return on_origin_loaded();
+    if (!m_base_url_preloaded && m_base_url != m_url && url.find(m_base_url) == 0 && url.find(m_url) != 0) {
+        return on_base_url_loaded();
     }
 
     return on_target_url_loaded(url);
@@ -76,21 +76,21 @@ std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_loading_html_lo
     m_load_default_url = false;
     std::vector<BrowserLogicCommand> result;
 
-    // Credentials must be set before the origin SPA makes its init API calls.
+    // Credentials must be set before the base-URL SPA makes its init API calls.
     if (!m_api_key_sent && !m_usr.empty() && !m_psk.empty()) {
         auto cred_cmds = send_credentials();
         result.insert(result.end(), cred_cmds.begin(), cred_cmds.end());
     }
-    result.emplace_back(BrowserLogicCommandType::LoadURL, m_url_origin);
+    result.emplace_back(BrowserLogicCommandType::LoadURL, m_base_url);
     return result;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_origin_loaded()
+std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_base_url_loaded()
 {
-    m_origin_preloaded = true;
+    m_base_url_preloaded = true;
     m_reached_default_url = true;
 
-    std::string path = m_url.substr(m_url_origin.length());
+    std::string path = m_url.substr(m_base_url.length());
     if (path.empty()) path = "/";
 
     return {
@@ -156,7 +156,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::reconnect_commands
 {
     m_connection_changed = false;
     return {
-        {BrowserLogicCommandType::DeleteCookies, m_url_origin},
+        {BrowserLogicCommandType::DeleteCookies, m_base_url},
         {BrowserLogicCommandType::ClearBasicAuth, std::string()},
         {BrowserLogicCommandType::LoadResourcesPage, m_loading_html}
     };
@@ -173,14 +173,14 @@ void BrowserLogicPhysicalPrinter::update_connection(
     m_api_key = api_key;
     m_usr = usr;
     m_psk = psk;
-    m_url_origin = Slic3r::Biz::Network::IHttp::get_origin_from_url(url);
+    m_base_url = Slic3r::Biz::Network::IHttp::get_base_url(url);
 
     m_last_target_url.clear();
     m_reached_default_url = false;
     m_styles_defined = false;
     m_api_key_sent = false;
     m_load_default_url = true;
-    m_origin_preloaded = false;
+    m_base_url_preloaded = false;
     m_auto_retry_count = 0;
     m_connection_changed = true;
 }
@@ -290,8 +290,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_reload_event(co
             return {{BrowserLogicCommandType::DoReload, {}}};
         }
 
-        m_origin_preloaded = false;
-        return {{BrowserLogicCommandType::LoadURL, m_url_origin}};
+        m_base_url_preloaded = false;
+        return {{BrowserLogicCommandType::LoadURL, m_base_url}};
     } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Could not parse Physical Printer reload message. {}", e.what());
         return {};

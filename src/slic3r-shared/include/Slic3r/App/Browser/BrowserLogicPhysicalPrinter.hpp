@@ -33,7 +33,7 @@ private:
     std::vector<BrowserLogicCommand> on_dummy_event(const std::string& message_data) { return {}; }
 
     std::vector<BrowserLogicCommand> on_loading_html_loaded();
-    std::vector<BrowserLogicCommand> on_origin_loaded();
+    std::vector<BrowserLogicCommand> on_base_url_loaded();
     std::vector<BrowserLogicCommand> on_target_url_loaded(const std::string& url);
     std::vector<BrowserLogicCommand> reconnect_commands();
 
@@ -50,13 +50,13 @@ private:
     std::string m_usr;
     std::string m_psk;
 
-    std::string m_url_origin;
+    std::string m_base_url;
     std::string m_last_target_url;
     bool m_reached_default_url{false};
     bool m_styles_defined{false};
     bool m_api_key_sent{false};
     bool m_load_default_url{true};
-    bool m_origin_preloaded{false};
+    bool m_base_url_preloaded{false};
     int m_auto_retry_count{0};
     bool m_connection_changed{false};
 };
