@@ -11,6 +11,7 @@ struct UIItemCommandExtraOpts
     std::function<bool()> visible                               = nullptr;
     std::function<bool()> checked                               = nullptr;
     std::function<void(bool)> checked_changed                   = nullptr;
+    bool todo{false};
 };
 
 /**
@@ -62,6 +63,11 @@ public:
         }
     }
 
+    bool has_todo_state() const
+    {
+        return m_extra_opts.todo;
+    }
+
     const std::optional<std::vector<Platform::KeyboardShortcut>> keyboard_shortcuts() const override
     {
         return m_extra_opts.keyboard_shortcuts;
@@ -69,6 +75,8 @@ public:
 
     bool enabled() const override
     {
+        if (has_todo_state())
+            return false;
         return m_extra_opts.enabled ? m_extra_opts.enabled() : true;
     }
 

@@ -341,6 +341,15 @@ std::string MenuBuilder::icon_name(UniversalMenuItemName menu_item_name)
     return icon == Render::Icon::None ? std::string{} : Render::ImguiIconHelper::icon_name(icon);
 }
 
+static std::string get_item_name_translated(App::MenuItem* menu_item)
+{
+    std::string item_name = MenuBuilder::item_name_translated(menu_item->name());
+    if (menu_item->command() && menu_item->command()->has_todo_state()) {
+        item_name += fmt::format("   ({})", Biz::_u8L("TODO"));
+    }
+    return item_name;
+}
+
 void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* menu_item)
 {
     for (App::MenuItem* sub_menu_item : menu_item->children()) {
@@ -348,8 +357,9 @@ void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* men
             yoga_menu_item->append_sub_menu_separator();
             continue;
         }
+
         Yoga::MenuItem* new_yoga_menu_item = yoga_menu_item->append_sub_menu_item(
-            item_name_translated(sub_menu_item->name()),
+            get_item_name_translated(sub_menu_item),
             item_icon(sub_menu_item->name())
         );
         if (sub_menu_item->children().empty()) {
@@ -363,7 +373,7 @@ void MenuBuilder::add_submenu(Yoga::MenuItem* yoga_menu_item, App::MenuItem* men
 Yoga::MenuItem* MenuBuilder::add_menu_item(Yoga::Menu* menu, App::MenuItem* menu_item)
 {
     Yoga::MenuItem* yoga_menu_item = menu->append_item(
-        item_name_translated(menu_item->name()),
+        get_item_name_translated(menu_item),
         item_icon(menu_item->name())
     );
     m_command_binding_manager.bind_menu_item(menu_item->command(), yoga_menu_item);
@@ -382,7 +392,7 @@ void MenuBuilder::add_menu_items(Yoga::Menu* menu, App::MenuItem* root_menu_item
             add_menu_item(menu, menu_item);
         } else {
             Yoga::MenuItem* yoga_menu_item_with_submenu =
-                menu->append_item(item_name_translated(menu_item->name()));
+                menu->append_item(get_item_name_translated(menu_item));
             add_submenu(yoga_menu_item_with_submenu, menu_item);
         }
     }
