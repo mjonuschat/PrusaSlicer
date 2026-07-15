@@ -1895,7 +1895,7 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 {
                     open_browser(
                         OpenBrowserParams{
-                            .url                   = "https://github.com/prusa3d/slic3r/issues/new",
+                            .url                   = "https://github.com/prusa3d/slic3r/issues/new/choose",
                             .force_remember_choice = false
                         }
                     );
