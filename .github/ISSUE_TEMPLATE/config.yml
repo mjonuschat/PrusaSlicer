@@ -1,9 +1,9 @@
 contact_links:
   - name: 💡 Feature request or idea
-    url: https://github.com/Prusa-Development/PrusaSlicerPrivate/discussions/categories/feature-requests
+    url: https://github.com/prusa3d/PrusaSlicer/discussions/categories/feature-requests
     about: Want a new feature or have an idea? Share it in Discussions — that's where we collect and discuss them.
   - name: ❓ Community help
-    url: https://github.com/Prusa-Development/PrusaSlicerPrivate/discussions/categories/community-help
+    url: https://github.com/prusa3d/PrusaSlicer/discussions/categories/community-help
     about: Need help, or not sure whether it's really a bug? Ask the community in Discussions.
   - name: 🛟  Prusa official support
     url: https://www.prusa3d.com/page/prusaslicer-support-form_233563/
@@ -14,5 +14,5 @@ contact_links:
   - name: 💬  PrusaPrinters forum
     url: https://forum.prusaprinters.org/forum/prusaslicer/
     about: Join the PrusaPrinters community forum. (Not an official support channel.)
-    
+
 blank_issues_enabled: false
