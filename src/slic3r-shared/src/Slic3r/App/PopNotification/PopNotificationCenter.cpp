@@ -991,11 +991,11 @@ const auto user_account_login_matcher{cmp<UserAccountLoginNotificationData>( //
 
 void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
     if (is_refresh) {
         return;
     }
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
-    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
     const boost::filesystem::path avatar{m_project_interactor.user_account_interactor().avatar()};
     const std::string image_path{boost::filesystem::exists(avatar) ? avatar.string() : std::string{}};
@@ -1082,7 +1082,7 @@ void PopNotificationCenter::on_user_account_action_retry(
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
     std::string text = fmt::format(
-        "(Attempt {}) Communication with Prusa Account is taking longer than expected. Retrying. Attempt {}.",
+        "Communication with Prusa Account is taking longer than expected. Retrying. Attempt {}.",
         std::to_string(retry.attempt),
         std::to_string(retry.attempt)
     );
