@@ -159,6 +159,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_login(const std::str
     for (const std::string& arg : args) {
         if (arg.rfind("prusaslicer://login", 0) == 0) {
             dispatch_login(arg);
+            break;
         }
     }
 }
