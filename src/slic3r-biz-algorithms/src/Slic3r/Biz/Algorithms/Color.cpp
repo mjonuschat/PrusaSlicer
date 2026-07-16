@@ -296,6 +296,17 @@ Domain::ColorRGBA to_rgba(const Domain::ColorRGB& other_rgb, float alpha)
     return {other_rgb.r(), other_rgb.g(), other_rgb.b(), alpha};
 }
 
+std::vector<Domain::ColorRGBA> to_rgba(const std::vector<Domain::ColorRGB>& colors)
+{
+    std::vector<Domain::ColorRGBA> result;
+    result.reserve(colors.size());
+    for (const Domain::ColorRGB& color : colors) {
+        result.push_back(to_rgba(color));
+    }
+
+    return result;
+}
+
 Domain::ColorRGBA picking_decode(unsigned int id)
 {
     return {

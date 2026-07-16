@@ -1,13 +1,17 @@
 #pragma once
 
-#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
+#include "Slic3r/App/Plater/MMPaintedVolumeRendering.hpp"
 #include "Slic3r/App/Plater/SinkingContours.hpp"
+#include "Slic3r/App/Render/GeometryManager.hpp"
+#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 
 namespace Slic3r::App::Plater {
 
 class PlaterScenePresenterProjectContext : public Scene::ScenePresenterProjectContext
 {
 public:
+    using MMPaintedGeometryManager = Render::GeometryManager<MMPainting::MMPaintedVolumeGeometryId>;
+
     PlaterScenePresenterProjectContext() = default;
     PlaterScenePresenterProjectContext(const PlaterScenePresenterProjectContext&) = delete;
     PlaterScenePresenterProjectContext& operator=(const PlaterScenePresenterProjectContext&) = delete;
@@ -21,6 +25,8 @@ public:
     void update_selection_obb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);
     void set_selection_obb_visible(bool visible);
 
+    const MMPaintedGeometryManager& mm_painted_geometry_manager() const;
+    MMPaintedGeometryManager& mm_painted_geometry_manager();
 private:
     SinkingContours m_sinking_contours;
     struct SelectionOBBNode
@@ -32,6 +38,7 @@ private:
         Scene::Node* volume_nodes_parent{ nullptr };
     };
     SelectionOBBNode m_selection_obb_node;
+    MMPaintedGeometryManager m_mm_painted_geometry_manager{"mm_painted_geometry"};
 };
 
 } // namespace Slic3r::App::Plater

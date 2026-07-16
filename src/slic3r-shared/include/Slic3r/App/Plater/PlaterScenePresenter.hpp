@@ -23,9 +23,10 @@
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
-#include "Slic3r/Biz/IProjectsChangedListener.hpp"
-#include "Slic3r/Biz/IColorsChangedListener.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 
 namespace Slic3r::App::Scene {
@@ -58,7 +59,8 @@ class PlaterScenePresenter :
     public Biz::IFDMResultCacheChangedListener,
     public Biz::ISLAResultCacheChangedListener,
     public Biz::IProjectsChangedListener,
-    public Biz::IColorsChangedListener
+    public Biz::IColorsChangedListener,
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PlaterScenePresenterProjectContext>;
@@ -180,6 +182,12 @@ public:
         const std::vector<Domain::ColorRGB>& colors
     ) override;
 
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
+
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
 
@@ -238,6 +246,12 @@ private:
         Domain::SelectionId project_id,
         const Domain::ElementRefs& volumes
     ) override;
+    void on_volume_facets_annotations_changed(
+        Domain::SelectionId project_id,
+        Domain::FacetsAnnotationKind kind,
+        const Domain::ElementRefs& volumes
+    ) override;
+    void on_model_reloaded(Domain::SelectionId project_id) override;
 
     void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
@@ -262,7 +276,16 @@ private:
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
         std::optional<Domain::ColorRGBA> color = std::nullopt);
 
+    /**
+     * @brief Updates tag, geometry and material of volume nodes so they match the model.
+     *
+     * @param project_id Project whose scene is traversed.
+     * @param volumes Volumes whose nodes to refresh. Pass nullptr to refresh every volume node.
+     */
+    void refresh_volume_nodes(Domain::SelectionId project_id, const Domain::ElementRefs* volumes);
+
     void clear_orphan_volumes_from_managers(Domain::SelectionId project_id);
+    void clear_orphan_mm_painted_geometry(Domain::SelectionId project_id);
 
     void build_unknown_wipe_tower_node(
         Scene::NodeBuilder& builder,

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
@@ -291,15 +292,7 @@ std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_color
         settings_interactor.get_colors(m_project_interactor.selected_config_container_id())
     };
 
-    std::vector<ColorRGBA> result;
-    result.reserve(rgb_colors.size());
-    std::ranges::transform(
-        rgb_colors,
-        std::back_inserter(result),
-        [](const Domain::ColorRGB& color)
-        { return Domain::ColorRGBA{color.r(), color.g(), color.b(), 1.0f}; }
-    );
-    return result;
+    return Biz::Algorithms::Color::to_rgba(rgb_colors);
 }
 
 void MultiMaterialPaintingGizmo::update_painting_dialog_tools()

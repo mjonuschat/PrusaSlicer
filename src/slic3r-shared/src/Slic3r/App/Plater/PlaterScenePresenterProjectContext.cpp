@@ -112,4 +112,16 @@ void PlaterScenePresenterProjectContext::set_selection_obb_visible(bool visible)
         m_selection_obb_node.main_node->set_enabled(visible);
 }
 
+const PlaterScenePresenterProjectContext::MMPaintedGeometryManager&
+PlaterScenePresenterProjectContext::mm_painted_geometry_manager() const
+{
+    return m_mm_painted_geometry_manager;
+}
+
+PlaterScenePresenterProjectContext::MMPaintedGeometryManager&
+PlaterScenePresenterProjectContext::mm_painted_geometry_manager()
+{
+    return m_mm_painted_geometry_manager;
+}
+
 } // namespace Slic3r::App::Plater
