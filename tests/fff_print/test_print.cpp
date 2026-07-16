@@ -452,7 +452,7 @@ bool is_exclusively_undone(const Print& print, const std::set<Step>& steps)
     ASSERT(print.objects().size() == 1);
     const PrintObject& object{*print.objects().front()};
 
-    for (std::size_t i{}; i < FDMPrintStep::psCount; ++i) {
+    for (std::size_t i{}; i < FDMPrintObjectStep::posCount; ++i) {
         const FDMPrintObjectStep step{static_cast<FDMPrintObjectStep>(i)};
         if (steps.contains(step)) {
             if (object.is_step_done(step)) {
