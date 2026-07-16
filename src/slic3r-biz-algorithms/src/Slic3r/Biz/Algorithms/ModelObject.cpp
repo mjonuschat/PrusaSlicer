@@ -617,6 +617,9 @@ Domain::ModelObject* merge(const std::vector<const Domain::ModelInstance*>& inst
         // merge volumes
         for (const Domain::ModelVolume* volume : object->volumes) {
             Domain::ModelVolume* new_volume = new_object->add_volume(*volume);
+            // Give the new volumes new id, otherwise there would temporarily
+            // be volumes with the same id and all sorts of horrible things may happen.
+            new_volume->set_new_unique_id();
             new_volume->set_transformation(instance->get_matrix() * new_volume->get_matrix());
 
             update_volume_settings_from_object_settings<Domain::ObjectSettings>(

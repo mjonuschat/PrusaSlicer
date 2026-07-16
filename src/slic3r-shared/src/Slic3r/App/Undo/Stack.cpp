@@ -445,8 +445,8 @@ LoadedSnapshot Stack::load_and_select_snapshot(
 
     LoadedSnapshot result;
     result.model = load_serialized_model(to_load.at(0));
-    result.model.assert_is_valid();
     result.model.update_links_bottom_up_recursive();
+    result.model.assert_is_valid();
     result.object_selection = load_serialized_object_selection(to_load.at(1));
     result.selected_tool_gizmo =
         static_cast<Scene::ToolType>(std::stoi(to_load.at(2).serialized_data));
