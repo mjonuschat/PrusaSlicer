@@ -468,6 +468,7 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_insta
 
     const auto& selected_preset = config_container->selected_preset();
 
+    project.model().assert_is_valid();
     m_slicing_interactor.update_process(
         project.model(),
         project.metadata(),

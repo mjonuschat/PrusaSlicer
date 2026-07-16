@@ -386,6 +386,7 @@ void Stack::take_snapshot(
     Biz::UndoSnapshotType type
 )
 {
+    model.assert_is_valid();
     const std::vector<Snapshot>& snapshots{m_stack->get_snapshots()};
     if (m_one_past_selected_index != snapshots.size()) {
         m_stack->pop_back_n(snapshots.size() - m_one_past_selected_index);
@@ -444,6 +445,7 @@ LoadedSnapshot Stack::load_and_select_snapshot(
 
     LoadedSnapshot result;
     result.model = load_serialized_model(to_load.at(0));
+    result.model.assert_is_valid();
     result.model.update_links_bottom_up_recursive();
     result.object_selection = load_serialized_object_selection(to_load.at(1));
     result.selected_tool_gizmo =

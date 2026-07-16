@@ -121,6 +121,7 @@ public:
     bool          is_fuzzy_skin_painted() const;
 
     void update_links_bottom_up_recursive();
+    void assert_is_valid() const;
 
 private:
     explicit Model(int) : ObjectBase(-1) { assert(this->id().invalid()); }

@@ -130,6 +130,46 @@ void Model::update_links_bottom_up_recursive()
     }
 }
 
+void Model::assert_is_valid() const
+{
+    std::vector<size_t> ids;
+    ids.reserve(1 + this->objects.size() * 8);
+
+    const auto collect_id = [&ids](const ObjectID id) {
+        ASSERT(id.valid());
+        ids.push_back(id.id);
+    };
+
+    collect_id(this->id());
+
+    for (const ModelObject* object : this->objects) {
+        ASSERT(ASSERT_VAL(object)->get_model() == this);
+
+        collect_id(object->id());
+        collect_id(object->layer_height_profile.id());
+
+        for (const ModelInstance* instance : object->instances) {
+            ASSERT(instance != nullptr);
+            ASSERT(instance->get_object() == object);
+            collect_id(instance->id());
+        }
+
+        for (const ModelVolume* volume : object->volumes) {
+            ASSERT(volume != nullptr);
+            ASSERT(volume->get_object() == object);
+
+            collect_id(volume->id());
+            collect_id(volume->supported_facets.id());
+            collect_id(volume->seam_facets.id());
+            collect_id(volume->mm_segmentation_facets.id());
+            collect_id(volume->fuzzy_skin_facets.id());
+        }
+    }
+
+    std::sort(ids.begin(), ids.end());
+    ASSERT(std::adjacent_find(ids.begin(), ids.end()) == ids.end());
+}
+
 ModelObject* Model::add_object()
 {
     this->objects.emplace_back(new ModelObject(this));
