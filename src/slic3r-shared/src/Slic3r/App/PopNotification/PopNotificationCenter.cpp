@@ -416,7 +416,8 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
         && status.code != SlicingStatusCode::Finished
         && status.code != SlicingStatusCode::Stopping
         && status.code != SlicingStatusCode::InvalidData
-        )
+        // The partial slicing ends back in the Modified state, so the notification has to be erased too.
+        && status.code != SlicingStatusCode::Modified)
     {
         return;
     }
