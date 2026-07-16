@@ -398,7 +398,7 @@ indexed_triangle_set SLAPrint::Steps::generate_preview_vdb(const SLAPrintObject 
                          .interior_bandwidth(1.f);
 
     voxparams.statusfn([&po](int){
-        return po.m_print->cancel_status() != CancelStatus::NOT_CANCELED;
+        return po.m_print->canceled();
     });
 
     auto r = range(po.m_mesh_to_slice);

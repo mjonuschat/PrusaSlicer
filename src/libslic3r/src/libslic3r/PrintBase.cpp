@@ -109,13 +109,8 @@ std::string PrintBase::output_filename(const std::string &format, const std::str
 }
 
 std::mutex& PrintObjectBase::state_mutex(PrintBase *print)
-{ 
-	return print->state_mutex();
-}
-
-std::function<void()> PrintObjectBase::cancel_callback(PrintBase *print)
 {
-	return print->cancel_callback();
+	return print->state_mutex();
 }
 
 static Domain::Polygon get_rectangle(double width, double height)

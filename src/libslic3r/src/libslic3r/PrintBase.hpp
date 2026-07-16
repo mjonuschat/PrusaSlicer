@@ -177,46 +177,26 @@ public:
 
     // Make the step invalid.
     // PrintBase::m_state_mutex should be locked at this point, guarding access to m_state.
-    // In case the step has already been entered or finished, cancel the background
-    // processing by calling the cancel callback.
-    template<typename CancelationCallback>
-    bool invalidate(StepType step, CancelationCallback cancel) {
-        if (PrintStateBase::StateWithTimeStamp &state = m_state[step]; state.try_invalidate()) {
-            // Raise the mutex, so that the following cancel() callback could cancel
-            // the background processing.
-            cancel();
-            return true;
-        } else
-            return false;
+    bool invalidate(StepType step) {
+        return m_state[step].try_invalidate();
     }
 
-    template<typename CancelationCallback, typename StepTypeIterator>
-    bool invalidate_multiple(StepTypeIterator step_begin, StepTypeIterator step_end, CancelationCallback cancel) {
+    template<typename StepTypeIterator>
+    bool invalidate_multiple(StepTypeIterator step_begin, StepTypeIterator step_end) {
         bool invalidated = false;
         for (StepTypeIterator it = step_begin; it != step_end; ++ it)
             if (m_state[*it].try_invalidate())
                 invalidated = true;
-        if (invalidated) {
-            // Raise the mutex, so that the following cancel() callback could cancel
-            // the background processing.
-            cancel();
-        }
         return invalidated;
     }
 
     // Make all steps invalid.
     // PrintBase::m_state_mutex should be locked at this point, guarding access to m_state.
-    // In case any step has already been entered or finished, cancel the background
-    // processing by calling the cancel callback.
-    template<typename CancelationCallback>
-    bool invalidate_all(CancelationCallback cancel) {
+    bool invalidate_all() {
         bool invalidated = false;
         for (size_t i = 0; i < COUNT; ++ i)
             if (m_state[i].try_invalidate())
                 invalidated = true;
-        if (invalidated) {
-            cancel();
-        }
         return invalidated;
     }
 
@@ -257,7 +237,6 @@ protected:
     virtual ~PrintObjectBase() {}
     // Declared here to allow access from PrintBase through friendship.
 	static std::mutex&                  state_mutex(PrintBase *print);
-	static std::function<void()>        cancel_callback(PrintBase *print);
 
     Domain::ModelObject                *m_model_object;
 };
@@ -290,7 +269,7 @@ private:
 class PrintBase : public Domain::ObjectBase, public Biz::Slicing::IPrint
 {
 public:
-	PrintBase() { this->restart(); }
+	PrintBase() = default;
     inline virtual ~PrintBase() {}
 
     virtual Domain::PrinterTechnology technology() const noexcept = 0;
@@ -337,28 +316,8 @@ public:
         progress_callback(Biz::Slicing::Progress{percent, message});
     }
 
-    typedef std::function<void()>  cancel_callback_type;
-    // Various methods will call this callback to stop the background processing (the Print::process() call)
-    // in case a successive change of the Print / PrintObject / PrintRegion instances changed
-    // the state of the finished or running calculations.
-    void                       set_cancel_callback(cancel_callback_type cancel_callback) { m_cancel_callback = cancel_callback; }
     // Has the calculation been canceled?
-	enum CancelStatus {
-		// No cancelation, background processing should run.
-		NOT_CANCELED = 0,
-		// Canceled by user from the user interface (user pressed the "Cancel" button or user closed the application).
-		CANCELED_BY_USER = 1,
-		// Canceled internally from Print::apply() through the Print/PrintObject::invalidate_step() or ::invalidate_all_steps().
-		CANCELED_INTERNAL = 2
-	};
-    CancelStatus               cancel_status() const { return m_cancel_status.load(std::memory_order_acquire); }
-    // Has the calculation been canceled?
-	bool                       canceled() const { return m_cancel_status.load(std::memory_order_acquire) != NOT_CANCELED; }
-    // Cancel the running computation. Stop execution of all the background threads.
-	void                       cancel() { m_cancel_status = CANCELED_BY_USER; }
-	void                       cancel_internal() { m_cancel_status = CANCELED_INTERNAL; }
-    // Cancel the running computation. Stop execution of all the background threads.
-	void                       restart() { m_cancel_status = NOT_CANCELED; }
+	bool                       canceled() const { return stop_token.stop_requested(); }
     // Returns true if the last step was finished with success.
     virtual bool               finished() const = 0;
 
@@ -371,16 +330,13 @@ protected:
 	friend class PrintObjectBase;
 
     std::mutex&            state_mutex() const { return m_state_mutex; }
-    std::function<void()>  cancel_callback() { return m_cancel_callback; }
-	void				   call_cancel_callback() { m_cancel_callback(); }
 
     // If the background processing stop was requested, throw CanceledException.
     // To be called by the worker thread and its sub-threads (mostly launched on the TBB thread pool) regularly.
     void                   throw_if_canceled() const {
-        if (stop_token.stop_requested()) {
+        if (this->canceled()) {
             throw Biz::Slicing::CanceledException();
         }
-        if (m_cancel_status.load(std::memory_order_acquire)) throw Biz::Slicing::CanceledException();
     }
     // Wrapper around this->throw_if_canceled(), so that throw_if_canceled() may be passed to a function without making throw_if_canceled() public.
     PrintTryCancel         make_try_cancel() const { return PrintTryCancel(this); }
@@ -397,11 +353,6 @@ protected:
     std::optional<Biz::Parser::PlaceholderParser>        m_placeholder_parser;
 
 private:
-    std::atomic<CancelStatus>               m_cancel_status;
-
-    // Callback to be evoked to stop the background processing before a state is updated.
-    cancel_callback_type                    m_cancel_callback = [](){};
-
     // Mutex used for synchronization of the worker thread with the UI thread:
     // The mutex will be used to guard the worker thread against entering a stage
     // while the data influencing the stage is modified.
@@ -428,14 +379,14 @@ protected:
 		return m_state.set_done(step, this->state_mutex(), [this](){ this->throw_if_canceled(); });
 	}
     bool            invalidate_step(PrintStepEnum step)
-		{ return m_state.invalidate(step, this->cancel_callback()); }
+		{ return m_state.invalidate(step); }
     template<typename StepTypeIterator>
-    bool            invalidate_steps(StepTypeIterator step_begin, StepTypeIterator step_end) 
-        { return m_state.invalidate_multiple(step_begin, step_end, this->cancel_callback()); }
-    bool            invalidate_steps(std::initializer_list<PrintStepEnum> il) 
-        { return m_state.invalidate_multiple(il.begin(), il.end(), this->cancel_callback()); }
-    bool            invalidate_all_steps() 
-        { return m_state.invalidate_all(this->cancel_callback()); }
+    bool            invalidate_steps(StepTypeIterator step_begin, StepTypeIterator step_end)
+        { return m_state.invalidate_multiple(step_begin, step_end); }
+    bool            invalidate_steps(std::initializer_list<PrintStepEnum> il)
+        { return m_state.invalidate_multiple(il.begin(), il.end()); }
+    bool            invalidate_all_steps()
+        { return m_state.invalidate_all(); }
 
 	bool            is_step_started_unguarded(PrintStepEnum step) const { return m_state.is_started_unguarded(step); }
 	bool            is_step_done_unguarded(PrintStepEnum step) const { return m_state.is_done_unguarded(step); }
@@ -467,18 +418,15 @@ protected:
             bool running = false;
             for (int istep = 0; istep < n_object_steps; ++ istep) {
                 if (! print_object->is_step_enabled_unguarded(PrintObjectStepEnum(istep)))
-                    // Step was skipped, cancel.
+                    // Step was skipped.
                     break;
                 if (print_object->is_step_started_unguarded(PrintObjectStepEnum(istep))) {
-                    // No step was skipped, and a wanted step is being processed. Don't cancel.
+                    // No step was skipped, and a wanted step is being processed.
                     running = true;
                     break;
                 }
             }
-            if (! running)
-                this->call_cancel_callback();
 
-            // Now the background process is either stopped, or it is inside one of the print object steps to be calculated anyway.
             if (params.single_model_instance_only) {
                 // Suppress all the steps of other instances.
                 for (PrintObject *po : print_objects)
@@ -497,23 +445,6 @@ protected:
                 print_object->enable_step_unguarded(PrintObjectStepEnum(istep), false);
         } else {
             // Slicing all objects.
-            bool running = false;
-            for (PrintObject *print_object : print_objects)
-                for (int istep = 0; istep < n_object_steps; ++ istep) {
-                    if (! print_object->is_step_enabled_unguarded(PrintObjectStepEnum(istep))) {
-                        // Step may have been skipped. Restart.
-                        goto loop_end;
-                    }
-                    if (print_object->is_step_started_unguarded(PrintObjectStepEnum(istep))) {
-                        // This step is running, and the state cannot be changed due to the this->state_mutex() being locked.
-                        // It is safe to manipulate m_stepmask of other PrintObjects and Print now.
-                        running = true;
-                        goto loop_end;
-                    }
-                }
-        loop_end:
-            if (! running)
-                this->call_cancel_callback();
             for (PrintObject *po : print_objects) {
                 for (int istep = 0; istep < n_object_steps; ++ istep)
                     po->enable_step_unguarded(PrintObjectStepEnum(istep), true);
@@ -624,14 +555,14 @@ protected:
 	}
 
     bool            invalidate_step(PrintObjectStepEnum step)
-        { return m_state.invalidate(step, PrintObjectBase::cancel_callback(m_print)); }
+        { return m_state.invalidate(step); }
     template<typename StepTypeIterator>
-    bool            invalidate_steps(StepTypeIterator step_begin, StepTypeIterator step_end) 
-        { return m_state.invalidate_multiple(step_begin, step_end, PrintObjectBase::cancel_callback(m_print)); }
-    bool            invalidate_steps(std::initializer_list<PrintObjectStepEnum> il) 
-        { return m_state.invalidate_multiple(il.begin(), il.end(), PrintObjectBase::cancel_callback(m_print)); }
-    bool            invalidate_all_steps() 
-        { return m_state.invalidate_all(PrintObjectBase::cancel_callback(m_print)); }
+    bool            invalidate_steps(StepTypeIterator step_begin, StepTypeIterator step_end)
+        { return m_state.invalidate_multiple(step_begin, step_end); }
+    bool            invalidate_steps(std::initializer_list<PrintObjectStepEnum> il)
+        { return m_state.invalidate_multiple(il.begin(), il.end()); }
+    bool            invalidate_all_steps()
+        { return m_state.invalidate_all(); }
 
     bool            is_step_started_unguarded(PrintObjectStepEnum step) const { return m_state.is_started_unguarded(step); }
     bool            is_step_done_unguarded(PrintObjectStepEnum step) const { return m_state.is_done_unguarded(step); }

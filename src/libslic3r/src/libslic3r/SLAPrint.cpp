@@ -950,7 +950,6 @@ InvalidatedSteps SLAPrint::apply(
     std::vector<std::string>* warnings
 )
 {
-    this->call_cancel_callback();
 #ifdef _DEBUG
     check_model_ids_validity(model);
 #endif /* _DEBUG */
