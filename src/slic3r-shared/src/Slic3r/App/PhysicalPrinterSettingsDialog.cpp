@@ -116,9 +116,11 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     Item* keywords_row = m_page_list->emplace_back<Item>();
     keywords_row->set_padding({0, 5});
 
-    constexpr std::pair<DisplayModes, const char*> keywords[] = {
-        {DisplayModes::All, "All"},
-        {DisplayModes::Compatible, "Compatible"},
+    const std::pair<DisplayModes, std::string> keywords[] = {
+        // TRN Physical printer list filter button: shows every printer.
+        {DisplayModes::All, _u8L("All")},
+        // TRN Physical printer list filter button: shows only printers compatible with the selected printer profile.
+        {DisplayModes::Compatible, _u8L("Compatible")},
     };
     m_selected_mode = keywords[0].first;
 

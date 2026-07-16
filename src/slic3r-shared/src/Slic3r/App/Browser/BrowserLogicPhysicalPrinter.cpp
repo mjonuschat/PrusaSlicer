@@ -24,9 +24,9 @@ BrowserLogicPhysicalPrinter::BrowserLogicPhysicalPrinter(
     , m_psk(psk)
     , m_base_url(Slic3r::Biz::Network::IHttp::get_base_url(url))
 {
-    m_events["reloadHomePage"] = std::bind(&BrowserLogicPhysicalPrinter::on_reload_event, this, std::placeholders::_1);
-    m_events["appQuit"] = std::bind(&BrowserLogicPhysicalPrinter::on_dummy_event, this, std::placeholders::_1);
-    m_events["appMinimize"] = std::bind(&BrowserLogicPhysicalPrinter::on_dummy_event, this, std::placeholders::_1);
+    m_events["reloadHomePage"] = [this](const std::string& message_data) { return on_reload_event(message_data); };
+    m_events["appQuit"] = [this](const std::string& message_data) { return on_dummy_event(message_data); };
+    m_events["appMinimize"] = [this](const std::string& message_data) { return on_dummy_event(message_data); };
 }
 
 std::vector<BrowserLogicCommand>

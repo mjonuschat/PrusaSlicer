@@ -621,10 +621,13 @@ void MainFrame::init_physical_printer_page(Biz::ProjectInteractor& project_inter
     assert(!m_physical_printer_page_added);
     const auto selected_printer = project_interactor.physical_printer_interactor().selected_physical_printer_data();
     const auto* payload = std::get_if<Slic3r::Biz::PhysicalPrinter::PrinterUpload>(&selected_printer.payload);
+    if (!payload) {
+        return;
+    }
     std::string url = build_physical_printer_url(selected_printer.host);
     std::unique_ptr<App::Browser::BrowserLogicPhysicalPrinter> logic = std::make_unique<App::Browser::BrowserLogicPhysicalPrinter>(url, payload->api_key, payload->username, payload->password);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::PhysicalPrinter), std::move(logic), false);
-    m_left_bar->AddNewPage( webview_panel, WX::_L("Physical Printer"), "lb_physical_printer");
+    m_left_bar->AddNewPage( webview_panel, WX::_L("Physical Printer"), "application_window");
     webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_physical_printer_page_added = true;
 }

@@ -164,7 +164,6 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ExportToSD, "export_to_sd"},    
     {Icon::ConnectUpload, "connect_gcode"},
     {Icon::ExportToLocal, "save"},
-    {Icon::ExclamationMark, "exclamation_mark"},
 
     // Gizmo Emboss
     {Icon::AlignHLeftBtn, "align_horizontal_left"},

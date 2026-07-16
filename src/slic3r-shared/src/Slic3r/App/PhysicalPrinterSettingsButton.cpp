@@ -32,13 +32,14 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
 {
     m_texts_wrapper->set_min_height(36);
 
-    m_attention_icon = m_icon->emplace_back<Icon>(Render::Icon::ExclamationMark);
+    m_attention_icon = m_icon->emplace_back<Icon>(Render::Icon::ErrorTick);
     m_attention_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_attention_icon->set_aspect_ratio(1);
+    m_attention_icon->set_tint(m_theme->color_imgui(Platform::Color::Warning));
     m_attention_icon->set_position_type(YGPositionTypeAbsolute);
-    m_attention_icon->set_width(22.f);
-    m_attention_icon->set_left(0.f);
-    m_attention_icon->set_bottom(0.f); 
+    m_attention_icon->set_width(22_fpx);
+    m_attention_icon->set_left(0_fpx);
+    m_attention_icon->set_bottom(0_fpx);
     m_attention_icon->set_visible(false);
 
     m_bin_btn = add_button(Render::Icon::DeleteBtnIcon, Biz::_u8L("Delete physical printer"));

@@ -222,6 +222,13 @@ public:
 
 
     static std::string extract_host_from_url(const std::string& url_in);
+
+	/**
+	 * @brief Reduces the given URL to its origin (scheme, host and explicit port).
+	 * A URL without a scheme defaults to http, not https, because this is currently
+	 * used only for print host URLs, which are typically plain-http on the LAN.
+	 * Users needing TLS type https:// into the host field.
+	 */
     static std::string get_base_url(const std::string& url_in);
     static std::string substitute_host(const std::string& orig_addr, std::string sub_addr);
     static std::string escape_path_by_element(const boost::filesystem::path& path);

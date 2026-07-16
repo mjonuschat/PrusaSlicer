@@ -54,6 +54,11 @@ protected:
     void init_physical_printer_ui();
     virtual void update_buttons() {}
 
+    /// Re-reads the selected printer into the button and refreshes its compatibility.
+    void refresh_physical_printer_button();
+    /// Re-evaluates the selected printer against the current printer profile.
+    void update_physical_printer_compatibility();
+
 protected:
     Biz::ProjectInteractor* m_project_interactor{nullptr};
     Navigator* m_render_module_navigator{nullptr};

@@ -100,17 +100,17 @@ PhysicalPrinterAdvancedSettingsDialog::~PhysicalPrinterAdvancedSettingsDialog() 
 
 void PhysicalPrinterAdvancedSettingsDialog::build_form()
 {
-    content_item()->set_width(440);
+    content_item()->set_width(440_fpx);
 
     content()->set_orientation(Orientation::Vertical);
-    content()->set_padding(0);
+    content()->set_padding(0_fpx);
 
     ScrollArea* fields = content()->emplace_back<ScrollArea>();
     fields->set_orientation(Orientation::Vertical);
-    fields->set_gap(4);
-    fields->set_padding(15);
+    fields->set_gap(4_fpx);
+    fields->set_padding(15_fpx);
     fields->set_flex_grow(1);
-    fields->set_max_height(460);
+    fields->set_max_height(460_fpx);
 
     auto commit = [this] {
         if (!m_loading) {
@@ -122,14 +122,14 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
         Item* row = fields->emplace_back<Item>();
         row->set_orientation(Orientation::Horizontal);
         row->set_align_items(YGAlignCenter);
-        row->set_gap(5);
+        row->set_gap(5_fpx);
 
         Item* left = row->emplace_back<Item>();
-        left->set_max_width(175);
+        left->set_max_width(175_fpx);
 
         Text* text = left->emplace_back<Text>(label);
-        text->set_width(175);
-        text->set_height(40);
+        text->set_width(175_fpx);
+        text->set_height(40_fpx);
         text->set_wrap_mode(Text::WrapMode::WrapElide);
         text->set_align({AlignH::Left, AlignV::Center});
         return row;
@@ -152,9 +152,11 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
     m_name = add_input(unused_row, _u8L("Name"),
         _u8L("User given name to distinguish configurations."));
     m_host = add_input(unused_row, _u8L("Hostname, IP or URL"),
-        _u8L("Slic3r can upload G-code files to a printer host. This field should contain "
-             "the hostname, IP address or URL of the printer host instance. "
-             "Print host behind HAProxy with basic auth enabled can be accessed by putting the user name and password into the URL "
+        _u8L("Slic3r can upload G-code files to a printer host.\n"
+             "This field should contain the hostname, IP address or URL\n"
+             "of the printer host instance.\n"
+             "Print host behind HAProxy with basic auth enabled can be accessed\n"
+             "by putting the user name and password into the URL\n"
              "in the following format: https://username:password@your-octopi-address/"));
 
     // Host type combo
@@ -167,8 +169,8 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
         m_host_type = row->emplace_back<ComboBox>(std::move(labels));
         m_host_type->set_flex_grow(1);
         m_host_type->tooltip().set_text(
-            _u8L("Slic3r can upload G-code files to a printer host. This field must contain "
-                 "the kind of the host."));
+            _u8L("Slic3r can upload G-code files to a printer host.\n"
+                 "This field must contain the kind of the host."));
         m_host_type->callbacks().selection_changed = [this, commit](int) {
             // Available auth types depend on the host type.
             rebuild_auth_type_options(current_auth_type());
@@ -189,16 +191,19 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
     }
 
     m_api_key  = add_input(m_api_key_row, _u8L("API Key / Password"),
-        _u8L("Slic3r can upload G-code files to a printer host. This field should contain "
-             "the API Key or the password required for authentication."));
+        _u8L("Slic3r can upload G-code files to a printer host.\n"
+             "This field should contain the API Key or the password\n"
+             "required for authentication."));
     m_user     = add_input(m_user_row, _u8L("User"));
     m_password = add_input(m_password_row, _u8L("Password"));
+    m_password->set_input_flags(ImGuiInputTextFlags_Password);
     m_port     = add_input(unused_row, _u8L("Port"),
         _u8L("Port number. Optional parameter."));
     m_port->set_input_flags(ImGuiInputTextFlags_CharsDecimal);
     m_port->set_validator(std::make_unique<IntValidator>(0, 65535));
     m_ca_file  = add_input(unused_row, _u8L("HTTPS CA File"),
-        _u8L("Custom CA certificate file can be specified for HTTPS OctoPrint connections, in crt/pem format. "
+        _u8L("Custom CA certificate file can be specified for HTTPS OctoPrint connections,\n"
+             "in crt/pem format.\n"
              "If left blank, the default OS CA certificate repository is used."));
 
     // Boolean option: label on the left column, bare toggle on the right.
@@ -206,8 +211,10 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
         Item* row = make_row(_u8L("Ignore HTTPS certificate revocation checks"));
         m_ssl_ignore_revoke = row->emplace_back<ToggleButton>(
             std::string{},
-            _u8L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
-                 "One may want to enable this option for self signed certificates if connection fails."));
+            _u8L("Ignore HTTPS certificate revocation checks in case of missing\n"
+                 "or offline distribution points.\n"
+                 "One may want to enable this option for self signed certificates\n"
+                 "if connection fails."));
         m_ssl_ignore_revoke->callbacks().checked_changed = [commit](bool) { commit(); };
 #ifndef _WIN32
         // The revocation check option is only meaningful on Windows.
@@ -218,7 +225,7 @@ void PhysicalPrinterAdvancedSettingsDialog::build_form()
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
     Item* footer = content()->emplace_back<Item>();
-    footer->set_padding(10);
+    footer->set_padding(10_fpx);
     footer->set_justify_content(YGJustifyFlexEnd);
 
     m_save_button = footer->emplace_back<LayoutButton>(_u8L("Save"));

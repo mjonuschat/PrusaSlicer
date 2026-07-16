@@ -141,7 +141,6 @@ enum class Icon : wchar_t
     ExportToSD,
     ConnectUpload,
     ExportToLocal,
-    ExclamationMark,
 
     Layers,
     WallsPerimeters,

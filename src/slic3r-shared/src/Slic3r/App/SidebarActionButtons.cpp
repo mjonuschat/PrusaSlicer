@@ -117,12 +117,7 @@ void SidebarActionButtons::init_physical_printer_ui()
         }
     };
 
-    const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
-    bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
-        *m_physical_printer_button->state(),
-        printer_config
-    );
-    m_physical_printer_button->set_compatible(compatible);
+    update_physical_printer_compatibility();
 }
 
 std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button()
@@ -162,7 +157,7 @@ PhysicalPrinterAdvancedSettingsDialog& SidebarActionButtons::physical_printer_ad
     return *m_physical_printer_advanced_settings_dialog;
 }
 
-void SidebarActionButtons::on_printer_data_changed()
+void SidebarActionButtons::refresh_physical_printer_button()
 {
     if (!m_project_interactor) {
         return;
@@ -179,6 +174,11 @@ void SidebarActionButtons::on_printer_data_changed()
     update_buttons();
 
     // The printer's data (e.g. its hardware config) may have changed its compatibility.
+    update_physical_printer_compatibility();
+}
+
+void SidebarActionButtons::update_physical_printer_compatibility()
+{
     const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
     bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
         *m_physical_printer_button->state(),
@@ -187,30 +187,14 @@ void SidebarActionButtons::on_printer_data_changed()
     m_physical_printer_button->set_compatible(compatible);
 }
 
+void SidebarActionButtons::on_printer_data_changed()
+{
+    refresh_physical_printer_button();
+}
+
 void SidebarActionButtons::on_selected_physical_printer_changed()
 {
-    if (!m_project_interactor) {
-        return;
-    }
-    PhysicalPrinterInteractor& physical_printer_interactor =
-        m_project_interactor->physical_printer_interactor();
-    const Biz::PhysicalPrinter::PhysicalPrinterConfig& physical_printer =
-        physical_printer_interactor.selected_physical_printer_data();
-
-    m_physical_printer_button->set_state(physical_printer);
-    m_physical_printer_button->update();
-    m_physical_printer_button->set_visible_bin(false);
-
-    update_buttons();
-
-    const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
-    bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
-            *m_physical_printer_button->state(),
-            printer_config
-        );
-        m_physical_printer_button->set_compatible(
-            compatible
-        );
+    refresh_physical_printer_button();
 }
 
 void SidebarActionButtons::on_preset_selection_changed(
@@ -222,12 +206,7 @@ void SidebarActionButtons::on_preset_selection_changed(
     if (m_project_interactor->selected_project_id() == project_id
         && m_project_interactor->selected_config_container_id() == config_container_id)
     {
-        const auto& printer_config = m_project_interactor->preset_interactor().current_printer_config();
-        bool compatible = Biz::PhysicalPrinter::is_physical_printer_compatible(
-            *m_physical_printer_button->state(),
-            printer_config
-        );
-        m_physical_printer_button->set_compatible(compatible);
+        update_physical_printer_compatibility();
     }
 }
 
