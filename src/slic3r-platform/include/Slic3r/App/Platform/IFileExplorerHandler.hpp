@@ -1,11 +1,14 @@
 #pragma once
 
+#include "Slic3r/App/Platform/IFileExplorerErrorListener.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+
 #include <string>
 #include <boost/filesystem/path.hpp>
 
 namespace Slic3r::App::Platform {
 
-class IFileExplorerHandler
+class IFileExplorerHandler : public WithListeners<IFileExplorerErrorListener>
 {
 public:
     IFileExplorerHandler()          = default;

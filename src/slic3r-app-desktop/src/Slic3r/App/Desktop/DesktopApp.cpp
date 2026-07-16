@@ -335,6 +335,10 @@ bool DesktopApp::OnInit()
         std::make_unique<PopNotification::PopNotificationCenter>(*m_project_interactor.get())
     );
     app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
+    app_services.file_explorer_handler()
+        .add_listener<Platform::IFileExplorerErrorListener>(
+            &app_services.pop_notification_center()
+        );
     platform_services.job_manager()
         .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
             &app_services.pop_notification_center()

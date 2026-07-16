@@ -21,7 +21,8 @@ enum class PopNotificationType
     SlicingError,
     LoadError,
     ArrangeEvent,
-    ConnectError
+    ConnectError,
+    FileExplorerError
 };
 
 /*

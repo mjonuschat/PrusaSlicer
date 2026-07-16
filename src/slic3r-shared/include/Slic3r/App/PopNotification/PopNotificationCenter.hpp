@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
 #include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
+#include "Slic3r/App/Platform/IFileExplorerErrorListener.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
 
 namespace Slic3r::Biz {
@@ -28,7 +29,8 @@ class PopNotificationCenter :
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IProjectsChangedListener,
     public Biz::IArrangeEventsListener,
-    public Biz::Connect::IConnectHandlerListener
+    public Biz::Connect::IConnectHandlerListener,
+    public Platform::IFileExplorerErrorListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
@@ -89,6 +91,12 @@ public:
 
     // Connect Message Hander
     void on_connect_handler_error(const std::string& msg) override;
+
+    // File explorer
+    void on_file_explorer_error(
+        const boost::filesystem::path& path,
+        Platform::FileExplorerError reason
+    ) override;
 
 private:
     PopNotificationLayout download_finished_layout(

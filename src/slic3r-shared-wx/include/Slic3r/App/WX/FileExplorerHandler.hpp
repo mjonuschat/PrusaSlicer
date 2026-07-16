@@ -12,8 +12,15 @@ public:
 
     void open_datadir_folder() override
     {
-        boost::filesystem::path path(data_dir());
-        open_folder(path);
+        open_folder(boost::filesystem::path(data_dir()));
     }
+
+private:
+    /**
+     * @brief Hands the folder over to the system file manager.
+     * @param path An existing directory, already validated by open_folder().
+     * @return False when the file manager could not be launched.
+     */
+    static bool launch_file_manager(const boost::filesystem::path& path);
 };
 } // namespace Slic3r::App::WX

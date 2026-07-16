@@ -1245,4 +1245,52 @@ void PopNotificationCenter::on_connect_handler_error(const std::string& msg)
     );
 }
 
+void PopNotificationCenter::on_file_explorer_error(
+    const boost::filesystem::path& path,
+    Platform::FileExplorerError reason
+)
+{
+    // TRN Header of an error notification shown when a folder could not be opened in the system file manager (Explorer, Finder, ...).
+    const std::string header{_u8L("Cannot Open Folder")};
+
+    std::string body;
+    switch (reason) {
+    case Platform::FileExplorerError::EmptyPath:
+        // TRN Body of an error notification shown when the application tried to open a folder but no path was given.
+        body = _u8L("No folder path was given.");
+        break;
+    case Platform::FileExplorerError::DoesNotExist:
+        // TRN Body of an error notification. {} is replaced by the full path of a folder that does not exist.
+        body = fmt::format(fmt::runtime(_u8L("The folder does not exist: {}")), path.string());
+        break;
+    case Platform::FileExplorerError::NotADirectory:
+        // TRN Body of an error notification. {} is replaced by a full path that points to a file, not to a folder.
+        body = fmt::format(fmt::runtime(_u8L("This path is not a folder: {}")), path.string());
+        break;
+    case Platform::FileExplorerError::CheckFailed:
+        // TRN Body of an error notification. {} is replaced by the full path of a folder that could not be checked, for example because it is on a network drive that cannot be reached.
+        body = fmt::format(fmt::runtime(_u8L("The folder could not be accessed: {}")), path.string());
+        break;
+    case Platform::FileExplorerError::LaunchFailed:
+        // TRN Body of an error notification. {} is replaced by the full path of a folder that the system file manager refused to open.
+        body = fmt::format(
+            fmt::runtime(_u8L("Failed to open the folder in the file manager: {}")), path.string()
+        );
+        break;
+    default:
+        ASSERT(false, "Missing FileExplorerError handling.");
+        return;
+    }
+
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::FileExplorerError,
+            PopNotificationLevel::Error,
+            60s,
+            PopNotificationLayoutHeaderText{header, body}
+        },
+        never_equal_matcher
+    );
+}
+
 } // namespace Slic3r::App::PopNotification

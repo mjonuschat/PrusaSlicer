@@ -4,12 +4,15 @@
 #include <wx/utils.h>
 #include <wx/string.h>
 
+#include <string>
+
 namespace Slic3r::App::WX {
 
-void FileExplorerHandler::open_folder(const boost::filesystem::path& path)
+bool FileExplorerHandler::launch_file_manager(const boost::filesystem::path& path)
 {
-    const char* argv[] = {"open", path.string().c_str(), nullptr};
-    ::wxExecute(argv, wxEXEC_ASYNC, nullptr);
+    const std::string path_str = path.string();
+    const char* argv[]         = {"open", path_str.c_str(), nullptr};
+    return ::wxExecute(argv, wxEXEC_ASYNC, nullptr) != 0;
 }
 
 } // namespace Slic3r::App::WX

@@ -30,6 +30,7 @@ set(SLIC3R_SHARED_WX_FILES
         include/Slic3r/App/WX/DialogManager.hpp
         src/Slic3r/App/WX/DialogManager.cpp
         include/Slic3r/App/WX/FileExplorerHandler.hpp
+        src/Slic3r/App/WX/FileExplorerHandler.cpp
         include/Slic3r/App/WX/DiffDialog.hpp
         src/Slic3r/App/WX/DiffDialog.cpp
         src/Slic3r/App/WX/DiffNamespace.hpp
