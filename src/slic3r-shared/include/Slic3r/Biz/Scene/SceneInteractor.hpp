@@ -16,6 +16,7 @@
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Preset/IPresetVisualGetter.hpp"
 
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
@@ -249,10 +250,12 @@ public:
     /**
      * @brief Modify facets annotations for given volumes.
      * @param volume_refs List of volumes to modify.
+     * @param kind Which facets annotation of the volumes the modifier modifies.
      * @param modifier Called for each volume to perform modification of facets annotations.
      */
     void modify_facets_annotations(
         const Domain::ElementRefs& volume_refs,
+        const Domain::FacetsAnnotationKind kind,
         const std::function<bool(const Domain::ElementRef&, Domain::ModelVolume&)>& modifier
     );
 

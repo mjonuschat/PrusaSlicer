@@ -12,6 +12,7 @@
 using namespace Slic3r::App::Yoga;
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::ModelVolume;
 
 namespace Slic3r::App::Plater {
@@ -195,6 +196,11 @@ void MultiMaterialPaintingGizmo::register_commands(Platform::CommandRegistry& re
 std::unique_ptr<GizmoWindow> MultiMaterialPaintingGizmo::release_ui_window()
 {
     return m_dialog.release();
+}
+
+FacetsAnnotationKind MultiMaterialPaintingGizmo::get_facets_annotation_kind() const
+{
+    return FacetsAnnotationKind::MultiMaterial;
 }
 
 const Domain::FacetsAnnotation& MultiMaterialPaintingGizmo::get_facets_annotation(

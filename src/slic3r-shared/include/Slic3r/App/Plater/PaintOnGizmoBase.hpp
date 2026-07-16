@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
+#include "Slic3r/Domain/FacetsAnnotation.hpp"
 
 namespace Slic3r::App::Plater {
 class PaintOnSupportsDialog;
@@ -147,6 +148,7 @@ protected:
 
     std::vector<Domain::ColorRGBA> m_painting_colors;
 
+    virtual Domain::FacetsAnnotationKind get_facets_annotation_kind() const = 0;
     virtual const Domain::FacetsAnnotation& get_facets_annotation(
         const Domain::ModelVolume& model_volume
     ) const = 0;

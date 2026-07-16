@@ -13,6 +13,7 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
 using Slic3r::Biz::Algorithms::TriangleSelector;
+using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
@@ -100,6 +101,11 @@ Scene::ToolType PaintOnSupportsGizmo::type() const
 GizmoWindowPtr PaintOnSupportsGizmo::release_ui_window()
 {
     return m_dialog.release();
+}
+
+FacetsAnnotationKind PaintOnSupportsGizmo::get_facets_annotation_kind() const
+{
+    return FacetsAnnotationKind::FdmSupports;
 }
 
 const Domain::FacetsAnnotation& PaintOnSupportsGizmo::get_facets_annotation(

@@ -10,6 +10,8 @@
 
 using namespace Slic3r::App::Yoga;
 
+using Slic3r::Domain::FacetsAnnotationKind;
+
 namespace Slic3r::App::Plater {
 
 PaintOnSeamsGizmo::PaintOnSeamsGizmo(
@@ -57,6 +59,11 @@ Scene::ToolType PaintOnSeamsGizmo::type() const
 std::unique_ptr<GizmoWindow> PaintOnSeamsGizmo::release_ui_window()
 {
     return m_dialog.release();
+}
+
+FacetsAnnotationKind PaintOnSeamsGizmo::get_facets_annotation_kind() const
+{
+    return FacetsAnnotationKind::Seam;
 }
 
 const Domain::FacetsAnnotation& PaintOnSeamsGizmo::get_facets_annotation(

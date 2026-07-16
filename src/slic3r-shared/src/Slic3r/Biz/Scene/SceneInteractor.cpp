@@ -57,6 +57,7 @@ using Slic3r::Domain::BoundingBox2d;
 using Slic3r::Domain::ConstModelInstanceList;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::ElementRefs;
+using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
@@ -1061,6 +1062,7 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
 
 void SceneInteractor::modify_facets_annotations(
     const Domain::ElementRefs& volume_refs,
+    FacetsAnnotationKind kind,
     const std::function<bool(const Domain::ElementRef&, ModelVolume&)>& modifier
 )
 {
