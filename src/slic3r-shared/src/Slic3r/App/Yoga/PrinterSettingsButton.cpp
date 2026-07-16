@@ -16,7 +16,7 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
     m_icon = emplace_back<Icon>(Render::Icon::None);
     m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
-    m_icon->set_width(64);
+    m_icon->set_width(64_fpx);
 
     m_texts_wrapper = emplace_back<Item>();
     m_texts_wrapper->set_orientation(Orientation::Vertical);
@@ -32,7 +32,7 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
 
     m_btn_wrapper = emplace_back<Item>();
     m_btn_wrapper->set_flex_shrink(0);
-    m_btn_wrapper->set_gap(5);
+    m_btn_wrapper->set_gap(5_fpx);
 
     m_printers_btn =
         add_button(Render::Icon::ConfigContainer, Biz::_u8L("Show info about printer"));
@@ -125,8 +125,8 @@ LayoutButton* PrinterSettingsButton::add_button(Render::Icon icon, const std::st
 {
     LayoutButton* button = m_btn_wrapper->emplace_back<LayoutButton>(std::string{}, icon, tooltip);
     button->set_self_align(YGAlignCenter);
-    button->set_min_width(24.f);
-    button->set_min_height(24.f);
+    button->set_min_width(24_fpx);
+    button->set_min_height(24_fpx);
     button->set_background_color(Platform::Color::ButtonTransparent);
     button->set_flex_shrink(0);
     // Extra button is hidden by default.
@@ -142,8 +142,8 @@ Icon* PrinterSettingsButton::add_extra_icon(Render::Icon icon)
 {
     Icon* extra_icon = m_btn_wrapper->emplace_back<Icon>(icon);
     extra_icon->set_self_align(YGAlignCenter);
-    extra_icon->set_min_width(24.f);
-    extra_icon->set_min_height(24.f);
+    extra_icon->set_min_width(24_fpx);
+    extra_icon->set_min_height(24_fpx);
     extra_icon->set_flex_shrink(0);
     // Extra icon is hidden by default.
     // It can be shown in the settings dialog under certain conditions.

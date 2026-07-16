@@ -96,8 +96,6 @@ YGAlign Align::get_yoga_h_align() const
     return {};
 }
 
-Unit::Unit(float value, Type type) : value(value), type(type) {}
-
 bool Unit::operator==(const Unit& other) const
 {
     return type == other.type && Domain::fuzzy_compare(value, other.value);
@@ -106,96 +104,6 @@ bool Unit::operator==(const Unit& other) const
 bool Unit::operator!=(const Unit& other) const
 {
     return !(*this == other);
-}
-
-Unit operator""_px(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Pixel);
-}
-
-Unit operator""_px(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Pixel);
-}
-
-Unit operator""_fpx(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::FigmaPixel);
-}
-
-Unit operator""_fpx(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::FigmaPixel);
-}
-
-// Unit operator""_mm(long double value)
-// {
-// return Unit(static_cast<float>(value), Unit::Type::Milimeter);
-// }
-
-// Unit operator""_mm(unsigned long long value)
-// {
-// return Unit(static_cast<float>(value), Unit::Type::Milimeter);
-// }
-
-Unit operator""_pt(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Point);
-}
-
-Unit operator""_pt(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Point);
-}
-
-Unit operator""_rem(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Rem);
-}
-
-Unit operator""_rem(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::Rem);
-}
-
-Unit operator""_ww(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportWidth);
-}
-
-Unit operator""_ww(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportWidth);
-}
-
-Unit operator""_wh(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportHeight);
-}
-
-Unit operator""_wh(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportHeight);
-}
-
-Unit operator""_wmin(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportMin);
-}
-
-Unit operator""_wmin(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportMin);
-}
-
-Unit operator""_wmax(long double value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportMax);
-}
-
-Unit operator""_wmax(unsigned long long value)
-{
-    return Unit(static_cast<float>(value), Unit::Type::ViewportMax);
 }
 
 float EvaluatedSides::result_horizontal() const

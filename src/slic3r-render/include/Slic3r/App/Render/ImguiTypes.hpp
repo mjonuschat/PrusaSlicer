@@ -71,9 +71,6 @@ enum class Icon : wchar_t
     ToolbarGraph,
     ToolbarCut,
 
-    // printer icons (PNGs)
-    PrinterNEXT,
-
     // sidebar icons
     SavePrint,
     SavePrintToFlash,

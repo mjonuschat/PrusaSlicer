@@ -13,7 +13,7 @@
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/AppServices.hpp"
-#include "Slic3r/App/AddPrinterDialog.hpp"
+#include "Slic3r/App/AddPrinterPanel.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -541,10 +541,10 @@ public:
         m_printers->set_orientation(Orientation::Vertical);
         m_printers->set_gap(10_fpx);
         m_printers->set_visible(false);
-        m_dialog = emplace_back<AddPrinterDialog>(
+        m_dialog = emplace_back<AddPrinterPanel>(
             project_interactor,
             [this]() { show_dialog(false); },
-            [this](const AddPrinterDialog::Printer& printer)
+            [this](const AddPrinterPanel::Printer& printer)
             {
                 const Domain::Preset::VendorData& vendor_data{
                     m_project_interactor.workbench()
@@ -831,7 +831,7 @@ private:
     std::function<void(const std::vector<PrinterToAdd>&)> m_finish;
     std::function<void(bool)> m_hide_top_bar;
     Screen* m_screen{nullptr};
-    AddPrinterDialog* m_dialog{nullptr};
+    AddPrinterPanel* m_dialog{nullptr};
     Title* m_title{nullptr};
     LayoutButton* m_add_button{nullptr};
     Rectangle* m_printers{nullptr};

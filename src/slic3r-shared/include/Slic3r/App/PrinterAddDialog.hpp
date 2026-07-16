@@ -5,45 +5,33 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Dialog.hpp"
-#include "Slic3r/App/Yoga/ButtonGroup.hpp"
-#include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/PageEntryButton.hpp"
-#include "Slic3r/Biz/ObservableList.hpp"
 
-namespace Slic3r::App::Yoga {
-class StackLayout;
-} // namespace Slic3r::App::Yoga
+namespace Slic3r::Biz {
+class ProjectInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
-class Navigator;
+class AddPrinterPanel;
 
 class PrinterAddDialog : public Yoga::Dialog
 {
 public:
-    PrinterAddDialog(Navigator& navigator);
+    struct Callbacks
+    {
+        std::function<void()> printer_added{nullptr};
+    };
 
-protected:
-    void on_tab_selected(int current_index) override;
-    void close_action() override;
+    explicit PrinterAddDialog(Biz::ProjectInteractor& project_interactor);
+
+    Callbacks& callbacks();
 
 private:
-    void create_add_logical_printer_page();
-    void create_add_physical_printer_page();
+    Biz::ProjectInteractor& m_project_interactor;
 
-private:
-    Navigator& m_navigator;
-    Yoga::StackLayout* m_stack_layout{nullptr};
+    Callbacks m_callbacks;
 
-    Yoga::ButtonGroup m_group_search;
-
-    using PageListView = Yoga::ListView<
-        PageEntryButton,
-        PageEntry,
-        Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>>;
-
-    Biz::UnsharedPointer<Biz::ObservableList<PageEntry>> m_list_vendors;
-    PageListView* m_page_list_view = nullptr;
+    AddPrinterPanel* m_add_printer_panel{nullptr};
 };
 
 } // namespace Slic3r::App

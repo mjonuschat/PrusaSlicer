@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.Alpha)
 {
     set_object_name(window_name.empty() ? "Window" : window_name);
-    set_padding(1.15_rem);
+    set_padding(20_fpx);
 }
 
 float Window::rounding() const

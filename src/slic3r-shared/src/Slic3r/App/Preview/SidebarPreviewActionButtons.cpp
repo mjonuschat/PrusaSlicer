@@ -50,7 +50,7 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
 
     auto layout_bottom = m_buttons_layout->emplace_back<Item>();
     layout_bottom->set_orientation(Orientation::Horizontal);
-    layout_bottom->set_gap(1_rem);
+    layout_bottom->set_gap(10_fpx);
 
     auto navigation_button = get_navigation_button();
     m_navigation_button = navigation_button.get();

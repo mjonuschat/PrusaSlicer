@@ -26,11 +26,12 @@ public:
         set_orientation(Orientation::Vertical);
         set_background_color(Platform::Color::ButtonTransparent);
         m_icon = emplace_back<ExtruderIcon>();
-        m_icon->set_width(18_fpx);
-        m_icon->set_height(18_fpx);
+        m_icon->set_width(24_fpx);
+        m_icon->set_height(24_fpx);
         set_content_padding(4_fpx);
-        set_max_width(22_fpx);
-        set_max_height(22_fpx);
+        set_width(28_fpx);
+        set_height(28_fpx);
+        set_content_align_items(YGAlignCenter);
 
         set_draggable(true);
         set_cursor(ImGuiMouseCursor_Hand);
@@ -79,7 +80,7 @@ ToolRowControl::ToolRowControl(
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlign::YGAlignCenter);
     set_content_justify_content(YGJustifyFlexStart);
-    set_height(25_fpx);
+    set_height(28_fpx);
     set_padding(Paddings{10_fpx, 0, 0, 0});
     set_gap(5_fpx);
     set_allow_overlap(true);
@@ -101,7 +102,7 @@ void ToolRowControl::on_data_update()
     indexes.reserve(overrides.size());
     std::ranges::transform(overrides, std::back_inserter(indexes), &ToolRowOverride::tool_index);
 
-    m_icon_container->set_width(22_fpx * m_state->second);
+    m_icon_container->set_width(28_fpx * m_state->second);
 
     if (m_last_indexes != indexes) {
         m_control_gui_type = Domain::ConfigItemDef::GUIType::undefined; // reset GUI

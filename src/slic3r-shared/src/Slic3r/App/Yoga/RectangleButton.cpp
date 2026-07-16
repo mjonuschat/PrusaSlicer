@@ -15,9 +15,9 @@ RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(to
     std::unique_ptr<Rectangle> rect = std::make_unique<Rectangle>();
     m_background                    = rect.get();
     AbstractButton::insert(std::move(rect), 0);
-    m_background->set_padding(4);
+    m_background->set_padding(4_fpx);
     m_background->set_justify_content(YGJustifyCenter);
-    m_background->set_gap(5);
+    m_background->set_gap(5_fpx);
     m_background->set_flex_grow(1);
     m_background->set_flex_shrink(0);
 

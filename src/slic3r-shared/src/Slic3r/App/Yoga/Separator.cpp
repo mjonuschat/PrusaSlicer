@@ -20,6 +20,7 @@ Separator::Separator(Orientation orientation) : Rectangle()
     }
     set_fill(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     set_rounding(0);
+    set_object_name("Separator");
 }
 
 Vec2f Separator::get_item_size()

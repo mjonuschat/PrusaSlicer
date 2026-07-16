@@ -161,6 +161,10 @@ TopBar::TopBar(
     add_new_project_btn->set_width(22_fpx);
     add_new_project_btn->set_height(22_fpx);
     add_new_project_btn->set_content_padding({});
+    // This pixel manipulation is just to force plus icon to be
+    // same size as close project icon
+    add_new_project_btn->icon_object()->set_width(20_fpx);
+    add_new_project_btn->icon_object()->set_height(20_fpx);
 
     if (m_undo_stack_btn) {
         m_undo_stack_btn->set_content_padding({2_fpx, 0});
@@ -428,9 +432,7 @@ void TopBar::add_menu_btns_items()
             children.cbegin(),
             children.cend(),
             [](App::MenuItem* menu_item)
-            {
-                return menu_item->name().matches(MenuItemName::RecentProjects);
-            }
+            { return menu_item->name().matches(MenuItemName::RecentProjects); }
         );
         ASSERT(recent_projects_it != children.cend());
         m_recent_projects_item =
@@ -438,7 +440,6 @@ void TopBar::add_menu_btns_items()
 
         update_recent_projects();
     }
-
 }
 
 void TopBar::update_recent_projects()

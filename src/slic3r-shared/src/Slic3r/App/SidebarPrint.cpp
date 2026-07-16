@@ -40,7 +40,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_print_settings_dialog = emplace_back<PrintSettingsDialog>(project_interactor, m_navigator);
 
     set_orientation(Orientation::Vertical);
-    set_gap(0.25_rem);
+    set_gap(5_fpx);
 
     Paddings pad = padding().source;
     pad.right    = 0;
@@ -52,7 +52,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_content_area->set_orientation(Orientation::Vertical);
     m_content_area->set_flex_grow(1);
     m_content_area->set_padding(Paddings(0, 0, 1_rem, 0));
-    m_content_area->set_gap(0.25_rem);
+    m_content_area->set_gap(5_fpx);
 
     m_print_settings_dialog->attach_to_item(this, Position::Left, 20);
     m_print_settings_dialog->callbacks().closed = [this]()
@@ -116,7 +116,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
             Biz::ProjectInteractor&>{m_project_interactor}
     );
     m_tool_head_list_view->set_orientation(Orientation::Vertical);
-    m_tool_head_list_view->set_gap(0.25_rem);
+    m_tool_head_list_view->set_gap(5_fpx);
     m_tool_head_list_view->set_flex_shrink(0);
     m_tool_head_list_view->set_source_list(
         &m_project_interactor.preset_interactor().tool_presets()

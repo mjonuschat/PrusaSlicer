@@ -109,7 +109,6 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ToolbarGCode, "toolbar_gcode"},
     {Icon::ToolbarGraph, "toolbar_graph"},
     {Icon::ToolbarCut, "cut"},
-    {Icon::PrinterNEXT, "printer_NEXT"},
 
     {Icon::TopBarUndo, "tb_undo"},
     {Icon::TopBarRedo, "tb_redo"},
@@ -258,7 +257,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Robot, "robot"},
 };
 
-static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};
+static const std::unordered_set<Icon> ICON_PNG = {};
 
 std::string ImguiIconHelper::icon_path(Icon icon)
 {

@@ -344,7 +344,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
             m_open_override_settings_dialog_for_category
         });
     m_override_group_list_view->set_orientation(Orientation::Vertical);
-    m_override_group_list_view->set_gap(0.25_rem);
+    m_override_group_list_view->set_gap(5_fpx);
     m_override_group_list_view->set_flex_shrink(0);
     m_override_group_list_view->set_source_list(m_override_group_filter.get());
 

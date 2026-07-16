@@ -4,170 +4,44 @@
 ///|/
 #include "Slic3r/App/PrinterAddDialog.hpp"
 
-#include "Slic3r/App/Yoga/StackLayout.hpp"
-#include "Slic3r/App/Yoga/Icon.hpp"
-#include "Slic3r/App/Yoga/InputText.hpp"
-#include "Slic3r/App/Yoga/InputTextField.hpp"
-#include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/Validator.hpp"
-#include "Slic3r/App/Yoga/ScrollArea.hpp"
-#include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/AddPrinterPanel.hpp"
+
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-struct Printer
+PrinterAddDialog::PrinterAddDialog(Biz::ProjectInteractor& project_interactor) :
+    Dialog({"Add printer"}, "PrinterAddDialog"),
+    m_project_interactor(project_interactor)
 {
-    std::string name;
-    Render::Icon icon = Render::Icon::PrinterNEXT;
-};
-
-void emplace_family(Item* container, const std::string& name, const std::vector<Printer>& printers)
-{
-    Text* family = container->emplace_back<Text>(name, Render::ImguiFontType::Bold);
-    family->set_margin(Margins(0, 10));
-
-    Item* printers_grid = container->emplace_back<Item>();
-    printers_grid->set_orientation(Orientation::Horizontal);
-    printers_grid->set_gap(5);
-    printers_grid->set_flex_shrink(0);
-    printers_grid->set_flex_wrap(YGWrapWrap);
-
-    for (const Printer& printer : printers) {
-        LayoutButton* button =
-            printers_grid->emplace_back<LayoutButton>(printer.name, printer.icon, printer.name);
-        button->set_width(180);
-        button->set_height(160);
-        button->set_content_orientation(Orientation::Vertical);
-        button->set_content_justify_content(YGJustifyCenter);
-        button->set_background_color(ImColor(41, 41, 41));
-    }
-}
-
-PrinterAddDialog::PrinterAddDialog(Navigator& navigator) :
-    Dialog({"Add logical printer", "Add physical printer"}, "PrinterAddDialog"),
-    m_navigator(navigator),
-    m_list_vendors(std::make_shared<Biz::ObservableList<PageEntry>>())
-{
-    content_item()->set_width(600);
-    content_item()->set_height(500);
-
-    content()->set_orientation(Orientation::Vertical);
-    m_stack_layout = content()->emplace_back<StackLayout>();
-    m_stack_layout->set_orientation(Orientation::Vertical);
-
-    create_add_logical_printer_page();
-
-    create_add_physical_printer_page();
-}
-
-void PrinterAddDialog::on_tab_selected(int current_index)
-{
-    m_stack_layout->set_current_index(current_index);
-}
-
-void PrinterAddDialog::close_action()
-{
-    // TODO: Implement
-}
-
-void PrinterAddDialog::create_add_logical_printer_page()
-{
-    Item* logical_printer_page = m_stack_layout->emplace_back<Item>();
-    logical_printer_page->set_orientation(Orientation::Vertical);
-    logical_printer_page->set_gap(5);
-
-    Item* search_row = logical_printer_page->emplace_back<Item>();
-    search_row->set_gap(5);
-    search_row->set_flex_shrink(0);
-
-    Icon* icon = search_row->emplace_back<Icon>(Render::Icon::Search);
-    icon->set_width(20);
-    icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-    InputText* search_input = search_row->emplace_back<InputText>();
-    search_input->set_flex_grow(1);
-    search_input->set_hint("Search printer");
-
-    for (const std::string& search_type : std::initializer_list<std::string>{"All", "FFF", "SLA"}) {
-        LayoutButton* search_button = search_row->emplace_back<LayoutButton>(search_type);
-        search_button->set_rounding(10);
-        search_button->set_checkable(true);
-        search_button->set_background_color(ImColor(61, 61, 61));
-        search_button->set_content_padding({15, 2});
-        m_group_search.insert_button(search_button);
-        if (search_type == "All") {
-            search_button->set_checked(true);
-        }
-    }
-
-    logical_printer_page->emplace_back<Separator>(Orientation::Horizontal);
-
-    Item* layout_logic_row = logical_printer_page->emplace_back<Item>();
-
-    m_list_vendors->reset({
-        {"Prusa3D"},
-        {"Prusa PRO"},
-        {"AnkerMake"},
-        {"AnyCubic"},
-        {"Artillery"},
-        {"BIBO"},
-        {"BIQU"},
-        {"Cocoa Press"},
-        {"Creality"},
-        {"E3D"},
-        {"Elegoo"},
-    });
-
-    auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
-        [this](size_t index)
+    content_item()->set_width(100_ww);
+    content_item()->set_height(100_wh);
+    content_item()->set_max_width(800_fpx);
+    content_item()->set_max_height(600_fpx);
+    content_item()->set_padding(0);
+    m_add_printer_panel = content()->emplace_back<AddPrinterPanel>(
+        m_project_interactor,
+        nullptr,
+        [this](const AddPrinterPanel::Printer& printer)
         {
-            // m_pages_stack_layout->set_current_index(index);
-            for (size_t button_index = 0; button_index < m_page_list_view->object_count();
-                 ++button_index)
-            {
-                PageEntryButton* button =
-                    dynamic_cast<PageEntryButton*>(m_page_list_view->get_item(button_index));
-                ASSERT(button);
-                button->set_checked(index == button_index);
+            AppSettingsAdvanced& settings =
+                AppServices::instance().app_config().app_settings_advanced();
+
+            settings.printer_favorite_presets.insert(printer.preset_item_id);
+            if (m_callbacks.printer_added) {
+                m_callbacks.printer_added();
+                close();
             }
         }
     );
-    m_page_list_view = layout_logic_row->emplace_back<PageListView>(std::move(factory));
-    m_page_list_view->set_orientation(Orientation::Vertical);
-    m_page_list_view->set_min_width(125);
-    m_page_list_view->set_source_list(m_list_vendors.get());
-    dynamic_cast<AbstractButton*>(m_page_list_view->get_item(0))->set_checked(true);
-
-    layout_logic_row->emplace_back<Separator>(Orientation::Vertical);
-
-    ScrollArea* printers = layout_logic_row->emplace_back<ScrollArea>();
-    printers->set_orientation(Orientation::Vertical);
-    printers->set_gap(5);
-    printers->set_flex_grow(1);
-    printers->set_padding(10);
-
-    emplace_family(printers, "NEXT Family", {{"NEXT"}});
-    emplace_family(printers, "Core Family", {{"Core one"}, {"Core one+"}});
-    emplace_family(printers, "MK4 Family", {{"MK4S"}, {"MK4"}, {"MK4mk2"}});
+    m_add_printer_panel->set_flex_grow(1);
 }
 
-void PrinterAddDialog::create_add_physical_printer_page()
+PrinterAddDialog::Callbacks& PrinterAddDialog::callbacks()
 {
-    Item* physical_printer_page = m_stack_layout->emplace_back<Item>();
-    physical_printer_page->set_orientation(Orientation::Vertical);
-    physical_printer_page->set_gap(5);
-
-    physical_printer_page->emplace_back<Text>("IP", Render::ImguiFontType::Bold);
-    physical_printer_page->emplace_back<InputTextField>();
-
-    physical_printer_page->emplace_back<Text>("Password", Render::ImguiFontType::Bold);
-    physical_printer_page->emplace_back<InputTextField>();
-
-    LayoutButton* connect_button = physical_printer_page->emplace_back<LayoutButton>("Connect");
-    connect_button->set_self_align(YGAlignFlexEnd);
+    return m_callbacks;
 }
-
 } // namespace Slic3r::App

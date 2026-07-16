@@ -11,7 +11,6 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp>
@@ -26,7 +25,6 @@ namespace Slic3r::App {
 
 PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
-    PrinterAddDialog* printer_add_dialog,
     Navigator& navigator,
     PhysicalPrinterAdvancedSettingsDialog* advanced_dialog
 ) :
@@ -34,7 +32,6 @@ PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
     m_physical_printer_changed_listener_scope(project_interactor.physical_printer_interactor(), *this),
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_user_account_listener_scope(project_interactor.user_account_interactor(), *this),
-    m_printer_add_dialog(printer_add_dialog),
     m_project_interactor(project_interactor),
     m_physical_printer_interactor(project_interactor.physical_printer_interactor()),
     m_navigator(navigator),

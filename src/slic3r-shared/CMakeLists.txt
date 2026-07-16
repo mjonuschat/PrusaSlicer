@@ -1141,8 +1141,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/PrinterSearchFunction.hpp
         src/Slic3r/App/PrinterSearchFunction.cpp
 
-        include/Slic3r/App/AddPrinterDialog.hpp
-        src/Slic3r/App/AddPrinterDialog.cpp
+        include/Slic3r/App/AddPrinterPanel.hpp
+        src/Slic3r/App/AddPrinterPanel.cpp
 
         src/Slic3r/Biz/Utils/MeshRaycaster.cpp
         include/Slic3r/Biz/Utils/MeshRaycaster.hpp

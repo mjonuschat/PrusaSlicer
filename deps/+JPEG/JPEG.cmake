@@ -5,6 +5,7 @@ add_cmake_project(JPEG
         -DENABLE_SHARED=OFF
         -DENABLE_STATIC=ON
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DCMAKE_INSTALL_LIBDIR:PATH=${${PROJECT_NAME}_DEP_INSTALL_PREFIX}/lib #jpeg turbo forces lib64, explicitly set lib directory
 )
 
 set(DEP_JPEG_DEPENDS ZLIB)

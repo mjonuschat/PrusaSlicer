@@ -30,7 +30,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_project_interactor(project_interactor),
     m_navigator(navigator)
 {
-    m_printer_add_dialog              = emplace_back<PrinterAddDialog>(m_navigator);
+    m_printer_add_dialog              = emplace_back<PrinterAddDialog>(m_project_interactor);
     m_logical_printer_settings_dialog = emplace_back<LogicalPrinterSettingsDialog>(
         project_interactor,
         m_printer_add_dialog,
@@ -41,7 +41,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
         emplace_back<MaterialSelectionDialog>(project_interactor, m_navigator);
 
     set_orientation(Orientation::Vertical);
-    set_gap(1_rem);
+    set_gap(15_fpx);
     set_min_width(220);
     set_flex_shrink(0.f);
 
@@ -51,13 +51,14 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_bed_name = emplace_back<Text>("Unkown");
     m_bed_name->set_margin(Paddings(0.f, -5.f, 0.f, 0.f));
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
+    m_bed_name->set_font_size(1.15_rem);
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>();
     m_logical_printer_button->set_flex_grow(1.f);
     m_logical_printer_button->set_visible_cog(true);
 
     m_logical_printer_settings_dialog
-        ->attach_to_item(m_logical_printer_button, Position::Left, 20_fpx, AlignU::Start);
+        ->attach_to_item(m_logical_printer_button, Position::Left, 40_fpx, AlignU::Start);
     m_logical_printer_settings_dialog->callbacks().opened = [this]()
     { m_logical_printer_button->set_checked(true); };
     m_logical_printer_settings_dialog->callbacks().closed = [this]()
@@ -100,9 +101,9 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());
     m_list_view->set_orientation(Orientation::Vertical);
-    m_list_view->set_gap(0.25_rem);
+    m_list_view->set_gap(5_fpx);
 
-    m_material_selection_dialog->attach_to_item(m_list_view, Position::Left, 20_fpx, AlignU::Start);
+    m_material_selection_dialog->attach_to_item(m_list_view, Position::Left, 40_fpx, AlignU::Start);
     m_material_selection_dialog->callbacks().closed = [this]()
     {
         for (AbstractButton* button : m_material_button_group->buttons()) {

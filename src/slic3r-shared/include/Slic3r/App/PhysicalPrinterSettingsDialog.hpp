@@ -56,7 +56,6 @@ class PhysicalPrinterSettingsDialog :
 public:
     PhysicalPrinterSettingsDialog(
         Biz::ProjectInteractor& project_interactor,
-        PrinterAddDialog* printer_add_dialog,
         Navigator& navigator,
         PhysicalPrinterAdvancedSettingsDialog* advanced_dialog
     );
@@ -131,7 +130,6 @@ private:
         PhysicalPrinterSettingsDialog>
         m_user_account_listener_scope;
         
-    PrinterAddDialog* m_printer_add_dialog{nullptr};
     Biz::ProjectInteractor& m_project_interactor;
     Biz::PhysicalPrinter::PhysicalPrinterInteractor& m_physical_printer_interactor;
     Navigator& m_navigator;

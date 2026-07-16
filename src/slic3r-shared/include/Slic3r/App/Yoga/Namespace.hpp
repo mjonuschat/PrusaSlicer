@@ -52,7 +52,7 @@ struct Unit
         ViewportMax ///< % of Viewport larger size
     };
 
-    Unit(float value = 0, Type type = Type::Pixel);
+    constexpr Unit(float value = 0, Type type = Type::Pixel) : value(value), type(type) {}
 
     bool operator==(const Unit& other) const;
     bool operator!=(const Unit& other) const;
@@ -100,24 +100,85 @@ Unit operator-(Unit lhs, Unit rhs);
 Unit operator*(Unit lhs, Unit rhs);
 Unit operator/(Unit lhs, Unit rhs);
 
-Unit operator""_px(long double value);
-Unit operator""_px(unsigned long long value);
-Unit operator""_fpx(long double value);
-Unit operator""_fpx(unsigned long long value);
-// Unit operator""_mm(long double value);
-// Unit operator""_mm(unsigned long long value);
-Unit operator""_pt(long double value);
-Unit operator""_pt(unsigned long long value);
-Unit operator""_rem(long double value);
-Unit operator""_rem(unsigned long long value);
-Unit operator""_ww(long double value);
-Unit operator""_ww(unsigned long long value);
-Unit operator""_wh(long double value);
-Unit operator""_wh(unsigned long long value);
-Unit operator""_wmin(long double value);
-Unit operator""_wmin(unsigned long long value);
-Unit operator""_wmax(long double value);
-Unit operator""_wmax(unsigned long long value);
+constexpr Unit operator""_px(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Pixel);
+}
+
+constexpr Unit operator""_px(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Pixel);
+}
+
+constexpr Unit operator""_fpx(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::FigmaPixel);
+}
+
+constexpr Unit operator""_fpx(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::FigmaPixel);
+}
+
+constexpr Unit operator""_pt(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Point);
+}
+
+constexpr Unit operator""_pt(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Point);
+}
+
+constexpr Unit operator""_rem(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Rem);
+}
+
+constexpr Unit operator""_rem(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::Rem);
+}
+
+constexpr Unit operator""_ww(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportWidth);
+}
+
+constexpr Unit operator""_ww(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportWidth);
+}
+
+constexpr Unit operator""_wh(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportHeight);
+}
+
+constexpr Unit operator""_wh(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportHeight);
+}
+
+constexpr Unit operator""_wmin(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportMin);
+}
+
+constexpr Unit operator""_wmin(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportMin);
+}
+
+constexpr Unit operator""_wmax(long double value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportMax);
+}
+
+constexpr Unit operator""_wmax(unsigned long long value)
+{
+    return Unit(static_cast<float>(value), Unit::Type::ViewportMax);
+}
 
 struct Sides
 {

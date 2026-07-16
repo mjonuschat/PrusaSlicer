@@ -8,6 +8,7 @@
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Yoga/ComboBoxListViewSelection.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
 #include "Slic3r/App/PrinterNozzleRow.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
@@ -61,7 +62,7 @@ public:
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
     void select_page_settings();
 
-    void on_app_config_changed(const std::string &key) override;
+    void on_app_config_changed(const std::string& key) override;
 
 private:
     void create_page_list();
@@ -88,8 +89,11 @@ private:
         LogicalPrinterSettingsButton::FnIndexClicked,
         LogicalPrinterSettingsButton::FnIndexClicked,
         const Biz::Preset::PresetInteractor&>;
-    using PrinterListView = Yoga::
-        ListView<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, PrinterListViewFactory>;
+    using PrinterListView = Yoga::ListView<
+        LogicalPrinterSettingsButton,
+        Biz::Preset::PresetItem,
+        PrinterListViewFactory,
+        Yoga::ScrollArea>;
 
     using NozzleListView = Yoga::ListView<
         PrinterNozzleRow,
@@ -118,10 +122,7 @@ private:
         LogicalPrinterSettingsDialog>
         m_selected_project_changed_listener_scope;
 
-    Biz::ListenerScope<
-        IAppConfigChangedListener,
-        AppConfigInteractor,
-        LogicalPrinterSettingsDialog>
+    Biz::ListenerScope<IAppConfigChangedListener, AppConfigInteractor, LogicalPrinterSettingsDialog>
         m_app_config_changed_listener_scope;
 
     Biz::ProjectInteractor& m_project_interactor;
@@ -134,6 +135,7 @@ private:
     Yoga::Item* m_page_list{nullptr};
     Yoga::InputText* m_input_text_search{nullptr};
     Yoga::LayoutButton* m_only_favorites_button{nullptr};
+    Yoga::LayoutButton* m_add_printer_button{nullptr};
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>
         m_preset_favorite_filter;
     Biz::UnsharedPointer<Biz::ObservableListSearcher<Biz::Preset::PresetItem>> m_preset_searcher;

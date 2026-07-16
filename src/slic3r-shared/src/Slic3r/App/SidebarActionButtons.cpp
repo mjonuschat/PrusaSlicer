@@ -52,8 +52,6 @@ void SidebarActionButtons::init_physical_printer_ui()
     m_project_interactor->physical_printer_interactor()
         .add_listener<Biz::PhysicalPrinter::IPhysicalPrinterChangedListener>(this);
     m_project_interactor->preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
-
-    m_printer_add_dialog = emplace_back<PrinterAddDialog>(*m_render_module_navigator);
     
     m_physical_printer_advanced_settings_dialog = emplace_back<PhysicalPrinterAdvancedSettingsDialog>(
         *m_project_interactor,
@@ -62,7 +60,6 @@ void SidebarActionButtons::init_physical_printer_ui()
     
     m_physical_printer_settings_dialog = emplace_back<PhysicalPrinterSettingsDialog>(
         *m_project_interactor,
-        m_printer_add_dialog,
         *m_render_module_navigator,
         m_physical_printer_advanced_settings_dialog
     );
