@@ -10,7 +10,6 @@
 #include <vector>
 #include <string>
 #include <functional>
-#include <atomic>
 #include <mutex>
 
 #include <jthread/JThread.hpp>
@@ -26,6 +25,7 @@
 #include "Slic3r/Domain/SLA/PrintStatistics.hpp"
 
 #include "libslic3r/IPrint.hpp"
+#include "libslic3r/PrintState.hpp"
 #include "libslic3r/SlicingStatus.hpp"
 #include "libslic3r/CanceledException.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
@@ -34,165 +34,6 @@
 
 namespace Slic3r {
 class PrintConfigView;
-
-class PrintStateBase {
-public:
-    enum class State {
-        // Fresh state, either the object is new or the data of that particular milestone was cleaned up.
-        // Fresh state may transit to Started.
-        Fresh,
-        // Milestone was started and now it is being executed.
-        // Started state may transit to Canceled with invalid data or Done with valid data.
-        Started,
-        // Milestone was being executed, but now it is canceled and not yet cleaned up.
-        // Canceled state may transit to Fresh state if its invalid data is cleaned up
-        // or to Started state.
-        // Canceled and Invalidated states are of similar nature: Canceled step was Started but canceled,
-        // while Invalidated state was Done but invalidated.
-        Canceled,
-        // Milestone was finished successfully, it's data is now valid.
-        // Done state may transit to Invalidated state if its data is no more valid
-        // or to a Started state.
-        Done,
-        // Milestone was finished successfully (done), but now it is invalidated and it's data is no more valid.
-        // Invalidated state may transit to Fresh if its invalid data is cleaned up,
-        // or to state Started.
-        // Canceled and Invalidated states are of similar nature: Canceled step was Started but canceled,
-        // while Invalidated state was Done but invalidated.
-        Invalidated,
-    };
-
-    struct StepState
-    {
-        State       state { State::Fresh };
-        bool        enabled { true };
-
-        bool        is_done() const { return state == State::Done; }
-        // The milestone may have some data available, but it is no more valid and it should be cleaned up to conserve memory.
-        bool        is_dirty() const { return state == State::Canceled || state == State::Invalidated; }
-
-        // If the milestone is Started or Done, invalidate it:
-        // Turn Started to Canceled, turn Done to Invalidated.
-        bool        try_invalidate() {
-            bool invalidated = this->state == State::Started || this->state == State::Done;
-            if (invalidated) {
-                this->state = this->state == State::Started ? State::Canceled : State::Invalidated;
-            }
-            return invalidated;
-        }
-    };
-};
-
-// To be instantiated over FDMPrintStep or FDMPrintObjectStep enums.
-template <class StepType, size_t COUNT>
-class PrintState : public PrintStateBase
-{
-public:
-    PrintState() {}
-
-    bool is_done(StepType step, std::mutex &mtx) const {
-        std::scoped_lock<std::mutex> lock(mtx);
-        return m_state[step].is_done();
-    }
-
-    bool is_started_unguarded(StepType step) const {
-        return m_state[step].state == State::Started;
-    }
-
-    bool is_done_unguarded(StepType step) const {
-        return m_state[step].is_done();
-    }
-
-    void enable_unguarded(StepType step, bool enable) {
-        m_state[step].enabled = enable;
-    }
-
-    void enable_all_unguarded(bool enable) {
-        for (size_t istep = 0; istep < COUNT; ++ istep)
-            m_state[istep].enabled = enable;
-    }
-
-    bool is_enabled_unguarded(StepType step) const {
-        return m_state[step].enabled;
-    }
-
-    // Set the step as started. Block on mutex while the Print / PrintObject / PrintRegion objects are being
-    // modified by the UI thread.
-    // This is necessary to block until the Print::apply() updates its state, which may
-    // influence the processing step being entered.
-    // Returns false if the step is not enabled or if the step has already been finished (it is done).
-    template<typename ThrowIfCanceled>
-    bool set_started(StepType step, std::mutex &mtx, ThrowIfCanceled throw_if_canceled) {
-        std::scoped_lock<std::mutex> lock(mtx);
-        // If canceled, throw before changing the step state.
-        throw_if_canceled();
-
-        PrintStateBase::StepState &state = m_state[step];
-        if (! state.enabled || state.state == State::Done)
-            return false;
-        state.state = State::Started;
-        return true;
-    }
-
-    // Set the step as done. Block on mutex while the Print / PrintObject / PrintRegion objects are being
-    // modified by the UI thread.
-	template<typename ThrowIfCanceled>
-	void set_done(StepType step, std::mutex &mtx, ThrowIfCanceled throw_if_canceled) {
-        std::scoped_lock<std::mutex> lock(mtx);
-        // If canceled, throw before changing the step state.
-        throw_if_canceled();
-        assert(m_state[step].state == State::Started);
-        m_state[step].state = State::Done;
-    }
-
-    // Make the step invalid.
-    // PrintBase::m_state_mutex should be locked at this point, guarding access to m_state.
-    bool invalidate(StepType step) {
-        return m_state[step].try_invalidate();
-    }
-
-    template<typename StepTypeIterator>
-    bool invalidate_multiple(StepTypeIterator step_begin, StepTypeIterator step_end) {
-        bool invalidated = false;
-        for (StepTypeIterator it = step_begin; it != step_end; ++ it)
-            if (m_state[*it].try_invalidate())
-                invalidated = true;
-        return invalidated;
-    }
-
-    // Make all steps invalid.
-    // PrintBase::m_state_mutex should be locked at this point, guarding access to m_state.
-    bool invalidate_all() {
-        bool invalidated = false;
-        for (size_t i = 0; i < COUNT; ++ i)
-            if (m_state[i].try_invalidate())
-                invalidated = true;
-        return invalidated;
-    }
-
-    // If the milestone is Canceled or Invalidated, return true and turn the state of the milestone to Fresh.
-    // The caller is responsible for releasing the data of the milestone that is no more valid.
-    bool query_reset_dirty_unguarded(StepType step) {
-        if (PrintStateBase::StepState &state = m_state[step]; state.is_dirty()) {
-            state.state = State::Fresh;
-            return true;
-        } else
-            return false;
-    }
-
-    // To be called after the background thread was stopped by the user pressing the Cancel button,
-    // which in turn stops the background thread without adjusting state of the milestone being executed.
-    // This method fixes the state of the canceled milestone by setting it to a Canceled state.
-    void mark_canceled_unguarded() {
-        for (size_t i = 0; i < COUNT; ++ i) {
-            if (State &state = m_state[i].state; state == State::Started)
-                state = State::Canceled;
-        }
-    }
-
-public:
-    StepState m_state[COUNT];
-};
 
 class PrintBase;
 
@@ -477,7 +318,7 @@ protected:
         m_state.mark_canceled_unguarded();
     }
 
-public:
+private:
     PrintState<PrintStepEnum, COUNT>    m_state;
 };
 
@@ -552,7 +393,7 @@ protected:
     friend PrintType;
     PrintType                                *m_print;
 
-public:
+private:
     PrintState<PrintObjectStepEnum, COUNT>    m_state;
 };
 

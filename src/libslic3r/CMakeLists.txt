@@ -303,6 +303,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/PrintApply.cpp
     src/libslic3r/PrintBase.hpp
     src/libslic3r/PrintBase.cpp
+    src/libslic3r/PrintState.hpp
     src/libslic3r/PrintObject.cpp
     src/libslic3r/PrintObjectSlice.cpp
     src/libslic3r/PrintRegion.cpp
