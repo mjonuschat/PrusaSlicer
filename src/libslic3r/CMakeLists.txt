@@ -393,8 +393,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Thread.cpp
     src/libslic3r/Thread.hpp
     src/libslic3r/TriangleMeshSlicer.cpp
-    src/libslic3r/TriangleSelectorWrapper.cpp
-    src/libslic3r/TriangleSelectorWrapper.hpp
     src/libslic3r/TriangleSetSampling.cpp
     src/libslic3r/TriangleSetSampling.hpp
     src/libslic3r/TriangulateWall.hpp

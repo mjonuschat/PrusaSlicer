@@ -53,6 +53,8 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/TriangleMesh.hpp
     src/Slic3r/Biz/Algorithms/TriangleSelector.cpp
     include/Slic3r/Biz/Algorithms/TriangleSelector.hpp
+    src/Slic3r/Biz/Algorithms/TriangleSelectorPainter.cpp
+    include/Slic3r/Biz/Algorithms/TriangleSelectorPainter.hpp
     src/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.cpp
     include/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp
     src/Slic3r/Biz/Algorithms/ModelInstance.cpp
