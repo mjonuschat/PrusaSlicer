@@ -4,6 +4,10 @@
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/Biz/GeneratedSupportPointsCache.hpp"
+
+#include <memory>
+#include <optional>
 
 namespace Slic3r::App::Scene {
 class Clipper;
@@ -14,6 +18,7 @@ class Device;
 } // namespace Slic3r::App::Render
 
 namespace Slic3r::Biz {
+class GeneratedSupportPointsRequest;
 class ProjectInteractor;
 } // namespace Slic3r::Biz
 
@@ -38,6 +43,9 @@ public:
     Scene::ToolType type() const override;
     std::unique_ptr<GizmoWindow> release_ui_window() override;
 
+    void on_deactivated() override;
+    void on_model_reloaded(Domain::SelectionId project_id) override;
+
     Domain::TriangleSelector::TriangleStateType get_left_button_state_type() const override;
     Domain::TriangleSelector::TriangleStateType get_right_button_state_type() const override;
 
@@ -54,10 +62,28 @@ protected:
     void on_cursor_radius_changed(float value) override;
     void on_smart_fill_angle_changed(float value) override;
     void on_clipping_of_view_changed(double value) override;
+    void on_painting_stroke_applied() override;
 
 private:
     void select_facets_by_angle(float threshold_deg);
     void auto_generate_support_painting();
+    void start_automatic_painting(Domain::SlicingId slicing_id, Domain::ObjectID model_object_id);
+
+    void on_support_points_request_completed(
+        std::optional<Biz::ObjectSupportPointsRef> support_points
+    );
+
+    bool apply_generated_support_points(Domain::SlicingId slicing_id);
+    void finish_automatic_painting(bool applied_support_points);
+    void reset_automatic_painting_state();
+    void cancel_automatic_painting();
+
+    void show_invalid_print_setup_warning(Domain::SlicingId slicing_id) const;
+    void show_printable_object_required_warning() const;
+    void show_object_not_on_bed_warning() const;
+
+    std::optional<Domain::SlicingId> m_automatic_painting_slicing_id;
+    std::unique_ptr<Biz::GeneratedSupportPointsRequest> m_support_points_request;
 
     Yoga::Passthrough<PaintOnSupportsDialog> m_dialog;
 };

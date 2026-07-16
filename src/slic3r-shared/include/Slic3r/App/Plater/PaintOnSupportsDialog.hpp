@@ -53,6 +53,8 @@ public:
 
     void set_brush_type(const Biz::Algorithms::TriangleSelector::CursorType& brush_type);
 
+    void set_automatic_painting_running(bool running);
+
 private:
     void update_visibility();
 

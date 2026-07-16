@@ -1,11 +1,17 @@
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/DisplayStrings.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Plater/PaintOnGizmoBase.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
+#include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelectorPainter.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Domain/ModelVolume.hpp"
@@ -232,6 +238,12 @@ PaintOnSupportsGizmo::PaintOnSupportsGizmo(
 ) :
     PaintOnGizmoBase(device, data_factory, project_interactor, scene_presenter)
 {
+    m_support_points_request = std::make_unique<GeneratedSupportPointsRequest>(
+        project_interactor.slicing_interactor(),
+        project_interactor.status_cache(),
+        project_interactor.generated_support_points_cache()
+    );
+
     m_dialog = std::make_unique<PaintOnSupportsDialog>();
     m_dialog->set_tool_type(m_tool_type);
     m_dialog->set_brush_type(m_cursor_type);
@@ -241,6 +253,7 @@ PaintOnSupportsGizmo::PaintOnSupportsGizmo(
     m_dialog->set_highlight_overhangs_angle(m_highlight_by_angle_threshold_deg);
     m_dialog->set_paint_on_overhangs_only_value(m_paint_on_overhangs_only);
     m_dialog->set_split_triangles_value(m_triangle_splitting_enabled);
+    m_dialog->set_automatic_painting_running(m_automatic_painting_slicing_id.has_value());
 
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
     { this->set_tool_type(tool_type); };
@@ -289,10 +302,37 @@ PaintOnSupportsGizmo::PaintOnSupportsGizmo(
 
     m_dialog->callbacks().automatic_painting = [this]() { this->auto_generate_support_painting(); };
 
-    m_dialog->callbacks().painting_reset = [this]() { this->clear_all_paintings(); };
+    m_dialog->callbacks().painting_reset = [this]()
+    {
+        this->clear_all_paintings();
+        m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::PaintOnSupportsStroke);
+    };
+
+    m_support_points_request->callbacks().completed =
+        [this](const std::optional<ObjectSupportPointsRef> support_points)
+    { this->on_support_points_request_completed(support_points); };
 }
 
 PaintOnSupportsGizmo::~PaintOnSupportsGizmo() = default;
+
+void PaintOnSupportsGizmo::on_deactivated()
+{
+    if (m_automatic_painting_slicing_id.has_value()) {
+        m_support_points_request->cancel();
+        this->finish_automatic_painting(false);
+    }
+
+    PaintOnGizmoBase::on_deactivated();
+}
+
+void PaintOnSupportsGizmo::on_model_reloaded(const SelectionId project_id)
+{
+    if (project_id == m_project_interactor.selected_project_id()) {
+        this->cancel_automatic_painting();
+    }
+
+    PaintOnGizmoBase::on_model_reloaded(project_id);
+}
 
 Scene::ToolType PaintOnSupportsGizmo::type() const
 {
@@ -322,10 +362,12 @@ bool PaintOnSupportsGizmo::set_facets_annotation(
 ) const
 {
     const bool result{model_volume.supported_facets.set_data(triangle_selector.serialize())};
-    m_project_interactor.undo_provider().take_snapshot(
-        Biz::UndoSnapshotType::PaintOnSupportsStroke
-    );
     return result;
+}
+
+void PaintOnSupportsGizmo::on_painting_stroke_applied()
+{
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::PaintOnSupportsStroke);
 }
 
 Domain::TriangleSelector::TriangleStateType PaintOnSupportsGizmo::get_left_button_state_type() const
@@ -391,11 +433,216 @@ void PaintOnSupportsGizmo::select_facets_by_angle(const float threshold_deg)
     }
 
     this->apply_painting_to_model();
+    m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::PaintOnSupportsStroke);
 }
 
 void PaintOnSupportsGizmo::auto_generate_support_painting()
 {
-    // TODO: Automatic support painting isn't implemented yet, resolve it later.
+    using Slicing::StatusCode;
+
+    if (m_automatic_painting_slicing_id.has_value() || m_paintable_volumes.empty()) {
+        return;
+    }
+
+    const Project& project              = m_project_interactor.selected_project();
+    const ModelObject& model_object     = m_paintable_volumes.front().model_object;
+    const ModelInstance& model_instance = m_paintable_volumes.front().model_instance;
+
+    if (!model_instance.is_printable()) {
+        this->show_printable_object_required_warning();
+        return;
+    }
+
+    const BedRef bed_ref = model_instance.get_last_bed();
+    if (project.find_bed_instance_by_id(bed_ref.instance_id) == nullptr) {
+        this->show_object_not_on_bed_warning();
+        return;
+    }
+
+    const SlicingId slicing_id{m_project_interactor.selected_project_id(), bed_ref.instance_id};
+    const StatusCode status = m_project_interactor.slicing_interactor().get_status(slicing_id);
+    if (status == StatusCode::InvalidData) {
+        this->show_invalid_print_setup_warning(slicing_id);
+        return;
+    } else if (status == StatusCode::Empty) {
+        this->show_printable_object_required_warning();
+        return;
+    }
+
+    const bool not_painted = std::ranges::all_of(
+        m_paintable_volumes,
+        [this](const PaintableVolume& paintable_volume)
+        { return this->get_facets_annotation(paintable_volume.model_volume).empty(); }
+    );
+
+    if (not_painted) {
+        this->start_automatic_painting(slicing_id, model_object.id());
+        return;
+    }
+
+    IMessageDialogProvider& dialog_manager = AppServices::instance().dialog_manager();
+    dialog_manager.show_yesno_dialog(
+        _u8L("Warning"),
+        _u8L("Automatic painting will erase all currently painted areas.")
+            + "\n\n"
+            + _u8L("Are you sure you want to do it?"),
+        [this, slicing_id, model_object_id = model_object.id()](const bool answer)
+        {
+            if (!answer
+                || m_automatic_painting_slicing_id.has_value()
+                || m_paintable_volumes.empty()
+                || m_paintable_volumes.front().model_object.id() != model_object_id)
+            {
+                return;
+            }
+
+            this->start_automatic_painting(slicing_id, model_object_id);
+        }
+    );
+}
+
+void PaintOnSupportsGizmo::start_automatic_painting(
+    const SlicingId slicing_id,
+    const ObjectID model_object_id
+)
+{
+    m_automatic_painting_slicing_id = slicing_id;
+
+    m_dialog->set_automatic_painting_running(true);
+    m_support_points_request->start(slicing_id, model_object_id);
+}
+
+void PaintOnSupportsGizmo::on_support_points_request_completed(
+    const std::optional<ObjectSupportPointsRef> support_points
+)
+{
+    ASSERT(m_automatic_painting_slicing_id.has_value());
+
+    const SlicingId slicing_id = *m_automatic_painting_slicing_id;
+
+    const bool applied =
+        support_points.has_value() && this->apply_generated_support_points(slicing_id);
+
+    const std::optional<Slicing::Status> status =
+        m_project_interactor.status_cache().get_status(slicing_id);
+    this->finish_automatic_painting(applied);
+
+    if (status.has_value() && status->code == Slicing::StatusCode::InvalidData) {
+        this->show_invalid_print_setup_warning(slicing_id);
+    }
+}
+
+bool PaintOnSupportsGizmo::apply_generated_support_points(const SlicingId slicing_id)
+{
+    const GeneratedSupportPointsCache& support_points_cache =
+        m_project_interactor.generated_support_points_cache();
+
+    bool applied = false;
+    for (const PaintableVolume& paintable_volume : m_paintable_volumes) {
+        const size_t volume_idx = &paintable_volume - &m_paintable_volumes.front();
+        const std::optional<ObjectSupportPointsRef> object_support_points_ref =
+            support_points_cache.get_object_support_points(
+                slicing_id,
+                paintable_volume.model_object.id()
+            );
+
+        if (!object_support_points_ref.has_value()) {
+            continue;
+        }
+
+        const ObjectSupportPoints& object_support_points = object_support_points_ref->get();
+        const Transform3d mesh_transform =
+            object_support_points.object_transform * paintable_volume.model_volume.get_matrix();
+        Algorithms::TriangleSelectorPainter triangle_selector_painter{
+            paintable_volume.model_volume.mesh(),
+            mesh_transform
+        };
+
+        for (const GeneratedSupportPoint& support_point : object_support_points.support_points) {
+            triangle_selector_painter.paint_spot(
+                support_point.position,
+                support_point.spot_radius,
+                Domain::TriangleSelector::TriangleStateType::ENFORCER
+            );
+        }
+
+        TriangleSelectorRenderWrapper& triangle_selector_wrapper =
+            m_triangle_selector_wrappers[volume_idx];
+        triangle_selector_wrapper.triangle_selector().deserialize(
+            triangle_selector_painter.serialize(),
+            true
+        );
+        triangle_selector_wrapper.update_painted_geometry(m_device);
+        applied = true;
+    }
+
+    if (applied) {
+        this->apply_painting_to_model();
+    }
+
+    return applied;
+}
+
+void PaintOnSupportsGizmo::finish_automatic_painting(const bool applied_support_points)
+{
+    ASSERT(m_automatic_painting_slicing_id.has_value());
+    if (applied_support_points) {
+        m_project_interactor.undo_provider().take_snapshot(
+            UndoSnapshotType::PaintOnSupportsAutomaticPainting
+        );
+    }
+
+    this->reset_automatic_painting_state();
+}
+
+void PaintOnSupportsGizmo::reset_automatic_painting_state()
+{
+    m_automatic_painting_slicing_id.reset();
+    m_dialog->set_automatic_painting_running(false);
+}
+
+void PaintOnSupportsGizmo::cancel_automatic_painting()
+{
+    if (!m_automatic_painting_slicing_id.has_value()) {
+        return;
+    }
+
+    m_support_points_request->cancel();
+    this->reset_automatic_painting_state();
+}
+
+void PaintOnSupportsGizmo::show_invalid_print_setup_warning(const SlicingId slicing_id) const
+{
+    std::string error_message;
+    const std::optional<Slicing::Status> status =
+        m_project_interactor.status_cache().get_status(slicing_id);
+    if (status.has_value()) {
+        for (const Slicing::Error& error : status->errors) {
+            error_message +=
+                "\n" + App::to_display_string(error, m_project_interactor.selected_project());
+        }
+    }
+
+    AppServices::instance().dialog_manager().show_warning_dialog(
+        _u8L("Automatic painting requires valid print setup.") + error_message,
+        _u8L("Warning")
+    );
+}
+
+void PaintOnSupportsGizmo::show_printable_object_required_warning() const
+{
+    AppServices::instance().dialog_manager().show_warning_dialog(
+        _u8L("Automatic painting requires printable object."),
+        _u8L("Warning")
+    );
+}
+
+void PaintOnSupportsGizmo::show_object_not_on_bed_warning() const
+{
+    AppServices::instance().dialog_manager().show_warning_dialog(
+        _u8L("Automatic painting requires the object to be placed on a bed."),
+        _u8L("Warning")
+    );
 }
 
 } // namespace Slic3r::App::Plater

@@ -265,6 +265,14 @@ void PaintOnSupportsDialog::set_brush_type(
     this->update_visibility();
 }
 
+void PaintOnSupportsDialog::set_automatic_painting_running(const bool running)
+{
+    m_automatic_painting_button->set_enabled(!running);
+    m_automatic_painting_button->set_label(
+        running ? _u8L("Painting...") : _u8L("Automatic painting")
+    );
+}
+
 void PaintOnSupportsDialog::update_visibility()
 {
     if (m_selected_tool_type == PaintOnGizmoBase::ToolType::BRUSH) {

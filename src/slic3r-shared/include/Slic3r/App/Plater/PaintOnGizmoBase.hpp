@@ -157,6 +157,11 @@ protected:
         const Biz::Algorithms::TriangleSelector& triangle_selector
     ) const = 0;
 
+    /**
+     * @brief Called after a finished painting stroke gets applied to the model.
+     */
+    virtual void on_painting_stroke_applied() {}
+
     void set_tool_type(ToolType tool_type);
     void set_cursor_type(Biz::Algorithms::TriangleSelector::CursorType cursor_type);
 

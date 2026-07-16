@@ -999,6 +999,7 @@ bool PaintOnGizmoBase::process_gizmo_event(
         && m_button_down != Button::None)
     {
         this->apply_painting_to_model();
+        this->on_painting_stroke_applied();
 
         m_button_down      = Button::None;
         m_last_mouse_click = Vec2d::Zero();

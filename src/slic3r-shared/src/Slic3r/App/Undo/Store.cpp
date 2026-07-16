@@ -194,6 +194,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Delete selection");
     case Type::PaintOnSupportsStroke:
         return _u8L("Support painting stroke");
+    case Type::PaintOnSupportsAutomaticPainting:
+        return _u8L("Automatic painting support points");
     case Type::PaintOnSeamsStroke:
         return _u8L("Seam painting stroke");
     case Type::PaintOnFuzzySkinStroke:
