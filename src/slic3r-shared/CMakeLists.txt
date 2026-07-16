@@ -477,6 +477,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/ISceneChangedListener.hpp
         include/Slic3r/App/Scene/GraphicsSettings.hpp
         src/Slic3r/App/Scene/GraphicsSettings.cpp
+        include/Slic3r/App/Scene/TextureUnits.hpp
         include/Slic3r/App/Scene/CameraFrustumUpdater.hpp
         src/Slic3r/App/Scene/CameraFrustumUpdater.cpp
         include/Slic3r/App/Scene/Clipper.hpp

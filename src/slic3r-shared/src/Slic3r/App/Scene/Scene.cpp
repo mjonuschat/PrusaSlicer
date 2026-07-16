@@ -7,10 +7,11 @@
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
-#include "Slic3r/App/Scene/LightingHelper.hpp"
-#include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Scene/TextureUnits.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
@@ -539,8 +540,8 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, const Camera& 
             .set_shader(device.context().shader_manager().shader(shader_name))
             .set_uniform("light_matrix", light_cam_matrix)
             .set_uniform("shadows_intensity", shadows.intensity)
-            .set_texture(shadows.SHADOWSMAP_TEX_UNIT, shadows.framebuffer->depth())
-            .set_uniform("shadowsmap", shadows.SHADOWSMAP_TEX_UNIT);
+            .set_texture(TextureUnits::SHADOW_MAP, shadows.framebuffer->depth())
+            .set_uniform("shadowsmap", TextureUnits::SHADOW_MAP);
 
         set_uniforms(m_lighting, material);
     }
@@ -805,12 +806,12 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Camera& camera,
         .set_uniform("viewport_size", v_size)
         .set_uniform("projection_matrix", projection)
         .set_uniform("inverse_projection_matrix", inv_projection)
-        .set_uniform("g_depth", AmbientOcclusion::DEPTH_TEX_UNIT)
-        .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
-        .set_uniform("tex_noise", AmbientOcclusion::NOISE_TEX_UNIT)
-        .set_texture(AmbientOcclusion::DEPTH_TEX_UNIT, ao.gbuffer_fb->depth())
-        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
-        .set_texture(AmbientOcclusion::NOISE_TEX_UNIT, ao.noise_tex);
+        .set_uniform("g_depth", TextureUnits::AO_DEPTH)
+        .set_uniform("g_eye_normal", TextureUnits::AO_EYE_NORMAL)
+        .set_uniform("tex_noise", TextureUnits::AO_NOISE)
+        .set_texture(TextureUnits::AO_DEPTH, ao.gbuffer_fb->depth())
+        .set_texture(TextureUnits::AO_EYE_NORMAL, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(TextureUnits::AO_NOISE, ao.noise_tex);
 
 
     for (size_t i = 0; i < ao.kernel.size(); ++i) {
@@ -853,9 +854,9 @@ void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Camera& c
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_hblur"))
-        .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
+        .set_uniform("in_tex", TextureUnits::AO_RESULT)
         .set_uniform("filter_size", int(ao.blur_filter_size))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.ao_tex_fb->color_attachment(0));
+        .set_texture(TextureUnits::AO_RESULT, ao.ao_tex_fb->color_attachment(0));
 
     cmd_buffer->bind_and_draw(*m_screen_quad, material);
 
@@ -892,9 +893,9 @@ void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Camera& c
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_vblur"))
-        .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
+        .set_uniform("in_tex", TextureUnits::AO_RESULT)
         .set_uniform("filter_size", int(ao.blur_filter_size))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.hblur_fb->color_attachment(0));
+        .set_texture(TextureUnits::AO_RESULT, ao.hblur_fb->color_attachment(0));
 
     cmd_buffer->bind_and_draw(*m_screen_quad, material);
 
@@ -937,16 +938,16 @@ void Scene::render_ao_lighting_pass(Render::Device& device, const Camera& camera
         .set_uniform("inverse_projection_matrix", inv_projection)
         .set_uniform("inverse_projection_view_matrix", inv_projection_view)
         .set_uniform("light_matrix", light_cam_proj_view_matrix)
-        .set_uniform("g_depth", AmbientOcclusion::DEPTH_TEX_UNIT)
-        .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
-        .set_uniform("g_color", AmbientOcclusion::COLOR_TEX_UNIT)
-        .set_uniform("ssao", AmbientOcclusion::AO_TEX_UNIT)
-        .set_uniform("shadowsmap", Shadows::SHADOWSMAP_TEX_UNIT)
-        .set_texture(AmbientOcclusion::DEPTH_TEX_UNIT, ao.gbuffer_fb->depth())
-        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
-        .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.vblur_fb->color_attachment(0))
-        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, shadows.framebuffer->depth());
+        .set_uniform("g_depth", TextureUnits::AO_DEPTH)
+        .set_uniform("g_eye_normal", TextureUnits::AO_EYE_NORMAL)
+        .set_uniform("g_color", TextureUnits::AO_COLOR)
+        .set_uniform("ssao", TextureUnits::AO_RESULT)
+        .set_uniform("shadowsmap", TextureUnits::SHADOW_MAP)
+        .set_texture(TextureUnits::AO_DEPTH, ao.gbuffer_fb->depth())
+        .set_texture(TextureUnits::AO_EYE_NORMAL, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(TextureUnits::AO_COLOR, ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
+        .set_texture(TextureUnits::AO_RESULT, ao.vblur_fb->color_attachment(0))
+        .set_texture(TextureUnits::SHADOW_MAP, shadows.framebuffer->depth());
  
     set_uniforms(m_lighting, material);
     set_uniforms(pbr_params_list, material);
