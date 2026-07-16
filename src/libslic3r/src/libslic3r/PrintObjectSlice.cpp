@@ -910,11 +910,15 @@ void PrintObject::slice_volumes()
         // If XY Size compensation is also enabled, notify the user that XY Size compensation
         // would not be used because the object is multi-material painted.
         if (m_config.get<double>("xy_size_compensation") != 0.f) {
-            this->active_step_add_warning(
-                PrintStateBase::WarningLevel::CRITICAL,
-                _u8L("An object has enabled XY Size compensation which will not be used because it is also multi-material painted.\nXY Size "
-                  "compensation cannot be combined with multi-material painting.") +
-                    "\n" + (_u8L("Object name")) + ": " + this->model_object()->name);
+            m_print->append_warning_callback(
+                Slicing::Warning{
+                    Slicing::WarningCode::XYSizeCompensationIgnoredMultiMaterialPainting,
+                    {},
+                    this->model_object()->id(),
+                    {},
+                    Slicing::WarningSeverity::HIGH
+                }
+            );
         }
 
         SPDLOG_DEBUG("Slicing volumes - MMU segmentation");
@@ -926,11 +930,15 @@ void PrintObject::slice_volumes()
         // If XY Size compensation is also enabled, notify the user that XY Size compensation
         // would not be used because the object has custom fuzzy skin painted.
         if (m_config.get<double>("xy_size_compensation") != 0.f) {
-            this->active_step_add_warning(
-                PrintStateBase::WarningLevel::CRITICAL,
-                _u8L("An object has enabled XY Size compensation which will not be used because it is also fuzzy skin painted.\nXY Size "
-                     "compensation cannot be combined with fuzzy skin painting.") +
-                    "\n" + (_u8L("Object name")) + ": " + this->model_object()->name);
+            m_print->append_warning_callback(
+                Slicing::Warning{
+                    Slicing::WarningCode::XYSizeCompensationIgnoredFuzzySkinPainting,
+                    {},
+                    this->model_object()->id(),
+                    {},
+                    Slicing::WarningSeverity::HIGH
+                }
+            );
         }
 
         SPDLOG_DEBUG("Slicing volumes - Fuzzy skin segmentation");
