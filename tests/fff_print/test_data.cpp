@@ -332,7 +332,6 @@ void init_print(
     )};
     ASSERT(!std::holds_alternative<Biz::Slicing::ApplyStatus::InvalidData>(status));
     print.validate();
-    print.set_status_silent();
 }
 
 void init_print(
@@ -393,7 +392,6 @@ void init_and_process_print(
 
 std::string gcode(Print & print)
 {
-    print.set_status_silent();
     print.process();
     const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
 	return result.const_gcode()->str();

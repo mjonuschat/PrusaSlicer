@@ -60,8 +60,6 @@ SCENARIO("Model construction", "[Model]") {
 
             ensure_on_bed(*model_object);
 			THEN("Print works?") {
-				print.set_status_silent();
-
                 Domain::Bed model_bed;
                 Domain::BedInstance bed_instance{model_bed};
 

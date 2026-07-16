@@ -49,7 +49,6 @@ std::unique_ptr<IPrint> init_print(const Domain::PrinterTechnology& printer_tech
         UNREACHABLE("Only FFF and SLA are viable options!");
     }
     callbacks_ref.get().on_wipe_tower_geometry(std::nullopt, id);
-    print->set_status_silent();
     return print;
 }
 } // namespace Slic3r::Biz::Slicing
