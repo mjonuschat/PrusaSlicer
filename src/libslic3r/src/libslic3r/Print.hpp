@@ -45,6 +45,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
+#include "libslic3r/GeneratedSupportPoints.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintSteps.hpp"
 #include "libslic3r/Slicing.hpp"
@@ -542,14 +543,17 @@ private: // Prevents erroneous use by other classes.
     typedef std::pair<PrintObject *, bool>         PrintObjectInfo;
 
 public:
-    using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
-    using OnWipeTowerGeometry = std::function<void(Biz::Slicing::OptWipeTowerGeometry)>;
-    using OnExtruderCandidates = std::function<void(std::vector<unsigned>)>;
+    using OnFdmResult              = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
+    using OnWipeTowerGeometry      = std::function<void(Biz::Slicing::OptWipeTowerGeometry)>;
+    using OnExtruderCandidates     = std::function<void(std::vector<unsigned>)>;
+    using OnGeneratedSupportPoints =
+        std::function<void(Biz::Slicing::GeneratedSupportPointsSnapshot&&)>;
     Print();
     Print(
         const OnFdmResult& on_fdm_result,
         const OnWipeTowerGeometry& on_wipe_tower_geometry,
-        const OnExtruderCandidates& on_extruder_candidates
+        const OnExtruderCandidates& on_extruder_candidates,
+        const OnGeneratedSupportPoints& on_generated_support_points
     );
     virtual ~Print();
 
@@ -695,9 +699,10 @@ public:
     // Unguarded variant, thus it shall only be called from main thread with background processing stopped.
     static bool         is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, FDMPrintObjectStep print_object_step);
 
-    OnFdmResult         m_on_fdm_result;
+    OnFdmResult m_on_fdm_result;
     OnWipeTowerGeometry m_on_wipe_tower_geometry;
     OnExtruderCandidates m_on_extruder_candidates;
+    OnGeneratedSupportPoints m_on_generated_support_points;
 
     PrintConfigView m_config;
     MetadataSerializeFn m_metadata_serializer;

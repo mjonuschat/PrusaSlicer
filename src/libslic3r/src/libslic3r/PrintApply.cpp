@@ -1134,6 +1134,8 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
             get_invalidated_steps(current_regions, **new_regions)
         };
 
+        (*new_regions)->generated_support_points = current_regions.generated_support_points;
+
         const auto print_objects_range_begin{it_print_object};
         const auto print_objects_range_end{
             std::find_if(it_print_object, print_objects.end(), [&](const PrintObject* object) {

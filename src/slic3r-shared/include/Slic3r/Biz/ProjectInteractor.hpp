@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/ClipboardInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/GeneratedSupportPointsCache.hpp"
 #include "Slic3r/Biz/IMdb.hpp"
 #include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
@@ -115,6 +116,9 @@ public:
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
+        m_slicing_interactor.set_listener<Slicing::IGeneratedSupportPointsListener>(
+            &m_generated_support_points_cache
+        );
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_slicing_interactor.add_listener<Slicing::IWipeTowerGeometryListener>(&m_scene_interactor);
         m_slicing_interactor.add_listener<Slicing::IExtruderCandidatesListener>(&m_scene_interactor);
@@ -330,6 +334,11 @@ public:
     SLAObjectCache& sla_object_cache()
     {
         return m_sla_object_cache;
+    }
+
+    GeneratedSupportPointsCache& generated_support_points_cache()
+    {
+        return m_generated_support_points_cache;
     }
 
     StatusCache& status_cache()
@@ -659,6 +668,7 @@ private:
     FDMResultCache m_fdm_result_cache;
     SLAResultCache m_sla_result_cache;
     SLAObjectCache m_sla_object_cache;
+    GeneratedSupportPointsCache m_generated_support_points_cache;
     StatusCache m_status_cache;
     ResultExport::ResultExportInteractor m_result_export_interactor;
     UserAccount::UserAccountInteractor m_user_account_interactor;

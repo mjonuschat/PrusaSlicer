@@ -54,6 +54,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <boost/filesystem/path.hpp>
@@ -75,8 +76,12 @@ using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
 using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
+using Slic3r::Biz::Slicing::GeneratedSupportPoint;
+using Slic3r::Biz::Slicing::GeneratedSupportPointsSnapshot;
 using Slic3r::Biz::Slicing::IThumbnailImageGenerator;
+using Slic3r::Biz::Slicing::ObjectSupportPoints;
 using Slic3r::Biz::Slicing::SliceUntilStep;
+using Slic3r::Domain::ObjectID;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SupportMode;
 using Slic3r::Domain::VolumeSettings;
@@ -97,20 +102,23 @@ Domain::Point PrintInstance::shift() const
     return m_shift.cast<coord_t>();
 }
 
-Print::Print()
-    : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
-    , m_on_wipe_tower_geometry([](Biz::Slicing::OptWipeTowerGeometry&&) {})
-    , m_on_extruder_candidates([](std::vector<unsigned>){})
+Print::Print() :
+    m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {}),
+    m_on_wipe_tower_geometry([](Biz::Slicing::OptWipeTowerGeometry&&) {}),
+    m_on_extruder_candidates([](std::vector<unsigned>) {}),
+    m_on_generated_support_points([](GeneratedSupportPointsSnapshot&&) {})
 {}
 
 Print::Print(
     const OnFdmResult& on_fdm_result,
     const OnWipeTowerGeometry& on_wipe_tower_geometry,
-    const OnExtruderCandidates& on_extruder_candidates
+    const OnExtruderCandidates& on_extruder_candidates,
+    const OnGeneratedSupportPoints& on_generated_support_points
 ) :
     m_on_fdm_result(on_fdm_result),
     m_on_wipe_tower_geometry(on_wipe_tower_geometry),
-    m_on_extruder_candidates(on_extruder_candidates)
+    m_on_extruder_candidates(on_extruder_candidates),
+    m_on_generated_support_points(on_generated_support_points)
 {}
 
 Print::~Print() { this->clear(); }
@@ -1206,6 +1214,39 @@ Biz::Slicing::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wip
     return result;
 }
 
+GeneratedSupportPointsSnapshot get_generated_support_points(const PrintObjectPtrs& print_objects)
+{
+    GeneratedSupportPointsSnapshot result;
+    std::set<ObjectID> visited_model_objects;
+    for (const PrintObject* print_object : print_objects) {
+        const ObjectID model_object_id = print_object->model_object()->id();
+        const std::optional<PrintObjectRegions::GeneratedSupportPoints>& support_points =
+            print_object->shared_regions()->generated_support_points;
+
+        if (!support_points.has_value() || !visited_model_objects.insert(model_object_id).second) {
+            continue;
+        }
+
+        ObjectSupportPoints object_support_points{
+            model_object_id,
+            support_points->object_transform
+        };
+
+        object_support_points.support_points.reserve(support_points->support_points.size());
+        for (const SupportSpotsGenerator::SupportPoint& support_point :
+             support_points->support_points)
+        {
+            object_support_points.support_points.push_back(
+                GeneratedSupportPoint{support_point.position, support_point.spot_radius}
+            );
+        }
+
+        result.push_back(std::move(object_support_points));
+    }
+
+    return result;
+}
+
 // Slicing process, running at a background thread.
 void Print::process()
 {
@@ -1227,6 +1268,8 @@ void Print::process()
     // check data from previous step, format the error message(s) and send alert to ui
     // this also has to be done sequentially.
     alert_when_supports_needed();
+
+    m_on_generated_support_points(get_generated_support_points(m_objects));
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {

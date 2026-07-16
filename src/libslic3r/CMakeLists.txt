@@ -413,6 +413,7 @@ set(SLIC3R_SOURCES
 set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/CustomGCode.hpp
     include/libslic3r/ExtruderCandidates.hpp
+    include/libslic3r/GeneratedSupportPoints.hpp
     include/libslic3r/IPrint.hpp
     include/libslic3r/InitPrint.hpp
     include/libslic3r/PrintSteps.hpp

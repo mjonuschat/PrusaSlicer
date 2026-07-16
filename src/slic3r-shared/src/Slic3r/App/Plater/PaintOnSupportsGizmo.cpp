@@ -7,19 +7,220 @@
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Domain/ModelVolume.hpp"
 
-using namespace Slic3r::App::Yoga;
-using namespace Slic3r::Biz;
+#include "libslic3r/GeneratedSupportPoints.hpp"
 
+#include <algorithm>
+#include <functional>
+#include <optional>
+
+using Slic3r::Biz::GeneratedSupportPointsCache;
+using Slic3r::Biz::IMessageDialogProvider;
+using Slic3r::Biz::ObjectSupportPointsRef;
+using Slic3r::Biz::UndoSnapshotType;
 using Slic3r::Biz::Algorithms::TriangleSelector;
+using Slic3r::Biz::Slicing::GeneratedSupportPoint;
+using Slic3r::Biz::Slicing::ObjectSupportPoints;
+using Slic3r::Biz::Slicing::SlicingInteractor;
+using Slic3r::Biz::Slicing::StatusCode;
+using Slic3r::Domain::BedRef;
 using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::ObjectID;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
+
+using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
+
+namespace Slic3r::Biz {
+
+/**
+ * @brief Provides generated support points for one model object from a cache or by requesting slicing.
+ */
+class GeneratedSupportPointsRequest :
+    public IGeneratedSupportPointsCacheChangedListener,
+    public IStatusCacheChangedListener
+{
+public:
+    struct Callbacks
+    {
+        std::function<void(std::optional<ObjectSupportPointsRef>)> completed =
+            [](std::optional<ObjectSupportPointsRef>) {};
+    };
+
+    GeneratedSupportPointsRequest() = delete;
+
+    GeneratedSupportPointsRequest(
+        SlicingInteractor& slicing_interactor,
+        StatusCache& status_cache,
+        GeneratedSupportPointsCache& support_points_cache
+    ) :
+        m_slicing_interactor(slicing_interactor),
+        m_status_cache(status_cache),
+        m_support_points_cache(support_points_cache)
+    {}
+
+    ~GeneratedSupportPointsRequest() override
+    {
+        this->cancel();
+    }
+
+    Callbacks& callbacks()
+    {
+        return m_callbacks;
+    }
+
+    void start(SlicingId slicing_id, ObjectID model_object_id)
+    {
+        if (this->running()) {
+            return;
+        }
+
+        m_state            = State::WaitingForSlicing;
+        m_slicing_id       = slicing_id;
+        m_model_object_id  = model_object_id;
+        m_has_fresh_points = false;
+        m_support_points_cache.add_listener<IGeneratedSupportPointsCacheChangedListener>(this);
+        m_status_cache.add_listener<IStatusCacheChangedListener>(this);
+
+        const StatusCode status = m_slicing_interactor.get_status(slicing_id);
+        if (status == StatusCode::Finished) {
+            this->complete(this->cached_support_points());
+        } else if (status == StatusCode::Modified) {
+            this->request_slicing_until_support_spots();
+        } else if (status == StatusCode::Empty || status == StatusCode::InvalidData) {
+            this->complete(std::nullopt);
+        }
+    }
+
+    void cancel()
+    {
+        if (!this->running()) {
+            return;
+        }
+
+        m_support_points_cache.remove_listener<IGeneratedSupportPointsCacheChangedListener>(this);
+        m_status_cache.remove_listener<IStatusCacheChangedListener>(this);
+
+        m_state = State::Idle;
+    }
+
+    [[nodiscard]] bool running() const
+    {
+        return m_state != State::Idle;
+    }
+
+    void on_generated_support_points_cache_changed(const SlicingId id) override
+    {
+        if (!this->running() || id != m_slicing_id) {
+            return;
+        }
+
+        const std::optional<Slicing::Status> current_status = m_status_cache.get_status(id);
+        if (current_status.has_value()
+            && current_status->code == StatusCode::Running
+            && this->cached_support_points().has_value())
+        {
+            m_has_fresh_points = true;
+        }
+    }
+
+    void on_status_cache_status_code_changed(const SlicingId id) override
+    {
+        if (!this->running() || id != m_slicing_id) {
+            return;
+        }
+
+        const std::optional<Slicing::Status> status = m_status_cache.get_status(id);
+        if (!status.has_value()) {
+            this->complete(std::nullopt);
+            return;
+        }
+
+        switch (status->code) {
+        case StatusCode::Running:
+            m_state            = State::SlicingActive;
+            m_has_fresh_points = false;
+            break;
+        case StatusCode::Stopping:
+            m_state            = State::SlicingActive;
+            m_has_fresh_points = false;
+            break;
+        case StatusCode::Updating:
+            m_has_fresh_points = false;
+            break;
+        case StatusCode::Modified:
+            if (m_has_fresh_points) {
+                this->complete(this->cached_support_points());
+            } else if (m_state == State::WaitingForSlicing) {
+                this->request_slicing_until_support_spots();
+            } else {
+                this->complete(std::nullopt);
+            }
+            break;
+        case StatusCode::Finished:
+            this->complete(this->cached_support_points());
+            break;
+        case StatusCode::Empty:
+        case StatusCode::InvalidData:
+            this->complete(std::nullopt);
+            break;
+        default:
+            break;
+        }
+    }
+
+private:
+    enum class State
+    {
+        Idle,
+        WaitingForSlicing,
+        SlicingRequested,
+        SlicingActive
+    };
+
+    [[nodiscard]] std::optional<ObjectSupportPointsRef> cached_support_points() const
+    {
+        return m_support_points_cache.get_object_support_points(m_slicing_id, m_model_object_id);
+    }
+
+    void complete(std::optional<ObjectSupportPointsRef> support_points)
+    {
+        this->cancel();
+        m_callbacks.completed(support_points);
+    }
+
+    void request_slicing_until_support_spots()
+    {
+        m_state = State::SlicingRequested;
+        m_slicing_interactor.slice_bed(
+            m_slicing_id,
+            Slicing::SliceUntilStep{posSupportSpotsSearch, m_model_object_id}
+        );
+    }
+
+    SlicingInteractor& m_slicing_interactor;
+    StatusCache& m_status_cache;
+    GeneratedSupportPointsCache& m_support_points_cache;
+
+    Callbacks m_callbacks;
+
+    State m_state           = State::Idle;
+    bool m_has_fresh_points = false;
+    SlicingId m_slicing_id;
+    ObjectID m_model_object_id;
+};
+
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Plater {
 

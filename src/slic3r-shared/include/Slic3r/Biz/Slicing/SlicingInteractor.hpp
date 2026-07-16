@@ -46,6 +46,15 @@ public:
     virtual void on_remove_bed(const Domain::SlicingId&)                        = 0;
 };
 
+class IGeneratedSupportPointsListener : public ISlicingListener
+{
+public:
+    virtual void on_generated_support_points_changed(
+        GeneratedSupportPointsSnapshot&&,
+        const Domain::SlicingId
+    ) = 0;
+};
+
 struct IStatusListener : ISlicingListener
 {
     virtual void on_status_changed(const StatusUpdate, const Domain::SlicingId) = 0;
@@ -86,7 +95,11 @@ class SlicingInteractor :
     public ISelectedProjectChangedListener,
     public IProcessCallbacks,
     public WithListeners<IStatusListener, IWipeTowerGeometryListener, IExtruderCandidatesListener>,
-    public WithListener<IFDMResultListener, ISLAResultListener, ISLAObjectListener>
+    public WithListener<
+        IFDMResultListener,
+        ISLAResultListener,
+        ISLAObjectListener,
+        IGeneratedSupportPointsListener>
 {
 public:
     SlicingInteractor(
@@ -129,6 +142,10 @@ public:
     void on_exception(std::exception_ptr exception, Domain::SlicingId) override;
     void on_wipe_tower_geometry(Slicing::OptWipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
     void on_extruder_candidates(std::vector<unsigned>&& extruder_candidates, const Domain::SlicingId id) override;
+    void on_generated_support_points(
+        GeneratedSupportPointsSnapshot&& generated_support_points,
+        const Domain::SlicingId id
+    ) override;
     StatusCode get_status(const Domain::SlicingId id) const override;
 
 private:

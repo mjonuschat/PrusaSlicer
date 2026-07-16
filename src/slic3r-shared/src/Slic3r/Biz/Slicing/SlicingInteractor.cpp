@@ -116,6 +116,10 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
     invoke_listeners<IWipeTowerGeometryListener>(
         [&](auto* listener) { listener->on_wipe_tower_geometry_changed(std::nullopt, id); }
     );
+
+    invoke_listener<IGeneratedSupportPointsListener>(
+        [&id](auto* listener) { listener->on_generated_support_points_changed({}, id); }
+    );
 }
 
 void SlicingInteractor::slice_bed(
@@ -339,6 +343,36 @@ void SlicingInteractor::on_extruder_candidates(
         ))
     {
         SPDLOG_TRACE("{}: extruder_candidates not dispatched", fmt::streamed(id));
+    }
+}
+
+void SlicingInteractor::on_generated_support_points(
+    GeneratedSupportPointsSnapshot&& generated_support_points,
+    const SlicingId id
+)
+{
+    SPDLOG_TRACE(
+        "{}: GeneratedSupportPointsSnapshot{{objects: {}}}",
+        fmt::streamed(id),
+        generated_support_points.size()
+    );
+
+    if (!m_dispatcher.dispatch_on_main_thread(
+            [this, id, support_points = std::move(generated_support_points)]() mutable
+            {
+                invoke_listener<IGeneratedSupportPointsListener>(
+                    [&](auto* listener)
+                    {
+                        listener->on_generated_support_points_changed(
+                            std::move(support_points),
+                            id
+                        );
+                    }
+                );
+            }
+        ))
+    {
+        SPDLOG_TRACE("{}: generated support points not dispatched", fmt::streamed(id));
     }
 }
 
