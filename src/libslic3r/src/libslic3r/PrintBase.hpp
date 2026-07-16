@@ -62,13 +62,9 @@ public:
         Invalidated,
     };
 
-    typedef size_t TimeStamp;
-
-    // A new unique timestamp is being assigned to the step every time the step changes its state.
-    struct StateWithTimeStamp
+    struct StepState
     {
         State       state { State::Fresh };
-        TimeStamp   timestamp { 0 };
         bool        enabled { true };
 
         bool        is_done() const { return state == State::Done; }
@@ -77,22 +73,14 @@ public:
 
         // If the milestone is Started or Done, invalidate it:
         // Turn Started to Canceled, turn Done to Invalidated.
-        // Update timestamp of this milestone.
         bool        try_invalidate() {
             bool invalidated = this->state == State::Started || this->state == State::Done;
             if (invalidated) {
                 this->state = this->state == State::Started ? State::Canceled : State::Invalidated;
-                this->timestamp = ++ g_last_timestamp;
             }
             return invalidated;
         }
     };
-
-protected:
-    //FIXME last timestamp is shared between Print & SLAPrint,
-    // and if multiple Print or SLAPrint instances are executed in parallel, modification of g_last_timestamp
-    // is not synchronized!
-    static size_t g_last_timestamp;
 };
 
 // To be instantiated over FDMPrintStep or FDMPrintObjectStep enums.
@@ -102,30 +90,17 @@ class PrintState : public PrintStateBase
 public:
     PrintState() {}
 
-    StateWithTimeStamp state_with_timestamp(StepType step, std::mutex &mtx) const {
-        std::scoped_lock<std::mutex> lock(mtx);
-        StateWithTimeStamp state = m_state[step];
-        return state;
-    }
-
-    bool is_started(StepType step, std::mutex &mtx) const {
-        return this->state_with_timestamp(step, mtx).state == State::Started;
-    }
-
     bool is_done(StepType step, std::mutex &mtx) const {
-        return this->state_with_timestamp(step, mtx).state == State::Done;
-    }
-
-    StateWithTimeStamp state_with_timestamp_unguarded(StepType step) const { 
-        return m_state[step];
+        std::scoped_lock<std::mutex> lock(mtx);
+        return m_state[step].is_done();
     }
 
     bool is_started_unguarded(StepType step) const {
-        return this->state_with_timestamp_unguarded(step).state == State::Started;
+        return m_state[step].state == State::Started;
     }
 
     bool is_done_unguarded(StepType step) const {
-        return this->state_with_timestamp_unguarded(step).state == State::Done;
+        return m_state[step].is_done();
     }
 
     void enable_unguarded(StepType step, bool enable) {
@@ -138,7 +113,7 @@ public:
     }
 
     bool is_enabled_unguarded(StepType step) const {
-        return this->state_with_timestamp_unguarded(step).enabled;
+        return m_state[step].enabled;
     }
 
     // Set the step as started. Block on mutex while the Print / PrintObject / PrintRegion objects are being
@@ -152,27 +127,22 @@ public:
         // If canceled, throw before changing the step state.
         throw_if_canceled();
 
-        PrintStateBase::StateWithTimeStamp &state = m_state[step];
+        PrintStateBase::StepState &state = m_state[step];
         if (! state.enabled || state.state == State::Done)
             return false;
         state.state = State::Started;
-        state.timestamp = ++ g_last_timestamp;
         return true;
     }
 
     // Set the step as done. Block on mutex while the Print / PrintObject / PrintRegion objects are being
     // modified by the UI thread.
-    // Returns the timestamp when this step entered the Done state.
 	template<typename ThrowIfCanceled>
-	TimeStamp set_done(StepType step, std::mutex &mtx, ThrowIfCanceled throw_if_canceled) {
+	void set_done(StepType step, std::mutex &mtx, ThrowIfCanceled throw_if_canceled) {
         std::scoped_lock<std::mutex> lock(mtx);
         // If canceled, throw before changing the step state.
         throw_if_canceled();
         assert(m_state[step].state == State::Started);
-        PrintStateBase::StateWithTimeStamp &state = m_state[step];
-        state.state = State::Done;
-        state.timestamp = ++ g_last_timestamp;
-        return state.timestamp;
+        m_state[step].state = State::Done;
     }
 
     // Make the step invalid.
@@ -203,7 +173,7 @@ public:
     // If the milestone is Canceled or Invalidated, return true and turn the state of the milestone to Fresh.
     // The caller is responsible for releasing the data of the milestone that is no more valid.
     bool query_reset_dirty_unguarded(StepType step) {
-        if (PrintStateBase::StateWithTimeStamp &state = m_state[step]; state.is_dirty()) {
+        if (PrintStateBase::StepState &state = m_state[step]; state.is_dirty()) {
             state.state = State::Fresh;
             return true;
         } else
@@ -221,7 +191,7 @@ public:
     }
 
 public:
-    StateWithTimeStamp m_state[COUNT];
+    StepState m_state[COUNT];
 };
 
 class PrintBase;
@@ -371,12 +341,11 @@ public:
     PrintBaseWithState() = default;
 
     bool            is_step_done(PrintStepEnum step) const { return m_state.is_done(step, this->state_mutex()); }
-	PrintStateBase::StateWithTimeStamp step_state_with_timestamp(PrintStepEnum step) const { return m_state.state_with_timestamp(step, this->state_mutex()); }
 
 protected:
     bool            set_started(PrintStepEnum step) { return m_state.set_started(step, this->state_mutex(), [this](){ this->throw_if_canceled(); }); }
-	PrintStateBase::TimeStamp set_done(PrintStepEnum step) {
-		return m_state.set_done(step, this->state_mutex(), [this](){ this->throw_if_canceled(); });
+	void            set_done(PrintStepEnum step) {
+		m_state.set_done(step, this->state_mutex(), [this](){ this->throw_if_canceled(); });
 	}
     bool            invalidate_step(PrintStepEnum step)
 		{ return m_state.invalidate(step); }
@@ -524,7 +493,6 @@ public:
 
     typedef PrintState<PrintObjectStepEnum, COUNT> PrintObjectState;
     bool            is_step_done(PrintObjectStepEnum step) const { return m_state.is_done(step, PrintObjectBase::state_mutex(m_print)); }
-    PrintStateBase::StateWithTimeStamp step_state_with_timestamp(PrintObjectStepEnum step) const { return m_state.state_with_timestamp(step, PrintObjectBase::state_mutex(m_print)); }
 
     bool all_steps_done() const {
         return is_step_done(PrintObjectStepEnum(int(COUNT) - 1));
@@ -550,8 +518,8 @@ protected:
 
     bool            set_started(PrintObjectStepEnum step)
         { return m_state.set_started(step, PrintObjectBase::state_mutex(m_print), [this](){ this->throw_if_canceled(); }); }
-	PrintStateBase::TimeStamp set_done(PrintObjectStepEnum step) {
-		return m_state.set_done(step, PrintObjectBase::state_mutex(m_print), [this](){ this->throw_if_canceled(); });
+	void            set_done(PrintObjectStepEnum step) {
+		m_state.set_done(step, PrintObjectBase::state_mutex(m_print), [this](){ this->throw_if_canceled(); });
 	}
 
     bool            invalidate_step(PrintObjectStepEnum step)

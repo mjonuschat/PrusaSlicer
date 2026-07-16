@@ -36,8 +36,6 @@ void PrintTryCancel::operator()() const
     m_print->throw_if_canceled();
 }
 
-size_t PrintStateBase::g_last_timestamp = 0;
-
 // Update "scale", "input_filename", "input_filename_base" placeholders from the current m_objects.
 ParserConfig PrintBase::get_object_placeholders() const
 {
