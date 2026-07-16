@@ -19,6 +19,7 @@
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Localization.hpp"
 #include "Slic3r/App/Lua/ProjectApi.hpp"
+#include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -1873,18 +1874,18 @@ void MenuCommandRegistrar::register_main_menu_help_commands()
                 }
             )
         )
+#endif
         // Menu -> Help -> Config Folder
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::ConfigFolder},
             std::make_unique<UIItemCommand>(
                 CommandName::ConfigFolder,
-                [this]()
+                []()
                 {
-                    // TODO: Implement config folder functionality
+                    AppServices::instance().file_explorer_handler().open_datadir_folder();
                 }
             )
         )
-#endif
         // Menu -> Help -> Report An Issue
         .register_menu_item(
             {MenuItemName::MainMenu, MenuItemName::Help, MenuItemName::ReportAnIssue},
