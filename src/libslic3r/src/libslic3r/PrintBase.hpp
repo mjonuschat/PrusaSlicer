@@ -5,6 +5,7 @@
 #ifndef slic3r_PrintBase_hpp_
 #define slic3r_PrintBase_hpp_
 
+#include <algorithm>
 #include <set>
 #include <vector>
 #include <string>
@@ -121,7 +122,7 @@ protected:
     static size_t g_last_timestamp;
 };
 
-// To be instantiated over PrintStep or PrintObjectStep enums.
+// To be instantiated over FDMPrintStep or FDMPrintObjectStep enums.
 template <class StepType, size_t COUNT>
 class PrintState : public PrintStateBase
 {
@@ -700,6 +701,37 @@ protected:
             for (; istep < PrintStepEnumSize; ++ istep)
                 m_state.enable_unguarded(PrintStepEnum(istep), false);
         }
+    }
+
+    /**
+     * @brief Limits the processing to the given model object and stops after the given print object step.
+     *
+     * @return False when the model object has no print object.
+     */
+    template <typename PrintObject>
+    bool set_task_until_object_step_impl(
+        const int to_object_step,
+        const Domain::ObjectID model_object_id,
+        std::vector<PrintObject*>& print_objects
+    )
+    {
+        const bool model_object_found = std::any_of(
+            print_objects.begin(),
+            print_objects.end(),
+            [&model_object_id](const PrintObject* print_object)
+            { return print_object->model_object()->id() == model_object_id; }
+        );
+        if (!model_object_found) {
+            return false;
+        }
+
+        TaskParams task;
+        task.single_model_object        = model_object_id;
+        task.single_model_instance_only = true;
+        task.to_object_step             = to_object_step;
+        this->set_task_impl(task, print_objects);
+
+        return true;
     }
 
     // Clean up after process() finished, either with success, error or if canceled.

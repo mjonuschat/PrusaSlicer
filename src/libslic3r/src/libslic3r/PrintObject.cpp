@@ -169,10 +169,8 @@ Domain::Transform3d PrintObject::trafo_centered() const
     return result;
 }
 
-SlicingSync::PrintSteps PrintObject::set_instances(PrintInstances &&instances)
+FDMPrintSteps PrintObject::set_instances(PrintInstances &&instances)
 {
-    using SlicingSync::PrintSteps;
-
     for (PrintInstance& i : instances) {
         // Add the center offset, which will be subtracted from the mesh when slicing.
         i.m_shift += Algorithms::Scaling::scaled<int64_t>(m_center_offset_unscaled);
@@ -183,7 +181,7 @@ SlicingSync::PrintSteps PrintObject::set_instances(PrintInstances &&instances)
     bool equal = equal_length && std::equal(instances.begin(), instances.end(), m_instances.begin(), 
     	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift() == rhs.shift(); });
 
-    PrintSteps steps{};
+    FDMPrintSteps steps{};
     if (!equal) {
         steps.insert(psSkirtBrim);
         steps.insert(psGCodeExport);
@@ -798,7 +796,7 @@ SupportLayerPtrs::iterator PrintObject::insert_support_layer(SupportLayerPtrs::i
     return m_support_layers.insert(pos, new SupportLayer(id, interface_id, this, height, print_z, slice_z));
 }
 
-bool PrintObject::invalidate_step(PrintObjectStep step)
+bool PrintObject::invalidate_step(FDMPrintObjectStep step)
 {
     if (step == posSlice || step == posSupportMaterial) {
         m_slicing_params.valid = false;

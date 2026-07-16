@@ -70,6 +70,12 @@ struct UpdateRequest
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
 
+struct SlicingRequest
+{
+    Domain::SlicingId id;
+    std::optional<SliceUntilStep> slice_until_step = std::nullopt;
+};
+
 /** @brief This is a fatal exception and the backend might be in invalid state after it.
  *  It is expected that the program will gracefully terminate! */
 struct FatalSlicingError : public std::runtime_error {
@@ -104,7 +110,10 @@ public:
 
     /* Blocks the UI thread if the process is running! */
     void remove_bed(const Domain::SelectionId bed_instance_id);
-    void slice_bed(const Domain::SlicingId slicing_id);
+    void slice_bed(
+        const Domain::SlicingId slicing_id,
+        std::optional<SliceUntilStep> slice_until_step = std::nullopt
+    );
     void stop_slicing_bed(const Domain::SlicingId slicing_id);
     void slice_all();
     void stop_all();
@@ -145,7 +154,7 @@ private:
     mutable std::mutex m_status_mutex;
     std::map<Domain::SlicingId, StatusCode> m_statuses;
 
-    std::deque<Domain::SlicingId> m_slicing_queue;
+    std::deque<SlicingRequest> m_slicing_queue;
     std::map<Domain::SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
     Platform::IMainThreadDispatcher& m_dispatcher;

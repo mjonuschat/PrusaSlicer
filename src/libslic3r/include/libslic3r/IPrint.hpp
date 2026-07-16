@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <optional>
+#include <variant>
 #include <vector>
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
@@ -8,6 +10,7 @@
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 #include "jthread/JThread.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
+#include "libslic3r/PrintSteps.hpp"
 #include "libslic3r/SlicingStatus.hpp"
 #include "Slic3r/Domain/PrintStatistics.hpp"
 #include "Slic3r/Domain/SLA/PrintStatistics.hpp"
@@ -36,6 +39,18 @@ struct InvalidData
 using Status = std::variant<InvalidData, Unchanged, Changed, Empty>;
 } // namespace ApplyStatus
 
+using PrintObjectStep = std::variant<FDMPrintObjectStep, SLAPrintObjectStep>;
+
+// Restricts the slicing to the single model object and stops the slicing
+// after the given print object step is finished.
+struct SliceUntilStep
+{
+    PrintObjectStep step;
+    Domain::ObjectID model_object_id;
+
+    bool operator==(const SliceUntilStep&) const = default;
+};
+
 class IPrint
 {
 public:
@@ -48,9 +63,13 @@ public:
                                        const Domain::BedInstance& bed,
                                        const Domain::Preset::SelectedPresetMetadata& metadata,
                                        const MetadataSerializeFn& serializer) = 0;
-    virtual void slice(Domain::SlicingId, Slicing::IThumbnailImageGenerator&) = 0;
-    virtual bool empty() const                                                = 0;
-    virtual ~IPrint()                                                         = default;
+    virtual void slice(
+        Domain::SlicingId,
+        Slicing::IThumbnailImageGenerator&,
+        std::optional<SliceUntilStep> slice_until_step
+    )                          = 0;
+    virtual bool empty() const = 0;
+    virtual ~IPrint()          = default;
 
     JThread::StopToken stop_token;
     std::function<void(Biz::Slicing::Progress)> progress_callback{[](Biz::Slicing::Progress) {}};

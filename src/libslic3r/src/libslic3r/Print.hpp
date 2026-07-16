@@ -46,6 +46,7 @@
 #include "libslic3r/GCode/ToolOrdering.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/PrintBase.hpp"
+#include "libslic3r/PrintSteps.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"
 
@@ -73,42 +74,18 @@ namespace FillLightning {
     using GeneratorPtr = std::unique_ptr<Generator, GeneratorDeleter>;
 }; // namespace FillLightning
 
-// Print step IDs for keeping track of the print state.
-// The Print steps are applied in this order.
-enum PrintStep : unsigned int {
-    psWipeTower,
-    // Ordering of the tools on PrintObjects for a multi-material print.
-    // psToolOrdering is a synonym to psWipeTower, as the Wipe Tower calculates and modifies the ToolOrdering,
-    // while if printing without the Wipe Tower, the ToolOrdering is calculated as well.
-    psToolOrdering = psWipeTower,
-    psAlertWhenSupportsNeeded,
-    psSkirtBrim,
-    // Last step before G-code export, after this step is finished, the initial extrusion path preview
-    // should be refreshed.
-    psSlicingFinished = psSkirtBrim,
-    psGCodeExport,
-    psCount,
-};
-
-enum PrintObjectStep : unsigned int {
-    posSlice, posPerimeters, posPrepareInfill,
-    posInfill, posIroning, posSupportSpotsSearch, posSupportMaterial, posEstimateCurledExtrusions, posCalculateOverhangingPerimeters, posCount,
-};
-
 namespace SlicingSync {
 struct AllSteps
 {};
 
 template<typename T>
 using AllOrSome = std::variant<T, AllSteps>;
-using PrintSteps = std::set<PrintStep>;
-using PrintObjectSteps = std::set<PrintObjectStep>;
-using StepsPerPrintObject = std::map<PrintObject*, AllOrSome<PrintObjectSteps>>;
-using PrintAndObjectSteps = std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>>;
+using StepsPerPrintObject = std::map<PrintObject*, AllOrSome<FDMPrintObjectSteps>>;
+using PrintAndObjectSteps = std::pair<AllOrSome<FDMPrintSteps>, AllOrSome<FDMPrintObjectSteps>>;
 
 struct InvalidatedSteps
 {
-    AllOrSome<PrintSteps> print;
+    AllOrSome<FDMPrintSteps> print;
     StepsPerPrintObject object;
 
     bool empty() const;
@@ -325,10 +302,10 @@ private:
     friend class PrintObject;
 };
 
-class PrintObject : public PrintObjectBaseWithState<Print, PrintObjectStep, posCount>
+class PrintObject : public PrintObjectBaseWithState<Print, FDMPrintObjectStep, posCount>
 {
 private: // Prevents erroneous use by other classes.
-    typedef PrintObjectBaseWithState<Print, PrintObjectStep, posCount> Inherited;
+    typedef PrintObjectBaseWithState<Print, FDMPrintObjectStep, posCount> Inherited;
 
 public:
     // Size of an object: XYZ in scaled coordinates. The size might not be quite snug in XY plane.
@@ -429,7 +406,7 @@ public:
 private:
     // to be called from Print only.
     friend class Print;
-    friend class PrintBaseWithState<PrintStep, psCount>;
+    friend class PrintBaseWithState<FDMPrintStep, psCount>;
 
 public:
 	PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Domain::Transform3d& trafo, PrintInstances&& instances);
@@ -439,9 +416,9 @@ public:
         clear_support_layers();
     }
 
-    SlicingSync::PrintSteps set_instances(PrintInstances &&instances);
+    FDMPrintSteps           set_instances(PrintInstances &&instances);
     // Invalidates the step, and its depending steps in PrintObject and Print.
-    bool                    invalidate_step(PrintObjectStep step);
+    bool                    invalidate_step(FDMPrintObjectStep step);
     // Invalidates all PrintObject and Print steps.
     bool                    invalidate_all_steps();
     // If ! m_slicing_params.valid, recalculate.
@@ -557,10 +534,10 @@ struct Thumbnails {
 };
 
 // The complete print tray with possibly multiple objects.
-class Print : public PrintBaseWithState<PrintStep, psCount>
+class Print : public PrintBaseWithState<FDMPrintStep, psCount>
 {
 private: // Prevents erroneous use by other classes.
-    typedef PrintBaseWithState<PrintStep, psCount> Inherited;
+    typedef PrintBaseWithState<FDMPrintStep, psCount> Inherited;
     // Bool indicates if supports of PrintObject are top-level contour.
     typedef std::pair<PrintObject *, bool>         PrintObjectInfo;
 
@@ -615,21 +592,25 @@ public:
         const SlicingSync::InvalidatedSteps& steps
     );
 
-    void                set_task(const TaskParams &params) override { PrintBaseWithState<PrintStep, psCount>::set_task_impl(params, m_objects); }
+    void                set_task(const TaskParams &params) override { PrintBaseWithState<FDMPrintStep, psCount>::set_task_impl(params, m_objects); }
     void                process() override;
-    void                finalize() override { PrintBaseWithState<PrintStep, psCount>::finalize_impl(m_objects); }
+    void                finalize() override { PrintBaseWithState<FDMPrintStep, psCount>::finalize_impl(m_objects); }
     void                cleanup() override;
 
-    void slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) override;
+    void slice(
+        Domain::SlicingId slicing_id,
+        Biz::Slicing::IThumbnailImageGenerator&,
+        std::optional<Biz::Slicing::SliceUntilStep> slice_until_step
+    ) override;
 
     // Exports G-code into a file name based on the path_template, returns the file path of the generated G-code file.
     // If preview_data is not null, the preview_data is filled in for the G-code visualization (not used by the command line Slic3r).
     Biz::libpgcode::ProcessorResult process_gcode();
 
     // methods for handling state
-    bool                is_step_done(PrintStep step) const { return Inherited::is_step_done(step); }
+    bool                is_step_done(FDMPrintStep step) const { return Inherited::is_step_done(step); }
     // Returns true if an object step is done on all objects and there's at least one object.    
-    bool                is_step_done(PrintObjectStep step) const;
+    bool                is_step_done(FDMPrintObjectStep step) const;
     // Returns true if the last step was finished with success.
     bool                finished() const override { return this->is_step_done(psGCodeExport); }
 
@@ -694,7 +675,7 @@ public:
     const std::vector<unsigned>& get_extruder_candidates() const { return m_extruder_candidates; }
 
     // Invalidates the step, and its depending steps in Print.
-    bool                invalidate_step(PrintStep step);
+    bool                invalidate_step(FDMPrintStep step);
 
     void                _make_skirt();
 
@@ -712,7 +693,7 @@ public:
     // That means data shared by all print objects of the print_objects span may still use the shared data.
     // Otherwise the shared data shall be released.
     // Unguarded variant, thus it shall only be called from main thread with background processing stopped.
-    static bool         is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step);
+    static bool         is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, FDMPrintObjectStep print_object_step);
 
     OnFdmResult         m_on_fdm_result;
     OnWipeTowerGeometry m_on_wipe_tower_geometry;

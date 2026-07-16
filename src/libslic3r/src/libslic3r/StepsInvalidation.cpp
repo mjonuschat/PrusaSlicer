@@ -13,13 +13,13 @@ namespace Slic3r::SlicingSync {
 using Domain::ConfigView;
 using Domain::Percentage;
 using Domain::FloatOrPercentage;
-using Step = std::variant<PrintStep, PrintObjectStep>;
+using Step = std::variant<FDMPrintStep, FDMPrintObjectStep>;
 
 std::vector<Step> propagate(Step step)
 {
     return std::visit(
         Domain::overloaded{
-            [](const PrintStep& step) -> std::vector<Step>
+            [](const FDMPrintStep& step) -> std::vector<Step>
             {
                 switch (step) {
                 case psWipeTower:
@@ -34,7 +34,7 @@ std::vector<Step> propagate(Step step)
                     PANIC("Unknown print step propagation!");
                 }
             },
-            [](const PrintObjectStep& step) -> std::vector<Step>
+            [](const FDMPrintObjectStep& step) -> std::vector<Step>
             {
                 switch (step) {
                 case posSlice:
@@ -132,10 +132,10 @@ std::vector<Step> all_steps()
 {
     std::set<Step> result;
     for (size_t i{}; i < psCount; ++i) {
-        result.insert(static_cast<PrintStep>(i));
+        result.insert(static_cast<FDMPrintStep>(i));
     }
     for (size_t i{}; i < posCount; ++i) {
-        result.insert(static_cast<PrintObjectStep>(i));
+        result.insert(static_cast<FDMPrintObjectStep>(i));
     }
     return std::vector<Step>{result.begin(), result.end()};
 }
@@ -615,13 +615,13 @@ PrintAndObjectSteps diff_to_invalidated_steps(
     }
     steps.merge(handle_special_cases(old_config, new_config, diff));
 
-    std::set<PrintStep> print_steps;
-    std::set<PrintObjectStep> print_object_steps;
+    std::set<FDMPrintStep> print_steps;
+    std::set<FDMPrintObjectStep> print_object_steps;
     for (const Step& step : steps) {
         std::visit(
             Domain::overloaded{
-                [&](const PrintStep& step) { print_steps.insert(step); },
-                [&](const PrintObjectStep& step) { print_object_steps.insert(step); }
+                [&](const FDMPrintStep& step) { print_steps.insert(step); },
+                [&](const FDMPrintObjectStep& step) { print_object_steps.insert(step); }
             },
             step
         );
@@ -642,10 +642,10 @@ AllOrSome<Set> merge(const AllOrSome<Set>& a, const AllOrSome<Set>& b)
     return values_a;
 }
 
-template AllOrSome<PrintSteps>
-merge(const AllOrSome<PrintSteps>& a, const AllOrSome<PrintSteps>& b);
-template AllOrSome<PrintObjectSteps>
-merge(const AllOrSome<PrintObjectSteps>& a, const AllOrSome<PrintObjectSteps>& b);
+template AllOrSome<FDMPrintSteps>
+merge(const AllOrSome<FDMPrintSteps>& a, const AllOrSome<FDMPrintSteps>& b);
+template AllOrSome<FDMPrintObjectSteps>
+merge(const AllOrSome<FDMPrintObjectSteps>& a, const AllOrSome<FDMPrintObjectSteps>& b);
 
 StepsPerPrintObject merge(const StepsPerPrintObject& a, const StepsPerPrintObject& b)
 {

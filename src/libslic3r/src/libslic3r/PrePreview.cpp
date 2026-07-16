@@ -589,17 +589,17 @@ bool PrePreview::invalidate(const Slic3r::Print& print)
 
     for (auto& [object, object_preview] : m_object_previews) {
         if (!object_preview.perimeters.empty()
-            && !object->is_step_done(PrintObjectStep::posPerimeters))
+            && !object->is_step_done(FDMPrintObjectStep::posPerimeters))
         {
             object_preview.perimeters = {};
             invalidated               = true;
         }
-        if (!object_preview.infill.empty() && !object->is_step_done(PrintObjectStep::posInfill)) {
+        if (!object_preview.infill.empty() && !object->is_step_done(FDMPrintObjectStep::posInfill)) {
             object_preview.infill = {};
             invalidated           = true;
         }
         if (!object_preview.supports.empty()
-            && !object->is_step_done(PrintObjectStep::posSupportMaterial))
+            && !object->is_step_done(FDMPrintObjectStep::posSupportMaterial))
         {
             object_preview.supports = {};
             invalidated             = true;
@@ -617,15 +617,15 @@ bool PrePreview::invalidate(const Slic3r::Print& print)
         }
     }
 
-    if (!m_brim_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+    if (!m_brim_preview.empty() && !print.is_step_done(FDMPrintStep::psSkirtBrim)) {
         m_brim_preview = {};
         invalidated    = true;
     }
-    if (!m_skirt_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+    if (!m_skirt_preview.empty() && !print.is_step_done(FDMPrintStep::psSkirtBrim)) {
         m_skirt_preview = {};
         invalidated     = true;
     }
-    if (!m_wipe_tower_preview.empty() && !print.is_step_done(PrintStep::psSkirtBrim)) {
+    if (!m_wipe_tower_preview.empty() && !print.is_step_done(FDMPrintStep::psSkirtBrim)) {
         m_wipe_tower_preview = {};
         invalidated          = true;
     }

@@ -11,7 +11,7 @@ InvalidatedSteps merge(const InvalidatedSteps& a, const InvalidatedSteps& b);
 
 InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps);
 
-using Step = std::variant<PrintStep, PrintObjectStep>;
+using Step = std::variant<FDMPrintStep, FDMPrintObjectStep>;
 
 std::vector<Step> propagate(Step step);
 

@@ -430,14 +430,14 @@ class ThumbnailGenerator : public Biz::Slicing::IThumbnailImageGenerator
     void handle_enqueued_requests() override {}
 };
 
-using Step = std::variant<PrintStep, PrintObjectStep>;
+using Step = std::variant<FDMPrintStep, FDMPrintObjectStep>;
 
 // Check that all other steps are done (hence the exclusive in the name).
 // Check only the first object.
 bool is_exclusively_undone(const Print& print, const std::set<Step>& steps)
 {
-    for (std::size_t i{}; i < PrintStep::psCount; ++i) {
-        const PrintStep step{static_cast<PrintStep>(i)};
+    for (std::size_t i{}; i < FDMPrintStep::psCount; ++i) {
+        const FDMPrintStep step{static_cast<FDMPrintStep>(i)};
         if (steps.contains(step)) {
             if (print.is_step_done(step)) {
                 return false;
@@ -452,8 +452,8 @@ bool is_exclusively_undone(const Print& print, const std::set<Step>& steps)
     ASSERT(print.objects().size() == 1);
     const PrintObject& object{*print.objects().front()};
 
-    for (std::size_t i{}; i < PrintStep::psCount; ++i) {
-        const PrintObjectStep step{static_cast<PrintObjectStep>(i)};
+    for (std::size_t i{}; i < FDMPrintStep::psCount; ++i) {
+        const FDMPrintObjectStep step{static_cast<FDMPrintObjectStep>(i)};
         if (steps.contains(step)) {
             if (object.is_step_done(step)) {
                 return false;
@@ -490,7 +490,7 @@ void apply_and_check(
     Biz::Slicing::SerializedConfig serialized_config{};
     HwPrinterConfig hw_config{create_dummy_hw_config()};
 
-    context.print.slice(SlicingId{0, 0}, thumbnail_generator);
+    context.print.slice(SlicingId{0, 0}, thumbnail_generator, std::nullopt);
     REQUIRE(is_exclusively_undone(context.print, {}));
 
     modify_config(context.config);
@@ -757,7 +757,7 @@ void apply_and_check(
     Biz::Slicing::SerializedConfig serialized_config{};
     HwPrinterConfig hw_config{create_dummy_hw_config(1, 0, Domain::PrinterTechnology::SLA)};
 
-    context.print.slice(SlicingId{0, 0}, thumbnail_generator);
+    context.print.slice(SlicingId{0, 0}, thumbnail_generator, std::nullopt);
     REQUIRE(is_exclusively_undone(context.print, {}));
 
     modify_config(context.config);

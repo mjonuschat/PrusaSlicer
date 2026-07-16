@@ -41,8 +41,6 @@ namespace CustomGCode = Domain::CustomGCode;
 
 using SlicingSync::get_invalidated_steps;
 using SlicingSync::PrintAndObjectSteps;
-using SlicingSync::PrintSteps;
-using SlicingSync::PrintObjectSteps;
 using SlicingSync::InvalidatedSteps;
 using SlicingSync::AllSteps;
 using SlicingSync::AllOrSome;
@@ -449,9 +447,9 @@ bool Print::invalidate_object_steps(
 ) {
     bool invalidated{false};
 
-    if (std::holds_alternative<PrintSteps>(steps.print)) {
-        const auto print_steps{std::get<PrintSteps>(steps.print)};
-        for (const PrintStep& step : print_steps) {
+    if (std::holds_alternative<FDMPrintSteps>(steps.print)) {
+        const auto print_steps{std::get<FDMPrintSteps>(steps.print)};
+        for (const FDMPrintStep& step : print_steps) {
             if (this->invalidate_step(step)) {
                 invalidated = true;
             }
@@ -467,9 +465,9 @@ bool Print::invalidate_object_steps(
         if (!existing_objects.contains(print_object)) {
             continue;
         }
-        if (std::holds_alternative<PrintObjectSteps>(invalidated_steps)) {
-            const auto object_steps{std::get<PrintObjectSteps>(invalidated_steps)};
-            for (const PrintObjectStep& step : object_steps) {
+        if (std::holds_alternative<FDMPrintObjectSteps>(invalidated_steps)) {
+            const auto object_steps{std::get<FDMPrintObjectSteps>(invalidated_steps)};
+            for (const FDMPrintObjectStep& step : object_steps) {
                 if (print_object->invalidate_step(step)) {
                     invalidated = true;
                 }
@@ -707,7 +705,7 @@ std::vector<Biz::Slicing::Warning> validate_print_config_change(const PrintConfi
     return warnings;
 }
 
-PrintSteps get_custom_gcode_invalidated_steps(
+FDMPrintSteps get_custom_gcode_invalidated_steps(
     const std::optional<CustomGCode::Info>& current,
     const std::optional<CustomGCode::Info>& next,
     const std::size_t num_extruders
@@ -726,7 +724,7 @@ PrintSteps get_custom_gcode_invalidated_steps(
 
     // The Tool Ordering and the Wipe Tower are no more valid.
     // Because G-code export (PlaceholderParser) accesses the first layer convex hull, we need to also invalidate psSkirtBrim.
-    const PrintSteps order_differs_invalidated_steps{psGCodeExport, psWipeTower, psSkirtBrim};
+    const FDMPrintSteps order_differs_invalidated_steps{psGCodeExport, psWipeTower, psSkirtBrim};
 
     if (multi_extruder_differ) {
         return order_differs_invalidated_steps;
@@ -923,17 +921,17 @@ PrintAndObjectSteps get_model_invalidated_steps(
     };
 
 
-    PrintSteps print_steps;
-    PrintObjectSteps object_steps;
+    FDMPrintSteps print_steps;
+    FDMPrintObjectSteps object_steps;
 
     if (supports_differ || model_custom_supports_data_changed(model_object, model_object_new)) {
         const std::vector<SlicingSync::Step> steps{SlicingSync::propagate(posSupportMaterial)};
         for (const SlicingSync::Step& step : steps) {
             std::visit(Domain::overloaded{
-                [&](const PrintObjectStep& step){
+                [&](const FDMPrintObjectStep& step){
                     object_steps.insert(step);
                 },
-                [&](const PrintStep& step){
+                [&](const FDMPrintStep& step){
                     print_steps.insert(step);
                 },
             }, step);
@@ -1067,7 +1065,7 @@ tl::expected<PrintObjectsSyncResult, Errors> sync_print_objects(
                 print_object->set_config(new_config);
                 result.invalidated_steps.print = SlicingSync::merge(
                     result.invalidated_steps.print,
-                    AllOrSome<PrintSteps>{print_object->set_instances(std::move(new_instances.instances))}
+                    AllOrSome<FDMPrintSteps>{print_object->set_instances(std::move(new_instances.instances))}
                 );
                 result.reused_objects.insert(print_object);
                 result.objects.push_back(print_object);
@@ -1143,13 +1141,13 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
             })
         };
 
-        PrintSteps* result_print_steps{std::get_if<PrintSteps>(&result.invalidated_steps.print)};
+        FDMPrintSteps* result_print_steps{std::get_if<FDMPrintSteps>(&result.invalidated_steps.print)};
         if (result_print_steps != nullptr) {
             std::visit(Domain::overloaded{
                 [&](const AllSteps&){
                     result.invalidated_steps.print = AllSteps{};
                 },
-                [&](PrintSteps invalidated_print_steps){
+                [&](FDMPrintSteps invalidated_print_steps){
                     result_print_steps->merge(std::move(invalidated_print_steps));
                 }
             }, invalidated_steps.first);
@@ -1315,7 +1313,7 @@ bool InvalidatedSteps::empty() const {
     if (std::holds_alternative<AllSteps>(print)) {
         return false;
     }
-    if (!std::get<PrintSteps>(print).empty()) {
+    if (!std::get<FDMPrintSteps>(print).empty()) {
         return false;
     }
 
@@ -1323,7 +1321,7 @@ bool InvalidatedSteps::empty() const {
         if (std::holds_alternative<AllSteps>(steps)) {
             return false;
         }
-        if (!std::get<PrintObjectSteps>(steps).empty()) {
+        if (!std::get<FDMPrintObjectSteps>(steps).empty()) {
             return false;
         }
     }
@@ -1390,11 +1388,11 @@ InvalidatedSteps sync_hw_config(
     for (const auto& step : invalid_steps) {
         std::visit(
             Domain::overloaded{
-                [&](const PrintStep& step) { std::get<PrintSteps>(result.print).insert(step); },
-                [&](const PrintObjectStep& step)
+                [&](const FDMPrintStep& step) { std::get<FDMPrintSteps>(result.print).insert(step); },
+                [&](const FDMPrintObjectStep& step)
                 {
                     for (PrintObject* object : print_objects) {
-                        auto& object_steps{std::get<PrintObjectSteps>(result.object[object])};
+                        auto& object_steps{std::get<FDMPrintObjectSteps>(result.object[object])};
                         object_steps.insert(step);
                     }
                 },
@@ -1487,9 +1485,9 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
             for (const auto& step : SlicingSync::propagate(psSkirtBrim)) {
                 std::visit(
                     Domain::overloaded{
-                        [&](const PrintStep& step)
-                        { std::get<PrintSteps>(wipe_tower_invalidated_steps.print).insert(step); },
-                        [&](const PrintObjectStep& step)
+                        [&](const FDMPrintStep& step)
+                        { std::get<FDMPrintSteps>(wipe_tower_invalidated_steps.print).insert(step); },
+                        [&](const FDMPrintObjectStep& step)
                         { PANIC("No object steps can be invalidated by this!"); },
                     },
                     step
@@ -1543,8 +1541,8 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
         ASSERT(m_wipe_tower);
         const bool wipe_tower_invalidated{std::visit(
             Domain::overloaded{
-                [&](const std::set<PrintStep>& steps)
-                { return steps.contains(PrintStep::psWipeTower); },
+                [&](const std::set<FDMPrintStep>& steps)
+                { return steps.contains(FDMPrintStep::psWipeTower); },
                 [&](AllSteps) { return true; },
             },
             invalidated_steps.print
@@ -1604,7 +1602,7 @@ void Print::cleanup()
     }
 }
 
-bool Print::is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step)
+bool Print::is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, FDMPrintObjectStep print_object_step)
 {
     return std::any_of(print_objects.begin(), print_objects.end(), [print_object_step](auto po){ return po->is_step_done_unguarded(print_object_step); });
 }

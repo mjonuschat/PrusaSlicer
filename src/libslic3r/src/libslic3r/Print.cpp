@@ -69,19 +69,20 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 using SlicingSync::PrintAndObjectSteps;
-using SlicingSync::PrintObjectSteps;
-using SlicingSync::PrintSteps;
 using ParserConfig = Biz::Parser::IO::Config;
 using Biz::Parser::PlaceholderParser;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
 using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
-using Slic3r::Domain::VolumeSettings;
+using Slic3r::Biz::Slicing::IThumbnailImageGenerator;
+using Slic3r::Biz::Slicing::SliceUntilStep;
+using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SupportMode;
+using Slic3r::Domain::VolumeSettings;
 
-template class PrintState<PrintStep, psCount>;
-template class PrintState<PrintObjectStep, posCount>;
+template class PrintState<FDMPrintStep, psCount>;
+template class PrintState<FDMPrintObjectStep, posCount>;
 
 PrintInstance::PrintInstance(const Domain::ModelInstance& model_instance, std::size_t model_instance_index, const Domain::Vec2big& shift)
     : print_object(nullptr)
@@ -381,14 +382,14 @@ Biz::Slicing::ApplyStatus::Status Print::update(
     return result;
 }
 
-bool Print::invalidate_step(PrintStep step)
+bool Print::invalidate_step(FDMPrintStep step)
 {
 	return Inherited::invalidate_step(step);
 }
 
 // returns true if an object step is done on all objects
 // and there's at least one object
-bool Print::is_step_done(PrintObjectStep step) const
+bool Print::is_step_done(FDMPrintObjectStep step) const
 {
     if (m_objects.empty())
         return false;
@@ -1410,8 +1411,40 @@ bool check_result(
 
 } // namespace
 
-void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator& thumbnail_generator)
+void Print::slice(
+    SlicingId slicing_id,
+    IThumbnailImageGenerator& thumbnail_generator,
+    const std::optional<SliceUntilStep> slice_until_step
+)
 {
+    // Clean up after the processing on every exit path, even the exceptional ones.
+    const ScopeGuard finalize_and_cleanup_guard{
+        [this]() -> void
+        {
+            this->finalize();
+            this->cleanup();
+        }
+    };
+
+    if (slice_until_step.has_value()) {
+        ASSERT(std::holds_alternative<FDMPrintObjectStep>(slice_until_step->step));
+        const FDMPrintObjectStep until_object_step =
+            std::get<FDMPrintObjectStep>(slice_until_step->step);
+
+        if (!this->set_task_until_object_step_impl(
+                static_cast<int>(until_object_step),
+                slice_until_step->model_object_id,
+                m_objects
+            ))
+        {
+            // The model object has no print object.
+            return;
+        }
+
+        this->process();
+        return;
+    }
+
     thumbnails = request_thumbnails(slicing_id, config().get<std::string>("thumbnails"), thumbnail_generator);
 
     ASSERT(
@@ -1426,8 +1459,6 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
     result.contained_in_bed = check_result(result, config(), append_warning_callback);
 
     m_on_fdm_result(std::move(result));
-    this->finalize();
-    this->cleanup();
 }
 
 void Print::_make_skirt()
