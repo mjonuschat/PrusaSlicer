@@ -152,6 +152,20 @@ public:
     virtual void on_instances_last_bed_updated(const Domain::ElementRefs& updated_instances) {}
 
     virtual void on_model_reloaded(Domain::SelectionId project_id) {}
+
+    /**
+     * @brief Called whenever a volume's facets annotation (Multi-Material / Supports / Seam / Fuzzy skin)
+     *        changes. Listeners interested only in a specific annotation should filter by kind.
+     * @param project_id Project the volumes belong to
+     * @param kind Which facets annotation of the volumes changed
+     * @param volumes List of volumes whose annotation of the given kind changed
+     */
+    virtual void on_volume_facets_annotations_changed(
+        Domain::SelectionId project_id,
+        Domain::FacetsAnnotationKind kind,
+        const Domain::ElementRefs& volumes
+    )
+    {}
 };
 
 class ISceneBedInstanceChangedListener

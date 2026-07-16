@@ -5,9 +5,12 @@
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 
-#include "Slic3r/PlatformInfo.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/PlatformInfo.hpp"
+
+using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 namespace Slic3r::App::Render {
 
@@ -33,6 +36,9 @@ std::pair<bool, std::string> ShaderManager::init()
     DEBUG_ASSERT(m_shaders.empty());
 
     bool valid = true;
+
+    const std::string mm_palette_size =
+        "MM_PALETTE_SIZE " + std::to_string(static_cast<int>(TriangleStateType::Count));
 
 #if SLIC3R_OPENGL_ES
     const std::string prefix = "ES/";
@@ -61,6 +67,12 @@ std::pair<bool, std::string> ShaderManager::init()
 #endif // SLIC3R_OPENGL_ES
     // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
     valid &= append_shader("gouraud_light", { prefix + "gouraud_light.vs", prefix + "gouraud_light.fs" });
+    // extend "gouraud_light" by per-vertex colors, used to render MM-painted volumes in the plater
+    valid &= append_shader(
+        "mm_gouraud_light",
+        {prefix + "mm_gouraud_light.vs", prefix + "mm_gouraud_light.fs"},
+        {mm_palette_size}
+    );
     // extend "gouraud_light" by adding two clipping planes at different world z, used in sla preview
     valid &= append_shader("gouraud_light_double_z_clip", { prefix + "gouraud_light_double_z_clip.vs", prefix + "gouraud_light_double_z_clip.fs" });
     // extend "gouraud_light" by adding clipping, used in sla gizmos
@@ -106,6 +118,12 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("ao_lighting", { prefix + "ao_lighting.vs", prefix + "ao_lighting.fs" });
     // used to render ao g-buffer for models
     valid &= append_shader("gbuffer_ao", { prefix + "gbuffer_ao.vs", prefix + "gbuffer_ao.fs" });
+    // extend "gbuffer_ao" by per-vertex colors, used to render MM-painted volumes in the plater
+    valid &= append_shader(
+        "mm_gbuffer_ao",
+        {prefix + "mm_gbuffer_ao.vs", prefix + "mm_gbuffer_ao.fs"},
+        {mm_palette_size}
+    );
     // extend "gbuffer_ao" by adding two clipping planes at different world z, used in sla preview
     valid &= append_shader("gbuffer_ao_double_z_clip", { prefix + "gbuffer_ao_double_z_clip.vs", prefix + "gbuffer_ao_double_z_clip.fs" });
     // used to render ao g-buffer for printbed
@@ -116,6 +134,12 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("segments_ao", { prefix + "segments_ao.vs", prefix + "segments_ao.fs" });
     // used to render shadowed models with phong shading
     valid &= append_shader("phong_shadows", { prefix + "phong_shadows.vs", prefix + "phong_shadows.fs" });
+    // extend "phong_shadows" by per-vertex colors, used to render MM-painted volumes in the plater
+    valid &= append_shader(
+        "mm_phong_shadows",
+        {prefix + "mm_phong_shadows.vs", prefix + "mm_phong_shadows.fs"},
+        {mm_palette_size}
+    );
     // extend "phong_shadows" by adding two clipping planes at different world z, used in sla preview
     valid &= append_shader("phong_shadows_double_z_clip", { prefix + "phong_shadows_double_z_clip.vs", prefix + "phong_shadows_double_z_clip.fs" });
     // used to render shadowed printbed with phong shading

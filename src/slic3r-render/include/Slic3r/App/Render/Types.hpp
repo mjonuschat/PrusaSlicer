@@ -181,7 +181,8 @@ enum class VertexAttribType
     Normal,
     TexCoord0,
     Color,
-    Extra
+    Extra,
+    PaletteIndex
 };
 
 

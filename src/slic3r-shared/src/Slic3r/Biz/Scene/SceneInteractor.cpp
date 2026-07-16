@@ -1097,6 +1097,19 @@ void SceneInteractor::modify_facets_annotations(
     for (const Domain::BedRef& bed_ref : changes.updated_beds) {
         this->invoke_slicing_input_changed(bed_ref);
     }
+
+    if (!instances_to_update.empty()) {
+        invoke_listeners<ISceneChangedListener>(
+            [&](ISceneChangedListener* l)
+            {
+                l->on_volume_facets_annotations_changed(
+                    m_selected_project_id,
+                    kind,
+                    instances_to_update
+                );
+            }
+        );
+    }
 }
 
 void SceneInteractor::modify_layer_height_profile(

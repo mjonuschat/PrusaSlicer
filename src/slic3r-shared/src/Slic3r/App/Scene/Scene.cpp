@@ -41,25 +41,28 @@ enum class ShadingPass
 std::vector<std::pair<std::string, std::string>> SHADOWSMAP_PASS_DICTIONARY = {
     {"gouraud_light", "shadowsmap"},
     {"gouraud_light_double_z_clip", "shadowsmap_double_z_clip"},
-    {"printbed"     , "shadowsmap"},
-    {"options"      , "options_shadowsmap"},
-    {"segments"     , "segments_shadowsmap"},
+    {"mm_gouraud_light", "shadowsmap"},
+    {"printbed", "shadowsmap"},
+    {"options", "options_shadowsmap"},
+    {"segments", "segments_shadowsmap"},
 };
 
 std::vector<std::pair<std::string, std::string>> SHADOWS_RECEIVERS_PASS_DICTIONARY = {
     {"gouraud_light", "phong_shadows"},
     {"gouraud_light_double_z_clip", "phong_shadows_double_z_clip"},
-    {"printbed"     , "printbed_phong_shadows"},
-    {"options"      , "options_phong_shadows"},
-    {"segments"     , "segments_phong_shadows"},
+    {"mm_gouraud_light", "mm_phong_shadows"},
+    {"printbed", "printbed_phong_shadows"},
+    {"options", "options_phong_shadows"},
+    {"segments", "segments_phong_shadows"},
 };
 
 std::vector<std::pair<std::string, std::string>> AO_G_BUFFER_PASS_DICTIONARY = {
     {"gouraud_light", "gbuffer_ao"},
     {"gouraud_light_double_z_clip", "gbuffer_ao_double_z_clip"},
-    {"printbed"     , "printbed_ao"},
-    {"options"      , "options_ao"},
-    {"segments"     , "segments_ao"},
+    {"mm_gouraud_light", "mm_gbuffer_ao"},
+    {"printbed", "printbed_ao"},
+    {"options", "options_ao"},
+    {"segments", "segments_ao"},
 };
 
 static std::string shader_name_by_shading_pass(const std::string& shader_name, ShadingPass pass)
