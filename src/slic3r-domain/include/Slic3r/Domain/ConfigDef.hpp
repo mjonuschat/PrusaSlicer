@@ -229,6 +229,7 @@ struct ConfigItemDef
         Print_MultiMaterial_OozePrevention      = 901,
         Print_MultiMaterial_WipeTower           = 902,
         Print_MultiMaterial_BondingInterlocking = 903,
+        Print_MultiMaterial_ToolChanges         = 904,
 
         Print_PrecisionSlicing_SlicingStrategy           = 1000,
         Print_PrecisionSlicing_DimensionalAccuracy       = 1001,

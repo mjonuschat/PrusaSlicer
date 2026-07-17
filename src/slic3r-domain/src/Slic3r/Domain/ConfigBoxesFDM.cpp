@@ -3728,6 +3728,26 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "User is responsible for ensuring there is no collision with the print.");
     def->init_fn = init_with(false);
 
+    def               = defs.add("toolchange_ordering", typeid(EnumWrapper));
+    def->location     = Print;
+    def->label        = L("Toolchange ordering");
+    def->option_group = ConfigItemDef::OptionGroup::Print_MultiMaterial_ToolChanges;
+    def->category     = ConfigItemDef::Category::Print_MultiMaterial;
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::combobox;
+    def->tooltip      = L(
+        "Determines the order of tool changes on each layer.\n"
+        "Optimized - Starts with the last used extruder to minimize tool changes.\n"
+        "Cyclic - Uses extruders in a fixed sequential order (1, 2, 3, ...) on every layer."
+    );
+    def->init_fn = init_with(
+        ToolChangeOrderingType::Optimized,
+        {
+            {int(ToolChangeOrderingType::Optimized), "optimized", L("Optimized")},
+            {int(ToolChangeOrderingType::Cyclic),    "cyclic",    L("Cyclic")},
+        }
+    );
+
     def               = defs.add("support_material", typeid(EnumWrapper));
     def->location     = Print;
     def->overrides_in = Locations{Object};

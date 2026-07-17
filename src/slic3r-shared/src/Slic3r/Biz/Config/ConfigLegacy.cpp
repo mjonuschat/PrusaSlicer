@@ -126,6 +126,7 @@ namespace {
                 "support_tree_branch_diameter", "support_tree_branch_diameter_angle", "support_tree_branch_diameter_double_wall",
                 "support_tree_branch_distance", "support_tree_tip_diameter", "support_tree_top_rate", "temperature",
                 "template_custom_gcode", "thick_bridges", "thin_walls", "thumbnails", "thumbnails_format", "toolchange_gcode",
+                "toolchange_ordering",
                 "top_fill_pattern", "top_infill_extrusion_width", "top_one_perimeter_type", "top_solid_infill_acceleration",
                 "top_solid_infill_speed", "top_solid_layers", "top_solid_min_thickness", "travel_acceleration",
                 "travel_lift_before_obstacle", "travel_max_lift", "travel_ramping_lift",

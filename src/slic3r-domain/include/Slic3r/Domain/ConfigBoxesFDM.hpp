@@ -105,6 +105,12 @@ enum class PressureAdvance
     AutomaticCalibration,
 };
 
+enum class ToolChangeOrderingType
+{
+    Optimized,
+    Cyclic,
+};
+
 // Then, define all types of ConfigBoxes that will be used. Provide our list
 // of definitions and the type of the box (which must match definitions).
 

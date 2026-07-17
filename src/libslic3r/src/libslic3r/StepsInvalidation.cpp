@@ -497,6 +497,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"thumbnails", steps({propagate(psGCodeExport)})},
     {"thumbnails_format", steps({propagate(psGCodeExport)})},
     {"toolchange_gcode", steps({propagate(psGCodeExport)})},
+    {"toolchange_ordering", steps({propagate(psWipeTower)})},
     {"top_fill_pattern", steps({propagate(posInfill)})},
     {"top_infill_extrusion_width", steps({propagate(posInfill)})},
     {"top_one_perimeter_type", steps({propagate(posPerimeters)})},
