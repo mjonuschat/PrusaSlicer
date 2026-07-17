@@ -4103,6 +4103,12 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         gcode += ";_TOOLCHANGE_TIME" + std::to_string(toolchange_time) + "\n";
     }
 
+    // Custom toolchange gcode may have changed fan speed via M106/M107 that CoolingBuffer
+    // doesn't track. Reset dynamic fan speed and emit ;_TOOLCHANGE_END to force CoolingBuffer
+    // to restore the correct fan speed.
+    m_current_dynamic_fan_speed.reset();
+    gcode += ";_TOOLCHANGE_END\n";
+
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)
     if (config.get<bool>("single_extruder_multi_material") && !config.get<bool>("wipe_tower")) {
         int temp = (m_layer_index <= 0 ? config.get<std::vector<int>>("first_layer_temperature").at(extruder_id) :

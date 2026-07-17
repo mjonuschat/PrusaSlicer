@@ -48,6 +48,7 @@ using Domain::CoolingSlowdownLogicType;
 const constexpr float SEGMENT_SPLIT_EPSILON = static_cast<float>(10. * GCodeFormatter::XYZ_EPSILON);
 
 const constexpr std::string_view TOOLCHANGE_TIME_TAG = ";_TOOLCHANGE_TIME";
+const constexpr std::string_view TOOLCHANGE_END_TAG  = ";_TOOLCHANGE_END";
 
 CoolingBuffer::CoolingBuffer(GCodeGenerator& gcodegen, const Biz::Slicing::CoolingBufferConfig& config) :
     m_toolchange_prefix(gcodegen.writer().toolchange_prefix()),
@@ -149,6 +150,7 @@ struct CoolingLine
         TYPE_INTERNAL_PERIMETER = 1 << 19,
         TYPE_FIRST_INTERNAL_PERIMETER = 1 << 20,
         TYPE_TOOLCHANGE_TIME          = 1 << 21,
+        TYPE_TOOLCHANGE_END           = 1 << 22,
     };
 
     CoolingLine(unsigned int type, size_t  line_start, size_t  line_end) :
@@ -900,6 +902,8 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
             line.type |= CoolingLine::TYPE_SET_FAN_SPEED;
         } else if (boost::contains(sline, ";_RESET_FAN_SPEED")) {
             line.type |= CoolingLine::TYPE_RESET_FAN_SPEED;
+        } else if (boost::starts_with(sline, TOOLCHANGE_END_TAG)) {
+            line.type = CoolingLine::TYPE_TOOLCHANGE_END;
         }
 
         if (line.type != 0)
@@ -1314,6 +1318,11 @@ std::string CoolingBuffer::apply_layer_cooldown(
         } else if (line->type & CoolingLine::TYPE_BRIDGE_FAN_END) {
             if (bridge_fan_control)
                 new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, m_fan_speed);
+        } else if (line->type & CoolingLine::TYPE_TOOLCHANGE_END) {
+            // Custom toolchange gcode may have changed fan speed via M106/M107 that CoolingBuffer
+            // doesn't track. Force re-emission to restore the correct fan speed.
+            m_fan_speed = -1;
+            change_extruder_set_fan();
         } else if (line->type & (CoolingLine::TYPE_EXTRUDE_END | CoolingLine::TYPE_TOOLCHANGE_TIME)) {
             // Just remove this comment.
         } else if (line->type & (CoolingLine::TYPE_ADJUSTABLE | CoolingLine::TYPE_ADJUSTABLE_EMPTY | CoolingLine::TYPE_EXTERNAL_PERIMETER | CoolingLine::TYPE_FIRST_INTERNAL_PERIMETER | CoolingLine::TYPE_WIPE | CoolingLine::TYPE_HAS_F)) {
