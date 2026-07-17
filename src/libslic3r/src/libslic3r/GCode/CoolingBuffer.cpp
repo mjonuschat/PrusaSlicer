@@ -459,8 +459,6 @@ struct PerExtruderAdjustments
     size_t                      n_lines_adjustable  = 0;
     // Non-adjustable time of lines starting with n_lines_adjustable. 
     float                       time_non_adjustable = 0;
-    // Current total time for this extruder.
-    float                       time_total          = 0;
     // Maximum time for this extruder, when the maximum slow down is applied.
     float                       time_maximum        = 0;
 
@@ -1067,8 +1065,6 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
             adj.create_non_adjustable_segments(static_cast<float>(perimeter_transition_distance));
         }
 
-        // Curren total time for this extruder.
-        adj.time_total  = adj.elapsed_time_total();
         // Maximum time for this extruder, when all extrusion moves are slowed down to min_extrusion_speed.
         adj.time_maximum = adj.maximum_time_after_slowdown(AdjustableFeatureType::ExternalPerimeters | AdjustableFeatureType::FirstInternalPerimeters);
         if (adj.cooling_slow_down_enabled && adj.lines.size() > 0) {
@@ -1089,7 +1085,7 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
         // Calculate the current adjusted elapsed_time_total over the non-finalized extruders.
         float total = elapsed_time_total0;
         for (auto it = cur_begin; it != by_slowdown_time.end(); ++ it)
-            total += (*it)->time_total;
+            total += (*it)->elapsed_time_total();
         float slowdown_below_layer_time = adj.slowdown_below_layer_time * 1.001f;
         if (total > slowdown_below_layer_time) {
             // The current total time is above the minimum threshold of the rest of the extruders, don't adjust anything.
