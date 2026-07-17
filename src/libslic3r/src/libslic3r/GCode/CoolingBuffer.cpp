@@ -47,6 +47,8 @@ using Domain::CoolingSlowdownLogicType;
 
 const constexpr float SEGMENT_SPLIT_EPSILON = static_cast<float>(10. * GCodeFormatter::XYZ_EPSILON);
 
+const constexpr std::string_view TOOLCHANGE_TIME_TAG = ";_TOOLCHANGE_TIME";
+
 CoolingBuffer::CoolingBuffer(GCodeGenerator& gcodegen, const Biz::Slicing::CoolingBufferConfig& config) :
     m_toolchange_prefix(gcodegen.writer().toolchange_prefix()),
     m_config(std::move(config)),
@@ -146,6 +148,7 @@ struct CoolingLine
         TYPE_RESET_FAN_SPEED    = 1 << 18,
         TYPE_INTERNAL_PERIMETER = 1 << 19,
         TYPE_FIRST_INTERNAL_PERIMETER = 1 << 20,
+        TYPE_TOOLCHANGE_TIME          = 1 << 21,
     };
 
     CoolingLine(unsigned int type, size_t  line_start, size_t  line_end) :
@@ -861,6 +864,13 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
             line.type = CoolingLine::TYPE_BRIDGE_FAN_START;
         } else if (boost::starts_with(sline, ";_BRIDGE_FAN_END")) {
             line.type = CoolingLine::TYPE_BRIDGE_FAN_END;
+        } else if (boost::starts_with(sline, TOOLCHANGE_TIME_TAG)) {
+            line.type = CoolingLine::TYPE_TOOLCHANGE_TIME;
+            fast_float::from_chars(
+                sline.data() + TOOLCHANGE_TIME_TAG.size(),
+                sline.data() + sline.size(),
+                line.non_adjustable_time
+            );
         } else if (boost::starts_with(sline, "G4 ")) {
             // Parse the wait time.
             line.type = CoolingLine::TYPE_G4;
@@ -1304,7 +1314,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
         } else if (line->type & CoolingLine::TYPE_BRIDGE_FAN_END) {
             if (bridge_fan_control)
                 new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, m_fan_speed);
-        } else if (line->type & CoolingLine::TYPE_EXTRUDE_END) {
+        } else if (line->type & (CoolingLine::TYPE_EXTRUDE_END | CoolingLine::TYPE_TOOLCHANGE_TIME)) {
             // Just remove this comment.
         } else if (line->type & (CoolingLine::TYPE_ADJUSTABLE | CoolingLine::TYPE_ADJUSTABLE_EMPTY | CoolingLine::TYPE_EXTERNAL_PERIMETER | CoolingLine::TYPE_FIRST_INTERNAL_PERIMETER | CoolingLine::TYPE_WIPE | CoolingLine::TYPE_HAS_F)) {
             // Find the start of a comment, or roll to the end of line.
