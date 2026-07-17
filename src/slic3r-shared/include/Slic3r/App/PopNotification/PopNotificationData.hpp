@@ -3,6 +3,7 @@
 #include "Slic3r/App/PopNotification/PopNotificationDataVariant.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationLayout.hpp"
 #include "Slic3r/Biz/Platform/TimerQueue.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::App::PopNotification {
 
@@ -44,6 +45,7 @@ struct PopNotificationData
     std::chrono::seconds timeout;
     PopNotificationLayout layout; // data that needs to be shown by View
     PopNotificationPayload payload; // data that needs to be stored
+    Domain::SelectionId project_id{Domain::INVALID_ID};
     Biz::Platform::TimerQueue::TimerID timer_id;
 };
 

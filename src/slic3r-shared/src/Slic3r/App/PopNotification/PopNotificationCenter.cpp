@@ -451,7 +451,8 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
             status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
             status.code == Biz::Slicing::StatusCode::Finished ? 5s : 0s,
             PopNotificationLayoutHeaderText{header, text},
-            SlicingStatusNotificationData{slicing_id}
+            SlicingStatusNotificationData{slicing_id},
+            slicing_id.project_id
         },
         slicing_matcher
     );
@@ -482,7 +483,8 @@ void PopNotificationCenter::on_status_cache_progress_changed(const Domain::Slici
             status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
             0s,
             PopNotificationLayoutHeaderTextProgress{header, text, progress},
-            SlicingStatusNotificationData{slicing_id}
+            SlicingStatusNotificationData{slicing_id},
+            slicing_id.project_id
         },
         slicing_matcher
     );
@@ -539,7 +541,8 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
                 PopNotificationLevel::Error,
                 0s,
                 PopNotificationLayoutHeaderText{header, to_display_string(error, project)},
-                Payload{error.code, slicing_id}
+                Payload{error.code, slicing_id},
+                slicing_id.project_id
             },
             matcher
         );
@@ -598,7 +601,8 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
                 warning.severity == WarningSeverity::LOW ? PopNotificationLevel::Warning : PopNotificationLevel::Error,
                 0s,
                 PopNotificationLayoutHeaderText{header, to_display_string(warning, project)},
-                Payload{warning.code, slicing_id}
+                Payload{warning.code, slicing_id},
+                slicing_id.project_id
             },
             matcher
         );
@@ -1125,6 +1129,14 @@ void PopNotificationCenter::on_project_load_failed(const std::string& error)
     );
 }
 
+void PopNotificationCenter::on_project_will_be_removed(const Domain::SelectionId project_id)
+{
+    m_notification_list.erase_notification_by_predicate(
+        [project_id](const PopNotificationData& notification)
+        { return notification.project_id == project_id; }
+    );
+}
+
 std::optional<int>
 get_instance_index(const Domain::ModelObject& model_object, const Domain::SelectionId instance_id)
 {
@@ -1185,6 +1197,7 @@ void PopNotificationCenter::on_elements_not_arranged(
             0s,
             PopNotificationLayoutHeaderText{header, text},
             ArrangeEventType::ElementsNotArranged,
+            project_id,
         },
         [](const PopNotificationPayload& a, const PopNotificationPayload& b)
         {
@@ -1216,6 +1229,7 @@ void PopNotificationCenter::on_fatal_arrange_error(
             0s,
             PopNotificationLayoutHeaderText{header, text},
             ArrangeEventType::FatalError,
+            project_id,
         },
         [](const PopNotificationPayload& a, const PopNotificationPayload& b)
         {

@@ -28,16 +28,16 @@ bool check_volume_exist(
     if (!exist_item(item, project_interactor)) {
         // find first existing
         bool found = false;
-        for (auto it = items.rbegin(); it != items.rend(); ++it)
-        {
+        for (auto it = items.rbegin(); it != items.rend(); ++it) {
             if (exist_item(*it, project_interactor)) {
                 item = *it;
                 found = true;
                 break;
             }
         }
-        if (!found)
-            return false; 
+        if (!found) {
+            return false;
+        }
     }
     return true;
 }
@@ -51,11 +51,14 @@ SimplifyNotification::SimplifyNotification(
     m_notify(notify)
 {
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
     m_create_simplify_fn = [this, &gizmo_manager](const Item& item_)->std::function<bool()> {
         return [this, item_, &gizmo_manager]() -> bool {
             Item item = item_; // copy to remove const qualifier
-            if (!check_volume_exist(item, m_project_interactor, m_meshes_to_simplify))
+            if (!check_volume_exist(item, m_project_interactor, m_meshes_to_simplify)) {
                 return true; // can't opne simplify without volume
+            }
 
             m_project_interactor.select_project(item.project_id);
             Biz::Scene::ObjectSelection selection{
@@ -74,6 +77,8 @@ SimplifyNotification::SimplifyNotification(
 SimplifyNotification::~SimplifyNotification(){
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.remove_listener<Biz::IProjectsChangedListener>(this);
 }
 
 namespace {
@@ -97,16 +102,18 @@ using namespace Slic3r::App::PopNotification;
 
 std::string create_message(const SimplifyNotification::Items& items)
 {
-    if (items.size() == 1)
+    if (items.size() == 1) {
         return _u8L(
             "This mesh exceeds 1M triangles and may cause processing slowdowns."
         );
+    }
     std::string message =
         _u8L(
             "These meshes exceed 1M triangles and may cause processing slowdowns."
         ) + "\n";
-    for (const SimplifyNotification::Item& item : items)
+    for (const SimplifyNotification::Item& item : items) {
         message += "\n" + item.list_text;
+    }
     return message;
 }
 
@@ -120,8 +127,9 @@ bool close_notification(PopNotificationCenter& notify) {
             break;
         }
     }
-    if (!is_open)
+    if (!is_open) {
         return false;
+    }
 
     list.close_notifications_of_type(
         PopNotificationType::SimplifySuggestion);
@@ -130,29 +138,49 @@ bool close_notification(PopNotificationCenter& notify) {
 }
 } // namespace
 
-void recreate_notification(
-    PopNotificationCenter& notify, 
+SimplifyNotification::Items filter_by_project(
     const SimplifyNotification::Items& items,
+    Domain::SelectionId project_id)
+{
+    SimplifyNotification::Items result;
+    for (const SimplifyNotification::Item& item : items) {
+        if (item.project_id == project_id) {
+            result.push_back(item);
+        }
+    }
+    return result;
+}
+
+void recreate_notification(
+    PopNotificationCenter& notify,
+    const SimplifyNotification::Items& items,
+    Domain::SelectionId project_id,
     const SimplifyNotification::CreateSimplifyFn& create_fn,
     bool open_when_closed = false)
-{    
-    if (bool was_open = close_notification(notify);
-        (!open_when_closed && !was_open) || items.empty())
-        return;
+{
+    // Meshes of all open projects are tracked, but only the active project's belong in the
+    // notification - the others are not visible to simplify.
+    const SimplifyNotification::Items project_items = filter_by_project(items, project_id);
 
-    const SimplifyNotification::Item& item = items.back();
+    if (bool was_open = close_notification(notify);
+        (!open_when_closed && !was_open) || project_items.empty()) {
+        return;
+    }
+
+    const SimplifyNotification::Item& item = project_items.back();
     PopNotificationData data{
         .type = PopNotificationType::SimplifySuggestion,
         .level = PopNotificationLevel::Regular,
         .timeout = 0s,
         .layout = PopNotificationLayoutHeaderTextButtons {
             .header = _u8L("Reduce Triangle Count"),
-            .text = create_message(items),
+            .text = create_message(project_items),
             .buttons = { PopNotificationButtonData {
                 .text = item.button_name,
                 .callback = create_fn(item)
             }}
-        }
+        },
+        .project_id = project_id
     };
     auto matcher = [](const PopNotificationPayload&, const PopNotificationPayload&) { return false; };
     notify.upsert_notifcation(data, matcher);
@@ -167,8 +195,9 @@ void SimplifyNotification::on_volume_added(
     for (const Domain::ElementRef& element : volumes) {
         const Domain::ModelVolume* volume = 
             project.find_volume_by_id(element.object_id, element.volume_id);
-        if (volume == nullptr || !need_simplify(volume->mesh().its))
-            continue;            
+        if (volume == nullptr || !need_simplify(volume->mesh().its)) {
+            continue;
+        }
         m_meshes_to_simplify.push_back(Item{
             .project_id = project_id,
             .element = element,
@@ -177,8 +206,15 @@ void SimplifyNotification::on_volume_added(
         });
         exist_change = true;
     }
-    if (exist_change)
-        recreate_notification(m_notify, m_meshes_to_simplify, m_create_simplify_fn, true);
+    if (exist_change) {
+        recreate_notification(
+            m_notify,
+            m_meshes_to_simplify,
+            m_project_interactor.selected_project_id(),
+            m_create_simplify_fn,
+            true
+        );
+    }
 }
 
 void SimplifyNotification::on_volume_removed(
@@ -189,13 +225,16 @@ void SimplifyNotification::on_volume_removed(
         const auto [first, last] = std::ranges::remove_if(
             m_meshes_to_simplify, [project_id, &el](const Item& it) {
                 return it.project_id == project_id && it.element == el; });
-        if (first == last)
+        if (first == last) {
             continue;
+        }
         m_meshes_to_simplify.erase(first, last);
         exist_change = true;
     }
-    if (exist_change)
-        recreate_notification(m_notify, m_meshes_to_simplify, m_create_simplify_fn);
+    if (exist_change) {
+        recreate_notification(m_notify, m_meshes_to_simplify,
+            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+    }
 }
 
 void SimplifyNotification::on_instance_added(
@@ -205,16 +244,19 @@ void SimplifyNotification::on_instance_added(
     const Domain::Project& project = m_project_interactor.project(project_id);
     for (const Domain::ElementRef& el_instance : instances) {
         const Domain::ModelObject* object = project.find_object_by_id(el_instance.object_id);
-        if (object == nullptr || object->instances.size() != 1)
+        if (object == nullptr || object->instances.size() != 1) {
             continue; // no first instance
+        }
 
         // collect volumes of the just added object
         el_volumes.reserve(el_volumes.size() + object->volumes.size());
-        for (const Domain::ModelVolume* volume : object->volumes)
+        for (const Domain::ModelVolume* volume : object->volumes) {
             el_volumes.emplace_back(el_instance.object_id, el_instance.instance_id, volume->id().id);
+        }
     }
-    if (el_volumes.empty())
+    if (el_volumes.empty()) {
         return; // no added volume
+    }
 
     on_volume_added(project_id, el_volumes);
 }
@@ -225,21 +267,25 @@ void SimplifyNotification::on_instance_removed(
     bool exist_change = false;
     const Domain::Project& project = m_project_interactor.project(project_id);
     for (const Domain::ElementRef& el_instance : instances) {
-        if (project.find_object_by_id(el_instance.object_id) != nullptr )
+        if (project.find_object_by_id(el_instance.object_id) != nullptr ) {
             continue; // not last instance
+        }
 
         // find items from object
         const auto [first, last] = std::ranges::remove_if(m_meshes_to_simplify, 
             [project_id, object_id = el_instance.object_id](const Item& it) { 
                 return it.project_id == project_id && it.element.object_id == object_id;
             });
-        if (first == last)
+        if (first == last) {
             continue; // no object volume in list
+        }
         m_meshes_to_simplify.erase(first, last);
         exist_change = true;
     }
-    if (exist_change)
-        recreate_notification(m_notify, m_meshes_to_simplify, m_create_simplify_fn);
+    if (exist_change) {
+        recreate_notification(m_notify, m_meshes_to_simplify,
+            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+    }
 }
 
 void SimplifyNotification::on_simplify(
@@ -254,16 +300,37 @@ void SimplifyNotification::on_simplify(
                     it.element.object_id == el.object_id && 
                     it.element.volume_id == el.volume_id;
             });
-        if (first == last)
+        if (first == last) {
             continue; // no object volume in list
+        }
         m_meshes_to_simplify.erase(first, last);
         exist_change = true;
     }
-    if (exist_change)
-        recreate_notification(m_notify, m_meshes_to_simplify, m_create_simplify_fn);
+    if (exist_change) {
+        recreate_notification(m_notify, m_meshes_to_simplify,
+            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+    }
 
     // after simplify apply is assumption that you do not want to simplify more
     // even when model has more than 1M triangles. Soo do not check result of simplificaiton.
+}
+
+void SimplifyNotification::on_selected_project_changed(size_t index)
+{
+    recreate_notification(m_notify, m_meshes_to_simplify, index, m_create_simplify_fn, true);
+}
+
+void SimplifyNotification::on_project_will_be_removed(Domain::SelectionId project_id)
+{
+    const auto [first, last] = std::ranges::remove_if(
+        m_meshes_to_simplify,
+        [project_id](const Item& it) { return it.project_id == project_id; });
+    if (first == last) {
+        return; // no mesh of the removed project in list
+    }
+    m_meshes_to_simplify.erase(first, last);
+    recreate_notification(m_notify, m_meshes_to_simplify,
+        m_project_interactor.selected_project_id(), m_create_simplify_fn);
 }
 
 void SimplifyNotification::on_paint_removed_after_simplify()
@@ -275,7 +342,9 @@ void SimplifyNotification::on_paint_removed_after_simplify()
             0s,
             PopNotificationLayoutText(_u8L(
                 "Custom supports, seams, fuzzy skin and multimaterial painting were removed after simplifying the mesh."
-            ))
+            )),
+            {},
+            m_project_interactor.selected_project_id()
         },
         never_equal_matcher
     );

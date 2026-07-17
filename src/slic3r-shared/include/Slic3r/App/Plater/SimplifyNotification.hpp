@@ -4,6 +4,8 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneChangedListener
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
@@ -11,9 +13,15 @@ namespace Slic3r::App::Plater {
 
 /**
 * @brief Manage notification about huge triangle meshes with suggestion to simplify it
+*
+* @note The notification lists meshes of the active project only, even though meshes of all
+*       open projects are tracked.
 */
-class SimplifyNotification final : public Biz::Scene::ISceneChangedListener
-{    
+class SimplifyNotification final :
+    public Biz::Scene::ISceneChangedListener,
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::IProjectsChangedListener
+{
 public:
     SimplifyNotification(
         Biz::ProjectInteractor& project_interactor,
@@ -49,6 +57,18 @@ public:
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
 
     /**@}*/
+
+    /**
+     * @brief Rebuild the notification for the newly active project.
+     * @note Implementation of ISelectedProjectChangedListener interface
+     */
+    void on_selected_project_changed(size_t index) override;
+
+    /**
+     * @brief Drop meshes of the removed project, they can no longer be simplified.
+     * @note Implementation of IProjectsChangedListener interface
+     */
+    void on_project_will_be_removed(Domain::SelectionId project_id) override;
 
     void on_simplify(Domain::SelectionId project_id, const Domain::ElementRefs& simplified_volumes);
 

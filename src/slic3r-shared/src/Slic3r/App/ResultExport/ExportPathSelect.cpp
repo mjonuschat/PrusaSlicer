@@ -92,7 +92,9 @@ ExportNameData get_export_name_data(const Biz::ProjectInteractor& project_intera
              PopNotification::PopNotificationLayoutHeaderText(
                  "Failed to parse output filename",
                  shorten_error(e.what())
-             )},
+             ),
+             {},
+             project_interactor.selected_project_id()},
             [](const PopNotification::PopNotificationPayload&,
                const PopNotification::PopNotificationPayload&) { return false; }
         );
