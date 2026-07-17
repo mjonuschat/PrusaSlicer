@@ -11,6 +11,7 @@
 
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectMetadataJson.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
@@ -22,6 +23,8 @@
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+using Slic3r::Biz::_u8L;
+using Slic3r::Domain::FacetsAnnotation;
 using Slic3r::Domain::Vec3d;
 
 using ModelObject = Slic3r::Domain::ModelObject;
@@ -63,10 +66,17 @@ void write_svg_file(mz_zip_archive &archive, const std::string &filepath, const 
         throw boost::filesystem::filesystem_error("Unable to add svg file to archive.", {});
 }
 
-// Add only non empty data
-void add(json& result, std::string_view name, json &&data) {
-    if (!data.empty())
-        result[name] = std::move(data);
+/**
+ * Add only non empty data.
+ * Returns true when the data was stored (empty data is not stored).
+ */
+bool add(json& result, std::string_view name, json &&data) {
+    if (data.empty()) {
+        return false;
+    }
+
+    result[name] = std::move(data);
+    return true;
 }
 
 /// <summary>
@@ -603,13 +613,45 @@ void load(const json &source_json, ModelVolume::Source &source, Domain::Triangle
 } // namespace SourceSerialization
 
 namespace FacetsAnnotationSerialization {
-constexpr const char *FACETS_ANNOTATION_FILE = "Metadata/Slic3r_facets_annotation.json";
-constexpr std::string_view ID = "id";
-constexpr std::string_view MM_SEGMENTATION_FACETS = "mmSegmentationFacets";
-constexpr std::string_view SUPPORT_FACETS = "supportedFacets";
-constexpr std::string_view SEAM_FACETS = "seamFacets";
-constexpr std::string_view FUZZY_SKIN_FACETS = "fuzzySkinFacets";
-NamesType FACETS_NAMES{{ID, MM_SEGMENTATION_FACETS, SUPPORT_FACETS, SEAM_FACETS, FUZZY_SKIN_FACETS}};
+constexpr const char* FACETS_ANNOTATION_FILE = "Metadata/Slic3r_facets_annotation.json";
+constexpr std::string_view ID                = "id";
+
+constexpr std::string_view MM_SEGMENTATION_FACETS             = "mmSegmentationFacets";
+constexpr std::string_view MM_SEGMENTATION_FACETS_VERSION_KEY = "mmSegmentationFacetsVersion";
+constexpr std::string_view SUPPORT_FACETS                     = "supportedFacets";
+constexpr std::string_view SUPPORT_FACETS_VERSION_KEY         = "supportedFacetsVersion";
+constexpr std::string_view SEAM_FACETS                        = "seamFacets";
+constexpr std::string_view SEAM_FACETS_VERSION_KEY            = "seamFacetsVersion";
+constexpr std::string_view FUZZY_SKIN_FACETS                  = "fuzzySkinFacets";
+constexpr std::string_view FUZZY_SKIN_FACETS_VERSION_KEY      = "fuzzySkinFacetsVersion";
+
+NamesType FACETS_NAMES{
+    {ID,
+     MM_SEGMENTATION_FACETS,
+     SUPPORT_FACETS,
+     SEAM_FACETS,
+     FUZZY_SKIN_FACETS,
+     MM_SEGMENTATION_FACETS_VERSION_KEY,
+     SUPPORT_FACETS_VERSION_KEY,
+     SEAM_FACETS_VERSION_KEY,
+     FUZZY_SKIN_FACETS_VERSION_KEY}
+};
+
+/**
+ * Painting data version, stored next to each facet set.
+ * Version 1 : Initial version (triangle states 0-16).
+ * Version 2 : Extended support up to 255 triangle states.
+ *
+ * These constants are the maximum painting versions this slicer is able to read. The version
+ * written into the file is not these constants but the minimum version required by the actual
+ * data (see minimum_required_painting_version()), so files stay readable by older slicers
+ * whenever possible.
+ */
+constexpr unsigned int MM_SEGMENTATION_FACETS_VERSION = 2;
+constexpr unsigned int SUPPORT_FACETS_VERSION         = 2;
+constexpr unsigned int SEAM_FACETS_VERSION            = 2;
+constexpr unsigned int FUZZY_SKIN_FACETS_VERSION      = 2;
+
 constexpr std::string_view TRIANGLE = "triangle"; // index into mesh(specifiead by ID) triangles
 constexpr std::string_view DIVIDING = "dividing";
 NamesType FACET_NAMES{{TRIANGLE, DIVIDING}};
@@ -632,6 +674,24 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
         return result;
     };
 
+    /**
+     * Store the painting together with its version, but only when the painting is not empty.
+     * The version is derived from the data itself, so paintings that use only triangle states
+     * representable by an older version stay readable by older slicers.
+     */
+    auto add_painting = [&facets_to_json](
+                            json& facet_json,
+                            const FacetsAnnotation& facets,
+                            std::string_view name,
+                            std::string_view version_key,
+                            int triangle_count
+                        )
+    {
+        if (add(facet_json, name, facets_to_json(facets, triangle_count))) {
+            facet_json[version_key] = facets.get_data().minimum_required_painting_version();
+        }
+    };
+
     json facets_json = json::array();
     for (const ModelObject *mo : model.objects) {
         for (const ModelVolume *mv : mo->volumes) {
@@ -641,10 +701,35 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
             unsigned id = it->second;
             int triangle_count = static_cast<int>(mv->mesh().its.indices.size());
             json facet_json;
-            add(facet_json, MM_SEGMENTATION_FACETS, facets_to_json(mv->mm_segmentation_facets, triangle_count));
-            add(facet_json, SUPPORT_FACETS, facets_to_json(mv->supported_facets, triangle_count));
-            add(facet_json, SEAM_FACETS, facets_to_json(mv->seam_facets, triangle_count));
-            add(facet_json, FUZZY_SKIN_FACETS, facets_to_json(mv->fuzzy_skin_facets, triangle_count));
+            add_painting(
+                facet_json,
+                mv->mm_segmentation_facets,
+                MM_SEGMENTATION_FACETS,
+                MM_SEGMENTATION_FACETS_VERSION_KEY,
+                triangle_count
+            );
+            add_painting(
+                facet_json,
+                mv->supported_facets,
+                SUPPORT_FACETS,
+                SUPPORT_FACETS_VERSION_KEY,
+                triangle_count
+            );
+            add_painting(
+                facet_json,
+                mv->seam_facets,
+                SEAM_FACETS,
+                SEAM_FACETS_VERSION_KEY,
+                triangle_count
+            );
+            add_painting(
+                facet_json,
+                mv->fuzzy_skin_facets,
+                FUZZY_SKIN_FACETS,
+                FUZZY_SKIN_FACETS_VERSION_KEY,
+                triangle_count
+            );
+
             if (facet_json.empty())
                 continue;
             facet_json[ID] = id;
@@ -652,6 +737,24 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
         }
     }
     write_file(archive, facets_json, FACETS_ANNOTATION_FILE);
+}
+
+/**
+ * @brief Returns whether the painting's stored version can be read.
+ *
+ * A missing version key defaults to version 1 because older 3MF files were mistakenly written
+ * without it.
+ *
+ * @param version_key Key under which the painting's version is stored.
+ * @param max_supported_version Maximum painting version this slicer is able to read.
+ */
+bool is_painting_version_supported(
+    const json& volume_facets,
+    std::string_view version_key,
+    unsigned int max_supported_version
+)
+{
+    return volume_facets.value(version_key, 1u) <= max_supported_version;
 }
 
 void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssues& collected_issues) {
@@ -681,6 +784,37 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
         facets.shrink_to_fit();
     };
 
+    // Localized names of paintings skipped because of an unsupported version, shown to the user in the warning dialog.
+    std::set<std::string> skipped_painting_names;
+
+    /**
+     * Load one painting of all volumes sharing the mesh, or record its name into
+     * skipped_painting_names when its stored version is unsupported.
+     */
+    auto load_painting = [&json_to_facets, &skipped_painting_names](
+                             const json& volume_facets,
+                             const ModelVolumePtrs& volumes,
+                             std::string_view facets_key,
+                             std::string_view version_key,
+                             unsigned int max_supported_version,
+                             const std::string& name,
+                             FacetsAnnotation ModelVolume::* facets_member
+                         )
+    {
+        if (!volume_facets.contains(facets_key)) {
+            return;
+        }
+
+        if (!is_painting_version_supported(volume_facets, version_key, max_supported_version)) {
+            skipped_painting_names.insert(name);
+            return;
+        }
+
+        for (ModelVolume* mv : volumes) {
+            json_to_facets(volume_facets[facets_key], mv->*facets_member);
+        }
+    };
+
     for (const auto &volume_facets : facets_json_arr) {
         if (!is_valid(volume_facets, FACETS_NAMES, collected_issues, RT::facets_unknown_type))
             continue;
@@ -695,19 +829,50 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
             collected_issues.add_issue(Read3mfIssue(RT::facets_bad_id, std::to_string(id)));
             continue;
         }
-        const ModelVolumePtrs &volumes = it->second;
-        if (volume_facets.contains(MM_SEGMENTATION_FACETS))
-            for (ModelVolume *mv : volumes)
-                json_to_facets(volume_facets[MM_SEGMENTATION_FACETS], mv->mm_segmentation_facets);
-        if (volume_facets.contains(SUPPORT_FACETS))
-            for (ModelVolume *mv : volumes)
-                json_to_facets(volume_facets[SUPPORT_FACETS], mv->supported_facets);
-        if (volume_facets.contains(SEAM_FACETS))
-            for (ModelVolume *mv : volumes)
-                json_to_facets(volume_facets[SEAM_FACETS], mv->seam_facets);
-        if (volume_facets.contains(FUZZY_SKIN_FACETS))
-            for (ModelVolume *mv : volumes)
-                json_to_facets(volume_facets[FUZZY_SKIN_FACETS], mv->fuzzy_skin_facets);
+
+        const ModelVolumePtrs& volumes = it->second;
+        load_painting(
+            volume_facets,
+            volumes,
+            MM_SEGMENTATION_FACETS,
+            MM_SEGMENTATION_FACETS_VERSION_KEY,
+            MM_SEGMENTATION_FACETS_VERSION,
+            _u8L("multi-material"),
+            &ModelVolume::mm_segmentation_facets
+        );
+        load_painting(
+            volume_facets,
+            volumes,
+            SUPPORT_FACETS,
+            SUPPORT_FACETS_VERSION_KEY,
+            SUPPORT_FACETS_VERSION,
+            _u8L("FDM supports"),
+            &ModelVolume::supported_facets
+        );
+        load_painting(
+            volume_facets,
+            volumes,
+            SEAM_FACETS,
+            SEAM_FACETS_VERSION_KEY,
+            SEAM_FACETS_VERSION,
+            _u8L("seam"),
+            &ModelVolume::seam_facets
+        );
+        load_painting(
+            volume_facets,
+            volumes,
+            FUZZY_SKIN_FACETS,
+            FUZZY_SKIN_FACETS_VERSION_KEY,
+            FUZZY_SKIN_FACETS_VERSION,
+            _u8L("fuzzy skin"),
+            &ModelVolume::fuzzy_skin_facets
+        );
+    }
+
+    for (const std::string& painting_name : skipped_painting_names) {
+        collected_issues.add_issue(
+            Read3mfIssue(RT::facets_newer_version_skipped, std::nullopt, painting_name)
+        );
     }
 }
 } // namespace FacetsAnnotationSerialization

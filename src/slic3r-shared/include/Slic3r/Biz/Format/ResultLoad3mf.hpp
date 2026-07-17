@@ -239,6 +239,7 @@ enum class Read3mfIssueType: unsigned short {
     facets_unknown_facet_key,
     facets_triangle_id_issue,
     facets_dividing_data_issue,
+    facets_newer_version_skipped,
 
 // LAYER_HEIGHTS_PROFILE
     layer_heights_must_be_array,
