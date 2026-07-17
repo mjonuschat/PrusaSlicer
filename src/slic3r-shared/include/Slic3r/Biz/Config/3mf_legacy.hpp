@@ -5,11 +5,13 @@
 #ifndef slic3r_Format_3mfLegacy_hpp_
 #define slic3r_Format_3mfLegacy_hpp_
 
+#include "Slic3r/Biz/VirtualExtrudersConfig.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
+#include "Slic3r/Domain/VirtualExtruder.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
 #include <map>
@@ -72,7 +74,8 @@ namespace Slic3rLegacy {
         bool check_version,
         boost::optional<Slic3r::Semver> &prusaslicer_generator_version,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        Slic3r::Biz::VirtualExtrudersConfig& out_virtual_extruders_config
     );
 
     // Save the given model and the config data contained in the given Print into a 3mf file.
@@ -80,11 +83,12 @@ namespace Slic3rLegacy {
     extern bool store_3mf_legacy(
         const char* path,
         const Slic3r::Domain::Model* model,
-        const std::optional<Slic3r::Domain::ConfigPack>& config,
-        const std::optional<Slic3r::Domain::Preset::HwPrinterConfig>& hw_config,
+        const Slic3r::Domain::ConfigPack& config,
+        const Slic3r::Domain::Preset::HwPrinterConfig& hw_config,
         bool fullpath_sources,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        const Slic3r::Domain::VirtualExtruders& virtual_extruders = {},
         const Slic3r::Domain::Image* thumbnail_data = nullptr,
         bool zip64 = true
     );

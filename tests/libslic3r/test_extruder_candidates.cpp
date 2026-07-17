@@ -45,12 +45,14 @@ TEST_CASE_METHOD(
     config.print.items.opt("support_material").set(SupportMode::None);
     config.print.items.opt("perimeter_extruder").set(2);
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0, 1});
 
     config.print.items.opt("infill_extruder").set(3);
     config.print.items.opt("solid_infill_extruder").set(4);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1, 2, 3});
 }
 
@@ -65,36 +67,38 @@ TEST_CASE_METHOD(
     // It does not matter if the volumes are parts or modifiers, so there is no need
     // for a special "modifiers" test.
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0});
 
     object->object_settings.items.opt("extruder").set(2);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1});
 
     volume->volume_settings.overrides.set("extruder", 3);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{2});
 
     ModelObject* another_object{model.add_object()};
     ModelVolume* another_volume{add_volume(another_object, make_cube(10, 10, 10))};
     another_object->add_instance();
 
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{0, 2});
 
     another_volume->volume_settings.overrides.set("extruder", 4);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{2, 3});
 
     another_volume->volume_settings.overrides.set("infill_extruder", 5);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{2, 3, 4});
 
     // Overriding all sub-extruders should override the usage of extruder 4 (index 3).
     another_volume->volume_settings.overrides.set("solid_infill_extruder", 5);
     another_volume->volume_settings.overrides.set("perimeter_extruder", 5);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{2, 4});
 }
 
@@ -106,15 +110,17 @@ TEST_CASE_METHOD(
 {
     config.print.items.opt("support_material").set(SupportMode::None);
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0});
 
     object->object_settings.items.opt("extruder").set(2);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1});
 
     object->instances.front()->printable = false;
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{});
 }
 
@@ -128,12 +134,14 @@ TEST_CASE_METHOD(
     VolumeSettings range_settings;
     object->layer_config_ranges.insert({range, std::move(range_settings)});
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0});
 
     object->layer_config_ranges.at(range).overrides.set("extruder", 3);
 
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{0, 2});
 }
 
@@ -146,15 +154,17 @@ TEST_CASE_METHOD(
     object->object_settings.items.opt("extruder").set(3);
     object->object_settings.overrides.set("support_material", SupportMode::Everywhere);
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0, 2});
 
     object->object_settings.overrides.set("support_material_extruder", 4);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{0, 2, 3});
 
     object->object_settings.overrides.set("support_material_interface_extruder", 5);
-    extruders = get_extruder_candidates(model, config, bed_instance);
+    extruders = get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{2, 3, 4});
 }
 
@@ -169,7 +179,9 @@ TEST_CASE_METHOD(
     selector.set_facet(1, Slic3r::Domain::TriangleSelector::TriangleStateType::Extruder3);
     volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
 
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, bed_instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{0, 1, 2});
 }
 
@@ -187,7 +199,9 @@ TEST_CASE_METHOD(
         CustomGCodeMode::MultiExtruder,
         {CustomGCodeItem{.print_z = 5.0, .type = CustomGCodeType::ToolChange, .extruder = 2}}
     };
-    std::vector<unsigned> extruders{get_extruder_candidates(model, config, instance)};
+    std::vector<unsigned> extruders{
+        get_extruder_candidates(model, config, instance, config.virtual_extruders)
+    };
     CHECK(extruders == std::vector<unsigned>{1, 2});
 }
 
@@ -207,7 +221,8 @@ TEST_CASE_METHOD(
 
     volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
 
-    std::vector<unsigned> extruders = get_extruder_candidates(model, config, bed_instance);
+    std::vector<unsigned> extruders =
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1});
 }
 
@@ -228,7 +243,8 @@ TEST_CASE_METHOD(
 
     volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
 
-    std::vector<unsigned> extruders = get_extruder_candidates(model, config, bed_instance);
+    std::vector<unsigned> extruders =
+        get_extruder_candidates(model, config, bed_instance, config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1, 2});
 }
 
@@ -250,6 +266,7 @@ TEST_CASE_METHOD(
 
     volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
 
-    std::vector<unsigned> extruders = get_extruder_candidates(model, small_config, bed_instance);
+    std::vector<unsigned> extruders =
+        get_extruder_candidates(model, small_config, bed_instance, small_config.virtual_extruders);
     CHECK(extruders == std::vector<unsigned>{1});
 }

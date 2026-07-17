@@ -39,23 +39,27 @@ namespace Slic3r {
 
 namespace CustomGCode = Domain::CustomGCode;
 
-using SlicingSync::get_invalidated_steps;
-using SlicingSync::PrintAndObjectSteps;
-using SlicingSync::InvalidatedSteps;
-using SlicingSync::AllSteps;
-using SlicingSync::AllOrSome;
-using SlicingSync::StepsPerPrintObject;
+using Biz::Parser::PlaceholderParser;
+using Domain::FullConfigFDMPtr;
 using Domain::ModelWipeTower;
 using Domain::ObjectID;
-using Domain::FullConfigFDMPtr;
 using Domain::PartialObjectConfigFDMPtr;
-using Domain::VolumeSettings;
 using Domain::PartialVolumeConfigFDM;
 using Domain::PartialVolumeConfigFDMPtr;
-using Biz::Parser::PlaceholderParser;
+using Domain::VolumeSettings;
+using SlicingSync::AllOrSome;
+using SlicingSync::AllSteps;
+using SlicingSync::get_invalidated_steps;
+using SlicingSync::InvalidatedSteps;
+using SlicingSync::PrintAndObjectSteps;
+using SlicingSync::StepsPerPrintObject;
 using ParserConfig = Biz::Parser::IO::Config;
-using Errors = std::vector<Biz::Slicing::Error>;
+using Errors       = std::vector<Biz::Slicing::Error>;
 using Biz::Slicing::get_painting_extruders;
+using Domain::VirtualExtruder;
+using Domain::VirtualExtruderComponent;
+using Domain::VirtualExtruderGradientStop;
+using Domain::VirtualExtruders;
 
 static inline bool transform3d_lower(const Transform3d &lhs, const Transform3d &rhs) 
 {
@@ -535,7 +539,8 @@ generate_print_object_regions(
     const PartialObjectConfigFDMPtr& new_object_settings,
     const FullConfigFDMPtr& new_full_config,
     const Transform3d& trafo,
-    size_t num_extruders,
+    size_t num_physical_extruders,
+    const VirtualExtruders& virtual_extruders,
     const float xy_size_compensation,
     const std::vector<unsigned int>& painting_extruders,
     const bool has_painted_fuzzy_skin
@@ -553,19 +558,39 @@ generate_print_object_regions(
     for (const auto &range : model_layer_ranges)
         layer_ranges_regions.push_back({ range.layer_height_range, range.config });
 
-    const bool is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const Domain::ModelVolume *mv) { return mv->is_mm_painted(); });
+    const bool is_mm_painted = num_physical_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const Domain::ModelVolume *mv) { return mv->is_mm_painted(); });
     update_volume_bboxes(layer_ranges_regions, out->cached_volume_ids, model_volumes, out->trafo_bboxes, is_mm_painted ? 0.f : std::max(0.f, xy_size_compensation));
 
     std::vector<PrintRegion*> region_set;
-    auto get_create_region = [&region_set, &all_regions](const PrintRegionConfigView &config) -> PrintRegion* {
+    auto get_create_region = [&region_set, &all_regions](
+        const PrintRegionConfigView &config,
+        std::optional<unsigned int> source_virtual = std::nullopt) -> PrintRegion* {
         size_t hash = config.hash();
-        auto it = Slic3r::lower_bound_by_predicate(region_set.begin(), region_set.end(), [hash](const PrintRegion* l) {
-            return l->config_hash() < hash; });
-        if (it != region_set.end() && (*it)->config_hash() == hash && (*it)->config() == config)
+        auto it     = Slic3r::lower_bound_by_predicate(
+            region_set.begin(),
+            region_set.end(),
+            [hash, source_virtual](const PrintRegion* l)
+            {
+                if (l->config_hash() != hash) {
+                    return l->config_hash() < hash;
+                }
+
+                return l->source_virtual_extruder_id() < source_virtual;
+            }
+        );
+
+        if (it != region_set.end()
+            && (*it)->config_hash() == hash
+            && (*it)->config() == config
+            && (*it)->source_virtual_extruder_id() == source_virtual)
+        {
             return *it;
+        }
+
         // Insert into a sorted array, it has O(n) complexity, but the calling algorithm has an O(n^2*log(n)) complexity anyways.
         all_regions.emplace_back(std::make_unique<PrintRegion>(std::move(config), hash, int(all_regions.size())));
         PrintRegion *region = all_regions.back().get();
+        region->set_source_virtual_extruder_id(source_virtual);
         region_set.emplace(it, region);
         return region;
     };
@@ -596,10 +621,11 @@ generate_print_object_regions(
                             new_object_settings,
                             new_volume_settings
                         };
+
                         // Add a model volume, assign an existing region or generate a new one.
                         layer_range.volume_regions.push_back({
                             &volume, -1,
-                            get_create_region(new_config),
+                            get_create_region(new_config, new_config.source_virtual_extruder()),
                             bbox
                         });
                     } else if (volume.is_negative_volume()) {
@@ -631,7 +657,7 @@ generate_print_object_regions(
                                     // Only create new region for a modifier, which actually modifies config of it's parent.
                                     if (new_config != parent_region.region->config()) {
                                         added = true;
-                                        layer_range.volume_regions.push_back({ &volume, parent_region_id, get_create_region(new_config), bbox });
+                                        layer_range.volume_regions.push_back({ &volume, parent_region_id, get_create_region(new_config, new_config.source_virtual_extruder()), bbox });
                                     } else if (parent_model_part_id == -1 && parent_volume.is_model_part())
                                         parent_model_part_id = parent_region_id;
                                 }
@@ -645,13 +671,84 @@ generate_print_object_regions(
             }
     }
 
+    // Create PaintedRegions for each physical extruder a virtual extruder can
+    // resolve to. Both MM segmentation and remap_virtual_region_slices_to_physical
+    // need these target regions to exist.
+    for (PrintObjectRegions::LayerRangeRegions& layer_range : layer_ranges_regions) {
+        const int num_volume_regions = int(layer_range.volume_regions.size());
+        for (int volume_region_id = 0; volume_region_id < num_volume_regions; ++volume_region_id) {
+            const PrintObjectRegions::VolumeRegion& volume_region =
+                layer_range.volume_regions[volume_region_id];
+            if (!volume_region.model_volume->is_model_part()
+                && !volume_region.model_volume->is_modifier())
+            {
+                continue;
+            }
+
+            const std::optional<unsigned int> source_virtual =
+                volume_region.region->source_virtual_extruder_id();
+            if (!source_virtual.has_value()) {
+                continue;
+            }
+
+            const unsigned int virtual_extruder_id = *source_virtual;
+            // Find the matching virtual extruder definition.
+            for (const VirtualExtruder& virtual_extruder : virtual_extruders) {
+                if (virtual_extruder.id != virtual_extruder_id) {
+                    continue;
+                }
+
+                std::set<unsigned int> distinct_physical_ids;
+                if (virtual_extruder.gradient.has_value()) {
+                    for (const VirtualExtruderGradientStop& stop : virtual_extruder.gradient->stops)
+                    {
+                        distinct_physical_ids.insert(stop.extruder_id);
+                    }
+                } else {
+                    for (const VirtualExtruderComponent& component : virtual_extruder.components) {
+                        distinct_physical_ids.insert(component.extruder_id);
+                    }
+                }
+
+                for (unsigned int physical_id : distinct_physical_ids) {
+                    assert(physical_id >= 1 && physical_id <= num_physical_extruders);
+                    PrintRegionConfigView painted_region_cfg =
+                        create_mm_painted_region_config(volume_region.region->config(), static_cast<int>(physical_id));
+                    layer_range.painted_regions.push_back(
+                        {physical_id, volume_region_id, get_create_region(painted_region_cfg)}
+                    );
+                }
+
+                break;
+            }
+        }
+    }
+
     // Finally add painting regions.
     for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges_regions) {
         for (unsigned int painted_extruder_id : painting_extruders)
             for (int parent_region_id = 0; parent_region_id < int(layer_range.volume_regions.size()); ++ parent_region_id)
                 if (const PrintObjectRegions::VolumeRegion &parent_region = layer_range.volume_regions[parent_region_id]; parent_region.model_volume->is_model_part() || parent_region.model_volume->is_modifier()) {
-                    PrintRegionConfigView painted_region_cfg = create_mm_painted_region_config(parent_region.region->config(), static_cast<int>(painted_extruder_id));
-                    layer_range.painted_regions.push_back({painted_extruder_id, parent_region_id, get_create_region(painted_region_cfg)});
+                    // The virtual extruder expansion above may have already created the target region for this pair.
+                    const auto it_painted_region = std::ranges::find_if(
+                        layer_range.painted_regions,
+                        [&](const PrintObjectRegions::PaintedRegion& painted_region)
+                        {
+                            return painted_region.parent == parent_region_id
+                                && painted_region.extruder_id == painted_extruder_id;
+                        }
+                    );
+                    PrintRegion* target_region =
+                        it_painted_region != layer_range.painted_regions.end() ?
+                        it_painted_region->region :
+                        get_create_region(create_mm_painted_region_config(
+                            parent_region.region->config(),
+                            static_cast<int>(painted_extruder_id)
+                        ));
+
+                    layer_range.painted_regions.push_back(
+                        {painted_extruder_id, parent_region_id, target_region}
+                    );
                 }
         // Sort the regions by parent region::print_object_region_id() and extruder_id to help the slicing algorithm when applying MM segmentation.
         std::sort(layer_range.painted_regions.begin(), layer_range.painted_regions.end(), [&layer_range](auto &l, auto &r) {
@@ -1102,6 +1199,7 @@ struct RegionsSyncResult
 tl::expected<RegionsSyncResult, Errors> sync_regions(
     const PrintObjectPtrs& print_objects,
     const std::size_t num_extruders,
+    const VirtualExtruders& virtual_extruders,
     const FullConfigFDMPtr& new_full_config
 )
 {
@@ -1112,7 +1210,7 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
 
         const std::vector<unsigned int> painting_extruders{
             num_extruders > 1 ?
-                get_painting_extruders(*print_object.model_object(), num_extruders) :
+                get_painting_extruders(*print_object.model_object(), num_extruders, virtual_extruders) :
                 std::vector<unsigned int>{}
         };
 
@@ -1124,6 +1222,7 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
             new_full_config,
             print_object.trafo(),
             num_extruders,
+            virtual_extruders,
             print_object.is_mm_painted() ? 0.f : float(print_object.config().get<double>("xy_size_compensation")),
             painting_extruders,
             print_object.is_fuzzy_skin_painted()
@@ -1232,6 +1331,7 @@ tl::expected<ModelSyncResult, Errors> sync_model(
     Print* print,
     const Vec3d& shrinkage_compensation,
     std::size_t num_extruders,
+    const VirtualExtruders& virtual_extruders,
     bool num_extruders_changed
 )
 {
@@ -1271,7 +1371,7 @@ tl::expected<ModelSyncResult, Errors> sync_model(
     }
 
     const auto regions_sync_result{
-        sync_regions(print_objects_sync_result->objects, num_extruders, new_full_config)
+        sync_regions(print_objects_sync_result->objects, num_extruders, virtual_extruders, new_full_config)
     };
     if (!regions_sync_result) {
         return tl::unexpected{regions_sync_result.error()};
@@ -1413,6 +1513,28 @@ InvalidatedSteps sync_hw_config(
     return result;
 }
 
+InvalidatedSteps invalidate_for_virtual_extruders_change(const PrintObjectPtrs& print_objects)
+{
+    InvalidatedSteps result;
+    for (const SlicingSync::Step& step : SlicingSync::propagate(posSlice)) {
+        std::visit(
+            Domain::overloaded{
+                [&](const FDMPrintStep& print_step)
+                { std::get<FDMPrintSteps>(result.print).insert(print_step); },
+                [&](const FDMPrintObjectStep& object_step)
+                {
+                    for (PrintObject* object : print_objects) {
+                        std::get<FDMPrintObjectSteps>(result.object[object]).insert(object_step);
+                    }
+                },
+            },
+            step
+        );
+    }
+
+    return result;
+}
+
 Biz::Slicing::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
@@ -1440,6 +1562,10 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
         m_config.hw_config().material_slot_count()
         != num_extruders
     };
+
+    const VirtualExtruders& virtual_extruders = new_full_config_ptr->virtual_extruders();
+    const bool virtual_extruders_differ       = virtual_extruders != m_virtual_extruders;
+    m_virtual_extruders                       = virtual_extruders;
 
     const InvalidatedSteps hw_config_invalidated_steps{sync_hw_config(
         m_objects,
@@ -1470,6 +1596,7 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
         this,
         shrinkage_compensation,
         num_extruders,
+        virtual_extruders,
         num_extruders_changed
     )};
     if (!model_sync_result) {
@@ -1537,13 +1664,20 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
         print_object->set_shared_regions(new_regions);
     }
 
+    const InvalidatedSteps virtual_extruders_invalidated_steps{
+        virtual_extruders_differ ?
+            invalidate_for_virtual_extruders_change(m_objects) :
+            InvalidatedSteps{}
+    };
+
     const InvalidatedSteps invalidated_steps{SlicingSync::merge(
         {hw_config_invalidated_steps,
          wipe_tower_invalidated_steps,
          custom_gcode_invalidated_steps,
          model_sync_result->invalidated_steps,
          changed_objects_invalidated_steps,
-         deleted_objects_invalidated_steps}
+         deleted_objects_invalidated_steps,
+         virtual_extruders_invalidated_steps}
     )};
 
     if (can_have_wipe_tower()) {

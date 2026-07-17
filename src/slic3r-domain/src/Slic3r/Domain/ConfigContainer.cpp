@@ -30,7 +30,8 @@ ConfigPack ConfigContainer::build_print_config() const
 {
     ConfigPack pack = m_preset.config();
     if (auto* fdm = std::get_if<ConfigPackFDM>(&pack)) {
-        fdm->project = m_project_settings;
+        fdm->project           = m_project_settings;
+        fdm->virtual_extruders = m_virtual_extruders;
     }
     return pack;
 }

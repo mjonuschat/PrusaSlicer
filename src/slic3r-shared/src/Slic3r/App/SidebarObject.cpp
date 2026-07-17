@@ -67,6 +67,9 @@ public:
 
         on_color_selected = [this](std::size_t index)
         {
+            // Translate the item position to the extruder ID.
+            const int extruder_id = this->extruder_id_at(index);
+
             const Biz::Scene::ObjectSelection& selection{
                 m_project_interactor.scene_interactor().object_selection()
             };
@@ -86,7 +89,7 @@ public:
                     };
                     m_project_interactor.preset_interactor().set_item_value(
                         item,
-                        Domain::ConfigValue{static_cast<int>(index)}
+                        Domain::ConfigValue{extruder_id}
                     );
                 } else if (selection.mode == Biz::Scene::SelectionMode::Volume) {
                     const Domain::ModelVolume* model_volume{
@@ -100,9 +103,12 @@ public:
                     };
                     m_project_interactor.preset_interactor().set_item_value(
                         item,
-                        Domain::ConfigValue{static_cast<int>(index)}
+                        Domain::ConfigValue{extruder_id}
                     );
-                    m_project_interactor.preset_interactor().set_item_override(item, index != 0);
+                    m_project_interactor.preset_interactor().set_item_override(
+                        item,
+                        extruder_id != 0
+                    );
                 }
             }
         };
@@ -192,7 +198,14 @@ public:
         }
 
         if (extruder_ids.size() == 1) {
-            set_current_index(*extruder_ids.begin());
+            const int extruder_id = *extruder_ids.begin();
+
+            // Translate the extruder ID to the item position.
+            const std::size_t item_index =
+                this->index_of_extruder_id(extruder_id)
+                    .value_or(static_cast<std::size_t>(std::max(extruder_id, 0)));
+
+            set_current_index(item_index);
         } else {
             set_current_index(std::nullopt);
         }

@@ -186,6 +186,8 @@ PlaterScenePresenter::PlaterScenePresenter(
         .add_listener<Biz::IColorsChangedListener>(this);
     m_project_interactor.preset_interactor()
         .add_listener<IPresetChangedListener>(this);
+    m_project_interactor.virtual_extruder_interactor()
+        .add_listener<Biz::IVirtualExtrudersChangedListener>(this);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -416,6 +418,15 @@ void PlaterScenePresenter::on_preset_value_changed(
         return;
     }
 
+    m_volume_materials_dirty = true;
+    invoke_bed_visually_changed(project_id);
+}
+
+void PlaterScenePresenter::on_virtual_extruders_changed(
+    SelectionId project_id,
+    SelectionId config_container_id
+)
+{
     m_volume_materials_dirty = true;
     invoke_bed_visually_changed(project_id);
 }
@@ -695,19 +706,21 @@ void PlaterScenePresenter::update_volume_materials()
                             Scene::color_from_extruder_slot(slot_colors, *vol, *config_container);
 
                         if (vol->is_model_part() && vol->is_mm_painted()) {
-                            std::vector<ColorRGBA> slot_colors_rgba =
+                            const std::vector<ColorRGBA> slot_colors_rgba =
                                 Biz::Algorithms::Color::to_rgba(slot_colors);
-                            for (ColorRGBA& slot_color : slot_colors_rgba) {
-                                update_printable_color(slot_color, inst->printable);
-                            }
-
-                            ColorRGBA default_color = extruder_color.value_or(
+                            const ColorRGBA default_color = extruder_color.value_or(
                                 Scene::VOLUME_COLORS.at(ModelVolumeType::MODEL_PART)
                             );
-                            update_printable_color(default_color, inst->printable);
 
-                            painted_palette_colors =
-                                MMPainting::create_palette_colors(default_color, slot_colors_rgba);
+                            painted_palette_colors = MMPainting::create_palette_colors(
+                                default_color,
+                                slot_colors_rgba,
+                                config_container->virtual_extruders()
+                            );
+
+                            for (ColorRGBA& palette_color : *painted_palette_colors) {
+                                update_printable_color(palette_color, inst->printable);
+                            }
                         } else {
                             part_color = extruder_color;
                             if (part_color) {

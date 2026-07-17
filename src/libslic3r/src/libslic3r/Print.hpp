@@ -38,6 +38,7 @@
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/VirtualExtruder.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -120,6 +121,7 @@ public:
     // Identifier of this PrintRegion in the list of Print::m_print_regions.
     int                         print_region_id() const throw() { return m_print_region_id; }
     int                         print_object_region_id() const throw() { return m_print_object_region_id; }
+    std::optional<unsigned int> source_virtual_extruder_id() const throw() { return m_source_virtual_extruder_id; }
 	// 1-based extruder identifier for this region and role.
 	unsigned int 				extruder(FlowRole role) const;
     Flow                        flow(const PrintObject &object, FlowRole role, double layer_height, bool first_layer = false) const;
@@ -133,10 +135,12 @@ public:
     static void collect_object_printing_extruders(
         const PrintRegionConfigView& config,
         const bool has_brim,
-        std::vector<unsigned int>& object_extruders
+        std::vector<unsigned int>& object_extruders,
+        const Domain::VirtualExtruders& virtual_extruders = {}
     );
 
     void set_print_region_id(const int id) {m_print_region_id = id;}
+    void set_source_virtual_extruder_id(std::optional<unsigned int> id) throw() { m_source_virtual_extruder_id = id; }
 
     template <typename T>
     T extruder_config_value(const std::string& key, FlowRole role) const {
@@ -156,9 +160,14 @@ private:
     int                m_print_region_id { -1 };
     int                m_print_object_region_id { -1 };
     int                m_ref_cnt { 0 };
+    std::optional<unsigned int> m_source_virtual_extruder_id;
 };
 
-inline bool operator==(const PrintRegion &lhs, const PrintRegion &rhs) { return lhs.config() == rhs.config(); }
+inline bool operator==(const PrintRegion &lhs, const PrintRegion &rhs)
+{
+    return lhs.config() == rhs.config()
+        && lhs.source_virtual_extruder_id() == rhs.source_virtual_extruder_id();
+}
 inline bool operator!=(const PrintRegion &lhs, const PrintRegion &rhs) { return ! (lhs == rhs); }
 
 // For const correctness: Wrapping a vector of non-const pointers as a span of const pointers.
@@ -631,6 +640,16 @@ public:
     Flow                brim_flow() const;
     Flow                skirt_flow() const;
 
+    unsigned int num_physical_extruders() const
+    {
+        return static_cast<unsigned int>(m_config.hw_config().material_slot_count());
+    }
+
+    const Domain::VirtualExtruders& virtual_extruders() const
+    {
+        return m_virtual_extruders;
+    }
+
     std::vector<unsigned int> object_extruders() const;
     std::vector<unsigned int> support_material_extruders() const;
     std::vector<unsigned int> extruders() const;
@@ -712,6 +731,7 @@ public:
 
     PrintObjectPtrs m_objects;
     PrintRegionPtrs m_print_regions;
+    Domain::VirtualExtruders m_virtual_extruders;
 
     // Ordered collections of extrusion paths to build skirt loops and brim.
     ExtrusionEntityCollection               m_skirt;

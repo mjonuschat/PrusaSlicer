@@ -36,7 +36,8 @@ namespace Tests {
         Slic3r::Domain::CustomGCodesOnBeds custom_gcodes;
 
         boost::optional<Semver> version;
-        Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes);
+        Slic3r::Biz::VirtualExtrudersConfig virtual_extruders_config;
+        Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes, virtual_extruders_config);
 
         return {model, std::move(config), std::move(wipe_towers)};
     }

@@ -1306,6 +1306,7 @@ const Domain::Preset::HwPrinterConfig& ConfigView::hw_config() const {
 
 ConfigValue ConfigView::resolve_value(const std::string& key) const
 {
+    ASSERT(!m_finalized);
     for (auto rev_it = m_partial_configs.rbegin(); rev_it != m_partial_configs.rend(); ++rev_it) {
         const PartialConfigPtr& partial_config{*rev_it};
         if (auto result{partial_config->get_value(key)}) {

@@ -1100,6 +1100,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.cpp
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
+        include/Slic3r/Biz/Format/VirtualExtruder.hpp
+        src/Slic3r/Biz/Format/VirtualExtruder.cpp
 
         include/Slic3r/Biz/FileLoadingLogic.hpp
         src/Slic3r/Biz/FileLoadingLogic.cpp
@@ -1122,10 +1124,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ArrangeInteractor.cpp
         include/Slic3r/Biz/ClipboardInteractor.hpp
         src/Slic3r/Biz/ClipboardInteractor.cpp
+        include/Slic3r/Biz/VirtualExtruderInteractor.hpp
+        src/Slic3r/Biz/VirtualExtruderInteractor.cpp
 
         include/Slic3r/Biz/IMdb.hpp
         include/Slic3r/Biz/IColorsChangedListener.hpp
         include/Slic3r/Biz/ProjectSettingsInteractor.hpp
+        include/Slic3r/Biz/IVirtualExtrudersChangedListener.hpp
+        include/Slic3r/Biz/VirtualExtrudersConfig.hpp
         src/Slic3r/Biz/ProjectSettingsInteractor.cpp
 
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp

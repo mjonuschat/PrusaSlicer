@@ -9,6 +9,7 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/VirtualExtruder.hpp"
 
 namespace Slic3r::Domain {
 class ModelVolume;
@@ -54,11 +55,13 @@ create_mm_painted_volume_geometry(Render::Device& device, const Domain::ModelVol
  *
  * @param default_color Color of unpainted triangles, i.e. of the extruder assigned to the volume.
  * @param slot_colors Colors of the material slots indexed from 0; slot k becomes paint state k + 1.
+ * @param virtual_extruders Virtual extruders of the printer group the volume belongs to.
  * @return Palette indexed by paint state, always TriangleSelector::TRIANGLE_STATE_TYPE_COUNT entries long.
  */
 std::vector<Domain::ColorRGBA> create_palette_colors(
     const Domain::ColorRGBA& default_color,
-    const std::vector<Domain::ColorRGBA>& slot_colors
+    const std::vector<Domain::ColorRGBA>& slot_colors,
+    const Domain::VirtualExtruders& virtual_extruders
 );
 
 /**

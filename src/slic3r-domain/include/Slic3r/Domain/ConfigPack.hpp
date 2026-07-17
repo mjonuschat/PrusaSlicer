@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/IConfigPackFDMViewer.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/VirtualExtruder.hpp"
 
 namespace Slic3r::Domain {
 
@@ -16,6 +17,7 @@ struct ConfigPackFDM : public IConfigPackFDMViewer
     std::vector<Domain::ToolPrintSettings> tool;
     std::vector<Domain::FilamentSettings> filament;
     Domain::ProjectSettings project;
+    Domain::VirtualExtruders virtual_extruders;
 
     bool operator==(const ConfigPackFDM& other) const;
 

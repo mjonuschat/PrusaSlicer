@@ -176,6 +176,40 @@ Bed* Project::find_bed_by_id(size_t id)
     return find_by_id(m_bed_container.beds(), id);
 }
 
+const ConfigContainer* Project::find_config_container_by_element(const ElementRef& element) const
+{
+    if (element.is_wipe_tower()) {
+        return this->find_config_container_by_bed_instance_id(
+            element.wipe_tower_id.bed_instance_id
+        );
+    }
+
+    const ModelInstance* model_instance =
+        this->find_instance_by_id(element.object_id, element.instance_id);
+    if (model_instance == nullptr) {
+        return nullptr;
+    }
+
+    return this->find_config_container(model_instance->get_last_bed().config_container_id);
+}
+
+ConfigContainer* Project::find_config_container_by_element(const ElementRef& element)
+{
+    if (element.is_wipe_tower()) {
+        return this->find_config_container_by_bed_instance_id(
+            element.wipe_tower_id.bed_instance_id
+        );
+    }
+
+    ModelInstance* model_instance =
+        this->find_instance_by_id(element.object_id, element.instance_id);
+    if (model_instance == nullptr) {
+        return nullptr;
+    }
+
+    return find_config_container(model_instance->get_last_bed().config_container_id);
+}
+
 namespace {
 
 void visit(

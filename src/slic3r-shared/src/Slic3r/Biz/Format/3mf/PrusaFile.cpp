@@ -11,6 +11,7 @@
 
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Format/ProjectFileConstants.hpp"
+#include "Slic3r/Biz/Format/VirtualExtruder.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectMetadataJson.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
@@ -1635,6 +1636,27 @@ void write(
         cc_json["beds"] = beds_json;
 
         cc_json[PRESET_METADATA] = nlohmann::ordered_json(config_container->selected_preset().metadata());
+
+        if (!config_container->virtual_extruders().empty()) {
+            std::vector<std::string> extruder_colors = config_container->project_settings()
+                                                           .items.opt("extruder_colour")
+                                                           .get<std::vector<std::string>>();
+            extruder_colors.resize(
+                config_container->selected_preset().hw_config.material_slot_count()
+            );
+            for (std::string& color : extruder_colors) {
+                if (color.empty()) {
+                    color = "#808080";
+                }
+            }
+
+            cc_json[VIRTUAL_EXTRUDERS] =
+                Biz::Format::VirtualExtruder::serialize_virtual_extruders_to_project_json(
+                    extruder_colors,
+                    config_container->virtual_extruders()
+                );
+        }
+
         const auto& cfg_var = config_container->build_print_config();
         if (std::holds_alternative<Domain::ConfigPackFDM>(cfg_var))
             cc_json[CONFIGURATION] = nlohmann::ordered_json(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)));
@@ -1685,6 +1707,14 @@ void load(
         } else {
             config_containers_data.back().preset = std::move(preset_and_config->preset_metadata);
             config_containers_data.back().config_pack = std::move(preset_and_config->config_pack);
+        }
+
+        if (config_container.contains(VIRTUAL_EXTRUDERS)) {
+            const nlohmann::json virtual_extruders_json = config_container[VIRTUAL_EXTRUDERS];
+            config_containers_data.back().virtual_extruders_config.virtual_extruders =
+                Biz::Format::VirtualExtruder::deserialize_virtual_extruders_from_project_json(
+                    virtual_extruders_json
+                );
         }
 
         if (config_container.contains("beds")) {

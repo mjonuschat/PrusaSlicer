@@ -23,6 +23,7 @@
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/LayerHeight.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
 #include "Slic3r/Exception.hpp"
@@ -53,6 +54,7 @@
 #include <float.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <set>
 #include <string>
@@ -75,16 +77,23 @@ using Biz::Parser::PlaceholderParser;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
-using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
 using Slic3r::Biz::Slicing::GeneratedSupportPoint;
 using Slic3r::Biz::Slicing::GeneratedSupportPointsSnapshot;
 using Slic3r::Biz::Slicing::IThumbnailImageGenerator;
 using Slic3r::Biz::Slicing::ObjectSupportPoints;
 using Slic3r::Biz::Slicing::SliceUntilStep;
+using Slic3r::Domain::ConfigItem;
+using Slic3r::Domain::ConfigOverrides;
+using Slic3r::Domain::Model;
+using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::ObjectID;
 using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SupportMode;
 using Slic3r::Domain::VolumeSettings;
+
+using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
+using Slic3r::Biz::Algorithms::VirtualExtruder::is_virtual_extruder;
 
 template class PrintState<FDMPrintStep, psCount>;
 template class PrintState<FDMPrintObjectStep, posCount>;
@@ -156,6 +165,88 @@ check_extruder_offset(const Domain::Model& model, const Domain::ConfigPackFDM& c
     return std::nullopt;
 }
 
+/**
+ * @brief Report infill roles printed by a different virtual extruder than the perimeter.
+ *
+ * Checked per settings scope (print -> object -> volume or height range), violating
+ * role keys are appended to result.
+ */
+static void check_virtual_extruder_roles(
+    const Model& model,
+    const ConfigPackFDM& config,
+    std::vector<std::string>& result
+)
+{
+    using ExtruderIdsByRole = std::array<int, 3>;
+
+    const std::array<std::string, 3> extruder_role_keys{
+        "perimeter_extruder",
+        "infill_extruder",
+        "solid_infill_extruder"
+    };
+
+    const auto resolve_extruder_ids =
+        [&](const ConfigOverrides& overrides, ExtruderIdsByRole parent_extruder_ids)
+    {
+        for (size_t i = 0; i < extruder_role_keys.size(); ++i) {
+            const std::string& extruder_role_key              = extruder_role_keys[i];
+            const std::optional<ConfigItem> extruder_override = overrides.get(extruder_role_key);
+
+            if (extruder_override.has_value()) {
+                parent_extruder_ids[i] = extruder_override->get<int>();
+            }
+        }
+
+        return parent_extruder_ids;
+    };
+
+    const auto check_extruder_ids = [&](const ExtruderIdsByRole& extruder_ids)
+    {
+        const int first_extruder_id = extruder_ids[0];
+
+        for (size_t i = 1; i < extruder_role_keys.size(); ++i) {
+            const int extruder_id = extruder_ids[i];
+
+            if (extruder_id != first_extruder_id
+                && is_virtual_extruder(
+                    static_cast<unsigned int>(extruder_id),
+                    config.virtual_extruders
+                ))
+            {
+                result.push_back(extruder_role_keys[i]);
+            }
+        }
+    };
+
+    ExtruderIdsByRole print_extruder_ids;
+    for (size_t i = 0; i < extruder_role_keys.size(); ++i) {
+        print_extruder_ids[i] = config.print.items.opt(extruder_role_keys[i]).get<int>();
+    }
+
+    check_extruder_ids(print_extruder_ids);
+
+    for (const ModelObject* object : model.objects) {
+        const ExtruderIdsByRole object_extruder_ids =
+            resolve_extruder_ids(object->object_settings.overrides, print_extruder_ids);
+
+        check_extruder_ids(object_extruder_ids);
+
+        for (const ModelVolume* volume : object->volumes) {
+            check_extruder_ids(
+                resolve_extruder_ids(volume->volume_settings.overrides, object_extruder_ids)
+            );
+        }
+
+        for (const VolumeSettings& height_range_settings :
+             object->layer_config_ranges | std::views::values)
+        {
+            check_extruder_ids(
+                resolve_extruder_ids(height_range_settings.overrides, object_extruder_ids)
+            );
+        }
+    }
+}
+
 static std::optional<Biz::Slicing::Error> check_extruders(
     const Domain::Model& model,
     const Domain::ConfigPackFDM& config,
@@ -164,16 +255,25 @@ static std::optional<Biz::Slicing::Error> check_extruders(
 {
     const int slot_count{static_cast<int>(hw_config.material_slot_count())};
 
+    const auto accepts_extruder = [&](const ConfigItem& item, const int min_value)
+    {
+        return in_range(item, min_value, slot_count)
+            || is_virtual_extruder(
+                   static_cast<unsigned int>(item.get<int>()),
+                   config.virtual_extruders
+            );
+    };
+
     std::vector<std::string> result;
 
     for (const Domain::ModelObject* object : model.objects) {
         const auto object_extruder{object->object_settings.items.opt("extruder")};
-        if (!in_range(object_extruder, 0, slot_count)) {
+        if (!accepts_extruder(object_extruder, 0)) {
             result.push_back("extruder");
         }
         for (const Domain::ModelVolume* volume : object->volumes) {
             const auto volume_extruder{volume->volume_settings.overrides.get("extruder")};
-            if (volume_extruder && !in_range(*volume_extruder, 0, slot_count)) {
+            if (volume_extruder && !accepts_extruder(*volume_extruder, 0)) {
                 result.push_back("extruder");
             }
         }
@@ -182,25 +282,25 @@ static std::optional<Biz::Slicing::Error> check_extruders(
              object->layer_config_ranges | std::views::values)
         {
             const auto height_range_extruder{height_range_settings.overrides.get("extruder")};
-            if (height_range_extruder && !in_range(*height_range_extruder, 0, slot_count)) {
+            if (height_range_extruder && !accepts_extruder(*height_range_extruder, 0)) {
                 result.push_back("extruder");
             }
         }
     }
 
     for (const char* key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"}) {
-        if (!in_range(config.print.items.opt(key), 1, slot_count)) {
+        if (!accepts_extruder(config.print.items.opt(key), 1)) {
             result.push_back(key);
         }
 
         for (const Domain::ModelObject* object : model.objects) {
             const auto object_extruder{object->object_settings.overrides.get(key)};
-            if (object_extruder && !in_range(*object_extruder, 1, slot_count)) {
+            if (object_extruder && !accepts_extruder(*object_extruder, 1)) {
                 result.push_back(key);
             }
             for (const Domain::ModelVolume* volume : object->volumes) {
                 const auto volume_extruder{volume->volume_settings.overrides.get(key)};
-                if (volume_extruder && !in_range(*volume_extruder, 1, slot_count)) {
+                if (volume_extruder && !accepts_extruder(*volume_extruder, 1)) {
                     result.push_back(key);
                 }
             }
@@ -209,12 +309,14 @@ static std::optional<Biz::Slicing::Error> check_extruders(
                  object->layer_config_ranges | std::views::values)
             {
                 const auto height_range_extruder{height_range_settings.overrides.get(key)};
-                if (height_range_extruder && !in_range(*height_range_extruder, 1, slot_count)) {
+                if (height_range_extruder && !accepts_extruder(*height_range_extruder, 1)) {
                     result.push_back(key);
                 }
             }
         }
     }
+
+    check_virtual_extruder_roles(model, config, result);
 
     if (!in_range(config.print.items.opt("wipe_tower_extruder"), 0, slot_count)) {
         result.push_back("wipe_tower_extruder");
@@ -316,7 +418,7 @@ Biz::Slicing::ApplyStatus::Status Print::update(
         const std::vector<unsigned> extruder_candidates{
             metadata.hw_config.material_slot_count() == 1 ?
                 std::vector<unsigned>{0} :
-                Biz::Slicing::get_extruder_candidates(model, config_fdm, bed)
+                Biz::Slicing::get_extruder_candidates(model, config_fdm, bed, config_fdm.virtual_extruders)
         };
         // Backend needs extruder_candidates for MMU, but in Biz/App extruder candidates
         // has to correspond to tool count
@@ -1132,7 +1234,7 @@ double Print::skirt_first_layer_height() const
 
 Flow Print::brim_flow() const
 {
-    const int extruder_id{m_print_regions.front()->config().get<int>("perimeter_extruder") - 1};
+    const int extruder_id{static_cast<int>(m_print_regions.front()->extruder(frPerimeter)) - 1};
     ASSERT(extruder_id >= 0);
 
     Domain::FloatOrPercentage width = m_config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_extrusion_width").at(extruder_id);

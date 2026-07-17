@@ -26,6 +26,7 @@
 #include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/IColorsChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/IVirtualExtrudersChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 
@@ -60,6 +61,7 @@ class PlaterScenePresenter :
     public Biz::ISLAResultCacheChangedListener,
     public Biz::IProjectsChangedListener,
     public Biz::IColorsChangedListener,
+    public Biz::IVirtualExtrudersChangedListener,
     public Biz::Preset::IPresetChangedListener
 {
 public:
@@ -186,6 +188,11 @@ public:
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,
         const Domain::ConfigItem& item
+    ) override;
+
+    void on_virtual_extruders_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
     ) override;
 
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }

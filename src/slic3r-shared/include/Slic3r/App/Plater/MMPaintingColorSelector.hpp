@@ -56,7 +56,7 @@ class ColorSelector : public Yoga::Item
 public:
     ColorSelector(ImColor mouse_left_color, ImColor mouse_right_color);
 
-    void set_colors(const std::vector<Domain::ColorRGBA>& colors);
+    void set_colors(const PaintingPalette& palette);
 
     void select_color_index(SelectedColor color, std::size_t index);
 

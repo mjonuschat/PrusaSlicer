@@ -386,6 +386,7 @@ TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
+        Biz::VirtualExtrudersConfig virtual_extruders_config;
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
         Slic3rLegacy::load_3mf_legacy(
             test_file_path.string().c_str(),
@@ -395,7 +396,8 @@ TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
             true,
             prusaslicer_generator_version,
             wipe_towers,
-            custom_gcodes
+            custom_gcodes,
+            virtual_extruders_config
         );
 
         // Hw printer config is NOT loaded, this mock config must match, what is in the 3mf.
@@ -428,8 +430,9 @@ TEST_CASE("Legacy SLA 3MF roundtrip", "[config]")
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
+        Biz::VirtualExtrudersConfig virtual_extruders_config;
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
-        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes, virtual_extruders_config);
 
         // Hw printer config is NOT loaded, this mock config must match, what is in the 3mf.
         const Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(5, 0.4)};

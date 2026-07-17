@@ -32,12 +32,15 @@ using Slic3r::App::Scene::SceneNodeTag;
 using Slic3r::Biz::Algorithms::TriangleSelector;
 using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::Scene::SceneInteractor;
+using Slic3r::Biz::Scene::SelectionState;
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::Point;
 using Slic3r::Domain::Polyline;
+using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::Transform3d;
@@ -1165,9 +1168,12 @@ ColorRGBA PaintOnGizmoBase::create_default_painting_color(const ModelVolume& mod
     return Algorithms::Color::saturate(ColorRGBA::WHITE(), 0.25f);
 }
 
-std::vector<ColorRGBA> PaintOnGizmoBase::create_painting_colors() const
+PaintingPalette PaintOnGizmoBase::create_painting_colors() const
 {
-    return {ColorRGBA(0.47f, 0.47f, 1.f, 1.f), ColorRGBA(1.f, 0.44f, 0.44f, 1.f)};
+    return {
+        {ColorRGBA(0.47f, 0.47f, 1.f, 1.f), 1},
+        {ColorRGBA(1.f, 0.44f, 0.44f, 1.f), 2},
+    };
 }
 
 ColorRGBA PaintOnGizmoBase::get_cursor_sphere_left_button_color() const
@@ -1327,25 +1333,23 @@ void PaintOnGizmoBase::render_scene(Render::CommandBuffer& cmd_buffer)
 
 bool PaintOnGizmoBase::enabled() const
 {
-    const Biz::Scene::ObjectSelection& selection =
-        m_project_interactor.scene_interactor().object_selection();
-    const bool whole_instance{selection.state() == Biz::Scene::SelectionState::WholeInstance};
+    const ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+    if (selection.state() != SelectionState::WholeInstance) {
+        return false;
+    }
 
-    const Domain::SelectionId config_container_id{
-        m_project_interactor.selected_config_container_id()
-    };
-    const Domain::Project& project{
+    const Project& project{
         m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
     };
-    const Domain::ConfigContainer* config_container{
-        project.find_config_container(config_container_id)
-    };
+
+    const ConfigContainer* config_container =
+        project.find_config_container_by_element(selection.elements.front());
+
     if (config_container == nullptr) {
         return false;
     }
-    const bool is_fdm{config_container->print_technology() == Domain::PrinterTechnology::FFF};
 
-    return whole_instance && is_fdm;
+    return config_container->print_technology() == PrinterTechnology::FFF;
 }
 
 void PaintOnGizmoBase::provide_gizmo_controller(Scene::IGizmoController& gizmo_controller)

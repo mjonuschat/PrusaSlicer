@@ -39,6 +39,12 @@ struct BedInstancesId : public Id
     using Id::Id;
 };
 
-using ChannelId = std::variant<TriangleMeshId, ObjectId, ConfigContainerId, BedInstancesId>;
+struct VirtualExtrudersId : public Id
+{
+    using Id::Id;
+};
+
+using ChannelId =
+    std::variant<TriangleMeshId, ObjectId, ConfigContainerId, BedInstancesId, VirtualExtrudersId>;
 
 } // namespace Slic3r::App::Undo

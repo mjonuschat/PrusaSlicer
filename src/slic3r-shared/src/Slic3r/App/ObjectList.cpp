@@ -1686,13 +1686,17 @@ void ObjectList::render_extruder_marker(
 
         std::set<unsigned> extruder_candidates;
         if (object) {
-            extruder_candidates =
-                Biz::Slicing::get_object_extruder_candidates(*object, config_pack_viewer);
+            extruder_candidates = Biz::Slicing::get_object_extruder_candidates(
+                *object,
+                config_pack_viewer,
+                config_container->virtual_extruders()
+            );
         } else if (volume) {
             extruder_candidates = Biz::Slicing::get_volume_extruder_candidates(
                 volume->volume_settings,
                 volume->get_object()->object_settings,
-                config_pack_viewer.get_print()
+                config_pack_viewer.get_print(),
+                config_container->virtual_extruders()
             );
         }
         if (extruder_candidates.empty()) {

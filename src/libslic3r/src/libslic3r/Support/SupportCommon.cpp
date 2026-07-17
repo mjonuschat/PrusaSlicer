@@ -84,7 +84,7 @@ void remove_bridges_from_contacts(
         // Surface supporting this layer, expanded by 0.5 * nozzle_diameter, as we consider this kind of overhang to be sufficiently supported.
         Polygons lower_grown_slices = expand(lower_layer.lslices,
             //FIXME to mimic the decision in the perimeter generator, we should use half the external perimeter width.
-            0.5f * float(scale_(Biz::Slicing::get_nozzle_diameter(print_config.hw_config(), layerm.region().config().get<int>("perimeter_extruder")-1))),
+            0.5f * float(scale_(Biz::Slicing::get_nozzle_diameter(print_config.hw_config(), layerm.region().extruder(frPerimeter) - 1))),
             SUPPORT_SURFACES_OFFSET_PARAMETERS);
         // Collect perimeters of this layer.
         //FIXME split_at_first_point() could split a bridge mid-way

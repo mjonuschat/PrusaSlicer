@@ -14,6 +14,7 @@
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
+
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::Algorithms;
@@ -466,11 +467,9 @@ void MultiMaterialPaintingDialog::set_split_triangles_value(const bool split_tri
     m_split_triangles_toggle->set_checked(split_triangles);
 }
 
-void MultiMaterialPaintingDialog::set_painting_colors(
-    const std::vector<Domain::ColorRGBA>& colors
-)
+void MultiMaterialPaintingDialog::set_painting_colors(const PaintingPalette& palette)
 {
-    m_color_selector->set_colors(colors);
+    m_color_selector->set_colors(palette);
 }
 
 void MultiMaterialPaintingDialog::switch_colors()

@@ -58,6 +58,7 @@ namespace pt = boost::property_tree;
 #include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
 #include "Slic3r/Biz/Utils/XmlEscape.hpp"
 #include "Slic3r/Biz/Config/Legacy/LegacyCustomGCodesList.hpp"
+#include "Slic3r/Biz/Format/VirtualExtruder.hpp"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
@@ -78,6 +79,8 @@ using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
 using Slic3r::Domain::ConfigPackSLA;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::Preset::HwPrinterConfig;
+using Slic3r::Domain::VirtualExtruders;
 
 using namespace Slic3r::Biz;
 
@@ -769,7 +772,8 @@ namespace Slic3rLegacy {
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
             Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+            VirtualExtrudersConfig& out_virtual_extruders_config
         );
         unsigned int version() const { return m_version; }
         boost::optional<Semver> prusaslicer_generator_version() const { return m_prusaslicer_generator_version; }
@@ -794,7 +798,8 @@ namespace Slic3rLegacy {
             LegacyPresetMetadata& preset_metadata,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+            VirtualExtrudersConfig& out_virtual_extruders_config
         );
         bool _extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
@@ -806,6 +811,8 @@ namespace Slic3rLegacy {
         void _extract_sla_drain_holes_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
         Slic3r::Domain::CustomGCodesOnBeds _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
+
+        VirtualExtrudersConfig _extract_virtual_extruders_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
         Slic3r::Domain::WipeTowersOnBeds _extract_wipe_tower_information_from_archive(
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
@@ -931,7 +938,8 @@ namespace Slic3rLegacy {
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        VirtualExtrudersConfig& out_virtual_extruders_config
     )
     {
         m_version = 0;
@@ -958,7 +966,7 @@ namespace Slic3rLegacy {
         m_start_part_path = MODEL_FILE; // set default value for invalid .rel file
         clear_errors();
 
-        return _load_model_from_file(filename, model, config, preset_metadata, config_substitutions, wipe_towers, custom_gcodes);
+        return _load_model_from_file(filename, model, config, preset_metadata, config_substitutions, wipe_towers, custom_gcodes, out_virtual_extruders_config);
     }
 
     void _3MF_Importer::_destroy_xml_parser()
@@ -986,7 +994,8 @@ namespace Slic3rLegacy {
         LegacyPresetMetadata& preset_metadata,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        VirtualExtrudersConfig& out_virtual_extruders_config
     )
     {
         mz_zip_archive archive;
@@ -1098,6 +1107,10 @@ namespace Slic3rLegacy {
                 else if (boost::algorithm::iequals(name, CUSTOM_GCODE_PER_PRINT_Z_FILE)) {
                     // extract slic3r layer config ranges file
                     custom_gcodes = _extract_custom_gcode_per_print_z_from_archive(archive, stat);
+                }
+                else if (boost::algorithm::iequals(name, std::string(Format::VirtualExtruder::CONFIG_FILE))) {
+                    // extract virtual extruders file
+                    out_virtual_extruders_config = _extract_virtual_extruders_from_archive(archive, stat);
                 }
                 else if (boost::algorithm::iequals(name, WIPE_TOWER_INFORMATION_FILE)) {
                     // extract wipe tower information file
@@ -1897,6 +1910,35 @@ namespace Slic3rLegacy {
         }
 
         return true;
+    }
+
+    VirtualExtrudersConfig _3MF_Importer::_extract_virtual_extruders_from_archive(
+        mz_zip_archive& archive,
+        const mz_zip_archive_file_stat& stat
+    )
+    {
+        if (stat.m_uncomp_size == 0) {
+            return {};
+        }
+
+        std::string buffer(static_cast<size_t>(stat.m_uncomp_size), '\0');
+        if (!mz_zip_reader_extract_to_mem(
+                &archive,
+                stat.m_file_index,
+                buffer.data(),
+                buffer.size(),
+                0
+            ))
+        {
+            add_error(
+                "Error reading "
+                + std::string(Format::VirtualExtruder::CONFIG_FILE)
+                + " from archive"
+            );
+            return {};
+        }
+
+        return Format::VirtualExtruder::deserialize_virtual_extruders_from_json(buffer);
     }
 
     Slic3r::Domain::CustomGCodesOnBeds _3MF_Importer::_extract_custom_gcode_per_print_z_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
@@ -3098,13 +3140,14 @@ namespace Slic3rLegacy {
         bool save_model_to_file(
             const std::string& filename,
             const Domain::Model& model,
-            const std::optional<ConfigPack>& config,
-            const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
+            const ConfigPack& config,
+            const HwPrinterConfig& hw_config,
             bool fullpath_sources,
             const Domain::Image* thumbnail_data,
             bool zip64,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+            const VirtualExtruders& virtual_extruders
         );
         static void add_transformation(std::stringstream &stream, const Transform3d &tr);
     private:
@@ -3112,11 +3155,12 @@ namespace Slic3rLegacy {
         bool _save_model_to_file(
             const std::string& filename,
             const Domain::Model& model,
-            const std::optional<ConfigPack>& config,
-            const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
+            const ConfigPack& config,
+            const Domain::Preset::HwPrinterConfig& hw_config,
             const Domain::Image* thumbnail_data,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+            const VirtualExtruders& virtual_extruders
         );
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const Domain::Image& thumbnail_data);
@@ -3134,34 +3178,37 @@ namespace Slic3rLegacy {
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Domain::Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes, const std::optional<ConfigPack>& config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
+        bool _add_virtual_extruders_file_to_archive(mz_zip_archive& archive, const VirtualExtruders& virtual_extruders, const ConfigPack& config, const HwPrinterConfig& hw_config);
     };
 
     bool _3MF_Exporter::save_model_to_file(
         const std::string& filename,
         const Domain::Model& model,
-        const std::optional<ConfigPack>& config,
-        const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
+        const ConfigPack& config,
+        const Domain::Preset::HwPrinterConfig& hw_config,
         bool fullpath_sources,
         const Domain::Image* thumbnail_data,
         bool zip64,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        const VirtualExtruders& virtual_extruders
     )
     {
         clear_errors();
         m_fullpath_sources = fullpath_sources;
         m_zip64 = zip64;
-        return _save_model_to_file(filename, model, config, hw_config, thumbnail_data, wipe_towers, custom_gcodes);
+        return _save_model_to_file(filename, model, config, hw_config, thumbnail_data, wipe_towers, custom_gcodes, virtual_extruders);
     }
 
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
         const Domain::Model& model,
-        const std::optional<ConfigPack>& config,
-        const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
+        const ConfigPack& config,
+        const HwPrinterConfig& hw_config,
         const Domain::Image* thumbnail_data,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        const VirtualExtruders& virtual_extruders
     )
     {
         mz_zip_archive archive;
@@ -3258,7 +3305,6 @@ namespace Slic3rLegacy {
             return false;
         }
 
-
         // Adds wipe tower information ("Metadata/Prusa_Slicer_wipe_tower_information.xml").
         if (!_add_wipe_tower_information_file_to_archive(archive, wipe_towers)) {
             close_zip_writer(&archive);
@@ -3269,13 +3315,10 @@ namespace Slic3rLegacy {
 
         // Adds slic3r print config file ("Metadata/Slic3r_PE.config").
         // This file contains the content of FullPrintConfing / SLAFullPrintConfig.
-        if (config.has_value()) {
-            ASSERT(hw_config);
-            if (!_add_print_config_file_to_archive(archive, *config, *hw_config, model, wipe_towers)) {
-                close_zip_writer(&archive);
-                boost::filesystem::remove(filename);
-                return false;
-            }
+        if (!_add_print_config_file_to_archive(archive, config, hw_config, model, wipe_towers)) {
+            close_zip_writer(&archive);
+            boost::filesystem::remove(filename);
+            return false;
         }
 
         // Adds slic3r model config file ("Metadata/Slic3r_PE_model.config").
@@ -3283,6 +3326,13 @@ namespace Slic3rLegacy {
         // As there is just a single Indexed Triangle Set data stored per ModelObject, offsets of volumes into their respective Indexed Triangle Set data
         // is stored here as well.
         if (!_add_model_config_file_to_archive(archive, model, objects_data)) {
+            close_zip_writer(&archive);
+            boost::filesystem::remove(filename);
+            return false;
+        }
+
+        // Adds virtual extruders file ("Metadata/Prusa_Slicer_full_spectrum.json").
+        if (!_add_virtual_extruders_file_to_archive(archive, virtual_extruders, config, hw_config)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -4270,6 +4320,55 @@ namespace Slic3rLegacy {
         return true;
 }
 
+    bool _3MF_Exporter::_add_virtual_extruders_file_to_archive(
+        mz_zip_archive& archive,
+        const VirtualExtruders& virtual_extruders,
+        const ConfigPack& config,
+        const HwPrinterConfig& hw_config
+    )
+    {
+        if (virtual_extruders.empty()) {
+            return true;
+        }
+
+        const ConfigPackFDM* config_pack_fdm = std::get_if<ConfigPackFDM>(&config);
+        if (config_pack_fdm == nullptr) {
+            return true;
+        }
+
+        const Domain::ConfigItem* extruder_colour_item =
+            config_pack_fdm->project.items.find("extruder_colour");
+
+        std::vector<std::string> colors = extruder_colour_item != nullptr ?
+            extruder_colour_item->get<std::vector<std::string>>() :
+            std::vector<std::string>{};
+
+        colors.resize(hw_config.material_slot_count());
+        for (std::string& color : colors) {
+            if (color.empty()) {
+                color = "#808080";
+            }
+        }
+
+        const std::string json =
+            Format::VirtualExtruder::serialize_virtual_extruders_to_json(colors, virtual_extruders);
+        if (!mz_zip_writer_add_mem(
+                &archive,
+                std::string(Format::VirtualExtruder::CONFIG_FILE).c_str(),
+                json.data(),
+                json.size(),
+                MZ_DEFAULT_COMPRESSION
+            ))
+        {
+            add_error(
+                "Unable to add " + std::string(Format::VirtualExtruder::CONFIG_FILE) + " to archive"
+            );
+            return false;
+        }
+
+        return true;
+    }
+
 bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
 {
     std::string out = "";
@@ -4691,7 +4790,8 @@ bool load_3mf_legacy(
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
     Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
-    Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
+    Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+    VirtualExtrudersConfig& out_virtual_extruders_config
 )
 {
     // This is set here for the legacy loading. It used to be an argument.
@@ -4703,7 +4803,7 @@ bool load_3mf_legacy(
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
     Slic3rLegacy::_3MF_Importer         importer;
-    bool res = importer.load_model_from_file(path, *model, config, preset_metadata, config_substitutions, check_version, wipe_towers, custom_gcodes);
+    bool res = importer.load_model_from_file(path, *model, config, preset_metadata, config_substitutions, check_version, wipe_towers, custom_gcodes, out_virtual_extruders_config);
     importer.log_errors();
     prusaslicer_generator_version = importer.prusaslicer_generator_version();
 
@@ -4713,11 +4813,12 @@ bool load_3mf_legacy(
 bool store_3mf_legacy(
     const char* path,
     const Domain::Model* model,
-    const std::optional<ConfigPack>& config,
-    const std::optional<Domain::Preset::HwPrinterConfig>& hw_config,
+    const ConfigPack& config,
+    const HwPrinterConfig& hw_config,
     bool fullpath_sources,
     const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
     const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+    const VirtualExtruders& virtual_extruders,
     const Slic3r::Domain::Image* thumbnail_data,
     bool zip64
 )
@@ -4729,7 +4830,7 @@ bool store_3mf_legacy(
         return false;
 
     Slic3rLegacy::_3MF_Exporter exporter;
-    bool res = exporter.save_model_to_file(path, *model, config, hw_config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
+    bool res = exporter.save_model_to_file(path, *model, config, hw_config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes, virtual_extruders);
     if (!res)
         exporter.log_errors();
 
