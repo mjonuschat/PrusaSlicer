@@ -252,6 +252,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Movement & Timing");
     case ConfigItemDef::OptionGroup::Filament_MultiMaterial_WipeTowerPurging:
         return L("Wipe Tower Purging");
+    case ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters:
+        return L("Flush parameters (experimental)");
     case ConfigItemDef::OptionGroup::Filament_Overrides_PrintSpeedOverride:
         return L("Print Speed Override");
     case ConfigItemDef::OptionGroup::Filament_MaterialPrintingProfile_ProfilesSettings:

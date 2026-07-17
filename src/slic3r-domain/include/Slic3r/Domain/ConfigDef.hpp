@@ -270,6 +270,7 @@ struct ConfigItemDef
         Filament_MultiMaterial_TipShapingCooling = 5301,
         Filament_MultiMaterial_MovementTiming    = 5302,
         Filament_MultiMaterial_WipeTowerPurging  = 5303,
+        Filament_MultiMaterial_FlushParameters   = 5304,
 
         Filament_Overrides_PrintSpeedOverride = 5400,
 

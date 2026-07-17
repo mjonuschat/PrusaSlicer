@@ -1377,6 +1377,34 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->init_fn = init_with(10.);
 
+    def               = defs.add("filament_flush_volume", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Flush volume");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters;
+    def->category     = ConfigItemDef::Category::Filament_MultiMaterial;
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip =
+        L("Volume of filament to flush during a tool change. "
+          "Used in custom toolchange G-code.");
+    def->sidetext = L("mm³");
+    def->min      = 0;
+    def->init_fn  = init_with(0.);
+
+    def               = defs.add("filament_flush_speed", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Flush speed");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters;
+    def->category     = ConfigItemDef::Category::Filament_MultiMaterial;
+    def->order        = 1;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip =
+        L("Extrusion speed used for flushing during a tool change. "
+          "Used in custom toolchange G-code.");
+    def->sidetext = L("mm/s");
+    def->min      = 0;
+    def->init_fn  = init_with(0.);
+
     def = defs.add("filament_diameter", typeid(double));
     def->location = Filament;
     def->label = L("Diameter");

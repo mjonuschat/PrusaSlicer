@@ -225,6 +225,8 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"filament_cost", steps({propagate(psGCodeExport)})},
     {"filament_density", steps({propagate(psGCodeExport)})},
     {"filament_diameter", steps({propagate(psGCodeExport)})},
+    {"filament_flush_speed", steps({propagate(psGCodeExport)})},
+    {"filament_flush_volume", steps({propagate(psGCodeExport)})},
     {"filament_infill_max_crossing_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"filament_infill_max_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"filament_change_time", steps({propagate(psGCodeExport)})},
