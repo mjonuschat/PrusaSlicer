@@ -2636,10 +2636,14 @@ void ProcessorImpl::store_move(MoveType type, bool internal_only)
     m_last_line_id = (type == MoveType::ColorChange || type == MoveType::PausePrint || type == MoveType::CustomGCode) ? m_line_id + 1 :
                      (type == MoveType::Seam) ? m_last_line_id : m_line_id;
 
+    // Extrusions between FLUSH_START/FLUSH_END are stored with a dedicated move type, so they can be
+    // hidden from the G-code preview.
+    const MoveType stored_type = m_flushing ? MoveType::Flush : type;
+
     const Vec3f& extruder_offset = m_config.extruders.offsets[m_extruder_id];
 
     MoveVertex move;
-    move.type            = type;
+    move.type            = stored_type;
     move.extrusion_role  = m_extrusion_role;
     move.extruder_id     = m_extruder_id;
     move.cp_color_id     = m_extruder_color.current;

@@ -26,6 +26,7 @@ std::string to_string(MoveType type)
     case MoveType::Travel:      { return _u8L("Travel"); }
     case MoveType::Wipe:        { return _u8L("Wipe"); }
     case MoveType::Extrude:     { return _u8L("Extrude"); }
+    case MoveType::Flush:       { return _u8L("Flush"); }
     default:                    { return _u8L("Unknown"); }
     }
 }

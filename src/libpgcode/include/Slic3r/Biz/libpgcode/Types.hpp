@@ -62,6 +62,7 @@ enum class MoveType : uint8_t
     Travel,
     Wipe,
     Extrude,
+    Flush,
     COUNT
 };
 
