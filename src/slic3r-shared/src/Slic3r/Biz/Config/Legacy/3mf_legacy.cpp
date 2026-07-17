@@ -109,9 +109,11 @@ const char* SLIC3RPE_3MF_VERSION = "slic3rpe:Version3mf"; // definition of the m
 const unsigned int FDM_SUPPORTS_PAINTING_VERSION = 1;
 const unsigned int SEAM_PAINTING_VERSION         = 1;
 const unsigned int MM_PAINTING_VERSION           = 1;
+const unsigned int FUZZY_SKIN_PAINTING_VERSION   = 1;
 
 const std::string SLIC3RPE_FDM_SUPPORTS_PAINTING_VERSION = "slic3rpe:FdmSupportsPaintingVersion";
 const std::string SLIC3RPE_SEAM_PAINTING_VERSION         = "slic3rpe:SeamPaintingVersion";
+const std::string SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION   = "slic3rpe:FuzzySkinPaintingVersion";
 const std::string SLIC3RPE_MM_PAINTING_VERSION           = "slic3rpe:MmPaintingVersion";
 
 const std::string MODEL_FOLDER = "3D/";
@@ -686,6 +688,7 @@ namespace Slic3rLegacy {
         boost::optional<Semver> m_prusaslicer_generator_version;
         unsigned int m_fdm_supports_painting_version = 0;
         unsigned int m_seam_painting_version         = 0;
+        unsigned int m_fuzzy_skin_painting_version   = 0;
         unsigned int m_mm_painting_version           = 0;
 
         XML_Parser m_xml_parser;
@@ -894,6 +897,7 @@ namespace Slic3rLegacy {
         m_version = 0;
         m_fdm_supports_painting_version = 0;
         m_seam_painting_version = 0;
+        m_fuzzy_skin_painting_version = 0;
         m_mm_painting_version = 0;
         m_check_version = check_version;
         m_model = &model;
@@ -2521,6 +2525,10 @@ namespace Slic3rLegacy {
             m_seam_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_seam_painting_version, SEAM_PAINTING_VERSION,
                 _u8L("The selected 3MF contains seam painted object using a newer version of PrusaSlicer and is not compatible."));
+        } else if (m_curr_metadata_name == SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION) {
+            m_fuzzy_skin_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
+            check_painting_version(m_fuzzy_skin_painting_version, FUZZY_SKIN_PAINTING_VERSION,
+                _u8L("The selected 3MF contains fuzzy skin painted object using a newer version of PrusaSlicer and is not compatible."));
         } else if (m_curr_metadata_name == SLIC3RPE_MM_PAINTING_VERSION) {
             m_mm_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_mm_painting_version, MM_PAINTING_VERSION,
@@ -3347,6 +3355,9 @@ namespace Slic3rLegacy {
 
             if (model.is_seam_painted())
                 stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_SEAM_PAINTING_VERSION << "\">" << SEAM_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
+
+            if (model.is_fuzzy_skin_painted())
+                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION << "\">" << FUZZY_SKIN_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
 
             if (model.is_mm_painted())
                 stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_MM_PAINTING_VERSION << "\">" << MM_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
