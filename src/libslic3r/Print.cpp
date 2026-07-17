@@ -96,6 +96,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "bridge_minimum_cruise_ratio",
         "bridge_jerk",
         "bridge_fan_speed",
+        "internal_bridge_fan_speed",
         "enable_dynamic_fan_speeds",
         "overhang_fan_speed_0",
         "overhang_fan_speed_1",

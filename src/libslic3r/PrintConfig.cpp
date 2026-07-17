@@ -807,6 +807,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts { 100 });
 
+    def = this->add("internal_bridge_fan_speed", coInts);
+    def->label = L("Internal Bridges fan speed");
+    def->tooltip = L("This fan speed is enforced during internal bridges.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInts { 100 });
+
     def = this->add("bridge_flow_ratio", coFloat);
     def->label = L("Bridge flow ratio");
     def->category = L("Infill");
@@ -877,6 +886,16 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Speed for printing bridges.");
     def->sidetext = L("mm/s");
     def->aliases = { "bridge_feed_rate" };
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(60));
+
+    def = this->add("internal_bridge_speed", coFloat);
+    def->label = L("Bridges internal");
+    def->category = L("Speed");
+    def->tooltip = L("Speed for printing internal bridges.");
+    def->sidetext = L("mm/s");
+    def->aliases = { "bridge_internal_feed_rate" };
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(60));

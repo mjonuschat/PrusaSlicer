@@ -3108,6 +3108,7 @@ std::string GCodeGenerator::extrude_smooth_path(
 
     // Extrude along the smooth path.
     bool          is_bridge_extruded = false;
+    bool          is_bridge_internal_extruded = false;
     EmitModifiers emit_modifiers     = EmitModifiers::create_with_disabled_emits();
     for (auto el_it = smooth_path.begin(); el_it != smooth_path.end(); ++el_it) {
         const auto next_el_it = next(el_it);
@@ -3127,6 +3128,15 @@ std::string GCodeGenerator::extrude_smooth_path(
             is_bridge_extruded                   = false;
         }
 
+        if (el_it->path_attributes.role.is_bridge_internal()) {
+            emit_modifiers.emit_bridge_internal_fan_start = !is_bridge_internal_extruded;
+            emit_modifiers.emit_bridge_internal_fan_end   = next_el_it == smooth_path.end() || !next_el_it->path_attributes.role.is_bridge_internal();
+            is_bridge_internal_extruded                   = true;
+        } else if (is_bridge_internal_extruded) {
+            emit_modifiers.emit_bridge_internal_fan_start = false;
+            emit_modifiers.emit_bridge_internal_fan_end   = false;
+            is_bridge_internal_extruded                   = false;
+        }
         // Ensure that just for the last extrusion from the smooth path, the fan speed will be reset back
         // to the value calculated by the CoolingBuffer.
         if (next_el_it == smooth_path.end()) {
@@ -4402,6 +4412,9 @@ std::string GCodeGenerator::_extrude(
             speed = m_config.get_abs_value("perimeter_speed");
         } else if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
             speed = m_config.get_abs_value("external_perimeter_speed");
+        } else if (path_attr.role.is_bridge_internal()) {
+            assert(path_attr.role.is_perimeter() || path_attr.role == ExtrusionRole::InternalBridgeInfill);
+            speed = m_config.get_abs_value("internal_bridge_speed");
         } else if (path_attr.role.is_bridge()) {
             assert(path_attr.role.is_perimeter() || path_attr.role == ExtrusionRole::BridgeInfill);
             speed = m_config.get_abs_value("bridge_speed");
@@ -4433,7 +4446,7 @@ std::string GCodeGenerator::_extrude(
     // Apply small perimeter modifier but don't adjust bridge speed.
     // Resolve percentage against the correct base speed for the perimeter type:
     // external perimeters use external_perimeter_speed, internal use perimeter_speed.
-    if (factor < 1 && !path_attr.role.is_bridge()) {
+    if (factor < 1 && !path_attr.role.is_bridge() && !path_attr.role.is_bridge_internal()) {
         double base_speed = path_attr.role == ExtrusionRole::ExternalPerimeter
             ? m_config.get_abs_value("external_perimeter_speed")
             : m_config.get_abs_value("perimeter_speed");
@@ -4521,7 +4534,9 @@ std::string GCodeGenerator::_extrude(
     if (m_enable_cooling_markers) {
         if (path_attr.role.is_bridge() && emit_modifiers.emit_bridge_fan_start) {
             gcode += ";_BRIDGE_FAN_START\n";
-        } else if (!path_attr.role.is_bridge()) {
+	 } else if (path_attr.role.is_bridge_internal() && emit_modifiers.emit_bridge_internal_fan_start) {
+            gcode += ";_BRIDGE_INTERNAL_FAN_START\n";
+        } else if (!path_attr.role.is_bridge() && !path_attr.role.is_bridge_internal()) {
             cooling_marker_setspeed_comments = ";_EXTRUDE_SET_SPEED";
         }
 
@@ -4626,6 +4641,8 @@ std::string GCodeGenerator::_extrude(
     if (m_enable_cooling_markers) {
         if (path_attr.role.is_bridge() && emit_modifiers.emit_bridge_fan_end) {
             gcode += ";_BRIDGE_FAN_END\n";
+	 } else if (path_attr.role.is_bridge_internal() && emit_modifiers.emit_bridge_internal_fan_end) {
+            gcode += ";_BRIDGE_INTERNAL_FAN_END\n";
         } else if (!path_attr.role.is_bridge()) {
             gcode += ";_EXTRUDE_END\n";
         }

@@ -130,6 +130,8 @@ struct CoolingLine
         TYPE_FIRST_INTERNAL_PERIMETER = 1 << 20,
         TYPE_TOOLCHANGE_TIME          = 1 << 21,
         TYPE_TOOLCHANGE_END           = 1 << 22,
+        TYPE_INTERNAL_BRIDGE_FAN_START     = 1 << 23,
+        TYPE_INTERNAL_BRIDGE_FAN_END       = 1 << 24,
     };
 
     CoolingLine(unsigned int type, size_t  line_start, size_t  line_end) :
@@ -848,6 +850,10 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
             line.type = CoolingLine::TYPE_BRIDGE_FAN_START;
         } else if (boost::starts_with(sline, ";_BRIDGE_FAN_END")) {
             line.type = CoolingLine::TYPE_BRIDGE_FAN_END;
+        } else if (boost::starts_with(sline, ";_BRIDGE_INTERNAL_FAN_START")) {
+            line.type = CoolingLine::TYPE_INTERNAL_BRIDGE_FAN_START;
+        } else if (boost::starts_with(sline, ";_BRIDGE_INTERNAL_FAN_END")) {
+            line.type = CoolingLine::TYPE_INTERNAL_BRIDGE_FAN_END;
         } else if (boost::starts_with(sline, TOOLCHANGE_TIME_TAG)) {
             line.type = CoolingLine::TYPE_TOOLCHANGE_TIME;
             fast_float::from_chars(
@@ -1142,8 +1148,10 @@ std::string CoolingBuffer::apply_layer_cooldown(
     std::string new_gcode;
     new_gcode.reserve(gcode.size() * 2);
     bool bridge_fan_control = false;
+    bool internal_bridge_fan_control = false;
     int  bridge_fan_speed   = 0;
-    auto change_extruder_set_fan = [this, layer_id, layer_time, &new_gcode, &bridge_fan_control, &bridge_fan_speed](const int requested_fan_speed = -1) {
+    int  internal_bridge_fan_speed   = 0;
+    auto change_extruder_set_fan = [this, layer_id, layer_time, &new_gcode, &bridge_fan_control, &bridge_fan_speed, &internal_bridge_fan_control, &internal_bridge_fan_speed](const int requested_fan_speed = -1) {
 #define EXTRUDER_CONFIG(OPT) m_config.OPT.get_at(m_current_extruder)
         const int min_fan_speed            = EXTRUDER_CONFIG(min_fan_speed);
         // Is the fan speed ramp enabled?
@@ -1184,22 +1192,27 @@ std::string CoolingBuffer::apply_layer_cooldown(
             }
 
             bridge_fan_speed = EXTRUDER_CONFIG(bridge_fan_speed);
+            internal_bridge_fan_speed = EXTRUDER_CONFIG(internal_bridge_fan_speed);
             if (int(layer_id) >= disable_fan_first_layers && int(layer_id) + 1 < full_fan_speed_layer) {
                 // Ramp up the fan speed from disable_fan_first_layers to full_fan_speed_layer.
                 const float factor = float(int(layer_id + 1) - disable_fan_first_layers) / float(full_fan_speed_layer - disable_fan_first_layers);
 
                 fan_speed_new                        = std::clamp(int(float(fan_speed_new) * factor + 0.5f), 0, 100);
                 bridge_fan_speed                     = std::clamp(int(float(bridge_fan_speed) * factor + 0.5f), 0, 100);
+                internal_bridge_fan_speed                     = std::clamp(int(float(internal_bridge_fan_speed) * factor + 0.5f), 0, 100);
                 requested_fan_speed_limits.max_speed = fan_speed_new;
             }
 
 #undef EXTRUDER_CONFIG
             bridge_fan_control = bridge_fan_speed > fan_speed_new;
+            internal_bridge_fan_control = internal_bridge_fan_speed > fan_speed_new;
         } else { // fan disabled
-            bridge_fan_control                   = false;
-            bridge_fan_speed                     = 0;
-            fan_speed_new                        = 0;
-            requested_fan_speed_limits.max_speed = 0;
+            bridge_fan_control                            = false;
+            internal_bridge_fan_control                   = false;
+            bridge_fan_speed                              = 0;
+            internal_bridge_fan_speed                     = 0;
+            fan_speed_new                                 = 0;
+            requested_fan_speed_limits.max_speed          = 0;
         }
 
         requested_fan_speed_limits.min_speed = std::min(requested_fan_speed_limits.min_speed, requested_fan_speed_limits.max_speed);
@@ -1299,6 +1312,12 @@ std::string CoolingBuffer::apply_layer_cooldown(
                 new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, bridge_fan_speed);
         } else if (line->type & CoolingLine::TYPE_BRIDGE_FAN_END) {
             if (bridge_fan_control)
+                new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, m_fan_speed);
+        } else if (line->type & CoolingLine::TYPE_INTERNAL_BRIDGE_FAN_START) {
+            if (internal_bridge_fan_control)
+                new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, internal_bridge_fan_speed);
+        } else if (line->type & CoolingLine::TYPE_INTERNAL_BRIDGE_FAN_END) {
+            if (internal_bridge_fan_control)
                 new_gcode += GCodeWriter::set_fan(m_config.gcode_flavor, m_config.gcode_comments, m_fan_speed);
         } else if (line->type & CoolingLine::TYPE_TOOLCHANGE_END) {
             // Custom toolchange gcode may have changed fan speed via M106/M107 that CoolingBuffer

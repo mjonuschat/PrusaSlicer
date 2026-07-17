@@ -108,7 +108,7 @@ public:
     AABox get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles = {
         EGCodeExtrusionRole::Perimeter, EGCodeExtrusionRole::ExternalPerimeter, EGCodeExtrusionRole::OverhangPerimeter,
         EGCodeExtrusionRole::InternalInfill, EGCodeExtrusionRole::SolidInfill, EGCodeExtrusionRole::TopSolidInfill,
-        EGCodeExtrusionRole::Ironing, EGCodeExtrusionRole::BridgeInfill, EGCodeExtrusionRole::GapFill,
+        EGCodeExtrusionRole::Ironing, EGCodeExtrusionRole::BridgeInfill,  EGCodeExtrusionRole::BridgeInternalInfill,EGCodeExtrusionRole::GapFill,
         EGCodeExtrusionRole::Skirt, EGCodeExtrusionRole::SupportMaterial, EGCodeExtrusionRole::SupportMaterialInterface,
         EGCodeExtrusionRole::WipeTower, EGCodeExtrusionRole::Custom }) const;
 

@@ -32,6 +32,7 @@ enum class ExtrusionRoleModifier : uint16_t {
     Solid,
     Ironing,
     Bridge,
+    BridgeInternal,
     OverBridge,
 // 3) Special types
     // Indicator that the extrusion role was mixed from multiple differing extrusion roles,
@@ -70,7 +71,7 @@ struct ExtrusionRole : public ExtrusionRoleModifiers
     static constexpr const ExtrusionRoleModifiers Ironing{ ExtrusionRoleModifier::Infill | ExtrusionRoleModifier::Solid | ExtrusionRoleModifier::Ironing | ExtrusionRoleModifier::External };
     // Visible bridging infill at the bottom of an object.
     static constexpr const ExtrusionRoleModifiers BridgeInfill{ ExtrusionRoleModifier::Infill | ExtrusionRoleModifier::Solid | ExtrusionRoleModifier::Bridge | ExtrusionRoleModifier::External };
-//    static constexpr const ExtrusionRoleModifiers InternalBridgeInfill{ ExtrusionRoleModifier::Infill | ExtrusionRoleModifier::Solid | ExtrusionRoleModifier::Bridge };
+    static constexpr const ExtrusionRoleModifiers BridgeInternalInfill{ ExtrusionRoleModifier::Infill | ExtrusionRoleModifier::Solid | ExtrusionRoleModifier::BridgeInternal };
     // Gap fill extrusion, currently used for any variable width extrusion: Thin walls outside of the outer extrusion,
     // gap fill in between perimeters, gap fill between the inner perimeter and infill.
     //FIXME revise GapFill and ThinWall types, split Gap Fill to Gap Fill and ThinWall.
@@ -95,6 +96,7 @@ struct ExtrusionRole : public ExtrusionRoleModifiers
     bool is_sparse_infill() const { return this->is_infill() && ! this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Solid); }
     bool is_external() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::External); }
     bool is_bridge() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Bridge); }
+    bool is_bridge_internal() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::BridgeInternal); }
     bool is_thin_wall() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Thin); }
 
     bool is_support() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Support); }
@@ -126,6 +128,7 @@ enum class GCodeExtrusionRole : uint8_t {
     TopSolidInfill,
     Ironing,
     BridgeInfill,
+    BridgeInternalInfill,
     GapFill,
     Skirt,
     SupportMaterial,

@@ -27,6 +27,7 @@ GCodeExtrusionRole extrusion_role_to_gcode_extrusion_role(ExtrusionRole role)
     if (role == ExtrusionRole::TopSolidInfill)      return GCodeExtrusionRole::TopSolidInfill;
     if (role == ExtrusionRole::Ironing)             return GCodeExtrusionRole::Ironing;
     if (role == ExtrusionRole::BridgeInfill)        return GCodeExtrusionRole::BridgeInfill;
+    if (role == ExtrusionRole::BridgeInternalInfill)        return GCodeExtrusionRole::BridgeInternalInfill;
     if (role == ExtrusionRole::GapFill)             return GCodeExtrusionRole::GapFill;
     if (role == ExtrusionRole::Skirt)               return GCodeExtrusionRole::Skirt;
     if (role == ExtrusionRole::SupportMaterial)     return GCodeExtrusionRole::SupportMaterial;
@@ -48,6 +49,7 @@ std::string gcode_extrusion_role_to_string(GCodeExtrusionRole role)
         case GCodeExtrusionRole::TopSolidInfill               : return L("Top solid infill");
         case GCodeExtrusionRole::Ironing                      : return L("Ironing");
         case GCodeExtrusionRole::BridgeInfill                 : return L("Bridge infill");
+        case GCodeExtrusionRole::BridgeInternalInfill         : return L("Bridge internal infill");
         case GCodeExtrusionRole::GapFill                      : return L("Gap fill");
         case GCodeExtrusionRole::Skirt                        : return L("Skirt/Brim");
         case GCodeExtrusionRole::SupportMaterial              : return L("Support material");
@@ -75,6 +77,8 @@ GCodeExtrusionRole string_to_gcode_extrusion_role(const std::string_view role)
         return GCodeExtrusionRole::TopSolidInfill;
     else if (role == L("Ironing"))
         return GCodeExtrusionRole::Ironing;
+    else if (role == L("Bridge internal infill"))
+        return GCodeExtrusionRole::BridgeInternalInfill;
     else if (role == L("Bridge infill"))
         return GCodeExtrusionRole::BridgeInfill;
     else if (role == L("Gap fill"))
