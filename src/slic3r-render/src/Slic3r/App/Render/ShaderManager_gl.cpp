@@ -10,6 +10,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/PlatformInfo.hpp"
 
+using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 namespace Slic3r::App::Render {
@@ -38,7 +39,7 @@ std::pair<bool, std::string> ShaderManager::init()
     bool valid = true;
 
     const std::string mm_palette_size =
-        "MM_PALETTE_SIZE " + std::to_string(static_cast<int>(TriangleStateType::Count));
+        "MM_PALETTE_SIZE " + std::to_string(TRIANGLE_STATE_TYPE_COUNT);
 
 #if SLIC3R_OPENGL_ES
     const std::string prefix = "ES/";

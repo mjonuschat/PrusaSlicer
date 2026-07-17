@@ -54,7 +54,7 @@ create_mm_painted_volume_geometry(Render::Device& device, const Domain::ModelVol
  *
  * @param default_color Color of unpainted triangles, i.e. of the extruder assigned to the volume.
  * @param slot_colors Colors of the material slots indexed from 0; slot k becomes paint state k + 1.
- * @return Palette indexed by paint state, always TriangleStateType::Count entries long.
+ * @return Palette indexed by paint state, always TriangleSelector::TRIANGLE_STATE_TYPE_COUNT entries long.
  */
 std::vector<Domain::ColorRGBA> create_palette_colors(
     const Domain::ColorRGBA& default_color,

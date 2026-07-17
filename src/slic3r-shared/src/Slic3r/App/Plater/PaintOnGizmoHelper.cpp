@@ -22,9 +22,6 @@
 
 #include "libslic3r/TriangleMeshSlicer.hpp"
 
-using namespace Slic3r;
-using namespace Slic3r::Biz;
-
 using Slic3r::App::Plater::TriangleSelectorRenderWrapper;
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::Point;
@@ -37,6 +34,10 @@ using Slic3r::Domain::Vec2f;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
 using Slic3r::Domain::Vec4f;
+using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
+
+using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 namespace {
 
@@ -61,9 +62,7 @@ std::unique_ptr<App::Render::Geometry> create_painted_mesh_geometry(
     }
 
     // Plus 1 in the initialization of m_gizmo_scene is because the first position is allocated for non-painted triangles, and the indices above colors.size() are allocated for seed fill.
-    std::vector<std::vector<uint32_t>> indices_per_colors(
-        2 * (static_cast<size_t>(TriangleStateType::Count) + 1)
-    );
+    std::vector<std::vector<uint32_t>> indices_per_colors(2 * (TRIANGLE_STATE_TYPE_COUNT + 1));
     for (const TriangleSelector::Triangle& tr : triangles) {
         if (tr.valid() && !tr.is_split()) {
             int color = int(tr.get_state()) <= int(colors.size()) ? int(tr.get_state()) : 0;
