@@ -46,9 +46,9 @@ static const ColorRGB LABEL_REGULAR             = Domain::ColorRGB::ORANGE();
 static const ColorRGB LABEL_DISABLED            = { 0.8f, 0.8f, 0.8f };
 static const ColorRGB LABEL_SECONDARY_SELECTION = { 0.6f, 0.6f, 0.6f };
 
-static const ColorRGBA X_AXIS = { 0.75f, 0.0f, 0.0f, 1.0f };
-static const ColorRGBA Y_AXIS = { 0.0f, 0.75f, 0.0f, 1.0f };
-static const ColorRGBA Z_AXIS = { 0.0f, 0.0f, 0.75f, 1.0f };
+static const ColorRGBA X_AXIS = ColorRGBA::X();
+static const ColorRGBA Y_AXIS = ColorRGBA::Y();
+static const ColorRGBA Z_AXIS = ColorRGBA::Z();
 
 Render::Material BedMaterials::plate_default_material(const Render::Device& device)
 {

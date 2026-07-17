@@ -65,9 +65,9 @@ public:
 	static const ColorRGB YELLOW()      { return { 1.0f, 1.0f, 0.0f }; }
 	static const ColorRGB WHITE()       { return { 1.0f, 1.0f, 1.0f }; }
 
-	static const ColorRGB X()           { return { 0.75f, 0.0f, 0.0f }; }
-	static const ColorRGB Y()           { return { 0.0f, 0.75f, 0.0f }; }
-	static const ColorRGB Z()           { return { 0.0f, 0.0f, 0.75f }; }
+	static const ColorRGB X()           { return { 1.0f, 0.2f, 0.322f }; }
+	static const ColorRGB Y()           { return { 0.545f, 0.863f, 0.0f }; }
+	static const ColorRGB Z()           { return { 0.157f, 0.565f, 1.0f }; }
 };
 
 class ColorRGBA
@@ -76,7 +76,15 @@ class ColorRGBA
 
 public:
 	ColorRGBA() = default;
-	ColorRGBA(float r, float g, float b, float a);
+
+    constexpr ColorRGBA(float r, float g, float b, float a) :
+        m_data(
+            {std::clamp(r, 0.0f, 1.0f),
+             std::clamp(g, 0.0f, 1.0f),
+             std::clamp(b, 0.0f, 1.0f),
+             std::clamp(a, 0.0f, 1.0f)}
+        )
+    {}
 	ColorRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 	ColorRGBA(const ColorRGBA& other) = default;
 
@@ -111,26 +119,100 @@ public:
 
 	bool is_transparent() const { return m_data[3] < 1.0f; }
 
-	static const ColorRGBA BLACK()       { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
-	static const ColorRGBA BLUE()        { return { 0.0f, 0.0f, 1.0f, 1.0f }; }
-	static const ColorRGBA BLUEISH()     { return { 0.5f, 0.5f, 1.0f, 1.0f }; }
-	static const ColorRGBA CYAN()        { return { 0.0f, 1.0f, 1.0f, 1.0f }; }
-	static const ColorRGBA DARK_GRAY()   { return { 0.25f, 0.25f, 0.25f, 1.0f }; }
-	static const ColorRGBA DARK_YELLOW() { return { 0.5f, 0.5f, 0.0f, 1.0f }; }
-	static const ColorRGBA GRAY()		 { return { 0.5f, 0.5f, 0.5f, 1.0f }; }
-	static const ColorRGBA GREEN()		 { return { 0.0f, 1.0f, 0.0f, 1.0f }; }
-	static const ColorRGBA GREENISH()    { return { 0.5f, 1.0f, 0.5f, 1.0f }; }
-	static const ColorRGBA LIGHT_GRAY()  { return { 0.75f, 0.75f, 0.75f, 1.0f }; }
-	static const ColorRGBA MAGENTA()     { return { 1.0f, 0.0f, 1.0f, 1.0f }; }
-	static const ColorRGBA ORANGE()      { return { 0.923f, 0.504f, 0.264f, 1.0f }; }
-	static const ColorRGBA RED()         { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
-	static const ColorRGBA REDISH()      { return { 1.0f, 0.5f, 0.5f, 1.0f }; }
-	static const ColorRGBA YELLOW()      { return { 1.0f, 1.0f, 0.0f, 1.0f }; }
-	static const ColorRGBA WHITE()       { return { 1.0f, 1.0f, 1.0f, 1.0f }; }
+    static constexpr ColorRGBA BLACK()
+	{
+	    return {0.0f, 0.0f, 0.0f, 1.0f};
+	}
 
-	static const ColorRGBA X()           { return { 0.75f, 0.0f, 0.0f, 1.0f }; }
-	static const ColorRGBA Y()           { return { 0.0f, 0.75f, 0.0f, 1.0f }; }
-	static const ColorRGBA Z()           { return { 0.0f, 0.0f, 0.75f, 1.0f }; }
+    static constexpr ColorRGBA BLUE()
+	{
+	    return {0.0f, 0.0f, 1.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA BLUEISH()
+	{
+	    return {0.5f, 0.5f, 1.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA CYAN()
+	{
+	    return {0.0f, 1.0f, 1.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA DARK_GRAY()
+	{
+	    return {0.25f, 0.25f, 0.25f, 1.0f};
+	}
+
+    static constexpr ColorRGBA DARK_YELLOW()
+	{
+	    return {0.5f, 0.5f, 0.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA GRAY()
+	{
+	    return {0.5f, 0.5f, 0.5f, 1.0f};
+	}
+
+    static constexpr ColorRGBA GREEN()
+	{
+	    return {0.0f, 1.0f, 0.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA GREENISH()
+	{
+	    return {0.5f, 1.0f, 0.5f, 1.0f};
+	}
+
+    static constexpr ColorRGBA LIGHT_GRAY()
+	{
+	    return {0.75f, 0.75f, 0.75f, 1.0f};
+	}
+
+    static constexpr ColorRGBA MAGENTA()
+	{
+	    return {1.0f, 0.0f, 1.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA ORANGE()
+	{
+	    return {0.923f, 0.504f, 0.264f, 1.0f};
+	}
+
+    static constexpr ColorRGBA RED()
+	{
+	    return {1.0f, 0.0f, 0.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA REDISH()
+	{
+	    return {1.0f, 0.5f, 0.5f, 1.0f};
+	}
+
+    static constexpr ColorRGBA YELLOW()
+	{
+	    return {1.0f, 1.0f, 0.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA WHITE()
+	{
+	    return {1.0f, 1.0f, 1.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA X()
+	{
+	    return {1.0f, 0.2f, 0.322f, 1.0f};
+	}
+
+    static constexpr ColorRGBA Y()
+	{
+	    return {0.545f, 0.863f, 0.0f, 1.0f};
+	}
+
+    static constexpr ColorRGBA Z()
+	{
+	    return {0.157f, 0.565f, 1.0f, 1.0f};
+	}
 };
 
 ColorRGB operator*(float value, const ColorRGB& other);

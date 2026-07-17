@@ -79,15 +79,6 @@ void ColorRGB::set(unsigned int comp, float value)
     m_data[comp] = std::clamp(value, 0.0f, 1.0f);
 }
 
-ColorRGBA::ColorRGBA(float r, float g, float b, float a):
-    m_data(
-        {std::clamp(r, 0.0f, 1.0f),
-         std::clamp(g, 0.0f, 1.0f),
-         std::clamp(b, 0.0f, 1.0f),
-         std::clamp(a, 0.0f, 1.0f)}
-    )
-{}
-
 ColorRGBA::ColorRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a):
     m_data(
         {std::clamp(r * INV_255, 0.0f, 1.0f),
