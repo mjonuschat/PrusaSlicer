@@ -78,7 +78,8 @@ static std::vector<std::string> roundtrip_and_get_diff_lines(const fs::path& fil
 
     // HwConfig cannot be loaded just from ini, hence the nozzle diameters are lost.
     // Mock the hw config, to mirror the ini.
-    Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(5, 0.4)};
+    Domain::Preset::HwPrinterConfig hw_config{Test::create_dummy_hw_config(1, 0.4)};
+    hw_config.feeders[{0}] = Domain::Preset::HwFeederConfig{.slot_count = 5};
 
     // Serialize the config again in the legacy format.
     std::stringstream ss;

@@ -650,6 +650,8 @@ ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig&
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology"); pt == Slic3rLegacy::ptFFF) {
             int extruder_num = get_extruder_num(cfg);
+            bool mmu = (cfg.has("single_extruder_multi_material") && cfg.opt_bool("single_extruder_multi_material"));
+
             LegacyKeysAndOverrides legacy_data = legacy_fdm_data();
             ConfigPackFDM out;
             out.tool.resize(extruder_num);
@@ -663,10 +665,22 @@ ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig&
 
             fill_config_box_from_legacy(cfg, out.printer, legacy_data);
             fill_config_box_from_legacy(cfg, out.print, legacy_data);
+
             for (int i = 0; i < extruder_num; ++i) {
                 fill_config_box_from_legacy(cfg, out.tool[i], legacy_data, i, extruder_num > 1);
                 fill_config_box_from_legacy(cfg, out.filament[i], legacy_data, i, extruder_num > 1);
             }
+
+            if (mmu) {
+                // Bake tool overrides to the print item values.
+                for (Domain::ConfigBox& box : out.tool) {
+                    for (const ConfigItem& item : box.overrides.overridden_items()) {
+                        out.print.items.opt(item.name()).set(item.value());
+                        box.overrides.disable(item.name());
+                    }
+                }
+            }
+
             fill_config_box_from_legacy(cfg, out.project, legacy_data);
             return out;
         }
@@ -752,12 +766,20 @@ static std::vector<double> get_nozzle_diameters(const Domain::Preset::HwPrinterC
 {
     std::vector<double> result;
 
-    for (const auto& tool : hw_config.tools) {
+    if (hw_config.material_slot_count() != hw_config.tool_count) {
         const std::optional<double> nozzle_diameter{
-            Domain::Preset::get_feature<double>(tool.features, "nozzle_diameter")
+            Domain::Preset::get_feature<double>(hw_config.tools.front().features, "nozzle_diameter")
         };
         ASSERT(nozzle_diameter);
-        result.push_back(*nozzle_diameter);
+        result.resize(hw_config.material_slot_count(), *nozzle_diameter);
+    } else {
+        for (const auto& tool : hw_config.tools) {
+            const std::optional<double> nozzle_diameter{
+                Domain::Preset::get_feature<double>(tool.features, "nozzle_diameter")
+            };
+            ASSERT(nozzle_diameter);
+            result.push_back(*nozzle_diameter);
+        }
     }
 
     return result;
@@ -769,14 +791,25 @@ static std::vector<unsigned char> get_nozzle_high_flows(
 {
     std::vector<unsigned char> result;
 
-    for (const auto& tool : hw_config.tools) {
+    if (hw_config.material_slot_count() != hw_config.tool_count) {
         const std::optional<bool> high_flow{
-            Domain::Preset::get_feature<bool>(tool.features, "nozzle_high_flow")
+            Domain::Preset::get_feature<bool>(hw_config.tools.front().features, "nozzle_high_flow")
         };
         if (high_flow.value_or(false)) {
-            result.push_back(1);
+            result.resize(hw_config.material_slot_count(), 1);
         } else {
-            result.push_back(0);
+            result.resize(hw_config.material_slot_count(), 0);
+        }
+    } else {
+        for (const auto& tool : hw_config.tools) {
+            const std::optional<bool> high_flow{
+                Domain::Preset::get_feature<bool>(tool.features, "nozzle_high_flow")
+            };
+            if (high_flow.value_or(false)) {
+                result.push_back(1);
+            } else {
+                result.push_back(0);
+            }
         }
     }
 
@@ -830,7 +863,15 @@ std::string serialize_as_legacy_config(
                 }
             }
             if (item) {
-                convert_new_to_old(*item, opt, *cfg_old->def()->get(key), filament_id);
+                if (hw_config.material_slot_count() != hw_config.tool_count
+                    && item->def().overrides_in.contains(FDMConfigLocation::Tool))
+                {
+                    for (std::size_t i{}; i < hw_config.material_slot_count(); ++i) {
+                        convert_new_to_old(*item, opt, *cfg_old->def()->get(key), i);
+                    }
+                } else {
+                    convert_new_to_old(*item, opt, *cfg_old->def()->get(key), filament_id);
+                }
             }
 
             if (!item && box->location == legacy_data.override_box_type
