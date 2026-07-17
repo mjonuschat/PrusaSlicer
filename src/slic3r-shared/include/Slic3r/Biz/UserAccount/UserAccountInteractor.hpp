@@ -119,6 +119,7 @@ public:
 
 private:
     void on_user_id(const std::string& body);
+    void notify_action_retry_finished();
 
     Platform::IMainThreadDispatcher& m_dispatcher;
     std::unique_ptr<IUserAccountCommunication> m_communication;

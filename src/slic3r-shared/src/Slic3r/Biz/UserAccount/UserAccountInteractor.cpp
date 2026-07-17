@@ -145,6 +145,7 @@ void UserAccountInteractor::on_action_retry(const Network::IHttp::Retry& retry)
 void UserAccountInteractor::on_action_success(ActionSuccessType success_type, std::string body)
 {
     SPDLOG_INFO("UserAccountInteractor: Action success({})", static_cast<int>(success_type));
+    notify_action_retry_finished();
     switch (success_type) {
     case Slic3r::Biz::UserAccount::ActionSuccessType::None:
         // Empty callback
@@ -178,6 +179,7 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
 void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string body)
 {
     SPDLOG_INFO("UserAccountInteractor: Action fail({})", static_cast<int>(fail_type));
+    notify_action_retry_finished();
     switch (fail_type) {
     case Slic3r::Biz::UserAccount::ActionFailType::None:
         // Empty callback
@@ -207,11 +209,15 @@ void UserAccountInteractor::on_new_refresh_time(long long exp)
 
 void UserAccountInteractor::on_race_lost(const std::string& msg)
 {
+    // The session queue is already cancelled here - no retry of the refresh is in flight anymore.
+    // Recovery from the store below is silent, so this is the only chance to report the end of it.
+    notify_action_retry_finished();
     m_communication->on_race_lost(msg);
 }
 
 void UserAccountInteractor::on_logged_out(bool notify_owner)
 {
+    notify_action_retry_finished();
     if (update_menu_callback) {
         update_menu_callback(true);
     }
@@ -230,6 +236,13 @@ void UserAccountInteractor::on_printables_secret_token(const std::string& body)
 {
     invoke_listeners<IUserAccountListener>(
         [body](auto* listener) { listener->on_printables_secret_token(body); }
+    );
+}
+
+void UserAccountInteractor::notify_action_retry_finished()
+{
+    invoke_listeners<IUserAccountListener>(
+        [](auto* listener) { listener->on_user_account_action_retry_finished(); }
     );
 }
 

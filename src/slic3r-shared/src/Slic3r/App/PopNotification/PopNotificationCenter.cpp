@@ -991,7 +991,6 @@ const auto user_account_login_matcher{cmp<UserAccountLoginNotificationData>( //
 
 void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
-    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
     if (is_refresh) {
         return;
     }
@@ -1082,8 +1081,8 @@ void PopNotificationCenter::on_user_account_action_retry(
     m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
     std::string text = fmt::format(
-        "Communication with Prusa Account is taking longer than expected. Retrying. Attempt {}.",
-        std::to_string(retry.attempt),
+        // TRN Prusa Account notification shown while a request is being retried. {} is the number of the current attempt.
+        fmt::runtime(_u8L("Communication is taking longer than expected. Retrying. Attempt {}.")),
         std::to_string(retry.attempt)
     );
     m_notification_list.upsert_notifcation(
@@ -1091,9 +1090,12 @@ void PopNotificationCenter::on_user_account_action_retry(
             PopNotificationType::UserAccountTransientError,
             PopNotificationLevel::Warning,
             0s,
-            PopNotificationLayoutTextButtons(
+            PopNotificationLayoutHeaderTextButtons(
+                // TRN Header of the Prusa Account retry notification.
+                _u8L("Prusa Account"),
                 text,
-                {{"Cancel",
+                // TRN Button on the Prusa Account retry notification. Cancels the retried request.
+                {{_u8L("Cancel"),
                   [cancel_callback]()
                   {
                       cancel_callback();
@@ -1103,6 +1105,11 @@ void PopNotificationCenter::on_user_account_action_retry(
         },
         never_equal_matcher
     );
+}
+
+void PopNotificationCenter::on_user_account_action_retry_finished()
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 }
 
 void PopNotificationCenter::on_project_load_failed(const std::string& error)

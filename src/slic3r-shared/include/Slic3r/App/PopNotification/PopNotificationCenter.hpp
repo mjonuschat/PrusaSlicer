@@ -64,6 +64,7 @@ public:
     void on_user_account_logged_out() override;
     void on_user_account_will_refresh() override;
     void on_user_account_action_retry(const Biz::Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override;
+    void on_user_account_action_retry_finished() override;
 
     // Projects Changed
     void on_project_load_failed(const std::string& error) override;
