@@ -148,8 +148,9 @@ void TimeMachine::calculate_time(ProcessorResult& result, TimeMode mode, size_t 
     for (size_t i = 0; i < n_blocks_process; ++i) {
         const TimeBlock& block = blocks[i];
         float block_time = block.time();
-        if (i == 0)
+        if (i + 1 == n_blocks_process) {
             block_time += additional_time;
+        }
 
         time += double(block_time);
         result.moves()[block.move_id].time[size_t(mode)] = block_time;
