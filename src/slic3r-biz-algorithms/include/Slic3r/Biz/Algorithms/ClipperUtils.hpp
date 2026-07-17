@@ -385,6 +385,7 @@ Domain::ExPolygons intersection_ex(const Domain::Polygons &subject, const Domain
 Domain::ExPolygons intersection_ex(const Domain::ExPolygon &subject, const Domain::Polygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::ExPolygons intersection_ex(const Domain::Polygons &subject, const Domain::ExPolygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::ExPolygons intersection_ex(const Domain::ExPolygons &subject, const Domain::Polygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
+Domain::ExPolygons intersection_ex(const Domain::ExPolygons &subject, const Domain::ExPolygon &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::ExPolygons intersection_ex(const Domain::ExPolygons &subject, const Domain::ExPolygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::Polylines  intersection_pl(const Domain::Polylines &subject, const Domain::Polygon &clip);
 Domain::Polylines  intersection_pl(const Domain::Polyline &subject, const Domain::ExPolygon &clip);

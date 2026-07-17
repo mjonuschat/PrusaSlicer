@@ -1368,6 +1368,21 @@ Slic3r::Domain::ExPolygons intersection_ex(
         ClipperUtils::PolygonsProvider(clip), do_safety_offset
     );
 }
+
+Slic3r::Domain::ExPolygons intersection_ex(
+    const Slic3r::Domain::ExPolygons& subject,
+    const Slic3r::Domain::ExPolygon& clip,
+    ApplySafetyOffset do_safety_offset
+)
+{
+    return _clipper_ex(
+        ClipperLib::ctIntersection,
+        ClipperUtils::ExPolygonsProvider(subject),
+        ClipperUtils::ExPolygonProvider(clip),
+        do_safety_offset
+    );
+}
+
 Slic3r::Domain::ExPolygons intersection_ex(
     const Slic3r::Domain::ExPolygons& subject,
     const Slic3r::Domain::ExPolygons& clip,
