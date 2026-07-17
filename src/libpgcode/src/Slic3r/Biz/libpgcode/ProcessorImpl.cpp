@@ -470,9 +470,9 @@ void ProcessorImpl::process_gcode_line(const GCodeReader::GCodeLine& line)
         default:
             break;
         }
-    }
-    else {
-        const std::string& comment = line.raw();
+    } else {
+        // Leading whitespace is trimmed so that tags inside indented blocks (e.g. {if}) are recognized.
+        const std::string_view comment = skip_whitespaces(std::string_view(line.raw()));
         if (comment.length() > 2 && comment.front() == ';')
             // Process tags embedded into comments. Tag comments always start at the start of a line
             // with a comment and continue with a tag without any whitespace separator.
