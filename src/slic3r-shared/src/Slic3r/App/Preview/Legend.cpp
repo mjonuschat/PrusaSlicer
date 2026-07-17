@@ -122,6 +122,37 @@ static CoarseItems collect_color_range_coarse_items(FdmViewer& viewer, FdmViewer
     return ret;
 }
 
+static WipeTowerAndFlushFilamentUsage
+get_wipe_tower_and_flush_filament_usage(const FdmViewerWrapper& wrapper, const uint8_t extruder_id)
+{
+    const WipeTowerAndFlushFilamentUsagePerExtruder& usage_per_extruder{
+        wrapper.wipe_tower_and_flush_filament_usage()
+    };
+    const auto it{usage_per_extruder.find(extruder_id)};
+
+    return (it == usage_per_extruder.end()) ? WipeTowerAndFlushFilamentUsage{} : it->second;
+}
+
+static std::string
+format_filament_usage(const float length, const float mass, const FdmViewerWrapper& wrapper)
+{
+    const bool is_si{wrapper.units() == UnitsSystem::SI};
+    const std::string formatted_length{convert_and_format_units(
+        length,
+        UnitsType::Meters,
+        is_si ? UnitsType::Meters : UnitsType::Feet,
+        2
+    )};
+    const std::string formatted_mass{convert_and_format_units(
+        mass,
+        UnitsType::Grams,
+        is_si ? UnitsType::Grams : UnitsType::Ounces,
+        2
+    )};
+
+    return format("%s (%s)", formatted_length.c_str(), formatted_mass.c_str());
+}
+
 static CoarseItems collect_tool_coarse_items(FdmViewer& viewer)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
@@ -594,7 +625,10 @@ static void draw_color_range_items_detail(const FdmViewer& viewer, const FdmView
 static void draw_tool_items_details(Render::ImguiRender& imgui_render, const FdmViewer& viewer, const FdmViewerWrapper& wrapper)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
-    const Palette& tool_colors = viewer.tool_colors();
+    const Palette& tool_colors                     = viewer.tool_colors();
+    const bool has_wipe_tower                      = wrapper.has_wipe_tower_filament();
+    const bool has_flush                           = wrapper.has_flush_filament();
+
     float line_height = ImGui::GetTextLineHeight();
     ImVec2 icon_size(line_height, line_height);
     float cell_height = 1.5f * line_height;
@@ -621,9 +655,24 @@ static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Fdm
 
         ImGui::PopStyleColor(4);
 
-        for (size_t i = 0; i < used_extruders_ids.size(); ++i) {
-            uint8_t extruder_id = used_extruders_ids[i];
+        const auto draw_usage_row =
+            [&wrapper, icon_size](const std::string& label, const float length, const float mass)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Indent(icon_size.x);
+            ImGui::TextUnformatted(label.c_str());
+            ImGui::Unindent(icon_size.x);
+
+            ImGui::TableSetColumnIndex(1);
+            const std::string text{format_filament_usage(length, mass, wrapper)};
+            ImGui::TextUnformatted(text.c_str());
+        };
+
+        for (const uint8_t extruder_id : used_extruders_ids) {
             const ColorRGB& color = tool_colors[extruder_id];
+            const float extruder_length{viewer.used_extruder_used_filament_length(extruder_id)};
+            const float extruder_mass{viewer.used_extruder_used_filament_mass(extruder_id)};
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -634,13 +683,28 @@ static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Fdm
             ImGui::Text("%s %d", _u8L("Extruder").c_str(), 1 + extruder_id);
 
             ImGui::TableSetColumnIndex(1);
-            std::string txt_length = convert_and_format_units(viewer.used_extruder_used_filament_length(extruder_id),
-                UnitsType::Meters, (wrapper.units() == UnitsSystem::SI) ? UnitsType::Meters : UnitsType::Feet,
-                2);
-            std::string txt_mass = convert_and_format_units(viewer.used_extruder_used_filament_mass(extruder_id),
-                UnitsType::Grams, (wrapper.units() == UnitsSystem::SI) ? UnitsType::Grams : UnitsType::Ounces,
-                2);
-            ImGui::Text("%s (%s)", txt_length.c_str(), txt_mass.c_str());
+            const std::string text{format_filament_usage(extruder_length, extruder_mass, wrapper)};
+            ImGui::TextUnformatted(text.c_str());
+
+            if (has_wipe_tower || has_flush) {
+                const WipeTowerAndFlushFilamentUsage usage{
+                    get_wipe_tower_and_flush_filament_usage(wrapper, extruder_id)
+                };
+
+                draw_usage_row(
+                    _u8L("objects"),
+                    std::max(0.f, extruder_length - usage.wipe_tower_m - usage.flush_m),
+                    std::max(0.f, extruder_mass - usage.wipe_tower_g - usage.flush_g)
+                );
+
+                if (has_wipe_tower) {
+                    draw_usage_row(_u8L("wipe tower"), usage.wipe_tower_m, usage.wipe_tower_g);
+                }
+
+                if (has_flush) {
+                    draw_usage_row(_u8L("flush"), usage.flush_m, usage.flush_g);
+                }
+            }
         }
 
         ImGui::EndTable();

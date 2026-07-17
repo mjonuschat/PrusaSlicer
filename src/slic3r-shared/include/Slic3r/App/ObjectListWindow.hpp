@@ -52,6 +52,7 @@ private:
 
     Yoga::Rectangle* m_sliced_info{nullptr};
 
+    Yoga::Text* m_used_material_label{nullptr};
     Yoga::Text* m_used_material{nullptr};
     Yoga::Text* m_material_cost{nullptr};
     Yoga::Text* m_first_layer_time{nullptr};

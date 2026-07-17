@@ -87,27 +87,50 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
         LayoutButton* calc_btn = si_header->emplace_back<LayoutButton>("", Render::Icon::Calculator);
         */
 
-        auto add_row = [this](const std::string& label, Text** value_item) {
+        struct SlicedInfoRow
+        {
+            Item* row;
+            Text* label;
+            Text* value;
+        };
+
+        auto add_row = [this](const std::string& label) -> SlicedInfoRow
+        {
             Item* row = m_sliced_info->emplace_back<Item>();
             row->set_gap(10.f);
 
-            Text* text = row->emplace_back<Text>(label);
-            text->set_font_type(Render::ImguiFontType::Bold);
-            text->set_width(85.f);
+            Text* label_text = row->emplace_back<Text>(label);
+            label_text->set_font_type(Render::ImguiFontType::Bold);
+            label_text->set_width(85.f);
 
-            *value_item = row->emplace_back<Text>("");
-            (*value_item)->set_flex_grow(1);
-            (*value_item)->set_wrap_mode(Text::WrapMode::WrapElide);
-            return row;
+            Text* value_text = row->emplace_back<Text>("");
+            value_text->set_flex_grow(1);
+            value_text->set_wrap_mode(Text::WrapMode::WrapElide);
+            return {row, label_text, value_text};
         };
 
-        add_row(_u8L("Used material"), &m_used_material);
-        m_material_cost_row = add_row(_u8L("Cost"), &m_material_cost);
+        const SlicedInfoRow used_material_row = add_row(_u8L("Used material"));
+        m_used_material_label                 = used_material_row.label;
+        m_used_material                       = used_material_row.value;
+
+        const SlicedInfoRow material_cost_row = add_row(_u8L("Cost"));
+        m_material_cost_row                   = material_cost_row.row;
+        m_material_cost                       = material_cost_row.value;
         m_material_cost_row->set_visible(false);
-        m_first_layer_time_row = add_row(_u8L("First layer"), &m_first_layer_time);
+
+        const SlicedInfoRow first_layer_time_row = add_row(_u8L("First layer"));
+        m_first_layer_time_row                   = first_layer_time_row.row;
+        m_first_layer_time                       = first_layer_time_row.value;
         m_first_layer_time_row->set_visible(false);
-        add_row(_u8L("Printing time"), &m_estimated_time);
+
+        m_estimated_time = add_row(_u8L("Printing time")).value;
     }
+}
+
+static std::string
+format_used_material(const float weight_g, const float length_mm, const float volume_cm3)
+{
+    return format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight_g, length_mm / 1000.f, volume_cm3);
 }
 
 void ObjectListWindow::update_sliced_info()
@@ -136,7 +159,53 @@ void ObjectListWindow::update_sliced_info()
         const float weight{print_statistics.total_used_filament_g};
         const float length{print_statistics.total_used_filament_mm};
 
-        const std::string used_material = format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight, length / 1000.0, volume);
+        const bool has_wipe_tower{print_statistics.total_used_filament_for_wipe_tower_mm > 0.f};
+        const bool has_flush{print_statistics.total_used_filament_for_flush_mm > 0.f};
+
+        std::string used_material_label{_u8L("Used material")};
+        std::string used_material{format_used_material(weight, length, volume)};
+
+        const auto append_row =
+            [&](const std::string& label, float weight_g, float length_mm, float volume_cm3)
+        {
+            used_material_label += "\n  " + label;
+            used_material += '\n' + format_used_material(weight_g, length_mm, volume_cm3);
+        };
+
+        if (has_wipe_tower || has_flush) {
+            append_row(
+                _u8L("objects"),
+                weight
+                    - print_statistics.total_used_filament_for_wipe_tower_g
+                    - print_statistics.total_used_filament_for_flush_g,
+                length
+                    - print_statistics.total_used_filament_for_wipe_tower_mm
+                    - print_statistics.total_used_filament_for_flush_mm,
+                volume
+                    - print_statistics.total_used_filament_for_wipe_tower_cm3
+                    - print_statistics.total_used_filament_for_flush_cm3
+            );
+
+            if (has_wipe_tower) {
+                append_row(
+                    _u8L("wipe tower"),
+                    print_statistics.total_used_filament_for_wipe_tower_g,
+                    print_statistics.total_used_filament_for_wipe_tower_mm,
+                    print_statistics.total_used_filament_for_wipe_tower_cm3
+                );
+            }
+
+            if (has_flush) {
+                append_row(
+                    _u8L("flush"),
+                    print_statistics.total_used_filament_for_flush_g,
+                    print_statistics.total_used_filament_for_flush_mm,
+                    print_statistics.total_used_filament_for_flush_cm3
+                );
+            }
+        }
+
+        m_used_material_label->set_text(used_material_label);
         m_used_material->set_text(used_material);
 
         const float cost{ print_statistics.total_filament_cost };
@@ -160,6 +229,7 @@ void ObjectListWindow::update_sliced_info()
     float used_material_total = print_statistics.objects_used_material + print_statistics.support_used_material;
 
     const std::string used_material = format("%1$.2f g  %2$.0f mm3", print_statistics.total_weight, used_material_total);
+    m_used_material_label->set_text(_u8L("Used material"));
     m_used_material->set_text(used_material);
 
     m_material_cost->set_text(format("%1%", print_statistics.total_cost));

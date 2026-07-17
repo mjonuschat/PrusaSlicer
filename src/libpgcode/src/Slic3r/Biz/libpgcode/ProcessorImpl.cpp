@@ -598,10 +598,18 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
 
     float volume_extruded_filament = filament_geo.area_cross_section * delta_pos[E];
 
-    if (volume_extruded_filament != 0.0f)
-        m_used_filaments.increase_caches(volume_extruded_filament, m_extruder_id,
-            filament_geo.area_cross_section * m_config.parking_pos_retraction,
-            filament_geo.area_cross_section * m_config.extra_loading_move);
+    if (volume_extruded_filament != 0.f) {
+        if (m_flushing) {
+            m_used_filaments.update_flush_per_extruder(volume_extruded_filament, m_extruder_id);
+        } else {
+            m_used_filaments.increase_caches(
+                volume_extruded_filament,
+                m_extruder_id,
+                filament_geo.area_cross_section * m_config.parking_pos_retraction,
+                filament_geo.area_cross_section * m_config.extra_loading_move
+            );
+        }
+    }
 
     MoveType type = detect_move_type(delta_pos, m_wiping);
     if (type == MoveType::Extrude) {
@@ -1856,6 +1864,18 @@ void ProcessorImpl::process_tags(const std::string_view comment)
         return;
     }
 
+    // flush start tag
+    if (comment.starts_with(custom_tag(CustomTags::Flush_Start))) {
+        m_flushing = true;
+        return;
+    }
+
+    // flush end tag
+    if (comment.starts_with(custom_tag(CustomTags::Flush_End))) {
+        m_flushing = false;
+        return;
+    }
+
     // height tag
     tag = reserved_tag(Tags::Height);
     pos = comment.find(tag);
@@ -2526,11 +2546,19 @@ void ProcessorImpl::process_custom_gcode_time(CustomGCode::Type code)
 
 void ProcessorImpl::process_filaments(CustomGCode::Type code)
 {
-    switch (code)
-    {
-    case CustomGCode::Type::ColorChange: { m_used_filaments.process_color_change_cache(); break; }
-    case CustomGCode::Type::ToolChange:  { m_used_filaments.process_extruder_cache(m_extruder_id); break; }
-    default:                           { break; }
+    switch (code) {
+    case CustomGCode::Type::ColorChange: {
+        m_used_filaments.process_color_change_cache();
+        break;
+    }
+    case CustomGCode::Type::ToolChange: {
+        m_used_filaments.process_role_cache(m_result, m_extruder_id, m_extrusion_role);
+        m_used_filaments.process_extruder_cache(m_extruder_id);
+        break;
+    }
+    default: {
+        break;
+    }
     }
 }
 
@@ -2544,6 +2572,7 @@ void ProcessorImpl::reset()
 {
     m_extruder_id = 0;
     m_wiping = false;
+    m_flushing = false;
     m_seams_detection_enabled = false;
     m_global_positioning_type  = PositioningType::Absolute;
     m_e_local_positioning_type = PositioningType::Absolute;
@@ -2739,10 +2768,12 @@ void ProcessorImpl::update_basic_statistics()
         basic_print_stats->silent_mode_time = silent_mode_time;
     }
 
-    basic_print_stats->volumes_per_color_change =
-        m_used_filaments.volumes_per_color_change;
-    basic_print_stats->volumes_per_extruder    = m_used_filaments.volumes_per_extruder;
-    basic_print_stats->used_filaments_per_role = m_used_filaments.filaments_per_role;
+    basic_print_stats->volumes_per_color_change = m_used_filaments.volumes_per_color_change;
+    basic_print_stats->volumes_per_extruder     = m_used_filaments.volumes_per_extruder;
+    basic_print_stats->wipe_tower_volumes_per_extruder =
+        m_used_filaments.wipe_tower_volumes_per_extruder;
+    basic_print_stats->flush_volumes_per_extruder = m_used_filaments.flush_volumes_per_extruder;
+    basic_print_stats->used_filaments_per_role    = m_used_filaments.filaments_per_role;
 }
 
 } // namespace Slic3r::Biz::libpgcode

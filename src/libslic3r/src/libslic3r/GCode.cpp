@@ -882,6 +882,11 @@ namespace DoExport {
 
                     print_statistics.total_wipe_tower_filament += wipe_tower_filament;
 
+                    const double wipe_tower_filament_volume{
+                        wipe_tower_filament * extruder.filament_crossection() * 0.001
+                    };
+                    print_statistics.total_wipe_tower_filament_volume += wipe_tower_filament_volume;
+
                     const double wipe_tower_filament_weight{
                         wipe_tower_filament
                         * extruder.filament_crossection()

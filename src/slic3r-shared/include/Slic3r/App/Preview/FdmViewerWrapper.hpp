@@ -130,6 +130,10 @@ public:
 
     Biz::libpgcode::GCodeProducer producer() const { return m_data.producer; }
 
+    const WipeTowerAndFlushFilamentUsagePerExtruder& wipe_tower_and_flush_filament_usage() const;
+    bool has_wipe_tower_filament() const;
+    bool has_flush_filament() const;
+
     float cog_marker_scale_factor() const { return m_viewer.cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_viewer.set_cog_marker_scale_factor(factor); }
 

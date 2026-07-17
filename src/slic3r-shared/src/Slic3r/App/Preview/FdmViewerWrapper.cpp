@@ -12,6 +12,8 @@
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/TemplateUtils.hpp"
 
+#include <algorithm>
+
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
@@ -288,6 +290,119 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
     return ret;
 }
 
+struct WipeTowerAndFlushFilamentUsageData
+{
+    WipeTowerAndFlushFilamentUsagePerExtruder usage_per_extruder;
+    bool has_wipe_tower_filament{false};
+    bool has_flush_filament{false};
+};
+
+static float value_or_zero(const std::vector<float>& values, size_t index)
+{
+    return index < values.size() ? values[index] : 0.f;
+}
+
+static WipeTowerAndFlushFilamentUsageData extract_wipe_tower_and_flush_filament_usage(
+    const ProcessorResult& result
+)
+{
+    return std::visit(
+        Domain::overloaded{
+            [](const Domain::FullPrintStatistics& stats)
+            {
+                WipeTowerAndFlushFilamentUsageData ret;
+                ret.has_wipe_tower_filament = stats.total_used_filament_for_wipe_tower_mm > 0.f;
+                ret.has_flush_filament      = stats.total_used_filament_for_flush_mm > 0.f;
+
+                const size_t extruders_count{std::max(
+                    {stats.used_filament_for_wipe_tower_per_extruder_mm.size(),
+                     stats.used_filament_for_wipe_tower_per_extruder_g.size(),
+                     stats.used_filament_for_flush_per_extruder_mm.size(),
+                     stats.used_filament_for_flush_per_extruder_g.size()}
+                )};
+
+                for (size_t extruder_id = 0; extruder_id < extruders_count; ++extruder_id) {
+                    const WipeTowerAndFlushFilamentUsage usage{
+                        .wipe_tower_m = 0.001f
+                            * value_or_zero(stats.used_filament_for_wipe_tower_per_extruder_mm,
+                                            extruder_id),
+                        .wipe_tower_g = value_or_zero(
+                            stats.used_filament_for_wipe_tower_per_extruder_g,
+                            extruder_id
+                        ),
+                        .flush_m = 0.001f
+                            * value_or_zero(
+                                       stats.used_filament_for_flush_per_extruder_mm,
+                                       extruder_id
+                            ),
+                        .flush_g =
+                            value_or_zero(stats.used_filament_for_flush_per_extruder_g, extruder_id)
+                    };
+
+                    const bool has_wipe_tower{usage.wipe_tower_m > 0.f || usage.wipe_tower_g > 0.f};
+                    const bool has_flush{usage.flush_m > 0.f || usage.flush_g > 0.f};
+
+                    ret.has_wipe_tower_filament |= has_wipe_tower;
+                    ret.has_flush_filament |= has_flush;
+                    if (has_wipe_tower || has_flush) {
+                        ret.usage_per_extruder[static_cast<uint8_t>(extruder_id)] = usage;
+                    }
+                }
+
+                return ret;
+            },
+            [&result](const Domain::BasicPrintStatistics& stats)
+            {
+                const auto length_from_volume = [&result](uint8_t extruder_id, float volume)
+                {
+                    if (extruder_id >= result.extruders_count) {
+                        return 0.f;
+                    }
+
+                    const float area{result.filament_geometry(extruder_id).area_cross_section};
+                    return area > 0.f ? volume / area * 0.001f : 0.f;
+                };
+
+                const auto mass_from_volume = [&result](uint8_t extruder_id, float volume)
+                {
+                    return extruder_id < result.filament_densities.size() ?
+                        volume * result.filament_densities[extruder_id] * 0.001f :
+                        0.f;
+                };
+
+                WipeTowerAndFlushFilamentUsageData ret;
+                for (const auto& [extruder_id, volume] : stats.wipe_tower_volumes_per_extruder) {
+                    if (volume <= 0.f) {
+                        continue;
+                    }
+
+                    ret.has_wipe_tower_filament = true;
+
+                    WipeTowerAndFlushFilamentUsage& usage{ret.usage_per_extruder[extruder_id]};
+                    usage.wipe_tower_m = length_from_volume(extruder_id, volume);
+                    usage.wipe_tower_g = mass_from_volume(extruder_id, volume);
+                }
+
+                for (const auto& [extruder_id, volume] : stats.flush_volumes_per_extruder) {
+                    if (volume <= 0.f) {
+                        continue;
+                    }
+
+                    ret.has_flush_filament = true;
+
+                    WipeTowerAndFlushFilamentUsage& usage{ret.usage_per_extruder[extruder_id]};
+                    usage.flush_m = length_from_volume(extruder_id, volume);
+                    usage.flush_g = mass_from_volume(extruder_id, volume);
+                }
+
+                return ret;
+            }
+        },
+
+        result.print_statistics
+    );
+}
+
 static FdmViewerWrapperInputData extract_wrapper_input_data_from_result(const ProcessorResult& result)
 {
     FdmViewerWrapperInputData ret;
@@ -302,6 +417,13 @@ static FdmViewerWrapperInputData extract_wrapper_input_data_from_result(const Pr
     ret.color_change_gcode = result.color_change_gcode;
     ret.pause_print_gcode = result.pause_print_gcode;
     ret.template_custom_gcode = result.template_custom_gcode;
+
+    WipeTowerAndFlushFilamentUsageData usage_data{
+        extract_wipe_tower_and_flush_filament_usage(result)
+    };
+    ret.wipe_tower_and_flush_filament_usage = std::move(usage_data.usage_per_extruder);
+    ret.has_wipe_tower_filament             = usage_data.has_wipe_tower_filament;
+    ret.has_flush_filament                  = usage_data.has_flush_filament;
 
     return ret;
 }
@@ -339,6 +461,22 @@ void FdmViewerWrapper::set_units(UnitsSystem sys)
 {
     m_units = sys;
     m_slider_layers->set_units(sys);
+}
+
+const WipeTowerAndFlushFilamentUsagePerExtruder&
+FdmViewerWrapper::wipe_tower_and_flush_filament_usage() const
+{
+    return m_data.wipe_tower_and_flush_filament_usage;
+}
+
+bool FdmViewerWrapper::has_wipe_tower_filament() const
+{
+    return m_data.has_wipe_tower_filament;
+}
+
+bool FdmViewerWrapper::has_flush_filament() const
+{
+    return m_data.has_flush_filament;
 }
 
 void FdmViewerWrapper::set_layers_range(Interval::value_type min, Interval::value_type max)
