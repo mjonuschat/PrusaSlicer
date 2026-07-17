@@ -1193,7 +1193,7 @@ variants:
             top_infill_extrusion_width: 0.42
             overhangs: 1
             support_material: 1
-            support_material_contact_distance: 0.2
+            support_material_contact_distance: 0
             support_material_extruder: 5
             support_material_extrusion_width: 0.4
             support_material_interface_extruder: 5
@@ -1232,7 +1232,7 @@ variants:
             top_infill_extrusion_width: 0.42
             overhangs: 1
             support_material: 1
-            support_material_contact_distance: 0.2
+            support_material_contact_distance: 0
             support_material_extrusion_width: 0.4
             support_material_interface_extruder: 5
             support_material_interface_spacing: 0.1
