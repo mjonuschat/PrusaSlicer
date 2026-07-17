@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   update-version:
-    uses: mjonuschat/prusaslicer-ci/.github/workflows/publish_version.yml@main
+    uses: LMS-P/prusaslicer-ci/.github/workflows/publish_version.yml@main
     secrets: inherit
     permissions:
       contents: read
