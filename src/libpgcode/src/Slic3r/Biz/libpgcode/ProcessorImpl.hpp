@@ -75,6 +75,7 @@ private:
     uint8_t m_extruder_id{ 0 };
     bool m_wiping{ false };
     bool m_flushing{ false };
+    bool m_exclude_e{ false };
     bool m_seams_detection_enabled{ false };
     uint32_t m_line_id{ 0 };
     uint32_t m_last_line_id{ 0 };

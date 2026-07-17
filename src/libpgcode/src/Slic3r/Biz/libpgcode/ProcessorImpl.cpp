@@ -598,7 +598,7 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
 
     float volume_extruded_filament = filament_geo.area_cross_section * delta_pos[E];
 
-    if (volume_extruded_filament != 0.f) {
+    if (volume_extruded_filament != 0.f && !m_exclude_e) {
         if (m_flushing) {
             m_used_filaments.update_flush_per_extruder(volume_extruded_filament, m_extruder_id);
         } else {
@@ -1876,6 +1876,18 @@ void ProcessorImpl::process_tags(const std::string_view comment)
         return;
     }
 
+    // exclude E start tag
+    if (comment.starts_with(custom_tag(CustomTags::Exclude_E_Start))) {
+        m_exclude_e = true;
+        return;
+    }
+
+    // exclude E end tag
+    if (comment.starts_with(custom_tag(CustomTags::Exclude_E_End))) {
+        m_exclude_e = false;
+        return;
+    }
+
     // height tag
     tag = reserved_tag(Tags::Height);
     pos = comment.find(tag);
@@ -2573,6 +2585,7 @@ void ProcessorImpl::reset()
     m_extruder_id = 0;
     m_wiping = false;
     m_flushing = false;
+    m_exclude_e = false;
     m_seams_detection_enabled = false;
     m_global_positioning_type  = PositioningType::Absolute;
     m_e_local_positioning_type = PositioningType::Absolute;

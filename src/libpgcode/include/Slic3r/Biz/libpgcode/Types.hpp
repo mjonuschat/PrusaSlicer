@@ -327,12 +327,16 @@ enum class CustomTags : uint8_t
 {
     Flush_Start,
     Flush_End,
+    Exclude_E_Start,
+    Exclude_E_End,
     COUNT
 };
 
 static const std::vector<std::string_view> CUSTOM_TAGS = {
     "FLUSH_START"sv,
-    "FLUSH_END"sv
+    "FLUSH_END"sv,
+    "EXCLUDE_E_START"sv,
+    "EXCLUDE_E_END"sv
 };
 
 } // namespace Slic3r::Biz::libpgcode
