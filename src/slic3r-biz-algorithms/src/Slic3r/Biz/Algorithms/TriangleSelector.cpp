@@ -1184,6 +1184,26 @@ void TriangleSelector::set_facet(int facet_idx, TriangleStateType state) {
     m_triangles[facet_idx].set_state(state);
 }
 
+void TriangleSelector::remap_states(const std::map<TriangleStateType, TriangleStateType>& remap)
+{
+    for (Triangle& tr : m_triangles) {
+        if (!tr.valid() || tr.is_split()) {
+            continue;
+        }
+
+        if (const auto it = remap.find(tr.get_state()); it != remap.end()) {
+            tr.set_state(it->second);
+        }
+    }
+
+    for (Triangle& tr : m_triangles) {
+        if (tr.is_split() && tr.valid()) {
+            const size_t facet_idx = &tr - &m_triangles.front();
+            this->remove_useless_children(int(facet_idx));
+        }
+    }
+}
+
 // called by select_patch()->select_triangle()...select_triangle()
 // to decide which sides of the triangle to split and to actually split it calling set_division() and perform_split().
 void TriangleSelector::split_triangle(int facet_idx, const Index3 &neighbors)
