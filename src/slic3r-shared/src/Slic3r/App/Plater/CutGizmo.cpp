@@ -2729,12 +2729,23 @@ void synchronize_model_after_cut(Model& model, const CutId& cut_id)
             obj->cut_id = cut_id;
 }
 
+static std::vector<size_t> get_unique_object_ids(const ElementRefs& instance_refs)
+{
+    auto object_ids =
+        instance_refs | std::views::transform([](const auto& ref) { return ref.object_id; });
+    std::vector<size_t> unique_object_ids(object_ids.begin(), object_ids.end());
+    std::ranges::sort(unique_object_ids);
+    auto [first, last] = std::ranges::unique(unique_object_ids);
+    unique_object_ids.erase(first, last);
+    return unique_object_ids;
+}
+
 void CutGizmo::perform_cut()
 {
     if (!can_perform_cut() || !context().selected_object)
         return;
 
-    // deactivate CutGizmo and than perform a cut
+    // deactivate CutGizmo and then perform a cut
     if (m_controller) {
         m_controller->deactivate_current_tool();
     }
@@ -2791,54 +2802,62 @@ void CutGizmo::perform_cut()
         // save cut_id to post update synchronization
         const CutId cut_id = cut_mo->cut_id;
 
-        // update cut results in the model
+        // Update cut results in the model:
+        // 1. Remove the old object
         m_project_interactor->scene_interactor().delete_object(context().selected_object);
-        const ElementRefs instance_refs{m_project_interactor->scene_interactor().add_new_objects(new_objects)};
+        // 2. Add new objects.
+        const ElementRefs instance_refs{
+            m_project_interactor->scene_interactor().add_new_objects(new_objects)
+        };
+        // Note: After that, process only ModelInstances, which will be obtained with ids from instance_refs
 
         // arrange result objects
         Biz::Arrange::Settings settings;
         settings.scaled_offset = Biz::Algorithms::Scaling::scaled(3.0);
 
         const Biz::Scene::BedSelection selection{
-            m_project_interactor->scene_interactor().bed_selection()};
+            m_project_interactor->scene_interactor().bed_selection()
+        };
         ASSERT(!selection.empty());
         const BedRef& bed_ref{selection.selected_beds().front()};
         const Domain::BedInstance* bed_instance{
-            m_project_interactor->selected_project().find_bed_instance_by_id(bed_ref.instance_id)};
+            m_project_interactor->selected_project().find_bed_instance_by_id(bed_ref.instance_id)
+        };
         ASSERT(bed_instance);
 
-        BedToArrange bed_to_arrange{
-            bed_ref,
-            bed_instance->index(),
-            {},
-            {},
-            true
-        };
-
-        ASSERT(instance_refs.size() == 2);
-        for (std::size_t i{}; i < instance_refs.size(); ++i) {
-            const ElementRef& element{instance_refs[i]};
-            const ModelInstance* instance{
-                m_project_interactor->selected_project()
-                    .find_instance_by_id(element.object_id, element.instance_id)};
-            if (!instance) {
-                continue;
-            }
-            if (i == 0) {
-                bed_to_arrange.fixed.push_back(instance);
+        std::vector<size_t> unique_object_ids = get_unique_object_ids(instance_refs);
+        std::vector<BedToArrange> beds_to_arrange;
+        std::size_t inst_cnt{};
+        for (std::size_t object_id : unique_object_ids) {
+            const ModelObject* object{
+                m_project_interactor->selected_project().find_object_by_id(object_id)
+            };
+            ASSERT(object);
+            if (beds_to_arrange.empty()) {
+                inst_cnt = object->instances.size();
+                beds_to_arrange.reserve(inst_cnt);
+                for (const ModelInstance* instance : object->instances) {
+                    beds_to_arrange.emplace_back(
+                        BedToArrange{bed_ref, bed_instance->index(), {}, {instance}, true}
+                    );
+                }
             } else {
-                bed_to_arrange.arrangeable.push_back(instance);
+                ASSERT(object->instances.size() == inst_cnt);
+                for (std::size_t inst_idx{}; inst_idx < inst_cnt; inst_idx++) {
+                    beds_to_arrange.at(inst_idx).arrangeable.emplace_back(
+                        object->instances.at(inst_idx)
+                    );
+                }
             }
         }
 
         m_project_interactor->arrange_interactor().arrange(
             m_project_interactor->selected_project_id(),
-            {bed_to_arrange},
+            beds_to_arrange,
             std::nullopt,
             {},
             settings,
             [this]() { take_snapshot(Biz::UndoSnapshotType::Cut); });
-        // may be better solution?
         synchronize_model_after_cut(m_project_interactor->selected_project().model(), cut_id);
     }
 
