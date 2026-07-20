@@ -10,6 +10,8 @@
 
 using namespace Slic3r::App::Yoga;
 
+using Slic3r::Domain::FacetsAnnotationKind;
+
 namespace Slic3r::App::Plater {
 
 PaintOnFuzzySkinGizmo::PaintOnFuzzySkinGizmo(
@@ -69,6 +71,11 @@ Scene::ToolType PaintOnFuzzySkinGizmo::type() const
 std::unique_ptr<GizmoWindow> PaintOnFuzzySkinGizmo::release_ui_window()
 {
     return m_dialog.release();
+}
+
+FacetsAnnotationKind PaintOnFuzzySkinGizmo::get_facets_annotation_kind() const
+{
+    return FacetsAnnotationKind::FuzzySkin;
 }
 
 const Domain::FacetsAnnotation& PaintOnFuzzySkinGizmo::get_facets_annotation(

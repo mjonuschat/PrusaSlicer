@@ -96,6 +96,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/LayerRangeSettingsDialog.hpp
         src/Slic3r/App/Plater/LayerRangeSettingsDialog.cpp
         include/Slic3r/App/Plater/MMPaintingColorDropdowns.hpp
+        include/Slic3r/App/Plater/MMPaintedVolumeRendering.hpp
+        src/Slic3r/App/Plater/MMPaintedVolumeRendering.cpp
         include/Slic3r/App/Plater/MMPaintingUtils.hpp
         include/Slic3r/App/Plater/MMPaintingColorSelector.hpp
         src/Slic3r/App/Plater/MMPaintingColorSelector.cpp
@@ -477,6 +479,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/ISceneChangedListener.hpp
         include/Slic3r/App/Scene/GraphicsSettings.hpp
         src/Slic3r/App/Scene/GraphicsSettings.cpp
+        include/Slic3r/App/Scene/TextureUnits.hpp
         include/Slic3r/App/Scene/CameraFrustumUpdater.hpp
         src/Slic3r/App/Scene/CameraFrustumUpdater.cpp
         include/Slic3r/App/Scene/Clipper.hpp

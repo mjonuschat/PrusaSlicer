@@ -212,6 +212,7 @@ void ScopedThumbnailSceneCustomizerBase::override_non_printable_volumes_material
                 if (model_inst != nullptr && !model_inst->printable) {
                     Render::Material material = n.render_component()->material();
                     material.set_uniform("uniform_color", Domain::ColorRGBA::GRAY());
+                    material.set_uniform("use_uniform_color", true);
                     // Caching is not needed here.
                     // All volume overrides are already cached in disable_volumes_override_material().
                     n.set_material_override(material);

@@ -46,6 +46,16 @@ const VertexAttribsDesc& VertexP3N3T2::format()
     return desc;
 }
 
+const VertexAttribsDesc& VertexP3N3I1::format()
+{
+    static const VertexAttribsDesc desc = {
+        {VertexAttribType::Vertex, DataType::Float, 3, offsetof(VertexP3N3I1, position)},
+        {VertexAttribType::Normal, DataType::Float, 3, offsetof(VertexP3N3I1, normal)},
+        {VertexAttribType::PaletteIndex, DataType::Float, 1, offsetof(VertexP3N3I1, palette_index)}
+    };
+    return desc;
+}
+
 const VertexAttribsDesc& VertexP2T2::format()
 {
     static const VertexAttribsDesc desc =  {

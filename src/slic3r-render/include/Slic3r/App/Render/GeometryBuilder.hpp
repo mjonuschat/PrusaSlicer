@@ -43,6 +43,16 @@ struct VertexP3N3T2
     static const VertexAttribsDesc& format();
 };
 
+struct VertexP3N3I1
+{
+    Domain::Vec3f position;
+    Domain::Vec3f normal;
+    // Index into the material's color palette texture; resolved to a color in the vertex shader.
+    float palette_index;
+
+    static const VertexAttribsDesc& format();
+};
+
 struct VertexP2T2
 {
     Domain::Vec2f position;
@@ -52,9 +62,10 @@ struct VertexP2T2
 };
 
 static_assert(sizeof(VertexP3) == 3 * 4);
-static_assert(sizeof(VertexP3T2) == (3 + 2) * 4); 
+static_assert(sizeof(VertexP3T2) == (3 + 2) * 4);
 static_assert(sizeof(VertexP3N3) == (3 + 3) * 4);
 static_assert(sizeof(VertexP3N3T2) == (3 + 3 + 2) * 4);
+static_assert(sizeof(VertexP3N3I1) == (3 + 3 + 1) * 4);
 static_assert(sizeof(VertexP2T2) == (2 + 2) * 4);
 
 

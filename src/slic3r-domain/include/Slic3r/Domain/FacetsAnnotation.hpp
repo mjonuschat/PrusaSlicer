@@ -4,9 +4,18 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace Slic3r::Domain {
+
+enum class FacetsAnnotationKind : std::uint8_t
+{
+    FdmSupports,
+    Seam,
+    MultiMaterial,
+    FuzzySkin
+};
 
 class FacetsAnnotation final : public Domain::ObjectWithTimestamp
 {

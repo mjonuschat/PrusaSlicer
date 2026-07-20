@@ -1,47 +1,58 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 
-#include "Slic3r/Biz/IColorsChangedListener.hpp"
-
-#include <ranges>
+#include "Slic3r/App/Plater/MMPaintedVolumeRendering.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Scene/NodeBuilder.hpp"
-#include "Slic3r/App/Scene/NodeVisitor.hpp"
-#include "Slic3r/App/Scene/SceneNodeTag.hpp"
-#include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 #include "Slic3r/App/Render/Device.hpp"
-#include "Slic3r/Domain/Bed.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/Domain/Transformation.hpp"
+#include "Slic3r/App/Render/FramebufferManager.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
-#include "Slic3r/App/Scene/BedMaterials.hpp"
-#include "Slic3r/Biz/Scene/BedGeometry.hpp"
-#include "Slic3r/App/Render/FramebufferManager.hpp"
-#include "Slic3r/App/Scene/BedNodeBuilder.hpp"
-#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
+#include "Slic3r/App/Scene/PrintVolumeData.hpp"
+#include "Slic3r/App/Scene/SceneNodeTag.hpp"
+#include "Slic3r/App/Scene/VolumeColor.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/IColorsChangedListener.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
-#include "Slic3r/App/Scene/PrintVolumeData.hpp"
-#include "Slic3r/App/Scene/CameraHelper.hpp"
-#include "Slic3r/App/Scene/VolumeColor.hpp"
+#include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Math.hpp"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+#include <algorithm>
+#include <ranges>
 #include <tracy/Tracy.hpp>
+#include <unordered_set>
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
 
+using Slic3r::App::Plater::MMPainting::MMPaintedVolumeGeometryId;
+using Slic3r::App::Scene::SceneNodeTag;
+using Slic3r::Biz::Algorithms::Color::saturate;
+using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::ConfigItem;
+using Slic3r::Domain::ElementRef;
+using Slic3r::Domain::ElementRefs;
+using Slic3r::Domain::FacetsAnnotationKind;
+using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::SquareMatrix3d;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3d;
-
-using Slic3r::Biz::Algorithms::Color::saturate;
-
-using Slic3r::App::Scene::SceneNodeTag;
 
 namespace Slic3r::App::Plater {
 
@@ -99,6 +110,70 @@ std::optional<ColorRGBA> color_from_extruder_slot(
     return std::nullopt;
 }
 
+/**
+ * @brief Tells whether any of the volume refs has the same object and volume id as the node tag.
+ */
+bool
+volume_refs_contain_tagged_volume(const ElementRefs& volumes, const SceneNodeTag& node_tag)
+{
+    return std::ranges::any_of(
+        volumes,
+        [&node_tag](const Domain::ElementRef& volume_el)
+        {
+            return volume_el.object_id == node_tag.object_id
+                && volume_el.volume_id == node_tag.volume_id;
+        }
+    );
+}
+
+/**
+ * @brief Sets the node's geometry and material to render the volume either as MMU-painted
+ *        (paint-state geometry + palette material) or as plain (shared mesh + uniform color).
+ */
+void apply_render_mode_to_volume_node(
+    Render::Device& device,
+    PlaterScenePresenterProjectContext& ctx,
+    const ModelVolume& model_volume,
+    Scene::Node& node
+)
+{
+    Scene::MeshRenderNodeComponent* render_component =
+        dynamic_cast<Scene::MeshRenderNodeComponent*>(node.render_component());
+    if (render_component == nullptr) {
+        return;
+    }
+
+    if (model_volume.is_model_part() && model_volume.is_mm_painted()) {
+        const Render::Geometry* painted_geometry = ctx.mm_painted_geometry_manager().get_or_create(
+            MMPainting::mm_painted_volume_geometry_id(model_volume),
+            [&]() { return MMPainting::create_mm_painted_volume_geometry(device, model_volume); }
+        );
+        render_component->set_geometry(painted_geometry);
+        render_component->replace_material(MMPainting::create_mm_painted_volume_material(device));
+    } else {
+        const Render::Geometry* plain_geometry = ctx.model_geometry_manager().get(
+            Scene::AuxiliaryElementId{Scene::AuxiliaryElementId::Type::Volume, model_volume.id().id}
+        );
+        if (plain_geometry == nullptr) {
+            return;
+        }
+
+        ColorRGBA clr{1.0f, 1.0f, 1.0f, 1.0f};
+        auto color_it = Scene::VOLUME_COLORS.find(model_volume.type());
+        if (color_it != Scene::VOLUME_COLORS.end()) {
+            clr = color_it->second;
+        }
+
+        render_component->set_geometry(plain_geometry);
+        render_component->replace_material(
+            Render::Material{}
+                .set_shader(device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", clr)
+                .set_transparent(clr.is_transparent())
+        );
+    }
+}
+
 } // namespace
 
 PlaterScenePresenter::PlaterScenePresenter(
@@ -122,6 +197,8 @@ PlaterScenePresenter::PlaterScenePresenter(
 
     m_project_interactor.project_settings_interactor()
         .add_listener<Biz::IColorsChangedListener>(this);
+    m_project_interactor.preset_interactor()
+        .add_listener<IPresetChangedListener>(this);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -339,6 +416,20 @@ void PlaterScenePresenter::on_colors_changed(
     invoke_bed_visually_changed(project_id);
 }
 
+void PlaterScenePresenter::on_preset_value_changed(
+    SelectionId project_id,
+    SelectionId config_container_i,
+    const ConfigItem& item
+)
+{
+    if (item.def().name != "extruder") {
+        return;
+    }
+
+    m_volume_materials_dirty = true;
+    invoke_bed_visually_changed(project_id);
+}
+
 void PlaterScenePresenter::force_bed_thumbnails_generation()
 {
     invoke_bed_visually_changed(m_selected_project_id);
@@ -541,7 +632,10 @@ void PlaterScenePresenter::update_volume_materials()
                 if (!color.has_value())
                     n.remove_material_override();
                 else {
-                    Render::Material mat = Render::Material{}.set_uniform("uniform_color", *color).set_transparent(color->is_transparent());
+                    Render::Material mat = Render::Material{}
+                                               .set_uniform("uniform_color", *color)
+                                               .set_uniform("use_uniform_color", true)
+                                               .set_transparent(color->is_transparent());
                     n.set_material_override(mat);
                 }
 
@@ -577,25 +671,56 @@ void PlaterScenePresenter::update_volume_materials()
                 }
 
                 std::optional<ColorRGBA> part_color;
+                std::optional<std::vector<ColorRGBA>> painted_palette_colors;
                 if (is_model_part && !is_wipe_tower && inst != nullptr) {
-                    auto cc_it = mi_to_cc_map.find(tag->instance_id);
-                    if (cc_it != mi_to_cc_map.end()) {
-                        const auto& slot_colors = m_project_interactor
-                            .project_settings_interactor().get_colors(cc_it->second);
-                        const auto* obj = proj.find_object_by_id(tag->object_id);
-                        const auto* vol = obj
-                            ? Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id)
-                            : nullptr;
-                        if (vol) {
-                            part_color = color_from_extruder_slot(slot_colors, *vol, inst->printable);
+                    const auto cc_it = mi_to_cc_map.find(tag->instance_id);
+
+                    // Refresh even instances placed off any bed so a painted volume never renders without a palette.
+                    const SelectionId cc_id = cc_it != mi_to_cc_map.end() ?
+                        cc_it->second :
+                        m_project_interactor.selected_config_container_id();
+
+                    const std::vector<ColorRGB>& slot_colors =
+                        m_project_interactor.project_settings_interactor().get_colors(cc_id);
+                    const ModelObject* obj = proj.find_object_by_id(tag->object_id);
+                    const ModelVolume* vol = obj ?
+                        Domain::find_by_id<ModelVolume>(obj->volumes, tag->volume_id) :
+                        nullptr;
+
+                    if (vol != nullptr && vol->is_model_part() && vol->is_mm_painted()) {
+                        std::vector<ColorRGBA> slot_colors_rgba =
+                            Biz::Algorithms::Color::to_rgba(slot_colors);
+                        for (ColorRGBA& slot_color : slot_colors_rgba) {
+                            update_printable_color(slot_color, inst->printable);
                         }
+
+                        const ColorRGBA default_color =
+                            color_from_extruder_slot(slot_colors, *vol, inst->printable)
+                                .value_or(
+                                    Scene::VOLUME_COLORS.at(Domain::ModelVolumeType::MODEL_PART)
+                                );
+
+                        painted_palette_colors =
+                            MMPainting::create_palette_colors(default_color, slot_colors_rgba);
+                    } else if (vol != nullptr) {
+                        part_color = color_from_extruder_slot(slot_colors, *vol, inst->printable);
                     }
                 }
 
                 Render::Material mat = n.render_component()->material();
                 set_uniforms(print_volume, mat);
-                if (part_color)
+                if (part_color) {
                     mat.set_uniform("uniform_color", *part_color);
+                }
+
+                if (painted_palette_colors.has_value()) {
+                    MMPainting::apply_mm_palette_to_material(
+                        m_device,
+                        *painted_palette_colors,
+                        mat
+                    );
+                }
+
                 n.render_component()->replace_material(mat);
                 if (n.has_material_override()) {
                     Render::Material ov_mat = *n.material_override();
@@ -698,20 +823,78 @@ void PlaterScenePresenter::build_volume_node(
     }
     update_printable_color(clr, inst->printable);
 
-    auto material =
+    const bool render_painted               = vol->is_model_part() && vol->is_mm_painted();
+    const Render::Geometry* volume_geometry = geom;
+    Render::Material material =
         Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
             .set_uniform("uniform_color", clr)
             .set_transparent(clr.is_transparent());
+
+    if (render_painted) {
+        volume_geometry = ctx.mm_painted_geometry_manager().get_or_create(
+            MMPainting::mm_painted_volume_geometry_id(*vol),
+            [&]() { return MMPainting::create_mm_painted_volume_geometry(m_device, *vol); }
+        );
+        material = MMPainting::create_mm_painted_volume_material(m_device);
+        m_volume_materials_dirty = true;
+    }
+
     builder.set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
-        .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
+        .set_mesh(volume_geometry, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
         .set_aabb(trimesh->aabb_mesh())
         // FIXME: for fff printers the pbr data should be set in dependence of the volume filament
         // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
         // and for sla printers it should be set in dependence of the resin type
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
+}
+
+void PlaterScenePresenter::refresh_volume_nodes(SelectionId project_id, const ElementRefs* volumes)
+{
+    PlaterScenePresenterProjectContext& ctx = m_projects[project_id];
+    const Project& proj                     = m_workbench.project(project_id);
+
+    Scene::visit(
+        ctx.scene().root(),
+        [&](Scene::Node& node)
+        {
+            const SceneNodeTag* tag = node.tag_of_type<SceneNodeTag>();
+            if (tag == nullptr || tag->volume_id == 0 || !node.has_render_component()) {
+                return;
+            }
+
+            if (volumes != nullptr && !volume_refs_contain_tagged_volume(*volumes, *tag)) {
+                return;
+            }
+
+            const ModelVolume* model_volume =
+                proj.find_volume_by_id(tag->object_id, tag->volume_id);
+            if (model_volume == nullptr) {
+                return;
+            }
+
+            if (tag->volume_type != model_volume->type()) {
+                node.set_tag(
+                    SceneNodeTag{
+                        tag->object_id,
+                        tag->volume_id,
+                        tag->instance_id,
+                        model_volume->type(),
+                        tag->wipe_tower_id
+                    }
+                );
+            }
+
+            apply_render_mode_to_volume_node(m_device, ctx, *model_volume, node);
+        },
+        true
+    );
+
+    m_volume_materials_dirty = true;
+    this->invoke_bed_visually_changed(project_id);
+    this->clear_orphan_mm_painted_geometry(project_id);
 }
 
 void
@@ -740,6 +923,43 @@ PlaterScenePresenter::clear_orphan_volumes_from_managers(Domain::SelectionId pro
 
     trimesh_mgr.release_if(predicate);
     geom_mgr.release_if(predicate);
+
+    this->clear_orphan_mm_painted_geometry(project_id);
+}
+
+void PlaterScenePresenter::clear_orphan_mm_painted_geometry(SelectionId project_id)
+{
+    PlaterScenePresenterProjectContext& ctx = m_projects[project_id];
+    const Project& proj                     = m_workbench.project(project_id);
+
+    std::unordered_set<MMPaintedVolumeGeometryId> geometry_ids_to_keep;
+    visit(
+        ctx.scene().root(),
+        [&](const Scene::Node& node)
+        {
+            const SceneNodeTag* tag = node.tag_of_type<SceneNodeTag>();
+            if (tag == nullptr || tag->volume_id == 0) {
+                return;
+            }
+
+            const ModelVolume* model_volume =
+                proj.find_volume_by_id(tag->object_id, tag->volume_id);
+            if (model_volume != nullptr
+                && model_volume->is_model_part()
+                && model_volume->is_mm_painted())
+            {
+                geometry_ids_to_keep.insert(
+                    MMPainting::mm_painted_volume_geometry_id(*model_volume)
+                );
+            }
+        },
+        true
+    );
+
+    ctx.mm_painted_geometry_manager().release_if(
+        [&](const MMPaintedVolumeGeometryId& geometry_id, const Render::Geometry&)
+        { return !geometry_ids_to_keep.contains(geometry_id); }
+    );
 }
 
 const double wipe_tower_brim_height{0.2};
@@ -1258,58 +1478,28 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     sinking_contours.set_selection(elements);
 }
 
-void PlaterScenePresenter::on_volume_type_changed(
-    Domain::SelectionId project_id,
-    const Domain::ElementRefs& volumes
+void
+PlaterScenePresenter::on_volume_type_changed(SelectionId project_id, const ElementRefs& volumes)
+{
+    this->refresh_volume_nodes(project_id, &volumes);
+}
+
+void PlaterScenePresenter::on_volume_facets_annotations_changed(
+    SelectionId project_id,
+    FacetsAnnotationKind kind,
+    const ElementRefs& volumes
 )
 {
-    auto& scn        = scene();
-    const auto& proj = m_workbench.project(project_id);
+    if (kind != FacetsAnnotationKind::MultiMaterial) {
+        return;
+    }
 
-    Scene::visit(
-        scn.root(),
-        [&](Scene::Node& n)
-        {
-            const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
-            if (t == nullptr || t->volume_id == 0)
-                return;
-            for (const Domain::ElementRef& volume_el : volumes) {
-                if (volume_el.volume_id != t->volume_id) {
-                    continue;
-                }
+    this->refresh_volume_nodes(project_id, &volumes);
+}
 
-                const Domain::ModelVolume* model_volume =
-                    proj.find_volume_by_id(volume_el.object_id, volume_el.volume_id);
-                if (t->volume_type != model_volume->type()) {
-                    SceneNodeTag new_tag(
-                        t->object_id,
-                        t->volume_id,
-                        t->instance_id,
-                        model_volume->type(),
-                        t->wipe_tower_id
-                    );
-                    n.set_tag(new_tag);
-
-                    ColorRGBA clr = ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
-                    auto color_it = Scene::VOLUME_COLORS.find(model_volume->type());
-                    if (color_it != Scene::VOLUME_COLORS.end())
-                        clr = color_it->second;
-
-                    auto material =
-                        Render::Material{}
-                            .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                            .set_uniform("uniform_color", clr)
-                            .set_transparent(clr.is_transparent());
-                    n.render_component()->replace_material(material);
-                }
-                return;
-            }
-        },
-        true
-    );
-
-    m_volume_materials_dirty = true;
-    invoke_bed_visually_changed(project_id);
+void PlaterScenePresenter::on_model_reloaded(SelectionId project_id)
+{
+    this->refresh_volume_nodes(project_id, nullptr);
 }
 
 void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances)

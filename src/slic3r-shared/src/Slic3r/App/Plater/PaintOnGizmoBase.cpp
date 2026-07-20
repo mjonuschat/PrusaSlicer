@@ -302,7 +302,11 @@ void PaintOnGizmoBase::apply_painting_to_model() const
         return this->set_facets_annotation(volume, triangle_selector);
     };
 
-    m_scene_interactor.modify_facets_annotations(volume_refs, facets_annotations_modificator);
+    m_scene_interactor.modify_facets_annotations(
+        volume_refs,
+        this->get_facets_annotation_kind(),
+        facets_annotations_modificator
+    );
 }
 
 void PaintOnGizmoBase::init_main_nodes()

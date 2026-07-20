@@ -24,6 +24,8 @@ const char* shader_input_name(VertexAttribType vat)
     case VertexAttribType::Extra:
         return "v_extra";
 
+    case VertexAttribType::PaletteIndex:
+        return "v_palette_index";
     }
 
     // Encountered missing VertexAttribType, if valid, please add it into the switch above

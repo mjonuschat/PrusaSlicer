@@ -49,7 +49,6 @@ struct Shadows
 
     static constexpr int DEFAULT_FRAMEBUFFER_SIZE = 2048;
     static constexpr float DEFAULT_INTENSITY = 0.75f;
-    static constexpr int SHADOWSMAP_TEX_UNIT = 15;
 };
 
 struct AmbientOcclusion
@@ -78,12 +77,6 @@ struct AmbientOcclusion
 
     static constexpr int EYE_NORM_CLR_ATTR = 0;
     static constexpr int COLOR_CLR_ATTR = 1;
-
-    static constexpr int NOISE_TEX_UNIT = 8;
-    static constexpr int DEPTH_TEX_UNIT = 9;
-    static constexpr int EYE_NORM_TEX_UNIT = 10;
-    static constexpr int COLOR_TEX_UNIT = 11;
-    static constexpr int AO_TEX_UNIT = 12;
 
     static constexpr float DEFAULT_INTENSITY = 1.0f;
     static constexpr int DEFAULT_KERNEL_SIZE = 32;
