@@ -103,7 +103,7 @@ PrintToolRowItem::~PrintToolRowItem()
 void PrintToolRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     if (config_item && m_state->print_item->name() == config_item->name()) {
-        set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
+        set_border_color(m_theme->color_imgui(Platform::Color::AccentTertiary));
         if (m_main_button) {
             m_main_button->set_checked(true);
         }

@@ -167,7 +167,7 @@ void ConfigRowItem::on_data_update()
 void ConfigRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     if (m_state == config_item) {
-        set_border_color(m_theme->color_imgui(Platform::Color::AccentPrimary));
+        set_border_color(m_theme->color_imgui(Platform::Color::AccentTertiary));
     } else {
         set_border_color(m_theme->color_imgui(Platform::Color::Transparent));
     }
