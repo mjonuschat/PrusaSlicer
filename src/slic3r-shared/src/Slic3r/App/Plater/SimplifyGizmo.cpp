@@ -912,11 +912,13 @@ void SimplifyGizmo::process()
             m_scene_presenter, m_device, dialog());
     };
 
-    std::string job_name = create_job_name(m_project_interactor.selected_project_id());
+    const Domain::SelectionId project_id = m_project_interactor.selected_project_id();
+    std::string job_name = create_job_name(project_id);
     proj_ctx.is_job_running = true;
     Biz::Platform::PlatformServices::instance()
         .job_manager()
         .create_job(job_name, process, create_job_data(proj_ctx, m_project_interactor))
+        .set_project_id(project_id)
         .on_result(finalize)
         .start();
 }

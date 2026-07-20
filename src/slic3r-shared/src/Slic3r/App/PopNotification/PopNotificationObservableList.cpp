@@ -141,7 +141,19 @@ void PopNotificationObservableList::stop_notification_timer(PopNotificationDataI
 
 void PopNotificationObservableList::on_notification_close_button(const PopNotificationData* to_close)
 {
-    erase_notification(to_close);
+    auto it{std::ranges::find_if(
+        m_notifications,
+        [to_close](const PopNotificationDataPtr& notification)
+        { return notification.get() == to_close; }
+    )};
+    if (it == m_notifications.end()) {
+        return; 
+    }
+    const std::function<void()> on_close{(*it)->on_user_close};
+    erase_notification_by_index((size_t) std::distance(m_notifications.begin(), it));
+    if (on_close) {
+        on_close();
+    }
 }
 
 void PopNotificationObservableList::on_notification_hover(const PopNotificationData* hovered) {}

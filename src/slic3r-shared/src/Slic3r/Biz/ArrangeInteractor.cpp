@@ -790,6 +790,7 @@ void ArrangeInteractor::arrange(
             model_instances_per_bed,
             get_meshes(extra, ResetTranslation::True),
             wipe_tower_per_bed)
+        .set_project_id(project_id)
         .on_result(
             [this, project_id, settings, on_finished, config_container_to_add_beds](
                 const std::optional<ArrangeLocalResult>& result)

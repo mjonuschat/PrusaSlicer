@@ -75,6 +75,8 @@ SimplifyNotification::SimplifyNotification(
 }
 
 SimplifyNotification::~SimplifyNotification(){
+    m_notify.observable_list().close_notifications_of_type(
+        PopNotification::PopNotificationType::SimplifySuggestion);
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::Scene::ISceneChangedListener>(this);
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
@@ -151,23 +153,28 @@ SimplifyNotification::Items filter_by_project(
     return result;
 }
 
-void recreate_notification(
-    PopNotificationCenter& notify,
-    const SimplifyNotification::Items& items,
-    Domain::SelectionId project_id,
-    const SimplifyNotification::CreateSimplifyFn& create_fn,
-    bool open_when_closed = false)
+} // namespace
+
+void SimplifyNotification::recreate_notification(
+    Domain::SelectionId project_id, bool open_when_closed)
 {
     // Meshes of all open projects are tracked, but only the active project's belong in the
     // notification - the others are not visible to simplify.
-    const SimplifyNotification::Items project_items = filter_by_project(items, project_id);
+    if (project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+    if (m_dismissed_projects.contains(project_id)) {
+        // user closed the notification for this project, only refresh it when still open
+        open_when_closed = false;
+    }
+    const Items project_items = filter_by_project(m_meshes_to_simplify, project_id);
 
-    if (bool was_open = close_notification(notify);
+    if (bool was_open = close_notification(m_notify);
         (!open_when_closed && !was_open) || project_items.empty()) {
         return;
     }
 
-    const SimplifyNotification::Item& item = project_items.back();
+    const Item& item = project_items.back();
     PopNotificationData data{
         .type = PopNotificationType::SimplifySuggestion,
         .level = PopNotificationLevel::Regular,
@@ -177,15 +184,15 @@ void recreate_notification(
             .text = create_message(project_items),
             .buttons = { PopNotificationButtonData {
                 .text = item.button_name,
-                .callback = create_fn(item)
+                .callback = m_create_simplify_fn(item)
             }}
         },
-        .project_id = project_id
+        .project_id = project_id,
+        .on_user_close = [this, project_id]() { m_dismissed_projects.insert(project_id); }
     };
     auto matcher = [](const PopNotificationPayload&, const PopNotificationPayload&) { return false; };
-    notify.upsert_notifcation(data, matcher);
+    m_notify.upsert_notifcation(data, matcher);
 }
-} // namespace
 
 void SimplifyNotification::on_volume_added(
     Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
@@ -207,13 +214,10 @@ void SimplifyNotification::on_volume_added(
         exist_change = true;
     }
     if (exist_change) {
-        recreate_notification(
-            m_notify,
-            m_meshes_to_simplify,
-            m_project_interactor.selected_project_id(),
-            m_create_simplify_fn,
-            true
-        );
+        // a newly added oversized mesh is worth showing even when the user closed the
+        // notification before - and it is shown together with the already listed ones
+        m_dismissed_projects.erase(project_id);
+        recreate_notification(project_id, /*open_when_closed=*/true);
     }
 }
 
@@ -232,8 +236,7 @@ void SimplifyNotification::on_volume_removed(
         exist_change = true;
     }
     if (exist_change) {
-        recreate_notification(m_notify, m_meshes_to_simplify,
-            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+        recreate_notification(project_id);
     }
 }
 
@@ -283,8 +286,7 @@ void SimplifyNotification::on_instance_removed(
         exist_change = true;
     }
     if (exist_change) {
-        recreate_notification(m_notify, m_meshes_to_simplify,
-            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+        recreate_notification(project_id);
     }
 }
 
@@ -307,8 +309,7 @@ void SimplifyNotification::on_simplify(
         exist_change = true;
     }
     if (exist_change) {
-        recreate_notification(m_notify, m_meshes_to_simplify,
-            m_project_interactor.selected_project_id(), m_create_simplify_fn);
+        recreate_notification(project_id);
     }
 
     // after simplify apply is assumption that you do not want to simplify more
@@ -317,11 +318,14 @@ void SimplifyNotification::on_simplify(
 
 void SimplifyNotification::on_selected_project_changed(size_t index)
 {
-    recreate_notification(m_notify, m_meshes_to_simplify, index, m_create_simplify_fn, true);
+    recreate_notification(index, /*open_when_closed=*/true);
 }
 
 void SimplifyNotification::on_project_will_be_removed(Domain::SelectionId project_id)
 {
+    // project ids are never reused, so this is only to keep the set from growing
+    m_dismissed_projects.erase(project_id);
+
     const auto [first, last] = std::ranges::remove_if(
         m_meshes_to_simplify,
         [project_id](const Item& it) { return it.project_id == project_id; });
@@ -329,8 +333,7 @@ void SimplifyNotification::on_project_will_be_removed(Domain::SelectionId projec
         return; // no mesh of the removed project in list
     }
     m_meshes_to_simplify.erase(first, last);
-    recreate_notification(m_notify, m_meshes_to_simplify,
-        m_project_interactor.selected_project_id(), m_create_simplify_fn);
+    recreate_notification(m_project_interactor.selected_project_id());
 }
 
 void SimplifyNotification::on_paint_removed_after_simplify()

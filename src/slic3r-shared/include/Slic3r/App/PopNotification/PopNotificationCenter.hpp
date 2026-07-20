@@ -20,7 +20,7 @@ class ProjectInteractor;
 
 namespace Slic3r::App::PopNotification {
 
-typedef std::function<void(const std::string&, const Biz::Platform::JobManager::Progress&)> JobStatusFn;
+struct JobNotificationSpec;
 
 class PopNotificationCenter :
     public Biz::Platform::JobManager::IJobManagerStatusChangedListener,
@@ -39,10 +39,6 @@ public:
 
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
-    void on_job_manager_status_changed_generic(const std::string& name, const Biz::Platform::JobManager::Progress& progress);
-    void on_job_print_host(const std::string& string, const  Biz::Platform::JobManager::Progress& progress);
-    void on_download_job_status_changed(const std::string& string, const Biz::Platform::JobManager::Progress& progress);
-    void on_arrange_job_status_changed(const std::string& job_name, const Biz::Platform::JobManager::Progress& progress);
 
     // Slicing
     void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
@@ -100,6 +96,20 @@ public:
     ) override;
 
 private:
+    void on_job_progress(
+        const JobNotificationSpec& spec,
+        const std::string& job_key,
+        const Biz::Platform::JobManager::Progress& progress
+    );
+
+    void on_arrange_job_progress(
+        const std::string& job_key,
+        const Biz::Platform::JobManager::Progress& progress
+    );
+
+    void on_job_print_host(const std::string& job_key, const Biz::Platform::JobManager::Progress& progress);
+    void on_download_job_status_changed(const std::string& string, const Biz::Platform::JobManager::Progress& progress);
+
     PopNotificationLayout download_finished_layout(
         const std::string& body,
         const boost::filesystem::path& dest_path,
@@ -112,8 +122,6 @@ private:
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;
     Biz::ProjectInteractor& m_project_interactor;
     std::function<void(LeftBarTabs, const std::string&)> m_switch_left_tab_fn;
-
-    std::map<std::string, JobStatusFn> m_job_status_functions;
 };
 
 } // namespace Slic3r::App::PopNotification

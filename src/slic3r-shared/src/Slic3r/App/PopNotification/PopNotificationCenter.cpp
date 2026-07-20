@@ -28,13 +28,6 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
     m_removable_drive_service(project_interactor.removable_drive_service()),
     m_project_interactor(project_interactor)
 {
-    m_job_status_functions["printhost"] = std::bind(&PopNotificationCenter::on_job_print_host, this, std::placeholders::_1, std::placeholders::_2);
-    m_job_status_functions["file_download"] = std::bind(&PopNotificationCenter::on_download_job_status_changed, this, std::placeholders::_1, std::placeholders::_2);
-    // TRN job name to be used in job_status_to_string
-    m_job_status_functions["arrange"] = std::bind(&PopNotificationCenter::on_arrange_job_status_changed, this, _u8L("Arrange"), std::placeholders::_2);
-    // TRN job name to be used in job_status_to_string
-    m_job_status_functions["SimplifyJob"] = std::bind(&PopNotificationCenter::on_job_manager_status_changed_generic, this, _u8L("Simplify"), std::placeholders::_2);
-
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
     m_project_interactor.arrange_interactor().add_listener<Biz::IArrangeEventsListener>(this);
@@ -58,23 +51,58 @@ void PopNotificationCenter::upsert_notifcation(PopNotificationData data, PopNoti
     m_notification_list.upsert_notifcation(std::move(data), matcher);
 }
 
+struct JobNotificationSpec
+{
+    std::string key_prefix;
+    std::string started_header;
+    std::string finished_header;
+    std::string failed_header;
+    Render::Icon icon{Render::Icon::None};
+};
 
 namespace {
-std::string job_status_to_string(const JobStatus& status, const std::string& job_name)
+const JobNotificationSpec* find_job_spec(const std::string& job_key)
 {
-    std::string status_text;
+    static const std::vector<JobNotificationSpec> specs{
+        JobNotificationSpec{
+            .key_prefix = "arrange",
+            // TRN Header of an arrange notification while the arrange runs.
+            .started_header = L("Arranging..."),
+            // TRN Header of a finished arrange notification.
+            .finished_header = L("Arrange Finished"),
+            // TRN Header of a failed arrange notification.
+            .failed_header = L("Arrange Failed"),
+            .icon = Render::Icon::Layout
+        },
+        JobNotificationSpec{
+            .key_prefix = "SimplifyJob",
+            // TRN Header of a simplify notification while the simplification runs.
+            .started_header = L("Simplifying..."),
+            // TRN Header of a finished simplify notification.
+            .finished_header = L("Simplify Finished"),
+            // TRN Header of a failed simplify notification.
+            .failed_header = L("Simplify Failed"),
+            .icon = Render::Icon::Simplify
+        }
+    };
+
+    for (const JobNotificationSpec& spec : specs) {
+        if (job_key.starts_with(spec.key_prefix)) {
+            return &spec;
+        }
+    }
+    return nullptr;
+}
+
+std::string job_status_header(const JobStatus& status, const JobNotificationSpec& spec)
+{
     switch (status) {
     case JobStatus::Finished:
-        // TRN job_status_to_string, {} is job name.
-        return fmt::format(fmt::runtime(_u8L("{} has finished.")), job_name);
+        return _u8(spec.finished_header);
     case JobStatus::Failed:
-        // TRN job_status_to_string, status of a failed job.
-        status_text = _u8L("has failed");
-        // TRN job_status_to_string, {} is job name.
-        return fmt::format(fmt::runtime(_u8L("{} has failed.")), job_name);
+        return _u8(spec.failed_header);
     case JobStatus::Started:
-         // TRN job_status_to_string, {} is job name.
-        return fmt::format(fmt::runtime(_u8L("{} has started.")), job_name);
+        return _u8(spec.started_header);
     case JobStatus::None:
     default:
         break;
@@ -102,55 +130,74 @@ std::function<bool(const PopNotificationPayload&, const PopNotificationPayload&)
 
 void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus& status)
 {
-    // Every new job, that should be displayed 
+    // Every new job, that should be displayed
     for (const auto& [job_name, progress] : status) {
         ASSERT(!job_name.empty());
 
-        [[maybe_unused]] bool found = false;
-        for (const auto& pair : m_job_status_functions) {
-            if (job_name.starts_with(pair.first)) {
-                found = true;
-                pair.second(job_name, progress);
-                break;
-            }
+        if (job_name.starts_with("printhost")) {
+            on_job_print_host(job_name, progress);
+        } else if (job_name.starts_with("file_download")) {
+            on_download_job_status_changed(job_name, progress);
+        } else if (job_name.starts_with("arrange")) {
+            on_arrange_job_progress(job_name, progress);
+        } else if (const JobNotificationSpec* spec{find_job_spec(job_name)}) {
+            on_job_progress(*spec, job_name, progress);
         }
-
 #ifndef NDEBUG
-        if (!found) {
-            on_job_manager_status_changed_generic("DEBUG ONLY: " + job_name, progress);
+        else {
+            // Runtime text, translation of an unknown msgid passes it through unchanged.
+            const std::string debug_header{"DEBUG ONLY: " + job_name};
+            on_job_progress(
+                JobNotificationSpec{
+                    .started_header = debug_header,
+                    .finished_header = debug_header,
+                    .failed_header = debug_header
+                },
+                job_name,
+                progress
+            );
         }
 #endif
     }
+
+    m_notification_list.erase_notification_by_predicate(
+        [&status](const PopNotificationData& data)
+        {
+            if (data.type != PopNotificationType::JobProgress) {
+                return false;
+            }
+            const auto* payload{std::get_if<JobProgressNotificationData>(&data.payload)};
+            // finished and failed notifications are meant to stay for their timeout
+            return payload != nullptr
+                && payload->progress.status == JobStatus::Started
+                && !status.contains(payload->job_name);
+        }
+    );
 }
 
-void PopNotificationCenter::on_arrange_job_status_changed(const std::string& job_name, const Biz::Platform::JobManager::Progress& progress)
+void PopNotificationCenter::on_job_progress(
+    const JobNotificationSpec& spec,
+    const std::string& job_key,
+    const Biz::Platform::JobManager::Progress& progress)
 {
-    if (progress.status == Domain::JobStatus::Started
-        && progress.percent == std::nullopt)
-    {
-        m_notification_list.erase_notification_by_predicate(
-            [](const PopNotificationData& data)
-            { return data.type == PopNotificationType::ArrangeEvent; }
-        );
+    const std::string header{job_status_header(progress.status, spec)};
+
+    if (header.empty()) {
+        return;
     }
 
-    on_job_manager_status_changed_generic(job_name, progress);
-}
-
-void PopNotificationCenter::on_job_manager_status_changed_generic(const std::string& job_name, const Biz::Platform::JobManager::Progress& progress)
-{
-    const std::string text{job_status_to_string(progress.status, job_name)};
-
-    if (text.empty()) {
+    if (progress.project_id != Domain::INVALID_ID
+        && !m_project_interactor.project_exists(progress.project_id))
+    {
         return;
     }
 
     PopNotificationLayout layout;
     if (progress.status == JobStatus::Started && progress.percent) {
         int perc = (int) (progress.percent.value().value * 100);
-        layout   = PopNotificationLayoutTextProgress(text, perc);
+        layout   = PopNotificationLayoutHeaderProgress(header, perc, spec.icon);
     } else {
-        layout = PopNotificationLayoutText(text);
+        layout = PopNotificationLayoutHeader(header, spec.icon);
     }
 
     PopNotificationData notification{
@@ -159,7 +206,8 @@ void PopNotificationCenter::on_job_manager_status_changed_generic(const std::str
                                                 PopNotificationLevel::ProgressWithClose,
         progress.status == JobStatus::Started ? 0s : 5s,
         layout,
-        JobProgressNotificationData(job_name, progress)
+        JobProgressNotificationData{job_key, progress},
+        progress.project_id
     };
 
     using Payload = JobProgressNotificationData;
@@ -169,7 +217,23 @@ void PopNotificationCenter::on_job_manager_status_changed_generic(const std::str
     m_notification_list.upsert_notifcation(std::move(notification), matcher);
 }
 
-void PopNotificationCenter::on_job_print_host(const std::string& string, const Progress& progress)
+void PopNotificationCenter::on_arrange_job_progress(
+    const std::string& job_key,
+    const Biz::Platform::JobManager::Progress& progress)
+{
+    if (progress.status == JobStatus::Started && progress.percent == std::nullopt) {
+        m_notification_list.erase_notification_by_predicate(
+            [](const PopNotificationData& data)
+            { return data.type == PopNotificationType::ArrangeEvent; }
+        );
+    }
+
+    if (const JobNotificationSpec* spec{find_job_spec(job_key)}) {
+        on_job_progress(*spec, job_key, progress);
+    }
+}
+
+void PopNotificationCenter::on_job_print_host(const std::string& job_key, const Progress& progress)
 {
 
     size_t payload_id;
@@ -289,7 +353,7 @@ PopNotificationLayout PopNotificationCenter::download_finished_layout(
 }
 
 void PopNotificationCenter::on_download_job_status_changed(
-    const std::string& string,
+    const std::string& job_key,
     const Biz::Platform::JobManager::Progress& progress
 )
 {

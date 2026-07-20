@@ -82,6 +82,13 @@ struct PopNotificationLayoutHeaderTextProgress
     Render::Icon icon{Render::Icon::None};
 };
 
+struct PopNotificationLayoutHeaderProgress
+{
+    std::string header;
+    int progress;
+    Render::Icon icon{Render::Icon::None};
+};
+
 using PopNotificationLayout = std::variant<
     PopNotificationLayoutText,
     PopNotificationLayoutHeaderText,
@@ -92,6 +99,7 @@ using PopNotificationLayout = std::variant<
     PopNotificationLayoutTextButtons,
     PopNotificationLayoutHeaderTextButtons,
     PopNotificationLayoutTextProgress,
-    PopNotificationLayoutHeaderTextProgress>;
+    PopNotificationLayoutHeaderTextProgress,
+    PopNotificationLayoutHeaderProgress>;
 
 } // namespace Slic3r::App::PopNotification

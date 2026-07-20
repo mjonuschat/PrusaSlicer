@@ -5,6 +5,8 @@
 #include "Slic3r/Biz/Platform/TimerQueue.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
+#include <functional>
+
 namespace Slic3r::App::PopNotification {
 
 enum class PopNotificationType
@@ -46,6 +48,7 @@ struct PopNotificationData
     PopNotificationLayout layout; // data that needs to be shown by View
     PopNotificationPayload payload; // data that needs to be stored
     Domain::SelectionId project_id{Domain::INVALID_ID};
+    std::function<void()> on_user_close;
     Biz::Platform::TimerQueue::TimerID timer_id;
 };
 

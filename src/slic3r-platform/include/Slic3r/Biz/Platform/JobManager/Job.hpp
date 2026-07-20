@@ -61,6 +61,12 @@ public:
         return *this;
     }
 
+    Job& set_project_id(const Domain::SelectionId project_id)
+    {
+        m_progress_tracker.set_project_id(project_id);
+        return *this;
+    }
+
     void start()
     {
         ASSERT(m_on_result);

@@ -27,6 +27,11 @@ void ProgressTracker::set_status_unsafe(const Domain::JobStatus status)
     m_on_change(*m_progress);
 }
 
+void ProgressTracker::set_project_id(const Domain::SelectionId project_id)
+{
+    m_progress->project_id = project_id;
+}
+
 void ProgressTracker::set(Domain::Percentage percentage)
 {
     if (!m_dispatcher.get().dispatch_on_main_thread(

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <functional>
+#include <set>
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneChangedListener
@@ -87,7 +88,13 @@ public:
     using Items = std::vector<Item>;
     using CreateSimplifyFn = std::function<std::function<bool()>(const Item&)>;
 private:
+
+    void recreate_notification(Domain::SelectionId project_id, bool open_when_closed = false);
+
     Items m_meshes_to_simplify;
+
+    std::set<Domain::SelectionId> m_dismissed_projects;
+
     Biz::ProjectInteractor& m_project_interactor;
     PopNotification::PopNotificationCenter& m_notify;
     CreateSimplifyFn m_create_simplify_fn;
