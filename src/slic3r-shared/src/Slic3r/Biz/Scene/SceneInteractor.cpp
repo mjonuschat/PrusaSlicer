@@ -3398,12 +3398,19 @@ SceneInteractor::add_object_to_active_bed(const indexed_triangle_set& its, const
     ElementRefs new_instances = new_object_from_mesh(std::move(mesh), name);
 
     if (bbox.defined) {
-        Domain::Transform3d xform = Domain::Transform3d::Identity();
         using namespace Biz::Algorithms::BoundingBox;
-        xform.translate(-center(bbox));
-        xform.translate(Domain::Vec3d(0., 0., sizes(bbox).z() * 0.5));
-        xform.translate(Domain::Vec3d{ bed_center.x(), bed_center.y(), 0. });
-        transform_selection(xform.matrix());
+        const Vec3d bb_center{center(bbox)};
+
+        // Transform in volume mode.
+        Domain::Transform3d z_transform = Domain::Transform3d::Identity();
+        z_transform.translate(Domain::Vec3d(0., 0., sizes(bbox).z() * 0.5 - bb_center.z()));
+        transform_selection(z_transform.matrix());
+
+        // Transform in instance mode.
+        Domain::Transform3d xy_transform = Domain::Transform3d::Identity();
+        xy_transform.translate(
+            Domain::Vec3d{bed_center.x() - bb_center.x(), bed_center.y() - bb_center.y(), 0.});
+        transform_selection(xy_transform.matrix());
     }
 
     return new_instances;
