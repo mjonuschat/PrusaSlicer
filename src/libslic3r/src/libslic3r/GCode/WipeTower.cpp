@@ -915,7 +915,9 @@ WipeTower::ToolChangeResult WipeTower::tool_change(size_t tool)
                           (is_first_layer() ? m_filpar[tool].first_layer_temperature : m_filpar[tool].temperature));
         toolchange_Change(writer, tool, m_filpar[tool].material); // Change the tool, set a speed override for soluble and flex materials.
         toolchange_Load(writer, cleaning_box);
-        writer.travel(writer.x(), writer.y()-m_perimeter_width); // cooling and loading were done a bit down the road
+        if (has_semm_loading_move()) {
+            writer.travel(writer.x(), writer.y() - m_perimeter_width); // cooling and loading were done a bit down the road
+        }
         toolchange_Wipe(writer, cleaning_box, wipe_volume);     // Wipe the newly loaded filament until the end of the assigned wipe area.
         ++ m_num_tool_changes;
     } else
@@ -1132,8 +1134,11 @@ void WipeTower::toolchange_Unload(
 
     // this is to align ramming and future wiping extrusions, so the future y-steps can be uniform from the start:
     // the perimeter_width will later be subtracted, it is there to not load while moving over just extruded material
-    Vec2f pos = Vec2f(end_of_ramming.x(), end_of_ramming.y() + (y_step/m_extra_spacing_ramming-m_perimeter_width) / 2.f + m_perimeter_width);
-    if (do_ramming)
+    Vec2f pos = Vec2f(end_of_ramming.x(),
+                      end_of_ramming.y()
+                          + (y_step / m_extra_spacing_ramming - m_perimeter_width) / 2.f
+                          + (has_semm_loading_move() ? m_perimeter_width : 0.0));
+    if (do_ramming && has_semm_loading_move())
         writer.travel(pos, 2400.f);
     else
         writer.set_position(pos);
@@ -1185,7 +1190,7 @@ void WipeTower::toolchange_Load(
 	WipeTowerWriter &writer,
 	const box_coordinates  &cleaning_box)
 {
-    if (m_semm && (m_parking_pos_retraction != 0 || m_extra_loading_move != 0)) {
+    if (has_semm_loading_move()) {
         float xl = cleaning_box.ld.x() + m_perimeter_width * 0.75f;
         float xr = cleaning_box.rd.x() - m_perimeter_width * 0.75f;
         float oldx = writer.x();	// the nozzle is in place to do the first wiping moves, we will remember the position
@@ -1293,6 +1298,9 @@ void WipeTower::toolchange_Wipe(
     writer.change_analyzer_line_width(m_perimeter_width);
 }
 
+bool WipeTower::has_semm_loading_move() const {
+    return m_semm && (m_parking_pos_retraction != 0 || m_extra_loading_move != 0);
+}
 
 
 

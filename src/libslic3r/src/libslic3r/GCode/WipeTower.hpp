@@ -417,6 +417,8 @@ private:
 		WipeTowerWriter &writer,
 		const box_coordinates  &cleaning_box,
 		float wipe_volume);
+
+    bool has_semm_loading_move() const;
 };
 
 
