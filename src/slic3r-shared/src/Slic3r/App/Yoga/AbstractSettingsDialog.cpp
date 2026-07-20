@@ -39,14 +39,12 @@ AbstractSettingsDialog::AbstractSettingsDialog(
     m_footer->set_self_align(YGAlignFlexEnd);
     m_footer->set_flex_shrink(0);
 
-    for (const std::string& tab : tabs) {
+    for (const std::string& tab : tabs)
         append_tab(tab);
-    }
 }
 
-AbstractSettingsDialog::~AbstractSettingsDialog() {}
-
-LayoutButton* AbstractSettingsDialog::add_footer_button(Item* footer, const std::string& label, Render::Icon icon)
+LayoutButton*
+AbstractSettingsDialog::add_footer_button(Item* footer, const std::string& label, Render::Icon icon)
 {
     LayoutButton* button = footer->emplace_back<LayoutButton>(label, icon);
     button->set_content_padding({7.f});

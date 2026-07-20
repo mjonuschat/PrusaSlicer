@@ -81,6 +81,7 @@ namespace {
 
 Popup::Popup()
 {
+    set_object_name("Popup");
     m_offset.source = 10;
     m_popup_node    = YGNodeNewWithConfig(m_config);
     YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);

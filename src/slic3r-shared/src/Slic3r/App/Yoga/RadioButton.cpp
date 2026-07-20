@@ -13,6 +13,7 @@ namespace Slic3r::App::Yoga {
 RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
     AbstractButton(tooltip)
 {
+    set_object_name("RadioButton");
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlignCenter);
     set_gap(10.f);

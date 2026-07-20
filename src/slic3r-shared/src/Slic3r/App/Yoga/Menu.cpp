@@ -8,6 +8,7 @@ namespace Slic3r::App::Yoga {
 
 Menu::Menu(const std::string& name, Position position)
 {
+    set_object_name("Menu");
     set_position(position);
     set_orientation(Orientation::Vertical);
     set_padding({3.f, 3.f});

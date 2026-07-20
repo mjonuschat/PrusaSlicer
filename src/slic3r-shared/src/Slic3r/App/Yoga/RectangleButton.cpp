@@ -11,6 +11,7 @@ namespace Slic3r::App::Yoga {
 
 RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(tooltip)
 {
+    set_object_name("RectangleButton");
     std::unique_ptr<Rectangle> rect = std::make_unique<Rectangle>();
     m_background                    = rect.get();
     AbstractButton::insert(std::move(rect), 0);

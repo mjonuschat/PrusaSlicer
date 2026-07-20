@@ -13,6 +13,7 @@ namespace Slic3r::App::Yoga {
 
 InputTextField::InputTextField(const std::string& name)
 {
+    set_object_name("InputTextField");
     m_tooltip = emplace_back<Tooltip>(this, std::string{}, std::string{});
     set_padding(1);
     set_disabled_fill(

@@ -6,8 +6,6 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 
-#include "imgui_internal.h"
-
 namespace Slic3r::App::Yoga {
 
 Tooltip::Tooltip(

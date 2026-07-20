@@ -26,7 +26,6 @@ public:
         const std::initializer_list<std::string>& tabs,
         const std::string& name = {}
     );
-    ~AbstractSettingsDialog();
 
     static LayoutButton* add_footer_button(
         Item* footer,

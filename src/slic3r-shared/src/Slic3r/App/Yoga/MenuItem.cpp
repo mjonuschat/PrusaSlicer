@@ -40,6 +40,7 @@ void MenuItem::create(
     bool has_sub_menu
 )
 {
+    set_object_name("MenuItem");
     set_background_color(Platform::Color::ButtonTransparent);
     set_flex_shrink(0);
     set_align_content(YGAlignCenter);

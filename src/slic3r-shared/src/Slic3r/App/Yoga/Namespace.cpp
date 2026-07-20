@@ -66,6 +66,8 @@ void EvaluatedUnit::evaluate(const SizeInfo& size_info)
         result = source.value * 0.01f * static_cast<float>(size_info.viewport_min());
         break;
     }
+
+    result = YGRoundValueToPixelGrid(result, size_info.dpi_scale_factor, false, false);
 }
 
 YGAlign Align::get_yoga_v_align() const

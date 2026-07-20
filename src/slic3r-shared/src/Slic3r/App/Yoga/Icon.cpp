@@ -24,7 +24,7 @@ Icon::Icon(Render::Icon icon, int explicit_max_size) :
     set_icon(icon);
 }
 
-Icon::Icon(Render::Icon icon) : m_auto_resize(true), m_icon(icon) {}
+Icon::Icon(Render::Icon icon) : m_icon(icon) {}
 
 void Icon::render(const Vec2f& pos, const Vec2f& size)
 {

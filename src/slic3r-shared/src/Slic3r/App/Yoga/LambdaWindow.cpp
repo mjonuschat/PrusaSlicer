@@ -11,6 +11,7 @@ namespace Slic3r::App::Yoga {
 LambdaWindow::LambdaWindow(RenderPosFn render_fn, const std::string& prefix)
     : Window(prefix)
 {
+    set_object_name("LambdaWindow");
     m_lambda_item = emplace_back<LambdaItem>(render_fn);
 }
 

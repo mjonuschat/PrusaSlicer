@@ -14,260 +14,15 @@
 #include <imgui_internal.h>
 #include <fmt/format.h>
 #include <cmath>
-#include <string>
-#include <stack>
 
 namespace Slic3r::App::Yoga {
 
-/**
- * @brief utility function to traverse tree from object ana run function on every visited object
- */
-static void traverse(Object* object, std::function<void(Object* object)> function)
-{
-    std::stack<Object*> children;
-    for (Object* child : object->objects()) {
-        children.push(child);
-    }
-    while (!children.empty()) {
-        Object* child = children.top();
-        children.pop();
-
-        function(child);
-
-        for (Object* child_object : child->objects()) {
-            children.push(child_object);
-        }
-    }
-}
-
 Render::ImguiRender* Item::m_imgui_render = nullptr;
-
-YGConfigRef Object::m_config = YGConfigNew();
-
-Theme* Object::m_theme = nullptr;
-
-std::unordered_map<std::string, int> Object::m_object_names = {};
-
-Object::Object() : m_heartbeat(std::make_shared<int>(1)) {}
-
-Object::~Object() = default;
-
-const std::string& Object::object_name() const
-{
-    return m_object_name;
-}
-
-void Object::set_object_name(const std::string& object_name)
-{
-    ASSERT(
-        object_name.find('_') == std::string::npos,
-        "Yoga::Object name cannot contain underscore '_'"
-    );
-
-    // Get item name without increment
-    std::string old_name = m_object_name.substr(0, m_object_name.find('_'));
-    if (object_name == old_name) {
-        // No item change -> early exit
-        return;
-    }
-
-    if (m_object_names.contains(object_name)) {
-        m_object_name = object_name + "_" + std::to_string(++m_object_names[object_name]);
-    } else {
-        m_object_name = object_name + "_1";
-        m_object_names.insert({object_name, 1});
-    }
-}
-
-void Object::resize(const SizeInfo& size_info) {}
-
-void Object::render(const Vec2f& pos, const Vec2f& size) {}
-
-void Object::style_node()
-{
-    for (const ObjectPtr& child : std::as_const(m_children)) {
-        child->style_node();
-    }
-}
-
-Object* Object::parent() const
-{
-    return m_parent;
-}
-
-std::vector<Object*> Object::objects() const
-{
-    std::vector<Object*> objects;
-    objects.reserve(m_children.size());
-    std::transform(
-        m_children.cbegin(),
-        m_children.cend(),
-        std::back_inserter(objects),
-        [](const ObjectPtr& object) { return object.get(); }
-    );
-
-    return objects;
-}
-
-void Object::prepend(ObjectPtr child)
-{
-    insert(std::move(child), 0);
-}
-
-void Object::append(ObjectPtr child)
-{
-    insert(std::move(child), m_children.size());
-}
-
-void Object::insert(ObjectPtr child, size_t index)
-{
-    add_child(std::move(child), index);
-}
-
-ObjectPtr Object::remove(Object* child)
-{
-    return remove_child(child);
-}
-
-ObjectHeartBeat Object::heartbeat() const
-{
-    return m_heartbeat.get();
-}
-
-void Object::push_event(std::unique_ptr<Event> event)
-{
-    Object* item_to_push = nullptr;
-
-    if (m_root && m_root != this) {
-        item_to_push = m_root;
-    }
-
-    if (item_to_push) {
-        // Event will be pushed either to parent or directly to RootItem for processing
-        item_to_push->push_event(std::move(event));
-    } else {
-        // What just happened is that some Object (this or our children) pushed event
-        // But we are not able to reach RootItem therefore there is nobody to process this event.
-        // This usually happen in two cases:
-        // 1) Event is pushed during RootItem destruction and the vtable cannot be derived
-        // Solution: Do not push any event during RootItem destruction
-        // 2) Event is pushed through isolated tree which is not parented to RootItem (therefore tree is not valid)
-        // Solution: Either do not push events in these trees or insert that tree to RootItem tree.
-
-        // We would like this to catch this in Debug always, majority of these issues
-        // are present only during destruction and in that case it would be overkill to crash
-        // in Release
-        DEBUG_ASSERT(
-            item_to_push,
-            "ItemEvent {} cannot be pushed from {}, you are trying to push event either during destruction of the tree or to isolated island"
-        );
-        SPDLOG_WARN(
-            "ItemEvent {} cannot be pushed from {}, please report",
-            std::to_string(reinterpret_cast<unsigned long long>(event.get())),
-            object_name()
-        );
-    }
-}
-
-void Object::add_child(ObjectPtr child, size_t index)
-{
-    ASSERT(child);
-    ASSERT(!index_of(child.get()).has_value(), "Child is already parented to this item");
-    ASSERT(index <= m_children.size(), "Invalid child index");
-
-    child->m_parent = this;
-
-    if (m_root != child->m_root) {
-        child->m_root = m_root;
-        traverse(
-            child.get(),
-            [this](Object* object)
-            {
-                object->root_item_about_to_update();
-                object->m_root = m_root;
-                object->root_item_updated();
-            }
-        );
-    }
-
-    m_children.insert(m_children.cbegin() + index, std::move(child));
-}
-
-ObjectPtr Object::remove_child(Object* child)
-{
-    ASSERT(child);
-
-    std::vector<ObjectPtr>::iterator it = std::find_if(
-        m_children.begin(),
-        m_children.end(),
-        [child](const ObjectPtr& child_item) { return child_item.get() == child; }
-    );
-
-    ASSERT(it != m_children.end(), "Trying to remove unmaintained child");
-    if (it == m_children.end()) {
-        return nullptr;
-    }
-
-    child->m_parent = nullptr;
-    child->m_root   = child;
-
-    traverse(
-        child,
-        [child](Object* object)
-        {
-            if (object->m_root) {
-                object->root_item_about_to_update();
-                object->m_root = child;
-                object->root_item_updated();
-            }
-        }
-    );
-
-    ObjectPtr result(std::move(*it));
-    m_children.erase(it);
-
-    return result;
-}
-
-Object* Object::root_item() const
-{
-    return m_root;
-}
-
-void Object::root_item_about_to_update() {}
-
-void Object::root_item_updated() {}
-
-size_t Object::object_count() const
-{
-    return m_children.size();
-}
-
-Object* Object::get_object(size_t index) const
-{
-    return m_children.at(index).get();
-}
-
-void Object::set_style_dirty()
-{
-    if (m_root != this) {
-        m_root->set_style_dirty();
-    }
-}
-
-std::optional<size_t> Object::index_of(Object* item) const
-{
-    std::vector<ObjectPtr>::const_iterator it = std::find_if(
-        m_children.cbegin(),
-        m_children.cend(),
-        [item](const ObjectPtr& object) { return item == object.get(); }
-    );
-    return it == m_children.cend() ? std::nullopt :
-                                     std::optional<size_t>(std::distance(m_children.cbegin(), it));
-}
 
 Item::Item()
 {
+    set_object_name("Item");
+
     m_node = YGNodeNew();
 
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
@@ -555,7 +310,7 @@ void Item::set_width(const Unit& width)
         EvaluatedUnit new_width{width};
         new_width.evaluate(m_size_info);
         YGNodeStyleSetWidth(m_node, new_width.result);
-        m_width = std::move(new_width);
+        m_width = new_width;
         set_style_dirty();
     }
 }
@@ -569,7 +324,7 @@ void Item::set_height(const Unit& height)
         EvaluatedUnit new_height{height};
         new_height.evaluate(m_size_info);
         YGNodeStyleSetHeight(m_node, new_height.result);
-        m_height = std::move(new_height);
+        m_height = new_height;
         set_style_dirty();
     }
 }
@@ -705,12 +460,12 @@ void Item::size_info_changed(const SizeInfo& info_size) {}
 
 ImVec2 Item::to_im(const Vec2f& val)
 {
-    return ImVec2(val.x(), val.y());
+    return {val.x(), val.y()};
 }
 
 Vec2f Item::from_im(const ImVec2& val)
 {
-    return Vec2f(val.x, val.y);
+    return {val.x, val.y};
 }
 
 bool Item::is_node_visible(YGNodeRef node)
@@ -794,16 +549,14 @@ Vec2f Object::pixel_round(const Vec2f& value)
 void Item::update_children_render_order()
 {
     m_children_render_order.clear();
-    std::copy_if(
-        m_children_items.cbegin(),
-        m_children_items.cend(),
+    std::ranges::copy_if(
+        m_children_items,
         std::back_inserter(m_children_render_order),
         [](Item* child) { return child; }
     );
     // sort children by Z layer, higher Z shall be rendered first
-    std::sort(
-        m_children_render_order.begin(),
-        m_children_render_order.end(),
+    std::ranges::sort(
+        m_children_render_order,
         [](Item* left, Item* right) { return left->z() > right->z(); }
     );
 
@@ -1067,9 +820,9 @@ void Item::style_node()
     }
 }
 
-void Item::render_item_begin(Vec2f pos, Vec2f size) {}
+void Item::render_item_begin(const Vec2f& pos, const Vec2f& size) {}
 
-void Item::render_item_end(Vec2f pos, Vec2f size)
+void Item::render_item_end(const Vec2f& pos, const Vec2f& size)
 {
     render_debug(pos, size);
 
@@ -1078,7 +831,7 @@ void Item::render_item_end(Vec2f pos, Vec2f size)
     }
 }
 
-void Item::render_node(Vec2f pos, Item* child)
+void Item::render_node(const Vec2f& pos, Item* child)
 {
     YGNodeRef child_node = child->node();
     if (!is_node_visible(child_node)) {
@@ -1095,362 +848,7 @@ void Item::render_node(Vec2f pos, Item* child)
     child->render(cell_pos, cell_size);
 }
 
-#ifdef DEBUG
-Item* Item::m_debug_item = nullptr;
-
-static std::string_view unit_type_string(Unit::Type type)
-{
-    switch (type) {
-    case Unit::Type::Pixel:
-        return "px";
-    case Unit::Type::FigmaPixel:
-        return "fpx";
-    case Unit::Type::Point:
-        return "pt";
-    case Unit::Type::Rem:
-        return "rem";
-    case Unit::Type::ViewportWidth:
-        return "vw";
-    case Unit::Type::ViewportHeight:
-        return "vh";
-    case Unit::Type::ViewportMin:
-        return "vmin";
-    case Unit::Type::ViewportMax:
-        return "vmax";
-    }
-    return "?";
-}
-
-static std::string fmt_side(const Unit& src, float result)
-{
-    if (std::isnan(src.value) || std::isnan(result)) {
-        return "(unset)";
-    } else if (src.type == Unit::Type::Pixel) {
-        return fmt::format("{:.4g}px", src.value);
-    } else {
-        return fmt::format("{:.4g}{}={:.4g}", src.value, unit_type_string(src.type), result);
-    }
-}
-
-static std::string fmt_eu(const EvaluatedUnit& eu)
-{
-    return fmt_side(eu.source, eu.result);
-}
-
-static void draw_debug_cross(ImVec2 pos)
-{
-    static float a = 0.0f;
-    a += 0.13f; // ~7.5°
-
-    const ImVec2 c{pos.x + 8.0f, pos.y + 8.0f};
-    const auto l = [&](float x) {
-        const ImVec2 d{std::cos(x) * 8.0f, std::sin(x) * 8.0f};
-        ImGui::GetForegroundDrawList()->AddLine(
-            {c.x - d.x, c.y - d.y},
-            {c.x + d.x, c.y + d.y},
-            IM_COL32(255, 0, 0, 255),
-            2.0f
-            );
-    };
-
-    l(a);
-    l(a + 1.5708f);
-}
-#endif
-
-void Item::render_debug_overlay(ImDrawList* draw_list) const
-{
-#ifdef DEBUG
-    ImGui::PushFont(ImGui::GetFont(), 16);
-
-    constexpr ImU32 c_header  = IM_COL32(255, 180, 60, 255);
-    constexpr ImU32 c_text    = IM_COL32(220, 220, 220, 255);
-    constexpr ImU32 c_margin  = IM_COL32(246, 178, 107, 230);
-    constexpr ImU32 c_padding = IM_COL32(147, 196, 125, 230);
-    constexpr ImU32 c_content = IM_COL32(180, 220, 255, 255);
-    constexpr ImU32 c_border  = IM_COL32(255, 60, 60, 220);
-    constexpr ImU32 f_margin  = IM_COL32(246, 178, 107, 90);
-    constexpr ImU32 f_padding = IM_COL32(147, 196, 125, 90);
-    constexpr ImU32 f_content = IM_COL32(97, 150, 218, 70);
-
-    const Vec2f gpos = get_global_pos();
-    const float w    = width();
-    const float h    = height();
-
-    draw_list->AddRect(to_im(gpos), to_im(gpos + Vec2f(w, h)), c_border, 0.f, 0, 1.5f);
-
-    const float ml = m_margins.left;
-    const float mt = m_margins.top;
-    const float mr = m_margins.right;
-    const float mb = m_margins.bottom;
-
-    const float pl = m_paddings.left;
-    const float pt = m_paddings.top;
-    const float pr = m_paddings.right;
-    const float pb = m_paddings.bottom;
-
-    const Sides& ms = m_margins.source;
-    const Sides& ps = m_paddings.source;
-
-    using Line = std::pair<std::string, ImU32>;
-
-    std::vector<Line> lines;
-    lines.reserve(7);
-
-    {
-        std::string header = object_name().empty() ? "" : object_name() + "  ";
-        header += fmt::format("{}x{}px  at [{}, {}]", w, h, gpos.x(), gpos.y());
-        lines.emplace_back(std::move(header), c_header);
-    }
-
-    lines.emplace_back(
-        fmt::format(
-            "dpi:{}  scale:{:.4g}x  vp:{}x{}  rem:{:.4g}px",
-            m_size_info.dpi,
-            m_size_info.dpi_scale_factor,
-            m_size_info.viewport_size_x,
-            m_size_info.viewport_size_y,
-            m_size_info.root_font_size
-        ),
-        c_text
-    );
-
-    if (m_min_width.result > 0 || m_min_height.result > 0) {
-        lines.emplace_back(
-            "min_w: " + fmt_eu(m_min_width) + " min_h: " + fmt_eu(m_min_height),
-            c_text
-        );
-    }
-    if (!YGFloatIsUndefined(m_max_width.result) || !YGFloatIsUndefined(m_max_height.result)) {
-        lines.emplace_back(
-            "max_w: " + fmt_eu(m_max_width) + " max_h: " + fmt_eu(m_max_height),
-            c_text
-        );
-    }
-
-    auto fmt_yoga_size = [](const Item::YogaSize& yoga_size) -> std::string
-    {
-        if (std::holds_alternative<EvaluatedUnit>(yoga_size)) {
-            return fmt_eu(std::get<EvaluatedUnit>(yoga_size));
-        } else {
-            return fmt::format("{:.4g}%", std::get<float>(yoga_size));
-        }
-    };
-
-    if (m_width.has_value()) {
-        lines.emplace_back("explicit width: " + fmt_yoga_size(m_width.value()), c_text);
-    }
-    if (m_height.has_value()) {
-        lines.emplace_back("explicit height: " + fmt_yoga_size(m_height.value()), c_text);
-    }
-
-    lines.emplace_back(
-        fmt::format(
-            "grow:{:.4g}  shrink:{:.4g}  gap:{}",
-            m_flex_grow.result,
-            m_flex_shrink.result,
-            fmt_eu(m_gap)
-        ),
-        c_text
-    );
-
-    const ImVec2 pad = {6.f, 4.f};
-    const float lh   = ImGui::GetFontSize() + 2.f;
-
-    auto for_each_text_line = [](const std::string& text, auto&& fn)
-    {
-        for (size_t start = 0;;) {
-            const size_t end  = text.find('\n', start);
-            const char* begin = text.c_str() + start;
-            const char* stop =
-                end == std::string::npos ? text.c_str() + text.size() : text.c_str() + end;
-
-            fn(begin, stop);
-
-            if (end == std::string::npos)
-                break;
-
-            start = end + 1;
-        }
-    };
-
-    int total_text_lines = 0;
-    float text_w         = 0.f;
-
-    for (const auto& [text, col] : lines) {
-        for_each_text_line(
-            text,
-            [&](const char* begin, const char* end)
-            {
-                text_w = std::max(text_w, ImGui::CalcTextSize(begin, end).x);
-                ++total_text_lines;
-            }
-        );
-    }
-
-    const float ratio = h > 0.f ? w / h : 1.f;
-
-    float dw = 220.f;
-    float dh = 220.f / ratio;
-
-    if (dh > 130.f) {
-        dh = 130.f;
-        dw = 130.f * ratio;
-    }
-
-    dw = std::max(dw, 80.f);
-    dh = std::max(dh, 55.f);
-
-    const float sx = w > 0.f ? dw / w : 1.f;
-    const float sy = h > 0.f ? dh / h : 1.f;
-
-    auto scaled_x = [sx](float value) { return value > 0.f ? std::max(3.f, value * sx) : 0.f; };
-
-    auto scaled_y = [sy](float value) { return value > 0.f ? std::max(3.f, value * sy) : 0.f; };
-
-    const float dml = scaled_x(ml);
-    const float dmt = scaled_y(mt);
-    const float dmr = scaled_x(mr);
-    const float dmb = scaled_y(mb);
-
-    const float dpl = scaled_x(pl);
-    const float dpt = scaled_y(pt);
-    const float dpr = scaled_x(pr);
-    const float dpb = scaled_y(pb);
-
-    auto label_width = [](const Unit& src, float result)
-    {
-        if (!(result > 0.f))
-            return 0.f;
-
-        const std::string text = fmt_side(src, result);
-        return ImGui::CalcTextSize(text.c_str()).x;
-    };
-
-    const float max_label_w = std::max(
-        {label_width(ms.left, ml),
-         label_width(ms.top, mt),
-         label_width(ms.right, mr),
-         label_width(ms.bottom, mb),
-         label_width(ps.left, pl),
-         label_width(ps.top, pt),
-         label_width(ps.right, pr),
-         label_width(ps.bottom, pb)}
-    );
-
-    const float fh        = ImGui::GetFontSize();
-    const float label_gap = 2.f;
-
-    const float diagram_extra_x      = max_label_w + label_gap;
-    const float diagram_extra_top    = mt > 0.f ? fh + label_gap : 0.f;
-    const float diagram_extra_bottom = mb > 0.f ? fh + label_gap : 0.f;
-
-    const float diagram_w = dw + diagram_extra_x * 2.f;
-    const float diagram_h = dh + diagram_extra_top + diagram_extra_bottom;
-
-    const float pw = std::max(text_w, diagram_w) + pad.x * 2.f;
-    const float ph = static_cast<float>(total_text_lines) * lh + diagram_h + pad.y * 2.f;
-
-    const ImGuiViewport* vp = ImGui::GetMainViewport();
-    const ImVec2 pmin       = {vp->Pos.x, vp->Pos.y + vp->Size.y - ph};
-    const ImVec2 pmax       = {vp->Pos.x + pw, vp->Pos.y + vp->Size.y};
-
-    draw_list->AddRectFilled(pmin, pmax, IM_COL32(0, 0, 0, 160));
-    draw_list->AddRect(pmin, pmax, IM_COL32(255, 100, 0, 180));
-
-    float y = pmin.y + pad.y;
-
-    for (const auto& [text, col] : lines) {
-        for_each_text_line(
-            text,
-            [&](const char* begin, const char* end)
-            {
-                draw_list->AddText({pmin.x + pad.x, y}, col, begin, end);
-                y += lh;
-            }
-        );
-    }
-
-    const float ox = pmin.x + (pw - dw) * .5f;
-
-    const ImVec2 mar_min = {ox, y + diagram_extra_top};
-    const ImVec2 mar_max = {ox + dw, mar_min.y + dh};
-
-    const ImVec2 bdr_min = {mar_min.x + dml, mar_min.y + dmt};
-    const ImVec2 bdr_max = {mar_max.x - dmr, mar_max.y - dmb};
-
-    const ImVec2 cnt_min = {bdr_min.x + dpl, bdr_min.y + dpt};
-    const ImVec2 cnt_max = {bdr_max.x - dpr, bdr_max.y - dpb};
-
-    if (dml > 0.f || dmt > 0.f || dmr > 0.f || dmb > 0.f) {
-        draw_list->AddRectFilled({mar_min.x, mar_min.y}, {mar_max.x, bdr_min.y}, f_margin);
-        draw_list->AddRectFilled({mar_min.x, bdr_max.y}, {mar_max.x, mar_max.y}, f_margin);
-        draw_list->AddRectFilled({mar_min.x, bdr_min.y}, {bdr_min.x, bdr_max.y}, f_margin);
-        draw_list->AddRectFilled({bdr_max.x, bdr_min.y}, {mar_max.x, bdr_max.y}, f_margin);
-        draw_list->AddRect(mar_min, mar_max, c_margin);
-    }
-
-    if (dpl > 0.f || dpt > 0.f || dpr > 0.f || dpb > 0.f) {
-        draw_list->AddRectFilled({bdr_min.x, bdr_min.y}, {bdr_max.x, cnt_min.y}, f_padding);
-        draw_list->AddRectFilled({bdr_min.x, cnt_max.y}, {bdr_max.x, bdr_max.y}, f_padding);
-        draw_list->AddRectFilled({bdr_min.x, cnt_min.y}, {cnt_min.x, cnt_max.y}, f_padding);
-        draw_list->AddRectFilled({cnt_max.x, cnt_min.y}, {bdr_max.x, cnt_max.y}, f_padding);
-    }
-
-    if (cnt_min.x < cnt_max.x && cnt_min.y < cnt_max.y)
-        draw_list->AddRectFilled(cnt_min, cnt_max, f_content);
-
-    draw_list->AddRect(bdr_min, bdr_max, c_border, 0.f, 0, 1.5f);
-
-    const float bdr_cx = (bdr_min.x + bdr_max.x) * .5f;
-    const float bdr_cy = (bdr_min.y + bdr_max.y) * .5f;
-
-    auto add_label = [&](const Unit& src, float result, ImU32 col, ImVec2 pos, ImVec2 align)
-    {
-        if (!(result > 0.f))
-            return;
-
-        const std::string text = fmt_side(src, result);
-        const ImVec2 size      = ImGui::CalcTextSize(text.c_str());
-
-        draw_list->AddText({pos.x - size.x * align.x, pos.y - size.y * align.y}, col, text.c_str());
-    };
-
-    ImGui::PushFont(ImGui::GetFont(), 12);
-    // Margin: outside border box, adjacent to border edge.
-    add_label(ms.top, mt, c_margin, {bdr_cx, bdr_min.y - fh - label_gap}, {.5f, 0.f});
-    add_label(ms.bottom, mb, c_margin, {bdr_cx, bdr_max.y + label_gap}, {.5f, 0.f});
-    add_label(ms.left, ml, c_margin, {bdr_min.x - label_gap, bdr_cy}, {1.f, .5f});
-    add_label(ms.right, mr, c_margin, {bdr_max.x + label_gap, bdr_cy}, {0.f, .5f});
-
-    // Padding: inside border box, adjacent to border edge.
-    add_label(ps.top, pt, c_padding, {bdr_cx, bdr_min.y + label_gap}, {.5f, 0.f});
-    add_label(ps.bottom, pb, c_padding, {bdr_cx, bdr_max.y - fh - label_gap}, {.5f, 0.f});
-    add_label(ps.left, pl, c_padding, {bdr_min.x + label_gap, bdr_cy}, {0.f, .5f});
-    add_label(ps.right, pr, c_padding, {bdr_max.x - label_gap, bdr_cy}, {1.f, .5f});
-    ImGui::PopFont();
-
-    if (cnt_min.x < cnt_max.x && cnt_min.y < cnt_max.y) {
-        const std::string content_size =
-            fmt::format("{:.4g}x{:.4g}", std::max(0.f, w - pl - pr), std::max(0.f, h - pt - pb));
-        const ImVec2 size = ImGui::CalcTextSize(content_size.c_str());
-
-        if (cnt_max.x - cnt_min.x >= size.x + 4.f && cnt_max.y - cnt_min.y >= size.y) {
-            draw_list->AddText(
-                {(cnt_min.x + cnt_max.x - size.x) * .5f, (cnt_min.y + cnt_max.y - size.y) * .5f},
-                c_content,
-                content_size.c_str()
-            );
-        }
-    }
-
-    ImGui::PopFont();
-
-    draw_debug_cross({0, pmin.y - 16});
-#endif
-}
-
-void Item::render_debug(Vec2f pos, Vec2f size)
+void Item::render_debug(const Vec2f& pos, const Vec2f& size)
 {
 #ifdef DEBUG
     {
@@ -1484,7 +882,7 @@ void Item::render_debug(Vec2f pos, Vec2f size)
 }
 
 void Item::render_image(
-    Render::TexturePtr texture,
+    const Render::TexturePtr& texture,
     const ImVec2& image_size,
     const ImVec2& uv0,
     const ImVec2& uv1,

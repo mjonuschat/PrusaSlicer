@@ -282,6 +282,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/WelcomeDialog.cpp
         src/Slic3r/App/WarningPanel.cpp
         include/Slic3r/App/WarningPanel.hpp
+        src/Slic3r/App/TopBar.cpp
+        include/Slic3r/App/TopBar.hpp
+        src/Slic3r/App/MenuCommandRegistrar.cpp
+        include/Slic3r/App/MenuCommandRegistrar.hpp
+        include/Slic3r/App/PageEntryButton.hpp
+        src/Slic3r/App/PageEntryButton.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -526,6 +532,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/WindowParams.hpp
         include/Slic3r/App/Yoga/Item.hpp
         src/Slic3r/App/Yoga/Item.cpp
+        src/Slic3r/App/Yoga/Item_debug.cpp
+        include/Slic3r/App/Yoga/Object.hpp
+        src/Slic3r/App/Yoga/Object.cpp
         src/Slic3r/App/Yoga/Window.cpp
         include/Slic3r/App/Yoga/Window.hpp
         include/Slic3r/App/Yoga/LambdaItem.hpp
@@ -579,10 +588,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ListView.hpp
         src/Slic3r/App/Yoga/ProjectButton.cpp
         include/Slic3r/App/Yoga/ProjectButton.hpp
-        src/Slic3r/App/TopBar.cpp
-        include/Slic3r/App/TopBar.hpp
-        src/Slic3r/App/MenuCommandRegistrar.cpp
-        include/Slic3r/App/MenuCommandRegistrar.hpp
         include/Slic3r/App/Yoga/ScrollArea.hpp
         src/Slic3r/App/Yoga/ScrollArea.cpp
         include/Slic3r/App/Yoga/InputText.hpp
@@ -605,8 +610,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/RootItem.cpp
         include/Slic3r/App/Yoga/StackLayout.hpp
         src/Slic3r/App/Yoga/StackLayout.cpp
-        include/Slic3r/App/PageEntryButton.hpp
-        src/Slic3r/App/PageEntryButton.cpp
         include/Slic3r/App/Yoga/Popup.hpp
         src/Slic3r/App/Yoga/Popup.cpp
         include/Slic3r/App/Yoga/AlignmentButtons.hpp

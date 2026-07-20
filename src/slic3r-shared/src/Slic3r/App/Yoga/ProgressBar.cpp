@@ -12,6 +12,7 @@
 namespace Slic3r::App::Yoga {
 ProgressBar::ProgressBar() : Rectangle()
 {
+    set_object_name("ProgressBar");
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_color(m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
     set_border_width(1.f);

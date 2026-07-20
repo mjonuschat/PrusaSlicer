@@ -6,6 +6,7 @@ namespace Slic3r::App::Yoga {
 
 Toggler::Toggler()
 {
+    set_object_name("Toggler");
     set_align_items(YGAlignCenter);
 
     set_width(20);

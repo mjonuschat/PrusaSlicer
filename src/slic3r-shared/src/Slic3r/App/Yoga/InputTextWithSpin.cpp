@@ -23,6 +23,7 @@ InputTextWithSpin::InputTextWithSpin(
     m_step(step),
     m_step_fast(step_fast)
 {
+    set_object_name("InputTextWithSpin");
     set_validator(std::move(validator_in));
     set_orientation(Orientation::Horizontal);
 
