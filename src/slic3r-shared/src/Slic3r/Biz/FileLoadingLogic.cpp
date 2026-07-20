@@ -617,11 +617,21 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
                 ASSERT(fdm_config.tool.size() == preset_metadata.tools.size());
                 ASSERT(hw_printer.tools.size() == preset_metadata.tools.size());
             }
-            // while (preset_metadata.tools.size() < preset_metadata.hw_config.tool_count)
-            // preset_metadata.tools.emplace_back();
-            ASSERT(preset_metadata.materials.size() == preset_metadata.hw_config.material_slot_count());
-            // while (preset_metadata.materials.size() < preset_metadata.hw_config.tool_count)
-            // preset_metadata.materials.emplace_back();
+
+            const std::size_t slot_count{preset_metadata.hw_config.material_slot_count()};
+            // If there is a single material for a multi slot printer,
+            // copy the first material to all the slots.
+            if (preset_metadata.materials.size() == 1 && slot_count > 1) {
+                Domain::ConfigPackFDM* config_pack_fdm{std::get_if<Domain::ConfigPackFDM>(&config_pack)};
+                while (preset_metadata.materials.size() < slot_count) {
+                    preset_metadata.materials.push_back(preset_metadata.materials.front());
+                    if (config_pack_fdm) {
+                        config_pack_fdm->filament.push_back(config_pack_fdm->filament.front());
+                    }
+                }
+            }
+
+            ASSERT(preset_metadata.materials.size() == slot_count);
         } else
             throw Loaded3MFException(
                 Read3mfIssue(Read3mfIssueType::legacy_loader_failed, result.error())
