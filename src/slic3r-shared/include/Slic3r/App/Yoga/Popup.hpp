@@ -13,6 +13,10 @@ class Popup;
 using WindowPtr = std::unique_ptr<Window>;
 using PopupPtr  = std::unique_ptr<Popup>;
 
+/**
+ * @warning This class contains a content_item() where all
+ * children are parented
+ */
 class Popup : public Object
 {
 public:

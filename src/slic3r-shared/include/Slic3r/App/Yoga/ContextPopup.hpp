@@ -8,6 +8,10 @@
 
 namespace Slic3r::App::Yoga {
 
+/**
+ * @warning This class contains a content_item() where all
+ * children are parented
+ */
 class ContextPopup : public Item
 {
 public:
@@ -18,6 +22,10 @@ public:
     };
 
     explicit ContextPopup(const std::string& name = {});
+
+    void insert(ObjectPtr child, size_t index) override;
+    void append(ObjectPtr child) override;
+    ObjectPtr remove(Object* child) override;
 
     Callbacks& callbacks();
 
@@ -48,11 +56,15 @@ public:
     const ImColor& background_color() const;
     void set_background_color(const ImColor& background_color);
 
+    Item* content_item() const;
+
 private:
     void invalidate_style();
 
 private:
     Callbacks m_callbacks;
+
+    Item* m_content_item = nullptr;
 
     float m_offset      = 10;
     Position m_position = Position::Right;

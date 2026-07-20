@@ -12,9 +12,28 @@ namespace Slic3r::App::Yoga {
 
 ContextPopup::ContextPopup(const std::string& name)
 {
+    ItemPtr content = std::make_unique<Item>();
+    m_content_item  = content.get();
+    m_content_item->set_flex_grow(1);
+    Item::insert(std::move(content), 0);
     m_background_color = m_theme->color_imgui(Platform::Color::WindowBg);
     set_object_name(name.empty() ? "ContextMenu" : name);
     set_position_type(YGPositionType::YGPositionTypeAbsolute);
+}
+
+void ContextPopup::insert(ObjectPtr child, size_t index)
+{
+    m_content_item->insert(std::move(child), index);
+}
+
+void ContextPopup::append(ObjectPtr child)
+{
+    m_content_item->append(std::move(child));
+}
+
+ObjectPtr ContextPopup::remove(Object* child)
+{
+    return m_content_item->remove(child);
 }
 
 ContextPopup::Callbacks& ContextPopup::callbacks()
@@ -149,6 +168,7 @@ void ContextPopup::render(const Vec2f& pos, const Vec2f& size)
     }
     if (begin) {
         m_opened = true;
+        m_content_item->set_visible(true);
         if (m_request_close) {
             ImGui::CloseCurrentPopup();
             m_request_close = false;
@@ -163,6 +183,7 @@ void ContextPopup::render(const Vec2f& pos, const Vec2f& size)
         }
     } else if (m_opened) {
         m_opened = false;
+        m_content_item->set_visible(false);
         if (m_callbacks.closed) {
             m_callbacks.closed();
         }
@@ -272,6 +293,11 @@ void ContextPopup::invalidate_style()
     set_left(YGUndefined);
     set_right(YGUndefined);
     set_style_dirty();
+}
+
+Item* ContextPopup::content_item() const
+{
+    return m_content_item;
 }
 
 const ImColor& ContextPopup::background_color() const

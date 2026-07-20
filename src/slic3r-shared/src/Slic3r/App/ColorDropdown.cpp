@@ -283,10 +283,10 @@ ColorDropdown::ColorDropdown(Biz::ProjectInteractor& project_interactor, bool wi
     );
 
     m_popup = m_trigger->emplace_back<Yoga::ContextPopup>("MMPaintingColorDropdownPopup");
-    m_popup->set_orientation(Yoga::Orientation::Vertical);
+    m_popup->content_item()->set_orientation(Yoga::Orientation::Vertical);
     m_popup->set_width_percent(100);
     m_popup->set_padding({2_fpx, 2_fpx});
-    m_popup->set_gap(2_fpx);
+    m_popup->content_item()->set_gap(2_fpx);
     m_popup->set_offset(2);
     m_popup->set_position(Yoga::Position::Bottom);
 
@@ -551,8 +551,8 @@ Label get_label(
 
 void ColorDropdown::rebuild_popup_items()
 {
-    while (!m_popup->items().empty()) {
-        m_popup->remove(m_popup->items().back());
+    while (!m_popup->content_item()->items().empty()) {
+        m_popup->content_item()->remove(m_popup->content_item()->items().back());
     }
 
     m_popup_items.clear();

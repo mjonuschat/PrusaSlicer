@@ -165,6 +165,9 @@ public:
      */
     void move_later(Item* target, size_t index);
 
+    /**
+     * @deprecated Please use Item::get_item(size_t index)
+     */
     const std::vector<Item*>& items() const;
     Item* get_item(size_t index) const;
 

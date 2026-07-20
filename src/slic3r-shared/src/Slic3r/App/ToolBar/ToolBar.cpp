@@ -211,7 +211,7 @@ void ToolBar::style_node()
             m_button_more->set_orientation(orientation());
             ContextPopup* subtoolbar = m_button_more->get_or_create_subtoolbar();
             for (ToolBarButton* collapsed_button : std::as_const(collapsed_buttons)) {
-                if (collapsed_button->parent() != subtoolbar) {
+                if (collapsed_button->parent() != subtoolbar->content_item()) {
                     subtoolbar->append(
                         unique_dynamic_cast<ToolBarButton>(Item::remove(collapsed_button))
                     );
@@ -225,7 +225,7 @@ void ToolBar::style_node()
         if (subtoolbar) {
             // Go through every included button and append it if they are missing
             for (ToolBarButton* included_button : std::as_const(included_buttons)) {
-                if (included_button->parent() == subtoolbar) {
+                if (included_button->parent() == subtoolbar->content_item()) {
                     Item::insert(subtoolbar->remove(included_button), object_count() - 1);
                 }
             }
