@@ -51,7 +51,7 @@ void Wipe::set_path(SmoothPath &&path) {
         m_path = std::move(path.front().path);
         int64_t len = Geometry::ArcWelder::estimate_path_length(m_path);
         for (auto it = std::next(path.begin()); len < wipe_len_max_scaled && it != path.end(); ++it) {
-            if (it->path_attributes.role.is_bridge())
+            if (it->path_attributes.role.is_bridge() || it->path_attributes.role.is_bridge_internal())
                 break; // Do not perform a wipe on bridges.
             assert(it->path.size() >= 2);
             assert(m_path.back().point == it->path.front().point);

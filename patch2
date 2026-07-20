@@ -1,0 +1,15 @@
+--- src/libslic3r/Fill/Fill.cpp	2026-07-17 16:21:46.068715398 +0300
++++ /home/ms/Projects/3d/PrusaSlicer/src/libslic3r/Fill/Fill.cpp	2026-07-15 17:13:34.796384722 +0300
+@@ -248,7 +248,11 @@
+ 		            continue;
+
+ 		        if (is_bridge) {
+-		            params.extrusion_role = ExtrusionRole::BridgeInfill;
++				if (surface.is_bridge_internal()) {
++		        		params.extrusion_role = ExtrusionRole::BridgeInternalInfill;
++			        } else {
++					params.extrusion_role = ExtrusionRole::BridgeInfill;
++				}
+                 } else {
+                     if (surface.is_solid()) {
+                         if (surface.is_top()) {

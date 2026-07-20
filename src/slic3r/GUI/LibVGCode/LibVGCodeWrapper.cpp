@@ -77,6 +77,7 @@ Slic3r::GCodeExtrusionRole convert(EGCodeExtrusionRole role)
     case EGCodeExtrusionRole::TopSolidInfill:           { return Slic3r::GCodeExtrusionRole::TopSolidInfill; }
     case EGCodeExtrusionRole::Ironing:                  { return Slic3r::GCodeExtrusionRole::Ironing; }
     case EGCodeExtrusionRole::BridgeInfill:             { return Slic3r::GCodeExtrusionRole::BridgeInfill; }
+    case EGCodeExtrusionRole::BridgeInternalInfill:     { return Slic3r::GCodeExtrusionRole::BridgeInternalInfill; }
     case EGCodeExtrusionRole::GapFill:                  { return Slic3r::GCodeExtrusionRole::GapFill; }
     case EGCodeExtrusionRole::Skirt:                    { return Slic3r::GCodeExtrusionRole::Skirt; }
     case EGCodeExtrusionRole::SupportMaterial:          { return Slic3r::GCodeExtrusionRole::SupportMaterial; }
@@ -100,6 +101,7 @@ EGCodeExtrusionRole convert(Slic3r::GCodeExtrusionRole role)
     case Slic3r::GCodeExtrusionRole::TopSolidInfill:           { return EGCodeExtrusionRole::TopSolidInfill; }
     case Slic3r::GCodeExtrusionRole::Ironing:                  { return EGCodeExtrusionRole::Ironing; }
     case Slic3r::GCodeExtrusionRole::BridgeInfill:             { return EGCodeExtrusionRole::BridgeInfill; }
+    case Slic3r::GCodeExtrusionRole::BridgeInternalInfill:     { return EGCodeExtrusionRole::BridgeInternalInfill; }
     case Slic3r::GCodeExtrusionRole::GapFill:                  { return EGCodeExtrusionRole::GapFill; }
     case Slic3r::GCodeExtrusionRole::Skirt:                    { return EGCodeExtrusionRole::Skirt; }
     case Slic3r::GCodeExtrusionRole::SupportMaterial:          { return EGCodeExtrusionRole::SupportMaterial; }
