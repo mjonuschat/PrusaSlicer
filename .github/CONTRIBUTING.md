@@ -1,8 +1,30 @@
 # Contribution guidelines
 
+You can contribute to the PrusaSlicer project by reporting a bug or creating a pull request. Before reporting a bug, make sure to read the [Issue tracker policy](#issue-tracker-policy). Before creating a pull request, make sure to read the [Submitting a pull request](#submitting-a-pull-request) section.
+
+## Issue tracker policy
+
+The [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues) is **only** for reporting bugs. Feature requests, suggestions or any general questions/comments should be submitted to [GitHub Discussions](https://www.github.com/prusa3d/discussions). The bug report must be **well-formed** and provide all the necessary details for us to be able to reproduce it. The policy more formally:
+
+1. The report must be a bug.
+2. You must provide all the necessary details for us to reproduce the issue. This includes a clear detailed description in English, a project file (3mf) where applicable and any screenshots/videos to support the written description.
+3. You must make sure that the bug you are reporting is not already reported in the bug tracker.
+4. You must not combine multiple bug reports into a single issue, rather make multiple bug reports if necessary.
+5. You must use the latest PrusaSlicer version available when reporting (including alpha, beta and RC) without significant modifications (e.g. extensive scripting).
+6. You must specify the operating system and PrusaSlicer version.
+7. We may close your issue if there is a lot of text with very little substance. This is specifically aimed at suspected AI-generated content.
+8. We may move an issue to Discussions or close it if we are unable to reproduce it.
+9. We may (very rarely) move a reproducible bug report to Discussions or close it if it happens under extremely specific circumstances.
+
+These rules are intentionally **quite strict** with the aim to keep the issue tracker clean and useful for everyone. Once a bug is **acknowledged** in the issue tracker and not closed/moved to Discussions, it means we **will do our best to fix it**.
+
+Also note that we **really want your feedback** and these rules apply **only to the issue tracker**. You can always voice your concerns/questions/remarks in the [GitHub Discussions](https://www.github.com/prusa3d/discussions).
+
+## Submitting a pull request
+
 As an open source project, we appreciate pull requests from the community. On the other hand, every bit of code has to be reviewed and later maintained, which is a burden that will fall on us, not on the auther of the PR. Pulling unfinished, buggy or unservicable code would inevitably compromise stability of the software and make the future development difficult. For this reason, we cannot accept any pull request that comes. If you're a SW developer and consider contributing, this is a guideline to follow to increase the chance of merging your work.
 
-## General guidelines for a good pull request
+### General guidelines for a good pull request
 
 Click to see details:
 
@@ -38,10 +60,10 @@ We have seen pull requests that did not do what they claimed at all. We have see
 </details>
 
 
-## Coding style
+### Coding style
 
 Coding style is described in [doc/CodeStyle.md](doc/CodeStyle.md) in more detail.
 
-## Disclaimer
+### Disclaimer
 
 Maintainers of PrusaSlicer always have the final vote on what gets merged and what does not. No amount of likes on Facebook or hearts on the respective pull request can overrule it, and if a maintainer closes a PR for whatever reason, it is closed. As hard as it may sound, the responsibility and long-term maintenance is on us. Thanks for your understanding.

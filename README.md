@@ -27,25 +27,7 @@ If you prefer, you can always build PrusaSlicer yourself from source. See the [d
 
 ### Reporting a bug
 
-Did you find a bug? Bugs can be reported in our [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues), but **first make sure your report complies with the policy stated below**. **Are you not sure?** Get in touch in our [GitHub Discussions](https://www.github.com/prusa3d/discussions), before filing a bug report in the issue tracker. You can always file a bug report later, once you have more confidence.
-
-#### Issue tracker policy
-
-The [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues) is **only** for reporting bugs. Feature requests, suggestions or any general questions/comments should be submitted to [GitHub Discussions](https://www.github.com/prusa3d/discussions). The bug report must be **well-formed** and provide all the necessary details for us to be able to reproduce it. The policy more formally:
-
-1. The report must be a bug.
-2. You must provide all the necessary details for us to reproduce the issue. This includes a clear detailed description in English, a project file (3mf) where applicable and any screenshots/videos to support the written description.
-3. You must make sure that the bug you are reporting is not already reported in the bug tracker.
-4. You must not combine multiple bug reports into a single issue, rather make multiple bug reports if necessary.
-5. You must use the latest PrusaSlicer version available when reporting (including alpha, beta and RC) without significant modifications (e.g. extensive scripting).
-6. You must specify the operating system and PrusaSlicer version.
-7. We may close your issue if there is a lot of text with very little substance. This is specifically aimed at suspected AI-generated content.
-8. We may move an issue to Discussions or close it if we are unable to reproduce it.
-9. We may (very rarely) move a reproducible bug report to Discussions or close it if it happens under extremely specific circumstances.
-
-These rules are intentionally **quite strict** with the aim to keep the issue tracker clean and useful for everyone. Once a bug is **acknowledged** in the issue tracker and not closed/moved to Discussions, it means we **will do our best to fix it**.
-
-Also note that we **really want your feedback** and these rules apply **only to the issue tracker**. You can always voice your concerns/questions/remarks in the [GitHub Discussions](https://www.github.com/prusa3d/discussions).
+Did you find a bug? Bugs can be reported in our [GitHub issue tracker](https://github.com/prusa3d/PrusaSlicer/issues), but **first make sure your report complies with the [Issue tracker policy](https://github.com/prusa3d/PrusaSlicer?tab=contributing-ov-file#issue-tracker-policy)**. **Are you not sure?** Get in touch in our [GitHub Discussions](https://www.github.com/prusa3d/discussions), before filing a bug report in the issue tracker. You can always file a bug report later, once you have more confidence.
 
 ### How to get in touch
 
