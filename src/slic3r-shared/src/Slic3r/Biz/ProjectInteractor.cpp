@@ -560,6 +560,8 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 
     ASSERT(it != projects.end());
 
+    Platform::PlatformServices::instance().job_manager().cancel_jobs_for_project(project_id);
+
     invoke_listeners<IProjectsChangedListener>(
         [project_id](auto* l) { l->on_project_will_be_removed(project_id); }
     );

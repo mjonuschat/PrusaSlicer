@@ -119,6 +119,13 @@ public:
         m_jobs.erase(name);
     }
 
+    void cancel_jobs_for_project(const Domain::SelectionId project_id)
+    {
+        std::erase_if(m_jobs, [project_id](const auto& job) {
+            return job.second->progress_tracker().get_progress().project_id == project_id;
+        });
+    }
+
 private:
     IMainThreadDispatcher& m_dispatcher;
     std::map<std::string, std::unique_ptr<JobBase>> m_jobs;
