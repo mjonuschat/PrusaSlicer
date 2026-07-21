@@ -20,7 +20,6 @@ PhysicalPrinterInteractor::PhysicalPrinterInteractor(
     m_preset_interactor(preset_interactor),
     m_user_account_interactor(user_account_interactor)
 {
-    m_cbi_accessor.set_config_box(&m_storage.dummy_settings());
     read_storage();
     m_selected_uuid = m_observable_list.at(0).uuid;
     m_selected_index = 0;
