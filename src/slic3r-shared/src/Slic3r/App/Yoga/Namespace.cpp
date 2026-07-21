@@ -67,7 +67,7 @@ void EvaluatedUnit::evaluate(const SizeInfo& size_info)
         break;
     }
 
-    result = YGRoundValueToPixelGrid(result, size_info.dpi_scale_factor, false, false);
+    result = std::round(result);
 }
 
 YGAlign Align::get_yoga_v_align() const
