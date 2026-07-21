@@ -100,7 +100,7 @@ std::optional<ColorRGBA> color_from_extruder_slot(
 )
 {
     const int raw_id = vol.extruder_id();
-    const int slot   = (raw_id <= 0) ? 0 : raw_id - 1;
+    const int slot   = (raw_id <= 0 || raw_id > slot_colors.size()) ? 0 : raw_id - 1;
     if (slot < static_cast<int>(slot_colors.size())) {
         const auto& c = slot_colors[slot];
         ColorRGBA color{c.r(), c.g(), c.b(), 1.0f};
