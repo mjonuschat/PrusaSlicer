@@ -90,8 +90,10 @@ std::vector<BrowserLogicCommand> BrowserLogicPhysicalPrinter::on_base_url_loaded
     m_base_url_preloaded = true;
     m_reached_default_url = true;
 
-    std::string path = m_url.substr(m_base_url.length());
-    if (path.empty()) path = "/";
+    std::string path = "/";
+    if (m_url.size() >= m_base_url.size() && m_url.compare(0, m_base_url.size(), m_base_url) == 0) {
+        path = m_url.substr(m_base_url.size());
+    }
 
     return {
         {BrowserLogicCommandType::RunScript, script_show_loading_overlay()},
