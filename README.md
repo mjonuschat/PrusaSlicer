@@ -12,7 +12,7 @@ The **recommended installation method** is to go to the [PrusaSlicer project pag
 
 **Alternatively**, for Windows and macOS, you can download the software directly from the [GitHub releases page](https://github.com/prusa3d/PrusaSlicer/releases). For Linux, PrusaSlicer is currently distributed exclusively through [Flathub](https://flathub.org/en/apps/com.prusa3d.PrusaSlicer).
 
-If you prefer, you can always build PrusaSlicer yourself from source. See the [documentation](doc/) to learn how to do it.
+If you prefer, you can always build PrusaSlicer yourself from source. See the [documentation](doc/Build.md) to learn how to do it.
 
 ### Main features
 
