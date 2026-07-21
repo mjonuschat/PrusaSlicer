@@ -1,9 +1,9 @@
 
+src/libslic3r/include/libslic3r/SlicingStatus.hpp
 src/libslic3r/src/libslic3r/EdgeGrid.cpp
 src/libslic3r/src/libslic3r/ExtrusionRole.cpp
 src/libslic3r/src/libslic3r/GCode.cpp
 src/libslic3r/src/libslic3r/GCode/PostProcessor.cpp
-src/libslic3r/src/libslic3r/miniz_extension.cpp
 src/libslic3r/src/libslic3r/Print.cpp
 src/libslic3r/src/libslic3r/PrintBase.cpp
 src/libslic3r/src/libslic3r/PrintObjectSlice.cpp
@@ -28,18 +28,26 @@ src/slic3r-domain/src/Slic3r/Domain/ConfigBoxesSLA.cpp
 src/slic3r-domain/src/Slic3r/Domain/ConfigCommon.cpp
 src/slic3r-domain/src/Slic3r/Domain/ConfigDef.cpp
 src/slic3r-domain/src/Slic3r/Domain/ConfigPhysical.cpp
-src/slic3r-domain/src/Slic3r/Domain/I18N.cpp
 src/slic3r-platform/src/Slic3r/App/Platform/KeyCode.cpp
+src/slic3r-shared/include/Slic3r/App/Plater/ArrangeDialog.hpp
+src/slic3r-shared/include/Slic3r/App/Plater/MMPaintingColorDropdowns.hpp
+src/slic3r-shared/src/Slic3r/App/AddPrinterDialog.cpp
 src/slic3r-shared/src/Slic3r/App/AppConfig.cpp
+src/slic3r-shared/src/Slic3r/App/ColorDropdown.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemBedShape.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemCheckBox.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemComboBox.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemExtruderSelection.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemFilePicker.cpp
+src/slic3r-shared/src/Slic3r/App/Config/ConfigItemPreview.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemRammingParams.cpp
+src/slic3r-shared/src/Slic3r/App/Config/ConfigItemSpinBox.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemSubstitutions.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemTextField.cpp
 src/slic3r-shared/src/Slic3r/App/Config/ConfigItemUtils.cpp
+src/slic3r-shared/src/Slic3r/App/Config/ConfigRowItem.cpp
+src/slic3r-shared/src/Slic3r/App/Config/ExplanationContainer.cpp
+src/slic3r-shared/src/Slic3r/App/Config/FavoriteButton.cpp
 src/slic3r-shared/src/Slic3r/App/Config/OverridableConfigRowItem.cpp
 src/slic3r-shared/src/Slic3r/App/Config/PrintToolRowButton.cpp
 src/slic3r-shared/src/Slic3r/App/Config/PrintToolRowItem.cpp
@@ -47,6 +55,7 @@ src/slic3r-shared/src/Slic3r/App/Config/ToolRowControl.cpp
 src/slic3r-shared/src/Slic3r/App/DisplayStrings.cpp
 src/slic3r-shared/src/Slic3r/App/LogicalPrinterSettingsButton.cpp
 src/slic3r-shared/src/Slic3r/App/LogicalPrinterSettingsDialog.cpp
+src/slic3r-shared/src/Slic3r/App/Lua/PluginDialog.cpp
 src/slic3r-shared/src/Slic3r/App/MaterialSelectionDialog.cpp
 src/slic3r-shared/src/Slic3r/App/MaterialSelectionRow.cpp
 src/slic3r-shared/src/Slic3r/App/MaterialSettingsDialog.cpp
@@ -55,6 +64,7 @@ src/slic3r-shared/src/Slic3r/App/MenuCommandRegistrar.cpp
 src/slic3r-shared/src/Slic3r/App/NumberEntryDialog.cpp
 src/slic3r-shared/src/Slic3r/App/ObjectList.cpp
 src/slic3r-shared/src/Slic3r/App/ObjectListWindow.cpp
+src/slic3r-shared/src/Slic3r/App/OverrideItemPreviewRow.cpp
 src/slic3r-shared/src/Slic3r/App/OverrideItemRow.cpp
 src/slic3r-shared/src/Slic3r/App/OverrideOptionGroup.cpp
 src/slic3r-shared/src/Slic3r/App/OverrideSettingsDialog.cpp
@@ -75,7 +85,6 @@ src/slic3r-shared/src/Slic3r/App/Plater/PlaceOnBedButton.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/PlaterRenderModule.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/ReferenceFramePicker.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/RotationDialog.cpp
-src/slic3r-shared/src/Slic3r/App/Plater/ScaleDialog.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/ScaleWidget.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/SidebarPlaterActionButtons.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/SimplifyDialog.cpp
@@ -85,6 +94,7 @@ src/slic3r-shared/src/Slic3r/App/Plater/SvgDialog.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/SvgGizmo.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/TextDialog.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/TextGizmo.cpp
+src/slic3r-shared/src/Slic3r/App/Plater/ToolGizmosUiInfo.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/TranslationDialog.cpp
 src/slic3r-shared/src/Slic3r/App/Plater/VariableLayerHeightDialog.cpp
 src/slic3r-shared/src/Slic3r/App/PopNotification/PopNotificationCenter.cpp
@@ -110,13 +120,11 @@ src/slic3r-shared/src/Slic3r/App/PrusaLinkStorageListener.cpp
 src/slic3r-shared/src/Slic3r/App/ResultExport/ExportPathSelect.cpp
 src/slic3r-shared/src/Slic3r/App/SearchBar.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarActionButtons.cpp
-src/slic3r-shared/src/Slic3r/App/SidebarBed.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarObject.cpp
 src/slic3r-shared/src/Slic3r/App/SidebarPrint.cpp
-src/slic3r-shared/src/Slic3r/App/SidebarToolHeadRow.cpp
-src/slic3r-shared/src/Slic3r/App/ToolLabel.cpp
 src/slic3r-shared/src/Slic3r/App/TopBar.cpp
 src/slic3r-shared/src/Slic3r/App/Undo/Store.cpp
+src/slic3r-shared/src/Slic3r/App/WelcomeDialog.cpp
 src/slic3r-shared/src/Slic3r/App/WipeTowerSettings.cpp
 src/slic3r-shared/src/Slic3r/App/Yoga/AlignmentButtons.cpp
 src/slic3r-shared/src/Slic3r/App/Yoga/CollapsibleWindow.cpp
@@ -130,7 +138,7 @@ src/slic3r-shared/src/Slic3r/Biz/Emboss/Emboss.cpp
 src/slic3r-shared/src/Slic3r/Biz/Emboss/TextPresetManager.cpp
 src/slic3r-shared/src/Slic3r/Biz/FileLoadingLogic.cpp
 src/slic3r-shared/src/Slic3r/Biz/Format/3mf.cpp
-src/slic3r-shared/src/Slic3r/Biz/I18N/I18N.cpp
+src/slic3r-shared/src/Slic3r/Biz/MiniZErrorTranslation.cpp
 src/slic3r-shared/src/Slic3r/Biz/Network/HttpCurl.cpp
 src/slic3r-shared/src/Slic3r/Biz/PhysicalPrinter/PhysicalPrinterConfig.cpp
 src/slic3r-shared/src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
@@ -148,6 +156,7 @@ src/slic3r-shared/src/Slic3r/Biz/PrintHost/PrintHostPrusaLink.cpp
 src/slic3r-shared/src/Slic3r/Biz/PrintHost/PrintHostPrusaLinkStorage.cpp
 src/slic3r-shared/src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
 src/slic3r-shared/src/Slic3r/Biz/ProjectInteractor.cpp
+src/slic3r-shared/src/Slic3r/Biz/ResultExport/SLA/Zipper.cpp
 src/slic3r-shared/src/Slic3r/Biz/Units.cpp
 src/slic3r-shared-wx/src/Slic3r/App/WX/BitmapGetters.cpp
 src/slic3r-shared-wx/src/Slic3r/App/WX/DialogManager.cpp
