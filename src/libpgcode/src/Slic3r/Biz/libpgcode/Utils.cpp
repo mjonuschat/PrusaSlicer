@@ -81,6 +81,12 @@ std::string_view reserved_tag(Tags tag)
     return RESERVED_TAGS[size_t(tag)];
 }
 
+std::string_view custom_tag(CustomTags tag)
+{
+    assert(tag < CustomTags::COUNT);
+    return CUSTOM_TAGS[size_t(tag)];
+}
+
 bool is_hex_digit(const char c)
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');

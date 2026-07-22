@@ -28,6 +28,7 @@ using Slic3r::Domain::indexed_triangle_set_with_color;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::PixelFormat;
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 using namespace Slic3r::Biz;
@@ -42,7 +43,7 @@ MMPaintedVolumeGeometryId mm_painted_volume_geometry_id(const ModelVolume& model
 std::unique_ptr<Geometry>
 create_mm_painted_volume_geometry(Device& device, const ModelVolume& model_volume)
 {
-    const constexpr int paint_state_count = static_cast<int>(TriangleStateType::Count);
+    const constexpr int paint_state_count = static_cast<int>(TRIANGLE_STATE_TYPE_COUNT);
 
     const indexed_triangle_set_with_color painted_mesh =
         Algorithms::FacetsAnnotation::get_all_facets_strict_with_colors(
@@ -80,7 +81,7 @@ create_mm_painted_volume_geometry(Device& device, const ModelVolume& model_volum
 std::vector<ColorRGBA>
 create_palette_colors(const ColorRGBA& default_color, const std::vector<ColorRGBA>& slot_colors)
 {
-    constexpr size_t palette_size = static_cast<size_t>(TriangleStateType::Count);
+    const constexpr size_t palette_size = TRIANGLE_STATE_TYPE_COUNT;
 
     std::vector<ColorRGBA> palette_colors(palette_size, default_color);
     std::ranges::copy(slot_colors | std::views::take(palette_size - 1), palette_colors.begin() + 1);

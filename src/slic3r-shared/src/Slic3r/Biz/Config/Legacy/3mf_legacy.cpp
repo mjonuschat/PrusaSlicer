@@ -76,6 +76,7 @@ namespace CustomGCode = Slic3r::Domain::CustomGCode;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
 using Slic3r::Domain::ConfigPackSLA;
+using Slic3r::Domain::ModelVolume;
 
 using namespace Slic3r::Biz;
 
@@ -106,12 +107,15 @@ const char* SLIC3RPE_3MF_VERSION = "slic3rpe:Version3mf"; // definition of the m
 // Painting gizmos data version numbers
 // 0 : 3MF files saved by older PrusaSlicer or the painting gizmo wasn't used. No version definition in them.
 // 1 : Introduction of painting gizmos data versioning. No other changes in painting gizmos data.
-const unsigned int FDM_SUPPORTS_PAINTING_VERSION = 1;
-const unsigned int SEAM_PAINTING_VERSION         = 1;
-const unsigned int MM_PAINTING_VERSION           = 1;
+// 2 : Extended support up to 255 triangle states.
+const unsigned int FDM_SUPPORTS_PAINTING_VERSION = 2;
+const unsigned int SEAM_PAINTING_VERSION         = 2;
+const unsigned int FUZZY_SKIN_PAINTING_VERSION   = 2;
+const unsigned int MM_PAINTING_VERSION           = 2;
 
 const std::string SLIC3RPE_FDM_SUPPORTS_PAINTING_VERSION = "slic3rpe:FdmSupportsPaintingVersion";
 const std::string SLIC3RPE_SEAM_PAINTING_VERSION         = "slic3rpe:SeamPaintingVersion";
+const std::string SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION   = "slic3rpe:FuzzySkinPaintingVersion";
 const std::string SLIC3RPE_MM_PAINTING_VERSION           = "slic3rpe:MmPaintingVersion";
 
 const std::string MODEL_FOLDER = "3D/";
@@ -686,6 +690,7 @@ namespace Slic3rLegacy {
         boost::optional<Semver> m_prusaslicer_generator_version;
         unsigned int m_fdm_supports_painting_version = 0;
         unsigned int m_seam_painting_version         = 0;
+        unsigned int m_fuzzy_skin_painting_version   = 0;
         unsigned int m_mm_painting_version           = 0;
 
         XML_Parser m_xml_parser;
@@ -894,6 +899,7 @@ namespace Slic3rLegacy {
         m_version = 0;
         m_fdm_supports_painting_version = 0;
         m_seam_painting_version = 0;
+        m_fuzzy_skin_painting_version = 0;
         m_mm_painting_version = 0;
         m_check_version = check_version;
         m_model = &model;
@@ -2521,6 +2527,10 @@ namespace Slic3rLegacy {
             m_seam_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_seam_painting_version, SEAM_PAINTING_VERSION,
                 _u8L("The selected 3MF contains seam painted object using a newer version of PrusaSlicer and is not compatible."));
+        } else if (m_curr_metadata_name == SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION) {
+            m_fuzzy_skin_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
+            check_painting_version(m_fuzzy_skin_painting_version, FUZZY_SKIN_PAINTING_VERSION,
+                _u8L("The selected 3MF contains fuzzy skin painted object using a newer version of PrusaSlicer and is not compatible."));
         } else if (m_curr_metadata_name == SLIC3RPE_MM_PAINTING_VERSION) {
             m_mm_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_mm_painting_version, MM_PAINTING_VERSION,
@@ -3342,14 +3352,25 @@ namespace Slic3rLegacy {
             stream << "<" << MODEL_TAG << " unit=\"millimeter\" xml:lang=\"en-US\" xmlns=\"http://schemas.microsoft.com/3dmanufacturing/core/2015/02\" xmlns:slic3rpe=\"http://schemas.slic3r.org/3mf/2017/06\">\n";
             stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_3MF_VERSION << "\">" << VERSION_3MF << "</" << METADATA_TAG << ">\n";
 
-            if (model.is_fdm_support_painted())
-                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_FDM_SUPPORTS_PAINTING_VERSION << "\">" << FDM_SUPPORTS_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
+            if (model.is_fdm_support_painted()) {
+                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_FDM_SUPPORTS_PAINTING_VERSION << "\">"
+                       << model.minimum_required_painting_version(&ModelVolume::supported_facets) << "</" << METADATA_TAG << ">\n";
+            }
 
-            if (model.is_seam_painted())
-                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_SEAM_PAINTING_VERSION << "\">" << SEAM_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
+            if (model.is_seam_painted()) {
+                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_SEAM_PAINTING_VERSION << "\">"
+                       << model.minimum_required_painting_version(&ModelVolume::seam_facets) << "</" << METADATA_TAG << ">\n";
+            }
 
-            if (model.is_mm_painted())
-                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_MM_PAINTING_VERSION << "\">" << MM_PAINTING_VERSION << "</" << METADATA_TAG << ">\n";
+            if (model.is_fuzzy_skin_painted()) {
+                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION << "\">"
+                       << model.minimum_required_painting_version(&ModelVolume::fuzzy_skin_facets) << "</" << METADATA_TAG << ">\n";
+            }
+
+            if (model.is_mm_painted()) {
+                stream << " <" << METADATA_TAG << " name=\"" << SLIC3RPE_MM_PAINTING_VERSION << "\">"
+                       << model.minimum_required_painting_version(&ModelVolume::mm_segmentation_facets) << "</" << METADATA_TAG << ">\n";
+            }
 
             std::string name = Slic3r::Biz::Utils::xml_escape(boost::filesystem::path(filename).stem().string());
             stream << " <" << METADATA_TAG << " name=\"Title\">" << name << "</" << METADATA_TAG << ">\n";

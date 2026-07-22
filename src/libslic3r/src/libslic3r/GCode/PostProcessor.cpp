@@ -300,6 +300,10 @@ static FilamentStatistics get_filament_statistics(
     for (const Extruder& extruder : extruders) {
         const uint8_t extruder_id{static_cast<uint8_t>(extruder.id())};
         const auto it{extruded_volumes.find(extruder_id)};
+        if (it == extruded_volumes.end()) {
+            continue;
+        }
+
         const float volume{it->second};
         const float weight{volume * static_cast<float>(extruder.filament_density()) * 0.001f};
         const double crossection{extruder.filament_crossection()};
@@ -341,12 +345,26 @@ static Domain::FullPrintStatistics get_full_statistics(
     const FilamentStatistics filament_statistics{
         get_filament_statistics(basic_statistics.volumes_per_extruder, extruders, extruders_count)
     };
+    const FilamentStatistics wipe_tower_statistics{get_filament_statistics(
+        basic_statistics.wipe_tower_volumes_per_extruder,
+        extruders,
+        extruders_count
+    )};
+    const FilamentStatistics flush_statistics{get_filament_statistics(
+        basic_statistics.flush_volumes_per_extruder,
+        extruders,
+        extruders_count
+    )};
 
     Domain::FullPrintStatistics result;
 
-    result.used_filament_per_extruder_mm  = filament_statistics.used_mm;
-    result.used_filament_per_extruder_cm3 = filament_statistics.used_cm3;
-    result.used_filament_per_extruder_g   = filament_statistics.used_g;
+    result.used_filament_per_extruder_mm                = filament_statistics.used_mm;
+    result.used_filament_per_extruder_cm3               = filament_statistics.used_cm3;
+    result.used_filament_per_extruder_g                 = filament_statistics.used_g;
+    result.used_filament_for_wipe_tower_per_extruder_mm = wipe_tower_statistics.used_mm;
+    result.used_filament_for_wipe_tower_per_extruder_g  = wipe_tower_statistics.used_g;
+    result.used_filament_for_flush_per_extruder_mm      = flush_statistics.used_mm;
+    result.used_filament_for_flush_per_extruder_g       = flush_statistics.used_g;
 
     result.used_filaments_per_role = basic_statistics.used_filaments_per_role;
     result.used_filament_per_color_change_cm3 = basic_statistics.volumes_per_color_change;
@@ -358,8 +376,16 @@ static Domain::FullPrintStatistics get_full_statistics(
     result.total_used_filament_g = sum(filament_statistics.used_g);
     result.total_filament_cost   = sum(filament_statistics.used_cost);
 
-    result.total_wipe_tower_cost = extra_statistics.total_wipe_tower_cost;
-    result.total_used_filament_for_wipe_tower_g = extra_statistics.total_wipe_tower_filament_weight;
+    result.total_wipe_tower_cost = static_cast<float>(extra_statistics.total_wipe_tower_cost);
+    result.total_used_filament_for_wipe_tower_mm =
+        static_cast<float>(extra_statistics.total_wipe_tower_filament);
+    result.total_used_filament_for_wipe_tower_cm3 =
+        static_cast<float>(extra_statistics.total_wipe_tower_filament_volume);
+    result.total_used_filament_for_wipe_tower_g =
+        static_cast<float>(extra_statistics.total_wipe_tower_filament_weight);
+    result.total_used_filament_for_flush_mm  = sum(flush_statistics.used_mm);
+    result.total_used_filament_for_flush_cm3 = sum(flush_statistics.used_cm3);
+    result.total_used_filament_for_flush_g   = sum(flush_statistics.used_g);
 
     result.total_toolchanges = extra_statistics.total_toolchanges;
     result.normal_mode_time = basic_statistics.normal_mode_time;

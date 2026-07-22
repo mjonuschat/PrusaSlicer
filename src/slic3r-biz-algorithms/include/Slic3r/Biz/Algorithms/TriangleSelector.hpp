@@ -10,6 +10,7 @@
 #include <cfloat>
 #include <algorithm>
 #include <array>
+#include <map>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -458,6 +459,10 @@ public:
 
     // Set facet of the mesh to a given state. Only works for original triangles.
     void set_facet(int facet_idx, TriangleStateType state);
+
+    // Remap triangle states according to the given mapping. Merges split
+    // triangles whose children end up with identical states after remapping.
+    void remap_states(const std::map<TriangleStateType, TriangleStateType>& remap);
 
     // Clear everything and make the tree empty.
     void reset();

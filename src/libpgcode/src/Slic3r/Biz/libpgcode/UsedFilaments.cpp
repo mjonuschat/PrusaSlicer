@@ -33,6 +33,14 @@ void UsedFilaments::increase_caches(float extruded_volume, uint8_t extruder_id, 
     }
 }
 
+void UsedFilaments::update_flush_per_extruder(float flushed_volume, uint8_t extruder_id)
+{
+    if (flushed_volume > 0.f) {
+        flush_volumes_per_extruder[extruder_id] += flushed_volume;
+        volumes_per_extruder[extruder_id] += flushed_volume;
+    }
+}
+
 void UsedFilaments::process_color_change_cache()
 {
     if (color_change_cache != 0.0f) {
@@ -65,6 +73,11 @@ void UsedFilaments::process_role_cache(const ProcessorResult& result, uint8_t ex
         }
         else
             filaments_per_role[role] = filament;
+
+        if (role == GCodeExtrusionRole::WipeTower) {
+            wipe_tower_volumes_per_extruder[extruder_id] += role_cache;
+        }
+
         role_cache = 0.0f;
     }
 }
@@ -83,6 +96,8 @@ void UsedFilaments::reset()
 
     tool_change_cache = 0.0f;
     volumes_per_extruder.clear();
+    wipe_tower_volumes_per_extruder.clear();
+    flush_volumes_per_extruder.clear();
 
     role_cache = 0.0f;
     filaments_per_role.clear();

@@ -358,6 +358,12 @@ static const t_config_enum_values s_keys_map_SupportMode = {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(SupportMode)
 
+static t_config_enum_values s_keys_map_ToolChangeOrderingType {
+            { "optimized", int(ToolChangeOrderingType::Optimized) },
+            { "cyclic",    int(ToolChangeOrderingType::Cyclic) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(ToolChangeOrderingType)
+
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
     for (std::pair<const t_config_option_key, ConfigOptionDef> &kvp : options)
@@ -1589,6 +1595,28 @@ void PrintConfigDef::init_fff_params()
     def->min = -10.;
     def->max = 10.;
     def->set_default_value(new ConfigOptionPercents { 0. });
+
+    def = this->add("filament_flush_volume", coFloats);
+    def->label = L("Flush volume");
+    def->tooltip = L(
+        "Volume of filament to flush during a tool change. "
+        "Used in custom toolchange G-code."
+    );
+    def->sidetext = L("mm³");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats{0.});
+
+    def = this->add("filament_flush_speed", coFloats);
+    def->label = L("Flush speed");
+    def->tooltip = L(
+        "Extrusion speed used for flushing during a tool change. "
+        "Used in custom toolchange G-code."
+    );
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats{0.});
 
     def = this->add("fill_angle", coFloat);
     def->label = L("Fill angle");
@@ -3715,6 +3743,21 @@ void PrintConfigDef::init_fff_params()
     def->height = 5;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
+
+    def = this->add("toolchange_ordering", coEnum);
+    def->label = L("Toolchange ordering");
+    def->category = L("Advanced");
+    def->tooltip = L(
+        "Determines the order of tool changes on each layer.\n"
+        "Optimized - Starts with the last used extruder to minimize tool changes.\n"
+        "Cyclic - Uses extruders in a fixed sequential order (1, 2, 3, ...) on every layer."
+    );
+    def->mode = comAdvanced;
+    def->set_enum<ToolChangeOrderingType>({
+        { std::make_pair("optimized", L("Optimized")) },
+        { std::make_pair("cyclic",    L("Cyclic")) },
+    });
+    def->set_default_value(new ConfigOptionEnum<ToolChangeOrderingType>(ToolChangeOrderingType::Optimized));
 
     def = this->add("top_infill_extrusion_width", coFloatOrPercent);
     def->label = L("Top solid infill");

@@ -229,6 +229,7 @@ struct ConfigItemDef
         Print_MultiMaterial_OozePrevention      = 901,
         Print_MultiMaterial_WipeTower           = 902,
         Print_MultiMaterial_BondingInterlocking = 903,
+        Print_MultiMaterial_ToolChanges         = 904,
 
         Print_PrecisionSlicing_SlicingStrategy           = 1000,
         Print_PrecisionSlicing_DimensionalAccuracy       = 1001,
@@ -269,6 +270,7 @@ struct ConfigItemDef
         Filament_MultiMaterial_TipShapingCooling = 5301,
         Filament_MultiMaterial_MovementTiming    = 5302,
         Filament_MultiMaterial_WipeTowerPurging  = 5303,
+        Filament_MultiMaterial_FlushParameters   = 5304,
 
         Filament_Overrides_PrintSpeedOverride = 5400,
 

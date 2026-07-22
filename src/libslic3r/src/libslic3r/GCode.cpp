@@ -882,6 +882,11 @@ namespace DoExport {
 
                     print_statistics.total_wipe_tower_filament += wipe_tower_filament;
 
+                    const double wipe_tower_filament_volume{
+                        wipe_tower_filament * extruder.filament_crossection() * 0.001
+                    };
+                    print_statistics.total_wipe_tower_filament_volume += wipe_tower_filament_volume;
+
                     const double wipe_tower_filament_weight{
                         wipe_tower_filament
                         * extruder.filament_crossection()
@@ -4067,10 +4072,13 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
     const std::string& toolchange_gcode = config.get<std::string>("toolchange_gcode");
     std::string toolchange_gcode_parsed;
 
+    const int prev_extruder_id =
+        static_cast<int>(m_writer.extruder() != nullptr ? m_writer.extruder()->id() : -1);
+
     // Process the custom toolchange_gcode. If it is empty, insert just a Tn command.
     if (!toolchange_gcode.empty()) {
         ParserConfig dynamic_config;
-        dynamic_config.set("previous_extruder", (int)(m_writer.extruder() != nullptr ? m_writer.extruder()->id() : -1 ));
+        dynamic_config.set("previous_extruder", prev_extruder_id);
         dynamic_config.set("next_extruder",     (int)extruder_id);
         dynamic_config.set("layer_num",         m_layer_index);
         dynamic_config.set("layer_z",           print_z);
@@ -4088,6 +4096,18 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
     else {
         // user provided his own toolchange gcode, no need to do anything
     }
+
+    // Emit toolchange time annotation for CoolingBuffer.
+    const double toolchange_time = config.get<double>("filament_change_time");
+    if (toolchange_time > 0.) {
+        gcode += ";_TOOLCHANGE_TIME" + std::to_string(toolchange_time) + "\n";
+    }
+
+    // Custom toolchange gcode may have changed fan speed via M106/M107 that CoolingBuffer
+    // doesn't track. Reset dynamic fan speed and emit ;_TOOLCHANGE_END to force CoolingBuffer
+    // to restore the correct fan speed.
+    m_current_dynamic_fan_speed.reset();
+    gcode += ";_TOOLCHANGE_END\n";
 
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)
     if (config.get<bool>("single_extruder_multi_material") && !config.get<bool>("wipe_tower")) {

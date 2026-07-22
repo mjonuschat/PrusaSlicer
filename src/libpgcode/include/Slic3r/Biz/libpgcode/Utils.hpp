@@ -32,6 +32,7 @@ float convert(float value, UnitsType value_units, UnitsType desired_units);
 bool supports_separate_travel_acceleration(Domain::GCodeFlavor flavor);
 
 std::string_view reserved_tag(Tags tag);
+std::string_view custom_tag(CustomTags tag);
 
 bool is_hex_digit(const char c);
 bool is_whitespace(char c);

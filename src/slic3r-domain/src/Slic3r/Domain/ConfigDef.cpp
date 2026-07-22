@@ -194,6 +194,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Wipe Tower");
     case ConfigItemDef::OptionGroup::Print_MultiMaterial_BondingInterlocking:
         return L("Bonding & Interlocking");
+    case ConfigItemDef::OptionGroup::Print_MultiMaterial_ToolChanges:
+        return L("Tool changes");
     case ConfigItemDef::OptionGroup::Print_PrecisionSlicing_SlicingStrategy:
         return L("Slicing Strategy");
     case ConfigItemDef::OptionGroup::Print_PrecisionSlicing_DimensionalAccuracy:
@@ -250,6 +252,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Movement & Timing");
     case ConfigItemDef::OptionGroup::Filament_MultiMaterial_WipeTowerPurging:
         return L("Wipe Tower Purging");
+    case ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters:
+        return L("Flush parameters (experimental)");
     case ConfigItemDef::OptionGroup::Filament_Overrides_PrintSpeedOverride:
         return L("Print Speed Override");
     case ConfigItemDef::OptionGroup::Filament_MaterialPrintingProfile_ProfilesSettings:

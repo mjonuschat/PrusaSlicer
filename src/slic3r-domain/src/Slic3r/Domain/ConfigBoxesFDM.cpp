@@ -1377,6 +1377,34 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->init_fn = init_with(10.);
 
+    def               = defs.add("filament_flush_volume", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Flush volume");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters;
+    def->category     = ConfigItemDef::Category::Filament_MultiMaterial;
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip =
+        L("Volume of filament to flush during a tool change. "
+          "Used in custom toolchange G-code.");
+    def->sidetext = L("mm³");
+    def->min      = 0;
+    def->init_fn  = init_with(0.);
+
+    def               = defs.add("filament_flush_speed", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Flush speed");
+    def->option_group = ConfigItemDef::OptionGroup::Filament_MultiMaterial_FlushParameters;
+    def->category     = ConfigItemDef::Category::Filament_MultiMaterial;
+    def->order        = 1;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip =
+        L("Extrusion speed used for flushing during a tool change. "
+          "Used in custom toolchange G-code.");
+    def->sidetext = L("mm/s");
+    def->min      = 0;
+    def->init_fn  = init_with(0.);
+
     def = defs.add("filament_diameter", typeid(double));
     def->location = Filament;
     def->label = L("Diameter");
@@ -3727,6 +3755,26 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "On layers with a toolchange, extruder will travel downward to print the wipe tower. "
                      "User is responsible for ensuring there is no collision with the print.");
     def->init_fn = init_with(false);
+
+    def               = defs.add("toolchange_ordering", typeid(EnumWrapper));
+    def->location     = Print;
+    def->label        = L("Toolchange ordering");
+    def->option_group = ConfigItemDef::OptionGroup::Print_MultiMaterial_ToolChanges;
+    def->category     = ConfigItemDef::Category::Print_MultiMaterial;
+    def->order        = 0;
+    def->gui_type     = ConfigItemDef::GUIType::combobox;
+    def->tooltip      = L(
+        "Determines the order of tool changes on each layer.\n"
+        "Optimized - Starts with the last used extruder to minimize tool changes.\n"
+        "Cyclic - Uses extruders in a fixed sequential order (1, 2, 3, ...) on every layer."
+    );
+    def->init_fn = init_with(
+        ToolChangeOrderingType::Optimized,
+        {
+            {int(ToolChangeOrderingType::Optimized), "optimized", L("Optimized")},
+            {int(ToolChangeOrderingType::Cyclic),    "cyclic",    L("Cyclic")},
+        }
+    );
 
     def               = defs.add("support_material", typeid(EnumWrapper));
     def->location     = Print;

@@ -62,6 +62,7 @@ enum class MoveType : uint8_t
     Travel,
     Wipe,
     Extrude,
+    Flush,
     COUNT
 };
 
@@ -321,6 +322,22 @@ static const std::vector<std::string_view> RESERVED_TAGS = {
     "_GP_FIRST_LINE_M73_PLACEHOLDER"sv,
     "_GP_LAST_LINE_M73_PLACEHOLDER"sv,
     "_GP_PRINT_STATISTICS_PLACEHOLDER"sv
+};
+
+enum class CustomTags : uint8_t
+{
+    Flush_Start,
+    Flush_End,
+    Exclude_E_Start,
+    Exclude_E_End,
+    COUNT
+};
+
+static const std::vector<std::string_view> CUSTOM_TAGS = {
+    "FLUSH_START"sv,
+    "FLUSH_END"sv,
+    "EXCLUDE_E_START"sv,
+    "EXCLUDE_E_END"sv
 };
 
 } // namespace Slic3r::Biz::libpgcode

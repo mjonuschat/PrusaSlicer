@@ -1,5 +1,8 @@
 #include "libslic3r/ExtruderCandidates.hpp"
 
+using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
+using Slic3r::Domain::TriangleSelector::TriangleStateType;
+
 namespace Slic3r::Biz::Slicing {
 
 std::vector<unsigned int>
@@ -9,15 +12,14 @@ get_painting_extruders(const Domain::ModelObject& model_object, const unsigned i
         return {};
     }
 
-    using Domain::TriangleSelector::TriangleStateType;
-    std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
+    std::array<bool, TRIANGLE_STATE_TYPE_COUNT> used_facet_states{};
     for (const Domain::ModelVolume* volume : model_object.volumes) {
         if (volume->is_mm_painted()) {
             const std::vector<bool>& volume_used_facet_states{
                 volume->mm_segmentation_facets.get_data().used_states
             };
 
-            assert(volume_used_facet_states.size() == used_facet_states.size());
+            assert(volume_used_facet_states.size() <= used_facet_states.size());
             for (size_t state_idx = 1;
                  state_idx < std::min(volume_used_facet_states.size(), used_facet_states.size());
                  ++state_idx)

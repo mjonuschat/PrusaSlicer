@@ -31,6 +31,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
+#include <algorithm>
 #include <fmt/format.h>
 
 namespace Slic3r::Biz::FileLoadingLogic {
@@ -667,6 +668,29 @@ load_from_project(const boost::filesystem::path& project_file_path, OptionalPres
     return load_legacy_project(project_file_name, bundle);
 }
 
+static std::string skipped_painting_warning_text(const Read3mfIssues& issues)
+{
+    const auto issue_it{std::ranges::find(
+        issues.issues,
+        Read3mfIssueType::facets_newer_version_skipped,
+        &Read3mfIssue::type
+    )};
+    ASSERT(issue_it != issues.issues.end());
+
+    std::string painting_names;
+    for (const Read3mfIssueData& source : issue_it->sources) {
+        painting_names += (painting_names.empty() ? "" : ", ") + source.first;
+    }
+
+    return fmt::vformat(
+        _u8L(
+            "Some painting in the 3MF file was created with a newer, unsupported version of "
+            "PrusaSlicer and was not loaded: {}. The geometry was loaded without it."
+        ),
+        fmt::make_format_args(painting_names)
+    );
+}
+
 static tl::expected<ReturnData, FileLoadError> read_data_from_file(
     const boost::filesystem::path& input_file_path,
     IMessageDialogProvider* dialog_provider,
@@ -699,6 +723,15 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
                         fmt::make_format_args(ret.file_name)
                     )
                 ));
+            }
+
+            if (dialog_provider
+                && loaded_3mf.issues_map.has_issue(Read3mfIssueType::facets_newer_version_skipped))
+            {
+                dialog_provider->show_info_dialog(
+                    skipped_painting_warning_text(loaded_3mf.issues_map),
+                    _u8L("Loading 3MF file")
+                );
             }
 
             ret.model = loaded_3mf.model;
@@ -956,6 +989,15 @@ static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider
         return project;
     }
 
+    if (dialog_provider
+        && loaded_3mf.issues_map.has_issue(Read3mfIssueType::facets_newer_version_skipped))
+    {
+        dialog_provider->show_info_dialog(
+            skipped_painting_warning_text(loaded_3mf.issues_map),
+            _u8L("Loading 3MF file")
+        );
+    }
+
     project.set_metadata(loaded_3mf.metadata);
     project.set_file_path(loaded_3mf.filepath_3mf);
     project.model() = std::move(loaded_3mf.model);
@@ -1013,7 +1055,8 @@ Domain::Project load_file_as_project(
             project_file_path.filename().string(),
             dialog_provider
         );
-    };
+    }
+
     return convert_to_project(std::move(loaded_3mf), dialog_provider);
 }
 
