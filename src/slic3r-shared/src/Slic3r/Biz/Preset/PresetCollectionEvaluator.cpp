@@ -276,8 +276,10 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 context.id
              );
         }
-        if (node.condition.has_value())
+        if (node.condition.has_value() && !skip_condition_eval) {
+            // append condition if present and not ignored (because overridden in subclass)
             context.conditions.push_back(&node.condition.value().expr_str);
+        }
         context.last_node_location = node.source_location;
         override_preset_values(context.values, unconditional_inherited_values);
         override_preset_values(context.values, node.values);
@@ -310,7 +312,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         )
     );
 
-    PresetEvaluator::StringPtrs negative_conditions;
+    PresetEvaluator::StringPtrs conditions, negative_conditions;
     bool any_variant_visited = false;
 
     for (const auto& var : node.variants) {
@@ -325,6 +327,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 negative_conditions.push_back(&var.condition.value().expr_str);
                 continue;
             }
+
+            conditions.push_back(&var.condition.value().expr_str);
 
         } else if (conditional_variants > 0) {
             // if there was at least one condition case met before
@@ -353,6 +357,11 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             true
         );
         for (auto& v : var_ctx) {
+            v.conditions.insert(
+                v.conditions.end(),
+                conditions.begin(),
+                conditions.end()
+            );
             v.negative_conditions.insert(
                 v.negative_conditions.end(),
                 negative_conditions.begin(),

@@ -98,18 +98,17 @@ variants:
         loader.load_from_string(yaml);
         auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
 
-        for (const auto& [
-            nozzle_high_flow, expected_c_value, expected_d_value, expected_condition_count
-        ] : {
-            std::make_tuple(true, false, 1, 1), std::make_tuple(false, true, 2, 0)
-        }) {
+        for (const auto& [nozzle_high_flow, expected_c_value, expected_d_value, expected_condition_count, expected_neg_cond_count] :
+             {std::make_tuple(true, false, 1, 1, 0), std::make_tuple(false, true, 2, 0, 1)})
+        {
             Expr::ValueMap overrides;
             overrides["tool.nozzle_high_flow"] = nozzle_high_flow;
-            auto evals = eval.eval_preset({overrides}, false);
+            auto evals                         = eval.eval_preset({overrides}, false);
             REQUIRE(evals.size() == 1);
             const auto& p = evals.front();
             REQUIRE(p.id == "*common*");
             REQUIRE(p.conditions.size() == expected_condition_count);
+            REQUIRE(p.negative_conditions.size() == expected_neg_cond_count);
             REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == expected_c_value);
@@ -877,5 +876,106 @@ features:
         REQUIRE(json.at("key3").get<std::string>() == "ahoj");
         REQUIRE(json.at("key4").is_null());
         REQUIRE(json.at("key5").is_null());
+    }
+
+    SECTION("condition gathereing")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+values:
+  a: 1
+features:
+  a: 1
+variants:
+  - condition: nozzle_diameter == 0.4
+    values:
+      b: 1
+    features:
+      b: 1
+  - condition: nozzle_diameter == 0.3
+    values:
+      b: 2
+    features:
+      b: 2
+  - condition: nozzle_diameter == 0.5
+    values:
+      b: 3
+    features:
+      b: 3
+---
+kind: printer
+id: 'Printer'
+name: 'Printer'
+inherits:
+  - '*common*'
+values:
+  c: 1
+features:
+  c: 1
+variants:
+  - condition: nozzle_high_flow
+    values:
+      d: 1
+    features:
+      d: 1
+  - values:
+      d: 2
+    features:
+      d: 2
+)";
+
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        struct Input
+        {
+            double nozzle_diameter;
+            bool nozzle_high_flow;
+        };
+
+        struct Output
+        {
+            double a,b,c,d;
+            size_t cond_count, neg_cond_count;
+        };
+
+        using Parameters = std::vector<std::tuple<Input, Output>>;
+        const auto params = Parameters{
+            {Input{0.4, true}, Output{1, 1, 1, 1, 2, 0}},
+            {Input{0.4, false}, Output{1, 1, 1, 2, 1, 1}},
+            {Input{0.3, true}, Output{1, 2, 1, 1, 2, 1}},
+            {Input{0.3, false}, Output{1, 2, 1, 2, 1, 2}},
+            {Input{0.5, true}, Output{1, 3, 1, 1, 2, 2}},
+            {Input{0.5, false}, Output{1, 3, 1, 2, 1, 3}},
+        };
+        for (auto& [input, expected_output] : params) {
+            INFO("nozzle_diameter: " << input.nozzle_diameter);
+            INFO("nozzle_high_flow: " << input.nozzle_high_flow);
+            auto evals = eval.eval_preset({{{"nozzle_diameter", input.nozzle_diameter}, {"nozzle_high_flow", input.nozzle_high_flow}}}, true);
+            auto it = std::find_if(evals.begin(), evals.end(), [](const auto& p){ return p.name == "Printer"; });
+
+            REQUIRE(it != evals.end());
+
+            REQUIRE(std::get<double>(it->values.at("a")) == expected_output.a);
+            REQUIRE(std::get<double>(it->values.at("b")) == expected_output.b);
+            REQUIRE(std::get<double>(it->values.at("c")) == expected_output.c);
+            REQUIRE(std::get<double>(it->values.at("d")) == expected_output.d);
+
+            REQUIRE(std::get<double>(it->features.at("a")) == expected_output.a);
+            REQUIRE(std::get<double>(it->features.at("b")) == expected_output.b);
+            REQUIRE(std::get<double>(it->features.at("c")) == expected_output.c);
+            REQUIRE(std::get<double>(it->features.at("d")) == expected_output.d);
+
+            REQUIRE(it->conditions.size() == expected_output.cond_count);
+            REQUIRE(it->negative_conditions.size() == expected_output.neg_cond_count);
+        }
     }
 }
