@@ -69,7 +69,10 @@ public:
                 const Domain::ConfigPack& config,
                 const Domain::BedInstance& bed);
 
-    void slice(IThumbnailImageGenerator& thumbnail_generator);
+    void slice(
+        IThumbnailImageGenerator& thumbnail_generator,
+        std::optional<SliceUntilStep> slice_until_step
+    );
     void stop();
 
     std::string get_hw_printer_id() const;

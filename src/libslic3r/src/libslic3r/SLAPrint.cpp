@@ -14,6 +14,7 @@
 
 #include <tbb/parallel_for.h>
 #include <boost/filesystem/path.hpp>
+#include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
 
 #include "Slic3r/Biz/Parser/IO.hpp"
@@ -42,27 +43,29 @@
 
 namespace Slic3r {
 
-using Domain::SLA::PointsStatus;
-using SLASlicingSync::AllSteps;
-using SLASlicingSync::AllOrSome;
-using SLASlicingSync::PrintSteps;
-using SLASlicingSync::PrintObjectSteps;
-using SLASlicingSync::StepsPerPrintObject;
-using SLASlicingSync::PrintAndObjectSteps;
-using SLASlicingSync::InvalidatedSteps;
-using Domain::ObjectID;
 using Biz::Parser::PlaceholderParser;
+using Domain::ObjectID;
+using Domain::SLA::PointsStatus;
+using SLASlicingSync::AllOrSome;
+using SLASlicingSync::AllSteps;
+using SLASlicingSync::InvalidatedSteps;
+using SLASlicingSync::PrintAndObjectSteps;
+using SLASlicingSync::PrintObjectSteps;
+using SLASlicingSync::PrintSteps;
+using SLASlicingSync::StepsPerPrintObject;
 using ParserConfig = Biz::Parser::IO::Config;
+using Biz::Algorithms::Scaling::unscaled;
 using Domain::ConfigPack;
 using Domain::ConfigPackSLA;
 using Domain::FullConfigSLA;
 using Domain::FullConfigSLAPtr;
-using Domain::Percentage;
 using Domain::PartialObjectConfigSLA;
-using Biz::Algorithms::Scaling::unscaled;
+using Domain::Percentage;
 using Domain::Transform3d;
 using InstanceTrafos = Biz::Slicing::Sla::Object::InstanceTrafos;
-
+using Slic3r::Biz::Slicing::IThumbnailImageGenerator;
+using Slic3r::Biz::Slicing::SliceUntilStep;
+using Slic3r::Domain::SlicingId;
 
 bool is_zero_elevation(const SLAPrintObjectConfigView &c)
 {
@@ -947,7 +950,6 @@ InvalidatedSteps SLAPrint::apply(
     std::vector<std::string>* warnings
 )
 {
-    this->call_cancel_callback();
 #ifdef _DEBUG
     check_model_ids_validity(model);
 #endif /* _DEBUG */
@@ -1218,11 +1220,39 @@ void SLAPrint::process()
 
 }
 
-void SLAPrint::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) {
+void SLAPrint::slice(
+    SlicingId slicing_id,
+    IThumbnailImageGenerator&,
+    const std::optional<SliceUntilStep> slice_until_step
+)
+{
+    // Clean up after the processing on every exit path, even the exceptional ones.
+    const ScopeGuard finalize_and_cleanup_guard{
+        [this]() -> void
+        {
+            this->finalize();
+            this->cleanup();
+        }
+    };
+
+    if (slice_until_step.has_value()) {
+        ASSERT(std::holds_alternative<SLAPrintObjectStep>(slice_until_step->step));
+        const SLAPrintObjectStep until_object_step =
+            std::get<SLAPrintObjectStep>(slice_until_step->step);
+
+        if (!this->set_task_until_object_step_impl(
+                static_cast<int>(until_object_step),
+                slice_until_step->model_object_id,
+                m_objects
+            ))
+        {
+            // The model object has no print object.
+            return;
+        }
+    }
+
     this->process();
-    this->finalize();
-    this->cleanup();
-};
+}
 
 // Returns true if an object step is done on all objects and there's at least one object.
 bool SLAPrint::is_object_step_done(SLAPrintObjectStep step) const

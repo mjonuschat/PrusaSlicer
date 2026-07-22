@@ -54,6 +54,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <boost/filesystem/path.hpp>
@@ -69,19 +70,24 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 using SlicingSync::PrintAndObjectSteps;
-using SlicingSync::PrintObjectSteps;
-using SlicingSync::PrintSteps;
 using ParserConfig = Biz::Parser::IO::Config;
 using Biz::Parser::PlaceholderParser;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 using Domain::GCodeFlavor;
 using Slic3r::Biz::Algorithms::LayerHeight::check_object_layers_fixed;
-using Slic3r::Domain::VolumeSettings;
+using Slic3r::Biz::Slicing::GeneratedSupportPoint;
+using Slic3r::Biz::Slicing::GeneratedSupportPointsSnapshot;
+using Slic3r::Biz::Slicing::IThumbnailImageGenerator;
+using Slic3r::Biz::Slicing::ObjectSupportPoints;
+using Slic3r::Biz::Slicing::SliceUntilStep;
+using Slic3r::Domain::ObjectID;
+using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SupportMode;
+using Slic3r::Domain::VolumeSettings;
 
-template class PrintState<PrintStep, psCount>;
-template class PrintState<PrintObjectStep, posCount>;
+template class PrintState<FDMPrintStep, psCount>;
+template class PrintState<FDMPrintObjectStep, posCount>;
 
 PrintInstance::PrintInstance(const Domain::ModelInstance& model_instance, std::size_t model_instance_index, const Domain::Vec2big& shift)
     : print_object(nullptr)
@@ -96,20 +102,23 @@ Domain::Point PrintInstance::shift() const
     return m_shift.cast<coord_t>();
 }
 
-Print::Print()
-    : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
-    , m_on_wipe_tower_geometry([](Biz::Slicing::OptWipeTowerGeometry&&) {})
-    , m_on_extruder_candidates([](std::vector<unsigned>){})
+Print::Print() :
+    m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {}),
+    m_on_wipe_tower_geometry([](Biz::Slicing::OptWipeTowerGeometry&&) {}),
+    m_on_extruder_candidates([](std::vector<unsigned>) {}),
+    m_on_generated_support_points([](GeneratedSupportPointsSnapshot&&) {})
 {}
 
 Print::Print(
     const OnFdmResult& on_fdm_result,
     const OnWipeTowerGeometry& on_wipe_tower_geometry,
-    const OnExtruderCandidates& on_extruder_candidates
+    const OnExtruderCandidates& on_extruder_candidates,
+    const OnGeneratedSupportPoints& on_generated_support_points
 ) :
     m_on_fdm_result(on_fdm_result),
     m_on_wipe_tower_geometry(on_wipe_tower_geometry),
-    m_on_extruder_candidates(on_extruder_candidates)
+    m_on_extruder_candidates(on_extruder_candidates),
+    m_on_generated_support_points(on_generated_support_points)
 {}
 
 Print::~Print() { this->clear(); }
@@ -381,14 +390,14 @@ Biz::Slicing::ApplyStatus::Status Print::update(
     return result;
 }
 
-bool Print::invalidate_step(PrintStep step)
+bool Print::invalidate_step(FDMPrintStep step)
 {
 	return Inherited::invalidate_step(step);
 }
 
 // returns true if an object step is done on all objects
 // and there's at least one object
-bool Print::is_step_done(PrintObjectStep step) const
+bool Print::is_step_done(FDMPrintObjectStep step) const
 {
     if (m_objects.empty())
         return false;
@@ -1205,6 +1214,39 @@ Biz::Slicing::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wip
     return result;
 }
 
+GeneratedSupportPointsSnapshot get_generated_support_points(const PrintObjectPtrs& print_objects)
+{
+    GeneratedSupportPointsSnapshot result;
+    std::set<ObjectID> visited_model_objects;
+    for (const PrintObject* print_object : print_objects) {
+        const ObjectID model_object_id = print_object->model_object()->id();
+        const std::optional<PrintObjectRegions::GeneratedSupportPoints>& support_points =
+            print_object->shared_regions()->generated_support_points;
+
+        if (!support_points.has_value() || !visited_model_objects.insert(model_object_id).second) {
+            continue;
+        }
+
+        ObjectSupportPoints object_support_points{
+            model_object_id,
+            support_points->object_transform
+        };
+
+        object_support_points.support_points.reserve(support_points->support_points.size());
+        for (const SupportSpotsGenerator::SupportPoint& support_point :
+             support_points->support_points)
+        {
+            object_support_points.support_points.push_back(
+                GeneratedSupportPoint{support_point.position, support_point.spot_radius}
+            );
+        }
+
+        result.push_back(std::move(object_support_points));
+    }
+
+    return result;
+}
+
 // Slicing process, running at a background thread.
 void Print::process()
 {
@@ -1226,6 +1268,8 @@ void Print::process()
     // check data from previous step, format the error message(s) and send alert to ui
     // this also has to be done sequentially.
     alert_when_supports_needed();
+
+    m_on_generated_support_points(get_generated_support_points(m_objects));
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
@@ -1410,8 +1454,40 @@ bool check_result(
 
 } // namespace
 
-void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator& thumbnail_generator)
+void Print::slice(
+    SlicingId slicing_id,
+    IThumbnailImageGenerator& thumbnail_generator,
+    const std::optional<SliceUntilStep> slice_until_step
+)
 {
+    // Clean up after the processing on every exit path, even the exceptional ones.
+    const ScopeGuard finalize_and_cleanup_guard{
+        [this]() -> void
+        {
+            this->finalize();
+            this->cleanup();
+        }
+    };
+
+    if (slice_until_step.has_value()) {
+        ASSERT(std::holds_alternative<FDMPrintObjectStep>(slice_until_step->step));
+        const FDMPrintObjectStep until_object_step =
+            std::get<FDMPrintObjectStep>(slice_until_step->step);
+
+        if (!this->set_task_until_object_step_impl(
+                static_cast<int>(until_object_step),
+                slice_until_step->model_object_id,
+                m_objects
+            ))
+        {
+            // The model object has no print object.
+            return;
+        }
+
+        this->process();
+        return;
+    }
+
     thumbnails = request_thumbnails(slicing_id, config().get<std::string>("thumbnails"), thumbnail_generator);
 
     ASSERT(
@@ -1426,8 +1502,6 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
     result.contained_in_bed = check_result(result, config(), append_warning_callback);
 
     m_on_fdm_result(std::move(result));
-    this->finalize();
-    this->cleanup();
 }
 
 void Print::_make_skirt()

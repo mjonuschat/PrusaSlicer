@@ -938,11 +938,11 @@ ProcessorResult post_process(
     ProcessorResult&& result,
     const std::vector<Extruder>& extruders,
     const Domain::ExtraPrintStatistics& extra_print_statistics,
-    WarningCallback active_step_add_warning_callback
+    WarningCallback warning_callback
 )
 {
     ProcessorResult ret = std::move(result);
-    PostProcessor pp(config, ret, extruders, extra_print_statistics, active_step_add_warning_callback);
+    PostProcessor pp(config, ret, extruders, extra_print_statistics, warning_callback);
     return ret;
 }
 

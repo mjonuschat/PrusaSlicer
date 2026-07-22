@@ -207,12 +207,15 @@ void BackgroundProcess::update(
     );
 }
 
-void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
+void BackgroundProcess::slice(
+    IThumbnailImageGenerator& thumbnail_generator,
+    const std::optional<SliceUntilStep> slice_until_step
+)
 {
     SPDLOG_INFO("{}: slice", fmt::streamed(m_id));
 
     this->stop();
-    this->queue_action([this, &thumbnail_generator]() {
+    this->queue_action([this, &thumbnail_generator, slice_until_step]() {
         this->m_thread = {}; // Wait for join.
         ASSERT(!is_thread_active(m_get_status()), "The thread is stopped afterwards!");
 
@@ -229,7 +232,7 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
         };
         m_on_status(status_update);
         this->m_thread = JThread{
-            [this, &thumbnail_generator](StopToken stop_token, IPrint* print) {
+            [this, &thumbnail_generator, slice_until_step](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
                 print->progress_callback = [this](Biz::Slicing::Progress progress){
                     StatusUpdate status_update;
@@ -244,23 +247,24 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
 
                 bool finished{false};
                 std::optional<Biz::Slicing::Error> slicing_error;
-                const ScopeGuard guard{[this, &finished, &slicing_error]() {
+                const ScopeGuard guard{[this, slice_until_step, &finished, &slicing_error]() {
 
                     StatusUpdate status_update;
                     status_update.clear_progress = true;
-                    if (finished) {
+                    if (finished && !slice_until_step.has_value()) {
                         status_update.code = StatusCode::Finished;
                     } else if(slicing_error) {
                         status_update.code = StatusCode::InvalidData;
                         status_update.errors_to_append = {*slicing_error};
                     } else {
+                        // A partially sliced bed still needs the full slicing, so it stays in the Modified state.
                         status_update.code = StatusCode::Modified;
                     }
                     m_on_status(status_update);
                 }};
 
                 try {
-                    print->slice(m_id, thumbnail_generator);
+                    print->slice(m_id, thumbnail_generator, slice_until_step);
                     finished = true;
                 } catch (const Exception& exception) {
                     slicing_error = exception.error();

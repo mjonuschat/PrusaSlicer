@@ -23,8 +23,15 @@ std::unique_ptr<IPrint> init_print(const Domain::PrinterTechnology& printer_tech
         Print::OnExtruderCandidates on_extruder_candidates =
             [callbacks_ref, id](std::vector<unsigned> extruder_candidates)
         { callbacks_ref.get().on_extruder_candidates(std::move(extruder_candidates), id); };
-        print =
-            std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry, on_extruder_candidates);
+        Print::OnGeneratedSupportPoints on_generated_support_points =
+            [callbacks_ref, id](GeneratedSupportPointsSnapshot&& support_points)
+        { callbacks_ref.get().on_generated_support_points(std::move(support_points), id); };
+        print = std::make_unique<Print>(
+            on_fdm_result,
+            on_wipe_tower_geometry,
+            on_extruder_candidates,
+            on_generated_support_points
+        );
         break;
     }
     case Domain::PrinterTechnology::SLA: {
@@ -42,7 +49,6 @@ std::unique_ptr<IPrint> init_print(const Domain::PrinterTechnology& printer_tech
         UNREACHABLE("Only FFF and SLA are viable options!");
     }
     callbacks_ref.get().on_wipe_tower_geometry(std::nullopt, id);
-    print->set_status_silent();
     return print;
 }
 } // namespace Slic3r::Biz::Slicing

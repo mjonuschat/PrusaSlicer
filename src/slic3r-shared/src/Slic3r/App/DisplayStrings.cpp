@@ -367,6 +367,22 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
             detail.height, detail.object_names[0], detail.object_names[1]);
     }
 
+    case WarningCode::XYSizeCompensationIgnoredMultiMaterialPainting:
+        message = _u8L(
+            "An object has enabled XY Size compensation which will not be used "
+            "because it is also multi-material painted.\n"
+            "XY Size compensation cannot be combined with multi-material painting."
+        );
+        break;
+
+    case WarningCode::XYSizeCompensationIgnoredFuzzySkinPainting:
+        message = _u8L(
+            "An object has enabled XY Size compensation which will not be used "
+            "because it is also fuzzy skin painted.\n"
+            "XY Size compensation cannot be combined with fuzzy skin painting."
+        );
+        break;
+
     case WarningCode::None:
         message = _u8L("Warning: unspecified issue detected.");
         break;

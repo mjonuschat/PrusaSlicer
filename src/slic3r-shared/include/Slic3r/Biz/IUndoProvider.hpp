@@ -79,6 +79,7 @@ enum class UndoSnapshotType
     SetAsPrintable,
     ChangeVolumeType,
     PaintOnSupportsStroke,
+    PaintOnSupportsAutomaticPainting,
     PaintOnSeamsStroke,
     PaintOnFuzzySkinStroke,
     MMPaintingStroke,

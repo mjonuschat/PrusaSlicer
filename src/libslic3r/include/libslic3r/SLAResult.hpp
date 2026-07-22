@@ -36,7 +36,7 @@ enum class ResultType
 
 /**
 @brief Issue found on backend during slicing
-NOTE: originaly it was divided on CRITICAL and PrintStateBase::WarningLevel::NON_CRITICAL
+NOTE: originally it was divided on critical and non-critical warning levels,
 now use function is_critical()
 */
 enum class ObjectIssueType

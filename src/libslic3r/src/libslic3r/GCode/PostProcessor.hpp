@@ -28,7 +28,7 @@ extern Slic3r::Biz::libpgcode::ProcessorResult post_process(
     Slic3r::Biz::libpgcode::ProcessorResult&& result, 
     const std::vector<Extruder>& extruders,
     const Domain::ExtraPrintStatistics& extra_print_statistics,
-    WarningCallback active_step_add_warning_callback
+    WarningCallback warning_callback
 );
 
 } // namespace GCode

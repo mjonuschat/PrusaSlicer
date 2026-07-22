@@ -303,6 +303,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/PrintApply.cpp
     src/libslic3r/PrintBase.hpp
     src/libslic3r/PrintBase.cpp
+    src/libslic3r/PrintState.hpp
     src/libslic3r/PrintObject.cpp
     src/libslic3r/PrintObjectSlice.cpp
     src/libslic3r/PrintRegion.cpp
@@ -393,8 +394,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Thread.cpp
     src/libslic3r/Thread.hpp
     src/libslic3r/TriangleMeshSlicer.cpp
-    src/libslic3r/TriangleSelectorWrapper.cpp
-    src/libslic3r/TriangleSelectorWrapper.hpp
     src/libslic3r/TriangleSetSampling.cpp
     src/libslic3r/TriangleSetSampling.hpp
     src/libslic3r/TriangulateWall.hpp
@@ -413,8 +412,10 @@ set(SLIC3R_SOURCES
 set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/CustomGCode.hpp
     include/libslic3r/ExtruderCandidates.hpp
+    include/libslic3r/GeneratedSupportPoints.hpp
     include/libslic3r/IPrint.hpp
     include/libslic3r/InitPrint.hpp
+    include/libslic3r/PrintSteps.hpp
     include/libslic3r/SerializedConfig.hpp
     include/libslic3r/SLAResult.hpp
     include/libslic3r/Slicing.hpp

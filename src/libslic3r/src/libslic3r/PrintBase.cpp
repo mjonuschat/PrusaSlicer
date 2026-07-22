@@ -36,8 +36,6 @@ void PrintTryCancel::operator()() const
     m_print->throw_if_canceled();
 }
 
-size_t PrintStateBase::g_last_timestamp = 0;
-
 // Update "scale", "input_filename", "input_filename_base" placeholders from the current m_objects.
 ParserConfig PrintBase::get_object_placeholders() const
 {
@@ -108,31 +106,9 @@ std::string PrintBase::output_filename(const std::string &format, const std::str
     }
 }
 
-void PrintBase::status_update_warnings(int step, PrintStateBase::WarningLevel /* warning_level */, const std::string &message, const PrintObjectBase* print_object)
-{
-    if (m_status_callback) {
-        auto status = print_object ? SlicingStatus(*print_object, step) : SlicingStatus(*this, step);
-        m_status_callback(status);
-    }
-    else if (! message.empty()) {
-        printf("%s warning: %s\n",  print_object ? "print_object" : "print", message.c_str());
-        std::fflush(stdout);
-    }
-}
-
 std::mutex& PrintObjectBase::state_mutex(PrintBase *print)
-{ 
-	return print->state_mutex();
-}
-
-std::function<void()> PrintObjectBase::cancel_callback(PrintBase *print)
-{ 
-	return print->cancel_callback();
-}
-
-void PrintObjectBase::status_update_warnings(PrintBase *print, int step, PrintStateBase::WarningLevel warning_level, const std::string &message)
 {
-    print->status_update_warnings(step, warning_level, message, this);
+	return print->state_mutex();
 }
 
 static Domain::Polygon get_rectangle(double width, double height)

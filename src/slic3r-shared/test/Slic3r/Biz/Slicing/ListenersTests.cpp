@@ -188,6 +188,118 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     }
 }
 
+struct GeneratedSupportPointsListener : public Slic3r::Biz::Slicing::IGeneratedSupportPointsListener
+{
+    void on_generated_support_points_changed(
+        Slic3r::Biz::Slicing::GeneratedSupportPointsSnapshot&& generated_support_points,
+        const SlicingId
+    ) override
+    {
+        support_points = std::move(generated_support_points);
+        received       = true;
+    }
+
+    Slic3r::Biz::Slicing::GeneratedSupportPointsSnapshot support_points;
+    bool received{false};
+};
+
+TEST_CASE_METHOD(
+    SlicingFixture,
+    "Background process dispatches generated support points once available",
+    "[slicing][slicing-callbacks][timeout]"
+)
+{
+    using namespace std::chrono_literals;
+
+    GeneratedSupportPointsListener support_points_listener;
+    slicing.set_listener<Slic3r::Biz::Slicing::IGeneratedSupportPointsListener>(
+        &support_points_listener
+    );
+
+    ModelOnBed model_on_bed{get_cubes_model(1, 5)};
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
+    slicing.slice_all();
+
+    REQUIRE(wait_for_status(
+        dispatcher,
+        status_listener,
+        5s,
+        [](const StatusEvents& events) { return events.back().status_code == StatusCode::Finished; }
+    ));
+
+    REQUIRE(support_points_listener.received);
+    REQUIRE(support_points_listener.support_points.size() == 1);
+    CHECK(
+        support_points_listener.support_points.front().model_object_id
+        == model_on_bed.model.objects.front()->id()
+    );
+}
+
+TEST_CASE_METHOD(
+    SlicingFixture,
+    "Partial slicing dispatches generated support points without the FDM result",
+    "[slicing][slicing-callbacks][timeout]"
+)
+{
+    using namespace std::chrono_literals;
+    using Slic3r::Biz::Slicing::SliceUntilStep;
+
+    ResultListener result_listener;
+    slicing.set_listener<IFDMResultListener>(&result_listener);
+
+    GeneratedSupportPointsListener support_points_listener;
+    slicing.set_listener<Slic3r::Biz::Slicing::IGeneratedSupportPointsListener>(
+        &support_points_listener
+    );
+
+    ModelOnBed model_on_bed{get_cubes_model(1, 5)};
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
+
+    const SlicingId id{0, model_on_bed.bed_instance.id().id};
+    slicing.slice_bed(
+        id,
+        SliceUntilStep{Slic3r::posSupportSpotsSearch, model_on_bed.model.objects.front()->id()}
+    );
+
+    REQUIRE(wait_for_status(
+        dispatcher,
+        status_listener,
+        5s,
+        [](const StatusEvents& events)
+        {
+            const bool was_running = std::ranges::any_of(
+                events,
+                [](const StatusEvent& event) { return event.status_code == StatusCode::Running; }
+            );
+            return was_running && events.back().status_code == StatusCode::Modified;
+        }
+    ));
+
+    REQUIRE(support_points_listener.received);
+    REQUIRE(support_points_listener.support_points.size() == 1);
+    CHECK(
+        support_points_listener.support_points.front().model_object_id
+        == model_on_bed.model.objects.front()->id()
+    );
+
+    const SelectionId bed_id{model_on_bed.bed_instance.id().id};
+    const auto gcode_it{result_listener.gcodes.find(bed_id)};
+
+    CHECK((gcode_it == result_listener.gcodes.end() || gcode_it->second->str().empty()));
+}
+
 struct SLAResultListener : public ISLAResultListener {
     void on_sla_result_changed(const SlicingId& id, SLAResult && result) override{
         switch (result.type) {

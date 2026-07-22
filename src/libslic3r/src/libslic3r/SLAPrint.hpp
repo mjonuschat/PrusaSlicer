@@ -31,6 +31,7 @@
 
 #include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/PrintBase.hpp"
+#include "libslic3r/PrintSteps.hpp"
 
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
@@ -45,24 +46,6 @@ namespace Slic3r {
 namespace sla {
 struct JobController;
 }  // namespace sla
-
-enum SLAPrintStep : unsigned int {
-    slapsMergeSlicesAndEval,
-    slapsRasterize,
-	slapsCount
-};
-
-enum SLAPrintObjectStep : unsigned int {
-    slaposAssembly,
-    slaposHollowing,
-    slaposDrillHoles,
-	slaposObjectSlice,
-	slaposSupportPoints,
-	slaposSupportTree,
-	slaposPad,
-    slaposSliceSupports,
-	slaposCount
-};
 
 class SLAPrint;
 
@@ -366,7 +349,11 @@ public:
     void                finalize() override { Inherited::finalize_impl(m_objects); }
     void                cleanup() override {}
 
-    void slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) override;
+    void slice(
+        Domain::SlicingId slicing_id,
+        Biz::Slicing::IThumbnailImageGenerator&,
+        std::optional<Biz::Slicing::SliceUntilStep> slice_until_step
+    ) override;
 
     // Returns true if an object step is done on all objects and there's at least one object.
     bool                is_object_step_done(SLAPrintObjectStep step) const;

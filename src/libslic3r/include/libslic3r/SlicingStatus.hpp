@@ -141,7 +141,9 @@ enum class WarningCode
     InvalidToolchange,
     CloseToPrimingRegions, // _u8L( "Your print is very close to the priming regions. " "Make sure there is no collision.")
     ToolpathOutsideBuildVolume,
-    GCodeConflict
+    GCodeConflict,
+    XYSizeCompensationIgnoredMultiMaterialPainting,
+    XYSizeCompensationIgnoredFuzzySkinPainting
 };
 
 struct StabilityWarningPayload {

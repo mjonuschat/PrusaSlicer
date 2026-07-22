@@ -116,14 +116,22 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
     invoke_listeners<IWipeTowerGeometryListener>(
         [&](auto* listener) { listener->on_wipe_tower_geometry_changed(std::nullopt, id); }
     );
+
+    invoke_listener<IGeneratedSupportPointsListener>(
+        [&id](auto* listener) { listener->on_generated_support_points_changed({}, id); }
+    );
 }
 
-void SlicingInteractor::slice_bed(const SlicingId id)
+void SlicingInteractor::slice_bed(
+    const SlicingId id,
+    const std::optional<SliceUntilStep> slice_until_step
+)
 {
     ASSERT(m_processes.contains(id));
     SPDLOG_TRACE("{}: slicing request", fmt::streamed(id));
 
-    m_slicing_queue.push_back(id);
+    m_slicing_queue.push_back(SlicingRequest{id, slice_until_step});
+
     process_slicing_queue();
 }
 
@@ -133,10 +141,11 @@ void SlicingInteractor::stop_slicing_bed(const Domain::SlicingId id)
         return;
     }
 
-    const auto it{std::ranges::find(m_slicing_queue, id)};
-    if (it != m_slicing_queue.end()) {
+    const std::size_t removed_request_count{
+        std::erase_if(m_slicing_queue, [&id](const SlicingRequest& request) { return request.id == id; })
+    };
+    if (removed_request_count > 0) {
         SPDLOG_TRACE("{}: slicing_queue: remove", fmt::streamed(id));
-        m_slicing_queue.erase(it);
     }
 
     m_processes.at(id).stop();
@@ -152,7 +161,7 @@ void SlicingInteractor::slice_all()
             continue;
         }
         SPDLOG_TRACE("{}: slicing request", fmt::streamed(id));
-        m_slicing_queue.push_back(id);
+        m_slicing_queue.push_back(SlicingRequest{id});
     }
     process_slicing_queue();
 }
@@ -337,6 +346,36 @@ void SlicingInteractor::on_extruder_candidates(
     }
 }
 
+void SlicingInteractor::on_generated_support_points(
+    GeneratedSupportPointsSnapshot&& generated_support_points,
+    const SlicingId id
+)
+{
+    SPDLOG_TRACE(
+        "{}: GeneratedSupportPointsSnapshot{{objects: {}}}",
+        fmt::streamed(id),
+        generated_support_points.size()
+    );
+
+    if (!m_dispatcher.dispatch_on_main_thread(
+            [this, id, support_points = std::move(generated_support_points)]() mutable
+            {
+                invoke_listener<IGeneratedSupportPointsListener>(
+                    [&](auto* listener)
+                    {
+                        listener->on_generated_support_points_changed(
+                            std::move(support_points),
+                            id
+                        );
+                    }
+                );
+            }
+        ))
+    {
+        SPDLOG_TRACE("{}: generated support points not dispatched", fmt::streamed(id));
+    }
+}
+
 void SlicingInteractor::process_slicing_queue()
 {
     process_update_requests();
@@ -344,9 +383,11 @@ void SlicingInteractor::process_slicing_queue()
     if (m_autoslicing_id && m_processes.contains(*m_autoslicing_id)) {
         const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
         if (m_statuses.at(*m_autoslicing_id) == Slicing::StatusCode::Modified) {
-            const auto it{std::ranges::find(m_slicing_queue, *m_autoslicing_id)};
+            const auto it{
+                std::ranges::find(m_slicing_queue, *m_autoslicing_id, &SlicingRequest::id)
+            };
             if (it == m_slicing_queue.end()) {
-                m_slicing_queue.push_front(*m_autoslicing_id);
+                m_slicing_queue.push_front(SlicingRequest{*m_autoslicing_id});
             }
         }
     }
@@ -361,15 +402,15 @@ void SlicingInteractor::process_slicing_queue()
 
     SPDLOG_TRACE("slicing_queue: {}", m_slicing_queue.size());
 
-    const SlicingId to_slice{m_slicing_queue.front()};
+    const SlicingRequest to_slice{m_slicing_queue.front()};
     m_slicing_queue.pop_front();
 
-    if (!m_processes.contains(to_slice)) {
-        SPDLOG_TRACE("{}: removed: nonexistent", fmt::streamed(to_slice));
+    if (!m_processes.contains(to_slice.id)) {
+        SPDLOG_TRACE("{}: removed: nonexistent", fmt::streamed(to_slice.id));
         return;
     }
 
-    m_processes.at(to_slice).slice(m_thumbnail_image_generator);
+    m_processes.at(to_slice.id).slice(m_thumbnail_image_generator, to_slice.slice_until_step);
 }
 
 void SlicingInteractor::process_update_requests()

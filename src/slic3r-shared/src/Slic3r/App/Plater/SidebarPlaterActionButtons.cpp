@@ -181,7 +181,6 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
                     );
                 }
             }
-            navigate_to_other();
         };
     } else {
         for (const BedStatus& bed_status : statuses) {

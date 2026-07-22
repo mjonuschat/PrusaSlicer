@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "libslic3r/GeneratedSupportPoints.hpp"
 #include "libslic3r/IPrint.hpp"
 #include "libslic3r/WipeTowerGeometry.hpp"
 #include "libslic3r/SLAResult.hpp"
@@ -19,6 +20,8 @@ public:
     virtual void on_exception(std::exception_ptr exception, Domain::SlicingId) = 0;
     virtual void on_wipe_tower_geometry(OptWipeTowerGeometry&&, Domain::SlicingId) = 0;
     virtual void on_extruder_candidates(std::vector<unsigned>&& extruder_candidates, Domain::SlicingId) = 0;
+    virtual void
+    on_generated_support_points(GeneratedSupportPointsSnapshot&&, Domain::SlicingId) = 0;
     virtual StatusCode get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };
