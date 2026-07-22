@@ -17,20 +17,26 @@ using namespace Slic3r::App::WX;
 LeftBarCtrl::LeftBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
 : TabsBarCtrl(parent, orient, menus)
 {
+    m_login_icon_sz = compact_mode() ? 32 : 42;
     auto add_btn = [this](Button* btn) -> void {
-        m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP, m_btn_margin); };
+        m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP, m_btn_margin);
+        btn->set_margin(w_config()->em_unit(this));
+    };
 
     preferences_btn = new Button(this, { wxEmptyString, "cog_wx", m_action_btn_sz, wxVERTICAL });
+    preferences_btn->SetToolTip(from_u8(Biz::_u8L("Preferences")));
     add_btn(preferences_btn);
 
     m_account_btn = new ButtonWithPopup(this, "user", orient, m_login_icon_sz);
-    m_account_btn->set_margin(static_cast<int>(0.3 * w_config()->em_unit()));
     add_btn(m_account_btn);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
+
+    m_account_btn->set_compact_mode(compact_mode(), m_login_icon_sz);
+    preferences_btn->set_compact_mode(compact_mode(), m_action_btn_sz, false);
 
     ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
 }
@@ -81,20 +87,26 @@ void LeftBarCtrl::UnselectPopupButtons()
     m_account_btn->set_selected(false);
 }
 
-void LeftBarCtrl::Rescale()
+void LeftBarCtrl::on_rescale()
 {
-    TabsBarCtrl::Rescale();
     int margin = w_config()->em_unit(this);
-    m_account_btn->set_margin(static_cast<int>(0.3 * margin));
+    m_account_btn->set_margin(margin);
     preferences_btn->set_margin(margin);
 }
 
-void LeftBarCtrl::set_compact_mode(bool compact_mode)
+void LeftBarCtrl::on_compact_mode_changed()
 {
-    TabsBarCtrl::set_compact_mode(compact_mode);
-    m_login_icon_sz = compact_mode ? 32 : 42;
-    m_account_btn->set_compact_mode(compact_mode, m_login_icon_sz);
-    preferences_btn->set_compact_mode(compact_mode, m_action_btn_sz);
+    const bool compact = compact_mode();
+    m_login_icon_sz = compact ? 32 : 42;
+    UpdateAccountButton(true);
+    m_account_btn->set_compact_mode(compact, m_login_icon_sz, false);
+    preferences_btn->set_compact_mode(compact, m_action_btn_sz, false);
+    for (int sizer_item_id = 0; sizer_item_id < m_second_sizer->GetItemCount(); sizer_item_id++) {
+        m_second_sizer->GetItem(sizer_item_id)
+            ->SetFlag(wxALIGN_CENTER_HORIZONTAL | (m_compact_mode ? wxTOP : wxALL));
+    }
+    m_second_sizer->Layout();
+    Refresh();
 }
 
 void LeftBarCtrl::ShowUserAccount(bool show)

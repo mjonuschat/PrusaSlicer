@@ -14,14 +14,15 @@ public:
 
     void OnColorsChanged() override;
     void UnselectPopupButtons() override;
-    void Rescale() override;
-    void set_compact_mode(bool compact_mode) override;
 
     void UpdateAccountButton(bool avatar/* = false*/);
     void ShowUserAccount(bool show);
 
-public:
     Button* preferences_btn{nullptr};
+
+protected:
+    void on_compact_mode_changed() override;
+    void on_rescale() override;
 
 private:
     ButtonWithPopup*    m_account_btn   { nullptr };

@@ -293,12 +293,14 @@ MainFrame::MainFrame(
 
     Bind(
         wxEVT_SIZE,
-        [](wxSizeEvent& event)
+        [this](wxSizeEvent& event)
         {
 #ifdef _WIN32
     // TODO
     // wxGetApp().other_instance_message_handler()->update_windows_properties(this);
 #endif // WIN32
+            bool compact = event.GetSize().GetWidth() < 1500;
+            m_left_bar->set_compact_mode(compact);
             event.Skip();
         }
     );

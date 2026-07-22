@@ -122,7 +122,8 @@ void TabsBarCtrl::Button::messure_min_size()
 #endif
     } else {
         GetTextExtent(localized_label, &x, &y);
-        wxSize size(x + 2 * m_margin, y + 3 * m_margin + m_appearance.px_cnt);
+        wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
+        wxSize size(x + 2 * m_margin, y + 3 * m_margin + szIcon.y);
         if (localized_label.IsEmpty()) {
             this->SetMinSize(wxSize(size.y, size.y));
         } else {
@@ -166,16 +167,27 @@ void TabsBarCtrl::Button::set_hovered(bool hovered)
     this->Update();
 }
 
-void TabsBarCtrl::Button::set_compact_mode(bool compact_mode, int icon_px_cnt)
+void TabsBarCtrl::Button::set_compact_mode(bool compact_mode, int icon_px_cnt, bool update_from_appearance)
 {
     if (m_appearance.px_cnt != icon_px_cnt) {
         m_appearance.px_cnt = icon_px_cnt;
-        init_bitmaps();
+        if (update_from_appearance) {
+            init_bitmaps();
+        }
     }
     m_compact_mode = compact_mode;
     messure_min_size();
 
-    SetToolTip(m_compact_mode && !m_appearance.label.IsEmpty() ? m_appearance.label : wxString());
+    if (update_from_appearance) {
+        SetToolTip(
+            m_compact_mode && !m_appearance.label.IsEmpty() ? m_appearance.label : wxString()
+        );
+    }
+}
+
+bool TabsBarCtrl::Button::compact_mode() const
+{
+    return m_compact_mode;
 }
 
 void TabsBarCtrl::Button::set_margin(int margin)
@@ -190,7 +202,7 @@ void TabsBarCtrl::Button::render()
     wxPaintDC dc(this);
 
     int em = w_config()->em_unit(this);
-    const double round_radius = 0.0;// 0.5 * em;
+    const double round_radius = m_compact_mode ? 0.0 : 0.5 * em;
     const int gap = int(0.5 * em);
 
     // Draw def rect with rounded corners
@@ -368,18 +380,6 @@ void TabsBarCtrl::update_margins()
     Layout();
 }
 
-void TabsBarCtrl::set_compact_mode(bool compact_mode)
-{
-    m_compact_mode = compact_mode;
-
-    m_btn_max_width = wxDefaultCoord;
-    for (auto* btn : m_pageButtons) {
-        btn->set_compact_mode(m_compact_mode, 20);
-    }
-
-    Layout();
-}
-
 wxPoint TabsBarCtrl::ButtonWithPopup::get_popup_pos()
 {
     wxPoint pos = this->GetPosition() + int(0.3 * w_config()->em_unit(this)) * wxSize(1, 1);
@@ -419,7 +419,12 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
 
     m_first_sizer = new wxBoxSizer(orient);
 
-    m_buttons_sizer = new wxFlexGridSizer(1, 1, m_btn_margin, orient == wxVERTICAL ? 0 : m_btn_margin);
+    m_buttons_sizer = new wxFlexGridSizer(
+        1,
+        1,
+        m_btn_margin,
+        (orient == wxVERTICAL && m_compact_mode) ? 0 : m_btn_margin
+    );
     m_buttons_sizer->SetFlexibleDirection(wxBOTH);
     m_first_sizer->Add(m_buttons_sizer, 0, align | margin_flags, m_btn_margin);
 
@@ -429,12 +434,53 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
     m_sizer->Add(m_second_sizer, 0, align);
 }
 
+void TabsBarCtrl::set_compact_mode(bool compact_mode)
+{
+    if (m_compact_mode == compact_mode)
+        return;
+    
+    m_compact_mode = compact_mode;
+    m_btn_max_width = wxDefaultCoord;
+
+    wxAlignment align{
+        m_orient == wxHORIZONTAL ? wxALIGN_CENTER_VERTICAL : wxALIGN_CENTER_HORIZONTAL
+    };
+    int margin_flags{
+        m_orient == wxHORIZONTAL ? wxLEFT | wxRIGHT : (compact_mode ? 0 : wxTOP | wxLEFT | wxRIGHT)
+    };
+
+    m_first_sizer->GetItem(size_t(0))->SetFlag(align | margin_flags);
+    m_buttons_sizer->SetHGap((m_orient == wxVERTICAL && m_compact_mode) ? 0 : m_btn_margin);
+
+    for (auto* button : m_pageButtons) {
+        button->set_compact_mode(m_compact_mode, 20);
+        m_btn_max_width = std::max(m_btn_max_width, button->GetMinSize().GetWidth());
+    }
+    if (!compact_mode) {
+        for (Button* button : m_pageButtons) {
+            wxSize new_min_size(m_btn_max_width, button->GetMinSize().y);
+            button->SetMinSize(new_min_size);
+        }
+    }
+    m_first_sizer->Layout();
+    Refresh();
+
+    on_compact_mode_changed();
+}
+
+bool TabsBarCtrl::compact_mode() const
+{
+    return m_compact_mode;
+}
+
 void TabsBarCtrl::Rescale()
 {
     update_margins();
 
     m_buttons_sizer->SetVGap(m_btn_margin);
-    m_buttons_sizer->SetHGap(m_btn_margin);
+    m_buttons_sizer->SetHGap((m_orient == wxVERTICAL && m_compact_mode) ? 0 : m_btn_margin);
+
+    on_rescale();
 
     // call Layout before update buttons width to process recaling of the buttons
     m_sizer->Layout();

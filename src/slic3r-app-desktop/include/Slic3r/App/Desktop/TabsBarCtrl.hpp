@@ -42,7 +42,8 @@ public:
 
         void set_selected(bool selected);
         void set_hovered(bool hovered);
-        void set_compact_mode(bool compact_mode, int icon_px_cnt = 16 );
+        void set_compact_mode(bool compact_mode, int icon_px_cnt = 16, bool update_from_appearance = true);
+        bool compact_mode() const;
         void set_margin(int margin);
         void render();
         bool is_selected() const { return m_is_selected; }
@@ -100,7 +101,7 @@ public:
     ~TabsBarCtrl() = default;
 
     void SetSelection(int sel, bool force = false);
-    virtual void Rescale();
+    void Rescale();
     virtual void OnColorsChanged();
     void UpdateSelection();
     bool InsertPage(size_t n, const wxString& text, bool bSelect = false, const std::string& bmp_name = "");
@@ -110,9 +111,12 @@ public:
 
     virtual void UnselectPopupButtons() = 0;
 
-    virtual void set_compact_mode(bool compact_mode);
+    void set_compact_mode(bool compact_mode);
+    bool compact_mode() const;
 
 protected:
+    virtual void on_compact_mode_changed() = 0;
+    virtual void on_rescale() = 0;
     wxRect get_selected_tab_rect();
 
 private:
