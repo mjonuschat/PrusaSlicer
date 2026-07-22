@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 
 #include <functional>
+#include <fmt/format.h>
 
 namespace Slic3r::App::Yoga {
 
