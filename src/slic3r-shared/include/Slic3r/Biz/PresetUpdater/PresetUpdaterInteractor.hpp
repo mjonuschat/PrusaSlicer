@@ -82,6 +82,8 @@ private:
     JThread::JThread m_thread;
     Platform::IMainThreadDispatcher& m_dispatcher;
 
+    JThread::JThread spawn_worker(std::function<void(JThread::StopToken)> body);
+
     // Error - operation has failed
     void dispatch_error(const std::string& body);
     // Status - operation is ongoing

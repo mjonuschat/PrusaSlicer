@@ -98,7 +98,7 @@ struct ProjectInteractorWrapper
     Slic3r::Biz::ProjectInteractor project_interactor;
 };
 
-TEST_CASE("Preset updater")
+TEST_CASE("PresetUpdater stage updates", "[preset_updater]")
 {
     boost::nowide::nowide_filesystem();
 

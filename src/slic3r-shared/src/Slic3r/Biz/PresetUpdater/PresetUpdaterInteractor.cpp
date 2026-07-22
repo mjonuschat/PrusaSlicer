@@ -39,6 +39,21 @@ PresetUpdaterInteractor::~PresetUpdaterInteractor()
     );
 }
 
+JThread::JThread PresetUpdaterInteractor::spawn_worker(std::function<void(JThread::StopToken)> body)
+{
+    return JThread::JThread([this, body = std::move(body)](JThread::StopToken stop_token) {
+        try {
+            body(stop_token);
+        } catch (const std::exception& e) {
+            SPDLOG_ERROR("PresetUpdater worker threw an unhandled exception: {}", e.what());
+            dispatch_error(std::string("PresetUpdater operation failed with an unexpected exception: ") + e.what());
+        } catch (...) {
+            SPDLOG_ERROR("PresetUpdater worker threw an unhandled unknown exception.");
+            dispatch_error("PresetUpdater operation failed with an unknown exception.");
+        }
+    });
+}
+
 void PresetUpdaterInteractor::check_forced_reconfigurations()
 {
     //Does not care about App config value - allways runs
@@ -59,7 +74,7 @@ void PresetUpdaterInteractor::check_forced_reconfigurations()
         dispatch_forced_reconfigurations_list(reconfigurations, warnings);
     };
 
-    m_thread = JThread::JThread(
+    m_thread = spawn_worker(
         [dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
             PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
@@ -103,7 +118,7 @@ void PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(bool a
         dispatch_reconfigurations_list(reconfigurations, warnings, verbose);
     };
 
-    m_thread = JThread::JThread(
+    m_thread = spawn_worker(
         [dispatch_err, dispatch_sta, dispatch_suc, ignore_hash](JThread::StopToken stop_token) {
             PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES, ignore_hash);
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
@@ -169,7 +184,7 @@ void PresetUpdaterInteractor::perform_reconfigurations(
         dispatch_reconfigurations_performed(warnings);
     };
 
-    m_thread = JThread::JThread(
+    m_thread = spawn_worker(
         [reconfigurations, dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
             PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
 
@@ -204,7 +219,7 @@ void PresetUpdaterInteractor::update_repositories(bool app_config_preset_updater
         dispatch_repository_selection_performed(repos, warnings);
     };
 
-    m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, repos](
+    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, repos](
                                     JThread::StopToken stop_token
                                 ) {
         PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
@@ -256,7 +271,7 @@ void PresetUpdaterInteractor::add_local_repository(bool app_config_preset_update
         dispatch_repository_info_vector(repos, warnings);
     };
 
-    m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, zip_path, unselect_others](
+    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, zip_path, unselect_others](
                                     JThread::StopToken stop_token
                                 ) {
         PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
@@ -303,7 +318,7 @@ void PresetUpdaterInteractor::remove_local_repository(bool app_config_preset_upd
         dispatch_repository_info_vector(repos, warnings);
     };
 
-    m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc, uuid](
+    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, uuid](
                                     JThread::StopToken stop_token
                                 ) {
         PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
@@ -345,7 +360,7 @@ void PresetUpdaterInteractor::list_repositories(bool app_config_preset_updater_a
         dispatch_repository_info_vector(repos, warnings);
     };
 
-    m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc](
+    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc](
                                     JThread::StopToken stop_token
                                 ) {
         PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
@@ -389,7 +404,7 @@ void PresetUpdaterInteractor::cleanup_update_sync(bool app_config_preset_updater
         dispatch_reconfigurations_list(reconfigurations, warnings, VerboseStyle::NoProgress);
     };
 
-    m_thread = JThread::JThread([dispatch_err, dispatch_sta, dispatch_suc](
+    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc](
                                     JThread::StopToken stop_token
                                 ) {
         PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
