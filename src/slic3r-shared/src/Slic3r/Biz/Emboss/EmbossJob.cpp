@@ -42,6 +42,7 @@ public:
     virtual ~Job()                   = default;
     virtual void process(StopToken&) = 0;
     virtual void finalize() {}
+    virtual Domain::SelectionId project_id() const = 0;
 };
 
 /**
@@ -82,6 +83,7 @@ public:
     explicit CreateVolumeJob(DataCreateVolume&& input);
     void process(StopToken& stop) override;
     void finalize() override;
+    Domain::SelectionId project_id() const override { return m_input.base.project_id; }
 };
 
 /**
@@ -115,6 +117,7 @@ public:
     explicit CreateObjectJob(DataCreateObject&& input);
     void process(StopToken& stop) override;
     void finalize() override;
+    Domain::SelectionId project_id() const override { return m_input.base.project_id; }
 };
 
 /**
@@ -173,6 +176,7 @@ public:
     explicit CreateSurfaceVolumeJob(CreateSurfaceVolumeData&& input);
     void process(StopToken& stop) override;
     void finalize() override;
+    Domain::SelectionId project_id() const override { return m_input.base.project_id; }
 };
 
 /**
@@ -192,6 +196,7 @@ public:
     explicit UpdateSurfaceVolumeJob(UpdateSurfaceVolumeData&& input);
     void process(StopToken& stop) override;
     void finalize() override;
+    Domain::SelectionId project_id() const override { return m_input.base.project_id; }
 };
 
 /**
@@ -230,6 +235,8 @@ public:
     @param instance_id Define instance for update selection
     */
     static void update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base, const Domain::ObjectID& instance_id);
+
+    Domain::SelectionId project_id() const override { return m_input.base.project_id; }
 };
 
 /**
@@ -1229,6 +1236,8 @@ bool queue_job(std::unique_ptr<Job> job)
     if (job == nullptr)
         return false;
 
+    const Domain::SelectionId project_id = job->project_id();
+
     std::function<std::unique_ptr<Job>(StopToken, std::unique_ptr<Job>&&)> process =
         [](StopToken stop_token, std::unique_ptr<Job>&& job) -> std::unique_ptr<Job>
     {
@@ -1241,6 +1250,7 @@ bool queue_job(std::unique_ptr<Job> job)
     Biz::Platform::PlatformServices::instance()
         .job_manager()
         .create_job("EmbossJob", process, std::move(job))
+        .set_project_id(project_id)
         .on_result(finalize)
         .start();
     return true;
