@@ -115,7 +115,7 @@ void RectangleButton::set_background_color_border(const ImColor& background_colo
 {
     set_background_color_border(
         background_color_border,
-        Imgui::adjust_brightness(m_background_color_border, 1.25f)
+        Imgui::adjust_brightness(background_color_border, 1.25f)
     );
 }
 

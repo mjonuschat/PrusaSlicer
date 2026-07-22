@@ -14,7 +14,9 @@ class SidebarPlaterActionButtons :
     public Biz::ISelectedBedInstancesChangedListener
 {
 public:
-    SidebarPlaterActionButtons(Navigator* render_module_navigator);
+    SidebarPlaterActionButtons(
+        Navigator* render_module_navigator,
+        std::function<void()> import_object_callback);
     ~SidebarPlaterActionButtons();
 
     void on_init(Biz::ProjectInteractor* project_interactor) override;
@@ -28,6 +30,7 @@ public:
 
 private:
     Yoga::LayoutButton* m_button_slice = nullptr;
+    std::function<void()> m_import_object_callback;
 
     void update_slice_button(const Biz::Scene::BedSelection& selection);
 };

@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -18,9 +19,13 @@ using Biz::Slicing::StatusCode;
 using Domain::SelectionId;
 using Domain::SlicingId;
 
-SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
+SidebarPlaterActionButtons::SidebarPlaterActionButtons(
+    Navigator* render_module_navigator,
+    std::function<void()> import_object_callback
+) :
     SidebarActionButtons("SidebarPlaterActionButtons", Render::ModuleType::Plater, render_module_navigator)
 {
+    m_import_object_callback = import_object_callback;
 }
 
 SidebarPlaterActionButtons::~SidebarPlaterActionButtons()
@@ -147,11 +152,19 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
     std::string tooltip;
     Render::Icon icon = Render::Icon::None;
     ImColor button_color = m_theme->color_imgui(Platform::Color::AccentPrimary);
+    bool neutral_background = false;
+    ImColor label_color = m_theme->color_imgui(Platform::Color::Text);
+    ImColor border_color = m_theme->color_imgui(Platform::Color::Transparent);
+    ImColor border_color_hover = border_color;
+    Yoga::Unit border_width = 0_fpx;
 
     if (any_invalid) {
         label        = _u8L("Invalid settings");
-        button_color = m_theme->color_imgui(Platform::Color::Error);
-        icon         = Render::Icon::EyeOpen;
+        neutral_background = true;
+        label_color  = m_theme->color_imgui(Platform::Color::Error);
+        border_color = m_theme->color_imgui(Platform::Color::Error);
+        border_color_hover = Imgui::adjust_brightness(border_color, 1.25f);
+        border_width = 1_fpx;
 
         std::string error_mesage;
         for (const BedStatus& bed_status : statuses) {
@@ -182,6 +195,16 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
                 }
             }
         };
+    } else if (all_empty) {
+        label        = _u8L("Add objects to slice");
+        neutral_background = true;
+        border_color = m_theme->color_imgui(Platform::Color::Text);
+        border_color_hover = border_color;
+        border_width = 1_fpx;
+
+        m_button_slice->callbacks().action = [this]() {
+            m_import_object_callback();
+        };
     } else {
         for (const BedStatus& bed_status : statuses) {
             if (bed_status.status == StatusCode::Modified) {
@@ -209,20 +232,19 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             }
             navigate_to_other();
         };
-
-        if (all_empty) {
-            m_button_slice->set_enabled(false);
-            button_color = m_theme->color_imgui(
-                Platform::Color::AccentPrimary,
-                Platform::ColorGroup::Disabled
-            );
-        }
     }
 
     m_button_slice->set_icon(icon);
     m_button_slice->set_label(label);
     m_button_slice->set_tooltip(tooltip);
-    m_button_slice->set_background_color(button_color);
+    if (neutral_background) {
+        m_button_slice->set_background_color(Platform::Color::Button);
+    } else {
+        m_button_slice->set_background_color(button_color);
+    }
+    m_button_slice->set_label_color(label_color);
+    m_button_slice->set_background_color_border(border_color);
+    m_button_slice->set_background_border_width(border_width.value);
 }
 
 } // namespace Slic3r::App::Plater

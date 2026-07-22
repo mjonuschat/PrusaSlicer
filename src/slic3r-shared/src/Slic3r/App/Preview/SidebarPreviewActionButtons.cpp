@@ -102,6 +102,11 @@ void SidebarPreviewActionButtons::update_buttons()
     const Biz::Slicing::Status status{*optional_status};
 
     m_primary_button->set_background_color(Platform::Color::AccentPrimary);
+    m_primary_button->set_label_color(m_theme->color_imgui(Platform::Color::Text));
+    m_primary_button->set_background_color_border(
+        m_theme->color_imgui(Platform::Color::Transparent)
+    );
+    m_primary_button->set_background_border_width(0.f);
     m_primary_button->callbacks().action = []() {};
     m_navigation_button->set_visible(true);
 
@@ -122,7 +127,10 @@ void SidebarPreviewActionButtons::update_buttons()
     case StatusCode::InvalidData: {
         ASSERT(!status.errors.empty());
         m_primary_button->set_label(Biz::_u8L("Invalid settings"));
-        m_primary_button->set_background_color(Platform::Color::Error);
+        m_primary_button->set_background_color(Platform::Color::WindowBgAlternate);
+        m_primary_button->set_label_color(m_theme->color_imgui(Platform::Color::Error));
+        m_primary_button->set_background_color_border(m_theme->color_imgui(Platform::Color::Error));
+        m_primary_button->set_background_border_width(2.f);
         m_primary_button->set_enabled(true);
 
         const Domain::Project& project{

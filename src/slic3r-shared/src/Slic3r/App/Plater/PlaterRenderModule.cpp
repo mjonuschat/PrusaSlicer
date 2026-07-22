@@ -599,7 +599,10 @@ void PlaterRenderModule::init_scene_layout()
     m_history->set_visible(false);
 
     m_sidebar_action_buttons =
-        Passthrough{std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)};
+        Passthrough{std::make_unique<SidebarPlaterActionButtons>(
+            m_render_module_navigator,
+            [this]() { command(Slic3r::App::Platform::CommandName::ImportGeometry).execute(); }
+        )};
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PlaterRenderLayout(
