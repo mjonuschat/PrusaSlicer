@@ -320,6 +320,17 @@ ImU32 to_ImU32(const Domain::ColorRGB& color, uint8_t alpha)
     return IM_COL32(color.r_uchar(), color.g_uchar(), color.b_uchar(), alpha);
 }
 
+ImVec4 to_ImVec4(const Domain::ColorRGBA& color)
+{
+    return {color.r(), color.g(), color.b(), color.a()};
+}
+
+ImVec4 to_ImVec4(const Domain::ColorRGB& color, uint8_t alpha)
+{
+    return {color.r(), color.g(), color.b(), alpha / 255.f};
+}
+
+
 ImColor adjust_brightness(ImColor color, float factor)
 {
     float h, s, v;

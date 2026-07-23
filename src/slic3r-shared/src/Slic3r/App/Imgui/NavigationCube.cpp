@@ -29,7 +29,9 @@
  */
 
 #include "Slic3r/App/Imgui/NavigationCube.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <array>
 #include <string>
@@ -113,9 +115,9 @@ struct Style
 {
     Style() {
         // initialize default colors
-        Colors[size_t(Color::DirX)] = ImVec4(0.750f, 0.000f, 0.000f, 1.000f);
-        Colors[size_t(Color::DirY)] = ImVec4(0.000f, 0.750f, 0.000f, 1.000f);
-        Colors[size_t(Color::DirZ)] = ImVec4(0.000f, 0.000f, 0.750f, 1.000f);
+        Colors[size_t(Color::DirX)] = to_ImVec4(Domain::ColorRGBA::X());
+        Colors[size_t(Color::DirY)] = to_ImVec4(Domain::ColorRGBA::Y());
+        Colors[size_t(Color::DirZ)] = to_ImVec4(Domain::ColorRGBA::Z());
         Colors[size_t(Color::Text)] = ImVec4(0.000f, 0.000f, 0.000f, 1.000f);
         Colors[size_t(Color::Face)] = ImVec4(0.808f, 0.808f, 0.800f, 0.800f);
         Colors[size_t(Color::FaceHighlight)] = ImVec4(0.918f, 0.498f, 0.259f, 1.000f);

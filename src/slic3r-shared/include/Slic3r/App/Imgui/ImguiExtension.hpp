@@ -68,6 +68,9 @@ void toggle_button(const std::string& label, bool* on, bool right_align = false)
 ImU32 to_ImU32(const Domain::ColorRGBA& color);
 ImU32 to_ImU32(const Domain::ColorRGB& color, uint8_t alpha = 255);
 
+ImVec4 to_ImVec4(const Domain::ColorRGBA& color);
+ImVec4 to_ImVec4(const Domain::ColorRGB& color, uint8_t alpha = 255);
+
 // Adjusts the brightness of an ImGui ImColor by the given factor (0 to 2)
 // factor < 1.0f darkens the color, factor > 1.0f brightens it
 ImColor adjust_brightness(ImColor color, float factor);
