@@ -1,124 +1,166 @@
-# Preset Updater — Manual Test Checklist
+# Preset Updater — Manual Test
 
-A hands-on checklist for verifying the Preset Updater end-to-end against the **live
-production** preset-repo-api. Follow it while actually using the built application — it is
-not automated. It complements the automated tests in
-`src/slic3r-shared/test/Slic3r/Biz/PresetUpdater/` (which run entirely against a mock
-server), by exercising the real network path, the real server contents, and the real files
-written to disk.
-
-## Why this exists
-
-The endpoint was switched to production (`https://preset-repo-api.prusa3d.com`, see
-`Slic3r::Biz::Network::ServiceConfig`). Automated tests deliberately never touch the network,
-so a human pass is the only thing that confirms the production server + full download/install
-pipeline actually work together.
+Follow these steps **in order** against a fresh throwaway data directory. Each step is a
+command plus the result you should see (printed JSON and files on disk). The automated tests
+run against a mock server; this pass exercises the real production endpoint, the real
+download/install pipeline, and the files written to disk.
 
 ## Setup
 
 1. Build a normal binary (GUI + launcher).
-2. **Always use a throwaway data directory** so your real profiles are never touched. Pass
-   `--datadir <tmp>` on every command below, pointing at an empty scratch folder, e.g.
-   `--datadir C:\tmp\pu_manual`.
-3. Endpoint selection:
-   - Default is production. No action needed to test production.
-   - To point at a staging/dev server instead, set `PRUSA_PRESET_REPO_URL` (only URLs on
-     whitelisted Prusa domains are accepted — see `ServiceConfig::update_url_from_env`).
-4. The reliable live surface today is the **CLI actions** below. The in-app GUI updater
-   (`Slic3r::App::PresetUpdaterUI`) is still under construction — automatic sync on startup is
-   commented out and reconfigurations are shown via a raw debug yes/no dialog — so drive the
-   flow from the command line and inspect the datadir on disk.
+2. Use a **throwaway data directory** and pass `--datadir <tmp>` on every command, pointing at
+   an empty folder, e.g. `--datadir C:\tmp\pu_manual`. This keeps your real profiles safe.
+3. Endpoint: default is production `https://preset-repo-api.prusa3d.com` (no action needed).
+   To point elsewhere, set `PRUSA_PRESET_REPO_URL` (only URLs on Prusa domains are accepted:
+   `prusa.com`, `prusa3d.com`, `prusa.cz`, `prusa3d.cz`, `printables.com`, `testprusaverse.com`).
+4. Only **one** `--preset-update*` action may be passed per invocation.
+5. Examples below use `prusa-slicer`; substitute your platform's binary name.
 
-Locations inside `<datadir>` to inspect:
+### Where results land
 
-| Path | Meaning |
+| Output | Meaning |
 | --- | --- |
-| `shared_runtime/RepositoryManifest.json` | The list of sources and their `selected` flags |
-| `update_sync/<repo_id>/...` | Files staged (downloaded) but not yet installed |
-| `presets/local/<repo_id>/<Vendor>/` + `<Vendor>.idx` | Installed vendor profiles |
-| `local_repositories/<uuid>/` | Unzipped local (offline) repositories |
+| stdout | JSON result of the action. A failure is an object with an `"error"` key. |
+| `<datadir>/shared_runtime/RepositoryManifest.json` | The sources list and their `selected` flags |
+| `<datadir>/update_sync/<repo_id>/…` | Files staged (downloaded) but not yet installed |
+| `<datadir>/presets/local/<repo_id>/<Vendor>/` + `<Vendor>.idx` | Installed vendor profiles |
+| `<datadir>/local_repositories/<uuid>/` | Unzipped local (offline) sources |
 
-## Checklist
-
-Tick each step. On failure, record the exact command, the JSON printed, and the relevant
-tree under `<datadir>` (see "On failure" below).
+## Steps
 
 ### 1. List sources
 ```
 prusa-slicer --datadir <tmp> --preset-update-sources
 ```
-- [ ] Prints a JSON array of sources fetched from production.
-- [ ] The Prusa production repository is present and `selected: true`.
+- [ ] Prints `{"result": [ … ]}` — a JSON array of sources fetched from the server.
+- [ ] The Prusa production source is present with `"selected": true`.
 - [ ] `shared_runtime/RepositoryManifest.json` now exists and matches the printed list.
+- [ ] **Copy the Prusa source's `uuid`** from the output; later steps call it `<PRUSA_UUID>`.
 
-### 2. Sync / list reconfigurations (clean datadir)
+### 2. Stage and list reconfigurations (clean datadir)
 ```
 prusa-slicer --datadir <tmp> --preset-update-list
 ```
-- [ ] Returns JSON with the reconfigurations (on a clean datadir, the online vendors show up
-      as `new_vendors`).
-- [ ] Downloaded indices/bundles appear under `update_sync/<repo_id>/`.
-- [ ] Running the same command again returns an empty/`None` result (nothing new to stage).
+- [ ] Prints `{"result": { … }}` where `new_vendors` lists the online vendors and the other
+      arrays (`regular_updates`, `forced_updates`, `forced_downgrades`, `not_in_index`) are empty.
+- [ ] Files appear under `update_sync/<repo_id>/`.
+- [ ] No `"error"` in the output.
 
-### 3. Perform update (download + install)
+### 3. List again (still staged, not installed)
+```
+prusa-slicer --datadir <tmp> --preset-update-list
+```
+- [ ] Same `new_vendors` result as step 2 — staging does **not** install, so the vendors are
+      still "new". No `"error"`.
+
+### 4. Install
 ```
 prusa-slicer --datadir <tmp> --preset-update
 ```
-- [ ] Completes without an `error` in the output.
-- [ ] Installed profiles appear under `presets/local/<repo_id>/<Vendor>/` with a
-      `vendor.yaml`, and an index `presets/local/<repo_id>/<Vendor>.idx`.
-- [ ] The installed `vendor.yaml` `version` equals the recommended version from the index.
-- [ ] A follow-up `--preset-update-list` now reports `None` (everything up to date).
+- [ ] No `"error"`. On full success this command prints **nothing** (or only a
+      `{"warnings": […]}` object).
+- [ ] `presets/local/<repo_id>/<Vendor>/vendor.yaml` and `presets/local/<repo_id>/<Vendor>.idx`
+      now exist.
+- [ ] The installed `vendor.yaml` `version` equals the `recommended_version` shown in step 2.
+- [ ] There are no files in `update_sync/<repo_id>/`.
 
-### 4. Select / deselect a source
+### 5. List after install
 ```
-prusa-slicer --datadir <tmp> --preset-update-sources          # note a source uuid
-prusa-slicer --datadir <tmp> --preset-update-select-source <uuid>
+prusa-slicer --datadir <tmp> --preset-update-list
 ```
-- [ ] The `selected` flag for that `uuid` toggles in `shared_runtime/RepositoryManifest.json`.
-- [ ] A subsequent `--preset-update-list` respects the selection (deselected sources are not
-      synced).
-- [ ] Selecting a source that shares an `id` with an already-selected one deselects the other
-      (only one source per `id` stays selected).
+- [ ] Prints `{"result": { … }}` with **all** arrays empty — everything is up to date.
+- [ ] There are no files in `update_sync/<repo_id>/`.
 
-### 5. Add a local (offline) repository
+### 6. Deselect the source
+```
+prusa-slicer --datadir <tmp> --preset-update-select-source <PRUSA_UUID>
+```
+- [ ] Prints `{"result": [ … ]}` where the entry for `<PRUSA_UUID>` now has `"selected": false`
+      (this command toggles the flag).
+- [ ] In `RepositoryManifest.json`, that `uuid`'s `"selected"` is now `false`.
+
+### 7. List with the source deselected
+```
+prusa-slicer --datadir <tmp> --preset-update-list
+```
+- [ ] Prints `{"result": { … }}` with all arrays empty — a deselected source is not synced.
+
+### 8. Re-select the source
+```
+prusa-slicer --datadir <tmp> --preset-update-select-source <PRUSA_UUID>
+```
+- [ ] The entry for `<PRUSA_UUID>` is `"selected": true` again.
+- [ ] Selecting a source automatically deselects any **other** source that shares the same `id`.
+
+### 9. Add a local (offline) source with the same `id` as the online source
+Use a local zip whose repository `id` matches the online Prusa source's `id`, so the two are
+mutually exclusive (if the `id`s differ, both stay selected and nothing switches off).
+(Optional: delete the datadir first so the fresh offline source carries the same update you
+installed in step 4.)
 ```
 prusa-slicer --datadir <tmp> --preset-update-add-local <path-to-repo.zip>
 ```
-- [ ] The local source appears in `--preset-update-sources`, reported as `local`.
+- [ ] Prints `{"result": [ … ]}` that now includes the local source (non-empty `zip_path` and
+      `unzipped_data_path`), with `"selected": true`.
+- [ ] The online source with the same `id` is now `"selected": false` — adding a local source
+      deselects other sources with the same `id`.
 - [ ] Its unzipped data appears under `local_repositories/<uuid>/`.
-- [ ] `--preset-update-list` then `--preset-update` install profiles from the local source.
+- [ ] **Note both uuids** for this `id`: `<ONLINE_UUID>` (online, now deselected) and
+      `<LOCAL_UUID>` (local, selected). They are the same as `<PRUSA_UUID>`/the add output unless
+      you deleted the datadir — re-run `--preset-update-sources` if unsure.
 
-### 6. Remove the local repository
+### 10. Select the online source — switches the local one off
 ```
-prusa-slicer --datadir <tmp> --preset-update-remove-local <uuid>
+prusa-slicer --datadir <tmp> --preset-update-select-source <ONLINE_UUID>
 ```
-- [ ] The source disappears from `--preset-update-sources`.
-- [ ] `local_repositories/<uuid>/` is deleted.
+- [ ] `<ONLINE_UUID>` becomes `"selected": true`.
+- [ ] `<LOCAL_UUID>` (same `id`) becomes `"selected": false` — selecting a source switches off
+      the other source with the same `id`.
 
-### 7. Cleanup staged files
+### 11. Select the local source — switches the online one off
+```
+prusa-slicer --datadir <tmp> --preset-update-select-source <LOCAL_UUID>
+```
+- [ ] `<LOCAL_UUID>` becomes `"selected": true`.
+- [ ] `<ONLINE_UUID>` becomes `"selected": false`.
+
+### 12. Install from the local source (optional)
+```
+prusa-slicer --datadir <tmp> --preset-update-list
+prusa-slicer --datadir <tmp> --preset-update
+```
+- [ ] `--preset-update-list` reports the local source's vendor(s) as reconfigurations.
+- [ ] `--preset-update` installs them under `presets/local/`.
+
+### 13. Remove the local source
+```
+prusa-slicer --datadir <tmp> --preset-update-remove-local <LOCAL_UUID>
+```
+- [ ] The printed `{"result": [ … ]}` no longer contains `<LOCAL_UUID>`.
+- [ ] `local_repositories/<LOCAL_UUID>/` is deleted.
+
+### 14. Cleanup staged files
 ```
 prusa-slicer --datadir <tmp> --preset-update-cleanup
 ```
-- [ ] Everything staged under `update_sync/` is removed.
+- [ ] Prints `{"result": { … }}` (a reconfiguration check after cleanup).
+- [ ] Everything under `update_sync/` is removed.
 - [ ] Already-installed profiles under `presets/local/` are left untouched.
 
-### 8. In-app flow (best effort)
-- [ ] Launch the GUI build against the same `<datadir>` and confirm the updater dialog(s)
-      appear and behave. Note: the GUI path is still a work in progress; treat unexpected
-      debug dialogs as known limitations, not failures.
+### 15. GUI smoke test (best effort)
+- [ ] Launch the GUI build against the same `<datadir>` and confirm the updater
+      notifications/dialogs appear and behave, and that startup does not crash.
 
-## Pass / fail criteria
+## Pass / fail
 
-- **Pass**: steps 1–7 each produce the expected on-disk result and no `error` field in the
-  JSON output; step 8 shows no crash.
-- **Fail**: any `error` in the output, a missing/incorrect file on disk, or a crash.
+- **Pass**: every step's stdout has no `"error"` key, the on-disk state matches each check, and
+  nothing crashes.
+- **Fail**: any `{"error": …}`, a missing or incorrect file, or a crash.
 
 ## On failure — what to attach
 
 - The exact command line (including `--datadir`).
-- The full JSON printed to stdout.
+- The full stdout (JSON).
 - The relevant subtree of `<datadir>` (`update_sync/`, `presets/local/`,
-  `shared_runtime/RepositoryManifest.json`).
-- Relevant log lines, especially the `PRESET UPDATER STATUS: target/attempt/delay` lines
-  emitted during downloads.
+  `shared_runtime/RepositoryManifest.json`, `local_repositories/`).
+- Relevant log lines, especially the `target:… attempt:… delay:…` lines emitted during downloads.

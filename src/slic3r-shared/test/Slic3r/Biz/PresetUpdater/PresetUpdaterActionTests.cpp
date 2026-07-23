@@ -22,11 +22,13 @@
 #include <catch2/trompeloeil.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <thread>
 
 using namespace Slic3r::Biz;
@@ -324,6 +326,16 @@ struct Fixture
         copy_dir_content_local(resources_profile_path / ("server" + version), server_runtime_path);
     }
 
+    void put_installed(const std::string& version)
+    {
+        copy_dir_content_local(resources_profile_path / ("resource" + version), installed_path);
+    }
+
+    void put_staged(const std::string& version)
+    {
+        copy_dir_content_local(resources_profile_path / ("resource" + version), staged_path);
+    }
+
     bool wait(CaptureListener& listener, std::chrono::seconds timeout = 20s)
     {
         const auto start = std::chrono::high_resolution_clock::now();
@@ -404,6 +416,22 @@ TEST_CASE("PresetUpdater lists sources and persists selection", "[preset_updater
     const std::string manifest = read_file(fx.shared_runtime_path / "RepositoryManifest.json");
     CHECK(manifest.find("\"selected\":false") != std::string::npos);
     CHECK(manifest.find(uuid) != std::string::npos);
+}
+
+TEST_CASE("PresetUpdater refreshes sources from the server on an empty selection", "[preset_updater]")
+{
+    Fixture fx;
+    fx.put_server("100");
+
+    CaptureListener listener(fx.interactor());
+
+    // An empty descriptor vector is a new query: the interactor syncs with the server
+    // instead of applying a user selection.
+    fx.interactor().update_repositories(true, PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{});
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    REQUIRE(listener.repos().size() == 1);
+    CHECK(listener.repos().front().descriptor.id == k_repo_name);
 }
 
 TEST_CASE("PresetUpdater adds and removes a local repository", "[preset_updater]")
@@ -496,4 +524,211 @@ TEST_CASE("PresetUpdater classifies multiple vendors in one repository", "[prese
     }
     CHECK(std::find(ids.begin(), ids.end(), k_vendor_name) != ids.end());
     CHECK(std::find(ids.begin(), ids.end(), k_second_vendor) != ids.end());
+}
+
+TEST_CASE("PresetUpdater installs reconfigurations over an installed vendor", "[preset_updater]")
+{
+    Fixture fx;
+    CaptureListener listener(fx.interactor());
+
+    std::string target_version;
+
+    SECTION("regular update raises the installed version")
+    {
+        fx.put_installed("100");
+        fx.put_server("101");
+        fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->regular_updates().size() == 1);
+        CHECK(listener.reconfigurations()->regular_updates().front().recommended_version == Slic3r::Semver{1, 0, 1});
+        target_version = "1.0.1";
+    }
+
+    SECTION("forced update replaces an app-incompatible installed version")
+    {
+        fx.put_installed("200");
+        fx.put_server("201");
+        fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->forced_updates().size() == 1);
+        CHECK(listener.reconfigurations()->forced_updates().front().recommended_version == Slic3r::Semver{2, 0, 1});
+        target_version = "2.0.1";
+    }
+
+    SECTION("forced downgrade replaces an app-incompatible newer installed version")
+    {
+        fx.put_installed("301");
+        fx.put_server("300");
+        fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->forced_downgrades().size() == 1);
+        CHECK(listener.reconfigurations()->forced_downgrades().front().recommended_version == Slic3r::Semver{3, 0, 0});
+        target_version = "3.0.0";
+    }
+
+    const auto reconfigurations = *listener.reconfigurations();
+
+    listener.reset();
+    fx.interactor().perform_reconfigurations(reconfigurations);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    CHECK(listener.performed());
+
+    const fs::path installed_vendor_dir = fx.installed_path / k_repo_name / k_vendor_name;
+    REQUIRE(fs::exists(installed_vendor_dir / "vendor.yaml"));
+    CHECK(fs::exists(fx.installed_path / k_repo_name / (k_vendor_name + ".idx")));
+    CHECK(read_file(installed_vendor_dir / "vendor.yaml").find(target_version) != std::string::npos);
+
+    listener.reset();
+    fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+    REQUIRE(fx.wait(listener));
+    REQUIRE(listener.reconfigurations().has_value());
+    CHECK(listener.reconfigurations()->empty());
+}
+
+TEST_CASE("PresetUpdater checks forced reconfigurations of installed profiles", "[preset_updater]")
+{
+    Fixture fx;
+    CaptureListener listener(fx.interactor());
+
+    SECTION("an app-compatible installed vendor needs no forced reconfiguration")
+    {
+        fx.put_installed("100");
+        fx.interactor().check_forced_reconfigurations();
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        CHECK(listener.reconfigurations()->empty());
+    }
+
+    SECTION("an app-incompatible newer installed vendor is a forced downgrade")
+    {
+        fx.put_installed("301");
+        fx.interactor().check_forced_reconfigurations();
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->forced_downgrades().size() == 1);
+        CHECK(listener.reconfigurations()->forced_downgrades().front().recommended_version == Slic3r::Semver{3, 0, 0});
+        CHECK(listener.reconfigurations()->regular_updates().empty());
+        CHECK(listener.reconfigurations()->forced_updates().empty());
+        CHECK(listener.reconfigurations()->new_vendors().empty());
+    }
+}
+
+TEST_CASE("PresetUpdater cleans up staged files and keeps installed profiles", "[preset_updater]")
+{
+    Fixture fx;
+    fx.put_installed("100");
+    fx.put_staged("100");
+
+    const fs::path stray = fx.staged_path / "stray.tmp";
+    {
+        boost::nowide::ofstream f(stray);
+        f << "leftover";
+    }
+    REQUIRE(fs::exists(fx.staged_path / k_repo_name));
+    REQUIRE(fs::exists(stray));
+
+    CaptureListener listener(fx.interactor());
+
+    fx.interactor().cleanup_update_sync(true);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+
+    CHECK_FALSE(fs::exists(fx.staged_path / k_repo_name));
+    CHECK_FALSE(fs::exists(stray));
+    CHECK(fs::is_empty(fx.staged_path));
+
+    const fs::path installed_vendor_dir = fx.installed_path / k_repo_name / k_vendor_name;
+    CHECK(fs::exists(installed_vendor_dir / "vendor.yaml"));
+    CHECK(fs::exists(fx.installed_path / k_repo_name / (k_vendor_name + ".idx")));
+}
+
+TEST_CASE("PresetUpdater ignores actions when the app config disables preset updates", "[preset_updater]")
+{
+    Fixture fx;
+    fx.put_server("100");
+
+    CaptureListener listener(fx.interactor());
+
+    fx.interactor().build_update_sync_and_reconfiguration_check(false, PresetUpdater::VerboseStyle::NoProgress, true);
+    CHECK_FALSE(fx.wait(listener, 1s));
+    CHECK_FALSE(listener.has_result());
+
+    fx.interactor().list_repositories(false);
+    CHECK_FALSE(fx.wait(listener, 1s));
+    CHECK_FALSE(listener.has_result());
+
+    fx.interactor().cleanup_update_sync(false);
+    CHECK_FALSE(fx.wait(listener, 1s));
+    CHECK_FALSE(listener.has_result());
+}
+
+TEST_CASE("PresetUpdater reports an unhandled worker exception as an error", "[preset_updater]")
+{
+    Fixture fx;
+    fx.put_server("100");
+
+    CaptureListener listener(fx.interactor());
+
+    SECTION("a std::exception is surfaced with its message")
+    {
+        fx.set_mutator([](const std::string&, std::string&, unsigned&) {
+            throw std::runtime_error("injected worker failure");
+        });
+        fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+        REQUIRE(fx.wait(listener));
+        REQUIRE(listener.got_error());
+        CHECK(listener.error_body().find("injected worker failure") != std::string::npos);
+    }
+
+    SECTION("a non-standard exception is surfaced as unknown")
+    {
+        fx.set_mutator([](const std::string&, std::string&, unsigned&) {
+            throw 42;
+        });
+        fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+        REQUIRE(fx.wait(listener));
+        REQUIRE(listener.got_error());
+        CHECK(listener.error_body().find("unknown exception") != std::string::npos);
+    }
+}
+
+TEST_CASE("PresetUpdater cancels a running operation and stays reusable", "[preset_updater]")
+{
+    Fixture fx;
+    fx.put_server("100");
+
+    std::atomic<bool> first_request_seen{false};
+    fx.set_mutator([&first_request_seen](const std::string&, std::string&, unsigned&) {
+        if (!first_request_seen.exchange(true)) {
+            // Hold the worker inside its first network request so the main thread has a
+            // deterministic window to request a stop before the post-sync checkpoint.
+            std::this_thread::sleep_for(500ms);
+        }
+    });
+
+    CaptureListener listener(fx.interactor());
+
+    fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+    std::this_thread::sleep_for(100ms);
+    fx.interactor().on_notification_cancel();
+
+    fx.dispatcher.dispatch_enqueued();
+    CHECK(first_request_seen.load());
+    CHECK_FALSE(listener.has_result());
+
+    fx.set_mutator({});
+    listener.reset();
+    fx.interactor().list_repositories(true);
+    REQUIRE(fx.wait(listener));
+    CHECK_FALSE(listener.got_error());
+    CHECK(listener.repos().size() == 1);
 }
