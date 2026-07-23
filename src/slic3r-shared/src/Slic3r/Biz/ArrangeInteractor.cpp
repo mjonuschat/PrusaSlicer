@@ -795,7 +795,7 @@ void ArrangeInteractor::arrange(
             [this, project_id, settings, on_finished, config_container_to_add_beds](
                 const std::optional<ArrangeLocalResult>& result)
             {
-                if (!result) {
+                if (!result || m_workbench.find_project_by_id(project_id) == nullptr) {
                     if (on_finished) {
                         on_finished();
                     }
@@ -849,13 +849,19 @@ void ArrangeInteractor::process_added_arrange_queue()
     }
 
     const PendingArrange pending_arrange{m_added_arrange_queue.front()};
-    const Project& project{m_workbench.project(pending_arrange.project_id)};
+    const Project* project{m_workbench.find_project_by_id(pending_arrange.project_id)};
+
+    if (!project) {
+        m_added_arrange_queue.pop();
+        process_added_arrange_queue();
+        return;
+    }
 
     const ConfigContainer* config_container{
-        project.find_config_container(pending_arrange.target_bed.config_container_id)};
+        project->find_config_container(pending_arrange.target_bed.config_container_id)};
 
     const BedInstance* target_bed{
-        project.find_bed_instance_by_id(pending_arrange.target_bed.instance_id)
+        project->find_bed_instance_by_id(pending_arrange.target_bed.instance_id)
     };
 
     if (!config_container || !target_bed) {
@@ -884,7 +890,7 @@ void ArrangeInteractor::process_added_arrange_queue()
 
     ConstModelInstanceList instances;
     for (const std::size_t instnace_id : pending_arrange.instance_ids) {
-        const ModelInstance* instance{project.find_instance_by_id(instnace_id)};
+        const ModelInstance* instance{project->find_instance_by_id(instnace_id)};
         if (!instance) {
             continue;
         }
