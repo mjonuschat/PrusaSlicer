@@ -330,6 +330,18 @@ void PaintOnGizmoBase::init_main_nodes()
     std::unique_ptr<Scene::Node> cursors_node = cursors_node_builder.build();
     m_cursors_node                            = cursors_node.get();
     scene.add_child(cursors_node.release(), m_main_node);
+
+    Scene::NodeBuilder clipping_plane_presenter_node_builder{scene};
+    clipping_plane_presenter_node_builder.set_debug_name("PaintOnGizmoBase - clipping_plane_presenter node");
+    std::unique_ptr<Scene::Node> clipping_plane_presenter_node = clipping_plane_presenter_node_builder.build();
+    m_clipping_plane_presenter_node                            = clipping_plane_presenter_node.get();
+    scene.add_child(clipping_plane_presenter_node.release(), m_main_node);
+
+    Scene::NodeBuilder sinking_plane_presenter_node_builder{scene};
+    sinking_plane_presenter_node_builder.set_debug_name("PaintOnGizmoBase - sinking_plane_presenter node");
+    std::unique_ptr<Scene::Node> sinking_plane_presenter_node = sinking_plane_presenter_node_builder.build();
+    m_sinking_plane_presenter_node                            = sinking_plane_presenter_node.get();
+    scene.add_child(sinking_plane_presenter_node.release(), m_main_node);
 }
 
 void PaintOnGizmoBase::init_cursors_nodes()
@@ -358,12 +370,12 @@ void PaintOnGizmoBase::init_clipper_presenters()
 
     ASSERT(selected_instance && selected_object);
     m_clipping_plane_presenter
-        .activate(selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
+        .activate(selected_object, selected_instance, m_clipping_plane_presenter_node, 0., Scene::BuildMeshesNodes::No);
     m_clipping_plane_presenter.set_behavior(true, true, 0.);
     m_clipping_plane_presenter.set_position_by_ratio(m_clipping_plane_clipper.get_position(), true);
 
     m_sinking_plane_presenter
-        .activate(selected_object, selected_instance, 0., Scene::BuildMeshesNodes::No);
+        .activate(selected_object, selected_instance, m_sinking_plane_presenter_node, 0., Scene::BuildMeshesNodes::No);
     m_sinking_plane_presenter.set_behavior(true, true, 0.);
 
     if (is_any_paintable_volume_sinking(m_paintable_volumes)) {
@@ -514,13 +526,12 @@ void PaintOnGizmoBase::on_deactivated()
         m_main_node               = nullptr;
         m_cursors_node            = nullptr;
         m_triangle_selectors_node = nullptr;
+        m_clipping_plane_presenter_node = nullptr;
+        m_sinking_plane_presenter_node = nullptr;
     }
 
     m_triangle_selector_wrappers.clear();
     m_visible_volumes_nodes.clear();
-
-    m_clipping_plane_presenter.deactivate();
-    m_sinking_plane_presenter.deactivate();
 
     scene.remove_listener<App::Scene::ISceneChangedListener>(this);
     m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -1234,10 +1245,9 @@ void PaintOnGizmoBase::rebuild_paintable_geometry()
         m_main_node               = nullptr;
         m_cursors_node            = nullptr;
         m_triangle_selectors_node = nullptr;
+        m_clipping_plane_presenter_node =nullptr;
+        m_sinking_plane_presenter_node =nullptr;
     }
-
-    m_clipping_plane_presenter.deactivate();
-    m_sinking_plane_presenter.deactivate();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
         m_gizmo_controller->deactivate_current_tool();

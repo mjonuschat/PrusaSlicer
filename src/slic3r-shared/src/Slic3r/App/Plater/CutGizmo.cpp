@@ -693,7 +693,7 @@ void CutGizmo::on_deactivated()
     reset_connectors_nodes();
     set_enabled_scene_nodes(true);
     m_clipper_presenter.set_enable_mesh(true);
-    m_clipper_presenter.deactivate();
+    m_clipper_presenter.deactivate(m_main_node);
 
     // Clear solid meshes to force their recreation when the selected object is changed
     m_solid_meshes.clear();
@@ -1261,7 +1261,7 @@ void CutGizmo::update_scene_nodes()
 
     update_cut_normal();
 
-    m_clipper_presenter.activate(context().selected_object, context().selected_instance);
+    m_clipper_presenter.activate(context().selected_object, context().selected_instance, m_main_node);
     m_clipper_presenter.set_behavior(true, true, 0.4);
 
     update_cut_plane_mesh();

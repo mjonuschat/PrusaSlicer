@@ -228,6 +228,8 @@ private:
     Scene::Node* m_main_node               = nullptr;
     Scene::Node* m_cursors_node            = nullptr;
     Scene::Node* m_triangle_selectors_node = nullptr;
+    Scene::Node* m_clipping_plane_presenter_node = nullptr;
+    Scene::Node* m_sinking_plane_presenter_node = nullptr;
 
     Scene::Node::NodeList
         m_visible_volumes_nodes; // Nodes that will be hidden when the gizmo is activated and shown when deactivated.

@@ -38,6 +38,7 @@ public:
     void activate(
         const Domain::ModelObject* selected_object,
         const Domain::ModelInstance* selected_instance,
+        Node* parent_node,
         double sla_shift                           = 0.,
         BuildMeshesNodes should_build_meshes_nodes = BuildMeshesNodes::Yes
     );
@@ -77,7 +78,7 @@ public:
     }
 
 private:
-    void init_main_node();
+    void init_main_node(Node* parent_node);
     // build Mesh nodes from selected instance
     void build_meshes_nodes(const Domain::Transform3d& inst_trafo);
     // build Plane/Contour nodes from Clipper
@@ -112,5 +113,7 @@ private:
 
     Ray m_translation_ray;
     double m_start_t{0};
+
+    int inst_counter{0};
 };
 } // namespace Slic3r::App::Scene

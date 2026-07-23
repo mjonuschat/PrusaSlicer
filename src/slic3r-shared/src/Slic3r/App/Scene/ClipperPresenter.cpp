@@ -52,13 +52,26 @@ static void set_enabled_scene_nodes(
     }
 }
 
+static Node* get_main_clipper_node(Node* parent_node)
+{
+    for (const auto& node : parent_node->children()) {
+        const ClipperElement* tag = node->tag_of_type<ClipperElement>();
+        if (tag && tag->type == ClipperElementType::Undef) {
+            return node.get();
+        }
+    };
+    return nullptr;
+}
+
 void ClipperPresenter::activate(
     const Domain::ModelObject* selected_object,
     const Domain::ModelInstance* selected_instance,
+    Node* parent_node,
     double sla_shift,
     BuildMeshesNodes should_build_meshes_nodes
 )
 {
+    m_main_node = get_main_clipper_node(parent_node);
     if (m_main_node && m_main_node->children().size() > 0) {
         deactivate();
     }
@@ -68,7 +81,9 @@ void ClipperPresenter::activate(
         m_clipper->update(selected_object, selected_instance, sla_shift, true);
     }
 
-    init_main_node();
+    if (!m_main_node) {
+        init_main_node(parent_node);
+    }
 
     if (should_build_meshes_nodes == BuildMeshesNodes::Yes) {
         build_meshes_nodes(selected_instance->get_matrix());
@@ -101,13 +116,15 @@ void ClipperPresenter::reset()
     m_contour_enabled = m_mesh_enabled = m_plane_enabled = true;
 }
 
-void ClipperPresenter::init_main_node()
+void ClipperPresenter::init_main_node(Node* parent_node)
 {
     NodeBuilder builder{m_scene_provider->scene()};
-    builder.set_debug_name("Clipper main").set_tag(ClipperElement());
 
-    m_scene_provider->scene().add_child(builder.build().release(), &m_scene_provider->scene().root());
-    m_main_node = m_scene_provider->scene().root().children().back().get();
+    builder.set_debug_name(fmt::format("Clipper main {}", inst_counter)).set_tag(ClipperElement());
+    inst_counter++;
+
+    m_scene_provider->scene().add_child(builder.build().release(), parent_node);
+    m_main_node = parent_node->children().back().get();
 }
 
 void ClipperPresenter::build_meshes_nodes(const Domain::Transform3d& inst_trafo)
@@ -223,6 +240,7 @@ void ClipperPresenter::update_nodes()
         [&](Node& node)
         {
             ClipperElement* tag   = node.tag_of_type<ClipperElement>();
+            ASSERT(tag);
             auto render_component = static_cast<MeshRenderNodeComponent*>(node.render_component());
 
             if (tag->type == ClipperElementType::Mesh) {
