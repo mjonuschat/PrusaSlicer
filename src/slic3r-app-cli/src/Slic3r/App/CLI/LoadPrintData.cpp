@@ -3,11 +3,14 @@
 #include "Slic3r/App/CLI/CLIRuntime.hpp"
 #include "Slic3r/App/CLI/CLIUtils.hpp"
 #include "Slic3r/App/CLI/ProcessActions.hpp"
+#include "Slic3r/App/CLI/ProcessTransform.hpp"
 #include "Slic3r/App/CLI/ProfilePresetSelection.hpp"
 #include "Slic3r/App/Init.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
@@ -29,6 +32,8 @@ using Slic3r::Biz::IProjectsChangedListener;
 using Slic3r::Biz::ProjectInteractor;
 using Slic3r::Biz::Config::PresetAndConfig;
 using Slic3r::Biz::Preset::PresetInteractor;
+using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::BedRef;
 using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::ConfigItem;
 using Slic3r::Domain::ConfigLocation;
@@ -42,6 +47,7 @@ using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::SLAConfigLocation;
+using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Preset::HwPrinterConfig;
 
 using namespace Slic3r::Biz;
@@ -374,6 +380,36 @@ static bool apply_config_overrides(CLIRuntime& runtime, const InitParams& init_p
     return true;
 }
 
+/**
+ * @brief Centers every given project on its selected bed.
+ */
+static void
+center_projects_on_selected_bed(CLIRuntime& runtime, const std::vector<SelectionId>& project_ids)
+{
+    ProjectInteractor& project_interactor = runtime.project_interactor();
+
+    for (const SelectionId project_id : project_ids) {
+        project_interactor.select_project(project_id);
+
+        const BedRef selected_bed_ref =
+            project_interactor.scene_interactor().bed_selection().last_selected_bed();
+        const ConfigContainer* config_container =
+            project_interactor.selected_project().find_config_container(
+                selected_bed_ref.config_container_id
+            );
+        if (config_container == nullptr) {
+            continue;
+        }
+
+        const BedInstance& selected_bed_instance =
+            config_container->find_bed_instance(selected_bed_ref.instance_id);
+        const Vec2d bed_center = config_container->bed().center()
+            + Algorithms::Point::to_2d(selected_bed_instance.transformation.get_offset());
+
+        center_selected_project_around_point(runtime, bed_center);
+    }
+}
+
 bool load_print_data(
     CLIRuntime& runtime,
     std::vector<SelectionId>& project_ids,
@@ -431,6 +467,10 @@ bool load_print_data(
         if (!apply_config_overrides(runtime, init_params)) {
             return false;
         }
+    }
+
+    if (!init_params.transform.dont_arrange.value_or(false)) {
+        center_projects_on_selected_bed(runtime, project_ids);
     }
 
     return true;
