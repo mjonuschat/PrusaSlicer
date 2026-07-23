@@ -31,7 +31,7 @@ class PopNotificationCenter :
     public Biz::IProjectsChangedListener,
     public Biz::IArrangeEventsListener,
     public Biz::Connect::IConnectHandlerListener,
-    public Platform::IFileExplorerErrorListener
+    public Platform::IFileExplorerErrorListener,
     public Biz::PresetUpdater::IPresetUpdaterResultListener
 {
 public:
