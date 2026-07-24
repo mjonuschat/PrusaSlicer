@@ -21,6 +21,7 @@ enum class BedElementType : int8_t
     AxesMain,
     AxesScaler,
     Label,
+    SelectionOutline,
 };
 
 /**

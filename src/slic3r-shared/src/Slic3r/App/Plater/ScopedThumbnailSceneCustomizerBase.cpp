@@ -147,7 +147,8 @@ void ScopedThumbnailSceneCustomizerBase::hide_bed_accessories()
                 if (tag->type == Scene::BedElementType::AxesMain ||
                     tag->type == Scene::BedElementType::Contour ||
                     tag->type == Scene::BedElementType::PrintVolume ||
-                    tag->type == Scene::BedElementType::Label) {
+                    tag->type == Scene::BedElementType::Label ||
+                    tag->type == Scene::BedElementType::SelectionOutline) {
                     n.set_enabled(false);
                     m_cache.hidden_nodes.push_back(&n);
                 }

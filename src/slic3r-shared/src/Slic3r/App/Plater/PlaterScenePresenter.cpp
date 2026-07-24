@@ -3,6 +3,7 @@
 #include "Slic3r/App/Plater/MMPaintedVolumeRendering.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
+#include "Slic3r/App/Plater/RibbonMeshGenerator.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -435,6 +436,12 @@ void PlaterScenePresenter::force_bed_thumbnails_generation()
     invoke_bed_visually_changed(m_selected_project_id);
 }
 
+void PlaterScenePresenter::update_bed_instances()
+{
+    m_bed_render_updater.update_all(scene().camera(), project_context().bed_error());
+    update_cc_selection_geometry();
+}
+
 void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)
 {
     std::for_each(
@@ -755,15 +762,31 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
         m_projects.try_emplace(m_selected_project_id);
         std::shared_ptr<Scene::ModelGeometryProvider> shared_model_geometry_provider =
             std::make_shared<Scene::ModelGeometryProvider>("plater");
-        project_context().set_model_geometry_provider(shared_model_geometry_provider);
+        auto& ctx = project_context();
+        ctx.set_model_geometry_provider(shared_model_geometry_provider);
+        auto& scene = ctx.scene();
+
         // a new camera has been created, add the camera update listeners
-        auto& camera = project_context().scene().camera();
+        auto& camera = scene.camera();
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
         camera.add_listener<Scene::ICameraUpdateListener>(this);
         camera.set_viewport(m_viewport);
-        project_context().scene().add_listener<App::Scene::ISceneChangedListener>(this);
+
+        scene.add_listener<App::Scene::ISceneChangedListener>(this);
+
+        auto* node =
+            Scene::NodeBuilder{scene}
+                .build()
+                .release();
+        scene.add_child(node, nullptr);
+        ctx.set_cc_selection_node(node);
     }
     set_scene_aabb_as_dirty();
+}
+
+void PlaterScenePresenter::on_selected_project_changed_final(size_t index)
+{
+    update_cc_selection_geometry();
 }
 
 void PlaterScenePresenter::on_scene_selection_changed(
@@ -1739,6 +1762,94 @@ void PlaterScenePresenter::remove_beds(Domain::SelectionId project_id, const Dom
             return tag.config_container_id == br.config_container_id && tag.instance_id == br.instance_id;
         }
     );
+}
+
+void PlaterScenePresenter::update_cc_selection_geometry()
+{
+    Render::GeometryBuilder<Render::VertexP3> geom_builder;
+
+    auto& ctx = project_context();
+    auto* node = ctx.cc_selection_node();
+    ASSERT(node != nullptr);
+
+    if (m_project_interactor.selected_config_container_id() == Domain::INVALID_ID) {
+        // not yet valid project
+        return;
+    }
+    const auto& cc = m_project_interactor.selected_config_container();
+    const bool show_outline =
+        m_project_interactor.selected_project().config_containers().size() > 1;
+
+    if (!show_outline) {
+        node->set_enabled(false);
+        node->set_render_component(nullptr);
+        return;
+    }
+
+    node->set_enabled(true);
+    const auto& bed = cc.bed_instances().front()->bed.get();
+    auto bed_contour = bed.contour_aabb();
+    const Domain::TriangleMesh& model = Biz::Scene::BedGeometry::model(bed);
+    if (!model.empty()) {
+        Domain::BoundingBox3d model_aabb = model.bounding_box();
+        bed_contour = Biz::Algorithms::BoundingBox::to_2d(model_aabb);
+    }
+
+    const auto bed_contour_points = std::vector<Domain::Vec4f>{
+        {float(bed_contour.min.x()), float(bed_contour.min.y()), 0.0f, 1.0f},
+        {float(bed_contour.max.x()), float(bed_contour.min.y()), 0.0f, 1.0f},
+        {float(bed_contour.min.x()), float(bed_contour.max.y()), 0.0f, 1.0f},
+        {float(bed_contour.max.x()), float(bed_contour.max.y()), 0.0f, 1.0f},
+    };
+
+    Domain::BoundingBox2f cc_bounds;
+    for (const auto& bi : cc.bed_instances()) {
+        for (const auto& p : bed_contour_points) {
+            auto v = bi->matrix().matrix().cast<float>() * p;
+            cc_bounds = Biz::Algorithms::BoundingBox::merge(cc_bounds, Domain::Vec2f{v.x(), v.y()});
+        }
+    }
+
+    constexpr float GROUND_Z = -0.5f;
+    constexpr float PADDING = 10;
+    constexpr float CORNER_RADIUS = PADDING;
+    constexpr float RIBBON_WIDTH = PADDING * 0.125f;
+
+    cc_bounds = Biz::Algorithms::BoundingBox::inflated(cc_bounds, PADDING);
+
+    RibbonMeshGenerator rg{
+        [&](const Domain::Vec3f& v) { geom_builder.add_vertex({v}); },
+        RIBBON_WIDTH,
+        CORNER_RADIUS
+    };
+
+    rg.generate(
+        {
+            {cc_bounds.min.x(), cc_bounds.min.y(), GROUND_Z},
+            {cc_bounds.min.x(), cc_bounds.max.y(), GROUND_Z},
+            {cc_bounds.max.x(), cc_bounds.max.y(), GROUND_Z},
+            {cc_bounds.max.x(), cc_bounds.min.y(), GROUND_Z},
+        },
+        true
+    );
+    geom_builder.add_draw_command({.primitive = Render::PrimitiveType::TriangleStrip});
+
+    auto& device = Render::Context::instance().device();
+    auto geom    = geom_builder.build(device);
+
+    auto mesh_component = std::make_unique<Scene::MeshRenderNodeComponent>(
+        geom.get(),
+        Scene::BedMaterials::cc_selection_border_material(device)
+    );
+    node->set_render_component(std::move(mesh_component));
+    node->set_tag(
+        Scene::BedNodeTag{
+            .config_container_id = cc.id().id,
+            .type                = Scene::BedElementType::SelectionOutline
+        }
+    );
+
+    ctx.set_cc_selection_geometry(std::move(geom));
 }
 
 } // namespace Slic3r::App::Plater

@@ -196,7 +196,7 @@ public:
     // Call this function to force bed thumbnails generation after the listeners are registered, for example to ensure
     // that the object list is properly updated
     void force_bed_thumbnails_generation();
-    void update_bed_instances() { m_bed_render_updater.update_all(scene().camera(), project_context().bed_error()); }
+    void update_bed_instances();
     bool update_bed_instance_error_state(const Domain::SlicingId& id, bool error);
 
     void update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
@@ -224,6 +224,7 @@ private:
     }
 
     void on_selected_project_changed(size_t index) override;
+    void on_selected_project_changed_final(size_t index) override;
 
     void on_scene_selection_bounding_box_updated(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
     void on_scene_selection_changed(
@@ -308,6 +309,7 @@ private:
     void remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances);
     void update_volume_materials();
 
+    void update_cc_selection_geometry();
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;

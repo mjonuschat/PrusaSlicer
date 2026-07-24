@@ -25,6 +25,7 @@ struct BedMaterials
     static Render::Material model_material(const Render::Device& device);
     static Render::Material axis_material(const Render::Device& device, uint8_t axis);
     static Render::Material label_material(const Render::Device& device, const std::string& label);
+    static Render::Material cc_selection_border_material(const Render::Device& device);
 
     // materials for other states
     static Render::Material plate_default_transparent_material(const Render::Material& primary_material);

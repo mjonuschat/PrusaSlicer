@@ -46,6 +46,8 @@ static const ColorRGB LABEL_REGULAR             = Domain::ColorRGB::ORANGE();
 static const ColorRGB LABEL_DISABLED            = { 0.8f, 0.8f, 0.8f };
 static const ColorRGB LABEL_SECONDARY_SELECTION = { 0.6f, 0.6f, 0.6f };
 
+static const ColorRGBA CC_SELECTION_BORDER = Domain::ColorRGBA::ORANGE();
+
 static const ColorRGBA X_AXIS = ColorRGBA::X();
 static const ColorRGBA Y_AXIS = ColorRGBA::Y();
 static const ColorRGBA Z_AXIS = ColorRGBA::Z();
@@ -155,6 +157,17 @@ Render::Material BedMaterials::label_material(const Render::Device& device, cons
         .set_texture(0, BedRenderHelper::label_texture(label, device.context().texture_manager(), LABEL_REGULAR))
         .set_transparent(true);
     return ret;
+}
+
+Render::Material BedMaterials::cc_selection_border_material(const Render::Device& device)
+{
+    Render::Material material;
+
+    material
+        .set_shader(device.context().shader_manager().shader("flat"))
+        .set_uniform("uniform_color", CC_SELECTION_BORDER);
+
+    return material;
 }
 
 Render::Material BedMaterials::plate_default_transparent_material(const Render::Material& primary_material)

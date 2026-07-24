@@ -1,6 +1,8 @@
 set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/PlaterScenePresenter.hpp
         src/Slic3r/App/Plater/PlaterScenePresenter.cpp
+		src/Slic3r/App/Plater/RibbonMeshGenerator.hpp
+		src/Slic3r/App/Plater/RibbonMeshGenerator.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/ToolGizmosUiInfo.hpp
