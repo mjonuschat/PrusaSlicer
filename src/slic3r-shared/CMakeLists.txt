@@ -507,6 +507,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/CameraTargetAnimation.cpp
         include/Slic3r/App/Scene/ModelGeometryProvider.hpp
         include/Slic3r/App/Scene/VolumeColor.hpp
+        src/Slic3r/App/Scene/VolumeColor.cpp
         include/Slic3r/Biz/Scene/OrientedBoundingBox.hpp
         src/Slic3r/Biz/Scene/OrientedBoundingBox.cpp
         include/Slic3r/App/Plater/ISelectionExtentsChangedListener.hpp

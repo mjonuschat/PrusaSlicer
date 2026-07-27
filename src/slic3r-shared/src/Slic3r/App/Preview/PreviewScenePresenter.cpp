@@ -10,22 +10,8 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include <Slic3r/App/libvgcode/SlaObjectNodeTag.hpp>
 
-namespace {
-
-std::optional<Slic3r::Domain::ColorRGBA> color_from_extruder_slot(
-    const std::vector<Slic3r::Domain::ColorRGB>& slot_colors,
-    const Slic3r::Domain::ModelVolume& vol)
-{
-    const int raw_id = vol.extruder_id();
-    const int slot = (raw_id <= 0) ? 0 : raw_id - 1;
-    if (slot < static_cast<int>(slot_colors.size())) {
-        const auto& c = slot_colors[slot];
-        return Slic3r::Domain::ColorRGBA{c.r(), c.g(), c.b(), 1.0f};
-    }
-    return std::nullopt;
-}
-
-} // namespace
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::SelectionId;
 
 namespace Slic3r::App::Preview {
 
@@ -204,16 +190,16 @@ void PreviewScenePresenter::add_shells()
     const auto& model = project.model();
     const auto& ccs = project.config_containers();
 
-    // collect all model instances on bed + map instance_id → config_container_id
+    // collect all model instances on bed + map instance_id -> config container
     Domain::ModelInstanceList instances_on_bed;
-    std::unordered_map<Domain::SelectionId, Domain::SelectionId> mi_to_cc_map;
+    std::unordered_map<SelectionId, const ConfigContainer*> mi_to_cc_map;
     for (const auto& cc : ccs) {
         const auto& bis = cc->bed_instances();
         for (const auto& bi : bis) {
             instances_on_bed.reserve(instances_on_bed.size() + bi->model_instances.size());
             instances_on_bed.insert(instances_on_bed.end(), bi->model_instances.begin(), bi->model_instances.end());
             for (const auto* mi : bi->model_instances)
-                mi_to_cc_map[mi->id().id] = cc->id().id;
+                mi_to_cc_map[mi->id().id] = cc.get();
         }
     }
 
@@ -262,10 +248,18 @@ void PreviewScenePresenter::add_shells()
                         if (vol->is_model_part()) {
                             auto cc_it = mi_to_cc_map.find(inst->id().id);
                             if (cc_it != mi_to_cc_map.end()) {
-                                const auto& slot_colors = m_project_interactor
-                                    .project_settings_interactor().get_colors(cc_it->second);
-                                if (auto c = color_from_extruder_slot(slot_colors, *vol))
-                                    clr = *c;
+                                const ConfigContainer& config_container = *cc_it->second;
+                                const auto& slot_colors =
+                                    m_project_interactor.project_settings_interactor().get_colors(
+                                        config_container.id().id
+                                    );
+
+                                clr = Scene::color_from_extruder_slot(
+                                          slot_colors,
+                                          *vol,
+                                          config_container
+                                )
+                                          .value_or(clr);
                             }
                         } else {
                             auto color_it = Scene::VOLUME_COLORS.find(vol->type());
