@@ -1386,7 +1386,7 @@ void PopNotificationCenter::on_file_explorer_error(
     );
 }
 
-void PopNotificationCenter::on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
+void PopNotificationCenter::on_preset_updater_status(Biz::PresetUpdater::JobId job_id, const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
 {
     m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdateAvailable);
     m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterWarning);
@@ -1446,7 +1446,7 @@ void PopNotificationCenter::on_preset_updater_status(const std::string& target, 
     );
 }
 
-void PopNotificationCenter::on_preset_updater_error(const std::string& body)
+void PopNotificationCenter::on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body)
 {
     m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterStatus);
     const std::string header{_u8L("Preset Updater Error")};
@@ -1462,6 +1462,7 @@ void PopNotificationCenter::on_preset_updater_error(const std::string& body)
 }
 
 void PopNotificationCenter::on_preset_updater_reconfigurations_list(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
         Biz::PresetUpdater::VerboseStyle verbose
@@ -1471,6 +1472,7 @@ void PopNotificationCenter::on_preset_updater_reconfigurations_list(
 }
 
 void PopNotificationCenter::on_preset_updater_repository_info_vector(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
     )
@@ -1479,6 +1481,7 @@ void PopNotificationCenter::on_preset_updater_repository_info_vector(
 }
 
 void PopNotificationCenter::on_preset_updater_reconfigurations_performed(
+    Biz::PresetUpdater::JobId job_id,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
 {

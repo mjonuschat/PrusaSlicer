@@ -32,13 +32,14 @@ PresetUpdaterUI::PresetUpdaterUI(
     m_preset_updater_interactor.check_forced_reconfigurations();
 }
 
-void PresetUpdaterUI::on_preset_updater_error(const std::string& body)
+void PresetUpdaterUI::on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body)
 {
     SPDLOG_INFO("{}: {}", std::string(__FUNCTION__), body);
     DEBUG_ASSERT(false);
 }
 
 void PresetUpdaterUI::on_preset_updater_forced_reconfigurations_list(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
@@ -108,6 +109,7 @@ void PresetUpdaterUI::on_preset_updater_forced_reconfigurations_list(
 }
 
 void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
     Biz::PresetUpdater::VerboseStyle verbose
@@ -218,6 +220,7 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
 }
 
 void PresetUpdaterUI::on_preset_updater_reconfigurations_performed(
+    Biz::PresetUpdater::JobId job_id,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
 {
@@ -231,6 +234,7 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_performed(
 }
 
 void PresetUpdaterUI::on_preset_updater_status(
+    Biz::PresetUpdater::JobId job_id,
     const std::string& target,
     int attempt,
     unsigned delay,
@@ -246,6 +250,7 @@ void PresetUpdaterUI::on_preset_updater_status(
 }
 
 void PresetUpdaterUI::on_preset_updater_repository_info_vector(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
@@ -260,7 +265,7 @@ void PresetUpdaterUI::on_preset_updater_repository_info_vector(
     Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector result =
         AppServices::instance().dialog_manager().show_preset_sources_dialog(descriptor);
     if (!result.empty()) {
-        m_preset_updater_interactor.update_repositories(
+        m_preset_updater_interactor.apply_repository_selection(
             AppServices::instance().app_config().get<bool>("enable_preset_update"),
             result
         );
@@ -268,6 +273,7 @@ void PresetUpdaterUI::on_preset_updater_repository_info_vector(
 }
 
 void PresetUpdaterUI::on_preset_updater_repository_selection_performed(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )

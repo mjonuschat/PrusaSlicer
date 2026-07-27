@@ -25,11 +25,7 @@ public:
         m_uuid(uuid),
         m_selected(selected)
     {
-        if (m_data.uuid.empty())
-        {
-            m_data.uuid = m_uuid;
-        }
-        DEBUG_ASSERT(m_data.uuid == m_uuid);
+        m_data.uuid = m_uuid;
     }
 
     AbstractPresetUpdaterRepository(const AbstractPresetUpdaterRepository&)            = default;
@@ -113,7 +109,7 @@ public:
     ) :
         AbstractPresetUpdaterRepository(uuid, std::move(data), selected)
     {
-        if (m_data.url.back() != '/') {
+        if (!m_data.url.empty() && m_data.url.back() != '/') {
             m_data.url += "/";
         }
     }

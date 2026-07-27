@@ -96,7 +96,7 @@ struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdater
     std::promise<bool> promise_approved;
     std::atomic<bool> resolved{false};
 
-    void on_preset_updater_error(const std::string& body) override
+    void on_preset_updater_error(Biz::PresetUpdater::JobId, const std::string& body) override
     {
         if (!resolved.exchange(true)) {
             promise_approved.set_value(false);
@@ -104,6 +104,7 @@ struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdater
     }
 
     void on_preset_updater_forced_reconfigurations_list(
+        Biz::PresetUpdater::JobId,
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings) override
     {
@@ -113,6 +114,7 @@ struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdater
     }
 
     void on_preset_updater_reconfigurations_list(
+        Biz::PresetUpdater::JobId,
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList&,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>&,
         Biz::PresetUpdater::VerboseStyle) override
@@ -121,9 +123,20 @@ struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdater
     }
 
     void on_preset_updater_status(
-        const std::string&, int, unsigned, Biz::PresetUpdater::VerboseStyle) override
+        Biz::PresetUpdater::JobId, const std::string&, int, unsigned, Biz::PresetUpdater::VerboseStyle) override
     {
         // Ignored on purpose. Only forced reconfigurations matters.
+    }
+
+    void on_preset_updater_job_finished(
+        Biz::PresetUpdater::JobId, Biz::PresetUpdater::JobState state) override
+    {
+        if (state == Biz::PresetUpdater::JobState::Succeeded) {
+            return;
+        }
+        if (!resolved.exchange(true)) {
+            promise_approved.set_value(false);
+        }
     }
 };
 

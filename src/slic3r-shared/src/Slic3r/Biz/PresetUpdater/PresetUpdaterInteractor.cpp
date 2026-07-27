@@ -4,27 +4,35 @@
 #include "PresetUpdaterRepositoryDatabase.hpp"
 #include "PresetUpdaterRepositorySync.hpp"
 
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+
+#include <algorithm>
+#include <vector>
 
 namespace Slic3r::Biz::PresetUpdater {
 
-#if 0 // debug logging
 namespace {
-void log_reconfigurations(const PresetUpdaterReconfigurationList& reconfigurations)
+
+Platform::JobManager::JobManager* job_manager_or_null()
 {
-    SPDLOG_INFO("Reconfigurations: updates: {} forced updates: {} downgrades: {}", std::to_string(reconfigurations.regular_updates().size()), std::to_string(reconfigurations.forced_updates().size()), std::to_string(reconfigurations.forced_downgrades().size()));
-    for (const auto& reconf :reconfigurations.regular_updates()) {
-        SPDLOG_INFO("update: {}", reconf.vendor_id);
-    }
-    for (const auto& reconf :reconfigurations.forced_updates()) {
-        SPDLOG_INFO("forced update: {}", reconf.vendor_id);
-    }
-    for (const auto& reconf :reconfigurations.forced_downgrades()) {
-        SPDLOG_INFO("forced downgrade: {}", reconf.vendor_id);
+    Platform::PlatformServices& services = Platform::PlatformServices::instance();
+    return services.has_job_manager() ? &services.job_manager() : nullptr;
+}
+
+std::string exception_message(const std::exception_ptr& exception)
+{
+    try {
+        std::rethrow_exception(exception);
+    } catch (const std::exception& e) {
+        return std::string("PresetUpdater operation failed with an unexpected exception: ") + e.what();
+    } catch (...) {
+        return "PresetUpdater operation failed with an unknown exception.";
     }
 }
+
 } // namespace
-#endif
 
 PresetUpdaterInteractor::PresetUpdaterInteractor(Platform::IMainThreadDispatcher& dispatcher) :
     m_dispatcher(dispatcher)
@@ -37,479 +45,629 @@ PresetUpdaterInteractor::~PresetUpdaterInteractor()
         "There must be no queued events (not even in the future),"
         " because they may remember the address of this instance!"
     );
+
+    shutdown();
 }
 
-JThread::JThread PresetUpdaterInteractor::spawn_worker(std::function<void(JThread::StopToken)> body)
+void PresetUpdaterInteractor::shutdown()
 {
-    return JThread::JThread([this, body = std::move(body)](JThread::StopToken stop_token) {
-        try {
-            body(stop_token);
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR("PresetUpdater worker threw an unhandled exception: {}", e.what());
-            dispatch_error(std::string("PresetUpdater operation failed with an unexpected exception: ") + e.what());
-        } catch (...) {
-            SPDLOG_ERROR("PresetUpdater worker threw an unhandled unknown exception.");
-            dispatch_error("PresetUpdater operation failed with an unknown exception.");
+    m_shut_down = true;
+    m_queue.clear();
+    // The running job body holds this and is still touching the data directory. 
+    // cancel_job blocks, which is what we want here.
+    if (m_running.has_value()) {
+        if (Platform::JobManager::JobManager* jobs = job_manager_or_null()) {
+            jobs->cancel_job(job_manager_name(*m_running));
         }
+        m_running.reset();
+    }
+}
+
+std::string PresetUpdaterInteractor::job_manager_name(JobId job_id)
+{
+    return "preset_updater/" + std::to_string(job_id);
+}
+
+bool PresetUpdaterInteractor::accepts_work() const
+{
+    return !m_shut_down && !m_dispatcher.is_closed();
+}
+
+JobId PresetUpdaterInteractor::enqueue(JobBody body)
+{
+    if (!accepts_work()) {
+        return k_invalid_job_id;
+    }
+
+    const JobId job_id = m_next_job_id++;
+    m_queue.push_back(PendingJob{job_id, std::move(body)});
+    start_next();
+    return job_id;
+}
+
+JobId PresetUpdaterInteractor::refuse_disabled()
+{
+    if (!accepts_work()) {
+        return k_invalid_job_id;
+    }
+
+    const JobId job_id = m_next_job_id++;
+    dispatch_job_finished(job_id, JobState::Disabled);
+    return job_id;
+}
+
+void PresetUpdaterInteractor::start_next()
+{
+    if (!accepts_work() || m_running.has_value() || m_queue.empty()) {
+        return;
+    }
+
+    Platform::JobManager::JobManager* jobs = job_manager_or_null();
+    if (jobs == nullptr) {
+        std::deque<PendingJob> abandoned;
+        abandoned.swap(m_queue);
+        for (const PendingJob& job : abandoned) {
+            dispatch_error(
+                job.id,
+                "PresetUpdater cannot run: no job manager is installed.",
+                PresetUpdaterReason::Internal
+            );
+            dispatch_job_finished(job.id, JobState::Failed);
+        }
+        return;
+    }
+
+    PendingJob job = std::move(m_queue.front());
+    m_queue.pop_front();
+    m_running = job.id;
+
+    jobs->create_job(job_manager_name(job.id), job.body, job.id)
+        .on_result([this, id = job.id](JobState state) { finish_running(id, state); })
+        .on_exception(
+            [this, id = job.id](const std::exception_ptr& exception)
+            {
+                const std::string message = exception_message(exception);
+                SPDLOG_ERROR("{}", message);
+                dispatch_error(id, message, PresetUpdaterReason::Internal);
+                finish_running(id, JobState::Failed);
+            }
+        )
+        .start();
+}
+
+void PresetUpdaterInteractor::finish_running(JobId job_id, JobState state)
+{
+    if (m_running.has_value() && *m_running == job_id) {
+        m_running.reset();
+    }
+    dispatch_job_finished(job_id, state);
+    start_next();
+}
+
+bool PresetUpdaterInteractor::request_running_stop()
+{
+    if (!m_running.has_value()) {
+        return false;
+    }
+    Platform::JobManager::JobManager* jobs = job_manager_or_null();
+    if (jobs == nullptr) {
+        return false;
+    }
+    return jobs->request_job_stop(job_manager_name(*m_running));
+}
+
+bool PresetUpdaterInteractor::cancel_job(JobId job_id)
+{
+    if (job_id == k_invalid_job_id) {
+        return false;
+    }
+    if (m_running.has_value() && *m_running == job_id) {
+        request_running_stop();
+        return true;
+    }
+    const auto it = std::find_if(m_queue.begin(), m_queue.end(), [job_id](const PendingJob& job) {
+        return job.id == job_id;
+    });
+    if (it == m_queue.end()) {
+        return false;
+    }
+    m_queue.erase(it);
+    dispatch_job_finished(job_id, JobState::Canceled);
+    return true;
+}
+
+void PresetUpdaterInteractor::cancel_all_jobs()
+{
+    std::deque<PendingJob> dropped;
+    dropped.swap(m_queue);
+    request_running_stop();
+    for (const PendingJob& job : dropped) {
+        dispatch_job_finished(job.id, JobState::Canceled);
+    }
+}
+
+void PresetUpdaterInteractor::on_notification_cancel()
+{
+    cancel_all_jobs();
+}
+
+size_t PresetUpdaterInteractor::pending_job_count() const
+{
+    return m_queue.size() + (m_running.has_value() ? 1u : 0u);
+}
+
+bool PresetUpdaterInteractor::is_job_pending(JobId job_id) const
+{
+    if (m_running.has_value() && *m_running == job_id) {
+        return true;
+    }
+    return std::any_of(m_queue.begin(), m_queue.end(), [job_id](const PendingJob& job) {
+        return job.id == job_id;
     });
 }
 
-void PresetUpdaterInteractor::check_forced_reconfigurations()
+std::function<void(const std::string&, int, unsigned)>
+PresetUpdaterInteractor::make_status_callback(
+    JobId job_id, Platform::JobManager::ProgressTracker progress_tracker, VerboseStyle verbose
+)
+{
+    return [this, job_id, progress_tracker, verbose](
+               const std::string& target, int attempt, unsigned delay
+           ) mutable
+    {
+        progress_tracker.set_progress_detail(Domain::ProgressDetail{attempt, target});
+        dispatch_status(job_id, target, attempt, delay, verbose);
+    };
+}
+
+JobId PresetUpdaterInteractor::check_forced_reconfigurations()
 {
     //Does not care about App config value - allways runs
     // Forced reconfigurations must be checked on startup
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
-
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::NoProgress);
-    };
-    auto dispatch_suc = [this](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_forced_reconfigurations_list(reconfigurations, warnings);
-    };
-
-    m_thread = spawn_worker(
-        [dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
+    return enqueue(
+        [this](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(job_id, progress_tracker, VerboseStyle::NoProgress),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
             const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
-            PresetUpdaterReconfigurationList reconfigurations = PresetUpdater::check_forced_reconfigurations(repos, &process_status);
+            PresetUpdaterReconfigurationList reconfigurations =
+                PresetUpdater::check_forced_reconfigurations(repos, &process_status);
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
             if (stop_token.stop_requested()) {
-                return;
+                return JobState::Canceled;
             }
 
-            dispatch_suc(reconfigurations, process_status.warnings());
+            dispatch_forced_reconfigurations_list(
+                job_id, reconfigurations, process_status.warnings()
+            );
+            return JobState::Succeeded;
         }
     );
 }
 
-void PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(bool app_config_preset_updater_allowed, VerboseStyle verbose, bool ignore_hash /*= false*/)
+JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
+    bool app_config_preset_updater_allowed,
+    VerboseStyle verbose,
+    bool ignore_hash /*= false*/,
+    SourceListSync source_list /*= SourceListSync::Fetch*/
+)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
-
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this, verbose](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, verbose);
-    };
-    auto dispatch_suc = [this, verbose](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_list(reconfigurations, warnings, verbose);
-    };
-
-    m_thread = spawn_worker(
-        [dispatch_err, dispatch_sta, dispatch_suc, ignore_hash](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES, ignore_hash);
+    return enqueue(
+        [this, verbose, ignore_hash, source_list](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(job_id, progress_tracker, verbose),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES,
+                ignore_hash
+            );
             PresetUpdaterRepositoryDatabase repo_database(&process_status);
             PresetUpdaterRepositorySync archive_sync;
 
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
 
-            repo_database.sync(&process_status);
-            if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
-            }
-            if (stop_token.stop_requested()) {
-                return;
+            if (source_list == SourceListSync::Fetch) {
+                repo_database.sync(&process_status);
+                if (process_status.has_error()) {
+                    dispatch_error(
+                        job_id, process_status.get_error(), process_status.get_error_reason()
+                    );
+                    return JobState::Failed;
+                }
+                if (stop_token.stop_requested()) {
+                    return JobState::Canceled;
+                }
             }
 
             const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
             archive_sync.sync(repos, &process_status);
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
             if (stop_token.stop_requested()) {
-                return;
+                return JobState::Canceled;
             }
 
-            PresetUpdaterReconfigurationList reconfigurations = PresetUpdater::check_reconfigurations(repos, &process_status);
+            PresetUpdaterReconfigurationList reconfigurations =
+                PresetUpdater::check_reconfigurations(repos, &process_status);
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
             if (stop_token.stop_requested()) {
-                return;
+                return JobState::Canceled;
             }
 
-            dispatch_suc(reconfigurations, process_status.warnings());
+            dispatch_reconfigurations_list(
+                job_id, reconfigurations, process_status.warnings(), verbose
+            );
+            return JobState::Succeeded;
         }
     );
 }
 
-void PresetUpdaterInteractor::perform_reconfigurations(
-    const PresetUpdaterReconfigurationList& reconfigurations
+JobId PresetUpdaterInteractor::perform_reconfigurations(
+    const PresetUpdaterReconfigurationList& reconfigurations,
+    ReconfigurationType types_to_perform /*= ReconfigurationType::All*/
 )
 {
     // Does not care about App config value - allways runs
     // Possible forced reconfigurations must be able to be performed
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this, reconfigurations, types_to_perform](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(
+                    job_id, progress_tracker, VerboseStyle::ProgressNotification
+                ),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
-    };
-    auto dispatch_suc = [this](const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_performed(warnings);
-    };
-
-    m_thread = spawn_worker(
-        [reconfigurations, dispatch_err, dispatch_sta, dispatch_suc](JThread::StopToken stop_token) {
-            PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-
-            PresetUpdater::perform_reconfigurations(reconfigurations, ReconfigurationType::All, &process_status);
+            PresetUpdater::perform_reconfigurations(
+                reconfigurations, types_to_perform, &process_status
+            );
             if (process_status.has_error()) {
-                dispatch_err(process_status.get_error());
-                return;
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
             }
-            dispatch_suc(process_status.warnings());
+            dispatch_reconfigurations_performed(job_id, process_status.warnings());
+            return JobState::Succeeded;
         }
     );
 }
 
-void PresetUpdaterInteractor::update_repositories(bool app_config_preset_updater_allowed, const SharedPresetUpdaterRepositoryInfoVector& repos)
+JobId PresetUpdaterInteractor::apply_repository_selection(
+    bool app_config_preset_updater_allowed, const SharedPresetUpdaterRepositoryInfoVector& repos
+)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this, repos](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(
+                    job_id, progress_tracker, VerboseStyle::ProgressNotification
+                ),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
+            PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
-    };
-    auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_repository_selection_performed(repos, warnings);
-    };
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, repos](
-                                    JThread::StopToken stop_token
-                                ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-        PresetUpdaterRepositoryDatabase repo_database(&process_status);
-
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-        // If repos came in empty, it is a new query - we do sync with servers
-        // Otherwise it is a selection from user - we just update selection
-        if (repos.empty()) {
-            repo_database.sync(&process_status);
-        } else {
             repo_database.apply_selection(repos, &process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
+            dispatch_repository_selection_performed(
+                job_id, repo_database.get_all_repositories(), process_status.warnings()
+            );
+            return JobState::Succeeded;
         }
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-        if (stop_token.stop_requested()) {
-            return;
-        }
-
-        const SharedPresetUpdaterRepositoryInfoVector& repos = repo_database.get_all_repositories();
-
-        dispatch_suc(repos, process_status.warnings());
-    });
+    );
 }
 
-void PresetUpdaterInteractor::add_local_repository(bool app_config_preset_updater_allowed, const boost::filesystem::path& zip_path, bool unselect_others)
+JobId PresetUpdaterInteractor::add_local_repository(
+    bool app_config_preset_updater_allowed, const boost::filesystem::path& zip_path
+)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this, zip_path](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(
+                    job_id, progress_tracker, VerboseStyle::ProgressNotification
+                ),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
+            PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
-    };
-    auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_repository_info_vector(repos, warnings);
-    };
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, zip_path, unselect_others](
-                                    JThread::StopToken stop_token
-                                ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-        PresetUpdaterRepositoryDatabase repo_database(&process_status);
-
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
+            repo_database.add_local_repository(zip_path, &process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
+            dispatch_repository_info_vector(
+                job_id, repo_database.get_all_repositories(), process_status.warnings()
+            );
+            return JobState::Succeeded;
         }
-
-        repo_database.add_local_repository(zip_path, unselect_others, &process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-        if (stop_token.stop_requested()) {
-            return;
-        }
-
-        const SharedPresetUpdaterRepositoryInfoVector& repos = repo_database.get_all_repositories();
-
-        dispatch_suc(repos, process_status.warnings());
-    });
+    );
 }
 
-void PresetUpdaterInteractor::remove_local_repository(bool app_config_preset_updater_allowed, const std::string& uuid)
+JobId PresetUpdaterInteractor::remove_local_repository(
+    bool app_config_preset_updater_allowed, const std::string& uuid
+)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this, uuid](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(
+                    job_id, progress_tracker, VerboseStyle::ProgressNotification
+                ),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
+            PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
-    };
-    auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_repository_info_vector(repos, warnings);
-    };
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc, uuid](
-                                    JThread::StopToken stop_token
-                                ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-        PresetUpdaterRepositoryDatabase repo_database(&process_status);
-
-        repo_database.remove_local_repository(uuid, &process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
+            repo_database.remove_local_repository(uuid, &process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
+            dispatch_repository_info_vector(
+                job_id, repo_database.get_all_repositories(), process_status.warnings()
+            );
+            return JobState::Succeeded;
         }
-        if (stop_token.stop_requested()) {
-            return;
-        }
-
-        const SharedPresetUpdaterRepositoryInfoVector& repos = repo_database.get_all_repositories();
-
-        dispatch_suc(repos, process_status.warnings());
-    });
+    );
 }
 
-void PresetUpdaterInteractor::list_repositories(bool app_config_preset_updater_allowed)
+JobId PresetUpdaterInteractor::list_repositories(
+    bool app_config_preset_updater_allowed, bool force_sync /*= true*/
+)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this, force_sync](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(
+                    job_id, progress_tracker, VerboseStyle::ProgressNotification
+                ),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
+            PresetUpdaterRepositoryDatabase repo_database(&process_status);
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::ProgressNotification);
-    };
-    auto dispatch_suc = [this](const SharedPresetUpdaterRepositoryInfoVector& repos, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_repository_info_vector(repos, warnings);
-    };
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc](
-                                    JThread::StopToken stop_token
-                                ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-        PresetUpdaterRepositoryDatabase repo_database(&process_status);
+            if (force_sync) {
+                repo_database.sync(&process_status);
+                if (process_status.has_error()) {
+                    dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                    return JobState::Failed;
+                }
+            }
 
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
+            dispatch_repository_info_vector(
+                job_id, repo_database.get_all_repositories(), process_status.warnings()
+            );
+            return JobState::Succeeded;
         }
-
-        repo_database.sync(&process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-
-        const SharedPresetUpdaterRepositoryInfoVector& repos = repo_database.get_all_repositories();
-
-        dispatch_suc(repos, process_status.warnings());
-    });
+    );
 }
 
-void PresetUpdaterInteractor::cleanup_update_sync(bool app_config_preset_updater_allowed)
+JobId PresetUpdaterInteractor::cleanup_update_sync(bool app_config_preset_updater_allowed)
 {
     if (!app_config_preset_updater_allowed) {
-        return;
+        return refuse_disabled();
     }
 
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
+    return enqueue(
+        [this](
+            JThread::StopToken stop_token,
+            Platform::JobManager::ProgressTracker progress_tracker,
+            JobId job_id
+        ) {
+            PresetUpdaterProcessStatus process_status(
+                stop_token,
+                make_status_callback(job_id, progress_tracker, VerboseStyle::NoProgress),
+                PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES
+            );
+            PresetUpdater::cleanup_update_sync(&process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    auto dispatch_err = [this](const std::string& body) {
-        dispatch_error(body);
-    };
-    auto dispatch_sta = [this](const std::string& target, int attempt, unsigned delay) {
-        dispatch_status(target, attempt, delay, VerboseStyle::NoProgress);
-    };
-    auto dispatch_suc = [this](const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings) {
-        dispatch_reconfigurations_list(reconfigurations, warnings, VerboseStyle::NoProgress);
-    };
+            PresetUpdaterRepositoryDatabase repo_database(&process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
 
-    m_thread = spawn_worker([dispatch_err, dispatch_sta, dispatch_suc](
-                                    JThread::StopToken stop_token
-                                ) {
-        PresetUpdaterProcessStatus process_status(stop_token, dispatch_sta, PresetUpdaterProcessStatus::PresetUpdaterRetryPolicy::PURP_5_TRIES);
-        PresetUpdater::cleanup_update_sync(&process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
+            const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
+            PresetUpdaterReconfigurationList reconfigurations =
+                PresetUpdater::check_reconfigurations(repos, &process_status);
+            if (process_status.has_error()) {
+                dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
+                return JobState::Failed;
+            }
+            if (stop_token.stop_requested()) {
+                return JobState::Canceled;
+            }
+            dispatch_reconfigurations_list(
+                job_id, reconfigurations, process_status.warnings(), VerboseStyle::NoProgress
+            );
+            return JobState::Succeeded;
         }
-
-        PresetUpdaterRepositoryDatabase repo_database(&process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-
-        const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
-        PresetUpdaterReconfigurationList reconfigurations = PresetUpdater::check_reconfigurations(repos, &process_status);
-        if (process_status.has_error()) {
-            dispatch_err(process_status.get_error());
-            return;
-        }
-        dispatch_suc(reconfigurations, process_status.warnings());
-    });
+    );
 }
 
-void PresetUpdaterInteractor::on_notification_cancel()
+void PresetUpdaterInteractor::dispatch_error(
+    JobId job_id, const std::string& body, PresetUpdaterReason reason
+)
 {
-    if (m_thread.joinable()) {
-        m_thread.request_stop();
-        m_thread.join();
-    }
-}
-
-void PresetUpdaterInteractor::dispatch_error(const std::string& body)
-{
-    m_dispatcher.dispatch_on_main_thread([this, body]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([body](auto* listener) {
-            listener->on_preset_updater_error(body);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, body, reason]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, body, reason](auto* listener) {
+            listener->on_preset_updater_error(job_id, body, reason);
         });
     });
 }
 
-void PresetUpdaterInteractor::dispatch_status(const std::string& target, int attempt, unsigned delay, VerboseStyle verbose)
+void PresetUpdaterInteractor::dispatch_status(JobId job_id, const std::string& target, int attempt, unsigned delay, VerboseStyle verbose)
 {
-    m_dispatcher.dispatch_on_main_thread([this, target, attempt, delay, verbose]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([target, attempt, delay, verbose](auto* listener) {
-            listener->on_preset_updater_status(target, attempt, delay, verbose);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, target, attempt, delay, verbose]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, target, attempt, delay, verbose](auto* listener) {
+            listener->on_preset_updater_status(job_id, target, attempt, delay, verbose);
         });
     });
 }
 
 void PresetUpdaterInteractor::dispatch_forced_reconfigurations_list(
+    JobId job_id,
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {
-    m_dispatcher.dispatch_on_main_thread([this, reconfigurations, warnings]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([reconfigurations, warnings](auto* listener) {
-            listener->on_preset_updater_forced_reconfigurations_list(reconfigurations, warnings);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, reconfigurations, warnings]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, reconfigurations, warnings](auto* listener) {
+            listener->on_preset_updater_forced_reconfigurations_list(job_id, reconfigurations, warnings);
         });
     });
 }
 
 void PresetUpdaterInteractor::dispatch_reconfigurations_list(
+    JobId job_id,
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings,
     VerboseStyle verbose
 )
 {
-    m_dispatcher.dispatch_on_main_thread([this, reconfigurations, warnings, verbose]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([reconfigurations, warnings, verbose](auto* listener) {
-            listener->on_preset_updater_reconfigurations_list(reconfigurations, warnings, verbose);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, reconfigurations, warnings, verbose]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, reconfigurations, warnings, verbose](auto* listener) {
+            listener->on_preset_updater_reconfigurations_list(job_id, reconfigurations, warnings, verbose);
         });
     });
 }
 
-void PresetUpdaterInteractor::dispatch_reconfigurations_performed(const std::vector<PresetUpdaterWarning>& warnings)
+void PresetUpdaterInteractor::dispatch_reconfigurations_performed(JobId job_id, const std::vector<PresetUpdaterWarning>& warnings)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, warnings]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([warnings](auto* listener) {
-            listener->on_preset_updater_reconfigurations_performed(warnings);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, warnings]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, warnings](auto* listener) {
+            listener->on_preset_updater_reconfigurations_performed(job_id, warnings);
         });
     });
 }
 
 void PresetUpdaterInteractor::dispatch_repository_info_vector(
+    JobId job_id,
     const SharedPresetUpdaterRepositoryInfoVector& repos,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, repos, warnings]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([repos, warnings](auto* listener) {
-            listener->on_preset_updater_repository_info_vector(repos, warnings);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, repos, warnings]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, repos, warnings](auto* listener) {
+            listener->on_preset_updater_repository_info_vector(job_id, repos, warnings);
         });
     });
 }
 
 void PresetUpdaterInteractor::dispatch_repository_selection_performed(
+    JobId job_id,
     const SharedPresetUpdaterRepositoryInfoVector& repos,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, repos, warnings]() {
-        this->invoke_listeners<IPresetUpdaterResultListener>([repos, warnings](auto* listener) {
-            listener->on_preset_updater_repository_selection_performed(repos, warnings);
+    m_dispatcher.dispatch_on_main_thread([this, job_id, repos, warnings]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, repos, warnings](auto* listener) {
+            listener->on_preset_updater_repository_selection_performed(job_id, repos, warnings);
+        });
+    });
+}
+
+void PresetUpdaterInteractor::dispatch_job_finished(JobId job_id, JobState state)
+{
+    m_dispatcher.dispatch_on_main_thread([this, job_id, state]() {
+        this->invoke_listeners<IPresetUpdaterResultListener>([job_id, state](auto* listener) {
+            listener->on_preset_updater_job_finished(job_id, state);
         });
     });
 }

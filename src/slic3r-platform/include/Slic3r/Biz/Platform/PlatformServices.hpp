@@ -72,6 +72,11 @@ public:
 
     JobManager::JobManager& job_manager();
 
+    bool has_job_manager() const
+    {
+        return m_job_manager != nullptr;
+    }
+
     IAppConfigProvider& app_config_provider();
 
 private:

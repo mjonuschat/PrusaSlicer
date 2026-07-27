@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
+
 #include <vector>
 #include <string>
 #include <map>
@@ -11,7 +13,6 @@ namespace Slic3r::Biz::PresetUpdater {
 
 class PresetUpdaterIndex;
 class PresetUpdaterProcessStatus;
-class PresetUpdaterReconfigurationList;
 class AbstractPresetUpdaterRepository;
 typedef std::vector<const AbstractPresetUpdaterRepository*> SharedRepositoryVector;
 
@@ -50,16 +51,6 @@ PresetUpdaterReconfigurationList check_reconfigurations(
     const SharedRepositoryVector& repos,
     PresetUpdaterProcessStatus* process_status
 );
-
-enum class ReconfigurationType : unsigned int {
-    None             = 0,
-    ForcedDowngrades = 1 << 0,
-    ForcedUpdates    = 1 << 1,
-    RegularUpdates   = 1 << 2,
-    NotInIndex       = 1 << 3,
-    NewVendors       = 1 << 4,
-    All              = ForcedDowngrades | ForcedUpdates | RegularUpdates | NotInIndex |NewVendors
-};
 
 void perform_reconfigurations(
     const PresetUpdaterReconfigurationList& reconfigurations,

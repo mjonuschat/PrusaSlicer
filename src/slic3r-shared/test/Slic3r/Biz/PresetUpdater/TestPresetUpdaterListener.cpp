@@ -21,6 +21,46 @@ void from_json(const nlohmann::json& j, PresetUpdaterWarning& w) {
 }
 
 namespace Slic3r::Biz::PresetUpdater {
+namespace {
+
+std::string reason_name(PresetUpdaterReason reason)
+{
+    switch (reason) {
+    case PresetUpdaterReason::NoUsableVersion:       return "NoUsableVersion";
+    case PresetUpdaterReason::IndexUnreadable:       return "IndexUnreadable";
+    case PresetUpdaterReason::DataUnreadable:        return "DataUnreadable";
+    case PresetUpdaterReason::DataCorrupted:         return "DataCorrupted";
+    case PresetUpdaterReason::DataInconsistent:      return "DataInconsistent";
+    case PresetUpdaterReason::LocalStorageFailed:    return "LocalStorageFailed";
+    case PresetUpdaterReason::InstallFailed:         return "InstallFailed";
+    case PresetUpdaterReason::SourceUnreachable:     return "SourceUnreachable";
+    case PresetUpdaterReason::SourceListUnavailable: return "SourceListUnavailable";
+    case PresetUpdaterReason::SourceDropped:         return "SourceDropped";
+    case PresetUpdaterReason::ArchiveInvalid:        return "ArchiveInvalid";
+    case PresetUpdaterReason::SourceNotFound:        return "SourceNotFound";
+    case PresetUpdaterReason::ManifestUnusable:      return "ManifestUnusable";
+    case PresetUpdaterReason::DataDirUnusable:       return "DataDirUnusable";
+    case PresetUpdaterReason::Internal:              return "Internal";
+    }
+    return "<unnamed reason>";
+}
+
+std::string reason_list(const std::set<PresetUpdaterReason>& reasons)
+{
+    if (reasons.empty()) {
+        return "<none>";
+    }
+    std::string ret;
+    for (const PresetUpdaterReason reason : reasons) {
+        if (!ret.empty()) {
+            ret += ", ";
+        }
+        ret += reason_name(reason);
+    }
+    return ret;
+}
+
+} // namespace
 
 TestPresetUpdaterListener::TestPresetUpdaterListener(
     PresetUpdaterInteractor& preset_updater_interactor
@@ -39,25 +79,37 @@ void TestPresetUpdaterListener::start(ExpectedReconfiguration expected)
     m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(true, Biz::PresetUpdater::VerboseStyle::NoProgress, true);
 }
 
-void TestPresetUpdaterListener::on_preset_updater_error(const std::string& body)
+void TestPresetUpdaterListener::check_reasons(const std::vector<PresetUpdaterWarning>& warnings)
+{
+    std::set<PresetUpdaterReason> reported;
+    for (const PresetUpdaterWarning& warning : warnings) {
+        reported.insert(warning.reason);
+    }
+    CHECK(reason_list(reported) == reason_list(m_expected.reasons));
+}
+
+void TestPresetUpdaterListener::on_preset_updater_error(
+    JobId job_id, const std::string& body, PresetUpdaterReason reason
+)
 {
     if (m_expected.state != ReconfigurationResult::Error) {
-         printf("Error: %s\n", body.c_str());
+        FAIL("Unexpected " << reason_name(reason) << " error: " << body);
     }
-    REQUIRE (m_expected.state == ReconfigurationResult::Error);
+    CHECK(reason_list({reason}) == reason_list(m_expected.reasons));
     m_has_result = true;
-
 }
 
 void TestPresetUpdaterListener::on_preset_updater_forced_reconfigurations_list(
+    JobId job_id,
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {
-    on_preset_updater_reconfigurations_list(reconfigurations, warnings,  Biz::PresetUpdater::VerboseStyle::NoProgress);
+    on_preset_updater_reconfigurations_list(job_id, reconfigurations, warnings,  Biz::PresetUpdater::VerboseStyle::NoProgress);
 }
 
 void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
+    JobId job_id,
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings,
     Biz::PresetUpdater::VerboseStyle verbose
@@ -70,10 +122,7 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
         //nlohmann::json j = warnings;
         //printf("%s\n",j.dump(4).c_str());
     }
-    if (!m_expected.allow_warnings)
-    {
-        REQUIRE(warnings.empty());
-    }
+    check_reasons(warnings);
     switch (m_expected.state)
     {
     case ReconfigurationResult::None:
@@ -133,26 +182,29 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
         CHECK(reconfigurations.new_vendors().front().recommended_version == m_expected.version);
         break;
     default:
-        ASSERT(false);
+        FAIL("Expected a job error, got a reconfigurations list.");
         break;
     }
     m_has_result = true;
 }
 
 void TestPresetUpdaterListener::on_preset_updater_reconfigurations_performed(
+    JobId job_id,
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {}
 
 void TestPresetUpdaterListener::on_preset_updater_status(
+    JobId job_id,
     const std::string& target,
     int attempt,
-    unsigned delay, 
+    unsigned delay,
     Biz::PresetUpdater::VerboseStyle verbose
 )
 {}
 
 void TestPresetUpdaterListener::on_preset_updater_repository_info_vector(
+    JobId job_id,
     const SharedPresetUpdaterRepositoryInfoVector& descriptor,
     const std::vector<PresetUpdaterWarning>& warnings
 )

@@ -5,7 +5,6 @@
 #include "Slic3r/Biz/SHA256.hpp"
 
 #include "Slic3r/Exception.hpp"
-#include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <boost/filesystem.hpp>
@@ -42,7 +41,6 @@ bool PresetUpdaterFileHash::compare(const std::string& hash_string) const
 
 PresetUpdaterFileHash file_hash(const fs::path& path, PresetUpdaterProcessStatus* process_status)
 {
-    ASSERT(fs::exists(path) && fs::is_regular_file(path));
     boost::nowide::ifstream file(path.string(), std::ios::in | std::ios::binary);
     if (!file.is_open()) {
         std::string msg = fmt::format(
@@ -50,7 +48,7 @@ PresetUpdaterFileHash file_hash(const fs::path& path, PresetUpdaterProcessStatus
             path.string()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataUnreadable);
         return PresetUpdaterFileHash({});
     }
     std::stringstream buffer;
@@ -66,7 +64,7 @@ PresetUpdaterFileHash file_hash(const fs::path& path, PresetUpdaterProcessStatus
             e.what()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
         return PresetUpdaterFileHash({});
     }
 

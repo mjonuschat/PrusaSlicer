@@ -1,4 +1,5 @@
 #include "PresetUpdaterUtils.hpp"
+#include "PresetUpdaterFileHash.hpp"
 #include "PresetUpdaterIndex.hpp"
 #include "PresetUpdaterProcessStatus.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
@@ -68,26 +69,26 @@ bool move_directory_contents(
         fs::path dest_path          = dest_dir / relative_path;
 
         if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
-            process_status->set_error(
+            process_status->set_warning(
                 fmt::format(
                     "Failed to create target directory {}: {}. Staging update has failed.",
                     dest_path.parent_path().string(),
                     ec.message()
                 )
-            );
+            , PresetUpdaterReason::LocalStorageFailed);
             return false;
         }
 
         auto result = safe_move(source_path, dest_path);
         if (!result) {
-            process_status->set_error(
+            process_status->set_warning(
                 fmt::format(
                     "Failed to move file {} to {}: {}",
                     source_path.string(),
                     dest_path.string(),
                     result.error()
                 )
-            );
+            , PresetUpdaterReason::LocalStorageFailed);
             return false;
         }
     }
@@ -100,7 +101,7 @@ bool move_directory_contents(
             ec.message()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
     }
     
     return true;
@@ -120,7 +121,7 @@ bool copy_file_wrapper(const fs::path& source, const fs::path& target, PresetUpd
             error_message
         );
         SPDLOG_ERROR(msg);
-        process_status->set_error(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
         return false;
     }
     // Permissions should be copied from the source file by copy_file(). We are not sure about the source
@@ -213,7 +214,12 @@ std::vector<PresetUpdaterIndex> load_vendors_db_filtered(
             {
                 index_db.emplace_back(std::move(idx));
             } else {
-                ASSERT(false);
+                SPDLOG_ERROR(
+                    "Index {} names vendor {}, which another index in {} already names. Skipping it.",
+                    dir_entry.path().string(),
+                    idx.vendor(),
+                    from_path.string()
+                );
             }
         }
     }
@@ -233,7 +239,7 @@ std::map<std::string, std::string> read_version_manifest(
     if (!file.is_open()) {
         std::string msg = fmt::format("Failed to read version manifest {}", path.string());
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataUnreadable);
         return {};
     }
     nlohmann::json data;
@@ -243,7 +249,7 @@ std::map<std::string, std::string> read_version_manifest(
     } catch (nlohmann::json::parse_error& e) {
         std::string msg = fmt::format("Failed to read version manifest {}. {}", path.string(), e.what());
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
         return {};
     }
 
@@ -253,7 +259,7 @@ std::map<std::string, std::string> read_version_manifest(
             path.string()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
         return {};
     }
 
@@ -274,7 +280,7 @@ std::map<std::string, std::string> read_version_manifest(
                 path.string()
             );
             SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+            process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
             return {};
         }
     }
@@ -303,7 +309,7 @@ void perform_downgrades(
                     dir_path.string(),
                     ec.message()
                 )
-            );
+            , PresetUpdaterReason::LocalStorageFailed);
             return;
         }
         if (!fs::remove(idx_path, ec) || ec) {
@@ -313,7 +319,7 @@ void perform_downgrades(
                     idx_path.string(),
                     ec.message()
                 )
-            );
+            , PresetUpdaterReason::LocalStorageFailed);
             return;
         }
     }
@@ -341,15 +347,25 @@ void perform_update_no_source_manifest(
     const fs::path vendor_source_manifest_path = vendor_source_dir_path
         / (update.vendor_id + ".manifest");
 
-    ASSERT(fs::exists(vendor_source_dir_path) && fs::is_directory(vendor_source_dir_path));
-    ASSERT(fs::exists(vendor_source_idx_path) && fs::is_regular_file(vendor_source_idx_path));
+    if (!fs::is_directory(vendor_source_dir_path, ec)
+        || !fs::is_regular_file(vendor_source_idx_path, ec))
+    {
+        process_status->set_warning(
+            fmt::format(
+                "Staged data of vendor {} is not at {} anymore. Nothing was installed.",
+                update.vendor_id,
+                vendor_source_dir_path.string()
+            )
+        , PresetUpdaterReason::InstallFailed);
+        return;
+    }
 
     process_status->set_install_target(update.vendor_id);
 
     if (!fs::create_directories(vendor_dest_dir_path, ec) && ec) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
-        );
+        , PresetUpdaterReason::InstallFailed);
         return;
     }
 
@@ -358,9 +374,9 @@ void perform_update_no_source_manifest(
         const fs::path& path = entry.path();
         SPDLOG_INFO("Deleting {}", path.string());
         if (!fs::remove_all(path, ec) || ec) {
-            process_status->set_error(
+            process_status->set_warning(
                 fmt::format("Failed to remove file {}: {}", path.string(), ec.message())
-            );
+            , PresetUpdaterReason::InstallFailed);
             return;
         }
     }
@@ -372,7 +388,7 @@ void perform_update_no_source_manifest(
             ec.message()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::InstallFailed);
     }
 
     // move alle files from source
@@ -383,24 +399,69 @@ void perform_update_no_source_manifest(
     // move index
     auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
     if (!result) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
                 result.error()
             )
-        );
+        , PresetUpdaterReason::InstallFailed);
         return;
     }
 
     // cleanup source
     if (!fs::remove_all(vendor_source_dir_path, ec) || ec) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format("Failed to remove {}: {}", vendor_source_dir_path.string(), ec.message())
-        );
+        , PresetUpdaterReason::InstallFailed);
         return;
     }
+}
+
+bool staged_update_is_complete(
+    const std::map<std::string, std::string>& files_in_version_manifest,
+    const fs::path& vendor_source_dir_path,
+    const fs::path& vendor_dest_dir_path,
+    PresetUpdaterProcessStatus* process_status
+)
+{
+    if (files_in_version_manifest.empty()) {
+        process_status->set_warning(
+            fmt::format(
+                "Version manifest of vendor {} names no file, so an unreadable manifest cannot be"
+                " told apart from a complete one. Nothing was installed.",
+                vendor_source_dir_path.filename().string()
+            )
+        , PresetUpdaterReason::InstallFailed);
+        return false;
+    }
+
+    boost::system::error_code ec;
+    for (const auto& [name, hash] : files_in_version_manifest) {
+        if (fs::is_regular_file(vendor_source_dir_path / name, ec) && !ec) {
+            continue;
+        }
+        const fs::path installed_path = vendor_dest_dir_path / name;
+        if (fs::is_regular_file(installed_path, ec)
+            && !ec
+            && file_hash(installed_path, process_status) == hash)
+        {
+            continue;
+        }
+        process_status->set_warning(
+            fmt::format(
+                "Staged data of vendor {} is incomplete: {} is neither staged at {} nor already"
+                " installed at the version the manifest names. Nothing was installed.",
+                vendor_source_dir_path.filename().string(),
+                name,
+                vendor_source_dir_path.string()
+            )
+        , PresetUpdaterReason::InstallFailed);
+        return false;
+    }
+
+    return true;
 }
 
 void perform_update_with_source_manifest(
@@ -424,28 +485,21 @@ void perform_update_with_source_manifest(
     const fs::path vendor_source_manifest_path = vendor_source_dir_path
         / (update.vendor_id + ".manifest");
 
-    ASSERT(fs::exists(vendor_source_dir_path) && fs::is_directory(vendor_source_dir_path));
-    ASSERT(fs::exists(vendor_source_idx_path) && fs::is_regular_file(vendor_source_idx_path));
-    ASSERT(
-        fs::exists(vendor_source_manifest_path) && fs::is_regular_file(vendor_source_manifest_path, ec)
-    );
+    if (!fs::is_directory(vendor_source_dir_path, ec)
+        || !fs::is_regular_file(vendor_source_idx_path, ec)
+        || !fs::is_regular_file(vendor_source_manifest_path, ec))
+    {
+        process_status->set_warning(
+            fmt::format(
+                "Staged data of vendor {} is not at {} anymore. Nothing was installed.",
+                update.vendor_id,
+                vendor_source_dir_path.string()
+            )
+        , PresetUpdaterReason::InstallFailed);
+        return;
+    }
 
     process_status->set_install_target(update.vendor_id);
-
-    // in case of new vendor, repo_dest_dir_path needs to be created
-    if (!fs::create_directory(repo_dest_dir_path, ec) && ec) {
-        process_status->set_error(
-            fmt::format("Failed to create directory {}: {}", repo_dest_dir_path.string(), ec.message())
-        );
-        return;
-    }
-
-    if (!fs::create_directory(vendor_dest_dir_path, ec) && ec) {
-        process_status->set_error(
-            fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
-        );
-        return;
-    }
 
     // Read manifest
     std::map<std::string, std::string> files_in_version_manifest = read_version_manifest(
@@ -453,19 +507,42 @@ void perform_update_with_source_manifest(
         process_status
     );
 
+    // Nothing installed is deleted before the new version is known to be complete.
+    if (!staged_update_is_complete(
+            files_in_version_manifest, vendor_source_dir_path, vendor_dest_dir_path, process_status
+        ))
+    {
+        return;
+    }
+
+    // in case of new vendor, repo_dest_dir_path needs to be created
+    if (!fs::create_directory(repo_dest_dir_path, ec) && ec) {
+        process_status->set_warning(
+            fmt::format("Failed to create directory {}: {}", repo_dest_dir_path.string(), ec.message())
+        , PresetUpdaterReason::InstallFailed);
+        return;
+    }
+
+    if (!fs::create_directory(vendor_dest_dir_path, ec) && ec) {
+        process_status->set_warning(
+            fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
+        , PresetUpdaterReason::InstallFailed);
+        return;
+    }
+
     // Delete files that are not in manifest
     for (const auto& entry : fs::recursive_directory_iterator(vendor_dest_dir_path, ec)) {
         if (!entry.is_regular_file(ec) || ec) {
             continue;
         }
         const fs::path& path = entry.path();
-        if (files_in_version_manifest.find(path.filename().string())
+        if (files_in_version_manifest.find(fs::relative(path, vendor_dest_dir_path).generic_string())
             == files_in_version_manifest.end())
         {
             if (!fs::remove(path, ec) || ec) {
-                process_status->set_error(
+                process_status->set_warning(
                     fmt::format("Failed to remove file {}: {}", path.string(), ec.message())
-                );
+                , PresetUpdaterReason::InstallFailed);
                 return;
             }
         }
@@ -478,7 +555,7 @@ void perform_update_with_source_manifest(
             ec.message()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::InstallFailed);
     }
 
     // move files that are staged
@@ -489,22 +566,22 @@ void perform_update_with_source_manifest(
     // move index
     auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
     if (!result) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format(
                 "Failed to move file {} to {}: {}",
                 vendor_source_idx_path.string(),
                 vendor_dest_idx_path.string(),
                 result.error()
             )
-        );
+        , PresetUpdaterReason::InstallFailed);
         return;
     }
 
     // cleanup source
     if (!fs::remove_all(vendor_source_dir_path, ec) || ec) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format("Failed to remove {}: {}", vendor_source_dir_path.string(), ec.message())
-        );
+        , PresetUpdaterReason::InstallFailed);
         return;
     }
 }
@@ -517,12 +594,19 @@ void perform_updates(
     const fs::path update_sync_path = fs::path(data_dir()) / "update_sync";
     boost::system::error_code ec;
     for (const VendorReconfiguration& update : updates) {
+        ASSERT(
+            !update.vendor_id.empty() && !update.vendor_repo_id.empty(),
+            "Every path below is built from these two names. An empty one addresses the source"
+            " directory instead of the vendor directory, and the install wipes it."
+        );
         SPDLOG_INFO("Updating bundle {}", update.vendor_id);
 
         const fs::path vendor_source_manifest_path = update_sync_path
             / update.vendor_repo_id
             / update.vendor_id
             / (update.vendor_id + ".manifest");
+
+        process_status->set_warning_target(update.vendor_repo_id, update.vendor_id);
         if (fs::exists(vendor_source_manifest_path, ec)
             && !ec
             && fs::is_regular_file(vendor_source_manifest_path, ec)
@@ -532,6 +616,7 @@ void perform_updates(
         } else {
             perform_update_no_source_manifest(update, process_status);
         }
+        process_status->clear_warning_target();
         // cleanup the repo dir
         const fs::path repo_path = update_sync_path / update.vendor_repo_id;
         if (fs::is_empty(repo_path, ec) && !ec) {
@@ -552,11 +637,11 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
-        process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message());
+        process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
     if (!fs::is_directory(profile_local_path, ec) || ec) {
-        process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message());
+        process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
 
@@ -581,7 +666,9 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
         } catch (const std::exception& e) {
             std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
             SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+            process_status->set_warning_target(repo_id);
+            process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
+            process_status->clear_warning_target();
             return {};
         }
         for (const auto& index : index_db) {
@@ -590,13 +677,15 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
                 / "vendor.yaml";
 
             if (!fs::exists(installed_vendor_yaml_path, ec) || ec) {
+                process_status->set_warning_target(repo_id, index.vendor());
                 process_status->set_warning(
                     fmt::format(
                         "File does not exists {}. {}",
                         installed_vendor_yaml_path.string(),
                         ec.message()
                     )
-                );
+                , PresetUpdaterReason::DataUnreadable);
+                process_status->clear_warning_target();
                 continue;
             }
 
@@ -607,13 +696,15 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
             try {
                 vendor_data = hw_config_loader.load(installed_vendor_yaml_path.string());
             } catch (const std::exception& e) {
-                process_status->set_error(
+                process_status->set_warning_target(repo_id, index.vendor());
+                process_status->set_warning(
                     fmt::format(
                         "Failed to load vendor file {}: {}",
                         installed_vendor_yaml_path.string(),
                         e.what()
                     )
-                );
+                , PresetUpdaterReason::DataInconsistent);
+                process_status->clear_warning_target();
                 continue;
             }
             Semver current_version = Semver(vendor_data.info.version);
@@ -625,7 +716,6 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
                     "No recommended version for vendor: {}, Index file might be corrupted.",
                     index.vendor()
                 );
-                DEBUG_ASSERT(false);
                 continue;
             }
             const PresetUpdaterIndex::const_iterator vendor_current_version_it = index.find(
@@ -648,7 +738,7 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
                     index.vendor(),
                     current_version.to_string()
                 );
-                if (process_status->has_warning(repo_id, vendor_data.info.id)) {
+                if (process_status->has_vendor_warning(repo_id, vendor_data.info.id)) {
                     SPDLOG_ERROR(
                         "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
                         vendor_data.info.id,
@@ -682,14 +772,6 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
                     "Current Slic3r incompatible with installed bundle (forced downgrade): {}",
                     installed_vendor_yaml_path.string()
                 );
-                if (process_status->has_warning(repo_id, vendor_data.info.id)) {
-                    SPDLOG_ERROR(
-                        "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
-                        vendor_data.info.id,
-                        repo_id
-                    );
-                    continue;
-                }
                 results.emplace_back(
                     VendorReconfigurationState::ForcedDowngrade,
                     vendor_data.info.id,
@@ -704,14 +786,6 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
                 "Current Slic3r incompatible with installed bundle (forced update): {}",
                 installed_vendor_yaml_path.string()
             );
-            if (process_status->has_warning(repo_id, vendor_data.info.id)) {
-                SPDLOG_ERROR(
-                    "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
-                    vendor_data.info.id,
-                    repo_id
-                );
-                continue;
-            }
             results.emplace_back(
                 VendorReconfigurationState::ForcedUpdate,
                 vendor_data.info.id,
@@ -737,19 +811,19 @@ PresetUpdaterReconfigurationList check_reconfigurations(
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
-        process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message());
+        process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
     if (!fs::is_directory(profile_local_path, ec) || ec) {
-        process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message());
+        process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
     if (!fs::exists(update_sync_path, ec) || ec) {
-        process_status->set_error(update_sync_path.string() + " does not exists. " + ec.message());
+        process_status->set_error(update_sync_path.string() + " does not exists. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
     if (!fs::is_directory(update_sync_path, ec) || ec) {
-        process_status->set_error(update_sync_path.string() + " is not directory. " + ec.message());
+        process_status->set_error(update_sync_path.string() + " is not directory. " + ec.message(), PresetUpdaterReason::DataDirUnusable);
         return {};
     }
 
@@ -774,7 +848,9 @@ PresetUpdaterReconfigurationList check_reconfigurations(
         } catch (const std::exception& e) {
             std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
             SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+            process_status->set_warning_target(repo_id);
+            process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
+            process_status->clear_warning_target();
             continue;
         }
         for (const auto& index : index_db) {
@@ -791,9 +867,11 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                 try {
                     update_sync_index.load(update_sync_index_path);
                 } catch (const std::runtime_error&) {
+                    process_status->set_warning_target(repo_id, index.vendor());
                     process_status->set_warning(
                         "Failed to load index " + update_sync_index_path.string()
-                    );
+                    , PresetUpdaterReason::IndexUnreadable);
+                    process_status->clear_warning_target();
                     continue;
                 }
             } else {
@@ -811,13 +889,15 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             try {
                 vendor_data = hw_config_loader.load(installed_vendor_yaml_path.string());
             } catch (const std::exception& e) {
-                process_status->set_error(
+                process_status->set_warning_target(repo_id, index.vendor());
+                process_status->set_warning(
                     fmt::format(
                         "Failed to load vendor file {}: {}",
                         installed_vendor_yaml_path.string(),
                         e.what()
                     )
-                );
+                , PresetUpdaterReason::DataInconsistent);
+                process_status->clear_warning_target();
                 continue;
             }
             Semver current_version = Semver(vendor_data.info.version);
@@ -830,8 +910,9 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                     index.vendor()
                 );
                 SPDLOG_ERROR(msg);
-                process_status->set_warning(msg);
-                DEBUG_ASSERT(false);
+                process_status->set_warning_target(repo_id, index.vendor());
+                process_status->set_warning(msg, PresetUpdaterReason::NoUsableVersion);
+                process_status->clear_warning_target();
                 continue;
             }
             const PresetUpdaterIndex::const_iterator vendor_current_version_it = update_sync_index.find(
@@ -878,7 +959,6 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             }
             if (vendor_current_version_it->is_current_slic3r_supported()) {
                 // This slicer needs no forced reconfigurations
-                ASSERT(current_version <= recommended->config_version);
                 if (current_version < recommended->config_version) {
                     // regular update
                     SPDLOG_INFO(
@@ -887,7 +967,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                         current_version.to_string(),
                         recommended->config_version.to_string()
                     );
-                    if (process_status->has_warning(repo_id, vendor_data.info.id)) {
+                    if (process_status->has_vendor_warning(repo_id, vendor_data.info.id)) {
                         SPDLOG_ERROR(
                             "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
                             vendor_data.info.id,
@@ -913,14 +993,6 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                     "Current Slic3r incompatible with installed bundle (forced downgrade): {}",
                     installed_vendor_yaml_path.string()
                 );
-                if (process_status->has_warning(repo_id, vendor_data.info.id)) {
-                    SPDLOG_ERROR(
-                        "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
-                        vendor_data.info.id,
-                        repo_id
-                    );
-                    continue;
-                }
                 results.emplace_back(
                     VendorReconfigurationState::ForcedDowngrade,
                     vendor_data.info.id,
@@ -936,14 +1008,6 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                 "Current Slic3r incompatible with installed bundle (forced update): {}",
                 installed_vendor_yaml_path.string()
             );
-            if (process_status->has_warning(repo_id, vendor_data.info.id)) {
-                SPDLOG_ERROR(
-                    "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
-                    vendor_data.info.id,
-                    repo_id
-                );
-                continue;
-            }
             results.emplace_back(
                 VendorReconfigurationState::ForcedUpdate,
                 vendor_data.info.id,
@@ -968,6 +1032,8 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             continue;
         }
 
+        process_status->set_warning_target(repo_id);
+
         // load installed index_db
         std::vector<PresetUpdaterIndex> index_db;
         if (fs::is_directory(archive_dir_path, ec) && !ec) {
@@ -976,9 +1042,9 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             } catch (const std::exception& e) {
                 std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
                 SPDLOG_ERROR(msg);
-                process_status->set_warning(msg);
+                process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
             }
-        }        
+        }
 
         // load staged index_db
         std::vector<PresetUpdaterIndex> update_sync_index_db;
@@ -991,7 +1057,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                 e.what()
             );
             SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+            process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
             continue;
         }
         
@@ -1007,6 +1073,8 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                 continue;
             }
 
+            process_status->set_warning_target(repo_id, update_sync_index.vendor());
+
             // check if present version is recommended.
 
             const PresetUpdaterIndex::const_iterator recommended = update_sync_index.recommended();
@@ -1016,7 +1084,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                         "No recommended version for vendor: {}, Index file might be corrupted. {}",
                         update_sync_index.vendor(), update_sync_index.path().string()
                     )
-                );
+                , PresetUpdaterReason::NoUsableVersion);
                 continue;
             }
             const fs::path vendor_yaml = update_sync_index.path().parent_path() / update_sync_index.vendor() / "vendor.yaml";
@@ -1028,13 +1096,13 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                 if (update_sync_version != recommended->config_version) {
                     process_status->set_warning(
                         fmt::format("Vendor data in update_sync failed sanity check. Its version is not recommended by its index. Vendor: {}", update_sync_index.vendor())
-                    );
+                    , PresetUpdaterReason::DataInconsistent);
                     continue;
                 }
             } catch (const std::exception& e) {
                 process_status->set_warning(
                     fmt::format("Failed to load vendor file {}: {}", vendor_yaml.string(), e.what())
-                );
+                , PresetUpdaterReason::DataInconsistent);
                 continue;
             }
             // update_sync_index is new vendor
@@ -1048,6 +1116,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
             );
         }
     }
+    process_status->clear_warning_target();
 
     return results;
 }
@@ -1107,9 +1176,9 @@ void cleanup_update_sync(PresetUpdaterProcessStatus* process_status)
         const fs::path& path = entry.path();
         SPDLOG_INFO("Deleting {}", path.string());
         if (!fs::remove_all(path, ec) || ec) {
-            process_status->set_error(
+            process_status->set_warning(
                 fmt::format("Failed to remove file {}: {}", path.string(), ec.message())
-            );
+            , PresetUpdaterReason::LocalStorageFailed);
         }
     }
 }

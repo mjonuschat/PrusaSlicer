@@ -58,22 +58,20 @@ public:
     /**
      * @brief Creates new local repository, unzips it to its newly created directory.
      * Unzipped data lives in datadir until removal of local repo.
-     * @param unselect_others means other repos with same id will be unselected. Otherwise more than one repo with same id might be selected.
+     * Other repositories sharing the id of the added one are unselected, because only one
+     * repository per id may be selected at a time.
      */
     void add_local_repository(
         const boost::filesystem::path& zip_path,
-        bool unselect_others,
         PresetUpdaterProcessStatus* process_status
-
     );
 
     /**
      * @brief Removes local repository, deletes its data directory.
+     * If the removed repository was the selected one for its id, the online repository offering
+     * that id is selected in its place, so the id is not left without a source.
      */
     void remove_local_repository(const std::string& uuid, PresetUpdaterProcessStatus* process_status);
-
-    static SharedPresetUpdaterRepositoryInfo prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg);
-    static void remove_local_repository_files(const SharedPresetUpdaterRepositoryInfo& info);
 
 private:
     /**
@@ -93,12 +91,17 @@ private:
 
     /**
      * @brief Deletes all data in destination folder, that are not part of repo vector.
-     * This cannot be done at any time. When user adds new offline repo, it is only unzipped (prepare_local_repository_files)
-     * and only when user confirms the dialog, it is added to the vector and written to manifest.
-     * This means that it is possible to unzip and cancel, leaving useless uzziped repo behind.
-     * This function should be called only after the uzziped repo is added to vector so only really useless data are deleted.
+     * A local repository is unzipped before it is written to the manifest, so a job that fails
+     * in between leaves an unzipped folder behind that belongs to no repository. Call this only
+     * once the repo vector is the one to keep, or the data of a pending repository is deleted too.
      */
     void consolidate_offline_repo_unzipped_folders(PresetUpdaterProcessStatus* process_status) const;
+
+    /**
+     * @brief Selects the online repository offering the given id, unless some repository with that
+     * id is already selected.
+     */
+    void select_online_repository_with_id(const std::string& id);
 
     // Helper methods
     void copy_initial_manifest(PresetUpdaterProcessStatus* process_status) const;

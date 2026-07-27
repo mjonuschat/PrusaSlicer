@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <boost/filesystem/path.hpp>
 #include <nlohmann/json_fwd.hpp>
 
@@ -10,6 +11,16 @@ enum class VerboseStyle{
     ProgressNotification,
     NoProgress
 };
+
+enum class SourceListSync
+{
+    Fetch,
+    UseStored
+};
+
+/// name for UI layer
+inline constexpr std::string_view k_manifest_download_target{"Sources Database Manifest"};
+
 struct PresetUpdaterRepositoryDescriptor
 {
     // mandatory
@@ -68,8 +79,5 @@ struct SharedPresetUpdaterRepositoryInfo
 typedef std::vector<SharedPresetUpdaterRepositoryInfo> SharedPresetUpdaterRepositoryInfoVector;
 
 void to_json(nlohmann::json& j, const SharedPresetUpdaterRepositoryInfo& i);
-
-void remove_local_repository_files(const SharedPresetUpdaterRepositoryInfo& info);
-SharedPresetUpdaterRepositoryInfo prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg);
 
 } // namespace Slic3r::Biz::PresetUpdater

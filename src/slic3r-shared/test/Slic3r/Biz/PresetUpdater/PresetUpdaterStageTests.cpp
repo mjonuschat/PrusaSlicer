@@ -96,6 +96,9 @@ struct ProjectInteractorWrapper
         dispatcher.close();
     }
 
+    /// Declared between the dispatcher and the project interactor so they are destroyed after the
+    /// interactors that cancel jobs through them, and before the dispatcher they hold a reference
+    /// to.
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
     Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope;
     Tests::JobManagerScope job_manager_scope;
@@ -490,25 +493,25 @@ TEST_CASE("PresetUpdater stage updates", "[preset_updater]")
                     {"", "", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"", "", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
  
-                    {"301", "", "", "", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "", "", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"", "301", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"", "", "301", "", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"", "", "", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                 
                     {"300", "300", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
-                    {"301", "301", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error}, // 301 resources fault
+                    {"301", "301", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor}, // 301 resources fault
                     {"300", "301", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
-                    {"301", "300", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error}, // 301 resources fault
+                    {"301", "300", "", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor}, // 301 resources fault
                 
                     {"300", "", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
-                    {"301", "", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error}, // 301 resources fault
-                    {"301", "", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error}, // 301 resources fault
+                    {"301", "", "301", "", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None}, // 301 resources fault
+                    {"301", "", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor}, // 301 resources fault
                     {"300", "", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                 
                     {"300", "", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
-                    {"301", "", "", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
-                    {"301", "", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error}, // 301 resources fault
+                    {"301", "", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None}, // 301 resources fault
 
                     {"", "300", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"", "301", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
@@ -526,15 +529,15 @@ TEST_CASE("PresetUpdater stage updates", "[preset_updater]")
                     {"", "", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
 
                     {"300", "", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
-                    {"301", "", "301", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "", "300", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
                     {"300", "", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
-                    {"301", "", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                 
                     {"", "300", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None}, 
                     {"", "301", "301", "301", Slic3r::Semver{3  ,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade}, 
@@ -548,45 +551,45 @@ TEST_CASE("PresetUpdater stage updates", "[preset_updater]")
                     {"", "301", "301", "300", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::None},
 
                     {"300", "300", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
-                    {"301", "301", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "300", "", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "301", "", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "300", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "300", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
                     {"300", "301", "", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
-                    {"301", "301", "", "300", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
 
                     {"300", "300", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
-                    {"301", "301", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
 
-                    {"301", "300", "300", "", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"300", "301", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"300", "300", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
 
-                    {"301", "300", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                     {"300", "301", "301", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
-                    {"301", "301", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "300", "", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::NewVendor},
                 
                     {"300", "300", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
-                    {"301", "301", "301", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "300", "300", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "301", "300", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "300", "301", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "300", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
 
-                    {"301", "301", "300", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
-                    {"301", "300", "301", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
-                    {"301", "300", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "301", "300", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
+                    {"301", "300", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
+                    {"301", "300", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
                     {"300", "301", "301", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::None},
                     {"300", "301", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
                     {"300", "300", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},         
                     {"300", "301", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},                
-                    {"301", "300", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::Error},
-                    {"301", "301", "300", "301", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::Error},
-                    {"301", "301", "301", "300", Slic3r::Semver{3,0,1}, PresetUpdater::ReconfigurationResult::Error},
+                    {"301", "300", "301", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
+                    {"301", "301", "300", "301", Slic3r::Semver{3,0,0}, PresetUpdater::ReconfigurationResult::ForcedDowngrade},
+                    {"301", "301", "301", "300", Slic3r::Semver{0,0,0}, PresetUpdater::ReconfigurationResult::None},
                 })
             );
         
@@ -619,8 +622,19 @@ TEST_CASE("PresetUpdater stage updates", "[preset_updater]")
             copy_dir_content(resources_profile_path / ("resource" + installed_version), installed_path);
         }
 
-        bool allowed_warnings = server_version.empty(); // empty server would trigger warnings
-        presetUpdater.start({result_type, result_version, allowed_warnings});
+        std::set<PresetUpdater::PresetUpdaterReason> expected_reasons;
+        if (server_version.empty()) {
+            expected_reasons.insert(PresetUpdater::PresetUpdaterReason::SourceListUnavailable);
+            expected_reasons.insert(PresetUpdater::PresetUpdaterReason::SourceUnreachable);
+        }
+        if (resources_version == "301"
+            || (staged_version == "301" && resources_version.empty() && server_version.empty()
+                && installed_version.empty()))
+        {
+            expected_reasons.insert(PresetUpdater::PresetUpdaterReason::DataInconsistent);
+        }
+
+        presetUpdater.start({result_type, result_version, std::move(expected_reasons)});
         //printf("Case: %s; %s; %s; %s\n",resources_version.c_str() ,server_version.c_str() ,staged_version.c_str() , installed_version.c_str() );
         REQUIRE(wait_for_updater(
             presetUpdater,

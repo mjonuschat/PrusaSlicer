@@ -29,7 +29,7 @@ PresetUpdaterRepositoryDatabase::PresetUpdaterRepositoryDatabase(PresetUpdaterPr
     if (!fs::create_directories(m_unq_tmp_path, ec) && ec) {
         process_status->set_error(
             fmt::format("Failed to create temp directory {}: {}.", m_unq_tmp_path.string(), ec.what())
-        );
+        , PresetUpdaterReason::DataDirUnusable);
         return;
     }
     load_app_manifest_json(process_status);
@@ -46,7 +46,6 @@ PresetUpdaterRepositoryDatabase::~PresetUpdaterRepositoryDatabase()
 
 void PresetUpdaterRepositoryDatabase::add_local_repository(
     const boost::filesystem::path& zip_path,
-    bool unselect_others,
     PresetUpdaterProcessStatus* process_status
 )
 {
@@ -58,42 +57,23 @@ void PresetUpdaterRepositoryDatabase::add_local_repository(
 
     std::string err_msg;
     if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, err_msg)) {
-        process_status->set_error(err_msg);
+        process_status->set_error(err_msg, PresetUpdaterReason::ArchiveInvalid);
         return;
     }
     if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, err_msg)) {
+        fs::remove_all(header_data.unzipped_data_path, ec);
+        process_status->set_error(err_msg, PresetUpdaterReason::ArchiveInvalid);
         return;
     }
-    if (unselect_others) {
-        for (auto& repo : m_all_repositories) {
-            if (repo.get()->descriptor().id == header_data.id)
-            {
-                repo.get()->set_selected(false);
-            }
+    for (auto& repo : m_all_repositories) {
+        if (repo.get()->descriptor().id == header_data.id) {
+            repo.get()->set_selected(false);
         }
     }
     m_all_repositories.emplace_back(
         std::make_unique<LocalPresetUpdaterRepository>(uuid, std::move(header_data), true)
     );
     save_app_manifest_json(process_status);
-}
-
-SharedPresetUpdaterRepositoryInfo PresetUpdaterRepositoryDatabase::prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg)
-{
-    PresetUpdaterRepositoryDescriptor header_data;
-    const std::string uuid         = get_next_uuid();
-    header_data.zip_path           = zip_path;
-    header_data.unzipped_data_path = fs::path(data_dir()) / "local_repositories" / uuid;
-    header_data.uuid = uuid;
-    boost::system::error_code ec;
-
-    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, error_msg)) {
-        return {};
-    }
-    if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, error_msg)) {
-        return {};
-    }
-    return SharedPresetUpdaterRepositoryInfo{std::move(header_data), true};
 }
 
 void PresetUpdaterRepositoryDatabase::remove_local_repository(
@@ -112,10 +92,18 @@ void PresetUpdaterRepositoryDatabase::remove_local_repository(
                 "Failed to remove repository. Could not find repository with matching UUID \"{}\".",
                 uuid
             )
-        );
+        , PresetUpdaterReason::SourceNotFound);
         return;
     }
-    ASSERT(!archives_it->get()->descriptor().unzipped_data_path.empty());
+    if (archives_it->get()->descriptor().unzipped_data_path.empty()) {
+        process_status->set_error(
+            fmt::format(
+                "Failed to remove repository. The repository with UUID \"{}\" is an online one.",
+                uuid
+            )
+        , PresetUpdaterReason::SourceNotFound);
+        return;
+    }
 
     boost::system::error_code ec;
     fs::remove_all(archives_it->get()->descriptor().unzipped_data_path, ec);
@@ -126,34 +114,49 @@ void PresetUpdaterRepositoryDatabase::remove_local_repository(
                 archives_it->get()->descriptor().unzipped_data_path.string(),
                 ec.what()
             )
-        );
+        , PresetUpdaterReason::LocalStorageFailed);
     }
 
-    std::string removed_uuid = archives_it->get()->uuid();
+    const std::string removed_id = archives_it->get()->descriptor().id;
+    const bool was_selected      = archives_it->get()->is_selected();
     m_all_repositories.erase(archives_it);
+
+    if (was_selected) {
+        select_online_repository_with_id(removed_id);
+    }
 
     save_app_manifest_json(process_status);
 }
 
-void PresetUpdaterRepositoryDatabase::remove_local_repository_files(
-    const SharedPresetUpdaterRepositoryInfo& info
-)
+void PresetUpdaterRepositoryDatabase::select_online_repository_with_id(const std::string& id)
 {
-    ASSERT(!info.descriptor.unzipped_data_path.empty());
-    boost::system::error_code ec;
-    fs::remove_all(info.descriptor.unzipped_data_path, ec);
-    if (ec) {
-        SPDLOG_ERROR(
-            "Failed to remove directory {}: {}.",
-            info.descriptor.unzipped_data_path.string(),
-            ec.what()
-        );
+    auto online_it = m_all_repositories.end();
+    for (auto it = m_all_repositories.begin(); it != m_all_repositories.end(); ++it) {
+        if ((*it)->descriptor().id != id) {
+            continue;
+        }
+        if ((*it)->is_selected()) {
+            return;
+        }
+        if ((*it)->descriptor().unzipped_data_path.empty()
+            && online_it == m_all_repositories.end())
+        {
+            online_it = it;
+        }
+    }
+
+    if (online_it != m_all_repositories.end()) {
+        (*online_it)->set_selected(true);
     }
 }
 
 void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProcessStatus* process_status)
 {
-    ASSERT(m_all_repositories.empty(), "This method shoud be called only from constructor");
+    ASSERT(
+        m_all_repositories.empty(),
+        "This method only ever appends, so calling it twice would list every source twice."
+        " It belongs in the constructor and nowhere else."
+    );
 
     const fs::path path = get_stored_manifest_path();
     boost::system::error_code ec;
@@ -174,14 +177,14 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 "Failed to read Repository Source Manifest at {}: Couldn't open the file. The file is being deleted to prevent this error in future.",
                 path.string()
             )
-        );
+        , PresetUpdaterReason::ManifestUnusable);
         fs::remove(path, ec);
         return;
     }
     if (data.empty()) {
         process_status->set_error(
             "The Repository Source Manifest file is empty. The file is being deleted to prevent this error in future."
-        );
+        , PresetUpdaterReason::ManifestUnusable);
         fs::remove(path, ec);
         return;
     }
@@ -192,7 +195,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
         if (j.is_discarded() || !j.is_array()) {
             process_status->set_error(
                 "Failed to parse Repository Source Manifest JSON: Input is not a valid JSON array. The file is being deleted to prevent this error in future."
-            );
+            , PresetUpdaterReason::ManifestUnusable);
             fs::remove(path, ec);
             return;
         }
@@ -208,7 +211,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                         warning_msg
                     ))
                 {
-                    process_status->set_warning(warning_msg);
+                    process_status->set_warning(warning_msg, PresetUpdaterReason::ManifestUnusable);
                     continue;
                 }
                 if (descriptor.unzipped_data_path.empty()
@@ -224,7 +227,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                             descriptor.unzipped_data_path.string(),
                             ec.what()
                         )
-                    );
+                    , PresetUpdaterReason::SourceDropped);
                     continue;
                 }
 
@@ -250,7 +253,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                         warning_msg
                     ))
                 {
-                    process_status->set_warning(warning_msg);
+                    process_status->set_warning(warning_msg, PresetUpdaterReason::ManifestUnusable);
                     continue;
                 }
                 if (descriptor.uuid.empty()) {
@@ -273,7 +276,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 "Failed to read Repository Source Manifest JSON. Reason: {}. The file is being deleted to prevent this error in future.",
                 e.what()
             )
-        );
+        , PresetUpdaterReason::ManifestUnusable);
         fs::remove(path, ec);
         return;
     }
@@ -288,14 +291,14 @@ void PresetUpdaterRepositoryDatabase::copy_initial_manifest(PresetUpdaterProcess
     const fs::path source_path = fs::path(resources_dir()) / "presets" / "RepositoryManifest.json";
     boost::system::error_code ec;
     if (!fs::exists(source_path, ec) || ec) {
-        SPDLOG_ERROR(ec.message());
-        ASSERT(
-            false,
+        process_status->set_error(
             fmt::format(
-                "Resources descriptor file does not exists at {}. The installation is corrupt.",
-                source_path.string()
+                "Resources descriptor file does not exists at {}: {}. The installation is corrupt.",
+                source_path.string(),
+                ec.message()
             )
-        );
+        , PresetUpdaterReason::ManifestUnusable);
+        return;
     }
     copy_file_wrapper(source_path, target_path, process_status);
 }
@@ -364,7 +367,7 @@ void PresetUpdaterRepositoryDatabase::save_app_manifest_json(PresetUpdaterProces
     } else {
         process_status->set_error(
             fmt::format("Failed to open Repository Source Manifest for writing at {}.", path)
-        );
+        , PresetUpdaterReason::ManifestUnusable);
     }
 }
 
@@ -401,14 +404,14 @@ void PresetUpdaterRepositoryDatabase::read_server_manifest(
                 "Failed to parse online Repository Source Manifest JSON. Reason: {}. Sources were not updated from online Manifest.",
                 e.what()
             )
-        );
+        , PresetUpdaterReason::SourceListUnavailable);
         return;
     }
 
     if (!json.is_array()) {
         process_status->set_warning(
             fmt::format("Failed to parse online Repository Source Manifest JSON. JSON is not an array.")
-        );
+        , PresetUpdaterReason::SourceListUnavailable);
         return;
     }
 
@@ -461,7 +464,7 @@ void PresetUpdaterRepositoryDatabase::read_server_manifest(
                 warning_msg
             ))
         {
-            process_status->set_warning(warning_msg);
+            process_status->set_warning(warning_msg, PresetUpdaterReason::ManifestUnusable);
             continue;
         }
 
@@ -539,7 +542,7 @@ void PresetUpdaterRepositoryDatabase::apply_selection(
                         "Can't apply selection. Two repositories of same id ({}) are selected.",
                         repos[i].descriptor.id
                     )
-                );
+                , PresetUpdaterReason::Internal);
                 return;
             }
         }
@@ -554,15 +557,10 @@ void PresetUpdaterRepositoryDatabase::apply_selection(
             }
         );
 
-        // Not found offline repo - was unzipped via static method prepare_local_repository_files
-        // Now it should be added to repo vector
+        // A repository the caller knows and this database does not. Only add_local_repository
+        // creates repositories, so the caller is working from a listing older than a removal.
         if (repo_it == m_all_repositories.end()) {
-             ASSERT(!info.descriptor.unzipped_data_path.empty());
-             auto descriptor_copy{info.descriptor};
-             m_all_repositories.emplace_back(
-                 std::make_unique<LocalPresetUpdaterRepository>(info.descriptor.uuid, std::move(descriptor_copy), info.selected)
-             );
-             continue;
+            continue;
         }
 
         repo_it->get()->set_selected(info.selected);
@@ -602,7 +600,7 @@ void PresetUpdaterRepositoryDatabase::consolidate_offline_repo_unzipped_folders(
 
     for (auto it = fs::directory_iterator(local_repos_dir, ec); it != fs::directory_iterator(); it.increment(ec)) {
         if (ec) {
-            process_status->set_warning(fmt::format("Failed to iterate local_repositories directory: {}", ec.message()));
+            process_status->set_warning(fmt::format("Failed to iterate local_repositories directory: {}", ec.message()), PresetUpdaterReason::LocalStorageFailed);
             break;
         }
 
@@ -623,7 +621,7 @@ void PresetUpdaterRepositoryDatabase::consolidate_offline_repo_unzipped_folders(
                 if (rm_ec) {
                     process_status->set_warning(
                         fmt::format("Failed to delete unreferenced offline repository folder {}: {}.", it->path().string(), rm_ec.message())
-                    );
+                    , PresetUpdaterReason::LocalStorageFailed);
                 }
             }
         }
@@ -672,7 +670,7 @@ bool sync_inner(std::string& manifest, PresetUpdaterProcessStatus* process_statu
                 error,
                 http_status
             );
-            process_status->set_warning("Failed to download Sources Database Manifest file.");
+            process_status->set_warning("Failed to download Sources Database Manifest file.", PresetUpdaterReason::SourceListUnavailable);
             res = false;
         })
         .on_complete([&](std::string body, unsigned /* http_status */) {
@@ -689,7 +687,7 @@ bool PresetUpdaterRepositoryDatabase::sync(PresetUpdaterProcessStatus* process_s
 {
     std::string manifest;
     bool sync_res = false;
-    process_status->set_download_target("Sources Database Manifest");
+    process_status->set_download_target(std::string(k_manifest_download_target));
     sync_res = sync_inner(manifest, process_status);
     if (!sync_res) {
         return false;
@@ -697,7 +695,7 @@ bool PresetUpdaterRepositoryDatabase::sync(PresetUpdaterProcessStatus* process_s
     try {
         read_server_manifest(std::move(manifest), process_status);
     } catch (const Slic3r::RuntimeError& e) {
-        process_status->set_error(fmt::format("Failed to read server manifest: {}", e.what()));
+        process_status->set_warning(fmt::format("Failed to read server manifest: {}", e.what()), PresetUpdaterReason::SourceListUnavailable);
         return false;
     }
 

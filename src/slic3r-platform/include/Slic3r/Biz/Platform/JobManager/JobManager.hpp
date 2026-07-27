@@ -114,6 +114,9 @@ public:
         return job_ref;
     }
 
+    /**
+     * @brief Cancels a job and waits for its thread to finish before returning.
+     */
     void cancel_job(const std::string& name)
     {
         m_jobs.erase(name);
@@ -124,6 +127,26 @@ public:
         std::erase_if(m_jobs, [project_id](const auto& job) {
             return job.second->progress_tracker().get_progress().project_id == project_id;
         });
+    }
+
+    /**
+     * @brief Asks a job to stop without waiting for it.
+     *
+     * @return false if no job of that name is registered.
+     */
+    bool request_job_stop(const std::string& name)
+    {
+        const auto it = m_jobs.find(name);
+        if (it == m_jobs.end()) {
+            return false;
+        }
+        it->second->cancel();
+        return true;
+    }
+
+    bool has_job(const std::string& name) const
+    {
+        return m_jobs.find(name) != m_jobs.end();
     }
 
 private:

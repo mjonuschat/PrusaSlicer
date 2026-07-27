@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterReason.hpp"
+
 #include "fmt/format.h"
 #include <string>
 
@@ -10,7 +12,8 @@ struct PresetUpdaterWarning
     std::string text;
     std::string repo;
     std::string vendor;
-    
+    PresetUpdaterReason reason{PresetUpdaterReason::Internal};
+
     std::string string() const
     {
         if (repo.empty() && vendor.empty()) {

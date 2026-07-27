@@ -1109,6 +1109,7 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterJob.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterWarning.hpp
@@ -1548,6 +1549,8 @@ if(SLIC3R_BUILD_TESTS)
 
             test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
             test/Slic3r/Biz/PresetUpdater/PresetUpdaterActionTests.cpp
+            test/Slic3r/Biz/PresetUpdater/PresetUpdaterQueueTests.cpp
+            test/Slic3r/Biz/PresetUpdater/PresetUpdaterTestFixture.hpp
             test/Slic3r/Biz/PresetUpdater/SemverTests.cpp
             test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
             test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp

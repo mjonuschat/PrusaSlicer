@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Semver.hpp"
 #include <string>
 
@@ -14,6 +15,18 @@ enum class VendorReconfigurationState
     ForcedDowngrade, // vendor profiles version is too high, in needs to be downgraded for use with SLIC3R_VERSION. Downgrade must be done after startup. Wizard needed.
     NotInIndex, // vendor profiles version is not in index, forced reconfiguration is needed. Reconfiguration must be done after startup. Wizard needed.
     NewVendor,
+};
+
+enum class ReconfigurationType : unsigned int {
+    None             = 0,
+    ForcedDowngrades = 1 << 0,
+    ForcedUpdates    = 1 << 1,
+    RegularUpdates   = 1 << 2,
+    NotInIndex       = 1 << 3,
+    NewVendors       = 1 << 4,
+    Forced           = ForcedDowngrades | ForcedUpdates,
+    Regular          = RegularUpdates | NewVendors,
+    All              = ForcedDowngrades | ForcedUpdates | RegularUpdates | NotInIndex | NewVendors
 };
 
 struct VendorReconfiguration
@@ -96,7 +109,11 @@ public:
             m_new_vendors.emplace_back(state, std::forward<Args>(args)...);
             break;
         default:
-            assert(false);
+            ASSERT(
+                false,
+                "Unhandled VendorReconfigurationState. The reconfiguration would land in no bucket"
+                " at all, so it would never be listed and never be performed."
+            );
             break;
         }
     }

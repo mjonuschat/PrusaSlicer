@@ -14,33 +14,42 @@ public:
 
     void start(const ActionParams& action, const std::string data);
 
-    void on_preset_updater_error(const std::string& body) override;
+    void on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body) override;
 
     void on_preset_updater_forced_reconfigurations_list(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
     ) override;
 
     void on_preset_updater_reconfigurations_list(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
         Biz::PresetUpdater::VerboseStyle verbose
     ) override;
 
     void on_preset_updater_reconfigurations_performed(
+        Biz::PresetUpdater::JobId job_id,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
     ) override;
 
-    void on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose) override;
+    void on_preset_updater_status(Biz::PresetUpdater::JobId job_id, const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose) override;
 
     void on_preset_updater_repository_info_vector(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
     ) override;
 
     void on_preset_updater_repository_selection_performed(
+        Biz::PresetUpdater::JobId job_id,
         const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
         const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+    ) override;
+
+    void on_preset_updater_job_finished(
+        Biz::PresetUpdater::JobId job_id, Biz::PresetUpdater::JobState state
     ) override;
 
     bool has_result()

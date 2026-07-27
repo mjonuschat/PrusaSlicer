@@ -143,6 +143,13 @@ bool AbstractPresetUpdaterRepository::extract_repository_header(
         warning_msg = fmt::format("Failed to parse source manifest: {}.", e.what());
         return false;
     }
+
+    if (data.id.empty()) {
+        SPDLOG_ERROR("Source manifest has an empty id. json: {}", json.dump());
+        warning_msg = "Failed to parse source manifest: the source id must not be empty.";
+        return false;
+    }
+
     return true;
 }
 
@@ -184,6 +191,8 @@ bool OnlinePresetUpdaterRepository::get_file_inner(
     }
     http->timeout_total(30)
         .size_limit(1024 * 1024 * 100) // How large is the largest bundle?
+        .on_progress([process_status](Network::IHttp::Progress, bool& cancel)
+                     { cancel = process_status->cancel_requested(); })
         .on_error([&](std::string body, std::string error, unsigned http_status) {
             SPDLOG_ERROR("Error getting: `{}`: HTTP {}, {}", url, http_status, body);
             res = false;
@@ -323,9 +332,6 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
     std::string& error_msg
 )
 {
-    DEBUG_ASSERT(!descriptor.unzipped_data_path.empty());
-    DEBUG_ASSERT(!descriptor.zip_path.empty());
-
     // Delete previous data before unzip.
     delete_path_recursive(descriptor.unzipped_data_path);
 

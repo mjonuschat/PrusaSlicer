@@ -40,15 +40,12 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
     } else if (action.preset_updater_add_local) {
         ASSERT(!data.empty());
         boost::filesystem::path path(data);
-        m_preset_updater_interactor.add_local_repository(true, path, true);
+        m_preset_updater_interactor.add_local_repository(true, path);
     } else if (action.preset_updater_remove_local) {
         ASSERT(!data.empty());
         m_preset_updater_interactor.remove_local_repository(true, data);
     } else if (action.preset_updater_list_repos) {
-        m_preset_updater_interactor.update_repositories(
-            true,
-            Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{}
-        );
+        m_preset_updater_interactor.list_repositories(true);
     } else if (action.preset_updater_switch_repo) {
         ASSERT(!data.empty());
         m_repo_to_switch = data;
@@ -60,19 +57,20 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
     }
 }
 
-void PresetUpdaterCLI::on_preset_updater_error(const std::string& body)
+void PresetUpdaterCLI::on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body)
 {
     nlohmann::json j = {{"error", body}};
     printf("%s\n",j.dump(-1).c_str());
     m_has_result = true;
 }
 
-void PresetUpdaterCLI::on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
+void PresetUpdaterCLI::on_preset_updater_status(Biz::PresetUpdater::JobId job_id, const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose)
 {
     SPDLOG_INFO("target:{} attempt:{} delay:{}", target, attempt, delay);
 }
 
 void PresetUpdaterCLI::on_preset_updater_forced_reconfigurations_list(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
@@ -80,7 +78,21 @@ void PresetUpdaterCLI::on_preset_updater_forced_reconfigurations_list(
     // This is empty on purpose - if preset updater functions are run in CLI, we do not check forced reconf before.
 }
 
+void PresetUpdaterCLI::on_preset_updater_job_finished(
+    Biz::PresetUpdater::JobId job_id, Biz::PresetUpdater::JobState state
+)
+{
+    if (state == Biz::PresetUpdater::JobState::Disabled) {
+        nlohmann::json j = {{"error", "Preset updates are disabled in application configuration."}};
+        printf("%s\n", j.dump(-1).c_str());
+        m_has_result = true;
+    } else if (state == Biz::PresetUpdater::JobState::Canceled) {
+        m_has_result = true;
+    }
+}
+
 void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings,
     Biz::PresetUpdater::VerboseStyle verbose
@@ -88,7 +100,9 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
 {
     if (m_perform_after_sync) {
         m_perform_after_sync = false;
-        m_preset_updater_interactor.perform_reconfigurations(reconfigurations);
+        m_preset_updater_interactor.perform_reconfigurations(
+            reconfigurations, Biz::PresetUpdater::ReconfigurationType::All
+        );
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", reconfigurations},{"warnings", warnings}};
@@ -102,6 +116,7 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_list(
 }
 
 void PresetUpdaterCLI::on_preset_updater_reconfigurations_performed(
+    Biz::PresetUpdater::JobId job_id,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
 {
@@ -113,6 +128,7 @@ void PresetUpdaterCLI::on_preset_updater_reconfigurations_performed(
 }
 
 void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
@@ -142,7 +158,7 @@ void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
             }
         }
         m_repo_to_switch.clear();
-        m_preset_updater_interactor.update_repositories(true, updated_descriptor);
+        m_preset_updater_interactor.apply_repository_selection(true, updated_descriptor);
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", descriptor},{"warnings", warnings}};
@@ -155,11 +171,12 @@ void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
     }
 }
 void PresetUpdaterCLI::on_preset_updater_repository_selection_performed(
+    Biz::PresetUpdater::JobId job_id,
     const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
     const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
 )
 {
-    on_preset_updater_repository_info_vector(descriptor, warnings);
+    on_preset_updater_repository_info_vector(job_id, descriptor, warnings);
 }
 
 

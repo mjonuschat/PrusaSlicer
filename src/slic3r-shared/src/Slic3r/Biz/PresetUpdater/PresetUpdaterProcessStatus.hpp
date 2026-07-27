@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterWarning.hpp"
 
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -44,9 +45,22 @@ public:
         return canceled;
     }
 
-    void set_error(const std::string& error_msg)
+    bool cancel_requested() const
     {
-        m_error = error_msg;
+        return m_stop_token.stop_requested();
+    }
+
+    void set_error(const std::string& error_msg, PresetUpdaterReason reason)
+    {
+        ASSERT(
+            !error_msg.empty(),
+            "has_error() is the emptiness of the message, so an empty error would fail the job"
+            " without anyone ever noticing it had failed."
+        );
+        if (m_error.empty()) {
+            m_error       = error_msg;
+            m_error_reason = reason;
+        }
     }
 
     bool has_error() const
@@ -59,9 +73,14 @@ public:
         return m_error;
     }
 
-    void set_warning(const std::string& msg)
+    PresetUpdaterReason get_error_reason() const
     {
-        m_warnings.emplace_back(msg, m_warning_target_repo, m_warning_target_vendor);
+        return m_error_reason;
+    }
+
+    void set_warning(const std::string& msg, PresetUpdaterReason reason)
+    {
+        m_warnings.emplace_back(msg, m_warning_target_repo, m_warning_target_vendor, reason);
     }
 
     bool has_warning() const
@@ -118,13 +137,11 @@ public:
 
     void set_install_target(const std::string& target);
 
-    bool has_warning(const std::string& repo, const std::string& vendor) const
+    bool has_vendor_warning(const std::string& repo, const std::string& vendor) const
     {
         for (const auto& warning : m_warnings) {
-            if (warning.repo == repo) {
-                if (warning.vendor.empty() || warning.vendor == vendor) {
-                    return true;
-                }
+            if (warning.repo == repo && warning.vendor == vendor) {
+                return true;
             }
         }
         return false;
@@ -134,6 +151,7 @@ public:
 
 private:
     std::string m_error;
+    PresetUpdaterReason m_error_reason{PresetUpdaterReason::Internal};
     std::vector<PresetUpdaterWarning> m_warnings;
     std::string m_warning_target_repo;
     std::string m_warning_target_vendor;

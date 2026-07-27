@@ -2,8 +2,11 @@
 
 #include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterReason.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 #include "Slic3r/App/Init.hpp"
+
+#include <set>
 
 namespace Slic3r::Biz::PresetUpdater {
 
@@ -22,7 +25,7 @@ struct ExpectedReconfiguration
 {
     ReconfigurationResult state;
     Semver version;
-    bool allow_warnings;
+    std::set<PresetUpdaterReason> reasons;
 };
 
 class TestPresetUpdaterListener : public IPresetUpdaterResultListener
@@ -32,26 +35,32 @@ public:
 
     void start(ExpectedReconfiguration expected);
 
-    void on_preset_updater_error(const std::string& body) override;
+    void on_preset_updater_error(
+        JobId job_id, const std::string& body, PresetUpdaterReason reason
+    ) override;
 
     void on_preset_updater_forced_reconfigurations_list(
+        JobId job_id,
         const PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<PresetUpdaterWarning>& warnings
     ) override;
 
     void on_preset_updater_reconfigurations_list(
+        JobId job_id,
         const PresetUpdaterReconfigurationList& reconfigurations,
         const std::vector<PresetUpdaterWarning>& warnings,
         Biz::PresetUpdater::VerboseStyle verbose
     ) override;
 
     void on_preset_updater_reconfigurations_performed(
+        JobId job_id,
         const std::vector<PresetUpdaterWarning>& warnings
     ) override;
 
-    void on_preset_updater_status(const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose) override;
+    void on_preset_updater_status(JobId job_id, const std::string& target, int attempt, unsigned delay, Biz::PresetUpdater::VerboseStyle verbose) override;
 
     void on_preset_updater_repository_info_vector(
+        JobId job_id,
         const SharedPresetUpdaterRepositoryInfoVector& descriptor,
         const std::vector<PresetUpdaterWarning>& warnings
     ) override;
@@ -62,6 +71,8 @@ public:
     }
 
 private:
+    void check_reasons(const std::vector<PresetUpdaterWarning>& warnings);
+
     PresetUpdaterInteractor& m_preset_updater_interactor;
     bool m_has_result{false};
     ExpectedReconfiguration m_expected;

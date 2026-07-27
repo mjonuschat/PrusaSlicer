@@ -1,362 +1,13 @@
-#include "Slic3r/Biz/Network/MockHttp.hpp"
-#include "Slic3r/Biz/Network/MockHttpFactory.hpp"
-
-#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
-#include "Slic3r/Biz/Platform/PlatformServices.hpp"
-#include "Slic3r/Biz/SecretStoreDummy.hpp"
-#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
-#include "Slic3r/TestUtils/JobManagerScope.hpp"
-#include "Slic3r/TestUtils/TestData.hpp"
-#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-#include "Slic3r/Directories.hpp"
-#include "Slic3r/Biz/Slicing/TestUtils.hpp"
-#include "Slic3r/Assert.hpp"
-#include "Slic3r/Semver.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
-
-#include <boost/filesystem/operations.hpp>
-#include <boost/nowide/filesystem.hpp>
-#include <boost/nowide/fstream.hpp>
-
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/trompeloeil.hpp>
+﻿#include "Slic3r/Biz/PresetUpdater/PresetUpdaterTestFixture.hpp"
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <sstream>
 #include <stdexcept>
-#include <thread>
 
 using namespace Slic3r::Biz;
+using namespace Slic3r::Biz::PresetUpdater::TestSupport;
 using namespace std::chrono_literals;
 namespace fs = boost::filesystem;
-
-namespace {
-
-const std::string k_repo_name     = "test_repo";
-const std::string k_vendor_name   = "TestVendor";
-const std::string k_second_vendor = "SecondVendor";
-const std::string k_server_addr   = "http://localhost:8000/";
-
-using ResponseMutator = std::function<void(const std::string& url, std::string& body, unsigned& status)>;
-
-void copy_dir_content_local(const fs::path& from, const fs::path& to)
-{
-    ASSERT(fs::exists(from) && fs::is_directory(from));
-    if (!fs::exists(to)) {
-        fs::create_directories(to);
-    }
-    boost::system::error_code ec;
-    for (fs::recursive_directory_iterator it(from); it != fs::recursive_directory_iterator();
-         it.increment(ec)) {
-        ASSERT(!ec);
-        const fs::path relative_path = it->path().lexically_relative(from);
-        const fs::path dest_path     = to / relative_path;
-        if (fs::is_directory(it->status())) {
-            if (!fs::exists(dest_path)) {
-                fs::create_directories(dest_path);
-            }
-        } else if (fs::is_regular_file(it->status())) {
-            fs::copy_file(it->path(), dest_path, fs::copy_options::overwrite_existing);
-        }
-    }
-}
-
-std::string read_file(const fs::path& path)
-{
-    boost::nowide::ifstream file(path, std::ios::in | std::ios::binary);
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-/// Captures every result the interactor dispatches so a test can assert on it afterwards.
-class CaptureListener : public PresetUpdater::IPresetUpdaterResultListener
-{
-public:
-    explicit CaptureListener(PresetUpdater::PresetUpdaterInteractor& interactor) :
-        m_interactor(interactor)
-    {
-        m_interactor.add_listener<PresetUpdater::IPresetUpdaterResultListener>(this);
-    }
-
-    void reset()
-    {
-        m_has_result = false;
-        m_error      = false;
-        m_performed  = false;
-        m_error_body.clear();
-        m_reconfigurations.reset();
-        m_repos.clear();
-        m_warnings.clear();
-    }
-
-    bool has_result() const { return m_has_result; }
-    bool got_error() const { return m_error; }
-    const std::string& error_body() const { return m_error_body; }
-    bool performed() const { return m_performed; }
-    const std::optional<PresetUpdater::PresetUpdaterReconfigurationList>& reconfigurations() const
-    {
-        return m_reconfigurations;
-    }
-    const PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repos() const { return m_repos; }
-    const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings() const { return m_warnings; }
-
-    void on_preset_updater_error(const std::string& body) override
-    {
-        m_error      = true;
-        m_error_body = body;
-        m_has_result = true;
-    }
-
-    void on_preset_updater_reconfigurations_list(
-        const PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings,
-        PresetUpdater::VerboseStyle
-    ) override
-    {
-        m_reconfigurations = reconfigurations;
-        m_warnings         = warnings;
-        m_has_result       = true;
-    }
-
-    void on_preset_updater_forced_reconfigurations_list(
-        const PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings
-    ) override
-    {
-        m_reconfigurations = reconfigurations;
-        m_warnings         = warnings;
-        m_has_result       = true;
-    }
-
-    void on_preset_updater_reconfigurations_performed(
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings
-    ) override
-    {
-        m_performed  = true;
-        m_warnings   = warnings;
-        m_has_result = true;
-    }
-
-    void on_preset_updater_status(const std::string&, int, unsigned, PresetUpdater::VerboseStyle) override {}
-
-    void on_preset_updater_repository_info_vector(
-        const PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings
-    ) override
-    {
-        store_repos(descriptor, warnings);
-    }
-
-    void on_preset_updater_repository_selection_performed(
-        const PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings
-    ) override
-    {
-        store_repos(descriptor, warnings);
-    }
-
-private:
-    void store_repos(
-        const PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
-        const std::vector<PresetUpdater::PresetUpdaterWarning>& warnings
-    )
-    {
-        m_repos.assign(descriptor.begin(), descriptor.end());
-        m_warnings   = warnings;
-        m_has_result = true;
-    }
-
-    PresetUpdater::PresetUpdaterInteractor& m_interactor;
-    bool m_has_result{false};
-    bool m_error{false};
-    bool m_performed{false};
-    std::string m_error_body;
-    std::optional<PresetUpdater::PresetUpdaterReconfigurationList> m_reconfigurations;
-    PresetUpdater::SharedPresetUpdaterRepositoryInfoVector m_repos;
-    std::vector<PresetUpdater::PresetUpdaterWarning> m_warnings;
-};
-
-/// Sets up the mock-server world used by PresetUpdaterStageTests and restores the global dirs it
-/// changed on teardown, so the fixture leaves no state behind.
-struct Fixture
-{
-    fs::path resource_dir;
-    fs::path data_dir;
-    fs::path installed_path;
-    fs::path staged_path;
-    fs::path shared_runtime_path;
-    fs::path resources_repo_path;
-    fs::path server_runtime_path;
-    fs::path resources_profile_path;
-    fs::path temp_dir_path;
-
-    std::shared_ptr<ResponseMutator> mutator_slot = std::make_shared<ResponseMutator>();
-
-    std::string prev_resources_dir;
-    std::string prev_data_dir;
-    fs::path prev_temp_dir;
-
-    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
-    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
-    Tests::JobManagerScope job_manager_scope{dispatcher};
-    Slic3r::Domain::Workbench workbench;
-    Slic3r::Test::MockThumbnailImageGenerator thumbnail_image_generator;
-    Slic3r::Biz::ProjectInteractor project_interactor;
-
-    Fixture() : project_interactor(workbench, dispatcher, thumbnail_image_generator)
-    {
-        boost::nowide::nowide_filesystem();
-
-        prev_resources_dir = Slic3r::resources_dir();
-        prev_data_dir      = Slic3r::data_dir();
-        prev_temp_dir      = Slic3r::temp_dir();
-
-        Slic3r::Biz::Network::configure_http_factory_with_mock();
-
-        resource_dir = Tests::get_datadir();
-        Slic3r::set_resources_dir(resource_dir.string());
-        Slic3r::set_data_dir((resource_dir / "datadir_actions").string());
-        data_dir = fs::path(Slic3r::data_dir());
-
-        installed_path         = data_dir / "presets" / "local";
-        staged_path            = data_dir / "update_sync";
-        shared_runtime_path    = data_dir / "shared_runtime";
-        resources_repo_path    = resource_dir / "presets" / k_repo_name;
-        server_runtime_path    = resource_dir / "server" / "runtime_actions";
-        resources_profile_path = resource_dir / "preset updater";
-        temp_dir_path          = resource_dir / "temp_actions";
-
-        Network::ServiceConfig::instance().set_preset_repo_url(k_server_addr);
-
-        fs::remove_all(data_dir);
-        fs::remove_all(resources_repo_path);
-        fs::remove_all(server_runtime_path);
-        fs::remove_all(temp_dir_path);
-
-        fs::create_directories(installed_path);
-        fs::create_directories(staged_path);
-        fs::create_directories(shared_runtime_path);
-        fs::create_directories(resources_repo_path);
-        fs::create_directories(server_runtime_path);
-        fs::create_directories(temp_dir_path);
-
-        Slic3r::set_temp_dir(temp_dir_path);
-
-        fs::copy_file(
-            resources_profile_path / "RepositoryManifest.json",
-            shared_runtime_path / "RepositoryManifest.json",
-            fs::copy_options::overwrite_existing
-        );
-
-        auto slot                     = mutator_slot;
-        const fs::path server_runtime = server_runtime_path;
-        Network::MockHttpProvider::get().set_create_fn(
-            [server_runtime, slot](
-                Network::IHttp::RequestMethod method,
-                const std::string& url,
-                Network::IHttp::RetryFn retryfn
-            ) -> std::unique_ptr<Network::MockHttp> {
-                ASSERT(method == Network::IHttp::RequestMethod::Get);
-                std::unique_ptr<Network::MockHttp> ret =
-                    std::make_unique<Network::MockHttp>(url, retryfn);
-                ret->set_perform_override_fn(
-                    [url, server_runtime, slot](Network::MockHttp* http, const Network::HttpRetryOpt&) {
-                        std::string aux(url);
-                        if (aux.starts_with(k_server_addr)) {
-                            aux.replace(0, k_server_addr.length(), "");
-                        }
-                        const fs::path path = server_runtime / aux;
-                        boost::nowide::ifstream file(path, std::ios::in | std::ios::binary);
-                        if (file.is_open()) {
-                            std::stringstream buffer;
-                            buffer << file.rdbuf();
-                            std::string body = buffer.str();
-                            unsigned status  = 200;
-                            if (slot && *slot) {
-                                (*slot)(url, body, status);
-                            }
-                            http->invoke_complete(body, status);
-                        } else {
-                            http->invoke_error("", "File not found: " + path.string(), 404);
-                        }
-                    }
-                );
-                ret->default_allow_timeout = NAMED_ALLOW_CALL(*ret, timeout_total_mock(trompeloeil::_));
-                ret->default_allow_size_limit = NAMED_ALLOW_CALL(*ret, size_limit_mock(trompeloeil::_));
-                return ret;
-            }
-        );
-
-        Platform::PlatformServices::instance().set_secret_store(std::make_unique<SecretStoreDummy>());
-    }
-
-    ~Fixture()
-    {
-        dispatcher.close();
-        fs::remove_all(resources_repo_path);
-        fs::remove_all(data_dir);
-        fs::remove_all(server_runtime_path);
-        fs::remove_all(temp_dir_path);
-        Slic3r::set_resources_dir(prev_resources_dir);
-        Slic3r::set_data_dir(prev_data_dir);
-        Slic3r::set_temp_dir(prev_temp_dir);
-    }
-
-    PresetUpdater::PresetUpdaterInteractor& interactor()
-    {
-        return project_interactor.preset_updater_interactor();
-    }
-
-    void set_mutator(ResponseMutator m) { *mutator_slot = std::move(m); }
-
-    void put_resources(const std::string& version)
-    {
-        copy_dir_content_local(
-            resources_profile_path / ("resource" + version) / k_repo_name,
-            resources_repo_path
-        );
-    }
-
-    void put_server(const std::string& version)
-    {
-        copy_dir_content_local(resources_profile_path / ("server" + version), server_runtime_path);
-    }
-
-    void put_installed(const std::string& version)
-    {
-        copy_dir_content_local(resources_profile_path / ("resource" + version), installed_path);
-    }
-
-    void put_staged(const std::string& version)
-    {
-        copy_dir_content_local(resources_profile_path / ("resource" + version), staged_path);
-    }
-
-    bool wait(CaptureListener& listener, std::chrono::seconds timeout = 20s)
-    {
-        const auto start = std::chrono::high_resolution_clock::now();
-        while (true) {
-            dispatcher.dispatch_enqueued();
-            if (listener.has_result()) {
-                return true;
-            }
-            if (std::chrono::high_resolution_clock::now() - start > timeout) {
-                return false;
-            }
-            std::this_thread::sleep_for(1ms);
-        }
-    }
-};
-
-} // namespace
 
 TEST_CASE("PresetUpdater performs a new-vendor install", "[preset_updater]")
 {
@@ -412,7 +63,7 @@ TEST_CASE("PresetUpdater lists sources and persists selection", "[preset_updater
     desired.push_back(PresetUpdater::SharedPresetUpdaterRepositoryInfo{info.descriptor, false});
 
     listener.reset();
-    fx.interactor().update_repositories(true, desired);
+    fx.interactor().apply_repository_selection(true, desired);
     REQUIRE(fx.wait(listener));
     REQUIRE(listener.repos().size() == 1);
     CHECK_FALSE(listener.repos().front().selected);
@@ -422,16 +73,14 @@ TEST_CASE("PresetUpdater lists sources and persists selection", "[preset_updater
     CHECK(manifest.find(uuid) != std::string::npos);
 }
 
-TEST_CASE("PresetUpdater refreshes sources from the server on an empty selection", "[preset_updater]")
+TEST_CASE("PresetUpdater refreshes sources from the server", "[preset_updater]")
 {
     Fixture fx;
     fx.put_server("100");
 
     CaptureListener listener(fx.interactor());
 
-    // An empty descriptor vector is a new query: the interactor syncs with the server
-    // instead of applying a user selection.
-    fx.interactor().update_repositories(true, PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{});
+    fx.interactor().list_repositories(true, true);
     REQUIRE(fx.wait(listener));
     REQUIRE_FALSE(listener.got_error());
     REQUIRE(listener.repos().size() == 1);
@@ -447,7 +96,7 @@ TEST_CASE("PresetUpdater adds and removes a local repository", "[preset_updater]
     const fs::path local_zip = fx.resources_profile_path / "local_repo.zip";
     REQUIRE(fs::exists(local_zip));
 
-    fx.interactor().add_local_repository(true, local_zip, true);
+    fx.interactor().add_local_repository(true, local_zip);
     REQUIRE(fx.wait(listener));
     REQUIRE_FALSE(listener.got_error());
 
@@ -655,24 +304,35 @@ TEST_CASE("PresetUpdater cleans up staged files and keeps installed profiles", "
     CHECK(fs::exists(fx.installed_path / k_repo_name / (k_vendor_name + ".idx")));
 }
 
-TEST_CASE("PresetUpdater ignores actions when the app config disables preset updates", "[preset_updater]")
+TEST_CASE("PresetUpdater refuses actions when the app config disables preset updates", "[preset_updater]")
 {
     Fixture fx;
     fx.put_server("100");
 
     CaptureListener listener(fx.interactor());
 
-    fx.interactor().build_update_sync_and_reconfiguration_check(false, PresetUpdater::VerboseStyle::NoProgress, true);
-    CHECK_FALSE(fx.wait(listener, 1s));
-    CHECK_FALSE(listener.has_result());
+    std::vector<PresetUpdater::JobId> refused;
+    refused.push_back(fx.interactor().build_update_sync_and_reconfiguration_check(
+        false, PresetUpdater::VerboseStyle::NoProgress, true
+    ));
+    refused.push_back(fx.interactor().list_repositories(false));
+    refused.push_back(fx.interactor().cleanup_update_sync(false));
+    refused.push_back(fx.interactor().apply_repository_selection(
+        false, PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{}
+    ));
+    refused.push_back(fx.interactor().add_local_repository(false, fx.resources_profile_path / "local_repo.zip"));
+    refused.push_back(fx.interactor().remove_local_repository(false, "no-such-uuid"));
 
-    fx.interactor().list_repositories(false);
-    CHECK_FALSE(fx.wait(listener, 1s));
+    // A refused job does no work, but it is still identifiable and still terminated - a caller
+    // showing queued work must never be left with a row that can never be retired.
+    REQUIRE(fx.wait_for_finished(listener, refused.size()));
     CHECK_FALSE(listener.has_result());
+    CHECK(fx.interactor().pending_job_count() == 0);
 
-    fx.interactor().cleanup_update_sync(false);
-    CHECK_FALSE(fx.wait(listener, 1s));
-    CHECK_FALSE(listener.has_result());
+    for (PresetUpdater::JobId job_id : refused) {
+        CHECK(job_id != PresetUpdater::k_invalid_job_id);
+        CHECK(listener.state_of(job_id) == PresetUpdater::JobState::Disabled);
+    }
 }
 
 TEST_CASE("PresetUpdater reports an unhandled worker exception as an error", "[preset_updater]")
@@ -721,12 +381,16 @@ TEST_CASE("PresetUpdater cancels a running operation and stays reusable", "[pres
 
     CaptureListener listener(fx.interactor());
 
-    fx.interactor().build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
+    const PresetUpdater::JobId canceled = fx.interactor()
+        .build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
     std::this_thread::sleep_for(100ms);
     fx.interactor().on_notification_cancel();
 
-    fx.dispatcher.dispatch_enqueued();
+    // on_notification_cancel no longer joins the worker, so the job reports Canceled once it
+    // unwinds. It must never produce a payload after being canceled.
+    REQUIRE(fx.wait_for_finished(listener, 1));
     CHECK(first_request_seen.load());
+    CHECK(listener.state_of(canceled) == PresetUpdater::JobState::Canceled);
     CHECK_FALSE(listener.has_result());
 
     fx.set_mutator({});

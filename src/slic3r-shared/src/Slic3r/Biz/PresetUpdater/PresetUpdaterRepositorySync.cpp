@@ -60,6 +60,15 @@ fs::path create_temp_dir()
     return temp_dir;
 }
 
+void warn_about_repo(
+    PresetUpdaterProcessStatus* process_status,
+    const std::string& repo_id,
+    const std::string& msg)
+{
+    process_status->set_warning_target(repo_id);
+    process_status->set_warning(msg, PresetUpdaterReason::SourceUnreachable);
+    process_status->clear_warning_target();
+}
 
 void remove_file(
     const fs::path& path,
@@ -70,7 +79,7 @@ void remove_file(
     bool failed = (!fs::remove(path, ec) && ec);
     
     if (failed) {
-        process_status->set_warning(fmt::format("{}: Failed to remove file {}: {}", func_name, path.string(), ec.message()));
+        process_status->set_warning(fmt::format("{}: Failed to remove file {}: {}", func_name, path.string(), ec.message()), PresetUpdaterReason::LocalStorageFailed);
     }
 }
 
@@ -83,7 +92,7 @@ void remove_directory(
     bool failed = (!fs::remove_all(path, ec) && ec);
     
     if (failed) {
-        process_status->set_warning(fmt::format("{}: Failed to remove directory {}: {}", func_name, path.string(), ec.message()));
+        process_status->set_warning(fmt::format("{}: Failed to remove directory {}: {}", func_name, path.string(), ec.message()), PresetUpdaterReason::LocalStorageFailed);
     }
 }
 
@@ -105,7 +114,7 @@ bool prepare_temp_vendor_dir(
         "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
         temp_vendor_dir_path.string(), vendor_name, ec.message());
     SPDLOG_ERROR(msg);
-    process_status->set_warning(msg);
+    process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
     return false;
 }
 
@@ -121,7 +130,7 @@ bool ensure_vendor_dir_exists(
             "{}: Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
             func_name, target_dir.string(), vendor_name, ec.message());
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
         return false;
     }
     return true;
@@ -159,12 +168,12 @@ bool check_resouces_vendor_sanity(
     const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex update_sync_index;
     if (recommended == source_index.end()) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format(
                 "No recommended version for vendor: {}, Index file might be corrupted.",
                 source_index.vendor()
             )
-        );
+        , PresetUpdaterReason::NoUsableVersion);
         return false;
     }
 
@@ -174,15 +183,15 @@ bool check_resouces_vendor_sanity(
         source_vendor_data = hw_config_loader.load(source_vendor_yaml.string());
         Semver version = Semver(source_vendor_data.info.version);
         if (version != recommended->config_version) {
-            process_status->set_error(
+            process_status->set_warning(
                 fmt::format("Vendor data in resources failed sanity check. Its version is not recommended by its index. Vendor: {}. This installation of app is probably corrupted.", source_index.vendor())
-            );
+            , PresetUpdaterReason::DataInconsistent);
             return false;
         }
     } catch (const std::exception& e) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format("Failed to load vendor file {}: {}. This installation of app is probably corrupted.", source_vendor_yaml.string(), e.what())
-        );
+        , PresetUpdaterReason::DataInconsistent);
         return false;
     }
 
@@ -231,7 +240,7 @@ bool unzip_files_from_bundle_zip(
     if (!archive.open(zip_file.string())) {
         std::string msg = fmt::format("Couldn't open zipped bundle: {}", zip_file.string());
         SPDLOG_ERROR(msg);
-        if (process_status) process_status->set_warning(msg);
+        if (process_status) process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
         return false;
     }
 
@@ -259,7 +268,7 @@ bool unzip_files_from_bundle_zip(
         if (!fs::create_directories(target_path.parent_path(), ec) && ec) {
             std::string msg = fmt::format("Failed to create directory {}: {}", target_path.parent_path().string(), ec.message());
             SPDLOG_ERROR(msg);
-            if (process_status) process_status->set_warning(msg);
+            if (process_status) process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
             success = false;
             continue;
         }
@@ -269,7 +278,7 @@ bool unzip_files_from_bundle_zip(
             if (!mz_zip_reader_extract_to_mem(archive.get(), stat.m_file_index, buffer.get(), (size_t)stat.m_uncomp_size, 0)) {
                 std::string msg = fmt::format("Failed to unzip {}", stat.m_filename);
                 SPDLOG_ERROR(msg);
-                if (process_status) process_status->set_warning(msg);
+                if (process_status) process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
                 success = false;
                 continue;
             }
@@ -278,7 +287,7 @@ bool unzip_files_from_bundle_zip(
             if (!file) {
                 std::string msg = fmt::format("Failed to open file for writing: {}", target_path.string());
                 SPDLOG_ERROR(msg);
-                if (process_status) process_status->set_warning(msg);
+                if (process_status) process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                 success = false;
                 continue;
             }
@@ -287,7 +296,7 @@ bool unzip_files_from_bundle_zip(
             if (!file) {
                 std::string msg = fmt::format("Failed to write data to: {}", target_path.string());
                 SPDLOG_ERROR(msg);
-                if (process_status) process_status->set_warning(msg);
+                if (process_status) process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                 success = false;
                 continue;
             }
@@ -307,7 +316,7 @@ bool move_file(
     if (!result) {
         std::string msg = fmt::format("{}: Failed to move file {}: {}", func_name, source.string(), result.error());
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
         return false;
     }
     return true;
@@ -349,7 +358,7 @@ bool download_and_stage_vendor_files(
             std::string msg = fmt::format(
                 "{}: Failed to get file {}. Staging update has failed.", 
                 std::string(__FUNCTION__), zip_filename);
-            SPDLOG_ERROR(msg); process_status->set_warning(msg); return false;
+            SPDLOG_ERROR(msg); process_status->set_warning(msg, PresetUpdaterReason::DataUnreadable); return false;
         }
 
         // Unzip to parent dir (dir named with uuid in temp) so the unzipped tree matches temp_vendor_dir_path structure
@@ -357,7 +366,7 @@ bool download_and_stage_vendor_files(
             std::string msg = fmt::format(
                 "{}: Failed to unzip bundle {}. Staging update has failed.", 
                 std::string(__FUNCTION__), target_path.string());
-            SPDLOG_ERROR(msg); process_status->set_warning(msg); return false;
+            SPDLOG_ERROR(msg); process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted); return false;
         }
     } else {
         // Download each file individually
@@ -372,7 +381,7 @@ bool download_and_stage_vendor_files(
                 std::string msg = fmt::format(
                     "{}: Failed to get file {}. Staging update has failed.", 
                     std::string(__FUNCTION__), source_subpath);
-                SPDLOG_ERROR(msg); process_status->set_warning(msg); return false;
+                SPDLOG_ERROR(msg); process_status->set_warning(msg, PresetUpdaterReason::DataUnreadable); return false;
             }
         }
     }
@@ -385,7 +394,7 @@ bool download_and_stage_vendor_files(
             std::string msg = fmt::format(
                 "{}: Failed to find file {}. Error: {}. Bundle is corrupted. Staging update has failed.", 
                 std::string(__FUNCTION__), target_path.string(), ec.message());
-            SPDLOG_ERROR(msg); process_status->set_warning(msg); return false;
+            SPDLOG_ERROR(msg); process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted); return false;
         }
 
         // Check file hash - it was not done during download
@@ -393,7 +402,7 @@ bool download_and_stage_vendor_files(
             std::string msg = fmt::format(
                 "File {} has failed file hash test after download. File is probably corrupted.", 
                 target_path.string());
-            SPDLOG_ERROR(msg); process_status->set_warning(msg); return false;
+            SPDLOG_ERROR(msg); process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted); return false;
         }
 
         // move to update_sync
@@ -417,7 +426,6 @@ void delete_staged_files(
     // Delete selected files in update_sync
     for (const std::string& filename : files_to_delete) {
         fs::path path(update_sync_vendor_dir_path / filename);
-        ASSERT(fs::exists(path) && fs::is_regular_file(path));
         if (!fs::remove(path, ec) || ec) {
             std::string msg = fmt::format(
                 "{}: Failed to remove file {}",
@@ -425,7 +433,7 @@ void delete_staged_files(
                 path.string()
             );
             SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+            process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
         }
     }
 }
@@ -441,16 +449,12 @@ bool copy_vendor_from_resources_to_sync(
 
     // Copy source to update_sync
     if (!fs::create_directories(update_sync_vendor_dir, ec) && ec) {
-        process_status->set_error(
+        process_status->set_warning(
             "Failed to create vendor dir " + update_sync_vendor_dir.string() + ". " + ec.message()
-        );
+        , PresetUpdaterReason::LocalStorageFailed);
         return false;
     }
 
-    if (!copy_file_wrapper(source_index.path(), update_sync_index_path, process_status)) {
-        return false;
-    }
-    
     for (const auto& entry : fs::recursive_directory_iterator(source_vendor_dir, ec)) {
         if (!entry.is_regular_file(ec) || ec) {
             continue;
@@ -476,10 +480,15 @@ bool copy_vendor_from_resources_to_sync(
             ec.message()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
         return false;
     }
-    
+
+    // The index is the commit marker: copy it only once the payload is whole.
+    if (!copy_file_wrapper(source_index.path(), update_sync_index_path, process_status)) {
+        return false;
+    }
+
     return true;
 }
 
@@ -502,7 +511,7 @@ bool should_keep_staged_version(
         } catch (const std::runtime_error&) {
             process_status->set_warning(
                 "Failed to load index " + update_sync_index_path.string()
-            );
+            , PresetUpdaterReason::IndexUnreadable);
         }
         
         if (loaded_update_sync_index) {
@@ -553,7 +562,7 @@ std::map<std::string, PresetUpdaterFileHash> get_directory_file_hashes(
     if (ec) {
         std::string msg = fmt::format("{}: Error traversing directory {}: {}", func_name, dir_path.string(), ec.message());
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
     }
     return hashes;
 }
@@ -571,7 +580,7 @@ bool download_version_manifest(
     if (!repo->get_version_manifest(source_subpath, temp_manifest_path, process_status)) {
         std::string msg = fmt::format("{}: Failed to get file {}. Staging update has failed.", func_name, source_subpath);
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataUnreadable);
         return false;
     }
     return true;
@@ -615,7 +624,10 @@ void PresetUpdaterRepositorySync::sync(
     PresetUpdaterProcessStatus* process_status
 ) const
 {
-    ASSERT(process_status);
+    ASSERT(
+        process_status,
+        "Every step of the sync reports through it, so there is nothing sensible to do without one."
+    );
 
     // Create workspace in OS temp folder.
     fs::path temp_dir;
@@ -624,7 +636,7 @@ void PresetUpdaterRepositorySync::sync(
     try {
         temp_dir = create_temp_dir();
     } catch (const Slic3r::RuntimeError& e) {
-        process_status->set_error(std::string("Preset Archive Sync has failed. ") + e.what());
+        process_status->set_error(std::string("Preset Archive Sync has failed. ") + e.what(), PresetUpdaterReason::DataDirUnusable);
         return;
     }
 
@@ -650,7 +662,7 @@ void PresetUpdaterRepositorySync::sync(
                 if (ec != boost::system::errc::directory_not_empty) {
                     process_status->set_warning(
                         "Failed to remove empty repo dir " + update_sync_repo_dir.string() + ". " + ec.message()
-                    );
+                    , PresetUpdaterReason::LocalStorageFailed);
                     return;
                 }
             }
@@ -680,7 +692,9 @@ void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
 
     const fs::path update_sync_repo_dir = fs::path(data_dir()) / "update_sync" / repo->descriptor().id;
     if (!fs::create_directory(update_sync_repo_dir, ec) && ec) {
-        process_status->set_error(
+        warn_about_repo(
+            process_status,
+            repo->descriptor().id,
             "Failed to create repo dir " + update_sync_repo_dir.string() + ". " + ec.message()
         );
         return;
@@ -696,7 +710,7 @@ void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
             e.what()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
         return;
     }
 
@@ -735,24 +749,19 @@ void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
     const fs::path update_sync_vendor_yaml = update_sync_vendor_dir / "vendor.yaml";
 
     const fs::path source_vendor_dir  = source_dir / source_index.vendor();
-    const fs::path source_vendor_yaml = source_vendor_dir / "vendor.yaml";
 
     boost::system::error_code ec;
-
-    ASSERT(fs::exists(source_index.path()));
-    ASSERT(fs::exists(source_vendor_dir) && fs::is_directory(source_vendor_dir));
-    ASSERT(fs::exists(source_vendor_yaml) && fs::is_regular_file(source_vendor_yaml));
 
     // Recommended version of vendor
     const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex update_sync_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     if (recommended == source_index.end()) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format(
                 "No recommended version for vendor: {}, Index file might be corrupted.",
                 source_index.vendor()
             )
-        );
+        , PresetUpdaterReason::NoUsableVersion);
         return;
     }
 
@@ -802,31 +811,25 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     const fs::path update_sync_vendor_yaml = update_sync_vendor_dir / "vendor.yaml";
 
     const fs::path source_vendor_dir  = source_dir / source_index.vendor();
-    const fs::path source_vendor_yaml = source_vendor_dir / "vendor.yaml";
 
     boost::system::error_code ec;
     Preset::IO::HwConfigLoader hw_config_loader;
-
-    ASSERT(fs::exists(source_index.path()));
-    ASSERT(fs::exists(source_vendor_dir) && fs::is_directory(source_vendor_dir));
-    ASSERT(fs::exists(source_vendor_yaml) && fs::is_regular_file(source_vendor_yaml));
 
     // Recommended version of vendor
     const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex installed_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     PresetUpdaterIndex update_sync_index;
     if (recommended == source_index.end()) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format(
                 "No recommended version for vendor: {}, Index file might be corrupted.",
                 source_index.vendor()
             )
-        );
+        , PresetUpdaterReason::NoUsableVersion);
         return;
     }
 
     // Check if installed version is recommended
-    ASSERT (fs::exists(installed_vendor_yaml));
     try {
         Domain::Preset::VendorData installed_vendor_data;
         installed_vendor_data = hw_config_loader.load(installed_vendor_yaml.string());
@@ -863,7 +866,7 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
             e.what()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        process_status->set_warning(msg, PresetUpdaterReason::DataInconsistent);
     }
 
 
@@ -910,8 +913,7 @@ void PresetUpdaterRepositorySync::sync_repository(
             ec.message()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        DEBUG_ASSERT(false);
+        warn_about_repo(process_status, repo->descriptor().id, msg);
         return;
     }
 
@@ -923,7 +925,7 @@ void PresetUpdaterRepositorySync::sync_repository(
             repo->descriptor().id
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        warn_about_repo(process_status, repo->descriptor().id, msg);
         return;
     }
     if (process_status->get_canceled()) {
@@ -960,8 +962,7 @@ void PresetUpdaterRepositorySync::sync_repository(
             repo->descriptor().id
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        DEBUG_ASSERT(false);
+        warn_about_repo(process_status, repo->descriptor().id, msg);
         return;
     } else {
         mz_uint num_entries = mz_zip_reader_get_num_files(archive.get());
@@ -988,7 +989,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                     if (res == 0) {
                         std::string msg = fmt::format("Failed to unzip {}", stat.m_filename);
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
                         continue;
                     }
     
@@ -999,7 +1000,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                             name
                         );
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::DataCorrupted);
                         continue;
                     }
     
@@ -1012,7 +1013,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                     if (!file) {
                         std::string msg = fmt::format("Failed to open temp file for writing: {}", tmp_path.string());
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                         continue;
                     }
 
@@ -1020,7 +1021,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                     if (!file) {
                         std::string msg = fmt::format("Failed to write to temp file: {}", tmp_path.string());
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                         continue;
                     }
                     file.close();
@@ -1032,7 +1033,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                             tmp_path.string()
                         );
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                         return;
                     }
 
@@ -1044,7 +1045,7 @@ void PresetUpdaterRepositorySync::sync_repository(
                             ec ? ec.message() : result.error()
                         );
                         SPDLOG_ERROR(msg);
-                        process_status->set_warning(msg);
+                        process_status->set_warning(msg, PresetUpdaterReason::LocalStorageFailed);
                         return;
                     }
 
@@ -1067,7 +1068,7 @@ void PresetUpdaterRepositorySync::sync_repository(
             e.what()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+        warn_about_repo(process_status, repo->descriptor().id, msg);
         return;
     }
 
@@ -1106,8 +1107,6 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
         / index.path().filename();
     boost::system::error_code ec;
 
-    ASSERT(fs::exists(index.path()));
-
     // Recommended version of vendor
     const PresetUpdaterIndex::const_iterator recommended = index.recommended();
     if (recommended == index.end()) {
@@ -1116,8 +1115,7 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
             index.vendor()
         );
         SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        // DEBUG_ASSERT(false);
+        process_status->set_warning(msg, PresetUpdaterReason::NoUsableVersion);
         return;
     }
 
@@ -1154,6 +1152,9 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     // Compare files_in_version_manifest and files_in_update_sync
     SyncOperations sync_files = calculate_sync_operations(files_in_version_manifest, files_in_update_sync);
 
+    // The index is the commit marker: dropping it hides the payload while it is rebuilt.
+    remove_file(index_update_sync_path, process_status, __FUNCTION__);
+
     // Delete selected files in update_sync
     delete_staged_files(sync_files.files_to_delete, update_sync_vendor_dir_path, process_status);
 
@@ -1172,11 +1173,14 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     }
 
 
-    // Move index to stage_sync
-    move_file(index.path(), index_update_sync_path, process_status, __FUNCTION__);
-
     // Move manifest file to update_sync
-    move_file(temp_manifest_path, update_sync_manifest_path, process_status, __FUNCTION__);
+    const bool manifest_staged =
+        move_file(temp_manifest_path, update_sync_manifest_path, process_status, __FUNCTION__);
+
+    // Move index to stage_sync
+    if (manifest_staged) {
+        move_file(index.path(), index_update_sync_path, process_status, __FUNCTION__);
+    }
 
     // Cleanup temp
     remove_directory(temp_vendor_dir_path, process_status, __FUNCTION__);
@@ -1205,19 +1209,15 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     const fs::path installed_vendor_yaml_path = installed_vendor_dir_path / "vendor.yaml";
     boost::system::error_code ec;
 
-    ASSERT(fs::exists(index.path()));
-    ASSERT(fs::exists(installed_vendor_dir_path) && fs::is_directory(installed_vendor_dir_path));
-    ASSERT(fs::exists(installed_vendor_yaml_path));
-
     // Current installed version
     Preset::IO::HwConfigLoader hw_config_loader;
     Domain::Preset::VendorData vendor_data;
     try {
         vendor_data = hw_config_loader.load(installed_vendor_yaml_path.string());
     } catch (const std::exception& e) {
-        process_status->set_error(
+        process_status->set_warning(
             fmt::format("Failed to read vendor file {}: {}", installed_vendor_yaml_path.string(), e.what())
-        );
+        , PresetUpdaterReason::DataInconsistent);
         return;
     }
     Semver installed_version = Semver(vendor_data.info.version);
@@ -1230,8 +1230,7 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
                 "No recommended version for vendor: {}, Index file might be corrupted.",
                 index.vendor()
             )
-        );
-        DEBUG_ASSERT(false);
+        , PresetUpdaterReason::NoUsableVersion);
         return;
     }
     const PresetUpdaterIndex::const_iterator vendor_current_version_it = index.find(installed_version);
@@ -1296,6 +1295,9 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     // Compare files_to_download_against_installed and files_in_update_sync
     SyncOperations sync_files = calculate_sync_operations(files_to_download_against_installed, files_in_update_sync);
    
+    // The index is the commit marker: dropping it hides the payload while it is rebuilt.
+    remove_file(index_update_sync_path, process_status, __FUNCTION__);
+
     // Delete selected files in update_sync
     delete_staged_files(sync_files.files_to_delete, update_sync_vendor_dir_path, process_status);
 
@@ -1313,11 +1315,14 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
         return; 
     }
 
-    // Move index to stage_sync
-    move_file(index.path(), index_update_sync_path, process_status, __FUNCTION__);
-
     // Move manifest file to update_sync
-    move_file(temp_manifest_path, update_sync_manifest_path, process_status, __FUNCTION__);
+    const bool manifest_staged =
+        move_file(temp_manifest_path, update_sync_manifest_path, process_status, __FUNCTION__);
+
+    // Move index to stage_sync
+    if (manifest_staged) {
+        move_file(index.path(), index_update_sync_path, process_status, __FUNCTION__);
+    }
 
     // Cleanup temp
     remove_directory(temp_vendor_dir_path, process_status, __FUNCTION__);
