@@ -52,4 +52,9 @@ inline const PopNotificationObservableList::Matcher never_equal_matcher =
     return false;
 };
 
+inline const PopNotificationObservableList::Matcher always_equal_matcher = 
+    [](const PopNotificationPayload&, const PopNotificationPayload&) {
+    return true;
+};
+
 } // namespace Slic3r::App::PopNotification

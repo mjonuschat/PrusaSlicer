@@ -161,6 +161,23 @@ public:
     {
         return "";
     }
+
+    Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector show_preset_sources_dialog(
+        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
+    ) override
+    {
+        return {};
+    }
+
+    void show_forced_reconfigurations_dialog(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::function<void(bool)>& callback
+    ) override
+    {
+        // TODO: Asserting to see if any call leads here.
+        DEBUG_ASSERT(false);
+        callback(false);
+    }
 };
 
 int run(InitParams& init_params)

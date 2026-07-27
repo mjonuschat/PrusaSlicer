@@ -53,7 +53,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/RammingChart.cpp
         include/Slic3r/App/WX/SavePresetDialog.hpp
         src/Slic3r/App/WX/SavePresetDialog.cpp
-
+        include/Slic3r/App/WX/PresetSourceDialog.hpp
+        src/Slic3r/App/WX/PresetSourceDialog.cpp
         
         include/Slic3r/Biz/WX/FontManager.hpp
         include/Slic3r/Biz/WX/FontUtils.hpp

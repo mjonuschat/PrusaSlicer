@@ -6,6 +6,7 @@
 
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -38,7 +39,7 @@ enum class ModuleType
 };
 } // namespace Render
 
-class Navigator : public Biz::ISelectedProjectChangedListener
+class Navigator : public Biz::ISelectedProjectChangedListener, public IAppConfigChangedListener
 {
 public:
     ~Navigator();
@@ -76,6 +77,8 @@ public:
     bool is_fullscreen() const;
     void set_fullscreen(bool fullscreen);
     void close_application();
+
+    void on_app_config_changed(const std::string& key) override;
 
 private:
     void set_render_module_type(Render::ModuleType type);

@@ -15,6 +15,8 @@ void configure_http_factory_with_mock() {
         return MockHttpProvider::get().create_fn()(request_method, url, fn);
     });
 
+    // All static functions must be set, otherwise default factory will run configure again and reconfigure Http implementation.
+
     factory.set_extract_host_from_url_fn([](const std::string& url) -> std::string {
         return "mock.host";
     });

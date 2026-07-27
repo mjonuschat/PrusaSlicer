@@ -52,6 +52,59 @@ FileOpResult safe_move(const boost::filesystem::path& source, const boost::files
     return {};
 }
 
+bool move_directory_contents(
+    const fs::path& source_dir, 
+    const fs::path& dest_dir, 
+    PresetUpdaterProcessStatus* process_status,
+    const char* caller_name) 
+{
+    boost::system::error_code ec;
+    for (const auto& entry : fs::recursive_directory_iterator(source_dir, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
+            continue;
+        }
+        const fs::path& source_path = entry.path();
+        fs::path relative_path      = fs::relative(source_path, source_dir);
+        fs::path dest_path          = dest_dir / relative_path;
+
+        if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
+            process_status->set_error(
+                fmt::format(
+                    "Failed to create target directory {}: {}. Staging update has failed.",
+                    dest_path.parent_path().string(),
+                    ec.message()
+                )
+            );
+            return false;
+        }
+
+        auto result = safe_move(source_path, dest_path);
+        if (!result) {
+            process_status->set_error(
+                fmt::format(
+                    "Failed to move file {} to {}: {}",
+                    source_path.string(),
+                    dest_path.string(),
+                    result.error()
+                )
+            );
+            return false;
+        }
+    }
+    
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            caller_name,
+            source_dir.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
+    
+    return true;
+}
 
 bool copy_file_wrapper(const fs::path& source, const fs::path& target, PresetUpdaterProcessStatus* process_status)
 {
@@ -291,6 +344,8 @@ void perform_update_no_source_manifest(
     ASSERT(fs::exists(vendor_source_dir_path) && fs::is_directory(vendor_source_dir_path));
     ASSERT(fs::exists(vendor_source_idx_path) && fs::is_regular_file(vendor_source_idx_path));
 
+    process_status->set_install_target(update.vendor_id);
+
     if (!fs::create_directories(vendor_dest_dir_path, ec) && ec) {
         process_status->set_error(
             fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
@@ -321,47 +376,8 @@ void perform_update_no_source_manifest(
     }
 
     // move alle files from source
-    for (const auto& entry : fs::recursive_directory_iterator(vendor_source_dir_path, ec)) {
-        if (!entry.is_regular_file(ec) || ec) {
-            continue;
-        }
-        const fs::path& source_path = entry.path();
-        fs::path relative_path      = fs::relative(source_path, vendor_source_dir_path);
-        fs::path dest_path          = vendor_dest_dir_path / relative_path;
-
-        if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
-            process_status->set_error(
-                fmt::format(
-                    "Failed to create directory {}: {}",
-                    dest_path.parent_path().string(),
-                    ec.message()
-                )
-            );
-            return;
-        }
-
-        auto result = safe_move(source_path, dest_path);
-        if (!result) {
-            process_status->set_error(
-                fmt::format(
-                    "Failed to move file {} to {}: {}",
-                    source_path.string(),
-                    dest_path.string(),
-                    result.error()
-                )
-            );
-            return;
-        }
-    }
-    if (ec) {
-        std::string msg = fmt::format(
-            "{}: Error traversing directory {}: {}",
-            std::string(__FUNCTION__),
-            vendor_source_dir_path.string(),
-            ec.message()
-        );
-        SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
+    if (!move_directory_contents(vendor_source_dir_path, vendor_dest_dir_path, process_status, __FUNCTION__)) {
+        return;
     }
 
     // move index
@@ -414,6 +430,7 @@ void perform_update_with_source_manifest(
         fs::exists(vendor_source_manifest_path) && fs::is_regular_file(vendor_source_manifest_path, ec)
     );
 
+    process_status->set_install_target(update.vendor_id);
 
     // in case of new vendor, repo_dest_dir_path needs to be created
     if (!fs::create_directory(repo_dest_dir_path, ec) && ec) {
@@ -465,38 +482,10 @@ void perform_update_with_source_manifest(
     }
 
     // move files that are staged
-    for (const auto& entry : fs::recursive_directory_iterator(vendor_source_dir_path, ec)) {
-        if (!entry.is_regular_file(ec) || ec) {
-            continue;
-        }
-        const fs::path& source_path = entry.path();
-        fs::path relative_path      = fs::relative(source_path, vendor_source_dir_path);
-        fs::path dest_path          = vendor_dest_dir_path / relative_path;
-        // create subdir
-        if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
-            std::string msg = fmt::format(
-                "Failed to create target directory {}: {}. Staging update has failed.",
-                dest_path.parent_path().string(),
-                ec.message()
-            );
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
-            return;
-        }
-        // move file
-        auto result = safe_move(source_path, dest_path);
-        if (!result) {
-            process_status->set_error(
-                fmt::format(
-                    "Failed to move file {} to {}: {}",
-                    source_path.string(),
-                    dest_path.string(),
-                    result.error()
-                )
-            );
-            return;
-        }
+    if (!move_directory_contents(vendor_source_dir_path, vendor_dest_dir_path, process_status, __FUNCTION__)) {
+        return;
     }
+
     // move index
     auto result = safe_move(vendor_source_idx_path, vendor_dest_idx_path);
     if (!result) {
@@ -550,6 +539,7 @@ void perform_updates(
         }
     }
 }
+
 } // namespace
 
 PresetUpdaterReconfigurationList check_forced_reconfigurations(
@@ -679,7 +669,7 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
 
             if (vendor_current_version_it->is_current_slic3r_supported()) {
                 // This slicer needs no forced reconfigurations
-                SPDLOG_ERROR(
+                SPDLOG_INFO(
                     "Preset bundle `{}` version {} needs no forced reconfiguration.",
                     index.vendor(),
                     current_version.to_string()

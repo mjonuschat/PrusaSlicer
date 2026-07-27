@@ -103,7 +103,7 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
 bool AbstractPresetUpdaterRepository::extract_repository_header(
     const nlohmann::json& json,
     PresetUpdaterRepositoryDescriptor& data,
-    PresetUpdaterProcessStatus* process_status
+    std::string& warning_msg
 )
 {
     try {
@@ -140,7 +140,7 @@ bool AbstractPresetUpdaterRepository::extract_repository_header(
 
     } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Failed to parse source manifest: {}. json: {}", e.what(), json.dump());
-        process_status->set_warning(fmt::format("Failed to parse source manifest: {}.", e.what()));
+        warning_msg = fmt::format("Failed to parse source manifest: {}.", e.what());
         return false;
     }
     return true;
@@ -183,16 +183,15 @@ bool OnlinePresetUpdaterRepository::get_file_inner(
         http->header("Authorization", "Bearer " + access_token);
     }
     http->timeout_total(30)
+        .size_limit(1024 * 1024 * 100) // How large is the largest bundle?
         .on_error([&](std::string body, std::string error, unsigned http_status) {
             SPDLOG_ERROR("Error getting: `{}`: HTTP {}, {}", url, http_status, body);
-            process_status->set_warning(error);
             res = false;
         })
         .on_complete([&](std::string body, unsigned /* http_status */) {
             if (body.empty()) {
                 std::string msg = fmt::format("Error getting: `{}`: Body is empty.", url);
                 SPDLOG_ERROR(msg);
-                process_status->set_warning(msg);
                 return;
             }
             boost::nowide::fstream file(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
@@ -221,31 +220,16 @@ bool OnlinePresetUpdaterRepository::get_archive(
 bool OnlinePresetUpdaterRepository::get_file(
     const std::string& source_subpath,
     const boost::filesystem::path& target_path,
-    const std::string& file_hash_string,
     PresetUpdaterProcessStatus* process_status
 ) const
 {
-    process_status->set_target(target_path.filename().string());
+    process_status->set_download_target(target_path.filename().string());
 
     const std::string escaped_source_subpath = Network::IHttp::escape_path_by_element(
         fs::path(source_subpath)
     );
 
-    if (!get_file_inner(m_data.url + escaped_source_subpath, target_path, process_status)) {
-        return false;
-    }
-    
-    if (PresetUpdaterFileHash file_hash = PresetUpdater::file_hash(target_path, process_status); !process_status->ignore_file_hash() && file_hash != file_hash_string) {
-        std::string msg = fmt::format(
-            "File {} has failed file hash test after download. File is probably corrupted.",
-            target_path.string()
-        );
-        SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        return false;
-    }
-
-    return true;
+    return get_file_inner(m_data.url + escaped_source_subpath, target_path, process_status);
 }
 
 bool OnlinePresetUpdaterRepository::get_version_manifest(
@@ -254,7 +238,7 @@ bool OnlinePresetUpdaterRepository::get_version_manifest(
     PresetUpdaterProcessStatus* process_status
 ) const
 {
-    process_status->set_target(target_path.filename().string());
+    process_status->set_download_target(target_path.filename().string());
 
     const std::string escaped_source_subpath = Network::IHttp::escape_path_by_element(
         fs::path(source_subpath)
@@ -302,24 +286,10 @@ bool LocalPresetUpdaterRepository::get_file_inner(
 bool LocalPresetUpdaterRepository::get_file(
     const std::string& source_subpath,
     const boost::filesystem::path& target_path,
-    const std::string& file_hash_string,
     PresetUpdaterProcessStatus* process_status
 ) const
 {
-    if (!get_file_inner(m_data.unzipped_data_path / source_subpath, target_path)) {
-        return false;
-    }
-
-    if (PresetUpdaterFileHash file_hash = PresetUpdater::file_hash(target_path, process_status); !process_status->ignore_file_hash() && file_hash != file_hash_string) {
-        std::string msg = fmt::format(
-            "File {} has failed file hash test after download. File is probably corupted.",
-            target_path.string()
-        );
-        SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        return false;
-    }
-    return true;
+    return get_file_inner(m_data.unzipped_data_path / source_subpath, target_path);
 }
 
 bool LocalPresetUpdaterRepository::get_version_manifest(
@@ -340,100 +310,101 @@ bool LocalPresetUpdaterRepository::get_archive(
     return get_file_inner(std::move(source_path), target_path);
 }
 
+template <typename F>
+struct ScopeFail {
+    F f;
+    bool active = true;
+    ~ScopeFail() { if (active) f(); }
+    void dismiss() { active = false; }
+};
+
 bool LocalPresetUpdaterRepository::extract_local_archive_repository(
     PresetUpdaterRepositoryDescriptor& descriptor,
-    PresetUpdaterProcessStatus* process_status
+    std::string& error_msg
 )
 {
     DEBUG_ASSERT(!descriptor.unzipped_data_path.empty());
     DEBUG_ASSERT(!descriptor.zip_path.empty());
+
     // Delete previous data before unzip.
-    // We have unique path in temp set for whole run of slicer and in it folder for each repo.
     delete_path_recursive(descriptor.unzipped_data_path);
 
     boost::system::error_code ec;
     if (!fs::create_directories(descriptor.unzipped_data_path, ec) && ec) {
-        process_status->set_error(
-            fmt::format(
-                "Failed to create directory at {} for repository {}.",
-                descriptor.unzipped_data_path.string(),
-                descriptor.id
-            )
+        error_msg = fmt::format(
+            "Failed to create directory at {} for repository {}.",
+            descriptor.unzipped_data_path.string(),
+            descriptor.id
         );
         return false;
     }
 
+    // RAII guard to clean up the directory if the function exits early
+    ScopeFail cleanup_guard{[&]() { delete_path_recursive(descriptor.unzipped_data_path); }};
+
     // Unzip repository zip to unique path in temp directory.
     if (!unzip_repository(descriptor.zip_path, descriptor.unzipped_data_path)) {
-        process_status->set_error(fmt::format("Failed to unzip repository on path \"{}\".", descriptor.zip_path.string()));
-        delete_path_recursive(descriptor.unzipped_data_path);
+        error_msg = fmt::format("Failed to unzip repository on path \"{}\".", descriptor.zip_path.string());
         return false;
     }
+
     // Read the manifest file.
     fs::path manifest_path = descriptor.unzipped_data_path / "manifest.json";
 
     try {
         boost::nowide::ifstream file_stream(manifest_path.c_str());
         if (!file_stream.is_open()) {
-            SPDLOG_ERROR("Failed to open manifest file: {}", manifest_path.string());
-            delete_path_recursive(descriptor.unzipped_data_path);
+            error_msg = fmt::format("Failed to open manifest file: {}", manifest_path.string());
             return false;
         }
 
         nlohmann::json j = nlohmann::json::parse(file_stream, nullptr, false);
         if (j.is_discarded()) {
-            SPDLOG_ERROR("Failed to parse manifest as JSON: {}", manifest_path.string());
-            delete_path_recursive(descriptor.unzipped_data_path);
+            error_msg = fmt::format("Failed to parse manifest as JSON: {}", manifest_path.string());
             return false;
         }
 
-        if (!extract_repository_header(j, descriptor, process_status)) {
-            process_status->set_error(
-                fmt::format("Failed to process repository data of source: {}", descriptor.id)
-            );
-            delete_path_recursive(descriptor.unzipped_data_path);
+        if (!extract_repository_header(j, descriptor, error_msg)) {
             return false;
         }
     } catch (const nlohmann::json::exception& e) {
-        process_status->set_error(
-            fmt::format(
-                "Failed to read source manifest JSON {}. Reason: {}",
-                manifest_path.string(),
-                e.what()
-            )
+        error_msg = fmt::format(
+            "Failed to read source manifest JSON {}. Reason: {}",
+            manifest_path.string(),
+            e.what()
         );
-        delete_path_recursive(descriptor.unzipped_data_path);
         return false;
     }
+
+    // Success path: dismiss the guard so it doesn't delete the data
+    cleanup_guard.dismiss();
     return true;
 }
 
 bool LocalPresetUpdaterRepository::data_structure_check(
     const boost::filesystem::path& unzipped_path,
-    PresetUpdaterProcessStatus* process_status
+    std::string& error_msg
 )
 {
     boost::system::error_code ec;
     if (!fs::exists(unzipped_path, ec) || ec || !fs::is_directory(unzipped_path, ec) || ec) {
-        process_status->set_error(
-            fmt::format("Directory \"{}\" does not exists.", unzipped_path.string())
-        );
+        error_msg = fmt::format("Directory \"{}\" does not exists.", unzipped_path.string());
         return false;
     }
 
     const fs::path manifest_path = unzipped_path / "manifest.json";
     if (!fs::exists(manifest_path, ec) || ec || !fs::is_regular_file(manifest_path, ec) || ec) {
-        process_status->set_error(
-            fmt::format("Missing manifest file at \"{}\".", manifest_path.string())
-        );
+        error_msg = fmt::format("Missing manifest file at \"{}\".", manifest_path.string());
         return false;
     }
 
     const fs::path index_archive_path = unzipped_path / "vendor_indices.zip";
-    if (!fs::exists(index_archive_path, ec) || ec || !fs::is_regular_file(index_archive_path, ec) || ec) {
-        process_status->set_error(
-            fmt::format("Missing index archive at \"{}\".", index_archive_path.string())
-        );
+    if (!fs::exists(index_archive_path, ec)
+        || ec
+        || !fs::is_regular_file(index_archive_path, ec)
+        || ec)
+    {
+        error_msg = fmt::format("Missing index archive at \"{}\".", index_archive_path.string());
         return false;
     }
 

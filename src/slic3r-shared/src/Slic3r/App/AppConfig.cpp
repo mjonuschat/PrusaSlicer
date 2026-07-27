@@ -140,6 +140,15 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->init_fn = []() { return Domain::ConfigValue(true); };
 #endif
 
+    def = defs.add("enable_preset_update", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Enable Preset Management");
+    def->tooltip = L("Enable Preset Management.");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_General;
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
     def = defs.add("layout_main_left_column_width", typeid(double));
     def->location = Domain::AppConfigLocation{};
     def->category = Domain::ConfigItemDef::Category::Hidden;

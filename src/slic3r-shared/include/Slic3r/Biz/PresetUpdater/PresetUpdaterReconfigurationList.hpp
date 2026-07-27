@@ -61,6 +61,20 @@ public:
         default;
     ~PresetUpdaterReconfigurationList() = default;
 
+    PresetUpdaterReconfigurationList(
+        const std::vector<VendorReconfiguration>& regular_updates,
+        const std::vector<VendorReconfiguration>& forced_updates,
+        const std::vector<VendorReconfiguration>& forced_downgrades,
+        const std::vector<VendorReconfiguration>& not_in_index,
+        const std::vector<VendorReconfiguration>& new_vendors
+    ) :
+        m_regular_updates(regular_updates),
+        m_forced_updates(forced_updates),
+        m_forced_downgrades(forced_downgrades),
+        m_not_in_index(not_in_index),
+        m_new_vendors(new_vendors)
+    {}
+
     // Method to emplace a VendorReconfiguration into the appropriate vector
     template <typename... Args>
     void emplace_back(VendorReconfigurationState state, Args&&... args)

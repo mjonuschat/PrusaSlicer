@@ -56,10 +56,12 @@ void PresetUpdaterRepositoryDatabase::add_local_repository(
     header_data.unzipped_data_path = fs::path(data_dir()) / "local_repositories" / uuid;
     boost::system::error_code ec;
 
-    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, process_status)) {
+    std::string err_msg;
+    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, err_msg)) {
+        process_status->set_error(err_msg);
         return;
     }
-    if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, process_status)) {
+    if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, err_msg)) {
         return;
     }
     if (unselect_others) {
@@ -74,6 +76,24 @@ void PresetUpdaterRepositoryDatabase::add_local_repository(
         std::make_unique<LocalPresetUpdaterRepository>(uuid, std::move(header_data), true)
     );
     save_app_manifest_json(process_status);
+}
+
+SharedPresetUpdaterRepositoryInfo PresetUpdaterRepositoryDatabase::prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg)
+{
+    PresetUpdaterRepositoryDescriptor header_data;
+    const std::string uuid         = get_next_uuid();
+    header_data.zip_path           = zip_path;
+    header_data.unzipped_data_path = fs::path(data_dir()) / "local_repositories" / uuid;
+    header_data.uuid = uuid;
+    boost::system::error_code ec;
+
+    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, error_msg)) {
+        return {};
+    }
+    if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, error_msg)) {
+        return {};
+    }
+    return SharedPresetUpdaterRepositoryInfo{std::move(header_data), true};
 }
 
 void PresetUpdaterRepositoryDatabase::remove_local_repository(
@@ -113,6 +133,22 @@ void PresetUpdaterRepositoryDatabase::remove_local_repository(
     m_all_repositories.erase(archives_it);
 
     save_app_manifest_json(process_status);
+}
+
+void PresetUpdaterRepositoryDatabase::remove_local_repository_files(
+    const SharedPresetUpdaterRepositoryInfo& info
+)
+{
+    ASSERT(!info.descriptor.unzipped_data_path.empty());
+    boost::system::error_code ec;
+    fs::remove_all(info.descriptor.unzipped_data_path, ec);
+    if (ec) {
+        SPDLOG_ERROR(
+            "Failed to remove directory {}: {}.",
+            info.descriptor.unzipped_data_path.string(),
+            ec.what()
+        );
+    }
 }
 
 void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProcessStatus* process_status)
@@ -165,12 +201,14 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
             // if "zip_path in repo_json is not empty, it's a local repo, else it's an online repo
             if (repo_json.contains("zip_path") && !repo_json["zip_path"].is_null() && !repo_json["zip_path"].get<std::string>().empty()) {
                 PresetUpdaterRepositoryDescriptor descriptor;
+                std::string warning_msg;
                 if (!AbstractPresetUpdaterRepository::extract_repository_header(
                         repo_json,
                         descriptor,
-                        process_status
+                        warning_msg
                     ))
                 {
+                    process_status->set_warning(warning_msg);
                     continue;
                 }
                 if (descriptor.unzipped_data_path.empty()
@@ -205,12 +243,14 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
             } else {
                 // Online repo
                 PresetUpdaterRepositoryDescriptor descriptor;
+                std::string warning_msg;
                 if (!AbstractPresetUpdaterRepository::extract_repository_header(
                         repo_json,
                         descriptor,
-                        process_status
+                        warning_msg
                     ))
                 {
+                    process_status->set_warning(warning_msg);
                     continue;
                 }
                 if (descriptor.uuid.empty()) {
@@ -414,12 +454,14 @@ void PresetUpdaterRepositoryDatabase::read_server_manifest(
 
     for (const auto& repo_json : json) {
         PresetUpdaterRepositoryDescriptor descriptor;
+        std::string warning_msg;
         if (!AbstractPresetUpdaterRepository::extract_repository_header(
                 repo_json,
                 descriptor,
-                process_status
+                warning_msg
             ))
         {
+            process_status->set_warning(warning_msg);
             continue;
         }
 
@@ -502,25 +544,96 @@ void PresetUpdaterRepositoryDatabase::apply_selection(
             }
         }
     }
+    
     for (const SharedPresetUpdaterRepositoryInfo& info : repos) {
         auto repo_it = std::find_if(
             m_all_repositories.begin(),
             m_all_repositories.end(),
-            [info](const std::unique_ptr<AbstractPresetUpdaterRepository>& ptr) {
+            [&info](const std::unique_ptr<AbstractPresetUpdaterRepository>& ptr) {
                 return ptr->uuid() == info.descriptor.uuid;
             }
         );
-        ASSERT(repo_it != m_all_repositories.end());
+
+        // Not found offline repo - was unzipped via static method prepare_local_repository_files
+        // Now it should be added to repo vector
+        if (repo_it == m_all_repositories.end()) {
+             ASSERT(!info.descriptor.unzipped_data_path.empty());
+             auto descriptor_copy{info.descriptor};
+             m_all_repositories.emplace_back(
+                 std::make_unique<LocalPresetUpdaterRepository>(info.descriptor.uuid, std::move(descriptor_copy), info.selected)
+             );
+             continue;
+        }
+
         repo_it->get()->set_selected(info.selected);
     }
+
+    // We also need to remove offline repos missing in info vector
+    std::erase_if(
+        m_all_repositories,
+        [&repos](const std::unique_ptr<AbstractPresetUpdaterRepository>& it)
+        {
+            if (it->descriptor().unzipped_data_path.empty()) {
+                return false;
+            }
+            
+            const std::string& uuid = it->descriptor().uuid;
+            
+            return std::find_if(
+                repos.begin(),
+                repos.end(),
+                [&uuid](const auto& info) { return info.descriptor.uuid == uuid; }
+            ) == repos.end();
+        }
+    );
+
+    consolidate_offline_repo_unzipped_folders(process_status);
     save_app_manifest_json(process_status);
-    return;
 }
 
+void PresetUpdaterRepositoryDatabase::consolidate_offline_repo_unzipped_folders(PresetUpdaterProcessStatus* process_status) const
+{
+    boost::system::error_code ec;
+    const fs::path local_repos_dir = fs::path(data_dir()) / "local_repositories";
+
+    if (!fs::exists(local_repos_dir, ec) || ec) {
+        return;
+    }
+
+    for (auto it = fs::directory_iterator(local_repos_dir, ec); it != fs::directory_iterator(); it.increment(ec)) {
+        if (ec) {
+            process_status->set_warning(fmt::format("Failed to iterate local_repositories directory: {}", ec.message()));
+            break;
+        }
+
+        if (fs::is_directory(it->status())) {
+            const std::string dir_name = it->path().filename().string();
+
+            auto repo_it = std::find_if(
+                m_all_repositories.begin(),
+                m_all_repositories.end(),
+                [&dir_name](const std::unique_ptr<AbstractPresetUpdaterRepository>& repo) {
+                    return !repo->descriptor().unzipped_data_path.empty() && repo->uuid() == dir_name;
+                }
+            );
+
+            if (repo_it == m_all_repositories.end()) {
+                boost::system::error_code rm_ec;
+                fs::remove_all(it->path(), rm_ec);
+                if (rm_ec) {
+                    process_status->set_warning(
+                        fmt::format("Failed to delete unreferenced offline repository folder {}: {}.", it->path().string(), rm_ec.message())
+                    );
+                }
+            }
+        }
+    }
+}
+    
 std::string PresetUpdaterRepositoryDatabase::get_next_uuid()
 {
-    boost::uuids::uuid uuid = m_uuid_generator();
-    return boost::uuids::to_string(uuid);
+    thread_local boost::uuids::random_generator generator;
+    return boost::uuids::to_string(generator());
 }
 
 namespace {
@@ -553,13 +666,13 @@ bool sync_inner(std::string& manifest, PresetUpdaterProcessStatus* process_statu
     }
     http->timeout_total(30)
         .on_error([&](std::string body, std::string error, unsigned http_status) {
-            SPDLOG_ERROR(
-                "Failed to get online repo source manifests: {} ; {} ; {}",
+        SPDLOG_ERROR(
+                "Download of Sources Database Manifest has failed: {} ; {} ; {}",
                 body,
                 error,
                 http_status
             );
-            process_status->set_warning("Failed to get online repo source manifests: " + error);
+            process_status->set_warning("Failed to download Sources Database Manifest file.");
             res = false;
         })
         .on_complete([&](std::string body, unsigned /* http_status */) {
@@ -576,7 +689,7 @@ bool PresetUpdaterRepositoryDatabase::sync(PresetUpdaterProcessStatus* process_s
 {
     std::string manifest;
     bool sync_res = false;
-    process_status->set_target("Archive Database Manifest");
+    process_status->set_download_target("Sources Database Manifest");
     sync_res = sync_inner(manifest, process_status);
     if (!sync_res) {
         return false;

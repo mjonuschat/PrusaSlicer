@@ -6,6 +6,10 @@
 
 namespace Slic3r::Biz::PresetUpdater {
 
+enum class VerboseStyle{
+    ProgressNotification,
+    NoProgress
+};
 struct PresetUpdaterRepositoryDescriptor
 {
     // mandatory
@@ -55,7 +59,7 @@ struct PresetUpdaterRepositoryDescriptor
 
 struct SharedPresetUpdaterRepositoryInfo
 {
-    const PresetUpdaterRepositoryDescriptor descriptor;
+    PresetUpdaterRepositoryDescriptor descriptor;
     bool selected;
 };
 
@@ -64,5 +68,8 @@ struct SharedPresetUpdaterRepositoryInfo
 typedef std::vector<SharedPresetUpdaterRepositoryInfo> SharedPresetUpdaterRepositoryInfoVector;
 
 void to_json(nlohmann::json& j, const SharedPresetUpdaterRepositoryInfo& i);
+
+void remove_local_repository_files(const SharedPresetUpdaterRepositoryInfo& info);
+SharedPresetUpdaterRepositoryInfo prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg);
 
 } // namespace Slic3r::Biz::PresetUpdater

@@ -20,6 +20,7 @@
 #include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
+#include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
@@ -33,9 +34,13 @@
 
 #include <cstring>
 #include <iostream>
+#include <algorithm>
+#include <chrono>
 #include <set>
 #include <sstream>
 #include <string>
+#include <future>
+#include <atomic>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -85,6 +90,106 @@ std::string format_slicing_errors(const std::vector<Slicing::Error>& slicing_err
 
     return error_stream.str();
 }
+
+struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdaterResultListener
+{
+    std::promise<bool> promise_approved;
+    std::atomic<bool> resolved{false};
+
+    void on_preset_updater_error(const std::string& body) override
+    {
+        if (!resolved.exchange(true)) {
+            promise_approved.set_value(false);
+        }
+    }
+
+    void on_preset_updater_forced_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings) override
+    {
+        if (!resolved.exchange(true)) {
+            promise_approved.set_value(reconfigurations.empty());
+        }
+    }
+
+    void on_preset_updater_reconfigurations_list(
+        const Biz::PresetUpdater::PresetUpdaterReconfigurationList&,
+        const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>&,
+        Biz::PresetUpdater::VerboseStyle) override
+    {
+        // Empty on purpose. Only forced reconfigurations matters.
+    }
+
+    void on_preset_updater_status(
+        const std::string&, int, unsigned, Biz::PresetUpdater::VerboseStyle) override
+    {
+        // Ignored on purpose. Only forced reconfigurations matters.
+    }
+};
+
+class CLIThumbnailImageGenerator : public Slicing::IThumbnailImageGenerator
+{
+public:
+    CLIThumbnailImageGenerator() = default;
+    explicit CLIThumbnailImageGenerator(const std::vector<std::string>& input_files)
+    {
+        if (input_files.size() == 1 && boost::iends_with(input_files[0], ".3mf")) {
+            m_filename = input_files[0];
+        }
+    }
+
+    std::future<Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
+        const Slicing::ThumbnailImageRequests& requests
+    ) override
+    {
+        std::promise<Slicing::ThumbnailImageResults> promise;
+        std::future<Slicing::ThumbnailImageResults> result{promise.get_future()};
+        if (m_filename.empty()) {
+            promise.set_value(Slicing::ThumbnailImageResults{});
+            return result;
+        }
+
+        std::vector<Domain::Size> sizes;
+        for (const auto& request : requests) {
+            for (const auto& size : request.params.sizes) {
+                sizes.emplace_back(size);
+            }
+        }
+
+        std::vector<Domain::Image> source_images = get_thumbnail_images_from_3mf(m_filename, sizes);
+
+        if (source_images.empty() || source_images.size() != sizes.size()
+         || std::any_of(source_images.begin(), source_images.end(),
+             [](const Domain::Image& img) { return img.width() == 0 || img.height() == 0; })
+            ) {
+            promise.set_value(Slicing::ThumbnailImageResults{});
+            return result;
+        }
+
+        Slicing::ThumbnailImageResults results;
+        size_t j=0;
+        for (const auto& request : requests) {
+            Slicing::ThumbnailImageResult thumbnail_result;
+            thumbnail_result.type = request.type;
+            thumbnail_result.project_id = request.params.project_id;
+            thumbnail_result.bed_instance_id = request.params.bed_instance_id;
+
+            for (size_t i = 0; i < request.params.sizes.size(); ++i) {
+                thumbnail_result.images.push_back(source_images[j++]);
+                ASSERT(thumbnail_result.images.back().width() == request.params.sizes[i].width);
+                ASSERT(thumbnail_result.images.back().height() == request.params.sizes[i].height);
+            }
+            results.push_back(std::move(thumbnail_result));
+        }
+        ASSERT(j == source_images.size());
+        promise.set_value(std::move(results));
+        return result;
+    }
+
+    void handle_enqueued_requests() override {}
+private:
+    std::string m_filename;
+};
 
 } // namespace
 
@@ -712,6 +817,54 @@ bool process_actions(
     }
 
     if (action.slice || action.export_gcode || action.export_sla) {
+        Biz::ProjectInteractor& project_interactor = runtime.project_interactor();
+        Biz::Platform::IMainThreadDispatcher& dispatcher = runtime.dispatcher();
+
+        PresetUpdaterApprovalListener approval_listener;
+        project_interactor.preset_updater_interactor().add_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(&approval_listener);
+
+        struct ScopedListenerGuard {
+            Biz::PresetUpdater::PresetUpdaterInteractor& interactor;
+            PresetUpdaterApprovalListener& listener;
+            ~ScopedListenerGuard() {
+                interactor.remove_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(&listener);
+            }
+        } listener_guard{project_interactor.preset_updater_interactor(), approval_listener};
+
+        project_interactor.preset_updater_interactor().check_forced_reconfigurations();
+
+        std::future<bool> future_approval = approval_listener.promise_approved.get_future();
+        bool is_approved = false;
+
+        try {
+            const auto timeout_limit = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+            bool timed_out = false;
+
+            while (future_approval.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready) {
+                dispatcher.dispatch_enqueued();
+
+                if (std::chrono::steady_clock::now() > timeout_limit) {
+                    SPDLOG_ERROR("Timeout waiting for preset updater approval. Aborting loop.");
+                    timed_out = true;
+                    break;
+                }
+            }
+
+            if (!timed_out) {
+                is_approved = future_approval.get();
+            }
+        } catch (const std::future_error& e) {
+            SPDLOG_ERROR("Future error during preset updater check (promise likely abandoned): {}", e.what());
+        }
+
+        if (!is_approved) {
+            boost::nowide::cerr << "Execution blocked: Pending forced preset reconfigurations or updater error."
+                << std::endl
+                << "Run --preset-update-list to list these reconfigurations or --preset-update to install."
+                << std::endl;
+            return false;
+        }
+
         if (!perform_slicing_exports(runtime, init_params, project_ids)) {
             return true;
         }
@@ -724,5 +877,4 @@ bool process_actions(
 
     return true;
 }
-
 } // namespace Slic3r::App::CLI

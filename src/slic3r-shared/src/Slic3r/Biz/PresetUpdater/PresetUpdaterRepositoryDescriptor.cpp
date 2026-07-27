@@ -1,4 +1,6 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp"
+
+#include "PresetUpdaterRepositoryDatabase.hpp"
 #include <nlohmann/json.hpp>
 
 namespace nlohmann {
@@ -51,5 +53,14 @@ void to_json(nlohmann::json& j, const SharedPresetUpdaterRepositoryInfo& i) {
     };
 }
 
+void remove_local_repository_files(const SharedPresetUpdaterRepositoryInfo& info)
+{
+    PresetUpdaterRepositoryDatabase::remove_local_repository_files(info);
+}
+
+SharedPresetUpdaterRepositoryInfo prepare_local_repository_files(const boost::filesystem::path& zip_path, std::string& error_msg)
+{
+    return PresetUpdaterRepositoryDatabase::prepare_local_repository_files(zip_path, error_msg);
+}
 
 } // namespace Slic3r::Biz::PresetUpdater

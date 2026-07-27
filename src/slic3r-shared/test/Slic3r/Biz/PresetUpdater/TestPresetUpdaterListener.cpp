@@ -36,7 +36,7 @@ void TestPresetUpdaterListener::start(ExpectedReconfiguration expected)
 {
     m_has_result = false;
     m_expected = std::move(expected);
-    m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(true);
+    m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(true, Biz::PresetUpdater::VerboseStyle::NoProgress, true);
 }
 
 void TestPresetUpdaterListener::on_preset_updater_error(const std::string& body)
@@ -49,9 +49,18 @@ void TestPresetUpdaterListener::on_preset_updater_error(const std::string& body)
 
 }
 
-void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
+void TestPresetUpdaterListener::on_preset_updater_forced_reconfigurations_list(
     const PresetUpdaterReconfigurationList& reconfigurations,
     const std::vector<PresetUpdaterWarning>& warnings
+)
+{
+    on_preset_updater_reconfigurations_list(reconfigurations, warnings,  Biz::PresetUpdater::VerboseStyle::NoProgress);
+}
+
+void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
+    const PresetUpdaterReconfigurationList& reconfigurations,
+    const std::vector<PresetUpdaterWarning>& warnings,
+    Biz::PresetUpdater::VerboseStyle verbose
 )
 {
     
@@ -59,8 +68,7 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
         // This is being commented out due to too much noise in the channel.
         // It may potentinally hide some problems, but it should be generally ok to hide.
         //nlohmann::json j = warnings;
-        //printf(j.dump(4).c_str());
-        //printf("\n");
+        //printf("%s\n",j.dump(4).c_str());
     }
     if (!m_expected.allow_warnings)
     {
@@ -131,7 +139,7 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_list(
     m_has_result = true;
 }
 
-void TestPresetUpdaterListener::on_preset_updater_reconfigurations_perfomed(
+void TestPresetUpdaterListener::on_preset_updater_reconfigurations_performed(
     const std::vector<PresetUpdaterWarning>& warnings
 )
 {}
@@ -139,7 +147,8 @@ void TestPresetUpdaterListener::on_preset_updater_reconfigurations_perfomed(
 void TestPresetUpdaterListener::on_preset_updater_status(
     const std::string& target,
     int attempt,
-    unsigned delay
+    unsigned delay, 
+    Biz::PresetUpdater::VerboseStyle verbose
 )
 {}
 
