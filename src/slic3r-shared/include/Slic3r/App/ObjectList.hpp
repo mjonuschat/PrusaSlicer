@@ -191,6 +191,7 @@ private:
     ImGuiTreeNodeFlags m_node_flags;
     ImGuiTableFlags m_table_flags;
     float m_state_column_width{0.f};
+    int m_total_beds_cnt{1};
     float m_progress_column_width{0.f};
     DeferredActionList m_deferred_actions;
 

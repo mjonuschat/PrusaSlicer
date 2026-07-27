@@ -459,6 +459,11 @@ ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::M
     init(project_interactor, mode);
 }
 
+static std::string get_sliced_statistics_string(int sliced_cnt, int total_cnt)
+{
+    return fmt::format("{}/{} {}", sliced_cnt, total_cnt, _u8L("SLICED"));
+}
+
 void ObjectList::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
 {
     auto& ctx          = selected_project_context();
@@ -479,7 +484,22 @@ void ObjectList::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
         m_state_column_width = std::max(m_state_column_width, ImGui::CalcTextSize(state.c_str()).x);
     }
 
-    m_progress_column_width = 2.f * ImGui::CalcTextSize(_u8L("SLICED").c_str()).x;
+    m_total_beds_cnt = 0;
+    for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
+        for (auto& bed_inst : cc->bed_instances()) {
+            if (bed_inst->model_instances.empty())
+                continue;
+            m_total_beds_cnt++;
+        }
+    }
+    size_t n = 0, i = m_total_beds_cnt;
+    while (i > 0) {
+        n = n * 10 + 8;
+        i /= 10;
+    }
+    m_progress_column_width =
+        ImGui::CalcTextSize(get_sliced_statistics_string(n, m_total_beds_cnt).c_str()).x
+        + GImGui->Style.FramePadding.x * 2.f;
 
     render_item_begin(pos, size);
     ImGui::SetCursorScreenPos(to_im(pos));
@@ -878,13 +898,11 @@ void ObjectList::render_group_name(const std::string& name)
 
 void ObjectList::render_all_beds_node()
 {
-    size_t total_beds_cnt    = 0;
-    size_t finished_beds_cnt = 0;
+    int finished_beds_cnt = 0;
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
         for (auto& bed_inst : cc->bed_instances()) {
             if (bed_inst->model_instances.empty())
                 continue;
-            total_beds_cnt++;
             const std::optional<Biz::Slicing::Status> status{
                 m_project_interactor->status_cache().get_status(
                     {m_project_interactor->selected_project_id(), bed_inst->id().id}
@@ -894,9 +912,9 @@ void ObjectList::render_all_beds_node()
                 finished_beds_cnt++;
         }
     }
-    DEBUG_ASSERT(total_beds_cnt != 0);
+    DEBUG_ASSERT(m_total_beds_cnt > 0);
 
-    ImVec2 progress_bar_sz(-1.f, ImGui::GetFontSize() + 4.f);
+    ImVec2 progress_bar_sz(m_progress_column_width, ImGui::GetFontSize() + 4.f);
     if (ImGui::BeginTable("##AllBeds", 3, m_table_flags)) {
         ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn(
@@ -911,7 +929,7 @@ void ObjectList::render_all_beds_node()
         );
 
         ImGui::TableNextColumn();
-        render_group_name(icon_str(Render::Icon::AllBeds) + " All");
+        render_group_name(fmt::format("{} {}", icon_str(Render::Icon::AllBeds), _u8L("All")));
 
         ImGui::TableNextColumn();
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * m_inner_padding.y()));
@@ -921,14 +939,13 @@ void ObjectList::render_all_beds_node()
             ImGuiCol_PlotHistogram,
             m_theme->color_imgui(Platform::Color::AccentSecondary).Value
         );
-        if (total_beds_cnt == finished_beds_cnt)
-            ImGui::ProgressBar(1.0, progress_bar_sz, "SLICED");
-        else
-            ImGui::ProgressBar(
-                float(finished_beds_cnt) / float(total_beds_cnt),
-                progress_bar_sz,
-                Slic3r::format("%1%/%2% SLICED", finished_beds_cnt, total_beds_cnt).c_str()
-            );
+        ImGui::ProgressBar(
+            m_total_beds_cnt == finished_beds_cnt ?
+                1.f :
+                float(finished_beds_cnt) / float(m_total_beds_cnt),
+            progress_bar_sz,
+            get_sliced_statistics_string(finished_beds_cnt, m_total_beds_cnt).c_str()
+        );
         ImGui::PopStyleColor();
 
         ImGui::EndTable();
