@@ -354,9 +354,10 @@ void VariableLayerHeightGizmo::on_activated()
     this->init_main_nodes();
     this->init_mesh_nodes();
 
-    scene.add_listener<App::Scene::ISceneChangedListener>(this);
+    scene.add_listener<Scene::ISceneChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
     m_scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
 }
 
 void VariableLayerHeightGizmo::on_deactivated()
@@ -376,9 +377,10 @@ void VariableLayerHeightGizmo::on_deactivated()
     m_visible_volumes_nodes.clear();
     m_material_wrapper.reset();
 
-    scene.remove_listener<App::Scene::ISceneChangedListener>(this);
+    scene.remove_listener<Scene::ISceneChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
     m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.remove_listener<ISceneSelectionChangedListener>(this);
 }
 
 void VariableLayerHeightGizmo::on_project_activated(size_t new_project_id)
@@ -433,6 +435,14 @@ void VariableLayerHeightGizmo::on_model_reloaded(SelectionId project_id)
         return;
     }
 
+    this->rebuild_gizmo_state();
+}
+
+void VariableLayerHeightGizmo::on_scene_selection_changed(
+    const SelectionId project_id,
+    const ObjectSelection& selection
+)
+{
     this->rebuild_gizmo_state();
 }
 

@@ -46,6 +46,11 @@ public:
     void on_deactivated() override;
     void on_model_reloaded(Domain::SelectionId project_id) override;
 
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+
     Domain::TriangleSelector::TriangleStateType get_left_button_state_type() const override;
     Domain::TriangleSelector::TriangleStateType get_right_button_state_type() const override;
 

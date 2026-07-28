@@ -39,6 +39,7 @@ using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::Point;
 using Slic3r::Domain::Polyline;
 using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec3d;
@@ -272,6 +273,14 @@ void PaintOnGizmoBase::on_model_reloaded(Domain::SelectionId project_id)
     }
 
     rebuild_paintable_geometry();
+}
+
+void PaintOnGizmoBase::on_scene_selection_changed(
+    const SelectionId project_id,
+    const ObjectSelection& selection
+)
+{
+    this->rebuild_paintable_geometry();
 }
 
 void PaintOnGizmoBase::apply_painting_to_model() const
@@ -508,8 +517,9 @@ void PaintOnGizmoBase::on_activated()
     this->update_clipping_plane();
     this->update_overhang_detection();
 
-    scene.add_listener<App::Scene::ISceneChangedListener>(this);
+    scene.add_listener<Scene::ISceneChangedListener>(this);
     m_scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
     scene.add_listener<IThumbnailRenderListener>(this);
 }
 
@@ -533,8 +543,9 @@ void PaintOnGizmoBase::on_deactivated()
     m_triangle_selector_wrappers.clear();
     m_visible_volumes_nodes.clear();
 
-    scene.remove_listener<App::Scene::ISceneChangedListener>(this);
+    scene.remove_listener<Scene::ISceneChangedListener>(this);
     m_scene_interactor.remove_listener<Biz::Scene::ISceneChangedListener>(this);
+    m_scene_interactor.remove_listener<ISceneSelectionChangedListener>(this);
     scene.remove_listener<IThumbnailRenderListener>(this);
 }
 
