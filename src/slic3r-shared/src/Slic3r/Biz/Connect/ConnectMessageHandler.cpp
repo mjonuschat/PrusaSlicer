@@ -232,6 +232,9 @@ void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::js
         return;
     }
 
+    const Domain::Preset::FeatureDefs* vendor_tool_features =
+        m_preset_interactor.get_vendor_tool_feature_defs();
+
     size_t tool_idx = 0;
 
     for (const auto& [tool_key, tool_json] : j["tools"].items()) {
@@ -250,13 +253,23 @@ void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::js
             bool matches                                    = true;
 
             for (const auto& [feature_key, json_feature_val] : tool_json["features"].items()) {
-                auto it = tool_def.features.find(feature_key);
+                const Domain::Preset::FeatureValue* expected_value = nullptr;
 
-                if (it == tool_def.features.end()) {
+                if (auto it = tool_def.features.find(feature_key); it != tool_def.features.end()) {
+                    expected_value = &it->second.default_value;
+                } else if (vendor_tool_features) {
+                    if (auto vendor_it = vendor_tool_features->find(feature_key);
+                        vendor_it != vendor_tool_features->end())
+                    {
+                        expected_value = &vendor_it->second.default_value;
+                    }
+                }
+
+                if (!expected_value) {
                     continue;
                 }
 
-                if (!compare_feature(it->second.default_value, json_feature_val)) {
+                if (!compare_feature(*expected_value, json_feature_val)) {
                     matches = false;
                     break;
                 }

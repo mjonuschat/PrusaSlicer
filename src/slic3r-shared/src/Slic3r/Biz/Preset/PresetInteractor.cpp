@@ -2240,6 +2240,21 @@ Domain::Preset::PresetNames PresetInteractor::get_all_vendor_preset_names(
     return ret;
 }
 
+const Domain::Preset::FeatureDefs* PresetInteractor::get_vendor_tool_feature_defs(
+    const std::optional<std::string>& vendor_id
+) const
+{
+    const auto& vendor_bundles = m_workbench.preset_bundle().vendor_bundles;
+    const auto vendor_it =
+        vendor_bundles.find(vendor_id.value_or(selected_printer_preset().hw_config.vendor_id));
+
+    if (vendor_it == vendor_bundles.end()) {
+        return nullptr;
+    }
+
+    return &vendor_it->second.vendor_data.info.features.tool;
+}
+
 boost::filesystem::path PresetInteractor::selected_user_preset_path(
     Domain::Preset::PresetKind kind,
     const std::string& preset_name
