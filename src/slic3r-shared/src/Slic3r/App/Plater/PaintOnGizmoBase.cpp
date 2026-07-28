@@ -1250,15 +1250,19 @@ void PaintOnGizmoBase::rebuild_paintable_geometry()
     const MeshManager& mesh_manager         = m_scene_presenter.model_triangle_mesh_manager();
     Scene::Scene& scene                     = m_scene_presenter.scene();
 
+    this->restore_visible_volumes();
+
     // Remove all the scene nodes created by this gizmo.
     if (m_main_node != nullptr) {
         scene.remove_child(m_main_node);
-        m_main_node               = nullptr;
-        m_cursors_node            = nullptr;
-        m_triangle_selectors_node = nullptr;
-        m_clipping_plane_presenter_node =nullptr;
-        m_sinking_plane_presenter_node =nullptr;
+        m_main_node                     = nullptr;
+        m_cursors_node                  = nullptr;
+        m_triangle_selectors_node       = nullptr;
+        m_clipping_plane_presenter_node = nullptr;
+        m_sinking_plane_presenter_node  = nullptr;
     }
+
+    m_visible_volumes_nodes.clear();
 
     if (object_selection.empty() || object_selection.mode != Biz::Scene::SelectionMode::Instance) {
         m_gizmo_controller->deactivate_current_tool();
