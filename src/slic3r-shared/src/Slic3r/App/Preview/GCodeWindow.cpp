@@ -6,33 +6,28 @@
 
 #include "Slic3r/Assert.hpp"
 
+#include <algorithm>
+#include <boost/algorithm/string/trim.hpp>
+
 namespace Slic3r::App::Preview {
 
 GCodeWindowData::Line GCodeWindowData::line_at(uint32_t id) const
 {
-    static const Line DUMMY_LINE = Line();
-    if (id < uint32_t(m_gcode->size())) {
-        std::string_view payload = (*m_gcode)[id];
-
-        size_t pos = payload.find('\n');
-        if (pos != payload.npos)
-            payload = payload.substr(0, pos);
-
-        Line line;
-        pos = payload.find(';');
-        if (pos != payload.npos)
-            line.comment = payload.substr(pos);
-        payload = payload.substr(0, pos);
-
-        pos = payload.find(' ');
-        if (pos != payload.npos) {
-            line.command = payload.substr(0, pos);
-            line.parameters = payload.substr(pos);
-        }
-        return line;
+    if (id >= uint32_t(m_gcode->size())) {
+        return {};
     }
-    else
-        return DUMMY_LINE;
+
+    // Trim the trailing newline and the leading whitespaces to not mismatch command as parameters.
+    const std::string_view payload = boost::algorithm::trim_copy((*m_gcode)[id]);
+
+    const size_t comment_pos = std::min(payload.find(';'), payload.size());
+    const size_t params_pos  = std::min(payload.substr(0, comment_pos).find(' '), comment_pos);
+
+    return {
+        .command    = payload.substr(0, params_pos),
+        .parameters = payload.substr(params_pos, comment_pos - params_pos),
+        .comment    = payload.substr(comment_pos)
+    };
 }
 
 void GCodeWindowData::resize_range(Range& range, uint32_t lines_count, uint32_t curr_line_id) const
