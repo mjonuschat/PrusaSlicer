@@ -280,7 +280,7 @@ private:
         double previous_layer_z,
         double print_z,
         bool vase_mode,
-        const Point &first_point,
+        const std::optional<Point> first_point,
         const bool first_layer,
         const Biz::Slicing::ExtrudeConfig& config
     );

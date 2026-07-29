@@ -2589,6 +2589,31 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
     return extrusions;
 }
 
+/**
+ * @brief Detects whether the extruder loop of process_layer() will emit a tool change before the
+ * first extrusion of the layer.
+ */
+static bool is_tool_change_before_first_extrusion(
+    const GCodeWriter& writer,
+    const std::vector<GCode::ExtrusionOrder::ExtruderExtrusions>& extrusions
+)
+{
+    if (!writer.multiple_extruders) {
+        return false;
+    }
+
+    for (const GCode::ExtrusionOrder::ExtruderExtrusions& extruder_extrusions : extrusions) {
+        if (writer.need_toolchange(extruder_extrusions.extruder_id)) {
+            return true;
+        }
+
+        if (GCode::ExtrusionOrder::get_first_point(extruder_extrusions).has_value()) {
+            break;
+        }
+    }
+
+    return false;
+}
 
 // In sequential mode, process_layer is called once per each object and its copy,
 // therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
@@ -2681,6 +2706,12 @@ LayerResult GCodeGenerator::process_layer(
     const PrintInstance* first_instance{get_first_instance(extrusions, instances_to_print)};
     m_label_objects.update(first_instance);
 
+    const bool uses_wipe_tower = layer_tools.has_wipe_tower && m_wipe_tower;
+
+    // Without a wipe tower, the travel to the next layer's first point must not happen before a tool change.
+    const bool tool_change_before_first_extrusion =
+        !uses_wipe_tower && is_tool_change_before_first_extrusion(m_writer, extrusions);
+
     std::string gcode;
 
     assert(is_decimal_separator_point()); // for the sprintfs
@@ -2730,11 +2761,17 @@ LayerResult GCodeGenerator::process_layer(
     const PrintObjectConfigView& first_object_config{layer.object()->config()};
     const Biz::Slicing::ExtrudeConfig first_object_extrude_config{first_object_config};
 
+    // With a pending tool change there is no safe travel target before the tool change.
+    // In that case, the travel to the first point happens after set_extruder() instead.
+    const std::optional<Point> layer_change_first_point = tool_change_before_first_extrusion ?
+        std::nullopt :
+        std::optional<Point>{first_point.head<2>()};
+
     gcode += this->change_layer(
         previous_layer_z,
         print_z,
         result.spiral_vase_enable,
-        first_point.head<2>(),
+        layer_change_first_point,
         first_layer,
         first_object_extrude_config
     ); // this will increase m_layer_index
@@ -2817,13 +2854,19 @@ LayerResult GCodeGenerator::process_layer(
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
     {
-        gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
-            m_wipe_tower->tool_change(*this, first_object_config, extruder_extrusions.extruder_id, extruder_extrusions.extruder_id == layer_tools.extruders.back()) :
+        gcode += uses_wipe_tower ?
+            m_wipe_tower->tool_change(
+                *this,
+                first_object_config,
+                extruder_extrusions.extruder_id,
+                extruder_extrusions.extruder_id == layer_tools.extruders.back()
+            ) :
             this->set_extruder(extruder_extrusions.extruder_id, print_z, first_object_config);
 
         // let analyzer tag generator aware of a role type change
-        if (layer_tools.has_wipe_tower && m_wipe_tower)
+        if (uses_wipe_tower) {
             m_last_processor_extrusion_role = GCodeExtrusionRole::WipeTower;
+        }
 
         if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == int(extruder_extrusions.extruder_id)) {
             assert(m_writer.extruder()->id() == extruder_id_for_custom_gcode);
@@ -2837,7 +2880,12 @@ LayerResult GCodeGenerator::process_layer(
             this->m_label_objects.update(nullptr);
         }
 
-        if (!this->m_moved_to_first_layer_point) {
+        // An extruder picked just to perform a color change may extrude nothing on this layer.
+        // Such an iteration must not travel to the first point before the following tool change.
+        const bool extrudes_anything =
+            GCode::ExtrusionOrder::get_first_point(extruder_extrusions).has_value();
+
+        if (!this->m_moved_to_first_layer_point && (uses_wipe_tower || extrudes_anything)) {
             const Point shift{first_instance->shift()};
             this->set_origin(unscale(shift));
 
@@ -3051,10 +3099,11 @@ std::string GCodeGenerator::change_layer(
     double previous_layer_z,
     double print_z,
     bool vase_mode,
-    const Point &first_point,
+    const std::optional<Point> first_point,
     const bool first_layer,
     const Slicing::ExtrudeConfig& config
-) {
+)
+{
     std::string gcode;
     if (m_layer_count > 0)
         // Increment a progress bar indicator.
@@ -3065,21 +3114,25 @@ std::string GCodeGenerator::change_layer(
     }
 
     const unsigned extruder_id{m_writer.extruder()->id()};
-    const bool do_ramping_layer_change = (
-        this->last_position
-        && !vase_mode
-        && print_z > previous_layer_z
-        && config.travel_ramping_lift.at(extruder_id)
-        && config.travel_slope.at(extruder_id) > 0
-        && config.travel_slope.at(extruder_id) < 90
-    );
+    const bool do_ramping_layer_change =
+        (this->last_position
+         && first_point
+         && !vase_mode
+         && print_z > previous_layer_z
+         && config.travel_ramping_lift.at(extruder_id)
+         && config.travel_slope.at(extruder_id) > 0
+         && config.travel_slope.at(extruder_id) < 90);
 
     const std::vector<double> retract_speed{config.retract_speed};
     const double travel_speed{config.travel_speed};
 
-    const Vec3d to{to_3d(unscaled(first_point), print_z)};
-    if (this->last_position && print_z > previous_layer_z && !config.retract_layer_change.at(m_writer.extruder()->id())) {
+    if (this->last_position
+        && first_point
+        && print_z > previous_layer_z
+        && !config.retract_layer_change.at(m_writer.extruder()->id()))
+    {
         const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
+        const Vec3d to{to_3d(unscaled(*first_point), print_z)};
         const Polyline xy_path{this->get_layer_change_xy_path(from, to, config)};
 
         if (this->needs_retraction(xy_path, config, ExtrusionRole::Mixed)) {
@@ -3092,11 +3145,12 @@ std::string GCodeGenerator::change_layer(
     if (do_ramping_layer_change) {
         // Must be determined again after possible wipe.
         const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
+        const Vec3d to{to_3d(unscaled(*first_point), print_z)};
 
         gcode += this->get_ramping_layer_change_gcode(from, to, extruder_id, config);
 
         this->writer().update_position(to);
-        this->last_position = this->gcode_to_point(unscaled(first_point));
+        this->last_position = this->gcode_to_point(unscaled(first_point.value()));
     } else {
         if (!first_layer) {
             gcode += this->writer().travel_to_z_force(print_z, "simple layer change");

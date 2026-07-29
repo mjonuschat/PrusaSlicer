@@ -173,18 +173,8 @@ TEST_CASE("Ooze prevention", "[Multi]")
     }
 }
 
-std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &volume1config, const VolumeSettings &volume2config)
+std::string slice_model(Domain::Model &model, const TestConfig &config)
 {
-    Domain::Model        model;
-    Domain::ModelObject* object = model.add_object();
-    object->name = "object.stl";
-    Domain::ModelVolume *v1 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
-    v1->volume_settings = volume1config;
-    Domain::ModelVolume *v2 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
-    translate(*v2, 0., 0., 20.);
-    v2->volume_settings = volume2config;
-    object->add_instance();
-    ensure_on_bed(*object);
     Domain::Bed model_bed;
     Domain::BedInstance bed_instance{model_bed};
     for (const Domain::ModelObject* object : model.objects) {
@@ -207,6 +197,22 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
     REQUIRE(std::holds_alternative<Biz::Slicing::ApplyStatus::Changed>(status));
     print.validate();
     return Test::gcode(print);
+}
+
+std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &volume1config, const VolumeSettings &volume2config)
+{
+    Domain::Model        model;
+    Domain::ModelObject* object = model.add_object();
+    object->name = "object.stl";
+    Domain::ModelVolume *v1 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+    v1->volume_settings = volume1config;
+    Domain::ModelVolume *v2 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+    translate(*v2, 0., 0., 20.);
+    v2->volume_settings = volume2config;
+    object->add_instance();
+    ensure_on_bed(*object);
+
+    return slice_model(model, config);
 }
 
 TEST_CASE("Stacked cubes", "[Multi]")
@@ -304,5 +310,108 @@ TEST_CASE("Stacked cubes", "[Multi]")
         THEN("T0 is never used for lower object") {
             REQUIRE(T1_shells.empty());
         }
+    }
+}
+
+namespace {
+
+const constexpr std::string_view tool_change_marker{"TEST_TOOLCHANGE"};
+const constexpr std::string_view layer_change_marker{"LAYER_CHANGE"};
+
+struct LayerStartToolChange
+{
+    Point position_at_tool_change;
+    Point previous_layer_last_extrusion;
+};
+
+std::vector<LayerStartToolChange> collect_layer_start_tool_changes(const std::string& gcode)
+{
+    std::vector<LayerStartToolChange> tool_changes;
+
+    GCodeReader parser;
+    Point last_extrusion_position{0, 0};
+    bool anything_extruded{false};
+    bool is_layer_change_pending{false};
+
+    parser.parse_buffer(
+        gcode,
+        [&](GCodeReader& self, const GCodeReader::GCodeLine& line)
+        {
+            const std::string_view comment{line.comment()};
+
+            if (comment.find(tool_change_marker) != std::string_view::npos) {
+                // Skip the initial tool selection, there is nothing printed before it.
+                if (is_layer_change_pending && anything_extruded) {
+                    tool_changes.push_back({self.xy_scaled(), last_extrusion_position});
+                }
+
+                return;
+            }
+
+            if (comment.find(layer_change_marker) != std::string_view::npos) {
+                is_layer_change_pending = true;
+                return;
+            }
+
+            if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0.f) {
+                last_extrusion_position = line.new_XY_scaled(self);
+                anything_extruded       = true;
+                is_layer_change_pending = false;
+            }
+        }
+    );
+
+    return tool_changes;
+}
+
+std::string slice_two_cubes_with_different_extruders(const TestConfig& config)
+{
+    Domain::Model model;
+
+    for (int object_index = 0; object_index < 2; ++object_index) {
+        Domain::ModelObject* object = model.add_object();
+        object->name                = "object.stl";
+        Domain::ModelVolume* volume = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+        translate(*volume, object_index * 40., 0., 0.);
+        VolumeSettings volume_settings;
+        volume_settings.overrides.set("extruder", object_index + 1);
+        volume->volume_settings = volume_settings;
+        object->add_instance();
+        ensure_on_bed(*object);
+    }
+
+    return slice_model(model, config);
+}
+
+} // namespace
+
+TEST_CASE(
+    "Tool change without a wipe tower is not preceded by a travel to another object",
+    "[Multi]"
+)
+{
+    TestConfig config{2};
+
+    config.print.items.opt("wipe_tower").set(false);
+    config.print.items.opt("travel_ramping_lift").set(true);
+    config.print.items.opt("travel_slope").set(30.);
+    config.print.items.opt("skirts").set(0);
+    config.print.items.opt("layer_height").set(0.2);
+    config.printer.items.opt("toolchange_gcode")
+        .set("T[next_extruder] ; " + std::string{tool_change_marker});
+    config.print.items.opt("toolchange_ordering").set(Domain::ToolChangeOrderingType::Cyclic);
+
+    const std::string gcode{slice_two_cubes_with_different_extruders(config)};
+    const std::vector<LayerStartToolChange> tool_changes{collect_layer_start_tool_changes(gcode)};
+
+    REQUIRE(!tool_changes.empty());
+
+    for (const LayerStartToolChange& tool_change : tool_changes) {
+        REQUIRE(
+            tool_change.position_at_tool_change.x() == tool_change.previous_layer_last_extrusion.x()
+        );
+        REQUIRE(
+            tool_change.position_at_tool_change.y() == tool_change.previous_layer_last_extrusion.y()
+        );
     }
 }
