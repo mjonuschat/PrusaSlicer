@@ -1522,17 +1522,11 @@ void MenuCommandRegistrar::register_main_menu_edit_commands()
                     );
                 },
                 UIItemCommandExtraOpts{
-#ifdef __APPLE__
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
-                            Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace}
-                        },
-#else
-                    .keyboard_shortcuts =
-                        Platform::KeyboardShortcuts{
+                            Platform::KeyboardShortcut{0, Platform::KeyCode::Backspace},
                             Platform::KeyboardShortcut{0, Platform::KeyCode::Delete}
                         },
-#endif
                     .enabled =
                         [this]()
                     {
