@@ -822,6 +822,24 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
         return;
     }
 
+#ifdef __WXMSW__
+    // Windows-specific workaround: reset the mouse button state when the cursor
+    // enters the application while a button is no longer pressed.
+    wxMouseEvent up_event(event);
+    if (m_mouse_button_pressed[0] && !event.LeftIsDown()) {
+        up_event.SetEventType(wxEVT_LEFT_UP);
+        on_mouse(up_event);
+    }
+    if (m_mouse_button_pressed[1] && !event.RightIsDown()) {
+        up_event.SetEventType(wxEVT_RIGHT_UP);
+        on_mouse(up_event);
+    }
+    if (m_mouse_button_pressed[2] && !event.MiddleIsDown()) {
+        up_event.SetEventType(wxEVT_MIDDLE_UP);
+        on_mouse(up_event);
+    }
+#endif
+
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
