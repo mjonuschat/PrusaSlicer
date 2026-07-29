@@ -8,7 +8,6 @@
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include "Slic3r/App/Config/OverridableSubcategoryListView.hpp"
 #include "Slic3r/App/Config/CategoryUtils.hpp"
@@ -169,7 +168,10 @@ void MaterialSettingsDialog::on_tab_selected(int current_index)
 
     if (m_current_tab && current_index < static_cast<int>(m_material_cbi_list.size())) {
         m_current_preset_label->set_current_list(current_index);
-        update_ui_state();
+        if (m_tabs.size() == m_material_cbi_list.size() && m_tabs.size() == m_config_tabs.size()) {
+            // Update UI only if m_config_tabs is completed
+            update_ui_state();
+        }
     }
 }
 
@@ -182,9 +184,10 @@ void MaterialSettingsDialog::update_ui_state(const Domain::ConfigItem* changed_i
 {
     Biz::OverridableConfigBoxInteractor& cbi = const_cast<Biz::OverridableConfigBoxInteractor&>(
         m_material_cbi_list.at(current_tab_index())
-        );
-    m_revert_button->set_visible(cbi.is_dirty());
+    );
+    m_revert_button->set_visible(cbi.config_box_overridable_list().lock()->is_dirty());
 
+    m_config_tabs.at(current_tab_index())->dirty_categorizer->invalidate();
     if (changed_item) {
         auto& category_page_transformer =
             m_config_tabs.at(current_tab_index())->category_page_transformer;
@@ -201,6 +204,11 @@ void MaterialSettingsDialog::update_ui_state(const Domain::ConfigItem* changed_i
                 category_page_transformer->on_updated(index);
             }
         }
+    } else {
+        auto& category_page_transformer =
+            m_config_tabs.at(current_tab_index())->category_page_transformer;
+        ASSERT(category_page_transformer->size() > 1);
+        category_page_transformer->on_updated({0, category_page_transformer->size() - 1});
     }
 }
 
@@ -215,37 +223,49 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
     project_interactor(project_interactor),
     cbi_index(cbi_index),
     categorizer(std::make_shared<Categorizer>()),
+    dirty_categorizer(std::make_shared<DirtyCategorizer>()),
     category_page_transformer(std::make_shared<OverridableCategoryPageTransformer>())
 {
+    auto group_by_fn = [](const Biz::OverrideItem& item,
+                          std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
+    {
+        const Domain::ConfigItemDef::Category category = item.is_override() ?
+            Domain::ConfigItemDef::Category::Filament_Overrides :
+            item.config_item->def().category;
+        DEBUG_ASSERT(
+            category != Domain::ConfigItemDef::Category::Unknown,
+            "ConfigItemDef cannot have unknown category, please fill it."
+        );
+
+        if (seen_keys.contains(category)) {
+            return true;
+        } else {
+            seen_keys.insert(category);
+            return false;
+        }
+    };
+
     categorizer->set_filter_fn(
         [](const Biz::OverrideItem& item)
         { return item.config_item->def().category != Domain::ConfigItemDef::Category::Hidden; }
     );
-    categorizer->set_group_by_fn(
-        [](const Biz::OverrideItem& item,
-           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
-        {
-            const Domain::ConfigItemDef::Category category = item.is_override() ?
-                Domain::ConfigItemDef::Category::Filament_Overrides :
-                item.config_item->def().category;
-            DEBUG_ASSERT(
-                category != Domain::ConfigItemDef::Category::Unknown,
-                "ConfigItemDef cannot have unknown category, please fill it."
-            );
-
-            if (seen_keys.contains(category)) {
-                return true;
-            } else {
-                seen_keys.insert(category);
-                return false;
-            }
-        }
-    );
+    categorizer->set_group_by_fn(group_by_fn);
     categorizer->set_sort_fn(
         [](const Biz::OverrideItem& lhs, const Biz::OverrideItem& rhs)
         { return lhs.config_item->def().category < rhs.config_item->def().category; }
     );
     categorizer->set_source_model(cbi.config_box_overridable_list());
+
+    dirty_categorizer->set_filter_fn([](const Biz::OverrideItem& item) { return item.is_dirty(); });
+    dirty_categorizer->set_group_by_fn(group_by_fn);
+    dirty_categorizer->set_category_getter_fn(
+        [](const Biz::OverrideItem& data)
+        {
+            return data.is_override() ? Domain::ConfigItemDef::Category::Filament_Overrides :
+                                        data.config_item->def().category;
+        }
+    );
+    dirty_categorizer->set_source_model(cbi.config_box_overridable_list());
 
     category_page_transformer->set_transform_fn(
         [this](const Biz::OverrideItem& data, size_t index)
@@ -258,16 +278,10 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
                 this->project_interactor.selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
-            auto dirty_categories    = this->project_interactor.preset_interactor()
-                                           .material_cbi_list()
-                                           .at(this->cbi_index)
-                                           .dirty_categories();
-            bool is_highlighted_text = dirty_categories.find(category) != dirty_categories.end();
-
             return PageEntry{
                 Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
                 icon,
-                is_highlighted_text
+                dirty_categorizer->contains(category)
             };
         }
     );

@@ -14,7 +14,9 @@
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+
+#include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
+#include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
@@ -1013,7 +1015,7 @@ bool PresetInteractor::is_printer_preset_selected_and_dirty(
     {
         return false;
     }
-    return m_printer_cbi.is_dirty();
+    return m_printer_cbi.config_box_list().lock()->is_dirty();
 }
 
 bool PresetInteractor::is_print_preset_selected_and_dirty(
@@ -1029,7 +1031,7 @@ bool PresetInteractor::is_print_preset_selected_and_dirty(
     {
         return false;
     }
-    return false;// todo
+    return m_print_tool_cbi.observable_list().lock()->is_dirty_print();
 }
 
 bool PresetInteractor::is_tool_print_preset_selected_and_dirty(
@@ -1048,7 +1050,7 @@ bool PresetInteractor::is_tool_print_preset_selected_and_dirty(
     {
         return false;
     }
-    return false;// todo
+    return m_print_tool_cbi.observable_list().lock()->is_dirty_tool(tool_index);
 }
 
 bool PresetInteractor::is_tool_material_preset_selected_and_dirty(
@@ -1069,7 +1071,7 @@ bool PresetInteractor::is_tool_material_preset_selected_and_dirty(
     }
     if (slot_index >= m_material_cbi_list.size())
         return false;
-    return m_material_cbi_list.at(slot_index).is_dirty();
+    return m_material_cbi_list.at(slot_index).config_box_overridable_list().lock()->is_dirty();
 }
 
 void PresetInteractor::discard_selected_printer_preset_changes()
@@ -1079,32 +1081,52 @@ void PresetInteractor::discard_selected_printer_preset_changes()
         selected_preset.printer.config_box().items.all_items();
 
     for (Domain::ConfigItem& item : all_items) {
-        if (m_printer_cbi_accessor.is_dirty(item.name()))
+        if (m_printer_cbi.config_box_list().lock()->is_dirty(item.name()))
             set_from_original_value(item);
     }
 }
 
 void PresetInteractor::discard_selected_print_preset_changes()
 {
-    // ToDo
+    auto& selected_preset = mutable_selected_printer_preset();
+    std::vector<Domain::ConfigItem>& all_items =
+        selected_preset.print.config_box().items.all_items();
+
+    for (Domain::ConfigItem& item : all_items) {
+        if (m_print_tool_cbi.observable_list().lock()->is_dirty_print(item.name()))
+            set_from_original_value(item);
+    }
 }
 
 void PresetInteractor::discard_selected_tool_print_preset_changes(size_t tool_index)
 {
-    // ToDo
+    auto& selected_preset = mutable_selected_printer_preset();
+    std::vector<Domain::ConfigItem>& all_items =
+        selected_preset.tools.at(tool_index).config_box().overrides.all_items();
+
+    for (Domain::ConfigItem& item : all_items) {
+        if (m_print_tool_cbi.observable_list().lock()->is_dirty_tool(item.name(), tool_index))
+            set_from_original_value(item, tool_index);
+    }
 }
 
 void PresetInteractor::discard_selected_tool_material_preset_changes(size_t slot_index)
 {
-    auto& selected_preset = mutable_selected_printer_preset();
+    auto& selected_preset         = mutable_selected_printer_preset();
     Domain::ConfigBox& config_box = selected_preset.materials[slot_index].config_box();
 
     for (Domain::ConfigItem& item : config_box.items.all_items()) {
-        if (m_material_cbi_list.at(slot_index).is_dirty(item.name()))
+        if (m_material_cbi_list.at(slot_index)
+                .config_box_overridable_list()
+                .lock()
+                ->is_dirty(item.name()))
             set_from_original_value(item, slot_index);
     }
     for (Domain::ConfigItem& item : config_box.overrides.all_items()) {
-        if (m_material_cbi_list.at(slot_index).is_dirty(item.name()))
+        if (m_material_cbi_list.at(slot_index)
+                .config_box_overridable_list()
+                .lock()
+                ->is_dirty(item.name()))
             set_from_original_value(item, slot_index);
     }
 }
@@ -1819,8 +1841,6 @@ void PresetInteractor::select_printer_preset_internal(
     fill_tool_items(selected_preset.hw_config);
     fill_sheet_items(selected_preset.hw_config);
 
-    fill_print_presets(selected_preset, no_data_update, bag);
-
     const auto& [original_printer_preset_ref, printer_is_runtime] =
         get_printer_preset(selected_preset.hw_config.id, selected_preset.printer.id);
     m_printer_cbi_accessor.set_config_box(
@@ -1836,6 +1856,7 @@ void PresetInteractor::select_printer_preset_internal(
         }
     );
 
+    fill_print_presets(selected_preset, no_data_update, bag);
     fill_tools_presets(selected_preset, no_data_update, bag);
     fill_materials_presets(selected_preset, no_data_update, bag);
 
@@ -1944,9 +1965,10 @@ void PresetInteractor::select_tool_print_preset_internal(
 
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
-    update_print_tool_cbi(selected_preset, config_container_id);
 
     bag.add([this, project_id = m_selected_project_id, config_container_id]{
+        auto& selected_preset = mutable_selected_printer_preset();
+        update_print_tool_cbi(selected_preset, config_container_id);
         invoke_listeners<IPresetChangedListener>(
             [project_id, config_container_id](auto* l)
             {
@@ -2413,9 +2435,9 @@ void PresetInteractor::set_from_original_value(const Domain::ConfigItem& item, s
 
     apply_location_ops(item.location(),
         [&]() { m_printer_cbi_accessor.set_from_original_value(name); },
-        [&]() { /* m_print_tool_cbi_accessor.set_from_print_original_value(name); // TODO */ },
+        [&]() { m_print_tool_cbi_accessor.set_from_original_print_value(name); },
         [&]() { m_material_accessors.at(&m_material_cbi_list.at(index)).set_from_original_value(name); },
-        [&]() { /* m_print_tool_cbi_accessor.set_from_tool_original_value(name, index); // TODO */ },
+        [&]() { m_print_tool_cbi_accessor.set_from_original_tool_value(name, index);},
         [&]() { /* m_object_settings_interactor_accessor.set_from_original_value(name, value); // TODO */ }
     );
 
@@ -3719,7 +3741,35 @@ void PresetInteractor::update_print_tool_cbi(
         [](Domain::Preset::EvaluatedToolPrintPreset::Preset& preset)
         { return &preset.config_box(); }
     );
-    m_print_tool_cbi_accessor.set_sources(m_selected_project_id, config_container_id, selected_preset, tool_cbs);
+
+    const auto& [print_preset_ref, b] = get_print_preset(
+        selected_preset.hw_config.id,
+        selected_preset.printer.id,
+        selected_preset.print.id
+    );
+
+    std::vector<const Domain::ConfigBox*> original_tool_cbs;
+    original_tool_cbs.reserve(selected_preset.tools.size());
+    std::vector<const Domain::Preset::EvaluatedToolPrintPreset::Preset*> tools;
+    for (size_t i = 0, n = selected_preset.tools.size(); i < n; i++) {
+        const auto& [tool_preset_ref, b] = get_tool_print_preset(
+            selected_preset.hw_config.id,
+            selected_preset.printer.id,
+            selected_preset.print.id,
+            i,
+            selected_preset.tools[i].id
+        );
+        original_tool_cbs.emplace_back(&tool_preset_ref.get().config_box());
+    }
+
+    m_print_tool_cbi_accessor.set_sources(
+        m_selected_project_id,
+        config_container_id,
+        selected_preset,
+        tool_cbs,
+        &print_preset_ref.get().config_box(),
+        original_tool_cbs
+    );
 }
 
 } // namespace Slic3r::Biz::Preset

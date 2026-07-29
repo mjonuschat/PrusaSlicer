@@ -27,7 +27,6 @@ public:
 
     bool is_dirty(const std::string& key) const;
     bool is_dirty() const;
-    std::set<Domain::ConfigItemDef::Category> dirty_categories();
 
     void set_from_original_value(const std::string& key);
 

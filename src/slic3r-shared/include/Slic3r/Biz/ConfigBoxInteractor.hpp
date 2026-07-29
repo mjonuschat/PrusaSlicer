@@ -34,8 +34,6 @@ public:
             const Domain::ConfigBox* original_config_box = nullptr
         );
 
-        bool is_dirty(const std::string& key) const;
-        bool is_dirty() const;
         void set_from_original_value(const std::string& key);
 
     private:
@@ -46,8 +44,6 @@ public:
     explicit ConfigBoxInteractor(SetAccessor& set_accessor);
 
     const Domain::ConfigValue* find(const std::string& name) const;
-    bool is_dirty() const;
-    std::set<Domain::ConfigItemDef::Category> dirty_categories() const;
 
     std::weak_ptr<ConfigBoxObservableList> config_box_list();
 

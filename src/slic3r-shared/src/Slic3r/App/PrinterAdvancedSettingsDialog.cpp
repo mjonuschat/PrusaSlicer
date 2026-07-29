@@ -6,7 +6,6 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -31,6 +30,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
     ConfigSettingsDialog(project_interactor, navigator, "PrinterAdvancedSettingsDialog"),
     m_list_selection_changed_scope(project_interactor.preset_interactor().printer_presets(), *this),
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
+    m_dirty_categorizer(std::make_shared<DirtyCategorizer>()),
     m_logical_printer_settings_dialog(logical_printer_settings_dialog)
 {
     Tab* tab = append_tab(_u8L("Printer"));
@@ -43,6 +43,32 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
         )
     );
 
+    m_dirty_categorizer->set_filter_fn([](const Biz::ConfigItemContext& data)
+        { return data.is_dirty(); });
+    m_dirty_categorizer->set_group_by_fn([](const Biz::ConfigItemContext& data,
+        std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
+        {
+            DEBUG_ASSERT(
+                data.config_item->def().category != Domain::ConfigItemDef::Category::Unknown,
+                "ConfigItemDef cannot have unknown category, please fill it."
+            );
+
+            if (seen_keys.contains(data.config_item->def().category)) {
+                return true;
+            }
+            else {
+                seen_keys.insert(data.config_item->def().category);
+                return false;
+            }
+        });
+    m_dirty_categorizer->set_category_getter_fn(
+        [](const Biz::ConfigItemContext& data) -> Domain::ConfigItemDef::Category
+        { return data.config_item->def().category; }
+    );
+    m_dirty_categorizer->set_source_model(
+        project_interactor.preset_interactor().printer_cbi().config_box_list()
+    );
+
     m_config_tabs.front()->category_page_transformer->set_transform_fn(
         [this](const Biz::ConfigItemContext& data, size_t index)
         {
@@ -52,15 +78,10 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
                 m_project_interactor->selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
-            auto dirty_categories = m_project_interactor->preset_interactor()
-                .printer_cbi()
-                .dirty_categories();
-            bool is_highlighted_text = dirty_categories.find(category) != dirty_categories.end();
-
             return PageEntry{
                 Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
                 icon,
-                is_highlighted_text
+                m_dirty_categorizer->contains(category)
             };
         }
     );
@@ -108,7 +129,7 @@ void PrinterAdvancedSettingsDialog::on_list_selection_changed(Domain::SelectionI
     m_label_preset_name->set_text(preset_item.ui_hw_config_name());
 
     m_revert_button->set_visible(
-        m_project_interactor->preset_interactor().printer_cbi().is_dirty()
+        m_project_interactor->preset_interactor().printer_cbi().config_box_list().lock()->is_dirty()
     );
 }
 
@@ -131,7 +152,7 @@ void PrinterAdvancedSettingsDialog::on_preset_value_changed(
     }
 
     m_revert_button->set_visible(
-        m_project_interactor->preset_interactor().printer_cbi().is_dirty()
+        m_project_interactor->preset_interactor().printer_cbi().config_box_list().lock()->is_dirty()
     );
 
     auto& category_page_transformer = m_config_tabs.front()->category_page_transformer;

@@ -209,6 +209,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/LightSetting.hpp
         src/Slic3r/App/LightSetting.cpp
         include/Slic3r/App/IDialogManager.hpp
+        include/Slic3r/App/DirtyCategoryList.hpp
         include/Slic3r/App/PrintSettingsDialog.hpp
         src/Slic3r/App/PrintSettingsDialog.cpp
         include/Slic3r/App/MaterialSettingsDialog.hpp

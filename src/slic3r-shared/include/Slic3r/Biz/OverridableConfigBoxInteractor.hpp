@@ -55,10 +55,6 @@ public:
 
     const Domain::ConfigValue* find(const std::string& name) const;
 
-    bool is_dirty(const std::string& name) const;
-    bool is_dirty() const;
-    std::set<Domain::ConfigItemDef::Category> dirty_categories() const;
-
     std::weak_ptr<const OverridableConfigBoxObservableList> config_box_overridable_list() const;
 
     std::weak_ptr<OverridableConfigBoxObservableList> config_box_overridable_list();

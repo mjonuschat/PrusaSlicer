@@ -54,8 +54,23 @@ public:
             const Domain::SelectionId selected_project_id,
             const Domain::SelectionId selected_container_id,
             Domain::Preset::SelectedPreset& selected_preset,
-            const std::vector<Domain::ConfigBox*>& tool_config_boxes
+            const std::vector<Domain::ConfigBox*>& tool_config_boxes,
+            const Domain::ConfigBox* original_print_config_box,
+            const std::vector<const Domain::ConfigBox*>& original_tool_config_boxes
         );
+
+        /**
+         * @brief Reset a print-level configuration value to its original value from the preset
+         * @param key Print configuration item key to reset
+         */
+        void set_from_original_print_value(const std::string& key);
+
+        /**
+         * @brief Reset a tool-specific configuration value to its original value from the preset
+         * @param key Tool configuration item key to reset
+         * @param index Tool index to reset the value for
+         */
+        void set_from_original_tool_value(const std::string& key, size_t index);
 
     private:
         std::weak_ptr<PrintToolConfigObservableList> m_observable_list;

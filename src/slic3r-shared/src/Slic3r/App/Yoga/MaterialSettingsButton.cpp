@@ -10,7 +10,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+#include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
 
 #include "Slic3r/LegacyFormat.hpp"
 
@@ -230,8 +230,7 @@ void MaterialSettingsButton::on_view_will_be_removed()
 
 void MaterialSettingsButton::set_material_name(const std::string& name, bool is_modified)
 {
-    const std::string modified_prefix = is_modified ? "* " : "";
-    m_material_name->set_text(modified_prefix + name);
+    m_material_name->set_text(name);
     m_material_name->set_text_color(
         m_theme->color_imgui(is_modified ? Platform::Color::AccentTertiary : Platform::Color::Text)
     );
@@ -273,7 +272,12 @@ void MaterialSettingsButton::on_preset_value_changed(
             return;
         }
     }
-    const bool is_modified_preset = m_project_interactor.preset_interactor().material_cbi_list().at(m_index).is_dirty();
+    const bool is_modified_preset = m_project_interactor.preset_interactor()
+                                        .material_cbi_list()
+                                        .at(m_index)
+                                        .config_box_overridable_list()
+                                        .lock()
+                                        ->is_dirty();
     set_material_name(m_material_preset_name, is_modified_preset);
 }
 

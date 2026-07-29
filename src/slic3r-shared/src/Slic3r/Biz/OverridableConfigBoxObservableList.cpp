@@ -3,7 +3,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include "Slic3r/Domain/Config.hpp"
 
@@ -179,17 +178,6 @@ bool OverridableConfigBoxObservableList::is_dirty() const
             return true;
     }
     return false;
-}
-
-std::set<Domain::ConfigItemDef::Category>
-OverridableConfigBoxObservableList::dirty_categories() const
-{
-    std::vector<std::string> diff_keys;
-    for (const auto& item : m_items) {
-        if (item.is_dirty())
-            diff_keys.emplace_back(item.name);
-    }
-    return Preset::PresetSelectionCheck::dirty_categories(*m_config_box, diff_keys);
 }
 
 void OverridableConfigBoxObservableList::set_from_original_value(const std::string& key)

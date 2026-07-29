@@ -21,6 +21,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+#include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -95,6 +96,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
             }
         }
     };
+    refresh_print_combobox_label_color();
 
     m_settings_set_btn =
         layer_height_row->emplace_back<LayoutButton>(std::string{}, Render::Icon::Cog);
@@ -123,6 +125,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     );
 
     update_tools_visibility();
+    refresh_tools_comboboxes_label_colors();
 
     add_separator();
 
@@ -137,8 +140,7 @@ void SidebarPrint::add_separator()
 
 void SidebarPrint::create_favorite_params()
 {
-    m_favorite_params_layout =
-        m_content_area->emplace_back<PrintToolFavoritesItem>(m_project_interactor);
+    m_content_area->emplace_back<PrintToolFavoritesItem>(m_project_interactor);
 }
 
 void SidebarPrint::update_tools_visibility()
@@ -153,6 +155,35 @@ void SidebarPrint::update_tools_visibility()
     m_tool_head_list_view->set_visible(is_multi_extruder);
 }
 
+void SidebarPrint::refresh_print_combobox_label_color()
+{
+    bool is_modified_preset = m_project_interactor.preset_interactor()
+                                  .print_tool_cbi()
+                                  .observable_list()
+                                  .lock()
+                                  ->is_dirty_print();
+    m_combo_print->set_label_color(m_theme->color_imgui(
+        is_modified_preset ? Platform::Color::AccentTertiary : Platform::Color::Text
+    ));
+}
+
+void SidebarPrint::refresh_tools_comboboxes_label_colors()
+{
+    const size_t tool_cnt = m_project_interactor.preset_interactor().tool_presets().size();
+    for (size_t tool_index{}; tool_index < tool_cnt; tool_index++) {
+        bool is_modified_preset = m_project_interactor.preset_interactor()
+                                      .print_tool_cbi()
+                                      .observable_list()
+                                      .lock()
+                                      ->is_dirty_tool(tool_index);
+        m_tool_head_list_view->item_at(tool_index)
+            ->combo_box()
+            ->set_label_color(m_theme->color_imgui(
+                is_modified_preset ? Platform::Color::AccentTertiary : Platform::Color::Text
+            ));
+    }
+}
+
 PrintSettingsDialog& SidebarPrint::print_settings_dialog()
 {
     return *m_print_settings_dialog;
@@ -164,11 +195,44 @@ void SidebarPrint::on_preset_selection_changed(
     Biz::Preset::PresetItemType type
 )
 {
-    if (type == Biz::Preset::PresetItemType::PrinterPreset
-        && m_project_interactor.selected_project_id() == project_id
+    if (m_project_interactor.selected_project_id() == project_id
         && m_project_interactor.selected_config_container_id() == config_container_id)
     {
-        update_tools_visibility();
+        switch (type) {
+        case Biz::Preset::PresetItemType::PrinterPreset:
+            update_tools_visibility();
+            break;
+        case Biz::Preset::PresetItemType::PrintPreset:
+            refresh_print_combobox_label_color();
+            break;
+        case Biz::Preset::PresetItemType::ToolPrintPreset:
+            refresh_tools_comboboxes_label_colors();
+            break;
+        case Biz::Preset::PresetItemType::MaterialPreset:
+        default:
+            break;
+        }
+    }
+}
+
+void SidebarPrint::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
+{
+    if (std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
+        if (location == Domain::FDMConfigLocation::Print) {
+            refresh_print_combobox_label_color();
+        } else if (location == Domain::FDMConfigLocation::Tool) {
+            refresh_tools_comboboxes_label_colors();
+        }
+    } else if (std::holds_alternative<Domain::SLAConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::SLAConfigLocation>(item.location())};
+        if (location != Domain::SLAConfigLocation::Print) {
+            refresh_print_combobox_label_color();
+        }
     }
 }
 

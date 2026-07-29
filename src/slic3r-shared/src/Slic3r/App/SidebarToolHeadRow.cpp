@@ -84,4 +84,9 @@ void SidebarToolHeadRow::on_view_will_be_reset()
     }
 }
 
+Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* SidebarToolHeadRow::combo_box()
+{
+    return m_combo_box;
+}
+
 } // namespace Slic3r::App

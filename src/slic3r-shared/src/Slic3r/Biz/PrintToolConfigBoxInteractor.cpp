@@ -107,15 +107,34 @@ void PrintToolConfigBoxInteractor::SetAccessor::set_sources(
     const Domain::SelectionId selected_project_id,
     const Domain::SelectionId selected_container_id,
     Domain::Preset::SelectedPreset& selected_preset,
-    const std::vector<Domain::ConfigBox*>& tool_config_boxes
+    const std::vector<Domain::ConfigBox*>& tool_config_boxes,
+    const Domain::ConfigBox* original_print_config_box,
+    const std::vector<const Domain::ConfigBox*>& original_tool_config_boxes
 )
 {
     m_observable_list.lock()->set_sources(
         selected_project_id,
         selected_container_id,
         selected_preset,
-        tool_config_boxes
+        tool_config_boxes,
+        original_print_config_box,
+        original_tool_config_boxes
     );
+}
+
+void PrintToolConfigBoxInteractor::SetAccessor::set_from_original_print_value(
+    const std::string& key
+)
+{
+    m_observable_list.lock()->set_from_original_print_value(key);
+}
+
+void PrintToolConfigBoxInteractor::SetAccessor::set_from_original_tool_value(
+    const std::string& key,
+    size_t index
+)
+{
+    m_observable_list.lock()->set_from_original_tool_value(key, index);
 }
 
 } // namespace Slic3r::Biz

@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
 
 #include "Slic3r/App/ConfigSettingsDialog.hpp"
+#include "Slic3r/App/DirtyCategoryList.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -47,6 +48,8 @@ public:
 protected:
     void close_action() override;
 
+    using DirtyCategorizer = DirtyCategoryList<Biz::ConfigItemContext>;
+
 private:
     Biz::ListenerScope<
         Biz::IListSelectionChangedListener,
@@ -60,6 +63,7 @@ private:
         PrinterAdvancedSettingsDialog>
         m_preset_changed_listener_scope;
 
+    Biz::UnsharedPointer<DirtyCategorizer> m_dirty_categorizer;
     LogicalPrinterSettingsDialog* m_logical_printer_settings_dialog{nullptr};
 
     Yoga::Text* m_label_preset_name{nullptr};

@@ -62,21 +62,6 @@ const Domain::ConfigValue* OverridableConfigBoxInteractor::find(const std::strin
     return value;
 }
 
-bool OverridableConfigBoxInteractor::is_dirty(const std::string& name) const
-{
-    return m_config_box_list->is_dirty(name);
-}
-
-bool OverridableConfigBoxInteractor::is_dirty() const
-{
-    return m_config_box_list->is_dirty();
-}
-
-std::set<Domain::ConfigItemDef::Category> OverridableConfigBoxInteractor::dirty_categories() const
-{
-    return m_config_box_list->dirty_categories();
-}
-
 std::weak_ptr<const OverridableConfigBoxObservableList>
 OverridableConfigBoxInteractor::config_box_overridable_list() const
 {

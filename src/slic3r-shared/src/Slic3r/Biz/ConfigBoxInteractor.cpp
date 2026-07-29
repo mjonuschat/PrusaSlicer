@@ -21,16 +21,6 @@ const Domain::ConfigValue* ConfigBoxInteractor::find(const std::string& name) co
     return m_config_box_list->find(name);
 }
 
-bool ConfigBoxInteractor::is_dirty() const
-{
-    return m_config_box_list->is_dirty();
-}
-
-std::set<Domain::ConfigItemDef::Category> ConfigBoxInteractor::dirty_categories() const
-{
-    return m_config_box_list->dirty_categories();
-}
-
 std::weak_ptr<ConfigBoxObservableList> ConfigBoxInteractor::config_box_list()
 {
     return m_config_box_list.get();
@@ -62,16 +52,6 @@ void ConfigBoxInteractor::SetAccessor::set_config_box(
 )
 {
     m_config_box_list.lock()->set_config_box(config_box, original_config_box);
-}
-
-bool ConfigBoxInteractor::SetAccessor::is_dirty(const std::string& key) const
-{
-    return m_config_box_list.lock()->is_dirty(key);
-}
-
-bool ConfigBoxInteractor::SetAccessor::is_dirty() const
-{
-    return m_config_box_list.lock()->is_dirty();
 }
 
 void ConfigBoxInteractor::SetAccessor::set_from_original_value(const std::string& key)

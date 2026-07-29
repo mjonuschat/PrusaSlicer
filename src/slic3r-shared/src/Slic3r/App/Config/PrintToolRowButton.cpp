@@ -5,6 +5,7 @@
 #include "Slic3r/App/Config/PrintToolRowButton.hpp"
 
 #include "Slic3r/Biz/PrintToolItem.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -12,12 +13,13 @@
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Config/ConfigItemPreview.hpp"
 #include "Slic3r/App/Config/ConfigItemUtils.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PrintToolRowButton::PrintToolRowButton()
+PrintToolRowButton::PrintToolRowButton(Biz::IConfigBoxSetter& cb_setter) : m_cb_setter(cb_setter)
 {
     set_content_orientation(Orientation::Horizontal);
     set_content_align_items(YGAlignCenter);
@@ -32,6 +34,30 @@ PrintToolRowButton::PrintToolRowButton()
     m_label = emplace_back<Text>(std::string{});
     m_label->set_flex_grow(1);
     m_label->set_wrap_mode(Text::WrapMode::WrapElide);
+
+    m_revert_button = emplace_back<LayoutButton>(
+        std::string{},
+        Render::Icon::UndoGizmo,
+        Biz::_u8L("Revert to the initial profile value")
+    );
+    m_revert_button->set_background_color(Platform::Color::ButtonTransparent);
+    m_revert_button->set_icon_tint(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->set_self_align(YGAlignCenter);
+    m_revert_button->set_content_padding(3);
+    m_revert_button->set_width(20);
+    m_revert_button->set_height(20);
+    m_revert_button->set_flex_shrink(0.f);
+    m_revert_button->callbacks().action = [this]()
+    {
+        std::size_t tool_count = m_last_print_tool_item->tool_overrides.size();
+        while (tool_count > 0) {
+            tool_count--;
+            m_cb_setter.set_from_original_value(
+                *m_last_print_tool_item->tool_overrides.at(tool_count),
+                tool_count
+            );
+        }
+    };
 
     m_compatibility_rule_rect = emplace_back<Rectangle>();
     m_compatibility_rule_rect->set_fill(IM_COL32_BLACK_TRANS);
@@ -112,6 +138,12 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
 
     set_tooltip(ConfigItemUtils::config_item_tooltip(*print_tool_item->print_item));
     m_label->set_text(Biz::_u8(print_tool_item->print_item->def().label));
+
+    const bool can_revert = print_tool_item->is_dirty_tool();
+    m_revert_button->set_visible(can_revert);
+    m_label->set_text_color(
+        m_theme->color_imgui(can_revert ? Platform::Color::AccentTertiary : Platform::Color::Text)
+    );
 }
 
 void PrintToolRowButton::checked_updated_internal()

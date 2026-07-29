@@ -85,6 +85,9 @@ public:
     Render::ImguiFontType label_font_type() const;
     void set_label_font_type(Render::ImguiFontType label_font_type);
 
+    const ImColor& label_color() const;
+    void set_label_color(const ImColor& label_color);
+
 protected:
     Vec2f get_item_size() override;
 
@@ -103,7 +106,8 @@ private:
         Validator* validator,
         ComboBox::Callbacks& callbacks,
         bool& hovered,
-        ImFont* label_font
+        ImFont* label_font,
+        const ImColor& label_color
     );
     bool BeginComboPopup(ImGuiID popup_id, const ImRect& bb, ImGuiComboFlags flags);
     ///////////////////////////////////////////////////////////////////////////////
@@ -132,6 +136,7 @@ private:
     bool m_hovered = false;
     std::string m_override_label;
     Render::ImguiFontType m_label_font_type = Render::ImguiFontType::Regular;
+    ImColor m_label_color;
 };
 
 } // namespace Slic3r::App::Yoga

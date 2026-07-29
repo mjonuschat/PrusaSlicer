@@ -364,7 +364,7 @@ void PrintToolRowItem::initialize()
 
         m_favorite_button->set_margin(Margins{0, 6_fpx, 0, 0});
 
-        m_main_button = m_header->emplace<PrintToolRowButton>(0);
+        m_main_button = m_header->emplace<PrintToolRowButton>(0, m_cb_setter);
         m_main_button->set_flex_grow(1.f);
         m_main_button->callbacks().checked_changed = [this](bool checked)
         { m_content->set_visible(checked); };

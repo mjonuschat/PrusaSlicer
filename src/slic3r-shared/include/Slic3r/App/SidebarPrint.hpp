@@ -41,6 +41,12 @@ public:
         Biz::Preset::PresetItemType type
     ) override;
 
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
+
     void on_config_container_selection_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
@@ -52,6 +58,8 @@ private:
     void create_favorite_params();
 
     void update_tools_visibility();
+    void refresh_print_combobox_label_color();
+    void refresh_tools_comboboxes_label_colors();
 
 private:
     using ToolHeadListView = Yoga::ListView<
@@ -72,15 +80,7 @@ private:
     Navigator& m_navigator;
 
     Yoga::LayoutButton* m_settings_set_btn{nullptr};
-    Yoga::ButtonGroup m_group_extruder;
-    Yoga::InputTextField* m_input_text_perimeters{nullptr};
-    Yoga::ComboBox* m_combo_density{nullptr};
-    Yoga::ComboBox* m_combo_pattern{nullptr};
-    Item* m_tool_container{nullptr};
-    std::vector<Item*> m_tools;
     Yoga::ScrollArea* m_content_area{nullptr};
-    Yoga::ComboBox* m_combo_tools{nullptr};
-    Yoga::Item* m_favorite_params_layout{nullptr};
     PrintToolFavoritesItem* m_favorite_params{nullptr};
 
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_print{nullptr};

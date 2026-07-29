@@ -35,6 +35,7 @@ public:
     );
 
     void on_view_will_be_reset() override;
+    Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* combo_box();
 
 protected:
     void on_data_update() override;

@@ -16,6 +16,7 @@
 
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
 #include "Slic3r/App/IConfigNavigable.hpp"
+#include "Slic3r/App/DirtyCategoryList.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -86,6 +87,8 @@ private:
     using Categorizer =
         Biz::ObservableListSortFilter<Biz::OverrideItem, Domain::ConfigItemDef::Category>;
 
+    using DirtyCategorizer = DirtyCategoryList<Biz::OverrideItem>;
+
     struct ConfigTab
     {
         ConfigTab(
@@ -105,6 +108,7 @@ private:
         Biz::ProjectInteractor& project_interactor;
         size_t cbi_index{0};
         Biz::UnsharedPointer<Categorizer> categorizer;
+        Biz::UnsharedPointer<DirtyCategorizer> dirty_categorizer;
         Biz::UnsharedPointer<OverridableCategoryPageTransformer> category_page_transformer;
     };
 

@@ -3,7 +3,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/ConfigBoxObservableList.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 namespace Slic3r::Biz {
 
@@ -97,16 +96,6 @@ void ConfigBoxObservableList::set_from_original_value(const std::string& key)
     if (item_context.original_config_item) {
         set_value(key, item_context.original_config_item->value());
     }
-}
-
-std::set<Domain::ConfigItemDef::Category> ConfigBoxObservableList::dirty_categories()
-{
-    std::vector<std::string> diff_keys;
-    for (const auto& item : m_items) {
-        if (item.is_dirty())
-            diff_keys.emplace_back(item.name);
-    }
-    return Preset::PresetSelectionCheck::dirty_categories(*m_config_box, diff_keys);
 }
 
 const Domain::ConfigValue* ConfigBoxObservableList::find(const std::string& name) const

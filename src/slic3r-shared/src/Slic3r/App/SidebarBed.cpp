@@ -15,7 +15,6 @@
 #include "Slic3r/App/PrinterAddDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui/imgui_internal.h>
@@ -226,7 +225,8 @@ void SidebarBed::on_preset_value_changed(
         }
     }
 
-    bool is_modified_preset = m_project_interactor.preset_interactor().printer_cbi().is_dirty();
+    bool is_modified_preset =
+        m_project_interactor.preset_interactor().printer_cbi().config_box_list().lock()->is_dirty();
     m_logical_printer_button->set_printer_name(m_selected_printer_preset_name, is_modified_preset);
 }
 

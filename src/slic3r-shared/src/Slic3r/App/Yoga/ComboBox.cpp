@@ -39,7 +39,8 @@ bool ComboBox::YGBeginCombo(
     Validator* validator,
     ComboBox::Callbacks& callbacks,
     bool& hovered,
-    ImFont* label_font
+    ImFont* label_font,
+    const ImColor& label_color
 )
 {
     ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -164,6 +165,7 @@ bool ComboBox::YGBeginCombo(
         // Render preview and label
         if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview)) {
             ImGui::PushFont(label_font, GImGui->FontSizeBase);
+            ImGui::PushStyleColor(ImGuiCol_Text, label_color.Value);
             if (g.LogEnabled)
                 ImGui::LogSetNextTextDecoration("{", "}");
             ImGui::RenderTextClipped(
@@ -173,6 +175,7 @@ bool ComboBox::YGBeginCombo(
                 NULL,
                 NULL
             );
+            ImGui::PopStyleColor();
             ImGui::PopFont();
         }
     }
@@ -280,6 +283,7 @@ bool ComboBox::BeginComboPopup(ImGuiID popup_id, const ImRect& bb, ImGuiComboFla
 
 ComboBox::ComboBox(const std::string& name)
 {
+    m_label_color = m_theme->color_imgui(Platform::Color::Text);
     set_object_name(name.empty() ? "ComboBox" : name);
     m_tooltip = emplace_back<Tooltip>(this, std::string{}, std::string{});
 }
@@ -336,7 +340,8 @@ void ComboBox::render(const Vec2f& pos, const Vec2f& size)
                 m_validator.get(),
                 m_callbacks,
                 new_hovered,
-                m_imgui_render ? m_imgui_render->font(m_label_font_type) : nullptr
+                m_imgui_render ? m_imgui_render->font(m_label_font_type) : nullptr,
+                m_label_color
             ))
         {
             const ImVec2 im_size = to_im(size);
@@ -410,6 +415,16 @@ Render::ImguiFontType ComboBox::label_font_type() const
 void ComboBox::set_label_font_type(Render::ImguiFontType label_font_type)
 {
     m_label_font_type = label_font_type;
+}
+
+const ImColor& ComboBox::label_color() const
+{
+    return m_label_color;
+}
+
+void ComboBox::set_label_color(const ImColor& label_color)
+{
+    m_label_color = label_color;
 }
 
 const std::string& ComboBox::override_label() const

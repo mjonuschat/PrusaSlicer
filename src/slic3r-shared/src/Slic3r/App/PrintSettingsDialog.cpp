@@ -36,8 +36,10 @@ PrintSettingsDialog::PrintSettingsDialog(
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_tool_print_categorizer(std::make_shared<ToolPrintCategorizer>()),
+    m_dirty_tool_print_categorizer(std::make_shared<DirtyToolPrintCategorizer>()),
     m_tool_print_transformer(std::make_shared<ToolPrintMenuTransformer>()),
-    m_extruder_menu_transformer(std::make_shared<ExtruderMenuTransformer>())
+    m_extruder_menu_transformer(std::make_shared<ExtruderMenuTransformer>()),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this)
 {
     content_item()->set_width(700);
     content_item()->set_height(700);
@@ -54,33 +56,44 @@ PrintSettingsDialog::PrintSettingsDialog(
     center_row->set_orientation(Orientation::Horizontal);
     center_row->set_flex_grow(1);
 
+    auto group_by_fn = [](const Biz::PrintToolItem& item,
+                          std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
+    {
+        DEBUG_ASSERT(
+            item.print_item->def().category != Domain::ConfigItemDef::Category::Unknown,
+            "ConfigItemDef cannot have unknown category, please fill it."
+        );
+
+        if (seen_keys.contains(item.print_item->def().category)) {
+            return true;
+        } else {
+            seen_keys.insert(item.print_item->def().category);
+            return false;
+        }
+    };
+
     m_tool_print_categorizer->set_filter_fn(
         [](const Biz::PrintToolItem& item)
         { return item.print_item->def().category != Domain::ConfigItemDef::Category::Hidden; }
     );
-    m_tool_print_categorizer->set_group_by_fn(
-        [](const Biz::PrintToolItem& item,
-           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
-        {
-            DEBUG_ASSERT(
-                item.print_item->def().category != Domain::ConfigItemDef::Category::Unknown,
-                "ConfigItemDef cannot have unknown category, please fill it."
-            );
-
-            if (seen_keys.contains(item.print_item->def().category)) {
-                return true;
-            } else {
-                seen_keys.insert(item.print_item->def().category);
-                return false;
-            }
-        }
-    );
+    m_tool_print_categorizer->set_group_by_fn(group_by_fn);
     m_tool_print_categorizer->set_sort_fn(
         [](const Biz::PrintToolItem& lhs, const Biz::PrintToolItem& rhs) -> int
         {
             return static_cast<uint8_t>(lhs.print_item->def().category)
                 < static_cast<uint8_t>(rhs.print_item->def().category);
         }
+    );
+
+    m_dirty_tool_print_categorizer->set_filter_fn([](const Biz::PrintToolItem& item)
+                                                  { return item.is_dirty(); });
+    m_dirty_tool_print_categorizer->set_group_by_fn(group_by_fn);
+    m_dirty_tool_print_categorizer->set_category_getter_fn(
+        [](const Biz::PrintToolItem& item) -> Domain::ConfigItemDef::Category
+        { return item.print_item->def().category; }
+    );
+    m_dirty_tool_print_categorizer->set_source_model(
+        m_project_interactor.preset_interactor().print_tool_cbi().observable_list()
     );
 
     m_tool_print_transformer->set_transform_fn(
@@ -91,10 +104,10 @@ PrintSettingsDialog::PrintSettingsDialog(
             Domain::PrinterTechnology pt =
                 m_project_interactor.selected_config_container().print_technology();
             Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
-
             return PageEntry{
                 Biz::_u8(Domain::ConfigItemDef::translate_category(category, pt)),
-                icon
+                icon,
+                m_dirty_tool_print_categorizer->contains(category)
             };
         }
     );
@@ -194,6 +207,25 @@ PrintSettingsDialog::PrintSettingsDialog(
     Item* spacer = m_footer->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
+    m_revert_button = AbstractSettingsDialog::add_footer_button(
+        m_footer,
+        _u8L("Revert changes"),
+        Render::Icon::UndoGizmo
+    );
+    m_revert_button->set_icon_tint(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->set_label_color(m_theme->color_imgui(Platform::Color::AccentTertiary));
+    m_revert_button->callbacks().action = [this]
+    {
+        m_project_interactor.preset_interactor().discard_selected_print_preset_changes();
+        size_t tool_index = m_project_interactor.preset_interactor().tool_items().size();
+        while (tool_index > 0) {
+            m_project_interactor.preset_interactor().discard_selected_tool_print_preset_changes(
+                --tool_index
+            );
+        }
+    };
+    m_revert_button->set_visible(false);
+
     LayoutButton* compare_button =
         AbstractSettingsDialog::add_footer_button(m_footer, _u8L("Compare"), Render::Icon::Compare);
     compare_button->callbacks().action = [this]
@@ -261,6 +293,17 @@ void PrintSettingsDialog::on_about_to_close()
     clear_navigation();
 }
 
+void PrintSettingsDialog::update_dirty_state()
+{
+    m_revert_button->set_visible(m_project_interactor.preset_interactor()
+                                     .print_tool_cbi()
+                                     .observable_list()
+                                     .lock()
+                                     ->is_dirty());
+
+    m_dirty_tool_print_categorizer->invalidate();
+}
+
 void PrintSettingsDialog::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     clear_navigation();
@@ -286,6 +329,52 @@ void PrintSettingsDialog::clear_navigation()
     for (size_t index = 0; index < m_category_stack_list_view->object_count(); ++index) {
         dynamic_cast<PrintToolSubcategoryListView*>(m_category_stack_list_view->get_item(index))
             ->clear_navigation();
+    }
+}
+
+void PrintSettingsDialog::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (type == Biz::Preset::PresetItemType::PrintPreset
+        || type == Biz::Preset::PresetItemType::ToolPrintPreset)
+    {
+        update_dirty_state();
+    }
+}
+
+void PrintSettingsDialog::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+)
+{
+    if (std::holds_alternative<Domain::FDMConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::FDMConfigLocation>(item.location())};
+        if (location != Domain::FDMConfigLocation::Print
+            && location != Domain::FDMConfigLocation::Tool)
+        {
+            return;
+        }
+    } else if (std::holds_alternative<Domain::SLAConfigLocation>(item.location())) {
+        const auto location{std::get<Domain::SLAConfigLocation>(item.location())};
+        if (location != Domain::SLAConfigLocation::Print) {
+            return;
+        }
+    }
+
+    update_dirty_state();
+    Domain::PrinterTechnology pt =
+        m_project_interactor.selected_config_container().print_technology();
+    for (size_t index = 0; index < m_tool_print_transformer->size(); index++) {
+        const auto& data = m_tool_print_transformer->at(index);
+        if (data.name
+            == Biz::_u8(Domain::ConfigItemDef::translate_category(item.def().category, pt)))
+        {
+            m_tool_print_transformer->on_updated(index);
+        }
     }
 }
 
