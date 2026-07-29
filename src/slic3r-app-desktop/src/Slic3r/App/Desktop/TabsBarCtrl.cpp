@@ -10,6 +10,7 @@
 #include <wx/dcclient.h>
 
 wxDEFINE_EVENT(wxCUSTOMEVT_TABS_BAR_SEL_CHANGED, wxCommandEvent);
+wxDEFINE_EVENT(wxCUSTOMEVT_TABS_BAR_FORCE_FULL_LAYOUT, wxCommandEvent);
 
 namespace Slic3r::App::Desktop {
 
@@ -94,8 +95,8 @@ void TabsBarCtrl::Button::init_bitmaps()
 void TabsBarCtrl::Button::messure_min_size()
 {
     if (m_compact_mode) {
-        const double koef = 0.1*w_config()->em_unit(this);
-        this->SetMinSize(wxSize(static_cast<int>(50.*koef), static_cast<int>(52.*koef)));
+        const double koef = 0.1 * w_config()->em_unit(this);
+        this->SetMinSize(wxSize(static_cast<int>(50. * koef), static_cast<int>(52. * koef)));
         return;
     }
 
@@ -121,7 +122,22 @@ void TabsBarCtrl::Button::messure_min_size()
             this->SetMinSize(wxSize(size.x + m_appearance.px_cnt, size.y));
 #endif
     } else {
-        GetTextExtent(localized_label, &x, &y);
+        wxArrayString lines = wxSplit(localized_label, ' ');
+        if (lines.size() == 1) {
+            GetTextExtent(localized_label, &x, &y);
+        } else {
+            int max_width = 0;
+            for (const wxString& line : lines) {
+                int width         = 0;
+                int unused_height = 0;
+                GetTextExtent(line, &width, &unused_height);
+                max_width = std::max(max_width, width);
+            }
+            const int line_height = GetCharHeight();
+            y                     = static_cast<int>(lines.size()) * line_height;
+            x                     = max_width;
+        }
+
         wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
         wxSize size(x + 2 * m_margin, y + 3 * m_margin + szIcon.y);
         if (localized_label.IsEmpty()) {
@@ -167,7 +183,11 @@ void TabsBarCtrl::Button::set_hovered(bool hovered)
     this->Update();
 }
 
-void TabsBarCtrl::Button::set_compact_mode(bool compact_mode, int icon_px_cnt, bool update_from_appearance)
+void TabsBarCtrl::Button::set_compact_mode(
+    bool compact_mode,
+    int icon_px_cnt,
+    bool update_from_appearance
+)
 {
     if (m_appearance.px_cnt != icon_px_cnt) {
         m_appearance.px_cnt = icon_px_cnt;
@@ -270,16 +290,31 @@ void TabsBarCtrl::Button::render()
         // Draw text
 
         if (!text.IsEmpty()) {
-            wxSize labelSize = dc.GetTextExtent(text);
-            if (labelSize.x > rc.width)
-                text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END, rc.width);
-            pt.x = (rc.width - labelSize.x) * 0.5;
-            if (!m_bmp_bundle.IsOk())
-                pt.y = (rc.height - labelSize.y) * 0.5;
-
             dc.SetTextForeground(m_foreground_color);
             dc.SetFont(GetFont());
-            dc.DrawText(text, pt);
+
+            wxArrayString lines = wxSplit(text, ' ');
+            if (lines.size() == 1) {
+                wxSize labelSize = dc.GetTextExtent(text);
+                if (labelSize.x > rc.width)
+                    text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END, rc.width);
+                pt.x = (rc.width - labelSize.x) * 0.5;
+                if (!m_bmp_bundle.IsOk())
+                    pt.y = (rc.height - labelSize.y) * 0.5;
+                dc.DrawText(text, pt);
+            } else {
+                int max_width         = 0;
+                const int line_height = GetCharHeight();
+                for (const wxString& line : lines) {
+                    wxSize labelSize = dc.GetTextExtent(line);
+                    pt.x             = (rc.width - labelSize.x) * 0.5;
+                    if (!m_bmp_bundle.IsOk())
+                        pt.y = (rc.height - labelSize.y) * 0.5;
+
+                    dc.DrawText(line, pt);
+                    pt.y += line_height;
+                }
+            }
         }
 
         // Draw down_arrow if needed
@@ -412,7 +447,7 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
     } else {
         m_sizer = new wxFlexGridSizer(1);
         m_sizer->AddGrowableRow(0);
-        align        = wxALIGN_CENTER_HORIZONTAL;
+        align = wxALIGN_CENTER_HORIZONTAL;
     }
     m_sizer->SetFlexibleDirection(orient);
     this->SetSizer(m_sizer);
@@ -434,13 +469,37 @@ TabsBarCtrl::TabsBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus /* = 
     m_sizer->Add(m_second_sizer, 0, align);
 }
 
+void TabsBarCtrl::refresh_buttons()
+{
+    for (auto* button : m_pageButtons) {
+        button->set_compact_mode(m_compact_mode,22);
+    }
+
+    if (!m_compact_mode && m_orient == wxVERTICAL) {
+        int max_min_width = wxDefaultCoord;
+        for (auto* button : m_pageButtons) {
+            max_min_width = std::max(max_min_width, button->GetMinSize().GetWidth());
+        }
+        for (Button* button : m_pageButtons) {
+            if (max_min_width > button->GetMinSize().GetWidth()) {
+                wxSize new_min_size(max_min_width, button->GetMinSize().y);
+                button->SetMinSize(new_min_size);
+            }
+        }
+        wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_TABS_BAR_FORCE_FULL_LAYOUT);
+        wxPostEvent(this->GetParent(), evt);
+    }
+
+    m_first_sizer->Layout();
+    Refresh();
+}
+
 void TabsBarCtrl::set_compact_mode(bool compact_mode)
 {
     if (m_compact_mode == compact_mode)
         return;
-    
+
     m_compact_mode = compact_mode;
-    m_btn_max_width = wxDefaultCoord;
 
     wxAlignment align{
         m_orient == wxHORIZONTAL ? wxALIGN_CENTER_VERTICAL : wxALIGN_CENTER_HORIZONTAL
@@ -449,21 +508,10 @@ void TabsBarCtrl::set_compact_mode(bool compact_mode)
         m_orient == wxHORIZONTAL ? wxLEFT | wxRIGHT : (compact_mode ? 0 : wxTOP | wxLEFT | wxRIGHT)
     };
 
+    refresh_buttons();
+
     m_first_sizer->GetItem(size_t(0))->SetFlag(align | margin_flags);
     m_buttons_sizer->SetHGap((m_orient == wxVERTICAL && m_compact_mode) ? 0 : m_btn_margin);
-
-    for (auto* button : m_pageButtons) {
-        button->set_compact_mode(m_compact_mode, 20);
-        m_btn_max_width = std::max(m_btn_max_width, button->GetMinSize().GetWidth());
-    }
-    if (!compact_mode) {
-        for (Button* button : m_pageButtons) {
-            wxSize new_min_size(m_btn_max_width, button->GetMinSize().y);
-            button->SetMinSize(new_min_size);
-        }
-    }
-    m_first_sizer->Layout();
-    Refresh();
 
     on_compact_mode_changed();
 }
@@ -549,14 +597,6 @@ bool TabsBarCtrl::InsertPage(
         }
     );
 
-    if (m_orient == wxVERTICAL && btn->GetMinSize().x > m_btn_max_width) {
-        m_btn_max_width = btn->GetMinSize().x;
-        wxSize new_min_size(m_btn_max_width, btn->GetMinSize().y);
-        for (Button* button : m_pageButtons) {
-            button->SetMinSize(new_min_size);
-        }
-    }
-
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_buttons_sizer->Insert(
         n,
@@ -571,6 +611,8 @@ bool TabsBarCtrl::InsertPage(
     else
         m_buttons_sizer->SetRows(m_buttons_sizer->GetRows() + 1);
 
+    refresh_buttons();
+
     m_sizer->Layout();
     return true;
 }
@@ -584,6 +626,8 @@ void TabsBarCtrl::RemovePage(size_t n)
     // Under OSX call of btn->Reparent(nullptr) causes a crash, so as a workaround use RemoveChild() instead
     this->RemoveChild(btn);
     btn->Destroy();
+
+    refresh_buttons();
 
     m_sizer->Layout();
 }

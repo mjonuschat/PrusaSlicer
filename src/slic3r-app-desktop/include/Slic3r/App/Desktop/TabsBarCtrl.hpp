@@ -14,6 +14,8 @@ class wxFlexGridSizer;
 
 // custom message the TabsBarCtrl sends to its parent (TabsBar) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TABS_BAR_SEL_CHANGED, wxCommandEvent);
+// custom message the TabsBarCtrl sends to its parent (TabsBar) to notify a required full layout refresh:
+wxDECLARE_EVENT(wxCUSTOMEVT_TABS_BAR_FORCE_FULL_LAYOUT, wxCommandEvent);
 
 namespace Slic3r::App::Desktop {
 
@@ -111,6 +113,7 @@ public:
 
     virtual void UnselectPopupButtons() = 0;
 
+    void refresh_buttons();
     void set_compact_mode(bool compact_mode);
     bool compact_mode() const;
 
@@ -133,7 +136,6 @@ protected:
     int                     m_orient;
 
     TabsBarMenus*           m_menus         { nullptr };
-    int                     m_btn_max_width { -1 };
     bool                    m_compact_mode{false};
 };
 

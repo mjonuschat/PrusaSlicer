@@ -57,6 +57,21 @@ public:
                 SetSelection(page_idx);
         });
 
+        this->Bind(
+            wxCUSTOMEVT_TABS_BAR_FORCE_FULL_LAYOUT,
+            [this](wxCommandEvent&)
+            {
+                if (wxWindow* current_page = GetCurrentPage()) {
+                    current_page->InvalidateBestSize();
+                    Layout();
+                    current_page->SetSize(GetPageRect());
+                } else {
+                    InvalidateBestSize();
+                    Layout();
+                }
+            }
+        );
+
         this->Bind(wxEVT_NAVIGATION_KEY, &TabsBar::OnNavigationKey, this);
 
         return true;

@@ -112,7 +112,8 @@ void LeftBarCtrl::on_compact_mode_changed()
 void LeftBarCtrl::ShowUserAccount(bool show)
 {
     m_account_btn->Show(show);
-    this->Layout();
+    wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_TABS_BAR_FORCE_FULL_LAYOUT);
+    wxPostEvent(GetParent(), evt);
 }
 
 } // namespace Slic3r::App::Desktop
