@@ -21,8 +21,8 @@ namespace Slic3r::App::Scene {
  *
  * @param node Root node to start the recursive visit
  * @param visitor Function of prototype `void(const Node&)` to be called on every node
- * @param ignore_enabled If passed `true` the visitor will be called only for enabled nodes,
- * otherwise even disabled nodes are visited.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  */
 void visit(const Node& node, const ConstNodeVisitor& visitor, bool ignore_enabled = false);
 
@@ -35,8 +35,8 @@ void visit(const Node& node, const ConstNodeVisitor& visitor, bool ignore_enable
  *
  * @param node Root node to start the recursive visit
  * @param visitor Function of prototype `void(Node&)` to be called on every node
- * @param ignore_enabled If passed `true` the visitor will be called only for enabled nodes,
- * otherwise even disabled nodes are visited.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  */
 void visit(Node& node, const NodeVisitor& visitor, bool ignore_enabled = false);
 

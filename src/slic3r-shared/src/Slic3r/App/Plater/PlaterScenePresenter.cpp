@@ -941,7 +941,9 @@ PlaterScenePresenter::clear_orphan_volumes_from_managers(Domain::SelectionId pro
                 volume_ids.insert(tag->volume_id);
             }
         },
-        false
+        // Disabled nodes (e.g. volume nodes hidden by a painting gizmo) are still part of the graph
+        // and still reference meshes/geometry in the managers, so they have to count as alive.
+        true
     );
 
     const auto predicate = [&](Scene::AuxiliaryElementId id, const auto&)
