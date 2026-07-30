@@ -27,6 +27,7 @@ using Slic3r::Biz::IMessageDialogProvider;
 using Slic3r::Biz::ObjectSupportPointsRef;
 using Slic3r::Biz::UndoSnapshotType;
 using Slic3r::Biz::Algorithms::TriangleSelector;
+using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::Slicing::GeneratedSupportPoint;
 using Slic3r::Biz::Slicing::ObjectSupportPoints;
 using Slic3r::Biz::Slicing::SlicingInteractor;
@@ -332,6 +333,16 @@ void PaintOnSupportsGizmo::on_model_reloaded(const SelectionId project_id)
     }
 
     PaintOnGizmoBase::on_model_reloaded(project_id);
+}
+
+void PaintOnSupportsGizmo::on_scene_selection_changed(
+    const SelectionId project_id,
+    const ObjectSelection& selection
+)
+{
+    this->cancel_automatic_painting();
+
+    PaintOnGizmoBase::on_scene_selection_changed(project_id, selection);
 }
 
 Scene::ToolType PaintOnSupportsGizmo::type() const

@@ -31,6 +31,7 @@ class PaintOnGizmoBase :
     public Scene::IToolGizmo,
     public App::Scene::ISceneChangedListener,
     public Biz::Scene::ISceneChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener,
     public Scene::IThumbnailRenderListener
 {
 public:
@@ -100,6 +101,11 @@ public:
     void on_thumbnail_render_end() override;
 
     void on_model_reloaded(Domain::SelectionId project_id) override;
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
