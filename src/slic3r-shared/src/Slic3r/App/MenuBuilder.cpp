@@ -265,6 +265,8 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                     return Biz::_u8L("Plugins");
                 case MenuItemName::PluginRescan:
                     return Biz::_u8L("Rescan Plugins");
+                case MenuItemName::PluginFolder:
+                    return Biz::_u8L("Show User Plugins Folder");
 
                 default:
                     return std::string();

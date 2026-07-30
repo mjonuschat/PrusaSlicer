@@ -173,7 +173,8 @@ enum class MenuItemName
     FixVolumeWithRepairAlgorithm,
 
     Plugins,
-    PluginRescan
+    PluginRescan,
+    PluginFolder,
 };
 
 class UniversalMenuItemName: public std::variant<MenuItemName, std::string>

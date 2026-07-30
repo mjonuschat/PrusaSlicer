@@ -2306,5 +2306,15 @@ void MenuCommandRegistrar::register_main_menu_plugin_commands(Lua::PluginSystem&
             }
         )
     );
+    m_menu_manager.register_menu_item(
+        {MenuItemName::Plugins, MenuItemName::PluginFolder},
+        std::make_unique<UIItemCommand>(
+            CommandName::PluginFolder,
+            [&]
+            {
+                AppServices::instance().file_explorer_handler().open_folder(data_dir() + "/lua");
+            }
+        )
+    );
 }
 } // namespace Slic3r::App
