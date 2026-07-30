@@ -235,11 +235,26 @@ void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::js
     const Domain::Preset::FeatureDefs* vendor_tool_features =
         m_preset_interactor.get_vendor_tool_feature_defs();
 
-    size_t tool_idx = 0;
-
     for (const auto& [tool_key, tool_json] : j["tools"].items()) {
+        const auto address = Domain::Preset::to_address(tool_key);
+
+        if (!address) {
+            SPDLOG_WARN(
+                "Connect tool sync: Address could not be parsed from '{}': {}",
+                tool_key,
+                address.error()
+            );
+            continue;
+        }
+
+        // Nested addresses (e.g. "2.0") are feeder/material slots handled elsewhere, not an error.
+        if (address->size() != 1) {
+            continue;
+        }
+
+        const size_t tool_idx = address->front();
+
         if (!tool_json.contains("features") || tool_idx >= m_preset_interactor.tool_items().size()) {
-            tool_idx++;
             continue;
         }
 
@@ -286,8 +301,6 @@ void ConnectMessageHandler::select_printer_tools_from_connect(const nlohmann::js
         } else {
             SPDLOG_WARN("Connect tool sync: No matching tool definition found for tool index {}", tool_idx);
         }
-
-        tool_idx++;
     }
 }
 

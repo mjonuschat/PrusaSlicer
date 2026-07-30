@@ -8,6 +8,8 @@
 #include <iterator>
 #include <cstddef>
 
+#include <tl/expected.hpp>
+
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "Slic3r/Domain/Preset/SourceLocatedExpr.hpp"
@@ -26,6 +28,13 @@ namespace Slic3r::Domain::Preset {
  * .
  */
 using Address = std::vector<uint8_t>;
+
+/**
+ * @brief Parses an Address from its dot separated textual form (e.g. "2.0").
+ *
+ * @return The parsed address or an error description when the input is not a valid address.
+ */
+tl::expected<Address, std::string> to_address(const std::string& input);
 
 /**
  * @brief Model information of a hardware component (like printer or feeder).

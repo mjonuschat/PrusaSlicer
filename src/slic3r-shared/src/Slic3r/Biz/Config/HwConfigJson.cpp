@@ -1,5 +1,4 @@
 #include "Slic3r/Biz/Config/HwConfigJson.hpp"
-#include <charconv>
 #include <fmt/ranges.h>
 #include <tl/expected.hpp>
 #include <variant>
@@ -36,6 +35,7 @@ using PartiallyParsedFeederConfigs   = std::map<std::string, HwFeederConfig>;
 using PartiallyParsedMaterialConfigs = std::map<std::string, MaterialConfig>;
 
 using Slic3r::Domain::Preset::Address;
+using Slic3r::Domain::Preset::to_address;
 
 uint8_t address_from_legacy_public(uint8_t address)
 {
@@ -56,26 +56,6 @@ std::string to_string(const Address& v)
     return fmt::to_string(
         fmt::join(v | std::views::transform([](auto slot) { return int(slot); }), ".")
     );
-}
-
-tl::expected<Address, std::string> from_string(const std::string& input)
-{
-    Address address;
-    for (const auto& slot : std::views::split(input, ".")) {
-        int slot_v;
-        auto result =
-            std::from_chars(std::to_address(slot.begin()), std::to_address(slot.end()), slot_v, 10);
-        if (result.ec != std::errc()) {
-            return tl::unexpected{"Failed to parse a number!"};
-        }
-        address.push_back(slot_v);
-    }
-
-    if (address.empty()) {
-        return tl::unexpected{"No numbers were parsed!"};
-    }
-
-    return address;
 }
 } // namespace
 
@@ -685,7 +665,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         tools_result->tools.contains("1") && !tools_result->tools.contains("0");
 
     for (const auto& [key, value] : tools_result->tools) {
-        const auto address{from_string(key)};
+        const auto address{to_address(key)};
         if (!address) {
             return tl::unexpected{
                 "Address could not be parsed from '" + key + "': " + address.error()
@@ -708,7 +688,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
 
     HwFeederConfigs& feeders = result.feeders;
     for (const auto& [key, value] : tools_result->feeders) {
-        const auto address{from_string(key)};
+        const auto address{to_address(key)};
         if (!address) {
             return tl::unexpected{
                 "Address could not be parsed from '" + key + "': " + address.error()
@@ -719,7 +699,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
 
     HwMaterialConfigs& materials = result.materials;
     for (const auto& [key, value] : tools_result->materials) {
-        const auto address{from_string(key)};
+        const auto address{to_address(key)};
         if (!address) {
             return tl::unexpected{
                 "Address could not be parsed from '" + key + "': " + address.error()

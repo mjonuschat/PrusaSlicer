@@ -3,9 +3,30 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
+#include <charconv>
 #include <ranges>
 
 namespace Slic3r::Domain::Preset {
+
+tl::expected<Address, std::string> to_address(const std::string& input)
+{
+    Address address;
+    for (const auto& slot : std::views::split(input, ".")) {
+        int slot_v;
+        auto result =
+            std::from_chars(std::to_address(slot.begin()), std::to_address(slot.end()), slot_v, 10);
+        if (result.ec != std::errc()) {
+            return tl::unexpected{"Failed to parse a number!"};
+        }
+        address.push_back(slot_v);
+    }
+
+    if (address.empty()) {
+        return tl::unexpected{"No numbers were parsed!"};
+    }
+
+    return address;
+}
 
 FeatureValueMap build_features(const FeatureDefs& feature_defs)
 {
