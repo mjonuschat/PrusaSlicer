@@ -3956,7 +3956,10 @@ std::string GCodeGenerator::travel_to(
     }
     travel.emplace_back(end_point);
 
-    if (config.travel_short_distance_acceleration > 0.) {
+    // Short distance travel acceleration must not be applied when the travel acceleration control
+    // is disabled (travel_acceleration is zero). Emitting zero acceleration is a no-op, so there
+    // would be no way to return from the short distance travel acceleration back to the default one.
+    if (config.travel_acceleration > 0. && config.travel_short_distance_acceleration > 0.) {
         return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, config, enforce_first_z, [&]() {
                    return role.is_external_perimeter() && xy_path.length() < scaled<double>(config.retract_before_travel.at(m_writer.extruder()->id()));
                });

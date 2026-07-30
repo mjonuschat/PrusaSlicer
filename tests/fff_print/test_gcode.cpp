@@ -5,10 +5,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <regex>
 #include <fstream>
 #include <span>
+#include <vector>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/GCode.hpp"
@@ -348,4 +350,73 @@ TEST_CASE("M201 for acceleation reset", "[GCode]") {
     CHECK(has_accel);
     INFO("M204 is not generated for repetier firmware");
     CHECK(!has_m204);
+}
+
+namespace {
+std::vector<int> collect_emitted_travel_accelerations(const std::string& gcode)
+{
+    std::vector<int> emitted_travel_accelerations;
+
+    GCodeReader parser;
+    parser.parse_buffer(
+        gcode,
+        [&emitted_travel_accelerations](GCodeReader& self, const GCodeReader::GCodeLine& line)
+        {
+            int travel_acceleration = 0;
+            if (line.cmd_is("M204") && line.has_value('T', travel_acceleration)) {
+                emitted_travel_accelerations.emplace_back(travel_acceleration);
+            }
+        }
+    );
+
+    return emitted_travel_accelerations;
+}
+} // namespace
+
+TEST_CASE(
+    "Travel short distance acceleration is not emitted when travel acceleration is disabled",
+    "[GCode]"
+)
+{
+    constexpr int travel_short_distance_acceleration = 250;
+
+    TestConfig config;
+    config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfMarlinFirmware);
+    config.print.items.opt("retract_before_travel").set(5.0);
+    config.print.items.opt("travel_short_distance_acceleration")
+        .set(static_cast<double>(travel_short_distance_acceleration));
+
+    WHEN("travel acceleration is enabled")
+    {
+        config.print.items.opt("travel_acceleration").set(1000.0);
+
+        const std::vector<int> emitted_travel_accelerations{
+            collect_emitted_travel_accelerations(slice({TestMesh::cube_with_hole}, config))
+        };
+
+        THEN("travel short distance acceleration is emitted")
+        {
+            CHECK(
+                std::ranges::find(emitted_travel_accelerations, travel_short_distance_acceleration)
+                != emitted_travel_accelerations.end()
+            );
+        }
+    }
+
+    WHEN("travel acceleration is disabled")
+    {
+        config.print.items.opt("travel_acceleration").set(0.0);
+
+        const std::vector<int> emitted_travel_accelerations{
+            collect_emitted_travel_accelerations(slice({TestMesh::cube_with_hole}, config))
+        };
+
+        THEN("travel short distance acceleration is never emitted")
+        {
+            CHECK(
+                std::ranges::find(emitted_travel_accelerations, travel_short_distance_acceleration)
+                == emitted_travel_accelerations.end()
+            );
+        }
+    }
 }
