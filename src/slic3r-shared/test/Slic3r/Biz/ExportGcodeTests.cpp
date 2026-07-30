@@ -2,22 +2,23 @@
 #include <catch2/trompeloeil.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
-#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
-#include "Slic3r/TestUtils/TestData.hpp"
-#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-#include "Slic3r/Directories.hpp"
-#include "Slic3r/Domain/ModelVolume.hpp"
-#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
+
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+
+#include "Slic3r/Directories.hpp"
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
+#include "Slic3r/TestUtils/ScopedThreadDispatcher.hpp"
+#include "Slic3r/TestUtils/TestData.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/filesystem.hpp>
@@ -100,9 +101,10 @@ struct JobManagerStatusListener :
         const Slic3r::Biz::Platform::JobManager::JobManagerStatus& job_manager_status
     ) override
     {
+        // Only count "printhost*" export jobs, otherwise other project_interactor jobs may be counted
         for (const auto& [job_name, progress] : job_manager_status)
         {
-            if (progress.status == watched_status) {
+            if (progress.status == watched_status && job_name.starts_with("printhost")) {
                 status_counter.insert(job_name);
             }
         }
@@ -204,10 +206,41 @@ struct CaseData
     CaseData& operator=(CaseData&&) = default;
 };
 
-TEST_CASE("Export gcode")
+struct ExportGcodeFixture
 {
-    boost::nowide::nowide_filesystem();
+    ExportGcodeFixture()
+    {
+        boost::nowide::nowide_filesystem();
 
+        std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
+        Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
+
+        Slic3r::set_data_dir(Tests::get_datadir().string());
+
+        Platform::PlatformServices::instance()
+            .job_manager()
+            .add_listener<Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+                &job_listener
+            );
+
+        project_interactor.preset_interactor().load_preset_bundle(
+            Preset::IO::BundlePaths::make_test_runtime(Tests::get_datadir())
+        );
+    }
+
+    Slic3r::Domain::Workbench workbench;
+    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
+    Tests::JobManagerScope job_manager_scope{dispatcher};
+    ThumbnailGenerator thumbnail_image_generator;
+    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
+    JobManagerStatusListener job_listener{Slic3r::Domain::JobStatus::Finished};
+    // Queue must be clear before project_interactor/job_listener are destroyed.
+    Tests::ScopedThreadDispatcher thread_dispatcher{dispatcher};
+};
+
+TEST_CASE_METHOD(ExportGcodeFixture, "Export gcode", "[export][timeout]")
+{
     auto [project_count, export_count, extension, seconds] =
         GENERATE(
             table<size_t, size_t, std::string, std::chrono::seconds>({
@@ -219,37 +252,16 @@ TEST_CASE("Export gcode")
             })
         );
 
-    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
-    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
-
-    Slic3r::Domain::Workbench workbench;
-    Slic3r::set_data_dir(Tests::get_datadir().string());
-
-    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
-    ThumbnailGenerator thumbnail_image_generator;
-    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
-
-    Platform::PlatformServices::instance().set_job_manager(
-        std::make_unique<Slic3r::Biz::Platform::JobManager::JobManager>(dispatcher)
-    );
-
     auto data_dir              = Tests::get_datadir();
     fs::path preset_bundle_dir = data_dir / "presets";
     fs::path config_dir        = data_dir / "configs";
 
-    JobManagerStatusListener job_listener(Slic3r::Domain::JobStatus::Finished);
-    Platform::PlatformServices::instance()
-        .job_manager()
-        .add_listener<Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
-            &job_listener
-        );
-
-    project_interactor.preset_interactor().load_preset_bundle(
-        Preset::IO::BundlePaths::make_test_runtime(Tests::get_datadir())
-    );
-
     SlicingStatusListener slicing_listener{project_interactor, true};
     project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);
+    // Must close (and thus drain) the dispatcher's queue while slicing_listener is still alive:
+    // it can hold pointers to slicing_listener, and this local goes out of scope before the
+    // fixture (and its dispatcher.close() in ~ExportGcodeFixture) is torn down.
+    Tests::ScopedThreadDispatcher thread_dispatcher_guard{dispatcher};
 
     std::vector<CaseData> projects;
     for (size_t i = 0; i < project_count; i++) {
@@ -282,7 +294,7 @@ TEST_CASE("Export gcode")
         dispatcher
     ));
 
-    for (size_t i = 0; i < project_count; i++) {      
+    for (size_t i = 0; i < project_count; i++) {
         for (size_t k = 0; k < export_count; k++) {
             REQUIRE(fs::exists(projects[i].paths[k].path()));
             std::string gcode;
@@ -295,55 +307,27 @@ TEST_CASE("Export gcode")
             }
         }
     }
-
-    // Queue must be clear before ProjectInteractor can be destroyed.
-    dispatcher.close();
 }
 
-TEST_CASE("Export sla")
+TEST_CASE_METHOD(ExportGcodeFixture, "Export sla", "[export][timeout]")
 {
-    boost::nowide::nowide_filesystem();
-
     auto [project_count, export_count, extension, seconds] =
         GENERATE(
             table<size_t, size_t, std::string, std::chrono::seconds>({
                 {1, 1, ".sl1", 30s},  // Export single sl1 file.
-                {1, 1, ".sl1s", 30s}, // Export single sl1s file. 
-                {3, 1, ".sl1", 50s},  // Export sl1 files of multiple projects. 
+                {1, 1, ".sl1s", 30s}, // Export single sl1s file.
+                {3, 1, ".sl1", 50s},  // Export sl1 files of multiple projects.
                 {1, 3, ".sl1", 50s},  // Export multiple sl1 files of 1 project.
                 {3, 3, ".sl1", 100s}  // Export a lot.
             })
         );
 
-    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
-    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
-
-    Slic3r::Domain::Workbench workbench;
-    Slic3r::set_data_dir(Tests::get_datadir().string());
-
-    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
-    ThumbnailGenerator thumbnail_image_generator;
-    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
-
-    Platform::PlatformServices::instance().set_job_manager(
-        std::make_unique<Slic3r::Biz::Platform::JobManager::JobManager>(dispatcher)
-    );
-
-    auto data_dir     = Tests::get_datadir();
-    auto bundle_paths = Preset::IO::BundlePaths::make_test_runtime(data_dir);
-
-
-    JobManagerStatusListener job_listener(Slic3r::Domain::JobStatus::Finished);
-    Platform::PlatformServices::instance()
-        .job_manager()
-        .add_listener<Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
-            &job_listener
-        );
-
-    project_interactor.preset_interactor().load_preset_bundle(bundle_paths);
-
     SlicingStatusListener slicing_listener{project_interactor, false};
     project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);
+    // Must close (and thus drain) the dispatcher's queue while slicing_listener is still alive:
+    // it can hold pointers to slicing_listener, and this local goes out of scope before the
+    // fixture (and its dispatcher.close() in ~ExportGcodeFixture) is torn down.
+    Tests::ScopedThreadDispatcher thread_dispatcher_guard{dispatcher};
 
     std::vector<CaseData> projects;
     for (size_t i = 0; i < project_count; i++) {
@@ -374,7 +358,7 @@ TEST_CASE("Export sla")
         dispatcher
     ));
 
-    for (size_t i = 0; i < project_count; i++) {      
+    for (size_t i = 0; i < project_count; i++) {
         for (size_t k = 0; k < export_count; k++) {
             REQUIRE(fs::exists(projects[i].paths[k].path()));
             std::string gcode;
@@ -387,7 +371,4 @@ TEST_CASE("Export sla")
             }
         }
     }
-
-    // Queue must be clear before ProjectInteractor can be destroyed.
-    dispatcher.close();
 }

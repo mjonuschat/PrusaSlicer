@@ -361,6 +361,11 @@ void Store::take_snapshot(Biz::UndoSnapshotType snapshot_type)
     );
 
     update_top_bar(project_id, it->second);
+
+    if (snapshot_type != Biz::UndoSnapshotType::InitializeProject) {
+        // Only invalidate non-empty projects
+        m_project_interactor.backup_store().invalidate_backup(project_id);
+    }
 }
 
 bool Store::is_undo_possible() const

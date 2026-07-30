@@ -426,8 +426,10 @@ wxBitmapBundle* BitmapCache::from_svg(const std::string& bitmap_name, unsigned t
     std::map<std::string, std::string> replaces;
     if (dark_mode)
         replaces["#808080"] = "#FFFFFF";
-    if (!new_color.empty())
+    if (!new_color.empty()) {
         replaces["#ED6B21"] = new_color;
+        replaces["#808080"] = new_color;
+    }
 
     replaces["#ButtonBG"] = dark_mode ? "#4E4E4E" : "#828282";
 

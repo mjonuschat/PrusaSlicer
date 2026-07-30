@@ -15,6 +15,7 @@
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/NumberEntryDialog.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
+#include "Slic3r/App/CrashedProjectsDialog.hpp"
 
 namespace Slic3r::App {
 
@@ -52,7 +53,8 @@ public:
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print,
         std::unique_ptr<SidebarObject> sidebar_object,
-        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
+        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog,
+        std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other)            = delete;
@@ -128,8 +130,8 @@ protected:
     ToolBar* m_right_toolbar  = nullptr;
 
     bool m_sidebars_visible = true;
-    float m_object_list_srcroll_y_delta{ -1 };
-    float m_object_list_srcroll_y_previous_delta{ -1 };
+    float m_object_list_srcroll_y_delta{-1};
+    float m_object_list_srcroll_y_previous_delta{-1};
     Yoga::SizeInfo m_info;
 
     // Inserted from render module
@@ -142,6 +144,7 @@ protected:
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_numbers_entry_dialog;
+    Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;
 };
 
 } // namespace Slic3r::App

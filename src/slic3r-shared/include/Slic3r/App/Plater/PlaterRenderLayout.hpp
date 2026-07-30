@@ -36,7 +36,8 @@ public:
         std::unique_ptr<NumberEntryDialog> number_entry_dialog,
         std::unique_ptr<WelcomeDialog> welcome_dialog,
         std::unique_ptr<InvalidDataDialog> invalid_data_dialog,
-        std::unique_ptr<Lua::PluginDialog> plugin_dialog
+        std::unique_ptr<Lua::PluginDialog> plugin_dialog,
+        std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog
     );
 
     void init() override;

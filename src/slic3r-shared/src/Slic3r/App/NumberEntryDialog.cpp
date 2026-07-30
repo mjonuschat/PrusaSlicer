@@ -89,7 +89,7 @@ void NumberEntryDialog::get_user_number_and_process(
 void NumberEntryDialog::close_action()
 {
     m_on_process = nullptr;
-    m_navigator.set_opened_dialog(nullptr);
+    m_navigator.set_modal_dialog(ModalDialog::None);
 }
 
 } // namespace Slic3r::App

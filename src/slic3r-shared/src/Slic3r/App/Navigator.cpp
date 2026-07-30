@@ -17,7 +17,10 @@ namespace Slic3r::App {
 
 Navigator::~Navigator() {}
 
-Navigator::Callbacks& Navigator::callbacks() { return m_callbacks; }
+Navigator::Callbacks& Navigator::callbacks()
+{
+    return m_callbacks;
+}
 
 void Navigator::on_init(
     Plater::PlaterRenderModule& plater_module,
@@ -46,9 +49,9 @@ void Navigator::navigate_to_module_type(Render::ModuleType type)
 
 void Navigator::set_render_module_type(Render::ModuleType type)
 {
-    ProjectContext& context = m_project_contexts->selected();
+    ProjectContext& context               = m_project_contexts->selected();
     const bool force_render_modele_switch = context.type != type;
-    context.type            = type;
+    context.type                          = type;
 
     if (type == Render::ModuleType::Plater) {
         m_canvas->set_next_render_module(m_plater_module);
@@ -113,35 +116,34 @@ void Navigator::open_invalid_data_dialog()
     }
 }
 
-void Navigator::set_opened_preferences(bool opened)
+void Navigator::set_modal_dialog(ModalDialog modal_dialog)
 {
     ProjectContext& context = m_project_contexts->selected();
     switch (context.type) {
     case Render::ModuleType::Plater:
-        m_plater_module->set_opened_preferences(opened);
+        m_plater_module->set_modal_dialog(modal_dialog);
         break;
     case Render::ModuleType::Preview:
-        m_preview_module->set_opened_preferences(opened);
+        m_preview_module->set_modal_dialog(modal_dialog);
         break;
     case Render::ModuleType::Undef:
         break;
     }
+
+    if (m_callbacks.modal_dialog_changed) {
+        m_callbacks.modal_dialog_changed(modal_dialog);
+    }
 }
 
-bool Navigator::is_opened_preferences()
+ModalDialog Navigator::current_modal_dialog() const
 {
-    ProjectContext& context = m_project_contexts->selected();
-    switch (context.type) {
-    case Render::ModuleType::Plater:
-        return m_plater_module->is_opened_preferences();
-    case Render::ModuleType::Preview:
-        return m_preview_module->is_opened_preferences();
-    case Render::ModuleType::Undef:
-        break;
-    }
-    return false;
+    return m_current_modal_dialog;
 }
 
+bool Navigator::is_any_modal_dialog_opened() const
+{
+    return m_current_modal_dialog != ModalDialog::None;
+}
 
 bool Navigator::object_list_collapsed() const
 {

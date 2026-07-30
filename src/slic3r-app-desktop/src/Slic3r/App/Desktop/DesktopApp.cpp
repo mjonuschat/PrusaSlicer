@@ -1,18 +1,15 @@
 #include "DesktopApp.hpp"
+
 #include "MainFrame.hpp"
 #include "Slic3r/App/Undo/Store.hpp"
 #include "SplashScreen.hpp"
 #include <wx/weakref.h>
 #include "AppInstanceCheck.hpp"
 #include "SecretStoreFactory.hpp"
-#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
-#include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
-#include <Slic3r/App/WX/format.hpp>
-#include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Localization.hpp>
 #include <Slic3r/App/ResourceResolver.hpp>
@@ -20,13 +17,18 @@
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
-#include "Slic3r/App/AppConfig.hpp"
-#include "Slic3r/App/AppConfigInteractor.hpp"
+#include <Slic3r/App/AppConfig.hpp>
+#include <Slic3r/App/AppConfigInteractor.hpp>
 #include <Slic3r/App/AppConfigProvider.hpp>
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
 #include <Slic3r/App/Theme.hpp>
+#include <Slic3r/App/Plater/ThumbnailImageGenerator.hpp>
+#include <Slic3r/App/WX/StringConversions.hpp>
+#include <Slic3r/App/WX/DialogManager.hpp>
+#include <Slic3r/App/WX/WindowMetrics.hpp>
+#include <Slic3r/App/ProjectSaver.hpp>
 
-#include "Slic3r/Directories.hpp"
+#include <Slic3r/Directories.hpp>
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -34,16 +36,17 @@
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/ResultExport/ResultExportInteractor.hpp>
-#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
-#include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
-
-#include "Slic3r/App/WX/DialogManager.hpp"
+#include <Slic3r/Biz/UserAccount/UserAccountInteractor.hpp>
+#include <Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp>
+#include <Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp>
 #include "Slic3r/Biz/WX/FontManager.hpp"
-#include "Slic3r/App/WX/WindowMetrics.hpp"
 
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include <Slic3r/App/WX/format.hpp>
+#include <Slic3r/App/WX/I18N.hpp>
 
 #ifdef WIN32
 #include <dbt.h>
@@ -192,12 +195,15 @@ int run(const Slic3r::App::InitParams& init_params, AppServices& app_services)
 
 // Temporary workaround, to select a favorite printer on application start.
 // DELETE this once it is not needed.
-static void select_favorite_preset(Biz::Preset::PresetInteractor& preset_interactor)
+static void select_favorite_preset(
+    Biz::Preset::PresetInteractor& preset_interactor
+)
 {
     const auto& app_services{AppServices::instance()};
     const AppConfig& app_config{app_services.app_config()};
     const AppSettingsAdvanced::PrinterFavoritePresets& printer_favorite_presets{
-        app_config.app_settings_advanced().printer_favorite_presets};
+        app_config.app_settings_advanced().printer_favorite_presets
+    };
 
     if (printer_favorite_presets.size() > 0 && app_config.get<bool>("printers_only_favorites")) {
         const std::string& preset_id{*printer_favorite_presets.begin()};
@@ -297,6 +303,12 @@ bool DesktopApp::OnInit()
 
     platform_services.set_app_config_provider(std::make_unique<AppConfigProvider>());
 
+    platform_services.set_app_instance_message_handler(
+        Biz::AppInstance::create_app_instance_message_handler(
+            platform_services.main_thread_dispatcher()
+        )
+    );
+
     std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{
         std::make_shared<Plater::ThumbnailImageGenerator>()
     };
@@ -359,6 +371,9 @@ bool DesktopApp::OnInit()
             &app_services.pop_notification_center()
         );
 
+    std::shared_ptr<ProjectSaver> project_saver =
+        std::make_shared<ProjectSaver>(*m_project_interactor, *thumbnail_store);
+
     auto font_manager = std::make_unique<Biz::WX::FontManager>(data_dir());
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
@@ -368,7 +383,8 @@ bool DesktopApp::OnInit()
         thumbnail_store,
         thumbnail_store_updater,
         thumbnail_image_generator,
-        std::move(font_manager)
+        std::move(font_manager),
+        project_saver
     );
 
     if (scrn && is_editor)
@@ -382,7 +398,8 @@ bool DesktopApp::OnInit()
         thumbnail_store_updater,
         thumbnail_image_generator,
         m_plater_module.get(),
-        &m_plater_module->plugin_system()
+        &m_plater_module->plugin_system(),
+        project_saver
     );
 
     m_project_interactor->removable_drive_service().add_status_listener(
@@ -399,8 +416,8 @@ bool DesktopApp::OnInit()
 
     handle_previous_crash_recovery(app_services.app_config());
 
-    m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator);
-    m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
+    m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator, project_saver);
+    platform_services.app_instance_message_handler().init(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     m_gl_context                         = canvas.release_context();
     platform_services.set_render_request_handler(&canvas);
@@ -462,6 +479,8 @@ bool DesktopApp::OnInit()
 #ifdef WIN32
     register_win32_device_notification_event();
 #endif // WIN32
+
+    m_project_interactor->backup_store().start_crash_detection();
 
     for (int i = 0; i < m_init_params.argc; ++i) {
         std::string arg(m_init_params.argv[i]);
@@ -575,7 +594,9 @@ void DesktopApp::handle_previous_crash_recovery(AppConfig& app_config)
 
 void DesktopApp::handle_app_instance_message(const std::string& message)
 {
-    m_project_interactor->handle_app_instance_message(message);
+    Biz::Platform::PlatformServices::instance()
+        .app_instance_message_handler()
+        .handle_message(message);
 }
 
 void DesktopApp::handle_HID_device_detached_event(const std::string& message)

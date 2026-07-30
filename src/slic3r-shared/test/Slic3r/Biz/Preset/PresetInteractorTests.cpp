@@ -2,6 +2,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <boost/filesystem/path.hpp>
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
@@ -175,6 +177,8 @@ struct BaseProjectInteractorFixture
 {
     Slic3r::Domain::Workbench workbench;
     Slic3r::App::Platform::StdMainThreadDispatcher main_thread_dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{main_thread_dispatcher};
+    Tests::JobManagerScope job_manager_scope{main_thread_dispatcher};
     Slic3r::Test::MockThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Biz::ProjectInteractor project_interactor{workbench, main_thread_dispatcher, thumbnail_image_generator};
     TestPresetDialogManager preset_dialog_manager;

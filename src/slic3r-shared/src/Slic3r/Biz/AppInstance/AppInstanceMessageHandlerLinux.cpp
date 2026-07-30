@@ -9,7 +9,6 @@
 
 #include <boost/nowide/convert.hpp>
 #include <regex>
-#include <functional>
 
 namespace Slic3r::Biz::AppInstance {
 
@@ -276,10 +275,18 @@ void AppInstanceMessageHandlerLinux::init(void* window_handle)
 {
 }
 
-void AppInstanceMessageHandlerLinux::multicast_message(const std::string& message_type, const std::string& message_data, size_t instance_hash) 
+void AppInstanceMessageHandlerLinux::multicast_message(
+    const std::string& message_type,
+    const std::string& message_data
+)
 {
     AppInstanceMessageSenderLinux sender;
-    sender.multicast_message(message_type, message_data, instance_hash, nullptr);
+    sender.multicast_message(
+        message_type,
+        message_data,
+        Platform::PlatformServices::instance().app_hash(),
+        nullptr
+    );
 }
 
 namespace {

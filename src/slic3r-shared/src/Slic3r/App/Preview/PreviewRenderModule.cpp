@@ -286,8 +286,11 @@ void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 
 void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
-    if (!is_modal_dialog_opened() && !m_gizmo_manager->on_scene_keyboard_event(e))
+    if (!m_render_module_navigator->is_any_modal_dialog_opened()
+        && !m_gizmo_manager->on_scene_keyboard_event(e))
+    {
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
+    }
 }
 
 void PreviewRenderModule::set_navigator(Navigator* navigator)
@@ -405,12 +408,20 @@ void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
-bool PreviewRenderModule::is_modal_dialog_opened() const
+void PreviewRenderModule::set_modal_dialog(ModalDialog modal_dialog)
 {
-    // TODO: Refactor this into a more general solution once additional modal dialogs are added
-    const bool is_invalid_data_dialog_opened =
-        m_invalid_data_dialog.get() && m_invalid_data_dialog->opened();
-    return is_opened_preferences() || is_invalid_data_dialog_opened;
+    auto handle_dialog = [&](Yoga::Dialog* dialog, ModalDialog modal){
+        if (modal_dialog == modal) {
+            dialog->open();
+        } else {
+            dialog->close();
+        }
+    };
+
+    handle_dialog(m_preferences_dialog.get(), ModalDialog::Preferences);
+    handle_dialog(m_crashed_projects_dialog.get(), ModalDialog::CrashedProjects);
+
+    request_render();
 }
 
 void PreviewRenderModule::open_invalid_data_dialog()
@@ -418,21 +429,6 @@ void PreviewRenderModule::open_invalid_data_dialog()
     if (m_invalid_data_dialog.get()) {
         set_opened_dialog(m_invalid_data_dialog.get());
     }
-}
-
-void PreviewRenderModule::set_opened_preferences(bool opened)
-{
-    if (opened) {
-        m_dialog_navigation.open_dialog(m_preferences_dialog.get());
-    } else {
-        m_preferences_dialog->close();
-    }
-    request_render();
-}
-
-bool PreviewRenderModule::is_opened_preferences() const
-{
-    return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
 
 void PreviewRenderModule::set_object_list_collapsed(bool collapsed)
@@ -842,14 +838,16 @@ void PreviewRenderModule::init_scene_layout()
         m_project_interactor,
         *m_render_module_navigator
     );
+    m_crashed_projects_dialog =
+        std::make_unique<CrashedProjectsDialog>(m_project_interactor, *m_render_module_navigator);
 
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
         this,
-        *m_thumbnail_store,
         *m_render_module_navigator,
         nullptr,
+        *m_project_saver,
         m_plugin_system
     );
 
@@ -888,7 +886,8 @@ void PreviewRenderModule::init_scene_layout()
         m_slider_gcode.release(),
         m_sidebar_auto_reslice.release(),
         m_number_entry_dialog.release(),
-        m_invalid_data_dialog.release()
+        m_invalid_data_dialog.release(),
+        m_crashed_projects_dialog.release()
     ));
     m_layout->init();
 
@@ -1059,7 +1058,6 @@ void PreviewRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
-    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
     m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());

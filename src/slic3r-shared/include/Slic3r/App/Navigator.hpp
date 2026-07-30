@@ -6,7 +6,9 @@
 
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
+#include "Slic3r/App/ModalDialog.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -44,8 +46,10 @@ class Navigator : public Biz::ISelectedProjectChangedListener, public IAppConfig
 public:
     ~Navigator();
 
-    struct Callbacks {
+    struct Callbacks
+    {
         std::function<void()> render_module_switched;
+        std::function<void(ModalDialog)> modal_dialog_changed;
     };
 
     Callbacks& callbacks();
@@ -69,8 +73,9 @@ public:
 
     void open_invalid_data_dialog();
 
-    void set_opened_preferences(bool opened);
-    bool is_opened_preferences();
+    void set_modal_dialog(ModalDialog dialog);
+    ModalDialog current_modal_dialog() const;
+    bool is_any_modal_dialog_opened() const;
 
     bool object_list_collapsed() const;
     void set_object_list_collapsed(bool collapsed);
@@ -96,12 +101,13 @@ private:
     using ProjectContextsPtr = std::unique_ptr<ProjectContexts>;
 
     ProjectContextsPtr m_project_contexts;
+    Callbacks m_callbacks;
 
     Plater::PlaterRenderModule* m_plater_module{nullptr};
     Preview::PreviewRenderModule* m_preview_module{nullptr};
     Platform::AbstractRenderCanvas* m_canvas{nullptr};
     bool m_object_list_collapsed{false};
-    Callbacks m_callbacks;
+    ModalDialog m_current_modal_dialog{ModalDialog::None};
 };
 
 } // namespace Slic3r::App

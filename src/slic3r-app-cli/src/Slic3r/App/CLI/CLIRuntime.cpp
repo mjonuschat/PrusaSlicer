@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
@@ -156,9 +157,13 @@ CLIRuntime::CLIRuntime(const InitParams& init_params) :
     PlatformServices& platform_services = PlatformServices::instance();
     platform_services.set_secret_store(std::make_unique<SecretStoreDummy>());
     platform_services.set_job_manager(nullptr);
+    platform_services.set_app_instance_message_handler(nullptr);
     platform_services.set_main_thread_dispatcher(std::make_unique<StdMainThreadDispatcher>());
     platform_services.set_job_manager(
         std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
+    );
+    platform_services.set_app_instance_message_handler(
+        Biz::AppInstance::create_app_instance_message_handler(platform_services.main_thread_dispatcher())
     );
 
     m_project_interactor.emplace(

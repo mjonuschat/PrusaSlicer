@@ -18,6 +18,7 @@ class IMessageDialogProvider
 public:
     using YesNoCallback           = std::function<void(bool answer)>;
     using CheckBoxCheckedCallback = std::function<void(bool checked)>;
+    using Button                  = std::pair<std::string, std::function<void()>>;
 
     IMessageDialogProvider()          = default;
     virtual ~IMessageDialogProvider() = default;
@@ -33,6 +34,13 @@ public:
         const std::string& check_text,
         const YesNoCallback& callback,
         const CheckBoxCheckedCallback& checked_callback
+    ) = 0;
+    virtual void show_yesnocancel_dialog(
+        const std::string& title,
+        const std::string& text,
+        const Button& yes,
+        const Button& no,
+        const Button& cancel
     ) = 0;
     virtual void
     show_info_dialog(const std::string& text, const std::string& title = std::string(), bool is_marked = false) = 0;

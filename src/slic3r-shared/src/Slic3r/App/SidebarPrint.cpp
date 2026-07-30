@@ -89,7 +89,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
                     preset_id
                 ))
             {
-                preset_interactor.select_print_preset(preset_id);
+                preset_interactor.select_print_preset(preset_id, true);
                 m_last_selected_index = print_index;
             } else {
                 m_combo_print->set_current_index(m_last_selected_index);

@@ -40,7 +40,8 @@ PrinterNozzleRow::PrinterNozzleRow(
         if (nozzle_index >= 0) {
             const bool valid = m_preset_interactor.select_printer_tool_item(
                 m_index,
-                m_preset_interactor.tool_items().at(m_index).items().at(nozzle_index).id
+                m_preset_interactor.tool_items().at(m_index).items().at(nozzle_index).id,
+                true
             );
             if (m_callbacks.validation_updated) {
                 m_callbacks.validation_updated(valid);

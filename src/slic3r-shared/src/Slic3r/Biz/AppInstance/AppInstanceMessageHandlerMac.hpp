@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 #include <jthread/JThread.hpp>
 
@@ -44,10 +45,10 @@ public:
     /**
      * @brief Uses AbstractAppInstanceMessageSender to multicast a message. Adds instance hash.
      */
-    void multicast_message(const std::string& message_type, const std::string& message_data, size_t instance_hash) override
+    void multicast_message(const std::string& message_type, const std::string& message_data) override
     {
         AppInstanceMessageSenderMac sender;
-        sender.multicast_message(message_type, message_data, instance_hash, nullptr);
+        sender.multicast_message(message_type, message_data, Platform::PlatformServices::instance().app_hash(), nullptr);
     }
     
     void on_becoming_primary_instance() override {}

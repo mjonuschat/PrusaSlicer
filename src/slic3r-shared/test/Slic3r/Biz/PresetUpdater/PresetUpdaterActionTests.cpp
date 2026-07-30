@@ -4,6 +4,8 @@
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Directories.hpp"
@@ -203,6 +205,8 @@ struct Fixture
     fs::path prev_temp_dir;
 
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
+    Tests::JobManagerScope job_manager_scope{dispatcher};
     Slic3r::Domain::Workbench workbench;
     Slic3r::Test::MockThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Biz::ProjectInteractor project_interactor;

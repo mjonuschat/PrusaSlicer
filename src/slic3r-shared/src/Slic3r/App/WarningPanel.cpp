@@ -14,9 +14,9 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-WarningPanel::WarningPanel()
+WarningPanel::WarningPanel(Platform::Color color)
 {
-    const ImColor warning_color = m_theme->color_imgui(Platform::Color::Error);
+    const ImColor warning_color = m_theme->color_imgui(color);
     ImColor warning_color_fill  = warning_color;
     warning_color_fill.Value.w  = 0.15f; // 15%
     set_fill(warning_color_fill);

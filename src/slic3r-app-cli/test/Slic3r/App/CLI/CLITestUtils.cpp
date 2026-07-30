@@ -1,8 +1,14 @@
 #include "CLITestUtils.hpp"
 
+#include "Slic3r/App/CLI/CLIRuntime.hpp"
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/Domain/Preset/Bundle.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 
@@ -16,8 +22,10 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
-using Slic3r::Biz::Preset::PresetInteractor;
-using Slic3r::Biz::Scene::SceneInteractor;
+using Slic3r::App::CLI::CLIThumbnailImageGenerator;
+using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::Biz::ProjectInteractor;
+using Slic3r::Biz::SecretStoreDummy;
 using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Workbench;
@@ -95,13 +103,49 @@ const std::vector<TestProfileSet>& resolved_profile_sets()
 {
     static const std::vector<TestProfileSet> profile_sets = []()
     {
-        Workbench workbench;
-        SceneInteractor scene_interactor{workbench};
-        PresetInteractor preset_interactor(workbench, scene_interactor);
-        preset_interactor.load_preset_bundle(Preset::IO::BundlePaths::make_standard_runtime());
+        // Self-contained: sets up PlatformServices itself (mirroring CLIRuntime's own
+        // setup/teardown), so this can safely run before any CLIRuntime exists.
+        PlatformServices& platform_services = PlatformServices::instance();
+        platform_services.set_secret_store(std::make_unique<SecretStoreDummy>());
+        platform_services.set_main_thread_dispatcher(
+            std::make_unique<App::Platform::StdMainThreadDispatcher>()
+        );
+        platform_services.set_job_manager(
+            std::make_unique<Biz::Platform::JobManager::JobManager>(
+                platform_services.main_thread_dispatcher()
+            )
+        );
+        platform_services.set_app_instance_message_handler(
+            AppInstance::create_app_instance_message_handler(
+                platform_services.main_thread_dispatcher()
+            )
+        );
 
-        const Bundle& preset_bundle = workbench.preset_bundle();
-        return get_test_printer_profile_sets(preset_bundle);
+        std::vector<TestProfileSet> result;
+        {
+            Workbench workbench;
+            CLIThumbnailImageGenerator thumbnail_image_generator;
+            ProjectInteractor project_interactor(
+                workbench,
+                platform_services.main_thread_dispatcher(),
+                thumbnail_image_generator
+            );
+            project_interactor.preset_interactor().load_preset_bundle(
+                Preset::IO::BundlePaths::make_standard_runtime()
+            );
+
+            const Bundle& preset_bundle = workbench.preset_bundle();
+            result = get_test_printer_profile_sets(preset_bundle);
+
+            // Queue must be clear before ProjectInteractor can be destroyed.
+            platform_services.main_thread_dispatcher().close();
+        }
+        // project_interactor (and its BackupStore, still registered on the handler) is
+        // destroyed above; only now is it safe to tear down the handler/job_manager it used.
+        platform_services.set_app_instance_message_handler(nullptr);
+        platform_services.set_job_manager(nullptr);
+
+        return result;
     }();
 
     return profile_sets;

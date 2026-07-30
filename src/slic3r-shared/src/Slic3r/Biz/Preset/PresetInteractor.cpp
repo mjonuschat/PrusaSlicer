@@ -17,6 +17,7 @@
 
 #include "Slic3r/Biz/PrintToolConfigObservableList.hpp"
 #include "Slic3r/Biz/OverridableConfigBoxObservableList.hpp"
+#include "Slic3r/Biz/BackupStore.hpp"
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
@@ -159,13 +160,13 @@ std::string PresetItem::ui_hw_config_name() const
     return hw_printer_config_name;
 }
 
-
-
 PresetInteractor::PresetInteractor(
     Domain::Workbench& workbench,
-    Scene::SceneInteractor& scene_interactor
+    Scene::SceneInteractor& scene_interactor,
+    BackupStore& backup_store
 ) :
     m_workbench(workbench),
+    m_backup_store(backup_store),
     m_object_settings_interactor(
         m_object_settings_interactor_accessor,
         m_workbench,
@@ -1931,12 +1932,17 @@ void PresetInteractor::select_printer_preset_internal(
 
 void PresetInteractor::select_printer_preset(
     const std::string& printer_hw_config_id,
-    const std::string& printer_preset_id
+    const std::string& printer_preset_id,
+    bool user
 )
 {
     ListenerInvokeLaterBag bag;
     select_printer_preset_internal(printer_hw_config_id, printer_preset_id, false, bag);
-    bag.add([this]{ invoke_slicing_input_changed(); });
+    bag.add([this] { invoke_slicing_input_changed(); });
+
+    if (user) {
+        m_backup_store.invalidate_backup(m_selected_project_id);
+    }
 }
 
 void
@@ -1985,11 +1991,14 @@ PresetInteractor::select_print_preset_internal(
     });
 }
 
-void PresetInteractor::select_print_preset(const std::string& id)
+void PresetInteractor::select_print_preset(const std::string& id, bool user)
 {
     ListenerInvokeLaterBag bag;
     select_print_preset_internal(id, false, bag);
     bag.add([this]{ invoke_slicing_input_changed(); });
+    if (user) {
+        m_backup_store.invalidate_backup(m_selected_project_id);
+    }
 }
 
 void PresetInteractor::select_tool_print_preset_internal(
@@ -2040,11 +2049,15 @@ void PresetInteractor::select_tool_print_preset_internal(
     });
 }
 
-void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id)
+void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id, bool user)
 {
     ListenerInvokeLaterBag bag;
     select_tool_print_preset_internal(tool_index, id, false, bag);
     bag.add([this] { invoke_slicing_input_changed(); });
+
+    if (user) {
+        m_backup_store.invalidate_backup(m_selected_project_id);
+    }
 }
 
 void PresetInteractor::select_material_preset_internal(
@@ -2108,11 +2121,15 @@ void PresetInteractor::select_material_preset_internal(
     });
 }
 
-void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
+void PresetInteractor::select_material_preset(size_t material_index, const std::string& id, bool user)
 {
     ListenerInvokeLaterBag bag;
     select_material_preset_internal(material_index, id, false, bag);
     bag.add([this] { invoke_slicing_input_changed(); });
+
+    if (user) {
+        m_backup_store.invalidate_backup(m_selected_project_id);
+    }
 }
 
 void PresetInteractor::duplicate_hw_config_if_needed_and_update(
@@ -2146,7 +2163,7 @@ void PresetInteractor::duplicate_hw_config_if_needed_and_update(
     fill_printer_presets(false, bag);
 }
 
-bool PresetInteractor::select_printer_tool_item(size_t tool_index, const std::string& id)
+bool PresetInteractor::select_printer_tool_item(size_t tool_index, const std::string& id, bool user)
 {
     auto& selected_preset = mutable_selected_printer_preset();
     auto& p = get_or_fail_project_context(m_selected_project_id);
@@ -2184,13 +2201,18 @@ bool PresetInteractor::select_printer_tool_item(size_t tool_index, const std::st
                 );
             }
         );
+
+        if (user) {
+            m_backup_store.invalidate_backup(m_selected_project_id);
+        }
+
         invoke_slicing_input_changed();
     }
 
     return successfully_changed;
 }
 
-bool PresetInteractor::select_printer_sheet(const std::string& id)
+bool PresetInteractor::select_printer_sheet(const std::string& id, bool user)
 {
     auto& p = get_or_fail_project_context(m_selected_project_id);
     auto& selected_preset = mutable_selected_printer_preset();
@@ -2229,6 +2251,9 @@ bool PresetInteractor::select_printer_sheet(const std::string& id)
             }
         );
 
+        if (user) {
+            m_backup_store.invalidate_backup(m_selected_project_id);
+        }
     }
 
     return successfully_changed;
@@ -2514,6 +2539,7 @@ void PresetInteractor::set_from_original_value(const Domain::ConfigItem& item, s
         [&]() { /* m_object_settings_interactor_accessor.set_from_original_value(name, value); // TODO */ }
     );
 
+    m_backup_store.invalidate_backup(m_selected_project_id);
     invoke_on_preset_value_changed(item);
     invoke_slicing_input_changed();
 }
@@ -2541,6 +2567,7 @@ void PresetInteractor::set_item_value(
         [&]() { m_print_tool_cbi_accessor.set_tool_value(name, indexes, value); },
         [&]() { m_object_settings_interactor_accessor.set_value(name, value); }
     );
+    m_backup_store.invalidate_backup(m_selected_project_id);
     invoke_on_preset_value_changed(item);
     invoke_slicing_input_changed();
 }
@@ -2577,6 +2604,7 @@ void PresetInteractor::set_item_override(const Domain::ConfigItem& item, bool en
         }
     );
 
+    m_backup_store.invalidate_backup(m_selected_project_id);
     invoke_on_preset_value_changed(item);
     invoke_slicing_input_changed();
 }

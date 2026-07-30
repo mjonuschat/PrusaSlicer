@@ -217,9 +217,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         {
             SPDLOG_ERROR(description);
             invoke_listeners<IProjectsChangedListener>([&description](IProjectsChangedListener* l)
-            {
-                l->on_project_load_failed(description);
-            });
+                                                       { l->on_project_load_failed(description); });
         }
     };
 
@@ -227,18 +225,18 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
                    { this->do_load_project(std::move(project), file_path); }};
 
     auto on_error{[report_error](std::exception_ptr eptr)
-    {
-        std::string description = "Unknown error";
-        try {
-            std::rethrow_exception(eptr);
-        } catch (Loaded3MFException& e) {
-            description = fmt::format("Loading file failed: {}", e.issue.msg);
-        } catch (std::exception& e) {
-            description = fmt::format("Loading file failed: {}", e.what());
-        } catch (...) {
-        }
-        report_error(description);
-    }};
+                  {
+                      std::string description = "Unknown error";
+                      try {
+                          std::rethrow_exception(eptr);
+                      } catch (Loaded3MFException& e) {
+                          description = fmt::format("Loading file failed: {}", e.issue.msg);
+                      } catch (std::exception& e) {
+                          description = fmt::format("Loading file failed: {}", e.what());
+                      } catch (...) {
+                      }
+                      report_error(description);
+                  }};
 
     Platform::PlatformServices::instance()
         .job_manager()
@@ -261,6 +259,105 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .on_result(on_result)
         .on_exception(on_error)
         .start();
+}
+
+void ProjectInteractor::load_projects(
+    const std::vector<boost::filesystem::path>& file_paths,
+    bool restored_projects
+)
+{
+    struct State
+    {
+        std::deque<boost::filesystem::path> queue;
+        std::list<boost::filesystem::path> restored;
+        std::function<void()> next;
+    };
+
+    auto state = std::make_shared<State>();
+    state->queue.assign(file_paths.begin(), file_paths.end());
+
+    state->next = [this, state, restored_projects]
+    {
+        if (state->queue.empty()) {
+            if (restored_projects) {
+                for (const boost::filesystem::path& restored : state->restored) {
+                    if (!boost::filesystem::remove(restored)) {
+                        SPDLOG_WARN("Could not removed backed project marked for deletion");
+                    }
+                }
+            }
+            return;
+        }
+
+        const boost::filesystem::path file_path = std::move(state->queue.front());
+        state->queue.pop_front();
+
+        Platform::PlatformServices::instance()
+            .job_manager()
+            .create_job(
+                "project_load",
+                [&preset_bundle = m_workbench.preset_bundle(),
+                 dialog_provider =
+                     m_dialog_provider](Biz::JThread::StopToken, boost::filesystem::path file_path)
+                {
+                    return FileLoadingLogic::load_file_as_project(
+                        file_path,
+                        preset_bundle,
+                        dialog_provider
+                    );
+                },
+                file_path
+            )
+            .on_result(
+                [this, state, restored_projects, file_path](Project project)
+                {
+                    if (restored_projects) {
+                        auto name = project.file_name();
+
+                        if (const auto first = name.find('_'); first != std::string::npos) {
+                            if (const auto second = name.find('_', first + 1);
+                                second != std::string::npos)
+                            {
+                                name.erase(0, second + 1);
+                            }
+                        }
+
+                        name.append(Biz::_u8L("(restored)"));
+                        project.set_file_name(name);
+
+                        state->restored.push_back(file_path);
+                    }
+
+                    do_load_project(std::move(project), {});
+                    state->next();
+                }
+            )
+            .on_exception(
+                [this, state](std::exception_ptr eptr)
+                {
+                    std::string description = "Unknown error";
+
+                    try {
+                        std::rethrow_exception(eptr);
+                    } catch (Loaded3MFException& e) {
+                        description = fmt::format("Loading file failed: {}", e.issue.msg);
+                    } catch (std::exception& e) {
+                        description = fmt::format("Loading file failed: {}", e.what());
+                    } catch (...) {
+                    }
+
+                    SPDLOG_ERROR(description);
+                    invoke_listeners<IProjectsChangedListener>(
+                        [&description](auto* l) { l->on_project_load_failed(description); }
+                    );
+
+                    state->next();
+                }
+            )
+            .start();
+    };
+
+    state->next();
 }
 
 tl::expected<SelectionId, std::string> ProjectInteractor::new_project_with_preset(
@@ -385,24 +482,33 @@ void publish(Domain::Model& model, IMessageDialogProvider* messager) {
 }
 }
 
-void ProjectInteractor::save_project(
+void ProjectInteractor::save_selected_project(
     const boost::filesystem::path& file_path,
     const Store3mfParam& params
 )
 {
-    auto& selected_project = this->selected_project();
-    selected_project.increment_version();
-    selected_project.set_file_path(file_path);
-    publish(selected_project.model(), m_dialog_provider);
-    store_3mf(file_path.string(), selected_project, params);
+    save_project(selected_project_id(), file_path, params);
+}
 
-    selected_project.directory_storage().set_project_dir(file_path);
+void ProjectInteractor::save_project(
+    Domain::SelectionId project_id,
+    const boost::filesystem::path& file_path,
+    const Store3mfParam& params
+)
+{
+    Domain::Project& project = m_workbench.project(project_id);
+    project.increment_version();
+    project.set_file_path(file_path);
+    publish(project.model(), m_dialog_provider);
+    store_3mf(file_path.string(), project, params);
+
+    project.directory_storage().set_project_dir(file_path);
 
     invoke_listeners<IProjectsChangedListener>(
-        [this](auto* l)
+        [this, project_id](auto* l)
         {
-            l->on_project_changed(selected_project_id());
-            l->on_project_saved(selected_project_id());
+            l->on_project_changed(project_id);
+            l->on_project_saved(project_id);
         }
     );
 }
@@ -723,11 +829,16 @@ std::string ProjectInteractor::get_project_save_name(Domain::SelectionId project
 {
     Domain::Project* project = m_workbench.find_project_by_id(project_id);
     std::string project_name = project->file_name();
-    // if project name is empty, try to find any model_object and name the project after it
-    for (Domain::ModelObject* model_object : project->model().objects) {
-        if (!model_object->name.empty()) {
-            project_name = model_object->name;
-            break;
+    if (project_name.empty()) {
+        // if project name is empty, try to find any model_object and name the project after it
+        for (Domain::ModelObject* model_object : project->model().objects) {
+            if (!model_object->input_file.empty()) {
+                project_name = boost::filesystem::path(model_object->input_file).stem().string();
+                break;
+            } else if (!model_object->name.empty()) {
+                project_name = boost::filesystem::path(model_object->name).stem().string();
+                break;
+            }
         }
     }
 

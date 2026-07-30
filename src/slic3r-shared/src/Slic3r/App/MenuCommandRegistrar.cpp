@@ -20,6 +20,7 @@
 #include "Slic3r/App/Localization.hpp"
 #include "Slic3r/App/Lua/ProjectApi.hpp"
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
+#include "Slic3r/App/ProjectSaver.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -176,13 +177,13 @@ MenuCommandRegistrar::MenuCommandRegistrar(
     Platform::AbstractRenderModule& render_module,
     Biz::ProjectInteractor& project_interactor,
     Navigator& navigator,
-    ThumbnailStore& thumbnail_store
+    ProjectSaver& project_saver
 ) :
     m_render_module(render_module),
     m_menu_manager(m_render_module.menu_manager()),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
-    m_thumbnail_store(thumbnail_store),
+    m_project_saver(project_saver),
     m_clipboard_interactor(m_project_interactor.clipboard_interactor())
 {}
 
@@ -1150,46 +1151,6 @@ void MenuCommandRegistrar::load_project()
         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
         callback
     );
-}
-
-void MenuCommandRegistrar::save_project()
-{
-    // Use "Save project as" while we don't have a project state
-    save_project_as();
-}
-
-void MenuCommandRegistrar::save_project_as()
-{
-    Domain::SelectionId selected_project_id = m_project_interactor.selected_project_id();
-    const std::string project_name = m_project_interactor.get_project_save_name(selected_project_id);
-    Store3mfParam params{
-        .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
-    };
-
-    // The 'true' is here for the development phase - effectively it always "Saves as":
-    if (true || project_name.empty()) {
-        // Saving a new project - show file save dialog.
-        IDialogManager::FileCallback callback =
-            [this,
-                &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
-        {
-            if (success)
-                m_project_interactor.save_project(file_paths.front(), params);
-        };
-        auto& dlg_manager = AppServices::instance().dialog_manager();
-        dlg_manager.show_file_dialog(
-            FileDialogType::Save,
-            _u8L("Save Project"),
-            this->default_dialog_folder(),
-            project_name,
-            Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
-            callback
-        );
-    } else {
-        // Saving an existing project - just save.
-        // DK: How this could work with just project_name?
-        m_project_interactor.save_project(boost::filesystem::path(project_name), params);
-    }
 }
 
 void MenuCommandRegistrar::install_plugin(Lua::PluginSystem& plugin_system)
@@ -2204,7 +2165,7 @@ void MenuCommandRegistrar::register_main_menu_commands(Lua::PluginSystem* plugin
             {MenuItemName::MainMenu, MenuItemName::Preferences},
             std::make_unique<UIItemCommand>(
                 CommandName::Preferences,
-                [this]() { m_navigator.set_opened_preferences(true); },
+                [this]() { m_navigator.set_modal_dialog(ModalDialog::Preferences); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
@@ -2374,7 +2335,7 @@ void MenuCommandRegistrar::register_file_menu_commands()
             {MenuItemName::FileMenu, MenuItemName::SaveProject},
             std::make_unique<UIItemCommand>(
                 CommandName::SaveProject,
-                [this]() { save_project(); },
+                [this]() { m_project_saver.save_selected_project(); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
@@ -2388,7 +2349,7 @@ void MenuCommandRegistrar::register_file_menu_commands()
             {MenuItemName::FileMenu, MenuItemName::SaveProjectAs},
             std::make_unique<UIItemCommand>(
                 CommandName::SaveProjectAs,
-                [this]() { save_project_as(); },
+                [this]() { m_project_saver.save_selected_project_as(); },
                 UIItemCommandExtraOpts{
                     .keyboard_shortcuts = Platform::KeyboardShortcuts{Platform::KeyboardShortcut{
                         Platform::KeyModifiers(Platform::KeyModifier::Ctrl)

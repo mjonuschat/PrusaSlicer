@@ -43,10 +43,6 @@ public:
         GetLeftBarCtrl()->ShowUserAccount(show);
     }
 
-    TabsBarCtrl::Button* preferences_button() {
-        return GetLeftBarCtrl()->preferences_btn;
-    }
-
     void set_compact_mode(bool compact_mode)
     {
         GetLeftBarCtrl()->set_compact_mode(compact_mode);

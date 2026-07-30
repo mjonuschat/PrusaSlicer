@@ -4,6 +4,19 @@
 
 namespace Slic3r::Domain {
 
+BedContainer BedContainer::copy() const
+{
+    BedContainer bc;
+    bc.beds().reserve(m_beds.size());
+    std::ranges::transform(
+        m_beds,
+        std::back_inserter(bc.beds()),
+        [](const BedPtr& bed) { return bed ? std::make_unique<Bed>(*bed) : nullptr; }
+    );
+
+    return bc;
+}
+
 std::vector<size_t> BedContainer::beds_indices() const
 {
     std::vector<size_t> ret;
@@ -110,13 +123,13 @@ void BedContainer::remove(const Bed* bed)
 
 Bed* BedContainer::bed(size_t idx)
 {
-    auto it = std::find_if(m_beds.begin(), m_beds.end(), [idx](std::unique_ptr<Bed>& b) { return b->id().id == idx; });
+    auto it = std::find_if(m_beds.begin(), m_beds.end(), [idx](BedPtr& b) { return b->id().id == idx; });
     return (it != m_beds.end()) ? it->get() : nullptr;
 }
 
 const Bed* BedContainer::bed(size_t idx) const
 {
-    auto it = std::find_if(m_beds.begin(), m_beds.end(), [idx](const std::unique_ptr<Bed>& b) { return b->id().id == idx; });
+    auto it = std::find_if(m_beds.begin(), m_beds.end(), [idx](const BedPtr& b) { return b->id().id == idx; });
     return (it != m_beds.end()) ? it->get() : nullptr;
 }
 

@@ -11,6 +11,7 @@
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/ProjectSaver.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/format.hpp>
@@ -158,7 +159,8 @@ static wxIcon main_frame_icon()
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
-    Navigator& navigator
+    Navigator& navigator,
+    std::shared_ptr<ProjectSaver> project_saver
 ) :
     wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID), wxDefaultPosition,wxDefaultSize,
         wxDEFAULT_FRAME_STYLE, from_u8("mainframe")),
@@ -166,6 +168,7 @@ MainFrame::MainFrame(
     m_project_interactor(project_interactor),
     m_preset_interactor(project_interactor.preset_interactor()),
     m_navigator(navigator),
+    m_project_saver(project_saver),
     m_projects_changed_listener_scope(m_project_interactor, *this)
 {
     // AppInstanceCheck on Windows expects "PrusaSlicer" in the title
@@ -352,6 +355,19 @@ MainFrame::MainFrame(
         });
     };
 
+    m_navigator.callbacks().modal_dialog_changed = [this](ModalDialog dialog)
+    {
+        m_left_bar->GetLeftBarCtrl()->preferences_btn()->Enable(
+            dialog == ModalDialog::Preferences || dialog == ModalDialog::None
+        );
+        m_left_bar->GetLeftBarCtrl()->account_btn()->Enable(dialog == ModalDialog::None);
+        m_left_bar->GetTabsBarCtrl()->enable_buttons(dialog == ModalDialog::None);
+
+        m_left_bar->GetLeftBarCtrl()->preferences_btn()->set_selected(
+            dialog == ModalDialog::Preferences
+        );
+    };
+
     SetDropTarget(new MainFrameDropTarget(project_interactor, m_navigator, [this]() {
         wxWindow* page = m_left_bar->GetCurrentPage();
         return page && page->GetId() == static_cast<wxWindowID>(LeftBarTabs::Slicing);
@@ -441,8 +457,48 @@ void MainFrame::on_app_config_changed(const std::string& key)
 
 void MainFrame::on_close(wxCloseEvent& event)
 {
-    Slic3r::Biz::Platform::close();
-    event.Skip();
+    if (!event.CanVeto() || // Close(true) or some system-initiated closes cannot be cancelled.
+        !m_project_interactor.backup_store().is_any_project_unsaved())
+    {
+        event.Skip();
+        Slic3r::Biz::Platform::close();
+        return;
+    }
+
+    MessageDialog dialog{
+        this,
+        from_u8(Biz::_u8L("There are unsaved changes.")),
+        from_u8(Biz::_u8L("Close application")),
+        wxYES_NO | wxCANCEL | wxICON_EXCLAMATION
+    };
+
+    dialog.SetYesNoCancelLabels(
+        from_u8(Biz::_u8L("Save")),
+        from_u8(Biz::_u8L("Discard")),
+        from_u8(Biz::_u8L("Cancel"))
+    );
+
+    switch (dialog.ShowModal()) {
+    case wxID_YES:
+        if (m_project_saver->save_unsaved_projects()) {
+            event.Skip();
+            Slic3r::Biz::Platform::close();
+        } else {
+            // Saving failed, or the user cancelled a nested file dialog.
+            event.Veto();
+        }
+        break;
+
+    case wxID_NO:
+        event.Skip();
+        Slic3r::Biz::Platform::close();
+        break;
+
+    case wxID_CANCEL:
+    default:
+        event.Veto();
+        break;
+    }
 }
 
 void MainFrame::update_accel_table()
@@ -542,33 +598,28 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
 
 void MainFrame::init_preferences_button()
 {
-    m_left_bar->preferences_button()->Bind(
+    m_left_bar->GetLeftBarCtrl()->preferences_btn()->Bind(
         wxEVT_BUTTON,
-        [this](wxCommandEvent& event)
+        [&](wxCommandEvent& event)
         {
             wxWindow* selected_page        = m_left_bar->GetCurrentPage();
             const bool is_slicing_selected = selected_page
                 && selected_page->GetId() == static_cast<wxWindowID>(LeftBarTabs::Slicing);
-            if (m_left_bar->preferences_button()->is_selected() && !is_slicing_selected) {
+            if (m_left_bar->GetLeftBarCtrl()->preferences_btn()->is_selected()
+                && !is_slicing_selected)
+            {
                 // just switch to the Slicing page
                 switch_left_tab(LeftBarTabs::Slicing, std::string());
                 return;
             }
 
-            const bool newly_selected = !m_left_bar->preferences_button()->is_selected();
+            const bool newly_selected =
+                !m_left_bar->GetLeftBarCtrl()->preferences_btn()->is_selected();
             if (newly_selected && !is_slicing_selected) {
                 switch_left_tab(LeftBarTabs::Slicing, std::string());
             }
-            m_navigator.set_opened_preferences(newly_selected);
-        }
-    );
-
-    m_left_bar->preferences_button()->Bind(
-        wxEVT_UPDATE_UI,
-        [this](wxUpdateUIEvent& evt)
-        {
-            m_left_bar->preferences_button()->set_selected(
-                m_navigator.is_opened_preferences()
+            m_navigator.set_modal_dialog(
+                newly_selected ? ModalDialog::Preferences : ModalDialog::None
             );
         }
     );

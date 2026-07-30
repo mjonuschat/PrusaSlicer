@@ -194,11 +194,10 @@ void AppInstanceMessageSenderWin32::broadcast_message(
 
 void AppInstanceMessageHandlerWin32::multicast_message(
     const std::string& message_type,
-    const std::string& message_data,
-    size_t instance_hash
+    const std::string& message_data
 )
 {
     AppInstanceMessageSenderWin32 sender;
-    sender.multicast_message(message_type, message_data, instance_hash, m_window_handle);
+    sender.multicast_message(message_type, message_data, Platform::PlatformServices::instance().app_hash(), m_window_handle);
 }
 } // namespace Slic3r::Biz::AppInstance

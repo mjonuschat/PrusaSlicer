@@ -1,6 +1,5 @@
 #include "Slic3r/App/TopBar.hpp"
 
-#include "Slic3r/App/Yoga/ProjectButton.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
@@ -17,6 +16,7 @@
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Platform/CommandName.hpp"
 #include "Slic3r/App/Lua/PluginSystem.hpp"
+#include "Slic3r/App/ProjectButton.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -32,9 +32,9 @@ using CommandName = Platform::CommandName;
 TopBar::TopBar(
     Biz::ProjectInteractor* project_interactor,
     Platform::AbstractRenderModule* render_module,
-    ThumbnailStore& thumbnail_store,
     Navigator& navigator,
     App::Undo::Store* undo_store,
+    ProjectSaver& project_saver,
     Lua::PluginSystem* plugin_system
 ) :
     Window("TopBar"),
@@ -52,9 +52,10 @@ TopBar::TopBar(
     m_menu_updated_listener_scope(render_module->menu_manager(), *this),
 #endif
     m_project_interactor(*project_interactor),
+    m_project_saver(project_saver),
     m_render_module(render_module),
     m_navigator(navigator),
-    m_menu_command_registrar(*render_module, *project_interactor, navigator, thumbnail_store),
+    m_menu_command_registrar(*render_module, *project_interactor, navigator, project_saver),
     m_menu_manager(render_module->menu_manager()),
     m_undo_store(undo_store),
     m_plugin_system(plugin_system)
@@ -102,7 +103,7 @@ TopBar::TopBar(
     }
     add_show_ui_btn(left_wrapper);
 
-    m_list_view = emplace_back<ProjectButtonListView>(m_project_interactor);
+    m_list_view = emplace_back<ProjectButtonListView>(ProjectButtonFactory{m_project_interactor, m_project_saver});
     m_list_view->set_window_flags(
         ImGuiWindowFlags_HorizontalScrollbar // compute horizontal scroll range
         | ImGuiWindowFlags_NoScrollbar // don't show any scrollbar

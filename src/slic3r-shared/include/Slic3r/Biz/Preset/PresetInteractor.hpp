@@ -7,15 +7,12 @@
 #include "Slic3r/Domain/Workbench.hpp"
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
-#include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/InvokeLaterBag.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
-#include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetDiffOperation.hpp"
 #include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
-#include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/PrintToolConfigBoxInteractor.hpp"
@@ -25,6 +22,10 @@
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+
+namespace Slic3r::Biz {
+class BackupStore;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::Biz::Preset {
 
@@ -100,7 +101,11 @@ class PresetInteractor final :
     public IPresetVisualGetter
 {
 public:
-    explicit PresetInteractor(Domain::Workbench& workbench, Scene::SceneInteractor& scene_interactor);
+    PresetInteractor(
+        Domain::Workbench& workbench,
+        Scene::SceneInteractor& scene_interactor,
+        BackupStore& backup_store
+    );
 
     PresetInteractor(PresetInteractor&&) = default;
 
@@ -212,15 +217,40 @@ public:
         return m_object_settings_interactor;
     }
 
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
     void select_printer_preset(
         const std::string& printer_hw_config_id,
-        const std::string& printer_preset_id
+        const std::string& printer_preset_id,
+        bool user = false
     );
-    void select_print_preset(const std::string& id);
-    void select_tool_print_preset(size_t tool_index, const std::string& id);
-    void select_material_preset(size_t material_index, const std::string& id);
-    bool select_printer_tool_item(size_t tool_index, const std::string& id);
-    bool select_printer_sheet(const std::string& id);
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
+    void select_print_preset(const std::string& id, bool user = false);
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
+    void select_tool_print_preset(size_t tool_index, const std::string& id, bool user = false);
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
+    void select_material_preset(size_t material_index, const std::string& id, bool user = false);
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
+    bool select_printer_tool_item(size_t tool_index, const std::string& id, bool user = false);
+    /**
+     * @param user - set this to true if action came from user (e.g. clicking a button)
+     * so this would invalidate Project in a BackupStore
+     */
+    bool select_printer_sheet(const std::string& id, bool user = false);
 
     using ConfigItemModifyFn = std::function<void(Domain::ConfigItem&)>;
 
@@ -956,6 +986,7 @@ private:
     using SetAccessorMap = std::map<const OverridableConfigBoxInteractor*, OverridableConfigBoxInteractor::SetAccessor>;
 
     Domain::Workbench& m_workbench;
+    BackupStore& m_backup_store;
     IO::BundlePaths m_bundle_paths;
 
     PresetItemObservableList m_printer_presets;

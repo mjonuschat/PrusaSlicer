@@ -54,6 +54,76 @@ struct MsgDialog : wxDialog
 
 	void SetButtonLabel(wxWindowID btn_id, const wxString& label, bool set_focus = false);
 
+// This part of code is ported from the "wx\msgdlg.h"
+	using wxMD = wxMessageDialogBase;
+	// customization of the message box buttons
+	virtual bool SetYesNoLabels(const wxMD::ButtonLabel& yes, const wxMD::ButtonLabel& no)
+	{
+		DoSetCustomLabel(m_yes, yes, wxID_YES);
+		DoSetCustomLabel(m_no, no, wxID_NO);
+		return true;
+	}
+
+	virtual bool SetYesNoCancelLabels(const wxMD::ButtonLabel& yes,
+		const wxMD::ButtonLabel& no,
+		const wxMD::ButtonLabel& cancel)
+	{
+		DoSetCustomLabel(m_yes, yes, wxID_YES);
+		DoSetCustomLabel(m_no, no, wxID_NO);
+		DoSetCustomLabel(m_cancel, cancel, wxID_CANCEL);
+		return true;
+	}
+
+	virtual bool SetOKLabel(const wxMD::ButtonLabel& ok)
+	{
+		DoSetCustomLabel(m_ok, ok, wxID_OK);
+		return true;
+	}
+
+	virtual bool SetOKCancelLabels(const wxMD::ButtonLabel& ok,
+		const wxMD::ButtonLabel& cancel)
+	{
+		DoSetCustomLabel(m_ok, ok, wxID_OK);
+		DoSetCustomLabel(m_cancel, cancel, wxID_CANCEL);
+		return true;
+	}
+
+	virtual bool SetHelpLabel(const wxMD::ButtonLabel& help)
+	{
+		DoSetCustomLabel(m_help, help, wxID_HELP);
+		return true;
+	}
+	// test if any custom labels were set
+	bool HasCustomLabels() const
+	{
+		return !(m_ok.empty() && m_cancel.empty() && m_help.empty() &&
+			m_yes.empty() && m_no.empty());
+	}
+
+	// these functions return the label to be used for the button which is
+	// either a custom label explicitly set by the user or the default label,
+	// i.e. they always return a valid string
+	wxString GetYesLabel() const
+	{
+		return m_yes.empty() ? GetDefaultYesLabel() : m_yes;
+	}
+	wxString GetNoLabel() const
+	{
+		return m_no.empty() ? GetDefaultNoLabel() : m_no;
+	}
+	wxString GetOKLabel() const
+	{
+		return m_ok.empty() ? GetDefaultOKLabel() : m_ok;
+	}
+	wxString GetCancelLabel() const
+	{
+		return m_cancel.empty() ? GetDefaultCancelLabel() : m_cancel;
+	}
+	wxString GetHelpLabel() const
+	{
+		return m_help.empty() ? GetDefaultHelpLabel() : m_help;
+	}
+
 protected:
 	enum {
 		CONTENT_WIDTH = 70,//50,
@@ -71,10 +141,48 @@ protected:
 	void apply_style(long style);
 	void finalize();
 
+	// this function is called by our public SetXXXLabels() and should assign
+	// the value to var with possibly some transformation (e.g. Cocoa version
+	// currently uses this to remove any accelerators from the button strings
+	// while GTK+ one handles stock items specifically here)
+	void DoSetCustomLabel(wxString& var, const wxMD::ButtonLabel& label, wxWindowID btn_id)
+	{
+		var = label.GetAsString();
+		SetButtonLabel(btn_id, var);
+	}
+
+	// these functions return the custom label or empty string and should be
+	// used only in specific circumstances such as creating the buttons with
+	// these labels (in which case it makes sense to only use a custom label if
+	// it was really given and fall back on stock label otherwise), use the
+	// Get{Yes,No,OK,Cancel}Label() methods above otherwise
+	const wxString& GetCustomYesLabel() const { return m_yes; }
+	const wxString& GetCustomNoLabel() const { return m_no; }
+	const wxString& GetCustomOKLabel() const { return m_ok; }
+	const wxString& GetCustomHelpLabel() const { return m_help; }
+	const wxString& GetCustomCancelLabel() const { return m_cancel; }
+
 	wxFont boldfont;
 	wxBoxSizer *content_sizer;
 	wxBoxSizer *btn_sizer;
 	wxStaticBitmap *logo;
+
+private:
+	// these functions may be overridden to provide different defaults for the
+	// default button labels (this is used by wxGTK)
+	virtual wxString GetDefaultYesLabel() const { return wxGetTranslation("Yes"); }
+	virtual wxString GetDefaultNoLabel() const { return wxGetTranslation("No"); }
+	virtual wxString GetDefaultOKLabel() const { return wxGetTranslation("OK"); }
+	virtual wxString GetDefaultCancelLabel() const { return wxGetTranslation("Cancel"); }
+	virtual wxString GetDefaultHelpLabel() const { return wxGetTranslation("Help"); }
+
+	// labels for the buttons, initially empty meaning that the defaults should
+	// be used, use GetYes/No/OK/CancelLabel() to access them
+	wxString m_yes,
+		m_no,
+		m_ok,
+		m_cancel,
+		m_help;
 };
 
 
@@ -153,115 +261,7 @@ public:
 	wxString	GetCheckBoxText()	const { return m_checkBoxText; }
 	bool		IsCheckBoxChecked() const { return m_checkBoxValue; }
 
-// This part o fcode isported from the "wx\msgdlg.h"
-	using wxMD = wxMessageDialogBase;
-	// customization of the message box buttons
-	virtual bool SetYesNoLabels(const wxMD::ButtonLabel& yes, const wxMD::ButtonLabel& no)
-	{
-		DoSetCustomLabel(m_yes, yes, wxID_YES);
-		DoSetCustomLabel(m_no, no, wxID_NO);
-		return true;
-	}
-
-	virtual bool SetYesNoCancelLabels(const wxMD::ButtonLabel& yes,
-		const wxMD::ButtonLabel& no,
-		const wxMD::ButtonLabel& cancel)
-	{
-		DoSetCustomLabel(m_yes, yes, wxID_YES);
-		DoSetCustomLabel(m_no, no, wxID_NO);
-		DoSetCustomLabel(m_cancel, cancel, wxID_CANCEL);
-		return true;
-	}
-
-	virtual bool SetOKLabel(const wxMD::ButtonLabel& ok)
-	{
-		DoSetCustomLabel(m_ok, ok, wxID_OK);
-		return true;
-}
-
-	virtual bool SetOKCancelLabels(const wxMD::ButtonLabel& ok,
-		const wxMD::ButtonLabel& cancel)
-	{
-		DoSetCustomLabel(m_ok, ok, wxID_OK);
-		DoSetCustomLabel(m_cancel, cancel, wxID_CANCEL);
-		return true;
-	}
-
-	virtual bool SetHelpLabel(const wxMD::ButtonLabel& help)
-	{
-		DoSetCustomLabel(m_help, help, wxID_HELP);
-		return true;
-	}
-	// test if any custom labels were set
-	bool HasCustomLabels() const
-	{
-		return !(m_ok.empty() && m_cancel.empty() && m_help.empty() &&
-			m_yes.empty() && m_no.empty());
-	}
-
-	// these functions return the label to be used for the button which is
-	// either a custom label explicitly set by the user or the default label,
-	// i.e. they always return a valid string
-	wxString GetYesLabel() const
-	{
-		return m_yes.empty() ? GetDefaultYesLabel() : m_yes;
-	}
-	wxString GetNoLabel() const
-	{
-		return m_no.empty() ? GetDefaultNoLabel() : m_no;
-	}
-	wxString GetOKLabel() const
-	{
-		return m_ok.empty() ? GetDefaultOKLabel() : m_ok;
-	}
-	wxString GetCancelLabel() const
-	{
-		return m_cancel.empty() ? GetDefaultCancelLabel() : m_cancel;
-	}
-	wxString GetHelpLabel() const
-	{
-		return m_help.empty() ? GetDefaultHelpLabel() : m_help;
-	}
-
-protected:
-	// this function is called by our public SetXXXLabels() and should assign
-	// the value to var with possibly some transformation (e.g. Cocoa version
-	// currently uses this to remove any accelerators from the button strings
-	// while GTK+ one handles stock items specifically here)
-	void DoSetCustomLabel(wxString& var, const wxMD::ButtonLabel& label, wxWindowID btn_id)
-	{
-		var = label.GetAsString();
-		SetButtonLabel(btn_id, var);
-	}
-
-	// these functions return the custom label or empty string and should be
-	// used only in specific circumstances such as creating the buttons with
-	// these labels (in which case it makes sense to only use a custom label if
-	// it was really given and fall back on stock label otherwise), use the
-	// Get{Yes,No,OK,Cancel}Label() methods above otherwise
-	const wxString& GetCustomYesLabel() const { return m_yes; }
-	const wxString& GetCustomNoLabel() const { return m_no; }
-	const wxString& GetCustomOKLabel() const { return m_ok; }
-	const wxString& GetCustomHelpLabel() const { return m_help; }
-	const wxString& GetCustomCancelLabel() const { return m_cancel; }
-
 private:
-	// these functions may be overridden to provide different defaults for the
-	// default button labels (this is used by wxGTK)
-	virtual wxString GetDefaultYesLabel() const { return wxGetTranslation("Yes"); }
-	virtual wxString GetDefaultNoLabel() const { return wxGetTranslation("No"); }
-	virtual wxString GetDefaultOKLabel() const { return wxGetTranslation("OK"); }
-	virtual wxString GetDefaultCancelLabel() const { return wxGetTranslation("Cancel"); }
-	virtual wxString GetDefaultHelpLabel() const { return wxGetTranslation("Help"); }
-
-	// labels for the buttons, initially empty meaning that the defaults should
-	// be used, use GetYes/No/OK/CancelLabel() to access them
-	wxString m_yes,
-		m_no,
-		m_ok,
-		m_cancel,
-		m_help;
-
 	HtmlContent m_content;
 };
 

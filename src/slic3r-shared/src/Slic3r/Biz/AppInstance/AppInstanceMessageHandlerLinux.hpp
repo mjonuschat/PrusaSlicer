@@ -41,7 +41,7 @@ public:
     /**
      * @brief Uses AbstractAppInstanceMessageSender to multicast a message. Adds instance hash.
      */
-    void multicast_message(const std::string& message_type, const std::string& message_data, size_t instance_hash) override;
+    void multicast_message(const std::string& message_type, const std::string& message_data) override;
     
     /**
      * @brief Every dbus message received comes her.

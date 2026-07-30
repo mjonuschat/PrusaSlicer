@@ -52,7 +52,7 @@ SidebarToolHeadRow::SidebarToolHeadRow(
                     preset_id
                 ))
             {
-                preset_interactor.select_tool_print_preset(m_index, preset_id);
+                preset_interactor.select_tool_print_preset(m_index, preset_id, true);
                 m_last_selected_index = index;
             } else {
                 m_combo_box->set_current_index(m_last_selected_index);

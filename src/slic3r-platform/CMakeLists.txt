@@ -38,6 +38,7 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/Biz/Platform/ISecretStore.hpp
     include/Slic3r/Biz/Platform/ISingleInstanceChecker.hpp
     include/Slic3r/Biz/Platform/ListenerScope.hpp
+    include/Slic3r/Biz/Platform/WithListeners.hpp
     include/Slic3r/Biz/Platform/JobManager/ProgressTracker.hpp
     src/Slic3r/Biz/Platform/JobManager/ProgressTracker.cpp
     include/Slic3r/Biz/Platform/JobManager/Job.hpp
@@ -48,6 +49,8 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/Biz/Platform/IAppConfigProvider.hpp
     include/Slic3r/App/Platform/CommandExecutionNotifier.hpp
     src/Slic3r/App/Platform/CommandExecutionNotifier.cpp
+    include/Slic3r/Biz/Platform/IAppInstanceMessageHandler.hpp
+    include/Slic3r/Biz/Platform/IAppInstanceMessageContentListener.hpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

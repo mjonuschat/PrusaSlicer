@@ -35,12 +35,10 @@ public:
     class Button : public wxPanel
     {
     public:
-        Button() {};
+        Button() = default;
         Button(wxWindow* parent,
             const ButtonAppearance& appear,
             wxSize size = wxDefaultSize);
-
-        ~Button() {}
 
         void set_selected(bool selected);
         void set_hovered(bool hovered);
@@ -51,13 +49,16 @@ public:
         bool is_selected() const { return m_is_selected; }
 
         void sys_color_changed();
-        void SetBitmapBundle(const wxBitmapBundle& bmp_bundle) { m_bmp_bundle = bmp_bundle; }
+        void set_bitmap_bundle(const wxBitmapBundle& bmp_bundle);
 
         bool SetFont(const wxFont& font) override;
 
     private:
         void        init_bitmaps();
         void        messure_min_size();
+
+    protected:
+        void DoEnable(bool enable) override;
 
     protected:
         wxBitmapBundle  m_dd_bmp_bundle = wxBitmapBundle();
@@ -71,6 +72,7 @@ public:
         wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
 
         bool m_compact_mode{false};
+        bool m_custom_bitmap{false};
         int m_margin{0};
     };
 
@@ -116,6 +118,7 @@ public:
     void refresh_buttons();
     void set_compact_mode(bool compact_mode);
     bool compact_mode() const;
+    void enable_buttons(bool enable);
 
 protected:
     virtual void on_compact_mode_changed() = 0;

@@ -1,12 +1,16 @@
 #pragma once
 
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
+
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewScenePresenter.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
 #include "Slic3r/App/Preview/SlaViewerWrapper.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
@@ -15,13 +19,11 @@
 #include <Slic3r/App/Preview/GCodeWindow.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
-#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
-#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/MenuManager.hpp"
 #include "Slic3r/App/CommandBindingManager.hpp"
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
-#include "Slic3r/Biz/ProjectScoped.hpp"
+#include "Slic3r/App/ModalDialog.hpp"
 
 #include <map>
 #include <memory>
@@ -31,6 +33,7 @@ namespace Slic3r::App {
 struct ThumbnailStore;
 class ThumbnailStoreUpdater;
 class Navigator;
+class ProjectSaver;
 } // namespace Slic3r::App
 
 namespace Slicer::App::Lua {
@@ -77,19 +80,21 @@ public:
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
         std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
         Scene::ISharedModelGeometryProvider* model_geometry_provider,
-        Lua::PluginSystem* plugin_system
+        Lua::PluginSystem* plugin_system,
+        std::shared_ptr<ProjectSaver> project_saver
     ) :
         m_workbench(workbench),
         m_project_interactor(project_interactor),
         m_undo_store(undo_store),
-        m_thumbnail_store(thumbnail_store),
-        m_thumbnail_store_updater(thumbnail_store_updater),
-        m_thumbnail_image_generator(thumbnail_image_generator),
         m_menu_manager(m_command_registry),
         m_command_binding_manager(m_command_registry),
         m_shared_model_geometry_provider(model_geometry_provider),
+        m_thumbnail_store(thumbnail_store),
+        m_thumbnail_store_updater(thumbnail_store_updater),
+        m_thumbnail_image_generator(thumbnail_image_generator),
         m_plugin_system(plugin_system),
-        m_gcode_view_type_states(m_project_interactor)
+        m_gcode_view_type_states(m_project_interactor),
+        m_project_saver(project_saver)
     {}
 
     /**
@@ -142,11 +147,9 @@ public:
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
-    bool is_modal_dialog_opened() const;
     void open_invalid_data_dialog();
 
-    void set_opened_preferences(bool opened);
-    bool is_opened_preferences() const;
+    void set_modal_dialog(ModalDialog dialog);
 
     void set_object_list_collapsed(bool collapsed);
 
@@ -241,6 +244,7 @@ private:
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
     Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
+    Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
     ToolBarButton* m_button_travels           = nullptr;
@@ -266,6 +270,7 @@ private:
     Navigator* m_render_module_navigator{nullptr};
     Lua::PluginSystem* m_plugin_system{nullptr};
     Biz::ProjectScoped<ProjectGCodeViewTypeStates> m_gcode_view_type_states;
+    std::shared_ptr<ProjectSaver> m_project_saver;
     bool m_active{false};
 
 

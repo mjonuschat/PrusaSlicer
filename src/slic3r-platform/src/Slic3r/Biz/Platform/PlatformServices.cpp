@@ -1,6 +1,8 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+
 #include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 #include <Slic3r/Biz/Platform/IAppConfigProvider.hpp>
+#include <Slic3r/Biz/Platform/IAppInstanceMessageHandler.hpp>
 
 namespace Slic3r::Biz::Platform {
 
@@ -64,6 +66,19 @@ IAppConfigProvider& PlatformServices::app_config_provider()
 {
     ASSERT(m_app_config_provider);
     return *m_app_config_provider;
+}
+
+void PlatformServices::set_app_instance_message_handler(
+    std::unique_ptr<IAppInstanceMessageHandler>&& message_handler
+)
+{
+    m_app_instance_message_handler = std::move(message_handler);
+}
+
+IAppInstanceMessageHandler& PlatformServices::app_instance_message_handler()
+{
+    ASSERT(m_app_instance_message_handler);
+    return *m_app_instance_message_handler;
 }
 
 } // namespace Slic3r::Biz::Platform

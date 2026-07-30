@@ -20,9 +20,7 @@
 #include "Slic3r/Biz/ResultExport/ResultExportInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
-#include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
-#include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
-#include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
+#include "Slic3r/Biz/Platform/IAppInstanceMessageContentListener.hpp"
 #include "Slic3r/Biz/ObservableProjectList.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
@@ -31,6 +29,7 @@
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 #include "Slic3r/Biz/IUndoProvider.hpp"
 #include "Slic3r/Biz/Connect/ConnectMessageHandler.hpp"
+#include "Slic3r/Biz/BackupStore.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -76,7 +75,7 @@ class ProjectInteractor final :
     public ISlicingInputChangedListener,
     public IColorsChangedListener,
     public UserAccount::IUserAccountListener,
-    public AppInstance::IAppInstanceMessageContentListener,
+    public Platform::IAppInstanceMessageContentListener,
     public FileDownloader::IFileDownloaderListener,
     public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
@@ -84,14 +83,14 @@ public:
     ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher, Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator) :
         m_workbench(workbench),
         m_scene_interactor(workbench),
-        m_preset_interactor(workbench, m_scene_interactor),
+        m_backup_store(*this),
+        m_preset_interactor(workbench, m_scene_interactor, m_backup_store),
         m_arrange_interactor(m_scene_interactor, workbench),
         m_clipboard_interactor(m_scene_interactor, m_arrange_interactor, workbench),
         m_project_settings_interactor(workbench, m_null_mdb),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_result_export_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
-        m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
         m_preset_updater_interactor(dispatcher),
         m_removable_drive_service(dispatcher),
         m_file_downloader_interactor(dispatcher),
@@ -123,7 +122,9 @@ public:
         m_slicing_interactor.add_listener<Slicing::IWipeTowerGeometryListener>(&m_scene_interactor);
         m_slicing_interactor.add_listener<Slicing::IExtruderCandidatesListener>(&m_scene_interactor);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
-        m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        Platform::PlatformServices::instance()
+            .app_instance_message_handler()
+            .add_listener<Platform::IAppInstanceMessageContentListener>(this);
         m_file_downloader_interactor.add_listener<FileDownloader::IFileDownloaderListener>(this);
         add_listener<ISelectedConfigContainerChangedListener>(
             &m_preset_interactor.object_settings_interactor()
@@ -169,6 +170,15 @@ public:
      * @brief Load project from the file
      */
     void load_project(const boost::filesystem::path& file_path);
+    /**
+     * @brief Load projects from files
+     * @param restored project - if set to true, will remove files after sucessfull loading,
+     * and adjust the project name
+     */
+    void load_projects(
+        const std::vector<boost::filesystem::path>& file_paths,
+        bool restored_projects = false
+    );
 
     /**
      * @name Project manipulation
@@ -177,7 +187,15 @@ public:
     /**
      * @brief Save project into the file
      */
-    void save_project(const boost::filesystem::path& file_path, const Store3mfParam& params);
+    void save_selected_project(const boost::filesystem::path& file_path, const Store3mfParam& params);
+    /**
+     * @brief Save project into the file
+     */
+    void save_project(
+        Domain::SelectionId project_id,
+        const boost::filesystem::path& file_path,
+        const Store3mfParam& params
+    );
 
     /**
      * Select already opened project. If the project is already selected, do nothing.
@@ -366,6 +384,11 @@ public:
         return m_project_settings_interactor;
     }
 
+    BackupStore& backup_store()
+    {
+        return m_backup_store;
+    }
+
     IUndoProvider& undo_provider() {
         return *ASSERT_VAL(m_undo_provider);
     }
@@ -411,29 +434,15 @@ public:
     );
 
     /**
-     * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.
-     */
-    void init_app_instance_message_handler(void* window_handle)
-    {
-        m_app_instance_message_handler->init(window_handle);
-    }
-
-    /**
-     * @brief Passes message to AppInstanceMessageHandler.
-     */
-    void handle_app_instance_message(const std::string& message)
-    {
-        m_app_instance_message_handler->handle_message(message);
-    }
-
-    /**
      * @brief Called on every successful login to user account and token renewal.
      * Notifies all other running apps to read token store.
      */
     void on_user_account_id_success(bool is_refresh, const std::string& username) override
     {
-        m_app_instance_message_handler
-            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
+        Platform::PlatformServices::instance().app_instance_message_handler().multicast_message(
+            "STORE_READ",
+            {}
+        );
 
         if (!is_refresh)
         {
@@ -450,16 +459,10 @@ public:
      */
     void on_user_account_logged_out_notify_instances() override
     {
-        m_app_instance_message_handler
-            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
-    }
-
-    void on_user_account_will_refresh() override
-    { /*unused*/
-    }
-
-    void on_user_account_action_retry(const Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override
-    { /*unused*/
+        Platform::PlatformServices::instance().app_instance_message_handler().multicast_message(
+            "STORE_READ",
+            {}
+        );
     }
 
     void load_models_to_project(std::vector<boost::filesystem::path> paths);
@@ -475,7 +478,7 @@ public:
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
-    void on_download_models(std::vector<std::string> message) override 
+    void on_download_models(std::vector<std::string> message) override
     {
         if (m_raise_app_fn) {
             m_raise_app_fn();
@@ -497,7 +500,7 @@ public:
     {
         if (in_new_project) {
             new_project();
-        }        
+        }
         load_models_to_project({path});
     }
 
@@ -516,11 +519,6 @@ public:
     {
         m_user_account_interactor.on_log_in_code_response(message);
     }
-
-    /**
-     * @brief Callback from AppInstanceMessageHandler.
-     */
-    void on_app_go_front() override {}
 
     /**
      * @brief Getter for user account.
@@ -544,7 +542,7 @@ public:
      * @returns Project filename, or if empty name of the first object if there is any
      */
     std::string get_project_save_name(Domain::SelectionId project_id) const;
-    
+
     /**
      * @brief Getter for default path when exporting 3mf file.
      */
@@ -659,6 +657,7 @@ private:
     Selection m_selection;
 
     Scene::SceneInteractor m_scene_interactor;
+    BackupStore m_backup_store;
     Preset::PresetInteractor m_preset_interactor;
     ArrangeInteractor m_arrange_interactor;
     ClipboardInteractor m_clipboard_interactor;
@@ -672,7 +671,6 @@ private:
     StatusCache m_status_cache;
     ResultExport::ResultExportInteractor m_result_export_interactor;
     UserAccount::UserAccountInteractor m_user_account_interactor;
-    std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;
     RemovableDrive::RemovableDriveService m_removable_drive_service;
     FileDownloader::FileDownloaderInteractor m_file_downloader_interactor;
@@ -683,7 +681,7 @@ private:
     IMessageDialogProvider* m_dialog_provider{ nullptr };
     std::unique_ptr<IUndoProvider> m_undo_provider;
 
-    
+
     /*
      * @brief Callback to mainframe to bring application forward.
      */

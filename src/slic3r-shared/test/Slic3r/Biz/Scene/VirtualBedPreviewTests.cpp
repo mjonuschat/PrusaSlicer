@@ -4,6 +4,9 @@
 
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
+#include "Slic3r/TestUtils/ScopedThreadDispatcher.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/BedPlacement.hpp"
@@ -26,15 +29,6 @@ struct SlicingInputChangedListener : Biz::ISlicingInputChangedListener
 {
     MAKE_MOCK1(on_slicing_input_changed, void(const Domain::BedRef&));
     MAKE_MOCK1(on_slicing_input_removed, void(const Domain::BedRef&));
-};
-
-struct ScopedThreadDispatcher
-{
-    ScopedThreadDispatcher(Biz::Platform::IMainThreadDispatcher& dispatcher) : m_dispatcher(dispatcher) {}
-    ~ScopedThreadDispatcher() { m_dispatcher.close(); }
-
-private:
-    Biz::Platform::IMainThreadDispatcher& m_dispatcher;
 };
 
 struct VirtualBedFixture
@@ -61,10 +55,12 @@ struct VirtualBedFixture
     Domain::Workbench workbench;
 
     App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
+    Tests::JobManagerScope job_manager_scope{dispatcher};
     App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
     Biz::ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
     Biz::Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};
-    ScopedThreadDispatcher thread_dispatcher{dispatcher};
+    Tests::ScopedThreadDispatcher thread_dispatcher{dispatcher};
 };
 
 } // namespace

@@ -11,6 +11,8 @@
 #include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 #include <boost/nowide/filesystem.hpp>
@@ -85,6 +87,8 @@ struct ProjectSettingsInteractorFixture
     std::unique_ptr<Slic3r::Biz::SecretStoreDummy> store_dummy =
         std::make_unique<Slic3r::Biz::SecretStoreDummy>();
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
+    Tests::JobManagerScope job_manager_scope{dispatcher};
     Slic3r::App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Domain::Workbench workbench;
     Slic3r::Biz::ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};

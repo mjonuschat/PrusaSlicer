@@ -5,8 +5,60 @@
 
 namespace Slic3r::Domain {
 
+Project::Project() : m_metadata(generate_uuid()), m_model(new Model()) {}
 
-Project::Project() : m_metadata(generate_uuid()),  m_model(new Model()) {}
+Project::Project(const Project& project) :
+    m_metadata(project.metadata()),
+    m_file_name(project.file_name()),
+    m_loaded_file_path(project.loaded_file_path()),
+    m_directory_storage(project.m_directory_storage)
+{
+    // Preserve IDs
+    m_model.reset(Model::new_copy(project.model()));
+
+    m_bed_container = project.bed_container().copy();
+
+    std::unordered_map<const Bed*, const Bed*> bed_translation_table;
+    for (const BedPtr& bed : project.bed_container().beds()) {
+        const Bed* new_bed = find_bed_by_id(bed->id().id);
+        ASSERT(new_bed, "copied bed needs to be found");
+        bed_translation_table[bed.get()] = new_bed;
+    }
+
+    std::unordered_map<ModelObject*, ModelObject*> model_object_translation_table;
+    std::unordered_map<ModelInstance*, ModelInstance*> model_instance_translation_table;
+    for (ModelObject* object : project.model().objects) {
+        ModelObject* new_object = find_object_by_id(object->id().id);
+        ASSERT(new_object, "copied object needs to be found");
+        model_object_translation_table[object] = new_object;
+
+        for (ModelInstance* instance : object->instances) {
+            ModelInstance* new_instance = find_instance_by_id(instance->id().id);
+            ASSERT(new_object, "copied instance needs to be found");
+            model_instance_translation_table[instance] = new_instance;
+        }
+    }
+
+    m_unplaced_model_instances.reserve(project.unplaced_model_instances().size());
+    std::ranges::transform(
+        project.unplaced_model_instances(),
+        std::back_inserter(m_unplaced_model_instances),
+        [&](ModelInstance* instance) -> ModelInstance*
+        {
+            auto it = model_instance_translation_table.find(instance);
+            ASSERT(it != model_instance_translation_table.end());
+            return it->second;
+        }
+    );
+
+    m_config_containers.reserve(project.config_containers().size());
+    std::ranges::transform(
+        project.config_containers(),
+        std::back_inserter(m_config_containers),
+        [&](const std::unique_ptr<ConfigContainer>& config_container)
+        { return config_container->copy(bed_translation_table, model_instance_translation_table); }
+    );
+}
 
 const ConfigContainer* Project::find_config_container(size_t id) const
 {
@@ -67,7 +119,6 @@ const ModelInstance* Project::find_instance_by_id(size_t inst_id) const
     return nullptr;
 }
 
-
 Domain::ModelObject* Project::find_object_by_id(size_t id)
 {
     return find_by_id<Domain::ModelObject>(m_model->objects, id);
@@ -99,7 +150,6 @@ ModelInstance* Project::find_instance_by_id(size_t inst_id)
     return nullptr;
 }
 
-
 const BedInstance* Project::find_bed_instance_by_id(size_t id) const
 {
     for (const auto& cc : m_config_containers)
@@ -128,21 +178,27 @@ Bed* Project::find_bed_by_id(size_t id)
 
 namespace {
 
-void visit(Project::ConfigContainerList& ccs, const std::function<void(Preset::SelectedPreset&)>& visitor)
+void visit(
+    Project::ConfigContainerList& ccs,
+    const std::function<void(Preset::SelectedPreset&)>& visitor
+)
 {
-    std::ranges::for_each(ccs, [&](auto& cc)
-    {
-        auto& selected_preset = cc->mutable_selected_preset();
-        visitor(selected_preset);
-    });
+    std::ranges::for_each(
+        ccs,
+        [&](auto& cc)
+        {
+            auto& selected_preset = cc->mutable_selected_preset();
+            visitor(selected_preset);
+        }
+    );
 }
 
 template <Preset::ConfigBoxLike Fdm, Preset::ConfigBoxLikeOrMonostate Sla>
 struct PresetModifier
 {
-    using EP = Preset::EvaluatedPreset<Fdm, Sla>;
-    using Selector = std::function<EP& (Preset::SelectedPreset& preset)>;
-    using MultiSelector = std::function<std::vector<EP>& (Preset::SelectedPreset& preset)>;
+    using EP              = Preset::EvaluatedPreset<Fdm, Sla>;
+    using Selector        = std::function<EP&(Preset::SelectedPreset& preset)>;
+    using MultiSelector   = std::function<std::vector<EP>&(Preset::SelectedPreset& preset)>;
     using SelectorVariant = std::variant<Selector, MultiSelector>;
 
     const EP& source;
@@ -188,7 +244,7 @@ PresetModifier<Fdm, Sla> make_preset_modifier(
     return modifier;
 }
 
-}
+} // namespace
 
 void Project::update_preset(const Preset::EvaluatedPrinterPreset::Preset& printer)
 {
@@ -210,7 +266,6 @@ void Project::update_preset(const Preset::EvaluatedPrintPreset::Preset& print)
             [](Preset::SelectedPreset& preset) -> auto& { return preset.print; }
         )
     );
-
 }
 
 void Project::update_preset(const Preset::EvaluatedToolPrintPreset::Preset& tool_print)
@@ -225,7 +280,8 @@ void Project::update_preset(const Preset::EvaluatedToolPrintPreset::Preset& tool
 }
 
 void Project::update_preset(const Preset::EvaluatedMaterialPreset::Preset& material)
-{    visit(
+{
+    visit(
         m_config_containers,
         make_preset_modifier(
             material,
@@ -233,6 +289,5 @@ void Project::update_preset(const Preset::EvaluatedMaterialPreset::Preset& mater
         )
     );
 }
-
 
 } // namespace Slic3r::Domain

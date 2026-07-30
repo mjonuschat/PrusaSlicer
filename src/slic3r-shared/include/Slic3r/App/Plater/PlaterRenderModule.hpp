@@ -19,6 +19,7 @@
 #include "Slic3r/App/Scene/ModelGeometryProvider.hpp"
 #include "Slic3r/App/Plater/ContextMenuGizmo.hpp"
 #include "Slic3r/App/WelcomeDialog.hpp"
+#include "Slic3r/App/ModalDialog.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -38,6 +39,8 @@ class PreferencesDialog;
 class ToolBarButton;
 class ToolBarSwitchButton;
 class NumberEntryDialog;
+class CrashedProjectsDialog;
+class ProjectSaver;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Lua {
@@ -95,7 +98,8 @@ public:
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
         std::shared_ptr<ThumbnailImageGenerator> thumbnail_image_generator,
-        std::unique_ptr<Biz::Emboss::IFontManager> font_manager
+        std::unique_ptr<Biz::Emboss::IFontManager> font_manager,
+        std::shared_ptr<ProjectSaver> project_saver
     );
     ~PlaterRenderModule();
 
@@ -121,14 +125,12 @@ public:
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
-    bool is_modal_dialog_opened() const;
     void open_invalid_data_dialog();
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
 
     void open_search();
-    void set_opened_preferences(bool opened);
-    bool is_opened_preferences() const;
+    void set_modal_dialog(ModalDialog dialog);
 
     void set_object_list_collapsed(bool collapsed);
 
@@ -261,6 +263,7 @@ private:
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
     Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
     Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
+    Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;
 
     ToolBarButton* m_toolbar_add                     = nullptr;
     ToolBarButton* m_toolbar_delete                  = nullptr;
@@ -304,6 +307,7 @@ private:
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
+    std::shared_ptr<ProjectSaver> m_project_saver;
 
     Navigator* m_render_module_navigator{nullptr};
 

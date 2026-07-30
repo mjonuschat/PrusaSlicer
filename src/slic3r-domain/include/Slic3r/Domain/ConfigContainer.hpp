@@ -17,6 +17,11 @@ class Bed;
 class ConfigContainer : public ObjectBase
 {
 public:
+    std::unique_ptr<ConfigContainer> copy(
+        const std::unordered_map<const Bed*, const Bed*>& bed_translation_table,
+        const std::unordered_map<ModelInstance*, ModelInstance*>& model_instance_translation_table
+    ) const;
+
     Domain::PrinterTechnology print_technology() const
     {
         return m_preset.technology();

@@ -458,7 +458,7 @@ void ConnectMessageHandler::do_select_printer_from_connect(
         return;
     }
 
-    m_preset_interactor.select_printer_preset(config->id, item->id);
+    m_preset_interactor.select_printer_preset(config->id, item->id, true);
     m_physical_printer_interactor.select_connect_upload(false);
     select_printer_tools_from_connect(parsed_printer_json);
     select_printer_materials_from_connect(parsed_printer_json);

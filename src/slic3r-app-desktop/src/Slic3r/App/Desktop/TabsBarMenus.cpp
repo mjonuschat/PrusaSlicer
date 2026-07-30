@@ -2,7 +2,6 @@
 #include "Slic3r/App/Desktop/TabsBarCtrl.hpp"
 
 #include "Slic3r/App/WX/MenuManaging.hpp"
-#include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/Assert.hpp>
@@ -24,29 +23,11 @@ TabsBarMenus::TabsBarMenus()
     BindEvtClose();
 }
 
-void TabsBarMenus::AppendMenuItem(wxMenu* menu, const wxString& title)
-{
-    append_submenu(&main, menu, wxID_ANY, title, from_u8("cog"));
-}
-
-void TabsBarMenus::AppendMenuSeparaorItem()
-{
-    main.AppendSeparator();
-}
-
 TabsBarMenus::UserAccountInfo TabsBarMenus::get_user_account_info()
 {
     if (m_cb_get_user_account_info)
         return m_cb_get_user_account_info();
     return UserAccountInfo();
-}
-
-void TabsBarMenus::sys_color_changed()
-{/*
-    MenuFactory::sys_color_changed(&main);
-    MenuFactory::sys_color_changed(&workspaces);
-    MenuFactory::sys_color_changed(&account);
-    */
 }
 
 void TabsBarMenus::CreateAccountMenu()
@@ -83,6 +64,15 @@ void TabsBarMenus::BindEvtClose()
     main.        Bind(wxEVT_MENU_CLOSE, [close_fn](wxMenuEvent&) { close_fn(); });
     workspaces.  Bind(wxEVT_MENU_CLOSE, [close_fn](wxMenuEvent&) { close_fn(); });
     account.     Bind(wxEVT_MENU_CLOSE, [close_fn](wxMenuEvent&) { close_fn(); });
+}
+
+void TabsBarMenus::set_account_menu_callbacks(
+    std::function<void()> cb_act_with_user_account,
+    std::function<UserAccountInfo()> cb_get_user_account_info
+)
+{
+    m_cb_act_with_user_account = cb_act_with_user_account;
+    m_cb_get_user_account_info = cb_get_user_account_info;
 }
 
 } // Slic3r::App::Desktop

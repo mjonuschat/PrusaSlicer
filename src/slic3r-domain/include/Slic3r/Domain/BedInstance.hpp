@@ -27,6 +27,11 @@ struct BedInstance : public ObjectBase
 {
     explicit BedInstance(const Bed& bed);
 
+    std::unique_ptr<BedInstance> copy(
+        const std::unordered_map<const Bed*, const Bed*>& bed_translation_table,
+        const std::unordered_map<ModelInstance*, ModelInstance*>& model_instance_translation_table
+    ) const;
+
     const Transform3d& matrix() const
     {
         return transformation.get_matrix();

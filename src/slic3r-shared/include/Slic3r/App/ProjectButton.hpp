@@ -13,13 +13,17 @@ class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
-
 class Text;
 class LayoutButton;
 class Rectangle;
+}
+
+namespace Slic3r::App {
+
+class ProjectSaver;
 
 class ProjectButton :
-    public AbstractButton,
+    public Yoga::AbstractButton,
     public Biz::DataObserver<Domain::SelectionId>,
     public Biz::ISelectedProjectChangedListener
 {
@@ -27,7 +31,8 @@ public:
     ProjectButton(
         size_t index,
         const Domain::SelectionId& data,
-        Biz::ProjectInteractor& project_interactor
+        Biz::ProjectInteractor& project_interactor,
+        ProjectSaver& project_saver
     );
 
     Domain::SelectionId project_id() const;
@@ -48,10 +53,12 @@ protected:
 
 private:
     Biz::ProjectInteractor& m_project_interactor;
-    Rectangle* m_background{nullptr};
-    Text* m_label{nullptr};
-    LayoutButton* m_cross{nullptr};
-    Item* m_separator_wrap{nullptr};
+    ProjectSaver& m_project_saver;
+
+    Yoga::Rectangle* m_background{nullptr};
+    Yoga::Text* m_label{nullptr};
+    Yoga::LayoutButton* m_cross{nullptr};
+    Yoga::Item* m_separator_wrap{nullptr};
 };
 
 } // namespace Slic3r::App::Yoga

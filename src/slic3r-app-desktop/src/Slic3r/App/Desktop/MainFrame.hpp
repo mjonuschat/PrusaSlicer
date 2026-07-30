@@ -32,6 +32,7 @@ class ProjectInteractor;
 
 namespace Slic3r::App {
 class Navigator;
+class ProjectSaver;
 
 namespace WX {
 class MacOSNativeMenuBar;
@@ -61,7 +62,8 @@ public:
     MainFrame(
         Domain::Workbench& workbench,
         Biz::ProjectInteractor& project_interactor,
-        Navigator& navigator
+        Navigator& navigator,
+        std::shared_ptr<ProjectSaver> project_saver
     );
     ~MainFrame();
 
@@ -133,6 +135,7 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
     Navigator& m_navigator;
+    std::shared_ptr<ProjectSaver> m_project_saver;
 
     Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, MainFrame>
         m_projects_changed_listener_scope;

@@ -1,10 +1,13 @@
-#include "Slic3r/App/Yoga/ProjectButton.hpp"
+#include "Slic3r/App/ProjectButton.hpp"
 
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/ProjectSaver.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -12,16 +15,19 @@
 #include <imgui/imgui_internal.h>
 
 using namespace Slic3r::Biz;
+using namespace Slic3r::App::Yoga;
 
-namespace Slic3r::App::Yoga {
+namespace Slic3r::App {
 
 ProjectButton::ProjectButton(
     size_t index,
     const Domain::SelectionId& data,
-    Biz::ProjectInteractor& project_interactor
+    Biz::ProjectInteractor& project_interactor,
+    ProjectSaver& project_saver
 ) :
     Biz::DataObserver<Domain::SelectionId>(index, data),
-    m_project_interactor(project_interactor)
+    m_project_interactor(project_interactor),
+    m_project_saver(project_saver)
 {
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
@@ -80,7 +86,9 @@ void ProjectButton::checked_updated_internal()
 {
     update_bg_color();
     m_label->set_text_color(m_theme->color_imgui(
-        Platform::Color::Text,
+        m_project_interactor.backup_store().is_project_unsaved(*m_state) ?
+            Platform::Color::AccentTertiary :
+            Platform::Color::Text,
         checked() ? Platform::ColorGroup::Default : Platform::ColorGroup::Disabled
     ));
     m_label->set_font_type(
@@ -105,10 +113,39 @@ void ProjectButton::on_data_update()
         btn_tooltip = proj_path.string();
     }
 
+    m_label->set_text_color(m_theme->color_imgui(
+        m_project_interactor.backup_store().is_project_unsaved(*m_state) ?
+            Platform::Color::AccentTertiary :
+            Platform::Color::Text
+    ));
+
     set_tooltip(btn_tooltip);
     m_label->set_text(btn_label);
 
-    m_cross->callbacks().action = [this]() { m_project_interactor.remove_project(*m_state); };
+    m_cross->callbacks().action = [this]()
+    {
+        if (m_project_interactor.backup_store().is_project_unsaved(*m_state)) {
+            AppServices::instance().dialog_manager().show_yesnocancel_dialog(
+                Biz::_u8L("Close project"),
+                Biz::_u8L("There are unsaved changes."),
+                {Biz::_u8L("Save"),
+                 [this]
+                 {
+                     if (m_project_saver.save_project(*m_state)) {
+                         m_project_interactor.remove_project(*m_state);
+                     }
+                 }},
+                {Biz::_u8L("Discard"), [this] { m_project_interactor.remove_project(*m_state); }},
+                {Biz::_u8L("Cancel"),
+                 []
+                 {
+                     // do nothing
+                 }}
+            );
+        } else {
+            m_project_interactor.remove_project(*m_state);
+        }
+    };
 
     callbacks().action = [this]()
     {
@@ -146,4 +183,4 @@ void ProjectButton::set_separator_visible(bool separator_visible)
     m_separator_wrap->set_visible(separator_visible);
 }
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

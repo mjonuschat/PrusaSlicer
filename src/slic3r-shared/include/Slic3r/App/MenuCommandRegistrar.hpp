@@ -29,6 +29,7 @@ namespace Slic3r::App {
 class MenuManager;
 struct ThumbnailStore;
 class Navigator;
+class ProjectSaver;
 
 class MenuCommandRegistrar
 {
@@ -37,7 +38,7 @@ public:
         Platform::AbstractRenderModule& render_module,
         Biz::ProjectInteractor& project_interactor,
         Navigator& navigator,
-        ThumbnailStore& thumbnail_store
+        ProjectSaver& project_saver
     );
 
     void register_top_bar_menus(Lua::PluginSystem* plugin_system = nullptr);
@@ -81,8 +82,6 @@ private:
     boost::filesystem::path default_dialog_folder() const;
 
     void load_project();
-    void save_project();
-    void save_project_as();
 
     void install_plugin(Lua::PluginSystem& plugin_system);
 
@@ -116,7 +115,8 @@ private:
     MenuManager& m_menu_manager;
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
-    ThumbnailStore& m_thumbnail_store;
+    ProjectSaver& m_project_saver;
+
     Scene::GeometryDataFactory* m_data_factory{nullptr};
     Scene::ISceneProvider* m_scene_provider{nullptr};
     Biz::ClipboardInteractor& m_clipboard_interactor;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string_view>
 
@@ -124,5 +125,6 @@ private:
     Vec2d m_center{ Vec2d::Zero() };
     BoundingBoxf m_contour_aabb;
 };
+using BedPtr = std::unique_ptr<Bed>;
 
 } // namespace Slic3r::Domain

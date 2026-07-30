@@ -263,7 +263,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
                 return;
             }
 
-            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
+            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id, true);
             m_navigator.set_opened_dialog(nullptr);
             m_project_interactor.undo_provider().take_snapshot(
                 UndoSnapshotType::SelectPrinterPreset
@@ -292,7 +292,7 @@ void LogicalPrinterSettingsDialog::create_page_list()
                 return;
             }
 
-            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
+            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id, true);
             select_page_settings();
             m_project_interactor.undo_provider().take_snapshot(
                 UndoSnapshotType::SelectPrinterPreset
@@ -382,7 +382,8 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     {
         if (sheet_index >= 0) {
             m_project_interactor.preset_interactor().select_printer_sheet(
-                m_project_interactor.preset_interactor().sheet_items().items().at(sheet_index).id
+                m_project_interactor.preset_interactor().sheet_items().items().at(sheet_index).id,
+                true
             );
         }
     };

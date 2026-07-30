@@ -24,6 +24,10 @@ public:
     using ConfigContainerList = std::vector<std::unique_ptr<ConfigContainer>>;
 
     Project();
+    Project(const Project& project);
+
+    Project(Project&& other) noexcept = default;
+    Project& operator=(Project&& other) noexcept = default;
 
     void set_metadata(const ProjectMetadata& metadata)
     {

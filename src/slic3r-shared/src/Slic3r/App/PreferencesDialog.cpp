@@ -5,7 +5,6 @@
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
 
-#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
@@ -44,7 +43,7 @@ void PreferencesDialog::on_reset()
 
 void PreferencesDialog::close_action()
 {
-    m_navigator.set_opened_dialog(nullptr);
+    m_navigator.set_modal_dialog(ModalDialog::None);
 }
 
 } // namespace Slic3r::App

@@ -142,6 +142,39 @@ void DialogManager::show_yesno_dialog(const std::string& title, const std::strin
         callback(false);
 }
 
+void DialogManager::show_yesnocancel_dialog(
+    const std::string& title,
+    const std::string& text,
+    const Button& yes,
+    const Button& no,
+    const Button& cancel
+)
+{
+    MessageDialog
+        dialog{nullptr, from_u8(text), from_u8(title), wxYES_NO | wxCANCEL | wxICON_EXCLAMATION};
+
+    dialog.SetYesNoCancelLabels(from_u8(yes.first), from_u8(no.first), from_u8(cancel.first));
+
+    switch (dialog.ShowModal()) {
+    case wxID_YES:
+        if (yes.second) {
+            yes.second();
+        }
+        break;
+    case wxID_NO:
+        if (no.second) {
+            no.second();
+        }
+        break;
+    case wxID_CANCEL:
+    default:
+        if (cancel.second) {
+            cancel.second();
+        }
+        break;
+    }
+}
+
 void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::string& text, const std::string& check_text, const YesNoCallback& callback, const CheckBoxCheckedCallback& cbc_callback)
 {
     RichMessageDialog dlg(wxTheApp->GetTopWindow(), from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);

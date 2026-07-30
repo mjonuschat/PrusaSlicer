@@ -3,6 +3,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
+#include "Slic3r/TestUtils/JobManagerScope.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 #include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
@@ -20,6 +22,8 @@ TEST_CASE("PresetMetadataLegacyLoader tests", "[preset][legacy]")
     Domain::Workbench workbench;
 
     App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
+    Tests::JobManagerScope job_manager_scope{dispatcher};
     App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
     ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
     Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};

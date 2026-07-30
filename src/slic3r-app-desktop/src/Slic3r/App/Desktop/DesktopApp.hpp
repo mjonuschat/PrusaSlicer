@@ -32,7 +32,8 @@ public:
     }
 
     /**
-     * @brief On Windows, accepting message from other instance must be done in wxApp implementation. See register_win32_device_notification_event()
+     * @brief On Windows, accepting message from other instance must be done in wxApp implementation.
+     * See register_win32_device_notification_event()
      */
     void handle_app_instance_message(const std::string& message);
 

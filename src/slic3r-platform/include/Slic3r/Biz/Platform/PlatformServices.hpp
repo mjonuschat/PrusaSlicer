@@ -11,6 +11,7 @@
 namespace Slic3r::Biz::Platform {
     
 class IAppConfigProvider;
+class IAppInstanceMessageHandler;
 
 namespace JobManager {
     class JobManager;
@@ -29,6 +30,7 @@ public:
     void set_single_instance_checker(std::unique_ptr<ISingleInstanceChecker>&& single_instance_checker);
     void set_job_manager(std::unique_ptr<JobManager::JobManager>&& job_manager);
     void set_app_config_provider(std::unique_ptr<IAppConfigProvider>&& provider);
+    void set_app_instance_message_handler(std::unique_ptr<IAppInstanceMessageHandler>&& message_handler);
 
     IRenderRequestHandler& render_request_handler()
     {
@@ -66,6 +68,8 @@ public:
         return *m_single_instance_checker;
     }
 
+    IAppInstanceMessageHandler& app_instance_message_handler();
+
     JobManager::JobManager& job_manager();
 
     IAppConfigProvider& app_config_provider();
@@ -84,6 +88,7 @@ private:
     std::unique_ptr<ISingleInstanceChecker> m_single_instance_checker{nullptr};  
     std::unique_ptr<JobManager::JobManager> m_job_manager;
     std::unique_ptr<IAppConfigProvider> m_app_config_provider;
+    std::unique_ptr<IAppInstanceMessageHandler> m_app_instance_message_handler;
 };
 
 } // namespace Slic3r::Biz::Platform

@@ -299,6 +299,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/MenuCommandRegistrar.hpp
         include/Slic3r/App/PageEntryButton.hpp
         src/Slic3r/App/PageEntryButton.cpp
+        src/Slic3r/App/ProjectButton.cpp
+        include/Slic3r/App/ProjectButton.hpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -602,8 +604,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ButtonGroup.hpp
         src/Slic3r/App/Yoga/ButtonGroup.cpp
         include/Slic3r/App/Yoga/ListView.hpp
-        src/Slic3r/App/Yoga/ProjectButton.cpp
-        include/Slic3r/App/Yoga/ProjectButton.hpp
         include/Slic3r/App/Yoga/ScrollArea.hpp
         src/Slic3r/App/Yoga/ScrollArea.cpp
         include/Slic3r/App/Yoga/InputText.hpp
@@ -714,6 +714,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/MenuManager.cpp
         include/Slic3r/App/CommandBindingManager.hpp
         src/Slic3r/App/CommandBindingManager.cpp
+        include/Slic3r/App/CrashedProjectsDialog.hpp
+        src/Slic3r/App/CrashedProjectsDialog.cpp
+        include/Slic3r/App/ProjectSaver.hpp
+        src/Slic3r/App/ProjectSaver.cpp
+        include/Slic3r/App/ModalDialog.hpp
 
         include/Slic3r/App/PopNotification/PopNotificationCenter.hpp
         include/Slic3r/App/PopNotification/PopNotificationData.hpp
@@ -878,6 +883,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PrintToolConfigObservableList.hpp
         src/Slic3r/Biz/PrintToolConfigObservableList.cpp
         include/Slic3r/Biz/ObservableListSearcher.hpp
+        include/Slic3r/Biz/BackupStore.hpp
+        src/Slic3r/Biz/BackupStore.cpp
+        include/Slic3r/Biz/IBackupStoreListener.hpp
 
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
@@ -1012,7 +1020,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/SHA256.hpp
 
         include/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp
-        include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceUtils.hpp
         src/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.cpp
@@ -1500,6 +1507,10 @@ if(SLIC3R_BUILD_TESTS)
             test/Slic3r/Biz/ObservableListSortFilterTests.cpp
             test/Slic3r/Biz/ObservableListTransformerTests.cpp
             test/Slic3r/Biz/ObservableListSearcherTests.cpp
+
+        test/Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp
+        test/Slic3r/TestUtils/JobManagerScope.hpp
+        test/Slic3r/TestUtils/ScopedThreadDispatcher.hpp
 
             test/Slic3r/Biz/Expr/ParserTests.cpp
             test/Slic3r/Biz/Expr/EvalTests.cpp

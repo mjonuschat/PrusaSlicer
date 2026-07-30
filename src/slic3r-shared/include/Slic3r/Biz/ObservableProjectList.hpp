@@ -9,19 +9,22 @@
 
 #include "Slic3r/Biz/IObservableList.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/IBackupStoreListener.hpp"
 
 #include <vector>
 
 namespace Slic3r::Biz {
 
 class ProjectInteractor;
+class BackupStore;
 
 class ObservableProjectList :
-    public Biz::IObservableList<Domain::SelectionId>,
-    public Biz::IProjectsChangedListener
+    public IObservableList<Domain::SelectionId>,
+    public IProjectsChangedListener,
+    public IBackupStoreListener
 {
 public:
-    explicit ObservableProjectList(Biz::ProjectInteractor& project_interactor);
+    explicit ObservableProjectList(ProjectInteractor& project_interactor);
 
     const Domain::SelectionId& at(size_t index) const override;
 
@@ -30,12 +33,16 @@ public:
     void on_project_added_uninitialized(Domain::SelectionId project_id) override;
     void on_project_removed(Domain::SelectionId project_id) override;
     void on_project_changed(Domain::SelectionId project_id) override;
+    void on_project_invalidation_changed(Domain::SelectionId project_id) override;
 
 private:
-    Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, ObservableProjectList>
+    ListenerScope<IProjectsChangedListener, ProjectInteractor, ObservableProjectList>
         m_project_changed_listener_scope;
 
-    Biz::ProjectInteractor& m_project_interactor;
+    ListenerScope<IBackupStoreListener, BackupStore, ObservableProjectList>
+        m_backup_store_listener_scope;
+
+    ProjectInteractor& m_project_interactor;
     using Projects = std::vector<std::unique_ptr<Domain::SelectionId>>;
     Projects m_projects;
 };

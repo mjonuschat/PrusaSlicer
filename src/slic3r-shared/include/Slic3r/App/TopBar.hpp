@@ -22,20 +22,20 @@ namespace Slic3r::App::Lua {
 class PluginSystem;
 } // namespace Slic3r::App::Lua
 
-namespace Slic3r::App {
-
-namespace Yoga {
-class ProjectButton;
+namespace Slic3r::App::Yoga {
 class LayoutButton;
 class Rectangle;
 class ScrollArea;
 class Menu;
 class MenuItem;
-} // namespace Yoga
+} // namespace Slic3r::App::Yoga
 
-struct ThumbnailStore;
+namespace Slic3r::App {
+
 class SearchBar;
 class Navigator;
+class ProjectSaver;
+class ProjectButton;
 
 class TopBar final :
     public Yoga::Window,
@@ -49,9 +49,9 @@ public:
     TopBar(
         Biz::ProjectInteractor* project_interactor,
         Platform::AbstractRenderModule* render_module,
-        ThumbnailStore& thumbnail_store,
         Navigator& navigator,
         App::Undo::Store* undo_store,
+        ProjectSaver& project_saver,
         Lua::PluginSystem* plugin_system = nullptr
     );
     ~TopBar();
@@ -89,11 +89,10 @@ private:
     void update_recent_projects();
 
 private:
-    using ProjectButtonListView = Yoga::ListView<
-        Yoga::ProjectButton,
-        Domain::SelectionId,
-        Yoga::ViewFactory<Yoga::ProjectButton, Domain::SelectionId, Biz::ProjectInteractor&>,
-        Yoga::ScrollArea>;
+    using ProjectButtonFactory = Yoga::
+        ViewFactory<ProjectButton, Domain::SelectionId, Biz::ProjectInteractor&, ProjectSaver&>;
+    using ProjectButtonListView = Yoga::
+        ListView<ProjectButton, Domain::SelectionId, ProjectButtonFactory, Yoga::ScrollArea>;
 
     Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, TopBar>
         m_selected_project_changed_listener_scope;
@@ -105,8 +104,7 @@ private:
         m_plugin_rescan_listener_scope;
 
 #ifndef USE_NATIVE_MENU
-    Biz::ListenerScope<IMenuUpdatedListener, MenuManager, TopBar>
-            m_menu_updated_listener_scope;
+    Biz::ListenerScope<IMenuUpdatedListener, MenuManager, TopBar> m_menu_updated_listener_scope;
 #endif
     ProjectButtonListView* m_list_view{nullptr};
 
@@ -130,6 +128,7 @@ private:
     SearchBar* m_search_bar{nullptr};
 
     Biz::ProjectInteractor& m_project_interactor;
+    ProjectSaver& m_project_saver;
     Platform::AbstractRenderModule* m_render_module{nullptr};
     Navigator& m_navigator;
 

@@ -94,6 +94,15 @@ public:
     ) override
     {}
 
+    void show_yesnocancel_dialog(
+        const std::string& title,
+        const std::string& text,
+        const Button& yes,
+        const Button& no,
+        const Button& cancel
+    ) override
+    {}
+
     void show_diff_dialog(
         const PresetInteractor& preset_interactor,
         std::optional<PresetKind> kind

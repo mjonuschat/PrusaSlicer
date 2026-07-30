@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Slic3r/App/ConfigSettingsDialog.hpp"
-#include "Slic3r/Biz/OverridableCBIObservableList.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;

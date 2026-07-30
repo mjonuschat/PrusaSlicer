@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/TestUtils/AppInstanceMessageHandlerScope.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include <algorithm>
 #include <chrono>
@@ -128,6 +129,7 @@ struct ArrangeInteractorFixture
 
     Domain::Workbench workbench;
     App::Platform::StdMainThreadDispatcher dispatcher;
+    Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
     App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
     Biz::ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
     Biz::Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};

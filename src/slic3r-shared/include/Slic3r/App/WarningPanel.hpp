@@ -16,7 +16,7 @@ namespace Slic3r::App {
 class WarningPanel : public Yoga::Rectangle
 {
 public:
-    WarningPanel();
+    explicit WarningPanel(Platform::Color color = Platform::Color::Error);
 
     void set_warning(const std::string& title, const std::string& text = {});
     void set_warning(const std::string& title, const std::vector<std::string>& errors);
@@ -27,4 +27,4 @@ private:
     Yoga::Text* m_text{nullptr};
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App

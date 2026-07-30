@@ -99,6 +99,7 @@
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Lua/PluginDialog.hpp"
+#include "Slic3r/App/CrashedProjectsDialog.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -128,7 +129,8 @@ PlaterRenderModule::PlaterRenderModule(
     std::shared_ptr<ThumbnailStore> thumbnail_store,
     std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
     std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
-    std::unique_ptr<Biz::Emboss::IFontManager> font_manager
+    std::unique_ptr<Biz::Emboss::IFontManager> font_manager,
+    std::shared_ptr<ProjectSaver> project_saver
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
@@ -143,7 +145,8 @@ PlaterRenderModule::PlaterRenderModule(
     ),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
-    m_thumbnail_image_generator(thumbnail_image_generator)
+    m_thumbnail_image_generator(thumbnail_image_generator),
+    m_project_saver(project_saver)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -158,15 +161,22 @@ void PlaterRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
-bool PlaterRenderModule::is_modal_dialog_opened() const
+void PlaterRenderModule::set_modal_dialog(ModalDialog modal_dialog)
 {
-    // TODO: Refactor this into a more general solution once additional modal dialogs are added
-    const bool is_number_entry_dialog_opened =
-        m_number_entry_dialog.get() && m_number_entry_dialog->opened();
-    const bool is_invalid_data_dialog_opened =
-        m_invalid_data_dialog.get() && m_invalid_data_dialog->opened();
-    return is_opened_preferences() || is_number_entry_dialog_opened
-        || is_invalid_data_dialog_opened;
+    auto handle_dialog = [&](Yoga::Popup* dialog, ModalDialog modal){
+        if (modal_dialog == modal) {
+            dialog->open();
+        } else {
+            dialog->close();
+        }
+    };
+
+    handle_dialog(m_preferences_dialog.get(), ModalDialog::Preferences);
+    handle_dialog(m_welcome_dialog.get(), ModalDialog::Welcome);
+    handle_dialog(m_number_entry_dialog.get(), ModalDialog::NumberEntry);
+    handle_dialog(m_crashed_projects_dialog.get(), ModalDialog::CrashedProjects);
+
+    request_render();
 }
 
 void PlaterRenderModule::open_invalid_data_dialog()
@@ -174,21 +184,6 @@ void PlaterRenderModule::open_invalid_data_dialog()
     if (m_invalid_data_dialog.get()) {
         set_opened_dialog(m_invalid_data_dialog.get());
     }
-}
-
-void PlaterRenderModule::set_opened_preferences(bool opened)
-{
-    if (opened) {
-        set_opened_dialog(m_preferences_dialog.get());
-    } else {
-        m_preferences_dialog->close();
-    }
-    request_render();
-}
-
-bool PlaterRenderModule::is_opened_preferences() const
-{
-    return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
 
 void PlaterRenderModule::set_object_list_collapsed(bool collapsed)
@@ -574,14 +569,16 @@ void PlaterRenderModule::init_scene_layout()
         m_project_interactor,
         *m_render_module_navigator
     );
+    m_crashed_projects_dialog =
+        std::make_unique<CrashedProjectsDialog>(m_project_interactor, *m_render_module_navigator);
 
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
         this,
-        *m_thumbnail_store,
         *m_render_module_navigator,
         &m_undo_store,
+        *m_project_saver,
         &m_plugin_system
     );
 
@@ -631,7 +628,8 @@ void PlaterRenderModule::init_scene_layout()
         m_number_entry_dialog.release(),
         m_welcome_dialog.release(),
         m_invalid_data_dialog.release(),
-        m_plugin_system.init_dialog().release()
+        m_plugin_system.init_dialog().release(),
+        m_crashed_projects_dialog.release()
     ));
     m_layout->init();
 
@@ -807,8 +805,6 @@ void PlaterRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
-    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
-    m_dialog_navigation.insert_dialog(m_number_entry_dialog.get());
     m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
@@ -1317,8 +1313,11 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
-    if (!is_modal_dialog_opened() && !m_gizmo_manager->on_scene_keyboard_event(e))
+    if (!m_render_module_navigator->is_any_modal_dialog_opened()
+        && !m_gizmo_manager->on_scene_keyboard_event(e))
+    {
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
+    }
 }
 
 void PlaterRenderModule::on_activated()

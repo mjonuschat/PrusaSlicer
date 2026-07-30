@@ -3,6 +3,10 @@
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/BitmapGetters.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
+#include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/Theme.hpp>
+
+#include <Slic3r/Biz/Algorithms/Color.hpp>
 
 #include "Slic3r/App/WX/I18N.hpp"
 
@@ -86,11 +90,31 @@ TabsBarCtrl::Button::Button(wxWindow* parent, const ButtonAppearance& appear, wx
 
 void TabsBarCtrl::Button::init_bitmaps()
 {
-    if (!m_appearance.icon_name.empty())
-        m_bmp_bundle = *get_bmp_bundle(m_appearance.icon_name, m_appearance.px_cnt);
-    if (m_appearance.has_down_arrow)
-        m_dd_bmp_bundle = *get_bmp_bundle("drop_down");
+
+    const std::string disabled_color = IsEnabled() ? std::string() :
+                                                     Slic3r::Biz::Algorithms::Color::encode_color(
+                                                         AppServices::instance().theme().color(
+                                                             Platform::Color::Text,
+                                                             Platform::ColorGroup::Disabled
+                                                         )
+                                                     );
+
+    if (!m_appearance.icon_name.empty() && !m_custom_bitmap) {
+        m_bmp_bundle =
+            *get_bmp_bundle(m_appearance.icon_name, m_appearance.px_cnt, -1, disabled_color);
+    }
+    if (m_appearance.has_down_arrow) {
+        m_dd_bmp_bundle = *get_bmp_bundle("drop_down", 16, -1);
+    }
 }
+
+void TabsBarCtrl::Button::DoEnable(bool enable)
+{
+    wxPanel::DoEnable(enable);
+    init_bitmaps();
+    Refresh();
+}
+
 
 void TabsBarCtrl::Button::messure_min_size()
 {
@@ -330,11 +354,16 @@ void TabsBarCtrl::Button::render()
 
 void TabsBarCtrl::Button::sys_color_changed()
 {
-    if (!m_appearance.icon_name.empty())
-        m_bmp_bundle = *get_bmp_bundle(m_appearance.icon_name, m_appearance.px_cnt);
+    init_bitmaps();
 
     m_background_color = m_parent->GetBackgroundColour();
     m_foreground_color = m_parent->GetForegroundColour();
+}
+
+void TabsBarCtrl::Button::set_bitmap_bundle(const wxBitmapBundle& bmp_bundle)
+{
+    m_bmp_bundle = bmp_bundle;
+    m_custom_bitmap = true;
 }
 
 bool TabsBarCtrl::Button::SetFont(const wxFont& font)
@@ -519,6 +548,11 @@ void TabsBarCtrl::set_compact_mode(bool compact_mode)
 bool TabsBarCtrl::compact_mode() const
 {
     return m_compact_mode;
+}
+
+void TabsBarCtrl::enable_buttons(bool enable)
+{
+    std::ranges::for_each(m_pageButtons, [enable](Button* button) { button->Enable(enable); });
 }
 
 void TabsBarCtrl::Rescale()

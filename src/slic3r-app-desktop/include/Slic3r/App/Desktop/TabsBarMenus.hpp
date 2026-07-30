@@ -39,25 +39,18 @@ public:
     TabsBarMenus();
     ~TabsBarMenus() = default;
 
-    void AppendMenuItem(wxMenu* menu, const wxString& title);
-    void AppendMenuSeparaorItem();
     void CreateAccountMenu();
     void UpdateAccountMenu();
 
     void Popup(TabsBarCtrl* popup_ctrl, wxMenu* menu, wxPoint pos);
     void BindEvtClose();
 
-    void        sys_color_changed();
-
     UserAccountInfo     get_user_account_info();
 
-    void set_account_menu_callbacks(std::function<void()>               cb_act_with_user_account  ,
-                                    std::function<UserAccountInfo()>    cb_get_user_account_info   )
-    {
-        m_cb_act_with_user_account   = cb_act_with_user_account;
-        m_cb_get_user_account_info   = cb_get_user_account_info;
-    }
-
+    void set_account_menu_callbacks(
+        std::function<void()> cb_act_with_user_account,
+        std::function<UserAccountInfo()> cb_get_user_account_info
+    );
 };
 
 } // namespace Slic3r::App::Desktop

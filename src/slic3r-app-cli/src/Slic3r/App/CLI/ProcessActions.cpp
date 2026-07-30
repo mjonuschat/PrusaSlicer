@@ -538,7 +538,7 @@ static bool export_projects(
         case IO::TMF: {
             try {
                 project_interactor.select_project(project_id);
-                project_interactor.save_project(
+                project_interactor.save_selected_project(
                     boost::filesystem::path{path},
                     Store3mfParam{.fullpath_sources = false}
                 );
