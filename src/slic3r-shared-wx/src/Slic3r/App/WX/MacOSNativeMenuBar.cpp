@@ -305,11 +305,6 @@ void MacOSNativeMenuBar::on_project_saved(Domain::SelectionId project_id)
     update_recent_projects();
 }
 
-void MacOSNativeMenuBar::on_menu_updated()
-{
-    build_from_menu_manager();
-}
-
 void MacOSNativeMenuBar::update_recent_projects()
 {
     // Remove all existing menu items.

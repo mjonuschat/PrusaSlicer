@@ -49,8 +49,7 @@ class MacOSNativeMenuBar :
     public Biz::IStatusCacheChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
-    public Biz::IProjectsChangedListener,
-    public IMenuUpdatedListener
+    public Biz::IProjectsChangedListener
 {
 public:
     /**
@@ -117,8 +116,6 @@ public:
 
     void on_project_loaded(Domain::SelectionId project_id) override;
     void on_project_saved(Domain::SelectionId project_id) override;
-
-    void on_menu_updated() override;
 
 private:
     void build_menu_from_name(MenuItemName menu_item_name);

@@ -16,6 +16,7 @@
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
+#include "Slic3r/App/IMenuUpdatedListener.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/IPhysicalPrinterChangedListener.hpp"
 
@@ -53,7 +54,8 @@ class MainFrame :
     public IAppConfigChangedListener,
     public Biz::IProjectsChangedListener,
     public Biz::UserAccount::IUserAccountListener,
-    public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
+    public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener,
+    public IMenuUpdatedListener
 {
 public:
     MainFrame(
@@ -89,6 +91,7 @@ public:
     void on_selected_physical_printer_changed() override;
     void on_printer_data_changed() override;
 
+    void on_menu_updated() override;
 private:
     void init_left_bar(Biz::ProjectInteractor& project_interactor);
     void init_printers_page(Biz::ProjectInteractor& project_interactor);

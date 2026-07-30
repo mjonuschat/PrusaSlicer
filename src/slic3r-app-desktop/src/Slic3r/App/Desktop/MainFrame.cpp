@@ -754,6 +754,15 @@ void MainFrame::on_printer_data_changed()
     logic->update_connection(build_physical_printer_url(selected_printer.host), payload->api_key, payload->username, payload->password);
 }
 
+void MainFrame::on_menu_updated()
+{
+#ifdef USE_NATIVE_MENU
+    m_native_menu_bar->build_from_menu_manager();
+    this->SetMenuBar(m_native_menu_bar->get_menu_bar());
+#endif
+}
+
+
 void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
 {
     ASSERT(m_left_bar);
@@ -1049,9 +1058,9 @@ void MainFrame::setup_macos_native_menu_bar()
     );
     m_project_interactor.removable_drive_service().add_status_listener(m_native_menu_bar.get());
 
-    menu_manager.add_listener<IMenuUpdatedListener>(m_native_menu_bar.get());
-    m_native_menu_bar->build_from_menu_manager();
+    menu_manager.add_listener<IMenuUpdatedListener>(this);
 
+    m_native_menu_bar->build_from_menu_manager();
     this->SetMenuBar(m_native_menu_bar->get_menu_bar());
 
     // Setup Apple menu (About, Preferences, Quit) - must be after SetMenuBar
