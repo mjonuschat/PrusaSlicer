@@ -185,7 +185,7 @@ foreach (pkg ${FOUND_PACKAGES})
           endif ()
         endif ()
     else()
-        message(status "Skipping package ${pkg}")
+        message(STATUS "Skipping package ${pkg}")
     endif ()
 endforeach()
 

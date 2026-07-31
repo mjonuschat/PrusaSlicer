@@ -1,8 +1,8 @@
 set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/PlaterScenePresenter.hpp
         src/Slic3r/App/Plater/PlaterScenePresenter.cpp
-		src/Slic3r/App/Plater/RibbonMeshGenerator.hpp
-		src/Slic3r/App/Plater/RibbonMeshGenerator.cpp
+        src/Slic3r/App/Plater/RibbonMeshGenerator.hpp
+        src/Slic3r/App/Plater/RibbonMeshGenerator.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/ToolGizmosUiInfo.hpp
@@ -418,7 +418,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/SceneNodeTag.hpp
         include/Slic3r/App/Scene/IRenderLayerObject.hpp
         include/Slic3r/App/Scene/IRenderNodeComponent.hpp
-		include/Slic3r/App/Scene/CameraProjectionParameters.hpp
+        include/Slic3r/App/Scene/CameraProjectionParameters.hpp
         include/Slic3r/App/Scene/Camera.hpp
         src/Slic3r/App/Scene/Camera.cpp
         include/Slic3r/App/Scene/CameraHelper.hpp
@@ -469,8 +469,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/MouseDragDetector.cpp
         include/Slic3r/App/Scene/MouseBindingScheme.hpp
         src/Slic3r/App/Scene/MouseBindingScheme.cpp
-		include/Slic3r/App/Scene/ClickDetector.hpp
-		src/Slic3r/App/Scene/ClickDetector.cpp
+        include/Slic3r/App/Scene/ClickDetector.hpp
+        src/Slic3r/App/Scene/ClickDetector.cpp
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
         src/Slic3r/App/Scene/GeometryDataFactory.cpp
         include/Slic3r/App/Scene/ISceneProvider.hpp
@@ -709,7 +709,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/UIItemCommand.hpp
         include/Slic3r/App/MenuBuilder.hpp
         src/Slic3r/App/MenuBuilder.cpp
-		include/Slic3r/App/IMenuUpdatedListener.hpp
+        include/Slic3r/App/IMenuUpdatedListener.hpp
         include/Slic3r/App/MenuManager.hpp
         src/Slic3r/App/MenuManager.cpp
         include/Slic3r/App/CommandBindingManager.hpp
@@ -813,18 +813,19 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/NameValidator.cpp
         include/Slic3r/Biz/Preset/ProjectPresetView.hpp
         src/Slic3r/Biz/Preset/ProjectPresetView.cpp
-#include / Slic3r / Biz / Preset / AbstractConfigManipulation.hpp
-#src / Slic3r / Biz / Preset / AbstractConfigManipulation.cpp
+        #include / Slic3r / Biz / Preset / AbstractConfigManipulation.hpp
+        #src / Slic3r / Biz / Preset / AbstractConfigManipulation.cpp
 
-#include / Slic3r / Biz / Preset / Bundle.hpp
-#src / Slic3r / Biz / Preset / Bundle.cpp
+        #include / Slic3r / Biz / Preset / Bundle.hpp
+        #src / Slic3r / Biz / Preset / Bundle.cpp
 
-	include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
+
+        include/Slic3r/Biz/Preset/IO/BundlePaths.hpp
         src/Slic3r/Biz/Preset/IO/BundlePaths.cpp
         include/Slic3r/Biz/Preset/IO/PresetLoader.hpp
         src/Slic3r/Biz/Preset/IO/PresetLoader.cpp
-	include/Slic3r/Biz/Preset/IO/PresetSaver.hpp
-	src/Slic3r/Biz/Preset/IO/PresetSaver.cpp
+        include/Slic3r/Biz/Preset/IO/PresetSaver.hpp
+        src/Slic3r/Biz/Preset/IO/PresetSaver.cpp
         include/Slic3r/Biz/Preset/IO/HwConfigLoader.hpp
         src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
         include/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp
@@ -837,7 +838,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
-	src/Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp
+        src/Slic3r/Biz/Preset/IO/PresetYamlDesc.hpp
 
         include/Slic3r/Biz/Preset/PresetEvaluator.hpp
         src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -854,8 +855,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Expr/Parser.cpp
         include/Slic3r/Biz/Expr/Eval.hpp
         src/Slic3r/Biz/Expr/Eval.cpp
-	include/Slic3r/Biz/Expr/Simplify.hpp
-	src/Slic3r/Biz/Expr/Simplify.cpp
+        include/Slic3r/Biz/Expr/Simplify.hpp
+        src/Slic3r/Biz/Expr/Simplify.cpp
 
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
@@ -942,20 +943,20 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Emboss/NSVGUtils.hpp
         include/Slic3r/Biz/Emboss/TextPresetManager.hpp
         include/Slic3r/Biz/Emboss/TextLines.hpp
-		include/Slic3r/Biz/Emboss/ShapeProvider.hpp
+        include/Slic3r/Biz/Emboss/ShapeProvider.hpp
         include/Slic3r/Biz/Emboss/SurfaceDrag.hpp
-		include/Slic3r/Biz/Emboss/SvgShapeProvider.hpp
-		include/Slic3r/Biz/Emboss/TextShapeProvider.hpp
+        include/Slic3r/Biz/Emboss/SvgShapeProvider.hpp
+        include/Slic3r/Biz/Emboss/TextShapeProvider.hpp
         include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp
         src/Slic3r/Biz/Emboss/Emboss.cpp
         src/Slic3r/Biz/Emboss/EmbossJob.cpp
         src/Slic3r/Biz/Emboss/NSVGUtils.cpp
         src/Slic3r/Biz/Emboss/TextPresetManager.cpp
         src/Slic3r/Biz/Emboss/TextLines.cpp
-		src/Slic3r/Biz/Emboss/ShapeProvider.cpp
+        src/Slic3r/Biz/Emboss/ShapeProvider.cpp
         src/Slic3r/Biz/Emboss/SurfaceDrag.cpp
-		src/Slic3r/Biz/Emboss/SvgShapeProvider.cpp
-		src/Slic3r/Biz/Emboss/TextShapeProvider.cpp
+        src/Slic3r/Biz/Emboss/SvgShapeProvider.cpp
+        src/Slic3r/Biz/Emboss/TextShapeProvider.cpp
         src/Slic3r/Biz/Emboss/stbtt_FlattenCurves.cpp
 
         include/Slic3r/Biz/Network/IHttp.hpp
@@ -1058,8 +1059,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Format/ProjectFileConstants.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
         src/Slic3r/Biz/Format/3mf.cpp
-#src / Slic3r / Biz / Format / 3mf / BuildTicket.cpp
-#src / Slic3r / Biz / Format / 3mf / BuildTicket.hpp
+        #src / Slic3r / Biz / Format / 3mf / BuildTicket.cpp
+        #src / Slic3r / Biz / Format / 3mf / BuildTicket.hpp
         src/Slic3r/Biz/Format/3mf/Metadata.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.hpp
@@ -1177,7 +1178,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Undo/BedSelectionState.cpp
         include/Slic3r/App/Undo/Stack.hpp
         src/Slic3r/App/Undo/Stack.cpp
-		include/Slic3r/App/Undo/ToolState.hpp
+        include/Slic3r/App/Undo/ToolState.hpp
 
         src/Slic3r/App/Undo/ModelSerialize.hpp
         src/Slic3r/App/Undo/ModelSerialize.cpp
@@ -1187,20 +1188,20 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Undo/ConfigContainerListSerialize.cpp
         src/Slic3r/App/Undo/BedSelectionStateSerialize.hpp
         src/Slic3r/App/Undo/BedSelectionStateSerialize.cpp
-		src/Slic3r/App/Undo/ToolStateSerialize.hpp
-		src/Slic3r/App/Undo/ToolStateSerialize.cpp
+        src/Slic3r/App/Undo/ToolStateSerialize.hpp
+        src/Slic3r/App/Undo/ToolStateSerialize.cpp
 
-		include/Slic3r/App/Lua/ProjectApi.hpp
-		src/Slic3r/App/Lua/ProjectApi.cpp
-		include/Slic3r/App/Lua/Plugin.hpp
-		src/Slic3r/App/Lua/Plugin.cpp
-		include/Slic3r/App/Lua/PluginRegistry.hpp
-		src/Slic3r/App/Lua/PluginRegistry.cpp
-		include/Slic3r/App/Lua/PluginSystem.hpp
-		src/Slic3r/App/Lua/PluginSystem.cpp
-		include/Slic3r/App/Lua/PluginDialog.hpp
-		src/Slic3r/App/Lua/PluginDialog.cpp
-		include/Slic3r/App/Lua/IPluginRescanListener.hpp
+        include/Slic3r/App/Lua/ProjectApi.hpp
+        src/Slic3r/App/Lua/ProjectApi.cpp
+        include/Slic3r/App/Lua/Plugin.hpp
+        src/Slic3r/App/Lua/Plugin.cpp
+        include/Slic3r/App/Lua/PluginRegistry.hpp
+        src/Slic3r/App/Lua/PluginRegistry.cpp
+        include/Slic3r/App/Lua/PluginSystem.hpp
+        src/Slic3r/App/Lua/PluginSystem.cpp
+        include/Slic3r/App/Lua/PluginDialog.hpp
+        src/Slic3r/App/Lua/PluginDialog.cpp
+        include/Slic3r/App/Lua/IPluginRescanListener.hpp
 
         include/Slic3r/App/CustomGCodeMigration.hpp
         src/Slic3r/App/CustomGCodeMigration.cpp
@@ -1208,60 +1209,60 @@ set(SLIC3R_SHARED_FILES
 
 if (WIN32)
     list(APPEND SLIC3R_SHARED_FILES
-        src/Slic3r/Biz/SHA256Win32.cpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.hpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.cpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryWin32.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceWin32.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.hpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.cpp
+            src/Slic3r/Biz/SHA256Win32.cpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.hpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.cpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryWin32.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceWin32.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.hpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.cpp
     )
 elseif (APPLE)
     list(APPEND SLIC3R_SHARED_FILES
-        src/Slic3r/Biz/SHA256Mac.cpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.hpp
-        include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMacWrapper.h
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
-        include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
-        src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceMac.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.hpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.h
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
+            src/Slic3r/Biz/SHA256Mac.cpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.hpp
+            include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMacWrapper.h
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
+            include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
+            src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceMac.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.hpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.h
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SLIC3R_SHARED_FILES
-        src/Slic3r/Biz/SHA256Linux.cpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.hpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.cpp
-        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryLinux.cpp
-        include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
-        src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceLinux.cpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.hpp
-        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.cpp
+            src/Slic3r/Biz/SHA256Linux.cpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.hpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.cpp
+            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryLinux.cpp
+            include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
+            src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceLinux.cpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.hpp
+            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.cpp
     )
 endif ()
 
 
 if(SLIC3R_BUILD_TESTS)
     list(APPEND SLIC3R_SHARED_FILES
-        test/Slic3r/Biz/Network/MockHttp.hpp
-        test/Slic3r/Biz/Network/MockHttpFactory.cpp
-        test/Slic3r/Biz/Network/MockHttpFactory.hpp
+            test/Slic3r/Biz/Network/MockHttp.hpp
+            test/Slic3r/Biz/Network/MockHttpFactory.cpp
+            test/Slic3r/Biz/Network/MockHttpFactory.hpp
     )
 endif()
 
 # Silence this one warning in the one legacy file.
 if (NOT MSVC)
     set_source_files_properties(
-        "src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp"
-        "src/Slic3r/Biz/Config/Legacy/Config.cpp"
-        "src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp"
-        "src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp"
-        PROPERTIES COMPILE_FLAGS "-Wno-overloaded-virtual"
+            "src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp"
+            "src/Slic3r/Biz/Config/Legacy/Config.cpp"
+            "src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp"
+            "src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp"
+            PROPERTIES COMPILE_FLAGS "-Wno-overloaded-virtual"
     )
 endif()
 
@@ -1307,9 +1308,9 @@ elseif ("${SLIC3R_YAML}" STREQUAL "ryml")
     endif ()
 
     set(SLIC3R_SHARED_FILES
-        ${SLIC3R_SHARED_FILES}
-        src/Slic3r/Biz/Yaml/YamlAdapterRyml.hpp
-        src/Slic3r/Biz/Yaml/YamlAdapterRyml.cpp
+            ${SLIC3R_SHARED_FILES}
+            src/Slic3r/Biz/Yaml/YamlAdapterRyml.hpp
+            src/Slic3r/Biz/Yaml/YamlAdapterRyml.cpp
     )
     set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_RYML")
 else ()
@@ -1334,7 +1335,7 @@ endif()
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render
-		slic3r-biz-lua
+        slic3r-biz-lua
         libvgcode
         libslic3r
         libpgcode
@@ -1356,22 +1357,22 @@ target_link_libraries(slic3r-shared PUBLIC
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE} ${USE_NATIVE_MENU_DEFINE})
 if (SLIC3R_SENTRY_DSN)
     target_compile_definitions(slic3r-shared PUBLIC
-        SLIC3R_SENTRY
-        "SLIC3R_SENTRY_DSN=\"${SLIC3R_SENTRY_DSN}\""
+            SLIC3R_SENTRY
+            "SLIC3R_SENTRY_DSN=\"${SLIC3R_SENTRY_DSN}\""
     )
 endif()
 
 if (EMSCRIPTEN)
-#target_link_libraries(slic3r - shared PUBLIC png - mt)
+    #target_link_libraries(slic3r - shared PUBLIC png - mt)
 else()
     find_package(CURL REQUIRED)
 
     add_library(libcurl INTERFACE)
     target_link_libraries(libcurl INTERFACE CURL::libcurl)
 
-#Fixing curl's cmake config script bugs
+    #Fixing curl's cmake config script bugs
     if (NOT WIN32)
-#Required by libcurl
+        #Required by libcurl
         find_package(ZLIB REQUIRED)
         target_link_libraries(libcurl INTERFACE ZLIB::ZLIB)
     else()
@@ -1381,7 +1382,7 @@ else()
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode libcurl)
 endif ()
 if (WIN32)
-        target_link_libraries(slic3r-shared PUBLIC shlwapi)
+    target_link_libraries(slic3r-shared PUBLIC shlwapi)
 endif ()
 if (APPLE)
     FIND_LIBRARY(DISKARBITRATION_LIBRARY DiskArbitration)
@@ -1397,7 +1398,7 @@ endif()
 
 if (NOT WIN32)
     if (SLIC3R_FHS)
-#CMAKE_INSTALL_FULL_DATAROOTDIR : read - only architecture - independent data root(share)
+        #CMAKE_INSTALL_FULL_DATAROOTDIR : read - only architecture - independent data root(share)
         set(SLIC3R_FHS_RESOURCES "${CMAKE_INSTALL_FULL_DATAROOTDIR}/PrusaSlicer")
         install(DIRECTORY ${SLIC3R_RESOURCES_DIR}/ DESTINATION ${SLIC3R_FHS_RESOURCES})
         target_compile_definitions(slic3r-shared PUBLIC SLIC3R_FHS SLIC3R_FHS_RESOURCES="${SLIC3R_FHS_RESOURCES}")
@@ -1411,7 +1412,7 @@ if (SLIC3R_REPO_URL)
 endif()
 
 if (SLIC3R_ENABLE_WEBKIT)
-   target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT)
 endif()
 
 if (SLIC3R_ENABLE_FORMAT_STEP)
@@ -1419,7 +1420,7 @@ if (SLIC3R_ENABLE_FORMAT_STEP)
     get_target_property(OCCT_TYPE OCCTWrapper TYPE)
     if (OCCT_TYPE STREQUAL "MODULE_LIBRARY")
         add_dependencies(slic3r-shared OCCTWrapper)
-#We cannot link against a MODULE library, so we add the include directory manually.
+        #We cannot link against a MODULE library, so we add the include directory manually.
         target_include_directories(slic3r-shared PRIVATE ${CMAKE_SOURCE_DIR}/src/occt_wrapper)
     else ()
         target_link_libraries(slic3r-shared PRIVATE OCCTWrapper)
@@ -1443,99 +1444,99 @@ if (SLIC3R_PCH)
         # without it, causing "Objective-C was disabled in PCH file but is
         # currently enabled". Just compile the header from scratch for them.
         set_source_files_properties(
-            src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
-            src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
-            PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+                src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
+                src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
+                PROPERTIES SKIP_PRECOMPILE_HEADERS ON
         )
     endif()
 endif()
 
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-shared-tests
-        test/main.cpp
+            test/main.cpp
 
-        test/Slic3r/App/DialogNavigationTests.cpp
+            test/Slic3r/App/DialogNavigationTests.cpp
 
-        test/Slic3r/App/Scene/Node.cpp
-        test/Slic3r/App/Scene/Ray.cpp
+            test/Slic3r/App/Scene/Node.cpp
+            test/Slic3r/App/Scene/Ray.cpp
         test/Slic3r/App/Scene/MouseBindingScheme.cpp
 
-        test/Slic3r/App/Plater/SurfaceMesh.cpp
+            test/Slic3r/App/Plater/SurfaceMesh.cpp
 
-        test/Slic3r/App/Yoga/ListViewTests.cpp
-        test/Slic3r/App/Yoga/LayoutTests.cpp
-        test/Slic3r/App/Yoga/DPITests.cpp
-        test/Slic3r/App/Yoga/DPILayoutTests.cpp
-        test/Slic3r/App/Yoga/ItemTreeTests.cpp
-        test/Slic3r/App/Yoga/ImGuiFixture.hpp
-        test/Slic3r/App/Yoga/YogaComponentFixture.hpp
-        test/Slic3r/App/Yoga/ButtonGroupTests.cpp
-        test/Slic3r/App/Yoga/AbstractButtonTests.cpp
-        test/Slic3r/App/Yoga/FavoriteButtonTests.cpp
-        test/Slic3r/App/Yoga/InputTextTests.cpp
-        test/Slic3r/App/Yoga/ValidatorTests.cpp
-        test/Slic3r/App/Yoga/TestRootItem.hpp
-        test/Slic3r/App/Yoga/SegmentedControlTests.cpp
-        test/Slic3r/App/Yoga/SplitLayoutTests.cpp
-        test/Slic3r/App/Yoga/ScrollAreaTests.cpp
-        test/Slic3r/App/Yoga/PopupTests.cpp
-        test/Slic3r/App/Yoga/ObjectTests.cpp
-        test/Slic3r/App/Yoga/EventTests.cpp
-        test/Slic3r/App/Yoga/ComboBoxTests.cpp
-        test/Slic3r/App/Yoga/ComboBoxListViewTests.cpp
-        test/Slic3r/App/Yoga/ComboBoxListViewSelectionTests.cpp
+            test/Slic3r/App/Yoga/ListViewTests.cpp
+            test/Slic3r/App/Yoga/LayoutTests.cpp
+            test/Slic3r/App/Yoga/DPITests.cpp
+            test/Slic3r/App/Yoga/DPILayoutTests.cpp
+            test/Slic3r/App/Yoga/ItemTreeTests.cpp
+            test/Slic3r/App/Yoga/ImGuiFixture.hpp
+            test/Slic3r/App/Yoga/YogaComponentFixture.hpp
+            test/Slic3r/App/Yoga/ButtonGroupTests.cpp
+            test/Slic3r/App/Yoga/AbstractButtonTests.cpp
+            test/Slic3r/App/Yoga/FavoriteButtonTests.cpp
+            test/Slic3r/App/Yoga/InputTextTests.cpp
+            test/Slic3r/App/Yoga/ValidatorTests.cpp
+            test/Slic3r/App/Yoga/TestRootItem.hpp
+            test/Slic3r/App/Yoga/SegmentedControlTests.cpp
+            test/Slic3r/App/Yoga/SplitLayoutTests.cpp
+            test/Slic3r/App/Yoga/ScrollAreaTests.cpp
+            test/Slic3r/App/Yoga/PopupTests.cpp
+            test/Slic3r/App/Yoga/ObjectTests.cpp
+            test/Slic3r/App/Yoga/EventTests.cpp
+            test/Slic3r/App/Yoga/ComboBoxTests.cpp
+            test/Slic3r/App/Yoga/ComboBoxListViewTests.cpp
+            test/Slic3r/App/Yoga/ComboBoxListViewSelectionTests.cpp
 
-        test/Slic3r/Biz/ProjectInteractorTests.cpp
-        test/Slic3r/Biz/ExportGcodeTests.cpp
-        test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
-        test/Slic3r/Biz/Scene/VirtualBedPreviewTests.cpp
-        test/Slic3r/Biz/WeakerPointerTests.cpp
-        test/Slic3r/Biz/ObservableListSortFilterTests.cpp
-        test/Slic3r/Biz/ObservableListTransformerTests.cpp
-        test/Slic3r/Biz/ObservableListSearcherTests.cpp
+            test/Slic3r/Biz/ProjectInteractorTests.cpp
+            test/Slic3r/Biz/ExportGcodeTests.cpp
+            test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
+            test/Slic3r/Biz/Scene/VirtualBedPreviewTests.cpp
+            test/Slic3r/Biz/WeakerPointerTests.cpp
+            test/Slic3r/Biz/ObservableListSortFilterTests.cpp
+            test/Slic3r/Biz/ObservableListTransformerTests.cpp
+            test/Slic3r/Biz/ObservableListSearcherTests.cpp
 
-        test/Slic3r/Biz/Expr/ParserTests.cpp
-        test/Slic3r/Biz/Expr/EvalTests.cpp
-        test/Slic3r/Biz/Expr/SimplifyTests.cpp
+            test/Slic3r/Biz/Expr/ParserTests.cpp
+            test/Slic3r/Biz/Expr/EvalTests.cpp
+            test/Slic3r/Biz/Expr/SimplifyTests.cpp
 
-        test/Slic3r/Biz/Yaml/YamlTests.cpp
-        test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
-        test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
-        test/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoaderTests.cpp
-        test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
-        test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
-        test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
-        test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
-        test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
-        test/Slic3r/Biz/Preset/PresetNameValidatorTests.cpp
-        test/Slic3r/Biz/Preset/JsonUtilsTests.cpp
+            test/Slic3r/Biz/Yaml/YamlTests.cpp
+            test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
+            test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
+            test/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoaderTests.cpp
+            test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
+            test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
+            test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
+            test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
+            test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
+            test/Slic3r/Biz/Preset/PresetNameValidatorTests.cpp
+            test/Slic3r/Biz/Preset/JsonUtilsTests.cpp
 
-        test/Slic3r/Biz/Slicing/TestUtils.cpp
-        test/Slic3r/Biz/Slicing/GCodeUtils.cpp
-        test/Slic3r/Biz/Slicing/ActionsTests.cpp
-        test/Slic3r/Biz/Slicing/ListenersTests.cpp
-        test/Slic3r/Biz/Slicing/ThumbnailsTests.cpp
+            test/Slic3r/Biz/Slicing/TestUtils.cpp
+            test/Slic3r/Biz/Slicing/GCodeUtils.cpp
+            test/Slic3r/Biz/Slicing/ActionsTests.cpp
+            test/Slic3r/Biz/Slicing/ListenersTests.cpp
+            test/Slic3r/Biz/Slicing/ThumbnailsTests.cpp
 
-        test/Slic3r/Biz/Config/ConfigLegacyTests.cpp
-        test/Slic3r/Biz/Config/ConfigLoadTests.cpp
-        test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
+            test/Slic3r/Biz/Config/ConfigLegacyTests.cpp
+            test/Slic3r/Biz/Config/ConfigLoadTests.cpp
+            test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
 
-        test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
-        test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
+            test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
+            test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
 
-        test/Slic3r/Biz/ArrangeInteractorTests.cpp
-        test/Slic3r/Biz/ProjectSettingsInteractorTests.cpp
+            test/Slic3r/Biz/ArrangeInteractorTests.cpp
+            test/Slic3r/Biz/ProjectSettingsInteractorTests.cpp
 
-        test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
-        test/Slic3r/Biz/PresetUpdater/PresetUpdaterActionTests.cpp
-        test/Slic3r/Biz/PresetUpdater/SemverTests.cpp
-        test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
-        test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
+            test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
+            test/Slic3r/Biz/PresetUpdater/PresetUpdaterActionTests.cpp
+            test/Slic3r/Biz/PresetUpdater/SemverTests.cpp
+            test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
+            test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
 
-        test/Slic3r/Biz/Format/3MFTests.cpp
-        test/Slic3r/Biz/Format/STEPTests.cpp
+            test/Slic3r/Biz/Format/3MFTests.cpp
+            test/Slic3r/Biz/Format/STEPTests.cpp
 
-        test/Slic3r/Biz/BundleCacheTests.cpp
+            test/Slic3r/Biz/BundleCacheTests.cpp
 
         test/Slic3r/App/CustomGCodeMigrationTests.cpp
     )
@@ -1547,12 +1548,12 @@ if(SLIC3R_BUILD_TESTS)
         add_dependencies(slic3r-shared-tests OCCTWrapper)
         target_compile_definitions(slic3r-shared-tests PRIVATE SLIC3R_ENABLE_FORMAT_STEP=$<BOOL:${SLIC3R_ENABLE_FORMAT_STEP}>)
 
-#Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
+        #Copy OCCTWrapper library next to the test executable so it can be loaded at runtime
         add_custom_command(TARGET slic3r-shared-tests POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_FILE:OCCTWrapper>
                 $<TARGET_FILE_DIR:slic3r-shared-tests>
-            COMMENT "Copying OCCTWrapper library for tests"
+                COMMENT "Copying OCCTWrapper library for tests"
         )
     endif()
 
@@ -1561,8 +1562,8 @@ if(SLIC3R_BUILD_TESTS)
     target_compile_definitions(slic3r-shared-tests PRIVATE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)")
 
     add_test(NAME slic3r-shared-tests
-        COMMAND slic3r-shared-tests ${CATCH_ALL_ARGS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND slic3r-shared-tests ${CATCH_ALL_ARGS}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
     if (WIN32)

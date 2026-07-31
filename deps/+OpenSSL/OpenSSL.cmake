@@ -6,6 +6,13 @@ set(_conf_cmd "./config")
 set(_cross_arch "")
 set(_cross_comp_prefix_line "")
 set(_apple_target_flags "")
+
+if (WIN32)
+    set(_exclude_from_all ON)
+else ()
+    set(_exclude_from_all OFF)
+endif ()
+
 if (APPLE)
     # OpenSSL's own ./config/./Configure has no notion of CMAKE_OSX_ARCHITECTURES - unlike
     # the CMake-based deps (add_cmake_project forwards it automatically), this is a raw
@@ -47,7 +54,7 @@ elseif (CMAKE_CROSSCOMPILING)
 endif ()
 
 ExternalProject_Add(dep_OpenSSL
-    EXCLUDE_FROM_ALL ON
+    EXCLUDE_FROM_ALL ${_exclude_from_all}
     URL "https://github.com/openssl/openssl/releases/download/openssl-4.0.1/openssl-4.0.1.tar.gz"
     URL_HASH SHA256=2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09
     DOWNLOAD_DIR ${${PROJECT_NAME}_DEP_DOWNLOAD_DIR}/OpenSSL
