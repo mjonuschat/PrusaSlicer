@@ -149,9 +149,20 @@ public:
         return new_name;
     }
 
+    NamesPerKindMap show_save_print_tool_dialog(
+        const NamesPerKindMap& original_names_per_kind,
+        const Slic3r::Biz::Preset::PresetInteractor& preset_interactor
+    )
+    {
+        return new_print_tool_names;
+    }
 
     Slic3r::Biz::Preset::PresetDiffOperation operation = Slic3r::Biz::Preset::PresetDiffOperation::Save;
     std::string new_name{"test"};
+    NamesPerKindMap new_print_tool_names = {
+        {Slic3r::Domain::Preset::PresetKind::FdmPrint, {"print_test"}},
+        {Slic3r::Domain::Preset::PresetKind::FdmToolPrint, {"tool1_test", "tool2_test"}}
+    };
 };
 
 

@@ -39,6 +39,7 @@ public:
     virtual ~IPresetDialogManager() = default;
 
     using PresetsSwitchStates = std::map<PresetSwitchKindId, PresetSwitchState>;
+    using NamesPerKindMap = std::map<Domain::Preset::PresetKind, std::vector<std::string>>;
 
     virtual PresetsSwitchStates show_unsaved_changes_dialog(
         const std::string& dialog_name,
@@ -54,6 +55,11 @@ public:
     virtual std::string show_save_dialog(
         Domain::Preset::PresetKind kind,
         const std::string& original_name,
+        const PresetInteractor& preset_interactor
+    ) = 0;
+
+    virtual NamesPerKindMap show_save_print_tool_dialog(
+        const NamesPerKindMap& original_names_per_kind,
         const PresetInteractor& preset_interactor
     ) = 0;
 };

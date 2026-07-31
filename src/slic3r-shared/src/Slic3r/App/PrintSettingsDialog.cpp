@@ -239,19 +239,10 @@ PrintSettingsDialog::PrintSettingsDialog(
     compare_button->set_flex_shrink(0);
 
     m_save_button = AbstractSettingsDialog::add_footer_button(m_footer, _u8L("Save preset"));
-
-    m_save_preset_menu = m_save_button->emplace_back<Menu>("SavePresetMenu", Position::Top);
-    MenuItem* save_print_preset_button =
-        m_save_preset_menu->append_item(Biz::_u8L("Print preset"), Render::Icon::PrinterIconMarker);
-    save_print_preset_button->callbacks().action = [this]
+    m_save_button->callbacks().action = [this]
     {
-        m_project_interactor.preset_interactor().save_user_preset(
-            Domain::Preset::PresetKind::FdmPrint,
-            0
-        );
+        m_project_interactor.preset_interactor().save_user_tool_print_presets();
     };
-
-    m_save_button->callbacks().action = [this] { m_save_preset_menu->open(); };
 
     if (m_category_page_list_view->list_item_count()) {
         m_category_page_list_view->item_at(0)->set_checked(true);

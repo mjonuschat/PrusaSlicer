@@ -109,12 +109,7 @@ public:
         Domain::Preset::PresetKind kind,
         size_t slot_index
     );
-    void save_user_preset(
-        Domain::Preset::PresetKind kind,
-        size_t slot_index,
-        const KeySet& item_names_to_omit,
-        std::string new_name = {}
-    );
+    void save_user_tool_print_presets();
 
     const PresetInteractorConfigContainerContext& config_container_context(
         Domain::SelectionId project_id,

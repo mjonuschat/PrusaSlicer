@@ -22,6 +22,8 @@
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
 #include <wx/combobox.h>
+#include <wx/statline.h>
+#include <wx/scrolwin.h>
 
 namespace Slic3r::App::WX {
 
@@ -68,13 +70,22 @@ void SavePresetDialog::Item::init_input_name_ctrl(
         }
         m_combo->SetValue(from_u8(preset_name));
 
-        m_combo->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_state(); });
+        m_combo->Bind(
+            wxEVT_TEXT,
+            [this](wxCommandEvent&)
+            {
+                update_state();
+                if (m_dialog) {
+                    m_dialog->check_reserved_preset_names(this->kind());
+                }
+            }
+        );
 
         input_name_sizer->Add(m_combo, 1, wxEXPAND, BORDER_W);
     }
 }
 
-static std::string top_label(Domain::Preset::PresetKind kind)
+static std::string top_label(Domain::Preset::PresetKind kind, size_t slot_index)
 {
     switch (kind) {
     case Domain::Preset::PresetKind::FdmPrinter:
@@ -84,7 +95,11 @@ static std::string top_label(Domain::Preset::PresetKind kind)
     case Domain::Preset::PresetKind::SlaPrint:
         return Biz::_u8L("Save print settings as");
     case Domain::Preset::PresetKind::FdmToolPrint:
-        return Biz::_u8L("Save tool print settings as");
+        return fmt::format(
+            // TRN {} is an index of tool print
+            fmt::runtime(Biz::_u8L("Save settings for tool print {} as")),
+            slot_index + 1
+        );
     case Domain::Preset::PresetKind::SlaToolPrint:
         return Biz::_u8L("Save tool settings as");
     case Domain::Preset::PresetKind::FdmMaterial:
@@ -99,6 +114,7 @@ static std::string top_label(Domain::Preset::PresetKind kind)
 
 SavePresetDialog::Item::Item(
     PresetKind kind,
+    size_t slot_index,
     const std::string& name,
     const std::string& suffix,
     wxBoxSizer* sizer,
@@ -106,16 +122,18 @@ SavePresetDialog::Item::Item(
     bool is_for_multiple_save
 ) :
     m_kind(kind),
+    m_slot_index(slot_index),
     m_validator(parent->preset_interactor(), kind, name, parent->is_for_rename()),
     m_use_text_ctrl(parent->is_for_rename()),
-    m_parent(parent),
+    m_dialog(parent),
+    m_parent(parent->items_parent()),
     m_valid_bmp(new wxStaticBitmap(m_parent, wxID_ANY, *get_bmp_bundle("tick_mark"))),
     m_valid_label(new wxStaticText(m_parent, wxID_ANY, wxEmptyString))
 {
     m_valid_label->SetFont(w_config()->bold_font());
 
-    wxStaticText* label_top = is_for_multiple_save ?
-        new wxStaticText(m_parent, wxID_ANY, from_u8(top_label(m_kind)) + from_u8(":")) :
+    wxCheckBox* preset_selector = is_for_multiple_save ?
+        new wxCheckBox(m_parent, wxID_ANY, from_u8(top_label(m_kind, slot_index)) + from_u8(":")) :
         nullptr;
 
     wxBoxSizer* input_name_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -130,14 +148,15 @@ SavePresetDialog::Item::Item(
             break;
         }
     }
-#ifndef  NDEBUG
+#ifndef NDEBUG
     if (init_name.empty()) {
         SPDLOG_ERROR(
             "Cannot find '{}' in {}",
             name,
             fmt::join(
                 m_validator.preset_names()
-                    | std::views::transform([](const auto& pn) { return fmt::format("- '{}'", pn.name); }),
+                    | std::views::transform([](const auto& pn)
+                                            { return fmt::format("- '{}'", pn.name); }),
                 "\n"
             )
         );
@@ -146,10 +165,28 @@ SavePresetDialog::Item::Item(
 
     init_input_name_ctrl(input_name_sizer, init_name.empty() ? name : init_name);
 
-    if (label_top)
-        sizer->Add(label_top, 0, wxEXPAND | wxTOP | wxBOTTOM, BORDER_W);
-    sizer->Add(input_name_sizer, 0, wxEXPAND | (label_top ? 0 : wxTOP) | wxBOTTOM, BORDER_W);
+    if (preset_selector)
+        sizer->Add(preset_selector, 0, wxEXPAND | wxTOP | wxBOTTOM, BORDER_W);
+    sizer->Add(input_name_sizer, 0, wxEXPAND | (preset_selector ? 0 : wxTOP) | wxBOTTOM, BORDER_W);
     sizer->Add(m_valid_label, 0, wxEXPAND | wxLEFT, 3 * BORDER_W);
+    if (preset_selector)
+        sizer->Add(new wxStaticLine(m_parent), 0, wxEXPAND | wxTOP | wxBOTTOM, BORDER_W);
+
+    if (preset_selector) {
+        preset_selector->SetValue(true);
+        preset_selector->Bind(
+            wxEVT_CHECKBOX,
+            [&](wxCommandEvent& event)
+            {
+                m_selected = event.IsChecked();
+                if (m_dialog) {
+                    m_dialog->check_reserved_preset_names(this->kind());
+                }
+                if (m_combo)
+                    m_combo->Enable(m_selected);
+            }
+        );
+    }
 
     update_state();
 }
@@ -189,7 +226,9 @@ std::string SavePresetDialog::Item::preset_name() const
     return existed_preset_name;
 }
 
-void SavePresetDialog::Item::set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names)
+void SavePresetDialog::Item::set_reserved_preset_names(
+    const std::vector<std::string>& reserved_preset_names
+)
 {
     m_validator.set_reserved_preset_names(reserved_preset_names);
     update_state();
@@ -201,8 +240,8 @@ void SavePresetDialog::Item::update_state()
 
     const auto validation_res = m_validator.validate(m_preset_name);
 
-    m_valid_type       = validation_res.type;
-    wxString info_line = from_u8(validation_res.message);
+    m_valid_type       = m_selected ? validation_res.type : ValidationType::Undef;
+    wxString info_line = m_selected ? from_u8(validation_res.message) : wxString();
 
     // Parent is expected to be SavePresetDialog
     SavePresetDialog* dlg = dynamic_cast<SavePresetDialog*>(m_parent);
@@ -215,12 +254,16 @@ void SavePresetDialog::Item::update_state()
 
     update_valid_bmp();
 
-    m_parent->Layout();
+    if (m_dialog)
+        m_dialog->refit();
+    else
+        m_parent->Layout();
 }
 
 void SavePresetDialog::Item::update_valid_bmp()
 {
     std::string bmp_name = m_valid_type == ValidationType::Warning ? "exclamation_manifold" :
+        m_valid_type == ValidationType::Undef                      ? "exclamation_triangle" :
         m_valid_type == ValidationType::Invalid                    ? "exclamation" :
                                                                      "tick_mark";
     m_valid_bmp->SetBitmap(*get_bmp_bundle(bmp_name));
@@ -239,7 +282,7 @@ void SavePresetDialog::Item::Enable(bool enable /*= true*/)
 
 SavePresetDialog::SavePresetDialog(
     wxWindow* parent,
-    std::map<PresetKind, std::string> names_per_kinds,
+    NamesPerKindMap names_per_kinds,
     const Biz::Preset::IPresetNameProvider& preset_interactor,
     std::string suffix,
     bool template_filament /* =false*/
@@ -250,7 +293,9 @@ SavePresetDialog::SavePresetDialog(
         names_per_kinds.size() == 1 ? _L("Save preset") : _L("Save presets"),
         wxDefaultPosition,
         wxSize(45 * w_config()->em_unit(), 5 * w_config()->em_unit()),
-        wxDEFAULT_DIALOG_STYLE | wxICON_WARNING
+        wxDEFAULT_DIALOG_STYLE
+            | (names_per_kinds.size() == 1 ? 0 : wxRESIZE_BORDER)
+            | wxICON_WARNING
     ),
     m_preset_interactor(preset_interactor)
 {
@@ -276,13 +321,13 @@ SavePresetDialog::SavePresetDialog(
     m_info_line_extension(from_u8(info_line_extension)),
     m_preset_interactor(preset_interactor)
 {
-    build({{kind, name}});
+    build({{kind, {name}}});
 }
 
 SavePresetDialog::~SavePresetDialog() = default;
 
 void SavePresetDialog::build(
-    const std::map<PresetKind, std::string>& names_per_kinds,
+    const NamesPerKindMap& names_per_kinds,
     std::string suffix,
     bool template_filament
 )
@@ -298,16 +343,45 @@ void SavePresetDialog::build(
     m_presets_sizer = new wxBoxSizer(wxVERTICAL);
 
     const bool is_for_multiple_save = names_per_kinds.size() > 1;
-    for (const auto& [kind, name] : names_per_kinds)
-        AddItem(kind, name, suffix, is_for_multiple_save);
+    if (is_for_multiple_save) {
+        // When several presets are saved at once, the list of the Items can be quite long,
+        // so place it into the scrollable area to keep the dialog inside the screen.
+        m_scrolled_panel = new wxScrolledWindow(
+            this,
+            wxID_ANY,
+            wxDefaultPosition,
+            wxDefaultSize,
+            wxVSCROLL | wxBORDER_NONE
+        );
+        m_scrolled_panel->SetScrollRate(0, w_config()->em_unit());
+        m_scrolled_panel->SetSizer(m_presets_sizer);
+    }
+    for (const auto& [kind, names] : names_per_kinds) {
+        for (size_t slot_index{}; slot_index < names.size(); slot_index++) {
+            AddItem(kind, slot_index, names.at(slot_index), suffix, is_for_multiple_save);
+        }
+    }
+
+    if (m_scrolled_panel) {
+        // Limit the height of the scrolled area, but keep the full width,
+        // so no horizontal scrolling is needed.
+        const int max_height    = 50 * w_config()->em_unit();
+        const wxSize content_sz = m_presets_sizer->CalcMin();
+        m_scrolled_panel->SetMinSize(wxSize(wxDefaultCoord, std::min(content_sz.y, max_height)));
+        m_scrolled_panel->FitInside();
+    }
 
     // Add dialog's buttons
     wxStdDialogButtonSizer* btns = this->CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     wxButton* btnOK              = static_cast<wxButton*>(this->FindWindowById(wxID_OK, this));
+
     btnOK->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { accept(); });
     btnOK->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) { evt.Enable(enable_ok_btn()); });
 
-    topSizer->Add(m_presets_sizer, 0, wxEXPAND | wxALL, BORDER_W);
+    if (m_scrolled_panel)
+        topSizer->Add(m_scrolled_panel, 1, wxEXPAND | wxALL, BORDER_W);
+    else
+        topSizer->Add(m_presets_sizer, 0, wxEXPAND | wxALL, BORDER_W);
 
     // Add checkbox for Template filament saving
     if (template_filament
@@ -336,19 +410,28 @@ void SavePresetDialog::build(
 
 void SavePresetDialog::AddItem(
     PresetKind kind,
+    size_t slot_index,
     const std::string& name,
     const std::string& suffix,
     bool is_for_multiple_save
 )
 {
     m_items.emplace_back(
-        std::make_unique<Item>(kind, name, suffix, m_presets_sizer, this, is_for_multiple_save)
+        std::make_unique<
+            Item>(kind, slot_index, name, suffix, m_presets_sizer, this, is_for_multiple_save)
     );
+    check_reserved_preset_names(kind);
 }
 
 const Biz::Preset::IPresetNameProvider& SavePresetDialog::preset_interactor() const
 {
     return m_preset_interactor;
+}
+
+wxWindow* SavePresetDialog::items_parent()
+{
+    return m_scrolled_panel ? static_cast<wxWindow*>(m_scrolled_panel) :
+                              static_cast<wxWindow*>(this);
 }
 
 std::string SavePresetDialog::get_name() const
@@ -366,6 +449,20 @@ std::string SavePresetDialog::get_name(PresetKind kind) const
     PANIC("SavePresetDialog::get_name(): preset kind not present in dialog");
 }
 
+SavePresetDialog::NamesPerKindMap SavePresetDialog::get_names_per_kind() const
+{
+    NamesPerKindMap ret{};
+    for (const auto& item : m_items) {
+        std::string preset_name = item->is_selected() ? item->preset_name() : std::string{};
+        if (ret.contains(item->kind())) {
+            ret.at(item->kind()).emplace_back(preset_name);
+        } else {
+            ret[item->kind()] = {preset_name};
+        }
+    }
+    return ret;
+}
+
 bool SavePresetDialog::get_template_filament_checkbox() const
 {
     if (m_template_filament_checkbox) {
@@ -379,7 +476,10 @@ const wxString& App::WX::SavePresetDialog::get_info_line_extension() const
     return m_info_line_extension;
 }
 
-void SavePresetDialog::set_reserved_preset_names(PresetKind kind, const std::vector<std::string>& reserved_preset_names)
+void SavePresetDialog::set_reserved_preset_names(
+    PresetKind kind,
+    const std::vector<std::string>& reserved_preset_names
+)
 {
     for (const auto& item : m_items) {
         if (item->kind() == kind) {
@@ -389,20 +489,52 @@ void SavePresetDialog::set_reserved_preset_names(PresetKind kind, const std::vec
     }
 }
 
-bool SavePresetDialog::enable_ok_btn() const
+void SavePresetDialog::check_reserved_preset_names(PresetKind kind)
 {
-    for (const auto& item : m_items)
-        if (!item->is_valid())
-            return false;
+    if (m_items.size() == 1)
+        return;
 
-    return true;
+    auto items_with_kind =
+        m_items | std::views::filter([kind](const auto& item) { return item->kind() == kind; });
+
+    for (const auto& item_checked : items_with_kind) {
+        std::vector<std::string> reserved_preset_names{};
+        if (size_t slot_index{item_checked->slot_index()}; slot_index > 0) {
+            for (const auto& item : items_with_kind) {
+                if (item->is_selected() && item->slot_index() < slot_index) {
+                    reserved_preset_names.emplace_back(item->preset_name());
+                }
+            }
+        }
+        item_checked->set_reserved_preset_names(reserved_preset_names);
+    }
 }
 
-bool SavePresetDialog::Layout()
+bool SavePresetDialog::enable_ok_btn() const
 {
-    const bool ret = wxDialog::Layout();
-    this->Fit();
-    return ret;
+    bool is_any_selected{false};
+    for (const auto& item : m_items) {
+        if (item->is_selected() && !item->is_valid())
+            return false;
+        is_any_selected |= item->is_selected();
+    }
+
+    return is_any_selected;
+}
+
+void SavePresetDialog::refit()
+{
+    if (!GetSizer()) {
+        // Called from constructor
+        return;
+    }
+    if (m_scrolled_panel) {
+        m_scrolled_panel->Layout();
+    } else {
+        SetMinSize(wxDefaultSize);
+        InvalidateBestSize();
+        Fit();
+    }
 }
 
 bool SavePresetDialog::is_for_rename() const

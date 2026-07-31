@@ -15,6 +15,7 @@ class NameValidator
 public:
     enum class ValidationType
     {
+        Undef,
         Valid,
         Invalid,
         Warning

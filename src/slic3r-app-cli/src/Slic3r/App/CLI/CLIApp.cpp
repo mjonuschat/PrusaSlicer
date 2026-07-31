@@ -162,6 +162,14 @@ public:
         return "";
     }
 
+    NamesPerKindMap show_save_print_tool_dialog(
+        const NamesPerKindMap& original_names_per_kind,
+        const PresetInteractor& preset_interactor
+    ) override
+    {
+        return {};
+    }
+
     Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector show_preset_sources_dialog(
         const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
     ) override

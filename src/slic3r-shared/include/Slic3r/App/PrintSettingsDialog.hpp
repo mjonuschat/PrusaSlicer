@@ -119,7 +119,6 @@ private:
     Yoga::Item* m_footer{nullptr};
     Yoga::LayoutButton* m_revert_button{nullptr};
     Yoga::LayoutButton* m_save_button{nullptr};
-    Yoga::Menu* m_save_preset_menu{nullptr};
     PageListView* m_category_page_list_view{nullptr};
     PageListView* m_extruder_page_list_view{nullptr};
 

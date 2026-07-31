@@ -285,13 +285,31 @@ std::string DialogManager::show_save_dialog(
     const Biz::Preset::PresetInteractor& preset_interactor
 )
 {
-    const std::map<Domain::Preset::PresetKind, std::string> kind_name{{kind, original_name}};
+    const SavePresetDialog::NamesPerKindMap kind_name{{kind, {original_name}}};
     SavePresetDialog save_dlg(nullptr, kind_name, preset_interactor, "");
 
     if (save_dlg.ShowModal() == wxID_OK)
         return save_dlg.get_name();
     else
         return "";
+}
+
+Biz::Preset::IPresetDialogManager::NamesPerKindMap DialogManager::show_save_print_tool_dialog(
+    const NamesPerKindMap& original_names_per_kind,
+    const Biz::Preset::PresetInteractor& preset_interactor
+)
+{
+    using namespace Domain::Preset;
+    ASSERT(
+        original_names_per_kind.at(PresetKind::FdmPrint).size() == 1
+        && original_names_per_kind.at(PresetKind::FdmToolPrint).size() > 1
+    );
+    SavePresetDialog save_dlg(nullptr, original_names_per_kind, preset_interactor, "");
+
+    if (save_dlg.ShowModal() == wxID_OK)
+        return save_dlg.get_names_per_kind();
+    else
+        return {};
 }
 
 std::string DialogManager::show_ramming_dialog(const std::string& ramming_parameters)

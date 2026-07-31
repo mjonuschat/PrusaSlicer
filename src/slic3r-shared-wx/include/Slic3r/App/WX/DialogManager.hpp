@@ -60,6 +60,10 @@ public:
         const std::string& original_name,
         const Biz::Preset::PresetInteractor& preset_interactor
     ) override;
+    NamesPerKindMap show_save_print_tool_dialog(
+        const NamesPerKindMap& original_names_per_kind,
+        const Biz::Preset::PresetInteractor& preset_interactor
+    ) override;
 
     std::string show_ramming_dialog(const std::string& ramming_parameters) override;
     std::optional<Biz::StepLoadDialogResult> show_load_step_dialog(

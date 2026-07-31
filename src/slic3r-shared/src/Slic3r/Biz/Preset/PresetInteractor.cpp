@@ -517,16 +517,59 @@ void PresetInteractor::save_user_preset(
     save_user_preset_internal(kind, slot_index, {}, std::move(new_name), bag);
 }
 
-void PresetInteractor::save_user_preset(
-    Domain::Preset::PresetKind kind,
-    size_t slot_index,
-    const KeySet& item_names_to_omit,
-    std::string new_name
-)
+void PresetInteractor::save_user_tool_print_presets()
 {
     InvokeLaterBag bag;
+    const auto& selected_preset = selected_printer_preset();
+    ASSERT(selected_preset.technology() == Domain::PrinterTechnology::FFF);
+
+    using namespace Domain::Preset;
+    const size_t tools_cnt = selected_preset.tools.size();
+    if (tools_cnt == 1) {
+        save_user_preset(PresetKind::FdmPrint, 0);
+        return;
+    }
+
+    IPresetDialogManager::NamesPerKindMap original_names_per_kind = {
+        {PresetKind::FdmPrint, {std::string{selected_preset.print.short_name()}}},
+        {PresetKind::FdmToolPrint, {std::string{selected_preset.tools.at(0).short_name()}}}
+    };
+    for (size_t slot_index{1}; slot_index < tools_cnt; slot_index++) {
+        original_names_per_kind.at(PresetKind::FdmToolPrint)
+            .emplace_back(selected_preset.tools.at(slot_index).short_name());
+    };
+
     m_unsaved_changes_selected_ids = from_selected_preset(selected_printer_preset());
-    save_user_preset_internal(kind, slot_index, item_names_to_omit, std::move(new_name), bag);
+    ASSERT(m_dialog_manager != nullptr);
+    IPresetDialogManager::NamesPerKindMap new_names =
+        m_dialog_manager->show_save_print_tool_dialog(original_names_per_kind, *this);
+
+    if (new_names.empty()) {
+        // cancel was pressed
+        return;
+    }
+
+    if (!new_names.at(PresetKind::FdmPrint).front().empty()) {
+        save_user_preset_internal(
+            PresetKind::FdmPrint,
+            0,
+            {},
+            std::move(new_names.at(PresetKind::FdmPrint).front()),
+            bag
+        );
+    }
+
+    for (size_t slot_index{}; slot_index < tools_cnt; slot_index++) {
+        if (new_names.at(PresetKind::FdmToolPrint).at(slot_index).empty())
+            continue;
+        save_user_preset_internal(
+            PresetKind::FdmToolPrint,
+            slot_index,
+            {},
+            new_names.at(PresetKind::FdmToolPrint).at(slot_index),
+            bag
+        );
+    };
 }
 
 void PresetInteractor::save_user_preset_internal(

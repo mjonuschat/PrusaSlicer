@@ -56,6 +56,7 @@ NameValidator::NameValidator(
 
 void NameValidator::set_reserved_preset_names(const std::vector<std::string>& reserved_preset_names)
 {
+    m_casei_reserved_preset_names.clear();
     for (const std::string& preset_name : reserved_preset_names) {
         m_casei_reserved_preset_names.emplace_back(boost::to_lower_copy<std::string>(preset_name));
     }
@@ -124,12 +125,16 @@ NameValidator::ValidationResult NameValidator::validate(const std::string& prese
         valid_type = ValidationType::Invalid;
     }
 
-    if (std::find(m_casei_reserved_preset_names.cbegin(),
-                  m_casei_reserved_preset_names.cend(),
-                  boost::to_lower_copy<std::string>(preset_name))
+    if (std::find(
+            m_casei_reserved_preset_names.cbegin(),
+            m_casei_reserved_preset_names.cend(),
+            boost::to_lower_copy<std::string>(preset_name)
+        )
         != m_casei_reserved_preset_names.cend())
     {
-        info_line  = _u8L("This name is already reserved, use another.");
+        info_line = _u8L(
+            "One of the presets above of the same type already uses this name."
+        );
         valid_type = ValidationType::Invalid;
     }
 

@@ -641,7 +641,8 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
 
             SavePresetDialog save_dlg(
                 this,
-                {{kind_id.kind, preset_name(m_preset_names, kind_id.kind, kind_id.id.value_or(0))}},
+                {{kind_id.kind,
+                  {preset_name(m_preset_names, kind_id.kind, kind_id.id.value_or(0))}}},
                 m_preset_interactor
             );
             if (kind_id.kind == PresetKind::FdmMaterial) {
