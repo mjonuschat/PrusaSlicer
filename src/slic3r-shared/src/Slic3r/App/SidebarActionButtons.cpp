@@ -84,6 +84,7 @@ void SidebarActionButtons::init_physical_printer_ui()
         [](size_t) {}
     );
 
+    m_physical_printer_button->set_bin_supported(false);
     m_physical_printer_button->set_visible(true);
     m_physical_printer_button->set_self_align(YGAlignStretch);
     m_physical_printer_button->set_flex_grow(1.f);
@@ -168,8 +169,6 @@ void SidebarActionButtons::refresh_physical_printer_button()
         physical_printer_interactor.selected_physical_printer_data();
 
     m_physical_printer_button->set_state(physical_printer);
-    m_physical_printer_button->update();
-    m_physical_printer_button->set_visible_bin(false);
 
     update_buttons();
 

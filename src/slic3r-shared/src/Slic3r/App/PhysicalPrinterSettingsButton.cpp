@@ -103,7 +103,7 @@ void PhysicalPrinterSettingsButton::update()
                     set_icon(Render::Icon::PhysicalPrinterIcon);
                 }
                 set_visible_cog(true);
-                set_visible_bin(true);
+                set_visible_bin(m_is_bin_supported);
             } else if constexpr (
                 std::is_same_v<T, Slic3r::Biz::PhysicalPrinter::FileSystemExport>
             ) {
@@ -135,6 +135,14 @@ void PhysicalPrinterSettingsButton::set_visible_bin(bool is_visible)
     if (m_is_visible_bin != is_visible) {
         m_is_visible_bin = is_visible;
         update_btns_visibility();
+    }
+}
+
+void PhysicalPrinterSettingsButton::set_bin_supported(bool is_supported)
+{
+    if (m_is_bin_supported != is_supported) {
+        m_is_bin_supported = is_supported;
+        update();
     }
 }
 

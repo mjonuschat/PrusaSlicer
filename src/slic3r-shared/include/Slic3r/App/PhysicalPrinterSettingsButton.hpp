@@ -34,7 +34,7 @@ public:
 
     void set_icon(Render::Icon icon);
 
-    void set_visible_bin(bool is_visible);
+    void set_bin_supported(bool is_supported);
     void set_visible_expand_icon(bool is_visible);
     std::function<void()>& on_bin();
 
@@ -50,6 +50,8 @@ protected:
     void update_btns_visibility() override;
 
 private:
+    void set_visible_bin(bool is_visible);
+
     FnIndexClicked m_on_clicked;
     FnIndexClicked m_on_cog_clicked;
     FnIndexClicked m_on_bin_clicked;
@@ -57,6 +59,7 @@ private:
     Yoga::LayoutButton* m_bin_btn{nullptr};
     Yoga::Icon* m_expand_icon{nullptr};
     bool m_is_visible_bin{false};
+    bool m_is_bin_supported{true};
 
     Yoga::Icon* m_attention_icon{nullptr};
 };
