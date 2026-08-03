@@ -15,6 +15,7 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/App/Platform/CommandRegistry.hpp
     src/Slic3r/App/Platform/CommandRegistry.cpp
     include/Slic3r/App/Platform/CommandName.hpp
+    src/Slic3r/App/Platform/ICommand.cpp
     include/Slic3r/App/Platform/IFileExplorerHandler.hpp
     include/Slic3r/App/Platform/IFileExplorerErrorListener.hpp
     include/Slic3r/Biz/Platform/IMainThreadDispatcher.hpp

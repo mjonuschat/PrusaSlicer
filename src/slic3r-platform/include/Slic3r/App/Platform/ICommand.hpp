@@ -43,23 +43,9 @@ public:
         return true;
     }
 
-    std::string keyboard_shortcut_string(KeyboardShortcut::Translator translator) const
-    {
-        return keyboard_shortcuts() ? keyboard_shortcuts().value().front().to_string(translator) :
-                                     std::string();
-    }
+    std::string keyboard_shortcut_string(KeyboardShortcut::Translator translator) const;
 
-    std::vector<std::string> keyboard_shortcut_accel_string() const
-    {
-        std::vector<std::string> ret;
-        if (keyboard_shortcuts()) {
-            KeyboardShortcuts kb_shortcuts = keyboard_shortcuts().value();
-            for (const KeyboardShortcut& kb_shortcut : kb_shortcuts) {
-                ret.emplace_back(kb_shortcut.to_accel_table_string());
-            }
-        }
-        return ret;
-    }
+    std::vector<std::string> keyboard_shortcut_accel_string() const;
 };
 
 struct FuncCommandExtraOpts

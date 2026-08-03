@@ -450,14 +450,6 @@ void PlaterRenderModule::register_commands()
                 FuncCommandExtraOpts{
                     .keyboard_shortcuts =
                         Platform::KeyboardShortcuts{
-                            Platform::KeyboardShortcut{
-                                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                                Platform::KeyCode::Num6
-                            },
-                            Platform::KeyboardShortcut{
-                                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                                Platform::KeyCode::Kp6
-                            },
                             Platform::KeyboardShortcut{0, Platform::KeyCode::Tab}
                         }
                 }
