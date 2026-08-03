@@ -83,7 +83,7 @@ variants:
     first_layer_acceleration_over_raft: 0
     first_layer_extrusion_width: 0.5
     first_layer_speed: 40
-    first_layer_infill_speed: 100
+    first_layer_solid_infill_speed: 100
     first_layer_speed_over_raft: 30
     gap_fill_enabled: 1
     gap_fill_speed: 120

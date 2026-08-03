@@ -26,7 +26,7 @@ variants:
     first_layer_acceleration_over_raft: 0
     first_layer_extrusion_width: 0.5
     first_layer_speed: 40
-    first_layer_infill_speed: 100
+    first_layer_solid_infill_speed: 100
     first_layer_speed_over_raft: 30
     gap_fill_enabled: 1
     gap_fill_speed: 120
@@ -590,7 +590,7 @@ variants:
           infill_anchor_max: 20
           support_material_speed: 90
           fill_density: 20%
-          first_layer_infill_speed: 70
+          first_layer_solid_infill_speed: 70
           over_bridge_speed: 0
         variants:
 # 0.6HF/0.15mm layer
@@ -886,7 +886,7 @@ variants:
           overhang_speed_1: 20
           overhang_speed_2: 25
           overhang_speed_3: 80%
-          first_layer_infill_speed: 55
+          first_layer_solid_infill_speed: 55
           over_bridge_speed: 0
           bridge_speed: 22
         variants:
@@ -1051,7 +1051,7 @@ variants:
         top_infill_extrusion_width: 0.27
         support_material_extrusion_width: 0.25
         first_layer_speed: 20
-        first_layer_infill_speed: 35
+        first_layer_solid_infill_speed: 35
         gcode_resolution: 0.008
         elefant_foot_compensation: 0
         brim_separation: 0
@@ -1682,7 +1682,7 @@ variants:
         infill_anchor_max: 20
         support_material_speed: 90
         fill_density: 20%
-        first_layer_infill_speed: 70
+        first_layer_solid_infill_speed: 70
         over_bridge_speed: 0
       variants:
 # 0.6n/0.15mm layer
@@ -1918,7 +1918,7 @@ variants:
         overhang_speed_1: 20
         overhang_speed_2: 25
         overhang_speed_3: 80%
-        first_layer_infill_speed: 55
+        first_layer_solid_infill_speed: 55
         over_bridge_speed: 0
         bridge_speed: 22
       variants:
