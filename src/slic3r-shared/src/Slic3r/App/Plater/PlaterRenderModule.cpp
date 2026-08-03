@@ -874,8 +874,10 @@ void PlaterRenderModule::update_current_right_sidebar()
     const Scene::ToolType tool_type  = m_gizmo_manager->current_tool_type();
     SidebarStackLayout* stack_layout = m_layout->sidebar_stack_layout();
 
+    bool switch_to_gizmo{false};
     if (tool_type != Scene::ToolType::None && stack_layout->contains_gizmo(tool_type)) {
         stack_layout->switch_to_gizmo(tool_type);
+        switch_to_gizmo =true;
     } else if (!empty_selection) {
         stack_layout->switch_to_item(SidebarStackLayout::ItemType::Object);
         // upon object selection we are selecting sidebar and closing opened dialogs
@@ -883,6 +885,7 @@ void PlaterRenderModule::update_current_right_sidebar()
     } else {
         stack_layout->switch_to_item(SidebarStackLayout::ItemType::Bed);
     }
+    m_sidebar_action_buttons->set_visible(!switch_to_gizmo);
 }
 
 void PlaterRenderModule::update_toolbar_visibility()
