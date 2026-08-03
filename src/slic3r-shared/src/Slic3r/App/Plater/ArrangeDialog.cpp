@@ -102,7 +102,7 @@ public:
                     button->set_checkable(true);
                     button->set_width(button_size);
                     button->set_height(button_size);
-                    if (pivot_point == PivotPoint::Center) {
+                    if (pivot_point == PivotPoint::BottomLeft) {
                         button->set_checked(true);
                     }
                     m_group.insert_button(button);

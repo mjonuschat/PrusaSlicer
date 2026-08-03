@@ -99,6 +99,7 @@ ArrangeGizmo::ArrangeGizmo(
 {
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
+    m_project_interactor.slicing_interactor().add_listener<Biz::Slicing::IWipeTowerGeometryListener>(this);
 
     PlatformServices::instance().job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
@@ -109,6 +110,7 @@ ArrangeGizmo::~ArrangeGizmo()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     m_project_interactor.preset_interactor().remove_listener<Biz::Preset::IPresetChangedListener>(
         this);
+    m_project_interactor.slicing_interactor().remove_listener<Biz::Slicing::IWipeTowerGeometryListener>(this);
     PlatformServices::instance().job_manager().remove_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
 
@@ -130,6 +132,12 @@ void ArrangeGizmo::on_preset_selection_changed(
     update_dialog();
 }
 
+void ArrangeGizmo::on_wipe_tower_geometry_changed(Biz::Slicing::OptWipeTowerGeometry g,
+                                                  const Domain::SlicingId)
+{
+    update_dialog();
+}
+
 void ArrangeGizmo::update_dialog() {
     const Project& project{m_workbench.project(m_project_interactor.selected_project_id())};
     const BedSelection& bed_selection{m_project_interactor.scene_interactor().bed_selection()};
@@ -138,7 +146,13 @@ void ArrangeGizmo::update_dialog() {
         get_auxiliary_travel_anchor(project, bed_selection)
     };
     m_dialog->set_bed_segments(bed_segments);
-    m_dialog->set_auxiliary_travel_anchor(auxiliary_travel_anchor);
+    if (m_project_interactor.scene_interactor().wipe_tower_geometry(
+            bed_selection.last_selected_bed().instance_id))
+    {
+        m_dialog->set_auxiliary_travel_anchor(auxiliary_travel_anchor);
+    } else {
+        m_dialog->set_auxiliary_travel_anchor(std::nullopt);
+    }
 }
 
 void ArrangeGizmo::on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status)

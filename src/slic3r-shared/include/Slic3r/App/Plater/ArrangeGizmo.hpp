@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;
@@ -27,7 +28,8 @@ class ArrangeGizmo final :
     public Scene::IToolGizmo,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::Preset::IPresetChangedListener,
-    public Biz::Platform::JobManager::IJobManagerStatusChangedListener
+    public Biz::Platform::JobManager::IJobManagerStatusChangedListener,
+    public Biz::Slicing::IWipeTowerGeometryListener
 {
 public:
     ArrangeGizmo(
@@ -53,6 +55,9 @@ public:
         Domain::SelectionId config_container_id,
         Biz::Preset::PresetItemType type
     ) override;
+
+    void on_wipe_tower_geometry_changed(Biz::Slicing::OptWipeTowerGeometry,
+                                        const Domain::SlicingId) override;
 
     void update_dialog();
 
