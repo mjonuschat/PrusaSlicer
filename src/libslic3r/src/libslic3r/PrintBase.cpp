@@ -47,11 +47,10 @@ ParserConfig PrintBase::get_object_placeholders() const
     int num_instances = 0;
 	for (const Domain::ModelObject *model_object : m_model.objects) {
         Domain::ModelInstance *printable = nullptr;
-		for (Domain::ModelInstance *model_instance : model_object->instances)
-			if (model_instance->is_printable()) {
-				printable = model_instance;
-				++ num_instances;
-			}
+		for (Domain::ModelInstance *model_instance : model_object->instances) {
+            printable = model_instance;
+            ++ num_instances;
+        }
 		if (printable) {
             ++ num_objects;
 	        // CHECK_ME -> Is the following correct ?

@@ -87,20 +87,18 @@ static std::vector<PrintObjectTrafoAndInstances> print_objects_from_model_object
     PrintObjectTrafoAndInstances           trafo;
     for (std::size_t index{}; index < instances.size(); ++index) {
         const Domain::ModelInstance& model_instance{*instances[index]};
-        if (model_instance.is_printable()) {
-            Geometry::Transformation model_instance_transformation = model_instance.get_transformation();
-            trafo.trafo = model_instance_transformation.get_matrix_with_applied_shrinkage_compensation(shrinkage_compensation);
-            Domain::Vec2big shift = Algorithms::Scaling::scaled<int64_t>(
-                Vec2d(trafo.trafo.data()[12], trafo.trafo.data()[13])
-            );
-            // Reset the XY axes of the transformation.
-            trafo.trafo.data()[12] = 0;
-            trafo.trafo.data()[13] = 0;
-            // Search or insert a trafo.
-            auto it = trafos.emplace(trafo).first;
-            const_cast<PrintObjectTrafoAndInstances&>(*it)
-                .instances.emplace_back(model_instance, index, shift);
-        }
+        Geometry::Transformation model_instance_transformation = model_instance.get_transformation();
+        trafo.trafo = model_instance_transformation.get_matrix_with_applied_shrinkage_compensation(shrinkage_compensation);
+        Domain::Vec2big shift = Algorithms::Scaling::scaled<int64_t>(
+            Vec2d(trafo.trafo.data()[12], trafo.trafo.data()[13])
+        );
+        // Reset the XY axes of the transformation.
+        trafo.trafo.data()[12] = 0;
+        trafo.trafo.data()[13] = 0;
+        // Search or insert a trafo.
+        auto it = trafos.emplace(trafo).first;
+        const_cast<PrintObjectTrafoAndInstances&>(*it)
+            .instances.emplace_back(model_instance, index, shift);
     }
     return std::vector<PrintObjectTrafoAndInstances>(trafos.begin(), trafos.end());
 }

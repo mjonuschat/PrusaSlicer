@@ -48,7 +48,7 @@ void remove_instances(
 ) {
     for (Domain::ModelObject* mo : model.objects) {
         std::erase_if(mo->instances, [&](const Domain::ModelInstance* instance) {
-            return !contains(instance, bed_instances);
+            return !instance->is_printable() || !contains(instance, bed_instances);
         });
     }
 

@@ -230,13 +230,12 @@ static std::vector<SLAPrintObject::Instance> sla_instances(const Domain::ModelOb
     assert(! model_object.instances.empty());
     if (! model_object.instances.empty()) {
         const Transform3d& trafo0 = model_object.instances.front()->get_matrix();
-        for (Domain::ModelInstance *model_instance : model_object.instances)
-            if (model_instance->is_printable()) {
-                instances.emplace_back(
-                    model_instance->id(),
-                    scaled(Vec2d(model_instance->get_offset(X), model_instance->get_offset(Y))),
-                    float(Geometry::rotation_diff_z(trafo0, model_instance->get_matrix())));
-            }
+        for (Domain::ModelInstance *model_instance : model_object.instances) {
+            instances.emplace_back(
+                model_instance->id(),
+                scaled(Vec2d(model_instance->get_offset(X), model_instance->get_offset(Y))),
+                float(Geometry::rotation_diff_z(trafo0, model_instance->get_matrix())));
+        }
     }
     return instances;
 }
