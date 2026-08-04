@@ -61,7 +61,6 @@ public:
     Icon(Render::Icon icon);
 
     void render(const Vec2f& pos, const Vec2f& size) override;
-    void resize(const SizeInfo& size_info) override;
 
     IconType icon_type() const;
     Render::Icon icon() const;
@@ -88,6 +87,7 @@ public:
     void set_rounding(Unit rounding);
 
 private:
+    void size_info_changed(const SizeInfo &info_size) override;
     void update_draw_sizes();
     void update_texture();
 
@@ -113,6 +113,7 @@ private:
     ImVec2 m_draw_size;
     ImVec2 m_offset;
     bool m_texture_has_replaced_strings{false};
+
 };
 
 } // namespace Slic3r::App::Yoga

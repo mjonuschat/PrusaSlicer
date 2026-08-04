@@ -72,12 +72,6 @@ void Icon::render(const Vec2f& pos, const Vec2f& size)
     render_item_end(pos, size);
 }
 
-void Icon::resize(const SizeInfo& size_info)
-{
-    Item::resize(size_info);
-    m_rounding.evaluate(size_info);
-}
-
 Icon::IconType Icon::icon_type() const
 {
     return m_icon_type;
@@ -227,6 +221,12 @@ void Icon::update_texture()
     }
 }
 
+void Icon::size_info_changed(const SizeInfo& info_size)
+{
+    m_rounding.evaluate(info_size);
+    update_texture();
+}
+
 bool Icon::preserve_colors() const
 {
     return m_preserve_colors;
@@ -243,7 +243,9 @@ void Icon::set_preserve_colors(bool preserve_colors)
 
 void Icon::set_rounding(Unit rounding)
 {
-    m_rounding = EvaluatedUnit{rounding};
+    if (m_rounding.source != rounding) {
+        m_rounding = EvaluatedUnit{rounding};
+        set_style_dirty();
+    }
 }
-
 } // namespace Slic3r::App::Yoga
