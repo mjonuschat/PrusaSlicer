@@ -790,6 +790,13 @@ public:
                                     return;
                                 }
 
+                                if (root["printers"].empty()) {
+                                    m_title->set_title(Biz::_u8L("There are no printers to synchronize."));
+                                    m_title->set_sub_title(Biz::_u8L("Please add your printer manually."));
+                                    reload_content_state();
+                                    return;
+                                }
+
                                 for (const nlohmann::json& printer_json : root["printers"]) {
                                     if (!printer_json.is_object()) {
                                         handle_error(Biz::_u8L("Failed to parse response"));
