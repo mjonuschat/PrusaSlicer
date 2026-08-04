@@ -3,6 +3,8 @@
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
+#include "Slic3r/Biz/Network/IHttp.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <string>
 #include <nlohmann/json_fwd.hpp>
@@ -39,8 +41,16 @@ public:
         const std::string& url,
         const std::string& access_token,
         std::function<void(const std::string&)> success_fn,
-        std::function<void(const std::string&)> fail_fn
-    ) const;
+        std::function<void(const std::string&)> fail_fn,
+        std::function<void(Network::IHttp::Retry, bool&)> retry_fn =
+            [](Network::IHttp::Retry retry, bool& cancel)
+        {
+            SPDLOG_INFO("Retry attempt {}: {} ms to next attempt",
+                        retry.attempt,
+                        retry.ms_to_next_attempt);
+        },
+        std::function<void(Network::IHttp::Progress, bool&)> progress_fn =
+            [](Network::IHttp::Progress, bool&) {}) const;
 
 private:
     void do_select_printer_from_connect(const std::string& printer_json);

@@ -6,6 +6,7 @@
 
 #include "Slic3r/Log.hpp"
 #include "nlohmann/json.hpp"
+#include "jthread/JThread.hpp"
 
 namespace Slic3r::Biz::Connect {
 
@@ -70,7 +71,7 @@ void ConnectMessageHandler::handle_select_printer_message(
     auto succ_fn = [this, uuid](const std::string& body)
     {
         std::string printer_json = extract_printer_json_by_uuid(body, uuid);
-        
+
         if (printer_json.empty()) {
             SPDLOG_WARN("Printer with UUID {} not found in Connect message.", uuid);
             dispatch_error("Printer with requested UUID not found in Connect response.");
@@ -100,37 +101,56 @@ void ConnectMessageHandler::fetch_printer_data_async(
     const std::string& url,
     const std::string& access_token,
     std::function<void(const std::string&)> success_fn,
-    std::function<void(const std::string&)> fail_fn
+    std::function<void(const std::string&)> fail_fn,
+    std::function<void(Network::IHttp::Retry, bool&)> retry_fn,
+    std::function<void(Network::IHttp::Progress, bool&)> progress_fn
 ) const
 {
-    std::thread([url, access_token, success_fn = std::move(success_fn), fail_fn = std::move(fail_fn)]() mutable {
-        auto retry_fn = [](Network::IHttp::Retry retry, bool& cancel) {
-            SPDLOG_INFO("Retry attempt {}: {} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
-        };
+    std::thread(
+        [url,
+         access_token,
+         success_fn  = std::move(success_fn),
+         fail_fn     = std::move(fail_fn),
+         retry_fn    = std::move(retry_fn),
+         progress_fn = std::move(progress_fn)]() mutable
+        {
+            std::unique_ptr<Network::IHttp> http =
+                Network::IHttp::create(Network::IHttp::RequestMethod::Get, url, retry_fn);
 
-        std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
-            Network::IHttp::RequestMethod::Get, url, retry_fn
-        );
-
-        if (!access_token.empty()) {
-            http->header("Authorization", "Bearer " + access_token);
-        }
-
-        http->on_complete([success_fn = std::move(success_fn)](std::string body, unsigned status) {
-            if (success_fn) {
-                success_fn(body);
+            if (!access_token.empty()) {
+                http->header("Authorization", "Bearer " + access_token);
             }
-        });
 
-        http->on_error([fail_fn = std::move(fail_fn)](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR("Connect HTTP request failed. Status: {}, Error: {}", status, error);
-            if (fail_fn) {
-                fail_fn("Connect HTTP request failed: " + error);
-            }
-        });
+            http->on_complete(
+                [success_fn = std::move(success_fn)](std::string body, unsigned status)
+                {
+                    if (success_fn) {
+                        success_fn(body);
+                    }
+                });
 
-        http->perform_sync(Network::HttpRetryOpt::default_retry());
-    }).detach();
+            http->on_error(
+                [fail_fn = std::move(fail_fn)](std::string body, std::string error, unsigned status)
+                {
+                    SPDLOG_ERROR("Connect HTTP request failed. Status: {}, Error: {}",
+                                 status,
+                                 error);
+                    if (fail_fn) {
+                        fail_fn("Connect HTTP request failed: " + error);
+                    }
+                });
+            http->on_progress(
+                [progress_fn = std::move(progress_fn)](Network::IHttp::Progress progress,
+                                                       bool& cancel)
+                {
+                    if (progress_fn) {
+                        progress_fn(progress, cancel);
+                    }
+                });
+
+            http->perform_sync(Network::HttpRetryOpt::default_retry());
+        })
+        .detach();
 }
 
 namespace {

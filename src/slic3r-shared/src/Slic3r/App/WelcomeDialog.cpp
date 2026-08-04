@@ -529,7 +529,11 @@ public:
             m_screen->content()->emplace_back<LayoutButton>(Biz::_u8L("Choose a printer"));
         m_add_button->set_background_color(Platform::Color::AccentPrimary);
         m_add_button->set_content_padding({30_fpx, 10_fpx, 30_fpx, 10_fpx});
-        m_add_button->callbacks().action = [this]() { show_dialog(true); };
+        m_add_button->callbacks().action = [this]()
+        {
+            m_printer_sync_stop_source->store(true);
+            show_dialog(true);
+        };
 
         m_printers = m_screen->content()->emplace_back<Rectangle>();
         m_printers->set_flex_shrink(0);
@@ -569,6 +573,15 @@ public:
         m_dialog->set_visible(false);
     }
 
+    void disable_printer_sync() {
+        m_printer_sync_stop_source->store(true);
+        show_dialog(false);
+        m_title->set_title(m_default_title);
+        m_title->set_sub_title(m_default_subtitle);
+        clear_printers();
+        reload_content_state();
+    }
+
     void show_dialog(bool show)
     {
         m_screen->set_visible(!show);
@@ -583,9 +596,11 @@ public:
                 .left_button_text     = Biz::_u8L("Back"),
                 .left_button_action   = m_go_to_prev,
                 .center_button_text   = Biz::_u8L("Finish"),
-                .center_button_action = [this]() { m_finish(m_printers_to_add); },
-                .rigth_button_text    = Biz::_u8L("Add another printer"),
-                .rigth_button_action  = [this]() { show_dialog(true); },
+                .center_button_action = [this]()
+                { m_printer_sync_stop_source->store(true), m_finish(m_printers_to_add); },
+                .rigth_button_text   = Biz::_u8L("Add another printer"),
+                .rigth_button_action = [this]()
+                { m_printer_sync_stop_source->store(true), show_dialog(true); },
             };
             m_screen->update_navigation(navigation_setup);
         } else {
@@ -621,10 +636,17 @@ public:
 
         m_printers->remove_later(m_printers->items().at(index));
         m_printers_to_add.erase(it);
-
         m_title->set_title(m_default_title);
         m_title->set_sub_title(m_default_subtitle);
         reload_content_state();
+    }
+
+    void clear_printers()
+    {
+        while (!m_printers->items().empty()) {
+            m_printers->remove(m_printers->items().back());
+        }
+        m_printers_to_add.clear();
     }
 
     std::optional<PrinterToAdd> parse_printer_json(const nlohmann::json& json)
@@ -688,6 +710,8 @@ public:
             return;
         }
 
+        m_printer_sync_stop_source->store(false);
+
         m_title->set_title(Biz::_u8L("Synchronization in progress"));
         m_title->set_sub_title(Biz::_u8L("Please wait while we fetch your printers"));
         m_add_button->set_visible(false);
@@ -705,6 +729,39 @@ public:
                             reload_content_state();
                         });
             }};
+
+        auto handle_retry{
+            [this](Biz::Network::IHttp::Retry retry, bool& cancel) {
+                if (m_printer_sync_stop_token.stop_requested()) {
+                    cancel = true;
+                    return;
+                }
+
+                if (retry.attempt <= 1) {
+                    return;
+                }
+                if (m_printer_sync_stop_token.stop_requested()) {
+                    return;
+                }
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread(
+                        [this]()
+                        {
+                            m_title->set_title(Biz::_u8L("Synchronizing printers failed, retrying..."));
+                            m_title->set_sub_title(Biz::_u8L("You can also choose your printer maually."));
+                            reload_content_state();
+                        });
+            }
+        };
+
+        auto handle_progress{
+            [this](Biz::Network::IHttp::Progress retry, bool& cancel) {
+                if (m_printer_sync_stop_token.stop_requested()) {
+                    cancel = true;
+                }
+            }
+        };
 
         const std::string url{Biz::Network::ServiceConfig::instance().connect_printer_list_url()};
         const std::string access_token{
@@ -758,7 +815,7 @@ public:
                                 "If you have any offline printers, you can also add them now"));
                         });
             },
-            handle_error);
+            handle_error, handle_retry, handle_progress);
     }
 
     void add_printer(const PrinterToAdd& printer)
@@ -783,6 +840,8 @@ public:
                 printer_item->remove(printer_item->items().back());
             }
         }
+
+        ASSERT(m_printers_to_add.size() == m_printers->items().size());
 
         printer_item->set_flex_shrink(0);
         printer_item->set_width(350_fpx);
@@ -836,6 +895,8 @@ private:
     LayoutButton* m_add_button{nullptr};
     Rectangle* m_printers{nullptr};
     std::vector<PrinterToAdd> m_printers_to_add;
+    Biz::JThread::StopSource m_printer_sync_stop_source{std::make_unique<std::atomic<bool>>(false)};
+    Biz::JThread::StopToken m_printer_sync_stop_token{m_printer_sync_stop_source};
 
     std::string m_default_title{Biz::_u8L("Choose your printer")};
     std::string m_default_subtitle{
@@ -1170,6 +1231,7 @@ WelcomeDialog::WelcomeDialog(Biz::ProjectInteractor& project_interactor) :
                 m_online = false;
                 m_project_interactor.user_account_interactor().do_log_out();
                 m_login_screen->reload_layout();
+                m_printer_screen->disable_printer_sync();
                 go_to_screen(ASSERT_VAL(m_printer_screen));
             }
 
