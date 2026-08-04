@@ -150,6 +150,8 @@ void PluginSystem::finalize_run()
 
     m_last_plugin_data = m_current_plugin_data;
     m_current_plugin_data = std::nullopt;
+
+    m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::ExecutePlugin);
 }
 
 void PluginSystem::clear()

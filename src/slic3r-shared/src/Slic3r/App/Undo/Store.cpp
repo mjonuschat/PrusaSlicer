@@ -262,6 +262,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Paste height range settings");
     case Type::HeightRangeLayerHeightOverride:
         return _u8L("Add layer height override");
+    case Type::ExecutePlugin:
+        return _u8L("Execute plugin");
     }
     PANIC("Unknown option");
     return {};

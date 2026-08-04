@@ -2013,7 +2013,7 @@ void MenuCommandRegistrar::register_undo_redo_commands()
                                 dynamic_cast<Plater::PlaterRenderModule*>(&m_render_module)
                             })
                         {
-                            return m_project_interactor.undo_provider().is_undo_possible();
+                            return m_project_interactor.undo_provider().is_redo_possible();
                         }
                         return false;
                     }
