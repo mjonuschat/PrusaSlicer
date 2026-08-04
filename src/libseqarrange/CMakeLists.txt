@@ -4,6 +4,7 @@ slic3r_remap_configs("z3::libz3" RelWithDebInfo Release)
 
 
 add_library(libseqarrange STATIC src/seq_interface.cpp src/seq_preprocess.cpp src/seq_sequential.cpp src/seq_utilities.cpp)
+set_target_properties(libseqarrange PROPERTIES PREFIX "")
 target_include_directories(libseqarrange PUBLIC include PRIVATE src )
 target_link_libraries(libseqarrange PUBLIC libslic3r PRIVATE z3::libz3)
 

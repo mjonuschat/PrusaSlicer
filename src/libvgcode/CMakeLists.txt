@@ -22,6 +22,7 @@ add_library(libvgcode
     include/Slic3r/App/libvgcode/Settings.hpp
     include/Slic3r/App/libvgcode/ToolMarker.hpp
     include/Slic3r/App/libvgcode/Utils.hpp
+    include/Slic3r/App/libvgcode/ViewRange.hpp
 
     src/Slic3r/App/libvgcode/ColorRange.cpp
     src/Slic3r/App/libvgcode/CogMarker.cpp
@@ -39,6 +40,8 @@ add_library(libvgcode
     src/Slic3r/App/libvgcode/SlaViewer.cpp
     src/Slic3r/App/libvgcode/ViewRange.cpp
 )
+
+set_target_properties(libvgcode PROPERTIES PREFIX "")
 
 target_include_directories(libvgcode PUBLIC include)
 target_include_directories(libvgcode PRIVATE src)

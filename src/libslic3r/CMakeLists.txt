@@ -426,6 +426,8 @@ set(SLIC3R_PUBLIC_HEADERS
 
 add_library(libslic3r STATIC ${SLIC3R_SOURCES} ${SLIC3R_PUBLIC_HEADERS})
 
+set_target_properties(libslic3r PROPERTIES PREFIX "")
+
 if (WIN32)
     target_compile_definitions(libslic3r PUBLIC NOMINMAX)
 endif ()
