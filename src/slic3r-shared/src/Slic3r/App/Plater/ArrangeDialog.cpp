@@ -282,10 +282,14 @@ ArrangeDialog::ArrangeDialog(
     help_section->set_flex_shrink(0);
     help_section->append(help());
 
-    m_arrange_button = bottom_bar()->emplace_back<LayoutButton>(m_arrange_all_label);
+    // empty item - stretch spacer
+    content()->emplace_back<Item>()->set_flex_grow(1);
+    add_separator(content());
+
     bottom_bar()->set_flex_shrink(0);
-    m_arrange_button->set_padding(Yoga::Paddings{5});
-    m_arrange_button->set_height(40);
+    bottom_bar()->set_padding(Yoga::Paddings{ 20_fpx });
+    m_arrange_button = bottom_bar()->emplace_back<LayoutButton>(m_arrange_all_label);
+    m_arrange_button->set_content_padding(Yoga::Paddings{10_fpx});
     m_arrange_button->callbacks().action = [this]() {
         m_on_arrange(static_cast<ArrangeMode>(m_mode->selected_index()));
     };

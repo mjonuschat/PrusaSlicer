@@ -189,11 +189,12 @@ CutDialog::CutDialog() : GizmoWindow()
 
 void CutDialog::init_action_buttons()
 {
-    bottom_bar()->set_justify_content(YGJustifySpaceBetween);
     bottom_bar()->set_flex_shrink(0);
-    bottom_bar()->set_padding(gap_size());
+    bottom_bar()->set_padding(2.f * gap_size());
+    bottom_bar()->set_gap(gap_size());
 
     m_perform_btn = bottom_bar()->emplace_back<LayoutButton>(_u8L("Perform cut"));
+    m_perform_btn->set_flex_grow(1.f);
     m_perform_btn->callbacks().action = [this]()
     {
         if (callbacks().perform) {
@@ -206,6 +207,7 @@ void CutDialog::init_action_buttons()
         Render::Icon::None,
         _u8L("Confirm connectors")
     );
+    m_confirm_connectors_btn->set_flex_grow(1.f);
     m_confirm_connectors_btn->callbacks().action = [this]() { confirm_connectors(); };
 
     for (LayoutButton* btn :
