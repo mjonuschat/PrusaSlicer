@@ -183,7 +183,6 @@ void SlicingInteractor::disable_auto_slicing() {
     if (!m_autoslicing_id) {
         return;
     }
-    stop_slicing_bed(*m_autoslicing_id);
     m_autoslicing_id = std::nullopt;
 }
 

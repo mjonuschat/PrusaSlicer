@@ -28,6 +28,7 @@ SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
         if (checked) {
             slicing_interactor.enable_auto_slicing(project_interactor.selected_bed_slicing_id());
         } else {
+            slicing_interactor.stop_all();
             slicing_interactor.disable_auto_slicing();
         }
         m_app_config.set("auto_reslice", checked);
