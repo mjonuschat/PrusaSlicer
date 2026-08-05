@@ -13,6 +13,7 @@
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/Biz/ObservableListSearcher.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
@@ -92,6 +93,7 @@ private:
     Navigator& m_navigator;
     Biz::Preset::PresetItemCompoundObservableList& m_material_presets;
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>> m_material_filter;
+    Biz::UnsharedPointer<Biz::ObservableListSearcher<Biz::Preset::PresetItem>> m_material_searcher;
 
     size_t m_material_index = Domain::INVALID_ID;
     Yoga::ButtonGroup m_material_type_button_group;

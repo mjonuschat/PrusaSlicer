@@ -65,7 +65,7 @@ AddPrinterPanel::AddPrinterPanel(
     m_project_interactor{project_interactor},
 
     m_sort_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()),
-    m_searcher{score_printer},
+    m_searcher{score_preset_item},
     m_add_printer{add_printer}
 {
     const ImColor secondary_color{m_theme->color_imgui(Platform::Color::WindowBgAlternate)};

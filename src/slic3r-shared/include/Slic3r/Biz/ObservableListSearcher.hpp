@@ -84,10 +84,10 @@ class ObservableListSearcher : public Biz::IListObserver<Data>, public IObservab
 
 public:
     // Returns int scoring value of an item. Higher value -> higher match
-    using ScoreFn =
-        std::function<int(std::function<const std::string&(const std::string&)> process_string,
-                          const Data& item,
-                          const std::string& search_text)>;
+    using ScoreFn = std::function<
+        int(std::function<const std::string&(const std::string&)> process_string,
+            const Data& item,
+            const std::string& search_text)>;
 
     ObservableListSearcher(ScoreFn score_fn) : m_score_fn(score_fn) {}
 
@@ -185,6 +185,20 @@ public:
 
     void search()
     {
+        // If we do not have model just clear up everything and early return
+        if (!m_source_model.is_valid()) {
+            if (!m_found_items.empty()) {
+                this->template invoke_listeners<Biz::IListObserver<Data>>(
+                    [&](Biz::IListObserver<Data>* l) { l->on_will_be_reset(); }
+                );
+                m_found_items.clear();
+                this->template invoke_listeners<Biz::IListObserver<Data>>(
+                    [&](Biz::IListObserver<Data>* l) { l->on_reset(); }
+                );
+            }
+            return;
+        }
+
         auto cmp = [](const ScoreItem& a, const ScoreItem& b) { return a.score > b.score; };
 
         std::vector<const Data*> found_items;
@@ -204,11 +218,13 @@ public:
                     0,
                     [&](int sum, const std::string& search_text)
                     {
-                        return sum + m_score_fn(
-                            [this](const std::string& input) -> const std::string& { return processed_string(input); },
-                            *item,
-                            search_text
-                        );
+                        return sum
+                            + m_score_fn(
+                                   [this](const std::string& input) -> const std::string&
+                                   { return processed_string(input); },
+                                   *item,
+                                   search_text
+                            );
                     }
                 );
                 if (!score) {

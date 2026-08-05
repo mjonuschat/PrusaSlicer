@@ -14,6 +14,7 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
+#include "Slic3r/App/PrinterSearchFunction.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
@@ -69,8 +70,12 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_material_presets(m_project_interactor.preset_interactor().material_presets()),
-    m_material_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>())
+    m_material_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()),
+    m_material_searcher(
+        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_preset_item)
+    )
 {
+    m_material_searcher->set_max_found_items(64);
     m_project_contexts = std::make_unique<Biz::ProjectScoped<ProjectContext>>(project_interactor);
 
     m_material_settings_dialog =
@@ -132,12 +137,7 @@ MaterialSelectionDialog::MaterialSelectionDialog(
                 return false;
             }
 
-            const std::string& search_text = m_input_text_search->text();
-            if (search_text.empty()) {
-                return true;
-            }
-
-            return find_locale_aware(data.name, search_text);
+            return true;
         }
     );
 
@@ -151,6 +151,8 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_input_text_search = search_row->emplace_back<InputText>();
     m_input_text_search->set_hint(_u8L("Search..."));
     m_input_text_search->set_flex_grow(1);
+    m_input_text_search->callbacks().text_changed = [this]()
+    { m_material_searcher->set_search_text(m_input_text_search->text()); };
 
     m_only_favorites_button = search_row->emplace_back<LayoutButton>(
         std::string(),
@@ -175,8 +177,6 @@ MaterialSelectionDialog::MaterialSelectionDialog(
         update_preset_list();
     };
     on_app_config_changed("materials_only_favorites");
-
-    m_input_text_search->callbacks().text_changed = [this]() { m_material_filter->invalidate(); };
 
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -219,7 +219,9 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_selection_row_list_view->set_gap(5);
     m_selection_row_list_view->set_margin({0.f, 0.f, -10.f, 0.f});
     m_selection_row_list_view->set_padding({0.f, 0.f, 15.f, 0.f});
-    m_selection_row_list_view->set_source_list(m_material_filter.get());
+    m_selection_row_list_view->set_source_list(m_material_searcher.get());
+
+    m_material_searcher->set_source_model(m_material_filter.get());
 
     // Material Settings Dialog setup
     m_material_settings_dialog->attach_to_item(content_item(), Position::Left);
@@ -261,11 +263,11 @@ void MaterialSelectionDialog::on_list_selection_changed(Domain::SelectionId new_
 {
     const Biz::Preset::PresetItem& selected_preset_item = m_preset_list->items().at(new_selection);
 
-    for (size_t index = 0; index < m_material_filter->size(); ++index) {
+    for (size_t index = 0; index < m_selection_row_list_view->list_item_count(); ++index) {
         AbstractButton* button =
             dynamic_cast<AbstractButton*>(m_selection_row_list_view->item_at(index));
         ASSERT(button);
-        if (m_material_filter->at(index).id == selected_preset_item.id) {
+        if (m_material_searcher->at(index).id == selected_preset_item.id) {
             button->set_checked(true);
             m_selection_row_list_view->scroll_at_item(m_selection_row_list_view->item_at(index));
         } else {

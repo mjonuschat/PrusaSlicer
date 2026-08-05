@@ -1,9 +1,12 @@
 #include "Slic3r/App/PrinterSearchFunction.hpp"
 
 namespace Slic3r::App {
-int score_printer(std::function<const std::string&(const std::string&)> process_string,
-                  const Biz::Preset::PresetItem& item,
-                  const std::string& search_text)
+
+int score_preset_item(
+    std::function<const std::string&(const std::string&)> process_string,
+    const Biz::Preset::PresetItem& item,
+    const std::string& search_text
+)
 {
     int score = 0;
 
@@ -21,4 +24,5 @@ int score_printer(std::function<const std::string&(const std::string&)> process_
 
     return score;
 }
+
 } // namespace Slic3r::App

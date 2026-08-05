@@ -52,7 +52,7 @@ LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
         std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()
     ),
     m_preset_searcher(
-        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_printer)
+        std::make_shared<Biz::ObservableListSearcher<Biz::Preset::PresetItem>>(score_preset_item)
     ),
     m_printer_add_dialog(printer_add_dialog)
 {
