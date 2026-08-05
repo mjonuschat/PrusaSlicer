@@ -1029,7 +1029,8 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         volume.set_new_unique_id();
 
         object_ids.push_back(id.object_id);
-        removed_ids.emplace_back(id.object_id, id.instance_id, id.volume_id);
+        // Invalidate the instance id, so the volume node is removed from all instances.
+        removed_ids.emplace_back(id.object_id, 0, id.volume_id);
         updated_ids.emplace_back(id.object_id, id.instance_id, volume.id().id);
     }
 
