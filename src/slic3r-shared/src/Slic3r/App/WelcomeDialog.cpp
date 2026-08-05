@@ -475,7 +475,16 @@ static const Domain::Preset::HwToolConfigDef* find_tool_config_def(
     const nlohmann::json& json,
     const std::vector<Domain::Preset::HwToolConfigDef>& tool_defs)
 {
+    if (!json.contains("features")) {
+        return nullptr;
+    }
     const auto& features{json["features"]};
+    if (!features.contains("nozzle_diameter")) {
+        return nullptr;
+    }
+    if (!features["nozzle_diameter"].is_number()) {
+        return nullptr;
+    }
     const auto nozzle_diameter{features["nozzle_diameter"].get<double>()};
     const auto nozzle_high_flow{features.value<bool>("nozzle_high_flow", false)};
     auto it{std::ranges::find_if(
@@ -685,8 +694,12 @@ public:
             {
                 config.tools.clear();
                 for (const auto& [_, tool] : json["tools"].items()) {
-                    const Domain::Preset::HwToolConfigDef* hw_tool_config_def{
-                        find_tool_config_def(tool, tool_defs)};
+                    const Domain::Preset::HwToolConfigDef* hw_tool_config_def{nullptr};
+                    try {
+                        hw_tool_config_def = find_tool_config_def(tool, tool_defs);
+                    } catch (const nlohmann::json::exception& e) {
+                        // Intentionally pass
+                    }
                     if (!hw_tool_config_def) {
                         continue;
                     }
