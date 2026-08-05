@@ -12,13 +12,17 @@
 namespace {
 std::string_view trim(std::string_view string)
 {
-    auto begin = std::find_if_not(string.begin(), string.end(), [](unsigned char ch) {
-        return std::isspace(ch);
-    });
+    auto begin = std::find_if_not(
+        string.begin(),
+        string.end(),
+        [](unsigned char ch) { return std::isspace(ch); }
+    );
 
-    auto end = std::find_if_not(string.rbegin(), string.rend(), [](unsigned char ch) {
-        return std::isspace(ch);
-    }).base();
+    auto end = std::find_if_not(
+                   string.rbegin(),
+                   string.rend(),
+                   [](unsigned char ch) { return std::isspace(ch); }
+    ).base();
 
     if (begin >= end) {
         return {}; // empty view
@@ -38,9 +42,11 @@ std::string Validator::process(const std::string& input)
 
 std::string IntValidator::process(const std::string& input)
 {
+    const std::string cured_input = boost::replace_all_copy(input, ",", ".");
+
     double value = 0;
     try {
-        value = boost::get<double>(m_eval.eval(m_parser.parse(input)));
+        value = boost::get<double>(m_eval.eval(m_parser.parse(cured_input)));
     } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
@@ -112,9 +118,11 @@ double DoubleValidator::value() const
 
 std::string DoubleValidator::process(const std::string& input)
 {
+    const std::string cured_input = boost::replace_all_copy(input, ",", ".");
+
     double value = 0;
     try {
-        value = boost::get<double>(m_eval.eval(m_parser.parse(input)));
+        value = boost::get<double>(m_eval.eval(m_parser.parse(cured_input)));
     } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
@@ -138,7 +146,9 @@ PercentageValidator::PercentageValidator(double from, double to) : DoubleValidat
 
 std::string PercentageValidator::process(const std::string& input)
 {
-    std::string_view trimmed_view = trim(input);
+    const std::string cured_input = boost::replace_all_copy(input, ",", ".");
+
+    std::string_view trimmed_view = trim(cured_input);
     if (!trimmed_view.empty() && trimmed_view.back() == '%') {
         m_last_entered_percentage_symbol = true;
         trimmed_view.remove_suffix(1); // so it would confuse parser
