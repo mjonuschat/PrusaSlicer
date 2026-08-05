@@ -382,6 +382,8 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"mmu_segmented_region_max_width", steps({propagate(posSlice)})},
     {"multimaterial_purging", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"notes", steps({propagate(psGCodeExport)})},
+    {"nozzle_diameter", steps({propagate(posSlice)})},
+    {"nozzle_high_flow", steps({propagate(psGCodeExport)})},
     {"only_one_perimeter_first_layer", steps({propagate(posPerimeters)})},
     {"only_retract_when_crossing_perimeters", steps({propagate(psGCodeExport)})},
     {"ooze_prevention", steps({propagate(psSkirtBrim)})},
