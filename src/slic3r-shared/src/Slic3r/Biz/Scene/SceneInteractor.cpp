@@ -661,11 +661,21 @@ BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_i
     return &it->second.bed_selection;
 }
 
-ElementRefs SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name)
+ElementRefs SceneInteractor::new_object_from_mesh(
+    TriangleMesh&& mesh,
+    const std::string& name,
+    const std::optional<ModelVolume::Source>& volume_source
+)
 {
-    UpdateObjectFn update_object = [&name](ModelObject& object) {
-        object.name = name;
+    UpdateObjectFn update_object = [&name, &volume_source](ModelObject& object)
+    {
+        object.name                  = name;
         object.volumes.front()->name = name;
+        if (volume_source.has_value()) {
+            object.input_file              = volume_source->input_file;
+            object.volumes.front()->source = *volume_source;
+        }
+
         //for (Domain::ModelVolume* volume : object.volumes)
         //    volume->name = name;
     };
@@ -744,7 +754,13 @@ ElementRefs SceneInteractor::add_new_objects(const std::vector<Domain::ModelObje
     return new_instances;
 }
 
-void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const std::string& name, const Transform& xform)
+void SceneInteractor::add_volume_from_mesh(
+    TriangleMesh&& mesh,
+    Domain::ModelVolumeType volume_type,
+    const std::string& name,
+    const Transform& xform,
+    const std::optional<ModelVolume::Source>& volume_source
+)
 {
     auto& project              = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
@@ -756,6 +772,11 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     auto& obj = *project.find_object_by_id(obj_id);
     auto& vol = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh), volume_type);
     vol.name  = name;
+
+    if (volume_source.has_value()) {
+        vol.source = *volume_source;
+    }
+
     if (xform != Domain::SquareMatrix4d::Identity()) {
         // Apply transformations only if explicitly set.
         // By default, the object controls the transformation of the volume added to it.
@@ -1693,6 +1714,38 @@ bool SceneInteractor::can_replace_selected_volume() const
         m_workbench.project(m_selected_project_id).find_object_by_id(volume_refs.front().object_id);
 
     return object != nullptr && !object->is_cut();
+}
+
+bool SceneInteractor::can_reload_selection_from_disk() const
+{
+    const ObjectSelection& selection = this->object_selection();
+    if (selection.empty() || selection.contains_wipe_tower()) {
+        return false;
+    }
+
+    const Project& project = m_workbench.project(m_selected_project_id);
+    for (const ElementRef& element : selection.elements) {
+        const ModelObject* object = project.find_object_by_id(element.object_id);
+        if (object == nullptr || object->is_cut()) {
+            return false;
+        }
+    }
+
+    const ElementRefs volume_refs = selected_volumes();
+    return std::ranges::any_of(
+        volume_refs,
+        [&project](const ElementRef& element)
+        {
+            const ModelVolume* volume =
+                project.find_volume_by_id(element.object_id, element.volume_id);
+
+            if (volume == nullptr) {
+                return false;
+            }
+
+            return Algorithms::ModelVolume::is_reloadable_from_disk(*volume);
+        }
+    );
 }
 
 void SceneInteractor::invalidate_cut_info()

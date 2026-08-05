@@ -107,7 +107,8 @@ enum class UndoSnapshotType
     HeightRangePaste,
     HeightRangeLayerHeightOverride,
     ExecutePlugin,
-    ReplaceWithStl
+    ReplaceWithStl,
+    ReloadFromDisk
 };
 
 namespace UndoSnapshotSelection {

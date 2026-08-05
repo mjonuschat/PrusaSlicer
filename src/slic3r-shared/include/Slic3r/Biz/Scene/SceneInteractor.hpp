@@ -227,7 +227,8 @@ public:
         Domain::TriangleMesh&& mesh,
         Domain::ModelVolumeType volume_type,
         const std::string& name = std::string(),
-        const Transform& xform  = Domain::SquareMatrix4d::Identity()
+        const Transform& xform  = Domain::SquareMatrix4d::Identity(),
+        const std::optional<Domain::ModelVolume::Source>& volume_source = std::nullopt
     );
     void add_volume_into_selected_object(const Domain::ModelVolume& volume);
     using VolumeFactory = std::function<Domain::ModelVolume*(Domain::ModelObject&)>;
@@ -241,8 +242,11 @@ public:
     );
 
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;
-    Domain::ElementRefs
-    new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
+    Domain::ElementRefs new_object_from_mesh(
+        Domain::TriangleMesh&& mesh,
+        const std::string& name                                         = std::string(),
+        const std::optional<Domain::ModelVolume::Source>& volume_source = std::nullopt
+    );
     Domain::ElementRefs new_object_from_mesh(
         Domain::TriangleMesh&& mesh,
         Domain::SelectionId project_id,
@@ -336,6 +340,11 @@ public:
      * @brief Whether the mesh of the selected volume can be replaced from a file.
      */
     bool can_replace_selected_volume() const;
+
+    /**
+     * @brief Whether the current selection has anything to reload from disk.
+     */
+    bool can_reload_selection_from_disk() const;
 
     /**
      * Delete elements (volumes or instances) from the current scene selection.

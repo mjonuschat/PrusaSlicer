@@ -99,6 +99,8 @@ private:
 
     void replace_selected_volume_with_stl();
 
+    void reload_selection_from_disk();
+
     struct OpenBrowserParams
     {
         std::string url;

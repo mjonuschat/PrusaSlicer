@@ -35,6 +35,8 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 
+#include <optional>
+
 namespace Slic3r::App {
 
 // #define SHOW_NOT_IMPLEMENTED_ITEMS
@@ -555,8 +557,11 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ReloadObject,
             CommandName::ReloadFromDisk,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { reload_selection_from_disk(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_reload_selection_from_disk(); }
+            }
         )
         .append_separator()
         .push_path_level(MenuItemName::SplitObject)
@@ -1386,6 +1391,56 @@ void MenuCommandRegistrar::replace_selected_volume_with_stl()
         Wildcards::generate_wildcards(model_file_types, Wildcards::TypeFlag::AllImportFiles),
         callback
     );
+}
+
+void MenuCommandRegistrar::reload_selection_from_disk()
+{
+    IDialogManager& dialog_manager = AppServices::instance().dialog_manager();
+
+    VolumeReloadLogic::MissingFileResolver missing_file_resolver =
+        [this, &dialog_manager](
+            const boost::filesystem::path& missing_file
+        ) -> std::optional<boost::filesystem::path>
+    {
+        std::optional<boost::filesystem::path> selected_path;
+        dialog_manager.show_file_dialog(
+            FileDialogType::Open,
+            _u8L("Please select the file to reload")
+                + " ("
+                + missing_file.filename().string()
+                + "):",
+            default_dialog_folder(),
+            missing_file.filename().string(),
+            Wildcards::generate_wildcards(model_file_types, Wildcards::TypeFlag::AllImportFiles),
+            [&selected_path](bool success, const std::vector<boost::filesystem::path>& file_paths)
+            {
+                if (success && !file_paths.empty()) {
+                    selected_path = file_paths.front();
+                }
+            }
+        );
+        return selected_path;
+    };
+
+    const VolumeReloadLogic::ReloadFromDiskResult reload_result =
+        VolumeReloadLogic::reload_selection(
+            missing_file_resolver,
+            m_project_interactor.scene_interactor(),
+            &dialog_manager
+        );
+
+    if (!reload_result.failed_volume_names.empty()) {
+        std::string message = _u8L("Unable to reload:") + "\n";
+        for (const std::string& failed_volume_name : reload_result.failed_volume_names) {
+            message += failed_volume_name + "\n";
+        }
+
+        dialog_manager.show_warning_dialog(message, _u8L("Error during reload"));
+    }
+
+    if (reload_result.changed_volume_count > 0) {
+        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::ReloadFromDisk);
+    }
 }
 
 // Maps UI language to supported website locale codes.
