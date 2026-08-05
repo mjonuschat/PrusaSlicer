@@ -42,6 +42,15 @@ using CommandName = Platform::CommandName;
 
 namespace {
 
+/**
+ * File types offered when importing geometry into the scene.
+ */
+constexpr Wildcards::TypeFlag import_file_types = Wildcards::TypeFlag::Project3mf
+    | Wildcards::TypeFlag::Stl
+    | Wildcards::TypeFlag::Obj
+    | Wildcards::TypeFlag::Svg
+    | Wildcards::TypeFlag::Step;
+
 class CommandBuilder
 {
 public:
@@ -1093,6 +1102,14 @@ void MenuCommandRegistrar::register_multi_object_menu_commands()
         .append_item_from_command(MenuItemName::PrintableMultiObjects, CommandName::SetAsPrintable);
 }
 
+boost::filesystem::path MenuCommandRegistrar::default_dialog_folder() const
+{
+    return m_project_interactor.project_dir(
+        m_project_interactor.selected_project_id(),
+        AppServices::instance().app_config().get<std::string>("last_used_directory")
+    );
+}
+
 void MenuCommandRegistrar::load_project()
 {
     IDialogManager::FileCallback callback =
@@ -1107,10 +1124,7 @@ void MenuCommandRegistrar::load_project()
     dlg_manager.show_file_dialog(
         FileDialogType::Open,
         _u8L("Open Project"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        default_dialog_folder(),
         "",
         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
         callback
@@ -1145,10 +1159,7 @@ void MenuCommandRegistrar::save_project_as()
         dlg_manager.show_file_dialog(
             FileDialogType::Save,
             _u8L("Save Project"),
-            m_project_interactor.project_dir(
-                m_project_interactor.selected_project_id(),
-                AppServices::instance().app_config().get<std::string>("last_used_directory")
-            ),
+            default_dialog_folder(),
             project_name,
             Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
             callback
@@ -1181,17 +1192,10 @@ void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
-                                                         Wildcards::TypeFlag::Project3mf
-                                                             | Wildcards::TypeFlag::Stl
-                                                             | Wildcards::TypeFlag::Obj
-                                                             | Wildcards::TypeFlag::Svg
-                                                             | Wildcards::TypeFlag::Step,
+                                                         import_file_types,
                                                          Wildcards::TypeFlag::AllImportFiles
                                                      ) :
                                                      Wildcards::generate_wildcards(specific_type),
@@ -1288,17 +1292,10 @@ MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeF
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
-                                                         Wildcards::TypeFlag::Project3mf
-                                                             | Wildcards::TypeFlag::Stl
-                                                             | Wildcards::TypeFlag::Obj
-                                                             | Wildcards::TypeFlag::Svg
-                                                             | Wildcards::TypeFlag::Step,
+                                                         import_file_types,
                                                          Wildcards::TypeFlag::AllImportFiles
                                                      ) :
                                                      Wildcards::generate_wildcards(specific_type),

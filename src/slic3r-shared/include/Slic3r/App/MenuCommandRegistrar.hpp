@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/ModelVolume.hpp"
 #include "Slic3r/App/Wildcards.hpp"
 
+#include <boost/filesystem/path.hpp>
 #include <string>
 
 namespace Slic3r::App::Platform {
@@ -70,6 +71,14 @@ private:
     void register_svg_or_text_volume_menu_commands();
     void register_volume_menu_commands();
     void register_multi_object_menu_commands();
+
+    /**
+     * @brief Folder a file dialog should start in.
+     *
+     * The directory of the selected project, falling back to the last one the user
+     * picked in any file dialog.
+     */
+    boost::filesystem::path default_dialog_folder() const;
 
     void load_project();
     void save_project();
