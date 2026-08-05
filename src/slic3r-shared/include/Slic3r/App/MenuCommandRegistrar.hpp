@@ -97,6 +97,8 @@ private:
 
     void export_selection_as_stl_obj();
 
+    void replace_selected_volume_with_stl();
+
     struct OpenBrowserParams
     {
         std::string url;

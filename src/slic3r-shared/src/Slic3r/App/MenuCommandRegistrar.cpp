@@ -29,6 +29,7 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/MeshExportLogic.hpp"
+#include "Slic3r/Biz/VolumeReloadLogic.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
@@ -50,6 +51,14 @@ constexpr Wildcards::TypeFlag import_file_types = Wildcards::TypeFlag::Project3m
     | Wildcards::TypeFlag::Stl
     | Wildcards::TypeFlag::Obj
     | Wildcards::TypeFlag::Svg
+    | Wildcards::TypeFlag::Step;
+
+/**
+ * File types offered when replacing or reloading a volume mesh.
+ */
+constexpr Wildcards::TypeFlag model_file_types = Wildcards::TypeFlag::Project3mf
+    | Wildcards::TypeFlag::Stl
+    | Wildcards::TypeFlag::Obj
     | Wildcards::TypeFlag::Step;
 
 class CommandBuilder
@@ -537,8 +546,11 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ReplaceObject,
             CommandName::ReplaceWithStl,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { replace_selected_volume_with_stl(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_replace_selected_volume(); }
+            }
         )
         .append_item(
             MenuItemName::ReloadObject,
@@ -1334,6 +1346,44 @@ void MenuCommandRegistrar::export_selection_as_stl_obj()
             Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj,
             Wildcards::TypeFlag::Stl
         ),
+        callback
+    );
+}
+
+void MenuCommandRegistrar::replace_selected_volume_with_stl()
+{
+    IDialogManager::FileCallback callback =
+        [this](const bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (!success || file_paths.empty()) {
+            return;
+        }
+
+        const tl::expected<void, std::string> replace_result =
+            VolumeReloadLogic::replace_selected_volume(
+                file_paths.front(),
+                m_project_interactor.scene_interactor(),
+                &AppServices::instance().dialog_manager()
+            );
+
+        if (!replace_result) {
+            AppServices::instance().dialog_manager().show_warning_dialog(
+                replace_result.error(),
+                _u8L("Error during replace")
+            );
+
+            return;
+        }
+
+        m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::ReplaceWithStl);
+    };
+
+    AppServices::instance().dialog_manager().show_file_dialog(
+        FileDialogType::Open,
+        _u8L("Select the new file:"),
+        this->default_dialog_folder(),
+        VolumeReloadLogic::proposed_replace_file_name(m_project_interactor.scene_interactor()),
+        Wildcards::generate_wildcards(model_file_types, Wildcards::TypeFlag::AllImportFiles),
         callback
     );
 }

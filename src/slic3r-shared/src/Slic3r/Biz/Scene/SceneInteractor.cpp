@@ -41,8 +41,9 @@
 #include <fmt/ranges.h>
 #include <map>
 #include <set>
-#include <vector>
+#include <tuple>
 #include <unordered_set>
+#include <vector>
 
 #include <tracy/Tracy.hpp>
 
@@ -63,6 +64,7 @@ using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelObjectPtrs;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::ModelVolumePtrs;
 using Slic3r::Domain::Point;
 using Slic3r::Domain::Points;
 using Slic3r::Domain::Polygon;
@@ -452,6 +454,44 @@ Domain::ElementRefs SceneInteractor::selected_volumes_with_shear() const
     }
 
     return result;
+}
+
+ElementRefs SceneInteractor::selected_volumes() const
+{
+    const ObjectSelection& selection = this->object_selection();
+    const Project& project           = m_workbench.project(m_selected_project_id);
+
+    ElementRefs volume_refs;
+    for (const ElementRef& element : selection.elements) {
+        if (element.is_wipe_tower()) {
+            continue;
+        }
+
+        if (selection.mode == SelectionMode::Volume) {
+            if (project.find_volume_by_id(element.object_id, element.volume_id) != nullptr) {
+                volume_refs.push_back(element);
+            }
+
+            continue;
+        }
+
+        const ModelObject* object = project.find_object_by_id(element.object_id);
+        if (object == nullptr) {
+            continue;
+        }
+
+        for (const ModelVolume* volume : object->volumes) {
+            volume_refs.emplace_back(element.object_id, element.instance_id, volume->id().id);
+        }
+    }
+
+    const auto volume_key = [](const ElementRef& element)
+    { return std::tie(element.object_id, element.volume_id); };
+
+    std::ranges::sort(volume_refs, {}, volume_key);
+    volume_refs.erase(std::ranges::unique(volume_refs, {}, volume_key).begin(), volume_refs.end());
+
+    return volume_refs;
 }
 
 std::set<SelectionReferenceFrame> SceneInteractor::object_selection_reference_frame_options() const
@@ -1006,25 +1046,65 @@ void SceneInteractor::notify_listener_on_objects(const Domain::Project& project)
 
 void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
 {
-    Domain::Project& project = m_workbench.project(m_selected_project_id);
-    Domain::ElementRefs removed_ids;
-    Domain::ElementRefs updated_ids;
-    removed_ids.reserve(meshes.size());
-    updated_ids.reserve(meshes.size());
-    std::vector<size_t> object_ids;
-    object_ids.reserve(meshes.size());
+    VolumeMeshReplacements replacements;
+    replacements.reserve(meshes.size());
     for (RefMesh& mesh : meshes) {
-        const Domain::ElementRef& id        = mesh.first;
-        Domain::TriangleMesh& triangle_mesh = mesh.second;
-        Domain::ModelVolume* volume_ptr     = project.find_volume_by_id(id.object_id, id.volume_id);
+        replacements.push_back(VolumeMeshReplacement{mesh.first, std::move(mesh.second)});
+    }
+
+    this->change_volume_meshes(std::move(replacements));
+}
+
+ElementRefs SceneInteractor::change_volume_meshes(VolumeMeshReplacements&& replacements)
+{
+    Project& project = m_workbench.project(m_selected_project_id);
+
+    ModelVolumePtrs volumes;
+    volumes.reserve(replacements.size());
+    for (const VolumeMeshReplacement& replacement : replacements) {
+        ModelVolume* volume_ptr =
+            project.find_volume_by_id(replacement.element.object_id, replacement.element.volume_id);
 
         assert(volume_ptr != nullptr);
-        if (volume_ptr == nullptr)
-            return;
+        if (volume_ptr == nullptr) {
+            return {};
+        }
 
-        Domain::ModelVolume& volume = *volume_ptr;
+        volumes.push_back(volume_ptr);
+    }
+
+    ElementRefs removed_ids;
+    ElementRefs updated_ids;
+    removed_ids.reserve(replacements.size());
+    updated_ids.reserve(replacements.size());
+    std::vector<size_t> object_ids;
+    object_ids.reserve(replacements.size());
+
+    for (VolumeMeshReplacement& replacement : replacements) {
+        const size_t replacement_idx = &replacement - replacements.data();
+        const ElementRef& id         = replacement.element;
+
+        ModelVolume& volume = *volumes[replacement_idx];
         volume.reset_extra_facets();
-        volume.set_mesh(std::move(triangle_mesh));
+        volume.set_mesh(std::move(replacement.mesh));
+
+        if (replacement.new_transformation.has_value()) {
+            volume.set_transformation(replacement.new_transformation.value());
+        }
+
+        if (replacement.new_source.has_value()) {
+            volume.source = replacement.new_source.value();
+        }
+
+        if (replacement.new_name.has_value()) {
+            volume.name = replacement.new_name.value();
+
+            ModelObject* object = project.find_object_by_id(id.object_id);
+            if (object != nullptr && object->volumes.size() == 1) {
+                object->name = replacement.new_name.value();
+            }
+        }
+
         Algorithms::ModelVolume::calculate_convex_hull(volume);
         volume.set_new_unique_id();
 
@@ -1059,6 +1139,8 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated_ids);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
+
+    return updated_ids;
 }
 
 void SceneInteractor::modify_facets_annotations(
@@ -1593,6 +1675,24 @@ bool SceneInteractor::can_export_selection_as_mesh() const
     }
 
     return selection.elements.size() == 1 || selection.elements.size() == object->instances.size();
+}
+
+bool SceneInteractor::can_replace_selected_volume() const
+{
+    const ObjectSelection& selection = this->object_selection();
+    if (selection.empty() || selection.contains_wipe_tower() || !selection.only_single_object()) {
+        return false;
+    }
+
+    const ElementRefs volume_refs = this->selected_volumes();
+    if (volume_refs.size() != 1) {
+        return false;
+    }
+
+    const ModelObject* object =
+        m_workbench.project(m_selected_project_id).find_object_by_id(volume_refs.front().object_id);
+
+    return object != nullptr && !object->is_cut();
 }
 
 void SceneInteractor::invalidate_cut_info()

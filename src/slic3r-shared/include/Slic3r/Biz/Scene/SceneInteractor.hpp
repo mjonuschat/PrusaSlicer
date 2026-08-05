@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <unordered_map>
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
@@ -257,9 +258,22 @@ public:
         const std::vector<Domain::ElementRef>& source_elements
     );
 
-    using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
+    using RefMesh   = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;
+
+    struct VolumeMeshReplacement
+    {
+        Domain::ElementRef element;
+        Domain::TriangleMesh mesh;
+        std::optional<Domain::ModelVolume::Source> new_source;
+        std::optional<Domain::Transform3d> new_transformation;
+        std::optional<std::string> new_name;
+    };
+
+    using VolumeMeshReplacements = std::vector<VolumeMeshReplacement>;
+
     void change_volume_meshes(RefMeshes&& meshes);
+    Domain::ElementRefs change_volume_meshes(VolumeMeshReplacements&& replacements);
 
     /**
      * @brief Modify facets annotations for given volumes.
@@ -317,6 +331,11 @@ public:
      * selected instance or all instances of the object must be selected.
      */
     bool can_export_selection_as_mesh() const;
+
+    /**
+     * @brief Whether the mesh of the selected volume can be replaced from a file.
+     */
+    bool can_replace_selected_volume() const;
 
     /**
      * Delete elements (volumes or instances) from the current scene selection.
@@ -416,6 +435,12 @@ public:
     Domain::ElementRefs selected_instance_all_volumes() const;
 
     Domain::ElementRefs selected_volumes_with_shear() const;
+
+    /**
+     * @brief Volumes of the current selection, each of them once.
+     */
+    Domain::ElementRefs selected_volumes() const;
+
     std::set<SelectionReferenceFrame> object_selection_reference_frame_options() const;
     SelectionReferenceFrame object_selection_reference_frame() const;
     bool reload_object_selection_reference_frame(SelectionReferenceFrame preferred_frame);
