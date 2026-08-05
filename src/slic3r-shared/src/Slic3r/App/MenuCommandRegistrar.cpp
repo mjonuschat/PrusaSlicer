@@ -28,6 +28,7 @@
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/MeshExportLogic.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
@@ -527,8 +528,11 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ExportObject,
             CommandName::ExportAsStl,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { this->export_selection_as_stl_obj(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_export_selection_as_mesh(); }
+            }
         )
         .append_item(
             MenuItemName::ReplaceObject,
@@ -1124,7 +1128,7 @@ void MenuCommandRegistrar::load_project()
     dlg_manager.show_file_dialog(
         FileDialogType::Open,
         _u8L("Open Project"),
-        default_dialog_folder(),
+        this->default_dialog_folder(),
         "",
         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
         callback
@@ -1159,7 +1163,7 @@ void MenuCommandRegistrar::save_project_as()
         dlg_manager.show_file_dialog(
             FileDialogType::Save,
             _u8L("Save Project"),
-            default_dialog_folder(),
+            this->default_dialog_folder(),
             project_name,
             Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
             callback
@@ -1192,7 +1196,7 @@ void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        default_dialog_folder(),
+        this->default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
                                                          import_file_types,
@@ -1292,7 +1296,7 @@ MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeF
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        default_dialog_folder(),
+        this->default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
                                                          import_file_types,
@@ -1304,6 +1308,35 @@ MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeF
 }
 
 void MenuCommandRegistrar::load_shape_from_gallery(Domain::ModelVolumeType type) {}
+
+void MenuCommandRegistrar::export_selection_as_stl_obj()
+{
+    IDialogManager::FileCallback callback =
+        [this](const bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (!success || file_paths.empty()) {
+            return;
+        }
+
+        MeshExportLogic::export_selection(
+            file_paths.front(),
+            m_project_interactor.scene_interactor(),
+            &AppServices::instance().dialog_manager()
+        );
+    };
+
+    AppServices::instance().dialog_manager().show_file_dialog(
+        FileDialogType::Save,
+        _u8L("Export as STL/OBJ"),
+        this->default_dialog_folder(),
+        MeshExportLogic::proposed_export_file_name(m_project_interactor.scene_interactor()),
+        Wildcards::generate_wildcards(
+            Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj,
+            Wildcards::TypeFlag::Stl
+        ),
+        callback
+    );
+}
 
 // Maps UI language to supported website locale codes.
 static std::string current_language_code_safe()

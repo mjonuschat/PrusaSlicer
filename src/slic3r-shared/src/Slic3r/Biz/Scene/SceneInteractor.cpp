@@ -1574,6 +1574,27 @@ bool SceneInteractor::can_invalidate_cut_info() const
     return false;
 }
 
+bool SceneInteractor::can_export_selection_as_mesh() const
+{
+    const ObjectSelection& selection = this->object_selection();
+    if (selection.empty() || selection.contains_wipe_tower() || !selection.only_single_object()) {
+        return false;
+    }
+
+    const Project& project    = m_workbench.project(m_selected_project_id);
+    const ModelObject* object = project.find_object_by_id(selection.elements.front().object_id);
+    if (object == nullptr) {
+        return false;
+    }
+
+    if (selection.mode == SelectionMode::Volume) {
+        ASSERT(selection.elements.size() == 1);
+        return selection.elements.front().has_volume();
+    }
+
+    return selection.elements.size() == 1 || selection.elements.size() == object->instances.size();
+}
+
 void SceneInteractor::invalidate_cut_info()
 {
     const Biz::Scene::ObjectSelection& selection = object_selection();
@@ -2388,9 +2409,14 @@ void SceneInteractor::on_preset_value_changed(
     }
 }
 
-const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const
+const Project& SceneInteractor::selected_project() const
 {
-    return m_projects.find(m_selected_project_id)->second.project.config_containers();
+    return m_projects.find(m_selected_project_id)->second.project;
+}
+
+const Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const
+{
+    return this->selected_project().config_containers();
 }
 
 const Domain::ModelInstanceList& SceneInteractor::unplaced_model_instances(const Domain::SelectionId project_id) const
@@ -2405,7 +2431,7 @@ const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_mode
 
 const BedContainer::BedList& SceneInteractor::selected_project_beds() const
 {
-    const Project& project{m_projects.find(m_selected_project_id)->second.project};
+    const Project& project = this->selected_project();
     return project.bed_container().beds();
 }
 

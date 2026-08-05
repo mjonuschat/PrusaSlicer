@@ -310,6 +310,15 @@ public:
     void invalidate_cut_info();
 
     /**
+     * @brief Whether the current selection can be exported as a single mesh file.
+     *
+     * The selection must contain exactly one object and no wipe tower. In Volume mode
+     * exactly one volume of any type must be selected. In Instance mode either one fully
+     * selected instance or all instances of the object must be selected.
+     */
+    bool can_export_selection_as_mesh() const;
+
+    /**
      * Delete elements (volumes or instances) from the current scene selection.
      *
      * @return An optional string containing the name of the last solid part that was attempted to be deleted.
@@ -383,6 +392,7 @@ public:
         const Domain::ConfigItem& item
     ) override;
 
+    const Domain::Project& selected_project() const;
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
     const Domain::ModelInstanceList& unplaced_model_instances(const Domain::SelectionId project_id) const;
     const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;

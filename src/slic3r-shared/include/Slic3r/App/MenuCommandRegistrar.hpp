@@ -95,6 +95,8 @@ private:
         Domain::ModelVolumeType type = Domain::ModelVolumeType::MODEL_PART
     );
 
+    void export_selection_as_stl_obj();
+
     struct OpenBrowserParams
     {
         std::string url;
