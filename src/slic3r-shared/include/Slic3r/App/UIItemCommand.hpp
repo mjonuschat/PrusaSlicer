@@ -56,13 +56,6 @@ public:
         return m_name.c_str();
     }
 
-    void execute() const override
-    {
-        if (m_execute) {
-            m_execute();
-        }
-    }
-
     bool has_todo_state() const
     {
         return m_extra_opts.todo;
@@ -94,6 +87,14 @@ public:
     {
         if (m_extra_opts.checked_changed) {
             m_extra_opts.checked_changed(checked);
+        }
+    }
+
+private:
+    void do_execute() const override
+    {
+        if (m_execute) {
+            m_execute();
         }
     }
 

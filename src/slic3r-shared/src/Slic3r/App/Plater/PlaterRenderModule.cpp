@@ -329,6 +329,10 @@ void PlaterRenderModule::on_init(
     m_project_interactor.removable_drive_service().add_status_listener(&m_command_binding_manager);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(&m_command_binding_manager);
 
+    Platform::CommandExecutionNotifier::instance().add_listener<Platform::ICommandExecutedListener>(
+        this
+    );
+
     init_gizmos();
     init_scene();
 
@@ -1298,15 +1302,7 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
         && e.button() == Platform::MouseButton::Left
         && e.type() == Platform::MouseEvent::Type::ButtonUp)
     {
-        for (Yoga::Menu* menu :
-             {m_bed_menu,
-              m_object_menu,
-              m_volume_menu,
-              m_multi_objects_menu,
-              m_svg_or_text_menu})
-        {
-            menu->close();
-        }
+        close_all_menus();
     }
 }
 
@@ -1381,6 +1377,21 @@ void PlaterRenderModule::on_preset_selection_changed(
 )
 {
     this->update_toolbar_visibility();
+}
+
+void PlaterRenderModule::close_all_menus()
+{
+    for (Yoga::Menu* menu :
+         {m_bed_menu, m_object_menu, m_volume_menu, m_multi_objects_menu, m_svg_or_text_menu})
+    {
+        menu->close();
+    }
+}
+
+void PlaterRenderModule::on_command_executed()
+{
+    // Close menus on some command execution
+    close_all_menus();
 }
 
 } // namespace Slic3r::App::Plater

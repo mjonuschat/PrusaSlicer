@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include "Slic3r/App/Platform/CommandExecutionNotifier.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
@@ -76,6 +77,7 @@ class ThumbnailImageGenerator;
 
 class PlaterRenderModule final :
     public Platform::AbstractRenderModule,
+    public Platform::ICommandExecutedListener,
     public Biz::IStatusCacheChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     private Scene::IGizmoActiveToolListener,
@@ -104,6 +106,8 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::ObjectSelection& selection
     ) override;
+
+    void on_command_executed() override;
 
     void set_navigator(Navigator* navigator) override;
 
@@ -216,6 +220,7 @@ private:
     void update_toolbar_visibility();
 
     void init_gizmos();
+    void close_all_menus();
 
     ToolBarButton* get_toolbar_button(Scene::ToolType tool_type) const;
 

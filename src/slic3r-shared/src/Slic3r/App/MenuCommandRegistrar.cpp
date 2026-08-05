@@ -572,12 +572,14 @@ void MenuCommandRegistrar::register_object_menu_commands()
             []() {},
             UIItemCommandExtraOpts{.todo = true}
         )
+#ifdef _WIN32
         .append_item(
             MenuItemName::FixObjectWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm,
             []() {},
             UIItemCommandExtraOpts{.todo = true}
         )
+#endif
         .append_separator()
         .append_item(
             MenuItemName::InvalidateCutInfo,
@@ -1038,10 +1040,13 @@ void MenuCommandRegistrar::register_volume_menu_commands()
         .append_item_from_command(MenuItemName::ReloadVolume, CommandName::ReloadFromDisk)
         .append_separator()
         .append_item_from_command(MenuItemName::SplitVolume, CommandName::SplitToVolumes)
+#ifdef _WIN32
         .append_item_from_command(
             MenuItemName::FixVolumeWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm
-        );
+        )
+#endif
+    ;
 }
 
 void MenuCommandRegistrar::register_multi_object_menu_commands()
@@ -1059,10 +1064,12 @@ void MenuCommandRegistrar::register_multi_object_menu_commands()
             CommandName::SetNumberOfInstances
         )
         .append_separator()
+#ifdef _WIN32
         .append_item_from_command(
             MenuItemName::FixMultiObjectWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm
         )
+#endif
         .append_item(
             MenuItemName::MergeMultiObjects,
             "merge-multi-objects",

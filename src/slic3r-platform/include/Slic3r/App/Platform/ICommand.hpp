@@ -5,18 +5,33 @@
 #include <string>
 #include <vector>
 #include "Slic3r/App/Platform/KeyboardShortcut.hpp"
+#include "Slic3r/App/Platform/CommandExecutionNotifier.hpp"
 
 namespace Slic3r::App::Platform {
 
 using KeyboardShortcuts = std::vector<KeyboardShortcut>;
 
-class ICommand
+class ICommandExecutor
+{
+public:
+    virtual ~ICommandExecutor() = default;
+
+    void execute() const
+    {
+        do_execute();
+        CommandExecutionNotifier::instance().notify_command_executed();
+    }
+
+protected:
+    virtual void do_execute() const = 0;
+};
+
+class ICommand : public ICommandExecutor
 {
 public:
     virtual ~ICommand() = default;
 
     virtual const char* name() const = 0;
-    virtual void execute() const     = 0;
 
     virtual const std::optional<KeyboardShortcuts> keyboard_shortcuts() const
     {
@@ -71,11 +86,6 @@ public:
         return m_name.c_str();
     }
 
-    void execute() const override
-    {
-        m_execute();
-    }
-
     const std::optional<KeyboardShortcuts> keyboard_shortcuts() const override
     {
         return m_extra_opts.keyboard_shortcuts;
@@ -84,6 +94,13 @@ public:
     bool enabled() const override
     {
         return m_extra_opts.enabled ? m_extra_opts.enabled() : true;
+    }
+
+private:
+
+    void do_execute() const override
+    {
+        m_execute();
     }
 
 private:

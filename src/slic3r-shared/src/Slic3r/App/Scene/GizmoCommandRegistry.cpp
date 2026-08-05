@@ -22,11 +22,6 @@ public:
         return m_wrapped_command->name();
     }
 
-    void execute() const override
-    {
-        m_wrapped_command->execute();
-    }
-
     const std::optional<Platform::KeyboardShortcuts> keyboard_shortcuts() const override
     {
         return m_wrapped_command->keyboard_shortcuts();
@@ -37,6 +32,12 @@ public:
         if (!m_gizmo_manager.is_tool_active_in_current_project(m_tool_gizmo))
             return false;
         return m_wrapped_command->enabled();
+    }
+
+private:
+    void do_execute() const override
+    {
+        m_wrapped_command->execute();
     }
 
 private:
