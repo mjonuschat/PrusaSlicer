@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -29,6 +30,13 @@ inline void append(std::vector<T, Alloc>& dest, std::vector<T, Alloc>&& src)
         src.clear();
         src.shrink_to_fit();
     }
+}
+
+template <typename T>
+inline void sort_remove_duplicates(std::vector<T>& vec)
+{
+    std::sort(vec.begin(), vec.end());
+    vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 }
 
 // Compute the next highest power of 2 of 32-bit v
