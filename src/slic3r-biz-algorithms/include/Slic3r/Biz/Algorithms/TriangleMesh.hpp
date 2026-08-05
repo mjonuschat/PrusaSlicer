@@ -84,7 +84,10 @@ Domain::BoundingBox3d transformed_bounding_box(
 // above the given z in world coordinates.
 Domain::BoundingBox3d transformed_bounding_box(const Domain::TriangleMesh& mesh, const Domain::Transform3d& trafo, double world_z);
 
-void write_obj_file(const Domain::TriangleMesh& mesh, const char* output_file);
+/**
+ * Returns false when the output file could not be opened for writing.
+ */
+bool write_obj_file(const Domain::TriangleMesh& mesh, const char* output_file);
 
 void trianglemesh_repair_on_import(stl_file& stl);
 

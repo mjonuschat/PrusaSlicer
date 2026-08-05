@@ -365,11 +365,9 @@ std::vector<TriangleMesh> split(const TriangleMesh& mesh)
     return out;
 }
 
-
-
-void write_obj_file(const TriangleMesh& mesh, const char* output_file)
+bool write_obj_file(const TriangleMesh& mesh, const char* output_file)
 {
-    its_write_obj(mesh.its, output_file);
+    return its_write_obj(mesh.its, output_file);
 }
 
 // Create a mapping from triangle edge into face.

@@ -96,20 +96,15 @@ tl::expected<Domain::TriangleMesh, std::string> load_obj(const std::string& path
     return mesh_out;
 }
 
-
-namespace {
-bool store_obj(const std::string& path, Domain::TriangleMesh *mesh)
+bool store_obj(const std::string& path, const Domain::TriangleMesh& mesh)
 {
-    //FIXME returning false even if write failed.
-    Biz::Algorithms::TriangleMesh::write_obj_file(*mesh, path.c_str());
-    return true;
+    return Algorithms::TriangleMesh::write_obj_file(mesh, path.c_str());
 }
-} // anonymous namespace
 
-bool store_obj(const std::string& path, Domain::Model *model)
+bool store_obj(const std::string& path, Domain::Model* model)
 {
     Domain::TriangleMesh mesh = Algorithms::Model::flatten_to_mesh(*model);
-    return store_obj(path, &mesh);
+    return store_obj(path, mesh);
 }
 
 }; // namespace Slic3r::Biz
