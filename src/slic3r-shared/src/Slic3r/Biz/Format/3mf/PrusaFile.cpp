@@ -26,6 +26,9 @@
 using Slic3r::Biz::_u8L;
 using Slic3r::Domain::FacetsAnnotation;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::TriangleSelector::TriangleBitStreamMapping;
+using Slic3r::Domain::TriangleSelector::TriangleSplittingData;
+using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 using ModelObject = Slic3r::Domain::ModelObject;
 using ModelVolume = Slic3r::Domain::ModelVolume;
@@ -763,9 +766,15 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
         return;
     }
 
-    auto json_to_facets = [&collected_issues](const json &facets_json, Domain::FacetsAnnotation &facets) {
+    auto json_to_facets = [&collected_issues](
+                              const json& facets_json,
+                              FacetsAnnotation& facets,
+                              const size_t mesh_facets_count
+                          )
+    {
         if (!facets_json.is_array())
             return;
+
         facets.reserve(static_cast<int>(facets_json.size()));
         for (const auto& facet_json: facets_json){
             if(!is_valid(facet_json, FACET_NAMES, collected_issues, RT::facets_unknown_facet_key))
@@ -782,6 +791,16 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
             facets.set_triangle_from_string(triangle_index, data);
         }
         facets.shrink_to_fit();
+
+        TriangleSplittingData& splitting_data = facets.triangle_splitting_data;
+        const std::vector<TriangleBitStreamMapping>& triangles_to_split =
+            splitting_data.triangles_to_split;
+
+        // Unpainted facets aren't serialized, so fewer deserialized triangles_to_split than mesh
+        // facets means that some facet keeps the default (NONE) state.
+        if (!triangles_to_split.empty() && triangles_to_split.size() < mesh_facets_count) {
+            splitting_data.used_states[static_cast<size_t>(TriangleStateType::NONE)] = true;
+        }
     };
 
     // Localized names of paintings skipped because of an unsupported version, shown to the user in the warning dialog.
@@ -811,7 +830,7 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssue
         }
 
         for (ModelVolume* mv : volumes) {
-            json_to_facets(volume_facets[facets_key], mv->*facets_member);
+            json_to_facets(volume_facets[facets_key], mv->*facets_member, mv->mesh().facets_count());
         }
     };
 
