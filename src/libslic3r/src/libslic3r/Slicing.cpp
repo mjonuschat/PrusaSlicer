@@ -13,6 +13,7 @@
 #include "libslic3r/HwConfigUtils.hpp"
 #include "libslic3r/ShrinkageCompensation.hpp"
 #include "libslic3r/SlicingInput.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 #include <limits>
 #include <algorithm>
@@ -177,6 +178,7 @@ SlicingParameters SlicingParameters::create_from_config(
 
     const auto partial_object_config_fdm = prepare_slicing_object_input(
         object_settings,
+        hw_config,
         hw_config.material_slot_count()
     );
     ASSERT(partial_object_config_fdm.has_value());

@@ -2,14 +2,11 @@
 #include <catch2/catch_approx.hpp>
 
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
-#include "Slic3r/Domain/Config.hpp"
 
 using namespace Catch;
 
 using Slic3r::Biz::Parser::PlaceholderParser;
 using Slic3r::Biz::Parser::IO::Config;
-using Slic3r::Domain::Percentage;
-using Slic3r::Domain::FloatOrPercentage;
 using Slic3r::Biz::Parser::IO::Vector;
 using Slic3r::Biz::Parser::IO::Scalar;
 using Slic3r::Biz::Parser::IO::Value;
@@ -24,7 +21,6 @@ TEST_CASE("Placeholder parser scripting", "[PlaceholderParser]") {
     config.set("printer_notes", std::string{"  PRINTER_VENDOR_PRUSA3D  PRINTER_MODEL_MK2  "});
     config.set("nozzle_diameter", std::vector<double>{0.6, 0.6, 0.6, 0.6});
     config.set("temperature", std::vector<int>{357, 359, 363, 378});
-    config.set("first_layer_speed", FloatOrPercentage{Percentage{50}});
     config.set("idle_temperature", std::vector<std::optional<int>>{100, std::nullopt, 200});
 
     PlaceholderParser parser;
@@ -105,25 +101,6 @@ TEST_CASE("Placeholder parser scripting", "[PlaceholderParser]") {
     SECTION("math: interpolate_table(13.84375892476, (0, 0), (20, 20))") { REQUIRE(std::stod(parser.process("{interpolate_table(13.84375892476, (0, 0), (20, 20))}")) == Approx(13.84375892476)); }
     SECTION("math: interpolate_table(13, (0, 0), (20, 20), (30, 20))") { REQUIRE(std::stod(parser.process("{interpolate_table(13, (0, 0), (20, 20), (30, 20))}")) == Approx(13.)); }
     SECTION("math: interpolate_table(25, (0, 0), (20, 20), (30, 20))") { REQUIRE(std::stod(parser.process("{interpolate_table(25, (0, 0), (20, 20), (30, 20))}")) == Approx(20.)); }
-
-    parser.set("layer_height", 0.2);
-    parser.set("perimeter_extrusion_width", Value{Scalar{FloatOrPercentage{Percentage{50}}, "layer_height"}});
-    parser.set("first_layer_height", Value{Scalar{FloatOrPercentage{Percentage{200}}, "layer_height"}});
-    parser.set("first_layer_extrusion_width", Value{Scalar{FloatOrPercentage{Percentage{50}}, "first_layer_height"}});
-
-    parser.set("external_perimeter_extrusion_width", 0.5);
-    parser.set("support_material_xy_spacing", Value{Scalar{FloatOrPercentage{Percentage{50}}, "external_perimeter_extrusion_width"}});
-
-    // Test the "coFloatOrPercent" and "xxx_extrusion_width" substitutions.
-    // first_layer_extrusion_width ratio_over first_layer_heigth.
-    SECTION("perimeter_extrusion_width") { REQUIRE(std::stod(parser.process("{perimeter_extrusion_width}")) == Approx(0.1)); }
-    SECTION("first_layer_extrusion_width") { REQUIRE(std::stod(parser.process("{first_layer_extrusion_width}")) == Approx(0.2)); }
-    SECTION("support_material_xy_spacing") { REQUIRE(std::stod(parser.process("{support_material_xy_spacing}")) == Approx(0.25)); }
-
-    parser.set("first_layer_speed", FloatOrPercentage{Percentage{50}});
-    // If first_layer_speed is set to percent, then it is applied over respective extrusion types by overriding their respective speeds.
-    // The PlaceholderParser has no way to know which extrusion type the caller has in mind, therefore it throws.
-    SECTION("first_layer_speed") { REQUIRE_THROWS(parser.process("{first_layer_speed}")); }
 
     // Test the boolean expression parser.
     auto boolean_expression = [&parser](const std::string& templ) { return parser.evaluate_boolean_expression(templ, parser.config()); };

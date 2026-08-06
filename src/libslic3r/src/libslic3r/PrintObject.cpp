@@ -2886,7 +2886,7 @@ void PrintObject::combine_infill()
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
         const PrintRegion &region                        = this->printing_region(region_id);
         const size_t       combine_infill_every_n_layers = region.extruder_config_value<int>("infill_every_layers", FlowRole::frInfill);
-        const bool         automatic_infill_combination  = region.config().get<bool>("automatic_infill_combination");
+        const bool         automatic_infill_combination  = region.extruder_config_value<bool>("automatic_infill_combination", FlowRole::frInfill);
         const bool         enable_combine_infill         = automatic_infill_combination || combine_infill_every_n_layers >= 2;
 
         if (!enable_combine_infill || region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill) == Domain::Percentage{0.}) {
@@ -2900,7 +2900,7 @@ void PrintObject::combine_infill()
             region.nozzle_diameter(FlowRole::frSolidInfill)
         );
 
-        const double automatic_infill_combination_max_layer_height = region.config().get<Domain::FloatOrPercentage>("automatic_infill_combination_max_layer_height").get_abs_value(nozzle_diameter);
+        const double automatic_infill_combination_max_layer_height = region.extruder_config_value<Domain::FloatOrPercentage>("automatic_infill_combination_max_layer_height", FlowRole::frInfill).get_abs_value(nozzle_diameter);
         const double max_combine_layer_height                      = automatic_infill_combination ? std::min(automatic_infill_combination_max_layer_height, nozzle_diameter) : nozzle_diameter;
 
         // define the combinations

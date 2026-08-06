@@ -20,55 +20,14 @@ public:
         const Preset::HwPrinterConfig& hw_config
     );
 
-    const Preset::HwPrinterConfig& hw_config() const {
-        return m_hw_config;
-    }
-
-    static FullConfigFDM defaults() {
-
-        Preset::HwToolConfig tool_config;
-
-        Preset::HwPrinterConfig hw_config{
-            .id                   = generate_uuid(),
-            .printer_id           = {},
-            .legacy_printer_model = {},
-            .vendor_id            = {},
-            .repo_id              = {},
-            .repo_version         = {},
-            .name                 = {},
-            .short_name           = {},
-            .technology           = PrinterTechnology::FFF,
-            .model                = {},
-            .tool_count           = 1,
-            .features             = {},
-            .visual               = {},
-            .tools                = {1, Preset::HwToolConfig{}},
-            .feeders              = {
-                {Preset::Address{0},
-                    Preset::HwFeederConfig{
-                        .id         = generate_uuid(),
-                        .type       = Preset::FeederType::Manual,
-                        .model      = {},
-                        .slot_count = 1,
-                        .features   = {}
-                 }}
-            },
-            .materials = {},
-            .sheet     = {}
-        };
-
-        return {ConfigPackFDM{}, {0}, hw_config};
-    }
-
-private:
-    Preset::HwPrinterConfig m_hw_config;
+    static FullConfigFDM defaults();
 };
 
 class PartialObjectConfigFDM : public PartialConfig {
 public:
     PartialObjectConfigFDM(
         const ObjectSettings& object_settings,
-        const std::size_t material_slot_count
+        const Preset::HwPrinterConfig& hw_config
     );
 };
 
@@ -76,7 +35,7 @@ class PartialVolumeConfigFDM : public PartialConfig {
 public:
     PartialVolumeConfigFDM(
         const VolumeSettings& volume_settings,
-        const std::size_t material_slot_count
+        const Preset::HwPrinterConfig& hw_config
     );
 };
 

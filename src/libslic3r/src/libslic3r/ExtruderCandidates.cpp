@@ -1,4 +1,5 @@
 #include "libslic3r/ExtruderCandidates.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;

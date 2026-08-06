@@ -160,7 +160,7 @@ static unsigned get_support_extruder_id(const PrintObject& object, bool is_inter
     // If object->config().support_material_extruder == 0 (which means to not trigger tool change,
     // but use the current extruder instead), use the smallest nozzle diameter.
     const std::vector<double> nozzle_diameters{
-        Biz::Slicing::get_nozzle_diameters(object.config().hw_config())
+        object.config().get<std::vector<double>>("nozzle_diameter")
     };
     double min_nozzle_diameter{std::numeric_limits<double>::max()};
     int min_nozzle_extruder_id{-1};

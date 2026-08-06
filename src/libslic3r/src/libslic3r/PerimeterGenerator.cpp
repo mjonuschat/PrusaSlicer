@@ -1054,7 +1054,7 @@ void PerimeterGenerator::process_arachne(
 
     ExPolygons last   = offset_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
     Polygons   last_p = Algorithms::ExPolygon::to_polygons(last);
-    Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.config);
+    Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.config, extruder_id);
     Arachne::Perimeters    perimeters     = wall_tool_paths.getToolPaths();
     ExPolygons             infill_contour = union_ex(wall_tool_paths.getInnerContour());
 
@@ -1097,7 +1097,7 @@ void PerimeterGenerator::process_arachne(
             top_expolygons = intersection_ex(top_expolygons, infill_contour);
 
             const Polygons not_top_polygons = Algorithms::ExPolygon::to_polygons(not_top_expolygons);
-            Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.config);
+            Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.config, extruder_id);
             Arachne::Perimeters inner_perimeters = inner_wall_tool_paths.getToolPaths();
 
             // Recalculate indexes of inner perimeters before merging them.
@@ -1116,7 +1116,7 @@ void PerimeterGenerator::process_arachne(
         } else {
             // There is no top surface ExPolygon, so we call Arachne again with parameters
             // like when the single perimeter feature is disabled.
-            Arachne::WallToolPaths no_single_perimeter_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 2), 0, params.layer_height, params.config);
+            Arachne::WallToolPaths no_single_perimeter_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 2), 0, params.layer_height, params.config, extruder_id);
             perimeters     = no_single_perimeter_tool_paths.getToolPaths();
             infill_contour = union_ex(no_single_perimeter_tool_paths.getInnerContour());
         }

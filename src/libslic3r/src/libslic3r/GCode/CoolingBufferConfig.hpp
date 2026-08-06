@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 namespace Slic3r::Biz::Slicing {
 struct CoolingBufferConfig

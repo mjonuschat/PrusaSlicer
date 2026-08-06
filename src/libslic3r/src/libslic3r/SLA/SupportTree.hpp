@@ -13,6 +13,7 @@
 
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/ConfigDefsSLA.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 
 #include "Slic3r/Biz/Algorithms/AABBMesh.hpp"

@@ -106,11 +106,17 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/Config.hpp
     src/Slic3r/Domain/Config.cpp
 
+    include/Slic3r/Domain/ConfigDefsFDM.hpp
+    src/Slic3r/Domain/ConfigDefsFDM.cpp
+
     include/Slic3r/Domain/ConfigBoxesFDM.hpp
     src/Slic3r/Domain/ConfigBoxesFDM.cpp
 
     include/Slic3r/Domain/FullConfigFDM.hpp
     src/Slic3r/Domain/FullConfigFDM.cpp
+
+    include/Slic3r/Domain/ConfigDefsSLA.hpp
+    src/Slic3r/Domain/ConfigDefsSLA.cpp
 
     include/Slic3r/Domain/ConfigBoxesSLA.hpp
     src/Slic3r/Domain/ConfigBoxesSLA.cpp
@@ -206,8 +212,11 @@ endif()
 
 if(SLIC3R_BUILD_TESTS)
     add_executable(slic3r-domain-tests
+        test/Slic3r/Domain/TestUtils.hpp
+        test/Slic3r/Domain/TestUtils.cpp
         test/Slic3r/Domain/ConfigValueTests.cpp
         test/Slic3r/Domain/ConfigTests.cpp
+        test/Slic3r/Domain/FDMConfigTests.cpp
         test/Slic3r/Domain/Preset/PresetTreeTests.cpp
         test/Slic3r/Domain/Preset/HwConfigTests.cpp
         test/Slic3r/Domain/SizeTests.cpp

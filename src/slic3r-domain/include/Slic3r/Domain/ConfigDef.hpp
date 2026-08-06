@@ -36,6 +36,15 @@ enum class SLAConfigLocation
     Object,
 };
 
+enum class CompatibilityRule
+{
+    Undefined,
+    IgnoreOverrides,
+    Min,
+    Max,
+    Average
+};
+
 struct PhysicalPrinterLocation {
     bool operator==(const PhysicalPrinterLocation&) const = default;
     bool operator<(const PhysicalPrinterLocation&) const {
@@ -73,6 +82,7 @@ struct ConfigItemDef
     std::function<ConfigValue(const ConfigLocation& config_location)> init_fn_ex;
     ConfigLocation location; // Which box it belongs to. Must not be empty.
     std::set<ConfigLocation> overrides_in; // Which boxes this can be overridden in.
+    std::string ratio_over;
 
     // Non-translated Label of the GUI input field. In case the GUI input fields are grouped in some views,
     // the label defines a short label of a grouped value, while full_label contains a label of a stand-alone field.
@@ -346,7 +356,7 @@ struct ConfigItemDef
 
     // The backend expects a single option, but it can be specified multiple times on the frontend.
     // Hence a compatibility rule needs to be specified to obtain a single value from multiple.
-    bool require_compatibility_rule = false;
+    CompatibilityRule compatibility_rule = CompatibilityRule::Undefined;
 
     static constexpr const char* nocli = "~~nocli";
 
@@ -425,14 +435,5 @@ private:
     std::vector<ConfigItemDef> m_defs;
     bool m_finalized{false};
     std::set<ConfigLocation> m_acceptable_boxes;
-};
-
-enum class CompatibilityRule
-{
-    Undefined,
-    IgnoreOverrides,
-    Min,
-    Max,
-    Average
 };
 } // namespace Slic3r::Domain

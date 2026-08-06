@@ -1,24 +1,13 @@
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
+#include "Slic3r/Domain/TestUtils.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 using namespace Slic3r::Domain;
 using namespace Slic3r::Domain::Preset;
 
 using Addresses = std::vector<Address>;
+using Slic3r::Test::build_fff_printer_config;
 
-
-HwPrinterConfig build_fff_printer_config(uint8_t tool_count, HwFeederConfigs feeders)
-{
-    HwToolConfigs tools{tool_count, HwToolConfig{}};
-    HwPrinterConfig printer_config = {
-        .printer_id = "printer",
-        .technology = PrinterTechnology::FFF,
-        .tool_count = tool_count,
-        .tools = std::move(tools),
-        .feeders = std::move(feeders)
-    };
-    return printer_config;
-}
 
 Addresses iterate(const HwPrinterConfig& config)
 {

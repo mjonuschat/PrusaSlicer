@@ -706,7 +706,8 @@ PrintObjectsSyncResult sync_print_objects(
         const auto it{reuse_candidates.find(model_object->id())};
 
         const auto object_settings_ptr{std::make_shared<PartialObjectConfigSLA>(
-            model_object->object_settings_sla
+            model_object->object_settings_sla,
+            new_full_config->hw_config()
         )};
         const SLAPrintObjectConfigView new_config{
             new_full_config,
@@ -954,7 +955,7 @@ InvalidatedSteps SLAPrint::apply(
     check_model_ids_validity(model);
 #endif /* _DEBUG */
 
-    const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack)};
+    const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack, metadata.hw_config)};
     const SLAPrintConfigView new_print_config{new_full_config_ptr};
     m_metadata = metadata;
     m_metadata_serializer = serializer;
@@ -963,7 +964,7 @@ InvalidatedSteps SLAPrint::apply(
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
 
-    m_placeholder_parser = PlaceholderParser{Biz::Parser::IO::get_parser_config(config_pack)};
+    m_placeholder_parser = PlaceholderParser{Biz::Parser::IO::get_parser_config(new_print_config)};
 
     // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
     m_print_config = new_print_config;

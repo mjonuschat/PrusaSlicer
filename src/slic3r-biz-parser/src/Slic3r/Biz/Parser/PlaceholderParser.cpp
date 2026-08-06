@@ -1017,46 +1017,6 @@ namespace client
             case IO::Type::Enum:
             case IO::Type::Point:   output.set_s(scalar.serialize());  break;
             case IO::Type::Bool:    output.set_b(scalar.get<bool>());    break;
-            case IO::Type::FloatOrPercent:
-            {
-                std::string opt_key(opt.it_range.begin(), opt.it_range.end());
-                const auto float_or_percent{scalar.get<Domain::FloatOrPercentage>()};
-                if (! float_or_percent.is_percentage()) {
-                    // Not a percent, just return the value.
-                    output.set_d(float_or_percent.float_value());
-                } else {
-                    // Resolve dependencies using the "ratio_over" link to a parent value.
-    			    double v = scalar.get<Domain::FloatOrPercentage>().get_abs_value(1.0); // percent to ratio
-                                                           //
-                    std::string parent_name{scalar.ratio_over()};
-    			    const IO::Value *opt_parent = parent_name.empty() ? nullptr : ctx->resolve_symbol(parent_name);
-    			    for (;;) {
-    			        if (opt_parent == nullptr)
-    			            ctx->throw_exception("FloatOrPercent variable failed to resolve the \"ratio_over\" dependencies", opt.it_range);
-
-
-                        const auto parent_value = std::get<IO::Scalar>(*opt_parent);
-
-                        if (parent_value.type() == IO::Type::Float) {
-                            v *= parent_value.get<double>();
-                            break;
-                        } else if (parent_value.type() == IO::Type::FloatOrPercent) {
-                            const auto value{parent_value.get<Domain::FloatOrPercentage>()};
-                            if (!value.is_percentage()) {
-                                v *= value.float_value();
-                                break;
-                            }
-                            v *= value.get_abs_value(1.0);
-    			        }
-    		        	// Continue one level up in the "ratio_over" hierarchy.
-                        parent_name = parent_value.ratio_over();
-    				    opt_parent = ctx->resolve_symbol(parent_name);
-    				    assert(opt_parent != nullptr);
-    			    }
-                    output.set_d(v);
-    	        }
-    		    break;
-    		}
             default:
                 ctx->throw_exception("Unsupported scalar variable type", opt.it_range);
             }

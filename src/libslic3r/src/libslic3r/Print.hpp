@@ -31,6 +31,7 @@
 
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ConfigCommon.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
 #include "Slic3r/Domain/Point.hpp"
@@ -50,6 +51,7 @@
 #include "libslic3r/PrintSteps.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 namespace Slic3r {
 
@@ -113,6 +115,7 @@ public:
 // Methods NOT modifying the PrintRegion's state:
 public:
     const PrintRegionConfigView& config() const throw() { return m_config; }
+    void finalize_config() { m_config.finalize(); };
     size_t                      config_hash() const throw() { return m_config_hash; }
     // Identifier of this PrintRegion in the list of Print::m_print_regions.
     int                         print_region_id() const throw() { return m_print_region_id; }

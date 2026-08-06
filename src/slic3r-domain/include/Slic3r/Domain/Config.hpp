@@ -12,6 +12,7 @@
 
 #include "Slic3r/Domain/ConfigValue.hpp"
 #include "Slic3r/Domain/ConfigDef.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 namespace Slic3r::Domain {
 // A wrapper type for a single config item. Not polymorphic, not templated. The caller
@@ -187,12 +188,6 @@ using MutBoxRef = std::reference_wrapper<ConfigBox>;
 using MutBoxRefs = std::vector<MutBoxRef>;
 using MutBoxOrBoxesVector = std::vector<std::variant<MutBoxRef, MutBoxRefs>>;
 
-using LocationSize = std::optional<std::size_t>;
-using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
-
-using CompatibilityRules = std::map<std::string, CompatibilityRule>;
-const CompatibilityRules& get_compatibility_rules();
-
 /* @param default_value: Used if any of the items is nullptr. Might be nullptr,
  *     but then all the item values need to be specified.
  *
@@ -222,8 +217,10 @@ public:
     SquashedConfig(
         const BoxOrBoxesVector& boxes,
         const std::vector<unsigned>& extruder_candidates,
-        const ConfigLocationSizes& sizes
+        const Preset::HwPrinterConfig& hw_config
     );
+
+    const Preset::HwPrinterConfig& hw_config() const;
 
     std::vector<std::string> diff_keys(const SquashedConfig& other) const;
 
@@ -242,16 +239,14 @@ public:
 
     std::size_t hash() const;
 
+    const std::map<std::string, ConfigValue>& original_values() const;
+    const std::vector<unsigned>& extruder_candidates() const;
+
 protected:
     std::map<std::string, ConfigValue> m_values;
-
-private:
-    void add(const ConfigBox& box, const ConfigLocationSizes& location_sizes);
-    void add(
-        const BoxRefs& boxes,
-        const std::vector<unsigned>& extruder_candidates,
-        const ConfigLocationSizes& location_sizes
-    );
+    std::map<std::string, ConfigValue> m_original_values;
+    Preset::HwPrinterConfig m_hw_config;
+    std::vector<unsigned> m_extruder_candidates;
 };
 
 class FullConfig : public SquashedConfig {
@@ -270,7 +265,7 @@ protected:
     FullConfig(
         const BoxOrBoxesVector& input,
         const std::vector<unsigned>& extruder_candidates,
-        const ConfigLocationSizes& location_sizes
+        const Preset::HwPrinterConfig& hw_config
     );
 
 private:
@@ -293,7 +288,7 @@ public:
 protected:
     PartialConfig(
         const BoxOrBoxesVector& input,
-        const ConfigLocationSizes& location_sizes
+        const Preset::HwPrinterConfig& hw_config
     );
 
 private:
@@ -312,22 +307,33 @@ public:
 
     template<class T>
     T get(const std::string& key) const {
-        return get_value(key).get<T>();
+        ASSERT(m_finalized);
+        const auto it{m_values.find(key)};
+        ASSERT(it != m_values.end());
+        return it->second.get<T>();
     }
 
     bool operator==(const ConfigView& other) const;
+
+    void finalize();
+
+    const std::map<std::string, ConfigValue>& values() const;
 
     std::size_t hash() const;
 
     std::vector<std::string> diff_keys(const ConfigView& other) const;
 
+    const Domain::Preset::HwPrinterConfig& hw_config() const;
+
 protected:
+    bool m_finalized{false};
     FullConfigPtr m_full_config;
     std::vector<PartialConfigPtr> m_partial_configs;
     std::vector<std::string> m_keys;
+    std::map<std::string, ConfigValue> m_values;
+    Domain::Preset::HwPrinterConfig m_hw_config;
 
-private:
-    ConfigValue get_value(const std::string& key) const;
+    ConfigValue resolve_value(const std::string& key) const;
 };
 
 } // namespace Slic3r::Domain

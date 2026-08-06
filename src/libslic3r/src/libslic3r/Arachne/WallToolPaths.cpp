@@ -43,7 +43,8 @@ WallToolPaths::WallToolPaths(
     const size_t inset_count,
     const coord_t wall_0_inset,
     const double layer_height,
-    const PrintRegionConfigView& print_region_config
+    const PrintRegionConfigView& print_region_config,
+    unsigned extruder_id
 )
     : outline(outline)
     , bead_width_0(bead_width_0)
@@ -59,21 +60,33 @@ WallToolPaths::WallToolPaths(
     , wall_transition_length(0)
     , toolpaths_generated(false)
     , print_region_config(print_region_config)
+    , extruder_id(extruder_id)
 {
+    ASSERT(extruder_id < std::numeric_limits<unsigned>::max());
     const auto nozzle_diameters{Biz::Slicing::get_nozzle_diameters(print_region_config.hw_config())};
     assert(!nozzle_diameters.empty());
     this->min_nozzle_diameter = float(*std::min_element(nozzle_diameters.begin(), nozzle_diameters.end()));
 
-    const auto &min_feature_size_opt = print_region_config.get<Domain::FloatOrPercentage>("min_feature_size");
+    const auto min_feature_size_opt =
+        print_region_config.get<std::vector<Domain::FloatOrPercentage>>("min_feature_size")
+            .at(extruder_id);
     this->min_feature_size = scaled<coord_t>(min_feature_size_opt.get_abs_value(this->min_nozzle_diameter));
 
-    const auto &min_bead_width_opt = print_region_config.get<Domain::FloatOrPercentage>("min_bead_width");
+    const auto min_bead_width_opt =
+        print_region_config.get<std::vector<Domain::FloatOrPercentage>>("min_bead_width")
+            .at(extruder_id);
     this->min_bead_width = scaled<coord_t>(min_bead_width_opt.get_abs_value(this->min_nozzle_diameter));
 
-    const auto &wall_transition_filter_deviation_opt = print_region_config.get<Domain::FloatOrPercentage>("wall_transition_filter_deviation");
-    this->wall_transition_filter_deviation = scaled<coord_t>(wall_transition_filter_deviation_opt.get_abs_value(this->min_nozzle_diameter));
+    const auto wall_transition_filter_deviation_opt =
+        print_region_config
+            .get<std::vector<Domain::FloatOrPercentage>>("wall_transition_filter_deviation")
+            .at(extruder_id);
+    this->wall_transition_filter_deviation = scaled<coord_t>(
+        wall_transition_filter_deviation_opt.get_abs_value(this->min_nozzle_diameter));
 
-    const auto &wall_transition_length_opt = print_region_config.get<Domain::FloatOrPercentage>("wall_transition_length");
+    const auto wall_transition_length_opt =
+        print_region_config.get<std::vector<Domain::FloatOrPercentage>>("wall_transition_length")
+            .at(extruder_id);
     this->wall_transition_length = scaled<coord_t>(wall_transition_length_opt.get_abs_value(this->min_nozzle_diameter));
 }
 
@@ -476,7 +489,9 @@ const std::vector<VariableWidthLines> &WallToolPaths::generate()
     const coord_t smallest_segment = Slic3r::Arachne::meshfix_maximum_resolution;
     const coord_t allowed_distance = Slic3r::Arachne::meshfix_maximum_deviation;
     const coord_t epsilon_offset = (allowed_distance / 2) - 1;
-    const double  transitioning_angle = deg2rad(this->print_region_config.get<double>("wall_transition_angle"));
+    const double transitioning_angle = deg2rad(
+        this->print_region_config.get<std::vector<double>>("wall_transition_angle")
+            .at(extruder_id));
     constexpr coord_t discretization_step_size = scaled<coord_t>(0.8);
 
     // Simplify outline for boost::voronoi consumption. Absolutely no self intersections or near-self intersections allowed:
@@ -508,7 +523,7 @@ const std::vector<VariableWidthLines> &WallToolPaths::generate()
     const double wall_split_middle_threshold = std::clamp(2. * unscaled<double>(this->min_bead_width) / external_perimeter_extrusion_width - 1., 0.01, 0.99); // For an uneven nr. of lines: When to split the middle wall into two.
     const double wall_add_middle_threshold   = std::clamp(unscaled<double>(this->min_bead_width) / perimeter_extrusion_width, 0.01, 0.99); // For an even nr. of lines: When to add a new middle in between the innermost two walls.
 
-    const int wall_distribution_count = this->print_region_config.get<int>("wall_distribution_count");
+    const int wall_distribution_count = this->print_region_config.get<std::vector<int>>("wall_distribution_count").at(extruder_id);
     const size_t max_bead_count = (inset_count < std::numeric_limits<coord_t>::max() / 2) ? 2 * inset_count : std::numeric_limits<coord_t>::max();
     const auto beading_strat = BeadingStrategyFactory::makeStrategy
         (

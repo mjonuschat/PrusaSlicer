@@ -2,6 +2,7 @@
 #include "Slic3r/Biz/ResultExport/SLA/Zipper.hpp"
 
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/ConfigDefsSLA.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
 #include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
@@ -69,7 +70,7 @@ const std::vector<std::string> count_opts{
     "tilt_up_cycles"
 };
 
-std::string tilt_options_to_json(const Domain::FullConfigSLA& cfg, const ConfMap& iniconf)
+std::string tilt_options_to_json(const Domain::ConfigView& cfg, const ConfMap& iniconf)
 {
     json below_node;
     json above_node;
@@ -139,7 +140,7 @@ static std::string serialize(const double value)
     return ss.str();
 }
 
-void fill_iniconf(ConfMap &m, const Domain::FullConfigSLA &cfg, const Domain::SLA::PrintStatistics &stats) {
+void fill_iniconf(ConfMap &m, const Domain::ConfigView &cfg, const Domain::SLA::PrintStatistics &stats) {
     using Domain::SLAMaterialSpeed;
     using Domain::SLAMaterialSpeed::slamsSlow;
     using Domain::SLAMaterialSpeed::slamsFast;
@@ -208,10 +209,10 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
     const auto& stats = *data.print_statistics;
 
     const Biz::Slicing::SerializedConfig& serialized_config{data.serialized_config};
-    const Domain::FullConfigSLA& full_config{data.full_config};
+    const Domain::ConfigView& print_config{data.config};
 
     ConfMap iniconf;
-    fill_iniconf(iniconf, full_config, stats);
+    fill_iniconf(iniconf, print_config, stats);
 
     iniconf["jobDir"] = project;
 
@@ -219,7 +220,7 @@ void store_sl1(const std::string& file_path, const Slicing::SLAResultData& data)
         zipper.add_entry("config.ini");
         zipper << to_ini(iniconf);
         zipper.add_entry("config.json");
-        zipper << tilt_options_to_json(full_config, iniconf);
+        zipper << tilt_options_to_json(print_config, iniconf);
 
         zipper.add_entry("prusaslicer.ini");
         zipper << serialized_config.ini;

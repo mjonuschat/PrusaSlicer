@@ -60,8 +60,6 @@ inline const EnumValueDefs* check_enum_def(const EnumValueDefs* def) {
 
 struct EnumVectorWrapper
 {
-    EnumVectorWrapper() = delete;
-
     template<typename T>
     EnumVectorWrapper(const T& values, const EnumValueDefs* def)
         : m_values{to_ints(values)}
@@ -97,9 +95,12 @@ struct EnumVectorWrapper
     std::vector<size_t> get_indexes() const;
     void set_indexes(const std::vector<size_t>& indexes);
 
+    std::vector<int>& raw();
+
     const std::type_info* type() const;
     const std::vector<int>& values() const;
     const EnumValueDefs& def() const;
+
 
     bool operator==(const EnumVectorWrapper&) const;
 
@@ -121,8 +122,6 @@ private:
 
 struct EnumWrapper
 {
-    EnumWrapper() = delete;
-
     template<typename T>
     explicit EnumWrapper(const T& value, const EnumValueDefs* def)
         : m_value{static_cast<int>(value)}, m_type{&typeid(T)}, m_def{check_enum_def(def)}
@@ -168,22 +167,12 @@ private:
 };
 
 struct ConfigValue {
-    ConfigValue() = delete;
-
-    template <typename T>
-    explicit ConfigValue(const T& value): m_value{value} {}
+    ConfigValue() = default;
 
     explicit ConfigValue(const char* str);
 
-    ConfigValue(const ConfigValue& other);
-
-    ConfigValue(ConfigValue&& other) noexcept;
-
-    ConfigValue& operator=(const ConfigValue& other);
-
-    ConfigValue& operator=(ConfigValue&& other) noexcept;
-
-    ~ConfigValue();
+    template <typename T>
+    explicit ConfigValue(const T& value): m_value{value} {}
 
     template <typename T>
     requires (!std::is_enum_v<T> && !Impl::is_enum_vector<T>())
@@ -287,7 +276,5 @@ private:
         std::vector<FloatOrPercentage>,
         std::vector<Percentage>
     > m_value{bool{}};
-
-    static void assert_types_equal(const ConfigValue& a, const ConfigValue& b);
 };
 }

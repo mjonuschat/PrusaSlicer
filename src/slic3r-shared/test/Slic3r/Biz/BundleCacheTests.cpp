@@ -129,7 +129,6 @@ using Slic3r::Domain::BoxRefs;
 using Slic3r::Domain::BoxOrBoxesVector;
 using Slic3r::Domain::EnumValueDefs;
 using Slic3r::Domain::EnumWrapper;
-using Slic3r::Domain::ConfigLocationSizes;
 
 using Slic3r::Domain::FDMConfigLocation::Print;
 using Slic3r::Domain::FDMConfigLocation::Filament;
@@ -145,11 +144,6 @@ const EnumValueDefs test_enum_def{
     { int(TestEnum::One), "one", "One" },
     { int(TestEnum::Two), "two", "Two" },
     { int(TestEnum::Three), "three", "Three" }
-};
-
-const ConfigLocationSizes location_sizes{
-    {Print, std::nullopt},
-    {Filament, 3}
 };
 
 void init(ConfigDefinitions& defs) {

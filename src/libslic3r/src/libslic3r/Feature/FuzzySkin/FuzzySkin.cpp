@@ -9,6 +9,7 @@
 
 #include "FuzzySkin.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 using namespace Slic3r;
 

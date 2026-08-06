@@ -18,6 +18,9 @@
 #include <vector>
 #include <cassert>
 
+#include "Slic3r/Domain/ConfigDefsSLA.hpp"
+#include "Slic3r/Domain/ConfigCommon.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
@@ -1551,7 +1554,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
     .export_data = std::make_shared<SLAResultData>(SLAResultData{
         .serialized_config = m_print->build_serialized_config(print_statistics),
-        .full_config       = config.full_config(),
+        .config       = config,
         .print_statistics  = print_statistics,
     }),
     .slices  = std::move(slices),
@@ -1648,7 +1651,7 @@ void SLAPrint::Steps::rasterize()
     // Send encoded files to frontend for export files for printer    
     m_print->m_on_sla_result(SLAResult{
         .export_data = std::make_shared<SLAResultData>(SLAResultData{
-            .full_config = printer_config.full_config(),
+            .config = printer_config,
             .files = OutputFiles{
                 .data = std::move(files),
                 .type = output_type

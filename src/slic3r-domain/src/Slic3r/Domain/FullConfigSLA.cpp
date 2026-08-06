@@ -10,24 +10,14 @@ BoxOrBoxesVector as_boxes(const ConfigPackSLA& config_pack) {
     return result;
 }
 
-namespace {
-ConfigLocationSizes get_sla_location_sizes() {
-    return {
-        {SLAConfigLocation::Printer, std::nullopt},
-        {SLAConfigLocation::Print, std::nullopt},
-        {SLAConfigLocation::Material, std::nullopt},
-        {SLAConfigLocation::Object, std::nullopt},
-    };
-}
-}
-
-FullConfigSLA::FullConfigSLA(const ConfigPackSLA& config_pack)
-    : FullConfig{as_boxes(config_pack), {}, get_sla_location_sizes()}
+FullConfigSLA::FullConfigSLA(const ConfigPackSLA& config_pack, const Preset::HwPrinterConfig& hw_config)
+    : FullConfig{as_boxes(config_pack), {}, hw_config}
 {}
 
 PartialObjectConfigSLA::PartialObjectConfigSLA(
-    const SLAObjectSettings& object_settings
+    const SLAObjectSettings& object_settings,
+    const Preset::HwPrinterConfig& hw_config
 )
-    : PartialConfig{{object_settings}, get_sla_location_sizes()}
+    : PartialConfig{{object_settings}, hw_config}
 {}
 } // namespace Slic3r::Domain

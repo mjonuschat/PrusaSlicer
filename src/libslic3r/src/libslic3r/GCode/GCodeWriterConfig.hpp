@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r::Biz::Slicing {

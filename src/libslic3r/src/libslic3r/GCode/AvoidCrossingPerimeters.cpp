@@ -1205,7 +1205,7 @@ static void init_boundary(AvoidCrossingPerimeters::Boundary *boundary, Polygons 
 Polyline AvoidCrossingPerimeters::travel_to(
     const GCodeGenerator& gcodegen,
     const Point& point,
-    const Domain::FloatOrPercentage& max_detour,
+    double max_detour,
     const std::vector<double>& travel_max_lift,
     bool* could_be_wipe_disabled
 )
@@ -1254,15 +1254,13 @@ Polyline AvoidCrossingPerimeters::travel_to(
         travel_intersection_count = 0;
     }
 
-    bool                              max_detour_length_exceeded = false;
-    if (!max_detour.is_zero()) {
+    bool max_detour_length_exceeded = false;
+    if (max_detour != 0) {
         double direct_length     = travel.length();
         double detour            = result_pl.length() - direct_length;
-        double max_detour_length = max_detour.is_percentage() ?
-            max_detour.get_abs_value(direct_length) :
-            scale_(max_detour.float_value());
+        double max_detour_length = scale_(max_detour);
         if (detour > max_detour_length) {
-            result_pl = {start, end};
+            result_pl                  = {start, end};
             max_detour_length_exceeded = true;
         }
     }

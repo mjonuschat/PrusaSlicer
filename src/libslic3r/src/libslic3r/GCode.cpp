@@ -740,7 +740,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     ProcessorConfig processor_config = DoExport::populate_processor_config(
         print->config(),
-        print->config().full_config().hw_config()
+        print->config().hw_config()
     );
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
@@ -3604,11 +3604,25 @@ std::string GCodeGenerator::_extrude(
     if (m_volumetric_speed.at(extruder_id) != 0. && speed == 0)
         speed = m_volumetric_speed.at(extruder_id) / path_attr.mm3_per_mm;
     if (this->on_first_layer()) {
-        const double first_layer_infill_speed{config.first_layer_infill_speed.at(extruder_id).get_abs_value(speed)};
-        if (path_attr.role == ExtrusionRole::SolidInfill && first_layer_infill_speed > 0) {
-            speed = first_layer_infill_speed;
+        if (path_attr.role == ExtrusionRole::InternalInfill) {
+            speed = config.first_layer_infill_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::SolidInfill) {
+            speed = config.first_layer_solid_infill_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::TopSolidInfill) {
+            speed = config.first_layer_top_solid_infill_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::Perimeter) {
+            speed = config.first_layer_perimeter_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
+            speed = config.first_layer_external_perimeter_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::SupportMaterial) {
+            speed = config.first_layer_support_material_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::GapFill) {
+            speed = config.first_layer_gap_fill_speed.at(extruder_id).float_value();
+        } else if (path_attr.role == ExtrusionRole::Skirt) {
+            speed = config.first_layer_support_material_speed.at(extruder_id).float_value();
         } else {
-            speed = config.first_layer_speed.at(extruder_id).get_abs_value(speed);
+            SPDLOG_ERROR("Invalid speed on first layer, using first layer perimeter speed");
+            speed = config.first_layer_perimeter_speed.at(extruder_id).float_value();
         }
     }
     else if (this->object_layer_over_raft())
@@ -4081,7 +4095,7 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         if (pressure_advance != PressureAdvance::Disabled) {
             gcode += m_writer.set_pressure_advance(
                 config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
-                this->m_print->config().full_config().hw_config().vendor_id
+                this->m_print->config().hw_config().vendor_id
             );
 
             if (pressure_advance == PressureAdvance::AutomaticCalibration) {
@@ -4194,7 +4208,7 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
     if (pressure_advance != PressureAdvance::Disabled) {
         gcode += m_writer.set_pressure_advance(
             config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
-            this->m_print->config().full_config().hw_config().vendor_id
+            this->m_print->config().hw_config().vendor_id
         );
 
         if (pressure_advance == PressureAdvance::AutomaticCalibration) {

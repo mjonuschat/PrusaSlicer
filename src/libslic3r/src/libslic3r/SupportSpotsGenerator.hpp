@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Polygon.hpp"

@@ -510,6 +510,17 @@ static void handle_legacy_project_loaded(
 
         config.erase("support_material_auto");
     }
+    if (auto* first_layer_infill_speed{config.option<
+            Slic3rLegacy::ConfigOptionFloatOrPercent>("first_layer_infill_speed", false)};
+        first_layer_infill_speed != nullptr)
+    {
+        auto* first_layer_solid_infill_speed{config.option<
+            Slic3rLegacy::ConfigOptionFloatOrPercent>("first_layer_solid_infill_speed", true)};
+        first_layer_solid_infill_speed->percent = first_layer_infill_speed->percent;
+        first_layer_solid_infill_speed->value = first_layer_infill_speed->value;
+        first_layer_infill_speed->percent = false;
+        first_layer_infill_speed->value = 0;
+    }
 }
 
 }

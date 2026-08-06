@@ -48,7 +48,8 @@ public:
         size_t inset_count,
         coord_t wall_0_inset,
         double layer_height,
-        const PrintRegionConfigView& print_region_config
+        const PrintRegionConfigView& print_region_config,
+        const unsigned extruder_id
     );
 
     /*!
@@ -132,6 +133,7 @@ private:
     std::vector<VariableWidthLines> toolpaths; //<! The generated toolpaths
     Polygons inner_contour;  //<! The inner contour of the generated toolpaths
     PrintRegionConfigView print_region_config;
+    unsigned extruder_id;
 };
 
 } // namespace Slic3r::Arachne

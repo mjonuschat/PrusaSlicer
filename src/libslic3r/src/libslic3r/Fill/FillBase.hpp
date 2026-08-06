@@ -29,6 +29,7 @@
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/ConfigViews.hpp"
@@ -86,6 +87,8 @@ struct FillParams
 
     // For infills that produce closed loops to force printing those loops clockwise.
     bool        prefer_clockwise_movements { false };
+
+    unsigned extruder_id{std::numeric_limits<unsigned>::max()};
 };
 static_assert(std::is_trivially_copyable_v<FillParams>, "FillParams class is not POD (and it should be - see constructor).");
 

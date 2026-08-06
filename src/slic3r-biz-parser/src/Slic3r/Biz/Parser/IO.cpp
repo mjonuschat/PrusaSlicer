@@ -11,18 +11,12 @@
 namespace Slic3r::Biz::Parser::IO {
 
 using Domain::Percentage;
-using Domain::FloatOrPercentage;
 using Domain::Vec2d;
-using Domain::FullConfig;
-using Domain::FullConfigFDM;
-using Domain::FullConfigSLA;
-using Domain::ConfigPackFDM;
-using Domain::ConfigPackSLA;
+using Domain::ConfigView;
 using Domain::ConfigPack;
 using Domain::EnumWrapper;
 using Domain::EnumVectorWrapper;
 using Domain::ConfigValue;
-using Domain::overloaded;
 
 // clang-format off
 template<typename T>
@@ -43,8 +37,6 @@ template<> struct get_option_type<std::string> { static constexpr auto value{Typ
 template<> struct get_option_type<std::vector<std::string>> { static constexpr auto value{Type::Strings}; };
 template<> struct get_option_type<Percentage> { static constexpr auto value{Type::Percent}; };
 template<> struct get_option_type<std::vector<Percentage>> { static constexpr auto value{Type::Percents}; };
-template<> struct get_option_type<FloatOrPercentage> { static constexpr auto value{Type::FloatOrPercent}; };
-template<> struct get_option_type<std::vector<FloatOrPercentage>> { static constexpr auto value{Type::FloatsOrPercents}; };
 template<> struct get_option_type<Vec2d> { static constexpr auto value{Type::Point}; };
 template<> struct get_option_type<std::vector<Vec2d>> { static constexpr auto value{Type::Points}; };
 template<> struct get_option_type<bool> { static constexpr auto value{Type::Bool}; };
@@ -64,29 +56,24 @@ constexpr Type get_option_type_v = get_option_type<T>::value;
 
 template<typename T>
 requires (!std::is_enum_v<T>)
-Scalar::Scalar(const T& value, const std::string& ratio_over) : m_ratio_over{ratio_over}
+Scalar::Scalar(const T& value)
 {
     constexpr auto type{get_option_type_v<T>};
     static_assert(type != Type::None, "Unknown type passed to set");
 
-    if (type != Type::Percent && type != Type::FloatOrPercent) {
-        ASSERT(ratio_over.empty(), "Ration over can only be defined for percent values");
-    }
-
     m_value = value;
     m_type = type;
 }
-template Scalar::Scalar(const double&, const std::string&);
-template Scalar::Scalar(const int&, const std::string&);
-template Scalar::Scalar(const std::optional<int>&, const std::string&);
-template Scalar::Scalar(const std::optional<double>&, const std::string&);
-template Scalar::Scalar(const std::optional<std::string>&, const std::string&);
-template Scalar::Scalar(const std::optional<bool>&, const std::string&);
-template Scalar::Scalar(const std::string&, const std::string&);
-template Scalar::Scalar(const Percentage&, const std::string&);
-template Scalar::Scalar(const FloatOrPercentage&, const std::string&);
-template Scalar::Scalar(const Vec2d&, const std::string&);
-template Scalar::Scalar(const bool&, const std::string&);
+template Scalar::Scalar(const double&);
+template Scalar::Scalar(const int&);
+template Scalar::Scalar(const std::optional<int>&);
+template Scalar::Scalar(const std::optional<double>&);
+template Scalar::Scalar(const std::optional<std::string>&);
+template Scalar::Scalar(const std::optional<bool>&);
+template Scalar::Scalar(const std::string&);
+template Scalar::Scalar(const Percentage&);
+template Scalar::Scalar(const Vec2d&);
+template Scalar::Scalar(const bool&);
 
 Scalar Scalar::init_enum(const int value, const std::string& serialized_value) {
     Scalar result{value};
@@ -105,7 +92,6 @@ bool Scalar::operator==(const Scalar& rhs) const {
         case Type::Int: return get<int>() == rhs.get<int>();
         case Type::String: return get<std::string>() == rhs.get<std::string>();
         case Type::Percent: return get<Percentage>() == rhs.get<Percentage>();
-        case Type::FloatOrPercent: return get<FloatOrPercentage>() == rhs.get<FloatOrPercentage>();
         case Type::Point: return get<Vec2d>().isApprox(rhs.get<Vec2d>());
         case Type::Bool: return get<bool>() == rhs.get<bool>();
         case Type::Enum: return get<int>() == rhs.get<int>();
@@ -129,11 +115,6 @@ std::string Scalar::serialize() const {
         const auto result{get<Percentage>()};
         return float_to_string_decimal_point(result.value) + "%";
     }
-    case Type::FloatOrPercent: {
-        const auto result{get<FloatOrPercentage>()};
-        const std::string value_string{float_to_string_decimal_point(result.get_abs_value(100.0))};
-        return result.is_percentage() ? value_string + "%" : value_string;
-    }
     case Type::Point: {
         const auto result{get<Vec2d>()};
         return float_to_string_decimal_point(result.x()) + "," +
@@ -147,8 +128,6 @@ std::string Scalar::serialize() const {
     default: PANIC("Programming error: invalid type reached!");
     }
 }
-
-std::string Scalar::ratio_over() const { return m_ratio_over; }
 
 template<typename T>
 requires (!std::is_enum_v<T>)
@@ -167,7 +146,6 @@ template std::optional<std::string> Scalar::get() const;
 template std::optional<bool> Scalar::get() const;
 template std::string Scalar::get() const;
 template Percentage Scalar::get() const;
-template FloatOrPercentage Scalar::get() const;
 template Vec2d Scalar::get() const;
 template bool Scalar::get() const;
 
@@ -190,7 +168,6 @@ template Vector::Vector(const std::vector<std::optional<std::string>>&);
 template Vector::Vector(const std::vector<std::optional<bool>>&);
 template Vector::Vector(const std::vector<std::string>&);
 template Vector::Vector(const std::vector<Percentage>&);
-template Vector::Vector(const std::vector<FloatOrPercentage>&);
 template Vector::Vector(const std::vector<Vec2d>&);
 template Vector::Vector(const std::vector<bool>&);
 
@@ -224,7 +201,6 @@ template std::vector<std::optional<std::string>> Vector::get() const;
 template std::vector<std::optional<bool>> Vector::get() const;
 template std::vector<std::string> Vector::get() const;
 template std::vector<Percentage> Vector::get() const;
-template std::vector<FloatOrPercentage> Vector::get() const;
 template std::vector<Vec2d> Vector::get() const;
 template std::vector<bool> Vector::get() const;
 
@@ -273,7 +249,6 @@ template void Config::set(const std::string&, const std::optional<std::string>&)
 template void Config::set(const std::string&, const std::optional<bool>&);
 template void Config::set(const std::string&, const std::string&);
 template void Config::set(const std::string&, const Percentage&);
-template void Config::set(const std::string&, const FloatOrPercentage&);
 template void Config::set(const std::string&, const Vec2d&);
 template void Config::set(const std::string&, const bool&);
 template void Config::set(const std::string&, const std::vector<double>&);
@@ -284,7 +259,6 @@ template void Config::set(const std::string&, const std::vector<std::optional<do
 template void Config::set(const std::string&, const std::vector<std::optional<std::string>>&);
 template void Config::set(const std::string&, const std::vector<std::string>&);
 template void Config::set(const std::string&, const std::vector<Percentage>&);
-template void Config::set(const std::string&, const std::vector<FloatOrPercentage>&);
 template void Config::set(const std::string&, const std::vector<Vec2d>&);
 template void Config::set(const std::string&, const std::vector<bool>&);
 
@@ -355,61 +329,32 @@ void copy(const std::string& name, const ConfigValue& value, Config& config)
             std::vector<std::string> enum_values;
             enum_values.insert(enum_values.end(), values.begin(), values.end());
             config.set(name, enum_values);
+        } else if constexpr (std::is_same_v<ValueType, Domain::FloatOrPercentage>)
+        {
+            ASSERT(!item_value.is_percentage());
+            config.set(name, item_value.float_value());
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Domain::FloatOrPercentage>>)
+        {
+            std::vector<double> values;
+            for (const Domain::FloatOrPercentage& value : item_value) {
+                ASSERT(!value.is_percentage());
+                values.push_back(value.float_value());
+            }
+            config.set(name, values);
         } else {
             config.set(name, item_value);
         }
     });
 }
 
-std::vector<double> get_nozzle_diameters(const Domain::Preset::HwPrinterConfig& hw_config)
-{
-    std::vector<double> result;
-
-    for (const auto& tool : hw_config.tools) {
-        const std::optional<double> nozzle_diameter{
-            Domain::Preset::get_feature<double>(tool.features, "nozzle_diameter")
-        };
-        ASSERT(nozzle_diameter);
-        result.push_back(*nozzle_diameter);
-    }
-
-    return result;
-}
-
-std::vector<bool> get_nozzle_high_flows(const Domain::Preset::HwPrinterConfig& hw_config)
-{
-    std::vector<bool> result;
-
-    for (const auto& tool : hw_config.tools) {
-        const std::optional<bool> high_flow{
-            Domain::Preset::get_feature<bool>(tool.features, "nozzle_high_flow")
-        };
-        result.push_back(high_flow.value_or(false));
-    }
-
-    return result;
-}
-
 } // namespace
 
-Config get_parser_config(const FullConfigFDM& full_config)
+Config get_parser_config(const ConfigView& config_view)
 {
     Config result;
-    for (const auto& [key, value] : full_config.values()) {
+    for (const auto& [key, value] : config_view.values()) {
         copy(key, value, result);
     }
-    result.set("nozzle_diameter", get_nozzle_diameters(full_config.hw_config()));
-    result.set("nozzle_high_flow", get_nozzle_high_flows(full_config.hw_config()));
-    return result;
-}
-
-Config get_parser_config(const FullConfigSLA& full_config)
-{
-    Config result;
-    for (const auto& [key, value] : full_config.values()) {
-        copy(key, value, result);
-    }
-
     return result;
 }
 

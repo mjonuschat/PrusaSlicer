@@ -12,17 +12,18 @@ BoxOrBoxesVector as_boxes(const ConfigPackSLA& config_pack);
 class FullConfigSLA : public FullConfig
 {
 public:
-    FullConfigSLA(const ConfigPackSLA& config_pack);
+    FullConfigSLA(const ConfigPackSLA& config_pack, const Preset::HwPrinterConfig& hw_config);
 
     static FullConfigSLA defaults() {
-        return {ConfigPackSLA{}};
+        return {ConfigPackSLA{}, Preset::HwPrinterConfig{.technology = PrinterTechnology::SLA}};
     }
 };
 
 class PartialObjectConfigSLA : public PartialConfig {
 public:
     PartialObjectConfigSLA(
-        const SLAObjectSettings& object_settings
+        const SLAObjectSettings& object_settings,
+        const Preset::HwPrinterConfig& hw_config
     );
 };
 

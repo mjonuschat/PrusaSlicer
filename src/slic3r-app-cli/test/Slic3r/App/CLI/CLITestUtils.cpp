@@ -31,8 +31,10 @@ namespace Slic3r::App::CLI::Test {
 
 namespace {
 
-TestProfileSet pick_profile_set(const Bundle& preset_bundle, const bool multi_tool)
+std::vector<TestProfileSet> get_test_printer_profile_sets(const Bundle& preset_bundle)
 {
+    std::vector<TestProfileSet> result;
+
     for (const std::vector<EvaluatedPrinterPreset>& printer_presets :
          preset_bundle.evaluated_presets | std::views::values)
     {
@@ -42,9 +44,6 @@ TestProfileSet pick_profile_set(const Bundle& preset_bundle, const bool multi_to
             }
 
             const std::size_t tool_count = printer_preset.hw_config.tool_count;
-            if (multi_tool ? tool_count < 2 : tool_count != 1) {
-                continue;
-            }
 
             if (printer_preset.prints.empty()) {
                 continue;
@@ -76,24 +75,25 @@ TestProfileSet pick_profile_set(const Bundle& preset_bundle, const bool multi_to
                 }
             }
 
-            return TestProfileSet{
-                .printer_profile_name  = printer_preset.hw_config.name,
-                .print_profile_name    = chosen_print_preset->preset.name,
-                .material_profile_name = chosen_material_preset->preset.name,
-                .tool_count            = tool_count
-            };
+            result.push_back(
+                TestProfileSet{.printer_profile_name  = printer_preset.hw_config.name,
+                               .print_profile_name    = chosen_print_preset->preset.name,
+                               .material_profile_name = chosen_material_preset->preset.name,
+                               .tool_count            = tool_count});
         }
     }
 
-    throw std::runtime_error(
-        multi_tool ? "No suitable multi-tool FFF printer was found in the preset bundle." :
-                     "No suitable single-tool FFF printer was found in the preset bundle."
-    );
+    if (result.empty()) {
+        throw std::runtime_error{"No suitable printers were found in the preset bundle."};
+    }
+    return result;
 }
 
-const std::pair<TestProfileSet, TestProfileSet>& resolved_profile_sets()
+} // namespace
+
+const std::vector<TestProfileSet>& resolved_profile_sets()
 {
-    static const std::pair<TestProfileSet, TestProfileSet> profile_sets = []()
+    static const std::vector<TestProfileSet> profile_sets = []()
     {
         Workbench workbench;
         SceneInteractor scene_interactor{workbench};
@@ -101,25 +101,10 @@ const std::pair<TestProfileSet, TestProfileSet>& resolved_profile_sets()
         preset_interactor.load_preset_bundle(Preset::IO::BundlePaths::make_standard_runtime());
 
         const Bundle& preset_bundle = workbench.preset_bundle();
-        return std::make_pair(
-            pick_profile_set(preset_bundle, false),
-            pick_profile_set(preset_bundle, true)
-        );
+        return get_test_printer_profile_sets(preset_bundle);
     }();
 
     return profile_sets;
-}
-
-} // namespace
-
-const TestProfileSet& single_tool_profile_set()
-{
-    return resolved_profile_sets().first;
-}
-
-const TestProfileSet& multi_tool_profile_set()
-{
-    return resolved_profile_sets().second;
 }
 
 ScopedTempDir::ScopedTempDir() :
@@ -150,21 +135,8 @@ boost::filesystem::path write_cube_stl(
     return stl_path;
 }
 
-InitParams make_single_tool_params()
+InitParams make_params(const TestProfileSet& profile_set)
 {
-    const TestProfileSet& profile_set = single_tool_profile_set();
-
-    InitParams init_params;
-    init_params.input.printer_profile_preset = profile_set.printer_profile_name;
-    init_params.input.print_profile_preset   = profile_set.print_profile_name;
-    init_params.input.material_profile_presets.emplace_back(profile_set.material_profile_name);
-    return init_params;
-}
-
-InitParams make_multi_tool_params()
-{
-    const TestProfileSet& profile_set = multi_tool_profile_set();
-
     InitParams init_params;
     init_params.input.printer_profile_preset = profile_set.printer_profile_name;
     init_params.input.print_profile_preset   = profile_set.print_profile_name;

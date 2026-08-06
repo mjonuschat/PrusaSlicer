@@ -172,16 +172,16 @@ public:
     LayerRanges() = default;
     LayerRanges(
         const Domain::LayerConfigRanges& in,
-        const std::size_t material_slot_count
+        const Domain::Preset::HwPrinterConfig& hw_config
     )
     {
-        this->assign(in, material_slot_count);
+        this->assign(in, hw_config);
     }
 
     // Convert input config ranges into continuous non-overlapping sorted vector of intervals and their configs.
     void assign(
         const Domain::LayerConfigRanges& in,
-        const std::size_t material_slot_count
+        const Domain::Preset::HwPrinterConfig& hw_config
     )
     {
         m_ranges.clear();
@@ -196,7 +196,7 @@ public:
                     last_z = min_z;
                 }
                 if (range.first.second > last_z + EPSILON) {
-                    const auto cfg{prepare_slicing_volume_input(range.second, material_slot_count)};
+                    const auto cfg{prepare_slicing_volume_input(range.second, hw_config, hw_config.material_slot_count())};
                     m_ranges.push_back(
                         {Domain::LayerHeightRange(last_z, range.first.second), cfg.value()}
                     );
@@ -498,7 +498,7 @@ PrintRegionConfigView create_mm_painted_region_config(
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
         volume_settings,
-        parent_config.hw_config().material_slot_count()
+        parent_config.hw_config()
     };
     painted_region_cfg.add_override(
         std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
@@ -517,7 +517,7 @@ PrintRegionConfigView create_fuzzy_skin_painted_region_config(
     PrintRegionConfigView painted_region_cfg = parent_config;
     const PartialVolumeConfigFDM squashed_volume_config{
         volume_settings,
-        parent_config.hw_config().material_slot_count()
+        parent_config.hw_config()
     };
     painted_region_cfg.add_override(
         std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config)
@@ -583,6 +583,7 @@ generate_print_object_regions(
                         }
                         const auto squashed_settings{prepare_slicing_volume_input(
                             volume.volume_settings,
+                            new_full_config->hw_config(),
                             new_full_config->hw_config().material_slot_count()
                         )};
                         if (!squashed_settings.has_value()) {
@@ -619,6 +620,7 @@ generate_print_object_regions(
                                     const auto squashed_settings{
                                         prepare_slicing_volume_input(
                                             volume.volume_settings,
+                                            new_full_config->hw_config(),
                                             new_full_config->hw_config().material_slot_count()
                                         )
                                     };
@@ -682,6 +684,10 @@ generate_print_object_regions(
                 return l.parent_print_object_region_id(layer_range) < r.parent_print_object_region_id(layer_range);
             });
         }
+    }
+
+    for (std::unique_ptr<PrintRegion>& region : all_regions) {
+        region->finalize_config();
     }
 
     return out;
@@ -1048,6 +1054,7 @@ tl::expected<PrintObjectsSyncResult, Errors> sync_print_objects(
 
         const auto object_settings{prepare_slicing_object_input(
             model_object->object_settings,
+            new_full_config->hw_config(),
             new_full_config->hw_config().material_slot_count()
         )};
         if (!object_settings.has_value()) {
@@ -1112,7 +1119,7 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
         const auto new_regions{generate_print_object_regions(
             nullptr,
             print_object.model_object()->volumes,
-            LayerRanges(print_object.model_object()->layer_config_ranges, new_full_config->hw_config().material_slot_count()),
+            LayerRanges(print_object.model_object()->layer_config_ranges, new_full_config->hw_config()),
             print_object.config().object_settings(),
             new_full_config,
             print_object.trafo(),
@@ -1475,7 +1482,7 @@ Biz::Slicing::ApplyStatus::Status Print::apply(
     m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
-        Biz::Parser::IO::get_parser_config(*new_full_config_ptr),
+        Biz::Parser::IO::get_parser_config(new_print_config),
         wipe_tower,
         metadata
     );

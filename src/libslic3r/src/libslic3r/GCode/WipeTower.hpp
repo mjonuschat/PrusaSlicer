@@ -293,7 +293,8 @@ private:
     float  m_travel_speed       = 0.f;
 	float  m_infill_speed       = 0.f;
 	float  m_perimeter_speed    = 0.f;
-    float  m_first_layer_speed  = 0.f;
+    float  m_first_layer_perimeter_speed = 0.f;
+    float  m_first_layer_infill_speed = 0.f;
     size_t m_first_layer_idx    = size_t(-1);
 
 	// G-code generator parameters.

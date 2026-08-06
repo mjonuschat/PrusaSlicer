@@ -1,5 +1,6 @@
 #include "libslic3r/ConfigUtils.hpp"
 #include <boost/algorithm/string/predicate.hpp>
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 
 namespace Slic3r {
 std::string get_extrusion_axis(const PrintConfigView& cfg)

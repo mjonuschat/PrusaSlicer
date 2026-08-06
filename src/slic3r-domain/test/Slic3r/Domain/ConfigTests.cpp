@@ -3,6 +3,7 @@
 #include <catch2/matchers/catch_matchers_all.hpp>
 
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/TestUtils.hpp"
 
 using namespace Catch;
 using namespace Catch::Matchers;
@@ -18,7 +19,6 @@ using Slic3r::Domain::BoxRefs;
 using Slic3r::Domain::BoxOrBoxesVector;
 using Slic3r::Domain::EnumValueDefs;
 using Slic3r::Domain::EnumWrapper;
-using Slic3r::Domain::ConfigLocationSizes;
 
 using Slic3r::Domain::FDMConfigLocation::Print;
 using Slic3r::Domain::FDMConfigLocation::Filament;
@@ -35,12 +35,6 @@ const EnumValueDefs test_enum_def{
     { int(TestEnum::One), "one", "One" },
     { int(TestEnum::Two), "two", "Two" },
     { int(TestEnum::Three), "three", "Three" }
-};
-
-const ConfigLocationSizes location_sizes{
-    {Print, std::nullopt},
-    {Filament, 3},
-    {Object, std::nullopt},
 };
 
 void init(ConfigDefinitions& defs) {
@@ -164,9 +158,12 @@ BoxOrBoxesVector get_input(
 struct TestFullConfig : public FullConfig
 {
     TestFullConfig(
-        const TestPrintSettings& test_box, const std::vector<TestFilamentSettings>& boxes_with_overrides
-    )
-        : FullConfig{get_input(test_box, boxes_with_overrides), {}, location_sizes}
+        const TestPrintSettings& test_box,
+        const std::vector<TestFilamentSettings>& boxes_with_overrides) :
+        FullConfig{
+            get_input(test_box, boxes_with_overrides),
+            {},
+            Slic3r::Test::build_fff_printer_config(3, {})}
     {}
 };
 
@@ -185,6 +182,8 @@ TEST_CASE("Full config can be created from boxes", "[Config]")
     CHECK_THAT(
         full_config.keys(),
         UnorderedEquals(std::vector<std::string>{
+            "nozzle_diameter",
+            "nozzle_high_flow",
             "print_config_item_with_object_override",
             "print_config_item",
             "print_config_item_with_filament_override",
@@ -212,9 +211,9 @@ TEST_CASE("Full config enum override works as expected", "[Config]")
 struct TestPartialConfig : public PartialConfig
 {
     TestPartialConfig(
-        const TestObjectSettings& boxes_with_overrides, const ConfigLocationSizes& base_location_sizes
+        const TestObjectSettings& boxes_with_overrides
     )
-        : PartialConfig{{std::ref(boxes_with_overrides)}, base_location_sizes}
+        : PartialConfig{{std::ref(boxes_with_overrides)}, {}}
     {}
 };
 
@@ -226,7 +225,7 @@ TEST_CASE("Parial config works as expected", "[Config]")
 
     TestObjectSettings object_settings;
     object_settings.overrides.set("print_config_item_with_object_override", 12);
-    const TestPartialConfig partial_config{object_settings, location_sizes};
+    const TestPartialConfig partial_config{object_settings};
 
     CHECK(partial_config.get<int>("print_config_item_with_object_override") == std::optional{12});
     CHECK(partial_config.get<int>("object_config_item") == std::optional{111});

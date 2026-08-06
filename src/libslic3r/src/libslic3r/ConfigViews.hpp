@@ -34,15 +34,6 @@ public:
     void add_override(const Domain::PartialVolumeConfigFDMPtr& override) {
         m_partial_configs.push_back(override);
     }
-
-    const Domain::PartialVolumeConfigFDM volume_settings() const {
-        return *std::dynamic_pointer_cast<const Domain::PartialVolumeConfigFDM>(m_partial_configs.back());
-    }
-
-    const Domain::Preset::HwPrinterConfig& hw_config() const
-    {
-        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
-    }
 };
 
 class PrintObjectConfigView : public Domain::ConfigView
@@ -52,17 +43,17 @@ public:
         const Domain::FullConfigFDMPtr& full_config,
         const Domain::PartialObjectConfigFDMPtr& object_settings
     ):
-        ConfigView{full_config, {object_settings}}
-    {}
-
-    const Domain::PartialObjectConfigFDMPtr object_settings() const {
-        return std::dynamic_pointer_cast<const Domain::PartialObjectConfigFDM>(m_partial_configs.front());
-    }
-
-    const Domain::Preset::HwPrinterConfig& hw_config() const
+        ConfigView{full_config, {object_settings}}, m_object_settings{object_settings}
     {
-        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
+        finalize();
     }
+
+    const Domain::PartialObjectConfigFDMPtr& object_settings() const {
+        return m_object_settings;
+    }
+
+private:
+    Domain::PartialObjectConfigFDMPtr m_object_settings;
 };
 
 class PrintConfigView : public Domain::ConfigView
@@ -72,19 +63,14 @@ public:
         const Domain::FullConfigFDMPtr& full_config
     ):
         ConfigView{full_config, {}}
-    {}
+    {
+        finalize();
+    }
 
     PrintConfigView():
         ConfigView{std::make_shared<const Domain::FullConfigFDM>(Domain::FullConfigFDM::defaults()), {}}
-    {}
-
-    const Domain::FullConfigFDM& full_config() const {
-        return *std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config);
-    }
-
-    const Domain::Preset::HwPrinterConfig& hw_config() const
     {
-        return std::dynamic_pointer_cast<const Domain::FullConfigFDM>(m_full_config)->hw_config();
+        finalize();
     }
 };
 
@@ -95,14 +81,14 @@ public:
         const Domain::FullConfigSLAPtr& full_config
     ):
         ConfigView{full_config, {}}
-    {}
+    {
+        finalize();
+    }
 
     SLAPrintConfigView():
         ConfigView{std::make_shared<const Domain::FullConfigSLA>(Domain::FullConfigSLA::defaults()), {}}
-    {}
-
-    const Domain::FullConfigSLA& full_config() const {
-        return *std::dynamic_pointer_cast<const Domain::FullConfigSLA>(m_full_config);
+    {
+        finalize();
     }
 };
 
@@ -114,10 +100,8 @@ public:
         const Domain::PartialObjectConfigSLAPtr& object_settings
     ):
         ConfigView{full_config, {object_settings}}
-    {}
-
-    const Domain::PartialObjectConfigSLA& object_settings() const {
-        return *std::dynamic_pointer_cast<const Domain::PartialObjectConfigSLA>(m_partial_configs.front());
+    {
+        finalize();
     }
 };
 

@@ -551,6 +551,12 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         params.use_arachne                = (perimeter_generator == Domain::PerimeterGeneratorType::Arachne && surface_fill.params.pattern == Domain::InfillPattern::ipConcentric) || surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring;
         params.layer_height               = layerm.layer()->height;
         params.prefer_clockwise_movements = this->object()->print()->config().get<bool>("prefer_clockwise_movements");
+        FlowRole flow_role{
+            surface_fill.surface.is_top() ?
+                frTopSolidInfill :
+                (surface_fill.surface.is_solid() ? frSolidInfill : frInfill)};
+        ASSERT(layerm.region().extruder(flow_role) > 0);
+        params.extruder_id = layerm.region().extruder(flow_role) - 1;
 
         for (ExPolygon &expoly : surface_fill.expolygons) {
 			// Spacing is modified by the filler to indicate adjustments. Reset it for each expolygon.
@@ -739,6 +745,8 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         params.resolution        = resolution;
         params.use_arachne       = false;
         params.layer_height      = layerm.layer()->height;
+        ASSERT(layerm.region().extruder(frInfill) > 0);
+        params.extruder_id       = layerm.region().extruder(frInfill) - 1;
 
         for (ExPolygon &expoly : surface_fill.expolygons) {
             // Spacing is modified by the filler to indicate adjustments. Reset it for each expolygon.

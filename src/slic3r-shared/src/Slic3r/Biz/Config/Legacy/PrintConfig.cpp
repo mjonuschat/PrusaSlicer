@@ -614,17 +614,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
-    def = this->add("avoid_crossing_perimeters_max_detour", coFloatOrPercent);
+    def = this->add("avoid_crossing_perimeters_max_detour", coFloat);
     def->label = L("Avoid crossing perimeters - Max detour length");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("The maximum detour length for avoid crossing perimeters. "
-                     "If the detour is longer than this value, avoid crossing perimeters is not applied for this travel path. "
-                     "Detour length could be specified either as an absolute value or as percentage (for example 50%) of a direct travel path.");
-    def->sidetext = L("mm or % (zero to disable)");
+                     "If the detour is longer than this value, avoid crossing perimeters is not applied for this travel path.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max_literal = 1000;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloatOrPercent(0., false));
+    def->set_default_value(new ConfigOptionFloat(0.));
 
     def = this->add("bed_temperature", coInts);
     def->label = L("Other layers");
@@ -1752,6 +1751,14 @@ void PrintConfigDef::init_fff_params()
                    "(for example: 40%) it will be a percantage of the solid infill speed "
                    "(for example: 40% of the solid infill speed). "
                    "Note that 0 means that the \"First layer speed\" value will be used.");
+    def->sidetext = L("mm/s or %");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloatOrPercent(0, false));
+
+    def = this->add("first_layer_solid_infill_speed", coFloatOrPercent);
+    def->label = L("First layer solid infill speed");
+    def->tooltip = "first_layer_solid_infill_speed introduced in slicer 3.0";
     def->sidetext = L("mm/s or %");
     def->min = 0;
     def->mode = comAdvanced;
@@ -5262,6 +5269,9 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
         // We map "1" to "everywhere" here, handle_legacy_project_loaded() downgrades it to
         // "enforcers_only" when needed.
         value = value == "1" ? "everywhere" : "none";
+    } else if (opt_key == "avoid_crossing_perimeters_max_detour" && value.find('%') != std::string::npos) {
+        // In PrusaSlicer 3.0.0 avoid crossing perimeters max detour is just absolute.
+        value = "0";
     }
 
     // In PrusaSlicer 2.3.0-alpha0 the "monotonous" infill was introduced, which was later renamed to "monotonic".

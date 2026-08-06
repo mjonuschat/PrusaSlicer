@@ -89,7 +89,7 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
     bool show_preview      = false;
     std::optional<Domain::ConfigValue> value;
 
-    if (print_tool_item->print_item->def().require_compatibility_rule) {
+    if (print_tool_item->print_item->def().compatibility_rule != Domain::CompatibilityRule::Undefined) {
         show_preview = true;
     } else if (print_tool_item->shared_context.extruder_candidates.empty()) {
         // Extruder candidates are empty, just compare all extruder values

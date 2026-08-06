@@ -32,8 +32,6 @@ enum class Type
     Strings,
     Percent,
     Percents,
-    FloatOrPercent,
-    FloatsOrPercents,
     Point,
     Points,
     Bool,
@@ -46,7 +44,7 @@ struct Scalar
 {
     template<typename T>
     requires (!std::is_enum_v<T>)
-    explicit Scalar(const T& value, const std::string& ratio_over = "");
+    explicit Scalar(const T& value);
 
     template<typename T>
     requires std::is_enum_v<T> explicit Scalar(const T& value, const std::string& serialized_value)
@@ -59,10 +57,8 @@ struct Scalar
 
     Type type() const;
     std::string serialize() const;
-    std::string ratio_over() const;
     bool is_optional() const;
     bool is_nil() const;
-    
 
     template<typename T>
     requires (!std::is_enum_v<T>)
@@ -78,7 +74,6 @@ struct Scalar
     }
 
 private:
-    std::string m_ratio_over;
     std::any m_value;
     Type m_type{Type::None};
 
@@ -169,7 +164,6 @@ private:
     std::vector<std::string> keys() const;
 };
 
-Config get_parser_config(const Domain::FullConfigFDM& config_pack);
-Config get_parser_config(const Domain::FullConfigSLA& config_pack);
+Config get_parser_config(const Domain::ConfigView& config_view);
 
 } // namespace Slic3r::Parser::IO

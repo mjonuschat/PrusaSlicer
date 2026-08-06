@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
+#include "Slic3r/Domain/ConfigDefsSLA.hpp"
 #include <nlohmann/json.hpp>
 
 using nlohmann::ordered_json;

@@ -251,6 +251,7 @@ const std::string model_file{"3D/3dmodel.model"};
 
 const std::map<std::string, std::vector<std::string>> fdm_whitelist{
     {config_file, {
+        "; first_layer_infill_speed",
         "; compatible_printers_condition_cummulative",
         "; default_filament_profile",
         "; default_print_profile",

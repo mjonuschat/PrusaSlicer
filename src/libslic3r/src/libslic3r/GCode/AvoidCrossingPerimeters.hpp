@@ -36,7 +36,7 @@ public:
     Polyline travel_to(
         const GCodeGenerator& gcodegen,
         const Point& point,
-        const Domain::FloatOrPercentage &max_detour,
+        double max_detour,
         const std::vector<double>& travel_max_lift
     )
     {
@@ -47,7 +47,7 @@ public:
     Polyline travel_to(
         const GCodeGenerator& gcodegen,
         const Point& point,
-        const Domain::FloatOrPercentage &max_detour,
+        double max_detour,
         const std::vector<double>& travel_max_lift,
         bool* could_be_wipe_disabled
     );

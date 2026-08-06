@@ -49,13 +49,14 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
 
     auto test = [&](const TestData &data, const TestConfig& config) {
         const auto full_config{std::make_shared<const FullConfigFDM>(config.get_full_config())};
-        Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->hw_config().material_slot_count()};
-        Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->hw_config().material_slot_count()};
-        const PrintRegionConfigView region_config_view{
+        Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->hw_config()};
+        Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->hw_config()};
+        PrintRegionConfigView region_config_view{
             full_config,
             std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
             {std::make_shared<const Domain::PartialVolumeConfigFDM>(std::move(volume_config))}
         };
+        region_config_view.finalize();
 
         SurfaceCollection slices;
         slices.append(data.expolygons, stInternal);

@@ -25,7 +25,6 @@ MutBoxRefs convert_to_mut_box_refs(
 }
 
 BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
-    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
     BoxOrBoxesVector result;
     result.push_back(config_pack.print);
     result.push_back(convert_to_box_refs(config_pack.tool));
@@ -36,7 +35,6 @@ BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
 }
 
 MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
-    ASSERT(config_pack.filament.size() == config_pack.tool.size() || config_pack.tool.size() == 1);
     MutBoxOrBoxesVector result;
     result.push_back(config_pack.print);
     result.push_back(convert_to_mut_box_refs(config_pack.tool));
@@ -46,50 +44,56 @@ MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
     return result;
 }
 
-namespace {
-ConfigLocationSizes get_fdm_location_sizes(const std::size_t material_slot_count) {
-    return {
-        {FDMConfigLocation::Print, std::nullopt},
-        {FDMConfigLocation::Tool, material_slot_count},
-        {FDMConfigLocation::Printer, std::nullopt},
-        {FDMConfigLocation::Filament, material_slot_count},
-        {FDMConfigLocation::Project, std::nullopt},
-        {FDMConfigLocation::Object, std::nullopt},
-        {FDMConfigLocation::Volume, std::nullopt}
-    };
-}
-}
-
 FullConfigFDM::FullConfigFDM(
     const ConfigPackFDM& config_pack,
     const std::vector<unsigned>& extruder_candidates,
-    const Preset::HwPrinterConfig& hw_config
-) :
-    FullConfig{
-        as_boxes(config_pack),
-        extruder_candidates,
-        get_fdm_location_sizes(hw_config.material_slot_count())
-    },
-    m_hw_config{hw_config}
+    const Preset::HwPrinterConfig& hw_config) :
+    FullConfig{as_boxes(config_pack), extruder_candidates, hw_config}
 {}
+
+FullConfigFDM FullConfigFDM::defaults()
+{
+    Preset::HwToolConfig tool_config;
+
+    Preset::HwPrinterConfig hw_config{
+        .id                   = generate_uuid(),
+        .printer_id           = {},
+        .legacy_printer_model = {},
+        .vendor_id            = {},
+        .repo_id              = {},
+        .repo_version         = {},
+        .name                 = {},
+        .short_name           = {},
+        .technology           = PrinterTechnology::FFF,
+        .model                = {},
+        .tool_count           = 1,
+        .features             = {},
+        .visual               = {},
+        .tools                = {1, Preset::HwToolConfig{.features = {{"nozzle_diameter", 0.4}}}},
+        .feeders              = {},
+        .materials            = {},
+        .sheet                = {}};
+
+    return {ConfigPackFDM{}, {0}, hw_config};
+}
 
 PartialObjectConfigFDM::PartialObjectConfigFDM(
     const ObjectSettings& object_settings,
-    const std::size_t material_slot_count
+    const Preset::HwPrinterConfig& hw_config
 ) :
     PartialConfig{
         {object_settings},
-        get_fdm_location_sizes(material_slot_count)
+        hw_config
     }
 {}
 
 PartialVolumeConfigFDM::PartialVolumeConfigFDM(
     const VolumeSettings& volume_settings,
-    const std::size_t material_slot_count
+    const Preset::HwPrinterConfig& hw_config
 ) :
     PartialConfig{
         {volume_settings},
-        get_fdm_location_sizes(material_slot_count)
+        hw_config
     }
 {}
 

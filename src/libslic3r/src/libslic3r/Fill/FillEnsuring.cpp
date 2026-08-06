@@ -467,7 +467,7 @@ ThickPolylines make_fill_polylines(
             coord_t                loops_count = (std::max(BB::sizes(ex_bb).x(), BB::sizes(ex_bb).y()) + scaled_spacing - 1) / scaled_spacing;
             Polygons               polygons    = Algorithms::ExPolygon::to_polygons(ex_poly);
             Arachne::WallToolPaths wall_tool_paths(polygons, scaled_spacing, scaled_spacing, loops_count, 0, params.layer_height,
-                                                   fill->region_config);
+                                                   fill->region_config, params.extruder_id);
             if (std::vector<Arachne::VariableWidthLines> loops = wall_tool_paths.getToolPaths(); !loops.empty()) {
                 std::vector<const Arachne::ExtrusionLine *> all_extrusions;
                 for (Arachne::VariableWidthLines &loop : loops) {

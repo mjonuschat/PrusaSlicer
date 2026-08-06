@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 #include "Slic3r/Biz/Parser/IO.hpp"
-#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 using namespace Catch;
@@ -14,7 +13,6 @@ using Slic3r::Biz::Parser::IO::Value;
 using Slic3r::Biz::Parser::IO::Vector;
 using Slic3r::Biz::Parser::IO::Scalar;
 using Slic3r::Domain::Percentage;
-using Slic3r::Domain::FloatOrPercentage;
 using Slic3r::Domain::Vec2d;
 
 TEST_CASE("Vector is stored if std::vector<int> is passed to config", "[ParserIO]") {
@@ -38,7 +36,6 @@ TEST_CASE("Scalar is stored if Perecentage is passed to config", "[ParserIO]") {
     REQUIRE(is_scalar(value));
     const Scalar& scalar{std::get<Scalar>(value)};
     CHECK(scalar.type() == Type::Percent);
-    CHECK(scalar.ratio_over() == "");
     CHECK(scalar.get<Percentage>() == data);
 }
 
@@ -69,8 +66,6 @@ TEST_CASE("Scalar can be serialized to string", "[ParserIO]") {
     CHECK(Scalar{std::optional<int>{}}.serialize() == "nil");
     CHECK(Scalar{std::string{"hello\r\n\\"}}.serialize() == "hello\r\n\\");
     CHECK(Scalar{Percentage{10}}.serialize() == "10%");
-    CHECK(Scalar{FloatOrPercentage{Percentage{30}}}.serialize() == "30%");
-    CHECK(Scalar{FloatOrPercentage{3.3}}.serialize() == "3.3");
     CHECK(Scalar{Vec2d{12.3, 4.56}}.serialize() == "12.3,4.56");
     CHECK(Scalar{true}.serialize() == "1");
     CHECK(Scalar{false}.serialize() == "0");

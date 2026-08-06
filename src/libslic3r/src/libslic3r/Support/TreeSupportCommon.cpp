@@ -44,20 +44,15 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     this->resolution                = scaled<coord_t>(print_config.get<double>("gcode_resolution"));
 
     // Arache feature
-    const auto min_feature_size{config.get<Domain::FloatOrPercentage>("min_feature_size")};
-    if (min_feature_size.is_percentage()) {
-        const auto nozzle_diameters{Biz::Slicing::get_nozzle_diameters(config.hw_config())};
-        const double max_nozzle_diameter{std::accumulate(
-            nozzle_diameters.begin(),
-            nozzle_diameters.end(),
-            0.0,
-            [](double a, double b) { return std::max(a, b); }
-        )};
-        ASSERT(max_nozzle_diameter > 0.0);
-        this->min_feature_size = scaled<coord_t>(min_feature_size.get_abs_value(max_nozzle_diameter));
-    } else {
-        this->min_feature_size = scaled<coord_t>(min_feature_size.float_value());
+    const auto min_feature_sizes{config.get<std::vector<Domain::FloatOrPercentage>>("min_feature_size")};
+    double min_feature_size{min_feature_sizes.empty() ? 0 : std::numeric_limits<double>::max()};
+    for (const Domain::FloatOrPercentage& size : min_feature_sizes) {
+        ASSERT(!size.is_percentage());
+        if (size.float_value() < min_feature_size) {
+            min_feature_size = size.float_value();
+        }
     }
+    this->min_feature_size = scaled<coord_t>(min_feature_size);
     // +1 makes the threshold inclusive
     this->support_angle             = 0.5 * M_PI - std::clamp<double>((config.get<int>("support_material_threshold") + 1) * M_PI / 180., 0., 0.5 * M_PI);
     this->support_line_width        = support_material_flow(&print_object, config.get<double>("layer_height")).scaled_width();

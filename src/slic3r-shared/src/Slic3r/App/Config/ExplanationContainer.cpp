@@ -110,7 +110,7 @@ void ExplanationContainer::update_explanation(const Biz::PrintToolItem& print_to
     const ImColor text_color = m_theme->color_imgui(Platform::Color::Text);
     const Domain::CompatibilityRule compatibility_rule =
         print_tool_item.print_item->compatibility_rule();
-    if (print_tool_item.print_item->def().require_compatibility_rule
+    if (print_tool_item.print_item->def().compatibility_rule != Domain::CompatibilityRule::Undefined
         && print_tool_item.value.second)
     {
         if (compatibility_rule == Domain::CompatibilityRule::IgnoreOverrides) {

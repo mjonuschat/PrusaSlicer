@@ -75,12 +75,29 @@ ExtrudeConfig::ExtrudeConfig(const Domain::ConfigView& config) :
     first_layer_infill_speed{
         config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_infill_speed")
     },
-    first_layer_speed{config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_speed")},
+    first_layer_solid_infill_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_solid_infill_speed")
+    },
+    first_layer_perimeter_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_perimeter_speed")
+    },
+    first_layer_external_perimeter_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_external_perimeter_speed")
+    },
+    first_layer_support_material_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_support_material_speed")
+    },
+    first_layer_top_solid_infill_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_top_solid_infill_speed")
+    },
+    first_layer_gap_fill_speed{
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_gap_fill_speed")
+    },
     first_layer_speed_over_raft{
         config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_speed_over_raft")
     },
     avoid_crossing_perimeters_max_detour{
-        config.get<Domain::FloatOrPercentage>("avoid_crossing_perimeters_max_detour")
+        config.get<double>("avoid_crossing_perimeters_max_detour")
     },
     gcode_comments{config.get<bool>("gcode_comments")},
     arc_fitting{config.get<Domain::ArcFittingType>("arc_fitting")},

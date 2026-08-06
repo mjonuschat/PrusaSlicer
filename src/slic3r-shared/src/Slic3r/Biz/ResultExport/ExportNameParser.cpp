@@ -39,12 +39,14 @@ ExportNameData parse_fdm_export_name(
     ASSERT(bed_instance != nullptr);
 
     ExportNameData result {Technology::Fdm, project_name, resolve_preferred_extension(output_filename_format)};
-    Domain::FullConfigFDM full_config{
+    auto full_config{std::make_shared<Domain::FullConfigFDM>(
         fdm_config,
         bed_instance->extruder_candidates,
         project_interactor.preset_interactor().current_printer_config()
-    };
-    Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
+    )};
+    Domain::ConfigView view{full_config, {}};
+    view.finalize();
+    Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(view);
     Biz::Parser::PlaceholderParser parser{io_config};
     const std::optional<Biz::FDMResultRef> fdm_result_opt{project_interactor.fdm_result_cache().get_result(project_interactor.selected_bed_slicing_id())};
     if (!fdm_result_opt) {
@@ -152,8 +154,14 @@ ExportNameData parse_sla_export_name(
 )
 {
     ExportNameData result {Technology::Sla, project_name, resolve_preferred_extension(output_filename_format)};
-    Domain::FullConfigSLA full_config{sla_config};
-    Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
+
+    auto full_config{std::make_shared<Domain::FullConfigSLA>(
+        sla_config, project_interactor.preset_interactor().current_printer_config()
+    )};
+    Domain::ConfigView view{full_config, {}};
+    view.finalize();
+
+    Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(view);
     Biz::Parser::PlaceholderParser parser{io_config};
     const Biz::SLAResultOptRef sla_result_opt{project_interactor.sla_result_cache().get_result(project_interactor.selected_bed_slicing_id())};
     if (!sla_result_opt) {

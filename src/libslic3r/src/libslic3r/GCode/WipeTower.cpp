@@ -635,8 +635,13 @@ WipeTower::WipeTower(
     // it is taken over following default. Speeds from config are not
     // easily accessible here.
     const float default_speed = 60.f;
-    m_first_layer_speed       = get_min_speed(
-        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_speed"),
+    m_first_layer_infill_speed = get_min_speed(
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_infill_speed"),
+        extruder_candidates,
+        default_speed
+    );
+    m_first_layer_perimeter_speed = get_min_speed(
+        config.get<std::vector<Domain::FloatOrPercentage>>("first_layer_perimeter_speed"),
         extruder_candidates,
         default_speed
     );
@@ -1237,7 +1242,7 @@ void WipeTower::toolchange_Wipe(
         x_to_wipe = std::max(x_to_wipe, x_to_fill_cleaning_box);
     }
 
-    const float target_speed = is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f;
+    const float target_speed = is_first_layer() ? m_first_layer_infill_speed * 60.f : m_infill_speed * 60.f;
     float wipe_speed = 0.33f * target_speed;
 
     // if there is less than 2.5*line_width to the edge, advance straightaway (there is likely a blob anyway)
@@ -1307,7 +1312,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
 
 	// Slow down on the 1st layer.
     bool first_layer = is_first_layer();
-    float feedrate = first_layer ? m_first_layer_speed * 60.f : m_infill_speed * 60.f;
+    float feedrate = first_layer ? m_first_layer_infill_speed * 60.f : m_infill_speed * 60.f;
 	float current_depth = m_layer_info->depth - m_layer_info->toolchanges_depth();
     box_coordinates fill_box(Vec2f(m_perimeter_width, m_layer_info->depth-(current_depth-m_perimeter_width)),
                              m_wipe_tower_width - 2 * m_perimeter_width, current_depth-m_perimeter_width);
@@ -1489,7 +1494,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
         return poly;
     };
 
-    feedrate = first_layer ? m_first_layer_speed * 60.f : m_perimeter_speed * 60.f;
+    feedrate = first_layer ? m_first_layer_perimeter_speed * 60.f : m_perimeter_speed * 60.f;
 
     // outer contour (always)
     bool infill_cone = first_layer && m_wipe_tower_width > 2*spacing && m_wipe_tower_depth > 2*spacing;

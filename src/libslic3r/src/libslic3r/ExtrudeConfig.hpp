@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Slic3r/Domain/Config.hpp"
-#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 
 namespace Slic3r::Biz::Slicing {
 struct ExtrudeConfig
@@ -71,9 +72,14 @@ struct ExtrudeConfig
     std::vector<Domain::FloatOrPercentage> over_bridge_speed{};
     std::vector<Domain::FloatOrPercentage> top_solid_infill_speed{};
     std::vector<Domain::FloatOrPercentage> first_layer_infill_speed{};
-    std::vector<Domain::FloatOrPercentage> first_layer_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_solid_infill_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_perimeter_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_external_perimeter_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_support_material_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_top_solid_infill_speed{};
+    std::vector<Domain::FloatOrPercentage> first_layer_gap_fill_speed{};
     std::vector<Domain::FloatOrPercentage> first_layer_speed_over_raft{};
-    Domain::FloatOrPercentage avoid_crossing_perimeters_max_detour{};
+    double avoid_crossing_perimeters_max_detour{};
     bool gcode_comments{};
     Domain::ArcFittingType arc_fitting{};
     Domain::ScarfSeamPlacement scarf_seam_placement{};

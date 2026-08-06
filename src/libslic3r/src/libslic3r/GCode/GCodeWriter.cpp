@@ -21,6 +21,7 @@
 #include <iomanip>
 
 #include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/libslic3r.h"

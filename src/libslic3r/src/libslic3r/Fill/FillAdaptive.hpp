@@ -24,6 +24,7 @@
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
 #include "libslic3r/Fill/FillBase.hpp"
 

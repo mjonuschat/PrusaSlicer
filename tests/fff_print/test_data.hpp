@@ -64,10 +64,7 @@ struct TestConfig : public Domain::ConfigPackFDM
 
     Biz::Parser::IO::Config get_parser_config() const
     {
-        Domain::FullConfigFDMPtr config{
-            *ASSERT_VAL(prepare_slicing_input(*this, {}, hw_config))
-        };
-        return Biz::Parser::IO::get_parser_config(*config);
+        return Biz::Parser::IO::get_parser_config(get_view());
     };
 
     Domain::FullConfigFDM get_full_config() const

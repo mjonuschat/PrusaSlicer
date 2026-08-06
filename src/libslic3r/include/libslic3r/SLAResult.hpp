@@ -90,7 +90,7 @@ using Instances = std::vector<Object>;
 struct SLAResultData
 {
     SerializedConfig serialized_config;
-    Domain::FullConfigSLA full_config;
+    Domain::ConfigView config;
     std::optional<Domain::SLA::PrintStatistics> print_statistics;
     Sla::OutputFiles files; // count files == slices.size()
     Domain::Images thumbnails;

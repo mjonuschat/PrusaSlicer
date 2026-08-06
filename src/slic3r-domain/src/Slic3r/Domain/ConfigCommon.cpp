@@ -88,7 +88,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     }
     if (technology == FFF) {
         def->location = FDMConfigLocation::Print;
-        def->require_compatibility_rule = true;
+        def->compatibility_rule = CompatibilityRule::Average;
         def->overrides_in = Locations{ fdm_tool, fdm_object, fdm_volume };
         def->option_group = ConfigItemDef::OptionGroup::Print_PrecisionSlicing_DimensionalAccuracy;
     }

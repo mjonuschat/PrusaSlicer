@@ -20,15 +20,7 @@ struct TestProfileSet
     std::size_t tool_count{0};
 };
 
-/**
- * @brief A single-tool printer with a compatible print and material profile.
- */
-const TestProfileSet& single_tool_profile_set();
-
-/**
- * @brief A multi-tool (tool_count >= 2) printer with a compatible print and material profile.
- */
-const TestProfileSet& multi_tool_profile_set();
+const std::vector<TestProfileSet>& resolved_profile_sets();
 
 /**
  * @brief Unique temporary directory removed at the end of the scope.
@@ -62,15 +54,7 @@ boost::filesystem::path write_cube_stl(
     double cube_size_mm
 );
 
-/**
- * @brief InitParams with the full single-tool profile set filled in.
- */
-InitParams make_single_tool_params();
-
-/**
- * @brief InitParams with the full multi-tool profile set filled in.
- */
-InitParams make_multi_tool_params();
+InitParams make_params(const TestProfileSet& profile_set);
 
 /**
  * @brief Counts the regular files with a .gcode or .bgcode extension in the directory.
