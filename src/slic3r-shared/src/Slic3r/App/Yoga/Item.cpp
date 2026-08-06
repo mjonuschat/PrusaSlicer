@@ -906,6 +906,10 @@ void Item::render_image(
 
 void Item::check_resized()
 {
+    if (!m_visible) {
+        return;
+    }
+
     float w = width();
     float h = height();
     if (!Domain::fuzzy_compare(w, m_last_width) || !Domain::fuzzy_compare(h, m_last_height)) {

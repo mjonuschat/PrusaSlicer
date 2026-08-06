@@ -266,7 +266,9 @@ void Popup::render(const Vec2f& pos, const Vec2f& size)
 
 void Popup::check_resized()
 {
-    m_content_item->check_resized();
+    if (m_opened) {
+        m_content_item->check_resized();
+    }
 }
 
 void Popup::resize(const SizeInfo& size_info)
@@ -276,6 +278,11 @@ void Popup::resize(const SizeInfo& size_info)
         m_last_size      = Vec2f{size_info.viewport_size_x, size_info.viewport_size_y};
         m_offset.evaluate(size_info);
     }
+
+    if (!m_opened) {
+        return;
+    }
+
     YGNodeCalculateLayout(
         m_popup_node,
         size_info.viewport_size_x,
