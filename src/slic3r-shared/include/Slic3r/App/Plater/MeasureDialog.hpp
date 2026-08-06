@@ -67,6 +67,7 @@ private:
 
     Yoga::Item* m_helper_panel = nullptr;
     Yoga::Item* m_main_panel   = nullptr;
+    Yoga::Item* m_toggle_separator = nullptr;
     GizmoHelpFactory m_extra_help;
     Yoga::Icon* m_help_select_icon   = nullptr;
     Yoga::Text* m_help_select_text   = nullptr;

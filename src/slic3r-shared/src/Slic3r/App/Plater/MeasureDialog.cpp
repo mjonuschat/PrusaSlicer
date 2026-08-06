@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/Separator.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Math.hpp"
@@ -53,7 +54,8 @@ MeasureDialog::MeasureDialog() : GizmoWindow()
 
     add_measure_rows();
 
-    add_separator(m_main_panel);
+    m_toggle_separator = add_separator(m_main_panel);
+    m_toggle_separator->set_visible(false);
 
     std::unique_ptr<SpotDescription> spot1 = std::make_unique<SpotDescription>();
     m_spot1                                = spot1.get();
@@ -238,24 +240,27 @@ void MeasureDialog::add_measure_rows()
         MeasureRowItem& row_item = m_measure_rows[i];
         row_item.row             = m_main_panel->emplace_back<Item>();
         row_item.row->set_gap(gap_size());
-        row_item.row->set_padding({content()->padding().left, 0});
 
         row_item.name = row_item.row->emplace_back<Text>("");
         row_item.name->set_self_align(YGAlignCenter);
-        row_item.name->set_width_percent(35);
+        row_item.name->set_width_percent(50);
 
         Item* value_item = row_item.row->emplace_back<Item>();
-        value_item->set_width_percent(65);
+        value_item->set_width_percent(50);
         value_item->set_gap(gap_size());
         row_item.value = value_item->emplace_back<Text>("");
         row_item.value->set_self_align(YGAlignCenter);
         row_item.value->set_font_type(Render::ImguiFontType::Bold);
+        row_item.value->set_text_color(m_theme->color_imgui(Platform::Color::AccentTertiary));
         row_item.value->set_flex_grow(1);
 
         row_item.copy_btn = value_item->emplace_back<LayoutButton>("", Render::Icon::CopyForGizmo);
+        row_item.copy_btn->set_width(20_fpx);
+        row_item.copy_btn->set_height(20_fpx);
         row_item.copy_btn->set_background_color(Platform::Color::Transparent);
         row_item.copy_btn->callbacks().action = [this, i]()
         { ImGui::SetClipboardText(m_measure_rows[i].clipboard_text.c_str()); };
+        row_item.row->set_visible(false);
     }
 }
 
@@ -271,16 +276,16 @@ void MeasureDialog::add_spot_row(
 
     Item* label_with_marker = row->emplace_back<Item>();
     label_with_marker->set_gap(gap_size());
-    label_with_marker->set_width_percent(35);
+    label_with_marker->set_width_percent(50);
     label_with_marker->set_align_items(YGAlignCenter);
-    label_with_marker->set_flex_shrink(0);
 
     Circle* marker = label_with_marker->emplace_back<Circle>();
-    marker->set_height(16);
+    marker->set_height(16_fpx);
+    marker->set_flex_shrink(0);
     marker->set_fill(marker_color);
     label_with_marker->emplace_back<Text>(title);
 
-    controls->set_width_percent(65);
+    controls->set_width_percent(50);
     row->append(std::move(controls));
 }
 
@@ -289,6 +294,7 @@ void MeasureDialog::set_measure(const MeasurementResult& result)
     for (auto& row : m_measure_rows) {
         row.row->set_visible(false);
     }
+    m_toggle_separator->set_visible(result.has_any_data());
 
     if (!result.has_any_data())
         return;
