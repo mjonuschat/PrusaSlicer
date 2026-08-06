@@ -28,7 +28,7 @@ PrintToolRowButton::PrintToolRowButton(Biz::IConfigBoxSetter& cb_setter) : m_cb_
     set_allow_overlap(true);
     set_checkable(true);
 
-    m_icon_caret = emplace_back<Icon>(Render::Icon::CaretUp);
+    m_icon_caret = emplace_back<Icon>(Render::Icon::CloseArrow);
     m_icon_caret->set_width(22);
     m_icon_caret->set_height(22);
     m_label = emplace_back<Text>(std::string{});
@@ -148,7 +148,7 @@ void PrintToolRowButton::update_data(const Biz::PrintToolItem* print_tool_item)
 
 void PrintToolRowButton::checked_updated_internal()
 {
-    m_icon_caret->set_icon(checked() ? Render::Icon::CaretDown : Render::Icon::CaretUp);
+    m_icon_caret->set_icon(checked() ? Render::Icon::OpenArrow : Render::Icon::CloseArrow);
     set_draw_flags(checked() ? ImDrawFlags_RoundCornersTop : ImDrawFlags_RoundCornersAll);
 }
 
