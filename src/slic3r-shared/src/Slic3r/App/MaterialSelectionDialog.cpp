@@ -162,17 +162,18 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_only_favorites_button->set_checkable(true);
     m_only_favorites_button->set_self_align(YGAlignCenter);
     m_only_favorites_button->callbacks().checked_changed = [this](bool checked)
-        {
-            m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
-            m_only_favorites_button->set_tooltip(
-                checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
-            );
-            m_material_filter->invalidate();
-            AppServices::instance().app_config_interactor().set_item_value(
-                "materials_only_favorites",
-                Domain::ConfigValue{ checked }
-            );
-        };
+    {
+        m_only_favorites_button->set_icon(checked ? Render::Icon::StarSolid : Render::Icon::Star);
+        m_only_favorites_button->set_tooltip(
+            checked ? Biz::_u8L("Show all items") : Biz::_u8L("Filter only favorited items")
+        );
+        m_material_filter->invalidate();
+        AppServices::instance().app_config_interactor().set_item_value(
+            "materials_only_favorites",
+            Domain::ConfigValue{checked}
+        );
+        update_preset_list();
+    };
     on_app_config_changed("materials_only_favorites");
 
     m_input_text_search->callbacks().text_changed = [this]() { m_material_filter->invalidate(); };
@@ -196,6 +197,9 @@ MaterialSelectionDialog::MaterialSelectionDialog(
                     .app_settings_advanced()
                     .toggle_material_favorite_preset(preset_item.id);
                 m_material_filter->invalidate();
+                if (!is_favorite(preset_item) && m_only_favorites_button->checked()) {
+                    on_list_selection_changed(m_preset_list->selected_index());
+                }
             },
             [this](size_t index)
             {
@@ -226,7 +230,6 @@ MaterialSelectionDialog::MaterialSelectionDialog(
             m_callbacks.advanced_settings_tab_opened(current_index);
         }
     };
-
 
     set_material_index(0);
 }
