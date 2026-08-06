@@ -455,6 +455,8 @@ void PrintToolRowItem::move_tool(size_t tool_index, size_t group_index)
         return;
     }
 
+    const Domain::ConfigValue& target_value = dst_group_it->first.front()->override_item->value();
+
     auto override_it = std::ranges::find(src_group_it->first, override);
 
     invoke_listeners<Biz::IListObserver<ToolRowOverrideGroup>>(
@@ -473,6 +475,10 @@ void PrintToolRowItem::move_tool(size_t tool_index, size_t group_index)
     invoke_listeners<Biz::IListObserver<ToolRowOverrideGroup>>(
         [](Biz::IListObserver<ToolRowOverrideGroup>* l) { l->on_reset(); }
     );
+
+    if (override->override_item->value() != target_value) {
+        m_cb_setter.set_item_value(*override->override_item, target_value, {override->tool_index});
+    }
 }
 
 void PrintToolRowItem::presort_overrides()

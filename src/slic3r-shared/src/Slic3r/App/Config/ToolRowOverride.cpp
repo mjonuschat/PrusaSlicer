@@ -11,7 +11,7 @@ namespace Slic3r::App {
 
 std::string ToolRowOverride::dnd_key() const
 {
-    return override_item->name() + "_" + ConfigItemUtils::config_item_to_string(*override_item);
+    return override_item->name();
 }
 
 } // namespace Slic3r::App
