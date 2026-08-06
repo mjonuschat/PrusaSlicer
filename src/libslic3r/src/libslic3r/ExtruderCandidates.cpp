@@ -1,6 +1,7 @@
 #include "libslic3r/ExtruderCandidates.hpp"
 #include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
+using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
@@ -129,6 +130,33 @@ std::set<unsigned> get_volume_extruder_candidates(
     return result;
 }
 
+/**
+ * @brief Returns whether the volume is painted with an extruder that exceeds the number of extruders.
+ *
+ * Facets painted with such an extruder are printed with the default extruder of the volume.
+ *
+ * @param volume Volume with multi-material painting.
+ * @param num_extruders Number of extruders of the current printer.
+ * @return True when any painting extruder of the volume exceeds num_extruders.
+ */
+bool
+has_paint_extruder_exceeding_extruder_count(const ModelVolume& volume, const size_t num_extruders)
+{
+    const std::vector<bool>& used_facet_states =
+        volume.mm_segmentation_facets.get_data().used_states;
+
+    for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1);
+         state_idx < used_facet_states.size();
+         ++state_idx)
+    {
+        if (used_facet_states[state_idx] && state_idx > num_extruders) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 std::set<unsigned> get_object_extruder_candidates(
     const Domain::ModelObject& object,
     const Domain::IConfigPackFDMViewer& config
@@ -160,6 +188,16 @@ std::set<unsigned> get_object_extruder_candidates(
         if (volume->type() != MODEL_PART && volume->type() != PARAMETER_MODIFIER) {
             continue;
         }
+
+        // A fully painted part doesn't use its default extruders, unless some painting extruder doesn't exist.
+        const bool default_extruders_unused = volume->type() == MODEL_PART
+            && volume->is_fully_mm_painted()
+            && !has_paint_extruder_exceeding_extruder_count(*volume, config.filament_size());
+
+        if (default_extruders_unused) {
+            continue;
+        }
+
         extruders.merge(get_volume_extruder_candidates(
             volume->volume_settings,
             object.object_settings,

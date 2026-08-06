@@ -190,3 +190,66 @@ TEST_CASE_METHOD(
     std::vector<unsigned> extruders{get_extruder_candidates(model, config, instance)};
     CHECK(extruders == std::vector<unsigned>{1, 2});
 }
+
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates skip the default extruder of a fully painted volume",
+    "[ExtruderCandidates]"
+)
+{
+    config.print.items.opt("support_material").set(SupportMode::None);
+    object->object_settings.items.opt("extruder").set(3);
+
+    TriangleSelector selector{volume->mesh()};
+    for (size_t facet_idx = 0; facet_idx < volume->mesh().facets_count(); ++facet_idx) {
+        selector.set_facet(static_cast<int>(facet_idx), TriangleStateType::Extruder2);
+    }
+
+    volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
+
+    std::vector<unsigned> extruders = get_extruder_candidates(model, config, bed_instance);
+    CHECK(extruders == std::vector<unsigned>{1});
+}
+
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates keep the default extruder of a partially painted volume",
+    "[ExtruderCandidates]"
+)
+{
+    config.print.items.opt("support_material").set(SupportMode::None);
+    object->object_settings.items.opt("extruder").set(3);
+
+    // Paint all facets of the cube except the first one.
+    TriangleSelector selector{volume->mesh()};
+    for (size_t facet_idx = 1; facet_idx < volume->mesh().facets_count(); ++facet_idx) {
+        selector.set_facet(static_cast<int>(facet_idx), TriangleStateType::Extruder2);
+    }
+
+    volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
+
+    std::vector<unsigned> extruders = get_extruder_candidates(model, config, bed_instance);
+    CHECK(extruders == std::vector<unsigned>{1, 2});
+}
+
+TEST_CASE_METHOD(
+    ExtruderCandidatesTestFixture,
+    "Extruder candidates keep the default extruder of a fully painted volume when the painting extruder does not exist",
+    "[ExtruderCandidates]"
+)
+{
+    // Facets painted with an extruder exceeding the number of extruders are printed with the default extruder of the volume.
+    TestConfig small_config{2};
+    small_config.print.items.opt("support_material").set(SupportMode::None);
+    object->object_settings.items.opt("extruder").set(2);
+
+    TriangleSelector selector{volume->mesh()};
+    for (size_t facet_idx = 0; facet_idx < volume->mesh().facets_count(); ++facet_idx) {
+        selector.set_facet(static_cast<int>(facet_idx), TriangleStateType::Extruder3);
+    }
+
+    volume->mm_segmentation_facets.triangle_splitting_data = selector.serialize();
+
+    std::vector<unsigned> extruders = get_extruder_candidates(model, small_config, bed_instance);
+    CHECK(extruders == std::vector<unsigned>{1});
+}

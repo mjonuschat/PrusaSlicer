@@ -211,6 +211,11 @@ public:
     bool                                is_mm_painted() const;
     bool                                is_fuzzy_skin_painted() const;
 
+    /**
+     * @brief Returns true if every facet of the volume mesh is painted by the multi-material painting gizmo.
+     */
+    bool is_fully_mm_painted() const;
+
     // Returns 0-based indices of extruders painted by multi-material painting gizmo.
     std::vector<size_t>                 get_extruders_from_multi_material_painting() const;
 
